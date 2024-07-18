@@ -1,16 +1,18 @@
 import { localized, msg, str } from "@lit/localize";
+import { Task } from "@lit/task";
 import clsx from "clsx";
 import { css, html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 
 import { columns } from "../ui/columns";
 
 import { TailwindElement } from "@/classes/TailwindElement";
-import { NavigateController } from "@/controllers/navigate";
-import { SubscriptionStatus } from "@/types/billing";
+import { APIController } from "@/controllers/api";
+import { SubscriptionStatus, type BillingPortal } from "@/types/billing";
 import type { OrgData, OrgQuotas } from "@/types/org";
-import type { AuthState } from "@/utils/AuthService";
+import type { Auth, AuthState } from "@/utils/AuthService";
 import { humanizeSeconds } from "@/utils/executionTimeFormatter";
 import { formatNumber, getLocale } from "@/utils/localization";
 import { pluralOf } from "@/utils/pluralize";
@@ -43,14 +45,14 @@ export class OrgSettingsBilling extends TailwindElement {
   @property({ type: String, noAccessor: true })
   salesEmail?: string;
 
-  private readonly navigate = new NavigateController(this);
+  private readonly api = new APIController(this);
 
   get portalUrlLabel() {
     const subscription = this.org?.subscription;
 
     if (!subscription) return;
 
-    let label = msg("Manage Plan");
+    let label = msg("Manage Billing");
 
     switch (subscription.status) {
       case SubscriptionStatus.PausedPaymentFailed: {
@@ -67,6 +69,28 @@ export class OrgSettingsBilling extends TailwindElement {
 
     return label;
   }
+
+  private readonly portalUrl = new Task(this, {
+    task: async ([org, authState]) => {
+      if (!org || !authState) throw new Error("Missing args");
+      try {
+        const { portalUrl } = await this.getPortalUrl(org.id, authState);
+
+        if (portalUrl) {
+          return portalUrl;
+        } else {
+          throw new Error("Missing portalUrl");
+        }
+      } catch (e) {
+        console.debug(e);
+
+        throw new Error(
+          msg("Sorry, couldn't retrieve current plan at this time."),
+        );
+      }
+    },
+    args: () => [this.org, this.authState] as const,
+  });
 
   render() {
     return html`
@@ -95,6 +119,32 @@ export class OrgSettingsBilling extends TailwindElement {
                           ? this.renderContactSalesLink(this.salesEmail)
                           : nothing}
                     </div>
+                    ${org.subscription?.futureCancelDate
+                      ? html`
+                          <div
+                            class="mb-3 flex items-center gap-2 border-b pb-3 text-neutral-500"
+                          >
+                            <sl-icon
+                              name="info-circle"
+                              class="text-base"
+                            ></sl-icon>
+                            <span>
+                              ${msg(
+                                html`Your plan will be canceled on
+                                  <sl-format-date
+                                    lang=${getLocale()}
+                                    class="truncate"
+                                    date=${org.subscription.futureCancelDate}
+                                    month="long"
+                                    day="numeric"
+                                    year="numeric"
+                                  >
+                                  </sl-format-date>`,
+                              )}
+                            </span>
+                          </div>
+                        `
+                      : nothing}
                     ${this.renderQuotas(org.quotas)}
                   `,
                 )}
@@ -157,41 +207,20 @@ export class OrgSettingsBilling extends TailwindElement {
 
       switch (subscription.status) {
         case SubscriptionStatus.Active: {
-          if (subscription.futureCancelDate) {
-            statusLabel = html`
-              <span class="text-danger"
-                >${msg(
-                  html`Canceling on
-                    <sl-format-date
-                      lang=${getLocale()}
-                      class="truncate"
-                      date=${subscription.futureCancelDate}
-                      month="2-digit"
-                      day="2-digit"
-                      year="2-digit"
-                    >
-                    </sl-format-date>`,
-                )}</span
-              >
-            `;
-          } else {
-            statusLabel = html`
-              <span class="text-success-700">${msg("Active")}</span>
-            `;
-          }
+          statusLabel = html`
+            <span class="text-success-700">${msg("Active")}</span>
+          `;
           break;
         }
         case SubscriptionStatus.PausedPaymentFailed: {
           statusLabel = html`
-            <span class="text-warning-600">
-              ${msg("Paused due to failed payment")}
-            </span>
+            <span class="text-danger">${msg("Paused, payment failed")}</span>
           `;
           break;
         }
         case SubscriptionStatus.Cancelled: {
           statusLabel = html`
-            <span class="text-danger-700">${msg("Canceled")}</span>
+            <span class="text-danger">${msg("Canceled")}</span>
           `;
           break;
         }
@@ -235,7 +264,7 @@ export class OrgSettingsBilling extends TailwindElement {
       </li>
       <li>
         ${msg(
-          str`${quotas.maxExecMinutesPerMonth ? humanizeSeconds(quotas.maxExecMinutesPerMonth, undefined, undefined, "long") : msg("Unlimited minutes")} of base crawling time per month`,
+          str`${quotas.maxExecMinutesPerMonth ? humanizeSeconds(quotas.maxExecMinutesPerMonth * 60, undefined, undefined, "long") : msg("Unlimited minutes")} of base crawling time per month`,
         )}
       </li>
     </ul>
@@ -245,8 +274,22 @@ export class OrgSettingsBilling extends TailwindElement {
     return html`
       <a
         class=${manageLinkClasslist}
-        href=${`${this.navigate.orgBasePath}/payment-portal-redirect`}
-        target="btrixPaymentTab"
+        href=${ifDefined(this.portalUrl.value)}
+        rel="noreferrer noopener"
+        @click=${async (e: MouseEvent) => {
+          e.preventDefault();
+
+          // Navigate to freshest portal URL
+          try {
+            await this.portalUrl.run();
+
+            if (this.portalUrl.value) {
+              window.location.href = this.portalUrl.value;
+            }
+          } catch (e) {
+            console.debug(e);
+          }
+        }}
       >
         ${this.portalUrlLabel}
         <sl-icon name="arrow-right"></sl-icon>
@@ -265,5 +308,9 @@ export class OrgSettingsBilling extends TailwindElement {
         ${msg("Contact Sales")}
       </a>
     `;
+  }
+
+  private async getPortalUrl(orgId: string, auth: Auth) {
+    return this.api.fetch<BillingPortal>(`/orgs/${orgId}/billing-portal`, auth);
   }
 }
