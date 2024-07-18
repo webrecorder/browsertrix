@@ -9,8 +9,8 @@ def test_api_docs():
 
     text = r.text
     assert "<title>Browsertrix API</title>" in text
-    assert '/favicon.ico' in text
-    assert '/api/openapi.json' in text
+    assert "/favicon.ico" in text
+    assert "/api/openapi.json" in text
 
 
 def test_api_redoc():
@@ -19,8 +19,8 @@ def test_api_redoc():
 
     text = r.text
     assert "<title>Browsertrix API</title>" in text
-    assert '/favicon.ico' in text
-    assert '/api/openapi.json' in text
+    assert "/favicon.ico" in text
+    assert "/api/openapi.json" in text
 
 
 def test_api_openapi():
@@ -30,5 +30,3 @@ def test_api_openapi():
     json = r.json()
     assert json["info"]["title"] == "Browsertrix"
     assert json["info"]["x-logo"]["url"] == "/docs-logo.svg"
-
-
