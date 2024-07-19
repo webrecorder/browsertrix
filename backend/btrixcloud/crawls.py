@@ -52,7 +52,7 @@ from .models import (
     UpdatedResponse,
     SuccessResponse,
     StartedResponse,
-    DeletedResponseQuota,
+    DeletedCountResponseQuota,
     DeletedCountResponse,
     EmptyResponse,
     CrawlScaleResponse,
@@ -447,6 +447,7 @@ class CrawlOps(BaseCrawlOps):
 
         return CrawlQueueResponse(total=total, results=results, matched=matched)
 
+    # pylint: disable=too-many-locals
     async def match_crawl_queue(
         self, crawl_id: str, regex: str, offset: int = 0
     ) -> MatchCrawlQueueResponse:
@@ -556,12 +557,10 @@ class CrawlOps(BaseCrawlOps):
         """update running crawl stats"""
         prefix = "" if not is_qa else "qa."
         query = {"_id": crawl_id, "type": "crawl", f"{prefix}state": "running"}
-        return (
-            await self.crawls.find_one_and_update(
-                query, {"$set": {f"{prefix}stats": stats.dict()}}
-            )
-            is not None
+        res = await self.crawls.find_one_and_update(
+            query, {"$set": {f"{prefix}stats": stats.dict()}}
         )
+        return res is not None
 
     async def inc_crawl_exec_time(
         self,
@@ -580,20 +579,18 @@ class CrawlOps(BaseCrawlOps):
         else:
             inc_update = {"crawlExecSeconds": exec_time}
 
-        return (
-            await self.crawls.find_one_and_update(
-                {
-                    "_id": crawl_id,
-                    "type": "crawl",
-                    "_lut": {"$ne": last_updated_time},
-                },
-                {
-                    "$inc": inc_update,
-                    "$set": {"_lut": last_updated_time},
-                },
-            )
-            is not None
+        res = await self.crawls.find_one_and_update(
+            {
+                "_id": crawl_id,
+                "type": "crawl",
+                "_lut": {"$ne": last_updated_time},
+            },
+            {
+                "$inc": inc_update,
+                "$set": {"_lut": last_updated_time},
+            },
         )
+        return res is not None
 
     async def get_crawl_exec_last_update_time(
         self, crawl_id: str
@@ -1160,7 +1157,7 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
     @app.post(
         "/orgs/{oid}/crawls/delete",
         tags=["crawls"],
-        response_model=DeletedResponseQuota,
+        response_model=DeletedCountResponseQuota,
     )
     async def delete_crawls(
         delete_list: DeleteCrawlList,
@@ -1170,8 +1167,8 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
         count, _, quota_reached = await ops.delete_crawls(
             org, delete_list, "crawl", user
         )
-        return DeletedResponseQuota(
-            deleted=count > 1, storageQuotaReached=quota_reached
+        return DeletedCountResponseQuota(
+            deleted=count, storageQuotaReached=quota_reached
         )
 
     @app.get("/orgs/all/crawls/stats", tags=["crawls"], response_model=bytes)
