@@ -907,7 +907,9 @@ class CrawlOperator(BaseOperator):
 
         return crawler_running, redis_running, pod_done_count
 
-    def handle_terminated_pod(self, name, role, status: CrawlStatus, terminated):
+    def handle_terminated_pod(
+        self, name, role, status: CrawlStatus, terminated: Optional[dict[str, Any]]
+    ) -> None:
         """handle terminated pod state"""
         if not terminated:
             return
@@ -1001,7 +1003,7 @@ class CrawlOperator(BaseOperator):
                 pod_state = "running"
                 state = cstate["running"]
                 start_time = from_k8s_date(state.get("startedAt"))
-                if update_start_time and update_start_time > start_time:
+                if update_start_time and start_time and update_start_time > start_time:
                     start_time = update_start_time
 
                 end_time = now
@@ -1010,11 +1012,11 @@ class CrawlOperator(BaseOperator):
                 state = cstate["terminated"]
                 start_time = from_k8s_date(state.get("startedAt"))
                 end_time = from_k8s_date(state.get("finishedAt"))
-                if update_start_time and update_start_time > start_time:
+                if update_start_time and start_time and update_start_time > start_time:
                     start_time = update_start_time
 
                 # already counted
-                if update_start_time and end_time < update_start_time:
+                if update_start_time and end_time and end_time < update_start_time:
                     print(
                         f"  - {name}: {pod_state}: skipping already counted, "
                         + f"{end_time} < {start_time}"
