@@ -741,7 +741,7 @@ def test_all_crawls_search_values(
     assert r.status_code == 200
     data = r.json()
 
-    assert len(data["names"]) == 2
+    assert len(data["names"]) == 3
     expected_names = [
         "Crawler User Test Crawl",
         "All Crawls Test Crawl",
