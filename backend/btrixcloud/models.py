@@ -2110,6 +2110,13 @@ class DeletedCountResponse(BaseModel):
 
 
 # ============================================================================
+class DeletedCountResponseQuota(DeletedCountResponse):
+    """Response for delete API endpoints"""
+
+    storageQuotaReached: bool
+
+
+# ============================================================================
 class RemovedResponse(BaseModel):
     """Response for API endpoints for removing resources"""
 
