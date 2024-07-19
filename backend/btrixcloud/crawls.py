@@ -409,17 +409,24 @@ class CrawlOps(BaseCrawlOps):
             # fallback to old crawler queue
             return await redis.llen(key)
 
-    async def _crawl_queue_range(self, redis: Redis, key: str, offset: int, count: int):
+    async def _crawl_queue_range(
+        self, redis: Redis, key: str, offset: int, count: int
+    ) -> list[str]:
         try:
             return await redis.zrangebyscore(key, 0, "inf", offset, count)
         except exceptions.ResponseError:
             # fallback to old crawler queue
-            return reversed(await redis.lrange(key, -offset - count, -offset - 1))
+            return list(reversed(await redis.lrange(key, -offset - count, -offset - 1)))
 
     async def get_crawl_queue(
         self, crawl_id: str, offset: int, count: int, regex: str
     ) -> CrawlQueueResponse:
         """get crawl queue"""
+
+        state = await self.get_crawl_state(crawl_id, False)
+
+        if state not in RUNNING_AND_STARTING_STATES:
+            raise HTTPException(status_code=400, detail="crawl_not_running")
 
         total = 0
         results = []
@@ -454,6 +461,11 @@ class CrawlOps(BaseCrawlOps):
         """get list of urls that match regex, starting at offset and at most
         around 'limit'. (limit rounded to next step boundary, so
         limit <= next_offset < limit + step"""
+        state = await self.get_crawl_state(crawl_id, False)
+
+        if state not in RUNNING_AND_STARTING_STATES:
+            raise HTTPException(status_code=400, detail="crawl_not_running")
+
         total = 0
         matched = []
         step = DEFAULT_RANGE_LIMIT
@@ -500,6 +512,9 @@ class CrawlOps(BaseCrawlOps):
         for given crawl_id, update config on crawl"""
 
         crawl = await self.get_crawl(crawl_id, org)
+
+        if crawl.state not in RUNNING_AND_STARTING_STATES:
+            raise HTTPException(status_code=400, detail="crawl_not_running")
 
         cid = crawl.cid
 
