@@ -799,24 +799,12 @@ class CrawlSearchValuesResponse(BaseModel):
 
 
 # ============================================================================
-class CrawlQueueUrl(BaseModel):
-    """Model for item in crawl queue"""
-
-    seedId: int
-    url: AnyHttpUrl
-    depth: int
-    extraHops: int
-    ts: int
-    pageid: Optional[str] = None
-
-
-# ============================================================================
 class CrawlQueueResponse(BaseModel):
     """Response model for GET crawl queue"""
 
     total: int
-    results: List[CrawlQueueUrl]
-    matched: List[CrawlQueueUrl]
+    results: List[AnyHttpUrl]
+    matched: List[AnyHttpUrl]
 
 
 # ============================================================================
@@ -824,7 +812,7 @@ class MatchCrawlQueueResponse(BaseModel):
     """Response model for match crawl queue"""
 
     total: int
-    matched: List[CrawlQueueUrl]
+    matched: List[AnyHttpUrl]
     nextOffset: int
 
 
@@ -2131,6 +2119,13 @@ class DeletedCountResponse(BaseModel):
     """Response for delete API endpoints that return count"""
 
     deleted: int
+
+
+# ============================================================================
+class DeletedCountResponseQuota(DeletedCountResponse):
+    """Response for delete API endpoints"""
+
+    storageQuotaReached: bool
 
 
 # ============================================================================

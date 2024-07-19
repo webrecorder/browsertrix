@@ -7,7 +7,7 @@ import re
 import csv
 import codecs
 
-from .conftest import API_PREFIX, HOST_PREFIX
+from .conftest import API_PREFIX, HOST_PREFIX, FINISHED_STATES
 from .test_collections import UPDATED_NAME as COLLECTION_NAME
 
 wacz_path = None
@@ -17,6 +17,10 @@ wacz_hash = None
 wacz_content = None
 
 page_id = None
+
+# newly started crawl for this test suite
+# (not using the fixture to be able to test running crawl)
+admin_crawl_id = None
 
 
 def test_list_orgs(admin_auth_headers, default_org_id):
@@ -53,12 +57,114 @@ def test_create_new_config(admin_auth_headers, default_org_id):
     assert data["storageQuotaReached"] is False
 
 
-def test_wait_for_complete(admin_auth_headers, default_org_id, admin_crawl_id):
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}/replay.json",
+def test_start_crawl(admin_auth_headers, default_org_id):
+    # Start crawl.
+    crawl_data = {
+        "runNow": True,
+        "name": "Admin Test Crawl",
+        "description": "Admin Test Crawl description",
+        "tags": ["wr-test-1", "wr-test-2"],
+        "config": {
+            "seeds": [{"url": "https://webrecorder.net/", "depth": 1}],
+            "exclude": "community",
+            # limit now set via 'max_pages_per_crawl' global limit
+            # "limit": 1,
+        },
+    }
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
         headers=admin_auth_headers,
+        json=crawl_data,
     )
     data = r.json()
+
+    global admin_crawl_id
+    admin_crawl_id = data["run_now_job"]
+
+
+def test_wait_for_running(admin_auth_headers, default_org_id):
+    while True:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}/replay.json",
+            headers=admin_auth_headers,
+        )
+        data = r.json()
+        if data["state"] == "running":
+            break
+        time.sleep(2)
+
+
+def test_crawl_queue(admin_auth_headers, default_org_id):
+    # 422 - requires offset and count
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}/queue",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 422
+
+    while True:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}/queue?offset=0&count=20",
+            headers=admin_auth_headers,
+        )
+        assert r.status_code == 200
+        data = r.json()
+        if data["total"] > 0:
+            break
+
+    assert len(data["results"]) > 0
+    assert data["results"][0].startswith("https://")
+
+
+def test_crawl_queue_match(admin_auth_headers, default_org_id):
+    # 422, regex required
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}/queueMatchAll",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 422
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}/queueMatchAll?regex=webrecorder&offset=0",
+        headers=admin_auth_headers,
+    )
+
+    data = r.json()
+    assert data["total"] > 0
+    assert len(data["matched"]) > 0
+    assert data["matched"][0].startswith("https://")
+
+
+def test_add_exclusion(admin_auth_headers, default_org_id):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}/exclusions?regex=test",
+        headers=admin_auth_headers,
+    )
+    assert r.json()["success"] == True
+
+
+def test_remove_exclusion(admin_auth_headers, default_org_id):
+    r = requests.delete(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}/exclusions?regex=test",
+        headers=admin_auth_headers,
+    )
+    assert r.json()["success"] == True
+
+
+def test_wait_for_complete(admin_auth_headers, default_org_id):
+    state = None
+    data = None
+    while True:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}/replay.json",
+            headers=admin_auth_headers,
+        )
+        data = r.json()
+        if data["state"] in FINISHED_STATES:
+            state = data["state"]
+            break
+        time.sleep(5)
+
     assert data["state"] == "complete"
 
     assert len(data["resources"]) == 1
@@ -78,7 +184,32 @@ def test_wait_for_complete(admin_auth_headers, default_org_id, admin_crawl_id):
     wacz_hash = data["resources"][0]["hash"]
 
 
-def test_crawl_info(admin_auth_headers, default_org_id, admin_crawl_id):
+def test_queue_and_exclusions_error_crawl_not_running(
+    admin_auth_headers, default_org_id
+):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}/queue?offset=0&count=20",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 400
+    assert r.json()["detail"] == "crawl_not_running"
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}/queueMatchAll?regex=webrecorder&offset=0",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 400
+    assert r.json()["detail"] == "crawl_not_running"
+
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}/exclusions?regex=test2",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 400
+    assert r.json()["detail"] == "crawl_not_running"
+
+
+def test_crawl_info(admin_auth_headers, default_org_id):
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}",
         headers=admin_auth_headers,
@@ -89,7 +220,7 @@ def test_crawl_info(admin_auth_headers, default_org_id, admin_crawl_id):
     assert data["userName"]
 
 
-def test_crawls_include_seed_info(admin_auth_headers, default_org_id, admin_crawl_id):
+def test_crawls_include_seed_info(admin_auth_headers, default_org_id):
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}",
         headers=admin_auth_headers,
@@ -121,7 +252,7 @@ def test_crawls_include_seed_info(admin_auth_headers, default_org_id, admin_craw
         assert crawl["seedCount"] > 0
 
 
-def test_crawl_seeds_endpoint(admin_auth_headers, default_org_id, admin_crawl_id):
+def test_crawl_seeds_endpoint(admin_auth_headers, default_org_id):
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}/seeds",
         headers=admin_auth_headers,
@@ -134,7 +265,7 @@ def test_crawl_seeds_endpoint(admin_auth_headers, default_org_id, admin_crawl_id
     assert data["items"][0]["depth"] == 1
 
 
-def test_crawls_exclude_errors(admin_auth_headers, default_org_id, admin_crawl_id):
+def test_crawls_exclude_errors(admin_auth_headers, default_org_id):
     # Get endpoint
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}",
@@ -164,7 +295,7 @@ def test_crawls_exclude_errors(admin_auth_headers, default_org_id, admin_crawl_i
         assert data.get("errors") == []
 
 
-def test_crawls_exclude_full_seeds(admin_auth_headers, default_org_id, admin_crawl_id):
+def test_crawls_exclude_full_seeds(admin_auth_headers, default_org_id):
     # Get endpoint
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}",
@@ -196,9 +327,7 @@ def test_crawls_exclude_full_seeds(admin_auth_headers, default_org_id, admin_cra
         assert config is None or config.get("seeds") is None
 
 
-def test_crawls_include_file_error_page_counts(
-    admin_auth_headers, default_org_id, admin_crawl_id
-):
+def test_crawls_include_file_error_page_counts(admin_auth_headers, default_org_id):
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}/replay.json",
         headers=admin_auth_headers,
@@ -863,9 +992,7 @@ def test_crawl_page_notes(crawler_auth_headers, default_org_id, crawler_crawl_id
     assert notes == []
 
 
-def test_delete_crawls_crawler(
-    crawler_auth_headers, default_org_id, admin_crawl_id, crawler_crawl_id
-):
+def test_delete_crawls_crawler(crawler_auth_headers, default_org_id, crawler_crawl_id):
     # Test that crawler user can't delete another user's crawls
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/delete",
