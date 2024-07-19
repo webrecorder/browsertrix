@@ -423,7 +423,7 @@ class CrawlOps(BaseCrawlOps):
     ) -> CrawlQueueResponse:
         """get crawl queue"""
 
-        state = await self.get_crawl_state(crawl_id, False)
+        state, _ = await self.get_crawl_state(crawl_id, False)
 
         if state not in RUNNING_AND_STARTING_STATES:
             raise HTTPException(status_code=400, detail="crawl_not_running")
@@ -461,7 +461,7 @@ class CrawlOps(BaseCrawlOps):
         """get list of urls that match regex, starting at offset and at most
         around 'limit'. (limit rounded to next step boundary, so
         limit <= next_offset < limit + step"""
-        state = await self.get_crawl_state(crawl_id, False)
+        state, _ = await self.get_crawl_state(crawl_id, False)
 
         if state not in RUNNING_AND_STARTING_STATES:
             raise HTTPException(status_code=400, detail="crawl_not_running")
