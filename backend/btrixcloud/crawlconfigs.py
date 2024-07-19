@@ -262,7 +262,7 @@ class CrawlConfigOps:
 
     async def add_new_crawl(
         self, crawl_id: str, crawlconfig: CrawlConfig, user: User, manual: bool
-    ):
+    ) -> None:
         """increments crawl count for this config and adds new crawl"""
 
         started = dt_now()
@@ -277,7 +277,7 @@ class CrawlConfigOps:
 
         await asyncio.gather(inc, add, info)
 
-    async def inc_crawl_count(self, cid: UUID):
+    async def inc_crawl_count(self, cid: UUID) -> None:
         """inc crawl count for config"""
         await self.crawl_configs.find_one_and_update(
             {"_id": cid, "inactive": {"$ne": True}},
@@ -286,7 +286,7 @@ class CrawlConfigOps:
 
     def check_attr_changed(
         self, crawlconfig: CrawlConfig, update: UpdateCrawlConfig, attr_name: str
-    ):
+    ) -> bool:
         """check if attribute is set and has changed. if not changed, clear it on the update"""
         if getattr(update, attr_name) is not None:
             if getattr(update, attr_name) != getattr(crawlconfig, attr_name):
@@ -296,7 +296,7 @@ class CrawlConfigOps:
 
     async def update_crawl_config(
         self, cid: UUID, org: Organization, user: User, update: UpdateCrawlConfig
-    ) -> dict[str, bool]:
+    ) -> dict[str, bool | str]:
         # pylint: disable=too-many-locals
         """Update name, scale, schedule, and/or tags for an existing crawl config"""
 
@@ -403,7 +403,7 @@ class CrawlConfigOps:
                     status_code=404, detail=f"Crawl Config '{cid}' not found"
                 )
 
-        ret = {
+        ret: dict[str, bool | str] = {
             "updated": True,
             "settings_changed": changed,
             "metadata_changed": metadata_changed,
