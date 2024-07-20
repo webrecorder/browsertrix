@@ -58,6 +58,8 @@ data:
 
   MAX_CRAWLER_MEMORY: "{{ .Values.max_crawler_memory }}"
 
+  ENABLE_AUTO_RESIZE_CRAWLERS: "{{ .Values.enable_auto_resize_crawlers }}"
+
   BILLING_ENABLED: "{{ .Values.billing_enabled }}"
 
   SALES_EMAIL: "{{ .Values.sales_email }}"

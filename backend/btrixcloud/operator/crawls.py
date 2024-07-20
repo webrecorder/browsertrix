@@ -29,11 +29,7 @@ from btrixcloud.models import (
     StorageRef,
 )
 
-from btrixcloud.utils import (
-    from_k8s_date,
-    to_k8s_date,
-    dt_now,
-)
+from btrixcloud.utils import from_k8s_date, to_k8s_date, dt_now, is_bool
 
 from .baseoperator import BaseOperator, Redis
 from .models import (
@@ -84,6 +80,15 @@ MEM_LIMIT_PADDING = 1.2
 class CrawlOperator(BaseOperator):
     """CrawlOperator Handler"""
 
+    done_key: str
+    pages_key: str
+    errors_key: str
+
+    fast_retry_secs: int
+    log_failed_crawl_lines: int
+
+    enable_auto_resize: bool
+
     def __init__(self, *args):
         super().__init__(*args)
 
@@ -94,6 +99,8 @@ class CrawlOperator(BaseOperator):
         self.fast_retry_secs = int(os.environ.get("FAST_RETRY_SECS") or 0)
 
         self.log_failed_crawl_lines = int(os.environ.get("LOG_FAILED_CRAWL_LINES") or 0)
+
+        self.enable_auto_resize = is_bool(os.environ.get("ENABLE_AUTO_RESIZE_CRAWLERS"))
 
     def init_routes(self, app):
         """init routes for this operator"""
@@ -377,7 +384,10 @@ class CrawlOperator(BaseOperator):
         params["priorityClassName"] = pri_class
         params["cpu"] = pod_info.newCpu or params.get(cpu_field)
         params["memory"] = pod_info.newMemory or params.get(mem_field)
-        params["memory_limit"] = float(params["memory"]) * MEM_LIMIT_PADDING
+        if self.enable_auto_resize:
+            params["memory_limit"] = float(params["memory"]) * MEM_LIMIT_PADDING
+        else:
+            params["memory_limit"] = self.k8s.max_crawler_memory_size
         params["workers"] = params.get(worker_field) or 1
         params["do_restart"] = (
             pod_info.should_restart_pod() or params.get("force_restart")
@@ -1091,6 +1101,9 @@ class CrawlOperator(BaseOperator):
             mem_usage = pod.get_percent_memory()
             new_memory = int(float(pod.allocated.memory) * MEM_SCALE_UP)
             send_sig = False
+
+            if not self.enable_auto_resize:
+                return
 
             # if pod is using >MEM_SCALE_UP_THRESHOLD of its memory, increase mem
             if mem_usage > MEM_SCALE_UP_THRESHOLD:
