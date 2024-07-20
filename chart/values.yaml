@@ -55,6 +55,7 @@ crawler_extra_args: ""
 # max allowed browser windows per crawl
 max_browser_windows: 8
 
+
 # Cluster Settings
 # =========================================
 name: browsertrix-cloud
@@ -309,6 +310,7 @@ min_seed_file_crawler_image: "docker.io/webrecorder/browsertrix-crawler:1.7.0"
 # num retries
 crawl_retries: 1000
 
+
 # Crawler Resources
 # -----------------
 
@@ -360,6 +362,26 @@ enable_auto_resize_crawlers: false
 # optional: set the workdir size for the profilebrowser pods
 # the workdir is used to store the browser profile data and other temporary files
 # profile_browser_workdir_size: 4Gi
+
+
+# Crawler Autoscaling
+# -----------------
+# enable auto-sizing of crawler pods with Vertical Pod Autoscaler (VPA)
+# if enabled, the crawler resources (below) serve as a minimum
+# and auto-scaler can resize, upto the max values below, if set
+# Requires: Vertical Pod Autoscaler to be installed separately
+# see: https://artifacthub.io/packages/helm/cowboysysop/vertical-pod-autoscaler
+# or https://github.com/kubernetes/autoscaler/blob/master/vertical-pod-autoscaler/README.md
+enable_auto_resize_crawlers: false
+
+# max memory per crawler instance
+# recommended to be set if using VPA, otherwise no upper bound
+# max_crawler_memory:
+
+# max CPU per crawler instance
+# recommended to be set if using VPA, otherwise no upper bound
+# max_crawler_cpu:
+
 
 # Other Crawler Settings
 # ----------------------

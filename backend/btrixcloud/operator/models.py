@@ -113,33 +113,6 @@ class CrawlSpec(BaseModel):
 
 
 # ============================================================================
-class PodResourcePercentage(BaseModel):
-    """Resource usage percentage ratios"""
-
-    memory: float = 0
-    cpu: float = 0
-    storage: float = 0
-
-
-# ============================================================================
-class PodResources(BaseModel):
-    """Pod Resources"""
-
-    memory: int = 0
-    cpu: float = 0
-    storage: int = 0
-
-    def __init__(self, *a, **kw):
-        if "memory" in kw:
-            kw["memory"] = int(parse_quantity(kw["memory"]))
-        if "cpu" in kw:
-            kw["cpu"] = float(parse_quantity(kw["cpu"]))
-        if "storage" in kw:
-            kw["storage"] = int(parse_quantity(kw["storage"]))
-        super().__init__(*a, **kw)
-
-
-# ============================================================================
 class PodInfo(BaseModel):
     """Aggregate pod status info held in CrawlJob"""
 
@@ -148,13 +121,7 @@ class PodInfo(BaseModel):
     isNewExit: Optional[bool] = Field(default=None, exclude=True)
     reason: Optional[str] = None
 
-    allocated: PodResources = PodResources()
-    used: PodResources = PodResources()
-
-    newCpu: Optional[int] = None
-    newMemory: Optional[int] = None
     newStorage: Optional[str] = None
-    signalAtMem: Optional[int] = None
 
     evicted: Optional[bool] = False
 
@@ -162,48 +129,8 @@ class PodInfo(BaseModel):
 
     sizePending: Optional[int] = 0
 
-    def dict(self, *a, **kw):
-        res = super().dict(*a, **kw)
-        percent = {
-            "memory": self.get_percent_memory(),
-            "cpu": self.get_percent_cpu(),
-            "storage": self.get_percent_storage(),
-        }
-        res["percent"] = percent
-        return res
-
-    def get_percent_memory(self) -> float:
-        """compute percent memory used"""
-        return (
-            float(self.used.memory) / float(self.allocated.memory)
-            if self.allocated.memory
-            else 0
-        )
-
-    def get_percent_cpu(self) -> float:
-        """compute percent cpu used"""
-        return (
-            float(self.used.cpu) / float(self.allocated.cpu)
-            if self.allocated.cpu
-            else 0
-        )
-
-    def get_percent_storage(self) -> float:
-        """compute percent storage used"""
-        return (
-            float(self.used.storage) / float(self.allocated.storage)
-            if self.allocated.storage
-            else 0
-        )
-
     def should_restart_pod(self, forced: bool = False) -> Optional[str]:
         """return true if pod should be restarted"""
-        if self.newMemory and self.newMemory != self.allocated.memory:
-            return "newMemory"
-
-        if self.newCpu and self.newCpu != self.allocated.cpu:
-            return "newCpu"
-
         if self.evicted:
             return "evicted"
 

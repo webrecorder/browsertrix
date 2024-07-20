@@ -79,6 +79,7 @@ data:
   NUM_BROWSERS: "{{ .Values.crawler_browser_instances }}"
 
   MAX_CRAWLER_MEMORY: "{{ .Values.max_crawler_memory }}"
+  MAX_CRAWLER_CPU: "{{ .Values.max_crawler_cpu }}"
 
   CRAWLER_MIN_AVAIL_STORAGE_RATIO: "{{ .Values.crawler_min_avail_storage_ratio }}"
 

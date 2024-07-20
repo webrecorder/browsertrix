@@ -21,6 +21,10 @@ rules:
   resources: ["pods"]
   verbs: ["list"]
 
+- apiGroups: ["autoscaling.k8s.io"]
+  resources: ["verticalpodautoscalers"]
+  verbs: ["list"]
+
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role

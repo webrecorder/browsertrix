@@ -29,12 +29,15 @@ else:
 
 
 # ============================================================================
+# pylint: disable=too-many-statements
 class K8sOpAPI(K8sAPI):
     """Additional k8s api for operators"""
 
-    has_pod_metrics: bool
+    has_vpa: bool
     enable_auto_resize: bool
+
     max_crawler_memory_size: int
+    max_crawler_cpu_size: float
 
     def __init__(self):
         super().__init__()
@@ -42,7 +45,7 @@ class K8sOpAPI(K8sAPI):
         with open(self.config_file, encoding="utf-8") as fh_config:
             self.shared_params = yaml.safe_load(fh_config)
 
-        self.has_pod_metrics = False
+        self.has_vpa = False
         self.enable_auto_resize = False
         self.max_crawler_memory_size = 0
 
@@ -78,6 +81,15 @@ class K8sOpAPI(K8sAPI):
         self.max_crawler_memory_size = max_crawler_memory_size or crawler_memory
 
         print(f"max crawler memory size: {self.max_crawler_memory_size}")
+
+        max_crawler_cpu_size = 0.0
+        max_crawler_cpu = os.environ.get("MAX_CRAWLER_CPU")
+        if max_crawler_cpu:
+            max_crawler_cpu_size = float(parse_quantity(max_crawler_cpu))
+
+        self.max_crawler_cpu_size = max_crawler_cpu_size or crawler_cpu
+
+        print(f"max crawler cpu: {self.max_crawler_cpu_size}")
 
         p["crawler_cpu"] = crawler_cpu
         p["crawler_memory"] = crawler_memory
@@ -132,13 +144,13 @@ class K8sOpAPI(K8sAPI):
 
     async def async_init(self) -> None:
         """perform any async init here"""
-        self.has_pod_metrics = await self.is_pod_metrics_available()
-        print("Pod Metrics Available:", self.has_pod_metrics)
+        self.has_vpa = await self.is_vpa_available()
+        print("Auto-Sizing Available:", self.has_vpa)
 
-        self.enable_auto_resize = self.has_pod_metrics and is_bool(
+        self.enable_auto_resize = self.has_vpa and is_bool(
             os.environ.get("ENABLE_AUTO_RESIZE_CRAWLERS")
         )
-        print("Auto-Resize Enabled", self.enable_auto_resize)
+        print("Auto-Resize Enabled:", self.enable_auto_resize)
 
 
 # pylint: disable=too-many-instance-attributes, too-many-arguments

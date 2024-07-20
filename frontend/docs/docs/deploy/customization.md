@@ -166,7 +166,33 @@ When replica locations are set, the default behavior when a crawl, upload, or br
 
 ??? info "If you are specifying a custom Minio deployment running in the same Kubernetes cluster, be sure to update the [network policy to allow access to your custom resource](#local-network-access-policy-and-custom-services)"
 
-## Horizontal Autoscaling
+
+## Crawler Resources and Auto-Resizing (Vertical Pod Autoscaling) of Crawlers
+
+Browsertrix provides a number of settings for controlling the memory and cpu allocated to each crawler.
+
+The minimum requirements (k8s resources requests) are set based on the number of browser worker instances per crawler,
+(`crawler_browser_instances`).
+
+The maximum limits (k8s resource limits) are optionally set as well for memory, and can be set to the same as requests,
+for memory, or unset for cpu, as per one recommended best practice.
+
+### Crawler Pod Autoscaling
+
+Optionally, it is possible to use the Vertical Pod Autoscaler to automatically adjust the minimum while the crawl is running.
+
+In this case, the max limits, `max_crawler_memory` and `max_crawler_cpu` should be set to ensure crawler pods don't scale
+above available memory and cpu.
+
+To enable the VPA:
+
+1) Install the Vertical Pod Autoscaler components, either [from the official GitHub](https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler#installation) or from [an known helm chart](https://artifacthub.io/packages/helm/cowboysysop/vertical-pod-autoscaler)
+
+2) Set `enable_crawlers_auto_size` to true.
+3) Also set `max_crawler_memory` and `max_crawler_cpu` (recommended). Be sure not to exceed the max memory and cpu available on the nodes the pods will be running on.
+
+
+## Horizontal Autoscaling of Browsertrix App Pods
 
 Browsertrix also includes support for horizontal auto-scaling for both the backend and frontend pods.
 The auto-scaling will start a new pod when memory/cpu utilization reaches the thresholds.

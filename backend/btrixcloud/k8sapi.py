@@ -372,11 +372,10 @@ class K8sAPI:
         except:
             return ""
 
-    async def is_pod_metrics_available(self) -> bool:
-        """return true/false if metrics server api is available by
-        attempting list operation. if operation succeeds, then
-        metrics are available, otherwise not available
-        """
+    async def is_vpa_available(self) -> bool:
+        """return true if vpa and podmetrics are available, by
+        attempting list operations for both. if either doesn't
+        exist, return false"""
         try:
             await self.custom_api.list_namespaced_custom_object(
                 group="metrics.k8s.io",
@@ -385,11 +384,25 @@ class K8sAPI:
                 plural="pods",
                 limit=1,
             )
-            return True
         # pylint: disable=broad-exception-caught
-        except Exception as exc:
-            print(exc)
+        except Exception:
+            print("pod metrics not found")
             return False
+
+        try:
+            await self.custom_api.list_namespaced_custom_object(
+                group="autoscaling.k8s.io",
+                version="v1",
+                namespace=self.namespace,
+                plural="verticalpodautoscalers",
+                limit=1,
+            )
+        # pylint: disable=broad-exception-caught
+        except Exception:
+            print("vpa not found")
+            return False
+
+        return True
 
     async def has_custom_jobs_with_label(self, plural, label) -> bool:
         """return true/false if any crawljobs or profilejobs
