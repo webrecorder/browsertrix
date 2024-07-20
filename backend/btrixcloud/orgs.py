@@ -1320,7 +1320,7 @@ class OrgOps:
         # Delete org
         await self.orgs.delete_one({"_id": org.id})
 
-    async def recalculate_storage(self, org: Organization):
+    async def recalculate_storage(self, org: Organization) -> dict[str, bool]:
         """Recalculate org storage use"""
         try:
             total_crawl_size, crawl_size, upload_size = (
