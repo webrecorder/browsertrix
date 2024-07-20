@@ -188,12 +188,16 @@ spec:
     {% endif %}
 
       resources:
+{% if memory_limit %}
         limits:
           memory: "{{ memory_limit }}"
+{% endif %}
 
+{% if not enable_auto_resize %}
         requests:
           cpu: "{{ cpu }}"
           memory: "{{ memory }}"
+{% endif %}
 
       {% if crawler_liveness_port and crawler_liveness_port != '0' %}
       livenessProbe:
@@ -206,4 +210,42 @@ spec:
         failureThreshold: 3
       {% endif %}
 
+{% endif %}
+
+
+{% if enable_auto_resize %}
+# -------
+# VPA
+# -------
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: {{ name }}
+  namespace: {{ namespace }}
+  labels:
+    crawl: {{ id }}
+    role: vpa
+
+spec:
+  targetRef:
+    apiVersion: "btrix.cloud/v1"
+    kind: CrawlJob
+    name: crawljob-{{ id }}
+  updatePolicy:
+    updateMode: "Auto"
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+    - containerName: "crawler"
+      minAllowed:
+        cpu: "{{ cpu }}"
+        memory: "{{ memory }}"
+      maxAllowed:
+      {% if cpu_limit %}
+        cpu: "{{ cpu_limit }}"
+      {% endif %}
+      {% if memory_limit %}
+        memory: "{{ memory_limit }}"
+      {% endif %}
 {% endif %}

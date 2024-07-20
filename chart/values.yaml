@@ -46,6 +46,7 @@ crawler_extra_args: ""
 max_crawl_scale: 3
 
 
+
 # Cluster Settings
 # =========================================
 name: browsertrix-cloud
@@ -235,6 +236,7 @@ crawler_namespace: "crawlers"
 # num retries
 crawl_retries: 1000
 
+
 # Crawler Resources
 # -----------------
 
@@ -268,16 +270,6 @@ crawler_extra_memory_per_browser: 768Mi
 # crawler_memory = crawler_memory_base + crawler_memory_per_extra_browser * (crawler_browser_instances - 1)
 # crawler_memory:
 
-# Crawler Autoscaling
-# ---------------------
-
-# if set to true, automatically adjust crawler memory usage up to max_crawler_memory
-enable_auto_resize_crawlers: false
-
-
-# max crawler memory, if set, will enable auto-resizing of crawler pods up to this size
-# if not set, no auto-resizing is done, and crawls always use 'crawler_memory' memory
-# max_crawler_memory:
 
 # optional: defaults to crawler_memory_base and crawler_cpu_base if not set
 # profile_browser_memory:
@@ -287,6 +279,26 @@ enable_auto_resize_crawlers: false
 # optional: set the workdir size for the profilebrowser pods
 # the workdir is used to store the browser profile data and other temporary files
 # profile_browser_workdir_size: 4Gi
+
+
+# Crawler Autoscaling
+# -----------------
+# enable auto-sizing of crawler pods with Vertical Pod Autoscaler (VPA)
+# if enabled, the crawler resources (below) serve as a minimum
+# and auto-scaler can resize, upto the max values below, if set
+# Requires: Vertical Pod Autoscaler to be installed separately
+# see: https://artifacthub.io/packages/helm/cowboysysop/vertical-pod-autoscaler
+# or https://github.com/kubernetes/autoscaler/blob/master/vertical-pod-autoscaler/README.md
+enable_auto_resize_crawlers: false
+
+# max memory per crawler instance
+# recommended to be set if using VPA, otherwise no upper bound
+# max_crawler_memory:
+
+# max CPU per crawler instance
+# recommended to be set if using VPA, otherwise no upper bound
+# max_crawler_cpu:
+
 
 # Other Crawler Settings
 # ----------------------
