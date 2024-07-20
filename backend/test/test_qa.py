@@ -541,6 +541,33 @@ def test_sort_crawls_by_qa_runs(
         last_count = crawl_qa_count
 
 
+def test_download_wacz_crawls(
+    crawler_crawl_id,
+    crawler_auth_headers,
+    default_org_id,
+    qa_run_id,
+    qa_run_pages_ready,
+):
+    with TemporaryFile() as fh:
+        with requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/{qa_run_id}/download",
+            headers=crawler_auth_headers,
+            stream=True,
+        ) as r:
+            assert r.status_code == 200
+            for chunk in r.iter_content():
+                fh.write(chunk)
+
+        fh.seek(0)
+        with ZipFile(fh, "r") as zip_file:
+            contents = zip_file.namelist()
+
+            assert len(contents) >= 2
+            for filename in contents:
+                assert filename.endswith(".wacz") or filename == "datapackage.json"
+                assert zip_file.getinfo(filename).compress_type == ZIP_STORED
+
+
 def test_delete_qa_runs(
     crawler_crawl_id,
     crawler_auth_headers,
