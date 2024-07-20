@@ -3,6 +3,7 @@ import requests
 import time
 from datetime import datetime
 from tempfile import TemporaryFile
+from zipfile import ZipFile, ZIP_STORED
 
 import pytest
 
