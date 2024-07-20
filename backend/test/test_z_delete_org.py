@@ -3,6 +3,29 @@ import requests
 from .conftest import API_PREFIX
 
 
+def test_recalculate_org_storage(admin_auth_headers, default_org_id):
+    # Prior to deleting org, ensure recalculating storage works now that
+    # resources of all types have been created.
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/recalculate-storage",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["success"]
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data["bytesStored"] > 0
+    assert data["bytesStoredCrawls"] > 0
+    assert data["bytesStoredUploads"] > 0
+    assert data["bytesStoredProfiles"] > 0
+
+
 def test_delete_org_non_superadmin(crawler_auth_headers, default_org_id):
     # Assert that non-superadmin can't delete org
     r = requests.delete(

@@ -2,7 +2,7 @@
 
 import os
 from datetime import timedelta
-from typing import Optional, List, Union, Dict, Any, Type, TYPE_CHECKING, cast
+from typing import Optional, List, Union, Dict, Any, Type, TYPE_CHECKING, cast, Tuple
 from uuid import UUID
 import urllib.parse
 
@@ -796,6 +796,34 @@ class BaseCrawlOps:
             "descriptions": descriptions,
             "firstSeeds": list(first_seeds),
         }
+
+    async def calculate_org_crawl_file_storage(
+        self, oid: UUID, type_: Optional[str] = None
+    ) -> Tuple[int, int, int]:
+        """Calculate and return total size of crawl files in org.
+
+        Returns tuple of (total, crawls only, uploads only)
+        """
+        total_size = 0
+        crawls_size = 0
+        uploads_size = 0
+
+        cursor = self.crawls.find({"oid": oid})
+        async for crawl_dict in cursor:
+            files = crawl_dict.get("files", [])
+            type_ = crawl_dict.get("type")
+
+            item_size = 0
+            for file_ in files:
+                item_size += file_.get("size", 0)
+
+            total_size += item_size
+            if type_ == "crawl":
+                crawls_size += item_size
+            if type_ == "upload":
+                uploads_size += item_size
+
+        return total_size, crawls_size, uploads_size
 
 
 # ============================================================================
