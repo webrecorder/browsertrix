@@ -22,6 +22,7 @@ spec:
         scale:
           specReplicasPath: .spec.scale
           statusReplicasPath: .status.scale
+          labelSelectorPath: .spec.selectorLabels
 
       schema:
         openAPIV3Schema:

@@ -10,7 +10,6 @@ import json
 
 import humanize
 
-from kubernetes.utils import parse_quantity
 from redis import asyncio as exceptions
 
 from btrixcloud.models import (
@@ -48,9 +47,6 @@ from .models import (
 )
 
 
-METRICS_API = "metrics.k8s.io/v1beta1"
-METRICS = f"PodMetrics.{METRICS_API}"
-
 DEFAULT_TTL = 30
 
 REDIS_TTL = 60
@@ -60,19 +56,6 @@ STARTING_TIME_SECS = 150
 
 # how often to update execution time seconds
 EXEC_TIME_UPDATE_SECS = 60
-
-
-# scale up if exceeded this threshold of mem usage (eg. 90%)
-MEM_SCALE_UP_THRESHOLD = 0.90
-
-# scale up by this much
-MEM_SCALE_UP = 1.2
-
-# soft OOM if exceeded this threshold of mem usage (eg. 100%)
-MEM_SOFT_OOM_THRESHOLD = 1.0
-
-# set memory limit to this much of request for extra padding
-MEM_LIMIT_PADDING = 1.2
 
 
 # pylint: disable=too-many-public-methods, too-many-locals, too-many-branches, too-many-statements
@@ -226,14 +209,7 @@ class CrawlOperator(BaseOperator):
             )
 
         if len(pods):
-            for pod_name, pod in pods.items():
-                self.sync_resources(status, pod_name, pod, data.children)
-
             status = await self.sync_crawl_state(redis_url, crawl, status, pods, data)
-
-            if self.k8s.enable_auto_resize:
-                # auto sizing handled here
-                await self.handle_auto_size(status.podStatus)
 
             if status.finished:
                 return await self.finalize_response(
@@ -256,7 +232,7 @@ class CrawlOperator(BaseOperator):
             )
             status.lastUpdatedTime = to_k8s_date(now)
 
-        children = self._load_redis(params, status, data.children)
+        children = self._load_redis(params, status)
 
         storage_path = crawl.storage.get_storage_extra_path(oid)
         storage_secret = crawl.storage.get_storage_secret_name(oid)
@@ -300,7 +276,7 @@ class CrawlOperator(BaseOperator):
             children.extend(await self._load_qa_configmap(params, data.children))
 
         for i in range(0, status.scale):
-            children.extend(self._load_crawler(params, i, status, data.children))
+            children.extend(self._load_crawler(params, i, data.children))
 
         return {
             "status": status.dict(exclude_none=True),
@@ -308,23 +284,19 @@ class CrawlOperator(BaseOperator):
             "resyncAfterSeconds": status.resync_after,
         }
 
-    def _load_redis(self, params, status, children):
+    def _load_redis(self, params: dict[str, Any], status: CrawlStatus):
         name = f"redis-{params['id']}"
-        has_pod = name in children[POD]
 
-        pod_info = status.podStatus[name]
         params["name"] = name
-        params["cpu"] = pod_info.newCpu or params.get("redis_cpu")
-        params["memory"] = pod_info.newMemory or params.get("redis_memory")
-        restart = pod_info.should_restart_pod() and has_pod
-        if restart:
-            print(f"Restart {name}")
-
-        params["init_redis"] = status.initRedis and not restart
+        params["cpu"] = params.get("redis_cpu")
+        params["memory"] = params.get("redis_memory")
+        params["init_redis"] = status.initRedis
 
         return self.load_from_yaml("redis.yaml", params)
 
-    async def _load_crawl_configmap(self, crawl: CrawlSpec, children, params):
+    async def _load_crawl_configmap(
+        self, crawl: CrawlSpec, children: dict[str, Any], params: dict[str, Any]
+    ):
         name = f"crawl-config-{crawl.id}"
 
         configmap = children[CMAP].get(name)
@@ -345,7 +317,9 @@ class CrawlOperator(BaseOperator):
 
         return self.load_from_yaml("crawl_configmap.yaml", params)
 
-    async def _load_qa_configmap(self, params, children):
+    async def _load_qa_configmap(
+        self, params: dict[str, Any], children: dict[str, Any]
+    ):
         qa_source_crawl_id = params["qa_source_crawl_id"]
         name = f"qa-replay-{qa_source_crawl_id}"
 
@@ -365,7 +339,12 @@ class CrawlOperator(BaseOperator):
         params["qa_source_replay_json"] = crawl_replay.json(include={"resources"})
         return self.load_from_yaml("qa_configmap.yaml", params)
 
-    def _load_crawler(self, params, i, status, children):
+    def _load_crawler(
+        self,
+        params: dict[str, Any],
+        i: int,
+        children: dict[str, Any],
+    ):
         name = f"crawl-{params['id']}-{i}"
         has_pod = name in children[POD]
 
@@ -380,19 +359,15 @@ class CrawlOperator(BaseOperator):
             worker_field = "crawler_workers"
             pri_class = f"crawl-pri-{i}"
 
-        pod_info = status.podStatus[name]
         params["name"] = name
         params["priorityClassName"] = pri_class
-        params["cpu"] = pod_info.newCpu or params.get(cpu_field)
-        params["memory"] = pod_info.newMemory or params.get(mem_field)
-        if self.k8s.enable_auto_resize:
-            params["memory_limit"] = float(params["memory"]) * MEM_LIMIT_PADDING
-        else:
-            params["memory_limit"] = self.k8s.max_crawler_memory_size
+        params["cpu"] = params.get(cpu_field)
+        params["memory"] = params.get(mem_field)
+        params["memory_limit"] = self.k8s.max_crawler_memory_size
+        params["cpu_limit"] = self.k8s.max_crawler_cpu_size
+        params["enable_auto_resize"] = self.k8s.enable_auto_resize
         params["workers"] = params.get(worker_field) or 1
-        params["do_restart"] = (
-            pod_info.should_restart_pod() or params.get("force_restart")
-        ) and has_pod
+        params["do_restart"] = params.get("force_restart") and has_pod
         if params.get("do_restart"):
             print(f"Restart {name}")
 
@@ -471,19 +446,6 @@ class CrawlOperator(BaseOperator):
 
         return new_scale
 
-    def sync_resources(self, status, name, pod, children):
-        """set crawljob status from current resources"""
-        resources = status.podStatus[name].allocated
-
-        src = pod["spec"]["containers"][0]["resources"]["requests"]
-        resources.memory = int(parse_quantity(src.get("memory")))
-        resources.cpu = float(parse_quantity(src.get("cpu")))
-
-        pvc = children[PVC].get(name)
-        if pvc:
-            src = pvc["spec"]["resources"]["requests"]
-            resources.storage = int(parse_quantity(src.get("storage")))
-
     async def set_state(
         self,
         state: TYPE_ALL_CRAWL_STATES,
@@ -556,7 +518,6 @@ class CrawlOperator(BaseOperator):
     def get_related(self, data: MCBaseRequest):
         """return objects related to crawl pods"""
         spec = data.parent.get("spec", {})
-        crawl_id = spec["id"]
         oid = spec.get("oid")
         related_resources = [
             {
@@ -565,15 +526,6 @@ class CrawlOperator(BaseOperator):
                 "labelSelector": {"matchLabels": {"btrix.org": oid}},
             },
         ]
-
-        if self.k8s.enable_auto_resize:
-            related_resources.append(
-                {
-                    "apiVersion": METRICS_API,
-                    "resource": "pods",
-                    "labelSelector": {"matchLabels": {"crawl": crawl_id}},
-                }
-            )
 
         return {"relatedResources": related_resources}
 
@@ -701,7 +653,7 @@ class CrawlOperator(BaseOperator):
         if redis_pod in pods:
             # if has other pods, keep redis pod until they are removed
             if len(pods) > 1:
-                new_children = self._load_redis(params, status, children)
+                new_children = self._load_redis(params, status)
                 await self.increment_pod_exec_time(pods, crawl, status)
 
         # keep pvs until pods are removed
@@ -759,13 +711,9 @@ class CrawlOperator(BaseOperator):
         )
         redis = None
 
-        metrics = data.related.get(METRICS, {})
-
         try:
             if redis_running:
                 redis = await self._get_redis(redis_url)
-
-            await self.add_used_stats(crawl.id, status.podStatus, redis, metrics)
 
             # skip if no newly exited pods
             if status.anyCrawlPodNewExit:
@@ -1080,74 +1028,6 @@ class CrawlOperator(BaseOperator):
 
         return False
 
-    async def add_used_stats(
-        self, crawl_id, pod_status: dict[str, PodInfo], redis, metrics
-    ):
-        """load current usage stats"""
-        if redis:
-            stats = await redis.info("persistence")
-            storage = int(stats.get("aof_current_size", 0)) + int(
-                stats.get("current_cow_size", 0)
-            )
-            pod_info = pod_status[f"redis-{crawl_id}"]
-            pod_info.used.storage = storage
-
-            # if no pod metrics, get memory estimate from redis itself
-            if not self.k8s.enable_auto_resize:
-                stats = await redis.info("memory")
-                pod_info.used.memory = int(stats.get("used_memory_rss", 0))
-
-                # stats = await redis.info("cpu")
-                # pod_info.used.cpu = float(stats.get("used_cpu_sys", 0))
-
-        for name, metric in metrics.items():
-            usage = metric["containers"][0]["usage"]
-            pod_info = pod_status[name]
-            pod_info.used.memory = int(parse_quantity(usage["memory"]))
-            pod_info.used.cpu = float(parse_quantity(usage["cpu"]))
-
-    async def handle_auto_size(self, pod_status: dict[str, PodInfo]) -> None:
-        """auto scale pods here, experimental"""
-        for name, pod in pod_status.items():
-            mem_usage = pod.get_percent_memory()
-            new_memory = int(float(pod.allocated.memory) * MEM_SCALE_UP)
-            send_sig = False
-
-            # if pod is using >MEM_SCALE_UP_THRESHOLD of its memory, increase mem
-            if mem_usage > MEM_SCALE_UP_THRESHOLD:
-                if new_memory > self.k8s.max_crawler_memory_size:
-                    print(
-                        f"Mem {mem_usage}: Not resizing pod {name}: "
-                        + f"mem {new_memory} > max allowed {self.k8s.max_crawler_memory_size}"
-                    )
-                    return
-
-                pod.newMemory = new_memory
-                print(
-                    f"Mem {mem_usage}: Resizing pod {name} -> mem {pod.newMemory} - Scale Up"
-                )
-
-                # if crawler pod is using its OOM threshold, attempt a soft OOM
-                # via a second SIGTERM
-                if (
-                    mem_usage >= MEM_SOFT_OOM_THRESHOLD
-                    and name.startswith("crawl")
-                    and pod.signalAtMem != pod.newMemory
-                ):
-                    send_sig = True
-
-            # if any pod crashed due to OOM, increase mem
-            elif pod.isNewExit and pod.reason == "oom":
-                pod.newMemory = new_memory
-                print(
-                    f"Mem {mem_usage}: Resizing pod {name} -> mem {pod.newMemory} - OOM Detected"
-                )
-                send_sig = True
-
-            # avoid resending SIGTERM multiple times after it already succeeded
-            if send_sig and await self.k8s.send_signal_to_pod(name, "SIGTERM"):
-                pod.signalAtMem = pod.newMemory
-
     async def log_crashes(self, crawl_id, pod_status: dict[str, PodInfo], redis):
         """report/log any pod crashes here"""
         for name, pod in pod_status.items():
@@ -1300,7 +1180,7 @@ class CrawlOperator(BaseOperator):
     ) -> CrawlStatus:
         """update crawl state and check if crawl is now done"""
         results = await redis.hgetall(f"{crawl.id}:status")
-        stats, sizes = await self.get_redis_crawl_stats(redis, crawl.id)
+        stats, _ = await self.get_redis_crawl_stats(redis, crawl.id)
 
         # need to add size of previously completed WACZ files as well!
         stats.size += status.filesAddedSize
@@ -1315,11 +1195,11 @@ class CrawlOperator(BaseOperator):
             crawl.db_crawl_id, crawl.is_qa, stats
         )
 
-        for key, value in sizes.items():
-            value = int(value)
-            if value > 0 and status.podStatus:
-                pod_info = status.podStatus[key]
-                pod_info.used.storage = value
+        # for key, value in sizes.items():
+        #   value = int(value)
+        #   if value > 0 and status.podStatus:
+        #     pod_info = status.podStatus[key]
+        #     pod_info.used.storage = value
 
         if not status.stopReason:
             status.stopReason = await self.is_crawl_stopping(crawl, status, data)
