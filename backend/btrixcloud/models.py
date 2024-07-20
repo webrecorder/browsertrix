@@ -314,7 +314,7 @@ class CrawlConfigIn(BaseModel):
 
     jobType: Optional[JobType] = JobType.CUSTOM
 
-    profileid: Union[UUID, EmptyStr, None]
+    profileid: Union[UUID, EmptyStr, None] = None
     crawlerChannel: str = "default"
 
     autoAddCollections: Optional[List[UUID]] = []
@@ -406,6 +406,8 @@ class CrawlConfigAdditional(BaseModel):
     lastRun: Optional[datetime]
 
     isCrawlRunning: Optional[bool] = False
+
+    crawlFilenameTemplate: Optional[str] = None
 
 
 # ============================================================================
@@ -929,6 +931,17 @@ class CrawlScaleResponse(BaseModel):
 
 
 # ============================================================================
+class CrawlError(BaseModel):
+    """Crawl error"""
+
+    timestamp: str
+    logLevel: str
+    context: str
+    message: str
+    details: Any
+
+
+# ============================================================================
 
 ### UPLOADED CRAWLS ###
 
@@ -1126,6 +1139,23 @@ class SubscriptionCreateOut(SubscriptionCreate, SubscriptionEventOut):
     """Output model for subscription creation event"""
 
     type: Literal["create"] = "create"
+
+
+# ============================================================================
+class SubscriptionImport(BaseModel):
+    """import subscription to existing org"""
+
+    subId: str
+    status: str
+    planId: str
+    oid: UUID
+
+
+# ============================================================================
+class SubscriptionImportOut(SubscriptionImport, SubscriptionEventOut):
+    """Output model for subscription import event"""
+
+    type: Literal["import"] = "import"
 
 
 # ============================================================================
@@ -2190,7 +2220,12 @@ class PaginatedSubscriptionEventResponse(PaginatedResponse):
     """Response model for paginated subscription events"""
 
     items: List[
-        Union[SubscriptionCreateOut, SubscriptionUpdateOut, SubscriptionCancelOut]
+        Union[
+            SubscriptionCreateOut,
+            SubscriptionUpdateOut,
+            SubscriptionCancelOut,
+            SubscriptionImportOut,
+        ]
     ]
 
 
@@ -2199,3 +2234,10 @@ class PaginatedWebhookNotificationResponse(PaginatedResponse):
     """Response model for paginated webhook notifications"""
 
     items: List[WebhookNotification]
+
+
+# ============================================================================
+class PaginatedCrawlErrorResponse(PaginatedResponse):
+    """Response model for crawl errors"""
+
+    items: List[CrawlError]

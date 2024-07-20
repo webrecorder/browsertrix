@@ -102,6 +102,7 @@ class PageOps:
         if not status and page_dict.get("loadState"):
             status = 200
 
+        ts = page_dict.get("ts")
         p = Page(
             id=page_id,
             oid=oid,
@@ -111,9 +112,7 @@ class PageOps:
             loadState=page_dict.get("loadState"),
             status=status,
             mime=page_dict.get("mime", "text/html"),
-            ts=(
-                from_k8s_date(page_dict.get("ts")) if page_dict.get("ts") else dt_now()
-            ),
+            ts=(from_k8s_date(ts) if ts else dt_now()),
         )
         p.compute_page_type()
         return p
@@ -403,7 +402,7 @@ class PageOps:
 
         remaining_notes = []
         for note in page_notes:
-            if not note.get("id") in delete.delete_list:
+            if note.get("id") not in delete.delete_list:
                 remaining_notes.append(note)
 
         modified = dt_now()

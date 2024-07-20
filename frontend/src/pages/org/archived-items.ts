@@ -389,7 +389,7 @@ export class CrawlsList extends TailwindElement {
       ${items.length
         ? html`
             <btrix-archived-item-list .listType=${this.itemType}>
-              <btrix-table-header-cell slot="actionCell" class="px-1">
+              <btrix-table-header-cell slot="actionCell" class="p-0">
                 <span class="sr-only">${msg("Row actions")}</span>
               </btrix-table-header-cell>
               ${repeat(items, ({ id }) => id, this.renderArchivedItem)}
@@ -602,7 +602,7 @@ export class CrawlsList extends TailwindElement {
       .item=${item}
       ?showStatus=${this.itemType !== null}
     >
-      <btrix-table-cell slot="actionCell" class="px-1">
+      <btrix-table-cell slot="actionCell" class="p-0">
         <btrix-overflow-dropdown>
           <sl-menu>${this.renderMenuItems(item)}</sl-menu>
         </btrix-overflow-dropdown>

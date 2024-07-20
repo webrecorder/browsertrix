@@ -1,7 +1,9 @@
 const { tailwindTransform } = require("postcss-lit");
 
+const attributes = require("./config/tailwind/plugins/attributes");
 const containPlugin = require("./config/tailwind/plugins/contain");
 const contentVisibilityPlugin = require("./config/tailwind/plugins/content-visibility");
+const cssPartsPlugin = require("./config/tailwind/plugins/parts");
 
 const PRIMARY_COLOR = "#0891B2";
 
@@ -163,7 +165,9 @@ module.exports = {
 
   plugins: [
     require("@tailwindcss/container-queries"),
+    attributes,
     containPlugin,
     contentVisibilityPlugin,
+    cssPartsPlugin,
   ],
 };

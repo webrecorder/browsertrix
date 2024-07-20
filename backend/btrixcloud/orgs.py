@@ -16,6 +16,7 @@ from tempfile import NamedTemporaryFile
 from typing import Optional, TYPE_CHECKING, Dict, Callable, List, AsyncGenerator, Any
 
 from pymongo import ReturnDocument
+from pymongo.collation import Collation
 from pymongo.errors import AutoReconnect, DuplicateKeyError
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -68,6 +69,7 @@ from .models import (
     UpdatedResponse,
     AddedResponse,
     AddedResponseId,
+    SuccessResponse,
     OrgInviteResponse,
     OrgAcceptInviteResponse,
     OrgDeleteInviteResponse,
@@ -160,13 +162,18 @@ class OrgOps:
 
     async def init_index(self) -> None:
         """init lookup index"""
+        case_insensitive_collation = Collation(locale="en", strength=1)
         while True:
             try:
-                await self.orgs.create_index("name", unique=True)
+                await self.orgs.create_index(
+                    "name", unique=True, collation=case_insensitive_collation
+                )
                 await self.orgs.create_index(
                     "subscription.subId", unique=True, sparse=True
                 )
-                await self.orgs.create_index("slug", unique=True)
+                await self.orgs.create_index(
+                    "slug", unique=True, collation=case_insensitive_collation
+                )
                 break
             # pylint: disable=duplicate-code
             except AutoReconnect:
@@ -366,6 +373,25 @@ class OrgOps:
             ) from dupe
 
         return org
+
+    async def add_subscription_to_org(
+        self, subscription: Subscription, oid: UUID
+    ) -> None:
+        """Add subscription to existing org"""
+        org = await self.get_org_by_id(oid)
+
+        org.subscription = subscription
+        include = {"subscription"}
+
+        if subscription.status == PAUSED_PAYMENT_FAILED:
+            org.readOnly = True
+            org.readOnlyReason = REASON_PAUSED
+            include.add("readOnly")
+            include.add("readOnlyReason")
+
+        await self.orgs.find_one_and_update(
+            {"_id": org.id}, {"$set": org.dict(include=include)}
+        )
 
     async def check_all_org_default_storages(self, storage_ops) -> None:
         """ensure all default storages references by this org actually exist
@@ -677,6 +703,17 @@ class OrgOps:
             return True
 
         return False
+
+    async def can_run_crawls(self, org: Organization) -> None:
+        """check crawl quotas and readOnly state, throw if can not run"""
+        if org.readOnly:
+            raise HTTPException(status_code=403, detail="org_set_to_read_only")
+
+        if await self.storage_quota_reached(org.id):
+            raise HTTPException(status_code=403, detail="storage_quota_reached")
+
+        if await self.exec_mins_quota_reached(org.id):
+            raise HTTPException(status_code=403, detail="exec_minutes_quota_reached")
 
     async def get_monthly_crawl_exec_seconds(self, oid: UUID) -> int:
         """Return monthlyExecSeconds for current month"""
@@ -1283,6 +1320,39 @@ class OrgOps:
         # Delete org
         await self.orgs.delete_one({"_id": org.id})
 
+    async def recalculate_storage(self, org: Organization) -> dict[str, bool]:
+        """Recalculate org storage use"""
+        try:
+            total_crawl_size, crawl_size, upload_size = (
+                await self.base_crawl_ops.calculate_org_crawl_file_storage(
+                    org.id,
+                )
+            )
+            profile_size = await self.profile_ops.calculate_org_profile_file_storage(
+                org.id
+            )
+
+            org_size = total_crawl_size + profile_size
+
+            await self.orgs.find_one_and_update(
+                {"_id": org.id},
+                {
+                    "$set": {
+                        "bytesStored": org_size,
+                        "bytesStoredCrawls": crawl_size,
+                        "bytesStoredUploads": upload_size,
+                        "bytesStoredProfiles": profile_size,
+                    }
+                },
+            )
+        # pylint: disable=broad-exception-caught, raise-missing-from
+        except Exception as err:
+            raise HTTPException(
+                status_code=400, detail=f"Error calculating size: {err}"
+            )
+
+        return {"success": True}
+
 
 # ============================================================================
 # pylint: disable=too-many-statements, too-many-arguments
@@ -1497,6 +1567,12 @@ def init_orgs_api(
         await ops.change_user_role(org, other_user.id, update.role)
 
         return {"updated": True}
+
+    @router.post(
+        "/recalculate-storage", tags=["organizations"], response_model=SuccessResponse
+    )
+    async def recalculate_org_storage(org: Organization = Depends(org_owner_dep)):
+        return await ops.recalculate_storage(org)
 
     @router.post("/invite", tags=["invites"], response_model=OrgInviteResponse)
     async def invite_user_to_org(

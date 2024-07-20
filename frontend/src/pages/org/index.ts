@@ -38,7 +38,6 @@ import "./browser-profiles-list";
 import "./browser-profiles-new";
 import "./settings/settings";
 import "./dashboard";
-import "./payment-portal-redirect";
 
 const RESOURCE_NAMES = ["workflow", "collection", "browser-profile", "upload"];
 type ResourceName = (typeof RESOURCE_NAMES)[number];
@@ -77,7 +76,6 @@ export type OrgParams = {
   settings: {
     settingsTab?: "information" | "members";
   };
-  "payment-portal-redirect": {};
 };
 export type OrgTab = keyof OrgParams;
 
@@ -117,6 +115,9 @@ export class Org extends LiteElement {
 
   @state()
   private orgStorageQuotaReached = false;
+
+  @state()
+  private showReadOnlyAlert = false;
 
   @state()
   private showStorageQuotaAlert = false;
@@ -240,6 +241,11 @@ export class Org extends LiteElement {
     if (!this.userInfo || !this.orgId) return;
     try {
       this.org = await this.getOrg(this.orgId);
+
+      this.showReadOnlyAlert = Boolean(
+        this.org?.readOnly || this.org?.subscription?.futureCancelDate,
+      );
+
       this.checkStorageQuota();
       this.checkExecutionMinutesQuota();
     } catch {
@@ -310,9 +316,6 @@ export class Org extends LiteElement {
         }
         // falls through
       }
-      case "payment-portal-redirect":
-        tabPanelContent = this.renderPaymentPortalRedirect();
-        break;
       default:
         tabPanelContent = html`<btrix-not-found
           class="flex items-center justify-center"
@@ -325,7 +328,7 @@ export class Org extends LiteElement {
 
     return html`
       <div class="flex min-h-full flex-col">
-        ${this.renderStorageAlert()} ${this.renderExecutionMinutesAlert()}
+        <btrix-org-status-banner .org=${this.org}></btrix-org-status-banner>
         ${this.renderOrgNavBar()}
         <main
           class="${noMaxWidth
@@ -336,62 +339,6 @@ export class Org extends LiteElement {
           ${tabPanelContent}
         </main>
         ${this.renderNewResourceDialogs()}
-      </div>
-    `;
-  }
-
-  private renderStorageAlert() {
-    return html`
-      <div
-        class="${this.showStorageQuotaAlert
-          ? "bg-slate-100 border-b py-5"
-          : ""} transition-all"
-      >
-        <div class="mx-auto box-border w-full max-w-screen-desktop px-3">
-          <sl-alert
-            variant="warning"
-            closable
-            ?open=${this.showStorageQuotaAlert}
-            @sl-after-hide=${() => (this.showStorageQuotaAlert = false)}
-          >
-            <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
-            <strong>${msg("Your org has reached its storage limit")}</strong
-            ><br />
-            ${msg(
-              "To add archived items again, delete unneeded items and unused browser profiles to free up space, or contact us to upgrade your storage plan.",
-            )}
-          </sl-alert>
-        </div>
-      </div>
-    `;
-  }
-
-  private renderExecutionMinutesAlert() {
-    return html`
-      <div
-        class="${this.showExecutionMinutesQuotaAlert
-          ? "bg-slate-100 border-b py-5"
-          : ""} transition-all"
-      >
-        <div class="mx-auto box-border w-full max-w-screen-desktop px-3">
-          <sl-alert
-            variant="warning"
-            closable
-            ?open=${this.showExecutionMinutesQuotaAlert}
-            @sl-after-hide=${() =>
-              (this.showExecutionMinutesQuotaAlert = false)}
-          >
-            <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
-            <strong
-              >${msg(
-                "Your org has reached its monthly execution minutes limit",
-              )}</strong
-            ><br />
-            ${msg(
-              "To purchase additional monthly execution minutes, contact us to upgrade your plan.",
-            )}
-          </sl-alert>
-        </div>
       </div>
     `;
   }
@@ -724,14 +671,6 @@ export class Org extends LiteElement {
       @org-remove-member=${this.onOrgRemoveMember}
       @btrix-update-org=${this.updateOrg}
     ></btrix-org-settings>`;
-  }
-
-  private renderPaymentPortalRedirect() {
-    return html`<btrix-org-payment-portal-redirect
-      class="flex flex-1"
-      orgId=${this.orgId}
-      .authState=${this.authState}
-    ></btrix-org-payment-portal-redirect>`;
   }
 
   private async onSelectNewDialog(e: SelectNewDialogEvent) {

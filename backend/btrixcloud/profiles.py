@@ -1,12 +1,13 @@
 """ Profile Management """
 
-from typing import Optional, TYPE_CHECKING, Any, cast, Dict, List
+from typing import Optional, TYPE_CHECKING, Any, cast, Dict, List, Tuple
 from uuid import UUID, uuid4
 import os
 
 from urllib.parse import urlencode
 
 from fastapi import APIRouter, Depends, Request, HTTPException
+from starlette.requests import Headers
 import aiohttp
 
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
@@ -30,6 +31,7 @@ from .models import (
     SuccessResponseStorageQuota,
     ProfilePingResponse,
     ProfileBrowserGetUrlResponse,
+    CrawlConfigProfileOut,
 )
 from .utils import dt_now
 
@@ -58,6 +60,9 @@ class ProfileOps:
     crawlconfigs: CrawlConfigOps
     background_job_ops: BackgroundJobOps
 
+    browser_fqdn_suffix: str
+    router: APIRouter
+
     def __init__(self, mdb, orgs, crawl_manager, storage_ops, background_job_ops):
         self.profiles = mdb["profiles"]
         self.orgs = orgs
@@ -66,7 +71,7 @@ class ProfileOps:
         self.crawl_manager = crawl_manager
         self.storage_ops = storage_ops
 
-        self.browser_fqdn_suffix = os.environ.get("CRAWLER_FQDN_SUFFIX")
+        self.browser_fqdn_suffix = os.environ.get("CRAWLER_FQDN_SUFFIX", "")
 
         self.router = APIRouter(
             prefix="/profiles",
@@ -82,16 +87,16 @@ class ProfileOps:
 
     async def create_new_browser(
         self, org: Organization, user: User, profile_launch: ProfileLaunchBrowserIn
-    ):
+    ) -> BrowserId:
         """Create new profile"""
-        prev_profile = ""
+        prev_profile_path = ""
         prev_profile_id = ""
         if profile_launch.profileId:
-            prev_profile = await self.get_profile_storage_path(
+            prev_profile_path = await self.get_profile_storage_path(
                 profile_launch.profileId, org
             )
 
-            if not prev_profile:
+            if not prev_profile_path:
                 raise HTTPException(status_code=400, detail="invalid_base_profile")
 
             prev_profile_id = str(profile_launch.profileId)
@@ -109,7 +114,7 @@ class ProfileOps:
             storage=org.storage,
             crawler_image=crawler_image,
             baseprofile=prev_profile_id,
-            profile_filename=prev_profile,
+            profile_filename=prev_profile_path,
         )
 
         if not browserid:
@@ -117,7 +122,9 @@ class ProfileOps:
 
         return BrowserId(browserid=browserid)
 
-    async def get_profile_browser_url(self, browserid, oid, headers):
+    async def get_profile_browser_url(
+        self, browserid: str, oid: str, headers: Headers
+    ) -> dict[str, str | int]:
         """get profile browser url"""
         json = await self._send_browser_req(browserid, "/vncpass")
 
@@ -130,7 +137,7 @@ class ProfileOps:
         host = headers.get("Host") or "localhost"
         # ws_scheme = "wss" if scheme == "https" else "ws"
 
-        auth_bearer = headers.get("Authorization").split(" ")[1]
+        auth_bearer = headers.get("Authorization", "").split(" ")[1]
 
         params = {
             "path": f"browser/{browserid}/ws?oid={oid}&auth_bearer={auth_bearer}",
@@ -144,7 +151,7 @@ class ProfileOps:
         params["url"] = url
         return params
 
-    async def ping_profile_browser(self, browserid):
+    async def ping_profile_browser(self, browserid: str) -> dict[str, Any]:
         """ping profile browser to keep it running"""
         await self.crawl_manager.ping_profile_browser(browserid)
 
@@ -152,7 +159,9 @@ class ProfileOps:
 
         return {"success": True, "origins": json.get("origins") or []}
 
-    async def navigate_profile_browser(self, browserid, urlin: UrlIn):
+    async def navigate_profile_browser(
+        self, browserid: str, urlin: UrlIn
+    ) -> dict[str, bool]:
         """ping profile browser to keep it running"""
         await self._send_browser_req(browserid, "/navigate", "POST", json=urlin.dict())
 
@@ -255,7 +264,7 @@ class ProfileOps:
 
     async def update_profile_metadata(
         self, profileid: UUID, update: ProfileUpdate, user: User
-    ):
+    ) -> dict[str, bool]:
         """Update name and description metadata only on existing profile"""
         query = {
             "name": update.name,
@@ -282,7 +291,7 @@ class ProfileOps:
         page: int = 1,
         sort_by: str = "modified",
         sort_direction: int = -1,
-    ):
+    ) -> Tuple[list[Profile], int]:
         """list all profiles"""
         # pylint: disable=too-many-locals,duplicate-code
 
@@ -334,7 +343,9 @@ class ProfileOps:
         profiles = [Profile.from_dict(res) for res in items]
         return profiles, total
 
-    async def get_profile(self, profileid: UUID, org: Optional[Organization] = None):
+    async def get_profile(
+        self, profileid: UUID, org: Optional[Organization] = None
+    ) -> Profile:
         """get profile by id and org"""
         query: dict[str, object] = {"_id": profileid}
         if org:
@@ -346,7 +357,9 @@ class ProfileOps:
 
         return Profile.from_dict(res)
 
-    async def get_profile_with_configs(self, profileid: UUID, org: Organization):
+    async def get_profile_with_configs(
+        self, profileid: UUID, org: Organization
+    ) -> ProfileWithCrawlConfigs:
         """get profile for api output, with crawlconfigs"""
 
         profile = await self.get_profile(profileid, org)
@@ -357,27 +370,33 @@ class ProfileOps:
 
     async def get_profile_storage_path(
         self, profileid: UUID, org: Optional[Organization] = None
-    ):
+    ) -> str:
         """return profile path filename (relative path) for given profile id and org"""
         try:
             profile = await self.get_profile(profileid, org)
-            return profile.resource.filename
+            return profile.resource.filename if profile.resource else ""
         # pylint: disable=bare-except
         except:
-            return None
+            pass
+
+        return ""
 
     async def get_profile_name(
         self, profileid: UUID, org: Optional[Organization] = None
-    ):
+    ) -> str:
         """return profile for given profile id and org"""
         try:
             profile = await self.get_profile(profileid, org)
             return profile.name
         # pylint: disable=bare-except
         except:
-            return None
+            pass
 
-    async def get_crawl_configs_for_profile(self, profileid: UUID, org: Organization):
+        return ""
+
+    async def get_crawl_configs_for_profile(
+        self, profileid: UUID, org: Organization
+    ) -> list[CrawlConfigProfileOut]:
         """Get list of crawl configs with basic info for that use a particular profile"""
 
         crawlconfig_info = await self.crawlconfigs.get_crawl_config_info_for_profile(
@@ -386,7 +405,9 @@ class ProfileOps:
 
         return crawlconfig_info
 
-    async def delete_profile(self, profileid: UUID, org: Organization):
+    async def delete_profile(
+        self, profileid: UUID, org: Organization
+    ) -> dict[str, Any]:
         """delete profile, if not used in active crawlconfig"""
         profile = await self.get_profile_with_configs(profileid, org)
 
@@ -403,27 +424,32 @@ class ProfileOps:
             await self.orgs.inc_org_bytes_stored(
                 org.id, -profile.resource.size, "profile"
             )
+            await self.background_job_ops.create_delete_replica_jobs(
+                org, profile.resource, str(profile.id), "profile"
+            )
 
         res = await self.profiles.delete_one(query)
         if not res or res.deleted_count != 1:
             raise HTTPException(status_code=404, detail="profile_not_found")
 
-        await self.background_job_ops.create_delete_replica_jobs(
-            org, profile.resource, profile.id, "profile"
-        )
-
         quota_reached = await self.orgs.storage_quota_reached(org.id)
 
         return {"success": True, "storageQuotaReached": quota_reached}
 
-    async def delete_profile_browser(self, browserid):
+    async def delete_profile_browser(self, browserid: str) -> dict[str, bool]:
         """delete profile browser immediately"""
         if not await self.crawl_manager.delete_profile_browser(browserid):
             raise HTTPException(status_code=404, detail="browser_not_found")
 
         return {"success": True}
 
-    async def _send_browser_req(self, browserid, path, method="GET", json=None):
+    async def _send_browser_req(
+        self,
+        browserid: str,
+        path: str,
+        method: str = "GET",
+        json: Optional[dict[str, Any]] = None,
+    ) -> dict[str, Any]:
         """make request to browser api to get state"""
         try:
             async with aiohttp.ClientSession() as session:
@@ -438,7 +464,7 @@ class ProfileOps:
             # pylint: disable=raise-missing-from
             raise HTTPException(status_code=200, detail="waiting_for_browser")
 
-        return json
+        return json or {}
 
     async def add_profile_file_replica(
         self, profileid: UUID, filename: str, ref: StorageRef
@@ -449,11 +475,28 @@ class ProfileOps:
             {"$push": {"resource.replicas": {"name": ref.name, "custom": ref.custom}}},
         )
 
+    async def calculate_org_profile_file_storage(self, oid: UUID) -> int:
+        """Calculate and return total size of profile files in org"""
+        total_size = 0
+
+        cursor = self.profiles.find({"oid": oid})
+        async for profile_dict in cursor:
+            file_ = profile_dict.get("resource")
+            if file_:
+                total_size += file_.get("size", 0)
+
+        return total_size
+
 
 # ============================================================================
 # pylint: disable=redefined-builtin,invalid-name,too-many-locals,too-many-arguments
 def init_profiles_api(
-    mdb, org_ops, crawl_manager, storage_ops, background_job_ops, user_dep
+    mdb,
+    org_ops: OrgOps,
+    crawl_manager: CrawlManager,
+    storage_ops: StorageOps,
+    background_job_ops: BackgroundJobOps,
+    user_dep,
 ):
     """init profile ops system"""
     ops = ProfileOps(mdb, org_ops, crawl_manager, storage_ops, background_job_ops)
@@ -584,6 +627,7 @@ def init_profiles_api(
     async def delete_profile_browser(browserid: str = Depends(browser_dep)):
         return await ops.delete_profile_browser(browserid)
 
-    org_ops.router.include_router(router)
+    if org_ops.router:
+        org_ops.router.include_router(router)
 
     return ops
