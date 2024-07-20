@@ -973,13 +973,19 @@ class CrawlOps(BaseCrawlOps):
     ):
         """Download all WACZs in a QA run as streaming nested WACZ"""
         qa_run = await self.get_qa_run_for_replay(crawl_id, qa_run_id, org)
+        if not qa_run.finished:
+            raise HTTPException(status_code=400, detail="qa_run_not_finished")
 
         if not qa_run.resources:
-            raise HTTPException(status_code=400, detail="no_qa_run_resources")
+            raise HTTPException(status_code=400, detail="qa_run_no_resources")
 
         resp = await self.storage_ops.download_streaming_wacz(org, qa_run.resources)
 
-        headers = {"Content-Disposition": f'attachment; filename="{crawl_id}.wacz"'}
+        finished = qa_run.finished.isoformat()
+
+        headers = {
+            "Content-Disposition": f'attachment; filename="qa-{finished}-crawl-{crawl_id}.wacz"'
+        }
         return StreamingResponse(
             resp, headers=headers, media_type="application/wacz+zip"
         )
