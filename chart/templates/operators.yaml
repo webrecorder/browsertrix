@@ -25,6 +25,13 @@ spec:
     updateStrategy:
       method: InPlace
 
+{{- if .Values.enable_auto_resize_crawlers }}
+  - apiVersion: autoscaling.k8s.io/v1
+    resource: verticalpodautoscalers
+    updateStrategy:
+      method: OnDelete
+{{- end }}
+
   hooks:
     sync:
       webhook:
