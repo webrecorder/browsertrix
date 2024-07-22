@@ -64,6 +64,17 @@ export class AppStateService {
       appState.org = org;
     });
   };
+  static patchOrg = (org: Partial<OrgData>) => {
+    unlock(() => {
+      if (!appState.org) {
+        throw new Error("no org in app state");
+      }
+      appState.org = {
+        ...appState.org,
+        ...org,
+      };
+    });
+  };
   static updateOrgSlug = (orgSlug: AppState["orgSlug"]) => {
     unlock(() => {
       appState.orgSlug = orgSlug;

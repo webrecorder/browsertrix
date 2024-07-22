@@ -3,13 +3,9 @@ import type { ReactiveController, ReactiveControllerHost } from "lit";
 
 import { APIError, type Detail } from "@/utils/api";
 import AuthService, { type Auth } from "@/utils/AuthService";
+import { AppStateService } from "@/utils/state";
 
 export type QuotaUpdateDetail = { reached: boolean };
-
-export interface APIEventMap {
-  "btrix-execution-minutes-quota-update": CustomEvent<QuotaUpdateDetail>;
-  "btrix-storage-quota-update": CustomEvent<QuotaUpdateDetail>;
-}
 
 /**
  * Utilities for interacting with the Browsertrix backend API
@@ -56,25 +52,14 @@ export class APIController implements ReactiveController {
       const storageQuotaReached = body.storageQuotaReached;
       const executionMinutesQuotaReached = body.execMinutesQuotaReached;
       if (typeof storageQuotaReached === "boolean") {
-        this.host.dispatchEvent(
-          new CustomEvent<QuotaUpdateDetail>("btrix-storage-quota-update", {
-            detail: { reached: storageQuotaReached },
-            bubbles: true,
-            composed: true,
-          }),
-        );
+        AppStateService.patchOrg({
+          storageQuotaReached: storageQuotaReached,
+        });
       }
       if (typeof executionMinutesQuotaReached === "boolean") {
-        this.host.dispatchEvent(
-          new CustomEvent<QuotaUpdateDetail>(
-            "btrix-execution-minutes-quota-update",
-            {
-              detail: { reached: executionMinutesQuotaReached },
-              bubbles: true,
-              composed: true,
-            },
-          ),
-        );
+        AppStateService.patchOrg({
+          execMinutesQuotaReached: executionMinutesQuotaReached,
+        });
       }
 
       return body as T;
@@ -97,27 +82,16 @@ export class APIController implements ReactiveController {
       }
       case 403: {
         if (errorDetail === "storage_quota_reached") {
-          this.host.dispatchEvent(
-            new CustomEvent<QuotaUpdateDetail>("btrix-storage-quota-update", {
-              detail: { reached: true },
-              bubbles: true,
-              composed: true,
-            }),
-          );
+          AppStateService.patchOrg({
+            storageQuotaReached: true,
+          });
           errorMessage = msg("Storage quota reached");
           break;
         }
         if (errorDetail === "exec_minutes_quota_reached") {
-          this.host.dispatchEvent(
-            new CustomEvent<QuotaUpdateDetail>(
-              "btrix-execution-minutes-quota-update",
-              {
-                detail: { reached: true },
-                bubbles: true,
-                composed: true,
-              },
-            ),
-          );
+          AppStateService.patchOrg({
+            execMinutesQuotaReached: true,
+          });
           errorMessage = msg("Monthly execution minutes quota reached");
           break;
         }

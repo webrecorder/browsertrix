@@ -1,11 +1,11 @@
 import { localized, msg, str } from "@lit/localize";
 import { differenceInDays } from "date-fns/fp";
 import { html, type PropertyValues, type TemplateResult } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
+import { customElement, state } from "lit/decorators.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import { NavigateController } from "@/controllers/navigate";
-import { OrgReadOnlyReason, type OrgData } from "@/types/org";
+import { OrgReadOnlyReason } from "@/types/org";
 import { formatISODateString } from "@/utils/localization";
 import appState, { use } from "@/utils/state";
 
@@ -21,9 +21,6 @@ type Alert = {
 @localized()
 @customElement("btrix-org-status-banner")
 export class OrgStatusBanner extends TailwindElement {
-  @property({ type: Object })
-  org?: OrgData;
-
   @use()
   appState = appState;
 
@@ -35,7 +32,7 @@ export class OrgStatusBanner extends TailwindElement {
   private alert?: Alert;
 
   protected willUpdate(_changedProperties: PropertyValues): void {
-    if (_changedProperties.has("org") && this.org) {
+    if (_changedProperties.has("appState") && this.appState.org) {
       this.alert = this.alerts.find(({ test }) => test());
 
       if (this.alert) {
@@ -45,7 +42,7 @@ export class OrgStatusBanner extends TailwindElement {
   }
 
   render() {
-    if (!this.org) return;
+    if (!this.appState.org) return;
 
     return html`
       <div
@@ -69,7 +66,7 @@ export class OrgStatusBanner extends TailwindElement {
   }
 
   private renderContent() {
-    if (!this.alert || !this.org) return;
+    if (!this.alert) return;
 
     const content = this.alert.content();
 
@@ -83,7 +80,7 @@ export class OrgStatusBanner extends TailwindElement {
    * Alerts ordered by priority
    */
   private get alerts(): Alert[] {
-    if (!this.org) return [];
+    if (!this.appState.org) return [];
 
     const billingTabLink = html`<a
       class="underline hover:no-underline"
@@ -99,7 +96,7 @@ export class OrgStatusBanner extends TailwindElement {
       subscription,
       storageQuotaReached,
       execMinutesQuotaReached,
-    } = this.org;
+    } = this.appState.org;
 
     return [
       {
