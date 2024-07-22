@@ -6,6 +6,7 @@ import { locked, options, use } from "lit-shared-state";
 import { persist } from "./persist";
 
 import type { AppSettings } from "@/types/app";
+import type { OrgData } from "@/types/org";
 import type { CurrentUser } from "@/types/user";
 
 export { use };
@@ -20,6 +21,7 @@ type SlugLookup = Record<string, string>;
 class AppState {
   settings: AppSettings | null = null;
   userInfo: CurrentUser | null = null;
+  org?: OrgData | null;
 
   @options(persist(window.localStorage))
   orgSlug: string | null = null;
@@ -55,6 +57,11 @@ export class AppStateService {
   static updateUserInfo = (userInfo: AppState["userInfo"]) => {
     unlock(() => {
       appState.userInfo = userInfo;
+    });
+  };
+  static updateOrg = (org: AppState["org"]) => {
+    unlock(() => {
+      appState.org = org;
     });
   };
   static updateOrgSlug = (orgSlug: AppState["orgSlug"]) => {
