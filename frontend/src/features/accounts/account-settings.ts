@@ -134,14 +134,17 @@ export class AccountSettings extends LiteElement {
     if (!this.userInfo) return;
     return html`
       <div class="mx-auto max-w-screen-sm">
-        <h1 class="mb-7 text-xl font-semibold leading-8">
+        <h1 class="mb-7 border-b pb-3 text-xl font-semibold leading-8">
           ${msg("Account Settings")}
         </h1>
-        <form class="mb-5 rounded border" @submit=${this.onSubmitName}>
+        <h2 class="mb-3 text-lg font-semibold leading-none">
+          ${msg("Profile")}
+        </h2>
+        <form class="mb-7 rounded border" @submit=${this.onSubmitName}>
           <div class="p-4">
-            <h2 class="mb-4 text-lg font-semibold leading-none">
+            <h3 class="mb-3 text-base font-medium leading-none">
               ${msg("Display Name")}
-            </h2>
+            </h3>
             <p class="mb-2">
               ${msg(
                 "Enter your full name, or another name to display in the orgs you belong to.",
@@ -166,11 +169,14 @@ export class AccountSettings extends LiteElement {
             >
           </footer>
         </form>
+        <h2 class="mb-3 text-lg font-semibold leading-none">
+          ${msg("Account")}
+        </h2>
         <form class="mb-5 rounded border" @submit=${this.onSubmitEmail}>
           <div class="p-4">
-            <h2 class="mb-4 text-lg font-semibold leading-none">
+            <h3 class="mb-3 text-base font-medium leading-none">
               ${msg("Email")}
-            </h2>
+            </h3>
             <p class="mb-2">${msg("Update the email you use to log in.")}</p>
             <sl-input
               name="email"
@@ -216,15 +222,15 @@ export class AccountSettings extends LiteElement {
             >
           </footer>
         </form>
-        <section class="mb-5 rounded border">
+        <section class="mb-7 rounded border">
           ${when(
             this.isChangingPassword,
             () => html`
               <form @submit=${this.onSubmitPassword}>
                 <div class="p-4">
-                  <h2 class="mb-4 text-lg font-semibold leading-none">
+                  <h3 class="mb-3 text-base font-medium leading-none">
                     ${msg("Password")}
-                  </h2>
+                  </h3>
                   <sl-input
                     class="mb-3"
                     name="password"
@@ -258,6 +264,15 @@ export class AccountSettings extends LiteElement {
                     )}
                   </p>
                   <sl-button
+                    type="reset"
+                    size="small"
+                    variant="text"
+                    class="mx-2"
+                    @click=${() => (this.isChangingPassword = false)}
+                  >
+                    ${msg("Cancel")}
+                  </sl-button>
+                  <sl-button
                     type="submit"
                     size="small"
                     variant="primary"
@@ -271,9 +286,9 @@ export class AccountSettings extends LiteElement {
             `,
             () => html`
               <div class="flex items-center justify-between px-4 py-3">
-                <h2 class="text-lg font-semibold leading-none">
+                <h3 class="text-base font-medium leading-none">
                   ${msg("Password")}
-                </h2>
+                </h3>
                 <sl-button
                   size="small"
                   @click=${() => (this.isChangingPassword = true)}

@@ -1,4 +1,4 @@
-import { localized, msg } from "@lit/localize";
+import { localized, msg, str } from "@lit/localize";
 import type { SlDialog } from "@shoelace-style/shoelace";
 import { nothing, render, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
@@ -233,7 +233,7 @@ export class App extends LiteElement {
   render() {
     return html`
       <div class="min-w-screen flex min-h-screen flex-col">
-        ${this.renderNavBar()}
+        ${this.renderNavBar()} ${this.renderAlertBanner()}
         <main class="relative flex flex-auto">${this.renderPage()}</main>
         <div class="border-t border-neutral-100">${this.renderFooter()}</div>
       </div>
@@ -245,6 +245,37 @@ export class App extends LiteElement {
         @sl-after-hide=${() => (this.globalDialogContent = {})}
         >${this.globalDialogContent.body}</sl-dialog
       >
+    `;
+  }
+
+  private renderAlertBanner() {
+    if (this.appState.userInfo?.orgs && !this.appState.userInfo.orgs.length) {
+      return this.renderNoOrgsBanner();
+    }
+  }
+
+  private renderNoOrgsBanner() {
+    return html`
+      <div class="border-b bg-slate-100 py-5">
+        <div class="mx-auto box-border w-full max-w-screen-desktop px-3">
+          <sl-alert variant="warning" open>
+            <sl-icon slot="icon" name="exclamation-triangle-fill"></sl-icon>
+            <strong class="block font-semibold">
+              ${msg("Your account isn't quite set up, yet")}
+            </strong>
+            ${msg(
+              "You must belong to at least one org in order to access Browsertrix features.",
+            )}
+            ${this.appState.settings?.salesEmail
+              ? msg(
+                  str`If you haven't received an invitation to an org, please contact us at ${this.appState.settings.salesEmail}.`,
+                )
+              : msg(
+                  str`If you haven't received an invitation to an org, please contact your Browsertrix administrator.`,
+                )}
+          </sl-alert>
+        </div>
+      </div>
     `;
   }
 
