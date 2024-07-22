@@ -489,7 +489,7 @@ def test_get_all_crawls_by_first_seed(
     )
     assert r.status_code == 200
     data = r.json()
-    assert data["total"] == 3
+    assert data["total"] == 4
     for item in data["items"]:
         assert item["firstSeed"] == first_seed
 
@@ -504,7 +504,7 @@ def test_get_all_crawls_by_type(
     )
     assert r.status_code == 200
     data = r.json()
-    assert data["total"] == 3
+    assert data["total"] == 4
     for item in data["items"]:
         assert item["type"] == "crawl"
 
@@ -608,9 +608,9 @@ def test_sort_all_crawls(
         headers=admin_auth_headers,
     )
     data = r.json()
-    assert data["total"] == 7
+    assert data["total"] == 8
     items = data["items"]
-    assert len(items) == 7
+    assert len(items) == 8
 
     last_created = None
     for crawl in items:
@@ -720,7 +720,7 @@ def test_all_crawls_search_values(
     assert r.status_code == 200
     data = r.json()
 
-    assert len(data["names"]) == 5
+    assert len(data["names"]) == 6
     expected_names = [
         "Crawler User Test Crawl",
         "My Upload Updated",
@@ -741,7 +741,7 @@ def test_all_crawls_search_values(
     assert r.status_code == 200
     data = r.json()
 
-    assert len(data["names"]) == 2
+    assert len(data["names"]) == 3
     expected_names = [
         "Crawler User Test Crawl",
         "All Crawls Test Crawl",
