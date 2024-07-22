@@ -48,6 +48,26 @@ app_root = FastAPI(docs_url=None, redoc_url=None, OPENAPI_URL=OPENAPI_URL)
 db_inited = {"inited": False}
 
 
+tags = [
+    "crawlconfigs",
+    "crawls",
+    "settings",
+    "auth",
+    "users",
+    "organizations",
+    "profiles",
+    "uploads",
+    "all-crawls",
+    "qa",
+    "pages",
+    "collections",
+    "webhooks",
+    "jobs",
+    "invites",
+    "subscriptions",
+]
+
+
 # ============================================================================
 def make_schema():
     """make custom openapi schema"""
@@ -71,6 +91,8 @@ See [https://docs.browsertrix.com/](https://docs.browsertrix.com/) for more info
             "url": "https://www.gnu.org/licenses/agpl-3.0.en.html",
         },
         routes=app_root.routes,
+        webhooks=app_root.webhooks.routes,
+        tags=[{"name": tag} for tag in tags],
     )
     schema["info"]["x-logo"] = {"url": "/docs-logo.svg"}
     return schema
@@ -223,7 +245,7 @@ def main():
 
     app.include_router(org_ops.router)
 
-    @app.get("/settings")
+    @app.get("/settings", tags=["settings"])
     async def get_settings():
         if not db_inited.get("inited"):
             raise HTTPException(status_code=503, detail="not_ready_yet")

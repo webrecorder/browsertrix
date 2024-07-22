@@ -69,6 +69,7 @@ from .models import (
     UpdatedResponse,
     AddedResponse,
     AddedResponseId,
+    SuccessResponse,
     OrgInviteResponse,
     OrgAcceptInviteResponse,
     OrgDeleteInviteResponse,
@@ -1320,6 +1321,39 @@ class OrgOps:
         # Delete org
         await self.orgs.delete_one({"_id": org.id})
 
+    async def recalculate_storage(self, org: Organization) -> dict[str, bool]:
+        """Recalculate org storage use"""
+        try:
+            total_crawl_size, crawl_size, upload_size = (
+                await self.base_crawl_ops.calculate_org_crawl_file_storage(
+                    org.id,
+                )
+            )
+            profile_size = await self.profile_ops.calculate_org_profile_file_storage(
+                org.id
+            )
+
+            org_size = total_crawl_size + profile_size
+
+            await self.orgs.find_one_and_update(
+                {"_id": org.id},
+                {
+                    "$set": {
+                        "bytesStored": org_size,
+                        "bytesStoredCrawls": crawl_size,
+                        "bytesStoredUploads": upload_size,
+                        "bytesStoredProfiles": profile_size,
+                    }
+                },
+            )
+        # pylint: disable=broad-exception-caught, raise-missing-from
+        except Exception as err:
+            raise HTTPException(
+                status_code=400, detail=f"Error calculating size: {err}"
+            )
+
+        return {"success": True}
+
 
 # ============================================================================
 # pylint: disable=too-many-statements, too-many-arguments
@@ -1534,6 +1568,12 @@ def init_orgs_api(
         await ops.change_user_role(org, other_user.id, update.role)
 
         return {"updated": True}
+
+    @router.post(
+        "/recalculate-storage", tags=["organizations"], response_model=SuccessResponse
+    )
+    async def recalculate_org_storage(org: Organization = Depends(org_owner_dep)):
+        return await ops.recalculate_storage(org)
 
     @router.post("/invite", tags=["invites"], response_model=OrgInviteResponse)
     async def invite_user_to_org(
