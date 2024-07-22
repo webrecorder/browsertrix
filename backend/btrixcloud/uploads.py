@@ -16,6 +16,7 @@ from starlette.requests import Request
 from pathvalidate import sanitize_filename
 
 from .basecrawls import BaseCrawlOps
+from .storages import CHUNK_SIZE
 from .models import (
     CrawlOut,
     CrawlOutWithResources,
@@ -272,9 +273,9 @@ class UploadFileReader(BufferedReader):
         super().__init__(upload.file._file)
         self.file_prep = file_prep
 
-    def read(self, size, *args):
+    def read(self, size: Optional[int] = CHUNK_SIZE) -> bytes:
         """read and digest file chunk"""
-        chunk = super().read(size, *args)
+        chunk = super().read(size)
         self.file_prep.add_chunk(chunk)
         return chunk
 
