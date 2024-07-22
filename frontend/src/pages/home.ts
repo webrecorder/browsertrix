@@ -60,8 +60,12 @@ export class Home extends LiteElement {
   willUpdate(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("slug") && this.slug) {
       this.navTo(`/orgs/${this.slug}`);
-    } else if (changedProperties.has("authState") && this.authState) {
-      void this.fetchOrgs();
+    } else if (changedProperties.has("userInfo") && this.userInfo) {
+      if (this.userInfo.isSuperAdmin) {
+        void this.fetchOrgs();
+      } else {
+        this.navTo(`/account/settings`);
+      }
     }
   }
 
