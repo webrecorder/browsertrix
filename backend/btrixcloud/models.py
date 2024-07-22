@@ -17,7 +17,8 @@ from pydantic import (
     AnyHttpUrl as AnyHttpUrlNonStr,
     EmailStr,
     RootModel,
-    AfterValidator,
+    BeforeValidator,
+    TypeAdapter,
 )
 
 # from fastapi_users import models as fastapi_users_models
@@ -36,8 +37,15 @@ EmptyStr = Annotated[str, Field(min_length=0, max_length=0)]
 Scale = Annotated[int, Field(strict=True, ge=1, le=MAX_CRAWL_SCALE)]
 ReviewStatus = Optional[Annotated[int, Field(strict=True, ge=1, le=5)]]
 
-HttpUrl = Annotated[HttpUrlNonStr, AfterValidator(str)]
-AnyHttpUrl = Annotated[AnyHttpUrlNonStr, AfterValidator(str)]
+any_http_url_adapter = TypeAdapter(AnyHttpUrlNonStr)
+AnyHttpUrl = Annotated[
+    str, BeforeValidator(lambda value: str(any_http_url_adapter.validate_python(value)))
+]
+
+http_url_adapter = TypeAdapter(HttpUrlNonStr)
+HttpUrl = Annotated[
+    str, BeforeValidator(lambda value: str(http_url_adapter.validate_python(value)))
+]
 
 
 # pylint: disable=invalid-name, too-many-lines
