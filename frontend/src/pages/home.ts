@@ -71,7 +71,7 @@ export class Home extends LiteElement {
     const orgListUpdated = changedProperties.has("orgList") && this.orgList;
     const userInfoUpdated = changedProperties.has("userInfo") && this.userInfo;
     if (orgListUpdated || userInfoUpdated) {
-      if (this.userInfo?.isAdmin && this.orgList && !this.orgList.length) {
+      if (this.userInfo?.isSuperAdmin && this.orgList && !this.orgList.length) {
         this.isAddingOrg = true;
       }
     }
@@ -89,7 +89,7 @@ export class Home extends LiteElement {
     let title: string | undefined;
     let content: TemplateResult<1> | undefined;
 
-    if (this.userInfo.isAdmin) {
+    if (this.userInfo.isSuperAdmin) {
       title = msg("Welcome");
       content = this.renderAdminOrgs();
     } else {

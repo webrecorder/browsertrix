@@ -54,7 +54,9 @@ export function maxLengthValidator(maxLength: number): MaxLengthValidator {
 
     el.setCustomValidity(
       isInvalid
-        ? msg(str`Please shorten this text to ${maxLength} or fewer characters.`)
+        ? msg(
+            str`Please shorten this text to ${maxLength} or fewer characters.`,
+          )
         : "",
     );
 

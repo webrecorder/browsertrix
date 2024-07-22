@@ -376,7 +376,7 @@ export class Org extends LiteElement {
               path: "browser-profiles",
             }),
           )}
-          ${when(this.isAdmin || this.userInfo?.isAdmin, () =>
+          ${when(this.isAdmin || this.userInfo?.isSuperAdmin, () =>
             this.renderNavTab({
               tabName: "settings",
               label: msg("Org Settings"),

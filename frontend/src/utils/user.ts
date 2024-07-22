@@ -7,7 +7,7 @@ export function formatAPIUser(userData: APIUser): CurrentUser {
     email: userData.email,
     name: userData.name,
     isVerified: userData.is_verified,
-    isAdmin: userData.is_superuser,
+    isSuperAdmin: userData.is_superuser,
     orgs: userData.orgs,
   };
 }

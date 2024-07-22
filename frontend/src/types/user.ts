@@ -30,6 +30,6 @@ export type CurrentUser = {
   email: string;
   name: string;
   isVerified: boolean;
-  isAdmin: boolean;
+  isSuperAdmin: boolean;
   orgs: UserOrg[];
 };

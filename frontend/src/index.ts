@@ -150,7 +150,7 @@ export class App extends LiteElement {
 
       if (
         orgs.length &&
-        !this.appState.userInfo!.isAdmin &&
+        !this.appState.userInfo!.isSuperAdmin &&
         !this.appState.orgSlug
       ) {
         const firstOrg = orgs[0].slug;
@@ -249,9 +249,9 @@ export class App extends LiteElement {
   }
 
   private renderNavBar() {
-    const isAdmin = this.appState.userInfo?.isAdmin;
+    const isSuperAdmin = this.appState.userInfo?.isSuperAdmin;
     let homeHref = "/";
-    if (!isAdmin && this.appState.orgSlug) {
+    if (!isSuperAdmin && this.appState.orgSlug) {
       homeHref = `/orgs/${this.appState.orgSlug}`;
     }
 
@@ -264,7 +264,7 @@ export class App extends LiteElement {
             aria-label="home"
             href=${homeHref}
             @click=${(e: MouseEvent) => {
-              if (isAdmin) {
+              if (isSuperAdmin) {
                 this.clearSelectedOrg();
               }
               this.navLink(e);
@@ -272,7 +272,7 @@ export class App extends LiteElement {
           >
             <img class="h-6" alt="Browsertrix logo" src=${brandLockupColor} />
           </a>
-          ${isAdmin
+          ${isSuperAdmin
             ? html`
                 <div
                   class="grid grid-flow-col items-center gap-3 text-xs md:gap-5 md:text-sm"
@@ -317,7 +317,7 @@ export class App extends LiteElement {
                         <sl-icon slot="prefix" name="gear"></sl-icon>
                         ${msg("Account Settings")}
                       </sl-menu-item>
-                      ${this.appState.userInfo?.isAdmin
+                      ${this.appState.userInfo?.isSuperAdmin
                         ? html` <sl-menu-item
                             @click=${() => this.navigate(ROUTES.usersInvite)}
                           >
@@ -390,7 +390,7 @@ export class App extends LiteElement {
           }}
         >
           ${when(
-            this.appState.userInfo.isAdmin,
+            this.appState.userInfo.isSuperAdmin,
             () => html`
               <sl-menu-item
                 type="checkbox"
@@ -418,7 +418,7 @@ export class App extends LiteElement {
 
   private renderMenuUserInfo() {
     if (!this.appState.userInfo) return;
-    if (this.appState.userInfo.isAdmin) {
+    if (this.appState.userInfo.isSuperAdmin) {
       return html`
         <div class="mb-2">
           <sl-tag class="uppercase" variant="primary" size="small"
@@ -617,7 +617,7 @@ export class App extends LiteElement {
 
       case "usersInvite": {
         if (this.appState.userInfo) {
-          if (this.appState.userInfo.isAdmin) {
+          if (this.appState.userInfo.isSuperAdmin) {
             return html`<btrix-users-invite
               class="mx-auto box-border w-full max-w-screen-desktop p-2 md:py-8"
               .authState="${this.authService.authState}"
@@ -634,7 +634,7 @@ export class App extends LiteElement {
       case "crawls":
       case "crawl": {
         if (this.appState.userInfo) {
-          if (this.appState.userInfo.isAdmin) {
+          if (this.appState.userInfo.isSuperAdmin) {
             return html`<btrix-crawls
               class="w-full"
               @notify=${this.onNotify}
