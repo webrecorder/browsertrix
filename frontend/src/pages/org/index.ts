@@ -527,8 +527,6 @@ export class Org extends LiteElement {
           class="col-span-5 mt-6"
           .authState=${this.authState!}
           orgId=${this.orgId}
-          ?orgStorageQuotaReached=${this.org?.storageQuotaReached}
-          ?orgExecutionMinutesQuotaReached=${this.org?.execMinutesQuotaReached}
           workflowId=${workflowId}
           openDialogName=${this.viewStateData?.dialog}
           ?isEditing=${isEditing}
@@ -549,8 +547,6 @@ export class Org extends LiteElement {
         .initialWorkflow=${workflow}
         .initialSeeds=${seeds}
         jobType=${ifDefined(params.jobType)}
-        ?orgStorageQuotaReached=${this.org?.storageQuotaReached}
-        ?orgExecutionMinutesQuotaReached=${this.org?.execMinutesQuotaReached}
         @select-new-dialog=${this.onSelectNewDialog}
       ></btrix-workflows-new>`;
     }

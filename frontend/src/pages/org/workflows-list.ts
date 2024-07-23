@@ -520,6 +520,10 @@ export class WorkflowsList extends LiteElement {
         this.isCrawler,
         () =>
           html` <sl-menu-item
+            ?disabled=${!this.org ||
+            this.org.readOnly ||
+            this.org.storageQuotaReached ||
+            this.org.execMinutesQuotaReached}
             @click=${() => void this.duplicateConfig(workflow)}
           >
             <sl-icon name="files" slot="prefix"></sl-icon>

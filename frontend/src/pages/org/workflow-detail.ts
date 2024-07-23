@@ -55,12 +55,6 @@ export class WorkflowDetail extends LiteElement {
   @property({ type: String })
   orgId!: string;
 
-  @property({ type: Boolean })
-  orgStorageQuotaReached = false;
-
-  @property({ type: Boolean })
-  orgExecutionMinutesQuotaReached = false;
-
   @property({ type: String })
   workflowId!: string;
 
@@ -120,6 +114,10 @@ export class WorkflowDetail extends LiteElement {
 
   @state()
   private filterBy: Partial<Record<keyof Crawl, string | CrawlState[]>> = {};
+
+  private get org() {
+    return this.appState.org;
+  }
 
   private readonly numberFormatter = new Intl.NumberFormat(getLocale(), {
     // notation: "compact",
@@ -572,9 +570,6 @@ export class WorkflowDetail extends LiteElement {
           configId=${this.workflow!.id}
           orgId=${this.orgId}
           .authState=${this.authState}
-          ?orgStorageQuotaReached=${this.orgStorageQuotaReached}
-          ?orgExecutionMinutesQuotaReached=${this
-            .orgExecutionMinutesQuotaReached}
           @reset=${() =>
             this.navTo(
               `${this.orgBasePath}/workflows/crawl/${this.workflow!.id}`,
@@ -623,14 +618,16 @@ export class WorkflowDetail extends LiteElement {
             content=${msg(
               "Org Storage Full or Monthly Execution Minutes Reached",
             )}
-            ?disabled=${!this.orgStorageQuotaReached &&
-            !this.orgExecutionMinutesQuotaReached}
+            ?disabled=${!this.org?.storageQuotaReached &&
+            !this.org?.execMinutesQuotaReached}
           >
             <sl-button
               size="small"
               variant="primary"
-              ?disabled=${this.orgStorageQuotaReached ||
-              this.orgExecutionMinutesQuotaReached}
+              ?disabled=${!this.org ||
+              this.org.readOnly ||
+              this.org.storageQuotaReached ||
+              this.org.execMinutesQuotaReached}
               @click=${() => void this.runNow()}
             >
               <sl-icon name="play" slot="prefix"></sl-icon>
@@ -670,8 +667,10 @@ export class WorkflowDetail extends LiteElement {
             () => html`
               <sl-menu-item
                 style="--sl-color-neutral-700: var(--success)"
-                ?disabled=${this.orgStorageQuotaReached ||
-                this.orgExecutionMinutesQuotaReached}
+                ?disabled=${!this.org ||
+                this.org.readOnly ||
+                this.org.storageQuotaReached ||
+                this.org.execMinutesQuotaReached}
                 @click=${() => void this.runNow()}
               >
                 <sl-icon name="play" slot="prefix"></sl-icon>
@@ -712,7 +711,13 @@ export class WorkflowDetail extends LiteElement {
             <sl-icon name="tags" slot="prefix"></sl-icon>
             ${msg("Copy Tags")}
           </sl-menu-item>
-          <sl-menu-item @click=${() => void this.duplicateConfig()}>
+          <sl-menu-item
+            ?disabled=${!this.org ||
+            this.org.readOnly ||
+            this.org.storageQuotaReached ||
+            this.org.execMinutesQuotaReached}
+            @click=${() => void this.duplicateConfig()}
+          >
             <sl-icon name="files" slot="prefix"></sl-icon>
             ${msg("Duplicate Workflow")}
           </sl-menu-item>
@@ -1165,14 +1170,14 @@ export class WorkflowDetail extends LiteElement {
             content=${msg(
               "Org Storage Full or Monthly Execution Minutes Reached",
             )}
-            ?disabled=${!this.orgStorageQuotaReached &&
-            !this.orgExecutionMinutesQuotaReached}
+            ?disabled=${!this.org?.storageQuotaReached &&
+            !this.org?.execMinutesQuotaReached}
           >
             <sl-button
               size="small"
               variant="primary"
-              ?disabled=${this.orgStorageQuotaReached ||
-              this.orgExecutionMinutesQuotaReached}
+              ?disabled=${this.org?.storageQuotaReached ||
+              this.org?.execMinutesQuotaReached}
               @click=${() => void this.runNow()}
             >
               <sl-icon name="play" slot="prefix"></sl-icon>

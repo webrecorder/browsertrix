@@ -272,12 +272,6 @@ export class CrawlConfigEditor extends LiteElement {
   @property({ type: Array })
   initialSeeds?: Seed[];
 
-  @property({ type: Boolean })
-  orgStorageQuotaReached = false;
-
-  @property({ type: Boolean })
-  orgExecutionMinutesQuotaReached = false;
-
   @state()
   private showCrawlerChannels = false;
 
@@ -302,6 +296,10 @@ export class CrawlConfigEditor extends LiteElement {
 
   @state()
   private serverError?: TemplateResult | string;
+
+  private get org() {
+    return this.appState.org;
+  }
 
   private maxScale = DEFAULT_MAX_SCALE;
 
@@ -590,7 +588,7 @@ export class CrawlConfigEditor extends LiteElement {
       scheduleType: defaultFormState.scheduleType,
       scheduleFrequency: defaultFormState.scheduleFrequency,
       runNow:
-        this.orgStorageQuotaReached || this.orgExecutionMinutesQuotaReached
+        this.org?.storageQuotaReached || this.org?.execMinutesQuotaReached
           ? false
           : defaultFormState.runNow,
       tags: this.initialWorkflow.tags,
@@ -921,8 +919,10 @@ export class CrawlConfigEditor extends LiteElement {
       <sl-switch
         class="mr-1"
         ?checked=${this.formState.runNow}
-        ?disabled=${this.orgStorageQuotaReached ||
-        this.orgExecutionMinutesQuotaReached}
+        ?disabled=${!this.org ||
+        this.org.readOnly ||
+        this.org.storageQuotaReached ||
+        this.org.execMinutesQuotaReached}
         @sl-change=${(e: SlChangeEvent) => {
           this.updateFormState(
             {
