@@ -261,7 +261,7 @@ export class App extends LiteElement {
           <sl-alert variant="warning" open>
             <sl-icon slot="icon" name="exclamation-triangle-fill"></sl-icon>
             <strong class="block font-semibold">
-              ${msg("Your account isn't quite set up, yet")}
+              ${msg("Your account isn't quite set up yet")}
             </strong>
             ${msg(
               "You must belong to at least one org in order to access Browsertrix features.",
