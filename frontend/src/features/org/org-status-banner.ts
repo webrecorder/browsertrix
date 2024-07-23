@@ -1,7 +1,7 @@
 import { localized, msg, str } from "@lit/localize";
 import { differenceInDays } from "date-fns/fp";
 import { html, type TemplateResult } from "lit";
-import { customElement, query } from "lit/decorators.js";
+import { customElement } from "lit/decorators.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import { NavigateController } from "@/controllers/navigate";
@@ -23,13 +23,14 @@ export class OrgStatusBanner extends TailwindElement {
   @use()
   appState = appState;
 
-  @query("#banner")
-  private readonly banner?: HTMLElement | null;
-
   private readonly navigate = new NavigateController(this);
 
+  private get org() {
+    return this.appState.org;
+  }
+
   render() {
-    if (!this.appState.org) return;
+    if (!this.org) return;
 
     const alert = this.alerts.find(({ test }) => test());
 
@@ -54,7 +55,7 @@ export class OrgStatusBanner extends TailwindElement {
    * Alerts ordered by priority
    */
   private get alerts(): Alert[] {
-    if (!this.appState.org) return [];
+    if (!this.org) return [];
 
     const billingTabLink = html`<a
       class="underline hover:no-underline"
@@ -70,7 +71,7 @@ export class OrgStatusBanner extends TailwindElement {
       subscription,
       storageQuotaReached,
       execMinutesQuotaReached,
-    } = this.appState.org;
+    } = this.org;
 
     return [
       {
