@@ -688,7 +688,7 @@ def test_sort_orgs(admin_auth_headers):
     r = requests.post(
         f"{API_PREFIX}/orgs/create",
         headers=admin_auth_headers,
-        json={"name": "mno", "slug": "mno"},
+        json={"name": "Mno", "slug": "mno"},
     )
     assert r.status_code == 200
 
@@ -701,6 +701,7 @@ def test_sort_orgs(admin_auth_headers):
 
     # Check default sorting
     # Default org should come first, followed by alphabetical sorting ascending
+    # Ensure org names are sorted lexically, not by character code
     r = requests.get(f"{API_PREFIX}/orgs", headers=admin_auth_headers)
     data = r.json()
     orgs = data["items"]
@@ -711,9 +712,10 @@ def test_sort_orgs(admin_auth_headers):
     last_name = None
     for org in other_orgs:
         org_name = org["name"]
+        org_name_lower = org_name.lower()
         if last_name:
-            assert org_name > last_name
-        last_name = org_name
+            assert org_name_lower > last_name
+        last_name = org_name_lower
 
     # Sort by name descending, ensure default org still first
     r = requests.get(
@@ -728,6 +730,7 @@ def test_sort_orgs(admin_auth_headers):
     last_name = None
     for org in other_orgs:
         org_name = org["name"]
+        org_name_lower = org_name.lower()
         if last_name:
-            assert org_name < last_name
-        last_name = org_name
+            assert org_name_lower < last_name
+        last_name = org_name_lower
