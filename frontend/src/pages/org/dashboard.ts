@@ -355,24 +355,26 @@ export class Dashboard extends LiteElement {
   }
 
   private renderCrawlingMeter(_metrics: Metrics) {
+    if (!this.org) return;
+
     let quotaSeconds = 0;
 
-    if (this.org!.quotas.maxExecMinutesPerMonth) {
-      quotaSeconds = this.org!.quotas.maxExecMinutesPerMonth * 60;
+    if (this.org.quotas.maxExecMinutesPerMonth) {
+      quotaSeconds = this.org.quotas.maxExecMinutesPerMonth * 60;
     }
 
     let quotaSecondsAllTypes = quotaSeconds;
 
     let quotaSecondsExtra = 0;
-    if (this.org!.extraExecSecondsAvailable) {
-      quotaSecondsExtra = this.org!.extraExecSecondsAvailable;
-      quotaSecondsAllTypes += this.org!.extraExecSecondsAvailable;
+    if (this.org.extraExecSecondsAvailable) {
+      quotaSecondsExtra = this.org.extraExecSecondsAvailable;
+      quotaSecondsAllTypes += this.org.extraExecSecondsAvailable;
     }
 
     let quotaSecondsGifted = 0;
-    if (this.org!.giftedExecSecondsAvailable) {
-      quotaSecondsGifted = this.org!.giftedExecSecondsAvailable;
-      quotaSecondsAllTypes += this.org!.giftedExecSecondsAvailable;
+    if (this.org.giftedExecSecondsAvailable) {
+      quotaSecondsGifted = this.org.giftedExecSecondsAvailable;
+      quotaSecondsAllTypes += this.org.giftedExecSecondsAvailable;
     }
 
     const now = new Date();
@@ -381,8 +383,8 @@ export class Dashboard extends LiteElement {
     const currentPeriod = `${currentYear}-${currentMonth}` as YearMonth;
 
     let usageSeconds = 0;
-    if (this.org!.monthlyExecSeconds) {
-      const actualUsage = this.org!.monthlyExecSeconds[currentPeriod];
+    if (this.org.monthlyExecSeconds) {
+      const actualUsage = this.org.monthlyExecSeconds[currentPeriod];
       if (actualUsage) {
         usageSeconds = actualUsage;
       }
@@ -393,21 +395,21 @@ export class Dashboard extends LiteElement {
     }
 
     let usageSecondsAllTypes = 0;
-    if (this.org!.crawlExecSeconds) {
-      const actualUsage = this.org!.crawlExecSeconds[currentPeriod];
+    if (this.org.crawlExecSeconds) {
+      const actualUsage = this.org.crawlExecSeconds[currentPeriod];
       if (actualUsage) {
         usageSecondsAllTypes = actualUsage;
       }
     }
 
     let usageSecondsExtra = 0;
-    if (this.org!.extraExecSeconds) {
-      const actualUsageExtra = this.org!.extraExecSeconds[currentPeriod];
+    if (this.org.extraExecSeconds) {
+      const actualUsageExtra = this.org.extraExecSeconds[currentPeriod];
       if (actualUsageExtra) {
         usageSecondsExtra = actualUsageExtra;
       }
     }
-    const maxExecSecsExtra = this.org!.quotas.extraExecMinutes * 60;
+    const maxExecSecsExtra = this.org.quotas.extraExecMinutes * 60;
     // Cap usage at quota for display purposes
     if (usageSecondsExtra > maxExecSecsExtra) {
       usageSecondsExtra = maxExecSecsExtra;
@@ -419,13 +421,13 @@ export class Dashboard extends LiteElement {
     }
 
     let usageSecondsGifted = 0;
-    if (this.org!.giftedExecSeconds) {
-      const actualUsageGifted = this.org!.giftedExecSeconds[currentPeriod];
+    if (this.org.giftedExecSeconds) {
+      const actualUsageGifted = this.org.giftedExecSeconds[currentPeriod];
       if (actualUsageGifted) {
         usageSecondsGifted = actualUsageGifted;
       }
     }
-    const maxExecSecsGifted = this.org!.quotas.giftedExecMinutes * 60;
+    const maxExecSecsGifted = this.org.quotas.giftedExecMinutes * 60;
     // Cap usage at quota for display purposes
     if (usageSecondsGifted > maxExecSecsGifted) {
       usageSecondsGifted = maxExecSecsGifted;
@@ -447,9 +449,9 @@ export class Dashboard extends LiteElement {
 
     const hasExtra =
       usageSecondsExtra ||
-      this.org!.extraExecSecondsAvailable ||
+      this.org.extraExecSecondsAvailable ||
       usageSecondsGifted ||
-      this.org!.giftedExecSecondsAvailable;
+      this.org.giftedExecSecondsAvailable;
 
     const renderBar = (
       /** Time in Seconds */
@@ -502,14 +504,14 @@ export class Dashboard extends LiteElement {
             </div>
           `,
           () =>
-            hasQuota
+            hasQuota && this.org
               ? html`
                   <span class="inline-flex items-center">
                     ${humanizeExecutionSeconds(
                       quotaSeconds -
                         usageSeconds +
-                        this.org!.extraExecSecondsAvailable +
-                        this.org!.giftedExecSecondsAvailable,
+                        this.org.extraExecSecondsAvailable +
+                        this.org.giftedExecSecondsAvailable,
                       { style: "short", round: "down" },
                     )}
                     <span class="ml-1">${msg("remaining")}</span>
@@ -519,12 +521,12 @@ export class Dashboard extends LiteElement {
         )}
       </div>
       ${when(
-        hasQuota,
-        () => html`
+        hasQuota && this.org,
+        (org) => html`
           <div class="mb-2">
             <btrix-meter
-              value=${this.org!.giftedExecSecondsAvailable ||
-              this.org!.extraExecSecondsAvailable ||
+              value=${org.giftedExecSecondsAvailable ||
+              org.extraExecSecondsAvailable ||
               isReached
                 ? quotaSecondsAllTypes
                 : usageSeconds}
@@ -540,29 +542,25 @@ export class Dashboard extends LiteElement {
                   hasExtra ? true : false,
                 ),
               )}
-              ${when(
-                usageSecondsGifted || this.org!.giftedExecSecondsAvailable,
-                () =>
-                  renderBar(
-                    usageSecondsGifted > quotaSecondsGifted
-                      ? quotaSecondsGifted
-                      : usageSecondsGifted,
-                    quotaSecondsGifted,
-                    msg("Gifted Execution Time Used"),
-                    "blue",
-                  ),
+              ${when(usageSecondsGifted || org.giftedExecSecondsAvailable, () =>
+                renderBar(
+                  usageSecondsGifted > quotaSecondsGifted
+                    ? quotaSecondsGifted
+                    : usageSecondsGifted,
+                  quotaSecondsGifted,
+                  msg("Gifted Execution Time Used"),
+                  "blue",
+                ),
               )}
-              ${when(
-                usageSecondsExtra || this.org!.extraExecSecondsAvailable,
-                () =>
-                  renderBar(
-                    usageSecondsExtra > quotaSecondsExtra
-                      ? quotaSecondsExtra
-                      : usageSecondsExtra,
-                    quotaSecondsExtra,
-                    msg("Extra Execution Time Used"),
-                    "red",
-                  ),
+              ${when(usageSecondsExtra || org.extraExecSecondsAvailable, () =>
+                renderBar(
+                  usageSecondsExtra > quotaSecondsExtra
+                    ? quotaSecondsExtra
+                    : usageSecondsExtra,
+                  quotaSecondsExtra,
+                  msg("Extra Execution Time Used"),
+                  "red",
+                ),
               )}
               <div slot="available" class="flex-1">
                 <sl-tooltip class="text-center">
@@ -664,13 +662,15 @@ export class Dashboard extends LiteElement {
   `;
 
   private readonly hasMonthlyTime = () =>
-    Object.keys(this.org!.monthlyExecSeconds!).length;
+    this.org?.monthlyExecSeconds &&
+    Object.keys(this.org.monthlyExecSeconds).length;
 
   private readonly hasExtraTime = () =>
-    Object.keys(this.org!.extraExecSeconds!).length;
+    this.org?.extraExecSeconds && Object.keys(this.org.extraExecSeconds).length;
 
   private readonly hasGiftedTime = () =>
-    Object.keys(this.org!.giftedExecSeconds!).length;
+    this.org?.giftedExecSeconds &&
+    Object.keys(this.org.giftedExecSeconds).length;
 
   private renderUsageHistory() {
     if (!this.org) return;
@@ -750,34 +750,36 @@ export class Dashboard extends LiteElement {
       // Sort latest
       .reverse()
       .map(([mY, crawlTime]) => {
-        let monthlySecondsUsed = this.org!.monthlyExecSeconds?.[mY] || 0;
+        if (!this.org) return [];
+
+        let monthlySecondsUsed = this.org.monthlyExecSeconds?.[mY] || 0;
         let maxMonthlySeconds = 0;
-        if (this.org!.quotas.maxExecMinutesPerMonth) {
-          maxMonthlySeconds = this.org!.quotas.maxExecMinutesPerMonth * 60;
+        if (this.org.quotas.maxExecMinutesPerMonth) {
+          maxMonthlySeconds = this.org.quotas.maxExecMinutesPerMonth * 60;
         }
         if (monthlySecondsUsed > maxMonthlySeconds) {
           monthlySecondsUsed = maxMonthlySeconds;
         }
 
-        let extraSecondsUsed = this.org!.extraExecSeconds?.[mY] || 0;
+        let extraSecondsUsed = this.org.extraExecSeconds?.[mY] || 0;
         let maxExtraSeconds = 0;
-        if (this.org!.quotas.extraExecMinutes) {
-          maxExtraSeconds = this.org!.quotas.extraExecMinutes * 60;
+        if (this.org.quotas.extraExecMinutes) {
+          maxExtraSeconds = this.org.quotas.extraExecMinutes * 60;
         }
         if (extraSecondsUsed > maxExtraSeconds) {
           extraSecondsUsed = maxExtraSeconds;
         }
 
-        let giftedSecondsUsed = this.org!.giftedExecSeconds?.[mY] || 0;
+        let giftedSecondsUsed = this.org.giftedExecSeconds?.[mY] || 0;
         let maxGiftedSeconds = 0;
-        if (this.org!.quotas.giftedExecMinutes) {
-          maxGiftedSeconds = this.org!.quotas.giftedExecMinutes * 60;
+        if (this.org.quotas.giftedExecMinutes) {
+          maxGiftedSeconds = this.org.quotas.giftedExecMinutes * 60;
         }
         if (giftedSecondsUsed > maxGiftedSeconds) {
           giftedSecondsUsed = maxGiftedSeconds;
         }
 
-        let totalSecondsUsed = this.org!.crawlExecSeconds?.[mY] || 0;
+        let totalSecondsUsed = this.org.crawlExecSeconds?.[mY] || 0;
         const totalMaxQuota =
           maxMonthlySeconds + maxExtraSeconds + maxGiftedSeconds;
         if (totalSecondsUsed > totalMaxQuota) {
