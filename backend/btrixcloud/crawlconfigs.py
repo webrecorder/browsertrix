@@ -25,7 +25,6 @@ from .models import (
     CrawlConfigOut,
     CrawlConfigProfileOut,
     CrawlOut,
-    EmptyStr,
     UpdateCrawlConfig,
     Organization,
     User,
@@ -188,13 +187,13 @@ class CrawlConfigOps:
         if not self.get_channel_crawler_image(config_in.crawlerChannel):
             raise HTTPException(status_code=404, detail="crawler_not_found")
 
-        profile_id = None
+        profileid = None
         if isinstance(config_in.profileid, UUID):
-            profile_id = config_in.profileid
+            profileid = config_in.profileid
 
         # ensure profile is valid, if provided
-        if profile_id:
-            await self.profiles.get_profile(profile_id, org)
+        if profileid:
+            await self.profiles.get_profile(profileid, org)
 
         now = dt_now()
         crawlconfig = CrawlConfig(
@@ -216,7 +215,7 @@ class CrawlConfigOps:
             maxCrawlSize=config_in.maxCrawlSize,
             scale=config_in.scale,
             autoAddCollections=config_in.autoAddCollections,
-            profileid=profile_id,
+            profileid=profileid,
             crawlerChannel=config_in.crawlerChannel,
             crawlFilenameTemplate=config_in.crawlFilenameTemplate,
         )
@@ -368,11 +367,11 @@ class CrawlConfigOps:
         query["modified"] = dt_now()
 
         # if empty str, just clear the profile
-        if isinstance(update.profileid, EmptyStr) or update.profileid == "":
+        if update.profileid == "":
             query["profileid"] = None
         # else, ensure its a valid profile
         elif update.profileid:
-            await self.profiles.get_profile(update.profileid, org)
+            await self.profiles.get_profile(cast(UUID, update.profileid), org)
             query["profileid"] = update.profileid
 
         if update.config is not None:
@@ -908,7 +907,7 @@ class CrawlConfigOps:
         name = crawlconfig.name
         if not name:
             if crawlconfig.config.seeds and len(crawlconfig.config.seeds):
-                url = crawlconfig.config.seeds[0].url
+                url = str(crawlconfig.config.seeds[0].url)
                 parts = urllib.parse.urlsplit(url)
                 name = parts.netloc
 

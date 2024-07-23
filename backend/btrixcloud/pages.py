@@ -24,7 +24,7 @@ from .models import (
     PageNoteEdit,
     PageNoteDelete,
     QARunBucketStats,
-    StartedResponse,
+    StartedResponseBool,
     UpdatedResponse,
     DeletedResponse,
     PageNoteAddedResponse,
@@ -639,7 +639,7 @@ def init_pages_api(app, mdb, crawl_ops, org_ops, storage_ops, user_dep):
     @app.post(
         "/orgs/{oid}/crawls/all/pages/reAdd",
         tags=["pages"],
-        response_model=StartedResponse,
+        response_model=StartedResponseBool,
     )
     async def re_add_all_crawl_pages(
         org: Organization = Depends(org_crawl_dep), user: User = Depends(user_dep)
@@ -654,7 +654,7 @@ def init_pages_api(app, mdb, crawl_ops, org_ops, storage_ops, user_dep):
     @app.post(
         "/orgs/{oid}/crawls/{crawl_id}/pages/reAdd",
         tags=["pages"],
-        response_model=StartedResponse,
+        response_model=StartedResponseBool,
     )
     async def re_add_crawl_pages(
         crawl_id: str, org: Organization = Depends(org_crawl_dep)

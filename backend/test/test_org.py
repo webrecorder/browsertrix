@@ -53,7 +53,7 @@ def test_get_org_crawler(crawler_auth_headers, default_org_id):
     data = r.json()
     assert data["id"] == default_org_id
     assert data["name"]
-    assert data.get("users") is None
+    assert data.get("users") == {}
 
 
 def test_rename_org(admin_auth_headers, default_org_id):

@@ -35,7 +35,7 @@ class Migration(BaseMigration):
             seed_list = config_dict["config"]["seeds"]
             for seed in seed_list:
                 if isinstance(seed, HttpUrl):
-                    new_seed = Seed(url=str(seed.url), scopeType=ScopeType.PAGE)
+                    new_seed = Seed(url=str(seed), scopeType=ScopeType.PAGE)
                     seeds_to_migrate.append(new_seed)
                 elif isinstance(seed, str):
                     new_seed = Seed(url=str(seed), scopeType=ScopeType.PAGE)
@@ -72,7 +72,7 @@ class Migration(BaseMigration):
             seed_list = crawl_dict["config"]["seeds"]
             for seed in seed_list:
                 if isinstance(seed, HttpUrl):
-                    new_seed = Seed(url=str(seed.url), scopeType=ScopeType.PAGE)
+                    new_seed = Seed(url=str(seed), scopeType=ScopeType.PAGE)
                     seeds_to_migrate.append(new_seed)
                 elif isinstance(seed, str):
                     new_seed = Seed(url=str(seed), scopeType=ScopeType.PAGE)

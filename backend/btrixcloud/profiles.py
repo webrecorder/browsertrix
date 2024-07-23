@@ -110,7 +110,7 @@ class ProfileOps:
         browserid = await self.crawl_manager.run_profile_browser(
             str(user.id),
             str(org.id),
-            url=profile_launch.url,
+            url=str(profile_launch.url),
             storage=org.storage,
             crawler_image=crawler_image,
             baseprofile=prev_profile_id,
