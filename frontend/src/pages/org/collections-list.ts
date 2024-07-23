@@ -138,6 +138,7 @@ export class CollectionsList extends LiteElement {
               <sl-button
                 variant="primary"
                 size="small"
+                ?disabled=${!this.appState.org || this.appState.org.readOnly}
                 @click=${() => (this.openDialogName = "create")}
               >
                 <sl-icon slot="prefix" name="plus-lg"></sl-icon>

@@ -508,7 +508,6 @@ export class Org extends LiteElement {
       .authState=${this.authState!}
       userId=${this.userInfo!.id}
       orgId=${this.orgId}
-      ?orgStorageQuotaReached=${this.org?.storageQuotaReached}
       ?isCrawler=${this.isCrawler}
       itemType=${ifDefined(params.itemType || undefined)}
       @select-new-dialog=${this.onSelectNewDialog}
@@ -559,8 +558,6 @@ export class Org extends LiteElement {
     return html`<btrix-workflows-list
       .authState=${this.authState!}
       orgId=${this.orgId}
-      ?orgStorageQuotaReached=${this.org?.storageQuotaReached}
-      ?orgExecutionMinutesQuotaReached=${this.org?.execMinutesQuotaReached}
       userId=${this.userInfo!.id}
       ?isCrawler=${this.isCrawler}
       @select-new-dialog=${this.onSelectNewDialog}
@@ -638,13 +635,11 @@ export class Org extends LiteElement {
     return html`<btrix-org-settings
       .authState=${this.authState}
       .userInfo=${this.userInfo}
-      .org=${this.org}
       .orgId=${this.orgId}
       activePanel=${activePanel}
       ?isAddingMember=${isAddingMember}
       @org-user-role-change=${this.onUserRoleChange}
       @org-remove-member=${this.onOrgRemoveMember}
-      @btrix-update-org=${this.updateOrg}
     ></btrix-org-settings>`;
   }
 

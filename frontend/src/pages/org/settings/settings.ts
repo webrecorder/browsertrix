@@ -18,7 +18,7 @@ import type { CurrentUser } from "@/types/user";
 import { isApiError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
 import { maxLengthValidator } from "@/utils/form";
-import { AccessCode, isAdmin, isCrawler, type OrgData } from "@/utils/orgs";
+import { AccessCode, isAdmin, isCrawler } from "@/utils/orgs";
 import slugifyStrict from "@/utils/slugify";
 import appState, { AppStateService, use } from "@/utils/state";
 import { formatAPIUser } from "@/utils/user";
@@ -72,9 +72,6 @@ export class OrgSettings extends TailwindElement {
   @property({ type: String })
   orgId!: string;
 
-  @property({ type: Object })
-  org!: OrgData;
-
   @property({ type: String })
   activePanel: Tab = "information";
 
@@ -102,6 +99,10 @@ export class OrgSettings extends TailwindElement {
   private readonly api = new APIController(this);
   private readonly navigate = new NavigateController(this);
   private readonly notify = new NotifyController(this);
+
+  private get org() {
+    return this.appState.org;
+  }
 
   private get tabLabels(): Record<Tab, string> {
     return {
@@ -140,6 +141,7 @@ export class OrgSettings extends TailwindElement {
                 href=${`${this.navigate.orgBasePath}/settings/members?invite`}
                 variant="primary"
                 size="small"
+                ?disabled=${!this.org || this.org.readOnly}
                 @click=${this.navigate.link}
               >
                 <sl-icon
@@ -148,8 +150,8 @@ export class OrgSettings extends TailwindElement {
                   aria-hidden="true"
                   library="default"
                 ></sl-icon>
-                ${msg("Invite New Member")}</sl-button
-              >
+                ${msg("Invite New Member")}
+              </sl-button>
             `,
             () => html` <h3>${this.tabLabels[this.activePanel]}</h3> `,
           )}
@@ -168,7 +170,6 @@ export class OrgSettings extends TailwindElement {
         </btrix-tab-panel>
         <btrix-tab-panel name="billing">
           <btrix-org-settings-billing
-            .org=${this.org}
             .authState=${this.authState}
             .salesEmail=${this.appState.settings?.salesEmail}
           ></btrix-org-settings-billing>
@@ -192,6 +193,8 @@ export class OrgSettings extends TailwindElement {
   }
 
   private renderInformation() {
+    if (!this.org) return;
+
     return html`<div class="rounded-lg border">
       <form @submit=${this.onOrgInfoSubmit}>
         ${columns([
@@ -274,8 +277,10 @@ export class OrgSettings extends TailwindElement {
   }
 
   private renderMembers() {
+    if (!this.org?.users) return;
+
     const columnWidths = ["1fr", "2fr", "auto", "min-content"];
-    const rows = Object.entries(this.org.users!).map(([_id, user]) => [
+    const rows = Object.entries(this.org.users).map(([_id, user]) => [
       user.name,
       user.email,
       this.renderUserRoleSelect(user),
@@ -357,10 +362,12 @@ export class OrgSettings extends TailwindElement {
   }
 
   private renderRemoveMemberButton(member: Member) {
+    if (!this.org?.users) return;
+
     let disableButton = false;
     if (member.email === this.userInfo.email) {
       const { [this.userInfo.id]: _currentUser, ...otherUsers } =
-        this.org.users!;
+        this.org.users;
       const hasOtherAdmin = Object.values(otherUsers).some(({ role }) =>
         isAdmin(role),
       );
@@ -461,7 +468,7 @@ export class OrgSettings extends TailwindElement {
 
   private async getPendingInvites() {
     const data = await this.api.fetch<APIPaginatedList<Invite>>(
-      `/orgs/${this.org.id}/invites`,
+      `/orgs/${this.org!.id}/invites`,
       this.authState!,
     );
 
@@ -492,7 +499,7 @@ export class OrgSettings extends TailwindElement {
 
     const params = {
       name: orgName,
-      slug: this.org.slug,
+      slug: this.org!.slug,
     };
 
     if (this.slugValue) {
@@ -576,7 +583,7 @@ export class OrgSettings extends TailwindElement {
 
       this.notify.toast({
         message: msg(
-          str`Successfully removed ${invite.email} from ${this.org.name}.`,
+          str`Successfully removed ${invite.email} from ${this.org!.name}.`,
         ),
         variant: "success",
         icon: "check2-circle",

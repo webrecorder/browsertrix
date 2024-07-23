@@ -76,12 +76,6 @@ export class WorkflowsList extends LiteElement {
   @property({ type: String })
   orgId!: string;
 
-  @property({ type: Boolean })
-  orgStorageQuotaReached = false;
-
-  @property({ type: Boolean })
-  orgExecutionMinutesQuotaReached = false;
-
   @property({ type: String })
   userId!: string;
 
@@ -121,6 +115,10 @@ export class WorkflowsList extends LiteElement {
   // Use to cancel requests
   private getWorkflowsController: AbortController | null = null;
   private timerId?: number;
+
+  private get org() {
+    return this.appState.org;
+  }
 
   private get selectedSearchFilterKey() {
     return Object.keys(WorkflowsList.FieldLabels).find((key) =>
@@ -215,6 +213,7 @@ export class WorkflowsList extends LiteElement {
               <sl-button
                 variant="primary"
                 size="small"
+                ?disabled=${this.org?.readOnly}
                 @click=${() => {
                   this.dispatchEvent(
                     new CustomEvent("select-new-dialog", {
@@ -452,8 +451,10 @@ export class WorkflowsList extends LiteElement {
         () => html`
           <sl-menu-item
             style="--sl-color-neutral-700: var(--success)"
-            ?disabled=${this.orgStorageQuotaReached ||
-            this.orgExecutionMinutesQuotaReached}
+            ?disabled=${!this.org ||
+            this.org.readOnly ||
+            this.org.storageQuotaReached ||
+            this.org.execMinutesQuotaReached}
             @click=${() => void this.runNow(workflow)}
           >
             <sl-icon name="play" slot="prefix"></sl-icon>
