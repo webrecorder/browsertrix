@@ -258,6 +258,15 @@ export class AccountSettings extends LiteElement {
                     )}
                   </p>
                   <sl-button
+                    type="reset"
+                    size="small"
+                    variant="text"
+                    class="mx-2"
+                    @click=${() => (this.isChangingPassword = false)}
+                  >
+                    ${msg("Cancel")}
+                  </sl-button>
+                  <sl-button
                     type="submit"
                     size="small"
                     variant="primary"
@@ -270,7 +279,7 @@ export class AccountSettings extends LiteElement {
               </form>
             `,
             () => html`
-              <div class="flex items-center justify-between px-4 py-3">
+              <div class="flex items-center justify-between px-4 py-2.5">
                 <h2 class="text-lg font-semibold leading-none">
                   ${msg("Password")}
                 </h2>

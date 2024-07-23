@@ -103,7 +103,7 @@ describe("browsertrix-app", () => {
       email: "test-user@example.com",
       name: "Test User",
       isVerified: false,
-      isAdmin: false,
+      isSuperAdmin: false,
       orgs: [
         {
           id: "test_org_id",

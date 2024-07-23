@@ -197,16 +197,7 @@ export class Org extends LiteElement {
         if (org) {
           this.navTo(`/orgs/${org.slug}`);
         } else {
-          // Handle edge case where user does not belong
-          // to any orgs but is attempting to log in
-          // TODO check if hosted instance and show support email if so
-          this.notify({
-            message: msg(
-              "You must belong to at least one org in order to log in. Please contact your Browsertrix admin to resolve the issue.",
-            ),
-            variant: "danger",
-            icon: "exclamation-octagon",
-          });
+          this.navTo(`/account/settings`);
         }
 
         return;
@@ -376,7 +367,7 @@ export class Org extends LiteElement {
               path: "browser-profiles",
             }),
           )}
-          ${when(this.isAdmin || this.userInfo?.isAdmin, () =>
+          ${when(this.isAdmin || this.userInfo?.isSuperAdmin, () =>
             this.renderNavTab({
               tabName: "settings",
               label: msg("Org Settings"),
