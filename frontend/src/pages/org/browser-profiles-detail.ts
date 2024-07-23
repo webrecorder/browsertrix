@@ -18,6 +18,7 @@ import { isApiError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
 import { maxLengthValidator } from "@/utils/form";
 import { formatNumber, getLocale } from "@/utils/localization";
+import { isArchivingDisabled } from "@/utils/orgs";
 import appState, { use } from "@/utils/state";
 
 const DESCRIPTION_MAXLENGTH = 500;
@@ -256,9 +257,7 @@ export class BrowserProfilesDetail extends TailwindElement {
                     )}
                   </p>
                   <sl-button
-                    ?disabled=${!this.org ||
-                    this.org.readOnly ||
-                    this.org.storageQuotaReached}
+                    ?disabled=${isArchivingDisabled(this.org)}
                     @click=${this.startBrowserPreview}
                   >
                     <sl-icon slot="prefix" name="gear"></sl-icon>
@@ -438,6 +437,8 @@ export class BrowserProfilesDetail extends TailwindElement {
   }
 
   private renderMenu() {
+    const archivingDisabled = isArchivingDisabled(this.org);
+
     return html`
       <sl-dropdown distance="4" placement="bottom-end">
         <sl-button size="small" slot="trigger" caret>
@@ -449,18 +450,14 @@ export class BrowserProfilesDetail extends TailwindElement {
             ${msg("Edit Metadata")}
           </sl-menu-item>
           <sl-menu-item
-            ?disabled=${!this.org ||
-            this.org.readOnly ||
-            this.org.storageQuotaReached}
+            ?disabled=${archivingDisabled}
             @click=${this.startBrowserPreview}
           >
             <sl-icon slot="prefix" name="gear"></sl-icon>
             ${msg("Configure Browser Profile")}
           </sl-menu-item>
           <sl-menu-item
-            ?disabled=${!this.org ||
-            this.org.readOnly ||
-            this.org.storageQuotaReached}
+            ?disabled=${archivingDisabled}
             @click=${() => void this.duplicateProfile()}
           >
             <sl-icon slot="prefix" name="files"></sl-icon>

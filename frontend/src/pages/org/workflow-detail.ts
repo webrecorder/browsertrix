@@ -33,6 +33,7 @@ import {
 import { humanizeSchedule } from "@/utils/cron";
 import LiteElement, { html } from "@/utils/LiteElement";
 import { getLocale } from "@/utils/localization";
+import { isArchivingDisabled } from "@/utils/orgs";
 
 const SECTIONS = ["crawls", "watch", "settings", "logs"] as const;
 type Tab = (typeof SECTIONS)[number];
@@ -584,6 +585,8 @@ export class WorkflowDetail extends LiteElement {
     if (!this.workflow) return;
     const workflow = this.workflow;
 
+    const archivingDisabled = isArchivingDisabled(this.org, true);
+
     return html`
       ${when(
         this.workflow.isCrawlRunning,
@@ -624,10 +627,7 @@ export class WorkflowDetail extends LiteElement {
             <sl-button
               size="small"
               variant="primary"
-              ?disabled=${!this.org ||
-              this.org.readOnly ||
-              this.org.storageQuotaReached ||
-              this.org.execMinutesQuotaReached}
+              ?disabled=${archivingDisabled}
               @click=${() => void this.runNow()}
             >
               <sl-icon name="play" slot="prefix"></sl-icon>
@@ -667,10 +667,7 @@ export class WorkflowDetail extends LiteElement {
             () => html`
               <sl-menu-item
                 style="--sl-color-neutral-700: var(--success)"
-                ?disabled=${!this.org ||
-                this.org.readOnly ||
-                this.org.storageQuotaReached ||
-                this.org.execMinutesQuotaReached}
+                ?disabled=${archivingDisabled}
                 @click=${() => void this.runNow()}
               >
                 <sl-icon name="play" slot="prefix"></sl-icon>
@@ -712,10 +709,7 @@ export class WorkflowDetail extends LiteElement {
             ${msg("Copy Tags")}
           </sl-menu-item>
           <sl-menu-item
-            ?disabled=${!this.org ||
-            this.org.readOnly ||
-            this.org.storageQuotaReached ||
-            this.org.execMinutesQuotaReached}
+            ?disabled=${archivingDisabled}
             @click=${() => void this.duplicateConfig()}
           >
             <sl-icon name="files" slot="prefix"></sl-icon>

@@ -68,6 +68,7 @@ import {
 import { maxLengthValidator } from "@/utils/form";
 import LiteElement, { html } from "@/utils/LiteElement";
 import { getLocale } from "@/utils/localization";
+import { isArchivingDisabled } from "@/utils/orgs";
 import { regexEscape, regexUnescape } from "@/utils/string";
 
 type NewCrawlConfigParams = WorkflowParams & {
@@ -919,10 +920,7 @@ export class CrawlConfigEditor extends LiteElement {
       <sl-switch
         class="mr-1"
         ?checked=${this.formState.runNow}
-        ?disabled=${!this.org ||
-        this.org.readOnly ||
-        this.org.storageQuotaReached ||
-        this.org.execMinutesQuotaReached}
+        ?disabled=${isArchivingDisabled(this.org, true)}
         @sl-change=${(e: SlChangeEvent) => {
           this.updateFormState(
             {
