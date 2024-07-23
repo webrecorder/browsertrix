@@ -21,7 +21,7 @@ type SlugLookup = Record<string, string>;
 class AppState {
   settings: AppSettings | null = null;
   userInfo: CurrentUser | null = null;
-  org?: OrgData | null;
+  org: OrgData | null | undefined = undefined;
 
   @options(persist(window.localStorage))
   orgSlug: string | null = null;
@@ -64,15 +64,16 @@ export class AppStateService {
       appState.org = org;
     });
   };
-  static patchOrg = (org: Partial<OrgData>) => {
+  static partialUpdateOrg = (org: { id: string } & Partial<OrgData>) => {
     unlock(() => {
-      if (!appState.org) {
-        throw new Error("no org in app state");
+      if (org.id && appState.org?.id === org.id) {
+        appState.org = {
+          ...appState.org,
+          ...org,
+        };
+      } else {
+        console.warn("no matching org in app state");
       }
-      appState.org = {
-        ...appState.org,
-        ...org,
-      };
     });
   };
   static updateOrgSlug = (orgSlug: AppState["orgSlug"]) => {

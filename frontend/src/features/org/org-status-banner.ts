@@ -1,7 +1,7 @@
 import { localized, msg, str } from "@lit/localize";
 import { differenceInDays } from "date-fns/fp";
-import { html, type PropertyValues, type TemplateResult } from "lit";
-import { customElement, state } from "lit/decorators.js";
+import { html, type TemplateResult } from "lit";
+import { customElement, query } from "lit/decorators.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import { NavigateController } from "@/controllers/navigate";
@@ -11,7 +11,6 @@ import appState, { use } from "@/utils/state";
 
 type Alert = {
   test: () => boolean;
-  persist?: boolean;
   content: () => {
     title: string | TemplateResult;
     detail: string | TemplateResult;
@@ -24,55 +23,30 @@ export class OrgStatusBanner extends TailwindElement {
   @use()
   appState = appState;
 
-  @state()
-  isAlertOpen = false;
+  @query("#banner")
+  private readonly banner?: HTMLElement | null;
 
   private readonly navigate = new NavigateController(this);
-
-  private alert?: Alert;
-
-  protected willUpdate(_changedProperties: PropertyValues): void {
-    if (_changedProperties.has("appState") && this.appState.org) {
-      this.alert = this.alerts.find(({ test }) => test());
-
-      if (this.alert) {
-        this.isAlertOpen = true;
-      }
-    }
-  }
 
   render() {
     if (!this.appState.org) return;
 
+    const alert = this.alerts.find(({ test }) => test());
+
+    if (!alert) return;
+
+    const content = alert.content();
+
     return html`
-      <div
-        class="${this.isAlertOpen
-          ? "bg-slate-100 border-b py-5"
-          : ""} transition-all"
-      >
+      <div id="banner" class="border-b bg-slate-100 py-5">
         <div class="mx-auto box-border w-full max-w-screen-desktop px-3">
-          <sl-alert
-            variant="danger"
-            ?closable=${!this.alert?.persist}
-            ?open=${this.isAlertOpen}
-            @sl-after-hide=${() => (this.isAlertOpen = false)}
-          >
+          <sl-alert variant="danger" open>
             <sl-icon slot="icon" name="exclamation-triangle-fill"></sl-icon>
-            ${this.renderContent()}
+            <strong class="block font-semibold">${content.title}</strong>
+            ${content.detail}
           </sl-alert>
         </div>
       </div>
-    `;
-  }
-
-  private renderContent() {
-    if (!this.alert) return;
-
-    const content = this.alert.content();
-
-    return html`
-      <strong class="block font-semibold">${content.title}</strong>
-      ${content.detail}
     `;
   }
 
@@ -102,7 +76,7 @@ export class OrgStatusBanner extends TailwindElement {
       {
         test: () =>
           !readOnly && !readOnlyOnCancel && !!subscription?.futureCancelDate,
-        persist: true,
+
         content: () => {
           const daysDiff = differenceInDays(
             new Date(),
@@ -144,7 +118,7 @@ export class OrgStatusBanner extends TailwindElement {
       {
         test: () =>
           !readOnly && readOnlyOnCancel && !!subscription?.futureCancelDate,
-        persist: true,
+
         content: () => {
           const daysDiff = differenceInDays(
             new Date(),
@@ -184,7 +158,7 @@ export class OrgStatusBanner extends TailwindElement {
       {
         test: () =>
           !!readOnly && readOnlyReason === OrgReadOnlyReason.SubscriptionPaused,
-        persist: true,
+
         content: () => ({
           title: msg(str`Your org has been set to read-only mode`),
           detail: msg(
@@ -197,7 +171,7 @@ export class OrgStatusBanner extends TailwindElement {
         test: () =>
           !!readOnly &&
           readOnlyReason === OrgReadOnlyReason.SubscriptionCancelled,
-        persist: true,
+
         content: () => ({
           title: msg(str`This org has been set to read-only mode`),
           detail: msg(
@@ -207,7 +181,7 @@ export class OrgStatusBanner extends TailwindElement {
       },
       {
         test: () => !!readOnly,
-        persist: true,
+
         content: () => ({
           title: msg(str`This org has been set to read-only mode`),
           detail: msg(`Please contact Browsertrix support to renew your plan.`),

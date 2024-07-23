@@ -12,6 +12,7 @@ import type {
   UserRoleChangeEvent,
 } from "./settings/settings";
 
+import type { QuotaUpdateDetail } from "@/controllers/api";
 import type { CollectionSavedEvent } from "@/features/collections/collection-metadata-dialog";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
 import type { Crawl, JobType } from "@/types/crawler";
@@ -128,6 +129,10 @@ export class Org extends LiteElement {
     return this.userOrg?.id || "";
   }
 
+  get org() {
+    return this.appState.org;
+  }
+
   get isAdmin() {
     const userOrg = this.userOrg;
     if (userOrg) return isAdmin(userOrg.role);
@@ -138,6 +143,30 @@ export class Org extends LiteElement {
     const userOrg = this.userOrg;
     if (userOrg) return isCrawler(userOrg.role);
     return false;
+  }
+
+  connectedCallback() {
+    super.connectedCallback();
+    this.addEventListener(
+      "btrix-execution-minutes-quota-update",
+      this.onExecutionMinutesQuotaUpdate,
+    );
+    this.addEventListener(
+      "btrix-storage-quota-update",
+      this.onStorageQuotaUpdate,
+    );
+  }
+
+  disconnectedCallback() {
+    this.removeEventListener(
+      "btrix-execution-minutes-quota-update",
+      this.onExecutionMinutesQuotaUpdate,
+    );
+    this.removeEventListener(
+      "btrix-storage-quota-update",
+      this.onStorageQuotaUpdate,
+    );
+    super.disconnectedCallback();
   }
 
   async willUpdate(changedProperties: Map<string, unknown>) {
@@ -168,6 +197,13 @@ export class Org extends LiteElement {
 
         return;
       }
+    } else if (
+      changedProperties.has("orgTab") &&
+      this.orgTab === "home" &&
+      this.orgId
+    ) {
+      // Get most up to date org data
+      void this.updateOrg();
     }
     if (changedProperties.has("openDialogName")) {
       // Sync URL to create dialog
@@ -197,8 +233,11 @@ export class Org extends LiteElement {
 
     if (!this.userInfo || !this.orgId) return;
     try {
-      AppStateService.updateOrg((await this.getOrg(this.orgId)) || null);
-    } catch {
+      const org = await this.getOrg(this.orgId);
+
+      AppStateService.updateOrg(org);
+    } catch (e) {
+      console.debug(e);
       this.notify({
         message: msg("Sorry, couldn't retrieve organization at this time."),
         variant: "danger",
@@ -232,7 +271,11 @@ export class Org extends LiteElement {
   }
 
   render() {
-    if (!this.userInfo) {
+    if (this.org === null) {
+      return html`<btrix-not-found></btrix-not-found>`;
+    }
+
+    if (!this.org || !this.userInfo) {
       // TODO combine loading state with tab panel content
       return "";
     }
@@ -433,7 +476,7 @@ export class Org extends LiteElement {
       <btrix-dashboard
         .authState=${this.authState!}
         orgId=${this.orgId}
-        .org=${this.appState.org || null}
+        .org=${this.org || null}
         ?isCrawler=${this.isCrawler}
         ?isAdmin=${this.isAdmin}
         @select-new-dialog=${this.onSelectNewDialog}
@@ -478,7 +521,7 @@ export class Org extends LiteElement {
       .authState=${this.authState!}
       userId=${this.userInfo!.id}
       orgId=${this.orgId}
-      ?orgStorageQuotaReached=${this.appState.org?.storageQuotaReached}
+      ?orgStorageQuotaReached=${this.org?.storageQuotaReached}
       ?isCrawler=${this.isCrawler}
       itemType=${ifDefined(params.itemType || undefined)}
       @select-new-dialog=${this.onSelectNewDialog}
@@ -498,9 +541,8 @@ export class Org extends LiteElement {
           class="col-span-5 mt-6"
           .authState=${this.authState!}
           orgId=${this.orgId}
-          ?orgStorageQuotaReached=${this.appState.org?.storageQuotaReached}
-          ?orgExecutionMinutesQuotaReached=${this.appState.org
-            ?.execMinutesQuotaReached}
+          ?orgStorageQuotaReached=${this.org?.storageQuotaReached}
+          ?orgExecutionMinutesQuotaReached=${this.org?.execMinutesQuotaReached}
           workflowId=${workflowId}
           openDialogName=${this.viewStateData?.dialog}
           ?isEditing=${isEditing}
@@ -521,9 +563,8 @@ export class Org extends LiteElement {
         .initialWorkflow=${workflow}
         .initialSeeds=${seeds}
         jobType=${ifDefined(params.jobType)}
-        ?orgStorageQuotaReached=${this.appState.org?.storageQuotaReached}
-        ?orgExecutionMinutesQuotaReached=${this.appState.org
-          ?.execMinutesQuotaReached}
+        ?orgStorageQuotaReached=${this.org?.storageQuotaReached}
+        ?orgExecutionMinutesQuotaReached=${this.org?.execMinutesQuotaReached}
         @select-new-dialog=${this.onSelectNewDialog}
       ></btrix-workflows-new>`;
     }
@@ -531,9 +572,8 @@ export class Org extends LiteElement {
     return html`<btrix-workflows-list
       .authState=${this.authState!}
       orgId=${this.orgId}
-      ?orgStorageQuotaReached=${this.appState.org?.storageQuotaReached}
-      ?orgExecutionMinutesQuotaReached=${this.appState.org
-        ?.execMinutesQuotaReached}
+      ?orgStorageQuotaReached=${this.org?.storageQuotaReached}
+      ?orgExecutionMinutesQuotaReached=${this.org?.execMinutesQuotaReached}
       userId=${this.userInfo!.id}
       ?isCrawler=${this.isCrawler}
       @select-new-dialog=${this.onSelectNewDialog}
@@ -600,7 +640,7 @@ export class Org extends LiteElement {
   }
 
   private renderOrgSettings() {
-    if (!this.userInfo || !this.appState.org) return;
+    if (!this.userInfo || !this.org) return;
     const params = this.params as OrgParams["settings"];
     const activePanel = params.settingsTab || "information";
     const isAddingMember = Object.prototype.hasOwnProperty.call(
@@ -611,7 +651,7 @@ export class Org extends LiteElement {
     return html`<btrix-org-settings
       .authState=${this.authState}
       .userInfo=${this.userInfo}
-      .org=${this.appState.org}
+      .org=${this.org}
       .orgId=${this.orgId}
       activePanel=${activePanel}
       ?isAddingMember=${isAddingMember}
@@ -641,6 +681,30 @@ export class Org extends LiteElement {
     void this.removeMember(e.detail.member);
   }
 
+  private async onStorageQuotaUpdate(e: CustomEvent<QuotaUpdateDetail>) {
+    e.stopPropagation();
+
+    const { reached } = e.detail;
+
+    AppStateService.partialUpdateOrg({
+      id: this.orgId,
+      storageQuotaReached: reached,
+    });
+  }
+
+  private async onExecutionMinutesQuotaUpdate(
+    e: CustomEvent<QuotaUpdateDetail>,
+  ) {
+    e.stopPropagation();
+
+    const { reached } = e.detail;
+
+    AppStateService.partialUpdateOrg({
+      id: this.orgId,
+      execMinutesQuotaReached: reached,
+    });
+  }
+
   private async onUserRoleChange(e: UserRoleChangeEvent) {
     const { user, newRole } = e.detail;
 
@@ -660,7 +724,9 @@ export class Org extends LiteElement {
         variant: "success",
         icon: "check2-circle",
       });
-      AppStateService.updateOrg((await this.getOrg(this.orgId)) || null);
+      const org = await this.getOrg(this.orgId);
+
+      AppStateService.updateOrg(org);
     } catch (e) {
       console.debug(e);
 
@@ -679,9 +745,9 @@ export class Org extends LiteElement {
   }
 
   private async removeMember(member: Member) {
-    const org = this.appState.org;
-
+    const org = this.org;
     if (!org) return;
+
     const isSelf = member.email === this.userInfo!.email;
     if (
       isSelf &&
@@ -713,7 +779,9 @@ export class Org extends LiteElement {
         // FIXME better UX, this is the only page currently that doesn't require org...
         this.navTo("/account/settings");
       } else {
-        AppStateService.updateOrg((await this.getOrg(this.orgId)) || null);
+        const org = await this.getOrg(this.orgId);
+
+        AppStateService.updateOrg(org);
       }
     } catch (e) {
       console.debug(e);

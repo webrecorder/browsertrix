@@ -22,7 +22,6 @@ import { type CollectionsChangeEvent } from "@/features/collections/collections-
 import { APIError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
 import { maxLengthValidator } from "@/utils/form";
-import { AppStateService } from "@/utils/state";
 
 export type FileUploaderRequestCloseEvent = CustomEvent<NonNullable<unknown>>;
 export type FileUploaderUploadStartEvent = CustomEvent<{
@@ -445,9 +444,12 @@ export class FileUploader extends TailwindElement {
 
       // Dispatch event here because we're not using apiFetch() for uploads
       if (data.storageQuotaReached) {
-        AppStateService.patchOrg({
-          storageQuotaReached: true,
-        });
+        this.dispatchEvent(
+          new CustomEvent("btrix-storage-quota-update", {
+            detail: { reached: true },
+            bubbles: true,
+          }),
+        );
       }
 
       if (data.id && data.added) {
@@ -486,9 +488,12 @@ export class FileUploader extends TailwindElement {
           message = msg(
             "Your org does not have enough storage to upload this file.",
           );
-          AppStateService.patchOrg({
-            storageQuotaReached: true,
-          });
+          this.dispatchEvent(
+            new CustomEvent("btrix-storage-quota-update", {
+              detail: { reached: true },
+              bubbles: true,
+            }),
+          );
         }
         this.notify.toast({
           message: message,
