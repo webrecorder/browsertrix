@@ -256,7 +256,9 @@ export class BrowserProfilesDetail extends TailwindElement {
                     )}
                   </p>
                   <sl-button
-                    ?disabled=${!this.org || this.org.readOnly}
+                    ?disabled=${!this.org ||
+                    this.org.readOnly ||
+                    this.org.storageQuotaReached}
                     @click=${this.startBrowserPreview}
                   >
                     <sl-icon slot="prefix" name="gear"></sl-icon>
@@ -447,14 +449,18 @@ export class BrowserProfilesDetail extends TailwindElement {
             ${msg("Edit Metadata")}
           </sl-menu-item>
           <sl-menu-item
-            ?disabled=${!this.org || this.org.readOnly}
+            ?disabled=${!this.org ||
+            this.org.readOnly ||
+            this.org.storageQuotaReached}
             @click=${this.startBrowserPreview}
           >
             <sl-icon slot="prefix" name="gear"></sl-icon>
             ${msg("Configure Browser Profile")}
           </sl-menu-item>
           <sl-menu-item
-            ?disabled=${!this.org || this.org.readOnly}
+            ?disabled=${!this.org ||
+            this.org.readOnly ||
+            this.org.storageQuotaReached}
             @click=${() => void this.duplicateProfile()}
           >
             <sl-icon slot="prefix" name="files"></sl-icon>

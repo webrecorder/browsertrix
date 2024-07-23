@@ -127,7 +127,9 @@ export class BrowserProfilesList extends TailwindElement {
               <sl-button
                 variant="primary"
                 size="small"
-                ?disabled=${!this.org || this.org.readOnly}
+                ?disabled=${!this.org ||
+                this.org.readOnly ||
+                this.org.storageQuotaReached}
                 @click=${() => {
                   this.dispatchEvent(
                     new CustomEvent("select-new-dialog", {
@@ -348,7 +350,9 @@ export class BrowserProfilesList extends TailwindElement {
       <btrix-overflow-dropdown @click=${(e: Event) => e.preventDefault()}>
         <sl-menu>
           <sl-menu-item
-            ?disabled=${!this.org || this.org.readOnly}
+            ?disabled=${!this.org ||
+            this.org.readOnly ||
+            this.org.storageQuotaReached}
             @click=${() => {
               void this.duplicateProfile(data);
             }}
