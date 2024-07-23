@@ -4,7 +4,6 @@ import { nothing, render, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
-import sortBy from "lodash/fp/sortBy";
 
 import "broadcastchannel-polyfill";
 import "./utils/polyfills";
@@ -355,8 +354,6 @@ export class App extends LiteElement {
     const orgs = this.appState.userInfo?.orgs;
     if (!orgs || orgs.length < 2 || !this.appState.userInfo) return;
 
-    const sortedOrgs = sortBy<UserOrg>("name")(orgs);
-
     const selectedOption = this.appState.orgSlug
       ? orgs.find(({ slug }) => slug === this.appState.orgSlug)
       : { slug: "", name: msg("All Organizations") };
@@ -401,7 +398,7 @@ export class App extends LiteElement {
               <sl-divider></sl-divider>
             `,
           )}
-          ${sortedOrgs.map(
+          ${orgs.map(
             (org) => html`
               <sl-menu-item
                 type="checkbox"
