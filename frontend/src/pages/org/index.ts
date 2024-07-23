@@ -197,11 +197,7 @@ export class Org extends LiteElement {
 
         return;
       }
-    } else if (
-      changedProperties.has("orgTab") &&
-      this.orgTab === "home" &&
-      this.orgId
-    ) {
+    } else if (changedProperties.has("orgTab") && this.orgId) {
       // Get most up to date org data
       void this.updateOrg();
     }
