@@ -3,7 +3,7 @@
 import asyncio
 import os
 from typing import TYPE_CHECKING, Any
-from kubernetes.utils import parse_quantity
+from kubernetes.utils import parse_quantity, is_bool
 
 import yaml
 from btrixcloud.k8sapi import K8sAPI
@@ -30,6 +30,7 @@ class K8sOpAPI(K8sAPI):
     """Additional k8s api for operators"""
 
     has_pod_metrics: bool
+    enable_auto_resize: bool
     max_crawler_memory_size: int
 
     def __init__(self):
@@ -39,6 +40,7 @@ class K8sOpAPI(K8sAPI):
             self.shared_params = yaml.safe_load(fh_config)
 
         self.has_pod_metrics = False
+        self.enable_auto_resize = False
         self.max_crawler_memory_size = 0
 
         self.compute_crawler_resources()
@@ -126,6 +128,11 @@ class K8sOpAPI(K8sAPI):
         """perform any async init here"""
         self.has_pod_metrics = await self.is_pod_metrics_available()
         print("Pod Metrics Available:", self.has_pod_metrics)
+
+        self.enable_auto_resize = self.has_pod_metrics and is_bool(
+            os.environ.get("ENABLE_AUTO_RESIZE_CRAWLERS")
+        )
+        print("Auto-Resize Enabled", self.enable_auto_resize)
 
 
 # pylint: disable=too-many-instance-attributes, too-many-arguments
