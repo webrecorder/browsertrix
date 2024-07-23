@@ -141,7 +141,6 @@ export class OrgSettings extends TailwindElement {
                 href=${`${this.navigate.orgBasePath}/settings/members?invite`}
                 variant="primary"
                 size="small"
-                ?disabled=${!this.org || this.org.readOnly}
                 @click=${this.navigate.link}
               >
                 <sl-icon
