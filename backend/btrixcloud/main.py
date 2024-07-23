@@ -6,7 +6,6 @@ supports docker and kubernetes based deployments of multiple browsertrix-crawler
 import os
 import asyncio
 import sys
-from typing import Optional
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
@@ -116,8 +115,8 @@ class SettingsResponse(BaseModel):
 
     billingEnabled: bool
 
-    salesEmail: Optional[str]
-    supportEmail: Optional[str]
+    salesEmail: str = ""
+    supportEmail: str = ""
 
 
 # ============================================================================
@@ -144,8 +143,8 @@ def main():
         maxPagesPerCrawl=int(os.environ.get("MAX_PAGES_PER_CRAWL", 0)),
         maxScale=int(os.environ.get("MAX_CRAWL_SCALE", 3)),
         billingEnabled=is_bool(os.environ.get("BILLING_ENABLED")),
-        salesEmail=os.environ.get("SALES_EMAIL"),
-        supportEmail=os.environ.get("EMAIL_SUPPORT"),
+        salesEmail=os.environ.get("SALES_EMAIL", ""),
+        supportEmail=os.environ.get("EMAIL_SUPPORT", ""),
     )
 
     invites = init_invites(mdb, email)
