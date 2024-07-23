@@ -3,10 +3,11 @@
 import asyncio
 import os
 from typing import TYPE_CHECKING, Any
-from kubernetes.utils import parse_quantity, is_bool
+from kubernetes.utils import parse_quantity
 
 import yaml
 from btrixcloud.k8sapi import K8sAPI
+from btrixcloud.utils import is_bool
 
 
 if TYPE_CHECKING:
