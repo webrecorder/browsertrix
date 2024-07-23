@@ -121,7 +121,7 @@ class SettingsResponse(BaseModel):
 
 # ============================================================================
 # pylint: disable=too-many-locals, duplicate-code
-def main():
+def main() -> None:
     """init browsertrix api"""
 
     app = APIRouter()
@@ -268,7 +268,7 @@ def main():
     app.include_router(org_ops.router)
 
     @app.get("/settings", tags=["settings"], response_model=SettingsResponse)
-    async def get_settings():
+    async def get_settings() -> SettingsResponse:
         if not db_inited.get("inited"):
             raise HTTPException(status_code=503, detail="not_ready_yet")
         return settings
