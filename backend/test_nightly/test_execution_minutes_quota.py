@@ -51,7 +51,7 @@ def test_crawl_stopped_when_quota_reached(org_with_quotas, admin_auth_headers):
     # Ensure that crawl was stopped by quota
     assert (
         get_crawl_status(org_with_quotas, crawl_id, admin_auth_headers)
-        == "stopped_quota_reached"
+        == "stopped_exec_mins_quota_reached"
     )
 
     time.sleep(5)
@@ -134,7 +134,7 @@ def test_crawl_stopped_when_quota_reached_with_extra(
     # Ensure that crawl was stopped by quota
     assert (
         get_crawl_status(org_with_quotas, crawl_id, admin_auth_headers)
-        == "stopped_quota_reached"
+        == "stopped_exec_mins_quota_reached"
     )
 
     time.sleep(5)

@@ -16,7 +16,11 @@ POD = "Pod.v1"
 CJS = f"CrawlJob.{BTRIX_API}"
 
 StopReason = Literal[
-    "stopped_by_user", "time-limit", "size-limit", "stopped_quota_reached"
+    "stopped_by_user",
+    "time-limit",
+    "size-limit",
+    "stopped_storage_quota_reached",
+    "stopped_exec_mins_quota_reached",
 ]
 
 

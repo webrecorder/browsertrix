@@ -196,13 +196,18 @@ class CrawlOperator(BaseOperator):
         if status.state in ("starting", "skipped_quota_reached"):
             # only check on very first run, before any pods/pvcs created
             # for now, allow if crawl has already started (pods/pvcs created)
-            if (
-                not pods
-                and not data.children[PVC]
-                and await self.org_ops.storage_quota_reached(crawl.oid)
-            ):
-                await self.mark_finished(crawl, status, "skipped_quota_reached")
-                return self._empty_response(status)
+            if not pods and not data.children[PVC]:
+                if self.org_ops.storage_quota_reached(crawl.oid):
+                    await self.mark_finished(
+                        crawl, status, "skipped_storage_quota_reached"
+                    )
+                    return self._empty_response(status)
+
+                if self.org_ops.exec_mins_quota_reached(crawl.oid):
+                    await self.mark_finished(
+                        crawl, status, "skipped_exec_mins_quota_reached"
+                    )
+                    return self._empty_response(status)
 
         if status.state in ("starting", "waiting_org_limit"):
             if not await self.can_start_new(crawl, data, status):
@@ -1228,9 +1233,12 @@ class CrawlOperator(BaseOperator):
             print(f"Graceful Stop: Maximum crawl size {crawl.max_crawl_size} hit")
             return "size-limit"
 
-        # check exec time quotas and stop if reached limit
+        # check storage and exec mins quotas and stop if reached limit
+        if await self.org_ops.storage_quota_reached(crawl.oid):
+            return "stopped_storage_quota_reached"
+
         if await self.org_ops.exec_mins_quota_reached(crawl.oid):
-            return "stopped_quota_reached"
+            return "stopped_exec_mins_quota_reached"
 
         return None
 
@@ -1329,8 +1337,10 @@ class CrawlOperator(BaseOperator):
             state: TYPE_NON_RUNNING_STATES
             if status.stopReason == "stopped_by_user":
                 state = "stopped_by_user"
-            elif status.stopReason == "stopped_quota_reached":
-                state = "stopped_quota_reached"
+            elif status.stopReason == "stopped_storage_quota_reached":
+                state = "stopped_storage_quota_reached"
+            elif status.stopReason == "stopped_exec_mins_quota_reached":
+                state = "stopped_exec_mins_quota_reached"
             else:
                 state = "complete"
 
