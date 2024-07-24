@@ -197,13 +197,13 @@ class CrawlOperator(BaseOperator):
             # only check on very first run, before any pods/pvcs created
             # for now, allow if crawl has already started (pods/pvcs created)
             if not pods and not data.children[PVC]:
-                if self.org_ops.storage_quota_reached(crawl.oid):
+                if await self.org_ops.storage_quota_reached(crawl.oid):
                     await self.mark_finished(
                         crawl, status, "skipped_storage_quota_reached"
                     )
                     return self._empty_response(status)
 
-                if self.org_ops.exec_mins_quota_reached(crawl.oid):
+                if await self.org_ops.exec_mins_quota_reached(crawl.oid):
                     await self.mark_finished(
                         crawl, status, "skipped_exec_mins_quota_reached"
                     )
