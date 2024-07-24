@@ -225,13 +225,7 @@ class CrawlOperator(BaseOperator):
             for pod_name, pod in pods.items():
                 self.sync_resources(status, pod_name, pod, data.children)
 
-            status = await self.sync_crawl_state(
-                redis_url,
-                crawl,
-                status,
-                pods,
-                data.related.get(METRICS, {}),
-            )
+            status = await self.sync_crawl_state(redis_url, crawl, status, pods, data)
 
             if self.k8s.enable_auto_resize:
                 # auto sizing handled here
@@ -752,7 +746,7 @@ class CrawlOperator(BaseOperator):
         crawl: CrawlSpec,
         status: CrawlStatus,
         pods: dict[str, dict],
-        metrics: Optional[dict],
+        data: MCSyncData,
     ):
         """sync crawl state for running crawl"""
         # check if at least one crawler pod started running
@@ -760,6 +754,8 @@ class CrawlOperator(BaseOperator):
             pods, status
         )
         redis = None
+
+        metrics = data.related.get(METRICS, {})
 
         try:
             if redis_running:
@@ -860,7 +856,7 @@ class CrawlOperator(BaseOperator):
 
             # update stats and get status
             return await self.update_crawl_state(
-                redis, crawl, status, pods, pod_done_count
+                redis, crawl, status, pods, pod_done_count, data
             )
 
         # pylint: disable=broad-except
@@ -1210,7 +1206,7 @@ class CrawlOperator(BaseOperator):
         return True
 
     async def is_crawl_stopping(
-        self, crawl: CrawlSpec, status: CrawlStatus
+        self, crawl: CrawlSpec, status: CrawlStatus, data: MCSyncData
     ) -> Optional[StopReason]:
         """check if crawl is stopping and set reason"""
         # if user requested stop, then enter stopping phase
@@ -1237,10 +1233,15 @@ class CrawlOperator(BaseOperator):
             print(f"Graceful Stop: Maximum crawl size {crawl.max_crawl_size} hit")
             return "size-limit"
 
-        # gracefully stop crawl if current crawl size will put org over storage quota
-        org = await self.org_ops.get_org_by_id(crawl.oid)
+        # gracefully stop crawl if current running crawl sizes reach storage quota
+        running_crawls_total_size = 0
+        for crawl_sorted in data.related[CJS].values():
+            crawl_status = crawl_sorted.get("status", {})
+            if crawl_status:
+                running_crawls_total_size += crawl_status.get("size", 0)
+
         if org.quotas.storageQuota and (
-            org.bytesStored + status.size >= org.quotas.storageQuota
+            org.bytesStored + running_crawls_total_size >= org.quotas.storageQuota
         ):
             return "stopped_storage_quota_reached"
 
@@ -1280,6 +1281,7 @@ class CrawlOperator(BaseOperator):
         status: CrawlStatus,
         pods: dict[str, dict],
         pod_done_count: int,
+        data: MCSyncData,
     ) -> CrawlStatus:
         """update crawl state and check if crawl is now done"""
         results = await redis.hgetall(f"{crawl.id}:status")
@@ -1305,7 +1307,7 @@ class CrawlOperator(BaseOperator):
                 pod_info.used.storage = value
 
         if not status.stopReason:
-            status.stopReason = await self.is_crawl_stopping(crawl, status)
+            status.stopReason = await self.is_crawl_stopping(crawl, status, data)
             status.stopping = status.stopReason is not None
 
         # mark crawl as stopping
