@@ -322,7 +322,7 @@ export class FileUploader extends TailwindElement {
     return html`
       <section class="flex flex-col gap-3">
         <h4 class="flex-0 text-lg font-semibold leading-none">
-          ${msg("Uploading WACZ File...")}
+          ${msg("Uploading...")}
         </h4>
         <p class="text-neutral-500">
           ${msg("Keep this window open until your upload finishes.")}
