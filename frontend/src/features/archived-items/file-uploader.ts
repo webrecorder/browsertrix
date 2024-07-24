@@ -124,7 +124,7 @@ export class FileUploader extends TailwindElement {
     const uploadInProgress = this.isUploading || this.isConfirmingCancel;
     return html`
       <btrix-dialog
-        .label=${msg("Upload Archive")}
+        .label=${msg("Upload WACZ")}
         .open=${this.open}
         @sl-show=${() => (this.isDialogVisible = true)}
         @sl-after-hide=${() => (this.isDialogVisible = false)}
@@ -187,8 +187,9 @@ export class FileUploader extends TailwindElement {
             )!;
             form.requestSubmit(submitInput);
           }}
-          >${msg("Upload File")}</sl-button
         >
+          ${msg("Upload")}
+        </sl-button>
       </div>
     `;
   }
@@ -321,7 +322,7 @@ export class FileUploader extends TailwindElement {
     return html`
       <section class="flex flex-col gap-3">
         <h4 class="flex-0 text-lg font-semibold leading-none">
-          ${msg("Uploading File")}
+          ${msg("Uploading WACZ File...")}
         </h4>
         <p class="text-neutral-500">
           ${msg("Keep this window open until your upload finishes.")}
