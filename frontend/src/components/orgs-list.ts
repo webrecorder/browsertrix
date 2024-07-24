@@ -16,7 +16,7 @@ import { NavigateController } from "@/controllers/navigate";
 import { NotifyController } from "@/controllers/notify";
 import type { CurrentUser } from "@/types/user";
 import type { AuthState } from "@/utils/AuthService";
-import { formatNumber } from "@/utils/localization";
+import { formatNumber, getLocale } from "@/utils/localization";
 import type { OrgData } from "@/utils/orgs";
 
 /**
@@ -27,7 +27,7 @@ import type { OrgData } from "@/utils/orgs";
 export class OrgsList extends TailwindElement {
   static styles = css`
     btrix-table {
-      grid-template-columns: min-content [clickable-start] 50ch auto auto [clickable-end] min-content;
+      grid-template-columns: min-content [clickable-start] 50ch auto auto auto [clickable-end] min-content;
     }
   `;
 
@@ -75,6 +75,9 @@ export class OrgsList extends TailwindElement {
           </btrix-table-header-cell>
           <btrix-table-header-cell class="px-2">
             ${msg("Name")}
+          </btrix-table-header-cell>
+          <btrix-table-header-cell class="px-2">
+            ${msg("Created")}
           </btrix-table-header-cell>
           <btrix-table-header-cell class="px-2">
             ${msg("Members")}
@@ -512,6 +515,17 @@ export class OrgsList extends TailwindElement {
               ? html`<code class="text-neutral-400">${org.id}</code>`
               : org.name}
           </a>
+        </btrix-table-cell>
+
+        <btrix-table-cell class="p-2">
+          <sl-format-date
+            lang=${getLocale()}
+            class="truncate"
+            date=${`${org.created}Z`}
+            month="2-digit"
+            day="2-digit"
+            year="2-digit"
+          ></sl-format-date>
         </btrix-table-cell>
         <btrix-table-cell class="p-2">
           ${memberCount ? formatNumber(memberCount) : none}
