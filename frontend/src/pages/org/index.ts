@@ -24,6 +24,7 @@ import type { AuthState } from "@/utils/AuthService";
 import { DEFAULT_MAX_SCALE } from "@/utils/crawler";
 import LiteElement, { html } from "@/utils/LiteElement";
 import { isAdmin, isCrawler, type OrgData } from "@/utils/orgs";
+import { AppStateService } from "@/utils/state";
 
 import "./workflow-detail";
 import "./workflows-list";
@@ -114,28 +115,10 @@ export class Org extends LiteElement {
   maxScale: number = DEFAULT_MAX_SCALE;
 
   @state()
-  private orgStorageQuotaReached = false;
-
-  @state()
-  private showReadOnlyAlert = false;
-
-  @state()
-  private showStorageQuotaAlert = false;
-
-  @state()
-  private orgExecutionMinutesQuotaReached = false;
-
-  @state()
-  private showExecutionMinutesQuotaAlert = false;
-
-  @state()
   private openDialogName?: ResourceName;
 
   @state()
   private isCreateDialogVisible = false;
-
-  @state()
-  private org?: OrgData | null;
 
   get userOrg() {
     if (!this.userInfo) return null;
@@ -144,6 +127,10 @@ export class Org extends LiteElement {
 
   get orgId() {
     return this.userOrg?.id || "";
+  }
+
+  get org() {
+    return this.appState.org;
   }
 
   get isAdmin() {
@@ -168,7 +155,6 @@ export class Org extends LiteElement {
       "btrix-storage-quota-update",
       this.onStorageQuotaUpdate,
     );
-    this.addEventListener("", () => {});
   }
 
   disconnectedCallback() {
@@ -202,6 +188,9 @@ export class Org extends LiteElement {
 
         return;
       }
+    } else if (changedProperties.has("orgTab") && this.orgId) {
+      // Get most up to date org data
+      void this.updateOrg();
     }
     if (changedProperties.has("openDialogName")) {
       // Sync URL to create dialog
@@ -231,15 +220,11 @@ export class Org extends LiteElement {
 
     if (!this.userInfo || !this.orgId) return;
     try {
-      this.org = await this.getOrg(this.orgId);
+      const org = await this.getOrg(this.orgId);
 
-      this.showReadOnlyAlert = Boolean(
-        this.org?.readOnly || this.org?.subscription?.futureCancelDate,
-      );
-
-      this.checkStorageQuota();
-      this.checkExecutionMinutesQuota();
-    } catch {
+      AppStateService.updateOrg(org);
+    } catch (e) {
+      console.debug(e);
       this.notify({
         message: msg("Sorry, couldn't retrieve organization at this time."),
         variant: "danger",
@@ -319,7 +304,7 @@ export class Org extends LiteElement {
 
     return html`
       <div class="flex min-h-full flex-col">
-        <btrix-org-status-banner .org=${this.org}></btrix-org-status-banner>
+        <btrix-org-status-banner></btrix-org-status-banner>
         ${this.renderOrgNavBar()}
         <main
           class="${noMaxWidth
@@ -523,7 +508,7 @@ export class Org extends LiteElement {
       .authState=${this.authState!}
       userId=${this.userInfo!.id}
       orgId=${this.orgId}
-      ?orgStorageQuotaReached=${this.orgStorageQuotaReached}
+      ?orgStorageQuotaReached=${this.org?.storageQuotaReached}
       ?isCrawler=${this.isCrawler}
       itemType=${ifDefined(params.itemType || undefined)}
       @select-new-dialog=${this.onSelectNewDialog}
@@ -543,9 +528,8 @@ export class Org extends LiteElement {
           class="col-span-5 mt-6"
           .authState=${this.authState!}
           orgId=${this.orgId}
-          ?orgStorageQuotaReached=${this.orgStorageQuotaReached}
-          ?orgExecutionMinutesQuotaReached=${this
-            .orgExecutionMinutesQuotaReached}
+          ?orgStorageQuotaReached=${this.org?.storageQuotaReached}
+          ?orgExecutionMinutesQuotaReached=${this.org?.execMinutesQuotaReached}
           workflowId=${workflowId}
           openDialogName=${this.viewStateData?.dialog}
           ?isEditing=${isEditing}
@@ -566,8 +550,8 @@ export class Org extends LiteElement {
         .initialWorkflow=${workflow}
         .initialSeeds=${seeds}
         jobType=${ifDefined(params.jobType)}
-        ?orgStorageQuotaReached=${this.orgStorageQuotaReached}
-        ?orgExecutionMinutesQuotaReached=${this.orgExecutionMinutesQuotaReached}
+        ?orgStorageQuotaReached=${this.org?.storageQuotaReached}
+        ?orgExecutionMinutesQuotaReached=${this.org?.execMinutesQuotaReached}
         @select-new-dialog=${this.onSelectNewDialog}
       ></btrix-workflows-new>`;
     }
@@ -575,8 +559,8 @@ export class Org extends LiteElement {
     return html`<btrix-workflows-list
       .authState=${this.authState!}
       orgId=${this.orgId}
-      ?orgStorageQuotaReached=${this.orgStorageQuotaReached}
-      ?orgExecutionMinutesQuotaReached=${this.orgExecutionMinutesQuotaReached}
+      ?orgStorageQuotaReached=${this.org?.storageQuotaReached}
+      ?orgExecutionMinutesQuotaReached=${this.org?.execMinutesQuotaReached}
       userId=${this.userInfo!.id}
       ?isCrawler=${this.isCrawler}
       @select-new-dialog=${this.onSelectNewDialog}
@@ -686,22 +670,26 @@ export class Org extends LiteElement {
 
   private async onStorageQuotaUpdate(e: CustomEvent<QuotaUpdateDetail>) {
     e.stopPropagation();
+
     const { reached } = e.detail;
-    this.orgStorageQuotaReached = reached;
-    if (reached) {
-      this.showStorageQuotaAlert = true;
-    }
+
+    AppStateService.partialUpdateOrg({
+      id: this.orgId,
+      storageQuotaReached: reached,
+    });
   }
 
   private async onExecutionMinutesQuotaUpdate(
     e: CustomEvent<QuotaUpdateDetail>,
   ) {
     e.stopPropagation();
+
     const { reached } = e.detail;
-    this.orgExecutionMinutesQuotaReached = reached;
-    if (reached) {
-      this.showExecutionMinutesQuotaAlert = true;
-    }
+
+    AppStateService.partialUpdateOrg({
+      id: this.orgId,
+      execMinutesQuotaReached: reached,
+    });
   }
 
   private async onUserRoleChange(e: UserRoleChangeEvent) {
@@ -723,7 +711,9 @@ export class Org extends LiteElement {
         variant: "success",
         icon: "check2-circle",
       });
-      this.org = await this.getOrg(this.orgId);
+      const org = await this.getOrg(this.orgId);
+
+      AppStateService.updateOrg(org);
     } catch (e) {
       console.debug(e);
 
@@ -742,14 +732,14 @@ export class Org extends LiteElement {
   }
 
   private async removeMember(member: Member) {
-    if (!this.org) return;
+    const org = this.org;
+    if (!org) return;
+
     const isSelf = member.email === this.userInfo!.email;
     if (
       isSelf &&
       !window.confirm(
-        msg(
-          str`Are you sure you want to remove yourself from ${this.org.name}?`,
-        ),
+        msg(str`Are you sure you want to remove yourself from ${org.name}?`),
       )
     ) {
       return;
@@ -766,7 +756,7 @@ export class Org extends LiteElement {
       this.notify({
         message: msg(
           str`Successfully removed ${member.name || member.email} from ${
-            this.org.name
+            org.name
           }.`,
         ),
         variant: "success",
@@ -776,7 +766,9 @@ export class Org extends LiteElement {
         // FIXME better UX, this is the only page currently that doesn't require org...
         this.navTo("/account/settings");
       } else {
-        this.org = await this.getOrg(this.orgId);
+        const org = await this.getOrg(this.orgId);
+
+        AppStateService.updateOrg(org);
       }
     } catch (e) {
       console.debug(e);
@@ -793,15 +785,5 @@ export class Org extends LiteElement {
         icon: "exclamation-octagon",
       });
     }
-  }
-
-  checkStorageQuota() {
-    this.orgStorageQuotaReached = !!this.org?.storageQuotaReached;
-    this.showStorageQuotaAlert = this.orgStorageQuotaReached;
-  }
-
-  checkExecutionMinutesQuota() {
-    this.orgExecutionMinutesQuotaReached = !!this.org?.execMinutesQuotaReached;
-    this.showExecutionMinutesQuotaAlert = this.orgExecutionMinutesQuotaReached;
   }
 }
