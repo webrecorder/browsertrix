@@ -39,7 +39,9 @@ export type OrgData = {
   bytesStoredUploads: number;
   bytesStoredProfiles: number;
   usage: { [key: YearMonth]: number } | null;
+  /* Actual total time used, including time to stop the crawl, gifted, and extra time */
   crawlExecSeconds?: { [key: YearMonth]: number };
+  /* Total time within the monthly time quota */
   monthlyExecSeconds?: { [key: YearMonth]: number };
   extraExecSeconds?: { [key: YearMonth]: number };
   giftedExecSeconds?: { [key: YearMonth]: number };
