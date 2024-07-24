@@ -215,7 +215,7 @@ TYPE_FAILED_STATES = Literal[
     "canceled",
     "failed",
     "skipped_storage_quota_reached",
-    "skipped_exec_mins_quota_reached",
+    "skipped_time_quota_reached",
 ]
 FAILED_STATES = get_args(TYPE_FAILED_STATES)
 
@@ -223,7 +223,7 @@ TYPE_SUCCESSFUL_STATES = Literal[
     "complete",
     "stopped_by_user",
     "stopped_storage_quota_reached",
-    "stopped_exec_mins_quota_reached",
+    "stopped_time_quota_reached",
 ]
 SUCCESSFUL_STATES = get_args(TYPE_SUCCESSFUL_STATES)
 

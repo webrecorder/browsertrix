@@ -19,7 +19,7 @@ class Migration(BaseMigration):
         """Perform migration up.
 
         Migrate skipped_quota_reached state to skipped_storage_quota_reached
-        Migration stopped_quota_reached to stopped_exec_mins_quota_reached
+        Migration stopped_quota_reached to stopped_time_quota_reached
         """
         crawls_db = self.mdb["crawls"]
 
@@ -43,7 +43,7 @@ class Migration(BaseMigration):
         try:
             res = await crawls_db.update_many(
                 {"type": "crawl", "state": "stopped_quota_reached"},
-                {"$set": {"state": "stopped_exec_mins_quota_reached"}},
+                {"$set": {"state": "stopped_time_quota_reached"}},
             )
             updated = res.modified_count
             print(

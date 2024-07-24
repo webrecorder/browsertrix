@@ -205,7 +205,7 @@ class CrawlOperator(BaseOperator):
 
                 if await self.org_ops.exec_mins_quota_reached(crawl.oid):
                     await self.mark_finished(
-                        crawl, status, "skipped_exec_mins_quota_reached"
+                        crawl, status, "skipped_time_quota_reached"
                     )
                     return self._empty_response(status)
 
@@ -1238,7 +1238,7 @@ class CrawlOperator(BaseOperator):
             return "stopped_storage_quota_reached"
 
         if await self.org_ops.exec_mins_quota_reached(crawl.oid):
-            return "stopped_exec_mins_quota_reached"
+            return "stopped_time_quota_reached"
 
         return None
 
@@ -1339,8 +1339,8 @@ class CrawlOperator(BaseOperator):
                 state = "stopped_by_user"
             elif status.stopReason == "stopped_storage_quota_reached":
                 state = "stopped_storage_quota_reached"
-            elif status.stopReason == "stopped_exec_mins_quota_reached":
-                state = "stopped_exec_mins_quota_reached"
+            elif status.stopReason == "stopped_time_quota_reached":
+                state = "stopped_time_quota_reached"
             else:
                 state = "complete"
 

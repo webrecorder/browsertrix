@@ -20,14 +20,14 @@ export const finishedCrawlStates: CrawlState[] = [
   "complete",
   "stopped_by_user",
   "stopped_storage_quota_reached",
-  "stopped_exec_mins_quota_reached",
+  "stopped_time_quota_reached",
 ];
 
 export const inactiveCrawlStates: CrawlState[] = [
   ...finishedCrawlStates,
   "canceled",
   "skipped_storage_quota_reached",
-  "skipped_exec_mins_quota_reached",
+  "skipped_time_quota_reached",
   "failed",
 ];
 

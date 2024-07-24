@@ -188,7 +188,7 @@ export class CrawlStatus extends TailwindElement {
         label = msg("Skipped: Storage Quota Reached");
         break;
 
-      case "skipped_exec_mins_quota_reached":
+      case "skipped_time_quota_reached":
         color = "var(--danger)";
         icon = html`<sl-icon
           name="exclamation-triangle-fill"
@@ -218,7 +218,7 @@ export class CrawlStatus extends TailwindElement {
         label = msg("Stopped: Storage Quota Reached");
         break;
 
-      case "stopped_exec_mins_quota_reached":
+      case "stopped_time_quota_reached":
         color = "var(--warning)";
         icon = html`<sl-icon
           name="exclamation-square-fill"
