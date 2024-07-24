@@ -476,7 +476,7 @@ export class OrgsList extends TailwindElement {
     if (org.readOnly) {
       status = {
         icon: html`<sl-icon
-          class="text-base text-neutral-400"
+          class="text-base text-neutral-500"
           name="slash-circle"
           label=${msg("Read-only")}
         >
@@ -500,7 +500,7 @@ export class OrgsList extends TailwindElement {
         </btrix-table-cell>
         <btrix-table-cell class="p-2" rowClickTarget="a">
           <a
-            class=${org.readOnly ? "text-neutral-400" : "text-neutral-900"}
+            class=${org.readOnly ? "text-neutral-500" : "text-neutral-900"}
             href="/orgs/${org.slug}"
             @click=${this.navigate.link}
             aria-disabled="${!isUserOrg}"
@@ -508,7 +508,9 @@ export class OrgsList extends TailwindElement {
             ${org.default
               ? html`<btrix-tag class="mr-1">${msg("Default")}</btrix-tag>`
               : nothing}
-            ${org.name}
+            ${org.name === org.id
+              ? html`<code class="text-neutral-400">${org.id}</code>`
+              : org.name}
           </a>
         </btrix-table-cell>
         <btrix-table-cell class="p-2">
