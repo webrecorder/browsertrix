@@ -1,7 +1,7 @@
 import { localized, msg, str } from "@lit/localize";
 import type { SlInput, SlInputEvent } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
-import { type PropertyValues, type TemplateResult } from "lit";
+import { type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
 import type { InviteSuccessDetail } from "@/features/accounts/invite-form";
@@ -15,6 +15,11 @@ import type { OrgData } from "@/utils/orgs";
 import slugifyStrict from "@/utils/slugify";
 
 /**
+ * Home page when org is not selected.
+ * Currently, only visible to superadmins--redirects to user's org, otherwise
+ *
+ * TODO Refactor out superadmin UI
+ *
  * @fires btrix-update-user-info
  */
 @localized()
@@ -62,27 +67,24 @@ export class Home extends LiteElement {
       this.navTo(`/orgs/${this.slug}`);
     } else if (changedProperties.has("userInfo") && this.userInfo) {
       if (this.userInfo.isSuperAdmin) {
-        void this.fetchOrgs();
+        if (this.userInfo.orgs.length) {
+          void this.fetchOrgs();
+        } else {
+          this.isAddingOrg = true;
+          this.isAddOrgFormVisible = true;
+        }
       } else {
         this.navTo(`/account/settings`);
       }
     }
   }
 
-  async updated(
-    changedProperties: PropertyValues<this> & Map<string, unknown>,
-  ) {
-    const orgListUpdated = changedProperties.has("orgList") && this.orgList;
-    const userInfoUpdated = changedProperties.has("userInfo") && this.userInfo;
-    if (orgListUpdated || userInfoUpdated) {
-      if (this.userInfo?.isSuperAdmin && this.orgList && !this.orgList.length) {
-        this.isAddingOrg = true;
-      }
-    }
-  }
-
   render() {
-    if (!this.userInfo || !this.orgList) {
+    if (!this.userInfo || !this.userInfo.isSuperAdmin) {
+      return;
+    }
+
+    if (this.userInfo.orgs.length && !this.orgList) {
       return html`
         <div class="my-24 flex items-center justify-center text-3xl">
           <sl-spinner></sl-spinner>
@@ -90,29 +92,19 @@ export class Home extends LiteElement {
       `;
     }
 
-    let title: string | undefined;
-    let content: TemplateResult<1> | undefined;
-
-    if (this.userInfo.isSuperAdmin) {
-      title = msg("Welcome");
-      content = this.renderAdminOrgs();
-    } else {
-      title = msg("Organizations");
-      content = this.renderLoggedInNonAdmin();
-    }
-
     return html`
       <div class="bg-white">
         <header
           class="mx-auto box-border w-full max-w-screen-desktop px-3 py-4 md:py-8"
         >
-          <h1 class="text-xl font-medium">${title}</h1>
+          <h1 class="text-xl font-medium">${msg("Welcome")}</h1>
         </header>
         <hr />
       </div>
       <main class="mx-auto box-border w-full max-w-screen-desktop px-3 py-4">
-        ${content}
+        ${this.renderAdminOrgs()}
       </main>
+      ${this.renderAddOrgDialog()}
     `;
   }
 
@@ -182,8 +174,6 @@ export class Home extends LiteElement {
           </section>
         </div>
       </div>
-
-      ${this.renderAddOrgDialog()}
     `;
   }
 
@@ -277,24 +267,6 @@ export class Home extends LiteElement {
     `;
   }
 
-  private renderLoggedInNonAdmin() {
-    if (this.orgList && !this.orgList.length) {
-      return html`<div class="rounded-lg border bg-white p-4 md:p-8">
-        <p class="text-center text-neutral-400">
-          ${msg("You don't have any organizations.")}
-        </p>
-      </div>`;
-    }
-
-    return html`
-      <btrix-orgs-list
-        .userInfo=${this.userInfo}
-        .orgList=${this.orgList}
-        ?skeleton=${!this.orgList}
-      ></btrix-orgs-list>
-    `;
-  }
-
   private renderInvite() {
     return html`
       <btrix-invite-form
@@ -383,9 +355,6 @@ export class Home extends LiteElement {
 
       // Update user info since orgs are checked against userInfo.orgs
       this.dispatchEvent(new CustomEvent("btrix-update-user-info"));
-
-      await this.updateComplete;
-      void this.fetchOrgs();
 
       this.notify({
         message: msg(str`Created new org named "${params.name}".`),
