@@ -1234,6 +1234,8 @@ class CrawlOperator(BaseOperator):
             return "size-limit"
 
         # gracefully stop crawl if current running crawl sizes reach storage quota
+        org = await self.org_ops.get_org_by_id(crawl.oid)
+
         running_crawls_total_size = 0
         for crawl_sorted in data.related[CJS].values():
             crawl_status = crawl_sorted.get("status", {})
