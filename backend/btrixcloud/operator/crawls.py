@@ -29,11 +29,7 @@ from btrixcloud.models import (
     StorageRef,
 )
 
-from btrixcloud.utils import (
-    from_k8s_date,
-    to_k8s_date,
-    dt_now,
-)
+from btrixcloud.utils import from_k8s_date, to_k8s_date, dt_now
 
 from .baseoperator import BaseOperator, Redis
 from .models import (
@@ -83,6 +79,13 @@ MEM_LIMIT_PADDING = 1.2
 # ============================================================================
 class CrawlOperator(BaseOperator):
     """CrawlOperator Handler"""
+
+    done_key: str
+    pages_key: str
+    errors_key: str
+
+    fast_retry_secs: int
+    log_failed_crawl_lines: int
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -221,8 +224,7 @@ class CrawlOperator(BaseOperator):
                 data.related.get(METRICS, {}),
             )
 
-            # auto-scaling not possible without pod metrics
-            if self.k8s.has_pod_metrics:
+            if self.k8s.enable_auto_resize:
                 # auto sizing handled here
                 await self.handle_auto_size(status.podStatus)
 
@@ -377,7 +379,10 @@ class CrawlOperator(BaseOperator):
         params["priorityClassName"] = pri_class
         params["cpu"] = pod_info.newCpu or params.get(cpu_field)
         params["memory"] = pod_info.newMemory or params.get(mem_field)
-        params["memory_limit"] = float(params["memory"]) * MEM_LIMIT_PADDING
+        if self.k8s.enable_auto_resize:
+            params["memory_limit"] = float(params["memory"]) * MEM_LIMIT_PADDING
+        else:
+            params["memory_limit"] = self.k8s.max_crawler_memory_size
         params["workers"] = params.get(worker_field) or 1
         params["do_restart"] = (
             pod_info.should_restart_pod() or params.get("force_restart")
@@ -555,7 +560,7 @@ class CrawlOperator(BaseOperator):
             },
         ]
 
-        if self.k8s.has_pod_metrics:
+        if self.k8s.enable_auto_resize:
             related_resources.append(
                 {
                     "apiVersion": METRICS_API,
@@ -1072,7 +1077,7 @@ class CrawlOperator(BaseOperator):
             pod_info.used.storage = storage
 
             # if no pod metrics, get memory estimate from redis itself
-            if not self.k8s.has_pod_metrics:
+            if not self.k8s.enable_auto_resize:
                 stats = await redis.info("memory")
                 pod_info.used.memory = int(stats.get("used_memory_rss", 0))
 

@@ -262,6 +262,12 @@ crawler_extra_memory_per_browser: 768Mi
 # crawler_memory = crawler_memory_base + crawler_memory_per_extra_browser * (crawler_browser_instances - 1)
 # crawler_memory:
 
+# Crawler Autoscaling
+# ---------------------
+
+# if set to true, automatically adjust crawler memory usage up to max_crawler_memory
+enable_auto_resize_crawlers: false
+
 
 # max crawler memory, if set, will enable auto-resizing of crawler pods up to this size
 # if not set, no auto-resizing is done, and crawls always use 'crawler_memory' memory
