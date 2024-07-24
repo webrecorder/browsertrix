@@ -1237,10 +1237,14 @@ class CrawlOperator(BaseOperator):
             print(f"Graceful Stop: Maximum crawl size {crawl.max_crawl_size} hit")
             return "size-limit"
 
-        # check storage and exec mins quotas and stop if reached limit
-        if await self.org_ops.storage_quota_reached(crawl.oid):
+        # gracefully stop crawl if current crawl size will put org over storage quota
+        org = await self.org_ops.get_org_by_id(crawl.oid)
+        if org.quotas.storageQuota and (
+            org.bytesStored + status.size >= org.quotas.storageQuota
+        ):
             return "stopped_storage_quota_reached"
 
+        # gracefully stop crawl is execution time quota is reached
         if await self.org_ops.exec_mins_quota_reached(crawl.oid):
             return "stopped_time_quota_reached"
 
