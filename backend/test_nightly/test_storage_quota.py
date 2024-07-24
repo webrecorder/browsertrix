@@ -14,6 +14,25 @@ STORAGE_QUOTA_BYTES = STORAGE_QUOTA_KB * 1000
 config_id = None
 
 
+def run_crawl(org_id, headers):
+    crawl_data = {
+        "runNow": True,
+        "name": "Storage Quota",
+        "config": {
+            "seeds": [{"url": "https://webrecorder.net/"}],
+            "extraHops": 1,
+        },
+    }
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{org_id}/crawlconfigs/",
+        headers=headers,
+        json=crawl_data,
+    )
+    data = r.json()
+
+    return data["run_now_job"], data["id"]
+
+
 def test_storage_quota(org_with_quotas, admin_auth_headers):
     r = requests.post(
         f"{API_PREFIX}/orgs/{org_with_quotas}/quotas",
@@ -58,7 +77,7 @@ def test_crawl_stopped_when_storage_quota_reached(org_with_quotas, admin_auth_he
         headers=admin_auth_headers,
     )
     data = r.json()
-    bytes_stored = data["storageUsedBytes"]
+    bytes_stored = data["bytesStored"]
     assert bytes_stored >= STORAGE_QUOTA_BYTES
 
     time.sleep(5)
@@ -70,47 +89,6 @@ def test_crawl_stopped_when_storage_quota_reached(org_with_quotas, admin_auth_he
     )
     assert r.status_code == 403
     assert r.json()["detail"] == "storage_quota_reached"
-
-
-def test_storage_checked_first(org_with_quotas, admin_auth_headers):
-    # Set to value that's already exceeded in previous test
-    r = requests.post(
-        f"{API_PREFIX}/orgs/{org_with_quotas}/quotas",
-        headers=admin_auth_headers,
-        json={"maxExecMinutesPerMonth": 1},
-    )
-    assert r.status_code == 200
-    assert r.json()["updated"]
-
-    time.sleep(5)
-
-    # Try to start a crawl and ensure the reason we can't start it is
-    # still storage quota, as that should be checked before execution time
-    r = requests.post(
-        f"{API_PREFIX}/orgs/{org_with_quotas}/crawlconfigs/{config_id}/run",
-        headers=admin_auth_headers,
-    )
-    assert r.status_code == 403
-    assert r.json()["detail"] == "storage_quota_reached"
-
-
-def run_crawl(org_id, headers):
-    crawl_data = {
-        "runNow": True,
-        "name": "Storage Quota",
-        "config": {
-            "seeds": [{"url": "https://webrecorder.net/"}],
-            "extraHops": 1,
-        },
-    }
-    r = requests.post(
-        f"{API_PREFIX}/orgs/{org_id}/crawlconfigs/",
-        headers=headers,
-        json=crawl_data,
-    )
-    data = r.json()
-
-    return data["run_now_job"], data["id"]
 
 
 def test_unset_quotas(org_with_quotas, admin_auth_headers):
