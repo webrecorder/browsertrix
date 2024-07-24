@@ -193,7 +193,11 @@ class CrawlOperator(BaseOperator):
             return {"status": status.dict(exclude_none=True), "children": []}
 
         # first, check storage quota, and fail immediately if quota reached
-        if status.state in ("starting", "skipped_quota_reached"):
+        if status.state in (
+            "starting",
+            "skipped_storage_quota_reached",
+            "skipped_time_quota_reached",
+        ):
             # only check on very first run, before any pods/pvcs created
             # for now, allow if crawl has already started (pods/pvcs created)
             if not pods and not data.children[PVC]:

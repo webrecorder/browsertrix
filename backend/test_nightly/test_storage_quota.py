@@ -50,11 +50,11 @@ def test_crawl_stopped_when_storage_quota_reached(org_with_quotas, admin_auth_he
         == "stopped_storage_quota_reached"
     )
 
-    time.sleep(5)
+    time.sleep(10)
 
     # Ensure crawl storage went over quota
     r = requests.get(
-        f"{API_PREFIX}/orgs/{org_with_quotas}/crawls/{crawl_id}/replay.json",
+        f"{API_PREFIX}/orgs/{org_with_quotas}",
         headers=admin_auth_headers,
     )
     data = r.json()
@@ -81,6 +81,8 @@ def test_storage_checked_first(org_with_quotas, admin_auth_headers):
     )
     assert r.status_code == 200
     assert r.json()["updated"]
+
+    time.sleep(5)
 
     # Try to start a crawl and ensure the reason we can't start it is
     # still storage quota, as that should be checked before execution time
