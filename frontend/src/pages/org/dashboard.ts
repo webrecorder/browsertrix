@@ -395,8 +395,8 @@ export class Dashboard extends LiteElement {
     }
 
     let usageSecondsAllTypes = 0;
-    if (this.org.crawlExecSeconds) {
-      const actualUsage = this.org.crawlExecSeconds[currentPeriod];
+    if (this.org.monthlyExecSeconds) {
+      const actualUsage = this.org.monthlyExecSeconds[currentPeriod];
       if (actualUsage) {
         usageSecondsAllTypes = actualUsage;
       }
