@@ -291,6 +291,7 @@ export class App extends LiteElement {
           class="mx-auto box-border flex h-12 items-center justify-between px-3 xl:pl-6"
         >
           <a
+            class="items-between flex gap-2"
             aria-label="home"
             href=${homeHref}
             @click=${(e: MouseEvent) => {
@@ -301,6 +302,9 @@ export class App extends LiteElement {
             }}
           >
             <img class="h-6" alt="Browsertrix logo" src=${brandLockupColor} />
+            ${isSuperAdmin
+              ? html`<btrix-tag>${msg("Admin")}</btrix-tag>`
+              : nothing}
           </a>
           ${isSuperAdmin
             ? html`
