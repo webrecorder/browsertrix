@@ -15,7 +15,7 @@ import { ROUTES } from "@/routes";
 import type { UserOrg, UserOrgInviteInfo } from "@/types/user";
 import { isApiError } from "@/utils/api";
 import type { Auth, AuthState } from "@/utils/AuthService";
-import { AppStateService } from "@/utils/state";
+import appState, { AppStateService, use } from "@/utils/state";
 import { formatAPIUser } from "@/utils/user";
 
 import "./ui/org-form";
@@ -31,6 +31,9 @@ export class AcceptInvite extends TailwindElement {
 
   @property({ type: String })
   email?: string;
+
+  @use()
+  appState = appState;
 
   @state()
   private serverError?: string;
@@ -181,7 +184,29 @@ export class AcceptInvite extends TailwindElement {
       );
     } catch (e) {
       console.debug(e);
-      throw new Error(msg("This invitation is not valid."));
+
+      const status = isApiError(e) ? e.statusCode : null;
+
+      switch (status) {
+        case 404:
+          throw new Error(
+            msg(
+              "This invite doesn't exist or has expired. Please ask the organization administrator to resend an invitation.",
+            ),
+          );
+        case 400:
+          throw new Error(
+            msg(
+              str`This is not a valid invite, or it may have expired. If you believe this is an error, please contact ${this.appState.settings?.supportEmail || msg("your Browsertrix administrator")} for help.`,
+            ),
+          );
+        default:
+          throw new Error(
+            msg(
+              str`Something unexpected went wrong retrieving this invite. Please contact ${this.appState.settings?.supportEmail || msg("your Browsertrix administrator")} for help.`,
+            ),
+          );
+      }
     }
   }
 

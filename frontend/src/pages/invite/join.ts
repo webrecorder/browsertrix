@@ -1,4 +1,4 @@
-import { localized, msg } from "@lit/localize";
+import { localized, msg, str } from "@lit/localize";
 import { Task } from "@lit/task";
 import { customElement, property, state } from "lit/decorators.js";
 
@@ -132,16 +132,27 @@ export class Join extends LiteElement {
       `/api/users/invite/${token}?email=${encodeURIComponent(email)}`,
     );
 
-    if (resp.status === 200) {
-      return (await resp.json()) as UserOrgInviteInfo;
-    } else if (resp.status === 404) {
-      throw new Error(
-        msg(
-          "This invite doesn't exist or has expired. Please ask the organization administrator to resend an invitation.",
-        ),
-      );
-    } else {
-      throw new Error(msg("This invitation is not valid."));
+    switch (resp.status) {
+      case 200:
+        return (await resp.json()) as UserOrgInviteInfo;
+      case 404:
+        throw new Error(
+          msg(
+            "This invite doesn't exist or has expired. Please ask the organization administrator to resend an invitation.",
+          ),
+        );
+      case 400:
+        throw new Error(
+          msg(
+            str`This is not a valid invite, or it may have expired. If you believe this is an error, please contact ${this.appState.settings?.supportEmail || msg("your Browsertrix administrator")} for help.`,
+          ),
+        );
+      default:
+        throw new Error(
+          msg(
+            str`Something unexpected went wrong retrieving this invite. Please contact ${this.appState.settings?.supportEmail || msg("your Browsertrix administrator")} for help.`,
+          ),
+        );
     }
   }
 
