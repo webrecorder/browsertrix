@@ -1,6 +1,6 @@
 import { localized, msg, str } from "@lit/localize";
 import { Task } from "@lit/task";
-import { html } from "lit";
+import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
 import { renderInviteMessage } from "./ui/inviteMessage";
@@ -52,9 +52,7 @@ export class AcceptInvite extends TailwindElement {
   });
 
   get _isLoggedIn(): boolean {
-    return Boolean(
-      this.authState && this.email && this.authState.username === this.email,
-    );
+    return Boolean(this.authState && this.email);
   }
 
   readonly _api = new APIController(this);
@@ -72,7 +70,7 @@ export class AcceptInvite extends TailwindElement {
   firstUpdated() {
     if (!this._isLoggedIn) {
       this._notify.toast({
-        message: msg("Log in to continue."),
+        message: msg("Please log in to accept this invite."),
         variant: "warning",
         icon: "exclamation-triangle",
       });
@@ -155,13 +153,17 @@ export class AcceptInvite extends TailwindElement {
               error: (err) =>
                 html`<btrix-alert variant="danger">
                   <div>${err instanceof Error ? err.message : err}</div>
-                  <a
-                    href=${ROUTES.home}
-                    @click=${this._navigate.link}
-                    class="mt-3 inline-block underline hover:no-underline"
-                  >
-                    ${msg("Go to home page")}
-                  </a>
+                  ${this.authState && this.authState.username !== this.email
+                    ? nothing
+                    : html`
+                        <a
+                          href=${ROUTES.home}
+                          @click=${this._navigate.link}
+                          class="mt-3 inline-block underline hover:no-underline"
+                        >
+                          ${msg("Go to home page")}
+                        </a>
+                      `}
                 </btrix-alert> `,
             })}
           </div>
@@ -194,12 +196,21 @@ export class AcceptInvite extends TailwindElement {
               "This invite doesn't exist or has expired. Please ask the organization administrator to resend an invitation.",
             ),
           );
-        case 400:
-          throw new Error(
-            msg(
-              str`This is not a valid invite, or it may have expired. If you believe this is an error, please contact ${this.appState.settings?.supportEmail || msg("your Browsertrix administrator")} for help.`,
-            ),
-          );
+        case 400: {
+          if (auth.username === this.email) {
+            throw new Error(
+              msg(
+                str`This is not a valid invite, or it may have expired. If you believe this is an error, please contact ${this.appState.settings?.supportEmail || msg("your Browsertrix administrator")} for help.`,
+              ),
+            );
+          } else {
+            throw new Error(
+              msg(
+                str`This invitation is for ${this.email}. You are currently logged in as ${auth.username}. Please log in with the correct email to access this invite.`,
+              ),
+            );
+          }
+        }
         default:
           throw new Error(
             msg(
