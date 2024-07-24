@@ -431,9 +431,9 @@ def test_get_config_seeds(crawler_auth_headers, default_org_id, url_list_config_
     assert data["total"] == 3
 
     EXPECTED_SEED_URLS = [
-        "https://webrecorder.net",
-        "https://example.com",
-        "https://specs.webrecorder.net",
+        "https://webrecorder.net/",
+        "https://example.com/",
+        "https://specs.webrecorder.net/",
     ]
     found_seed_urls = []
 

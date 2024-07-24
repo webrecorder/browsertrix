@@ -13,6 +13,7 @@ from fastapi.routing import APIRouter
 
 from fastapi.openapi.utils import get_openapi
 from fastapi.openapi.docs import get_swagger_ui_html, get_redoc_html
+from pydantic import BaseModel
 
 from .db import init_db, await_db_and_migrations, update_and_prepare_db
 
@@ -48,6 +49,26 @@ app_root = FastAPI(docs_url=None, redoc_url=None, OPENAPI_URL=OPENAPI_URL)
 db_inited = {"inited": False}
 
 
+tags = [
+    "crawlconfigs",
+    "crawls",
+    "settings",
+    "auth",
+    "users",
+    "organizations",
+    "profiles",
+    "uploads",
+    "all-crawls",
+    "qa",
+    "pages",
+    "collections",
+    "webhooks",
+    "jobs",
+    "invites",
+    "subscriptions",
+]
+
+
 # ============================================================================
 def make_schema():
     """make custom openapi schema"""
@@ -71,14 +92,36 @@ See [https://docs.browsertrix.com/](https://docs.browsertrix.com/) for more info
             "url": "https://www.gnu.org/licenses/agpl-3.0.en.html",
         },
         routes=app_root.routes,
+        webhooks=app_root.webhooks.routes,
+        tags=[{"name": tag} for tag in tags],
     )
     schema["info"]["x-logo"] = {"url": "/docs-logo.svg"}
     return schema
 
 
 # ============================================================================
+class SettingsResponse(BaseModel):
+    """/api/settings response model"""
+
+    registrationEnabled: bool
+
+    jwtTokenLifetime: int
+
+    defaultBehaviorTimeSeconds: int
+    defaultPageLoadTimeSeconds: int
+
+    maxPagesPerCrawl: int
+    maxScale: int
+
+    billingEnabled: bool
+
+    salesEmail: str = ""
+    supportEmail: str = ""
+
+
+# ============================================================================
 # pylint: disable=too-many-locals, duplicate-code
-def main():
+def main() -> None:
     """init browsertrix api"""
 
     app = APIRouter()
@@ -88,20 +131,21 @@ def main():
 
     dbclient, mdb = init_db()
 
-    settings = {
-        "registrationEnabled": is_bool(os.environ.get("REGISTRATION_ENABLED")),
-        "jwtTokenLifetime": JWT_TOKEN_LIFETIME,
-        "defaultBehaviorTimeSeconds": int(
+    settings = SettingsResponse(
+        registrationEnabled=is_bool(os.environ.get("REGISTRATION_ENABLED")),
+        jwtTokenLifetime=JWT_TOKEN_LIFETIME,
+        defaultBehaviorTimeSeconds=int(
             os.environ.get("DEFAULT_BEHAVIOR_TIME_SECONDS", 300)
         ),
-        "defaultPageLoadTimeSeconds": int(
+        defaultPageLoadTimeSeconds=int(
             os.environ.get("DEFAULT_PAGE_LOAD_TIME_SECONDS", 120)
         ),
-        "maxPagesPerCrawl": int(os.environ.get("MAX_PAGES_PER_CRAWL", 0)),
-        "maxScale": int(os.environ.get("MAX_CRAWL_SCALE", 3)),
-        "billingEnabled": is_bool(os.environ.get("BILLING_ENABLED")),
-        "salesEmail": os.environ.get("SALES_EMAIL"),
-    }
+        maxPagesPerCrawl=int(os.environ.get("MAX_PAGES_PER_CRAWL", 0)),
+        maxScale=int(os.environ.get("MAX_CRAWL_SCALE", 3)),
+        billingEnabled=is_bool(os.environ.get("BILLING_ENABLED")),
+        salesEmail=os.environ.get("SALES_EMAIL", ""),
+        supportEmail=os.environ.get("EMAIL_SUPPORT", ""),
+    )
 
     invites = init_invites(mdb, email)
 
@@ -223,8 +267,8 @@ def main():
 
     app.include_router(org_ops.router)
 
-    @app.get("/settings")
-    async def get_settings():
+    @app.get("/settings", tags=["settings"], response_model=SettingsResponse)
+    async def get_settings() -> SettingsResponse:
         if not db_inited.get("inited"):
             raise HTTPException(status_code=503, detail="not_ready_yet")
         return settings

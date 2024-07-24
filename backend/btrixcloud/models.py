@@ -8,14 +8,17 @@ from uuid import UUID
 import os
 
 from typing import Optional, List, Dict, Union, Literal, Any, get_args
+from typing_extensions import Annotated
+
 from pydantic import (
     BaseModel,
-    conint,
     Field,
-    HttpUrl,
-    AnyHttpUrl,
+    HttpUrl as HttpUrlNonStr,
+    AnyHttpUrl as AnyHttpUrlNonStr,
     EmailStr,
-    ConstrainedStr,
+    RootModel,
+    BeforeValidator,
+    TypeAdapter,
 )
 
 # from fastapi_users import models as fastapi_users_models
@@ -25,6 +28,24 @@ from .utils import dt_now
 
 # crawl scale for constraint
 MAX_CRAWL_SCALE = int(os.environ.get("MAX_CRAWL_SCALE", 3))
+
+# annotated types
+# ============================================================================
+
+EmptyStr = Annotated[str, Field(min_length=0, max_length=0)]
+
+Scale = Annotated[int, Field(strict=True, ge=1, le=MAX_CRAWL_SCALE)]
+ReviewStatus = Optional[Annotated[int, Field(strict=True, ge=1, le=5)]]
+
+any_http_url_adapter = TypeAdapter(AnyHttpUrlNonStr)
+AnyHttpUrl = Annotated[
+    str, BeforeValidator(lambda value: str(any_http_url_adapter.validate_python(value)))
+]
+
+http_url_adapter = TypeAdapter(HttpUrlNonStr)
+HttpUrl = Annotated[
+    str, BeforeValidator(lambda value: str(http_url_adapter.validate_python(value)))
+]
 
 
 # pylint: disable=invalid-name, too-many-lines
@@ -51,12 +72,12 @@ class InvitePending(BaseMongoModel):
     created: datetime
     tokenHash: str
     inviterEmail: str
-    fromSuperuser: Optional[bool]
-    oid: Optional[UUID]
+    fromSuperuser: Optional[bool] = False
+    oid: Optional[UUID] = None
     role: UserRole = UserRole.VIEWER
-    email: Optional[str]
+    email: Optional[str] = ""
     # set if existing user
-    userid: Optional[UUID]
+    userid: Optional[UUID] = None
 
 
 # ============================================================================
@@ -66,11 +87,11 @@ class InviteOut(BaseModel):
     created: datetime
     inviterEmail: str
     inviterName: str
-    oid: Optional[UUID]
-    orgName: Optional[str]
-    orgSlug: Optional[str]
+    oid: Optional[UUID] = None
+    orgName: Optional[str] = None
+    orgSlug: Optional[str] = None
     role: UserRole = UserRole.VIEWER
-    email: Optional[str]
+    email: Optional[str] = ""
     firstOrgAdmin: Optional[bool] = None
 
 
@@ -238,14 +259,6 @@ class ScopeType(str, Enum):
 
 
 # ============================================================================
-class EmptyStr(ConstrainedStr):
-    """empty string only"""
-
-    min_length = 0
-    max_length = 0
-
-
-# ============================================================================
 class Seed(BaseModel):
     """Crawl seed"""
 
@@ -264,7 +277,7 @@ class Seed(BaseModel):
 class RawCrawlConfig(BaseModel):
     """Base Crawl Config"""
 
-    seeds: Optional[List[Seed]]
+    seeds: Optional[List[Seed]] = []
 
     scopeType: Optional[ScopeType] = ScopeType.PREFIX
 
@@ -275,11 +288,11 @@ class RawCrawlConfig(BaseModel):
     limit: Optional[int] = 0
     extraHops: Optional[int] = 0
 
-    lang: Optional[str]
+    lang: Optional[str] = None
     blockAds: Optional[bool] = False
 
-    behaviorTimeout: Optional[int]
-    pageLoadTimeout: Optional[int]
+    behaviorTimeout: Optional[int] = None
+    pageLoadTimeout: Optional[int] = None
     pageExtraDelay: Optional[int] = 0
     postLoadDelay: Optional[int] = 0
 
@@ -310,7 +323,7 @@ class CrawlConfigIn(BaseModel):
 
     name: str
 
-    description: Optional[str]
+    description: Optional[str] = ""
 
     jobType: Optional[JobType] = JobType.CUSTOM
 
@@ -322,7 +335,7 @@ class CrawlConfigIn(BaseModel):
 
     crawlTimeout: int = 0
     maxCrawlSize: int = 0
-    scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)] = 1  # type: ignore
+    scale: Scale = 1
 
     crawlFilenameTemplate: Optional[str] = None
 
@@ -337,15 +350,15 @@ class ConfigRevision(BaseMongoModel):
 
     config: RawCrawlConfig
 
-    profileid: Optional[UUID]
-    crawlerChannel: Optional[str]
+    profileid: Optional[UUID] = None
+    crawlerChannel: Optional[str] = None
 
     crawlTimeout: Optional[int] = 0
     maxCrawlSize: Optional[int] = 0
-    scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)] = 1  # type: ignore
+    scale: Scale = 1
 
     modified: datetime
-    modifiedBy: Optional[UUID]
+    modifiedBy: Optional[UUID] = None
 
     rev: int = 0
 
@@ -357,17 +370,17 @@ class CrawlConfigCore(BaseMongoModel):
     schedule: Optional[str] = ""
 
     jobType: Optional[JobType] = JobType.CUSTOM
-    config: Optional[RawCrawlConfig]
+    config: Optional[RawCrawlConfig] = None
 
     tags: Optional[List[str]] = []
 
     crawlTimeout: Optional[int] = 0
     maxCrawlSize: Optional[int] = 0
-    scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)] = 1  # type: ignore
+    scale: Scale = 1
 
     oid: UUID
 
-    profileid: Optional[UUID]
+    profileid: Optional[UUID] = None
     crawlerChannel: Optional[str] = None
 
 
@@ -375,14 +388,14 @@ class CrawlConfigCore(BaseMongoModel):
 class CrawlConfigAdditional(BaseModel):
     """Additional fields shared by CrawlConfig and CrawlConfigOut."""
 
-    name: Optional[str]
-    description: Optional[str]
+    name: Optional[str] = None
+    description: Optional[str] = None
 
     created: datetime
-    createdBy: Optional[UUID]
+    createdBy: Optional[UUID] = None
 
-    modified: Optional[datetime]
-    modifiedBy: Optional[UUID]
+    modified: Optional[datetime] = None
+    modifiedBy: Optional[UUID] = None
 
     autoAddCollections: Optional[List[UUID]] = []
 
@@ -396,14 +409,14 @@ class CrawlConfigAdditional(BaseModel):
 
     totalSize: Optional[int] = 0
 
-    lastCrawlId: Optional[str]
-    lastCrawlStartTime: Optional[datetime]
-    lastStartedBy: Optional[UUID]
-    lastCrawlTime: Optional[datetime]
-    lastCrawlState: Optional[str]
-    lastCrawlSize: Optional[int]
+    lastCrawlId: Optional[str] = None
+    lastCrawlStartTime: Optional[datetime] = None
+    lastStartedBy: Optional[UUID] = None
+    lastCrawlTime: Optional[datetime] = None
+    lastCrawlState: Optional[str] = None
+    lastCrawlSize: Optional[int] = None
 
-    lastRun: Optional[datetime]
+    lastRun: Optional[datetime] = None
 
     isCrawlRunning: Optional[bool] = False
 
@@ -417,9 +430,9 @@ class CrawlConfig(CrawlConfigCore, CrawlConfigAdditional):
     id: UUID
 
     config: RawCrawlConfig
-    createdByName: Optional[str]
-    modifiedByName: Optional[str]
-    lastStartedByName: Optional[str]
+    createdByName: Optional[str] = None
+    modifiedByName: Optional[str] = None
+    lastStartedByName: Optional[str] = None
 
     def get_raw_config(self):
         """serialize config for browsertrix-crawler"""
@@ -433,13 +446,13 @@ class CrawlConfigOut(CrawlConfigCore, CrawlConfigAdditional):
     id: UUID
 
     lastCrawlStopping: Optional[bool] = False
-    profileName: Optional[str]
-    firstSeed: Optional[str]
+    profileName: Optional[str] = None
+    firstSeed: Optional[str] = None
     seedCount: int = 0
 
-    createdByName: Optional[str]
-    modifiedByName: Optional[str]
-    lastStartedByName: Optional[str]
+    createdByName: Optional[str] = None
+    modifiedByName: Optional[str] = None
+    lastStartedByName: Optional[str] = None
 
 
 # ============================================================================
@@ -468,7 +481,7 @@ class UpdateCrawlConfig(BaseModel):
     crawlerChannel: Optional[str] = None
     crawlTimeout: Optional[int] = None
     maxCrawlSize: Optional[int] = None
-    scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)] = None  # type: ignore
+    scale: Scale = 1
     crawlFilenameTemplate: Optional[str] = None
     config: Optional[RawCrawlConfig] = None
 
@@ -479,7 +492,7 @@ class CrawlConfigAddedResponse(BaseModel):
 
     added: bool
     id: str
-    run_now_job: Optional[str]
+    run_now_job: Optional[str] = None
     storageQuotaReached: bool
     execMinutesQuotaReached: bool
 
@@ -509,10 +522,10 @@ class CrawlConfigUpdateResponse(BaseModel):
     settings_changed: bool
     metadata_changed: bool
 
-    storageQuotaReached: Optional[bool]
-    execMinutesQuotaReached: Optional[bool]
+    storageQuotaReached: Optional[bool] = False
+    execMinutesQuotaReached: Optional[bool] = False
 
-    started: Optional[str]
+    started: Optional[str] = None
 
 
 # ============================================================================
@@ -553,7 +566,7 @@ class StorageRef(BaseModel):
     """Reference to actual storage"""
 
     name: str
-    custom: Optional[bool]
+    custom: Optional[bool] = False
 
     def __init__(self, *args, **kwargs):
         if args:
@@ -599,8 +612,8 @@ class BaseFile(BaseModel):
 class CrawlFile(BaseFile):
     """file from a crawl"""
 
-    presignedUrl: Optional[str]
-    expireAt: Optional[datetime]
+    presignedUrl: Optional[str] = None
+    expireAt: Optional[datetime] = None
     crc32: int = 0
 
 
@@ -614,9 +627,9 @@ class CrawlFileOut(BaseModel):
     crc32: int = 0
     size: int
 
-    crawlId: Optional[str]
+    crawlId: Optional[str] = None
     numReplicas: int = 0
-    expireAt: Optional[str]
+    expireAt: Optional[str] = None
 
 
 # ============================================================================
@@ -636,7 +649,7 @@ class CoreCrawlable(BaseModel):
     id: str
 
     userid: UUID
-    userName: Optional[str]
+    userName: Optional[str] = None
 
     started: datetime
     finished: Optional[datetime] = None
@@ -645,7 +658,7 @@ class CoreCrawlable(BaseModel):
 
     crawlExecSeconds: int = 0
 
-    image: Optional[str]
+    image: Optional[str] = None
 
     stats: Optional[CrawlStats] = CrawlStats()
 
@@ -674,7 +687,7 @@ class BaseCrawl(CoreCrawlable, BaseMongoModel):
 
     collectionIds: Optional[List[UUID]] = []
 
-    reviewStatus: Optional[conint(ge=1, le=5)] = None  # type: ignore
+    reviewStatus: ReviewStatus = None
 
 
 # ============================================================================
@@ -691,25 +704,25 @@ class CrawlOut(BaseMongoModel):
 
     # pylint: disable=duplicate-code
 
-    type: Optional[str]
+    type: str
 
     id: str
 
     userid: UUID
-    userName: Optional[str]
+    userName: Optional[str] = None
     oid: UUID
 
-    profileid: Optional[UUID]
+    profileid: Optional[UUID] = None
 
-    name: Optional[str]
-    description: Optional[str]
+    name: Optional[str] = None
+    description: Optional[str] = None
 
     started: datetime
-    finished: Optional[datetime]
+    finished: Optional[datetime] = None
 
     state: str
 
-    stats: Optional[CrawlStats]
+    stats: Optional[CrawlStats] = None
 
     fileSize: int = 0
     fileCount: int = 0
@@ -724,28 +737,28 @@ class CrawlOut(BaseMongoModel):
     qaCrawlExecSeconds: int = 0
 
     # automated crawl fields
-    config: Optional[RawCrawlConfig]
-    cid: Optional[UUID]
-    firstSeed: Optional[str]
-    seedCount: Optional[int]
-    profileName: Optional[str]
-    stopping: Optional[bool]
-    manual: Optional[bool]
-    cid_rev: Optional[int]
-    scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)]  # type: ignore
+    config: Optional[RawCrawlConfig] = None
+    cid: Optional[UUID] = None
+    firstSeed: Optional[str] = None
+    seedCount: Optional[int] = None
+    profileName: Optional[str] = None
+    stopping: Optional[bool] = False
+    manual: bool = False
+    cid_rev: Optional[int] = None
+    scale: Scale = 1
 
-    storageQuotaReached: Optional[bool]
-    execMinutesQuotaReached: Optional[bool]
+    storageQuotaReached: Optional[bool] = False
+    execMinutesQuotaReached: Optional[bool] = False
 
     crawlerChannel: str = "default"
-    image: Optional[str]
+    image: Optional[str] = None
 
-    reviewStatus: Optional[conint(ge=1, le=5)] = None  # type: ignore
+    reviewStatus: ReviewStatus = None
 
     qaRunCount: int = 0
-    activeQAStats: Optional[CrawlStats]
-    lastQAState: Optional[str]
-    lastQAStarted: Optional[datetime]
+    activeQAStats: Optional[CrawlStats] = None
+    lastQAState: Optional[str] = None
+    lastQAStarted: Optional[datetime] = None
 
     filePageCount: Optional[int] = 0
     errorPageCount: Optional[int] = 0
@@ -763,11 +776,11 @@ class CrawlOutWithResources(CrawlOut):
 class UpdateCrawl(BaseModel):
     """Update crawl"""
 
-    name: Optional[str]
-    description: Optional[str]
-    tags: Optional[List[str]]
-    collectionIds: Optional[List[UUID]]
-    reviewStatus: Optional[conint(ge=1, le=5)]  # type: ignore
+    name: Optional[str] = None
+    description: Optional[str] = None
+    tags: Optional[List[str]] = None
+    collectionIds: Optional[List[UUID]] = []
+    reviewStatus: ReviewStatus = None
 
 
 # ============================================================================
@@ -794,24 +807,12 @@ class CrawlSearchValuesResponse(BaseModel):
 
 
 # ============================================================================
-class CrawlQueueUrl(BaseModel):
-    """Model for item in crawl queue"""
-
-    seedId: int
-    url: AnyHttpUrl
-    depth: int
-    extraHops: int
-    ts: int
-    pageid: Optional[str]
-
-
-# ============================================================================
 class CrawlQueueResponse(BaseModel):
     """Response model for GET crawl queue"""
 
     total: int
-    results: List[CrawlQueueUrl]
-    matched: List[CrawlQueueUrl]
+    results: List[AnyHttpUrl]
+    matched: List[AnyHttpUrl]
 
 
 # ============================================================================
@@ -819,7 +820,7 @@ class MatchCrawlQueueResponse(BaseModel):
     """Response model for match crawl queue"""
 
     total: int
-    matched: List[CrawlQueueUrl]
+    matched: List[AnyHttpUrl]
     nextOffset: int
 
 
@@ -832,7 +833,7 @@ class MatchCrawlQueueResponse(BaseModel):
 class CrawlScale(BaseModel):
     """scale the crawl to N parallel containers"""
 
-    scale: conint(ge=1, le=MAX_CRAWL_SCALE) = 1  # type: ignore
+    scale: Scale = 1
 
 
 # ============================================================================
@@ -853,7 +854,7 @@ class QARunOut(BaseModel):
 
     id: str
 
-    userName: Optional[str]
+    userName: Optional[str] = None
 
     started: datetime
     finished: Optional[datetime] = None
@@ -894,7 +895,7 @@ class Crawl(BaseCrawl, CrawlConfigCore):
     cid_rev: int = 0
 
     # schedule: Optional[str]
-    manual: Optional[bool]
+    manual: bool = False
 
     stopping: Optional[bool] = False
 
@@ -951,6 +952,7 @@ class UploadedCrawl(BaseCrawl):
     """Store State of a Crawl Upload"""
 
     type: Literal["upload"] = "upload"
+    image: None = None
 
 
 # ============================================================================
@@ -969,8 +971,8 @@ class Collection(BaseMongoModel):
 
     name: str = Field(..., min_length=1)
     oid: UUID
-    description: Optional[str]
-    modified: Optional[datetime]
+    description: Optional[str] = None
+    modified: Optional[datetime] = None
 
     crawlCount: Optional[int] = 0
     pageCount: Optional[int] = 0
@@ -987,10 +989,10 @@ class CollIn(BaseModel):
     """Collection Passed in By User"""
 
     name: str = Field(..., min_length=1)
-    description: Optional[str]
+    description: Optional[str] = None
     crawlIds: Optional[List[str]] = []
 
-    isPublic: Optional[bool] = False
+    isPublic: bool = False
 
 
 # ============================================================================
@@ -1004,9 +1006,9 @@ class CollOut(Collection):
 class UpdateColl(BaseModel):
     """Update collection"""
 
-    name: Optional[str]
-    description: Optional[str]
-    isPublic: Optional[bool]
+    name: Optional[str] = None
+    description: Optional[str] = None
+    isPublic: Optional[bool] = None
 
 
 # ============================================================================
@@ -1072,7 +1074,7 @@ class S3StorageIn(BaseModel):
     secret_key: str
     endpoint_url: str
     bucket: str
-    access_endpoint_url: Optional[str]
+    access_endpoint_url: Optional[str] = None
     region: str = ""
 
 
@@ -1166,7 +1168,7 @@ class SubscriptionUpdate(BaseModel):
     status: str
     planId: str
 
-    futureCancelDate: Optional[datetime]
+    futureCancelDate: Optional[datetime] = None
 
 
 # ============================================================================
@@ -1279,9 +1281,9 @@ class OrgOut(BaseMongoModel):
     id: UUID
     name: str
     slug: str
-    users: Optional[Dict[str, Any]]
+    users: Dict[str, Any] = {}
 
-    created: Optional[datetime]
+    created: Optional[datetime] = None
 
     default: bool = False
     bytesStored: int
@@ -1290,11 +1292,11 @@ class OrgOut(BaseMongoModel):
     bytesStoredProfiles: int
     origin: Optional[AnyHttpUrl] = None
 
-    storageQuotaReached: Optional[bool]
-    execMinutesQuotaReached: Optional[bool]
+    storageQuotaReached: Optional[bool] = False
+    execMinutesQuotaReached: Optional[bool] = False
 
     # total usage and exec time
-    usage: Optional[Dict[str, int]]
+    usage: Optional[Dict[str, int]] = {}
     crawlExecSeconds: Dict[str, int] = {}
 
     # qa only usage + exec time
@@ -1314,10 +1316,10 @@ class OrgOut(BaseMongoModel):
 
     webhookUrls: Optional[OrgWebhookUrls] = OrgWebhookUrls()
 
-    readOnly: Optional[bool]
-    readOnlyReason: Optional[str]
+    readOnly: Optional[bool] = False
+    readOnlyReason: Optional[str] = None
 
-    subscription: Optional[Subscription]
+    subscription: Optional[Subscription] = None
 
 
 # ============================================================================
@@ -1329,7 +1331,7 @@ class Organization(BaseMongoModel):
     slug: str
     users: Dict[str, UserRole] = {}
 
-    created: Optional[datetime]
+    created: Optional[datetime] = None
 
     default: bool = False
 
@@ -1437,7 +1439,7 @@ class OrgOutExport(Organization):
     """Org out for export"""
 
     # Additional field so export contains user names and emails
-    userDetails: Optional[List[Dict[str, Union[str, int, UUID]]]]
+    userDetails: Optional[List[Dict[str, Union[str, int, UUID]]]] = None
 
     async def serialize_for_export(self, user_manager):
         """Serialize result with users for org export"""
@@ -1581,9 +1583,9 @@ class Profile(BaseMongoModel):
     oid: UUID
 
     origins: List[str]
-    resource: Optional[ProfileFile]
+    resource: Optional[ProfileFile] = None
 
-    created: Optional[datetime]
+    created: Optional[datetime] = None
     createdBy: Optional[UUID] = None
     createdByName: Optional[str] = None
     modified: Optional[datetime] = None
@@ -1591,7 +1593,7 @@ class Profile(BaseMongoModel):
     modifiedByName: Optional[str] = None
 
     baseid: Optional[UUID] = None
-    crawlerChannel: Optional[str]
+    crawlerChannel: Optional[str] = None
 
 
 # ============================================================================
@@ -1891,10 +1893,9 @@ class DeleteReplicaJob(BackgroundJob):
 
 
 # ============================================================================
-class AnyJob(BaseModel):
-    """Union of all job types, for response model"""
+# Union of all job types, for response model
 
-    __root__: Union[CreateReplicaJob, DeleteReplicaJob, BackgroundJob]
+AnyJob = RootModel[Union[CreateReplicaJob, DeleteReplicaJob, BackgroundJob]]
 
 
 # ============================================================================
@@ -1948,7 +1949,7 @@ class PageQACompare(BaseModel):
 
     screenshotMatch: Optional[float] = None
     textMatch: Optional[float] = None
-    resourceCounts: Optional[Dict[str, int]]
+    resourceCounts: Optional[Dict[str, int]] = None
 
 
 # ============================================================================
@@ -2064,6 +2065,13 @@ class StartedResponse(BaseModel):
 
 
 # ============================================================================
+class StartedResponseBool(BaseModel):
+    """Response for API endpoints that start a background job"""
+
+    started: bool
+
+
+# ============================================================================
 class AddedResponse(BaseModel):
     """Response for API endpoints that return added"""
 
@@ -2119,6 +2127,13 @@ class DeletedCountResponse(BaseModel):
     """Response for delete API endpoints that return count"""
 
     deleted: int
+
+
+# ============================================================================
+class DeletedCountResponseQuota(DeletedCountResponse):
+    """Response for delete API endpoints"""
+
+    storageQuotaReached: bool
 
 
 # ============================================================================

@@ -204,7 +204,10 @@ class OrgOps:
         if not user.is_superuser:
             query[f"users.{user.id}"] = {"$gte": role.value}
 
-        aggregate: List[Dict[str, Any]] = [{"$match": query}]
+        aggregate: List[Dict[str, Any]] = [
+            {"$match": query},
+            {"$set": {"nameLower": {"$toLower": "$name"}}},
+        ]
 
         # Ensure default org is always first, then sort on sort_by if set
         sort_query = {"default": -1}
@@ -216,9 +219,13 @@ class OrgOps:
             if sort_direction not in (1, -1):
                 raise HTTPException(status_code=400, detail="invalid_sort_direction")
 
+            # Do lexical sort of names
+            if sort_by == "name":
+                sort_by = "nameLower"
+
             sort_query[sort_by] = sort_direction
 
-        aggregate.extend([{"$sort": sort_query}])
+        aggregate.extend([{"$sort": sort_query}, {"$unset": ["nameLower"]}])
 
         aggregate.extend(
             [
@@ -312,6 +319,7 @@ class OrgOps:
             id=id_,
             name=DEFAULT_ORG,
             slug=slug_from_name(DEFAULT_ORG),
+            created=dt_now(),
             users={},
             storage=self.default_primary,
             default=True,

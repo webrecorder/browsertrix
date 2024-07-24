@@ -363,7 +363,7 @@ def test_qa_stats(
         headers=crawler_auth_headers,
     )
     assert r.status_code == 422
-    assert r.json()["detail"][0]["msg"] == "field required"
+    assert r.json()["detail"][0]["msg"] == "Field required"
 
     # Test that invalid threshold values result in 400 HTTPException
     r = requests.get(

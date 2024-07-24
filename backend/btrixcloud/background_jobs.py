@@ -531,7 +531,9 @@ def init_background_jobs_api(
         """Retry background job"""
         return await ops.retry_background_job(job_id, org)
 
-    @app.post("/orgs/all/jobs/retryFailed", response_model=SuccessResponse)
+    @app.post(
+        "/orgs/all/jobs/retryFailed", response_model=SuccessResponse, tags=["jobs"]
+    )
     async def retry_all_failed_background_jobs(user: User = Depends(user_dep)):
         """Retry failed background jobs from all orgs"""
         if not user.is_superuser:

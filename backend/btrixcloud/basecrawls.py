@@ -714,7 +714,7 @@ class BaseCrawlOps:
         delete_list: DeleteCrawlList,
         org: Organization,
         user: Optional[User] = None,
-    ):
+    ) -> dict[str, bool]:
         """Delete uploaded crawls"""
         crawls: list[str] = []
         uploads: list[str] = []

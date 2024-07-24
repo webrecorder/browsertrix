@@ -10,11 +10,12 @@ import urllib.parse
 from datetime import datetime
 from uuid import UUID
 
-from typing import Optional, List, Dict, Union, Any, Sequence
+from typing import Optional, List, Dict, Union, Any, Sequence, AsyncIterator
 
 from fastapi import Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from redis import asyncio as exceptions
+from redis.asyncio.client import Redis
 import pymongo
 
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
@@ -39,6 +40,7 @@ from .models import (
     DeleteQARunList,
     Organization,
     User,
+    Seed,
     PaginatedCrawlOutResponse,
     PaginatedSeedResponse,
     PaginatedCrawlErrorResponse,
@@ -50,7 +52,7 @@ from .models import (
     UpdatedResponse,
     SuccessResponse,
     StartedResponse,
-    DeletedResponseQuota,
+    DeletedCountResponseQuota,
     DeletedCountResponse,
     EmptyResponse,
     CrawlScaleResponse,
@@ -115,7 +117,7 @@ class CrawlOps(BaseCrawlOps):
         return Crawl.from_dict(res)
 
     @contextlib.asynccontextmanager
-    async def get_redis(self, crawl_id):
+    async def get_redis(self, crawl_id: str) -> AsyncIterator[Redis]:
         """get redis url for crawl id"""
         redis_url = self.crawl_manager.get_redis_url(crawl_id)
 
@@ -317,7 +319,7 @@ class CrawlOps(BaseCrawlOps):
         delete_list: DeleteCrawlList,
         type_="crawl",
         user: Optional[User] = None,
-    ):
+    ) -> tuple[int, dict[UUID, dict[str, int]], bool]:
         """Delete a list of crawls by id for given org"""
 
         count, cids_to_update, quota_reached = await super().delete_crawls(
@@ -332,7 +334,7 @@ class CrawlOps(BaseCrawlOps):
             cid_inc = cid_dict["inc"]
             await self.crawl_configs.stats_recompute_last(cid, -cid_size, -cid_inc)
 
-        return {"deleted": True, "storageQuotaReached": quota_reached}
+        return count, cids_to_update, quota_reached
 
     # pylint: disable=too-many-arguments
     async def add_new_crawl(
@@ -343,7 +345,7 @@ class CrawlOps(BaseCrawlOps):
         started: str,
         manual: bool,
         username: str = "",
-    ):
+    ) -> None:
         """initialize new crawl"""
         if not username:
             user = await self.user_manager.get_by_id(userid)
@@ -377,14 +379,13 @@ class CrawlOps(BaseCrawlOps):
 
         try:
             await self.crawls.insert_one(crawl.to_dict())
-            return dt_now
 
         except pymongo.errors.DuplicateKeyError:
-            return None
+            pass
 
     async def update_crawl_scale(
         self, crawl_id: str, org: Organization, crawl_scale: CrawlScale, user: User
-    ):
+    ) -> bool:
         """Update crawl scale in the db"""
         crawl = await self.get_crawl(crawl_id, org)
         update = UpdateCrawlConfig(scale=crawl_scale.scale)
@@ -401,22 +402,31 @@ class CrawlOps(BaseCrawlOps):
 
         return True
 
-    async def _crawl_queue_len(self, redis, key):
+    async def _crawl_queue_len(self, redis, key) -> int:
         try:
             return await redis.zcard(key)
         except exceptions.ResponseError:
             # fallback to old crawler queue
             return await redis.llen(key)
 
-    async def _crawl_queue_range(self, redis, key, offset, count):
+    async def _crawl_queue_range(
+        self, redis: Redis, key: str, offset: int, count: int
+    ) -> list[str]:
         try:
             return await redis.zrangebyscore(key, 0, "inf", offset, count)
         except exceptions.ResponseError:
             # fallback to old crawler queue
-            return reversed(await redis.lrange(key, -offset - count, -offset - 1))
+            return list(reversed(await redis.lrange(key, -offset - count, -offset - 1)))
 
-    async def get_crawl_queue(self, crawl_id, offset, count, regex):
+    async def get_crawl_queue(
+        self, crawl_id: str, offset: int, count: int, regex: str
+    ) -> CrawlQueueResponse:
         """get crawl queue"""
+
+        state, _ = await self.get_crawl_state(crawl_id, False)
+
+        if state not in RUNNING_AND_STARTING_STATES:
+            raise HTTPException(status_code=400, detail="crawl_not_running")
 
         total = 0
         results = []
@@ -436,18 +446,26 @@ class CrawlOps(BaseCrawlOps):
         matched = []
         if regex:
             try:
-                regex = re.compile(regex)
+                regex_re = re.compile(regex)
             except re.error as exc:
                 raise HTTPException(status_code=400, detail="invalid_regex") from exc
 
-            matched = [result for result in results if regex.search(result)]
+            matched = [result for result in results if regex_re.search(result)]
 
-        return {"total": total, "results": results, "matched": matched}
+        return CrawlQueueResponse(total=total, results=results, matched=matched)
 
-    async def match_crawl_queue(self, crawl_id, regex, offset=0):
+    # pylint: disable=too-many-locals
+    async def match_crawl_queue(
+        self, crawl_id: str, regex: str, offset: int = 0
+    ) -> MatchCrawlQueueResponse:
         """get list of urls that match regex, starting at offset and at most
         around 'limit'. (limit rounded to next step boundary, so
         limit <= next_offset < limit + step"""
+        state, _ = await self.get_crawl_state(crawl_id, False)
+
+        if state not in RUNNING_AND_STARTING_STATES:
+            raise HTTPException(status_code=400, detail="crawl_not_running")
+
         total = 0
         matched = []
         step = DEFAULT_RANGE_LIMIT
@@ -460,7 +478,7 @@ class CrawlOps(BaseCrawlOps):
                 pass
 
             try:
-                regex = re.compile(regex)
+                regex_re = re.compile(regex)
             except re.error as exc:
                 raise HTTPException(status_code=400, detail="invalid_regex") from exc
 
@@ -473,7 +491,7 @@ class CrawlOps(BaseCrawlOps):
                 )
                 for result in results:
                     url = json.loads(result)["url"]
-                    if regex.search(url):
+                    if regex_re.search(url):
                         size += len(url)
                         matched.append(url)
 
@@ -483,13 +501,20 @@ class CrawlOps(BaseCrawlOps):
                     next_offset = count + step
                     break
 
-        return {"total": total, "matched": matched, "nextOffset": next_offset}
+        return MatchCrawlQueueResponse(
+            total=total, matched=matched, nextOffset=next_offset
+        )
 
-    async def add_or_remove_exclusion(self, crawl_id, regex, org, user, add):
+    async def add_or_remove_exclusion(
+        self, crawl_id, regex, org, user, add
+    ) -> dict[str, bool]:
         """add new exclusion to config or remove exclusion from config
         for given crawl_id, update config on crawl"""
 
         crawl = await self.get_crawl(crawl_id, org)
+
+        if crawl.state not in RUNNING_AND_STARTING_STATES:
+            raise HTTPException(status_code=400, detail="crawl_not_running")
 
         cid = crawl.cid
 
@@ -524,7 +549,7 @@ class CrawlOps(BaseCrawlOps):
         allowed_from: Sequence[TYPE_ALL_CRAWL_STATES],
         finished: Optional[datetime] = None,
         stats: Optional[CrawlStats] = None,
-    ):
+    ) -> bool:
         """update crawl state and other properties in db if state has changed"""
         prefix = "" if not is_qa else "qa."
 
@@ -538,25 +563,27 @@ class CrawlOps(BaseCrawlOps):
         if allowed_from:
             query[f"{prefix}state"] = {"$in": allowed_from}
 
-        return await self.crawls.find_one_and_update(query, {"$set": update})
+        res = await self.crawls.find_one_and_update(query, {"$set": update})
+        return res is not None
 
     async def update_running_crawl_stats(
         self, crawl_id: str, is_qa: bool, stats: CrawlStats
-    ):
+    ) -> bool:
         """update running crawl stats"""
         prefix = "" if not is_qa else "qa."
         query = {"_id": crawl_id, "type": "crawl", f"{prefix}state": "running"}
-        return await self.crawls.find_one_and_update(
+        res = await self.crawls.find_one_and_update(
             query, {"$set": {f"{prefix}stats": stats.dict()}}
         )
+        return res is not None
 
     async def inc_crawl_exec_time(
         self,
         crawl_id: str,
         is_qa: bool,
-        exec_time,
-        last_updated_time,
-    ):
+        exec_time: int,
+        last_updated_time: str,
+    ) -> bool:
         """increment exec time"""
         # update both crawl-shared qa exec seconds and per-qa run exec seconds
         if is_qa:
@@ -567,7 +594,7 @@ class CrawlOps(BaseCrawlOps):
         else:
             inc_update = {"crawlExecSeconds": exec_time}
 
-        return await self.crawls.find_one_and_update(
+        res = await self.crawls.find_one_and_update(
             {
                 "_id": crawl_id,
                 "type": "crawl",
@@ -578,15 +605,20 @@ class CrawlOps(BaseCrawlOps):
                 "$set": {"_lut": last_updated_time},
             },
         )
+        return res is not None
 
-    async def get_crawl_exec_last_update_time(self, crawl_id):
+    async def get_crawl_exec_last_update_time(
+        self, crawl_id: str
+    ) -> Optional[datetime]:
         """get crawl last updated time"""
         res = await self.crawls.find_one(
             {"_id": crawl_id, "type": "crawl"}, projection=["_lut"]
         )
         return res and res.get("_lut")
 
-    async def get_crawl_state(self, crawl_id: str, is_qa: bool):
+    async def get_crawl_state(
+        self, crawl_id: str, is_qa: bool
+    ) -> tuple[Optional[TYPE_ALL_CRAWL_STATES], Optional[datetime]]:
         """return current crawl state of a crawl"""
         prefix = "" if not is_qa else "qa."
 
@@ -603,27 +635,29 @@ class CrawlOps(BaseCrawlOps):
         crawl_id: str,
         is_qa: bool,
         error: str,
-    ):
+    ) -> bool:
         """add crawl error from redis to mongodb errors field"""
         prefix = "" if not is_qa else "qa."
 
-        await self.crawls.find_one_and_update(
+        res = await self.crawls.find_one_and_update(
             {"_id": crawl_id}, {"$push": {f"{prefix}errors": error}}
         )
+        return res is not None
 
     async def add_crawl_file(
         self, crawl_id: str, is_qa: bool, crawl_file: CrawlFile, size: int
-    ):
+    ) -> bool:
         """add new crawl file to crawl"""
         prefix = "" if not is_qa else "qa."
 
-        await self.crawls.find_one_and_update(
+        res = await self.crawls.find_one_and_update(
             {"_id": crawl_id},
             {
                 "$push": {f"{prefix}files": crawl_file.dict()},
                 "$inc": {f"{prefix}fileCount": 1, f"{prefix}fileSize": size},
             },
         )
+        return res is not None
 
     async def get_crawl_seeds(
         self,
@@ -631,7 +665,7 @@ class CrawlOps(BaseCrawlOps):
         org: Organization,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
-    ):
+    ) -> tuple[list[Seed], int]:
         """Get paginated list of seeds from crawl"""
         skip = (page - 1) * page_size
         upper_bound = skip + page_size
@@ -744,7 +778,9 @@ class CrawlOps(BaseCrawlOps):
         # return whatever detail may be included in the response
         raise HTTPException(status_code=400, detail=result)
 
-    async def start_crawl_qa_run(self, crawl_id: str, org: Organization, user: User):
+    async def start_crawl_qa_run(
+        self, crawl_id: str, org: Organization, user: User
+    ) -> str:
         """Start crawl QA run"""
 
         crawl = await self.get_crawl(crawl_id, org)
@@ -820,7 +856,7 @@ class CrawlOps(BaseCrawlOps):
 
     async def stop_crawl_qa_run(
         self, crawl_id: str, org: Organization, graceful: bool = True
-    ):
+    ) -> dict[str, bool]:
         """Stop crawl QA run, QA run removed when actually finished"""
         crawl = await self.get_crawl(crawl_id, org)
 
@@ -847,7 +883,7 @@ class CrawlOps(BaseCrawlOps):
 
     async def delete_crawl_qa_runs(
         self, crawl_id: str, delete_list: DeleteQARunList, org: Organization
-    ):
+    ) -> dict[str, int]:
         """delete specified finished QA run"""
         count = 0
         for qa_run_id in delete_list.qa_run_ids:
@@ -866,7 +902,7 @@ class CrawlOps(BaseCrawlOps):
 
     async def delete_crawl_qa_run_files(
         self, crawl_id: str, qa_run_id: str, org: Organization
-    ):
+    ) -> None:
         """delete crawl qa wacz files"""
         qa_run = await self.get_qa_run(crawl_id, qa_run_id, org)
         for file_ in qa_run.files:
@@ -877,9 +913,13 @@ class CrawlOps(BaseCrawlOps):
             #     org, file_, qa_run_id, "qa"
             # )
 
-    async def qa_run_finished(self, crawl_id: str):
+    async def qa_run_finished(self, crawl_id: str) -> bool:
         """clear active qa, add qa run to finished list, if successful"""
-        crawl = await self.get_crawl(crawl_id)
+        try:
+            crawl = await self.get_crawl(crawl_id)
+        # pylint: disable=bare-except
+        except:
+            return False
 
         if not crawl.qa:
             return False
@@ -1010,7 +1050,7 @@ class CrawlOps(BaseCrawlOps):
 
 
 # ============================================================================
-async def recompute_crawl_file_count_and_size(crawls, crawl_id):
+async def recompute_crawl_file_count_and_size(crawls, crawl_id: str):
     """Fully recompute file count and size for given crawl"""
     file_count = 0
     size = 0
@@ -1158,14 +1198,19 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
     @app.post(
         "/orgs/{oid}/crawls/delete",
         tags=["crawls"],
-        response_model=DeletedResponseQuota,
+        response_model=DeletedCountResponseQuota,
     )
     async def delete_crawls(
         delete_list: DeleteCrawlList,
         user: User = Depends(user_dep),
         org: Organization = Depends(org_crawl_dep),
     ):
-        return await ops.delete_crawls(org, delete_list, "crawl", user)
+        count, _, quota_reached = await ops.delete_crawls(
+            org, delete_list, "crawl", user
+        )
+        return DeletedCountResponseQuota(
+            deleted=count, storageQuotaReached=quota_reached
+        )
 
     @app.get("/orgs/all/crawls/stats", tags=["crawls"], response_model=bytes)
     async def get_all_orgs_crawl_stats(
@@ -1416,7 +1461,7 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
         crawl_id,
         offset: int,
         count: int,
-        regex: Optional[str] = "",
+        regex: str = "",
         org: Organization = Depends(org_crawl_dep),
     ):
         await ops.get_crawl_raw(crawl_id, org)
