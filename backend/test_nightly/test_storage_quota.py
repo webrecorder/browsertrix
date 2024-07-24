@@ -8,8 +8,8 @@ from .conftest import API_PREFIX
 from .utils import get_crawl_status
 
 
-STORAGE_QUOTA_MB = 5
-STORAGE_QUOTA_BYTES = STORAGE_QUOTA_MB * 1000
+STORAGE_QUOTA_KB = 5
+STORAGE_QUOTA_BYTES = STORAGE_QUOTA_KB * 1000
 
 config_id = None
 
