@@ -25,6 +25,7 @@ from .models import (
     CollectionDeletedBody,
     PaginatedWebhookNotificationResponse,
     Organization,
+    QARun,
 )
 from .utils import dt_now
 
@@ -267,7 +268,7 @@ class EventWebhookOps:
         )
 
     async def create_qa_analysis_finished_notification(
-        self, qa_run_id: str, oid: UUID, state: str, crawl_id: Optional[str] = ""
+        self, qa_run: QARun, oid: UUID, crawl_id: str
     ) -> None:
         """Create webhook notification for finished qa analysis run."""
         org = await self.org_ops.get_org_by_id(oid)
@@ -275,29 +276,15 @@ class EventWebhookOps:
         if not org.webhookUrls or not org.webhookUrls.qaAnalysisFinished:
             return
 
-        if crawl_id is None:
-            crawl_id = ""
-
-        qa_files = []
         qa_resources = []
 
         # Check both crawl.qa and crawl.qaFinished for files because we don't
         # know for certain what state the crawl will be in at this point
         try:
-            crawl = await self.crawl_ops.get_crawl(crawl_id)
-            if crawl.qa:
-                qa_files = crawl.qa.files
+            qa_resources = await self.crawl_ops.resolve_signed_urls(
+                qa_run.files, org, crawl_id, qa_run.id
+            )
 
-            qa_finished = crawl.qaFinished
-            if qa_finished:
-                qa_run = qa_finished.get(qa_run_id)
-                if qa_run:
-                    qa_files = qa_run.files
-
-            if qa_files:
-                qa_resources = await self.crawl_ops.resolve_signed_urls(
-                    qa_files, org, crawl_id, qa_run_id
-                )
         # pylint: disable=broad-exception-caught
         except Exception as err:
             print(f"Error trying to get QA run resources: {err}", flush=True)
@@ -308,9 +295,9 @@ class EventWebhookOps:
             oid=oid,
             body=QaAnalysisFinishedBody(
                 itemId=crawl_id,
-                qaRunId=qa_run_id,
+                qaRunId=qa_run.id,
                 orgId=str(org.id),
-                state=state,
+                state=qa_run.state,
                 resources=qa_resources,
             ),
             created=dt_now(),
@@ -403,7 +390,7 @@ class EventWebhookOps:
         await self.send_notification(org, notification)
 
     async def create_qa_analysis_started_notification(
-        self, qa_run_id: str, oid: UUID, crawl_id: Optional[str] = ""
+        self, qa_run_id: str, oid: UUID, crawl_id: str
     ) -> None:
         """Create webhook notification for started qa analysis run."""
         org = await self.org_ops.get_org_by_id(oid)
@@ -420,9 +407,6 @@ class EventWebhookOps:
         )
         if existing_notification:
             return
-
-        if crawl_id is None:
-            crawl_id = ""
 
         notification = WebhookNotification(
             id=uuid4(),

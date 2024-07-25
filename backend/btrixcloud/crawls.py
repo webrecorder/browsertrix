@@ -929,12 +929,15 @@ class CrawlOps(BaseCrawlOps):
         if crawl.qa.finished and crawl.qa.state in NON_RUNNING_STATES:
             query[f"qaFinished.{crawl.qa.id}"] = crawl.qa.dict()
 
-        if await self.crawls.find_one_and_update(
+        res = await self.crawls.find_one_and_update(
             {"_id": crawl_id, "type": "crawl"}, {"$set": query}
-        ):
-            return True
+        )
 
-        return False
+        await self.event_webhook_ops.create_qa_analysis_finished_notification(
+            crawl.qa, crawl.oid, crawl.id
+        )
+
+        return res
 
     async def get_qa_runs(
         self,
