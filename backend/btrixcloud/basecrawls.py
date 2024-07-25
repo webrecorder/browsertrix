@@ -187,10 +187,11 @@ class BaseCrawlOps:
             if crawl.config and crawl.config.seeds:
                 crawl.config.seeds = None
 
-        crawl.storageQuotaReached = await self.orgs.storage_quota_reached(crawl.oid)
-        crawl.execMinutesQuotaReached = await self.orgs.exec_mins_quota_reached(
-            crawl.oid
-        )
+        if not org:
+            org = await self.orgs.get_org_by_id(crawl.oid)
+
+        crawl.storageQuotaReached = self.orgs.storage_quota_reached(org)
+        crawl.execMinutesQuotaReached = self.orgs.exec_mins_quota_reached(org)
 
         return crawl
 

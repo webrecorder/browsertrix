@@ -201,13 +201,14 @@ class CrawlOperator(BaseOperator):
             # only check on very first run, before any pods/pvcs created
             # for now, allow if crawl has already started (pods/pvcs created)
             if not pods and not data.children[PVC]:
-                if await self.org_ops.storage_quota_reached(crawl.oid):
+                org = await self.org_ops.get_org_by_id(crawl.oid)
+                if self.org_ops.storage_quota_reached(org):
                     await self.mark_finished(
                         crawl, status, "skipped_storage_quota_reached"
                     )
                     return self._empty_response(status)
 
-                if await self.org_ops.exec_mins_quota_reached(crawl.oid):
+                if self.org_ops.exec_mins_quota_reached(org):
                     await self.mark_finished(
                         crawl, status, "skipped_time_quota_reached"
                     )
@@ -1236,19 +1237,24 @@ class CrawlOperator(BaseOperator):
         # gracefully stop crawl if current running crawl sizes reach storage quota
         org = await self.org_ops.get_org_by_id(crawl.oid)
 
-        running_crawls_total_size = 0
-        for crawl_sorted in data.related[CJS].values():
-            crawl_status = crawl_sorted.get("status", {})
-            if crawl_status:
-                running_crawls_total_size += crawl_status.get("size", 0)
+        if org.quotas.storageQuota:
+            running_crawls_total_size = status.size
+            for crawl_jobs in data.related[CJS].values():
+                # if the job id matches current crawl job, then skip
+                # this job to avoid double-counting
+                # using the more up-to-date 'status.size' for this job
+                if crawl_jobs.get("spec", {}).get("id") == crawl.id:
+                    continue
 
-        if org.quotas.storageQuota and (
-            org.bytesStored + running_crawls_total_size >= org.quotas.storageQuota
-        ):
-            return "stopped_storage_quota_reached"
+                crawl_status = crawl_jobs.get("status", {})
+                if crawl_status:
+                    running_crawls_total_size += crawl_status.get("size", 0)
+
+            if self.org_ops.storage_quota_reached(org, running_crawls_total_size):
+                return "stopped_storage_quota_reached"
 
         # gracefully stop crawl is execution time quota is reached
-        if await self.org_ops.exec_mins_quota_reached(crawl.oid):
+        if self.org_ops.exec_mins_quota_reached(org):
             return "stopped_time_quota_reached"
 
         return None

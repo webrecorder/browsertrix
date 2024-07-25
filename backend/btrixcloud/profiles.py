@@ -222,11 +222,7 @@ class ProfileOps:
 
         oid = UUID(metadata.get("btrix.org"))
 
-        if org.readOnly:
-            raise HTTPException(status_code=403, detail="org_set_to_read_only")
-
-        if await self.orgs.storage_quota_reached(oid):
-            raise HTTPException(status_code=403, detail="storage_quota_reached")
+        self.orgs.can_write_data(org, include_time=False)
 
         profile = Profile(
             id=profileid,
@@ -432,7 +428,7 @@ class ProfileOps:
         if not res or res.deleted_count != 1:
             raise HTTPException(status_code=404, detail="profile_not_found")
 
-        quota_reached = await self.orgs.storage_quota_reached(org.id)
+        quota_reached = self.orgs.storage_quota_reached(org)
 
         return {"success": True, "storageQuotaReached": quota_reached}
 

@@ -288,11 +288,12 @@ class OrgOps:
     async def get_default_register_org(self) -> Organization:
         """Get default organiation for new user registration, or default org"""
         if self.register_to_org_id:
-            res = await self.get_org_by_id(UUID(self.register_to_org_id))
-            if not res:
+            try:
+                await self.get_org_by_id(UUID(self.register_to_org_id))
+            except HTTPException as exc:
                 raise HTTPException(
                     status_code=500, detail="default_register_org_not_found"
-                )
+                ) from exc
 
         return await self.get_default_org()
 
@@ -585,10 +586,14 @@ class OrgOps:
 
         Remove invite after successful add
         """
+        org = None
         if not invite.oid:
             org = default_org
         else:
-            org = await self.get_org_by_id(invite.oid)
+            try:
+                org = await self.get_org_by_id(invite.oid)
+            except HTTPException:
+                pass
 
         if not org:
             raise HTTPException(status_code=400, detail="invalid_invite")
@@ -678,6 +683,8 @@ class OrgOps:
 
     async def inc_org_bytes_stored(self, oid: UUID, size: int, type_="crawl") -> bool:
         """Increase org bytesStored count (pass negative value to subtract)."""
+        org = await self.get_org_by_id(oid)
+
         if type_ == "crawl":
             await self.orgs.find_one_and_update(
                 {"_id": oid}, {"$inc": {"bytesStored": size, "bytesStoredCrawls": size}}
@@ -692,102 +699,58 @@ class OrgOps:
                 {"_id": oid},
                 {"$inc": {"bytesStored": size, "bytesStoredProfiles": size}},
             )
-        return await self.storage_quota_reached(oid)
 
-    # pylint: disable=invalid-name
-    async def storage_quota_reached(self, oid: UUID) -> bool:
-        """Return boolean indicating if storage quota is met or exceeded."""
-        quota = await self.get_org_storage_quota(oid)
-        if not quota:
-            return False
+        return self.storage_quota_reached(org)
 
-        org_data = await self.orgs.find_one({"_id": oid})
-        if not org_data:
-            return False
-
-        org = Organization.from_dict(org_data)
-
-        if org.bytesStored >= quota:
-            return True
-
-        return False
-
-    async def can_run_crawls(self, org: Organization) -> None:
+    def can_write_data(self, org: Organization, include_time=True) -> None:
         """check crawl quotas and readOnly state, throw if can not run"""
         if org.readOnly:
             raise HTTPException(status_code=403, detail="org_set_to_read_only")
 
-        if await self.storage_quota_reached(org.id):
+        if self.storage_quota_reached(org):
             raise HTTPException(status_code=403, detail="storage_quota_reached")
 
-        if await self.exec_mins_quota_reached(org.id):
+        if include_time and self.exec_mins_quota_reached(org):
             raise HTTPException(status_code=403, detail="exec_minutes_quota_reached")
 
-    async def get_monthly_crawl_exec_seconds(self, oid: UUID) -> int:
-        """Return monthlyExecSeconds for current month"""
-        org_data = await self.orgs.find_one({"_id": oid})
-        if not org_data:
-            return 0
-        org = Organization.from_dict(org_data)
-        yymm = dt_now().strftime("%Y-%m")
-        try:
-            return org.monthlyExecSeconds[yymm]
-        except KeyError:
-            return 0
+    # pylint: disable=invalid-name
+    def storage_quota_reached(self, org: Organization, extra_bytes: int = 0) -> bool:
+        """Return boolean indicating if storage quota is met or exceeded."""
+        if not org.quotas.storageQuota:
+            return False
 
-    async def exec_mins_quota_reached(
-        self, oid: UUID, include_extra: bool = True
+        if (org.bytesStored + extra_bytes) >= org.quotas.storageQuota:
+            return True
+
+        return False
+
+    def exec_mins_quota_reached(
+        self, org: Organization, include_extra: bool = True
     ) -> bool:
         """Return bool for if execution minutes quota is reached"""
         if include_extra:
-            gifted_seconds = await self.get_gifted_exec_secs_available(oid)
-            if gifted_seconds:
+            if org.giftedExecSecondsAvailable:
                 return False
 
-            extra_seconds = await self.get_extra_exec_secs_available(oid)
-            if extra_seconds:
+            if org.extraExecSecondsAvailable:
                 return False
 
-        monthly_quota = await self.get_org_exec_mins_monthly_quota(oid)
+        monthly_quota = org.quotas.maxExecMinutesPerMonth
         if monthly_quota:
-            monthly_exec_seconds = await self.get_monthly_crawl_exec_seconds(oid)
+            monthly_exec_seconds = self.get_monthly_crawl_exec_seconds(org)
             monthly_exec_minutes = math.floor(monthly_exec_seconds / 60)
             if monthly_exec_minutes >= monthly_quota:
                 return True
 
         return False
 
-    async def get_org_storage_quota(self, oid: UUID) -> int:
-        """return org storage quota, if any"""
-        org_data = await self.orgs.find_one({"_id": oid})
-        if org_data:
-            org = Organization.from_dict(org_data)
-            return org.quotas.storageQuota or 0
-        return 0
-
-    async def get_org_exec_mins_monthly_quota(self, oid: UUID) -> int:
-        """return max allowed execution mins per month, if any"""
-        org_data = await self.orgs.find_one({"_id": oid})
-        if org_data:
-            org = Organization.from_dict(org_data)
-            return org.quotas.maxExecMinutesPerMonth or 0
-        return 0
-
-    async def get_extra_exec_secs_available(self, oid: UUID) -> int:
-        """return extra billable rollover seconds available, if any"""
-        org_data = await self.orgs.find_one({"_id": oid})
-        if org_data:
-            org = Organization.from_dict(org_data)
-            return org.extraExecSecondsAvailable
-        return 0
-
-    async def get_gifted_exec_secs_available(self, oid: UUID) -> int:
-        """return gifted rollover seconds available, if any"""
-        org_data = await self.orgs.find_one({"_id": oid})
-        if org_data:
-            org = Organization.from_dict(org_data)
-            return org.giftedExecSecondsAvailable
-        return 0
+    def get_monthly_crawl_exec_seconds(self, org: Organization) -> int:
+        """Return monthlyExecSeconds for current month"""
+        yymm = dt_now().strftime("%Y-%m")
+        try:
+            return org.monthlyExecSeconds[yymm]
+        except KeyError:
+            return 0
 
     async def set_origin(self, org: Organization, request: Request) -> None:
         """Get origin from request and store in db for use in event webhooks"""
@@ -828,9 +791,9 @@ class OrgOps:
 
         org = await self.get_org_by_id(oid)
 
-        monthly_exec_secs_used = await self.get_monthly_crawl_exec_seconds(oid)
+        monthly_exec_secs_used = self.get_monthly_crawl_exec_seconds(org)
 
-        monthly_quota_mins = await self.get_org_exec_mins_monthly_quota(oid)
+        monthly_quota_mins = org.quotas.maxExecMinutesPerMonth or 0
         monthly_quota_secs = monthly_quota_mins * 60
 
         if (
@@ -912,7 +875,7 @@ class OrgOps:
     async def get_org_metrics(self, org: Organization) -> dict[str, int]:
         """Calculate and return org metrics"""
         # pylint: disable=too-many-locals
-        storage_quota = await self.get_org_storage_quota(org.id)
+        storage_quota = org.quotas.storageQuota or 0
         max_concurrent_crawls = await self.get_max_concurrent_crawls(org.id)
 
         # Calculate these counts in loop to avoid having db iterate through
@@ -1410,9 +1373,10 @@ def init_orgs_api(
         return org
 
     async def org_public(oid: UUID):
-        org = await ops.get_org_by_id(oid)
-        if not org:
-            raise HTTPException(status_code=404, detail="org_not_found")
+        try:
+            org = await ops.get_org_by_id(oid)
+        except HTTPException as exc:
+            raise HTTPException(status_code=404, detail="org_not_found") from exc
 
         return org
 
@@ -1464,8 +1428,8 @@ def init_orgs_api(
         org: Organization = Depends(org_dep), user: User = Depends(user_dep)
     ):
         org_out = await org.serialize_for_user(user, user_manager)
-        org_out.storageQuotaReached = await ops.storage_quota_reached(org.id)
-        org_out.execMinutesQuotaReached = await ops.exec_mins_quota_reached(org.id)
+        org_out.storageQuotaReached = ops.storage_quota_reached(org)
+        org_out.execMinutesQuotaReached = ops.exec_mins_quota_reached(org)
         return org_out
 
     @router.delete("", tags=["organizations"], response_model=DeletedResponse)
