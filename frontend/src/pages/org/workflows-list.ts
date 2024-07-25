@@ -17,6 +17,7 @@ import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import { isApiError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
+import { isArchivingDisabled } from "@/utils/orgs";
 
 type SearchFields = "name" | "firstSeed";
 type SortField = "lastRun" | "name" | "firstSeed" | "created" | "modified";
@@ -76,12 +77,6 @@ export class WorkflowsList extends LiteElement {
   @property({ type: String })
   orgId!: string;
 
-  @property({ type: Boolean })
-  orgStorageQuotaReached = false;
-
-  @property({ type: Boolean })
-  orgExecutionMinutesQuotaReached = false;
-
   @property({ type: String })
   userId!: string;
 
@@ -121,6 +116,10 @@ export class WorkflowsList extends LiteElement {
   // Use to cancel requests
   private getWorkflowsController: AbortController | null = null;
   private timerId?: number;
+
+  private get org() {
+    return this.appState.org;
+  }
 
   private get selectedSearchFilterKey() {
     return Object.keys(WorkflowsList.FieldLabels).find((key) =>
@@ -215,6 +214,7 @@ export class WorkflowsList extends LiteElement {
               <sl-button
                 variant="primary"
                 size="small"
+                ?disabled=${this.org?.readOnly}
                 @click=${() => {
                   this.dispatchEvent(
                     new CustomEvent("select-new-dialog", {
@@ -452,8 +452,7 @@ export class WorkflowsList extends LiteElement {
         () => html`
           <sl-menu-item
             style="--sl-color-neutral-700: var(--success)"
-            ?disabled=${this.orgStorageQuotaReached ||
-            this.orgExecutionMinutesQuotaReached}
+            ?disabled=${isArchivingDisabled(this.org, true)}
             @click=${() => void this.runNow(workflow)}
           >
             <sl-icon name="play" slot="prefix"></sl-icon>
@@ -519,6 +518,7 @@ export class WorkflowsList extends LiteElement {
         this.isCrawler,
         () =>
           html` <sl-menu-item
+            ?disabled=${isArchivingDisabled(this.org, true)}
             @click=${() => void this.duplicateConfig(workflow)}
           >
             <sl-icon name="files" slot="prefix"></sl-icon>

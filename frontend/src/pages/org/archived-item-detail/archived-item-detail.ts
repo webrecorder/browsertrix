@@ -34,6 +34,8 @@ import {
 } from "@/utils/crawler";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 import { getLocale } from "@/utils/localization";
+import { isArchivingDisabled } from "@/utils/orgs";
+import appState, { use } from "@/utils/state";
 import { tw } from "@/utils/tailwind";
 
 import "./ui/qa";
@@ -89,6 +91,9 @@ export class ArchivedItemDetail extends TailwindElement {
   @property({ type: Boolean })
   isCrawler = false;
 
+  @use()
+  appState = appState;
+
   @state()
   private qaRunId?: string;
 
@@ -124,6 +129,10 @@ export class ArchivedItemDetail extends TailwindElement {
 
   @query("#cancelQARunDialog")
   private readonly cancelQARunDialog?: Dialog | null;
+
+  private get org() {
+    return this.appState.org;
+  }
 
   private get listUrl(): string {
     let path = "items";
@@ -1077,7 +1086,7 @@ ${this.crawl?.description}
                 qaRuns.length === 0 ? "primary" : "default"
               }"
               @click=${() => void this.startQARun()}
-              ?disabled=${qaIsRunning}
+              ?disabled=${isArchivingDisabled(this.org, true) || qaIsRunning}
             >
               <sl-icon slot="prefix" name="microscope" library="app"></sl-icon>
               ${qaRuns.length ? msg("Rerun Analysis") : msg("Run Analysis")}

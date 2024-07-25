@@ -18,6 +18,8 @@ import { isApiError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
 import { maxLengthValidator } from "@/utils/form";
 import { formatNumber, getLocale } from "@/utils/localization";
+import { isArchivingDisabled } from "@/utils/orgs";
+import appState, { use } from "@/utils/state";
 
 const DESCRIPTION_MAXLENGTH = 500;
 
@@ -45,6 +47,9 @@ export class BrowserProfilesDetail extends TailwindElement {
 
   @property({ type: Boolean })
   isCrawler = false;
+
+  @use()
+  appState = appState;
 
   @state()
   private profile?: Profile;
@@ -82,6 +87,10 @@ export class BrowserProfilesDetail extends TailwindElement {
 
   private readonly validateNameMax = maxLengthValidator(50);
   private readonly validateDescriptionMax = maxLengthValidator(500);
+
+  get org() {
+    return this.appState.org;
+  }
 
   disconnectedCallback() {
     if (this.browserId) {
@@ -247,7 +256,10 @@ export class BrowserProfilesDetail extends TailwindElement {
                       "View or edit the current browser profile configuration.",
                     )}
                   </p>
-                  <sl-button @click=${this.startBrowserPreview}>
+                  <sl-button
+                    ?disabled=${isArchivingDisabled(this.org)}
+                    @click=${this.startBrowserPreview}
+                  >
                     <sl-icon slot="prefix" name="gear"></sl-icon>
                     ${msg("Configure Browser Profile")}
                   </sl-button>
@@ -425,6 +437,8 @@ export class BrowserProfilesDetail extends TailwindElement {
   }
 
   private renderMenu() {
+    const archivingDisabled = isArchivingDisabled(this.org);
+
     return html`
       <sl-dropdown distance="4" placement="bottom-end">
         <sl-button size="small" slot="trigger" caret>
@@ -435,11 +449,17 @@ export class BrowserProfilesDetail extends TailwindElement {
             <sl-icon slot="prefix" name="pencil"></sl-icon>
             ${msg("Edit Metadata")}
           </sl-menu-item>
-          <sl-menu-item @click=${this.startBrowserPreview}>
+          <sl-menu-item
+            ?disabled=${archivingDisabled}
+            @click=${this.startBrowserPreview}
+          >
             <sl-icon slot="prefix" name="gear"></sl-icon>
             ${msg("Configure Browser Profile")}
           </sl-menu-item>
-          <sl-menu-item @click=${() => void this.duplicateProfile()}>
+          <sl-menu-item
+            ?disabled=${archivingDisabled}
+            @click=${() => void this.duplicateProfile()}
+          >
             <sl-icon slot="prefix" name="files"></sl-icon>
             ${msg("Duplicate Profile")}
           </sl-menu-item>

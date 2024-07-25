@@ -21,6 +21,8 @@ import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import { isApiError } from "@/utils/api";
 import type { Auth, AuthState } from "@/utils/AuthService";
 import { finishedCrawlStates, isActive } from "@/utils/crawler";
+import { isArchivingDisabled } from "@/utils/orgs";
+import appState, { use } from "@/utils/state";
 
 type ArchivedItems = APIPaginatedList<ArchivedItem>;
 type SearchFields = "name" | "firstSeed";
@@ -90,13 +92,13 @@ export class CrawlsList extends TailwindElement {
   orgId?: string;
 
   @property({ type: Boolean })
-  orgStorageQuotaReached = false;
-
-  @property({ type: Boolean })
   isCrawler!: boolean;
 
   @property({ type: String })
   itemType: ArchivedItem["type"] | null = null;
+
+  @use()
+  appState = appState;
 
   @state()
   private pagination: Required<APIPaginationQuery> = {
@@ -140,6 +142,10 @@ export class CrawlsList extends TailwindElement {
 
   @query("#stateSelect")
   stateSelect?: SlSelect;
+
+  private get org() {
+    return this.appState.org;
+  }
 
   private readonly archivedItemsTask = new Task(this, {
     task: async (
@@ -302,13 +308,13 @@ export class CrawlsList extends TailwindElement {
               () => html`
                 <sl-tooltip
                   content=${msg("Org Storage Full")}
-                  ?disabled=${!this.orgStorageQuotaReached}
+                  ?disabled=${!this.org?.storageQuotaReached}
                 >
                   <sl-button
                     size="small"
                     variant="primary"
                     @click=${() => (this.isUploadingArchive = true)}
-                    ?disabled=${this.orgStorageQuotaReached}
+                    ?disabled=${isArchivingDisabled(this.org)}
                   >
                     <sl-icon slot="prefix" name="upload"></sl-icon>
                     ${msg("Upload WACZ")}
