@@ -681,22 +681,23 @@ class OrgOps:
             return org.quotas.maxPagesPerCrawl or 0
         return 0
 
-    async def inc_org_bytes_stored(self, oid: UUID, size: int, type_="crawl") -> bool:
+    async def inc_org_bytes_stored(
+        self, org: Organization, size: int, type_="crawl"
+    ) -> bool:
         """Increase org bytesStored count (pass negative value to subtract)."""
-        org = await self.get_org_by_id(oid)
-
         if type_ == "crawl":
             await self.orgs.find_one_and_update(
-                {"_id": oid}, {"$inc": {"bytesStored": size, "bytesStoredCrawls": size}}
+                {"_id": org.id},
+                {"$inc": {"bytesStored": size, "bytesStoredCrawls": size}},
             )
         elif type_ == "upload":
             await self.orgs.find_one_and_update(
-                {"_id": oid},
+                {"_id": org.id},
                 {"$inc": {"bytesStored": size, "bytesStoredUploads": size}},
             )
         elif type_ == "profile":
             await self.orgs.find_one_and_update(
-                {"_id": oid},
+                {"_id": org.id},
                 {"$inc": {"bytesStored": size, "bytesStoredProfiles": size}},
             )
 

@@ -357,7 +357,7 @@ class BaseCrawlOps:
         query = {"_id": {"$in": delete_list.crawl_ids}, "oid": org.id, "type": type_}
         res = await self.crawls.delete_many(query)
 
-        quota_reached = await self.orgs.inc_org_bytes_stored(org.id, -size, type_)
+        quota_reached = await self.orgs.inc_org_bytes_stored(org, -size, type_)
 
         return res.deleted_count, cids_to_update, quota_reached
 

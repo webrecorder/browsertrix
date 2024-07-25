@@ -220,8 +220,6 @@ class ProfileOps:
             print("baseid", baseid)
             baseid = UUID(baseid)
 
-        oid = UUID(metadata.get("btrix.org"))
-
         self.orgs.can_write_data(org, include_time=False)
 
         profile = Profile(
@@ -237,7 +235,7 @@ class ProfileOps:
             origins=json["origins"],
             resource=profile_file,
             userid=UUID(metadata.get("btrix.user")),
-            oid=oid,
+            oid=org.id,
             baseid=baseid,
             crawlerChannel=browser_commit.crawlerChannel,
         )
@@ -247,10 +245,10 @@ class ProfileOps:
         )
 
         await self.background_job_ops.create_replica_jobs(
-            oid, profile_file, str(profileid), "profile"
+            org.id, profile_file, str(profileid), "profile"
         )
 
-        quota_reached = await self.orgs.inc_org_bytes_stored(oid, file_size, "profile")
+        quota_reached = await self.orgs.inc_org_bytes_stored(org, file_size, "profile")
 
         return {
             "added": True,
@@ -417,9 +415,7 @@ class ProfileOps:
         # Delete file from storage
         if profile.resource:
             await self.storage_ops.delete_crawl_file_object(org, profile.resource)
-            await self.orgs.inc_org_bytes_stored(
-                org.id, -profile.resource.size, "profile"
-            )
+            await self.orgs.inc_org_bytes_stored(org, -profile.resource.size, "profile")
             await self.background_job_ops.create_delete_replica_jobs(
                 org, profile.resource, str(profile.id), "profile"
             )
