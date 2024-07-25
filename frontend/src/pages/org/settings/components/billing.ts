@@ -16,6 +16,7 @@ import type { Auth, AuthState } from "@/utils/AuthService";
 import { humanizeSeconds } from "@/utils/executionTimeFormatter";
 import { formatNumber, getLocale } from "@/utils/localization";
 import { pluralOf } from "@/utils/pluralize";
+import appState, { use } from "@/utils/state";
 import { tw } from "@/utils/tailwind";
 
 const linkClassList = tw`transition-color text-primary hover:text-primary-500`;
@@ -24,9 +25,6 @@ const manageLinkClasslist = clsx(
   tw`flex items-center gap-2 p-2 text-sm font-semibold leading-none`,
 );
 
-/**
- * @fires btrix-update-org
- */
 @localized()
 @customElement("btrix-org-settings-billing")
 export class OrgSettingsBilling extends TailwindElement {
@@ -39,13 +37,17 @@ export class OrgSettingsBilling extends TailwindElement {
   @property({ type: Object })
   authState?: AuthState;
 
-  @property({ type: Object, noAccessor: true })
-  org?: OrgData;
-
   @property({ type: String, noAccessor: true })
   salesEmail?: string;
 
+  @use()
+  appState = appState;
+
   private readonly api = new APIController(this);
+
+  private get org() {
+    return this.appState.org;
+  }
 
   get portalUrlLabel() {
     const subscription = this.org?.subscription;

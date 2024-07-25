@@ -813,7 +813,7 @@ class CrawlOps(BaseCrawlOps):
         if not crawl.cid or crawl.type != "crawl":
             raise HTTPException(status_code=400, detail="invalid_crawl_for_qa")
 
-        await self.orgs.can_run_crawls(org)
+        self.orgs.can_write_data(org)
 
         crawlconfig = await self.crawl_configs.get_crawl_config(crawl.cid, org.id)
 
@@ -1007,6 +1007,28 @@ class CrawlOps(BaseCrawlOps):
         qa_run_dict["resources"] = resources
 
         return QARunWithResources(**qa_run_dict)
+
+    async def download_qa_run_as_single_wacz(
+        self, crawl_id: str, qa_run_id: str, org: Organization
+    ):
+        """Download all WACZs in a QA run as streaming nested WACZ"""
+        qa_run = await self.get_qa_run_for_replay(crawl_id, qa_run_id, org)
+        if not qa_run.finished:
+            raise HTTPException(status_code=400, detail="qa_run_not_finished")
+
+        if not qa_run.resources:
+            raise HTTPException(status_code=400, detail="qa_run_no_resources")
+
+        resp = await self.storage_ops.download_streaming_wacz(org, qa_run.resources)
+
+        finished = qa_run.finished.isoformat()
+
+        headers = {
+            "Content-Disposition": f'attachment; filename="qa-{finished}-crawl-{crawl_id}.wacz"'
+        }
+        return StreamingResponse(
+            resp, headers=headers, media_type="application/wacz+zip"
+        )
 
     async def get_qa_run_aggregate_stats(
         self,
@@ -1226,6 +1248,14 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
     async def get_crawl_out(crawl_id, org: Organization = Depends(org_viewer_dep)):
         return await ops.get_crawl_out(crawl_id, org, "crawl")
 
+    @app.get(
+        "/orgs/{oid}/crawls/{crawl_id}/download", tags=["crawls"], response_model=bytes
+    )
+    async def download_crawl_as_single_wacz(
+        crawl_id: str, org: Organization = Depends(org_viewer_dep)
+    ):
+        return await ops.download_crawl_as_single_wacz(crawl_id, org)
+
     # QA APIs
     # ---------------------
     @app.get(
@@ -1248,6 +1278,16 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
         crawl_id, qa_run_id, org: Organization = Depends(org_viewer_dep)
     ):
         return await ops.get_qa_run_for_replay(crawl_id, qa_run_id, org)
+
+    @app.get(
+        "/orgs/{oid}/crawls/{crawl_id}/qa/{qa_run_id}/download",
+        tags=["qa"],
+        response_model=bytes,
+    )
+    async def download_qa_run_as_single_wacz(
+        crawl_id: str, qa_run_id: str, org: Organization = Depends(org_viewer_dep)
+    ):
+        return await ops.download_qa_run_as_single_wacz(crawl_id, qa_run_id, org)
 
     @app.get(
         "/orgs/{oid}/crawls/{crawl_id}/qa/{qa_run_id}/stats",

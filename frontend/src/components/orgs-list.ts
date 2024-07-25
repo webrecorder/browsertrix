@@ -16,7 +16,7 @@ import { NavigateController } from "@/controllers/navigate";
 import { NotifyController } from "@/controllers/notify";
 import type { CurrentUser } from "@/types/user";
 import type { AuthState } from "@/utils/AuthService";
-import { formatNumber } from "@/utils/localization";
+import { formatNumber, getLocale } from "@/utils/localization";
 import type { OrgData } from "@/utils/orgs";
 
 /**
@@ -27,7 +27,7 @@ import type { OrgData } from "@/utils/orgs";
 export class OrgsList extends TailwindElement {
   static styles = css`
     btrix-table {
-      grid-template-columns: min-content [clickable-start] 50ch auto auto [clickable-end] min-content;
+      grid-template-columns: min-content [clickable-start] 50ch auto auto auto [clickable-end] min-content;
     }
   `;
 
@@ -75,6 +75,9 @@ export class OrgsList extends TailwindElement {
           </btrix-table-header-cell>
           <btrix-table-header-cell class="px-2">
             ${msg("Name")}
+          </btrix-table-header-cell>
+          <btrix-table-header-cell class="px-2">
+            ${msg("Created")}
           </btrix-table-header-cell>
           <btrix-table-header-cell class="px-2">
             ${msg("Members")}
@@ -156,17 +159,17 @@ export class OrgsList extends TailwindElement {
       <btrix-dialog
         class="[--width:36rem]"
         id="orgReadOnlyDialog"
-        .label=${msg(str`Make Read-Only?`)}
+        .label=${msg(str`Disable Archiving?`)}
         @sl-after-hide=${() => (this.currOrg = null)}
       >
         ${when(this.currOrg, (org) => {
           return html`
             <p class="mb-3">
               ${msg(
-                html`Are you sure you want to make
-                  <strong class="font-semibold">${org.name}</strong>
-                  read-only? Members will no longer be able to crawl, upload
-                  files, create browser profiles, or create collections.`,
+                html`Are you sure you want to disable archiving in
+                  <strong class="font-semibold">${org.name}</strong> org?
+                  Members will no longer be able to crawl, upload files, create
+                  browser profiles, or create collections.`,
               )}
             </p>
             <ul class="mb-3 text-neutral-600">
@@ -195,7 +198,7 @@ export class OrgsList extends TailwindElement {
               <sl-input
                 name="readOnlyReason"
                 label=${msg("Reason")}
-                placeholder=${msg("Enter reason for making org read-only")}
+                placeholder=${msg("Enter reason for disabling archiving")}
                 required
               ></sl-input>
             </form>
@@ -206,7 +209,7 @@ export class OrgsList extends TailwindElement {
                 @click=${this.orgReadOnlyDialog?.submit}
                 variant="primary"
               >
-                ${msg("Make Read-Only")}
+                ${msg("Disable Archiving")}
               </sl-button>
             </div>
           `;
@@ -391,8 +394,8 @@ export class OrgsList extends TailwindElement {
 
       this.notify.toast({
         message: params.readOnly
-          ? msg(str`Org "${org.name}" is read-only.`)
-          : msg(str`Org "${org.name}" is no longer read-only.`),
+          ? msg(str`Archiving in "${org.name}" is disabled.`)
+          : msg(str`Archiving in "${org.name}" is re-enabled.`),
         variant: "success",
         icon: "check2-circle",
       });
@@ -401,7 +404,7 @@ export class OrgsList extends TailwindElement {
 
       this.notify.toast({
         message: msg(
-          "Sorry, couldn't update org read-only state at this time.",
+          "Sorry, couldn't update org archiving ability at this time.",
         ),
         variant: "danger",
         icon: "exclamation-octagon",
@@ -477,13 +480,13 @@ export class OrgsList extends TailwindElement {
       status = {
         icon: html`<sl-icon
           class="text-base text-neutral-400"
-          name="slash-circle"
-          label=${msg("Read-only")}
+          name="ban"
+          label=${msg("disabled")}
         >
         </sl-icon>`,
         description: org.readOnlyReason
-          ? `${msg("Read-only:")} ${org.readOnlyReason}`
-          : msg("Read-only (no reason specified)"),
+          ? `${msg("Archiving Disabled:")} ${org.readOnlyReason}`
+          : msg("Archiving Disabled (no reason specified)"),
       };
     }
 
@@ -500,7 +503,7 @@ export class OrgsList extends TailwindElement {
         </btrix-table-cell>
         <btrix-table-cell class="p-2" rowClickTarget="a">
           <a
-            class=${org.readOnly ? "text-neutral-400" : "text-neutral-900"}
+            class=${org.readOnly ? "text-neutral-500" : "text-neutral-900"}
             href="/orgs/${org.slug}"
             @click=${this.navigate.link}
             aria-disabled="${!isUserOrg}"
@@ -508,8 +511,21 @@ export class OrgsList extends TailwindElement {
             ${org.default
               ? html`<btrix-tag class="mr-1">${msg("Default")}</btrix-tag>`
               : nothing}
-            ${org.name}
+            ${org.name === org.id
+              ? html`<code class="text-neutral-400">${org.id}</code>`
+              : org.name}
           </a>
+        </btrix-table-cell>
+
+        <btrix-table-cell class="p-2">
+          <sl-format-date
+            lang=${getLocale()}
+            class="truncate"
+            date=${`${org.created}Z`}
+            month="2-digit"
+            day="2-digit"
+            year="2-digit"
+          ></sl-format-date>
         </btrix-table-cell>
         <btrix-table-cell class="p-2">
           ${memberCount ? formatNumber(memberCount) : none}
@@ -550,7 +566,7 @@ export class OrgsList extends TailwindElement {
                         slot="prefix"
                         name="arrow-counterclockwise"
                       ></sl-icon>
-                      ${msg("Undo Read-Only")}
+                      ${msg("Re-enable Archiving")}
                     </sl-menu-item>
                   `
                 : html`
@@ -560,8 +576,8 @@ export class OrgsList extends TailwindElement {
                         void this.orgReadOnlyDialog?.show();
                       }}
                     >
-                      <sl-icon slot="prefix" name="eye"></sl-icon>
-                      ${msg("Make Read-Only")}
+                      <sl-icon slot="prefix" name="ban"></sl-icon>
+                      ${msg("Disable Archiving")}
                     </sl-menu-item>
                   `}
               <sl-divider></sl-divider>

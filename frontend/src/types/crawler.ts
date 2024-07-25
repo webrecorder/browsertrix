@@ -134,10 +134,12 @@ export type CrawlState =
   | "stopping"
   | "complete"
   | "failed"
-  | "skipped_quota_reached"
+  | "skipped_storage_quota_reached"
+  | "skipped_time_quota_reached"
   | "canceled"
   | "stopped_by_user"
-  | "stopped_quota_reached";
+  | "stopped_storage_quota_reached"
+  | "stopped_time_quota_reached";
 
 // TODO maybe convert this to an enum?
 export enum ReviewStatus {

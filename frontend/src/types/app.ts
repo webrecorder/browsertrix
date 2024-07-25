@@ -7,4 +7,5 @@ export type AppSettings = {
   maxScale: number;
   billingEnabled: boolean;
   salesEmail: string;
+  supportEmail: string;
 };

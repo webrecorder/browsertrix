@@ -51,7 +51,7 @@ def test_crawl_stopped_when_quota_reached(org_with_quotas, admin_auth_headers):
     # Ensure that crawl was stopped by quota
     assert (
         get_crawl_status(org_with_quotas, crawl_id, admin_auth_headers)
-        == "stopped_quota_reached"
+        == "stopped_time_quota_reached"
     )
 
     time.sleep(5)
@@ -134,7 +134,7 @@ def test_crawl_stopped_when_quota_reached_with_extra(
     # Ensure that crawl was stopped by quota
     assert (
         get_crawl_status(org_with_quotas, crawl_id, admin_auth_headers)
-        == "stopped_quota_reached"
+        == "stopped_time_quota_reached"
     )
 
     time.sleep(5)
@@ -183,3 +183,13 @@ def run_crawl(org_id, headers):
 
 def get_total_exec_seconds(execSeconds: Dict[str, int]) -> int:
     return sum(list(execSeconds.values()))
+
+
+def test_unset_execution_mins_quota(org_with_quotas, admin_auth_headers):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{org_with_quotas}/quotas",
+        headers=admin_auth_headers,
+        json={"maxExecMinutesPerMonth": 0},
+    )
+    data = r.json()
+    assert data.get("updated") == True

@@ -27,6 +27,8 @@ import type { Browser } from "@/types/browser";
 import type { AuthState } from "@/utils/AuthService";
 import { html } from "@/utils/LiteElement";
 import { getLocale } from "@/utils/localization";
+import { isArchivingDisabled } from "@/utils/orgs";
+import appState, { use } from "@/utils/state";
 import { tw } from "@/utils/tailwind";
 
 const INITIAL_PAGE_SIZE = 20;
@@ -52,6 +54,9 @@ export class BrowserProfilesList extends TailwindElement {
   @property({ type: Boolean })
   isCrawler = false;
 
+  @use()
+  appState = appState;
+
   @state()
   browserProfiles?: APIPaginatedList<Profile>;
 
@@ -63,6 +68,10 @@ export class BrowserProfilesList extends TailwindElement {
 
   @state()
   private isLoading = true;
+
+  private get org() {
+    return this.appState.org;
+  }
 
   static styles = css`
     btrix-table {
@@ -119,6 +128,7 @@ export class BrowserProfilesList extends TailwindElement {
               <sl-button
                 variant="primary"
                 size="small"
+                ?disabled=${isArchivingDisabled(this.org)}
                 @click=${() => {
                   this.dispatchEvent(
                     new CustomEvent("select-new-dialog", {
@@ -339,6 +349,7 @@ export class BrowserProfilesList extends TailwindElement {
       <btrix-overflow-dropdown @click=${(e: Event) => e.preventDefault()}>
         <sl-menu>
           <sl-menu-item
+            ?disabled=${isArchivingDisabled(this.org)}
             @click=${() => {
               void this.duplicateProfile(data);
             }}

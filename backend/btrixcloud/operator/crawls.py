@@ -27,6 +27,7 @@ from btrixcloud.models import (
     CrawlFile,
     CrawlCompleteIn,
     StorageRef,
+    Organization,
 )
 
 from btrixcloud.utils import from_k8s_date, to_k8s_date, dt_now
@@ -192,20 +193,32 @@ class CrawlOperator(BaseOperator):
             await self.k8s.delete_crawl_job(crawl.id)
             return {"status": status.dict(exclude_none=True), "children": []}
 
+        org = None
+
         # first, check storage quota, and fail immediately if quota reached
-        if status.state in ("starting", "skipped_quota_reached"):
+        if status.state in (
+            "starting",
+            "skipped_storage_quota_reached",
+            "skipped_time_quota_reached",
+        ):
             # only check on very first run, before any pods/pvcs created
             # for now, allow if crawl has already started (pods/pvcs created)
-            if (
-                not pods
-                and not data.children[PVC]
-                and await self.org_ops.storage_quota_reached(crawl.oid)
-            ):
-                await self.mark_finished(crawl, status, "skipped_quota_reached")
-                return self._empty_response(status)
+            if not pods and not data.children[PVC]:
+                org = await self.org_ops.get_org_by_id(crawl.oid)
+                if self.org_ops.storage_quota_reached(org):
+                    await self.mark_finished(
+                        crawl, status, "skipped_storage_quota_reached"
+                    )
+                    return self._empty_response(status)
+
+                if self.org_ops.exec_mins_quota_reached(org):
+                    await self.mark_finished(
+                        crawl, status, "skipped_time_quota_reached"
+                    )
+                    return self._empty_response(status)
 
         if status.state in ("starting", "waiting_org_limit"):
-            if not await self.can_start_new(crawl, data, status):
+            if not await self.can_start_new(crawl, data, status, org):
                 return self._empty_response(status)
 
             await self.set_state(
@@ -216,13 +229,7 @@ class CrawlOperator(BaseOperator):
             for pod_name, pod in pods.items():
                 self.sync_resources(status, pod_name, pod, data.children)
 
-            status = await self.sync_crawl_state(
-                redis_url,
-                crawl,
-                status,
-                pods,
-                data.related.get(METRICS, {}),
-            )
+            status = await self.sync_crawl_state(redis_url, crawl, status, pods, data)
 
             if self.k8s.enable_auto_resize:
                 # auto sizing handled here
@@ -356,7 +363,6 @@ class CrawlOperator(BaseOperator):
 
         params["name"] = name
         params["qa_source_replay_json"] = crawl_replay.json(include={"resources"})
-        print(params["qa_source_replay_json"])
         return self.load_from_yaml("qa_configmap.yaml", params)
 
     def _load_crawler(self, params, i, status, children):
@@ -571,10 +577,19 @@ class CrawlOperator(BaseOperator):
 
         return {"relatedResources": related_resources}
 
-    async def can_start_new(self, crawl: CrawlSpec, data: MCSyncData, status):
+    async def can_start_new(
+        self,
+        crawl: CrawlSpec,
+        data: MCSyncData,
+        status: CrawlStatus,
+        org: Optional[Organization] = None,
+    ):
         """return true if crawl can start, otherwise set crawl to 'queued' state
         until more crawls for org finish"""
-        max_crawls = await self.org_ops.get_max_concurrent_crawls(crawl.oid)
+        if not org:
+            org = await self.org_ops.get_org_by_id(crawl.oid)
+
+        max_crawls = org.quotas.maxConcurrentCrawls or 0
         if not max_crawls:
             return True
 
@@ -583,20 +598,12 @@ class CrawlOperator(BaseOperator):
 
         name = data.parent.get("metadata", {}).get("name")
 
-        # def metadata_key(val):
-        #    return val.get("metadata").get("creationTimestamp")
-
-        # all_crawljobs = sorted(data.related[CJS].values(), key=metadata_key)
-        # print(list(data.related[CJS].keys()))
-
         i = 0
         for crawl_sorted in data.related[CJS].values():
             if crawl_sorted.get("status", {}).get("state") in NON_RUNNING_STATES:
                 continue
 
-            # print(i, crawl_sorted.get("metadata").get("name"))
             if crawl_sorted.get("metadata").get("name") == name:
-                # print("found: ", name, "index", i)
                 if i < max_crawls:
                     return True
 
@@ -743,7 +750,7 @@ class CrawlOperator(BaseOperator):
         crawl: CrawlSpec,
         status: CrawlStatus,
         pods: dict[str, dict],
-        metrics: Optional[dict],
+        data: MCSyncData,
     ):
         """sync crawl state for running crawl"""
         # check if at least one crawler pod started running
@@ -751,6 +758,8 @@ class CrawlOperator(BaseOperator):
             pods, status
         )
         redis = None
+
+        metrics = data.related.get(METRICS, {})
 
         try:
             if redis_running:
@@ -858,7 +867,7 @@ class CrawlOperator(BaseOperator):
 
             # update stats and get status
             return await self.update_crawl_state(
-                redis, crawl, status, pods, pod_done_count
+                redis, crawl, status, pods, pod_done_count, data
             )
 
         # pylint: disable=broad-except
@@ -1208,12 +1217,11 @@ class CrawlOperator(BaseOperator):
         return True
 
     async def is_crawl_stopping(
-        self, crawl: CrawlSpec, status: CrawlStatus
+        self, crawl: CrawlSpec, status: CrawlStatus, data: MCSyncData
     ) -> Optional[StopReason]:
         """check if crawl is stopping and set reason"""
         # if user requested stop, then enter stopping phase
         if crawl.stopping:
-            print("Graceful Stop: User requested stop")
             return "stopped_by_user"
 
         # check timeout if timeout time exceeds elapsed time
@@ -1225,19 +1233,34 @@ class CrawlOperator(BaseOperator):
                 ).total_seconds()
 
             if elapsed > crawl.timeout:
-                print(
-                    f"Graceful Stop: Crawl running time exceeded {crawl.timeout} second timeout"
-                )
                 return "time-limit"
 
         # crawl size limit
         if crawl.max_crawl_size and status.size > crawl.max_crawl_size:
-            print(f"Graceful Stop: Maximum crawl size {crawl.max_crawl_size} hit")
             return "size-limit"
 
-        # check exec time quotas and stop if reached limit
-        if await self.org_ops.exec_mins_quota_reached(crawl.oid):
-            return "stopped_quota_reached"
+        # gracefully stop crawl if current running crawl sizes reach storage quota
+        org = await self.org_ops.get_org_by_id(crawl.oid)
+
+        if org.quotas.storageQuota:
+            running_crawls_total_size = status.size
+            for crawl_job in data.related[CJS].values():
+                # if the job id matches current crawl job, then skip
+                # this job to avoid double-counting
+                # using the more up-to-date 'status.size' for this job
+                if crawl_job.get("spec", {}).get("id") == crawl.id:
+                    continue
+
+                crawl_status = crawl_job.get("status", {})
+                if crawl_status:
+                    running_crawls_total_size += crawl_status.get("size", 0)
+
+            if self.org_ops.storage_quota_reached(org, running_crawls_total_size):
+                return "stopped_storage_quota_reached"
+
+        # gracefully stop crawl is execution time quota is reached
+        if self.org_ops.exec_mins_quota_reached(org):
+            return "stopped_time_quota_reached"
 
         return None
 
@@ -1271,6 +1294,7 @@ class CrawlOperator(BaseOperator):
         status: CrawlStatus,
         pods: dict[str, dict],
         pod_done_count: int,
+        data: MCSyncData,
     ) -> CrawlStatus:
         """update crawl state and check if crawl is now done"""
         results = await redis.hgetall(f"{crawl.id}:status")
@@ -1296,8 +1320,10 @@ class CrawlOperator(BaseOperator):
                 pod_info.used.storage = value
 
         if not status.stopReason:
-            status.stopReason = await self.is_crawl_stopping(crawl, status)
+            status.stopReason = await self.is_crawl_stopping(crawl, status, data)
             status.stopping = status.stopReason is not None
+            if status.stopping:
+                print("Crawl gracefully stopping: {status.stopReason}, id: {crawl.id}")
 
         # mark crawl as stopping
         if status.stopping:
@@ -1336,8 +1362,10 @@ class CrawlOperator(BaseOperator):
             state: TYPE_NON_RUNNING_STATES
             if status.stopReason == "stopped_by_user":
                 state = "stopped_by_user"
-            elif status.stopReason == "stopped_quota_reached":
-                state = "stopped_quota_reached"
+            elif status.stopReason == "stopped_storage_quota_reached":
+                state = "stopped_storage_quota_reached"
+            elif status.stopReason == "stopped_time_quota_reached":
+                state = "stopped_time_quota_reached"
             else:
                 state = "complete"
 

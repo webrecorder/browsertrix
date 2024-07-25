@@ -31,6 +31,7 @@ export type OrgQuotas = {
 export type OrgData = {
   id: string;
   name: string;
+  created: string;
   slug: string;
   default: boolean;
   quotas: OrgQuotas;

@@ -68,6 +68,7 @@ import {
 import { maxLengthValidator } from "@/utils/form";
 import LiteElement, { html } from "@/utils/LiteElement";
 import { getLocale } from "@/utils/localization";
+import { isArchivingDisabled } from "@/utils/orgs";
 import { regexEscape, regexUnescape } from "@/utils/string";
 
 type NewCrawlConfigParams = WorkflowParams & {
@@ -272,12 +273,6 @@ export class CrawlConfigEditor extends LiteElement {
   @property({ type: Array })
   initialSeeds?: Seed[];
 
-  @property({ type: Boolean })
-  orgStorageQuotaReached = false;
-
-  @property({ type: Boolean })
-  orgExecutionMinutesQuotaReached = false;
-
   @state()
   private showCrawlerChannels = false;
 
@@ -302,6 +297,10 @@ export class CrawlConfigEditor extends LiteElement {
 
   @state()
   private serverError?: TemplateResult | string;
+
+  private get org() {
+    return this.appState.org;
+  }
 
   private maxScale = DEFAULT_MAX_SCALE;
 
@@ -590,7 +589,7 @@ export class CrawlConfigEditor extends LiteElement {
       scheduleType: defaultFormState.scheduleType,
       scheduleFrequency: defaultFormState.scheduleFrequency,
       runNow:
-        this.orgStorageQuotaReached || this.orgExecutionMinutesQuotaReached
+        this.org?.storageQuotaReached || this.org?.execMinutesQuotaReached
           ? false
           : defaultFormState.runNow,
       tags: this.initialWorkflow.tags,
@@ -921,8 +920,7 @@ export class CrawlConfigEditor extends LiteElement {
       <sl-switch
         class="mr-1"
         ?checked=${this.formState.runNow}
-        ?disabled=${this.orgStorageQuotaReached ||
-        this.orgExecutionMinutesQuotaReached}
+        ?disabled=${isArchivingDisabled(this.org, true)}
         @sl-change=${(e: SlChangeEvent) => {
           this.updateFormState(
             {

@@ -170,7 +170,6 @@ class PageOps:
                 return
 
             compare = PageQACompare(**compare_dict)
-            print("Adding QA Run Data for Page", page_dict.get("url"), compare)
 
             await self.add_qa_run_for_page(page.id, oid, qa_run_id, compare)
 
