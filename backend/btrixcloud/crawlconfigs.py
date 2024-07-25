@@ -225,7 +225,7 @@ class CrawlConfigOps:
             crawlconfig.lastStartedByName = user.name
 
         # Ensure page limit is below org maxPagesPerCall if set
-        max_pages = await self.org_ops.get_max_pages_per_crawl(org.id)
+        max_pages = org.quotas.maxPagesPerCrawl or 0
         if max_pages > 0:
             crawlconfig.config.limit = max_pages
 
@@ -248,8 +248,8 @@ class CrawlConfigOps:
                     exec_mins_quota_reached = True
                 print(f"Can't run crawl now: {e.detail}", flush=True)
         else:
-            storage_quota_reached = await self.org_ops.storage_quota_reached(org.id)
-            exec_mins_quota_reached = await self.org_ops.exec_mins_quota_reached(org.id)
+            storage_quota_reached = self.org_ops.storage_quota_reached(org)
+            exec_mins_quota_reached = self.org_ops.exec_mins_quota_reached(org)
 
         return CrawlConfigAddedResponse(
             added=True,
@@ -406,10 +406,8 @@ class CrawlConfigOps:
             "updated": True,
             "settings_changed": changed,
             "metadata_changed": metadata_changed,
-            "storageQuotaReached": await self.org_ops.storage_quota_reached(org.id),
-            "execMinutesQuotaReached": await self.org_ops.exec_mins_quota_reached(
-                org.id
-            ),
+            "storageQuotaReached": self.org_ops.storage_quota_reached(org),
+            "execMinutesQuotaReached": self.org_ops.exec_mins_quota_reached(org),
         }
         if run_now:
             crawl_id = await self.run_now(cid, org, user)
@@ -827,7 +825,7 @@ class CrawlConfigOps:
         self, crawlconfig: CrawlConfig, org: Organization, user: User
     ) -> str:
         """run new crawl for specified crawlconfig now"""
-        await self.org_ops.can_run_crawls(org)
+        self.org_ops.can_write_data(org)
 
         if await self.get_running_crawl(crawlconfig):
             raise HTTPException(status_code=400, detail="crawl_already_running")

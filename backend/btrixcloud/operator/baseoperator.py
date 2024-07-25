@@ -144,13 +144,13 @@ class BaseOperator:
     k8s: K8sOpAPI
     crawl_config_ops: CrawlConfigOps
     crawl_ops: CrawlOps
-    orgs_ops: OrgOps
+    org_ops: OrgOps
     coll_ops: CollectionOps
     storage_ops: StorageOps
-    event_webhook_ops: EventWebhookOps
     background_job_ops: BackgroundJobOps
-    user_ops: UserManager
+    event_webhook_ops: EventWebhookOps
     page_ops: PageOps
+    user_ops: UserManager
 
     def __init__(
         self,
@@ -173,7 +173,6 @@ class BaseOperator:
         self.background_job_ops = background_job_ops
         self.event_webhook_ops = event_webhook_ops
         self.page_ops = page_ops
-
         self.user_ops = crawl_config_ops.user_manager
 
         # to avoid background tasks being garbage collected

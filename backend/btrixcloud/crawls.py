@@ -813,7 +813,7 @@ class CrawlOps(BaseCrawlOps):
         if not crawl.cid or crawl.type != "crawl":
             raise HTTPException(status_code=400, detail="invalid_crawl_for_qa")
 
-        await self.orgs.can_run_crawls(org)
+        self.orgs.can_write_data(org)
 
         crawlconfig = await self.crawl_configs.get_crawl_config(crawl.cid, org.id)
 

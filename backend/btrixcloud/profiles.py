@@ -220,13 +220,7 @@ class ProfileOps:
             print("baseid", baseid)
             baseid = UUID(baseid)
 
-        oid = UUID(metadata.get("btrix.org"))
-
-        if org.readOnly:
-            raise HTTPException(status_code=403, detail="org_set_to_read_only")
-
-        if await self.orgs.storage_quota_reached(oid):
-            raise HTTPException(status_code=403, detail="storage_quota_reached")
+        self.orgs.can_write_data(org, include_time=False)
 
         profile = Profile(
             id=profileid,
@@ -241,7 +235,7 @@ class ProfileOps:
             origins=json["origins"],
             resource=profile_file,
             userid=UUID(metadata.get("btrix.user")),
-            oid=oid,
+            oid=org.id,
             baseid=baseid,
             crawlerChannel=browser_commit.crawlerChannel,
         )
@@ -251,15 +245,15 @@ class ProfileOps:
         )
 
         await self.background_job_ops.create_replica_jobs(
-            oid, profile_file, str(profileid), "profile"
+            org.id, profile_file, str(profileid), "profile"
         )
 
-        quota_reached = await self.orgs.inc_org_bytes_stored(oid, file_size, "profile")
+        await self.orgs.inc_org_bytes_stored(org.id, file_size, "profile")
 
         return {
             "added": True,
             "id": str(profile.id),
-            "storageQuotaReached": quota_reached,
+            "storageQuotaReached": self.orgs.storage_quota_reached(org),
         }
 
     async def update_profile_metadata(
@@ -432,7 +426,7 @@ class ProfileOps:
         if not res or res.deleted_count != 1:
             raise HTTPException(status_code=404, detail="profile_not_found")
 
-        quota_reached = await self.orgs.storage_quota_reached(org.id)
+        quota_reached = self.orgs.storage_quota_reached(org)
 
         return {"success": True, "storageQuotaReached": quota_reached}
 
