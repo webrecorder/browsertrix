@@ -22,6 +22,9 @@ class Migration(BaseMigration):
         Migration stopped_quota_reached to stopped_time_quota_reached
         """
         crawls_db = self.mdb["crawls"]
+        crawl_configs_db = self.mdb["crawl_configs"]
+
+        ## CRAWLS ##
 
         try:
             res = await crawls_db.update_many(
@@ -54,5 +57,41 @@ class Migration(BaseMigration):
         except Exception as err:
             print(
                 f"Error migrating crawls with state stopped_quota_reached: {err}",
+                flush=True,
+            )
+
+        ## WORKFLOWS ##
+
+        try:
+            res = await crawl_configs_db.update_many(
+                {"lastCrawlState": "skipped_quota_reached"},
+                {"$set": {"lastCrawlState": "skipped_storage_quota_reached"}},
+            )
+            updated = res.modified_count
+            print(
+                f"{updated} crawl configs with lastCrawlState skipped_quota_reached migrated",
+                flush=True,
+            )
+        # pylint: disable=broad-exception-caught
+        except Exception as err:
+            print(
+                f"Error migrating crawlconfigs with lastCrawlState skipped_quota_reached: {err}",
+                flush=True,
+            )
+
+        try:
+            res = await crawl_configs_db.update_many(
+                {"lastCrawlState": "stopped_quota_reached"},
+                {"$set": {"lastCrawlState": "stopped_time_quota_reached"}},
+            )
+            updated = res.modified_count
+            print(
+                f"{updated} crawl configs with lastCrawlState stopped_quota_reached migrated",
+                flush=True,
+            )
+        # pylint: disable=broad-exception-caught
+        except Exception as err:
+            print(
+                f"Error migrating crawl configs with lastCrawlState stopped_quota_reached: {err}",
                 flush=True,
             )
