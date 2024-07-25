@@ -360,7 +360,6 @@ class CrawlOperator(BaseOperator):
 
         params["name"] = name
         params["qa_source_replay_json"] = crawl_replay.json(include={"resources"})
-        print(params["qa_source_replay_json"])
         return self.load_from_yaml("qa_configmap.yaml", params)
 
     def _load_crawler(self, params, i, status, children):
@@ -587,20 +586,12 @@ class CrawlOperator(BaseOperator):
 
         name = data.parent.get("metadata", {}).get("name")
 
-        # def metadata_key(val):
-        #    return val.get("metadata").get("creationTimestamp")
-
-        # all_crawljobs = sorted(data.related[CJS].values(), key=metadata_key)
-        # print(list(data.related[CJS].keys()))
-
         i = 0
         for crawl_sorted in data.related[CJS].values():
             if crawl_sorted.get("status", {}).get("state") in NON_RUNNING_STATES:
                 continue
 
-            # print(i, crawl_sorted.get("metadata").get("name"))
             if crawl_sorted.get("metadata").get("name") == name:
-                # print("found: ", name, "index", i)
                 if i < max_crawls:
                     return True
 
@@ -1212,7 +1203,6 @@ class CrawlOperator(BaseOperator):
         """check if crawl is stopping and set reason"""
         # if user requested stop, then enter stopping phase
         if crawl.stopping:
-            print("Graceful Stop: User requested stop")
             return "stopped_by_user"
 
         # check timeout if timeout time exceeds elapsed time
@@ -1224,14 +1214,10 @@ class CrawlOperator(BaseOperator):
                 ).total_seconds()
 
             if elapsed > crawl.timeout:
-                print(
-                    f"Graceful Stop: Crawl running time exceeded {crawl.timeout} second timeout"
-                )
                 return "time-limit"
 
         # crawl size limit
         if crawl.max_crawl_size and status.size > crawl.max_crawl_size:
-            print(f"Graceful Stop: Maximum crawl size {crawl.max_crawl_size} hit")
             return "size-limit"
 
         # gracefully stop crawl if current running crawl sizes reach storage quota
@@ -1239,14 +1225,14 @@ class CrawlOperator(BaseOperator):
 
         if org.quotas.storageQuota:
             running_crawls_total_size = status.size
-            for crawl_jobs in data.related[CJS].values():
+            for crawl_job in data.related[CJS].values():
                 # if the job id matches current crawl job, then skip
                 # this job to avoid double-counting
                 # using the more up-to-date 'status.size' for this job
-                if crawl_jobs.get("spec", {}).get("id") == crawl.id:
+                if crawl_job.get("spec", {}).get("id") == crawl.id:
                     continue
 
-                crawl_status = crawl_jobs.get("status", {})
+                crawl_status = crawl_job.get("status", {})
                 if crawl_status:
                     running_crawls_total_size += crawl_status.get("size", 0)
 
@@ -1317,6 +1303,8 @@ class CrawlOperator(BaseOperator):
         if not status.stopReason:
             status.stopReason = await self.is_crawl_stopping(crawl, status, data)
             status.stopping = status.stopReason is not None
+            if status.stopping:
+                print("Crawl gracefully stopping: {status.stopReason}, id: {crawl.id}")
 
         # mark crawl as stopping
         if status.stopping:
