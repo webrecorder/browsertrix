@@ -141,6 +141,9 @@ def test_webhooks_sent(
             "crawlStarted": ECHO_SERVER_URL_FROM_K8S,
             "crawlFinished": ECHO_SERVER_URL_FROM_K8S,
             "crawlDeleted": ECHO_SERVER_URL_FROM_K8S,
+            "qaAnalysisStarted": ECHO_SERVER_URL_FROM_K8S,
+            "qaAnalysisFinished": ECHO_SERVER_URL_FROM_K8S,
+            "crawlReviewed": ECHO_SERVER_URL_FROM_K8S,
             "uploadFinished": ECHO_SERVER_URL_FROM_K8S,
             "uploadDeleted": ECHO_SERVER_URL_FROM_K8S,
             "addedToCollection": ECHO_SERVER_URL_FROM_K8S,
@@ -194,6 +197,42 @@ def test_webhooks_sent(
         if data["state"] == "complete":
             break
         time.sleep(5)
+
+    # Run QA analysis on crawl
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{webhooks_crawl_id}/qa/start",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+
+    qa_run_id = r.json()["started"]
+
+    # Wait for QA to complete
+    count = 0
+    max_attempts = 24
+    while count < max_attempts:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{webhooks_crawl_id}/qa/activeQA",
+            headers=admin_auth_headers,
+        )
+
+        data = r.json()
+        if not data["qa"]:
+            break
+
+        if count + 1 == max_attempts:
+            assert False
+
+        time.sleep(5)
+        count += 1
+
+    # Review crawl
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{webhooks_crawl_id}",
+        headers=admin_auth_headers,
+        json={"reviewStatus": 5, "description": "Perfect crawl"},
+    )
+    assert r.status_code == 200
 
     # Create upload and add to collection
     with open(os.path.join(curr_dir, "data", "example.wacz"), "rb") as fh:
@@ -267,6 +306,9 @@ def test_webhooks_sent(
     crawl_started_count = 0
     crawl_finished_count = 0
     crawl_deleted_count = 0
+    qa_analysis_started_count = 0
+    qa_analysis_finished_count = 0
+    crawl_reviewed_count = 0
     upload_finished_count = 0
     upload_deleted_count = 0
     added_to_collection_count = 0
@@ -293,6 +335,21 @@ def test_webhooks_sent(
         elif event == "crawlDeleted":
             crawl_deleted_count += 1
             assert post["itemId"]
+
+        elif event == "qaAnalysisStarted":
+            qa_analysis_started_count += 1
+            assert post["itemId"] == webhooks_crawl_id
+            assert post["qaRunId"] == qa_run_id
+
+        elif event == "qaAnalysisFinished":
+            qa_analysis_finished_count += 1
+            assert post["itemId"] == webhooks_crawl_id
+            assert post["qaRunId"] == qa_run_id
+            assert post["resources"]
+
+        elif event == "crawlReviewed":
+            crawl_reviewed_count += 1
+            assert post["itemId"] == webhooks_crawl_id
 
         elif event == "uploadFinished":
             upload_finished_count += 1
@@ -327,6 +384,9 @@ def test_webhooks_sent(
     assert crawl_started_count >= 1
     assert crawl_finished_count >= 1
     assert crawl_deleted_count == 1
+    assert qa_analysis_started_count == 1
+    assert qa_analysis_finished_count == 1
+    assert crawl_reviewed_count == 1
     assert upload_finished_count == 1
     assert upload_deleted_count == 1
     assert added_to_collection_count >= 2
@@ -339,4 +399,4 @@ def test_webhooks_sent(
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
-    assert r.json()["total"] >= 7
+    assert r.json()["total"] >= 10
