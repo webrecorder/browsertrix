@@ -807,11 +807,18 @@ class CrawlOperator(BaseOperator):
                     crawl,
                     allowed_from=["starting", "waiting_capacity"],
                 ):
-                    self.run_task(
-                        self.event_webhook_ops.create_crawl_started_notification(
-                            crawl.id, crawl.oid, scheduled=crawl.scheduled
+                    if not crawl.is_qa:
+                        self.run_task(
+                            self.event_webhook_ops.create_crawl_started_notification(
+                                crawl.id, crawl.oid, scheduled=crawl.scheduled
+                            )
                         )
-                    )
+                    else:
+                        self.run_task(
+                            self.event_webhook_ops.create_qa_analysis_started_notification(
+                                crawl.id, crawl.oid, crawl.qa_source_crawl_id
+                            )
+                        )
 
             # update lastActiveTime if crawler is running
             if crawler_running:
@@ -1448,6 +1455,10 @@ class CrawlOperator(BaseOperator):
 
         if state in FAILED_STATES:
             await self.page_ops.delete_qa_run_from_pages(crawl.db_crawl_id, crawl.id)
+
+        await self.event_webhook_ops.create_qa_analysis_finished_notification(
+            crawl.id, crawl.oid, state, crawl.qa_source_crawl_id
+        )
 
         # finally, delete job
         await self.k8s.delete_crawl_job(crawl.id)
