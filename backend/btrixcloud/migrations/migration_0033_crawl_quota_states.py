@@ -19,7 +19,8 @@ class Migration(BaseMigration):
         """Perform migration up.
 
         Migrate skipped_quota_reached state to skipped_storage_quota_reached
-        Migration stopped_quota_reached to stopped_time_quota_reached
+        Migrate stopped_quota_reached to stopped_time_quota_reached
+        Also update lastCrawlStates in workflows with these states
         """
         crawls_db = self.mdb["crawls"]
         crawl_configs_db = self.mdb["crawl_configs"]
