@@ -225,7 +225,7 @@ class CrawlConfigOps:
             crawlconfig.lastStartedByName = user.name
 
         # Ensure page limit is below org maxPagesPerCall if set
-        max_pages = await self.org_ops.get_max_pages_per_crawl(org.id)
+        max_pages = org.quotas.maxPagesPerCrawl or 0
         if max_pages > 0:
             crawlconfig.config.limit = max_pages
 

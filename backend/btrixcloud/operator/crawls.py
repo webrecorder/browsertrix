@@ -27,6 +27,7 @@ from btrixcloud.models import (
     CrawlFile,
     CrawlCompleteIn,
     StorageRef,
+    Organization,
 )
 
 from btrixcloud.utils import from_k8s_date, to_k8s_date, dt_now
@@ -192,6 +193,8 @@ class CrawlOperator(BaseOperator):
             await self.k8s.delete_crawl_job(crawl.id)
             return {"status": status.dict(exclude_none=True), "children": []}
 
+        org = None
+
         # first, check storage quota, and fail immediately if quota reached
         if status.state in (
             "starting",
@@ -215,7 +218,7 @@ class CrawlOperator(BaseOperator):
                     return self._empty_response(status)
 
         if status.state in ("starting", "waiting_org_limit"):
-            if not await self.can_start_new(crawl, data, status):
+            if not await self.can_start_new(crawl, data, status, org):
                 return self._empty_response(status)
 
             await self.set_state(
@@ -574,10 +577,19 @@ class CrawlOperator(BaseOperator):
 
         return {"relatedResources": related_resources}
 
-    async def can_start_new(self, crawl: CrawlSpec, data: MCSyncData, status):
+    async def can_start_new(
+        self,
+        crawl: CrawlSpec,
+        data: MCSyncData,
+        status: CrawlStatus,
+        org: Optional[Organization] = None,
+    ):
         """return true if crawl can start, otherwise set crawl to 'queued' state
         until more crawls for org finish"""
-        max_crawls = await self.org_ops.get_max_concurrent_crawls(crawl.oid)
+        if not org:
+            org = await self.org_ops.get_org_by_id(crawl.oid)
+
+        max_crawls = org.quotas.maxConcurrentCrawls or 0
         if not max_crawls:
             return True
 

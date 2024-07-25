@@ -673,14 +673,6 @@ class OrgOps:
                 org_owners.append(key)
         return org_owners
 
-    async def get_max_pages_per_crawl(self, oid: UUID) -> int:
-        """Return org-specific max pages per crawl setting or 0."""
-        org_data = await self.orgs.find_one({"_id": oid})
-        if org_data:
-            org = Organization.from_dict(org_data)
-            return org.quotas.maxPagesPerCrawl or 0
-        return 0
-
     async def inc_org_bytes_stored(self, oid: UUID, size: int, type_="crawl") -> None:
         """Increase org bytesStored count (pass negative value to subtract)."""
         if type_ == "crawl":
@@ -861,19 +853,11 @@ class OrgOps:
                 },
             )
 
-    async def get_max_concurrent_crawls(self, oid) -> int:
-        """return max allowed concurrent crawls, if any"""
-        org_data = await self.orgs.find_one({"_id": oid})
-        if org_data:
-            org = Organization.from_dict(org_data)
-            return org.quotas.maxConcurrentCrawls or 0
-        return 0
-
     async def get_org_metrics(self, org: Organization) -> dict[str, int]:
         """Calculate and return org metrics"""
         # pylint: disable=too-many-locals
         storage_quota = org.quotas.storageQuota or 0
-        max_concurrent_crawls = await self.get_max_concurrent_crawls(org.id)
+        max_concurrent_crawls = org.quotas.maxConcurrentCrawls or 0
 
         # Calculate these counts in loop to avoid having db iterate through
         # archived items several times.
