@@ -1277,6 +1277,9 @@ class OrgWebhookUrls(BaseModel):
     crawlStarted: Optional[AnyHttpUrl] = None
     crawlFinished: Optional[AnyHttpUrl] = None
     crawlDeleted: Optional[AnyHttpUrl] = None
+    qaAnalysisStarted: Optional[AnyHttpUrl] = None
+    qaAnalysisFinished: Optional[AnyHttpUrl] = None
+    crawlReviewed: Optional[AnyHttpUrl] = None
     uploadFinished: Optional[AnyHttpUrl] = None
     uploadDeleted: Optional[AnyHttpUrl] = None
     addedToCollection: Optional[AnyHttpUrl] = None
@@ -1735,6 +1738,11 @@ class WebhookEventType(str, Enum):
     CRAWL_FINISHED = "crawlFinished"
     CRAWL_DELETED = "crawlDeleted"
 
+    QA_ANALYSIS_STARTED = "qaAnalysisStarted"
+    QA_ANALYSIS_FINISHED = "qaAnalysisFinished"
+
+    CRAWL_REVIEWED = "crawlReviewed"
+
     UPLOAD_FINISHED = "uploadFinished"
     UPLOAD_DELETED = "uploadDeleted"
 
@@ -1832,6 +1840,39 @@ class UploadDeletedBody(BaseArchivedItemBody):
 
 
 # ============================================================================
+class QaAnalysisStartedBody(BaseArchivedItemBody):
+    """Webhook notification POST body for when qa analysis run starts"""
+
+    event: Literal[WebhookEventType.QA_ANALYSIS_STARTED] = (
+        WebhookEventType.QA_ANALYSIS_STARTED
+    )
+
+    qaRunId: str
+
+
+# ============================================================================
+class QaAnalysisFinishedBody(BaseArchivedItemFinishedBody):
+    """Webhook notification POST body for when qa analysis run finishes"""
+
+    event: Literal[WebhookEventType.QA_ANALYSIS_FINISHED] = (
+        WebhookEventType.QA_ANALYSIS_FINISHED
+    )
+
+    qaRunId: str
+
+
+# ============================================================================
+class CrawlReviewedBody(BaseArchivedItemBody):
+    """Webhook notification POST body for when crawl is reviewed in qa"""
+
+    event: Literal[WebhookEventType.CRAWL_REVIEWED] = WebhookEventType.CRAWL_REVIEWED
+
+    reviewStatus: ReviewStatus
+    reviewStatusLabel: str
+    description: Optional[str] = None
+
+
+# ============================================================================
 class WebhookNotification(BaseMongoModel):
     """Base POST body model for webhook notifications"""
 
@@ -1841,6 +1882,9 @@ class WebhookNotification(BaseMongoModel):
         CrawlStartedBody,
         CrawlFinishedBody,
         CrawlDeletedBody,
+        QaAnalysisStartedBody,
+        QaAnalysisFinishedBody,
+        CrawlReviewedBody,
         UploadFinishedBody,
         UploadDeletedBody,
         CollectionItemAddedBody,

@@ -720,7 +720,7 @@ class CrawlOperator(BaseOperator):
                 finalized = True
 
         if finalized and crawl.is_qa:
-            await self.crawl_ops.qa_run_finished(crawl.db_crawl_id)
+            self.run_task(self.crawl_ops.qa_run_finished(crawl.db_crawl_id))
 
         return {
             "status": status.dict(exclude_none=True),
@@ -816,11 +816,18 @@ class CrawlOperator(BaseOperator):
                     crawl,
                     allowed_from=["starting", "waiting_capacity"],
                 ):
-                    self.run_task(
-                        self.event_webhook_ops.create_crawl_started_notification(
-                            crawl.id, crawl.oid, scheduled=crawl.scheduled
+                    if not crawl.qa_source_crawl_id:
+                        self.run_task(
+                            self.event_webhook_ops.create_crawl_started_notification(
+                                crawl.id, crawl.oid, scheduled=crawl.scheduled
+                            )
                         )
-                    )
+                    else:
+                        self.run_task(
+                            self.event_webhook_ops.create_qa_analysis_started_notification(
+                                crawl.id, crawl.oid, crawl.qa_source_crawl_id
+                            )
+                        )
 
             # update lastActiveTime if crawler is running
             if crawler_running:

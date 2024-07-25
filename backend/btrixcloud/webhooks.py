@@ -15,6 +15,9 @@ from .models import (
     CrawlStartedBody,
     CrawlFinishedBody,
     CrawlDeletedBody,
+    QaAnalysisStartedBody,
+    QaAnalysisFinishedBody,
+    CrawlReviewedBody,
     UploadFinishedBody,
     UploadDeletedBody,
     CollectionItemAddedBody,
@@ -22,6 +25,7 @@ from .models import (
     CollectionDeletedBody,
     PaginatedWebhookNotificationResponse,
     Organization,
+    QARun,
 )
 from .utils import dt_now
 
@@ -195,7 +199,7 @@ class EventWebhookOps:
         crawl_id: str,
         org: Organization,
         event: str,
-        body: Union[CrawlFinishedBody, UploadFinishedBody],
+        body: Union[CrawlFinishedBody, QaAnalysisFinishedBody, UploadFinishedBody],
     ):
         """Create webhook notification for finished crawl/upload."""
         crawl = await self.crawl_ops.get_crawl_out(crawl_id, org)
@@ -262,6 +266,46 @@ class EventWebhookOps:
                 resources=[],
             ),
         )
+
+    async def create_qa_analysis_finished_notification(
+        self, qa_run: QARun, oid: UUID, crawl_id: str
+    ) -> None:
+        """Create webhook notification for finished qa analysis run."""
+        org = await self.org_ops.get_org_by_id(oid)
+
+        if not org.webhookUrls or not org.webhookUrls.qaAnalysisFinished:
+            return
+
+        qa_resources = []
+
+        # Check both crawl.qa and crawl.qaFinished for files because we don't
+        # know for certain what state the crawl will be in at this point
+        try:
+            qa_resources = await self.crawl_ops.resolve_signed_urls(
+                qa_run.files, org, crawl_id, qa_run.id
+            )
+
+        # pylint: disable=broad-exception-caught
+        except Exception as err:
+            print(f"Error trying to get QA run resources: {err}", flush=True)
+
+        notification = WebhookNotification(
+            id=uuid4(),
+            event=WebhookEventType.QA_ANALYSIS_FINISHED,
+            oid=oid,
+            body=QaAnalysisFinishedBody(
+                itemId=crawl_id,
+                qaRunId=qa_run.id,
+                orgId=str(org.id),
+                state=qa_run.state,
+                resources=qa_resources,
+            ),
+            created=dt_now(),
+        )
+
+        await self.webhooks.insert_one(notification.to_dict())
+
+        await self.send_notification(org, notification)
 
     async def create_crawl_deleted_notification(
         self, crawl_id: str, org: Organization
@@ -337,6 +381,82 @@ class EventWebhookOps:
                 itemId=crawl_id,
                 orgId=str(oid),
                 scheduled=scheduled,
+            ),
+            created=dt_now(),
+        )
+
+        await self.webhooks.insert_one(notification.to_dict())
+
+        await self.send_notification(org, notification)
+
+    async def create_qa_analysis_started_notification(
+        self, qa_run_id: str, oid: UUID, crawl_id: str
+    ) -> None:
+        """Create webhook notification for started qa analysis run."""
+        org = await self.org_ops.get_org_by_id(oid)
+
+        if not org.webhookUrls or not org.webhookUrls.qaAnalysisStarted:
+            return
+
+        # Check if already created this event
+        existing_notification = await self.webhooks.find_one(
+            {
+                "event": WebhookEventType.QA_ANALYSIS_STARTED,
+                "body.qaRunId": qa_run_id,
+            }
+        )
+        if existing_notification:
+            return
+
+        notification = WebhookNotification(
+            id=uuid4(),
+            event=WebhookEventType.QA_ANALYSIS_STARTED,
+            oid=oid,
+            body=QaAnalysisStartedBody(
+                itemId=crawl_id,
+                qaRunId=qa_run_id,
+                orgId=str(oid),
+            ),
+            created=dt_now(),
+        )
+
+        await self.webhooks.insert_one(notification.to_dict())
+
+        await self.send_notification(org, notification)
+
+    async def create_crawl_reviewed_notification(
+        self,
+        crawl_id: str,
+        oid: UUID,
+        review_status: Optional[int],
+        description: Optional[str],
+    ) -> None:
+        """Create webhook notification for crawl being reviewed in qa"""
+        org = await self.org_ops.get_org_by_id(oid)
+
+        if not org.webhookUrls or not org.webhookUrls.crawlReviewed:
+            return
+
+        review_status_labels = {
+            1: "Bad",
+            2: "Poor",
+            3: "Fair",
+            4: "Good",
+            5: "Excellent",
+        }
+
+        notification = WebhookNotification(
+            id=uuid4(),
+            event=WebhookEventType.CRAWL_REVIEWED,
+            oid=oid,
+            body=CrawlReviewedBody(
+                itemId=crawl_id,
+                orgId=str(oid),
+                reviewStatus=review_status,
+                reviewStatusLabel=(
+                    review_status_labels.get(review_status, "") if review_status else ""
+                ),
+                description=description,
             ),
             created=dt_now(),
         )
@@ -506,6 +626,18 @@ def init_openapi_webhooks(app):
     @app.webhooks.post(WebhookEventType.CRAWL_DELETED)
     def crawl_deleted(body: CrawlDeletedBody):
         """Sent when a crawl is deleted"""
+
+    @app.webhooks.post(WebhookEventType.QA_ANALYSIS_STARTED)
+    def qa_analysis_started(body: QaAnalysisStartedBody):
+        """Sent when a qa analysis run is started"""
+
+    @app.webhooks.post(WebhookEventType.QA_ANALYSIS_FINISHED)
+    def qa_analysis_finished(body: QaAnalysisFinishedBody):
+        """Sent when a qa analysis run has finished"""
+
+    @app.webhooks.post(WebhookEventType.CRAWL_REVIEWED)
+    def crawl_reviewed(body: CrawlReviewedBody):
+        """Sent when a crawl has been reviewed in qa"""
 
     @app.webhooks.post(WebhookEventType.UPLOAD_FINISHED)
     def upload_finished(body: UploadFinishedBody):

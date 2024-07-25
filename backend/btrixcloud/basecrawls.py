@@ -9,6 +9,7 @@ import urllib.parse
 import asyncio
 from fastapi import HTTPException, Depends
 from fastapi.responses import StreamingResponse
+import pymongo
 
 from .models import (
     CrawlFile,
@@ -244,12 +245,18 @@ class BaseCrawlOps:
 
         # update in db
         result = await self.crawls.find_one_and_update(
-            query,
-            {"$set": update_values},
+            query, {"$set": update_values}, return_document=pymongo.ReturnDocument.AFTER
         )
 
         if not result:
             raise HTTPException(status_code=404, detail="crawl_not_found")
+
+        if update_values.get("reviewStatus"):
+            crawl = BaseCrawl.from_dict(result)
+
+            await self.event_webhook_ops.create_crawl_reviewed_notification(
+                crawl.id, crawl.oid, crawl.reviewStatus, crawl.description
+            )
 
         return {"updated": True}
 
