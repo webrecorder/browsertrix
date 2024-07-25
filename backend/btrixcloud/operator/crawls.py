@@ -1450,8 +1450,9 @@ class CrawlOperator(BaseOperator):
         )
 
         if state in SUCCESSFUL_STATES and crawl.oid:
-            org = await self.org_ops.get_org_by_id(crawl.oid)
-            await self.org_ops.inc_org_bytes_stored(org, status.filesAddedSize, "crawl")
+            await self.org_ops.inc_org_bytes_stored(
+                crawl.oid, status.filesAddedSize, "crawl"
+            )
             await self.coll_ops.add_successful_crawl_to_collections(crawl.id, crawl.cid)
 
         if state in FAILED_STATES:

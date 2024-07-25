@@ -248,12 +248,12 @@ class ProfileOps:
             org.id, profile_file, str(profileid), "profile"
         )
 
-        quota_reached = await self.orgs.inc_org_bytes_stored(org, file_size, "profile")
+        await self.orgs.inc_org_bytes_stored(org.id, file_size, "profile")
 
         return {
             "added": True,
             "id": str(profile.id),
-            "storageQuotaReached": quota_reached,
+            "storageQuotaReached": self.orgs.storage_quota_reached(org),
         }
 
     async def update_profile_metadata(
@@ -415,7 +415,9 @@ class ProfileOps:
         # Delete file from storage
         if profile.resource:
             await self.storage_ops.delete_crawl_file_object(org, profile.resource)
-            await self.orgs.inc_org_bytes_stored(org, -profile.resource.size, "profile")
+            await self.orgs.inc_org_bytes_stored(
+                org.id, -profile.resource.size, "profile"
+            )
             await self.background_job_ops.create_delete_replica_jobs(
                 org, profile.resource, str(profile.id), "profile"
             )

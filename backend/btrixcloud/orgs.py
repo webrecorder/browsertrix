@@ -681,27 +681,23 @@ class OrgOps:
             return org.quotas.maxPagesPerCrawl or 0
         return 0
 
-    async def inc_org_bytes_stored(
-        self, org: Organization, size: int, type_="crawl"
-    ) -> bool:
+    async def inc_org_bytes_stored(self, oid: UUID, size: int, type_="crawl") -> None:
         """Increase org bytesStored count (pass negative value to subtract)."""
         if type_ == "crawl":
             await self.orgs.find_one_and_update(
-                {"_id": org.id},
+                {"_id": oid},
                 {"$inc": {"bytesStored": size, "bytesStoredCrawls": size}},
             )
         elif type_ == "upload":
             await self.orgs.find_one_and_update(
-                {"_id": org.id},
+                {"_id": oid},
                 {"$inc": {"bytesStored": size, "bytesStoredUploads": size}},
             )
         elif type_ == "profile":
             await self.orgs.find_one_and_update(
-                {"_id": org.id},
+                {"_id": oid},
                 {"$inc": {"bytesStored": size, "bytesStoredProfiles": size}},
             )
-
-        return self.storage_quota_reached(org)
 
     def can_write_data(self, org: Organization, include_time=True) -> None:
         """check crawl quotas and readOnly state, throw if can not run"""

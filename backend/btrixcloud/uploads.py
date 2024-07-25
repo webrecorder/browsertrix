@@ -195,7 +195,9 @@ class UploadOps(BaseCrawlOps):
             self.event_webhook_ops.create_upload_finished_notification(crawl_id, org.id)
         )
 
-        quota_reached = await self.orgs.inc_org_bytes_stored(org, file_size, "upload")
+        await self.orgs.inc_org_bytes_stored(org.id, file_size, "upload")
+
+        quota_reached = self.orgs.storage_quota_reached(org)
 
         if uploaded.files:
             for file in uploaded.files:
