@@ -758,7 +758,7 @@ class OrgOps:
         return False
 
     async def get_org_storage_quota(self, oid: UUID) -> int:
-        """return max allowed concurrent crawls, if any"""
+        """return org storage quota, if any"""
         org_data = await self.orgs.find_one({"_id": oid})
         if org_data:
             org = Organization.from_dict(org_data)

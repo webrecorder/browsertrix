@@ -193,16 +193,25 @@ class CrawlOperator(BaseOperator):
             return {"status": status.dict(exclude_none=True), "children": []}
 
         # first, check storage quota, and fail immediately if quota reached
-        if status.state in ("starting", "skipped_quota_reached"):
+        if status.state in (
+            "starting",
+            "skipped_storage_quota_reached",
+            "skipped_time_quota_reached",
+        ):
             # only check on very first run, before any pods/pvcs created
             # for now, allow if crawl has already started (pods/pvcs created)
-            if (
-                not pods
-                and not data.children[PVC]
-                and await self.org_ops.storage_quota_reached(crawl.oid)
-            ):
-                await self.mark_finished(crawl, status, "skipped_quota_reached")
-                return self._empty_response(status)
+            if not pods and not data.children[PVC]:
+                if await self.org_ops.storage_quota_reached(crawl.oid):
+                    await self.mark_finished(
+                        crawl, status, "skipped_storage_quota_reached"
+                    )
+                    return self._empty_response(status)
+
+                if await self.org_ops.exec_mins_quota_reached(crawl.oid):
+                    await self.mark_finished(
+                        crawl, status, "skipped_time_quota_reached"
+                    )
+                    return self._empty_response(status)
 
         if status.state in ("starting", "waiting_org_limit"):
             if not await self.can_start_new(crawl, data, status):
@@ -216,13 +225,7 @@ class CrawlOperator(BaseOperator):
             for pod_name, pod in pods.items():
                 self.sync_resources(status, pod_name, pod, data.children)
 
-            status = await self.sync_crawl_state(
-                redis_url,
-                crawl,
-                status,
-                pods,
-                data.related.get(METRICS, {}),
-            )
+            status = await self.sync_crawl_state(redis_url, crawl, status, pods, data)
 
             if self.k8s.enable_auto_resize:
                 # auto sizing handled here
@@ -743,7 +746,7 @@ class CrawlOperator(BaseOperator):
         crawl: CrawlSpec,
         status: CrawlStatus,
         pods: dict[str, dict],
-        metrics: Optional[dict],
+        data: MCSyncData,
     ):
         """sync crawl state for running crawl"""
         # check if at least one crawler pod started running
@@ -751,6 +754,8 @@ class CrawlOperator(BaseOperator):
             pods, status
         )
         redis = None
+
+        metrics = data.related.get(METRICS, {})
 
         try:
             if redis_running:
@@ -851,7 +856,7 @@ class CrawlOperator(BaseOperator):
 
             # update stats and get status
             return await self.update_crawl_state(
-                redis, crawl, status, pods, pod_done_count
+                redis, crawl, status, pods, pod_done_count, data
             )
 
         # pylint: disable=broad-except
@@ -1201,7 +1206,7 @@ class CrawlOperator(BaseOperator):
         return True
 
     async def is_crawl_stopping(
-        self, crawl: CrawlSpec, status: CrawlStatus
+        self, crawl: CrawlSpec, status: CrawlStatus, data: MCSyncData
     ) -> Optional[StopReason]:
         """check if crawl is stopping and set reason"""
         # if user requested stop, then enter stopping phase
@@ -1228,9 +1233,23 @@ class CrawlOperator(BaseOperator):
             print(f"Graceful Stop: Maximum crawl size {crawl.max_crawl_size} hit")
             return "size-limit"
 
-        # check exec time quotas and stop if reached limit
+        # gracefully stop crawl if current running crawl sizes reach storage quota
+        org = await self.org_ops.get_org_by_id(crawl.oid)
+
+        running_crawls_total_size = 0
+        for crawl_sorted in data.related[CJS].values():
+            crawl_status = crawl_sorted.get("status", {})
+            if crawl_status:
+                running_crawls_total_size += crawl_status.get("size", 0)
+
+        if org.quotas.storageQuota and (
+            org.bytesStored + running_crawls_total_size >= org.quotas.storageQuota
+        ):
+            return "stopped_storage_quota_reached"
+
+        # gracefully stop crawl is execution time quota is reached
         if await self.org_ops.exec_mins_quota_reached(crawl.oid):
-            return "stopped_quota_reached"
+            return "stopped_time_quota_reached"
 
         return None
 
@@ -1264,6 +1283,7 @@ class CrawlOperator(BaseOperator):
         status: CrawlStatus,
         pods: dict[str, dict],
         pod_done_count: int,
+        data: MCSyncData,
     ) -> CrawlStatus:
         """update crawl state and check if crawl is now done"""
         results = await redis.hgetall(f"{crawl.id}:status")
@@ -1289,7 +1309,7 @@ class CrawlOperator(BaseOperator):
                 pod_info.used.storage = value
 
         if not status.stopReason:
-            status.stopReason = await self.is_crawl_stopping(crawl, status)
+            status.stopReason = await self.is_crawl_stopping(crawl, status, data)
             status.stopping = status.stopReason is not None
 
         # mark crawl as stopping
@@ -1329,8 +1349,10 @@ class CrawlOperator(BaseOperator):
             state: TYPE_NON_RUNNING_STATES
             if status.stopReason == "stopped_by_user":
                 state = "stopped_by_user"
-            elif status.stopReason == "stopped_quota_reached":
-                state = "stopped_quota_reached"
+            elif status.stopReason == "stopped_storage_quota_reached":
+                state = "stopped_storage_quota_reached"
+            elif status.stopReason == "stopped_time_quota_reached":
+                state = "stopped_time_quota_reached"
             else:
                 state = "complete"
 
