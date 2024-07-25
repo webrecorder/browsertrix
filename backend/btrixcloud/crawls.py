@@ -342,7 +342,7 @@ class CrawlOps(BaseCrawlOps):
         crawl_id: str,
         crawlconfig: CrawlConfig,
         userid: UUID,
-        started: str,
+        started: datetime,
         manual: bool,
         username: str = "",
     ) -> None:
@@ -582,7 +582,7 @@ class CrawlOps(BaseCrawlOps):
         crawl_id: str,
         is_qa: bool,
         exec_time: int,
-        last_updated_time: str,
+        last_updated_time: datetime,
     ) -> bool:
         """increment exec time"""
         # update both crawl-shared qa exec seconds and per-qa run exec seconds
