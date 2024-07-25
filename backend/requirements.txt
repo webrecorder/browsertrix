@@ -17,8 +17,7 @@ jinja2
 humanize
 python-multipart
 pathvalidate
-#https://github.com/ikreymer/stream-zip/archive/refs/heads/stream-uncompress.zip
-https://github.com/ikreymer/stream-zip/archive/refs/heads/stream-ignore-local-crc32.zip
+https://github.com/ikreymer/stream-zip/archive/refs/heads/crc32-optional.zip
 boto3
 backoff>=2.2.1
 python-slugify>=8.0.1

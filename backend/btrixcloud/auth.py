@@ -123,7 +123,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 # ============================================================================
 def verify_and_update_password(
     plain_password: str, hashed_password: str
-) -> Tuple[bool, str]:
+) -> Tuple[bool, Optional[str]]:
     """verify password and return updated hash, if any"""
     return PWD_CONTEXT.verify_and_update(plain_password, hashed_password)
 

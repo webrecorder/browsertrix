@@ -8,6 +8,7 @@ import urllib.parse
 
 import asyncio
 from fastapi import HTTPException, Depends
+from fastapi.responses import StreamingResponse
 
 from .models import (
     CrawlFile,
@@ -186,10 +187,11 @@ class BaseCrawlOps:
             if crawl.config and crawl.config.seeds:
                 crawl.config.seeds = None
 
-        crawl.storageQuotaReached = await self.orgs.storage_quota_reached(crawl.oid)
-        crawl.execMinutesQuotaReached = await self.orgs.exec_mins_quota_reached(
-            crawl.oid
-        )
+        if not org:
+            org = await self.orgs.get_org_by_id(crawl.oid)
+
+        crawl.storageQuotaReached = self.orgs.storage_quota_reached(org)
+        crawl.execMinutesQuotaReached = self.orgs.exec_mins_quota_reached(org)
 
         return crawl
 
@@ -355,7 +357,9 @@ class BaseCrawlOps:
         query = {"_id": {"$in": delete_list.crawl_ids}, "oid": org.id, "type": type_}
         res = await self.crawls.delete_many(query)
 
-        quota_reached = await self.orgs.inc_org_bytes_stored(org.id, -size, type_)
+        await self.orgs.inc_org_bytes_stored(org.id, -size, type_)
+
+        quota_reached = self.orgs.storage_quota_reached(org)
 
         return res.deleted_count, cids_to_update, quota_reached
 
@@ -797,6 +801,20 @@ class BaseCrawlOps:
             "firstSeeds": list(first_seeds),
         }
 
+    async def download_crawl_as_single_wacz(self, crawl_id: str, org: Organization):
+        """Download all WACZs in archived item as streaming nested WACZ"""
+        crawl = await self.get_crawl_out(crawl_id, org)
+
+        if not crawl.resources:
+            raise HTTPException(status_code=400, detail="no_crawl_resources")
+
+        resp = await self.storage_ops.download_streaming_wacz(org, crawl.resources)
+
+        headers = {"Content-Disposition": f'attachment; filename="{crawl_id}.wacz"'}
+        return StreamingResponse(
+            resp, headers=headers, media_type="application/wacz+zip"
+        )
+
     async def calculate_org_crawl_file_storage(
         self, oid: UUID, type_: Optional[str] = None
     ) -> Tuple[int, int, int]:
@@ -927,6 +945,16 @@ def init_base_crawls_api(app, user_dep, *args):
     )
     async def get_crawl_out(crawl_id, org: Organization = Depends(org_viewer_dep)):
         return await ops.get_crawl_out(crawl_id, org)
+
+    @app.get(
+        "/orgs/{oid}/all-crawls/{crawl_id}/download",
+        tags=["all-crawls"],
+        response_model=bytes,
+    )
+    async def download_base_crawl_as_single_wacz(
+        crawl_id: str, org: Organization = Depends(org_viewer_dep)
+    ):
+        return await ops.download_crawl_as_single_wacz(crawl_id, org)
 
     @app.patch(
         "/orgs/{oid}/all-crawls/{crawl_id}",

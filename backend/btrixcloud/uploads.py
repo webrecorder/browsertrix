@@ -67,11 +67,7 @@ class UploadOps(BaseCrawlOps):
         replaceId: Optional[str],
     ) -> dict[str, Any]:
         """Upload streaming file, length unknown"""
-        if org.readOnly:
-            raise HTTPException(status_code=403, detail="org_set_to_read_only")
-
-        if await self.orgs.storage_quota_reached(org.id):
-            raise HTTPException(status_code=403, detail="storage_quota_reached")
+        self.orgs.can_write_data(org, include_time=False)
 
         prev_upload = None
         if replaceId:
@@ -129,11 +125,7 @@ class UploadOps(BaseCrawlOps):
         user: User,
     ) -> dict[str, Any]:
         """handle uploading content to uploads subdir + request subdir"""
-        if org.readOnly:
-            raise HTTPException(status_code=403, detail="org_set_to_read_only")
-
-        if await self.orgs.storage_quota_reached(org.id):
-            raise HTTPException(status_code=403, detail="storage_quota_reached")
+        self.orgs.can_write_data(org, include_time=False)
 
         id_ = uuid.uuid4()
         files: List[CrawlFile] = []
@@ -203,9 +195,9 @@ class UploadOps(BaseCrawlOps):
             self.event_webhook_ops.create_upload_finished_notification(crawl_id, org.id)
         )
 
-        quota_reached = await self.orgs.inc_org_bytes_stored(
-            org.id, file_size, "upload"
-        )
+        await self.orgs.inc_org_bytes_stored(org.id, file_size, "upload")
+
+        quota_reached = self.orgs.storage_quota_reached(org)
 
         if uploaded.files:
             for file in uploaded.files:
@@ -422,6 +414,16 @@ def init_uploads_api(app, user_dep, *args):
     )
     async def get_upload_replay(crawl_id, org: Organization = Depends(org_viewer_dep)):
         return await ops.get_crawl_out(crawl_id, org, "upload")
+
+    @app.get(
+        "/orgs/{oid}/uploads/{crawl_id}/download",
+        tags=["uploads"],
+        response_model=bytes,
+    )
+    async def download_upload_as_single_wacz(
+        crawl_id: str, org: Organization = Depends(org_viewer_dep)
+    ):
+        return await ops.download_crawl_as_single_wacz(crawl_id, org)
 
     @app.patch(
         "/orgs/{oid}/uploads/{crawl_id}",

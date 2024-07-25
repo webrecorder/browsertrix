@@ -113,7 +113,7 @@ class CronJobOperator(BaseOperator):
             cid=str(cid),
             userid=str(userid),
             oid=str(oid),
-            storage=org.storage,
+            storage=str(org.storage),
             crawler_channel=crawlconfig.crawlerChannel or "default",
             scale=crawlconfig.scale,
             crawl_timeout=crawlconfig.crawlTimeout,

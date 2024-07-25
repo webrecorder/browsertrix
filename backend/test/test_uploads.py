@@ -1,7 +1,9 @@
 import requests
 import os
 import time
+from tempfile import TemporaryFile
 from urllib.parse import urljoin
+from zipfile import ZipFile, ZIP_STORED
 
 import pytest
 
@@ -327,6 +329,27 @@ def test_update_upload_metadata(admin_auth_headers, default_org_id, upload_id):
     assert data["description"] == UPDATED_DESC
     assert data["name"] == UPDATED_NAME
     assert data["collectionIds"] == UPDATED_COLLECTION_IDS
+
+
+def test_download_wacz_uploads(admin_auth_headers, default_org_id, upload_id):
+    with TemporaryFile() as fh:
+        with requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/uploads/{upload_id}/download",
+            headers=admin_auth_headers,
+            stream=True,
+        ) as r:
+            assert r.status_code == 200
+            for chunk in r.iter_content():
+                fh.write(chunk)
+
+        fh.seek(0)
+        with ZipFile(fh, "r") as zip_file:
+            contents = zip_file.namelist()
+
+            assert len(contents) == 2
+            for filename in contents:
+                assert filename.endswith(".wacz") or filename == "datapackage.json"
+                assert zip_file.getinfo(filename).compress_type == ZIP_STORED
 
 
 def test_delete_stream_upload(

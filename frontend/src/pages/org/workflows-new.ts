@@ -62,12 +62,6 @@ export class WorkflowsNew extends LiteElement {
   @property({ type: String })
   jobType?: JobType;
 
-  @property({ type: Boolean })
-  orgStorageQuotaReached = false;
-
-  @property({ type: Boolean })
-  orgExecutionMinutesQuotaReached = false;
-
   // Use custom property accessor to prevent
   // overriding default Workflow values
   @property({ type: Object })
@@ -79,6 +73,10 @@ export class WorkflowsNew extends LiteElement {
   }
 
   private _initialWorkflow: WorkflowParams = defaultValue;
+
+  private get org() {
+    return this.appState.org;
+  }
 
   private renderHeader() {
     const href = `${this.orgBasePath}/workflows/crawls`;
@@ -129,9 +127,6 @@ export class WorkflowsNew extends LiteElement {
           jobType=${jobType}
           orgId=${this.orgId}
           .authState=${this.authState}
-          ?orgStorageQuotaReached=${this.orgStorageQuotaReached}
-          ?orgExecutionMinutesQuotaReached=${this
-            .orgExecutionMinutesQuotaReached}
           @reset=${async (e: Event) => {
             await (e.target as LitElement).updateComplete;
             this.dispatchEvent(

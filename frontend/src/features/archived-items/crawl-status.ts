@@ -178,7 +178,7 @@ export class CrawlStatus extends TailwindElement {
         label = msg("Failed");
         break;
 
-      case "skipped_quota_reached":
+      case "skipped_storage_quota_reached":
         color = "var(--danger)";
         icon = html`<sl-icon
           name="exclamation-triangle-fill"
@@ -186,6 +186,16 @@ export class CrawlStatus extends TailwindElement {
           style="color: ${color}"
         ></sl-icon>`;
         label = msg("Skipped: Storage Quota Reached");
+        break;
+
+      case "skipped_time_quota_reached":
+        color = "var(--danger)";
+        icon = html`<sl-icon
+          name="exclamation-triangle-fill"
+          slot="prefix"
+          style="color: ${color}"
+        ></sl-icon>`;
+        label = msg("Skipped: Time Quota Reached");
         break;
 
       case "stopped_by_user":
@@ -198,7 +208,17 @@ export class CrawlStatus extends TailwindElement {
         label = msg("Stopped");
         break;
 
-      case "stopped_quota_reached":
+      case "stopped_storage_quota_reached":
+        color = "var(--warning)";
+        icon = html`<sl-icon
+          name="exclamation-square-fill"
+          slot="prefix"
+          style="color: ${color}"
+        ></sl-icon>`;
+        label = msg("Stopped: Storage Quota Reached");
+        break;
+
+      case "stopped_time_quota_reached":
         color = "var(--warning)";
         icon = html`<sl-icon
           name="exclamation-square-fill"

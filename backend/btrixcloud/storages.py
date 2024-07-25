@@ -11,6 +11,7 @@ from typing import (
     AsyncIterator,
     TYPE_CHECKING,
     Any,
+    cast,
 )
 from urllib.parse import urlsplit
 from contextlib import asynccontextmanager
@@ -26,7 +27,7 @@ from datetime import datetime
 from zipfile import ZipInfo
 
 from fastapi import Depends, HTTPException
-from stream_zip import stream_zip, NO_COMPRESSION_64
+from stream_zip import stream_zip, NO_COMPRESSION_64, Method
 from remotezip import RemoteZip
 
 import aiobotocore.session
@@ -698,7 +699,9 @@ class StorageOps:
             response = client.get_object(Bucket=bucket, Key=key + name)
             return response["Body"].iter_chunks(chunk_size=CHUNK_SIZE)
 
-        def member_files():
+        def member_files() -> (
+            Iterable[tuple[str, datetime, int, Method, Iterable[bytes]]]
+        ):
             modified_at = datetime(year=1980, month=1, day=1)
             perms = 0o664
             for file_ in all_files:
@@ -706,7 +709,7 @@ class StorageOps:
                     file_.name,
                     modified_at,
                     perms,
-                    NO_COMPRESSION_64(file_.size, file_.crc32),
+                    NO_COMPRESSION_64(file_.size, 0),
                     get_file(file_.name),
                 )
 
@@ -720,7 +723,8 @@ class StorageOps:
                 (datapackage_bytes,),
             )
 
-        return stream_zip(member_files(), chunk_size=CHUNK_SIZE)
+        # stream_zip() is an Iterator but defined as an Iterable, can cast
+        return cast(Iterator[bytes], stream_zip(member_files(), chunk_size=CHUNK_SIZE))
 
     async def download_streaming_wacz(
         self, org: Organization, files: List[CrawlFileOut]

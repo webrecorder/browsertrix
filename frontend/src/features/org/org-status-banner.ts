@@ -128,10 +128,8 @@ export class OrgStatusBanner extends TailwindElement {
           return {
             title:
               daysDiff > 1
-                ? msg(
-                    str`Your org will be set to read-only mode in ${daysDiff} days`,
-                  )
-                : msg("Your org will be set to read-only mode within one day"),
+                ? msg(str`Archiving will be disabled in ${daysDiff} days`)
+                : msg("Archiving will be disabled within one day"),
             detail: html`
               <p>
                 ${msg(
@@ -161,7 +159,7 @@ export class OrgStatusBanner extends TailwindElement {
           !!readOnly && readOnlyReason === OrgReadOnlyReason.SubscriptionPaused,
 
         content: () => ({
-          title: msg(str`Your org has been set to read-only mode`),
+          title: msg(str`Archiving is disabled for this org`),
           detail: msg(
             html`Your subscription has been paused due to payment failure.
             Please go to ${billingTabLink} to update your payment method.`,
@@ -174,7 +172,7 @@ export class OrgStatusBanner extends TailwindElement {
           readOnlyReason === OrgReadOnlyReason.SubscriptionCancelled,
 
         content: () => ({
-          title: msg(str`This org has been set to read-only mode`),
+          title: msg(str`Archiving is disabled for this org`),
           detail: msg(
             `Your subscription has been canceled. Please contact Browsertrix support to renew your plan.`,
           ),
@@ -184,7 +182,7 @@ export class OrgStatusBanner extends TailwindElement {
         test: () => !!readOnly,
 
         content: () => ({
-          title: msg(str`This org has been set to read-only mode`),
+          title: msg(str`Archiving is disabled for this org`),
           detail: msg(`Please contact Browsertrix support to renew your plan.`),
         }),
       },

@@ -188,6 +188,7 @@ export class App extends LiteElement {
         maxScale: 0,
         billingEnabled: false,
         salesEmail: "",
+        supportEmail: "",
       };
     }
   }

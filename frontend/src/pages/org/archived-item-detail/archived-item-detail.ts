@@ -34,6 +34,8 @@ import {
 } from "@/utils/crawler";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 import { getLocale } from "@/utils/localization";
+import { isArchivingDisabled } from "@/utils/orgs";
+import appState, { use } from "@/utils/state";
 import { tw } from "@/utils/tailwind";
 
 import "./ui/qa";
@@ -89,6 +91,9 @@ export class ArchivedItemDetail extends TailwindElement {
   @property({ type: Boolean })
   isCrawler = false;
 
+  @use()
+  appState = appState;
+
   @state()
   private qaRunId?: string;
 
@@ -124,6 +129,10 @@ export class ArchivedItemDetail extends TailwindElement {
 
   @query("#cancelQARunDialog")
   private readonly cancelQARunDialog?: Dialog | null;
+
+  private get org() {
+    return this.appState.org;
+  }
 
   private get listUrl(): string {
     let path = "items";
@@ -275,7 +284,21 @@ export class ArchivedItemDetail extends TailwindElement {
         ]);
         break;
       case "files":
-        sectionContent = this.renderPanel(msg("Files"), this.renderFiles());
+        sectionContent = this.renderPanel(
+          html` ${this.renderTitle(msg("Files"))}
+            <sl-tooltip content=${msg("Download all files as a single WACZ")}>
+              <sl-button
+                href=${`/api/orgs/${this.orgId}/all-crawls/${this.crawlId}/download?auth_bearer=${authToken}`}
+                download
+                size="small"
+                variant="primary"
+              >
+                <sl-icon slot="prefix" name="cloud-download"></sl-icon>
+                ${msg("Download Item")}
+              </sl-button>
+            </sl-tooltip>`,
+          this.renderFiles(),
+        );
         break;
       case "logs":
         sectionContent = this.renderPanel(
@@ -558,6 +581,8 @@ export class ArchivedItemDetail extends TailwindElement {
   private renderMenu() {
     if (!this.crawl) return;
 
+    const authToken = this.authState!.headers.Authorization.split(" ")[1];
+
     return html`
       <sl-dropdown placement="bottom-end" distance="4" hoist>
         <sl-button slot="trigger" size="small" caret
@@ -610,6 +635,19 @@ export class ArchivedItemDetail extends TailwindElement {
             ${msg("Copy Tags")}
           </sl-menu-item>
           ${when(
+            finishedCrawlStates.includes(this.crawl.state),
+            () => html`
+              <sl-divider></sl-divider>
+              <btrix-menu-item-link
+                href=${`/api/orgs/${this.orgId}/all-crawls/${this.crawlId}/download?auth_bearer=${authToken}`}
+                download
+              >
+                <sl-icon name="cloud-download" slot="prefix"></sl-icon>
+                ${msg("Download Item")}
+              </btrix-menu-item-link>
+            `,
+          )}
+          ${when(
             this.isCrawler && !isActive(this.crawl.state),
             () => html`
               <sl-divider></sl-divider>
@@ -618,7 +656,7 @@ export class ArchivedItemDetail extends TailwindElement {
                 @click=${() => void this.deleteCrawl()}
               >
                 <sl-icon name="trash3" slot="prefix"></sl-icon>
-                ${msg("Delete Crawl")}
+                ${msg("Delete Item")}
               </sl-menu-item>
             `,
           )}
@@ -1048,7 +1086,7 @@ ${this.crawl?.description}
                 qaRuns.length === 0 ? "primary" : "default"
               }"
               @click=${() => void this.startQARun()}
-              ?disabled=${qaIsRunning}
+              ?disabled=${isArchivingDisabled(this.org, true) || qaIsRunning}
             >
               <sl-icon slot="prefix" name="microscope" library="app"></sl-icon>
               ${qaRuns.length ? msg("Rerun Analysis") : msg("Run Analysis")}
