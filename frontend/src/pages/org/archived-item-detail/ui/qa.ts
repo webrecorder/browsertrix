@@ -404,14 +404,8 @@ export class ArchivedItemDetailQA extends TailwindElement {
                   }
 
                   downloadLink.loading = true;
-                  const file = await this.getQARunDownloadLink(run.id);
-                  if (file) {
-                    downloadLink.disabled = false;
-                    downloadLink.href = file.path;
-                  } else {
-                    downloadLink.disabled = true;
-                  }
-                  downloadLink.loading = false;
+                  downloadLink.disabled = false;
+                  downloadLink.href = `/orgs/${this.orgId}/crawls/${this.crawlId}/qa/${run.id}/download`;
                 }}
               >
                 <sl-menu>
@@ -931,19 +925,6 @@ export class ArchivedItemDetailQA extends TailwindElement {
       `/orgs/${this.orgId}/crawls/${this.crawlId}/pages?${query}`,
       this.authState!,
     );
-  }
-
-  private async getQARunDownloadLink(qaRunId: string) {
-    try {
-      const { resources } = await this.api.fetch<QARun>(
-        `/orgs/${this.orgId}/crawls/${this.crawlId}/qa/${qaRunId}/replay.json`,
-        this.authState!,
-      );
-      // TODO handle more than one file
-      return resources?.[0];
-    } catch (e) {
-      console.debug(e);
-    }
   }
 
   private async deleteQARun(id: string) {

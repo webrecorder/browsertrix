@@ -423,6 +423,16 @@ def init_uploads_api(app, user_dep, *args):
     async def get_upload_replay(crawl_id, org: Organization = Depends(org_viewer_dep)):
         return await ops.get_crawl_out(crawl_id, org, "upload")
 
+    @app.get(
+        "/orgs/{oid}/uploads/{crawl_id}/download",
+        tags=["uploads"],
+        response_model=bytes,
+    )
+    async def download_upload_as_single_wacz(
+        crawl_id: str, org: Organization = Depends(org_viewer_dep)
+    ):
+        return await ops.download_crawl_as_single_wacz(crawl_id, org)
+
     @app.patch(
         "/orgs/{oid}/uploads/{crawl_id}",
         tags=["uploads"],
