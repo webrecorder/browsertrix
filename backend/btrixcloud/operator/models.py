@@ -2,7 +2,7 @@
 
 from collections import defaultdict
 from uuid import UUID
-from typing import Optional, DefaultDict, Literal, Annotated
+from typing import Optional, DefaultDict, Literal, Annotated, Any
 from pydantic import BaseModel, Field
 from kubernetes.utils import parse_quantity
 from btrixcloud.models import StorageRef, TYPE_ALL_CRAWL_STATES
@@ -51,6 +51,15 @@ class MCDecoratorSyncData(BaseModel):
     attachments: dict
     related: dict
     finalizing: bool = False
+
+
+# ============================================================================
+class MCDecoratorSyncResponse(BaseModel):
+    """Response model for decoratorcontroller sync api"""
+
+    attachments: list[dict[str, Any]]
+    status: Optional[dict[str, Any]] = None
+    annotations: Optional[dict[str, str]] = None
 
 
 # ============================================================================
