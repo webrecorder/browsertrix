@@ -21,6 +21,7 @@ export const finishedCrawlStates: CrawlState[] = [
   "stopped_by_user",
   "stopped_storage_quota_reached",
   "stopped_time_quota_reached",
+  "stopped_org_readonly",
 ];
 
 export const inactiveCrawlStates: CrawlState[] = [

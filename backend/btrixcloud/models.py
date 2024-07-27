@@ -224,6 +224,7 @@ TYPE_SUCCESSFUL_STATES = Literal[
     "stopped_by_user",
     "stopped_storage_quota_reached",
     "stopped_time_quota_reached",
+    "stopped_org_readonly",
 ]
 SUCCESSFUL_STATES = get_args(TYPE_SUCCESSFUL_STATES)
 
