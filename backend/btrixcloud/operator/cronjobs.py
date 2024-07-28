@@ -174,15 +174,13 @@ class CronJobOperator(BaseOperator):
                 actual_state,
             )
         else:
-            # just return existing crawljob, after removing annotation
-            # should use OnDelete policy so should just not change crawljob anyway
+            # just return existing crawljob, filter metadata, remove status and annotations
             crawljob = crawljobs[crawljob_id]
-            try:
-                del crawljob["metadata"]["annotations"][
-                    "metacontroller.k8s.io/last-applied-configuration"
-                ]
-            except KeyError:
-                pass
+            crawljob["metadata"] = {
+                "name": crawljob["metadata"]["name"],
+                "labels": crawljob["metadata"].get("labels"),
+            }
+            crawljob.pop("status", "")
 
             response = MCDecoratorSyncResponse(attachments=[crawljob])
 
