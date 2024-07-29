@@ -14,7 +14,6 @@ import { NavigateController } from "@/controllers/navigate";
 import { NotifyController } from "@/controllers/notify";
 import type { APIUser } from "@/index";
 import type { APIPaginatedList } from "@/types/api";
-import type { CurrentUser } from "@/types/user";
 import { isApiError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
 import { maxLengthValidator } from "@/utils/form";
@@ -50,7 +49,6 @@ export type OrgRemoveMemberEvent = CustomEvent<{
  * ```ts
  * <btrix-org-settings
  *  .authState=${authState}
- *  .userInfo=${userInfo}
  *  .org=${org}
  *  .orgId=${orgId}
  *  ?isAddingMember=${isAddingMember}
@@ -65,9 +63,6 @@ export type OrgRemoveMemberEvent = CustomEvent<{
 export class OrgSettings extends TailwindElement {
   @property({ type: Object })
   authState?: AuthState;
-
-  @property({ type: Object })
-  userInfo!: CurrentUser;
 
   @property({ type: String })
   orgId!: string;
@@ -99,6 +94,10 @@ export class OrgSettings extends TailwindElement {
   private readonly api = new APIController(this);
   private readonly navigate = new NavigateController(this);
   private readonly notify = new NotifyController(this);
+
+  private get userInfo() {
+    return this.appState.userInfo;
+  }
 
   private get org() {
     return this.appState.org;
@@ -364,7 +363,7 @@ export class OrgSettings extends TailwindElement {
     if (!this.org?.users) return;
 
     let disableButton = false;
-    if (member.email === this.userInfo.email) {
+    if (this.userInfo && member.email === this.userInfo.email) {
       const { [this.userInfo.id]: _currentUser, ...otherUsers } =
         this.org.users;
       const hasOtherAdmin = Object.values(otherUsers).some(({ role }) =>

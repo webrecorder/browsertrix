@@ -631,7 +631,6 @@ export class Org extends LiteElement {
 
     return html`<btrix-org-settings
       .authState=${this.authState}
-      .userInfo=${this.userInfo}
       .orgId=${this.orgId}
       activePanel=${activePanel}
       ?isAddingMember=${isAddingMember}

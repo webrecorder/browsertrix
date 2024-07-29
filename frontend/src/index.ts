@@ -647,7 +647,6 @@ export class App extends LiteElement {
             return html`<btrix-users-invite
               class="mx-auto box-border w-full max-w-screen-desktop p-2 md:py-8"
               .authState="${this.authService.authState}"
-              .userInfo="${this.appState.userInfo}"
             ></btrix-users-invite>`;
           } else {
             return this.renderNotFoundPage();
