@@ -26,6 +26,7 @@ const mockAuthState = {
 
 describe("btrix-accept-invite", () => {
   beforeEach(() => {
+    AppStateService.resetAll();
     AuthService.broadcastChannel = new BroadcastChannel(AuthService.storageKey);
     window.localStorage.clear();
     window.sessionStorage.clear();

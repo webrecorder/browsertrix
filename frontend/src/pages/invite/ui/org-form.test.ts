@@ -10,6 +10,7 @@ import { AppStateService } from "@/utils/state";
 
 describe("btrix-org-form", () => {
   beforeEach(() => {
+    AppStateService.resetAll();
     AuthService.broadcastChannel = new BroadcastChannel(AuthService.storageKey);
     window.localStorage.clear();
     window.sessionStorage.clear();

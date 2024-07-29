@@ -2,6 +2,7 @@ import { expect, fixture } from "@open-wc/testing";
 import { restore, stub } from "sinon";
 
 import AuthService from "./utils/AuthService";
+import { AppStateService } from "./utils/state";
 import { formatAPIUser } from "./utils/user";
 
 import { App, type APIUser } from ".";
@@ -25,6 +26,7 @@ const mockUserInfo = formatAPIUser(mockAPIUser);
 
 describe("browsertrix-app", () => {
   beforeEach(() => {
+    AppStateService.resetAll();
     AuthService.broadcastChannel = new BroadcastChannel(AuthService.storageKey);
     window.sessionStorage.clear();
     stub(window.history, "pushState");

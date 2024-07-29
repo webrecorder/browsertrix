@@ -86,6 +86,7 @@ export class AppStateService {
   static resetAll = () => {
     unlock(() => {
       appState.settings = null;
+      appState.org = undefined;
     });
     AppStateService.resetUser();
   };
