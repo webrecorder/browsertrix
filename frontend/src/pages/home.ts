@@ -63,6 +63,7 @@ export class Home extends LiteElement {
   }
 
   willUpdate(changedProperties: PropertyValues<this>) {
+    console.log(this.userInfo);
     if (changedProperties.has("slug") && this.slug) {
       this.navTo(`/orgs/${this.slug}`);
     } else if (changedProperties.has("userInfo") && this.userInfo) {
