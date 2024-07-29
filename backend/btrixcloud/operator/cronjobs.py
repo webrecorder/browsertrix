@@ -1,11 +1,11 @@
 """ Operator handler for crawl CronJobs """
 
 from uuid import UUID
-from typing import Optional, Any
+from typing import Optional
 import yaml
 
 from btrixcloud.utils import to_k8s_date, dt_now
-from .models import MCDecoratorSyncData, CJS
+from .models import MCDecoratorSyncData, CJS, MCDecoratorSyncResponse
 from .baseoperator import BaseOperator
 
 from ..models import CrawlConfig
@@ -20,12 +20,14 @@ class CronJobOperator(BaseOperator):
         """init routes for crawl CronJob decorator"""
 
         @app.post("/op/cronjob/sync")
-        async def mc_sync_cronjob_crawls(data: MCDecoratorSyncData):
+        async def mc_sync_cronjob_crawls(
+            data: MCDecoratorSyncData,
+        ) -> MCDecoratorSyncResponse:
             return await self.sync_cronjob_crawl(data)
 
     def get_finished_response(
         self, metadata: dict[str, str], set_status=True, finished: Optional[str] = None
-    ):
+    ) -> MCDecoratorSyncResponse:
         """get final response to indicate cronjob created job is finished"""
 
         if not finished:
@@ -40,12 +42,12 @@ class CronJobOperator(BaseOperator):
                 "completionTime": finished,
             }
 
-        return {
-            "attachments": [],
+        return MCDecoratorSyncResponse(
+            attachments=[],
             # set on job to match default behavior when job finishes
-            "annotations": {"finished": finished},
-            "status": status,
-        }
+            annotations={"finished": finished},
+            status=status,
+        )
 
     # pylint: disable=too-many-arguments
     async def make_new_crawljob(
@@ -56,7 +58,7 @@ class CronJobOperator(BaseOperator):
         crawl_id: str,
         metadata: dict[str, str],
         state: Optional[str],
-    ) -> list[dict[str, Any]]:
+    ) -> MCDecoratorSyncResponse:
         """declare new CrawlJob from cid, based on db data"""
         # cronjob doesn't exist yet
         crawlconfig: CrawlConfig
@@ -125,9 +127,11 @@ class CronJobOperator(BaseOperator):
             profile_filename=profile_filename or "",
         )
 
-        return list(yaml.safe_load_all(crawljob))
+        return MCDecoratorSyncResponse(attachments=list(yaml.safe_load_all(crawljob)))
 
-    async def sync_cronjob_crawl(self, data: MCDecoratorSyncData):
+    async def sync_cronjob_crawl(
+        self, data: MCDecoratorSyncData
+    ) -> MCDecoratorSyncResponse:
         """create crawljobs from a job object spawned by cronjob"""
 
         metadata = data.object["metadata"]
@@ -161,7 +165,7 @@ class CronJobOperator(BaseOperator):
         crawljob_id = f"crawljob-{crawl_id}"
 
         if crawljob_id not in crawljobs:
-            attachments = await self.make_new_crawljob(
+            response = await self.make_new_crawljob(
                 UUID(cid),
                 UUID(oid) if oid else None,
                 UUID(userid) if userid else None,
@@ -170,16 +174,14 @@ class CronJobOperator(BaseOperator):
                 actual_state,
             )
         else:
-            # just return existing crawljob, after removing annotation
-            # should use OnDelete policy so should just not change crawljob anyway
+            # just return existing crawljob, filter metadata, remove status and annotations
             crawljob = crawljobs[crawljob_id]
-            try:
-                del crawljob["metadata"]["annotations"][
-                    "metacontroller.k8s.io/last-applied-configuration"
-                ]
-            except KeyError:
-                pass
+            crawljob["metadata"] = {
+                "name": crawljob["metadata"]["name"],
+                "labels": crawljob["metadata"].get("labels"),
+            }
+            crawljob.pop("status", "")
 
-            attachments = [crawljob]
+            response = MCDecoratorSyncResponse(attachments=[crawljob])
 
-        return {"attachments": attachments}
+        return response
