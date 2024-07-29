@@ -1,17 +1,8 @@
 import { APIError } from "./api";
+import appState, { AppStateService } from "./state";
 
 import { ROUTES } from "@/routes";
-
-export type Auth = {
-  username: string;
-  headers: {
-    Authorization: string;
-  };
-  /** Timestamp (milliseconds) when token expires */
-  tokenExpiresAt: number;
-};
-
-export type AuthState = Auth | null;
+import type { Auth, AuthState } from "@/types/auth";
 
 type JWT = {
   user_id: string;
@@ -63,7 +54,6 @@ const FRESHNESS_TIMER_INTERVAL = 60 * 1000 * 5;
 
 export default class AuthService {
   private timerId?: number;
-  private _authState: AuthState = null;
 
   static storageKey = "btrix.auth";
   static unsupportedAuthErrorCode = "UNSUPPORTED_AUTH_TYPE";
@@ -97,7 +87,10 @@ export default class AuthService {
   };
 
   get authState() {
-    return this._authState;
+    return appState.authState;
+  }
+  private set authState(authState: AuthState) {
+    AppStateService.updateAuthState(authState);
   }
 
   static createLoggedInEvent = (
@@ -270,7 +263,7 @@ export default class AuthService {
   constructor() {
     // Only have freshness check run in visible tab(s)
     document.addEventListener("visibilitychange", () => {
-      if (!this._authState) return;
+      if (!this.authState) return;
       if (document.visibilityState === "visible") {
         this.startFreshnessCheck();
       } else {
@@ -300,29 +293,25 @@ export default class AuthService {
   }
 
   private revoke() {
-    this._authState = null;
+    this.authState = null;
     AuthService.storage.removeItem();
   }
 
   persist(auth: Auth) {
-    this._authState = {
-      username: auth.username,
-      headers: auth.headers,
-      tokenExpiresAt: auth.tokenExpiresAt,
-    };
-    AuthService.storage.setItem(JSON.stringify(this._authState));
+    this.authState = auth;
+    AuthService.storage.setItem(JSON.stringify(auth));
   }
 
   private async checkFreshness() {
     // console.debug("checkFreshness authState:", this._authState);
 
-    if (!this._authState) return;
+    if (!this.authState) return;
     const paddedNow = Date.now() + FRESHNESS_TIMER_INTERVAL - 500; // tweak padding to account for API fetch time
 
-    if (this._authState.tokenExpiresAt > paddedNow) {
+    if (this.authState.tokenExpiresAt > paddedNow) {
       // console.debug(
       //   "fresh! restart timer tokenExpiresAt:",
-      //   new Date(this._authState.tokenExpiresAt)
+      //   new Date(this.authState.tokenExpiresAt)
       // );
       // console.debug("fresh! restart timer paddedNow:", new Date(paddedNow));
       // Restart timer
@@ -332,9 +321,11 @@ export default class AuthService {
     } else {
       try {
         const auth = await this.refresh();
-        this._authState.headers = auth.headers;
-        this._authState.tokenExpiresAt = auth.tokenExpiresAt;
-        this.persist(this._authState);
+        this.authState = {
+          ...this.authState,
+          ...auth,
+        };
+        this.persist(this.authState);
 
         // console.debug(
         //   "refreshed. restart timer tokenExpiresAt:",

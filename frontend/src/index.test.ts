@@ -66,8 +66,8 @@ describe("browsertrix-app", () => {
     stub(window.sessionStorage, "getItem").callsFake((key) => {
       if (key === "btrix.auth")
         return JSON.stringify({
-          headers: "_fake_headers_",
-          tokenExpiresAt: "_fake_tokenExpiresAt_",
+          headers: { Authorization: "_fake_headers_" },
+          tokenExpiresAt: 0,
           username: "test-auth@example.com",
         });
       return null;
@@ -75,8 +75,8 @@ describe("browsertrix-app", () => {
     const el = await fixture<App>("<browsertrix-app></browsertrix-app>");
 
     expect(el.authService.authState).to.eql({
-      headers: "_fake_headers_",
-      tokenExpiresAt: "_fake_tokenExpiresAt_",
+      headers: { Authorization: "_fake_headers_" },
+      tokenExpiresAt: 0,
       username: "test-auth@example.com",
     });
   });
