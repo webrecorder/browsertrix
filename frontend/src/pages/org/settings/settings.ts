@@ -28,18 +28,18 @@ import "./components/billing";
 type Tab = "information" | "members" | "billing";
 type User = {
   email: string;
-  role: number;
+  role: AccessCode;
 };
 type Invite = User & {
   created: string;
   inviterEmail: string;
 };
 export type Member = User & {
-  name: string;
+  name?: string;
 };
 export type UserRoleChangeEvent = CustomEvent<{
   user: Member;
-  newRole: number;
+  newRole: AccessCode;
 }>;
 export type OrgRemoveMemberEvent = CustomEvent<{
   member: Member;
@@ -517,7 +517,7 @@ export class OrgSettings extends TailwindElement {
       new CustomEvent("org-user-role-change", {
         detail: {
           user,
-          newRole: Number((e.target as HTMLSelectElement).value),
+          newRole: Number((e.target as HTMLSelectElement).value) as AccessCode,
         },
       }) as UserRoleChangeEvent,
     );

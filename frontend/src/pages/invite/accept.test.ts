@@ -229,15 +229,6 @@ describe("btrix-accept-invite", () => {
       );
 
       stub(el._navigate, "to");
-      stub(el._api, "fetch").callsFake(async () =>
-        Promise.resolve({
-          org: {
-            id: mockInviteInfo.oid,
-            name: mockInviteInfo.orgName,
-            slug: mockInviteInfo.orgSlug,
-          },
-        }),
-      );
       stub(el, "_getCurrentUser").callsFake(async () =>
         Promise.resolve({
           id: "fake_user_id",
@@ -246,6 +237,15 @@ describe("btrix-accept-invite", () => {
           is_verified: false,
           is_superuser: false,
           orgs: [],
+        }),
+      );
+      stub(el._api, "fetch").callsFake(async () =>
+        Promise.resolve({
+          org: {
+            id: mockInviteInfo.oid,
+            name: mockInviteInfo.orgName,
+            slug: mockInviteInfo.orgSlug,
+          },
         }),
       );
       stub(AppStateService, "updateUserInfo");
@@ -267,6 +267,16 @@ describe("btrix-accept-invite", () => {
       );
 
       stub(el._navigate, "to");
+      stub(el, "_getCurrentUser").callsFake(async () =>
+        Promise.resolve({
+          id: "fake_user_id",
+          email: "fake@example.com",
+          name: "Fake User",
+          is_verified: false,
+          is_superuser: false,
+          orgs: [],
+        }),
+      );
       stub(el._api, "fetch").callsFake(async () =>
         Promise.resolve({
           org: {

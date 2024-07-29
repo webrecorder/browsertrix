@@ -11,7 +11,7 @@ import type { AuthState } from "@/utils/AuthService";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 import LiteElement, { html } from "@/utils/LiteElement";
 import { getLocale } from "@/utils/localization";
-import type { OrgData, YearMonth } from "@/utils/orgs";
+import type { OrgData } from "@/utils/orgs";
 
 type Metrics = {
   storageUsedBytes: number;
@@ -386,7 +386,7 @@ export class Dashboard extends LiteElement {
     const now = new Date();
     const currentYear = now.getFullYear();
     const currentMonth = String(now.getUTCMonth() + 1).padStart(2, "0");
-    const currentPeriod = `${currentYear}-${currentMonth}` as YearMonth;
+    const currentPeriod = `${currentYear}-${currentMonth}`;
 
     let usageSeconds = 0;
     if (this.org.monthlyExecSeconds) {
@@ -752,7 +752,7 @@ export class Dashboard extends LiteElement {
       );
     }
 
-    const rows = (Object.entries(this.org.usage || {}) as [YearMonth, number][])
+    const rows = Object.entries(this.org.usage || {})
       // Sort latest
       .reverse()
       .map(([mY, crawlTime]) => {

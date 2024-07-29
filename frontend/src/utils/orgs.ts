@@ -1,20 +1,20 @@
-import { AccessCode, type OrgData, type UserRole } from "@/types/org";
+import { AccessCode, type OrgData } from "@/types/org";
 
 export * from "@/types/org";
 
-export function isOwner(accessCode?: (typeof AccessCode)[UserRole]): boolean {
+export function isOwner(accessCode?: AccessCode): boolean {
   if (!accessCode) return false;
 
   return accessCode === AccessCode.owner;
 }
 
-export function isAdmin(accessCode?: (typeof AccessCode)[UserRole]): boolean {
+export function isAdmin(accessCode?: AccessCode): boolean {
   if (!accessCode) return false;
 
   return accessCode >= AccessCode.owner;
 }
 
-export function isCrawler(accessCode?: (typeof AccessCode)[UserRole]): boolean {
+export function isCrawler(accessCode?: AccessCode): boolean {
   if (!accessCode) return false;
 
   return accessCode >= AccessCode.crawler;
