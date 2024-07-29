@@ -2,11 +2,14 @@ import { expect, fixture, oneEvent } from "@open-wc/testing";
 import { serialize, type SlInput } from "@shoelace-style/shoelace";
 import { html } from "lit/static-html.js";
 import { restore, stub } from "sinon";
+import { v4 as uuidv4 } from "uuid";
 
 import { OrgForm } from "./org-form";
 
 import AuthService from "@/utils/AuthService";
 import { AppStateService } from "@/utils/state";
+
+const mockUUID = uuidv4();
 
 describe("btrix-org-form", () => {
   beforeEach(() => {
@@ -113,7 +116,7 @@ describe("btrix-org-form", () => {
       stub(el._api, "fetch").callsFake(async () => Promise.resolve());
       stub(el, "_getCurrentUser").callsFake(async () =>
         Promise.resolve({
-          id: "fake_user_id",
+          id: mockUUID,
           email: "fake@example.com",
           name: "Fake User",
           is_verified: false,
@@ -140,7 +143,7 @@ describe("btrix-org-form", () => {
       stub(el._api, "fetch").callsFake(async () => Promise.resolve());
       stub(el, "_getCurrentUser").callsFake(async () =>
         Promise.resolve({
-          id: "fake_user_id",
+          id: mockUUID,
           email: "fake@example.com",
           name: "Fake User",
           is_verified: false,

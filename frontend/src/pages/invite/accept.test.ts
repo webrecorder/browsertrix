@@ -1,6 +1,7 @@
 import { expect, fixture, fixtureSync, oneEvent } from "@open-wc/testing";
 import { html } from "lit/static-html.js";
 import { match, restore, stub } from "sinon";
+import { v4 as uuidv4 } from "uuid";
 
 import { AcceptInvite } from "./accept";
 
@@ -8,13 +9,14 @@ import type { OrgForm, OrgUpdatedDetail } from "@/pages/invite/ui/org-form";
 import AuthService from "@/utils/AuthService";
 import { AppStateService } from "@/utils/state";
 
+const mockUUID = uuidv4();
 const mockInviteInfo = {
   inviterEmail: "inviter_fake_email@example.com",
   inviterName: "Inviter Fake Name",
   fromSuperuser: false,
   firstOrgAdmin: false,
   role: 0,
-  oid: "fake_oid",
+  oid: mockUUID,
   orgName: "Fake Org Name",
   orgSlug: "fake-org-name",
 };
@@ -150,7 +152,7 @@ describe("btrix-accept-invite", () => {
 
       const orgFormEl = el.shadowRoot!.querySelector<OrgForm>("btrix-org-form");
 
-      expect(orgFormEl).attribute("orgId", "fake_oid");
+      expect(orgFormEl).attribute("orgId", mockUUID);
       expect(orgFormEl).attribute("name", "Fake Org Name 2");
       expect(orgFormEl).attribute("slug", "fake-org-slug-2");
     });
@@ -231,7 +233,7 @@ describe("btrix-accept-invite", () => {
       stub(el._navigate, "to");
       stub(el, "_getCurrentUser").callsFake(async () =>
         Promise.resolve({
-          id: "fake_user_id",
+          id: mockUUID,
           email: "fake@example.com",
           name: "Fake User",
           is_verified: false,
@@ -269,7 +271,7 @@ describe("btrix-accept-invite", () => {
       stub(el._navigate, "to");
       stub(el, "_getCurrentUser").callsFake(async () =>
         Promise.resolve({
-          id: "fake_user_id",
+          id: mockUUID,
           email: "fake@example.com",
           name: "Fake User",
           is_verified: false,

@@ -35,10 +35,10 @@ export const yearMonthSchema = z.string().regex(YEAR_MONTH_REGEX);
 export const orgDataSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
-  created: apiDateSchema,
+  created: apiDateSchema.nullable(),
   slug: z.string(),
   default: z.boolean(),
-  quotas: orgQuotasSchema,
+  quotas: z.union([orgQuotasSchema, z.object({})]),
   bytesStored: z.number(),
   bytesStoredCrawls: z.number(),
   bytesStoredUploads: z.number(),
@@ -69,9 +69,12 @@ export const orgDataSchema = z.object({
       }),
     )
     .optional(),
-  readOnly: z.boolean().nullable(),
-  readOnlyReason: z.union([orgReadOnlyReasonSchema, z.string()]).nullable(),
-  readOnlyOnCancel: z.boolean(),
+  readOnly: z.boolean().nullable().optional(),
+  readOnlyReason: z
+    .union([orgReadOnlyReasonSchema, z.string()])
+    .nullable()
+    .optional(),
+  readOnlyOnCancel: z.boolean().optional(),
   subscription: subscriptionSchema.nullable(),
 });
 export type OrgData = z.infer<typeof orgDataSchema>;
