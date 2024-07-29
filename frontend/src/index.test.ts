@@ -1,35 +1,9 @@
 import { expect, fixture } from "@open-wc/testing";
 import { restore, stub } from "sinon";
-import { v4 as uuidv4 } from "uuid";
 
 import AuthService from "./utils/AuthService";
 
 import { App, type APIUser } from ".";
-
-const mockUUID = uuidv4();
-// TODO generate from schema
-const mockUserOrg = {
-  role: 10,
-  id: mockUUID,
-  name: "test org",
-  created: null,
-  slug: "test-org",
-  default: false,
-  quotas: {},
-  bytesStored: 100,
-  bytesStoredCrawls: 1,
-  bytesStoredUploads: 1,
-  bytesStoredProfiles: 1,
-  usage: null,
-  crawlExecSeconds: {},
-  monthlyExecSeconds: {},
-  extraExecSeconds: {},
-  giftedExecSeconds: {},
-  extraExecSecondsAvailable: 0,
-  giftedExecSecondsAvailable: 0,
-  users: {},
-  subscription: null,
-};
 
 describe("browsertrix-app", () => {
   beforeEach(() => {
@@ -90,12 +64,28 @@ describe("browsertrix-app", () => {
   it("sets user info", async () => {
     stub(App.prototype, "getUserInfo").callsFake(async () =>
       Promise.resolve({
-        id: mockUUID,
+        id: "test_id",
         email: "test-user@example.com",
         name: "Test User",
         is_verified: false,
         is_superuser: false,
-        orgs: [mockUserOrg],
+        orgs: [
+          {
+            id: "test_org_id",
+            name: "test org",
+            slug: "test-org",
+            role: 10,
+            quotas: {},
+            bytesStored: 100,
+            usage: null,
+            crawlExecSeconds: {},
+            monthlyExecSeconds: {},
+            extraExecSeconds: {},
+            giftedExecSeconds: {},
+            extraExecSecondsAvailable: {},
+            giftedExecSecondsAvailable: {},
+          },
+        ],
       } as APIUser),
     );
     stub(AuthService.prototype, "startFreshnessCheck");
@@ -109,12 +99,28 @@ describe("browsertrix-app", () => {
     const el = await fixture<App>("<browsertrix-app></browsertrix-app>");
 
     expect(el.appState.userInfo).to.eql({
-      id: mockUUID,
+      id: "test_id",
       email: "test-user@example.com",
       name: "Test User",
       isVerified: false,
       isSuperAdmin: false,
-      orgs: [mockUserOrg],
+      orgs: [
+        {
+          id: "test_org_id",
+          name: "test org",
+          role: 10,
+          slug: "test-org",
+          quotas: {},
+          bytesStored: 100,
+          usage: null,
+          crawlExecSeconds: {},
+          monthlyExecSeconds: {},
+          extraExecSeconds: {},
+          giftedExecSeconds: {},
+          extraExecSecondsAvailable: {},
+          giftedExecSecondsAvailable: {},
+        },
+      ],
     });
   });
 });
