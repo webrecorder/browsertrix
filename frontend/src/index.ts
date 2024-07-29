@@ -626,7 +626,6 @@ export class App extends LiteElement {
         return html`<btrix-org
           class="w-full"
           .authState=${this.authService.authState}
-          .userInfo=${this.appState.userInfo ?? undefined}
           .viewStateData=${this.viewState.data}
           .params=${this.viewState.params}
           .maxScale=${this.appState.settings?.maxScale || DEFAULT_MAX_SCALE}
@@ -639,9 +638,7 @@ export class App extends LiteElement {
       case "accountSettings":
         return html`<btrix-account-settings
           class="mx-auto box-border w-full max-w-screen-desktop p-2 md:py-8"
-          @btrix-update-user-info=${this.updateUserInfo}
           .authState="${this.authService.authState}"
-          .userInfo="${this.appState.userInfo ?? undefined}"
         ></btrix-account-settings>`;
 
       case "usersInvite": {
