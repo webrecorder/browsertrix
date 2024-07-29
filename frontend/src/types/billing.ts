@@ -13,7 +13,7 @@ export const subscriptionSchema = z.object({
   status: subscriptionStatusSchema,
   futureCancelDate: apiDateSchema.nullable(),
 });
-export type SubScription = z.infer<typeof subscriptionSchema>;
+export type Subscription = z.infer<typeof subscriptionSchema>;
 
 export const billingPortalSchema = z.object({
   portalUrl: z.string().url(),
