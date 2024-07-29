@@ -9,7 +9,7 @@ import "./utils/polyfills";
 
 import type { OrgTab } from "./pages/org";
 import { ROUTES } from "./routes";
-import type { CurrentUser, UserOrg } from "./types/user";
+import type { UserInfo, UserOrg } from "./types/user";
 import APIRouter, { type ViewState } from "./utils/APIRouter";
 import AuthService, {
   type Auth,
@@ -817,11 +817,11 @@ export class App extends LiteElement {
     }
   };
 
-  onUserInfoChange(event: CustomEvent<Partial<CurrentUser>>) {
+  onUserInfoChange(event: CustomEvent<Partial<UserInfo>>) {
     AppStateService.updateUserInfo({
       ...this.appState.userInfo,
       ...event.detail,
-    } as CurrentUser);
+    } as UserInfo);
   }
 
   /**
