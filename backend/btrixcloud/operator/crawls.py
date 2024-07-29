@@ -1242,6 +1242,9 @@ class CrawlOperator(BaseOperator):
         # gracefully stop crawl if current running crawl sizes reach storage quota
         org = await self.org_ops.get_org_by_id(crawl.oid)
 
+        if org.readOnly:
+            return "stopped_org_readonly"
+
         if org.quotas.storageQuota:
             running_crawls_total_size = status.size
             for crawl_job in data.related[CJS].values():
@@ -1366,6 +1369,8 @@ class CrawlOperator(BaseOperator):
                 state = "stopped_storage_quota_reached"
             elif status.stopReason == "stopped_time_quota_reached":
                 state = "stopped_time_quota_reached"
+            elif status.stopReason == "stopped_org_readonly":
+                state = "stopped_org_readonly"
             else:
                 state = "complete"
 

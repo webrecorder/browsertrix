@@ -228,6 +228,16 @@ export class CrawlStatus extends TailwindElement {
         label = msg("Stopped: Time Quota Reached");
         break;
 
+      case "stopped_org_readonly":
+        color = "var(--warning)";
+        icon = html`<sl-icon
+          name="exclamation-square-fill"
+          slot="prefix"
+          style="color: ${color}"
+        ></sl-icon>`;
+        label = msg("Stopped: Crawling Disabled");
+        break;
+
       case "canceled":
         color = "var(--sl-color-orange-600)";
         icon = html`<sl-icon
