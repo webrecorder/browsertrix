@@ -2,7 +2,6 @@ import { localized, msg, str } from "@lit/localize";
 import type { SlDialog } from "@shoelace-style/shoelace";
 import { nothing, render, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
-import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 
 import "broadcastchannel-polyfill";
@@ -608,15 +607,12 @@ export class App extends LiteElement {
           class="w-full md:bg-neutral-50"
           @btrix-update-user-info=${this.updateUserInfo}
           .authState=${this.authService.authState}
-          .userInfo=${this.appState.userInfo ?? undefined}
-          slug=${ifDefined(this.appState.orgSlug ?? undefined)}
         ></btrix-home>`;
 
       case "orgs":
         return html`<btrix-orgs
           class="w-full md:bg-neutral-50"
           .authState="${this.authService.authState}"
-          .userInfo="${this.appState.userInfo ?? undefined}"
         ></btrix-orgs>`;
 
       case "org": {

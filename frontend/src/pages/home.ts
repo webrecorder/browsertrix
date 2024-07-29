@@ -6,7 +6,6 @@ import { customElement, property, state } from "lit/decorators.js";
 
 import type { InviteSuccessDetail } from "@/features/accounts/invite-form";
 import type { APIPaginatedList } from "@/types/api";
-import type { CurrentUser } from "@/types/user";
 import { isApiError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
 import { maxLengthValidator } from "@/utils/form";
@@ -28,12 +27,6 @@ export class Home extends LiteElement {
   @property({ type: Object })
   authState?: AuthState;
 
-  @property({ type: Object })
-  userInfo?: CurrentUser;
-
-  @property({ type: String })
-  slug?: string;
-
   @state()
   private orgList?: OrgData[];
 
@@ -52,21 +45,30 @@ export class Home extends LiteElement {
   @state()
   private isOrgNameValid: boolean | null = null;
 
+  private get slug() {
+    return this.appState.orgSlug;
+  }
+
+  private get userInfo() {
+    return this.appState.userInfo;
+  }
+
   private readonly validateOrgNameMax = maxLengthValidator(40);
 
   connectedCallback() {
     if (this.authState) {
-      super.connectedCallback();
+      if (this.slug) {
+        this.navTo(`/orgs/${this.slug}`);
+      } else {
+        super.connectedCallback();
+      }
     } else {
       this.navTo("/log-in");
     }
   }
 
-  willUpdate(changedProperties: PropertyValues<this>) {
-    console.log(this.userInfo);
-    if (changedProperties.has("slug") && this.slug) {
-      this.navTo(`/orgs/${this.slug}`);
-    } else if (changedProperties.has("userInfo") && this.userInfo) {
+  willUpdate(changedProperties: PropertyValues) {
+    if (changedProperties.has("appState.userInfo") && this.userInfo) {
       if (this.userInfo.isSuperAdmin) {
         if (this.userInfo.orgs.length) {
           void this.fetchOrgs();
@@ -74,6 +76,8 @@ export class Home extends LiteElement {
           this.isAddingOrg = true;
           this.isAddOrgFormVisible = true;
         }
+      } else if (this.userInfo.orgs.length) {
+        this.navTo(`/orgs/${this.userInfo.orgs[0].slug}`);
       } else {
         this.navTo(`/account/settings`);
       }
