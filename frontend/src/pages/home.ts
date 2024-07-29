@@ -160,7 +160,6 @@ export class Home extends LiteElement {
             </header>
             <btrix-orgs-list
               .authState=${this.authState}
-              .userInfo=${this.userInfo}
               .orgList=${this.orgList}
               @update-quotas=${this.onUpdateOrgQuotas}
             ></btrix-orgs-list>
