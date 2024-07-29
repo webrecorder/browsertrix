@@ -2,8 +2,8 @@ import { z } from "zod";
 
 import type { SortDirection } from "./utils";
 
-// Custom regex since Zod .datetime() requires either
-// an offset or Z, while our API dates do not
+// Custom date refinement, since Zod .datetime() requires
+// either an offset or Z, while our API dates do not
 export const apiDateSchema = z.string().refine((v) => !isNaN(Date.parse(v)), {
   message: "String must be a valid date",
 });
