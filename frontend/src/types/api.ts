@@ -4,9 +4,9 @@ import type { SortDirection } from "./utils";
 
 // Custom regex since Zod .datetime() requires either
 // an offset or Z, while our API dates do not
-const ISO_8601_REGEX =
-  /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?(([+-]\d\d:\d\d)|Z)?$/i;
-export const apiDateSchema = z.string().regex(ISO_8601_REGEX);
+export const apiDateSchema = z.string().refine((v) => !isNaN(Date.parse(v)), {
+  message: "String must be a valid date",
+});
 export type APIDate = z.infer<typeof apiDateSchema>;
 
 /**
