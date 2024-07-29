@@ -56,7 +56,7 @@ module.exports = {
     "@typescript-eslint/no-base-to-string": "warn",
     "@typescript-eslint/no-duplicate-enum-values": "error",
     "@typescript-eslint/no-duplicate-type-constituents": "warn",
-    "@typescript-eslint/no-explicit-any": "warn",
+    "@typescript-eslint/no-explicit-any": "error",
     "@typescript-eslint/no-extra-non-null-assertion": "error",
     "@typescript-eslint/no-floating-promises": "warn",
     "@typescript-eslint/no-for-in-array": "warn",

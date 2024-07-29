@@ -56,7 +56,8 @@ export class AppStateService {
   };
   static updateUserInfo = (userInfo: AppState["userInfo"]) => {
     unlock(() => {
-      console.log(currentUserSchema.safeParse(userInfo).error);
+      const parsed = currentUserSchema.safeParse(userInfo);
+      if (parsed.error) console.debug(parsed.error);
 
       appState.userInfo = userInfo;
     });

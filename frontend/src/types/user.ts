@@ -1,9 +1,12 @@
 import { z } from "zod";
 
-import { accessCodeSchema, orgDataSchema } from "./org";
+import { accessCodeSchema } from "./org";
 
-export const userOrgSchema = orgDataSchema.extend({
+export const userOrgSchema = z.object({
   default: z.boolean().optional(),
+  id: z.string().uuid(),
+  name: z.string(),
+  slug: z.string(),
   role: accessCodeSchema,
 });
 export type UserOrg = z.infer<typeof userOrgSchema>;
