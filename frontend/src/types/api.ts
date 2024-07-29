@@ -1,4 +1,13 @@
+import { z } from "zod";
+
 import type { SortDirection } from "./utils";
+
+// Custom regex since Zod .datetime() requires either an offset or Z,
+// while our API dates does not
+const ISO_8601_REGEX =
+  /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?(([+-]\d\d:\d\d)|Z)?$/i;
+export const apiDateSchema = z.string().regex(ISO_8601_REGEX);
+export type APIDate = z.infer<typeof apiDateSchema>;
 
 /**
  * If no generic type is specified, `items` cannot exist.

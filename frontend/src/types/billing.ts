@@ -1,14 +1,21 @@
+import { z } from "zod";
+
+import { apiDateSchema } from "./api";
+
 export enum SubscriptionStatus {
   Active = "active",
   PausedPaymentFailed = "paused_payment_failed",
   Cancelled = "cancelled",
 }
+export const subscriptionStatusSchema = z.nativeEnum(SubscriptionStatus);
 
-export type Subscription = {
-  status: SubscriptionStatus;
-  futureCancelDate: null | string; // UTC datetime string
-};
+export const subscriptionSchema = z.object({
+  status: subscriptionStatusSchema,
+  futureCancelDate: apiDateSchema.nullable(),
+});
+export type SubScription = z.infer<typeof subscriptionSchema>;
 
-export type BillingPortal = {
-  portalUrl: string;
-};
+export const billingPortalSchema = z.object({
+  portalUrl: z.string().url(),
+});
+export type BillingPortal = z.infer<typeof billingPortalSchema>;

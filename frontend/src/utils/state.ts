@@ -7,7 +7,7 @@ import { persist } from "./persist";
 
 import type { AppSettings } from "@/types/app";
 import type { OrgData } from "@/types/org";
-import type { CurrentUser } from "@/types/user";
+import { currentUserSchema, type CurrentUser } from "@/types/user";
 
 export { use };
 
@@ -56,6 +56,8 @@ export class AppStateService {
   };
   static updateUserInfo = (userInfo: AppState["userInfo"]) => {
     unlock(() => {
+      currentUserSchema.parse(userInfo);
+
       appState.userInfo = userInfo;
     });
   };
