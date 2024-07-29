@@ -605,7 +605,6 @@ export class App extends LiteElement {
       case "home":
         return html`<btrix-home
           class="w-full md:bg-neutral-50"
-          @btrix-update-user-info=${this.updateUserInfo}
           .authState=${this.authService.authState}
         ></btrix-home>`;
 

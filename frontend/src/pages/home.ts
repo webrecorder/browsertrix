@@ -5,21 +5,22 @@ import { type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
 import type { InviteSuccessDetail } from "@/features/accounts/invite-form";
+import type { APIUser } from "@/index";
 import type { APIPaginatedList } from "@/types/api";
 import { isApiError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
 import { maxLengthValidator } from "@/utils/form";
 import LiteElement, { html } from "@/utils/LiteElement";
-import type { OrgData } from "@/utils/orgs";
+import { type OrgData } from "@/utils/orgs";
 import slugifyStrict from "@/utils/slugify";
+import { AppStateService } from "@/utils/state";
+import { formatAPIUser } from "@/utils/user";
 
 /**
  * Home page when org is not selected.
  * Currently, only visible to superadmins--redirects to user's org, otherwise
  *
  * TODO Refactor out superadmin UI
- *
- * @fires btrix-update-user-info
  */
 @localized()
 @customElement("btrix-home")
@@ -352,13 +353,17 @@ export class Home extends LiteElement {
     this.isSubmittingNewOrg = true;
 
     try {
-      await this.apiFetch(`/orgs/create`, this.authState!, {
-        method: "POST",
-        body: JSON.stringify(params),
-      });
-
-      // Update user info since orgs are checked against userInfo.orgs
-      this.dispatchEvent(new CustomEvent("btrix-update-user-info"));
+      // TODO return entire object from API
+      await this.apiFetch<{ added: true; id: string }>(
+        `/orgs/create`,
+        this.authState!,
+        {
+          method: "POST",
+          body: JSON.stringify(params),
+        },
+      );
+      const userInfo = await this.getUserInfo();
+      AppStateService.updateUserInfo(formatAPIUser(userInfo));
 
       this.notify({
         message: msg(str`Created new org named "${params.name}".`),
@@ -406,5 +411,9 @@ export class Home extends LiteElement {
   async checkFormValidity(formEl: HTMLFormElement) {
     await this.updateComplete;
     return !formEl.querySelector("[data-invalid]");
+  }
+
+  async getUserInfo(): Promise<APIUser> {
+    return this.apiFetch("/users/me", this.authState!);
   }
 }
