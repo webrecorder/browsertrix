@@ -3,8 +3,13 @@ import { spy } from "sinon";
 
 import * as auth from "./auth";
 import type LiteElement from "./LiteElement";
+import appState, { AppStateService } from "./state";
 
 describe("auth", () => {
+  beforeEach(() => {
+    AppStateService.resetAll();
+  });
+
   describe("needLogin", () => {
     it("dispatches the correct event on need log in", () => {
       const dispatchEventSpy = spy();
@@ -14,8 +19,10 @@ describe("auth", () => {
 
       const Element = auth.needLogin(
         class TestElement extends LiteElementMock {
-          authState = null;
-        } as unknown as { new (...args: unknown[]): LiteElement },
+          appState = appState;
+        } as unknown as {
+          new (...args: unknown[]): LiteElement;
+        },
       );
 
       const element = new Element();

@@ -20,7 +20,6 @@ import type { UserOrg } from "@/types/user";
 import { isApiError } from "@/utils/api";
 import type { ViewState } from "@/utils/APIRouter";
 import { needLogin } from "@/utils/auth";
-import type { AuthState } from "@/utils/AuthService";
 import { DEFAULT_MAX_SCALE } from "@/utils/crawler";
 import LiteElement, { html } from "@/utils/LiteElement";
 import { isAdmin, isCrawler, type OrgData } from "@/utils/orgs";
@@ -89,9 +88,6 @@ const UUID_REGEX =
 @customElement("btrix-org")
 @needLogin
 export class Org extends LiteElement {
-  @property({ type: Object })
-  authState?: AuthState;
-
   @property({ type: Object })
   viewStateData?: ViewState["data"];
 
@@ -399,7 +395,7 @@ export class Org extends LiteElement {
   }
 
   private renderNewResourceDialogs() {
-    if (!this.authState || !this.orgId || !this.isCrawler) {
+    if (!this.orgId || !this.isCrawler) {
       return;
     }
     if (!this.isCreateDialogVisible) {
@@ -418,7 +414,6 @@ export class Org extends LiteElement {
       >
         <btrix-file-uploader
           orgId=${this.orgId}
-          .authState=${this.authState}
           ?open=${this.openDialogName === "upload"}
           @request-close=${() => (this.openDialogName = undefined)}
           @uploaded=${() => {
@@ -428,7 +423,6 @@ export class Org extends LiteElement {
           }}
         ></btrix-file-uploader>
         <btrix-new-browser-profile-dialog
-          .authState=${this.authState}
           orgId=${this.orgId}
           ?open=${this.openDialogName === "browser-profile"}
           @sl-hide=${() => (this.openDialogName = undefined)}
@@ -446,7 +440,6 @@ export class Org extends LiteElement {
         </btrix-new-workflow-dialog>
         <btrix-collection-metadata-dialog
           orgId=${this.orgId}
-          .authState=${this.authState}
           ?open=${this.openDialogName === "collection"}
           @sl-hide=${() => (this.openDialogName = undefined)}
           @btrix-collection-saved=${(e: CollectionSavedEvent) => {
@@ -463,7 +456,6 @@ export class Org extends LiteElement {
   private renderDashboard() {
     return html`
       <btrix-dashboard
-        .authState=${this.authState!}
         orgId=${this.orgId}
         .org=${this.org || null}
         ?isCrawler=${this.isCrawler}
@@ -486,7 +478,6 @@ export class Org extends LiteElement {
 
         return html`<btrix-archived-item-qa
           class="flex-1"
-          .authState=${this.authState!}
           orgId=${this.orgId}
           itemId=${params.itemId}
           itemPageId=${ifDefined(params.itemPageId)}
@@ -496,7 +487,6 @@ export class Org extends LiteElement {
       }
 
       return html` <btrix-archived-item-detail
-        .authState=${this.authState!}
         orgId=${this.orgId}
         crawlId=${params.itemId}
         collectionId=${params.collectionId || ""}
@@ -507,7 +497,6 @@ export class Org extends LiteElement {
     }
 
     return html`<btrix-archived-items
-      .authState=${this.authState!}
       userId=${this.userInfo!.id}
       orgId=${this.orgId}
       ?isCrawler=${this.isCrawler}
@@ -527,7 +516,6 @@ export class Org extends LiteElement {
       return html`
         <btrix-workflow-detail
           class="col-span-5 mt-6"
-          .authState=${this.authState!}
           orgId=${this.orgId}
           workflowId=${workflowId}
           openDialogName=${this.viewStateData?.dialog}
@@ -543,7 +531,6 @@ export class Org extends LiteElement {
 
       return html` <btrix-workflows-new
         class="col-span-5 mt-6"
-        .authState=${this.authState!}
         orgId=${this.orgId}
         ?isCrawler=${this.isCrawler}
         .initialWorkflow=${workflow}
@@ -554,7 +541,6 @@ export class Org extends LiteElement {
     }
 
     return html`<btrix-workflows-list
-      .authState=${this.authState!}
       orgId=${this.orgId}
       userId=${this.userInfo!.id}
       ?isCrawler=${this.isCrawler}
@@ -567,7 +553,6 @@ export class Org extends LiteElement {
 
     if (params.browserProfileId) {
       return html`<btrix-browser-profiles-detail
-        .authState=${this.authState!}
         .orgId=${this.orgId}
         profileId=${params.browserProfileId}
         ?isCrawler=${this.isCrawler}
@@ -576,7 +561,6 @@ export class Org extends LiteElement {
 
     if (params.browserId) {
       return html`<btrix-browser-profiles-new
-        .authState=${this.authState!}
         .orgId=${this.orgId}
         .browserId=${params.browserId}
         .browserParams=${{
@@ -591,7 +575,6 @@ export class Org extends LiteElement {
     }
 
     return html`<btrix-browser-profiles-list
-      .authState=${this.authState!}
       .orgId=${this.orgId}
       ?isCrawler=${this.isCrawler}
       @select-new-dialog=${this.onSelectNewDialog}
@@ -603,7 +586,6 @@ export class Org extends LiteElement {
 
     if (params.collectionId) {
       return html`<btrix-collection-detail
-        .authState=${this.authState!}
         orgId=${this.orgId}
         userId=${this.userInfo!.id}
         collectionId=${params.collectionId}
@@ -614,7 +596,6 @@ export class Org extends LiteElement {
     }
 
     return html`<btrix-collections-list
-      .authState=${this.authState!}
       orgId=${this.orgId}
       ?isCrawler=${this.isCrawler}
       @select-new-dialog=${this.onSelectNewDialog}
@@ -631,7 +612,6 @@ export class Org extends LiteElement {
     );
 
     return html`<btrix-org-settings
-      .authState=${this.authState}
       .orgId=${this.orgId}
       activePanel=${activePanel}
       ?isAddingMember=${isAddingMember}
@@ -648,10 +628,7 @@ export class Org extends LiteElement {
   }
 
   private async getOrg(orgId: string): Promise<OrgData | undefined> {
-    const data = await this.apiFetch<OrgData>(
-      `/orgs/${orgId}`,
-      this.authState!,
-    );
+    const data = await this.apiFetch<OrgData>(`/orgs/${orgId}`);
 
     return data;
   }
@@ -688,7 +665,7 @@ export class Org extends LiteElement {
     const { user, newRole } = e.detail;
 
     try {
-      await this.apiFetch(`/orgs/${this.orgId}/user-role`, this.authState!, {
+      await this.apiFetch(`/orgs/${this.orgId}/user-role`, {
         method: "PATCH",
         body: JSON.stringify({
           email: user.email,
@@ -738,7 +715,7 @@ export class Org extends LiteElement {
     }
 
     try {
-      await this.apiFetch(`/orgs/${this.orgId}/remove`, this.authState!, {
+      await this.apiFetch(`/orgs/${this.orgId}/remove`, {
         method: "POST",
         body: JSON.stringify({
           email: member.email,

@@ -7,7 +7,6 @@ import { when } from "lit/directives/when.js";
 
 import type { SelectNewDialogEvent } from ".";
 
-import type { AuthState } from "@/utils/AuthService";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 import LiteElement, { html } from "@/utils/LiteElement";
 import { getLocale } from "@/utils/localization";
@@ -34,9 +33,6 @@ type Metrics = {
 @localized()
 @customElement("btrix-dashboard")
 export class Dashboard extends LiteElement {
-  @property({ type: Object })
-  authState!: AuthState;
-
   @property({ type: Boolean })
   isCrawler?: boolean;
 
@@ -850,7 +846,6 @@ export class Dashboard extends LiteElement {
     try {
       const data = await this.apiFetch<Metrics | undefined>(
         `/orgs/${this.orgId}/metrics`,
-        this.authState!,
       );
 
       this.metrics = data;

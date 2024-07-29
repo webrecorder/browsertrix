@@ -15,7 +15,6 @@ import type {
   APISortQuery,
 } from "@/types/api";
 import type { Crawl, Workflow } from "@/types/crawler";
-import { type AuthState } from "@/utils/AuthService";
 import { finishedCrawlStates } from "@/utils/crawler";
 import { getLocale } from "@/utils/localization";
 
@@ -106,9 +105,6 @@ export class CollectionWorkflowList extends TailwindElement {
       border-top: var(--border);
     }
   `;
-
-  @property({ type: Object })
-  authState?: AuthState;
 
   @property({ type: String })
   orgId?: string;
@@ -343,7 +339,6 @@ export class CollectionWorkflowList extends TailwindElement {
       APIPaginationQuery &
       APISortQuery,
   ) {
-    if (!this.authState) throw new Error("Missing attribute `authState`");
     if (!this.orgId) throw new Error("Missing attribute `orgId`");
 
     const query = queryString.stringify(
@@ -357,7 +352,6 @@ export class CollectionWorkflowList extends TailwindElement {
     );
     const data = await this.api.fetch<APIPaginatedList<Crawl>>(
       `/orgs/${this.orgId}/crawls?${query}`,
-      this.authState,
     );
 
     return data;

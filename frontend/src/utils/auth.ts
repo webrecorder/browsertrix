@@ -1,4 +1,4 @@
-import AuthService, { type AuthState } from "@/utils/AuthService";
+import AuthService from "@/utils/AuthService";
 import type LiteElement from "@/utils/LiteElement";
 
 /**
@@ -20,16 +20,8 @@ export function needLogin<T extends { new (...args: any[]): LiteElement }>(
   constructor: T,
 ) {
   return class extends constructor {
-    authState?: AuthState;
-
-    static get properties() {
-      return {
-        authState: { type: Object },
-      };
-    }
-
     update(changedProperties: Map<string, unknown>) {
-      if (this.authState) {
+      if (this.appState.authState) {
         super.update(changedProperties);
       } else {
         this.dispatchEvent(

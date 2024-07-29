@@ -15,7 +15,6 @@ import type { PageChangeEvent } from "@/components/ui/pagination";
 import { type SelectEvent } from "@/components/ui/search-combobox";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import { isApiError } from "@/utils/api";
-import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
 import { isArchivingDisabled } from "@/utils/orgs";
 
@@ -70,9 +69,6 @@ export class WorkflowsList extends LiteElement {
     name: msg("Name"),
     firstSeed: msg("Crawl Start URL"),
   };
-
-  @property({ type: Object })
-  authState!: AuthState;
 
   @property({ type: String })
   orgId!: string;
@@ -623,7 +619,6 @@ export class WorkflowsList extends LiteElement {
     this.getWorkflowsController = new AbortController();
     const data = await this.apiFetch<APIPaginatedList<Workflow>>(
       `/orgs/${this.orgId}/crawlconfigs?${query}`,
-      this.authState!,
       {
         signal: this.getWorkflowsController.signal,
       },
@@ -675,13 +670,9 @@ export class WorkflowsList extends LiteElement {
 
   private async deactivate(workflow: ListWorkflow): Promise<void> {
     try {
-      await this.apiFetch(
-        `/orgs/${this.orgId}/crawlconfigs/${workflow.id}`,
-        this.authState!,
-        {
-          method: "DELETE",
-        },
-      );
+      await this.apiFetch(`/orgs/${this.orgId}/crawlconfigs/${workflow.id}`, {
+        method: "DELETE",
+      });
 
       void this.fetchWorkflows();
       this.notify({
@@ -702,13 +693,9 @@ export class WorkflowsList extends LiteElement {
 
   private async delete(workflow: ListWorkflow): Promise<void> {
     try {
-      await this.apiFetch(
-        `/orgs/${this.orgId}/crawlconfigs/${workflow.id}`,
-        this.authState!,
-        {
-          method: "DELETE",
-        },
-      );
+      await this.apiFetch(`/orgs/${this.orgId}/crawlconfigs/${workflow.id}`, {
+        method: "DELETE",
+      });
 
       void this.fetchWorkflows();
       this.notify({
@@ -732,7 +719,6 @@ export class WorkflowsList extends LiteElement {
     if (window.confirm(msg("Are you sure you want to cancel the crawl?"))) {
       const data = await this.apiFetch<{ success: boolean }>(
         `/orgs/${this.orgId}/crawls/${crawlId}/cancel`,
-        this.authState!,
         {
           method: "POST",
         },
@@ -754,7 +740,6 @@ export class WorkflowsList extends LiteElement {
     if (window.confirm(msg("Are you sure you want to stop the crawl?"))) {
       const data = await this.apiFetch<{ success: boolean }>(
         `/orgs/${this.orgId}/crawls/${crawlId}/stop`,
-        this.authState!,
         {
           method: "POST",
         },
@@ -775,7 +760,6 @@ export class WorkflowsList extends LiteElement {
     try {
       await this.apiFetch(
         `/orgs/${this.orgId}/crawlconfigs/${workflow.id}/run`,
-        this.authState!,
         {
           method: "POST",
         },
@@ -828,10 +812,7 @@ export class WorkflowsList extends LiteElement {
         names: string[];
         descriptions: string[];
         firstSeeds: string[];
-      } = await this.apiFetch(
-        `/orgs/${this.orgId}/crawlconfigs/search-values`,
-        this.authState!,
-      );
+      } = await this.apiFetch(`/orgs/${this.orgId}/crawlconfigs/search-values`);
 
       // Update search/filter collection
       const toSearchItem = (key: SearchFields) => (value: string) => ({
@@ -849,7 +830,6 @@ export class WorkflowsList extends LiteElement {
   private async getWorkflow(workflow: ListWorkflow): Promise<Workflow> {
     const data: Workflow = await this.apiFetch(
       `/orgs/${this.orgId}/crawlconfigs/${workflow.id}`,
-      this.authState!,
     );
     return data;
   }
@@ -858,7 +838,6 @@ export class WorkflowsList extends LiteElement {
     // NOTE Returns first 1000 seeds (backend pagination max)
     const data = await this.apiFetch<APIPaginatedList<Seed>>(
       `/orgs/${this.orgId}/crawlconfigs/${workflow.id}/seeds`,
-      this.authState!,
     );
     return data;
   }

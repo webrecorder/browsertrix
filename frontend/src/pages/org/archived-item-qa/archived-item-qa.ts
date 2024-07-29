@@ -40,10 +40,10 @@ import type {
 } from "@/types/api";
 import type { ArchivedItem, ArchivedItemPageComment } from "@/types/crawler";
 import type { ArchivedItemQAPage, QARun } from "@/types/qa";
-import { type AuthState } from "@/utils/AuthService";
 import { finishedCrawlStates, isActive, renderName } from "@/utils/crawler";
 import { maxLengthValidator } from "@/utils/form";
 import { formatISODateString, getLocale } from "@/utils/localization";
+import appState, { use } from "@/utils/state";
 import { tw } from "@/utils/tailwind";
 
 const DEFAULT_PAGE_SIZE = 100;
@@ -88,9 +88,6 @@ const tabToPrefix: Record<QATypes.QATab, string> = {
 export class ArchivedItemQA extends TailwindElement {
   static styles = styles;
 
-  @property({ type: Object })
-  authState?: AuthState;
-
   @property({ type: String })
   orgId?: string;
 
@@ -105,6 +102,9 @@ export class ArchivedItemQA extends TailwindElement {
 
   @property({ type: String })
   tab: QATypes.QATab = "screenshots";
+
+  @use()
+  appState = appState;
 
   @state()
   private item?: ArchivedItem;
@@ -482,7 +482,7 @@ export class ArchivedItemQA extends TailwindElement {
               class="order-3 mx-auto flex w-full justify-center @lg:order-2 @lg:mx-0 @lg:w-auto"
             >
               <btrix-page-qa-approval
-                .authState=${this.authState}
+                
                 .orgId=${this.orgId}
                 .itemId=${this.itemId}
                 .pageId=${this.itemPageId}
@@ -1050,11 +1050,11 @@ export class ArchivedItemQA extends TailwindElement {
     if (!rwpId) return;
 
     const replaySource = `/api/orgs/${this.orgId}/crawls/${this.itemId}${qa ? `/qa/${rwpId}` : ""}/replay.json`;
-    const headers = this.authState?.headers;
+    const headers = this.appState.authState?.headers;
     const config = JSON.stringify({ headers });
     console.debug("rendering rwp", rwpId);
     return guard(
-      [rwpId, this.page, this.authState],
+      [rwpId, this.page, this.appState.authState],
       () => html`
         <replay-web-page
           source="${replaySource}"
@@ -1137,7 +1137,6 @@ export class ArchivedItemQA extends TailwindElement {
     try {
       const { data } = await this.api.fetch<{ data: ArchivedItemPageComment }>(
         `/orgs/${this.orgId}/crawls/${this.itemId}/pages/${this.itemPageId}/notes`,
-        this.authState!,
         {
           method: "POST",
           body: JSON.stringify({ text: value }),
@@ -1175,7 +1174,6 @@ export class ArchivedItemQA extends TailwindElement {
     try {
       await this.api.fetch(
         `/orgs/${this.orgId}/crawls/${this.itemId}/pages/${this.itemPageId}/notes/delete`,
-        this.authState!,
         {
           method: "POST",
           body: JSON.stringify({ delete_list: [commentId] }),
@@ -1212,14 +1210,12 @@ export class ArchivedItemQA extends TailwindElement {
   private async getQARuns(): Promise<QARun[]> {
     return this.api.fetch<QARun[]>(
       `/orgs/${this.orgId}/crawls/${this.itemId}/qa?skipFailed=true`,
-      this.authState!,
     );
   }
 
   private async getCrawl(): Promise<ArchivedItem> {
     return this.api.fetch<ArchivedItem>(
       `/orgs/${this.orgId}/crawls/${this.itemId}`,
-      this.authState!,
     );
   }
 
@@ -1449,7 +1445,6 @@ export class ArchivedItemQA extends TailwindElement {
       this.qaRunId
         ? `/orgs/${this.orgId}/crawls/${this.itemId}/qa/${this.qaRunId}/pages/${pageId}`
         : `/orgs/${this.orgId}/crawls/${this.itemId}/pages/${pageId}`,
-      this.authState!,
     );
   }
 
@@ -1483,7 +1478,6 @@ export class ArchivedItemQA extends TailwindElement {
     );
     return this.api.fetch<APIPaginatedList<ArchivedItemQAPage>>(
       `/orgs/${this.orgId}/crawls/${this.itemId ?? ""}/qa/${this.qaRunId ?? ""}/pages?${query}`,
-      this.authState!,
     );
   }
 
@@ -1500,7 +1494,6 @@ export class ArchivedItemQA extends TailwindElement {
     try {
       const data = await this.api.fetch<{ updated: boolean }>(
         `/orgs/${this.orgId}/all-crawls/${this.itemId}`,
-        this.authState!,
         {
           method: "PATCH",
           body: JSON.stringify({

@@ -2,9 +2,11 @@ import { expect } from "@open-wc/testing";
 import { restore, stub } from "sinon";
 
 import AuthService from "./AuthService";
+import { AppStateService } from "./state";
 
 describe("AuthService", () => {
   beforeEach(() => {
+    AppStateService.resetAll();
     AuthService.broadcastChannel = new BroadcastChannel(AuthService.storageKey);
     window.sessionStorage.clear();
     stub(window.history, "pushState");

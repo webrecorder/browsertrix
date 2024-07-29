@@ -20,8 +20,8 @@ import { NavigateController } from "@/controllers/navigate";
 import { NotifyController } from "@/controllers/notify";
 import { type CollectionsChangeEvent } from "@/features/collections/collections-add";
 import { APIError } from "@/utils/api";
-import type { AuthState } from "@/utils/AuthService";
 import { maxLengthValidator } from "@/utils/form";
+import appState, { use } from "@/utils/state";
 
 export type FileUploaderRequestCloseEvent = CustomEvent<NonNullable<unknown>>;
 export type FileUploaderUploadStartEvent = CustomEvent<{
@@ -42,7 +42,6 @@ enum AbortReason {
  * Usage:
  * ```ts
  * <btrix-file-uploader
- *   .authState=${this.authState}
  *   ?open=${this.open}
  *   @request-close=${this.requestClose}
  *   @uploaded=${this.uploaded}
@@ -59,11 +58,11 @@ export class FileUploader extends TailwindElement {
   @property({ type: String })
   orgId!: string;
 
-  @property({ type: Object })
-  authState!: AuthState;
-
   @property({ type: Boolean })
   open = false;
+
+  @use()
+  appState = appState;
 
   @state()
   private isUploading = false;
@@ -266,7 +265,6 @@ export class FileUploader extends TailwindElement {
       ></btrix-tag-input>
       <div class="mt-4">
         <btrix-collections-add
-          .authState=${this.authState}
           .initialCollections=${this.collectionIds}
           .orgId=${this.orgId}
           .configId=${"temp"}
@@ -396,7 +394,6 @@ export class FileUploader extends TailwindElement {
     try {
       const tags = await this.api.fetch<never>(
         `/orgs/${this.orgId}/crawlconfigs/tags`,
-        this.authState!,
       );
 
       // Update search/filter collection
@@ -516,7 +513,7 @@ export class FileUploader extends TailwindElement {
 
       xhr.open("PUT", `/api/${url}`);
       xhr.setRequestHeader("Content-Type", "application/octet-stream");
-      Object.entries(this.authState!.headers).forEach(([k, v]) => {
+      Object.entries(this.appState.authState!.headers).forEach(([k, v]) => {
         xhr.setRequestHeader(k, v);
       });
       xhr.addEventListener("load", () => {

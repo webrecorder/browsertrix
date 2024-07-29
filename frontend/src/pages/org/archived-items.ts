@@ -19,7 +19,6 @@ import { NotifyController } from "@/controllers/notify";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import { isApiError } from "@/utils/api";
-import type { Auth, AuthState } from "@/utils/AuthService";
 import { finishedCrawlStates, isActive } from "@/utils/crawler";
 import { isArchivingDisabled } from "@/utils/orgs";
 import appState, { use } from "@/utils/state";
@@ -81,9 +80,6 @@ export class CrawlsList extends TailwindElement {
     name: msg("Name"),
     firstSeed: msg("Crawl Start URL"),
   };
-
-  @property({ type: Object })
-  authState!: AuthState;
 
   @property({ type: String })
   userId!: string;
@@ -151,7 +147,6 @@ export class CrawlsList extends TailwindElement {
     task: async (
       [
         orgId,
-        authState,
         userId,
         itemType,
         pagination,
@@ -161,14 +156,13 @@ export class CrawlsList extends TailwindElement {
       ],
       { signal },
     ) => {
-      if (!orgId || !authState || !userId) {
+      if (!orgId || !userId) {
         return initialState;
       }
       try {
         const data = await this.getArchivedItems(
           {
             orgId,
-            authState,
             userId,
             itemType,
             pagination,
@@ -203,7 +197,6 @@ export class CrawlsList extends TailwindElement {
       // TODO consolidate filters into single fetch params
       [
         this.orgId,
-        this.authState,
         this.userId,
         this.itemType,
         this.pagination,
@@ -368,7 +361,6 @@ export class CrawlsList extends TailwindElement {
         () => html`
           <btrix-file-uploader
             orgId=${this.orgId!}
-            .authState=${this.authState}
             ?open=${this.isUploadingArchive}
             @request-close=${() => (this.isUploadingArchive = false)}
             @uploaded=${() => {
@@ -429,7 +421,6 @@ export class CrawlsList extends TailwindElement {
     ${this.itemToEdit
       ? html`
           <btrix-item-metadata-editor
-            .authState=${this.authState}
             .crawl=${this.itemToEdit}
             ?open=${this.isEditingItem}
             @request-close=${() => (this.isEditingItem = false)}
@@ -619,7 +610,8 @@ export class CrawlsList extends TailwindElement {
   private readonly renderMenuItems = (item: ArchivedItem) => {
     // HACK shoelace doesn't current have a way to override non-hover
     // color without resetting the --sl-color-neutral-700 variable
-    const authToken = this.authState!.headers.Authorization.split(" ")[1];
+    const authToken =
+      this.appState.authState!.headers.Authorization.split(" ")[1];
 
     return html`
       ${when(
@@ -750,7 +742,6 @@ export class CrawlsList extends TailwindElement {
   private async getArchivedItems(
     params: {
       orgId: string;
-      authState: Auth;
       userId: CrawlsList["userId"];
       itemType: CrawlsList["itemType"];
       pagination: CrawlsList["pagination"];
@@ -780,7 +771,6 @@ export class CrawlsList extends TailwindElement {
 
     return this.api.fetch<ArchivedItems>(
       `/orgs/${params.orgId}/all-crawls?${query}`,
-      params.authState,
       { signal },
     );
   }
@@ -797,7 +787,6 @@ export class CrawlsList extends TailwindElement {
         firstSeeds: string[];
       } = await this.api.fetch(
         `/orgs/${this.orgId}/all-crawls/search-values?${query}`,
-        this.authState!,
       );
 
       // Update search/filter collection
@@ -836,7 +825,6 @@ export class CrawlsList extends TailwindElement {
     try {
       const _data = await this.api.fetch(
         `/orgs/${item.oid}/${apiPath}/delete`,
-        this.authState!,
         {
           method: "POST",
           body: JSON.stringify({
@@ -884,7 +872,6 @@ export class CrawlsList extends TailwindElement {
   async getWorkflow(crawl: Crawl): Promise<Workflow> {
     const data: Workflow = await this.api.fetch(
       `/orgs/${crawl.oid}/crawlconfigs/${crawl.cid}`,
-      this.authState!,
     );
 
     return data;

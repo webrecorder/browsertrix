@@ -12,9 +12,7 @@ import { ROUTES } from "./routes";
 import type { UserInfo, UserOrg } from "./types/user";
 import APIRouter, { type ViewState } from "./utils/APIRouter";
 import AuthService, {
-  type Auth,
   type AuthEventDetail,
-  type AuthState,
   type LoggedInEventDetail,
   type NeedLoginEventDetail,
 } from "./utils/AuthService";
@@ -27,6 +25,7 @@ import type { NavigateEventDetail } from "@/controllers/navigate";
 import type { NotifyEventDetail } from "@/controllers/notify";
 import { theme } from "@/theme";
 import type { AppSettings } from "@/types/app";
+import { type Auth } from "@/types/auth";
 import brandLockupColor from "~assets/brand/browsertrix-lockup-color.svg";
 
 import "./shoelace";
@@ -77,7 +76,7 @@ export class App extends LiteElement {
   private readonly globalDialog!: SlDialog;
 
   async connectedCallback() {
-    let authState: AuthState = null;
+    let authState: AuthService["authState"] = null;
     try {
       authState = await AuthService.initSessionStorage();
     } catch (e) {
@@ -554,7 +553,6 @@ export class App extends LiteElement {
         if (this.appState.settings.registrationEnabled) {
           return html`<btrix-sign-up
             class="flex w-full items-center justify-center md:bg-neutral-50"
-            .authState="${this.authService.authState}"
           ></btrix-sign-up>`;
         } else {
           return this.renderNotFoundPage();
@@ -566,14 +564,11 @@ export class App extends LiteElement {
           class="flex w-full items-center justify-center md:bg-neutral-50"
           token="${this.viewState.params.token}"
           @user-info-change="${this.onUserInfoChange}"
-          .authState="${this.authService.authState}"
         ></btrix-verify>`;
 
       case "join":
         return html`<btrix-join
           class="flex w-full items-center justify-center md:bg-neutral-50"
-          .authState="${this.authService.authState}"
-          .userInfo="${this.appState.userInfo ?? undefined}"
           token="${this.viewState.params.token}"
           email="${this.viewState.params.email}"
         ></btrix-join>`;
@@ -581,7 +576,6 @@ export class App extends LiteElement {
       case "acceptInvite":
         return html`<btrix-accept-invite
           class="flex w-full items-center justify-center md:bg-neutral-50"
-          .authState="${this.authService.authState}"
           token="${this.viewState.params.token}"
           email="${this.viewState.params.email}"
         ></btrix-accept-invite>`;
@@ -603,16 +597,10 @@ export class App extends LiteElement {
         ></btrix-reset-password>`;
 
       case "home":
-        return html`<btrix-home
-          class="w-full md:bg-neutral-50"
-          .authState=${this.authService.authState}
-        ></btrix-home>`;
+        return html`<btrix-home class="w-full md:bg-neutral-50"></btrix-home>`;
 
       case "orgs":
-        return html`<btrix-orgs
-          class="w-full md:bg-neutral-50"
-          .authState="${this.authService.authState}"
-        ></btrix-orgs>`;
+        return html`<btrix-orgs class="w-full md:bg-neutral-50"></btrix-orgs>`;
 
       case "org": {
         const slug = this.viewState.params.slug;
@@ -624,7 +612,6 @@ export class App extends LiteElement {
             .split("/")[0] || "home";
         return html`<btrix-org
           class="w-full"
-          .authState=${this.authService.authState}
           .viewStateData=${this.viewState.data}
           .params=${this.viewState.params}
           .maxScale=${this.appState.settings?.maxScale || DEFAULT_MAX_SCALE}
@@ -637,7 +624,6 @@ export class App extends LiteElement {
       case "accountSettings":
         return html`<btrix-account-settings
           class="mx-auto box-border w-full max-w-screen-desktop p-2 md:py-8"
-          .authState="${this.authService.authState}"
         ></btrix-account-settings>`;
 
       case "usersInvite": {
@@ -645,7 +631,6 @@ export class App extends LiteElement {
           if (this.appState.userInfo.isSuperAdmin) {
             return html`<btrix-users-invite
               class="mx-auto box-border w-full max-w-screen-desktop p-2 md:py-8"
-              .authState="${this.authService.authState}"
             ></btrix-users-invite>`;
           } else {
             return this.renderNotFoundPage();
@@ -662,7 +647,6 @@ export class App extends LiteElement {
             return html`<btrix-crawls
               class="w-full"
               @notify=${this.onNotify}
-              .authState=${this.authService.authState}
               crawlId=${this.viewState.params.crawlId}
             ></btrix-crawls>`;
           } else {
@@ -864,7 +848,7 @@ export class App extends LiteElement {
   };
 
   async getUserInfo(): Promise<APIUser> {
-    return this.apiFetch("/users/me", this.authService.authState!);
+    return this.apiFetch("/users/me");
   }
 
   private clearUser() {

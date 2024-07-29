@@ -11,7 +11,6 @@ import { TailwindElement } from "@/classes/TailwindElement";
 import type { UnderlyingFunction } from "@/types/utils";
 import { isApiError } from "@/utils/api";
 import { needLogin } from "@/utils/auth";
-import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
 import PasswordService from "@/utils/PasswordService";
 import { AppStateService } from "@/utils/state";
@@ -95,9 +94,6 @@ export class RequestVerify extends TailwindElement {
 @customElement("btrix-account-settings")
 @needLogin
 export class AccountSettings extends LiteElement {
-  @property({ type: Object })
-  authState?: AuthState;
-
   @state()
   sectionSubmitting: null | "name" | "email" | "password" = null;
 
@@ -322,7 +318,7 @@ export class AccountSettings extends LiteElement {
   });
 
   private async onSubmitName(e: SubmitEvent) {
-    if (!this.userInfo || !this.authState) return;
+    if (!this.userInfo) return;
     const form = e.target as HTMLFormElement;
     const input = form.querySelector("sl-input")!;
     if (!input.checkValidity()) {
@@ -337,7 +333,7 @@ export class AccountSettings extends LiteElement {
     this.sectionSubmitting = "name";
 
     try {
-      await this.apiFetch(`/users/me`, this.authState, {
+      await this.apiFetch(`/users/me`, {
         method: "PATCH",
         body: JSON.stringify({
           email: this.userInfo.email,
@@ -367,7 +363,7 @@ export class AccountSettings extends LiteElement {
   }
 
   private async onSubmitEmail(e: SubmitEvent) {
-    if (!this.userInfo || !this.authState) return;
+    if (!this.userInfo) return;
     const form = e.target as HTMLFormElement;
     const input = form.querySelector("sl-input")!;
     if (!input.checkValidity()) {
@@ -382,7 +378,7 @@ export class AccountSettings extends LiteElement {
     this.sectionSubmitting = "email";
 
     try {
-      await this.apiFetch(`/users/me`, this.authState, {
+      await this.apiFetch(`/users/me`, {
         method: "PATCH",
         body: JSON.stringify({
           email: newEmail,
@@ -411,7 +407,7 @@ export class AccountSettings extends LiteElement {
   }
 
   private async onSubmitPassword(e: SubmitEvent) {
-    if (!this.userInfo || !this.authState) return;
+    if (!this.userInfo) return;
     const form = e.target as HTMLFormElement;
     const inputs = Array.from(form.querySelectorAll("sl-input"));
     if (inputs.some((input) => !input.checkValidity())) {
@@ -423,7 +419,7 @@ export class AccountSettings extends LiteElement {
     this.sectionSubmitting = "password";
 
     try {
-      await this.apiFetch("/users/me/password-change", this.authState, {
+      await this.apiFetch("/users/me/password-change", {
         method: "PUT",
         body: JSON.stringify({
           email: this.userInfo.email,

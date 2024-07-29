@@ -37,11 +37,11 @@ import type {
 } from "@/types/api";
 import { type ArchivedItem, type ArchivedItemPage } from "@/types/crawler";
 import type { QARun } from "@/types/qa";
-import { type Auth, type AuthState } from "@/utils/AuthService";
 import { finishedCrawlStates } from "@/utils/crawler";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 import { formatNumber, getLocale } from "@/utils/localization";
 import { pluralOf } from "@/utils/pluralize";
+import appState, { use } from "@/utils/state";
 
 type QAStatsThreshold = {
   lowerBoundary: `${number}`;
@@ -96,9 +96,6 @@ export class ArchivedItemDetailQA extends TailwindElement {
     }
   `;
 
-  @property({ type: Object, attribute: false })
-  authState?: AuthState;
-
   @property({ type: String, attribute: false })
   orgId?: string;
 
@@ -119,6 +116,8 @@ export class ArchivedItemDetailQA extends TailwindElement {
 
   @property({ attribute: false })
   mostRecentNonFailedQARun?: QARun;
+  @use()
+  appState = appState;
 
   @state()
   private pages?: APIPaginatedList<ArchivedItemPage>;
@@ -126,16 +125,10 @@ export class ArchivedItemDetailQA extends TailwindElement {
   private readonly qaStats = new Task(this, {
     // mostRecentNonFailedQARun passed as arg for reactivity so that meter will auto-update
     // like progress bar as the analysis run finishes new pages
-    task: async ([
-      orgId,
-      crawlId,
-      qaRunId,
-      authState,
-      mostRecentNonFailedQARun,
-    ]) => {
-      if (!qaRunId || !authState || !mostRecentNonFailedQARun)
+    task: async ([orgId, crawlId, qaRunId, mostRecentNonFailedQARun]) => {
+      if (!qaRunId || !mostRecentNonFailedQARun)
         throw new Error("Missing args");
-      const stats = await this.getQAStats(orgId, crawlId, qaRunId, authState);
+      const stats = await this.getQAStats(orgId, crawlId, qaRunId);
       return stats;
     },
     args: () =>
@@ -143,7 +136,6 @@ export class ArchivedItemDetailQA extends TailwindElement {
         this.orgId!,
         this.crawlId!,
         this.qaRunId,
-        this.authState,
         this.mostRecentNonFailedQARun,
       ] as const,
   });
@@ -923,7 +915,6 @@ export class ArchivedItemDetailQA extends TailwindElement {
     );
     return this.api.fetch<APIPaginatedList<ArchivedItemPage>>(
       `/orgs/${this.orgId}/crawls/${this.crawlId}/pages?${query}`,
-      this.authState!,
     );
   }
 
@@ -931,7 +922,6 @@ export class ArchivedItemDetailQA extends TailwindElement {
     try {
       await this.api.fetch(
         `/orgs/${this.orgId}/crawls/${this.crawlId}/qa/delete`,
-        this.authState!,
         { method: "POST", body: JSON.stringify({ qa_run_ids: [id] }) },
       );
     } catch (e) {
@@ -939,12 +929,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
     }
   }
 
-  private async getQAStats(
-    orgId: string,
-    crawlId: string,
-    qaRunId: string,
-    authState: Auth,
-  ) {
+  private async getQAStats(orgId: string, crawlId: string, qaRunId: string) {
     const query = queryString.stringify(
       {
         screenshotThresholds: [0.5, 0.9],
@@ -957,7 +942,6 @@ export class ArchivedItemDetailQA extends TailwindElement {
 
     return this.api.fetch<QAStats>(
       `/orgs/${orgId}/crawls/${crawlId}/qa/${qaRunId}/stats?${query}`,
-      authState,
     );
   }
 }

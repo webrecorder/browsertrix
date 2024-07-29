@@ -18,7 +18,6 @@ import type {
 } from "@/types/api";
 import type { Collection } from "@/types/collection";
 import type { UnderlyingFunction } from "@/types/utils";
-import type { AuthState } from "@/utils/AuthService";
 
 const INITIAL_PAGE_SIZE = 10;
 const MIN_SEARCH_LENGTH = 2;
@@ -31,7 +30,6 @@ export type CollectionsChangeEvent = CustomEvent<{
  * Usage:
  * ```ts
  * <btrix-collections-add
- *   .authState=${this.authState}
  *   .initialCollections=${[]}
  *   .orgId=${this.orgId}
  *   .configId=${this.configId}
@@ -43,9 +41,6 @@ export type CollectionsChangeEvent = CustomEvent<{
 @localized()
 @customElement("btrix-collections-add")
 export class CollectionsAdd extends TailwindElement {
-  @property({ type: Object })
-  authState!: AuthState;
-
   @property({ type: Array })
   initialCollections?: string[];
 
@@ -332,7 +327,6 @@ export class CollectionsAdd extends TailwindElement {
     });
     const data = await this.api.fetch<APIPaginatedList<Collection>>(
       `/orgs/${this.orgId}/collections?${query}`,
-      this.authState!,
       { signal },
     );
 
@@ -354,10 +348,7 @@ export class CollectionsAdd extends TailwindElement {
   private readonly getCollection = async (
     collId: string,
   ): Promise<Collection | undefined> => {
-    return this.api.fetch(
-      `/orgs/${this.orgId}/collections/${collId}`,
-      this.authState!,
-    );
+    return this.api.fetch(`/orgs/${this.orgId}/collections/${collId}`);
   };
 
   private async dispatchChange() {

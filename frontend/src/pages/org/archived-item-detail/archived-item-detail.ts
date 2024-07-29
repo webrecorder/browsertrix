@@ -26,7 +26,6 @@ import type {
 } from "@/types/crawler";
 import type { QARun } from "@/types/qa";
 import { isApiError } from "@/utils/api";
-import type { AuthState } from "@/utils/AuthService";
 import {
   activeCrawlStates,
   finishedCrawlStates,
@@ -67,9 +66,6 @@ export const QA_RUNNING_STATES = [
 @localized()
 @customElement("btrix-archived-item-detail")
 export class ArchivedItemDetail extends TailwindElement {
-  @property({ type: Object })
-  authState?: AuthState;
-
   @property({ type: String })
   itemType: ArchivedItem["type"] = "crawl";
 
@@ -152,6 +148,10 @@ export class ArchivedItemDetail extends TailwindElement {
   private readonly api = new APIController(this);
   private readonly navigate = new NavigateController(this);
   private readonly notify = new NotifyController(this);
+
+  private get authState() {
+    return this.appState.authState;
+  }
 
   private timerId?: number;
 
@@ -264,7 +264,6 @@ export class ArchivedItemDetail extends TailwindElement {
             </div> `,
           html`
             <btrix-archived-item-detail-qa
-              .authState=${this.authState}
               .orgId=${this.orgId}
               .crawlId=${this.crawlId}
               .itemType=${this.itemType}
@@ -413,7 +412,6 @@ export class ArchivedItemDetail extends TailwindElement {
       </main>
 
       <btrix-item-metadata-editor
-        .authState=${this.authState}
         .crawl=${this.crawl}
         ?open=${this.openDialogName === "metadata"}
         @request-close=${() => (this.openDialogName = undefined)}
@@ -1030,7 +1028,6 @@ ${this.crawl?.description}
           this.crawl && this.seeds && (!this.workflowId || this.workflow),
           () => html`
             <btrix-config-details
-              .authState=${this.authState!}
               .crawlConfig=${{
                 ...this.crawl,
                 jobType: this.workflow?.jobType,
@@ -1211,14 +1208,13 @@ ${this.crawl?.description}
     const apiPath = `/orgs/${this.orgId}/${
       this.itemType === "upload" ? "uploads" : "crawls"
     }/${this.crawlId}/replay.json`;
-    return this.api.fetch<Crawl>(apiPath, this.authState!);
+    return this.api.fetch<Crawl>(apiPath);
   }
 
   private async getSeeds() {
     // NOTE Returns first 1000 seeds (backend pagination max)
     const data = await this.api.fetch<APIPaginatedList<Seed>>(
       `/orgs/${this.orgId}/crawls/${this.crawlId}/seeds`,
-      this.authState!,
     );
     return data;
   }
@@ -1226,7 +1222,6 @@ ${this.crawl?.description}
   private async getWorkflow(): Promise<Workflow> {
     return this.api.fetch<Workflow>(
       `/orgs/${this.orgId}/crawlconfigs/${this.workflowId}`,
-      this.authState!,
     );
   }
 
@@ -1255,7 +1250,6 @@ ${this.crawl?.description}
 
     const data = (await this.api.fetch)<APIPaginatedList<CrawlLog>>(
       `/orgs/${this.orgId}/crawls/${this.crawlId}/errors?page=${page}&pageSize=${pageSize}`,
-      this.authState!,
     );
 
     return data;
@@ -1265,7 +1259,6 @@ ${this.crawl?.description}
     if (window.confirm(msg("Are you sure you want to cancel the crawl?"))) {
       const data = await this.api.fetch<{ success: boolean }>(
         `/orgs/${this.crawl!.oid}/crawls/${this.crawlId}/cancel`,
-        this.authState!,
         {
           method: "POST",
         },
@@ -1287,7 +1280,6 @@ ${this.crawl?.description}
     if (window.confirm(msg("Are you sure you want to stop the crawl?"))) {
       const data = await this.api.fetch<{ success: boolean }>(
         `/orgs/${this.crawl!.oid}/crawls/${this.crawlId}/stop`,
-        this.authState!,
         {
           method: "POST",
         },
@@ -1327,7 +1319,6 @@ ${this.crawl?.description}
         `/orgs/${this.crawl!.oid}/${
           this.crawl!.type === "crawl" ? "crawls" : "uploads"
         }/delete`,
-        this.authState!,
         {
           method: "POST",
           body: JSON.stringify({
@@ -1366,7 +1357,6 @@ ${this.crawl?.description}
     try {
       const result = await this.api.fetch<{ started: string }>(
         `/orgs/${this.orgId}/crawls/${this.crawlId}/qa/start`,
-        this.authState!,
         {
           method: "POST",
         },
@@ -1401,7 +1391,6 @@ ${this.crawl?.description}
     try {
       const data = await this.api.fetch<{ success: boolean }>(
         `/orgs/${this.crawl!.oid}/crawls/${this.crawlId}/qa/stop`,
-        this.authState!,
         {
           method: "POST",
         },
@@ -1433,7 +1422,6 @@ ${this.crawl?.description}
     try {
       const data = await this.api.fetch<{ success: boolean }>(
         `/orgs/${this.crawl!.oid}/crawls/${this.crawlId}/qa/cancel`,
-        this.authState!,
         {
           method: "POST",
         },
@@ -1495,7 +1483,6 @@ ${this.crawl?.description}
   private async getQARuns(): Promise<QARun[]> {
     return this.api.fetch<QARun[]>(
       `/orgs/${this.orgId}/crawls/${this.crawlId}/qa`,
-      this.authState!,
     );
   }
 }

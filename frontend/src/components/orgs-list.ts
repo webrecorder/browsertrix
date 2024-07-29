@@ -14,7 +14,6 @@ import type { Dialog } from "@/components/ui/dialog";
 import { APIController } from "@/controllers/api";
 import { NavigateController } from "@/controllers/navigate";
 import { NotifyController } from "@/controllers/notify";
-import type { AuthState } from "@/utils/AuthService";
 import { formatNumber, getLocale } from "@/utils/localization";
 import type { OrgData } from "@/utils/orgs";
 import appState, { use } from "@/utils/state";
@@ -30,9 +29,6 @@ export class OrgsList extends TailwindElement {
       grid-template-columns: min-content [clickable-start] 50ch auto auto auto [clickable-end] min-content;
     }
   `;
-
-  @property({ type: Object })
-  authState?: AuthState;
 
   @property({ type: Array })
   orgList?: OrgData[] = [];
@@ -381,7 +377,7 @@ export class OrgsList extends TailwindElement {
     params: Pick<OrgData, "readOnly" | "readOnlyReason">,
   ) {
     try {
-      await this.api.fetch(`/orgs/${org.id}/read-only`, this.authState!, {
+      await this.api.fetch(`/orgs/${org.id}/read-only`, {
         method: "POST",
         body: JSON.stringify(params),
       });
@@ -418,7 +414,7 @@ export class OrgsList extends TailwindElement {
 
   private async deleteOrg(org: OrgData) {
     try {
-      await this.api.fetch(`/orgs/${org.id}`, this.authState!, {
+      await this.api.fetch(`/orgs/${org.id}`, {
         method: "DELETE",
       });
 

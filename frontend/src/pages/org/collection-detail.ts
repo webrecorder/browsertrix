@@ -16,7 +16,6 @@ import type {
 } from "@/types/api";
 import type { Collection } from "@/types/collection";
 import type { ArchivedItem, Crawl, CrawlState, Upload } from "@/types/crawler";
-import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
 import { getLocale } from "@/utils/localization";
 
@@ -29,9 +28,6 @@ export type Tab = (typeof TABS)[number];
 @localized()
 @customElement("btrix-collection-detail")
 export class CollectionDetail extends LiteElement {
-  @property({ type: Object })
-  authState!: AuthState;
-
   @property({ type: String })
   orgId!: string;
 
@@ -206,7 +202,6 @@ export class CollectionDetail extends LiteElement {
         userId=${this.userId}
         collectionId=${this.collectionId}
         collectionName=${this.collection?.name || ""}
-        .authState=${this.authState}
         ?isCrawler=${this.isCrawler}
         ?open=${this.openDialogName === "editItems"}
         @sl-hide=${() => (this.openDialogName = undefined)}
@@ -221,7 +216,6 @@ export class CollectionDetail extends LiteElement {
         () => html`
           <btrix-collection-metadata-dialog
             orgId=${this.orgId}
-            .authState=${this.authState}
             .collection=${this.collection!}
             ?open=${this.openDialogName === "editMetadata"}
             @sl-hide=${() => (this.openDialogName = undefined)}
@@ -407,7 +401,8 @@ export class CollectionDetail extends LiteElement {
   };
 
   private readonly renderActions = () => {
-    const authToken = this.authState!.headers.Authorization.split(" ")[1];
+    const authToken =
+      this.appState.authState!.headers.Authorization.split(" ")[1];
 
     return html`
       <sl-dropdown distance="4">
@@ -707,7 +702,7 @@ export class CollectionDetail extends LiteElement {
     }
 
     const replaySource = `/api/orgs/${this.orgId}/collections/${this.collectionId}/replay.json`;
-    const headers = this.authState?.headers;
+    const headers = this.appState.authState?.headers;
     const config = JSON.stringify({ headers });
 
     return html`<section>
@@ -755,7 +750,6 @@ export class CollectionDetail extends LiteElement {
   private async onTogglePublic(isPublic: boolean) {
     const res = await this.apiFetch<{ updated: boolean }>(
       `/orgs/${this.orgId}/collections/${this.collectionId}`,
-      this.authState!,
       {
         method: "PATCH",
         body: JSON.stringify({ isPublic }),
@@ -778,7 +772,6 @@ export class CollectionDetail extends LiteElement {
       const name = this.collection.name;
       const _data: Crawl | Upload = await this.apiFetch(
         `/orgs/${this.orgId}/collections/${this.collection.id}`,
-        this.authState!,
         {
           method: "DELETE",
         },
@@ -815,7 +808,6 @@ export class CollectionDetail extends LiteElement {
   private async getCollection() {
     const data = await this.apiFetch<Collection>(
       `/orgs/${this.orgId}/collections/${this.collectionId}/replay.json`,
-      this.authState!,
     );
 
     return data;
@@ -870,7 +862,6 @@ export class CollectionDetail extends LiteElement {
     );
     const data = await this.apiFetch<APIPaginatedList<Crawl | Upload>>(
       `/orgs/${this.orgId}/all-crawls?collectionId=${this.collectionId}&${query}`,
-      this.authState!,
     );
 
     return data;
@@ -880,7 +871,6 @@ export class CollectionDetail extends LiteElement {
     try {
       await this.apiFetch(
         `/orgs/${this.orgId}/collections/${this.collectionId}/remove`,
-        this.authState!,
         {
           method: "POST",
           body: JSON.stringify({ crawlIds: [id] }),

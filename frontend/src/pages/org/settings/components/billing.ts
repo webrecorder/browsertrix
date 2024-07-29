@@ -12,7 +12,6 @@ import { TailwindElement } from "@/classes/TailwindElement";
 import { APIController } from "@/controllers/api";
 import { SubscriptionStatus, type BillingPortal } from "@/types/billing";
 import type { OrgData, OrgQuotas } from "@/types/org";
-import type { Auth, AuthState } from "@/utils/AuthService";
 import { humanizeSeconds } from "@/utils/executionTimeFormatter";
 import { formatNumber, getLocale } from "@/utils/localization";
 import { pluralOf } from "@/utils/pluralize";
@@ -33,9 +32,6 @@ export class OrgSettingsBilling extends TailwindElement {
       font-size: var(--sl-input-label-font-size-small);
     }
   `;
-
-  @property({ type: Object })
-  authState?: AuthState;
 
   @property({ type: String, noAccessor: true })
   salesEmail?: string;
@@ -73,10 +69,10 @@ export class OrgSettingsBilling extends TailwindElement {
   }
 
   private readonly portalUrl = new Task(this, {
-    task: async ([org, authState]) => {
-      if (!org || !authState) throw new Error("Missing args");
+    task: async ([org]) => {
+      if (!org) throw new Error("Missing args");
       try {
-        const { portalUrl } = await this.getPortalUrl(org.id, authState);
+        const { portalUrl } = await this.getPortalUrl(org.id);
 
         if (portalUrl) {
           return portalUrl;
@@ -91,7 +87,7 @@ export class OrgSettingsBilling extends TailwindElement {
         );
       }
     },
-    args: () => [this.org, this.authState] as const,
+    args: () => [this.org] as const,
   });
 
   render() {
@@ -312,7 +308,7 @@ export class OrgSettingsBilling extends TailwindElement {
     `;
   }
 
-  private async getPortalUrl(orgId: string, auth: Auth) {
-    return this.api.fetch<BillingPortal>(`/orgs/${orgId}/billing-portal`, auth);
+  private async getPortalUrl(orgId: string) {
+    return this.api.fetch<BillingPortal>(`/orgs/${orgId}/billing-portal`);
   }
 }

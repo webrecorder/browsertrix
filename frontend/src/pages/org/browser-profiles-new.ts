@@ -11,7 +11,6 @@ import { NavigateController } from "@/controllers/navigate";
 import { NotifyController } from "@/controllers/notify";
 import type { BrowserConnectionChange } from "@/features/browser-profiles/profile-browser";
 import { isApiError } from "@/utils/api";
-import type { AuthState } from "@/utils/AuthService";
 
 /**
  * Usage:
@@ -26,9 +25,6 @@ import type { AuthState } from "@/utils/AuthService";
 @localized()
 @customElement("btrix-browser-profiles-new")
 export class BrowserProfilesNew extends TailwindElement {
-  @property({ type: Object })
-  authState!: AuthState;
-
   @property({ type: String })
   orgId!: string;
 
@@ -130,7 +126,6 @@ export class BrowserProfilesNew extends TailwindElement {
       <div class="sticky top-0 flex h-screen flex-col gap-2">
         <btrix-profile-browser
           class="flex-1 overflow-hidden rounded-lg border"
-          .authState=${this.authState}
           orgId=${this.orgId}
           browserId=${this.browserId}
           initialNavigateUrl=${ifDefined(this.browserParams.navigateUrl)}
@@ -319,7 +314,6 @@ export class BrowserProfilesNew extends TailwindElement {
     try {
       const data = await this.api.fetch<{ id: string }>(
         `/orgs/${this.orgId}/profiles`,
-        this.authState!,
         {
           method: "POST",
           body: JSON.stringify(params),
@@ -373,7 +367,6 @@ export class BrowserProfilesNew extends TailwindElement {
 
     return this.api.fetch<{ browserid: string }>(
       `/orgs/${this.orgId}/profiles/browser`,
-      this.authState!,
       {
         method: "POST",
         body: JSON.stringify(params),
@@ -385,7 +378,6 @@ export class BrowserProfilesNew extends TailwindElement {
     try {
       const data = await this.api.fetch(
         `/orgs/${this.orgId}/profiles/browser/${id}`,
-        this.authState!,
         {
           method: "DELETE",
         },

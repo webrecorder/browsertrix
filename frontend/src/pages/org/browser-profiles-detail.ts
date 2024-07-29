@@ -15,7 +15,6 @@ import { NavigateController } from "@/controllers/navigate";
 import { NotifyController } from "@/controllers/notify";
 import type { BrowserConnectionChange } from "@/features/browser-profiles/profile-browser";
 import { isApiError } from "@/utils/api";
-import type { AuthState } from "@/utils/AuthService";
 import { maxLengthValidator } from "@/utils/form";
 import { formatNumber, getLocale } from "@/utils/localization";
 import { isArchivingDisabled } from "@/utils/orgs";
@@ -36,9 +35,6 @@ const DESCRIPTION_MAXLENGTH = 500;
 @localized()
 @customElement("btrix-browser-profiles-detail")
 export class BrowserProfilesDetail extends TailwindElement {
-  @property({ type: Object, attribute: false })
-  authState!: AuthState;
-
   @property({ type: String, attribute: false })
   orgId!: string;
 
@@ -227,7 +223,6 @@ export class BrowserProfilesDetail extends TailwindElement {
                     <div class="flex flex-1 flex-col gap-2">
                       <btrix-profile-browser
                         class="flex-1 overflow-hidden rounded border"
-                        .authState=${this.authState}
                         orgId=${this.orgId}
                         browserId=${ifDefined(this.browserId)}
                         .origins=${this.profile?.origins}
@@ -633,7 +628,6 @@ export class BrowserProfilesDetail extends TailwindElement {
     try {
       const data = await this.api.fetch<Profile & { error: boolean }>(
         `/orgs/${this.orgId}/profiles/${this.profile!.id}`,
-        this.authState!,
         {
           method: "DELETE",
         },
@@ -677,7 +671,6 @@ export class BrowserProfilesDetail extends TailwindElement {
 
     return this.api.fetch<{ browserid: string }>(
       `/orgs/${this.orgId}/profiles/browser`,
-      this.authState!,
       {
         method: "POST",
         body: JSON.stringify(params),
@@ -686,13 +679,9 @@ export class BrowserProfilesDetail extends TailwindElement {
   }
 
   private async deleteBrowser(id: string) {
-    return this.api.fetch(
-      `/orgs/${this.orgId}/profiles/browser/${id}`,
-      this.authState!,
-      {
-        method: "DELETE",
-      },
-    );
+    return this.api.fetch(`/orgs/${this.orgId}/profiles/browser/${id}`, {
+      method: "DELETE",
+    });
   }
 
   /**
@@ -715,7 +704,6 @@ export class BrowserProfilesDetail extends TailwindElement {
   private async getProfile() {
     const data = await this.api.fetch<Profile>(
       `/orgs/${this.orgId}/profiles/${this.profileId}`,
-      this.authState!,
     );
 
     return data;
@@ -734,7 +722,6 @@ export class BrowserProfilesDetail extends TailwindElement {
     try {
       const data = await this.api.fetch<{ updated: boolean }>(
         `/orgs/${this.orgId}/profiles/${this.profileId}`,
-        this.authState!,
         {
           method: "PATCH",
           body: JSON.stringify(params),
@@ -783,7 +770,6 @@ export class BrowserProfilesDetail extends TailwindElement {
     try {
       const data = await this.api.fetch<{ updated: boolean }>(
         `/orgs/${this.orgId}/profiles/${this.profileId}`,
-        this.authState!,
         {
           method: "PATCH",
           body: JSON.stringify(params),

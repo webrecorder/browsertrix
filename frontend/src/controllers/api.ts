@@ -2,7 +2,8 @@ import { msg } from "@lit/localize";
 import type { ReactiveController, ReactiveControllerHost } from "lit";
 
 import { APIError, type Detail } from "@/utils/api";
-import AuthService, { type Auth } from "@/utils/AuthService";
+import AuthService from "@/utils/AuthService";
+import appState from "@/utils/state";
 
 export type QuotaUpdateDetail = { reached: boolean };
 
@@ -20,7 +21,7 @@ export interface APIEventMap {
  *   private api = new APIController(this);
  *
  *   async getSomething() {
- *     await this.api.fetch("/path", this.authState)
+ *     await this.api.fetch("/path")
  *   }
  * }
  * ```
@@ -36,11 +37,11 @@ export class APIController implements ReactiveController {
   hostConnected() {}
   hostDisconnected() {}
 
-  async fetch<T = unknown>(
-    path: string,
-    auth: Auth,
-    options?: RequestInit,
-  ): Promise<T> {
+  async fetch<T = unknown>(path: string, options?: RequestInit): Promise<T> {
+    const auth = appState.authState;
+
+    if (!auth) throw new Error("auth not in state");
+
     const { headers, ...opts } = options || {};
     const resp = await fetch("/api" + path, {
       headers: {

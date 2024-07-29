@@ -15,7 +15,6 @@ import { NotifyController } from "@/controllers/notify";
 import type { APIUser } from "@/index";
 import type { APIPaginatedList } from "@/types/api";
 import { isApiError } from "@/utils/api";
-import type { AuthState } from "@/utils/AuthService";
 import { maxLengthValidator } from "@/utils/form";
 import { AccessCode, isAdmin, isCrawler } from "@/utils/orgs";
 import slugifyStrict from "@/utils/slugify";
@@ -48,7 +47,6 @@ export type OrgRemoveMemberEvent = CustomEvent<{
  * Usage:
  * ```ts
  * <btrix-org-settings
- *  .authState=${authState}
  *  .org=${org}
  *  .orgId=${orgId}
  *  ?isAddingMember=${isAddingMember}
@@ -61,9 +59,6 @@ export type OrgRemoveMemberEvent = CustomEvent<{
 @localized()
 @customElement("btrix-org-settings")
 export class OrgSettings extends TailwindElement {
-  @property({ type: Object })
-  authState?: AuthState;
-
   @property({ type: String })
   orgId!: string;
 
@@ -168,7 +163,6 @@ export class OrgSettings extends TailwindElement {
         </btrix-tab-panel>
         <btrix-tab-panel name="billing">
           <btrix-org-settings-billing
-            .authState=${this.authState}
             .salesEmail=${this.appState.settings?.salesEmail}
           ></btrix-org-settings-billing>
         </btrix-tab-panel>
@@ -467,7 +461,6 @@ export class OrgSettings extends TailwindElement {
   private async getPendingInvites() {
     const data = await this.api.fetch<APIPaginatedList<Invite>>(
       `/orgs/${this.org!.id}/invites`,
-      this.authState!,
     );
 
     return data.items;
@@ -533,17 +526,13 @@ export class OrgSettings extends TailwindElement {
     this.isSubmittingInvite = true;
 
     try {
-      const _data = await this.api.fetch(
-        `/orgs/${this.orgId}/invite`,
-        this.authState!,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            email: inviteEmail,
-            role: Number(role),
-          }),
-        },
-      );
+      const _data = await this.api.fetch(`/orgs/${this.orgId}/invite`, {
+        method: "POST",
+        body: JSON.stringify({
+          email: inviteEmail,
+          role: Number(role),
+        }),
+      });
 
       this.notify.toast({
         message: msg(str`Successfully invited ${inviteEmail}.`),
@@ -568,16 +557,12 @@ export class OrgSettings extends TailwindElement {
 
   private async removeInvite(invite: Invite) {
     try {
-      await this.api.fetch(
-        `/orgs/${this.orgId}/invites/delete`,
-        this.authState!,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            email: invite.email,
-          }),
-        },
-      );
+      await this.api.fetch(`/orgs/${this.orgId}/invites/delete`, {
+        method: "POST",
+        body: JSON.stringify({
+          email: invite.email,
+        }),
+      });
 
       this.notify.toast({
         message: msg(
@@ -605,7 +590,7 @@ export class OrgSettings extends TailwindElement {
 
   private async renameOrg({ name, slug }: { name: string; slug: string }) {
     try {
-      await this.api.fetch(`/orgs/${this.orgId}/rename`, this.authState!, {
+      await this.api.fetch(`/orgs/${this.orgId}/rename`, {
         method: "POST",
         body: JSON.stringify({ name, slug }),
       });
@@ -652,6 +637,6 @@ export class OrgSettings extends TailwindElement {
   }
 
   private async getCurrentUser(): Promise<APIUser> {
-    return this.api.fetch("/users/me", this.authState!);
+    return this.api.fetch("/users/me");
   }
 }
