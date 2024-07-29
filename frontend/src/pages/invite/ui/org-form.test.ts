@@ -25,7 +25,7 @@ describe("btrix-org-form", () => {
     stub(OrgForm.prototype, "_renameOrg");
     const el = await fixture<OrgForm>(
       html`<btrix-org-form
-        id="fake_oid"
+        id="e21ab647-2d0e-489d-97d1-88ac91774942"
         name="Fake Org Name"
       ></btrix-org-form>`,
     );
@@ -43,7 +43,7 @@ describe("btrix-org-form", () => {
     stub(OrgForm.prototype, "_renameOrg");
     const el = await fixture<OrgForm>(
       html`<btrix-org-form
-        id="fake_oid"
+        id="e21ab647-2d0e-489d-97d1-88ac91774942"
         slug="fake-org-name"
       ></btrix-org-form>`,
     );
@@ -59,7 +59,9 @@ describe("btrix-org-form", () => {
 
   it("runs rename task on submit", async () => {
     const el = await fixture<OrgForm>(
-      html`<btrix-org-form id="fake_oid"></btrix-org-form>`,
+      html`<btrix-org-form
+        id="e21ab647-2d0e-489d-97d1-88ac91774942"
+      ></btrix-org-form>`,
     );
     stub(el._renameOrgTask, "run");
 
@@ -92,13 +94,19 @@ describe("btrix-org-form", () => {
 
   it("renders rename org error", async () => {
     const el = await fixture<OrgForm>(
-      html`<btrix-org-form id="fake_oid"></btrix-org-form>`,
+      html`<btrix-org-form
+        id="e21ab647-2d0e-489d-97d1-88ac91774942"
+      ></btrix-org-form>`,
     );
     stub(el, "_renameOrg").callsFake(async () =>
       Promise.reject(new Error("Fake error")),
     );
 
-    await el._renameOrgTask.run(["fake_oid", "Fake Org Name", "fake-org-name"]);
+    await el._renameOrgTask.run([
+      "e21ab647-2d0e-489d-97d1-88ac91774942",
+      "Fake Org Name",
+      "fake-org-name",
+    ]);
 
     expect(el.shadowRoot?.querySelector("btrix-alert")).to.have.text(
       "Fake error",
@@ -108,12 +116,14 @@ describe("btrix-org-form", () => {
   describe("#_renameOrg", () => {
     it("updates user app state on success", async () => {
       const el = await fixture<OrgForm>(
-        html`<btrix-org-form id="fake_oid"></btrix-org-form>`,
+        html`<btrix-org-form
+          id="e21ab647-2d0e-489d-97d1-88ac91774942"
+        ></btrix-org-form>`,
       );
       stub(el._api, "fetch").callsFake(async () => Promise.resolve());
       stub(el, "_getCurrentUser").callsFake(async () =>
         Promise.resolve({
-          id: "fake_user_id",
+          id: "740d7b63-b257-4311-ba3f-adc46a5fafb8",
           email: "fake@example.com",
           name: "Fake User",
           is_verified: false,
@@ -124,7 +134,7 @@ describe("btrix-org-form", () => {
       stub(AppStateService, "updateUserInfo");
       stub(AppStateService, "updateOrgSlug");
 
-      await el._renameOrg("fake_oid", {
+      await el._renameOrg("e21ab647-2d0e-489d-97d1-88ac91774942", {
         name: "Fake Org Name 2",
         slug: "fake-org-name-2",
       });
@@ -135,12 +145,14 @@ describe("btrix-org-form", () => {
 
     it("fires the correct event on success", async () => {
       const el = await fixture<OrgForm>(
-        html`<btrix-org-form id="fake_oid"></btrix-org-form>`,
+        html`<btrix-org-form
+          id="e21ab647-2d0e-489d-97d1-88ac91774942"
+        ></btrix-org-form>`,
       );
       stub(el._api, "fetch").callsFake(async () => Promise.resolve());
       stub(el, "_getCurrentUser").callsFake(async () =>
         Promise.resolve({
-          id: "fake_user_id",
+          id: "740d7b63-b257-4311-ba3f-adc46a5fafb8",
           email: "fake@example.com",
           name: "Fake User",
           is_verified: false,
@@ -151,7 +163,7 @@ describe("btrix-org-form", () => {
 
       const listener = oneEvent(el, "btrix-org-updated");
 
-      el._renameOrg("fake_oid", {
+      el._renameOrg("e21ab647-2d0e-489d-97d1-88ac91774942", {
         name: "Fake Org Name 2",
         slug: "fake-org-name-2",
       });

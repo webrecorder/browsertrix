@@ -14,7 +14,7 @@ const mockInviteInfo = {
   fromSuperuser: false,
   firstOrgAdmin: false,
   role: 0,
-  oid: "fake_oid",
+  oid: "e21ab647-2d0e-489d-97d1-88ac91774942",
   orgName: "Fake Org Name",
   orgSlug: "fake-org-name",
 };
@@ -150,7 +150,10 @@ describe("btrix-accept-invite", () => {
 
       const orgFormEl = el.shadowRoot!.querySelector<OrgForm>("btrix-org-form");
 
-      expect(orgFormEl).attribute("orgId", "fake_oid");
+      expect(orgFormEl).attribute(
+        "orgId",
+        "e21ab647-2d0e-489d-97d1-88ac91774942",
+      );
       expect(orgFormEl).attribute("name", "Fake Org Name 2");
       expect(orgFormEl).attribute("slug", "fake-org-slug-2");
     });
@@ -231,7 +234,7 @@ describe("btrix-accept-invite", () => {
       stub(el._navigate, "to");
       stub(el, "_getCurrentUser").callsFake(async () =>
         Promise.resolve({
-          id: "fake_user_id",
+          id: "740d7b63-b257-4311-ba3f-adc46a5fafb8",
           email: "fake@example.com",
           name: "Fake User",
           is_verified: false,
@@ -269,7 +272,7 @@ describe("btrix-accept-invite", () => {
       stub(el._navigate, "to");
       stub(el, "_getCurrentUser").callsFake(async () =>
         Promise.resolve({
-          id: "fake_user_id",
+          id: "740d7b63-b257-4311-ba3f-adc46a5fafb8",
           email: "fake@example.com",
           name: "Fake User",
           is_verified: false,
