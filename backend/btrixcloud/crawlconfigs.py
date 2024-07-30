@@ -356,7 +356,7 @@ class CrawlConfigOps:
         )
 
         changed = changed or (
-            self.check_attr_changed(orig_crawl_config, update, "crawlerSSHProxy")
+            orig_crawl_config.crawlerSSHProxyId != update.crawlerSSHProxyId
         )
 
         metadata_changed = self.check_attr_changed(orig_crawl_config, update, "name")

@@ -364,7 +364,7 @@ class ConfigRevision(BaseMongoModel):
 
     profileid: Optional[UUID] = None
     crawlerChannel: Optional[str] = None
-    crawlerSSHProxy: Optional[str] = None
+    crawlerSSHProxyId: Optional[str] = None
 
     crawlTimeout: Optional[int] = 0
     maxCrawlSize: Optional[int] = 0
@@ -493,7 +493,7 @@ class UpdateCrawlConfig(BaseModel):
     schedule: Optional[str] = None
     profileid: Union[UUID, EmptyStr, None] = None
     crawlerChannel: Optional[str] = None
-    crawlerSSHProxy: Optional[str] = None
+    crawlerSSHProxyId: Optional[str] = None
     crawlTimeout: Optional[int] = None
     maxCrawlSize: Optional[int] = None
     scale: Scale = 1
@@ -697,7 +697,7 @@ class CoreCrawlable(BaseModel):
 
     image: Optional[str] = None
 
-    sshProxy: Optional[CrawlerSSHProxy] = None
+    crawlerSSHProxy: Optional[CrawlerSSHProxy] = None
 
     stats: Optional[CrawlStats] = CrawlStats()
 
@@ -790,7 +790,7 @@ class CrawlOut(BaseMongoModel):
     execMinutesQuotaReached: Optional[bool] = False
 
     crawlerChannel: str = "default"
-    crawlerSSHProxy: Optional[str] = None
+    crawlerSSHProxyId: Optional[str] = None
     image: Optional[str] = None
 
     reviewStatus: ReviewStatus = None
@@ -1637,7 +1637,7 @@ class Profile(BaseMongoModel):
 
     baseid: Optional[UUID] = None
     crawlerChannel: Optional[str] = None
-    crawlerSSHProxy: Optional[str] = None
+    crawlerSSHProxyId: Optional[str] = None
 
 
 # ============================================================================
@@ -1660,7 +1660,7 @@ class ProfileLaunchBrowserIn(UrlIn):
 
     profileId: Optional[UUID] = None
     crawlerChannel: str = "default"
-    crawlerSSHProxy: Optional[str]
+    crawlerSSHProxyId: Optional[str] = None
 
 
 # ============================================================================
@@ -1678,7 +1678,7 @@ class ProfileCreate(BaseModel):
     name: str
     description: Optional[str] = ""
     crawlerChannel: str = "default"
-    crawlerSSHProxy: Optional[str]
+    crawlerSSHProxyId: Optional[str] = None
 
 
 # ============================================================================

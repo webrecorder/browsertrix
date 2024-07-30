@@ -9,7 +9,7 @@ import type { AuthState } from "@/utils/AuthService";
 import LiteElement from "@/utils/LiteElement";
 
 type SelectCrawlerSSHProxyChangeDetail = {
-  value: string | undefined;
+  value: string | null;
 };
 
 export type SelectCrawlerSSHProxyChangeEvent =
@@ -50,7 +50,7 @@ export class SelectCrawlerSSHProxy extends LiteElement {
   orgId!: string;
 
   @property({ type: String })
-  crawlerSSHProxyId?: string | null;
+  crawlerSSHProxyId: string | null = null;
 
   @state()
   private selectedSSHProxy?: crawlerSSHProxy;
@@ -123,7 +123,7 @@ export class SelectCrawlerSSHProxy extends LiteElement {
     this.dispatchEvent(
       new CustomEvent<SelectCrawlerSSHProxyChangeDetail>("on-change", {
         detail: {
-          value: this.selectedSSHProxy?.id,
+          value: this.selectedSSHProxy ? this.selectedSSHProxy.id : null,
         },
       }),
     );
