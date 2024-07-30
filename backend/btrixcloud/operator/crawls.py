@@ -120,7 +120,7 @@ class CrawlOperator(BaseOperator):
 
         status = CrawlStatus(**data.parent.get("status", {}))
 
-        spec = data.parent.get("spec", {}) # spec is the data from crawl_job.yaml
+        spec = data.parent.get("spec", {})  # spec is the data from crawl_job.yaml
         crawl_id = spec["id"]
         cid = spec["cid"]
         oid = spec["oid"]
@@ -289,7 +289,6 @@ class CrawlOperator(BaseOperator):
             params["ssh_proxy_hostname"] = ssh_proxy.hostname
             params["ssh_proxy_username"] = ssh_proxy.username
             params["ssh_proxy_port"] = ssh_proxy.port if ssh_proxy.port else 22
-
 
         params["storage_filename"] = spec["storage_filename"]
         params["restart_time"] = spec.get("restartTime")

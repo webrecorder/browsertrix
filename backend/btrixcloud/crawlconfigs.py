@@ -126,9 +126,7 @@ class CrawlConfigOps:
             self.crawler_channels = CrawlerChannels(channels=channels)
 
         self.crawler_ssh_proxies_map = {}
-        with open(
-            os.environ["CRAWLER_SSH_PROXIES_JSON"], encoding="utf-8"
-        ) as fh:
+        with open(os.environ["CRAWLER_SSH_PROXIES_JSON"], encoding="utf-8") as fh:
             ssh_proxy_list: list[dict] = json.loads(fh.read())
             for ssh_proxy_data in ssh_proxy_list:
                 ssh_proxy = CrawlerSSHProxy(
@@ -139,9 +137,7 @@ class CrawlConfigOps:
                     username=ssh_proxy_data["username"],
                 )
 
-                self.crawler_ssh_proxies_map[ssh_proxy.id] = (
-                    ssh_proxy
-                )
+                self.crawler_ssh_proxies_map[ssh_proxy.id] = ssh_proxy
 
             self.crawler_ssh_proxies = CrawlerSSHProxies(
                 servers=list(self.crawler_ssh_proxies_map.values())
@@ -929,9 +925,7 @@ class CrawlConfigOps:
         """Get crawler image name by id"""
         return self.crawler_images_map.get(crawler_channel or "")
 
-    def get_crawler_ssh_proxy(
-        self, ssh_proxy_id:str
-    ) -> Optional[CrawlerSSHProxy]:
+    def get_crawler_ssh_proxy(self, ssh_proxy_id: str) -> Optional[CrawlerSSHProxy]:
         """Get crawlerSSHProxy by id"""
         return self.crawler_ssh_proxies_map.get(ssh_proxy_id)
 

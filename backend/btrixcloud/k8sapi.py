@@ -94,7 +94,7 @@ class K8sAPI:
         storage_filename: str = "",
         profile_filename: str = "",
         qa_source: str = "",
-        crawler_ssh_proxy:Optional[CrawlerSSHProxy] = None,
+        crawler_ssh_proxy: Optional[CrawlerSSHProxy] = None,
     ):
         """load job template from yaml"""
         if not crawl_id:
@@ -117,7 +117,7 @@ class K8sAPI:
             "storage_filename": storage_filename,
             "profile_filename": profile_filename,
             "qa_source": qa_source,
-            "ssh_proxy_id": crawler_ssh_proxy.id if crawler_ssh_proxy else None
+            "ssh_proxy_id": crawler_ssh_proxy.id if crawler_ssh_proxy else None,
         }
 
         data = self.templates.env.get_template("crawl_job.yaml").render(params)
