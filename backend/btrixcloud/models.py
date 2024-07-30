@@ -651,7 +651,6 @@ class CrawlFile(BaseFile):
 
     presignedUrl: Optional[str] = None
     expireAt: Optional[datetime] = None
-    crc32: int = 0
 
 
 # ============================================================================
@@ -661,7 +660,6 @@ class CrawlFileOut(BaseModel):
     name: str
     path: str
     hash: str
-    crc32: int = 0
     size: int
 
     crawlId: Optional[str] = None
@@ -959,7 +957,6 @@ class CrawlCompleteIn(BaseModel):
     filename: str
     size: int
     hash: str
-    crc32: int = 0
 
     completed: Optional[bool] = True
 

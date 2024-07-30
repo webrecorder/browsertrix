@@ -1204,7 +1204,6 @@ class CrawlOperator(BaseOperator):
             filename=filename,
             size=filecomplete.size,
             hash=filecomplete.hash,
-            crc32=filecomplete.crc32,
             storage=crawl.storage,
         )
 
