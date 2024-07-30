@@ -22,6 +22,16 @@ class Migration(BaseMigration):
         """
         crawls_db = self.mdb["crawls"]
 
-        await crawls_db.update_many(
-            {"files": {"$ne": []}}, {"$unset": {"files.$[].crc32": 1}}
-        )
+        try:
+            res = await crawls_db.update_many(
+                {"files.crc32": {"$exists": 1}},
+                {"$unset": {"files.$[].crc32": 1}},
+            )
+            updated = res.modified_count
+            print(f"{updated} crawls migrated to remove crc32 from files", flush=True)
+        # pylint: disable=broad-exception-caught
+        except Exception as err:
+            print(
+                f"Error migrating crawl files to remove crc32: {err}",
+                flush=True,
+            )
