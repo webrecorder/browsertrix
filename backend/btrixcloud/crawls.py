@@ -19,12 +19,7 @@ from redis.asyncio.client import Redis
 import pymongo
 
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
-from .utils import (
-    dt_now,
-    parse_jsonl_error_messages,
-    stream_dict_list_as_csv,
-    from_k8s_date,
-)
+from .utils import dt_now, parse_jsonl_error_messages, stream_dict_list_as_csv
 from .basecrawls import BaseCrawlOps
 from .crawlmanager import CrawlManager
 from .models import (
