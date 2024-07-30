@@ -340,6 +340,7 @@ class CrawlConfigIn(BaseModel):
 
     profileid: Union[UUID, EmptyStr, None] = None
     crawlerChannel: str = "default"
+    crawlerSSHProxyId: Optional[str] = None
 
     autoAddCollections: Optional[List[UUID]] = []
     tags: Optional[List[str]] = []
@@ -363,6 +364,7 @@ class ConfigRevision(BaseMongoModel):
 
     profileid: Optional[UUID] = None
     crawlerChannel: Optional[str] = None
+    crawlerSSHProxy: Optional[str] = None
 
     crawlTimeout: Optional[int] = 0
     maxCrawlSize: Optional[int] = 0
@@ -393,6 +395,7 @@ class CrawlConfigCore(BaseMongoModel):
 
     profileid: Optional[UUID] = None
     crawlerChannel: Optional[str] = None
+    crawlerSSHProxyId: Optional[str] = None
 
 
 # ============================================================================
@@ -490,6 +493,7 @@ class UpdateCrawlConfig(BaseModel):
     schedule: Optional[str] = None
     profileid: Union[UUID, EmptyStr, None] = None
     crawlerChannel: Optional[str] = None
+    crawlerSSHProxy: Optional[str] = None
     crawlTimeout: Optional[int] = None
     maxCrawlSize: Optional[int] = None
     scale: Scale = 1
@@ -565,6 +569,28 @@ class CrawlerChannels(BaseModel):
     """List of CrawlerChannel instances for API"""
 
     channels: List[CrawlerChannel] = []
+
+
+# ============================================================================
+
+### SSH PROXIES ###
+
+
+class CrawlerSSHProxy(BaseModel):
+    """SSH proxy definition"""
+
+    id: str
+    country_code: str
+    hostname: str
+    port: int
+    username: str
+
+
+# ============================================================================
+class CrawlerSSHProxies(BaseModel):
+    """List of CrawlerSSHProxy instances for API"""
+
+    servers: List[CrawlerSSHProxy] = []
 
 
 # ============================================================================
@@ -671,6 +697,8 @@ class CoreCrawlable(BaseModel):
 
     image: Optional[str] = None
 
+    sshProxy: Optional[CrawlerSSHProxy] = None
+
     stats: Optional[CrawlStats] = CrawlStats()
 
     files: List[CrawlFile] = []
@@ -762,6 +790,7 @@ class CrawlOut(BaseMongoModel):
     execMinutesQuotaReached: Optional[bool] = False
 
     crawlerChannel: str = "default"
+    crawlerSSHProxy: Optional[str] = None
     image: Optional[str] = None
 
     reviewStatus: ReviewStatus = None
@@ -1608,6 +1637,7 @@ class Profile(BaseMongoModel):
 
     baseid: Optional[UUID] = None
     crawlerChannel: Optional[str] = None
+    crawlerSSHProxy: Optional[str] = None
 
 
 # ============================================================================
@@ -1630,6 +1660,7 @@ class ProfileLaunchBrowserIn(UrlIn):
 
     profileId: Optional[UUID] = None
     crawlerChannel: str = "default"
+    crawlerSSHProxy: Optional[str]
 
 
 # ============================================================================
@@ -1647,6 +1678,7 @@ class ProfileCreate(BaseModel):
     name: str
     description: Optional[str] = ""
     crawlerChannel: str = "default"
+    crawlerSSHProxy: Optional[str]
 
 
 # ============================================================================

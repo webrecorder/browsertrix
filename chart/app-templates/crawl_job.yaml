@@ -34,3 +34,6 @@ spec:
 
   storageName: "{{ storage_name }}"
 
+  {% if ssh_proxy_id %}
+  crawlerSSHProxyId: "{{ ssh_proxy_id }}"
+  {% endif %}

@@ -353,6 +353,9 @@ class CrawlOps(BaseCrawlOps):
                 username = user.name
 
         image = self.crawl_configs.get_channel_crawler_image(crawlconfig.crawlerChannel)
+        ssh_proxy = self.crawl_configs.get_crawler_ssh_proxy(
+            crawlconfig.crawlerSSHProxyId
+        )
 
         crawl = Crawl(
             id=crawl_id,
@@ -374,6 +377,8 @@ class CrawlOps(BaseCrawlOps):
             tags=crawlconfig.tags,
             name=crawlconfig.name,
             crawlerChannel=crawlconfig.crawlerChannel,
+            crawlerSSHProxyId=crawlconfig.crawlerSSHProxyId,
+            sshProxy=ssh_proxy.dict() if ssh_proxy else None,
             image=image,
         )
 

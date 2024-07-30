@@ -10,6 +10,7 @@ import asyncio
 import json
 import re
 import os
+import traceback
 from datetime import datetime
 from uuid import UUID, uuid4
 import urllib.parse
@@ -39,6 +40,8 @@ from .models import (
     CrawlConfigSearchValues,
     CrawlConfigUpdateResponse,
     CrawlConfigDeletedResponse,
+    CrawlerSSHProxy,
+    CrawlerSSHProxies,
 )
 from .utils import dt_now, slug_from_name
 
@@ -121,6 +124,28 @@ class CrawlConfigOps:
                 self.crawler_images_map[channel.id] = channel.image
 
             self.crawler_channels = CrawlerChannels(channels=channels)
+
+        self.crawler_ssh_proxies_map = {}
+        with open(
+            os.environ["CRAWLER_SSH_PROXIES_JSON"], encoding="utf-8"
+        ) as fh:
+            ssh_proxy_list: list[dict] = json.loads(fh.read())
+            for ssh_proxy_data in ssh_proxy_list:
+                ssh_proxy = CrawlerSSHProxy(
+                    id=ssh_proxy_data["id"],
+                    country_code=ssh_proxy_data["country_code"],
+                    hostname=ssh_proxy_data["hostname"],
+                    port=ssh_proxy_data.get("port", 22),
+                    username=ssh_proxy_data["username"],
+                )
+
+                self.crawler_ssh_proxies_map[ssh_proxy.id] = (
+                    ssh_proxy
+                )
+
+            self.crawler_ssh_proxies = CrawlerSSHProxies(
+                servers=list(self.crawler_ssh_proxies_map.values())
+            )
 
         if "default" not in self.crawler_images_map:
             raise TypeError("The channel list must include a 'default' channel")
@@ -218,6 +243,7 @@ class CrawlConfigOps:
             profileid=profileid,
             crawlerChannel=config_in.crawlerChannel,
             crawlFilenameTemplate=config_in.crawlFilenameTemplate,
+            crawlerSSHProxyId=config_in.crawlerSSHProxyId,
         )
 
         if config_in.runNow:
@@ -327,6 +353,10 @@ class CrawlConfigOps:
             update.profileid is not None
             and update.profileid != orig_crawl_config.profileid
             and ((not update.profileid) != (not orig_crawl_config.profileid))
+        )
+
+        changed = changed or (
+            self.check_attr_changed(orig_crawl_config, update, "crawlerSSHProxy")
         )
 
         metadata_changed = self.check_attr_changed(orig_crawl_config, update, "name")
@@ -849,6 +879,7 @@ class CrawlConfigOps:
 
         except Exception as exc:
             # pylint: disable=raise-missing-from
+            print(traceback.format_exc())
             raise HTTPException(status_code=500, detail=f"Error starting crawl: {exc}")
 
     async def set_config_current_crawl_info(
@@ -897,6 +928,12 @@ class CrawlConfigOps:
     ) -> Optional[str]:
         """Get crawler image name by id"""
         return self.crawler_images_map.get(crawler_channel or "")
+
+    def get_crawler_ssh_proxy(
+        self, ssh_proxy_id:str
+    ) -> Optional[CrawlerSSHProxy]:
+        """Get crawlerSSHProxy by id"""
+        return self.crawler_ssh_proxies_map.get(ssh_proxy_id)
 
     def get_warc_prefix(self, org: Organization, crawlconfig: CrawlConfig) -> str:
         """Generate WARC prefix slug from org slug, name or url
@@ -1067,6 +1104,13 @@ def init_crawl_config_api(
         org: Organization = Depends(org_crawl_dep),
     ):
         return ops.crawler_channels
+
+    @router.get("/crawler-ssh-proxies", response_model=CrawlerSSHProxies)
+    async def get_crawler_ssh_proxies(
+        # pylint: disable=unused-argument
+        org: Organization = Depends(org_crawl_dep),
+    ):
+        return ops.crawler_ssh_proxies
 
     @router.get("/{cid}/seeds", response_model=PaginatedSeedResponse)
     async def get_crawl_config_seeds(

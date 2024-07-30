@@ -71,7 +71,15 @@ spec:
     - name: crawl-data
       persistentVolumeClaim:
         claimName: {{ name }}
-
+    {% if ssh_proxy_hostname %}
+    - name: proxy-ssh-key
+      secret:
+        secretName: "crawler-ssh-proxy-key-{{ ssh_proxy_id }}"
+        defaultMode: 0600
+    - name: proxy-known-hosts
+      configMap:
+        name: crawler-ssh-proxy-known-hosts
+    {% endif %}
 
   affinity:
 {% if crawler_node_type %}
@@ -129,6 +137,13 @@ spec:
       {% elif profile_filename %}
         - --profile
         - "@{{ profile_filename }}"
+      {% elif ssh_proxy_hostname %}
+        - --sshProxyLogin
+        - "{{ssh_proxy_username }}@{{ ssh_proxy_hostname }}:{{ ssh_proxy_port }}"
+        - --sshProxyPrivateKeyFile
+        - /tmp/ssh-proxy-privatekey
+        - --sshProxyKnownHostsFile
+        - /tmp/ssh-proxy-known_hosts
       {% endif %}
       volumeMounts:
         - name: crawl-config
@@ -141,7 +156,15 @@ spec:
           mountPath: /tmp/qa/
           readOnly: True
       {% endif %}
-
+      {% if ssh_proxy_hostname %}
+        - name: proxy-ssh-key
+          mountPath: /tmp/ssh-proxy-privatekey
+          subPath: ssh-privatekey
+        - name: proxy-known-hosts
+          mountPath: /tmp/ssh-proxy-known_hosts
+          subPath: known_hosts
+          readOnly: true
+      {% endif %}
         - name: crawl-data
           mountPath: /crawls
       envFrom:
@@ -179,12 +202,8 @@ spec:
           value: "{{ warc_prefix }}"
 
     {% if crawler_socks_proxy_host %}
-        - name: SOCKS_HOST
-          value: "{{ crawler_socks_proxy_host }}"
-      {% if crawler_socks_proxy_port %}
-        - name: SOCKS_PORT
-          value: "{{ crawler_socks_proxy_port }}"
-      {% endif %}
+        - name: PROXY_SERVER
+          value: "socks5://{{ crawler_socks_proxy_host }}:{{ crawler_socks_proxy_port }}"
     {% endif %}
 
       resources:

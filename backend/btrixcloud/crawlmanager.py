@@ -4,7 +4,7 @@ import os
 import asyncio
 import secrets
 
-from typing import Optional, Dict
+from typing import Optional, Dict, TYPE_CHECKING, cast
 from datetime import timedelta
 
 from fastapi import HTTPException
@@ -14,15 +14,27 @@ from .k8sapi import K8sAPI
 
 from .models import StorageRef, CrawlConfig, BgJobType
 
+if TYPE_CHECKING:
+    from .crawlconfigs import CrawlConfigOps
+else:
+    CrawlConfigOps = object
+
 
 # ============================================================================
 class CrawlManager(K8sAPI):
     """abstract crawl manager"""
 
+    crawlconfigs: CrawlConfigOps
+
     def __init__(self):
         super().__init__()
 
         self.loop = asyncio.get_running_loop()
+        self.crawlconfigs = cast(CrawlConfigOps, None)
+
+    def set_crawlconfig(self, crawlconfigs):
+        """set crawlconfig ops"""
+        self.crawlconfigs = crawlconfigs
 
     # pylint: disable=too-many-arguments
     async def run_profile_browser(
@@ -125,6 +137,15 @@ class CrawlManager(K8sAPI):
 
         await self.has_storage_secret(storage_secret)
 
+        crawler_ssh_proxy = self.crawlconfigs.get_crawler_ssh_proxy(
+            crawlconfig.crawlerSSHProxyId
+        )
+        if (
+            crawlconfig.crawlerSSHProxyId is not None
+            and len(crawlconfig.crawlerSSHProxyId) > 0
+        ):
+            assert crawler_ssh_proxy is not None
+
         return await self.new_crawl_job(
             cid,
             userid,
@@ -138,6 +159,7 @@ class CrawlManager(K8sAPI):
             warc_prefix=warc_prefix,
             storage_filename=storage_filename,
             profile_filename=profile_filename,
+            crawler_ssh_proxy=crawler_ssh_proxy,
         )
 
     async def create_qa_crawl_job(
