@@ -50,7 +50,7 @@ def from_k8s_date(string: str) -> Optional[datetime]:
 
 def to_k8s_date(dt_val: datetime) -> str:
     """convert datetime to string for k8s"""
-    return dt_val.isoformat("T") + "Z"
+    return f"{dt_val:%Y-%m-%dT%H:%M:%S}Z"
 
 
 def dt_now() -> datetime:
