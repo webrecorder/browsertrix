@@ -620,12 +620,15 @@ def test_crawl_stats(crawler_auth_headers, default_org_id):
             assert row["state"]
             assert row["userid"]
             assert row["user"]
-            assert row["started"]
             assert row["finished"] or row["finished"] is None
             assert row["duration"] or row["duration"] == 0
             assert row["pages"] or row["pages"] == 0
             assert row["filesize"] or row["filesize"] == 0
             assert row["avg_page_time"] or row["avg_page_time"] == 0
+
+            started = row["started"]
+            assert started
+            assert started.endswith("Z")
 
 
 def test_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
@@ -777,8 +780,11 @@ def test_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
 
     assert page["notes"] == []
     assert page["userid"]
-    assert page["modified"]
     assert page["approved"]
+
+    modified = page["modified"]
+    assert modified
+    assert modified.endswith("Z")
 
     # Set approved to False and test filter again
     r = requests.patch(

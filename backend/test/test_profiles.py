@@ -121,13 +121,19 @@ def profile_config_id(admin_auth_headers, default_org_id, profile_id):
     assert data["userid"]
     assert data["oid"] == default_org_id
     assert data.get("origins") or data.get("origins") == []
-    assert data["created"]
     assert data["createdBy"]
     assert data["createdByName"] == "admin"
-    assert data["modified"]
     assert data["modifiedBy"]
     assert data["modifiedByName"] == "admin"
     assert not data["baseid"]
+
+    created = data["created"]
+    assert created
+    assert created.endswith("Z")
+
+    modified = data["modified"]
+    assert modified
+    assert modified.endswith("Z")
 
     resource = data["resource"]
     assert resource
