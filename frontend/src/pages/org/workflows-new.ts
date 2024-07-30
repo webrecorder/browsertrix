@@ -36,6 +36,7 @@ const defaultValue = {
   scale: 1,
   autoAddCollections: [],
   crawlerChannel: "default",
+  crawlerSSHProxyId: null,
 } as WorkflowParams;
 
 /**

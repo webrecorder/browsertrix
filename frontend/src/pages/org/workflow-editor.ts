@@ -42,6 +42,7 @@ import type {
   SelectCrawlerChangeEvent,
   SelectCrawlerUpdateEvent,
 } from "@/components/ui/select-crawler";
+import type { SelectCrawlerSSHProxyChangeEvent } from "@/components/ui/select-crawler-ssh-proxy";
 import type { Tab } from "@/components/ui/tab-list";
 import type {
   TagInputEvent,
@@ -134,6 +135,7 @@ type FormState = {
   autoscrollBehavior: boolean;
   userAgent: string | null;
   crawlerChannel: string;
+  crawlerSSHProxyId: string | null;
 };
 
 const getDefaultProgressState = (hasConfigId = false): ProgressState => {
@@ -211,6 +213,7 @@ const getDefaultFormState = (): FormState => ({
   autoscrollBehavior: true,
   userAgent: null,
   crawlerChannel: "default",
+  crawlerSSHProxyId: null,
 });
 
 function getLocalizedWeekDays() {
@@ -616,6 +619,9 @@ export class CrawlConfigEditor extends LiteElement {
         this.initialWorkflow.config.userAgent ?? defaultFormState.userAgent,
       crawlerChannel:
         this.initialWorkflow.crawlerChannel || defaultFormState.crawlerChannel,
+      crawlerSSHProxyId:
+        this.initialWorkflow.crawlerSSHProxyId ||
+        defaultFormState.crawlerSSHProxyId,
       ...formState,
     };
   }
@@ -1755,6 +1761,18 @@ https://archiveweb.page/images/${"logo.svg"}`}
         msg(`Websites that observe the browser’s language setting may serve
         content in that language if available.`),
       )}
+      ${this.renderFormCol(html`
+        <btrix-select-crawler-ssh-proxy
+          orgId=${this.orgId}
+          .crawlerSSHProxyId="${this.formState.crawlerSSHProxyId || ""}"
+          .authState=${this.authState}
+          @on-change=${(e: SelectCrawlerSSHProxyChangeEvent) =>
+            this.updateFormState({
+              crawlerSSHProxyId: e.detail.value,
+            })}
+        ></btrix-select-crawler-ssh-proxy>
+      `)}
+      ${this.renderHelpTextCol(msg(`Choose a Browsertrix SSH Proxy`))}
     `;
   }
 
@@ -2476,6 +2494,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         ).join(","),
       },
       crawlerChannel: this.formState.crawlerChannel || "default",
+      crawlerSSHProxyId: this.formState.crawlerSSHProxyId,
     };
 
     return config;

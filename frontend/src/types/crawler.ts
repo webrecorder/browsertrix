@@ -51,6 +51,7 @@ export type WorkflowParams = {
   description: string | null;
   autoAddCollections: string[];
   crawlerChannel: string;
+  crawlerSSHProxyId: string | null;
 };
 
 export type CrawlConfig = WorkflowParams & {
@@ -210,6 +211,14 @@ export type Upload = ArchivedItemBase & {
 export type CrawlerChannel = {
   id: string;
   image: string;
+};
+
+export type crawlerSSHProxy = {
+  id: string;
+  country_code: string;
+  hostname: string;
+  port: number;
+  username: string;
 };
 
 export type ArchivedItem = Crawl | Upload;
