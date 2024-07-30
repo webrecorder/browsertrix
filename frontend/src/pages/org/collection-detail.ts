@@ -401,8 +401,7 @@ export class CollectionDetail extends LiteElement {
   };
 
   private readonly renderActions = () => {
-    const authToken =
-      this.appState.authState!.headers.Authorization.split(" ")[1];
+    const authToken = this.appState.auth!.headers.Authorization.split(" ")[1];
 
     return html`
       <sl-dropdown distance="4">
@@ -702,7 +701,7 @@ export class CollectionDetail extends LiteElement {
     }
 
     const replaySource = `/api/orgs/${this.orgId}/collections/${this.collectionId}/replay.json`;
-    const headers = this.appState.authState?.headers;
+    const headers = this.appState.auth?.headers;
     const config = JSON.stringify({ headers });
 
     return html`<section>

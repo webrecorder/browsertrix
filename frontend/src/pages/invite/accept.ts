@@ -38,7 +38,7 @@ export class AcceptInvite extends TailwindElement {
   _firstAdminOrgInfo: null | Pick<UserOrg, "id" | "name" | "slug"> = null;
 
   private get authState() {
-    return this.appState.authState;
+    return this.appState.auth;
   }
 
   readonly inviteInfo = new Task(this, {

@@ -2,8 +2,9 @@ import { APIError } from "./api";
 import appState, { AppStateService } from "./state";
 
 import { ROUTES } from "@/routes";
-import type { Auth, AuthState } from "@/types/auth";
+import type { Auth } from "@/types/auth";
 
+type AuthState = Auth | null;
 type JWT = {
   user_id: string;
   aud: string[];
@@ -87,7 +88,7 @@ export default class AuthService {
   };
 
   get authState() {
-    return appState.authState;
+    return appState.auth;
   }
   private set authState(authState: AuthState) {
     AppStateService.updateAuthState(authState);

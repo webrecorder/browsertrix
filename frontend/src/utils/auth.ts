@@ -21,7 +21,7 @@ export function needLogin<T extends { new (...args: any[]): LiteElement }>(
 ) {
   return class extends constructor {
     update(changedProperties: Map<string, unknown>) {
-      if (this.appState.authState) {
+      if (this.appState.auth) {
         super.update(changedProperties);
       } else {
         this.dispatchEvent(

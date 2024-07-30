@@ -9,6 +9,3 @@ export const authSchema = z.object({
   tokenExpiresAt: z.number(),
 });
 export type Auth = z.infer<typeof authSchema>;
-
-export const authStateSchema = authSchema.nullable();
-export type AuthState = z.infer<typeof authStateSchema>;

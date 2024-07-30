@@ -1050,11 +1050,11 @@ export class ArchivedItemQA extends TailwindElement {
     if (!rwpId) return;
 
     const replaySource = `/api/orgs/${this.orgId}/crawls/${this.itemId}${qa ? `/qa/${rwpId}` : ""}/replay.json`;
-    const headers = this.appState.authState?.headers;
+    const headers = this.appState.auth?.headers;
     const config = JSON.stringify({ headers });
     console.debug("rendering rwp", rwpId);
     return guard(
-      [rwpId, this.page, this.appState.authState],
+      [rwpId, this.page, this.appState.auth],
       () => html`
         <replay-web-page
           source="${replaySource}"

@@ -610,8 +610,7 @@ export class CrawlsList extends TailwindElement {
   private readonly renderMenuItems = (item: ArchivedItem) => {
     // HACK shoelace doesn't current have a way to override non-hover
     // color without resetting the --sl-color-neutral-700 variable
-    const authToken =
-      this.appState.authState!.headers.Authorization.split(" ")[1];
+    const authToken = this.appState.auth!.headers.Authorization.split(" ")[1];
 
     return html`
       ${when(

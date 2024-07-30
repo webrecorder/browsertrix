@@ -6,7 +6,7 @@ import { locked, options, use } from "lit-shared-state";
 import { persist } from "./persist";
 
 import type { AppSettings } from "@/types/app";
-import { authStateSchema, type AuthState } from "@/types/auth";
+import { authSchema, type Auth } from "@/types/auth";
 import type { OrgData } from "@/types/org";
 import { userInfoSchema, type UserInfo } from "@/types/user";
 
@@ -27,7 +27,7 @@ class AppState {
 
   // TODO persist here
   // @options(persist(window.sessionStorage))
-  authState: AuthState = null;
+  auth: Auth | null = null;
 
   // Store user-selected org slug in local storage so that
   // it persists between sessions
@@ -62,11 +62,14 @@ export class AppStateService {
       appState.settings = settings;
     });
   };
-  static updateAuthState = (authState: AppState["authState"]) => {
+  static updateAuthState = (authState: AppState["auth"]) => {
     unlock(() => {
-      console.log("safeParse", authStateSchema.safeParse(authState).error);
+      console.log(
+        "safeParse",
+        authSchema.nullable().safeParse(authState).error,
+      );
 
-      appState.authState = authState;
+      appState.auth = authState;
     });
   };
   static updateUserInfo = (userInfo: AppState["userInfo"]) => {
@@ -107,7 +110,7 @@ export class AppStateService {
   };
   static resetUser = () => {
     unlock(() => {
-      appState.authState = null;
+      appState.auth = null;
       appState.userInfo = null;
       appState.orgSlug = null;
     });

@@ -113,7 +113,7 @@ export class WorkflowDetail extends LiteElement {
   private filterBy: Partial<Record<keyof Crawl, string | CrawlState[]>> = {};
 
   private get authState() {
-    return this.appState.authState;
+    return this.appState.auth;
   }
 
   private get org() {

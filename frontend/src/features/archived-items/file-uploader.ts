@@ -513,7 +513,7 @@ export class FileUploader extends TailwindElement {
 
       xhr.open("PUT", `/api/${url}`);
       xhr.setRequestHeader("Content-Type", "application/octet-stream");
-      Object.entries(this.appState.authState!.headers).forEach(([k, v]) => {
+      Object.entries(this.appState.auth!.headers).forEach(([k, v]) => {
         xhr.setRequestHeader(k, v);
       });
       xhr.addEventListener("load", () => {

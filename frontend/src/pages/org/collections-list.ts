@@ -556,8 +556,7 @@ export class CollectionsList extends LiteElement {
   `;
 
   private readonly renderActions = (col: Collection) => {
-    const authToken =
-      this.appState.authState!.headers.Authorization.split(" ")[1];
+    const authToken = this.appState.auth!.headers.Authorization.split(" ")[1];
 
     return html`
       <btrix-overflow-dropdown>

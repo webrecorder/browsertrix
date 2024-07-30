@@ -71,7 +71,7 @@ export class Verify extends LiteElement {
     email: string;
     is_verified: boolean;
   }) {
-    const authState = this.appState.authState;
+    const authState = this.appState.auth;
     const shouldLogOut = authState && authState.username !== data.email;
 
     this.notify({

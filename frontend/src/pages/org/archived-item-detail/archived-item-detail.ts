@@ -150,7 +150,7 @@ export class ArchivedItemDetail extends TailwindElement {
   private readonly notify = new NotifyController(this);
 
   private get authState() {
-    return this.appState.authState;
+    return this.appState.auth;
   }
 
   private timerId?: number;

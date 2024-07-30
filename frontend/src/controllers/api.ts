@@ -38,7 +38,7 @@ export class APIController implements ReactiveController {
   hostDisconnected() {}
 
   async fetch<T = unknown>(path: string, options?: RequestInit): Promise<T> {
-    const auth = appState.authState;
+    const auth = appState.auth;
 
     if (!auth) throw new Error("auth not in state");
 
