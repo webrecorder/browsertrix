@@ -721,8 +721,8 @@ class CrawlOps(BaseCrawlOps):
             duration_seconds = 0
             if crawl.started and crawl.finished:
                 # JUST FOR DEBUGGING
-                naive_finished = crawl.finished.replace(tzinfo=None)
-                duration = naive_finished - crawl.started
+                naive_started = crawl.started.replace(tzinfo=None)
+                duration = crawl.finished - naive_started
                 duration_seconds = int(duration.total_seconds())
                 if duration_seconds:
                     data["duration"] = duration_seconds
