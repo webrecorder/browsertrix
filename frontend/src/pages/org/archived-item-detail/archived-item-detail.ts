@@ -744,7 +744,7 @@ export class ArchivedItemDetail extends TailwindElement {
                 <btrix-desc-list-item label=${msg("Uploaded")}>
                   <sl-format-date
                     lang=${getLocale()}
-                    date=${`${this.crawl!.finished}Z` /** Z for UTC */}
+                    date=${this.crawl!.finished}
                     month="2-digit"
                     day="2-digit"
                     year="2-digit"
@@ -758,7 +758,7 @@ export class ArchivedItemDetail extends TailwindElement {
                 <btrix-desc-list-item label=${msg("Start Time")}>
                   <sl-format-date
                     lang=${getLocale()}
-                    date=${`${this.crawl!.started}Z` /** Z for UTC */}
+                    date=${this.crawl!.started}
                     month="2-digit"
                     day="2-digit"
                     year="2-digit"
@@ -771,7 +771,7 @@ export class ArchivedItemDetail extends TailwindElement {
                   ${this.crawl!.finished
                     ? html`<sl-format-date
                         lang=${getLocale()}
-                        date=${`${this.crawl!.finished}Z` /** Z for UTC */}
+                        date=${this.crawl!.finished}
                         month="2-digit"
                         day="2-digit"
                         year="2-digit"
@@ -784,13 +784,13 @@ export class ArchivedItemDetail extends TailwindElement {
                 <btrix-desc-list-item label=${msg("Elapsed Time")}>
                   ${this.crawl!.finished
                     ? html`${RelativeDuration.humanize(
-                        new Date(`${this.crawl!.finished}Z`).valueOf() -
-                          new Date(`${this.crawl!.started}Z`).valueOf(),
+                        new Date(this.crawl!.finished).valueOf() -
+                          new Date(this.crawl!.started).valueOf(),
                       )}`
                     : html`
                         <span class="text-purple-600">
                           <btrix-relative-duration
-                            value=${`${this.crawl!.started}Z`}
+                            value=${this.crawl!.started}
                             unitCount="3"
                             tickSeconds="1"
                           ></btrix-relative-duration>
