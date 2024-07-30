@@ -560,8 +560,7 @@ class CrawlOps(BaseCrawlOps):
 
         update: Dict[str, Any] = {f"{prefix}state": state}
         if finished:
-            # Reset from k8s format
-            update[f"{prefix}finished"] = from_k8s_date(finished)
+            update[f"{prefix}finished"] = finished
         if stats:
             update[f"{prefix}stats"] = stats.dict()
 
