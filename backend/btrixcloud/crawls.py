@@ -19,7 +19,12 @@ from redis.asyncio.client import Redis
 import pymongo
 
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
-from .utils import dt_now, parse_jsonl_error_messages, stream_dict_list_as_csv
+from .utils import (
+    dt_now,
+    parse_jsonl_error_messages,
+    stream_dict_list_as_csv,
+    from_k8s_date,
+)
 from .basecrawls import BaseCrawlOps
 from .crawlmanager import CrawlManager
 from .models import (
@@ -555,7 +560,7 @@ class CrawlOps(BaseCrawlOps):
 
         update: Dict[str, Any] = {f"{prefix}state": state}
         if finished:
-            update[f"{prefix}finished"] = finished
+            update[f"{prefix}finished"] = from_k8s_date(finished)
         if stats:
             update[f"{prefix}stats"] = stats.dict()
 
