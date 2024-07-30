@@ -83,7 +83,7 @@ export class CrawlListItem extends TailwindElement {
             (crawl) => html`
               <sl-format-date
                 lang=${getLocale()}
-                date=${`${crawl.started}Z`}
+                date=${crawl.started}
                 month="2-digit"
                 day="2-digit"
                 year="2-digit"
@@ -153,7 +153,7 @@ export class CrawlListItem extends TailwindElement {
                   (crawl) => html`
                     <sl-format-date
                       lang=${getLocale()}
-                      date=${`${crawl.started}Z`}
+                      date=${crawl.started}
                       month="2-digit"
                       day="2-digit"
                       year="2-digit"
@@ -170,7 +170,7 @@ export class CrawlListItem extends TailwindElement {
               ? html`
                   <sl-format-date
                     lang=${getLocale()}
-                    date=${`${crawl.finished}Z`}
+                    date=${crawl.finished}
                     month="2-digit"
                     day="2-digit"
                     year="2-digit"
@@ -187,9 +187,9 @@ export class CrawlListItem extends TailwindElement {
           ${this.safeRender((crawl) =>
             RelativeDuration.humanize(
               (crawl.finished
-                ? new Date(`${crawl.finished}Z`)
+                ? new Date(crawl.finished)
                 : new Date()
-              ).valueOf() - new Date(`${crawl.started}Z`).valueOf(),
+              ).valueOf() - new Date(crawl.started).valueOf(),
             ),
           )}
         </btrix-table-cell>

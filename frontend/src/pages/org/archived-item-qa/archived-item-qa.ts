@@ -893,7 +893,7 @@ export class ArchivedItemQA extends BtrixElement {
               <sl-format-date
                 lang=${getLocale()}
                 class="font-monostyle text-xs text-neutral-500"
-                date=${`${page.ts}Z`}
+                date=${page.ts}
                 month="2-digit"
                 day="2-digit"
                 year="2-digit"

@@ -277,7 +277,7 @@ export class WorkflowListItem extends LitElement {
             if (workflow.lastCrawlTime && workflow.lastCrawlStartTime) {
               return html`<sl-format-date
                   lang=${getLocale()}
-                  date="${workflow.lastRun.toString()}Z"
+                  date="${workflow.lastRun.toString()}"
                   month="2-digit"
                   day="2-digit"
                   year="2-digit"
@@ -286,8 +286,8 @@ export class WorkflowListItem extends LitElement {
                 ></sl-format-date>
                 ${msg(
                   str`in ${RelativeDuration.humanize(
-                    new Date(`${workflow.lastCrawlTime}Z`).valueOf() -
-                      new Date(`${workflow.lastCrawlStartTime}Z`).valueOf(),
+                    new Date(workflow.lastCrawlTime).valueOf() -
+                      new Date(workflow.lastCrawlStartTime).valueOf(),
                     { compact: true },
                   )}`,
                 )}`;
@@ -295,7 +295,7 @@ export class WorkflowListItem extends LitElement {
             if (workflow.lastCrawlStartTime) {
               const diff =
                 new Date().valueOf() -
-                new Date(`${workflow.lastCrawlStartTime}Z`).valueOf();
+                new Date(workflow.lastCrawlStartTime).valueOf();
               if (diff < 1000) {
                 return "";
               }
