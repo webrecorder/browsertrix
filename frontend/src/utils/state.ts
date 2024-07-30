@@ -64,10 +64,7 @@ export class AppStateService {
   };
   static updateAuthState = (authState: AppState["auth"]) => {
     unlock(() => {
-      console.log(
-        "safeParse",
-        authSchema.nullable().safeParse(authState).error,
-      );
+      authSchema.nullable().parse(authState);
 
       appState.auth = authState;
     });

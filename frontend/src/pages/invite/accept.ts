@@ -69,7 +69,7 @@ export class AcceptInvite extends TailwindElement {
 
   firstUpdated() {
     if (this._isLoggedIn) {
-      this.inviteInfo.run();
+      void this.inviteInfo.run();
     } else {
       this._notify.toast({
         message: msg("Please log in to accept this invite."),

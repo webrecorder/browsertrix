@@ -89,6 +89,8 @@ describe("browsertrix-app", () => {
     stub(window.sessionStorage, "getItem").callsFake((key) => {
       if (key === "btrix.auth")
         return JSON.stringify({
+          headers: { Authorization: "_fake_headers_" },
+          tokenExpiresAt: 0,
           username: "test-auth@example.com",
         });
       return null;
