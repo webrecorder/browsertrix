@@ -163,7 +163,15 @@ spec:
           mountPath: /tmp/ssh-proxy/known-hosts
           subPath: {{ proxy_id }}-known-hosts
           readOnly: true
-      {% endif %}
+        - name: proxy-ssh-keys
+          mountPath: /etc/passwd
+          subPath: passwd
+          readOnly: true
+        - name: proxy-ssh-keys
+          mountPath: /etc/group
+          subPath: group
+          readOnly: true
+       {% endif %}
         - name: crawl-data
           mountPath: /crawls
       envFrom:

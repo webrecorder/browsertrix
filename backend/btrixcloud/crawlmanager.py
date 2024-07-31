@@ -138,7 +138,7 @@ class CrawlManager(K8sAPI):
             warc_prefix=warc_prefix,
             storage_filename=storage_filename,
             profile_filename=profile_filename,
-            proxy_id=crawlconfig.proxyId,
+            proxy_id=crawlconfig.proxyId or "",
         )
 
     async def create_qa_crawl_job(

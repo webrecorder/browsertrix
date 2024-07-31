@@ -93,7 +93,7 @@ class K8sAPI:
         storage_filename: str = "",
         profile_filename: str = "",
         qa_source: str = "",
-        proxy_id: Optional[str] = None,
+        proxy_id: str = "",
     ):
         """load job template from yaml"""
         if not crawl_id:
@@ -138,7 +138,7 @@ class K8sAPI:
         storage_filename: str = "",
         profile_filename: str = "",
         qa_source: str = "",
-        proxy_id: Optional[str] = None,
+        proxy_id: str = "",
     ) -> str:
         """load and init crawl job via k8s api"""
         crawl_id, data = self.new_crawl_job_yaml(

@@ -279,7 +279,7 @@ class CrawlOperator(BaseOperator):
 
         params["crawler_image"] = status.crawlerImage
 
-        if crawl.proxy_id:
+        if crawl.proxy_id and not crawl.is_qa:
             proxy = self.crawl_config_ops.get_crawler_proxy(crawl.proxy_id)
             params["proxy_id"] = crawl.proxy_id
             params["ssh_proxy_auth"] = proxy.auth if proxy else ""
