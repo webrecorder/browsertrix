@@ -15,10 +15,10 @@ import type LiteElement from "@/utils/LiteElement";
  *
  * @fires btrix-need-login
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function needLogin<T extends { new (...args: any[]): LiteElement }>(
-  constructor: T,
-) {
+export default function needLogin<
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  T extends { new (...args: any[]): LiteElement },
+>(constructor: T) {
   return class extends constructor {
     update(changedProperties: Map<string, unknown>) {
       if (this.appState.auth) {

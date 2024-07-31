@@ -10,7 +10,7 @@ import debounce from "lodash/fp/debounce";
 import { TailwindElement } from "@/classes/TailwindElement";
 import type { UnderlyingFunction } from "@/types/utils";
 import { isApiError } from "@/utils/api";
-import { needLogin } from "@/utils/auth";
+import needLogin from "@/utils/decorators/needLogin";
 import LiteElement, { html } from "@/utils/LiteElement";
 import PasswordService from "@/utils/PasswordService";
 import { AppStateService } from "@/utils/state";

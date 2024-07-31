@@ -19,6 +19,11 @@ import { formatAPIUser } from "@/utils/user";
 
 import "./ui/org-form";
 
+/**
+ * Page for existing users to accept an org invitation.
+ * Uses custom redirect instead of needLogin decorator to suppress "need login"
+ * message when accessing root URL.
+ */
 @localized()
 @customElement("btrix-accept-invite")
 export class AcceptInvite extends TailwindElement {

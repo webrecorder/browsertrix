@@ -1,7 +1,7 @@
 import { localized, msg, str } from "@lit/localize";
 import { customElement, state } from "lit/decorators.js";
 
-import { needLogin } from "@/utils/auth";
+import needLogin from "@/utils/decorators/needLogin";
 import LiteElement, { html } from "@/utils/LiteElement";
 
 @localized()
