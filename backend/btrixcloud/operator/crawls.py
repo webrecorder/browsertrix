@@ -547,7 +547,7 @@ class CrawlOperator(BaseOperator):
             if actual_state:
                 status.state = actual_state
             if finished:
-                status.finished = to_k8s_date(finished)
+                status.finished = finished
 
             if actual_state != state:
                 print(
