@@ -1,7 +1,6 @@
 import { localized, msg, str } from "@lit/localize";
 import { customElement, property, state } from "lit/decorators.js";
 
-import type { CurrentUser } from "@/types/user";
 import { needLogin } from "@/utils/auth";
 import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
@@ -13,11 +12,12 @@ export class UsersInvite extends LiteElement {
   @property({ type: Object })
   authState?: AuthState;
 
-  @property({ type: Object })
-  userInfo?: CurrentUser;
-
   @state()
   private invitedEmail?: string;
+
+  private get userInfo() {
+    return this.appState.userInfo;
+  }
 
   render() {
     let successMessage;

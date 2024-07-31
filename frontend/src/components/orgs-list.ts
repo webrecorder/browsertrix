@@ -14,10 +14,10 @@ import type { Dialog } from "@/components/ui/dialog";
 import { APIController } from "@/controllers/api";
 import { NavigateController } from "@/controllers/navigate";
 import { NotifyController } from "@/controllers/notify";
-import type { CurrentUser } from "@/types/user";
 import type { AuthState } from "@/utils/AuthService";
 import { formatNumber, getLocale } from "@/utils/localization";
 import type { OrgData } from "@/utils/orgs";
+import appState, { use } from "@/utils/state";
 
 /**
  * @fires update-quotas
@@ -34,9 +34,6 @@ export class OrgsList extends TailwindElement {
   @property({ type: Object })
   authState?: AuthState;
 
-  @property({ type: Object })
-  userInfo?: CurrentUser;
-
   @property({ type: Array })
   orgList?: OrgData[] = [];
 
@@ -45,6 +42,9 @@ export class OrgsList extends TailwindElement {
 
   @property({ type: Object })
   currOrg?: OrgData | null = null;
+
+  @use()
+  appState = appState;
 
   @query("#orgQuotaDialog")
   private readonly orgQuotaDialog?: Dialog | null;
@@ -61,6 +61,10 @@ export class OrgsList extends TailwindElement {
   private readonly api = new APIController(this);
   private readonly navigate = new NavigateController(this);
   private readonly notify = new NotifyController(this);
+
+  private get userInfo() {
+    return this.appState.userInfo;
+  }
 
   render() {
     if (this.skeleton) {

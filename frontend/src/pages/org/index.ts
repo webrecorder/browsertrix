@@ -16,7 +16,7 @@ import type { QuotaUpdateDetail } from "@/controllers/api";
 import type { CollectionSavedEvent } from "@/features/collections/collection-metadata-dialog";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
 import type { Crawl, JobType } from "@/types/crawler";
-import type { CurrentUser, UserOrg } from "@/types/user";
+import type { UserOrg } from "@/types/user";
 import { isApiError } from "@/utils/api";
 import type { ViewState } from "@/utils/APIRouter";
 import { needLogin } from "@/utils/auth";
@@ -93,9 +93,6 @@ export class Org extends LiteElement {
   authState?: AuthState;
 
   @property({ type: Object })
-  userInfo?: CurrentUser;
-
-  @property({ type: Object })
   viewStateData?: ViewState["data"];
 
   @property({ type: String })
@@ -120,26 +117,30 @@ export class Org extends LiteElement {
   @state()
   private isCreateDialogVisible = false;
 
-  get userOrg() {
+  private get userInfo() {
+    return this.appState.userInfo;
+  }
+
+  private get userOrg() {
     if (!this.userInfo) return null;
     return this.userInfo.orgs.find(({ slug }) => slug === this.slug)!;
   }
 
-  get orgId() {
+  private get orgId() {
     return this.userOrg?.id || "";
   }
 
-  get org() {
+  private get org() {
     return this.appState.org;
   }
 
-  get isAdmin() {
+  private get isAdmin() {
     const userOrg = this.userOrg;
     if (userOrg) return isAdmin(userOrg.role);
     return false;
   }
 
-  get isCrawler() {
+  private get isCrawler() {
     const userOrg = this.userOrg;
     if (userOrg) return isCrawler(userOrg.role);
     return false;
@@ -171,7 +172,8 @@ export class Org extends LiteElement {
 
   async willUpdate(changedProperties: Map<string, unknown>) {
     if (
-      (changedProperties.has("userInfo") || changedProperties.has("slug")) &&
+      (changedProperties.has("appState.userInfo") ||
+        changedProperties.has("slug")) &&
       this.userInfo &&
       this.slug
     ) {
@@ -630,7 +632,6 @@ export class Org extends LiteElement {
 
     return html`<btrix-org-settings
       .authState=${this.authState}
-      .userInfo=${this.userInfo}
       .orgId=${this.orgId}
       activePanel=${activePanel}
       ?isAddingMember=${isAddingMember}

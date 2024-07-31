@@ -2,7 +2,6 @@ import { localized, msg, str } from "@lit/localize";
 import type { SlDialog } from "@shoelace-style/shoelace";
 import { nothing, render, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
-import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 
 import "broadcastchannel-polyfill";
@@ -10,7 +9,7 @@ import "./utils/polyfills";
 
 import type { OrgTab } from "./pages/org";
 import { ROUTES } from "./routes";
-import type { CurrentUser, UserOrg } from "./types/user";
+import type { UserInfo, UserOrg } from "./types/user";
 import APIRouter, { type ViewState } from "./utils/APIRouter";
 import AuthService, {
   type Auth,
@@ -606,17 +605,13 @@ export class App extends LiteElement {
       case "home":
         return html`<btrix-home
           class="w-full md:bg-neutral-50"
-          @btrix-update-user-info=${this.updateUserInfo}
           .authState=${this.authService.authState}
-          .userInfo=${this.appState.userInfo ?? undefined}
-          slug=${ifDefined(this.appState.orgSlug ?? undefined)}
         ></btrix-home>`;
 
       case "orgs":
         return html`<btrix-orgs
           class="w-full md:bg-neutral-50"
           .authState="${this.authService.authState}"
-          .userInfo="${this.appState.userInfo ?? undefined}"
         ></btrix-orgs>`;
 
       case "org": {
@@ -630,7 +625,6 @@ export class App extends LiteElement {
         return html`<btrix-org
           class="w-full"
           .authState=${this.authService.authState}
-          .userInfo=${this.appState.userInfo ?? undefined}
           .viewStateData=${this.viewState.data}
           .params=${this.viewState.params}
           .maxScale=${this.appState.settings?.maxScale || DEFAULT_MAX_SCALE}
@@ -643,9 +637,7 @@ export class App extends LiteElement {
       case "accountSettings":
         return html`<btrix-account-settings
           class="mx-auto box-border w-full max-w-screen-desktop p-2 md:py-8"
-          @btrix-update-user-info=${this.updateUserInfo}
           .authState="${this.authService.authState}"
-          .userInfo="${this.appState.userInfo ?? undefined}"
         ></btrix-account-settings>`;
 
       case "usersInvite": {
@@ -654,7 +646,6 @@ export class App extends LiteElement {
             return html`<btrix-users-invite
               class="mx-auto box-border w-full max-w-screen-desktop p-2 md:py-8"
               .authState="${this.authService.authState}"
-              .userInfo="${this.appState.userInfo}"
             ></btrix-users-invite>`;
           } else {
             return this.renderNotFoundPage();
@@ -826,11 +817,11 @@ export class App extends LiteElement {
     }
   };
 
-  onUserInfoChange(event: CustomEvent<Partial<CurrentUser>>) {
+  onUserInfoChange(event: CustomEvent<Partial<UserInfo>>) {
     AppStateService.updateUserInfo({
       ...this.appState.userInfo,
       ...event.detail,
-    } as CurrentUser);
+    } as UserInfo);
   }
 
   /**

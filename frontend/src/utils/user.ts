@@ -1,7 +1,7 @@
 import type { APIUser } from "@/index";
-import { type CurrentUser } from "@/types/user";
+import { type UserInfo } from "@/types/user";
 
-export function formatAPIUser(userData: APIUser): CurrentUser {
+export function formatAPIUser(userData: APIUser): UserInfo {
   return {
     id: userData.id,
     email: userData.email,

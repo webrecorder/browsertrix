@@ -7,7 +7,7 @@ import { renderInviteMessage } from "./ui/inviteMessage";
 import type { SignUpSuccessDetail } from "@/features/accounts/sign-up-form";
 import type { OrgUpdatedDetail } from "@/pages/invite/ui/org-form";
 import { ROUTES } from "@/routes";
-import type { CurrentUser, UserOrg, UserOrgInviteInfo } from "@/types/user";
+import type { UserInfo, UserOrg, UserOrgInviteInfo } from "@/types/user";
 import AuthService, {
   type AuthState,
   type LoggedInEventDetail,
@@ -23,7 +23,7 @@ export class Join extends LiteElement {
   authState?: AuthState;
 
   @property({ type: Object })
-  userInfo?: CurrentUser;
+  userInfo?: UserInfo;
 
   @property({ type: String })
   token?: string;
