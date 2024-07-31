@@ -478,7 +478,6 @@ export class ArchivedItemQA extends BtrixElement {
               class="order-3 mx-auto flex w-full justify-center @lg:order-2 @lg:mx-0 @lg:w-auto"
             >
               <btrix-page-qa-approval
-                
                 .orgId=${this.orgId}
                 .itemId=${this.itemId}
                 .pageId=${this.itemPageId}
