@@ -2,11 +2,31 @@ import { expect, fixture } from "@open-wc/testing";
 import { restore, stub } from "sinon";
 
 import AuthService from "./utils/AuthService";
+import { AppStateService } from "./utils/state";
+import { formatAPIUser } from "./utils/user";
 
 import { App, type APIUser } from ".";
 
+const mockAPIUser: APIUser = {
+  id: "740d7b63-b257-4311-ba3f-adc46a5fafb8",
+  email: "test-user@example.com",
+  name: "Test User",
+  is_verified: false,
+  is_superuser: false,
+  orgs: [
+    {
+      id: "e21ab647-2d0e-489d-97d1-88ac91774942",
+      name: "test org",
+      slug: "test-org",
+      role: 10,
+    },
+  ],
+};
+const mockUserInfo = formatAPIUser(mockAPIUser);
+
 describe("browsertrix-app", () => {
   beforeEach(() => {
+    AppStateService.resetAll();
     AuthService.broadcastChannel = new BroadcastChannel(AuthService.storageKey);
     window.sessionStorage.clear();
     stub(window.history, "pushState");
@@ -63,30 +83,7 @@ describe("browsertrix-app", () => {
 
   it("sets user info", async () => {
     stub(App.prototype, "getUserInfo").callsFake(async () =>
-      Promise.resolve({
-        id: "test_id",
-        email: "test-user@example.com",
-        name: "Test User",
-        is_verified: false,
-        is_superuser: false,
-        orgs: [
-          {
-            id: "test_org_id",
-            name: "test org",
-            slug: "test-org",
-            role: 10,
-            quotas: {},
-            bytesStored: 100,
-            usage: null,
-            crawlExecSeconds: {},
-            monthlyExecSeconds: {},
-            extraExecSeconds: {},
-            giftedExecSeconds: {},
-            extraExecSecondsAvailable: {},
-            giftedExecSecondsAvailable: {},
-          },
-        ],
-      } as APIUser),
+      Promise.resolve(mockAPIUser),
     );
     stub(AuthService.prototype, "startFreshnessCheck");
     stub(window.sessionStorage, "getItem").callsFake((key) => {
@@ -98,29 +95,6 @@ describe("browsertrix-app", () => {
     });
     const el = await fixture<App>("<browsertrix-app></browsertrix-app>");
 
-    expect(el.appState.userInfo).to.eql({
-      id: "test_id",
-      email: "test-user@example.com",
-      name: "Test User",
-      isVerified: false,
-      isSuperAdmin: false,
-      orgs: [
-        {
-          id: "test_org_id",
-          name: "test org",
-          role: 10,
-          slug: "test-org",
-          quotas: {},
-          bytesStored: 100,
-          usage: null,
-          crawlExecSeconds: {},
-          monthlyExecSeconds: {},
-          extraExecSeconds: {},
-          giftedExecSeconds: {},
-          extraExecSecondsAvailable: {},
-          giftedExecSecondsAvailable: {},
-        },
-      ],
-    });
+    expect(el.appState.userInfo).to.eql(mockUserInfo);
   });
 });

@@ -5,34 +5,28 @@ import { type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
 import type { InviteSuccessDetail } from "@/features/accounts/invite-form";
+import type { APIUser } from "@/index";
 import type { APIPaginatedList } from "@/types/api";
-import type { CurrentUser } from "@/types/user";
 import { isApiError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
 import { maxLengthValidator } from "@/utils/form";
 import LiteElement, { html } from "@/utils/LiteElement";
-import type { OrgData } from "@/utils/orgs";
+import { type OrgData } from "@/utils/orgs";
 import slugifyStrict from "@/utils/slugify";
+import { AppStateService } from "@/utils/state";
+import { formatAPIUser } from "@/utils/user";
 
 /**
  * Home page when org is not selected.
  * Currently, only visible to superadmins--redirects to user's org, otherwise
  *
  * TODO Refactor out superadmin UI
- *
- * @fires btrix-update-user-info
  */
 @localized()
 @customElement("btrix-home")
 export class Home extends LiteElement {
   @property({ type: Object })
   authState?: AuthState;
-
-  @property({ type: Object })
-  userInfo?: CurrentUser;
-
-  @property({ type: String })
-  slug?: string;
 
   @state()
   private orgList?: OrgData[];
@@ -52,21 +46,30 @@ export class Home extends LiteElement {
   @state()
   private isOrgNameValid: boolean | null = null;
 
+  private get slug() {
+    return this.appState.orgSlug;
+  }
+
+  private get userInfo() {
+    return this.appState.userInfo;
+  }
+
   private readonly validateOrgNameMax = maxLengthValidator(40);
 
   connectedCallback() {
     if (this.authState) {
-      super.connectedCallback();
+      if (this.slug) {
+        this.navTo(`/orgs/${this.slug}`);
+      } else {
+        super.connectedCallback();
+      }
     } else {
       this.navTo("/log-in");
     }
   }
 
-  willUpdate(changedProperties: PropertyValues<this>) {
-    console.log(this.userInfo);
-    if (changedProperties.has("slug") && this.slug) {
-      this.navTo(`/orgs/${this.slug}`);
-    } else if (changedProperties.has("userInfo") && this.userInfo) {
+  willUpdate(changedProperties: PropertyValues) {
+    if (changedProperties.has("appState.userInfo") && this.userInfo) {
       if (this.userInfo.isSuperAdmin) {
         if (this.userInfo.orgs.length) {
           void this.fetchOrgs();
@@ -74,6 +77,8 @@ export class Home extends LiteElement {
           this.isAddingOrg = true;
           this.isAddOrgFormVisible = true;
         }
+      } else if (this.userInfo.orgs.length) {
+        this.navTo(`/orgs/${this.userInfo.orgs[0].slug}`);
       } else {
         this.navTo(`/account/settings`);
       }
@@ -160,7 +165,6 @@ export class Home extends LiteElement {
             </header>
             <btrix-orgs-list
               .authState=${this.authState}
-              .userInfo=${this.userInfo}
               .orgList=${this.orgList}
               @update-quotas=${this.onUpdateOrgQuotas}
             ></btrix-orgs-list>
@@ -349,13 +353,17 @@ export class Home extends LiteElement {
     this.isSubmittingNewOrg = true;
 
     try {
-      await this.apiFetch(`/orgs/create`, this.authState!, {
-        method: "POST",
-        body: JSON.stringify(params),
-      });
-
-      // Update user info since orgs are checked against userInfo.orgs
-      this.dispatchEvent(new CustomEvent("btrix-update-user-info"));
+      // TODO return entire object from API
+      await this.apiFetch<{ added: true; id: string }>(
+        `/orgs/create`,
+        this.authState!,
+        {
+          method: "POST",
+          body: JSON.stringify(params),
+        },
+      );
+      const userInfo = await this.getUserInfo();
+      AppStateService.updateUserInfo(formatAPIUser(userInfo));
 
       this.notify({
         message: msg(str`Created new org named "${params.name}".`),
@@ -403,5 +411,9 @@ export class Home extends LiteElement {
   async checkFormValidity(formEl: HTMLFormElement) {
     await this.updateComplete;
     return !formEl.querySelector("[data-invalid]");
+  }
+
+  async getUserInfo(): Promise<APIUser> {
+    return this.apiFetch("/users/me", this.authState!);
   }
 }

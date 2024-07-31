@@ -2,28 +2,26 @@ import { localized, msg, str } from "@lit/localize";
 import type { SlInput } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import type { ZxcvbnResult } from "@zxcvbn-ts/core";
-import { LitElement, type PropertyValues } from "lit";
+import { type PropertyValues } from "lit";
 import { customElement, property, queryAsync, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
 
-import type { CurrentUser } from "@/types/user";
+import { TailwindElement } from "@/classes/TailwindElement";
 import type { UnderlyingFunction } from "@/types/utils";
 import { isApiError } from "@/utils/api";
 import { needLogin } from "@/utils/auth";
 import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
 import PasswordService from "@/utils/PasswordService";
+import { AppStateService } from "@/utils/state";
 
 const { PASSWORD_MINLENGTH, PASSWORD_MAXLENGTH, PASSWORD_MIN_SCORE } =
   PasswordService;
 
-/**
- * @fires btrix-update-user-info
- */
 @localized()
 @customElement("btrix-request-verify")
-export class RequestVerify extends LitElement {
+export class RequestVerify extends TailwindElement {
   @property({ type: String })
   email!: string;
 
@@ -100,9 +98,6 @@ export class AccountSettings extends LiteElement {
   @property({ type: Object })
   authState?: AuthState;
 
-  @property({ type: Object })
-  userInfo?: CurrentUser;
-
   @state()
   sectionSubmitting: null | "name" | "email" | "password" = null;
 
@@ -114,6 +109,10 @@ export class AccountSettings extends LiteElement {
 
   @queryAsync('sl-input[name="password"]')
   private readonly passwordInput?: Promise<SlInput | null>;
+
+  private get userInfo() {
+    return this.appState.userInfo;
+  }
 
   async updated(
     changedProperties: PropertyValues<this> & Map<string, unknown>,
@@ -346,7 +345,11 @@ export class AccountSettings extends LiteElement {
         }),
       });
 
-      this.dispatchEvent(new CustomEvent("btrix-update-user-info"));
+      AppStateService.updateUserInfo({
+        ...this.userInfo,
+        name: newName,
+      });
+
       this.notify({
         message: msg("Your name has been updated."),
         variant: "success",
@@ -386,7 +389,11 @@ export class AccountSettings extends LiteElement {
         }),
       });
 
-      this.dispatchEvent(new CustomEvent("btrix-update-user-info"));
+      AppStateService.updateUserInfo({
+        ...this.userInfo,
+        email: newEmail,
+      });
+
       this.notify({
         message: msg("Your email has been updated."),
         variant: "success",
@@ -426,7 +433,7 @@ export class AccountSettings extends LiteElement {
       });
 
       this.isChangingPassword = false;
-      this.dispatchEvent(new CustomEvent("btrix-update-user-info"));
+
       this.notify({
         message: msg("Your password has been updated."),
         variant: "success",

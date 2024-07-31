@@ -2,7 +2,6 @@ import { localized, msg } from "@lit/localize";
 import { customElement, property, state } from "lit/decorators.js";
 
 import type { APIPaginatedList } from "@/types/api";
-import type { CurrentUser } from "@/types/user";
 import { needLogin } from "@/utils/auth";
 import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
@@ -14,9 +13,6 @@ import type { OrgData } from "@/utils/orgs";
 export class Orgs extends LiteElement {
   @property({ type: Object })
   authState?: AuthState;
-
-  @property({ type: Object })
-  userInfo?: CurrentUser;
 
   @state()
   private orgList?: OrgData[];
@@ -56,12 +52,7 @@ export class Orgs extends LiteElement {
       </div>`;
     }
 
-    return html`
-      <btrix-orgs-list
-        .userInfo=${this.userInfo}
-        .orgList=${this.orgList}
-      ></btrix-orgs-list>
-    `;
+    return html` <btrix-orgs-list .orgList=${this.orgList}></btrix-orgs-list> `;
   }
 
   private async getOrgs() {

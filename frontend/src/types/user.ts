@@ -35,7 +35,7 @@ export type UserRegisterResponseData = z.infer<
   typeof userRegisterResponseDataSchema
 >;
 
-export const currentUserSchema = z.object({
+export const userInfoSchema = z.object({
   id: z.string().uuid(),
   email: z.string().email(),
   name: z.string(),
@@ -43,4 +43,4 @@ export const currentUserSchema = z.object({
   isSuperAdmin: z.boolean(),
   orgs: z.array(userOrgSchema),
 });
-export type CurrentUser = z.infer<typeof currentUserSchema>;
+export type UserInfo = z.infer<typeof userInfoSchema>;

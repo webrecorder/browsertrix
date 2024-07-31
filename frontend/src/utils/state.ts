@@ -7,7 +7,7 @@ import { persist } from "./persist";
 
 import type { AppSettings } from "@/types/app";
 import type { OrgData } from "@/types/org";
-import { currentUserSchema, type CurrentUser } from "@/types/user";
+import { userInfoSchema, type UserInfo } from "@/types/user";
 
 export { use };
 
@@ -20,7 +20,7 @@ type SlugLookup = Record<string, string>;
 @state()
 class AppState {
   settings: AppSettings | null = null;
-  userInfo: CurrentUser | null = null;
+  userInfo: UserInfo | null = null;
   org: OrgData | null | undefined = undefined;
 
   @options(persist(window.localStorage))
@@ -56,8 +56,7 @@ export class AppStateService {
   };
   static updateUserInfo = (userInfo: AppState["userInfo"]) => {
     unlock(() => {
-      const parsed = currentUserSchema.safeParse(userInfo);
-      if (parsed.error) console.debug(parsed.error);
+      userInfoSchema.nullable().parse(userInfo);
 
       appState.userInfo = userInfo;
     });
@@ -87,6 +86,7 @@ export class AppStateService {
   static resetAll = () => {
     unlock(() => {
       appState.settings = null;
+      appState.org = undefined;
     });
     AppStateService.resetUser();
   };
