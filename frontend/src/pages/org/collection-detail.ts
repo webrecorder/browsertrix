@@ -401,7 +401,7 @@ export class CollectionDetail extends LiteElement {
   };
 
   private readonly renderActions = () => {
-    const authToken = this.appState.auth!.headers.Authorization.split(" ")[1];
+    const authToken = this.authState!.headers.Authorization.split(" ")[1];
 
     return html`
       <sl-dropdown distance="4">
@@ -666,7 +666,7 @@ export class CollectionDetail extends LiteElement {
     idx: number,
   ) => html`
     <btrix-archived-item-list-item
-      href=${`/orgs/${this.appState.orgSlug}/items/${item.type}/${item.id}?collectionId=${this.collectionId}`}
+      href=${`/orgs/${this.org?.id}/items/${item.type}/${item.id}?collectionId=${this.collectionId}`}
       .item=${item}
     >
       ${this.isCrawler
@@ -701,7 +701,7 @@ export class CollectionDetail extends LiteElement {
     }
 
     const replaySource = `/api/orgs/${this.orgId}/collections/${this.collectionId}/replay.json`;
-    const headers = this.appState.auth?.headers;
+    const headers = this.authState?.headers;
     const config = JSON.stringify({ headers });
 
     return html`<section>

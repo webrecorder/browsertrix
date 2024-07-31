@@ -294,10 +294,6 @@ export class CrawlConfigEditor extends LiteElement {
   @state()
   private serverError?: TemplateResult | string;
 
-  private get org() {
-    return this.appState.org;
-  }
-
   private maxScale = DEFAULT_MAX_SCALE;
 
   // For fuzzy search:

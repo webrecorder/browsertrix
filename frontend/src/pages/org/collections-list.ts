@@ -134,7 +134,7 @@ export class CollectionsList extends LiteElement {
               <sl-button
                 variant="primary"
                 size="small"
-                ?disabled=${!this.appState.org || this.appState.org.readOnly}
+                ?disabled=${!this.org || this.org.readOnly}
                 @click=${() => (this.openDialogName = "create")}
               >
                 <sl-icon slot="prefix" name="plus-lg"></sl-icon>
@@ -556,7 +556,7 @@ export class CollectionsList extends LiteElement {
   `;
 
   private readonly renderActions = (col: Collection) => {
-    const authToken = this.appState.auth!.headers.Authorization.split(" ")[1];
+    const authToken = this.authState!.headers.Authorization.split(" ")[1];
 
     return html`
       <btrix-overflow-dropdown>

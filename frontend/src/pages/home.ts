@@ -48,14 +48,10 @@ export class Home extends LiteElement {
     return this.appState.orgSlug;
   }
 
-  private get userInfo() {
-    return this.appState.userInfo;
-  }
-
   private readonly validateOrgNameMax = maxLengthValidator(40);
 
   connectedCallback() {
-    if (this.appState.auth) {
+    if (this.authState) {
       if (this.slug) {
         this.navTo(`/orgs/${this.slug}`);
       } else {

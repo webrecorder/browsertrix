@@ -44,7 +44,7 @@ export class SignUp extends LiteElement {
 
   private async onSubmit() {
     await this.updateComplete;
-    if (this.appState.auth) {
+    if (this.authState) {
       this.dispatchEvent(AuthService.createLogOutEvent({ redirect: false }));
     }
   }

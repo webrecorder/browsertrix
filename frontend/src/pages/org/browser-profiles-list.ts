@@ -9,7 +9,7 @@ import type { Profile } from "./types";
 
 import type { SelectNewDialogEvent } from ".";
 
-import { TailwindElement } from "@/classes/TailwindElement";
+import { BtrixElement } from "@/classes/BtrixElement";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import {
   SortDirection,
@@ -27,7 +27,6 @@ import type { Browser } from "@/types/browser";
 import { html } from "@/utils/LiteElement";
 import { getLocale } from "@/utils/localization";
 import { isArchivingDisabled } from "@/utils/orgs";
-import appState, { use } from "@/utils/state";
 import { tw } from "@/utils/tailwind";
 
 const INITIAL_PAGE_SIZE = 20;
@@ -43,15 +42,12 @@ const INITIAL_PAGE_SIZE = 20;
  */
 @localized()
 @customElement("btrix-browser-profiles-list")
-export class BrowserProfilesList extends TailwindElement {
+export class BrowserProfilesList extends BtrixElement {
   @property({ type: String })
   orgId!: string;
 
   @property({ type: Boolean })
   isCrawler = false;
-
-  @use()
-  appState = appState;
 
   @state()
   browserProfiles?: APIPaginatedList<Profile>;
@@ -64,10 +60,6 @@ export class BrowserProfilesList extends TailwindElement {
 
   @state()
   private isLoading = true;
-
-  private get org() {
-    return this.appState.org;
-  }
 
   static styles = css`
     btrix-table {

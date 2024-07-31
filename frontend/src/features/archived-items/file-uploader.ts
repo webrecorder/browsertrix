@@ -8,7 +8,7 @@ import { when } from "lit/directives/when.js";
 import throttle from "lodash/fp/throttle";
 import queryString from "query-string";
 
-import { TailwindElement } from "@/classes/TailwindElement";
+import { BtrixElement } from "@/classes/BtrixElement";
 import type { FileRemoveEvent } from "@/components/ui/file-list";
 import type {
   TagInputEvent,
@@ -21,7 +21,6 @@ import { NotifyController } from "@/controllers/notify";
 import { type CollectionsChangeEvent } from "@/features/collections/collections-add";
 import { APIError } from "@/utils/api";
 import { maxLengthValidator } from "@/utils/form";
-import appState, { use } from "@/utils/state";
 
 export type FileUploaderRequestCloseEvent = CustomEvent<NonNullable<unknown>>;
 export type FileUploaderUploadStartEvent = CustomEvent<{
@@ -54,15 +53,12 @@ enum AbortReason {
  */
 @localized()
 @customElement("btrix-file-uploader")
-export class FileUploader extends TailwindElement {
+export class FileUploader extends BtrixElement {
   @property({ type: String })
   orgId!: string;
 
   @property({ type: Boolean })
   open = false;
-
-  @use()
-  appState = appState;
 
   @state()
   private isUploading = false;
@@ -513,7 +509,7 @@ export class FileUploader extends TailwindElement {
 
       xhr.open("PUT", `/api/${url}`);
       xhr.setRequestHeader("Content-Type", "application/octet-stream");
-      Object.entries(this.appState.auth!.headers).forEach(([k, v]) => {
+      Object.entries(this.authState!.headers).forEach(([k, v]) => {
         xhr.setRequestHeader(k, v);
       });
       xhr.addEventListener("load", () => {

@@ -11,10 +11,6 @@ export class UsersInvite extends LiteElement {
   @state()
   private invitedEmail?: string;
 
-  private get userInfo() {
-    return this.appState.userInfo;
-  }
-
   render() {
     let successMessage;
 

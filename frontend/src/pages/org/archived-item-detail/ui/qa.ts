@@ -19,7 +19,7 @@ import queryString from "query-string";
 
 import { QA_RUNNING_STATES } from "../archived-item-detail";
 
-import { TailwindElement } from "@/classes/TailwindElement";
+import { BtrixElement } from "@/classes/BtrixElement";
 import { type Dialog } from "@/components/ui/dialog";
 import type { MenuItemLink } from "@/components/ui/menu-item-link";
 import type { OverflowDropdown } from "@/components/ui/overflow-dropdown";
@@ -41,7 +41,6 @@ import { finishedCrawlStates } from "@/utils/crawler";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 import { formatNumber, getLocale } from "@/utils/localization";
 import { pluralOf } from "@/utils/pluralize";
-import appState, { use } from "@/utils/state";
 
 type QAStatsThreshold = {
   lowerBoundary: `${number}`;
@@ -86,7 +85,7 @@ function statusWithIcon(
  */
 @localized()
 @customElement("btrix-archived-item-detail-qa")
-export class ArchivedItemDetailQA extends TailwindElement {
+export class ArchivedItemDetailQA extends BtrixElement {
   static styles = css`
     btrix-table {
       --btrix-cell-padding-top: var(--sl-spacing-x-small);
@@ -116,8 +115,6 @@ export class ArchivedItemDetailQA extends TailwindElement {
 
   @property({ attribute: false })
   mostRecentNonFailedQARun?: QARun;
-  @use()
-  appState = appState;
 
   @state()
   private pages?: APIPaginatedList<ArchivedItemPage>;

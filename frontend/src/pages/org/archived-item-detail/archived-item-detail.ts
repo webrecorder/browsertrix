@@ -6,7 +6,7 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import capitalize from "lodash/fp/capitalize";
 
-import { TailwindElement } from "@/classes/TailwindElement";
+import { BtrixElement } from "@/classes/BtrixElement";
 import { CopyButton } from "@/components/ui/copy-button";
 import { type Dialog } from "@/components/ui/dialog";
 import type { PageChangeEvent } from "@/components/ui/pagination";
@@ -34,7 +34,6 @@ import {
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 import { getLocale } from "@/utils/localization";
 import { isArchivingDisabled } from "@/utils/orgs";
-import appState, { use } from "@/utils/state";
 import { tw } from "@/utils/tailwind";
 
 import "./ui/qa";
@@ -65,7 +64,7 @@ export const QA_RUNNING_STATES = [
  */
 @localized()
 @customElement("btrix-archived-item-detail")
-export class ArchivedItemDetail extends TailwindElement {
+export class ArchivedItemDetail extends BtrixElement {
   @property({ type: String })
   itemType: ArchivedItem["type"] = "crawl";
 
@@ -86,9 +85,6 @@ export class ArchivedItemDetail extends TailwindElement {
 
   @property({ type: Boolean })
   isCrawler = false;
-
-  @use()
-  appState = appState;
 
   @state()
   private qaRunId?: string;
@@ -126,10 +122,6 @@ export class ArchivedItemDetail extends TailwindElement {
   @query("#cancelQARunDialog")
   private readonly cancelQARunDialog?: Dialog | null;
 
-  private get org() {
-    return this.appState.org;
-  }
-
   private get listUrl(): string {
     let path = "items";
     if (this.workflowId) {
@@ -148,10 +140,6 @@ export class ArchivedItemDetail extends TailwindElement {
   private readonly api = new APIController(this);
   private readonly navigate = new NavigateController(this);
   private readonly notify = new NotifyController(this);
-
-  private get authState() {
-    return this.appState.auth;
-  }
 
   private timerId?: number;
 

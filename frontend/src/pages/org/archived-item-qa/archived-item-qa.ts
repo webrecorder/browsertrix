@@ -19,7 +19,7 @@ import { renderScreenshots } from "./ui/screenshots";
 import { renderSeverityBadge } from "./ui/severityBadge";
 import { renderText } from "./ui/text";
 
-import { TailwindElement } from "@/classes/TailwindElement";
+import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
 import { APIController } from "@/controllers/api";
 import { NavigateController } from "@/controllers/navigate";
@@ -43,7 +43,6 @@ import type { ArchivedItemQAPage, QARun } from "@/types/qa";
 import { finishedCrawlStates, isActive, renderName } from "@/utils/crawler";
 import { maxLengthValidator } from "@/utils/form";
 import { formatISODateString, getLocale } from "@/utils/localization";
-import appState, { use } from "@/utils/state";
 import { tw } from "@/utils/tailwind";
 
 const DEFAULT_PAGE_SIZE = 100;
@@ -85,7 +84,7 @@ const tabToPrefix: Record<QATypes.QATab, string> = {
 
 @localized()
 @customElement("btrix-archived-item-qa")
-export class ArchivedItemQA extends TailwindElement {
+export class ArchivedItemQA extends BtrixElement {
   static styles = styles;
 
   @property({ type: String })
@@ -102,9 +101,6 @@ export class ArchivedItemQA extends TailwindElement {
 
   @property({ type: String })
   tab: QATypes.QATab = "screenshots";
-
-  @use()
-  appState = appState;
 
   @state()
   private item?: ArchivedItem;
@@ -1050,11 +1046,11 @@ export class ArchivedItemQA extends TailwindElement {
     if (!rwpId) return;
 
     const replaySource = `/api/orgs/${this.orgId}/crawls/${this.itemId}${qa ? `/qa/${rwpId}` : ""}/replay.json`;
-    const headers = this.appState.auth?.headers;
+    const headers = this.authState?.headers;
     const config = JSON.stringify({ headers });
     console.debug("rendering rwp", rwpId);
     return guard(
-      [rwpId, this.page, this.appState.auth],
+      [rwpId, this.page, this.authState],
       () => html`
         <replay-web-page
           source="${replaySource}"

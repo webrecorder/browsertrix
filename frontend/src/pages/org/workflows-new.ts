@@ -70,10 +70,6 @@ export class WorkflowsNew extends LiteElement {
 
   private _initialWorkflow: WorkflowParams = defaultValue;
 
-  private get org() {
-    return this.appState.org;
-  }
-
   private renderHeader() {
     const href = `${this.orgBasePath}/workflows/crawls`;
     const label = msg("Back to Crawl Workflows");

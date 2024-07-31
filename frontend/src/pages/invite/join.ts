@@ -25,10 +25,6 @@ export class Join extends LiteElement {
   @state()
   _firstAdminOrgInfo: null | Pick<UserOrg, "id" | "name" | "slug"> = null;
 
-  private get authState() {
-    return this.appState.auth;
-  }
-
   private readonly inviteInfo = new Task(this, {
     task: async ([token, email]) => {
       if (!token || !email) throw new Error("Missing args");

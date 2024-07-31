@@ -106,10 +106,6 @@ export class AccountSettings extends LiteElement {
   @queryAsync('sl-input[name="password"]')
   private readonly passwordInput?: Promise<SlInput | null>;
 
-  private get userInfo() {
-    return this.appState.userInfo;
-  }
-
   async updated(
     changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {

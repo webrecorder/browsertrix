@@ -21,7 +21,7 @@ export default function needLogin<
 >(constructor: T) {
   return class extends constructor {
     update(changedProperties: Map<string, unknown>) {
-      if (this.appState.auth) {
+      if (this.authState) {
         super.update(changedProperties);
       } else {
         this.dispatchEvent(

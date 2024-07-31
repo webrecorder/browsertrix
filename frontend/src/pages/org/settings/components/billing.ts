@@ -8,14 +8,13 @@ import { when } from "lit/directives/when.js";
 
 import { columns } from "../ui/columns";
 
-import { TailwindElement } from "@/classes/TailwindElement";
+import { BtrixElement } from "@/classes/BtrixElement";
 import { APIController } from "@/controllers/api";
 import { SubscriptionStatus, type BillingPortal } from "@/types/billing";
 import type { OrgData, OrgQuotas } from "@/types/org";
 import { humanizeSeconds } from "@/utils/executionTimeFormatter";
 import { formatNumber, getLocale } from "@/utils/localization";
 import { pluralOf } from "@/utils/pluralize";
-import appState, { use } from "@/utils/state";
 import { tw } from "@/utils/tailwind";
 
 const linkClassList = tw`transition-color text-primary hover:text-primary-500`;
@@ -26,7 +25,7 @@ const manageLinkClasslist = clsx(
 
 @localized()
 @customElement("btrix-org-settings-billing")
-export class OrgSettingsBilling extends TailwindElement {
+export class OrgSettingsBilling extends BtrixElement {
   static styles = css`
     .form-label {
       font-size: var(--sl-input-label-font-size-small);
@@ -36,14 +35,7 @@ export class OrgSettingsBilling extends TailwindElement {
   @property({ type: String, noAccessor: true })
   salesEmail?: string;
 
-  @use()
-  appState = appState;
-
   private readonly api = new APIController(this);
-
-  private get org() {
-    return this.appState.org;
-  }
 
   get portalUrlLabel() {
     const subscription = this.org?.subscription;

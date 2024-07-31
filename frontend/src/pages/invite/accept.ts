@@ -5,7 +5,7 @@ import { customElement, property, state } from "lit/decorators.js";
 
 import { renderInviteMessage } from "./ui/inviteMessage";
 
-import { TailwindElement } from "@/classes/TailwindElement";
+import { BtrixElement } from "@/classes/BtrixElement";
 import { APIController } from "@/controllers/api";
 import { NavigateController } from "@/controllers/navigate";
 import { NotifyController } from "@/controllers/notify";
@@ -14,7 +14,7 @@ import type { OrgUpdatedDetail } from "@/pages/invite/ui/org-form";
 import { ROUTES } from "@/routes";
 import type { UserOrg, UserOrgInviteInfo } from "@/types/user";
 import { isApiError } from "@/utils/api";
-import appState, { AppStateService, use } from "@/utils/state";
+import { AppStateService } from "@/utils/state";
 import { formatAPIUser } from "@/utils/user";
 
 import "./ui/org-form";
@@ -26,25 +26,18 @@ import "./ui/org-form";
  */
 @localized()
 @customElement("btrix-accept-invite")
-export class AcceptInvite extends TailwindElement {
+export class AcceptInvite extends BtrixElement {
   @property({ type: String })
   token?: string;
 
   @property({ type: String })
   email?: string;
 
-  @use()
-  appState = appState;
-
   @state()
   private serverError?: string;
 
   @state()
   _firstAdminOrgInfo: null | Pick<UserOrg, "id" | "name" | "slug"> = null;
-
-  private get authState() {
-    return this.appState.auth;
-  }
 
   readonly inviteInfo = new Task(this, {
     autoRun: false,

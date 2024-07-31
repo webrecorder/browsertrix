@@ -113,10 +113,6 @@ export class WorkflowsList extends LiteElement {
   private getWorkflowsController: AbortController | null = null;
   private timerId?: number;
 
-  private get org() {
-    return this.appState.org;
-  }
-
   private get selectedSearchFilterKey() {
     return Object.keys(WorkflowsList.FieldLabels).find((key) =>
       Boolean((this.filterBy as Record<string, unknown>)[key]),

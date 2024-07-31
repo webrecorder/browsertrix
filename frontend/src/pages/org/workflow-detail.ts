@@ -112,14 +112,6 @@ export class WorkflowDetail extends LiteElement {
   @state()
   private filterBy: Partial<Record<keyof Crawl, string | CrawlState[]>> = {};
 
-  private get authState() {
-    return this.appState.auth;
-  }
-
-  private get org() {
-    return this.appState.org;
-  }
-
   private readonly numberFormatter = new Intl.NumberFormat(getLocale(), {
     // notation: "compact",
   });

@@ -8,7 +8,7 @@ import { when } from "lit/directives/when.js";
 
 import { columns } from "./ui/columns";
 
-import { TailwindElement } from "@/classes/TailwindElement";
+import { BtrixElement } from "@/classes/BtrixElement";
 import { APIController } from "@/controllers/api";
 import { NavigateController } from "@/controllers/navigate";
 import { NotifyController } from "@/controllers/notify";
@@ -18,7 +18,7 @@ import { isApiError } from "@/utils/api";
 import { maxLengthValidator } from "@/utils/form";
 import { AccessCode, isAdmin, isCrawler } from "@/utils/orgs";
 import slugifyStrict from "@/utils/slugify";
-import appState, { AppStateService, use } from "@/utils/state";
+import { AppStateService } from "@/utils/state";
 import { formatAPIUser } from "@/utils/user";
 
 import "./components/billing";
@@ -58,7 +58,7 @@ export type OrgRemoveMemberEvent = CustomEvent<{
  */
 @localized()
 @customElement("btrix-org-settings")
-export class OrgSettings extends TailwindElement {
+export class OrgSettings extends BtrixElement {
   @property({ type: String })
   orgId!: string;
 
@@ -67,9 +67,6 @@ export class OrgSettings extends TailwindElement {
 
   @property({ type: Boolean })
   isAddingMember = false;
-
-  @use()
-  appState = appState;
 
   @state()
   private isSavingOrgName = false;
@@ -89,14 +86,6 @@ export class OrgSettings extends TailwindElement {
   private readonly api = new APIController(this);
   private readonly navigate = new NavigateController(this);
   private readonly notify = new NotifyController(this);
-
-  private get userInfo() {
-    return this.appState.userInfo;
-  }
-
-  private get org() {
-    return this.appState.org;
-  }
 
   private get tabLabels(): Record<Tab, string> {
     return {

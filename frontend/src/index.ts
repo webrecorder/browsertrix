@@ -18,7 +18,7 @@ import AuthService, {
 } from "./utils/AuthService";
 import { DEFAULT_MAX_SCALE } from "./utils/crawler";
 import LiteElement, { html } from "./utils/LiteElement";
-import appState, { AppStateService, use } from "./utils/state";
+import { AppStateService } from "./utils/state";
 import { formatAPIUser } from "./utils/user";
 
 import type { NavigateEventDetail } from "@/controllers/navigate";
@@ -62,9 +62,6 @@ export class App extends LiteElement {
 
   private readonly router = new APIRouter(ROUTES);
   authService = new AuthService();
-
-  @use()
-  appState = appState;
 
   @state()
   private viewState!: ViewState;
@@ -147,7 +144,7 @@ export class App extends LiteElement {
 
       if (
         orgs.length &&
-        !this.appState.userInfo!.isSuperAdmin &&
+        !this.userInfo!.isSuperAdmin &&
         !this.appState.orgSlug
       ) {
         const firstOrg = orgs[0].slug;
@@ -247,7 +244,7 @@ export class App extends LiteElement {
   }
 
   private renderAlertBanner() {
-    if (this.appState.userInfo?.orgs && !this.appState.userInfo.orgs.length) {
+    if (this.userInfo?.orgs && !this.userInfo.orgs.length) {
       return this.renderNoOrgsBanner();
     }
   }
@@ -278,7 +275,7 @@ export class App extends LiteElement {
   }
 
   private renderNavBar() {
-    const isSuperAdmin = this.appState.userInfo?.isSuperAdmin;
+    const isSuperAdmin = this.userInfo?.isSuperAdmin;
     let homeHref = "/";
     if (!isSuperAdmin && this.appState.orgSlug) {
       homeHref = `/orgs/${this.appState.orgSlug}`;
@@ -350,7 +347,7 @@ export class App extends LiteElement {
                         <sl-icon slot="prefix" name="gear"></sl-icon>
                         ${msg("Account Settings")}
                       </sl-menu-item>
-                      ${this.appState.userInfo?.isSuperAdmin
+                      ${this.userInfo?.isSuperAdmin
                         ? html` <sl-menu-item
                             @click=${() => this.navigate(ROUTES.usersInvite)}
                           >
@@ -385,8 +382,8 @@ export class App extends LiteElement {
   }
 
   private renderOrgs() {
-    const orgs = this.appState.userInfo?.orgs;
-    if (!orgs || orgs.length < 2 || !this.appState.userInfo) return;
+    const orgs = this.userInfo?.orgs;
+    if (!orgs || orgs.length < 2) return;
 
     const selectedOption = this.appState.orgSlug
       ? orgs.find(({ slug }) => slug === this.appState.orgSlug)
@@ -413,7 +410,7 @@ export class App extends LiteElement {
             if (value) {
               this.navigate(`/orgs/${value}`);
             } else {
-              if (this.appState.userInfo) {
+              if (this.userInfo) {
                 this.clearSelectedOrg();
               }
               this.navigate(`/`);
@@ -421,7 +418,7 @@ export class App extends LiteElement {
           }}
         >
           ${when(
-            this.appState.userInfo.isSuperAdmin,
+            this.userInfo.isSuperAdmin,
             () => html`
               <sl-menu-item
                 type="checkbox"
@@ -448,40 +445,36 @@ export class App extends LiteElement {
   }
 
   private renderMenuUserInfo() {
-    if (!this.appState.userInfo) return;
-    if (this.appState.userInfo.isSuperAdmin) {
+    if (!this.userInfo) return;
+    if (this.userInfo.isSuperAdmin) {
       return html`
         <div class="mb-2">
           <sl-tag class="uppercase" variant="primary" size="small"
             >${msg("admin")}</sl-tag
           >
         </div>
-        <div class="font-medium text-neutral-700">
-          ${this.appState.userInfo.name}
-        </div>
+        <div class="font-medium text-neutral-700">${this.userInfo.name}</div>
         <div class="whitespace-nowrap text-xs text-neutral-500">
-          ${this.appState.userInfo.email}
+          ${this.userInfo.email}
         </div>
       `;
     }
 
-    const orgs = this.appState.userInfo.orgs;
+    const orgs = this.userInfo.orgs;
     if (orgs.length === 1) {
       return html`
         <div class="my-1 font-medium text-neutral-700">${orgs[0].name}</div>
-        <div class="text-neutral-500">${this.appState.userInfo.name}</div>
+        <div class="text-neutral-500">${this.userInfo.name}</div>
         <div class="whitespace-nowrap text-xs text-neutral-500">
-          ${this.appState.userInfo.email}
+          ${this.userInfo.email}
         </div>
       `;
     }
 
     return html`
-      <div class="font-medium text-neutral-700">
-        ${this.appState.userInfo.name}
-      </div>
+      <div class="font-medium text-neutral-700">${this.userInfo.name}</div>
       <div class="whitespace-nowrap text-xs text-neutral-500">
-        ${this.appState.userInfo.email}
+        ${this.userInfo.email}
       </div>
     `;
   }
@@ -627,8 +620,8 @@ export class App extends LiteElement {
         ></btrix-account-settings>`;
 
       case "usersInvite": {
-        if (this.appState.userInfo) {
-          if (this.appState.userInfo.isSuperAdmin) {
+        if (this.userInfo) {
+          if (this.userInfo.isSuperAdmin) {
             return html`<btrix-users-invite
               class="mx-auto box-border w-full max-w-screen-desktop p-2 md:py-8"
             ></btrix-users-invite>`;
@@ -642,8 +635,8 @@ export class App extends LiteElement {
 
       case "crawls":
       case "crawl": {
-        if (this.appState.userInfo) {
-          if (this.appState.userInfo.isSuperAdmin) {
+        if (this.userInfo) {
+          if (this.userInfo.isSuperAdmin) {
             return html`<btrix-crawls
               class="w-full"
               @notify=${this.onNotify}
@@ -803,7 +796,7 @@ export class App extends LiteElement {
 
   onUserInfoChange(event: CustomEvent<Partial<UserInfo>>) {
     AppStateService.updateUserInfo({
-      ...this.appState.userInfo,
+      ...this.userInfo,
       ...event.detail,
     } as UserInfo);
   }

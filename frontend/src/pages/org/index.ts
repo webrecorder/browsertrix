@@ -113,10 +113,6 @@ export class Org extends LiteElement {
   @state()
   private isCreateDialogVisible = false;
 
-  private get userInfo() {
-    return this.appState.userInfo;
-  }
-
   private get userOrg() {
     if (!this.userInfo) return null;
     return this.userInfo.orgs.find(({ slug }) => slug === this.slug)!;
@@ -124,10 +120,6 @@ export class Org extends LiteElement {
 
   private get orgId() {
     return this.userOrg?.id || "";
-  }
-
-  private get org() {
-    return this.appState.org;
   }
 
   private get isAdmin() {
@@ -457,7 +449,6 @@ export class Org extends LiteElement {
     return html`
       <btrix-dashboard
         orgId=${this.orgId}
-        .org=${this.org || null}
         ?isCrawler=${this.isCrawler}
         ?isAdmin=${this.isAdmin}
         @select-new-dialog=${this.onSelectNewDialog}

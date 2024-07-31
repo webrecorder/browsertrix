@@ -10,7 +10,6 @@ import type { SelectNewDialogEvent } from ".";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 import LiteElement, { html } from "@/utils/LiteElement";
 import { getLocale } from "@/utils/localization";
-import type { OrgData } from "@/utils/orgs";
 
 type Metrics = {
   storageUsedBytes: number;
@@ -41,9 +40,6 @@ export class Dashboard extends LiteElement {
 
   @property({ type: String })
   orgId!: string;
-
-  @property({ type: Object })
-  org: OrgData | null = null;
 
   @state()
   private metrics?: Metrics;

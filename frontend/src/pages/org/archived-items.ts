@@ -10,7 +10,7 @@ import queryString from "query-string";
 
 import type { ArchivedItem, Crawl, CrawlState, Workflow } from "./types";
 
-import { TailwindElement } from "@/classes/TailwindElement";
+import { BtrixElement } from "@/classes/BtrixElement";
 import { CopyButton } from "@/components/ui/copy-button";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import { APIController } from "@/controllers/api";
@@ -21,7 +21,6 @@ import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import { isApiError } from "@/utils/api";
 import { finishedCrawlStates, isActive } from "@/utils/crawler";
 import { isArchivingDisabled } from "@/utils/orgs";
-import appState, { use } from "@/utils/state";
 
 type ArchivedItems = APIPaginatedList<ArchivedItem>;
 type SearchFields = "name" | "firstSeed";
@@ -75,7 +74,7 @@ const sortableFields: Record<
  */
 @localized()
 @customElement("btrix-archived-items")
-export class CrawlsList extends TailwindElement {
+export class CrawlsList extends BtrixElement {
   static FieldLabels: Record<SearchFields, string> = {
     name: msg("Name"),
     firstSeed: msg("Crawl Start URL"),
@@ -92,9 +91,6 @@ export class CrawlsList extends TailwindElement {
 
   @property({ type: String })
   itemType: ArchivedItem["type"] | null = null;
-
-  @use()
-  appState = appState;
 
   @state()
   private pagination: Required<APIPaginationQuery> = {
@@ -138,10 +134,6 @@ export class CrawlsList extends TailwindElement {
 
   @query("#stateSelect")
   stateSelect?: SlSelect;
-
-  private get org() {
-    return this.appState.org;
-  }
 
   private readonly archivedItemsTask = new Task(this, {
     task: async (
@@ -610,7 +602,7 @@ export class CrawlsList extends TailwindElement {
   private readonly renderMenuItems = (item: ArchivedItem) => {
     // HACK shoelace doesn't current have a way to override non-hover
     // color without resetting the --sl-color-neutral-700 variable
-    const authToken = this.appState.auth!.headers.Authorization.split(" ")[1];
+    const authToken = this.authState!.headers.Authorization.split(" ")[1];
 
     return html`
       ${when(

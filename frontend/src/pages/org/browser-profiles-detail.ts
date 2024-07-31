@@ -8,7 +8,7 @@ import queryString from "query-string";
 
 import type { Profile, ProfileWorkflow } from "./types";
 
-import { TailwindElement } from "@/classes/TailwindElement";
+import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
 import { APIController } from "@/controllers/api";
 import { NavigateController } from "@/controllers/navigate";
@@ -18,7 +18,6 @@ import { isApiError } from "@/utils/api";
 import { maxLengthValidator } from "@/utils/form";
 import { formatNumber, getLocale } from "@/utils/localization";
 import { isArchivingDisabled } from "@/utils/orgs";
-import appState, { use } from "@/utils/state";
 
 const DESCRIPTION_MAXLENGTH = 500;
 
@@ -34,7 +33,7 @@ const DESCRIPTION_MAXLENGTH = 500;
  */
 @localized()
 @customElement("btrix-browser-profiles-detail")
-export class BrowserProfilesDetail extends TailwindElement {
+export class BrowserProfilesDetail extends BtrixElement {
   @property({ type: String, attribute: false })
   orgId!: string;
 
@@ -43,9 +42,6 @@ export class BrowserProfilesDetail extends TailwindElement {
 
   @property({ type: Boolean })
   isCrawler = false;
-
-  @use()
-  appState = appState;
 
   @state()
   private profile?: Profile;
@@ -83,10 +79,6 @@ export class BrowserProfilesDetail extends TailwindElement {
 
   private readonly validateNameMax = maxLengthValidator(50);
   private readonly validateDescriptionMax = maxLengthValidator(500);
-
-  get org() {
-    return this.appState.org;
-  }
 
   disconnectedCallback() {
     if (this.browserId) {
