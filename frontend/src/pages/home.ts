@@ -71,16 +71,26 @@ export class Home extends LiteElement {
   willUpdate(changedProperties: PropertyValues) {
     if (changedProperties.has("appState.userInfo") && this.userInfo) {
       if (this.userInfo.isSuperAdmin) {
-        if (this.userInfo.orgs.length) {
-          void this.fetchOrgs();
-        } else {
-          this.isAddingOrg = true;
-          this.isAddOrgFormVisible = true;
-        }
+        this.initSuperAdmin();
       } else if (this.userInfo.orgs.length) {
         this.navTo(`/orgs/${this.userInfo.orgs[0].slug}`);
       } else {
         this.navTo(`/account/settings`);
+      }
+    }
+  }
+
+  protected firstUpdated(): void {
+    this.initSuperAdmin();
+  }
+
+  private initSuperAdmin() {
+    if (this.userInfo?.isSuperAdmin && !this.orgList) {
+      if (this.userInfo.orgs.length) {
+        void this.fetchOrgs();
+      } else {
+        this.isAddingOrg = true;
+        this.isAddOrgFormVisible = true;
       }
     }
   }
