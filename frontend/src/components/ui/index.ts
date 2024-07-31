@@ -30,7 +30,7 @@ import("./relative-duration");
 import("./search-combobox");
 import("./section-heading");
 import("./select-crawler");
-import("./select-crawler-ssh-proxy");
+import("./select-crawler-proxy");
 import("./tab-group");
 import("./tab-list");
 import("./table");

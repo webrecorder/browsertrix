@@ -302,13 +302,11 @@ crawler_liveness_port: 6065
 # crawler_socks_proxy_port: 9050
 
 # optional: configure a list of ssh servers to be used as a proxy
-crawler_ssh_proxies: []
-#  - id: USA # name of the proxy, is shown in the dropdown, has to be lowercase, alphanumeric
+proxies: []
+#  - id: My Proxy # name of the proxy, is shown in the dropdown, has to be lowercase, alphanumeric
 #    label: "US Proxy" # optional: label to show instead of the id in the dropdown
 #    country_code: US # Alpha-2 ISO 3991 country code, https://www.iso.org/obp/ui/#search
-#    hostname: example.com # IP or hostname of ssh server
-#    port: 22
-#    username: proxy
+#    auth: user@example.com[:port] # login string for SSH, with optional port
 #    private_key: secretkey # ssh-key needed to connect to server
 #    host_public_key: | # ssh public keys of the ssh server, use output of `ssh-keyscan $hostname -p $port` for best results
 #      # example.invalid:22 SSH-2.0-OpenSSH_9.6p1 Ubuntu-3ubuntu13

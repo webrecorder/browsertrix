@@ -19,7 +19,6 @@ from fastapi import HTTPException
 from fastapi.templating import Jinja2Templates
 
 from .utils import get_templates_dir, dt_now
-from .models import CrawlerSSHProxy
 
 
 # ============================================================================
@@ -94,7 +93,7 @@ class K8sAPI:
         storage_filename: str = "",
         profile_filename: str = "",
         qa_source: str = "",
-        crawler_ssh_proxy: Optional[CrawlerSSHProxy] = None,
+        proxy_id: Optional[str] = None,
     ):
         """load job template from yaml"""
         if not crawl_id:
@@ -117,7 +116,7 @@ class K8sAPI:
             "storage_filename": storage_filename,
             "profile_filename": profile_filename,
             "qa_source": qa_source,
-            "ssh_proxy_id": crawler_ssh_proxy.id if crawler_ssh_proxy else None,
+            "proxy_id": proxy_id,
         }
 
         data = self.templates.env.get_template("crawl_job.yaml").render(params)
@@ -139,7 +138,7 @@ class K8sAPI:
         storage_filename: str = "",
         profile_filename: str = "",
         qa_source: str = "",
-        crawler_ssh_proxy: Optional[CrawlerSSHProxy] = None,
+        proxy_id: Optional[str] = None,
     ) -> str:
         """load and init crawl job via k8s api"""
         crawl_id, data = self.new_crawl_job_yaml(
@@ -157,7 +156,7 @@ class K8sAPI:
             storage_filename=storage_filename,
             profile_filename=profile_filename,
             qa_source=qa_source,
-            crawler_ssh_proxy=crawler_ssh_proxy,
+            proxy_id=proxy_id,
         )
 
         # create job directly

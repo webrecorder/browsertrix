@@ -53,7 +53,7 @@ data:
   STORAGES_JSON: "/ops-configs/storages.json"
 
   CRAWLER_CHANNELS_JSON: "/ops-configs/crawler_channels.json"
-  CRAWLER_SSH_PROXIES_JSON: "/ops-configs/crawler_ssh_proxies.json"
+  CRAWLER_PROXIES_JSON: "/ops-configs/crawler_proxies.json"
 
   MIN_QA_CRAWLER_IMAGE: "{{ .Values.min_qa_crawler_image }}"
 

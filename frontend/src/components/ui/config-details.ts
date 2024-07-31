@@ -256,10 +256,10 @@ export class ConfigDetails extends LiteElement {
                 ISO6391.getName(crawlConfig.config.lang),
               )
             : nothing}
-          ${crawlConfig?.crawlerSSHProxyId
+          ${crawlConfig?.proxyId
             ? this.renderSetting(
                 msg("SSH Proxy Server"),
-                capitalize(crawlConfig.crawlerSSHProxyId),
+                capitalize(crawlConfig.proxyId),
               )
             : nothing}
         </btrix-desc-list>

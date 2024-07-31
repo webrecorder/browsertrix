@@ -1,0 +1,18 @@
+{{- if .Values.proxies }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: proxy-ssh-keys
+  namespace: {{ .Values.crawler_namespace }}
+#type: kubernetes.io/ssh-auth
+type: Opaque
+stringData:
+{{- range .Values.proxies }}
+  {{ .id }}-private-key: |
+{{ .private_key | indent 4 }}
+  {{ .id }}-known-hosts: {{ .host_public_key }}
+{{- end }}
+
+{{- end }}
+

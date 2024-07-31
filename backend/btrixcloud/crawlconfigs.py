@@ -40,8 +40,8 @@ from .models import (
     CrawlConfigSearchValues,
     CrawlConfigUpdateResponse,
     CrawlConfigDeletedResponse,
-    CrawlerSSHProxy,
-    CrawlerSSHProxies,
+    CrawlerProxy,
+    CrawlerProxies,
 )
 from .utils import dt_now, slug_from_name
 
@@ -125,26 +125,27 @@ class CrawlConfigOps:
 
             self.crawler_channels = CrawlerChannels(channels=channels)
 
-        self.crawler_ssh_proxies_map = {}
-        with open(os.environ["CRAWLER_SSH_PROXIES_JSON"], encoding="utf-8") as fh:
-            ssh_proxy_list: list[dict] = json.loads(fh.read())
-            for ssh_proxy_data in ssh_proxy_list:
-                ssh_proxy = CrawlerSSHProxy(
-                    id=ssh_proxy_data["id"],
-                    country_code=ssh_proxy_data["country_code"],
-                    hostname=ssh_proxy_data["hostname"],
-                    port=ssh_proxy_data.get("port", 22),
-                    username=ssh_proxy_data["username"],
-                )
-
-                self.crawler_ssh_proxies_map[ssh_proxy.id] = ssh_proxy
-
-            self.crawler_ssh_proxies = CrawlerSSHProxies(
-                servers=list(self.crawler_ssh_proxies_map.values())
-            )
-
         if "default" not in self.crawler_images_map:
             raise TypeError("The channel list must include a 'default' channel")
+
+        self.crawler_proxies_map = {}
+        with open(os.environ["CRAWLER_PROXIES_JSON"], encoding="utf-8") as fh:
+            proxy_list = json.loads(fh.read())
+            for proxy_data in proxy_list:
+                proxy = CrawlerProxy(
+                    id=proxy_data["id"],
+                    label=proxy_data["label"],
+                    country_code=proxy_data["country_code"],
+                    auth=proxy_data["auth"],
+                )
+
+                self.crawler_proxies_map[proxy.id] = proxy
+
+            self.crawler_proxies = CrawlerProxies(
+                servers=list(self.crawler_proxies_map.values())
+            )
+
+        print(self.crawler_proxies)
 
     def set_crawl_ops(self, ops):
         """set crawl ops reference"""
@@ -239,7 +240,7 @@ class CrawlConfigOps:
             profileid=profileid,
             crawlerChannel=config_in.crawlerChannel,
             crawlFilenameTemplate=config_in.crawlFilenameTemplate,
-            crawlerSSHProxyId=config_in.crawlerSSHProxyId,
+            proxyId=config_in.proxyId,
         )
 
         if config_in.runNow:
@@ -351,9 +352,7 @@ class CrawlConfigOps:
             and ((not update.profileid) != (not orig_crawl_config.profileid))
         )
 
-        changed = changed or (
-            orig_crawl_config.crawlerSSHProxyId != update.crawlerSSHProxyId
-        )
+        changed = changed or (orig_crawl_config.proxyId != update.proxyId)
 
         metadata_changed = self.check_attr_changed(orig_crawl_config, update, "name")
         metadata_changed = metadata_changed or self.check_attr_changed(
@@ -925,9 +924,9 @@ class CrawlConfigOps:
         """Get crawler image name by id"""
         return self.crawler_images_map.get(crawler_channel or "")
 
-    def get_crawler_ssh_proxy(self, ssh_proxy_id: str) -> Optional[CrawlerSSHProxy]:
-        """Get crawlerSSHProxy by id"""
-        return self.crawler_ssh_proxies_map.get(ssh_proxy_id)
+    def get_crawler_proxy(self, proxy_id: str) -> Optional[CrawlerProxy]:
+        """Get crawlerProxy by id"""
+        return self.crawler_proxies_map.get(proxy_id)
 
     def get_warc_prefix(self, org: Organization, crawlconfig: CrawlConfig) -> str:
         """Generate WARC prefix slug from org slug, name or url
@@ -1099,12 +1098,12 @@ def init_crawl_config_api(
     ):
         return ops.crawler_channels
 
-    @router.get("/crawler-ssh-proxies", response_model=CrawlerSSHProxies)
-    async def get_crawler_ssh_proxies(
+    @router.get("/crawler-proxies", response_model=CrawlerProxies)
+    async def get_crawler_proxies(
         # pylint: disable=unused-argument
         org: Organization = Depends(org_crawl_dep),
     ):
-        return ops.crawler_ssh_proxies
+        return ops.crawler_proxies
 
     @router.get("/{cid}/seeds", response_model=PaginatedSeedResponse)
     async def get_crawl_config_seeds(

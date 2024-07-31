@@ -52,8 +52,8 @@ spec:
 
   securityContext:
     runAsNonRoot: true
-    runAsUser: {{ crawler_uid}}
-    runAsGroup: {{ crawler_gid}}
+    runAsUser: {{ crawler_uid }}
+    runAsGroup: {{ crawler_gid }}
     fsGroup: {{ crawler_fsgroup }}
     allowPrivilegeEscalation: false
     readOnlyRootFilesystem: true
@@ -71,14 +71,11 @@ spec:
     - name: crawl-data
       persistentVolumeClaim:
         claimName: {{ name }}
-    {% if ssh_proxy_hostname %}
-    - name: proxy-ssh-key
+    {% if proxy_id %}
+    - name: proxy-ssh-keys
       secret:
-        secretName: "crawler-ssh-proxy-key-{{ ssh_proxy_id }}"
+        secretName: proxy-ssh-keys
         defaultMode: 0600
-    - name: proxy-known-hosts
-      configMap:
-        name: crawler-ssh-proxy-known-hosts
     {% endif %}
 
   affinity:
@@ -137,13 +134,14 @@ spec:
       {% elif profile_filename %}
         - --profile
         - "@{{ profile_filename }}"
-      {% elif ssh_proxy_hostname %}
+      {% endif %}
+      {% if proxy_id %}
         - --sshProxyLogin
-        - "{{ssh_proxy_username }}@{{ ssh_proxy_hostname }}:{{ ssh_proxy_port }}"
+        - "{{ ssh_proxy_auth }}"
         - --sshProxyPrivateKeyFile
-        - /tmp/ssh-proxy-privatekey
+        - /tmp/ssh-proxy/private-key
         - --sshProxyKnownHostsFile
-        - /tmp/ssh-proxy-known_hosts
+        - /tmp/ssh-proxy/known-hosts
       {% endif %}
       volumeMounts:
         - name: crawl-config
@@ -156,13 +154,14 @@ spec:
           mountPath: /tmp/qa/
           readOnly: True
       {% endif %}
-      {% if ssh_proxy_hostname %}
-        - name: proxy-ssh-key
-          mountPath: /tmp/ssh-proxy-privatekey
-          subPath: ssh-privatekey
-        - name: proxy-known-hosts
-          mountPath: /tmp/ssh-proxy-known_hosts
-          subPath: known_hosts
+      {% if proxy_id %}
+        - name: proxy-ssh-keys
+          mountPath: /tmp/ssh-proxy/private-key
+          subPath: {{ proxy_id }}-private-key
+          readOnly: true
+        - name: proxy-ssh-keys
+          mountPath: /tmp/ssh-proxy/known-hosts
+          subPath: {{ proxy_id }}-known-hosts
           readOnly: true
       {% endif %}
         - name: crawl-data
@@ -200,11 +199,6 @@ spec:
 
         - name: WARC_PREFIX
           value: "{{ warc_prefix }}"
-
-    {% if crawler_socks_proxy_host %}
-        - name: PROXY_SERVER
-          value: "socks5://{{ crawler_socks_proxy_host }}:{{ crawler_socks_proxy_port }}"
-    {% endif %}
 
       resources:
         limits:
