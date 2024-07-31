@@ -189,7 +189,7 @@ export class AcceptInvite extends BtrixElement {
             ),
           );
         case 400: {
-          if (this.authState!.username === this.email) {
+          if (this.authState?.username === this.email) {
             throw new Error(
               msg(
                 str`This is not a valid invite, or it may have expired. If you believe this is an error, please contact ${this.appState.settings?.supportEmail || msg("your Browsertrix administrator")} for help.`,
@@ -198,7 +198,7 @@ export class AcceptInvite extends BtrixElement {
           } else {
             throw new Error(
               msg(
-                str`This invitation is for ${this.email}. You are currently logged in as ${this.authState!.username}. Please log in with the correct email to access this invite.`,
+                str`This invitation is for ${this.email}. You are currently logged in as ${this.authState?.username}. Please log in with the correct email to access this invite.`,
               ),
             );
           }
@@ -275,6 +275,6 @@ export class AcceptInvite extends BtrixElement {
   }
 
   async _getCurrentUser(): Promise<APIUser> {
-    return this._api.fetch("/users/me", this.authState!);
+    return this._api.fetch("/users/me");
   }
 }

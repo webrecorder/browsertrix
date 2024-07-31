@@ -401,7 +401,7 @@ export class CollectionDetail extends LiteElement {
   };
 
   private readonly renderActions = () => {
-    const authToken = this.authState!.headers.Authorization.split(" ")[1];
+    const authToken = this.authState?.headers.Authorization.split(" ")[1];
 
     return html`
       <sl-dropdown distance="4">

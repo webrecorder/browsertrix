@@ -602,7 +602,7 @@ export class CrawlsList extends BtrixElement {
   private readonly renderMenuItems = (item: ArchivedItem) => {
     // HACK shoelace doesn't current have a way to override non-hover
     // color without resetting the --sl-color-neutral-700 variable
-    const authToken = this.authState!.headers.Authorization.split(" ")[1];
+    const authToken = this.authState?.headers.Authorization.split(" ")[1];
 
     return html`
       ${when(

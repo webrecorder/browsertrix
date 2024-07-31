@@ -497,7 +497,7 @@ export class WorkflowDetail extends LiteElement {
         </sl-button>`;
     }
     if (this.activePanel === "logs") {
-      const authToken = this.authState!.headers.Authorization.split(" ")[1];
+      const authToken = this.authState?.headers.Authorization.split(" ")[1];
       const isDownloadEnabled = Boolean(
         this.logs?.total &&
           this.workflow?.lastCrawlId &&

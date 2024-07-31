@@ -233,7 +233,7 @@ export class ArchivedItemDetail extends BtrixElement {
   }
 
   render() {
-    const authToken = this.authState!.headers.Authorization.split(" ")[1];
+    const authToken = this.authState?.headers.Authorization.split(" ")[1];
     let sectionContent: string | TemplateResult<1> = "";
 
     switch (this.activeTab) {
@@ -567,7 +567,7 @@ export class ArchivedItemDetail extends BtrixElement {
   private renderMenu() {
     if (!this.crawl) return;
 
-    const authToken = this.authState!.headers.Authorization.split(" ")[1];
+    const authToken = this.authState?.headers.Authorization.split(" ")[1];
 
     return html`
       <sl-dropdown placement="bottom-end" distance="4" hoist>
