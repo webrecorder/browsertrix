@@ -1,8 +1,8 @@
 import { expect } from "@esm-bundle/chai";
 import { spy } from "sinon";
 
-import type LiteElement from "../LiteElement";
-import appState, { AppStateService } from "../state";
+import type LiteElement from "../../utils/LiteElement";
+import appState, { AppStateService } from "../../utils/state";
 
 import needLogin from "./needLogin";
 

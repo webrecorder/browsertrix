@@ -122,7 +122,7 @@ describe("AuthService", () => {
         tokenExpiresAt: Date.now(),
         username: "test-auth@example.com",
       };
-      AppStateService.updateAuthState(mockAuth);
+      AppStateService.updateAuth(mockAuth);
 
       expect(new AuthService().authState).to.equal(mockAuth);
     });
@@ -130,7 +130,7 @@ describe("AuthService", () => {
 
   describe(".persist()", () => {
     it("updates auth state", () => {
-      stub(AppStateService, "updateAuthState");
+      stub(AppStateService, "updateAuth");
       const mockAuth = {
         headers: { Authorization: self.crypto.randomUUID() },
         tokenExpiresAt: Date.now(),
@@ -139,7 +139,7 @@ describe("AuthService", () => {
 
       new AuthService().persist(mockAuth);
 
-      expect(AppStateService.updateAuthState).to.have.been.calledWith(mockAuth);
+      expect(AppStateService.updateAuth).to.have.been.calledWith(mockAuth);
     });
 
     it("stores auth state", () => {

@@ -5,12 +5,12 @@ import { customElement, property, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
+import needLogin from "@/classes/decorators/needLogin";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { Crawl, CrawlState } from "@/types/crawler";
 import { activeCrawlStates } from "@/utils/crawler";
-import needLogin from "@/utils/decorators/needLogin";
 import LiteElement, { html } from "@/utils/LiteElement";
 
 type SortField = "started" | "firstSeed" | "fileSize";

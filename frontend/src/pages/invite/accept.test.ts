@@ -39,7 +39,7 @@ describe("btrix-accept-invite", () => {
   });
 
   it("redirects if not logged in", () => {
-    AppStateService.updateAuthState(null);
+    AppStateService.updateAuth(null);
     const el = fixtureSync<AcceptInvite>(
       html`<btrix-accept-invite
         token="my_fake_invite_token"
@@ -53,7 +53,7 @@ describe("btrix-accept-invite", () => {
   });
 
   it("gets invite info when auth state and token are present", async () => {
-    AppStateService.updateAuthState(mockAuthState);
+    AppStateService.updateAuth(mockAuthState);
     stub(AcceptInvite.prototype, "_getInviteInfo");
     const el = await fixture<AcceptInvite>(
       html`<btrix-accept-invite
@@ -75,7 +75,7 @@ describe("btrix-accept-invite", () => {
     });
 
     it("renders accept button", async () => {
-      AppStateService.updateAuthState(mockAuthState);
+      AppStateService.updateAuth(mockAuthState);
       const el = await fixture<AcceptInvite>(
         html`<btrix-accept-invite
           token="my_fake_invite_token"
@@ -89,7 +89,7 @@ describe("btrix-accept-invite", () => {
     });
 
     it("redirects to home on decline", async () => {
-      AppStateService.updateAuthState(mockAuthState);
+      AppStateService.updateAuth(mockAuthState);
       const el = await fixture<AcceptInvite>(
         html`<btrix-accept-invite
           token="my_fake_invite_token"
@@ -105,7 +105,7 @@ describe("btrix-accept-invite", () => {
     });
 
     it("renders org settings form when accepted", async () => {
-      AppStateService.updateAuthState(mockAuthState);
+      AppStateService.updateAuth(mockAuthState);
       const el = await fixture<AcceptInvite>(
         html`<btrix-accept-invite
           token="my_fake_invite_token"
@@ -129,7 +129,7 @@ describe("btrix-accept-invite", () => {
     });
 
     it("renders org settings form with the correct attributes", async () => {
-      AppStateService.updateAuthState(mockAuthState);
+      AppStateService.updateAuth(mockAuthState);
       const el = await fixture<AcceptInvite>(
         html`<btrix-accept-invite
           token="my_fake_invite_token"
@@ -160,7 +160,7 @@ describe("btrix-accept-invite", () => {
     });
 
     it("redirects to org dashboard on successful org rename", async () => {
-      AppStateService.updateAuthState(mockAuthState);
+      AppStateService.updateAuth(mockAuthState);
       const el = await fixture<AcceptInvite>(
         html`<btrix-accept-invite
           token="my_fake_invite_token"
@@ -210,7 +210,7 @@ describe("btrix-accept-invite", () => {
     });
 
     it("renders accept button", async () => {
-      AppStateService.updateAuthState(mockAuthState);
+      AppStateService.updateAuth(mockAuthState);
       const el = await fixture<AcceptInvite>(
         html`<btrix-accept-invite
           token="my_fake_invite_token"
@@ -224,7 +224,7 @@ describe("btrix-accept-invite", () => {
     });
 
     it("updates user app state on accept", async () => {
-      AppStateService.updateAuthState(mockAuthState);
+      AppStateService.updateAuth(mockAuthState);
       const el = await fixture<AcceptInvite>(
         html`<btrix-accept-invite
           token="my_fake_invite_token"
@@ -262,7 +262,7 @@ describe("btrix-accept-invite", () => {
     });
 
     it("redirects to org dashboard on accept", async () => {
-      AppStateService.updateAuthState(mockAuthState);
+      AppStateService.updateAuth(mockAuthState);
       const el = await fixture<AcceptInvite>(
         html`<btrix-accept-invite
           token="my_fake_invite_token"
@@ -297,7 +297,7 @@ describe("btrix-accept-invite", () => {
     });
 
     it("redirects to home on decline", async () => {
-      AppStateService.updateAuthState(mockAuthState);
+      AppStateService.updateAuth(mockAuthState);
       const el = await fixture<AcceptInvite>(
         html`<btrix-accept-invite
           token="my_fake_invite_token"

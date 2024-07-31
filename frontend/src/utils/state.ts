@@ -12,13 +12,9 @@ import { userInfoSchema, type UserInfo } from "@/types/user";
 
 export { use };
 
-// Prevent state updates from any component
-const { state, unlock } = locked();
-
 // Keyed by org ID
 type SlugLookup = Record<string, string>;
 
-@state()
 class AppState {
   // TODO persist
   settings: AppSettings | null = null;
@@ -52,64 +48,81 @@ class AppState {
   }
 }
 
-const appState = new AppState();
+export function makeAppStateService() {
+  // Prevent state updates from any component
+  const { state, unlock } = locked();
 
-export default appState;
+  @state()
+  class LockedAppState extends AppState {}
 
-export class AppStateService {
-  static updateSettings = (settings: AppState["settings"]) => {
-    unlock(() => {
-      appState.settings = settings;
-    });
-  };
-  static updateAuthState = (authState: AppState["auth"]) => {
-    unlock(() => {
-      authSchema.nullable().parse(authState);
+  const appState = new LockedAppState();
 
-      appState.auth = authState;
-    });
-  };
-  static updateUserInfo = (userInfo: AppState["userInfo"]) => {
-    unlock(() => {
-      userInfoSchema.nullable().parse(userInfo);
+  class AppStateService {
+    get appState() {
+      return appState;
+    }
 
-      appState.userInfo = userInfo;
-    });
-  };
-  static updateOrg = (org: AppState["org"]) => {
-    unlock(() => {
-      appState.org = org;
-    });
-  };
-  static partialUpdateOrg = (org: { id: string } & Partial<OrgData>) => {
-    unlock(() => {
-      if (org.id && appState.org?.id === org.id) {
-        appState.org = {
-          ...appState.org,
-          ...org,
-        };
-      } else {
-        console.warn("no matching org in app state");
-      }
-    });
-  };
-  static updateOrgSlug = (orgSlug: AppState["orgSlug"]) => {
-    unlock(() => {
-      appState.orgSlug = orgSlug;
-    });
-  };
-  static resetAll = () => {
-    unlock(() => {
-      appState.settings = null;
-      appState.org = undefined;
-    });
-    AppStateService.resetUser();
-  };
-  static resetUser = () => {
-    unlock(() => {
-      appState.auth = null;
-      appState.userInfo = null;
-      appState.orgSlug = null;
-    });
-  };
+    updateSettings = (settings: AppState["settings"]) => {
+      unlock(() => {
+        appState.settings = settings;
+      });
+    };
+    updateAuth = (authState: AppState["auth"]) => {
+      unlock(() => {
+        authSchema.nullable().parse(authState);
+
+        appState.auth = authState;
+      });
+    };
+    updateUserInfo = (userInfo: AppState["userInfo"]) => {
+      unlock(() => {
+        userInfoSchema.nullable().parse(userInfo);
+
+        appState.userInfo = userInfo;
+      });
+    };
+    updateOrg = (org: AppState["org"]) => {
+      unlock(() => {
+        appState.org = org;
+      });
+    };
+    partialUpdateOrg = (org: { id: string } & Partial<OrgData>) => {
+      unlock(() => {
+        if (org.id && appState.org?.id === org.id) {
+          appState.org = {
+            ...appState.org,
+            ...org,
+          };
+        } else {
+          console.warn("no matching org in app state");
+        }
+      });
+    };
+    updateOrgSlug = (orgSlug: AppState["orgSlug"]) => {
+      unlock(() => {
+        appState.orgSlug = orgSlug;
+      });
+    };
+    resetAll = () => {
+      unlock(() => {
+        appState.settings = null;
+        appState.org = undefined;
+      });
+      this.resetUser();
+    };
+    resetUser = () => {
+      unlock(() => {
+        appState.auth = null;
+        appState.userInfo = null;
+        appState.orgSlug = null;
+      });
+    };
+  }
+
+  return new AppStateService();
 }
+
+const AppStateService = makeAppStateService();
+
+export { AppStateService };
+export default AppStateService.appState;

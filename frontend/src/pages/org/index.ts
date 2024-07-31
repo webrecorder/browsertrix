@@ -12,6 +12,7 @@ import type {
   UserRoleChangeEvent,
 } from "./settings/settings";
 
+import needLogin from "@/classes/decorators/needLogin";
 import type { QuotaUpdateDetail } from "@/controllers/api";
 import type { CollectionSavedEvent } from "@/features/collections/collection-metadata-dialog";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
@@ -20,7 +21,6 @@ import type { UserOrg } from "@/types/user";
 import { isApiError } from "@/utils/api";
 import type { ViewState } from "@/utils/APIRouter";
 import { DEFAULT_MAX_SCALE } from "@/utils/crawler";
-import needLogin from "@/utils/decorators/needLogin";
 import LiteElement, { html } from "@/utils/LiteElement";
 import { isAdmin, isCrawler, type OrgData } from "@/utils/orgs";
 import { AppStateService } from "@/utils/state";

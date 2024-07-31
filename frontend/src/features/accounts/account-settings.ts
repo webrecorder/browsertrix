@@ -7,10 +7,10 @@ import { customElement, property, queryAsync, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
 
+import needLogin from "@/classes/decorators/needLogin";
 import { TailwindElement } from "@/classes/TailwindElement";
 import type { UnderlyingFunction } from "@/types/utils";
 import { isApiError } from "@/utils/api";
-import needLogin from "@/utils/decorators/needLogin";
 import LiteElement, { html } from "@/utils/LiteElement";
 import PasswordService from "@/utils/PasswordService";
 import { AppStateService } from "@/utils/state";

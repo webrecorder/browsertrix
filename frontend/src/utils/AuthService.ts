@@ -91,7 +91,7 @@ export default class AuthService {
     return appState.auth;
   }
   private set authState(authState: AuthState) {
-    AppStateService.updateAuthState(authState);
+    AppStateService.updateAuth(authState);
   }
 
   static createLoggedInEvent = (
