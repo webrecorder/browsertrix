@@ -720,7 +720,7 @@ class CrawlOps(BaseCrawlOps):
             data["duration"] = 0
             duration_seconds = 0
             if crawl.started and crawl.finished:
-                crawl.finished - crawl.started
+                duration = crawl.finished - crawl.started
                 duration_seconds = int(duration.total_seconds())
                 if duration_seconds:
                     data["duration"] = duration_seconds
