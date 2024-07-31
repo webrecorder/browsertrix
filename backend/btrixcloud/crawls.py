@@ -342,7 +342,7 @@ class CrawlOps(BaseCrawlOps):
         crawl_id: str,
         crawlconfig: CrawlConfig,
         userid: UUID,
-        started: str,
+        started: datetime,
         manual: bool,
         username: str = "",
     ) -> None:
@@ -714,9 +714,7 @@ class CrawlOps(BaseCrawlOps):
             data["duration"] = 0
             duration_seconds = 0
             if crawl.started and crawl.finished:
-                # JUST FOR DEBUGGING
-                naive_started = crawl.started.replace(tzinfo=None)
-                duration = crawl.finished - naive_started
+                crawl.finished - crawl.started
                 duration_seconds = int(duration.total_seconds())
                 if duration_seconds:
                     data["duration"] = duration_seconds
