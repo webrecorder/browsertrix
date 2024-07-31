@@ -17,11 +17,12 @@ import { formatAPIUser } from "@/utils/user";
 
 /**
  * Home page when org is not selected.
- * Currently, only visible to superadmins--redirects to user's org, otherwise.
+ *
  * Uses custom redirect instead of needLogin decorator to suppress "need login"
  * message when accessing root URL.
  *
- * TODO Refactor out superadmin UI
+ * Only accessed by superadmins. Regular users will be redirected their org.
+ * See https://github.com/webrecorder/browsertrix/issues/1972
  */
 @localized()
 @customElement("btrix-home")
