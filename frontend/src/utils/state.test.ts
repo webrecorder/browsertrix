@@ -2,6 +2,8 @@ import { expect } from "@open-wc/testing";
 
 import appState, { makeAppStateService } from "./state";
 
+import type { Auth } from "@/types/auth";
+
 describe("state", () => {
   describe("appState", () => {
     it("prevents mutations", () => {
@@ -44,9 +46,9 @@ describe("state", () => {
       const mockWrongAuth = {
         tokenExpiresAt: Date.now(),
         username: "test-auth@example.com",
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any;
-      const update = () => AppStateService.updateAuth(mockWrongAuth);
+      };
+      const update = () =>
+        AppStateService.updateAuth(mockWrongAuth as unknown as Auth);
 
       expect(update).to.throw();
     });
