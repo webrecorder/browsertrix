@@ -11,7 +11,8 @@ stringData:
 {{- range .Values.proxies }}
   {{ .id }}-private-key: |
 {{ .private_key | indent 4 }}
-  {{ .id }}-known-hosts: {{ .host_public_key }}
+  {{ .id }}-known-hosts: |
+    {{ .host_public_key | nindent 4 }}
 {{- end }}
 
   # slightly hacky: override /etc/passwd and /etc/group in crawler to be able to ssh to proxies
@@ -24,4 +25,3 @@ stringData:
     btrix:x:{{ .Values.crawler_gid | default 201407 }}:
 
 {{- end }}
-
