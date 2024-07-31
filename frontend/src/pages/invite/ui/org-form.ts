@@ -10,7 +10,6 @@ import { APIController } from "@/controllers/api";
 import { NotifyController } from "@/controllers/notify";
 import { type APIUser } from "@/index";
 import { isApiError } from "@/utils/api";
-import type { AuthState } from "@/utils/AuthService";
 import { maxLengthValidator } from "@/utils/form";
 import slugifyStrict from "@/utils/slugify";
 import { AppStateService } from "@/utils/state";
@@ -31,9 +30,6 @@ export type OrgUpdatedDetail = {
 @localized()
 @customElement("btrix-org-form")
 export class OrgForm extends TailwindElement {
-  @property({ type: Object })
-  authState?: AuthState;
-
   @property({ type: String })
   orgId?: string;
 
@@ -140,7 +136,7 @@ export class OrgForm extends TailwindElement {
     const payload = { name, slug };
 
     try {
-      await this._api.fetch(`/orgs/${id}/rename`, this.authState!, {
+      await this._api.fetch(`/orgs/${id}/rename`, {
         method: "POST",
         body: JSON.stringify(payload),
       });
@@ -235,6 +231,6 @@ export class OrgForm extends TailwindElement {
   }
 
   async _getCurrentUser(): Promise<APIUser> {
-    return this._api.fetch("/users/me", this.authState!);
+    return this._api.fetch("/users/me");
   }
 }

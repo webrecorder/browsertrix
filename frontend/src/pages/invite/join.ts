@@ -7,11 +7,8 @@ import { renderInviteMessage } from "./ui/inviteMessage";
 import type { SignUpSuccessDetail } from "@/features/accounts/sign-up-form";
 import type { OrgUpdatedDetail } from "@/pages/invite/ui/org-form";
 import { ROUTES } from "@/routes";
-import type { UserInfo, UserOrg, UserOrgInviteInfo } from "@/types/user";
-import AuthService, {
-  type AuthState,
-  type LoggedInEventDetail,
-} from "@/utils/AuthService";
+import type { UserOrg, UserOrgInviteInfo } from "@/types/user";
+import AuthService, { type LoggedInEventDetail } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
 
 import "./ui/org-form";
@@ -19,12 +16,6 @@ import "./ui/org-form";
 @localized()
 @customElement("btrix-join")
 export class Join extends LiteElement {
-  @property({ type: Object })
-  authState?: AuthState;
-
-  @property({ type: Object })
-  userInfo?: UserInfo;
-
   @property({ type: String })
   token?: string;
 
@@ -79,7 +70,6 @@ export class Join extends LiteElement {
                 this._isLoggedIn && this._firstAdminOrgInfo
                   ? html`
                       <btrix-org-form
-                        .authState=${this.authState}
                         orgId=${this._firstAdminOrgInfo.id}
                         name=${this._firstAdminOrgInfo.name}
                         slug=${this._firstAdminOrgInfo.slug}

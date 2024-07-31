@@ -24,7 +24,6 @@ import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { ExclusionEditor } from "@/features/crawl-workflows/exclusion-editor";
 import type { APIPaginatedList } from "@/types/api";
 import { isApiError } from "@/utils/api";
-import type { AuthState } from "@/utils/AuthService";
 import {
   DEFAULT_MAX_SCALE,
   inactiveCrawlStates,
@@ -50,9 +49,6 @@ const LOGS_PAGE_SIZE = 50;
 @localized()
 @customElement("btrix-workflow-detail")
 export class WorkflowDetail extends LiteElement {
-  @property({ type: Object })
-  authState!: AuthState;
-
   @property({ type: String })
   orgId!: string;
 
@@ -115,10 +111,6 @@ export class WorkflowDetail extends LiteElement {
 
   @state()
   private filterBy: Partial<Record<keyof Crawl, string | CrawlState[]>> = {};
-
-  private get org() {
-    return this.appState.org;
-  }
 
   private readonly numberFormatter = new Intl.NumberFormat(getLocale(), {
     // notation: "compact",
@@ -505,7 +497,7 @@ export class WorkflowDetail extends LiteElement {
         </sl-button>`;
     }
     if (this.activePanel === "logs") {
-      const authToken = this.authState!.headers.Authorization.split(" ")[1];
+      const authToken = this.authState?.headers.Authorization.split(" ")[1];
       const isDownloadEnabled = Boolean(
         this.logs?.total &&
           this.workflow?.lastCrawlId &&
@@ -570,7 +562,6 @@ export class WorkflowDetail extends LiteElement {
           jobType=${this.workflow!.jobType!}
           configId=${this.workflow!.id}
           orgId=${this.orgId}
-          .authState=${this.authState}
           @reset=${() =>
             this.navTo(
               `${this.orgBasePath}/workflows/crawl/${this.workflow!.id}`,
@@ -1234,7 +1225,6 @@ export class WorkflowDetail extends LiteElement {
           <btrix-crawl-queue
             orgId=${this.orgId}
             .crawlId=${this.lastCrawlId ?? undefined}
-            .authState=${this.authState}
           ></btrix-crawl-queue>
         `,
       )}
@@ -1252,7 +1242,6 @@ export class WorkflowDetail extends LiteElement {
               orgId=${this.orgId}
               .crawlId=${this.lastCrawlId ?? undefined}
               .config=${this.workflow.config}
-              .authState=${this.authState}
               ?isActiveCrawl=${isActive(this.workflow.lastCrawlState)}
               @on-success=${this.handleExclusionChange}
             ></btrix-exclusion-editor>`
@@ -1319,7 +1308,6 @@ export class WorkflowDetail extends LiteElement {
       aria-busy=${this.isLoading || !this.seeds}
     >
       <btrix-config-details
-        .authState=${this.authState!}
         .crawlConfig=${this.workflow}
         .seeds=${this.seeds?.items}
         anchorLinks
@@ -1348,7 +1336,6 @@ export class WorkflowDetail extends LiteElement {
     try {
       const data = await this.apiFetch<{ scaled: boolean }>(
         `/orgs/${this.orgId}/crawls/${this.lastCrawlId}/scale`,
-        this.authState!,
         {
           method: "POST",
           body: JSON.stringify({ scale: +value }),
@@ -1379,7 +1366,6 @@ export class WorkflowDetail extends LiteElement {
   private async getWorkflow(): Promise<Workflow> {
     const data: Workflow = await this.apiFetch(
       `/orgs/${this.orgId}/crawlconfigs/${this.workflowId}`,
-      this.authState!,
     );
     return data;
   }
@@ -1410,7 +1396,6 @@ export class WorkflowDetail extends LiteElement {
   private async getSeeds() {
     const data = await this.apiFetch<APIPaginatedList<Seed>>(
       `/orgs/${this.orgId}/crawlconfigs/${this.workflowId}/seeds`,
-      this.authState!,
     );
     return data;
   }
@@ -1440,7 +1425,6 @@ export class WorkflowDetail extends LiteElement {
     );
     const data = await this.apiFetch<APIPaginatedList<Crawl>>(
       `/orgs/${this.orgId}/crawls?${query}`,
-      this.authState!,
     );
 
     return data;
@@ -1466,7 +1450,6 @@ export class WorkflowDetail extends LiteElement {
   private async getCrawl(crawlId: Crawl["id"]): Promise<Crawl> {
     const data = await this.apiFetch<Crawl>(
       `/orgs/${this.orgId}/crawls/${crawlId}/replay.json`,
-      this.authState!,
     );
 
     return data;
@@ -1507,7 +1490,6 @@ export class WorkflowDetail extends LiteElement {
     try {
       await this.apiFetch(
         `/orgs/${this.orgId}/crawlconfigs/${this.workflow.id}`,
-        this.authState!,
         {
           method: "DELETE",
         },
@@ -1540,7 +1522,6 @@ export class WorkflowDetail extends LiteElement {
     try {
       await this.apiFetch(
         `/orgs/${this.orgId}/crawlconfigs/${this.workflow.id}`,
-        this.authState!,
         {
           method: "DELETE",
         },
@@ -1574,7 +1555,6 @@ export class WorkflowDetail extends LiteElement {
     try {
       const data = await this.apiFetch<{ success: boolean }>(
         `/orgs/${this.orgId}/crawls/${this.lastCrawlId}/cancel`,
-        this.authState!,
         {
           method: "POST",
         },
@@ -1603,7 +1583,6 @@ export class WorkflowDetail extends LiteElement {
     try {
       const data = await this.apiFetch<{ success: boolean }>(
         `/orgs/${this.orgId}/crawls/${this.lastCrawlId}/stop`,
-        this.authState!,
         {
           method: "POST",
         },
@@ -1628,7 +1607,6 @@ export class WorkflowDetail extends LiteElement {
     try {
       const data = await this.apiFetch<{ started: string | null }>(
         `/orgs/${this.orgId}/crawlconfigs/${this.workflow!.id}/run`,
-        this.authState!,
         {
           method: "POST",
         },
@@ -1673,16 +1651,12 @@ export class WorkflowDetail extends LiteElement {
 
   private async deleteCrawl(crawl: Crawl) {
     try {
-      const _data = await this.apiFetch(
-        `/orgs/${crawl.oid}/crawls/delete`,
-        this.authState!,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            crawl_ids: [crawl.id],
-          }),
-        },
-      );
+      const _data = await this.apiFetch(`/orgs/${crawl.oid}/crawls/delete`, {
+        method: "POST",
+        body: JSON.stringify({
+          crawl_ids: [crawl.id],
+        }),
+      });
       this.crawlToDelete = null;
       this.crawls = {
         ...this.crawls!,
@@ -1747,7 +1721,6 @@ export class WorkflowDetail extends LiteElement {
       `/orgs/${this.orgId}/crawls/${
         this.workflow!.lastCrawlId
       }/errors?page=${page}&pageSize=${pageSize}`,
-      this.authState!,
     );
 
     return data;

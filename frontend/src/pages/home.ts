@@ -2,13 +2,12 @@ import { localized, msg, str } from "@lit/localize";
 import type { SlInput, SlInputEvent } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import { type PropertyValues } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
+import { customElement, state } from "lit/decorators.js";
 
 import type { InviteSuccessDetail } from "@/features/accounts/invite-form";
 import type { APIUser } from "@/index";
 import type { APIPaginatedList } from "@/types/api";
 import { isApiError } from "@/utils/api";
-import type { AuthState } from "@/utils/AuthService";
 import { maxLengthValidator } from "@/utils/form";
 import LiteElement, { html } from "@/utils/LiteElement";
 import { type OrgData } from "@/utils/orgs";
@@ -18,16 +17,16 @@ import { formatAPIUser } from "@/utils/user";
 
 /**
  * Home page when org is not selected.
- * Currently, only visible to superadmins--redirects to user's org, otherwise
  *
- * TODO Refactor out superadmin UI
+ * Uses custom redirect instead of needLogin decorator to suppress "need login"
+ * message when accessing root URL.
+ *
+ * Only accessed by superadmins. Regular users will be redirected their org.
+ * See https://github.com/webrecorder/browsertrix/issues/1972
  */
 @localized()
 @customElement("btrix-home")
 export class Home extends LiteElement {
-  @property({ type: Object })
-  authState?: AuthState;
-
   @state()
   private orgList?: OrgData[];
 
@@ -48,10 +47,6 @@ export class Home extends LiteElement {
 
   private get slug() {
     return this.appState.orgSlug;
-  }
-
-  private get userInfo() {
-    return this.appState.userInfo;
   }
 
   private readonly validateOrgNameMax = maxLengthValidator(40);
@@ -174,7 +169,6 @@ export class Home extends LiteElement {
               </sl-button>
             </header>
             <btrix-orgs-list
-              .authState=${this.authState}
               .orgList=${this.orgList}
               @update-quotas=${this.onUpdateOrgQuotas}
             ></btrix-orgs-list>
@@ -285,7 +279,6 @@ export class Home extends LiteElement {
   private renderInvite() {
     return html`
       <btrix-invite-form
-        .authState=${this.authState}
         .orgs=${this.orgList}
         @btrix-invite-success=${(e: CustomEvent<InviteSuccessDetail>) => {
           const org = this.orgList?.find(({ id }) => id === e.detail.orgId);
@@ -320,19 +313,14 @@ export class Home extends LiteElement {
   }
 
   private async getOrgs() {
-    const data = await this.apiFetch<APIPaginatedList<OrgData>>(
-      "/orgs?sortBy=name",
-      this.authState!,
-    );
+    const data =
+      await this.apiFetch<APIPaginatedList<OrgData>>("/orgs?sortBy=name");
 
     return data.items;
   }
 
   private async getOrgSlugs() {
-    const data = await this.apiFetch<{ slugs: string[] }>(
-      "/orgs/slugs",
-      this.authState!,
-    );
+    const data = await this.apiFetch<{ slugs: string[] }>("/orgs/slugs");
 
     return data.slugs;
   }
@@ -364,14 +352,10 @@ export class Home extends LiteElement {
 
     try {
       // TODO return entire object from API
-      await this.apiFetch<{ added: true; id: string }>(
-        `/orgs/create`,
-        this.authState!,
-        {
-          method: "POST",
-          body: JSON.stringify(params),
-        },
-      );
+      await this.apiFetch<{ added: true; id: string }>(`/orgs/create`, {
+        method: "POST",
+        body: JSON.stringify(params),
+      });
       const userInfo = await this.getUserInfo();
       AppStateService.updateUserInfo(formatAPIUser(userInfo));
 
@@ -412,7 +396,7 @@ export class Home extends LiteElement {
   async onUpdateOrgQuotas(e: CustomEvent) {
     const org = e.detail as OrgData;
 
-    await this.apiFetch(`/orgs/${org.id}/quotas`, this.authState!, {
+    await this.apiFetch(`/orgs/${org.id}/quotas`, {
       method: "POST",
       body: JSON.stringify(org.quotas),
     });
@@ -424,6 +408,6 @@ export class Home extends LiteElement {
   }
 
   async getUserInfo(): Promise<APIUser> {
-    return this.apiFetch("/users/me", this.authState!);
+    return this.apiFetch("/users/me");
   }
 }

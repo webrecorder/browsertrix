@@ -8,7 +8,7 @@ import { when } from "lit/directives/when.js";
 import throttle from "lodash/fp/throttle";
 import queryString from "query-string";
 
-import { TailwindElement } from "@/classes/TailwindElement";
+import { BtrixElement } from "@/classes/BtrixElement";
 import type { FileRemoveEvent } from "@/components/ui/file-list";
 import type {
   TagInputEvent,
@@ -20,7 +20,6 @@ import { NavigateController } from "@/controllers/navigate";
 import { NotifyController } from "@/controllers/notify";
 import { type CollectionsChangeEvent } from "@/features/collections/collections-add";
 import { APIError } from "@/utils/api";
-import type { AuthState } from "@/utils/AuthService";
 import { maxLengthValidator } from "@/utils/form";
 
 export type FileUploaderRequestCloseEvent = CustomEvent<NonNullable<unknown>>;
@@ -42,7 +41,6 @@ enum AbortReason {
  * Usage:
  * ```ts
  * <btrix-file-uploader
- *   .authState=${this.authState}
  *   ?open=${this.open}
  *   @request-close=${this.requestClose}
  *   @uploaded=${this.uploaded}
@@ -55,12 +53,9 @@ enum AbortReason {
  */
 @localized()
 @customElement("btrix-file-uploader")
-export class FileUploader extends TailwindElement {
+export class FileUploader extends BtrixElement {
   @property({ type: String })
   orgId!: string;
-
-  @property({ type: Object })
-  authState!: AuthState;
 
   @property({ type: Boolean })
   open = false;
@@ -266,7 +261,6 @@ export class FileUploader extends TailwindElement {
       ></btrix-tag-input>
       <div class="mt-4">
         <btrix-collections-add
-          .authState=${this.authState}
           .initialCollections=${this.collectionIds}
           .orgId=${this.orgId}
           .configId=${"temp"}
@@ -396,7 +390,6 @@ export class FileUploader extends TailwindElement {
     try {
       const tags = await this.api.fetch<never>(
         `/orgs/${this.orgId}/crawlconfigs/tags`,
-        this.authState!,
       );
 
       // Update search/filter collection

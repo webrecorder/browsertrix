@@ -9,7 +9,7 @@ import type { Profile } from "./types";
 
 import type { SelectNewDialogEvent } from ".";
 
-import { TailwindElement } from "@/classes/TailwindElement";
+import { BtrixElement } from "@/classes/BtrixElement";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import {
   SortDirection,
@@ -24,11 +24,9 @@ import type {
   APISortQuery,
 } from "@/types/api";
 import type { Browser } from "@/types/browser";
-import type { AuthState } from "@/utils/AuthService";
 import { html } from "@/utils/LiteElement";
 import { getLocale } from "@/utils/localization";
 import { isArchivingDisabled } from "@/utils/orgs";
-import appState, { use } from "@/utils/state";
 import { tw } from "@/utils/tailwind";
 
 const INITIAL_PAGE_SIZE = 20;
@@ -44,18 +42,12 @@ const INITIAL_PAGE_SIZE = 20;
  */
 @localized()
 @customElement("btrix-browser-profiles-list")
-export class BrowserProfilesList extends TailwindElement {
-  @property({ type: Object })
-  authState!: AuthState;
-
+export class BrowserProfilesList extends BtrixElement {
   @property({ type: String })
   orgId!: string;
 
   @property({ type: Boolean })
   isCrawler = false;
-
-  @use()
-  appState = appState;
 
   @state()
   browserProfiles?: APIPaginatedList<Profile>;
@@ -68,10 +60,6 @@ export class BrowserProfilesList extends TailwindElement {
 
   @state()
   private isLoading = true;
-
-  private get org() {
-    return this.appState.org;
-  }
 
   static styles = css`
     btrix-table {
@@ -407,7 +395,6 @@ export class BrowserProfilesList extends TailwindElement {
     try {
       const data = await this.api.fetch<Profile & { error?: boolean }>(
         `/orgs/${this.orgId}/profiles/${profile.id}`,
-        this.authState!,
         {
           method: "DELETE",
         },
@@ -448,14 +435,10 @@ export class BrowserProfilesList extends TailwindElement {
       url,
     };
 
-    return this.api.fetch<Browser>(
-      `/orgs/${this.orgId}/profiles/browser`,
-      this.authState!,
-      {
-        method: "POST",
-        body: JSON.stringify(params),
-      },
-    );
+    return this.api.fetch<Browser>(`/orgs/${this.orgId}/profiles/browser`, {
+      method: "POST",
+      body: JSON.stringify(params),
+    });
   }
 
   /**
@@ -499,7 +482,6 @@ export class BrowserProfilesList extends TailwindElement {
 
     const data = await this.api.fetch<APIPaginatedList<Profile>>(
       `/orgs/${this.orgId}/profiles?${query}`,
-      this.authState!,
     );
 
     return data;

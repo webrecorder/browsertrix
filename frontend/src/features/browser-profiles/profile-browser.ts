@@ -7,7 +7,6 @@ import { TailwindElement } from "@/classes/TailwindElement";
 import { APIController } from "@/controllers/api";
 import { NotifyController } from "@/controllers/notify";
 import { isApiError, type APIError } from "@/utils/api";
-import type { AuthState } from "@/utils/AuthService";
 
 const POLL_INTERVAL_SECONDS = 2;
 const hiddenClassList = ["translate-x-2/3", "opacity-0", "pointer-events-none"];
@@ -46,9 +45,6 @@ export type BrowserConnectionChange = {
 @localized()
 @customElement("btrix-profile-browser")
 export class ProfileBrowser extends TailwindElement {
-  @property({ type: Object })
-  authState!: AuthState;
-
   @property({ type: String })
   orgId!: string;
 
@@ -446,7 +442,6 @@ export class ProfileBrowser extends TailwindElement {
   private async getBrowser() {
     const data = await this.api.fetch<BrowserResponseData>(
       `/orgs/${this.orgId}/profiles/browser/${this.browserId}`,
-      this.authState!,
     );
 
     return data;
@@ -460,7 +455,6 @@ export class ProfileBrowser extends TailwindElement {
 
     const data = this.api.fetch(
       `/orgs/${this.orgId}/profiles/browser/${this.browserId}/navigate`,
-      this.authState!,
       {
         method: "POST",
         body: JSON.stringify({ url }),
@@ -479,7 +473,6 @@ export class ProfileBrowser extends TailwindElement {
     try {
       const data = await this.api.fetch<{ origins?: string[] }>(
         `/orgs/${this.orgId}/profiles/browser/${this.browserId}/ping`,
-        this.authState!,
         {
           method: "POST",
         },
