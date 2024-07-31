@@ -1,7 +1,7 @@
 import { localized, msg } from "@lit/localize";
 import { customElement, state } from "lit/decorators.js";
 
-import needLogin from "@/classes/decorators/needLogin";
+import needLogin from "@/decorators/needLogin";
 import type { APIPaginatedList } from "@/types/api";
 import LiteElement, { html } from "@/utils/LiteElement";
 import type { OrgData } from "@/utils/orgs";

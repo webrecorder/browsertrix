@@ -7,8 +7,8 @@ import { customElement, property, queryAsync, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
 
-import needLogin from "@/classes/decorators/needLogin";
 import { TailwindElement } from "@/classes/TailwindElement";
+import needLogin from "@/decorators/needLogin";
 import type { UnderlyingFunction } from "@/types/utils";
 import { isApiError } from "@/utils/api";
 import LiteElement, { html } from "@/utils/LiteElement";

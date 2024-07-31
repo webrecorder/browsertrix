@@ -12,8 +12,8 @@ import type {
   UserRoleChangeEvent,
 } from "./settings/settings";
 
-import needLogin from "@/classes/decorators/needLogin";
 import type { QuotaUpdateDetail } from "@/controllers/api";
+import needLogin from "@/decorators/needLogin";
 import type { CollectionSavedEvent } from "@/features/collections/collection-metadata-dialog";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
 import type { Crawl, JobType } from "@/types/crawler";
