@@ -49,6 +49,12 @@ class ProfileOperator(BaseOperator):
         params["profile_filename"] = spec.get("profileFilename", "")
         params["crawler_image"] = spec["crawlerImage"]
 
+        proxy_id = spec.get("proxyId")
+        params["proxy_id"] = proxy_id
+        if proxy_id:
+            proxy = self.crawl_config_ops.get_crawler_proxy(proxy_id)
+            params["ssh_proxy_auth"] = proxy.auth if proxy else ""
+
         params["url"] = spec.get("startUrl", "about:blank")
         params["vnc_password"] = spec.get("vncPassword")
 

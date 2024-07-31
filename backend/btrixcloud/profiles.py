@@ -115,6 +115,7 @@ class ProfileOps:
             crawler_image=crawler_image,
             baseprofile=prev_profile_id,
             profile_filename=prev_profile_path,
+            proxy_id=profile_launch.proxyId or "",
         )
 
         if not browserid:

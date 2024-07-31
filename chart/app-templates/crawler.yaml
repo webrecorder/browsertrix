@@ -136,8 +136,8 @@ spec:
         - "@{{ profile_filename }}"
       {% endif %}
       {% if proxy_id %}
-        - --sshProxyLogin
-        - "{{ ssh_proxy_auth }}"
+        - --proxyServer
+        - "ssh://{{ ssh_proxy_auth }}"
         - --sshProxyPrivateKeyFile
         - /tmp/ssh-proxy/private-key
         - --sshProxyKnownHostsFile

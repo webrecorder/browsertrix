@@ -34,6 +34,7 @@ class CrawlManager(K8sAPI):
         crawler_image: str,
         baseprofile: str = "",
         profile_filename: str = "",
+        proxy_id: str = "",
     ) -> str:
         """run browser for profile creation"""
 
@@ -55,6 +56,7 @@ class CrawlManager(K8sAPI):
             "vnc_password": secrets.token_hex(16),
             "expire_time": to_k8s_date(dt_now() + timedelta(seconds=30)),
             "crawler_image": crawler_image,
+            "proxy_id": proxy_id,
         }
 
         data = self.templates.env.get_template("profile_job.yaml").render(params)

@@ -26,6 +26,13 @@ spec:
       emptyDir:
         sizeLimit: {{ profile_browser_workdir_size }}
 
+    {% if proxy_id %}
+    - name: proxy-ssh-keys
+      secret:
+        secretName: proxy-ssh-keys
+        defaultMode: 0600
+    {% endif %}
+
   {% if priorityClassName %}
   priorityClassName: {{ priorityClassName }}
   {% endif %}
@@ -73,10 +80,36 @@ spec:
         - --profile
         - "@{{ profile_filename }}"
       {%- endif %}
+      {% if proxy_id %}
+        - --proxyServer
+        - "ssh://{{ ssh_proxy_auth }}"
+        - --sshProxyPrivateKeyFile
+        - /tmp/ssh-proxy/private-key
+        - --sshProxyKnownHostsFile
+        - /tmp/ssh-proxy/known-hosts
+      {% endif %}
 
       volumeMounts:
         - name: crawler-workdir
           mountPath: /tmp/home
+      {% if proxy_id %}
+        - name: proxy-ssh-keys
+          mountPath: /tmp/ssh-proxy/private-key
+          subPath: {{ proxy_id }}-private-key
+          readOnly: true
+        - name: proxy-ssh-keys
+          mountPath: /tmp/ssh-proxy/known-hosts
+          subPath: {{ proxy_id }}-known-hosts
+          readOnly: true
+        - name: proxy-ssh-keys
+          mountPath: /etc/passwd
+          subPath: passwd
+          readOnly: true
+        - name: proxy-ssh-keys
+          mountPath: /etc/group
+          subPath: group
+          readOnly: true
+       {% endif %}
 
       envFrom:
         - secretRef:
