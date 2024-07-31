@@ -3,11 +3,10 @@ import { differenceInDays } from "date-fns/fp";
 import { html, type TemplateResult } from "lit";
 import { customElement } from "lit/decorators.js";
 
-import { TailwindElement } from "@/classes/TailwindElement";
+import { BtrixElement } from "@/classes/BtrixElement";
 import { NavigateController } from "@/controllers/navigate";
 import { OrgReadOnlyReason } from "@/types/org";
 import { formatISODateString } from "@/utils/localization";
-import appState, { use } from "@/utils/state";
 
 type Alert = {
   test: () => boolean;
@@ -19,15 +18,8 @@ type Alert = {
 
 @localized()
 @customElement("btrix-org-status-banner")
-export class OrgStatusBanner extends TailwindElement {
-  @use()
-  appState = appState;
-
+export class OrgStatusBanner extends BtrixElement {
   private readonly navigate = new NavigateController(this);
-
-  private get org() {
-    return this.appState.org;
-  }
 
   render() {
     if (!this.org) return;

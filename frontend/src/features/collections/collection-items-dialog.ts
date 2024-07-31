@@ -36,7 +36,6 @@ import type {
 } from "@/types/api";
 import type { ArchivedItem, Crawl, Upload, Workflow } from "@/types/crawler";
 import { isApiError } from "@/utils/api";
-import type { AuthState } from "@/utils/AuthService";
 import { finishedCrawlStates } from "@/utils/crawler";
 
 const TABS = ["crawl", "upload"] as const;
@@ -88,9 +87,6 @@ export class CollectionItemsDialog extends TailwindElement {
       min-height: calc(100vh - 8.6rem);
     }
   `;
-
-  @property({ type: Object })
-  authState!: AuthState;
 
   @property({ type: String })
   orgId!: string;
@@ -467,7 +463,6 @@ export class CollectionItemsDialog extends TailwindElement {
 
     return html`<section class="flex-1 p-3">
         <btrix-collection-workflow-list
-          .authState=${this.authState}
           orgId=${this.orgId}
           collectionId=${this.collectionId}
           .workflows=${this.workflows.items}
@@ -661,7 +656,6 @@ export class CollectionItemsDialog extends TailwindElement {
       requests.push(
         this.api.fetch(
           `/orgs/${this.orgId}/collections/${this.collectionId}/add`,
-          this.authState!,
           {
             method: "POST",
             body: JSON.stringify({ crawlIds: add }),
@@ -673,7 +667,6 @@ export class CollectionItemsDialog extends TailwindElement {
       requests.push(
         this.api.fetch(
           `/orgs/${this.orgId}/collections/${this.collectionId}/remove`,
-          this.authState!,
           {
             method: "POST",
             body: JSON.stringify({ crawlIds: remove }),
@@ -814,7 +807,6 @@ export class CollectionItemsDialog extends TailwindElement {
     );
     const data = await this.api.fetch<APIPaginatedList<Crawl>>(
       `/orgs/${this.orgId}/crawls?${query}`,
-      this.authState!,
     );
 
     return data;
@@ -833,7 +825,6 @@ export class CollectionItemsDialog extends TailwindElement {
     });
     const data = await this.api.fetch<APIPaginatedList<Workflow>>(
       `/orgs/${this.orgId}/crawlconfigs?${query}`,
-      this.authState!,
     );
 
     return data;
@@ -853,7 +844,6 @@ export class CollectionItemsDialog extends TailwindElement {
     });
     const data = await this.api.fetch<APIPaginatedList<Upload>>(
       `/orgs/${this.orgId}/uploads?${query}`,
-      this.authState!,
     );
 
     return data;
@@ -863,12 +853,10 @@ export class CollectionItemsDialog extends TailwindElement {
     if (searchType === "workflow") {
       return this.api.fetch<SearchValues>(
         `/orgs/${this.orgId}/crawlconfigs/search-values`,
-        this.authState!,
       );
     }
     return this.api.fetch<SearchValues>(
       `/orgs/${this.orgId}/all-crawls/search-values?crawlType=${searchType}`,
-      this.authState!,
     );
   }
 
@@ -877,16 +865,12 @@ export class CollectionItemsDialog extends TailwindElement {
     autoAddCollections,
   }: Pick<Workflow, "id" | "autoAddCollections">) {
     try {
-      await this.api.fetch(
-        `/orgs/${this.orgId}/crawlconfigs/${id}`,
-        this.authState!,
-        {
-          method: "PATCH",
-          body: JSON.stringify({
-            autoAddCollections: autoAddCollections,
-          }),
-        },
-      );
+      await this.api.fetch(`/orgs/${this.orgId}/crawlconfigs/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          autoAddCollections: autoAddCollections,
+        }),
+      });
       this.notify.toast({
         message: msg(str`Updated.`),
         variant: "success",

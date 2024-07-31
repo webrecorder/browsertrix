@@ -7,7 +7,6 @@ import { TailwindElement } from "@/classes/TailwindElement";
 import { APIController } from "@/controllers/api";
 import { NotifyController } from "@/controllers/notify";
 import type { ArchivedItemPage } from "@/types/crawler";
-import { type AuthState } from "@/utils/AuthService";
 
 export type UpdatePageApprovalDetail = {
   id: ArchivedItemPage["id"];
@@ -160,9 +159,6 @@ export class PageQAToolbar extends TailwindElement {
     }
   `;
 
-  @property({ type: Object, attribute: false })
-  authState?: AuthState;
-
   @property({ type: String, attribute: false })
   orgId?: string;
 
@@ -252,7 +248,6 @@ export class PageQAToolbar extends TailwindElement {
     try {
       await this.api.fetch(
         `/orgs/${this.orgId}/crawls/${this.itemId}/pages/${this.pageId}`,
-        this.authState!,
         {
           method: "PATCH",
           body: JSON.stringify({ approved }),

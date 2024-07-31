@@ -10,7 +10,6 @@ import type { ExclusionRemoveEvent } from "./queue-exclusion-table";
 
 import type { SeedConfig } from "@/pages/org/types";
 import { isApiError } from "@/utils/api";
-import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
 
 type URLs = string[];
@@ -28,7 +27,6 @@ type ResponseData = {
  *   orgId=${this.crawl.oid}
  *   crawlId=${this.crawl.id}
  *   .config=${this.workflow.config}
- *   .authState=${this.authState}
  *   ?isActiveCrawl=${isActive}
  * >
  * </btrix-exclusion-editor>
@@ -39,9 +37,6 @@ type ResponseData = {
 @localized()
 @customElement("btrix-exclusion-editor")
 export class ExclusionEditor extends LiteElement {
-  @property({ type: Object })
-  authState?: AuthState;
-
   @property({ type: String })
   orgId?: string;
 
@@ -72,7 +67,6 @@ export class ExclusionEditor extends LiteElement {
 
   willUpdate(changedProperties: PropertyValues<this> & Map<string, unknown>) {
     if (
-      changedProperties.has("authState") ||
       changedProperties.has("orgId") ||
       changedProperties.has("crawlId") ||
       changedProperties.has("regex")
@@ -137,7 +131,6 @@ export class ExclusionEditor extends LiteElement {
     return html`<btrix-crawl-queue
       orgId=${this.orgId!}
       crawlId=${this.crawlId!}
-      .authState=${this.authState}
       regex=${this.regex}
       .exclusions=${this.config?.exclude || []}
       matchedTotal=${this.matchedURLs?.length || 0}
@@ -163,7 +156,6 @@ export class ExclusionEditor extends LiteElement {
         `/orgs/${this.orgId}/crawls/${
           this.crawlId
         }/exclusions?${params.toString()}`,
-        this.authState!,
         {
           method: "DELETE",
         },
@@ -227,7 +219,6 @@ export class ExclusionEditor extends LiteElement {
       `/orgs/${this.orgId}/crawls/${
         this.crawlId
       }/queueMatchAll?${params.toString()}`,
-      this.authState!,
     );
 
     return data;
@@ -255,7 +246,6 @@ export class ExclusionEditor extends LiteElement {
         `/orgs/${this.orgId}/crawls/${
           this.crawlId
         }/exclusions?${params.toString()}`,
-        this.authState!,
         {
           method: "POST",
         },

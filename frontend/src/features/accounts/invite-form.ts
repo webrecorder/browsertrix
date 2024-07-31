@@ -10,7 +10,6 @@ import { TailwindElement } from "@/classes/TailwindElement";
 import { APIController } from "@/controllers/api";
 import { AccessCode, type OrgData } from "@/types/org";
 import { isApiError } from "@/utils/api";
-import type { AuthState } from "@/utils/AuthService";
 
 export type InviteSuccessDetail = {
   inviteEmail: string;
@@ -26,9 +25,6 @@ const sortByName = sortBy("name");
 @localized()
 @customElement("btrix-invite-form")
 export class InviteForm extends TailwindElement {
-  @property({ type: Object, attribute: false })
-  authState?: AuthState;
-
   @property({ type: Array, attribute: false })
   orgs?: OrgData[] = [];
 
@@ -176,7 +172,6 @@ export class InviteForm extends TailwindElement {
     try {
       const data = await this.api.fetch<{ invited: string }>(
         `/orgs/${orgId}/invite`,
-        this.authState!,
         {
           method: "POST",
           body: JSON.stringify({

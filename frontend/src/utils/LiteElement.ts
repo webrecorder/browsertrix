@@ -8,6 +8,9 @@ import { NotifyController } from "@/controllers/notify";
 
 export { html };
 
+/**
+ * @deprecated Use `BtrixElement` instead
+ */
 export default class LiteElement extends LitElement {
   @use()
   appState = appState;
@@ -15,6 +18,18 @@ export default class LiteElement extends LitElement {
   private readonly apiController = new APIController(this);
   private readonly notifyController = new NotifyController(this);
   private readonly navigateController = new NavigateController(this);
+
+  protected get authState() {
+    return this.appState.auth;
+  }
+
+  protected get userInfo() {
+    return this.appState.userInfo;
+  }
+
+  protected get org() {
+    return this.appState.org;
+  }
 
   protected get orgBasePath() {
     return this.navigateController.orgBasePath;

@@ -6,7 +6,6 @@ import orderBy from "lodash/fp/orderBy";
 
 import type { Profile } from "@/pages/org/types";
 import type { APIPaginatedList } from "@/types/api";
-import type { AuthState } from "@/utils/AuthService";
 import LiteElement from "@/utils/LiteElement";
 import { getLocale } from "@/utils/localization";
 
@@ -34,9 +33,6 @@ export type SelectBrowserProfileChangeEvent =
 @customElement("btrix-select-browser-profile")
 @localized()
 export class SelectBrowserProfile extends LiteElement {
-  @property({ type: Object })
-  authState!: AuthState;
-
   @property({ type: String })
   orgId!: string;
 
@@ -217,7 +213,6 @@ export class SelectBrowserProfile extends LiteElement {
   private async getProfiles() {
     const data = await this.apiFetch<APIPaginatedList<Profile>>(
       `/orgs/${this.orgId}/profiles`,
-      this.authState!,
     );
 
     return data.items;

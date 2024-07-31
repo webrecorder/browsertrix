@@ -9,15 +9,13 @@ import { capitalize } from "lodash";
 
 import { columns } from "../ui/columns";
 
-import { TailwindElement } from "@/classes/TailwindElement";
+import { BtrixElement } from "@/classes/BtrixElement";
 import { APIController } from "@/controllers/api";
 import { SubscriptionStatus, type BillingPortal } from "@/types/billing";
 import type { OrgData, OrgQuotas } from "@/types/org";
-import type { Auth, AuthState } from "@/utils/AuthService";
 import { humanizeSeconds } from "@/utils/executionTimeFormatter";
 import { formatNumber, getLocale } from "@/utils/localization";
 import { pluralOf } from "@/utils/pluralize";
-import appState, { use } from "@/utils/state";
 import { tw } from "@/utils/tailwind";
 
 const linkClassList = tw`transition-color text-primary hover:text-primary-500`;
@@ -28,27 +26,17 @@ const manageLinkClasslist = clsx(
 
 @localized()
 @customElement("btrix-org-settings-billing")
-export class OrgSettingsBilling extends TailwindElement {
+export class OrgSettingsBilling extends BtrixElement {
   static styles = css`
     .form-label {
       font-size: var(--sl-input-label-font-size-small);
     }
   `;
 
-  @property({ type: Object })
-  authState?: AuthState;
-
   @property({ type: String, noAccessor: true })
   salesEmail?: string;
 
-  @use()
-  appState = appState;
-
   private readonly api = new APIController(this);
-
-  private get org() {
-    return this.appState.org;
-  }
 
   get portalUrlLabel() {
     const subscription = this.org?.subscription;
@@ -74,10 +62,10 @@ export class OrgSettingsBilling extends TailwindElement {
   }
 
   private readonly portalUrl = new Task(this, {
-    task: async ([org, authState]) => {
-      if (!org || !authState) throw new Error("Missing args");
+    task: async ([org]) => {
+      if (!org) throw new Error("Missing args");
       try {
-        const { portalUrl } = await this.getPortalUrl(org.id, authState);
+        const { portalUrl } = await this.getPortalUrl(org.id);
 
         if (portalUrl) {
           return portalUrl;
@@ -92,7 +80,7 @@ export class OrgSettingsBilling extends TailwindElement {
         );
       }
     },
-    args: () => [this.org, this.authState] as const,
+    args: () => [this.org] as const,
   });
 
   render() {
@@ -329,7 +317,7 @@ export class OrgSettingsBilling extends TailwindElement {
     `;
   }
 
-  private async getPortalUrl(orgId: string, auth: Auth) {
-    return this.api.fetch<BillingPortal>(`/orgs/${orgId}/billing-portal`, auth);
+  private async getPortalUrl(orgId: string) {
+    return this.api.fetch<BillingPortal>(`/orgs/${orgId}/billing-portal`);
   }
 }
