@@ -1211,7 +1211,7 @@ class SubscriptionPortalUrlRequest(BaseModel):
     planId: str
 
     bytesStored: int
-    minutesUsed: int
+    execSeconds: int
 
 
 # ============================================================================
