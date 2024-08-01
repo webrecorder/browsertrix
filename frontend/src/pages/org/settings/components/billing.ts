@@ -5,6 +5,7 @@ import { css, html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
+import { capitalize } from "lodash";
 
 import { columns } from "../ui/columns";
 
@@ -171,7 +172,7 @@ export class OrgSettingsBilling extends TailwindElement {
                               html`To upgrade to Pro, contact us at
                                 <a
                                   class=${linkClassList}
-                                  href=${`mailto:${this.salesEmail}?subject=${msg(str`Upgrade Starter plan (${this.org?.name})`)}`}
+                                  href=${`mailto:${this.salesEmail}?subject=${msg(str`Upgrade Browsertrix plan (${this.org?.name})`)}`}
                                   rel="noopener noreferrer nofollow"
                                   >${this.salesEmail}</a
                                 >.`,
@@ -195,6 +196,22 @@ export class OrgSettingsBilling extends TailwindElement {
     `;
   }
 
+  private getPlanName(planId: string) {
+    switch (planId) {
+      case "starter":
+        return msg("Starter");
+
+      case "standard":
+        return msg("Starter");
+
+      case "plus":
+        return msg("Plus");
+
+      default:
+        return capitalize(planId);
+    }
+  }
+
   private readonly renderSubscriptionDetails = (
     subscription: OrgData["subscription"],
   ) => {
@@ -204,7 +221,7 @@ export class OrgSettingsBilling extends TailwindElement {
     if (subscription) {
       tierLabel = html`
         <sl-icon class="text-neutral-500" name="nut"></sl-icon>
-        ${msg("Starter")}
+        ${this.getPlanName(subscription.planId)}
       `;
 
       switch (subscription.status) {
