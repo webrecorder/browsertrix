@@ -202,7 +202,7 @@ export class OrgSettingsBilling extends TailwindElement {
         return msg("Starter");
 
       case "standard":
-        return msg("Starter");
+        return msg("Standard");
 
       case "plus":
         return msg("Plus");
