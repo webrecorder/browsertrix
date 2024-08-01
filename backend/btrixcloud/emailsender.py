@@ -14,7 +14,7 @@ from fastapi import HTTPException
 from fastapi.templating import Jinja2Templates
 
 from .models import CreateReplicaJob, DeleteReplicaJob, Organization, InvitePending
-from .utils import is_bool
+from .utils import is_bool, get_origin
 
 
 # pylint: disable=too-few-public-methods, too-many-instance-attributes
@@ -33,8 +33,6 @@ class EmailSender:
 
     log_sent_emails: bool
 
-    default_origin: str
-
     def __init__(self):
         self.sender = os.environ.get("EMAIL_SENDER") or "Browsertrix admin"
         self.password = os.environ.get("EMAIL_PASSWORD") or ""
@@ -45,8 +43,6 @@ class EmailSender:
         self.smtp_use_tls = is_bool(os.environ.get("EMAIL_SMTP_USE_TLS"))
 
         self.log_sent_emails = is_bool(os.environ.get("LOG_SENT_EMAILS"))
-
-        self.default_origin = os.environ.get("APP_ORIGIN", "")
 
         self.templates = Jinja2Templates(
             directory=os.path.join(os.path.dirname(__file__), "email-templates")
@@ -101,24 +97,12 @@ class EmailSender:
             server.send_message(msg)
             # server.sendmail(self.sender, receiver, message)
 
-    def get_origin(self, headers) -> str:
-        """Return origin of the received request"""
-        if not headers:
-            return self.default_origin
-
-        scheme = headers.get("X-Forwarded-Proto")
-        host = headers.get("Host")
-        if not scheme or not host:
-            return self.default_origin
-
-        return scheme + "://" + host
-
     def send_user_validation(
         self, receiver_email: str, token: str, headers: Optional[dict] = None
     ):
         """Send email to validate registration email address"""
 
-        origin = self.get_origin(headers)
+        origin = get_origin(headers)
 
         self._send_encrypted(receiver_email, "validate", origin=origin, token=token)
 
@@ -133,7 +117,7 @@ class EmailSender:
     ):
         """Send email to invite new user"""
 
-        origin = self.get_origin(headers)
+        origin = get_origin(headers)
 
         receiver_email = invite.email or ""
 
@@ -155,7 +139,7 @@ class EmailSender:
 
     def send_user_forgot_password(self, receiver_email, token, headers=None):
         """Send password reset email with token"""
-        origin = self.get_origin(headers)
+        origin = get_origin(headers)
 
         self._send_encrypted(
             receiver_email,

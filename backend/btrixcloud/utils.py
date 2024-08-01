@@ -20,6 +20,9 @@ from pymongo.errors import DuplicateKeyError
 from slugify import slugify
 
 
+default_origin = os.environ.get("APP_ORIGIN", "")
+
+
 class JSONSerializer(json.JSONEncoder):
     """Serializer class for json.dumps with UUID and datetime support"""
 
@@ -180,3 +183,16 @@ def get_duplicate_key_error_field(err: DuplicateKeyError) -> str:
             except IndexError:
                 pass
     return dupe_field
+
+
+def get_origin(headers) -> str:
+    """Return origin of the received request"""
+    if not headers:
+        return default_origin
+
+    scheme = headers.get("X-Forwarded-Proto")
+    host = headers.get("Host")
+    if not scheme or not host:
+        return default_origin
+
+    return scheme + "://" + host

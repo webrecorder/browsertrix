@@ -1205,6 +1205,8 @@ class SubscriptionCancelOut(SubscriptionCancel, SubscriptionEventOut):
 class SubscriptionPortalUrlRequest(BaseModel):
     """Request for subscription update pull"""
 
+    returnUrl: str
+
     subId: str
     planId: str
 

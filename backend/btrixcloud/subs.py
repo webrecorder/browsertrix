@@ -11,7 +11,7 @@ import aiohttp
 
 from .orgs import OrgOps
 from .users import UserManager
-from .utils import is_bool
+from .utils import is_bool, get_origin
 from .models import (
     SubscriptionCreate,
     SubscriptionImport,
@@ -264,13 +264,14 @@ class SubOps:
         return subs, total
 
     async def get_billing_portal_url(
-        self, org: Organization
+        self, org: Organization, headers: dict[str, str]
     ) -> SubscriptionPortalUrlResponse:
         """Get subscription info, fetching portal url if available"""
         if not org.subscription:
             return SubscriptionPortalUrlResponse()
 
         minutes_used = self.org_ops.get_monthly_crawl_exec_seconds(org) / 60
+        return_url = f"{get_origin(headers)}/orgs/{org.slug}/settings/billing"
 
         if external_subs_app_api_url:
             try:
@@ -279,6 +280,7 @@ class SubOps:
                     planId=org.subscription.planId,
                     bytesStored=org.bytesStored,
                     minutesUsed=minutes_used,
+                    returnUrl=return_url,
                 )
                 async with aiohttp.ClientSession() as session:
                     async with session.request(
@@ -393,8 +395,9 @@ def init_subs_api(
         response_model=SubscriptionPortalUrlResponse,
     )
     async def get_billing_portal_url(
+        request: Request,
         org: Organization = Depends(org_ops.org_owner_dep),
     ):
-        return await ops.get_billing_portal_url(org)
+        return await ops.get_billing_portal_url(org, dict(request.headers))
 
     return ops
