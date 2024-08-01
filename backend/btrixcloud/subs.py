@@ -270,7 +270,7 @@ class SubOps:
         if not org.subscription:
             return SubscriptionPortalUrlResponse()
 
-        minutes_used = self.org_ops.get_monthly_crawl_exec_seconds(org) / 60
+        minutes_used = int(self.org_ops.get_monthly_crawl_exec_seconds(org) / 60)
         return_url = f"{get_origin(headers)}/orgs/{org.slug}/settings/billing"
 
         if external_subs_app_api_url:
