@@ -10,9 +10,6 @@ import type { Profile, ProfileWorkflow } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
-import { APIController } from "@/controllers/api";
-import { NavigateController } from "@/controllers/navigate";
-import { NotifyController } from "@/controllers/notify";
 import type { BrowserConnectionChange } from "@/features/browser-profiles/profile-browser";
 import { isApiError } from "@/utils/api";
 import { maxLengthValidator } from "@/utils/form";
@@ -68,10 +65,6 @@ export class BrowserProfilesDetail extends BtrixElement {
 
   @query("#discardChangesDialog")
   private readonly discardChangesDialog?: Dialog | null;
-
-  private readonly api = new APIController(this);
-  private readonly navigate = new NavigateController(this);
-  private readonly notify = new NotifyController(this);
 
   private readonly validateNameMax = maxLengthValidator(50);
   private readonly validateDescriptionMax = maxLengthValidator(500);

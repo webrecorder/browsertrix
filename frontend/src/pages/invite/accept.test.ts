@@ -46,10 +46,10 @@ describe("btrix-accept-invite", () => {
         email="my_fake_email@example.com"
       ></btrix-accept-invite>`,
     );
-    stub(el._navigate, "to");
+    stub(el.navigate, "to");
     el.firstUpdated();
 
-    expect(el._navigate.to).to.have.calledWith(match("/log-in?redirectUrl="));
+    expect(el.navigate.to).to.have.calledWith(match("/log-in?redirectUrl="));
   });
 
   it("gets invite info when auth state and token are present", async () => {
@@ -97,11 +97,11 @@ describe("btrix-accept-invite", () => {
         ></btrix-accept-invite>`,
       );
 
-      stub(el._navigate, "to");
+      stub(el.navigate, "to");
 
       await el._onDecline();
 
-      expect(el._navigate.to).to.have.calledWith(el._navigate.orgBasePath);
+      expect(el.navigate.to).to.have.calledWith(el.navigate.orgBasePath);
     });
 
     it("renders org settings form when accepted", async () => {
@@ -113,7 +113,7 @@ describe("btrix-accept-invite", () => {
         ></btrix-accept-invite>`,
       );
 
-      stub(el._api, "fetch").callsFake(async () =>
+      stub(el.api, "fetch").callsFake(async () =>
         Promise.resolve({
           org: {
             id: mockInviteInfo.oid,
@@ -137,7 +137,7 @@ describe("btrix-accept-invite", () => {
         ></btrix-accept-invite>`,
       );
 
-      stub(el._api, "fetch").callsFake(async () =>
+      stub(el.api, "fetch").callsFake(async () =>
         Promise.resolve({
           org: {
             id: mockInviteInfo.oid,
@@ -167,7 +167,7 @@ describe("btrix-accept-invite", () => {
           email="my_fake_email@example.com"
         ></btrix-accept-invite>`,
       );
-      stub(el._navigate, "to");
+      stub(el.navigate, "to");
       stub(el, "_isLoggedIn").get(() => true);
       el._firstAdminOrgInfo = {
         id: mockInviteInfo.oid,
@@ -195,7 +195,7 @@ describe("btrix-accept-invite", () => {
 
       await oneEvent(orgFormEl, "btrix-org-updated");
 
-      expect(el._navigate.to).to.have.been.calledWith("/orgs/fake-org-slug-2");
+      expect(el.navigate.to).to.have.been.calledWith("/orgs/fake-org-slug-2");
     });
   });
 
@@ -232,7 +232,7 @@ describe("btrix-accept-invite", () => {
         ></btrix-accept-invite>`,
       );
 
-      stub(el._navigate, "to");
+      stub(el.navigate, "to");
       stub(el, "_getCurrentUser").callsFake(async () =>
         Promise.resolve({
           id: "740d7b63-b257-4311-ba3f-adc46a5fafb8",
@@ -243,7 +243,7 @@ describe("btrix-accept-invite", () => {
           orgs: [],
         }),
       );
-      stub(el._api, "fetch").callsFake(async () =>
+      stub(el.api, "fetch").callsFake(async () =>
         Promise.resolve({
           org: {
             id: mockInviteInfo.oid,
@@ -270,7 +270,7 @@ describe("btrix-accept-invite", () => {
         ></btrix-accept-invite>`,
       );
 
-      stub(el._navigate, "to");
+      stub(el.navigate, "to");
       stub(el, "_getCurrentUser").callsFake(async () =>
         Promise.resolve({
           id: "740d7b63-b257-4311-ba3f-adc46a5fafb8",
@@ -281,7 +281,7 @@ describe("btrix-accept-invite", () => {
           orgs: [],
         }),
       );
-      stub(el._api, "fetch").callsFake(async () =>
+      stub(el.api, "fetch").callsFake(async () =>
         Promise.resolve({
           org: {
             id: mockInviteInfo.oid,
@@ -293,7 +293,7 @@ describe("btrix-accept-invite", () => {
 
       await el._onAccept();
 
-      expect(el._navigate.to).to.have.calledWith("/orgs/fake-org-name");
+      expect(el.navigate.to).to.have.calledWith("/orgs/fake-org-name");
     });
 
     it("redirects to home on decline", async () => {
@@ -305,11 +305,11 @@ describe("btrix-accept-invite", () => {
         ></btrix-accept-invite>`,
       );
 
-      stub(el._navigate, "to");
+      stub(el.navigate, "to");
 
       await el._onDecline();
 
-      expect(el._navigate.to).to.have.calledWith(el._navigate.orgBasePath);
+      expect(el.navigate.to).to.have.calledWith(el.navigate.orgBasePath);
     });
   });
 });

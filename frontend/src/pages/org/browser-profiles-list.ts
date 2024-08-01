@@ -15,9 +15,6 @@ import {
   SortDirection,
   type SortValues,
 } from "@/components/ui/table/table-header-cell";
-import { APIController } from "@/controllers/api";
-import { NavigateController } from "@/controllers/navigate";
-import { NotifyController } from "@/controllers/notify";
 import type {
   APIPaginatedList,
   APIPaginationQuery,
@@ -87,10 +84,6 @@ export class BrowserProfilesList extends BtrixElement {
       height: 2.5rem;
     }
   `;
-
-  private readonly api = new APIController(this);
-  private readonly navigate = new NavigateController(this);
-  private readonly notify = new NotifyController(this);
 
   protected willUpdate(
     changedProperties: PropertyValues<this> & Map<string, unknown>,

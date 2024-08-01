@@ -11,9 +11,6 @@ import { CopyButton } from "@/components/ui/copy-button";
 import { type Dialog } from "@/components/ui/dialog";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import { RelativeDuration } from "@/components/ui/relative-duration";
-import { APIController } from "@/controllers/api";
-import { NavigateController } from "@/controllers/navigate";
-import { NotifyController } from "@/controllers/notify";
 import type { CrawlLog } from "@/features/archived-items/crawl-logs";
 import type { APIPaginatedList } from "@/types/api";
 import type {
@@ -134,9 +131,6 @@ export class ArchivedItemDetail extends BtrixElement {
   }
 
   private readonly numberFormatter = new Intl.NumberFormat(getLocale());
-  private readonly api = new APIController(this);
-  private readonly navigate = new NavigateController(this);
-  private readonly notify = new NotifyController(this);
 
   private timerId?: number;
 

@@ -21,9 +21,6 @@ import { renderText } from "./ui/text";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
-import { APIController } from "@/controllers/api";
-import { NavigateController } from "@/controllers/navigate";
-import { NotifyController } from "@/controllers/notify";
 import {
   type QaFilterChangeDetail,
   type QaPaginationChangeDetail,
@@ -152,9 +149,6 @@ export class ArchivedItemQA extends BtrixElement {
     sortDirection: 1,
   };
 
-  private readonly api = new APIController(this);
-  private readonly navigate = new NavigateController(this);
-  private readonly notify = new NotifyController(this);
   private readonly replaySwReg =
     navigator.serviceWorker.getRegistration("/replay/");
   private readonly validateItemDescriptionMax = maxLengthValidator(500);

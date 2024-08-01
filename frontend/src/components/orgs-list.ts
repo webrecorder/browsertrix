@@ -11,9 +11,6 @@ import { when } from "lit/directives/when.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
-import { APIController } from "@/controllers/api";
-import { NavigateController } from "@/controllers/navigate";
-import { NotifyController } from "@/controllers/notify";
 import { formatNumber, getLocale } from "@/utils/localization";
 import type { OrgData } from "@/utils/orgs";
 
@@ -49,10 +46,6 @@ export class OrgsList extends BtrixElement {
 
   @query("#orgDeleteButton")
   private readonly orgDeleteButton?: SlButton | null;
-
-  private readonly api = new APIController(this);
-  private readonly navigate = new NavigateController(this);
-  private readonly notify = new NotifyController(this);
 
   render() {
     if (this.skeleton) {

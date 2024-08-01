@@ -13,9 +13,6 @@ import type { ArchivedItem, Crawl, CrawlState, Workflow } from "./types";
 import { BtrixElement } from "@/classes/BtrixElement";
 import { CopyButton } from "@/components/ui/copy-button";
 import type { PageChangeEvent } from "@/components/ui/pagination";
-import { APIController } from "@/controllers/api";
-import { NavigateController } from "@/controllers/navigate";
-import { NotifyController } from "@/controllers/notify";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import { isApiError } from "@/utils/api";
@@ -181,10 +178,6 @@ export class CrawlsList extends BtrixElement {
 
   // For fuzzy search:
   private readonly searchKeys = ["name", "firstSeed"];
-
-  private readonly api = new APIController(this);
-  private readonly navigate = new NavigateController(this);
-  private readonly notify = new NotifyController(this);
 
   private get selectedSearchFilterKey() {
     return Object.keys(CrawlsList.FieldLabels).find((key) =>

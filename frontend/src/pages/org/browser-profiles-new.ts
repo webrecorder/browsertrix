@@ -6,9 +6,6 @@ import queryString from "query-string";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
-import { APIController } from "@/controllers/api";
-import { NavigateController } from "@/controllers/navigate";
-import { NotifyController } from "@/controllers/notify";
 import type { BrowserConnectionChange } from "@/features/browser-profiles/profile-browser";
 import { isApiError } from "@/utils/api";
 
@@ -39,10 +36,6 @@ export class BrowserProfilesNew extends BtrixElement {
     name: "",
     url: "",
   };
-
-  private readonly api = new APIController(this);
-  private readonly notify = new NotifyController(this);
-  private readonly nav = new NavigateController(this);
 
   @state()
   private isSubmitting = false;
