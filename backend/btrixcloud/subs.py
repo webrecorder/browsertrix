@@ -270,7 +270,7 @@ class SubOps:
         if not org.subscription:
             return SubscriptionPortalUrlResponse()
 
-        minutesUsed = self.org_ops.get_monthly_crawl_exec_seconds(org) / 60
+        minutes_used = self.org_ops.get_monthly_crawl_exec_seconds(org) / 60
 
         if external_subs_app_api_url:
             try:
@@ -278,7 +278,7 @@ class SubOps:
                     subId=org.subscription.subId,
                     planId=org.subscription.planId,
                     bytesStored=org.bytesStored,
-                    minutesUsed=minutesUsed,
+                    minutesUsed=minutes_used,
                 )
                 async with aiohttp.ClientSession() as session:
                     async with session.request(
