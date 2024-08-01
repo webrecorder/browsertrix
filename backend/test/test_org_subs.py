@@ -463,6 +463,7 @@ def test_subscription_events_log(admin_auth_headers, non_default_org_id):
             "status": "paused_payment_failed",
             "planId": "basic",
             "futureCancelDate": "2028-12-26T01:02:03",
+            "quotas": None,
         },
         {
             "type": "update",
@@ -471,6 +472,7 @@ def test_subscription_events_log(admin_auth_headers, non_default_org_id):
             "status": "active",
             "planId": "basic2",
             "futureCancelDate": None,
+            "quotas": None,
         },
         {"subId": "123", "oid": new_subs_oid, "type": "cancel"},
         {"subId": "234", "oid": new_subs_oid_2, "type": "cancel"},
@@ -522,6 +524,7 @@ def test_subscription_events_log_filter_sub_id(admin_auth_headers):
             "status": "paused_payment_failed",
             "planId": "basic",
             "futureCancelDate": "2028-12-26T01:02:03",
+            "quotas": None,
         },
         {
             "type": "update",
@@ -530,6 +533,7 @@ def test_subscription_events_log_filter_sub_id(admin_auth_headers):
             "status": "active",
             "planId": "basic2",
             "futureCancelDate": None,
+            "quotas": None,
         },
         {"subId": "123", "oid": new_subs_oid, "type": "cancel"},
     ]
@@ -574,6 +578,7 @@ def test_subscription_events_log_filter_oid(admin_auth_headers):
             "status": "paused_payment_failed",
             "planId": "basic",
             "futureCancelDate": "2028-12-26T01:02:03",
+            "quotas": None,
         },
         {
             "type": "update",
@@ -582,6 +587,7 @@ def test_subscription_events_log_filter_oid(admin_auth_headers):
             "status": "active",
             "planId": "basic2",
             "futureCancelDate": None,
+            "quotas": None,
         },
         {"subId": "123", "oid": new_subs_oid, "type": "cancel"},
     ]
@@ -609,6 +615,7 @@ def test_subscription_events_log_filter_plan_id(admin_auth_headers):
             "status": "active",
             "planId": "basic2",
             "futureCancelDate": None,
+            "quotas": None,
         },
     ]
 
@@ -652,6 +659,7 @@ def test_subscription_events_log_filter_status(admin_auth_headers):
             "status": "active",
             "planId": "basic2",
             "futureCancelDate": None,
+            "quotas": None,
         },
     ]
 
