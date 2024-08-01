@@ -1177,6 +1177,7 @@ class SubscriptionUpdate(BaseModel):
     planId: str
 
     futureCancelDate: Optional[datetime] = None
+    quotas: Optional[OrgQuotas] = None
 
 
 # ============================================================================
@@ -1206,6 +1207,9 @@ class SubscriptionPortalUrlRequest(BaseModel):
 
     subId: str
     planId: str
+
+    bytesStored: int
+    minutesUsed: int
 
 
 # ============================================================================
