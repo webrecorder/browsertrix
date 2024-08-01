@@ -76,7 +76,7 @@ export class CollectionDetail extends LiteElement {
   protected async willUpdate(
     changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {
-    if (changedProperties.has("appState.orgSlug")) {
+    if (changedProperties.has("appState.userOrg")) {
       this.collection = undefined;
       void this.fetchCollection();
     }
@@ -659,7 +659,7 @@ export class CollectionDetail extends LiteElement {
     idx: number,
   ) => html`
     <btrix-archived-item-list-item
-      href=${`/orgs/${this.org?.id}/items/${item.type}/${item.id}?collectionId=${this.collectionId}`}
+      href=${`/orgs/${this.orgId}/items/${item.type}/${item.id}?collectionId=${this.collectionId}`}
       .item=${item}
     >
       ${this.isCrawler

@@ -32,7 +32,11 @@ export default class LiteElement extends LitElement {
   }
 
   protected get orgId() {
-    return this.appState.userOrg?.id || "";
+    return this.appState.orgId;
+  }
+
+  protected get orgSlug() {
+    return this.appState.orgSlug;
   }
 
   protected get org() {

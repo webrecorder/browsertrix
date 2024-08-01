@@ -96,7 +96,7 @@ export class BrowserProfilesList extends BtrixElement {
     changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {
     if (
-      changedProperties.has("appState.orgSlug") ||
+      changedProperties.has("appState.userOrg") ||
       changedProperties.has("sort")
     ) {
       void this.fetchBrowserProfiles();

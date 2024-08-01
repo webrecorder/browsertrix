@@ -123,18 +123,18 @@ export class WorkflowsList extends LiteElement {
   protected async willUpdate(
     changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {
-    if (changedProperties.has("appState.orgSlug")) {
+    if (changedProperties.has("appState.userOrg")) {
       void this.fetchConfigSearchValues();
     }
     if (
-      changedProperties.has("appState.orgSlug") ||
+      changedProperties.has("appState.userOrg") ||
       changedProperties.has("orderBy") ||
       changedProperties.has("filterByCurrentUser") ||
       changedProperties.has("filterByScheduled") ||
       changedProperties.has("filterBy")
     ) {
       void this.fetchWorkflows({
-        page: changedProperties.has("appState.orgSlug") ? 1 : undefined,
+        page: changedProperties.has("appState.userOrg") ? 1 : undefined,
       });
     }
     if (changedProperties.has("filterByCurrentUser")) {

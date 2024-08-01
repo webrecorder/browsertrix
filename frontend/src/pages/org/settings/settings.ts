@@ -170,7 +170,7 @@ export class OrgSettings extends BtrixElement {
   }
 
   private renderInformation() {
-    if (!this.org) return;
+    if (!this.userOrg) return;
 
     return html`<div class="rounded-lg border">
       <form @submit=${this.onOrgInfoSubmit}>
@@ -184,7 +184,7 @@ export class OrgSettings extends BtrixElement {
                 label=${msg("Org Name")}
                 placeholder=${msg("My Organization")}
                 autocomplete="off"
-                value=${this.org.name}
+                value=${this.userOrg.name}
                 minlength="2"
                 required
                 help-text=${this.validateOrgNameMax.helpText}
@@ -204,7 +204,7 @@ export class OrgSettings extends BtrixElement {
                 label=${msg("Custom URL Identifier")}
                 placeholder="my-organization"
                 autocomplete="off"
-                value=${this.org.slug}
+                value=${this.orgSlug || ""}
                 minlength="2"
                 maxlength="30"
                 required
@@ -214,7 +214,7 @@ export class OrgSettings extends BtrixElement {
                   }/orgs/${
                     this.slugValue
                       ? slugifyStrict(this.slugValue)
-                      : this.org.slug
+                      : this.orgSlug
                   }`,
                 )}
                 @sl-input=${(e: InputEvent) => {
@@ -232,7 +232,7 @@ export class OrgSettings extends BtrixElement {
               <btrix-copy-field
                 class="mb-2"
                 label=${msg("Org ID")}
-                value=${this.org.id}
+                value=${this.orgId}
               ></btrix-copy-field>
             `,
             msg("Use this ID to reference this org in the Browsertrix API."),
@@ -445,7 +445,7 @@ export class OrgSettings extends BtrixElement {
 
   private async getPendingInvites() {
     const data = await this.api.fetch<APIPaginatedList<Invite>>(
-      `/orgs/${this.org!.id}/invites`,
+      `/orgs/${this.orgId}/invites`,
     );
 
     return data.items;
@@ -475,7 +475,7 @@ export class OrgSettings extends BtrixElement {
 
     const params = {
       name: orgName,
-      slug: this.org!.slug,
+      slug: this.orgSlug!,
     };
 
     if (this.slugValue) {
@@ -551,7 +551,7 @@ export class OrgSettings extends BtrixElement {
 
       this.notify.toast({
         message: msg(
-          str`Successfully removed ${invite.email} from ${this.org!.name}.`,
+          str`Successfully removed ${invite.email} from ${this.userOrg?.name}.`,
         ),
         variant: "success",
         icon: "check2-circle",

@@ -381,7 +381,7 @@ export class CrawlConfigEditor extends LiteElement {
     if (changedProperties.has("jobType") && this.jobType) {
       this.initializeEditor();
     }
-    if (changedProperties.has("appState.orgSlug")) {
+    if (changedProperties.has("appState.userOrg")) {
       await this.fetchAPIDefaults();
       if (this.orgId) {
         await this.fetchOrgQuotaDefaults();
@@ -409,7 +409,7 @@ export class CrawlConfigEditor extends LiteElement {
         }
       }
     }
-    if (changedProperties.get("appState.orgSlug") && this.orgId) {
+    if (changedProperties.get("appState.userOrg") && this.orgId) {
       await this.fetchTags();
     }
   }

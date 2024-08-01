@@ -161,7 +161,7 @@ export class OrgSettingsBilling extends BtrixElement {
                               html`To upgrade to Pro, contact us at
                                 <a
                                   class=${linkClassList}
-                                  href=${`mailto:${this.salesEmail}?subject=${msg(str`Upgrade Starter plan (${this.org?.name})`)}`}
+                                  href=${`mailto:${this.salesEmail}?subject=${msg(str`Upgrade Starter plan (${this.userOrg?.name})`)}`}
                                   rel="noopener noreferrer nofollow"
                                   >${this.salesEmail}</a
                                 >.`,
@@ -293,7 +293,7 @@ export class OrgSettingsBilling extends BtrixElement {
     return html`
       <a
         class=${manageLinkClasslist}
-        href=${`mailto:${salesEmail}?subject=${msg(str`Pro plan change request (${this.org?.name})`)}`}
+        href=${`mailto:${salesEmail}?subject=${msg(str`Pro plan change request (${this.userOrg?.name})`)}`}
         rel="noopener noreferrer nofollow"
       >
         <sl-icon name="envelope"></sl-icon>

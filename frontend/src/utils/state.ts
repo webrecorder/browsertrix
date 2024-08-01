@@ -13,7 +13,7 @@ import { userInfoSchema, type UserInfo, type UserOrg } from "@/types/user";
 export { use };
 
 // Keyed by org ID
-type SlugLookup = Record<string, string>;
+type Lookup = Record<string, string>;
 
 class AppState {
   // TODO persist
@@ -32,27 +32,14 @@ class AppState {
   // Org details
   org: OrgData | null | undefined = undefined;
 
-  // Use `userOrg` to retrieve the basic org info like id,
+  orgIdLookup: Lookup | null = null;
+
+  // Use `userOrg` to retrieve the basic org info like name,
   // since `userInfo` will` always available before `org`
-  get userOrg(): UserOrg | undefined {
-    return this.userInfo?.orgs.find(({ slug }) => slug === this.orgSlug);
-  }
+  userOrg: UserOrg | undefined = undefined;
 
-  // Slug lookup for non-superadmins
-  // Superadmins have access to the `GET orgs/slug-lookup` endpoint
-  get slugLookup(): SlugLookup | null {
-    if (this.userInfo) {
-      const slugLookup = this.userInfo.orgs.reduce(
-        (acc, org) => ({
-          ...acc,
-          [org.id]: org.slug,
-        }),
-        {},
-      );
-      return slugLookup;
-    }
-
-    return null;
+  get orgId() {
+    return this.userOrg?.id || "";
   }
 }
 
@@ -82,16 +69,22 @@ export function makeAppStateService() {
       appState.auth = authState;
     }
 
+    @transaction()
     @unlock()
     updateUserInfo(userInfo: AppState["userInfo"]) {
       userInfoSchema.nullable().parse(userInfo);
 
       appState.userInfo = userInfo;
+
+      this._updateUserOrg();
     }
 
+    @transaction()
     @unlock()
     updateOrgSlug(orgSlug: AppState["orgSlug"]) {
       appState.orgSlug = orgSlug;
+
+      this._updateUserOrg();
     }
 
     @unlock()
@@ -129,6 +122,12 @@ export function makeAppStateService() {
       appState.auth = null;
       appState.userInfo = null;
       appState.orgSlug = null;
+    }
+
+    private _updateUserOrg() {
+      appState.userOrg = appState.userInfo?.orgs.find(
+        ({ slug }) => slug === appState.orgSlug,
+      );
     }
   }
 

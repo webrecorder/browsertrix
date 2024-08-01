@@ -239,15 +239,6 @@ export class Org extends LiteElement {
   }
 
   render() {
-    if (!this.userInfo) {
-      // TODO combine loading state with tab panel content
-      return "";
-    }
-
-    if (!this.userOrg) {
-      return html`<btrix-not-found></btrix-not-found>`;
-    }
-
     let tabPanelContent: TemplateResult<1> | string | undefined = "";
 
     switch (this.orgTab) {
@@ -566,7 +557,6 @@ export class Org extends LiteElement {
   }
 
   private renderOrgSettings() {
-    if (!this.userInfo || !this.org) return;
     const params = this.params as OrgParams["settings"];
     const activePanel = params.settingsTab || "information";
     const isAddingMember = Object.prototype.hasOwnProperty.call(
@@ -663,14 +653,15 @@ export class Org extends LiteElement {
   }
 
   private async removeMember(member: Member) {
-    const org = this.org;
-    if (!org) return;
+    if (!this.userOrg) return;
 
     const isSelf = member.email === this.userInfo!.email;
     if (
       isSelf &&
       !window.confirm(
-        msg(str`Are you sure you want to remove yourself from ${org.name}?`),
+        msg(
+          str`Are you sure you want to remove yourself from ${this.userOrg.name}?`,
+        ),
       )
     ) {
       return;
@@ -687,7 +678,7 @@ export class Org extends LiteElement {
       this.notify({
         message: msg(
           str`Successfully removed ${member.name || member.email} from ${
-            org.name
+            this.userOrg.name
           }.`,
         ),
         variant: "success",

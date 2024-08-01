@@ -63,7 +63,7 @@ export class ExclusionEditor extends LiteElement {
 
   willUpdate(changedProperties: PropertyValues<this> & Map<string, unknown>) {
     if (
-      changedProperties.has("appState.orgSlug") ||
+      changedProperties.has("appState.userOrg") ||
       changedProperties.has("crawlId") ||
       changedProperties.has("regex")
     ) {

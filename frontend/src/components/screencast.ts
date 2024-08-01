@@ -156,7 +156,7 @@ export class Screencast extends BtrixElement {
     changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {
     if (
-      changedProperties.get("appState.orgSlug") ||
+      changedProperties.get("appState.userOrg") ||
       changedProperties.get("crawlId") ||
       changedProperties.get("authToken")
     ) {

@@ -663,12 +663,10 @@ export class App extends LiteElement {
 
       case "awpUploadRedirect": {
         const { orgId, uploadId } = this.viewState.params;
-        if (this.appState.slugLookup) {
-          const slug = this.appState.slugLookup[orgId];
-          if (slug) {
-            this.navigate(`/orgs/${slug}/items/upload/${uploadId}`);
-            return;
-          }
+        const slug = this.userInfo?.orgs.find((org) => org.id === orgId)?.slug;
+        if (slug) {
+          this.navigate(`/orgs/${slug}/items/upload/${uploadId}`);
+          return;
         }
         // falls through
       }
