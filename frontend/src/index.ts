@@ -80,9 +80,6 @@ export class App extends LiteElement {
       console.debug(e);
     }
     this.syncViewState();
-    if (this.viewState.route === "org") {
-      AppStateService.updateOrgSlug(this.viewState.params.slug || null);
-    }
     if (authState) {
       this.authService.saveLogin(authState);
       void this.updateUserInfo();
@@ -102,25 +99,28 @@ export class App extends LiteElement {
     void this.fetchAppSettings();
   }
 
-  willUpdate(changedProperties: Map<string, unknown>) {
-    if (changedProperties.get("viewState") && this.viewState.route === "org") {
-      AppStateService.updateOrgSlug(this.viewState.params.slug || null);
-    }
+  getLocationPathname() {
+    return window.location.pathname;
   }
 
   private syncViewState() {
+    const pathname = this.getLocationPathname();
+
     if (
       this.authService.authState &&
-      (window.location.pathname === "/log-in" ||
-        window.location.pathname === "/reset-password")
+      (pathname === "/log-in" || pathname === "/reset-password")
     ) {
       // Redirect to logged in home page
       this.viewState = this.router.match(ROUTES.home);
       window.history.replaceState(this.viewState, "", this.viewState.pathname);
     } else {
       this.viewState = this.router.match(
-        `${window.location.pathname}${window.location.search}`,
+        `${pathname}${window.location.search}`,
       );
+    }
+    const slug = this.viewState.params.slug || null;
+    if (slug !== this.appState.orgSlug) {
+      AppStateService.updateOrgSlug(slug);
     }
   }
 
@@ -598,9 +598,10 @@ export class App extends LiteElement {
       case "org": {
         const slug = this.viewState.params.slug;
         const orgPath = this.viewState.pathname;
+        const pathname = this.getLocationPathname();
         const orgTab =
-          window.location.pathname
-            .slice(window.location.pathname.indexOf(slug) + slug.length)
+          pathname
+            .slice(pathname.indexOf(slug) + slug.length)
             .replace(/(^\/|\/$)/, "")
             .split("/")[0] || "home";
         return html`<btrix-org
