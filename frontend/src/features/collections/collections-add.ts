@@ -7,7 +7,7 @@ import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
 import queryString from "query-string";
 
-import { TailwindElement } from "@/classes/TailwindElement";
+import { BtrixElement } from "@/classes/BtrixElement";
 import type { Combobox } from "@/components/ui/combobox";
 import { APIController } from "@/controllers/api";
 import { NotifyController } from "@/controllers/notify";
@@ -31,7 +31,6 @@ export type CollectionsChangeEvent = CustomEvent<{
  * ```ts
  * <btrix-collections-add
  *   .initialCollections=${[]}
- *   .orgId=${this.orgId}
  *   .configId=${this.configId}
  *   @collections-change=${console.log}
  * ></btrix-collections-add>
@@ -40,12 +39,9 @@ export type CollectionsChangeEvent = CustomEvent<{
  */
 @localized()
 @customElement("btrix-collections-add")
-export class CollectionsAdd extends TailwindElement {
+export class CollectionsAdd extends BtrixElement {
   @property({ type: Array })
   initialCollections?: string[];
-
-  @property({ type: String })
-  orgId!: string;
 
   @property({ type: String })
   configId?: string;

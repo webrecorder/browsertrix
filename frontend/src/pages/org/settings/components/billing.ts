@@ -61,10 +61,12 @@ export class OrgSettingsBilling extends BtrixElement {
   }
 
   private readonly portalUrl = new Task(this, {
-    task: async ([org]) => {
-      if (!org) throw new Error("Missing args");
+    task: async ([appState]) => {
+      if (!appState.settings?.billingEnabled || !appState.org?.subscription)
+        return;
+
       try {
-        const { portalUrl } = await this.getPortalUrl(org.id);
+        const { portalUrl } = await this.getPortalUrl();
 
         if (portalUrl) {
           return portalUrl;
@@ -79,7 +81,7 @@ export class OrgSettingsBilling extends BtrixElement {
         );
       }
     },
-    args: () => [this.org] as const,
+    args: () => [this.appState] as const,
   });
 
   render() {
@@ -300,7 +302,7 @@ export class OrgSettingsBilling extends BtrixElement {
     `;
   }
 
-  private async getPortalUrl(orgId: string) {
-    return this.api.fetch<BillingPortal>(`/orgs/${orgId}/billing-portal`);
+  private async getPortalUrl() {
+    return this.api.fetch<BillingPortal>(`/orgs/${this.orgId}/billing-portal`);
   }
 }

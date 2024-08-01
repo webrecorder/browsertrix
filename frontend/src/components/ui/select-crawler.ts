@@ -30,7 +30,6 @@ type CrawlerChannelsAPIResponse = {
  * ```ts
  * <btrix-select-crawler
  *   authState=${authState}
- *   orgId=${orgId}
  *   on-change=${({value}) => selectedCrawler = value}
  * ></btrix-select-crawler>
  * ```
@@ -40,9 +39,6 @@ type CrawlerChannelsAPIResponse = {
 @customElement("btrix-select-crawler")
 @localized()
 export class SelectCrawler extends LiteElement {
-  @property({ type: String })
-  orgId!: string;
-
   @property({ type: String })
   crawlerChannel?: string;
 

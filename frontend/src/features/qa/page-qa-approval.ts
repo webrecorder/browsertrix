@@ -3,7 +3,7 @@ import { css, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
 
-import { TailwindElement } from "@/classes/TailwindElement";
+import { BtrixElement } from "@/classes/BtrixElement";
 import { APIController } from "@/controllers/api";
 import { NotifyController } from "@/controllers/notify";
 import type { ArchivedItemPage } from "@/types/crawler";
@@ -21,7 +21,7 @@ export type UpdatePageApprovalDetail = {
  */
 @localized()
 @customElement("btrix-page-qa-approval")
-export class PageQAToolbar extends TailwindElement {
+export class PageQAToolbar extends BtrixElement {
   static styles = css`
     :host {
       --btrix-border: 1px solid var(--sl-color-neutral-300);
@@ -158,9 +158,6 @@ export class PageQAToolbar extends TailwindElement {
         var(--sl-transition-x-fast) transform;
     }
   `;
-
-  @property({ type: String, attribute: false })
-  orgId?: string;
 
   @property({ type: String, attribute: false })
   itemId?: string;

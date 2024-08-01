@@ -4,7 +4,7 @@ import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import queryString from "query-string";
 
-import { TailwindElement } from "@/classes/TailwindElement";
+import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
 import { APIController } from "@/controllers/api";
 import { NavigateController } from "@/controllers/navigate";
@@ -17,17 +17,13 @@ import { isApiError } from "@/utils/api";
  * ```ts
  * <btrix-browser-profiles-new
  *  authState=${authState}
- *  orgId=${orgId}
  *  browserId=${browserId}
  * ></btrix-browser-profiles-new>
  * ```
  */
 @localized()
 @customElement("btrix-browser-profiles-new")
-export class BrowserProfilesNew extends TailwindElement {
-  @property({ type: String })
-  orgId!: string;
-
+export class BrowserProfilesNew extends BtrixElement {
   @property({ type: String })
   browserId!: string;
 
@@ -126,7 +122,6 @@ export class BrowserProfilesNew extends TailwindElement {
       <div class="sticky top-0 flex h-screen flex-col gap-2">
         <btrix-profile-browser
           class="flex-1 overflow-hidden rounded-lg border"
-          orgId=${this.orgId}
           browserId=${this.browserId}
           initialNavigateUrl=${ifDefined(this.browserParams.navigateUrl)}
           @btrix-browser-load=${() => (this.isBrowserLoaded = true)}

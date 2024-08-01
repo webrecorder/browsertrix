@@ -46,9 +46,6 @@ const defaultValue = {
 @localized()
 @customElement("btrix-workflows-new")
 export class WorkflowsNew extends LiteElement {
-  @property({ type: String })
-  orgId!: string;
-
   @property({ type: Boolean })
   isCrawler!: boolean;
 
@@ -117,7 +114,6 @@ export class WorkflowsNew extends LiteElement {
           .initialWorkflow=${this.initialWorkflow}
           .initialSeeds=${this.initialSeeds}
           jobType=${jobType}
-          orgId=${this.orgId}
           @reset=${async (e: Event) => {
             await (e.target as LitElement).updateComplete;
             this.dispatchEvent(

@@ -1,6 +1,8 @@
 import { localized } from "@lit/localize";
-import { css, html, LitElement, type PropertyValues } from "lit";
+import { css, html, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+
+import { BtrixElement } from "@/classes/BtrixElement";
 
 type Message = {
   id: number; // page ID
@@ -29,14 +31,13 @@ type CloseMessage = Message & {
  * Usage example:
  * ```ts
  * <btrix-screencast
- *   orgId=${orgId}
  *   crawlId=${crawlId}
  * ></btrix-screencast>
  * ```
  */
 @customElement("btrix-screencast")
 @localized()
-export class Screencast extends LitElement {
+export class Screencast extends BtrixElement {
   static baseUrl = `${window.location.protocol === "https:" ? "wss" : "ws"}:${
     process.env.WEBSOCKET_HOST || window.location.host
   }/watch`;
@@ -125,9 +126,6 @@ export class Screencast extends LitElement {
   authToken?: string;
 
   @property({ type: String })
-  orgId?: string;
-
-  @property({ type: String })
   crawlId?: string;
 
   @property({ type: Number })
@@ -158,7 +156,7 @@ export class Screencast extends LitElement {
     changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {
     if (
-      changedProperties.get("orgId") ||
+      changedProperties.get("appState.orgSlug") ||
       changedProperties.get("crawlId") ||
       changedProperties.get("authToken")
     ) {

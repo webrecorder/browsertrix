@@ -26,7 +26,6 @@ const DESCRIPTION_MAXLENGTH = 500;
  * ```ts
  * <btrix-browser-profiles-detail
  *  authState=${authState}
- *  orgId=${orgId}
  *  profileId=${profileId}
  * ></btrix-browser-profiles-detail>
  * ```
@@ -34,9 +33,6 @@ const DESCRIPTION_MAXLENGTH = 500;
 @localized()
 @customElement("btrix-browser-profiles-detail")
 export class BrowserProfilesDetail extends BtrixElement {
-  @property({ type: String, attribute: false })
-  orgId!: string;
-
   @property({ type: String })
   profileId!: string;
 
@@ -215,7 +211,6 @@ export class BrowserProfilesDetail extends BtrixElement {
                     <div class="flex flex-1 flex-col gap-2">
                       <btrix-profile-browser
                         class="flex-1 overflow-hidden rounded border"
-                        orgId=${this.orgId}
                         browserId=${ifDefined(this.browserId)}
                         .origins=${this.profile?.origins}
                         @btrix-browser-load=${() =>

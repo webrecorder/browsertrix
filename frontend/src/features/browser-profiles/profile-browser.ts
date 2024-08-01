@@ -3,7 +3,7 @@ import { html, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 
-import { TailwindElement } from "@/classes/TailwindElement";
+import { BtrixElement } from "@/classes/BtrixElement";
 import { APIController } from "@/controllers/api";
 import { NotifyController } from "@/controllers/notify";
 import { isApiError, type APIError } from "@/utils/api";
@@ -30,7 +30,6 @@ export type BrowserConnectionChange = {
  * ```ts
  * <btrix-profile-browser
  *   authState=${authState}
- *   orgId=${orgId}
  *   browserId=${browserId}
  *   initialNavigateUrl=${initialNavigateUrl}
  *   origins=${origins}
@@ -44,10 +43,7 @@ export type BrowserConnectionChange = {
  */
 @localized()
 @customElement("btrix-profile-browser")
-export class ProfileBrowser extends TailwindElement {
-  @property({ type: String })
-  orgId!: string;
-
+export class ProfileBrowser extends BtrixElement {
   @property({ type: String })
   browserId?: string;
 

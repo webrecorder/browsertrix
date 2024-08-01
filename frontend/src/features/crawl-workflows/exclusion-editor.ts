@@ -24,7 +24,6 @@ type ResponseData = {
  * Usage example:
  * ```ts
  * <btrix-exclusion-editor
- *   orgId=${this.crawl.oid}
  *   crawlId=${this.crawl.id}
  *   .config=${this.workflow.config}
  *   ?isActiveCrawl=${isActive}
@@ -37,9 +36,6 @@ type ResponseData = {
 @localized()
 @customElement("btrix-exclusion-editor")
 export class ExclusionEditor extends LiteElement {
-  @property({ type: String })
-  orgId?: string;
-
   @property({ type: String })
   crawlId?: string;
 
@@ -67,7 +63,7 @@ export class ExclusionEditor extends LiteElement {
 
   willUpdate(changedProperties: PropertyValues<this> & Map<string, unknown>) {
     if (
-      changedProperties.has("orgId") ||
+      changedProperties.has("appState.orgSlug") ||
       changedProperties.has("crawlId") ||
       changedProperties.has("regex")
     ) {
@@ -129,7 +125,6 @@ export class ExclusionEditor extends LiteElement {
 
   private renderQueue() {
     return html`<btrix-crawl-queue
-      orgId=${this.orgId!}
       crawlId=${this.crawlId!}
       regex=${this.regex}
       .exclusions=${this.config?.exclude || []}

@@ -15,6 +15,14 @@ export class BtrixElement extends TailwindElement {
     return this.appState.userInfo;
   }
 
+  protected get userOrg() {
+    return this.appState.userOrg;
+  }
+
+  protected get orgId() {
+    return this.appState.userOrg?.id || "";
+  }
+
   protected get org() {
     return this.appState.org;
   }

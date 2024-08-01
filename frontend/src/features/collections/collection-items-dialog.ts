@@ -15,7 +15,7 @@ import type {
   SelectionChangeDetail,
 } from "./collection-workflow-list";
 
-import { TailwindElement } from "@/classes/TailwindElement";
+import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import { APIController } from "@/controllers/api";
@@ -72,7 +72,7 @@ const DEFAULT_PAGE_SIZE = 10;
 
 @localized()
 @customElement("btrix-collection-items-dialog")
-export class CollectionItemsDialog extends TailwindElement {
+export class CollectionItemsDialog extends BtrixElement {
   static styles = css`
     btrix-dialog {
       --width: var(--btrix-screen-lg);
@@ -87,12 +87,6 @@ export class CollectionItemsDialog extends TailwindElement {
       min-height: calc(100vh - 8.6rem);
     }
   `;
-
-  @property({ type: String })
-  orgId!: string;
-
-  @property({ type: String })
-  userId!: string;
 
   @property({ type: Boolean })
   isCrawler?: boolean;
@@ -463,7 +457,6 @@ export class CollectionItemsDialog extends TailwindElement {
 
     return html`<section class="flex-1 p-3">
         <btrix-collection-workflow-list
-          orgId=${this.orgId}
           collectionId=${this.collectionId}
           .workflows=${this.workflows.items}
           .selection=${this.selection}
@@ -725,9 +718,11 @@ export class CollectionItemsDialog extends TailwindElement {
   }
 
   private async fetchCrawls(pageParams: APIPaginationQuery = {}) {
+    const userId = this.userInfo!.id;
+
     try {
       this.crawls = await this.getCrawls({
-        userid: this.showOnlyMine ? this.userId : undefined,
+        userid: this.showOnlyMine ? userId : undefined,
         collectionId: this.collectionId,
         sortBy: this.sortCrawlsBy.field,
         sortDirection: this.sortCrawlsBy.direction,
@@ -738,7 +733,7 @@ export class CollectionItemsDialog extends TailwindElement {
       });
       if (!this.showOnlyInCollection) {
         this.workflows = await this.getWorkflows({
-          userid: this.showOnlyMine ? this.userId : undefined,
+          userid: this.showOnlyMine ? userId : undefined,
           sortBy:
             // NOTE "finished" field doesn't exist in crawlconfigs,
             // `lastRun` is used instead
@@ -758,9 +753,11 @@ export class CollectionItemsDialog extends TailwindElement {
   }
 
   private async fetchUploads(pageParams: APIPaginationQuery = {}) {
+    const userId = this.userInfo!.id;
+
     try {
       this.uploads = await this.getUploads({
-        userid: this.showOnlyMine ? this.userId : undefined,
+        userid: this.showOnlyMine ? userId : undefined,
         collectionId: this.showOnlyInCollection ? this.collectionId : undefined,
         sortBy: this.sortUploadsBy.field,
         sortDirection: this.sortUploadsBy.direction,

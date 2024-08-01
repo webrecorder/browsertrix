@@ -1,14 +1,14 @@
 /**
  * Store and access application-wide state
  */
-import { locked, options, use } from "lit-shared-state";
+import { locked, options, transaction, use } from "lit-shared-state";
 
 import { persist } from "./persist";
 
 import type { AppSettings } from "@/types/app";
 import { authSchema, type Auth } from "@/types/auth";
 import type { OrgData } from "@/types/org";
-import { userInfoSchema, type UserInfo } from "@/types/user";
+import { userInfoSchema, type UserInfo, type UserOrg } from "@/types/user";
 
 export { use };
 
@@ -19,16 +19,24 @@ class AppState {
   // TODO persist
   settings: AppSettings | null = null;
   userInfo: UserInfo | null = null;
-  org: OrgData | null | undefined = undefined;
 
   // TODO persist here
   // @options(persist(window.sessionStorage))
   auth: Auth | null = null;
 
-  // Store user-selected org slug in local storage so that
-  // it persists between sessions
+  // Store org slug in local storage in order to redirect
+  // to the most recently visited org on next log in
   @options(persist(window.localStorage))
   orgSlug: string | null = null;
+
+  // Org details
+  org: OrgData | null | undefined = undefined;
+
+  // Use `userOrg` to retrieve the basic org info like id,
+  // since `userInfo` will` always available before `org`
+  get userOrg(): UserOrg | undefined {
+    return this.userInfo?.orgs.find(({ slug }) => slug === this.orgSlug);
+  }
 
   // Slug lookup for non-superadmins
   // Superadmins have access to the `GET orgs/slug-lookup` endpoint
@@ -57,69 +65,74 @@ export function makeAppStateService() {
 
   const appState = new LockedAppState();
 
-  class AppStateService {
+  class AppStateActions {
     get appState() {
       return appState;
     }
 
-    updateSettings = (settings: AppState["settings"]) => {
-      unlock(() => {
-        appState.settings = settings;
-      });
-    };
-    updateAuth = (authState: AppState["auth"]) => {
-      unlock(() => {
-        authSchema.nullable().parse(authState);
+    @unlock()
+    updateSettings(settings: AppState["settings"]) {
+      appState.settings = settings;
+    }
 
-        appState.auth = authState;
-      });
-    };
-    updateUserInfo = (userInfo: AppState["userInfo"]) => {
-      unlock(() => {
-        userInfoSchema.nullable().parse(userInfo);
+    @unlock()
+    updateAuth(authState: AppState["auth"]) {
+      authSchema.nullable().parse(authState);
 
-        appState.userInfo = userInfo;
-      });
-    };
-    updateOrg = (org: AppState["org"]) => {
-      unlock(() => {
-        appState.org = org;
-      });
-    };
-    partialUpdateOrg = (org: { id: string } & Partial<OrgData>) => {
-      unlock(() => {
-        if (org.id && appState.org?.id === org.id) {
-          appState.org = {
-            ...appState.org,
-            ...org,
-          };
-        } else {
-          console.warn("no matching org in app state");
-        }
-      });
-    };
-    updateOrgSlug = (orgSlug: AppState["orgSlug"]) => {
-      unlock(() => {
-        appState.orgSlug = orgSlug;
-      });
-    };
-    resetAll = () => {
-      unlock(() => {
-        appState.settings = null;
-        appState.org = undefined;
-      });
-      this.resetUser();
-    };
-    resetUser = () => {
-      unlock(() => {
-        appState.auth = null;
-        appState.userInfo = null;
-        appState.orgSlug = null;
-      });
-    };
+      appState.auth = authState;
+    }
+
+    @unlock()
+    updateUserInfo(userInfo: AppState["userInfo"]) {
+      userInfoSchema.nullable().parse(userInfo);
+
+      appState.userInfo = userInfo;
+    }
+
+    @unlock()
+    updateOrgSlug(orgSlug: AppState["orgSlug"]) {
+      appState.orgSlug = orgSlug;
+    }
+
+    @unlock()
+    updateOrg(org: AppState["org"]) {
+      appState.org = org;
+    }
+
+    @unlock()
+    partialUpdateOrg(org: { id: string } & Partial<OrgData>) {
+      if (org.id && appState.org?.id === org.id) {
+        appState.org = {
+          ...appState.org,
+          ...org,
+        };
+      } else {
+        console.warn("no matching org in app state");
+      }
+    }
+
+    @transaction()
+    @unlock()
+    resetAll() {
+      appState.settings = null;
+      appState.org = undefined;
+      this._resetUser();
+    }
+
+    @transaction()
+    @unlock()
+    resetUser() {
+      this._resetUser();
+    }
+
+    private _resetUser() {
+      appState.auth = null;
+      appState.userInfo = null;
+      appState.orgSlug = null;
+    }
   }
 
-  return new AppStateService();
+  return new AppStateActions();
 }
 
 const AppStateService = makeAppStateService();

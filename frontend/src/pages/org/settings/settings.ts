@@ -48,7 +48,6 @@ export type OrgRemoveMemberEvent = CustomEvent<{
  * ```ts
  * <btrix-org-settings
  *  .org=${org}
- *  .orgId=${orgId}
  *  ?isAddingMember=${isAddingMember}
  * ></btrix-org-settings>
  * ```
@@ -59,9 +58,6 @@ export type OrgRemoveMemberEvent = CustomEvent<{
 @localized()
 @customElement("btrix-org-settings")
 export class OrgSettings extends BtrixElement {
-  @property({ type: String })
-  orgId!: string;
-
   @property({ type: String })
   activePanel: Tab = "information";
 

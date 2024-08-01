@@ -99,6 +99,12 @@ export class App extends LiteElement {
     void this.fetchAppSettings();
   }
 
+  willUpdate(changedProperties: Map<string, unknown>) {
+    if (changedProperties.get("viewState")) {
+      this.updateOrgSlugIfNeeded();
+    }
+  }
+
   getLocationPathname() {
     return window.location.pathname;
   }
@@ -117,9 +123,13 @@ export class App extends LiteElement {
       this.viewState = this.router.match(
         `${pathname}${window.location.search}`,
       );
+      this.updateOrgSlugIfNeeded();
     }
+  }
+
+  private updateOrgSlugIfNeeded() {
     const slug = this.viewState.params.slug || null;
-    if (slug !== this.appState.orgSlug) {
+    if (this.viewState.route === "org" && slug !== this.appState.orgSlug) {
       AppStateService.updateOrgSlug(slug);
     }
   }

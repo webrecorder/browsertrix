@@ -1,5 +1,5 @@
 import { localized, msg, str } from "@lit/localize";
-import { initialState, Task } from "@lit/task";
+import { Task } from "@lit/task";
 import type { SlCheckbox, SlSelect } from "@shoelace-style/shoelace";
 import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
@@ -80,12 +80,6 @@ export class CrawlsList extends BtrixElement {
     firstSeed: msg("Crawl Start URL"),
   };
 
-  @property({ type: String })
-  userId!: string;
-
-  @property({ type: String })
-  orgId?: string;
-
   @property({ type: Boolean })
   isCrawler!: boolean;
 
@@ -137,25 +131,12 @@ export class CrawlsList extends BtrixElement {
 
   private readonly archivedItemsTask = new Task(this, {
     task: async (
-      [
-        orgId,
-        userId,
-        itemType,
-        pagination,
-        orderBy,
-        filterBy,
-        filterByCurrentUser,
-      ],
+      [itemType, pagination, orderBy, filterBy, filterByCurrentUser],
       { signal },
     ) => {
-      if (!orgId || !userId) {
-        return initialState;
-      }
       try {
         const data = await this.getArchivedItems(
           {
-            orgId,
-            userId,
             itemType,
             pagination,
             orderBy,
@@ -188,8 +169,6 @@ export class CrawlsList extends BtrixElement {
     args: () =>
       // TODO consolidate filters into single fetch params
       [
-        this.orgId,
-        this.userId,
         this.itemType,
         this.pagination,
         this.orderBy,
@@ -352,7 +331,6 @@ export class CrawlsList extends BtrixElement {
         this.isCrawler && this.orgId,
         () => html`
           <btrix-file-uploader
-            orgId=${this.orgId!}
             ?open=${this.isUploadingArchive}
             @request-close=${() => (this.isUploadingArchive = false)}
             @uploaded=${() => {
@@ -500,7 +478,7 @@ export class CrawlsList extends BtrixElement {
         </div>
       </div>
 
-      ${this.userId
+      ${this.userInfo?.id
         ? html` <div class="mt-2 flex h-6 justify-end">
             <label>
               <span class="mr-1 text-xs text-neutral-500"
@@ -732,8 +710,6 @@ export class CrawlsList extends BtrixElement {
 
   private async getArchivedItems(
     params: {
-      orgId: string;
-      userId: CrawlsList["userId"];
       itemType: CrawlsList["itemType"];
       pagination: CrawlsList["pagination"];
       orderBy: CrawlsList["orderBy"];
@@ -750,7 +726,7 @@ export class CrawlsList extends BtrixElement {
           : finishedCrawlStates,
         page: params.pagination.page,
         pageSize: params.pagination.pageSize,
-        userid: params.filterByCurrentUser ? params.userId : undefined,
+        userid: params.filterByCurrentUser ? this.userInfo!.id : undefined,
         sortBy: params.orderBy.field,
         sortDirection: params.orderBy.direction === "desc" ? -1 : 1,
         crawlType: params.itemType,
@@ -761,7 +737,7 @@ export class CrawlsList extends BtrixElement {
     );
 
     return this.api.fetch<ArchivedItems>(
-      `/orgs/${params.orgId}/all-crawls?${query}`,
+      `/orgs/${this.orgId}/all-crawls?${query}`,
       { signal },
     );
   }
