@@ -72,9 +72,9 @@ spec:
       persistentVolumeClaim:
         claimName: {{ name }}
     {% if proxy_id %}
-    - name: proxy-ssh-keys
+    - name: proxies
       secret:
-        secretName: proxy-ssh-keys
+        secretName: proxies
         defaultMode: 0600
     {% endif %}
 
@@ -137,11 +137,15 @@ spec:
       {% endif %}
       {% if proxy_id %}
         - --proxyServer
-        - "ssh://{{ ssh_proxy_auth }}"
+        - "{{ proxy_url }}"
+      {% if proxy_ssh_private_key %}
         - --sshProxyPrivateKeyFile
         - /tmp/ssh-proxy/private-key
+      {% endif %}
+      {% if proxy_ssh_host_public_key %}
         - --sshProxyKnownHostsFile
         - /tmp/ssh-proxy/known-hosts
+      {% endif %}
       {% endif %}
       volumeMounts:
         - name: crawl-config
@@ -155,19 +159,23 @@ spec:
           readOnly: True
       {% endif %}
       {% if proxy_id %}
-        - name: proxy-ssh-keys
+      {% if proxy_ssh_private_key %}
+        - name: proxies
           mountPath: /tmp/ssh-proxy/private-key
           subPath: {{ proxy_id }}-private-key
           readOnly: true
-        - name: proxy-ssh-keys
+      {% endif %}
+      {% if proxy_ssh_host_public_key %}
+        - name: proxies
           mountPath: /tmp/ssh-proxy/known-hosts
           subPath: {{ proxy_id }}-known-hosts
           readOnly: true
-        - name: proxy-ssh-keys
+      {% endif %}
+        - name: proxies
           mountPath: /etc/passwd
           subPath: passwd
           readOnly: true
-        - name: proxy-ssh-keys
+        - name: proxies
           mountPath: /etc/group
           subPath: group
           readOnly: true

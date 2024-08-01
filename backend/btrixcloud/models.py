@@ -580,9 +580,12 @@ class CrawlerProxy(BaseModel):
     """proxy definition"""
 
     id: str
+    url: str
     label: str
-    country_code: str
-    auth: str
+    description: str = ""
+    country_code: str = ""
+    has_host_public_key: bool
+    has_private_key: bool
 
 
 # ============================================================================

@@ -55,6 +55,8 @@ data:
   CRAWLER_CHANNELS_JSON: "/ops-configs/crawler_channels.json"
   CRAWLER_PROXIES_JSON: "/ops-configs/crawler_proxies.json"
 
+  DEFAULT_PROXY_ID: "{{ .Values.default_proxy }}"
+
   MIN_QA_CRAWLER_IMAGE: "{{ .Values.min_qa_crawler_image }}"
 
   MAX_CRAWLER_MEMORY: "{{ .Values.max_crawler_memory }}"

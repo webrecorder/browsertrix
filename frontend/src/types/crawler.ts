@@ -216,8 +216,8 @@ export type CrawlerChannel = {
 export type Proxy = {
   id: string;
   label: string;
-  country_code: string;
-  auth: string;
+  country_code: string | null;
+  description: string | null;
 };
 
 export type ArchivedItem = Crawl | Upload;

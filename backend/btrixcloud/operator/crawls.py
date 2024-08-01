@@ -281,10 +281,11 @@ class CrawlOperator(BaseOperator):
 
         if crawl.proxy_id and not crawl.is_qa:
             proxy = self.crawl_config_ops.get_crawler_proxy(crawl.proxy_id)
-            params["proxy_id"] = crawl.proxy_id
-            params["ssh_proxy_auth"] = proxy.auth if proxy else ""
-        else:
-            params["proxy_id"] = None
+            if proxy:
+                params["proxy_id"] = crawl.proxy_id
+                params["proxy_url"] = proxy.url
+                params["proxy_ssh_private_key"] = proxy.has_private_key
+                params["proxy_ssh_host_public_key"] = proxy.has_host_public_key
 
         params["storage_filename"] = spec["storage_filename"]
         params["restart_time"] = spec.get("restartTime")

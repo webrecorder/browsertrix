@@ -135,8 +135,11 @@ class CrawlConfigOps:
                 proxy = CrawlerProxy(
                     id=proxy_data["id"],
                     label=proxy_data["label"],
-                    country_code=proxy_data["country_code"],
-                    auth=proxy_data["auth"],
+                    description=proxy_data.get("description", ""),
+                    country_code=proxy_data.get("country_code", ""),
+                    url=proxy_data["url"],
+                    has_host_public_key=bool(proxy_data.get("ssh_host_public_key")),
+                    has_private_key=bool(proxy_data.get("ssh_private_key")),
                 )
 
                 self.crawler_proxies_map[proxy.id] = proxy
@@ -144,8 +147,6 @@ class CrawlConfigOps:
             self.crawler_proxies = CrawlerProxies(
                 servers=list(self.crawler_proxies_map.values())
             )
-
-        print(self.crawler_proxies)
 
     def set_crawl_ops(self, ops):
         """set crawl ops reference"""

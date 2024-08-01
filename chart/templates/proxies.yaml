@@ -3,16 +3,23 @@
 apiVersion: v1
 kind: Secret
 metadata:
-  name: proxy-ssh-keys
+  name: proxies
   namespace: {{ .Values.crawler_namespace }}
 #type: kubernetes.io/ssh-auth
 type: Opaque
 stringData:
 {{- range .Values.proxies }}
+
+{{- if .ssh_private_key }}
   {{ .id }}-private-key: |
-{{ .private_key | indent 4 }}
+{{ .ssh_private_key | indent 4 }}
+{{- end }}
+
+{{- if .ssh_host_public_key }}
   {{ .id }}-known-hosts: |
-{{ .host_public_key | indent 4 }}
+{{ .ssh_host_public_key | indent 4 }}
+{{- end }}
+
 {{- end }}
 
   # slightly hacky: override /etc/passwd and /etc/group in crawler to be able to ssh to proxies

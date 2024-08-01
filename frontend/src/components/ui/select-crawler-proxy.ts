@@ -94,15 +94,19 @@ export class SelectCrawlerProxy extends LiteElement {
         ${this.allProxies?.map(
           (server) =>
             html` <sl-option value=${server.id}>
-              ${this.countryCodeToFlagEmoji(server.country_code)}
+              ${server.country_code
+                ? this.countryCodeToFlagEmoji(server.country_code)
+                : ""}
               ${capitalize(server.label)}
             </sl-option>`,
         )}
         ${this.selectedProxy
           ? html`
               <div slot="help-text">
-                ${msg("Connection:")}
-                <span class="font-monospace">${this.selectedProxy.auth}</span>
+                ${msg("Description:")}
+                <span class="font-monospace"
+                  >${this.selectedProxy.description || ""}</span
+                >
               </div>
             `
           : ``}
