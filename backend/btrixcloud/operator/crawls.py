@@ -20,6 +20,7 @@ from btrixcloud.models import (
     NON_RUNNING_STATES,
     RUNNING_STATES,
     RUNNING_AND_STARTING_ONLY,
+    RUNNING_AND_WAITING_ONLY,
     RUNNING_AND_STARTING_STATES,
     SUCCESSFUL_STATES,
     FAILED_STATES,
@@ -814,7 +815,7 @@ class CrawlOperator(BaseOperator):
                     "running",
                     status,
                     crawl,
-                    allowed_from=RUNNING_AND_STARTING_ONLY,
+                    allowed_from=["starting", "waiting_capacity"],
                 ):
                     if not crawl.qa_source_crawl_id:
                         self.run_task(
@@ -1399,7 +1400,7 @@ class CrawlOperator(BaseOperator):
 
             if new_status:
                 await self.set_state(
-                    new_status, status, crawl, allowed_from=RUNNING_AND_STARTING_ONLY
+                    new_status, status, crawl, allowed_from=RUNNING_AND_WAITING_ONLY
                 )
 
         return status
