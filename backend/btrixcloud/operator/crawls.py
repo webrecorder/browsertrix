@@ -20,7 +20,6 @@ from btrixcloud.models import (
     NON_RUNNING_STATES,
     RUNNING_STATES,
     RUNNING_AND_STARTING_ONLY,
-    RUNNING_AND_WAITING_ONLY,
     RUNNING_AND_STARTING_STATES,
     SUCCESSFUL_STATES,
     FAILED_STATES,
@@ -808,27 +807,25 @@ class CrawlOperator(BaseOperator):
                 status.resync_after = self.fast_retry_secs
                 return status
 
-            # set state to running (if not already)
-            if status.state not in RUNNING_STATES:
-                # if true (state is set), also run webhook
-                if await self.set_state(
-                    "running",
-                    status,
-                    crawl,
-                    allowed_from=["starting", "waiting_capacity"],
-                ):
-                    if not crawl.qa_source_crawl_id:
-                        self.run_task(
-                            self.event_webhook_ops.create_crawl_started_notification(
-                                crawl.id, crawl.oid, scheduled=crawl.scheduled
-                            )
+            # if true (state is set), also run webhook
+            if await self.set_state(
+                "running",
+                status,
+                crawl,
+                allowed_from=["starting", "waiting_capacity"],
+            ):
+                if not crawl.qa_source_crawl_id:
+                    self.run_task(
+                        self.event_webhook_ops.create_crawl_started_notification(
+                            crawl.id, crawl.oid, scheduled=crawl.scheduled
                         )
-                    else:
-                        self.run_task(
-                            self.event_webhook_ops.create_qa_analysis_started_notification(
-                                crawl.id, crawl.oid, crawl.qa_source_crawl_id
-                            )
+                    )
+                else:
+                    self.run_task(
+                        self.event_webhook_ops.create_qa_analysis_started_notification(
+                            crawl.id, crawl.oid, crawl.qa_source_crawl_id
                         )
+                    )
 
             # update lastActiveTime if crawler is running
             if crawler_running:
@@ -1400,7 +1397,7 @@ class CrawlOperator(BaseOperator):
 
             if new_status:
                 await self.set_state(
-                    new_status, status, crawl, allowed_from=RUNNING_AND_WAITING_ONLY
+                    new_status, status, crawl, allowed_from=RUNNING_STATES
                 )
 
         return status
