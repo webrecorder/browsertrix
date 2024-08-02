@@ -263,7 +263,7 @@ export class OrgSettingsBilling extends TailwindElement {
     <ul class="leading-relaxed text-neutral-700">
       <li>
         ${msg(
-          str`${quotas.maxPagesPerCrawl ? formatNumber(quotas.maxPagesPerCrawl) : msg("Unlimited")} ${pluralOf("pages", quotas.maxPagesPerCrawl)} per crawl`,
+          str`${quotas.maxExecMinutesPerMonth ? humanizeSeconds(quotas.maxExecMinutesPerMonth * 60, undefined, undefined, "long") : msg("Unlimited minutes")} of crawling and QA analysis time per month`,
         )}
       </li>
       <li>
@@ -273,17 +273,17 @@ export class OrgSettingsBilling extends TailwindElement {
                 value=${quotas.storageQuota}
               ></sl-format-bytes>`
             : msg("Unlimited")}
-          base disk space`,
+          storage`,
+        )}
+      </li>
+      <li>
+        ${msg(
+          str`${quotas.maxPagesPerCrawl ? formatNumber(quotas.maxPagesPerCrawl) : msg("Unlimited")} ${pluralOf("pages", quotas.maxPagesPerCrawl)} per crawl`,
         )}
       </li>
       <li>
         ${msg(
           str`${quotas.maxConcurrentCrawls ? formatNumber(quotas.maxConcurrentCrawls) : msg("Unlimited")} concurrent ${pluralOf("crawls", quotas.maxConcurrentCrawls)}`,
-        )}
-      </li>
-      <li>
-        ${msg(
-          str`${quotas.maxExecMinutesPerMonth ? humanizeSeconds(quotas.maxExecMinutesPerMonth * 60, undefined, undefined, "long") : msg("Unlimited minutes")} of base crawling time per month`,
         )}
       </li>
     </ul>
