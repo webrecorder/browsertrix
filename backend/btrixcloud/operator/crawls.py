@@ -814,7 +814,7 @@ class CrawlOperator(BaseOperator):
                     "running",
                     status,
                     crawl,
-                    allowed_from=["starting", "waiting_capacity"],
+                    allowed_from=RUNNING_AND_STARTING_ONLY,
                 ):
                     if not crawl.qa_source_crawl_id:
                         self.run_task(
@@ -1399,7 +1399,7 @@ class CrawlOperator(BaseOperator):
 
             if new_status:
                 await self.set_state(
-                    new_status, status, crawl, allowed_from=RUNNING_STATES
+                    new_status, status, crawl, allowed_from=RUNNING_AND_STARTING_ONLY
                 )
 
         return status
