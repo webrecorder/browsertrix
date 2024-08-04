@@ -55,7 +55,7 @@ spec:
         - name: api
           image: {{ .Values.backend_image }}
           imagePullPolicy: {{ .Values.backend_pull_policy }}
-          {{- if .Values.backend_api_command_override }}
+          {{- if .Values.skaffold_dev }}
           command:
             {{- range .Values.backend_api_command_override }}
             - {{ . | quote }}
@@ -147,7 +147,7 @@ spec:
         - name: op
           image: {{ .Values.backend_image }}
           imagePullPolicy: {{ .Values.backend_pull_policy }}
-          {{- if .Values.backend_op_command_override }}
+          {{- if .Values.skaffold_dev }}
           command:
             {{- range .Values.backend_op_command_override }}
             - {{ . | quote }}
@@ -198,6 +198,7 @@ spec:
               cpu: {{ .Values.backend_cpu }}
               memory: {{ .Values.backend_memory }}
 
+          {{- if not (.Values.skaffold_dev) }}
           startupProbe:
             httpGet:
               path: /healthz
@@ -206,6 +207,7 @@ spec:
             periodSeconds: 5
             failureThreshold: 5
             successThreshold: 1
+          {{- end }}
 
           readinessProbe:
             httpGet:
@@ -216,6 +218,7 @@ spec:
             failureThreshold: 5
             successThreshold: 1
 
+          {{- if not (.Values.skaffold_dev) }}
           livenessProbe:
             httpGet:
               path: /healthz
@@ -224,7 +227,7 @@ spec:
             periodSeconds: 30
             failureThreshold: 15
             successThreshold: 1
-
+          {{- end }}
 
 
 ---

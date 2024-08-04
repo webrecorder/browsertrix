@@ -55,6 +55,8 @@ deploy:
           # we hardcoded this earlier so make sure it has same value
           # across the helm chart
           opPort: 8756
+          # we need to override some settings for skaffold dev
+          skaffold_dev: true
           # hot reloading doesn't work with default gunicorn command
           # so need to override to use uvicorn
           # plus need to start the process with debugpy to debug
@@ -64,7 +66,7 @@ deploy:
             -  >
                 pip install --no-input debugpy
                 &&
-                python -m debugpy --listen 0.0.0.0:5678
+                python -Xfrozen_modules=off -m debugpy --listen 0.0.0.0:5678
                 -m uvicorn btrixcloud.main:app_root
                 --reload --host 0.0.0.0 --port 8000
           backend_op_command_override:
@@ -73,6 +75,6 @@ deploy:
             -  >
                 pip install --no-input debugpy
                 &&
-                python -m debugpy --listen 0.0.0.0:5679
+                python -Xfrozen_modules=off -m debugpy --listen 0.0.0.0:5679
                 -m uvicorn btrixcloud.main_op:app_root
                 --reload --host 0.0.0.0 --port 8756
