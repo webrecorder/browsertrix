@@ -484,7 +484,14 @@ class OrgOps:
             {"$set": query},
             return_document=ReturnDocument.AFTER,
         )
-        return Organization.from_dict(org_data) if org_data else None
+        if not org_data:
+            return None
+
+        org = Organization.from_dict(org_data)
+        if update.quotas:
+            await self.update_quotas(org, update.quotas)
+
+        return org
 
     async def cancel_subscription_data(
         self, cancel: SubscriptionCancel
