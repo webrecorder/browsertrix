@@ -276,6 +276,10 @@ def test_update_sub_2(admin_auth_headers):
             "futureCancelDate": None,
             # not updateable here, only by superadmin
             "readOnlyOnCancel": True,
+            "quotas": {
+                "maxPagesPerCrawl": 50,
+                "storageQuota": 500000,
+            },
         },
     )
 
@@ -472,7 +476,14 @@ def test_subscription_events_log(admin_auth_headers, non_default_org_id):
             "status": "active",
             "planId": "basic2",
             "futureCancelDate": None,
-            "quotas": None,
+            "quotas": {
+                "maxPagesPerCrawl": 50,
+                "storageQuota": 500000,
+                "extraExecMinutes": 0,
+                "giftedExecMinutes": 0,
+                "maxConcurrentCrawls": 0,
+                "maxExecMinutesPerMonth": 0,
+            },
         },
         {"subId": "123", "oid": new_subs_oid, "type": "cancel"},
         {"subId": "234", "oid": new_subs_oid_2, "type": "cancel"},
@@ -533,7 +544,14 @@ def test_subscription_events_log_filter_sub_id(admin_auth_headers):
             "status": "active",
             "planId": "basic2",
             "futureCancelDate": None,
-            "quotas": None,
+            "quotas": {
+                "maxPagesPerCrawl": 50,
+                "storageQuota": 500000,
+                "extraExecMinutes": 0,
+                "giftedExecMinutes": 0,
+                "maxConcurrentCrawls": 0,
+                "maxExecMinutesPerMonth": 0,
+            },
         },
         {"subId": "123", "oid": new_subs_oid, "type": "cancel"},
     ]
@@ -587,7 +605,14 @@ def test_subscription_events_log_filter_oid(admin_auth_headers):
             "status": "active",
             "planId": "basic2",
             "futureCancelDate": None,
-            "quotas": None,
+            "quotas": {
+                "maxPagesPerCrawl": 50,
+                "storageQuota": 500000,
+                "extraExecMinutes": 0,
+                "giftedExecMinutes": 0,
+                "maxConcurrentCrawls": 0,
+                "maxExecMinutesPerMonth": 0,
+            },
         },
         {"subId": "123", "oid": new_subs_oid, "type": "cancel"},
     ]
@@ -615,8 +640,15 @@ def test_subscription_events_log_filter_plan_id(admin_auth_headers):
             "status": "active",
             "planId": "basic2",
             "futureCancelDate": None,
-            "quotas": None,
-        },
+            "quotas": {
+                "maxPagesPerCrawl": 50,
+                "storageQuota": 500000,
+                "extraExecMinutes": 0,
+                "giftedExecMinutes": 0,
+                "maxConcurrentCrawls": 0,
+                "maxExecMinutesPerMonth": 0,
+            },
+        }
     ]
 
 
@@ -659,7 +691,14 @@ def test_subscription_events_log_filter_status(admin_auth_headers):
             "status": "active",
             "planId": "basic2",
             "futureCancelDate": None,
-            "quotas": None,
+            "quotas": {
+                "maxPagesPerCrawl": 50,
+                "storageQuota": 500000,
+                "extraExecMinutes": 0,
+                "giftedExecMinutes": 0,
+                "maxConcurrentCrawls": 0,
+                "maxExecMinutesPerMonth": 0,
+            },
         },
     ]
 
