@@ -26,7 +26,6 @@ const POLL_INTERVAL_SECONDS = 5;
  * Usage example:
  * ```ts
  * <btrix-crawl-queue
- *   orgId=${this.crawl.oid}
  *   crawlId=${this.crawl.id}
  *   regex="skip-me"
  * ></btrix-crawl-queue>
@@ -35,9 +34,6 @@ const POLL_INTERVAL_SECONDS = 5;
 @localized()
 @customElement("btrix-crawl-queue")
 export class CrawlQueue extends LiteElement {
-  @property({ type: String })
-  orgId?: string;
-
   @property({ type: String })
   crawlId?: string;
 
@@ -81,7 +77,7 @@ export class CrawlQueue extends LiteElement {
 
   willUpdate(changedProperties: PropertyValues<this> & Map<string, unknown>) {
     if (
-      changedProperties.has("orgId") ||
+      changedProperties.has("appState.userOrg") ||
       changedProperties.has("crawlId") ||
       changedProperties.has("pageSize") ||
       changedProperties.has("regex") ||

@@ -62,7 +62,7 @@ describe("browsertrix-app", () => {
 
   // TODO move tests to AuthService
   it("sets auth state from session storage", async () => {
-    stub(AuthService.prototype, "startFreshnessCheck");
+    stub(AuthService.prototype, "startFreshnessCheck").callsFake(() => {});
     stub(window.sessionStorage, "getItem").callsFake((key) => {
       if (key === "btrix.auth")
         return JSON.stringify({
@@ -85,18 +85,65 @@ describe("browsertrix-app", () => {
     stub(App.prototype, "getUserInfo").callsFake(async () =>
       Promise.resolve(mockAPIUser),
     );
-    stub(AuthService.prototype, "startFreshnessCheck");
-    stub(window.sessionStorage, "getItem").callsFake((key) => {
-      if (key === "btrix.auth")
-        return JSON.stringify({
-          headers: { Authorization: "_fake_headers_" },
-          tokenExpiresAt: 0,
-          username: "test-auth@example.com",
-        });
-      return null;
-    });
+    stub(AuthService.prototype, "startFreshnessCheck").callsFake(() => {});
+    stub(AuthService, "initSessionStorage").callsFake(() =>
+      Promise.resolve({
+        headers: { Authorization: "_fake_headers_" },
+        tokenExpiresAt: 0,
+        username: "test-auth@example.com",
+      }),
+    );
+
     const el = await fixture<App>("<browsertrix-app></browsertrix-app>");
 
     expect(el.appState.userInfo).to.eql(mockUserInfo);
+  });
+
+  it("sets default org slug", async () => {
+    stub(App.prototype, "getLocationPathname").callsFake(() => `/`);
+    stub(App.prototype, "getUserInfo").callsFake(async () =>
+      Promise.resolve(mockAPIUser),
+    );
+    stub(AuthService.prototype, "startFreshnessCheck").callsFake(() => {});
+    stub(AuthService, "initSessionStorage").callsFake(() =>
+      Promise.resolve({
+        headers: { Authorization: "_fake_headers_" },
+        tokenExpiresAt: 0,
+        username: "test-auth@example.com",
+      }),
+    );
+
+    const el = await fixture<App>("<browsertrix-app></browsertrix-app>");
+
+    expect(el.appState.orgSlug).to.equal("test-org");
+  });
+
+  it("sets org slug from path", async () => {
+    const id = self.crypto.randomUUID();
+    const mockOrg = {
+      id: id,
+      name: "test org 2",
+      slug: id,
+      role: 10,
+    };
+    stub(App.prototype, "getLocationPathname").callsFake(() => `/orgs/${id}`);
+    stub(App.prototype, "getUserInfo").callsFake(async () =>
+      Promise.resolve({
+        ...mockAPIUser,
+        orgs: [...mockAPIUser.orgs, mockOrg],
+      }),
+    );
+    stub(AuthService.prototype, "startFreshnessCheck").callsFake(() => {});
+    stub(AuthService, "initSessionStorage").callsFake(() =>
+      Promise.resolve({
+        headers: { Authorization: "_fake_headers_" },
+        tokenExpiresAt: 0,
+        username: "test-auth@example.com",
+      }),
+    );
+
+    const el = await fixture<App>("<browsertrix-app></browsertrix-app>");
+
+    expect(el.appState.orgSlug).to.equal(id);
   });
 });

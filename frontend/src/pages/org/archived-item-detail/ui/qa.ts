@@ -96,9 +96,6 @@ export class ArchivedItemDetailQA extends BtrixElement {
   `;
 
   @property({ type: String, attribute: false })
-  orgId?: string;
-
-  @property({ type: String, attribute: false })
   crawlId?: string;
 
   @property({ type: String, attribute: false })
@@ -122,19 +119,14 @@ export class ArchivedItemDetailQA extends BtrixElement {
   private readonly qaStats = new Task(this, {
     // mostRecentNonFailedQARun passed as arg for reactivity so that meter will auto-update
     // like progress bar as the analysis run finishes new pages
-    task: async ([orgId, crawlId, qaRunId, mostRecentNonFailedQARun]) => {
+    task: async ([crawlId, qaRunId, mostRecentNonFailedQARun]) => {
       if (!qaRunId || !mostRecentNonFailedQARun)
         throw new Error("Missing args");
-      const stats = await this.getQAStats(orgId, crawlId, qaRunId);
+      const stats = await this.getQAStats(crawlId, qaRunId);
       return stats;
     },
     args: () =>
-      [
-        this.orgId!,
-        this.crawlId!,
-        this.qaRunId,
-        this.mostRecentNonFailedQARun,
-      ] as const,
+      [this.crawlId!, this.qaRunId, this.mostRecentNonFailedQARun] as const,
   });
 
   @state()
@@ -926,7 +918,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
     }
   }
 
-  private async getQAStats(orgId: string, crawlId: string, qaRunId: string) {
+  private async getQAStats(crawlId: string, qaRunId: string) {
     const query = queryString.stringify(
       {
         screenshotThresholds: [0.5, 0.9],
@@ -938,7 +930,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
     );
 
     return this.api.fetch<QAStats>(
-      `/orgs/${orgId}/crawls/${crawlId}/qa/${qaRunId}/stats?${query}`,
+      `/orgs/${this.orgId}/crawls/${crawlId}/qa/${qaRunId}/stats?${query}`,
     );
   }
 }

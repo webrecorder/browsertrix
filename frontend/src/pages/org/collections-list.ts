@@ -53,9 +53,6 @@ const MIN_SEARCH_LENGTH = 2;
 @localized()
 @customElement("btrix-collections-list")
 export class CollectionsList extends LiteElement {
-  @property({ type: String })
-  orgId!: string;
-
   @property({ type: Boolean })
   isCrawler?: boolean;
 
@@ -110,12 +107,12 @@ export class CollectionsList extends LiteElement {
   protected async willUpdate(
     changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {
-    if (changedProperties.has("orgId")) {
+    if (changedProperties.has("appState.userOrg")) {
       this.collections = undefined;
       void this.fetchSearchValues();
     }
     if (
-      changedProperties.has("orgId") ||
+      changedProperties.has("appState.userOrg") ||
       changedProperties.has("filterBy") ||
       changedProperties.has("orderBy")
     ) {
@@ -189,7 +186,6 @@ export class CollectionsList extends LiteElement {
         </div>
       </btrix-dialog>
       <btrix-collection-metadata-dialog
-        orgId=${this.orgId}
         .collection=${this.openDialogName === "create"
           ? undefined
           : this.selectedCollection}

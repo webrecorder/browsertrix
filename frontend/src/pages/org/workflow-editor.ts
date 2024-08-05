@@ -255,9 +255,6 @@ type CrawlConfigResponse = {
 @customElement("btrix-workflow-editor")
 export class CrawlConfigEditor extends LiteElement {
   @property({ type: String })
-  orgId!: string;
-
-  @property({ type: String })
   configId?: string;
 
   @property({ type: String })
@@ -384,7 +381,7 @@ export class CrawlConfigEditor extends LiteElement {
     if (changedProperties.has("jobType") && this.jobType) {
       this.initializeEditor();
     }
-    if (changedProperties.has("orgId")) {
+    if (changedProperties.has("appState.userOrg")) {
       await this.fetchAPIDefaults();
       if (this.orgId) {
         await this.fetchOrgQuotaDefaults();
@@ -412,7 +409,7 @@ export class CrawlConfigEditor extends LiteElement {
         }
       }
     }
-    if (changedProperties.get("orgId") && this.orgId) {
+    if (changedProperties.get("appState.userOrg") && this.orgId) {
       await this.fetchTags();
     }
   }
@@ -1657,7 +1654,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
     return html`
       ${this.renderFormCol(html`
         <btrix-select-browser-profile
-          orgId=${this.orgId}
           .profileId=${this.formState.browserProfile?.id}
           @on-change=${(e: SelectBrowserProfileChangeEvent) =>
             this.updateFormState({
@@ -1671,7 +1667,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
       )}
       ${this.renderFormCol(html`
         <btrix-select-crawler
-          orgId=${this.orgId}
           .crawlerChannel=${this.formState.crawlerChannel}
           @on-change=${(e: SelectCrawlerChangeEvent) =>
             this.updateFormState({
@@ -1947,7 +1942,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
       ${this.renderFormCol(html`
         <btrix-collections-add
           .initialCollections=${this.formState.autoAddCollections}
-          .orgId=${this.orgId}
           .configId=${this.configId}
           emptyText=${msg("Search for a Collection to auto-add crawls")}
           @collections-change=${(e: CollectionsChangeEvent) =>

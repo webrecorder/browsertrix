@@ -126,7 +126,6 @@ export class CrawlMetadataEditor extends LiteElement {
         <div class="mt-4">
           <btrix-collections-add
             .initialCollections=${this.crawl.collectionIds}
-            .orgId=${this.crawl.oid}
             .configId=${"temp"}
             label=${msg("Add to Collection")}
             @collections-change=${(e: CollectionsChangeEvent) =>

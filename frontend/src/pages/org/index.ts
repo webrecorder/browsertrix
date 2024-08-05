@@ -113,23 +113,14 @@ export class Org extends LiteElement {
   @state()
   private isCreateDialogVisible = false;
 
-  private get userOrg() {
-    if (!this.userInfo) return null;
-    return this.userInfo.orgs.find(({ slug }) => slug === this.slug)!;
-  }
-
-  private get orgId() {
-    return this.userOrg?.id || "";
-  }
-
   private get isAdmin() {
-    const userOrg = this.userOrg;
+    const userOrg = this.appState.userOrg;
     if (userOrg) return isAdmin(userOrg.role);
     return false;
   }
 
   private get isCrawler() {
-    const userOrg = this.userOrg;
+    const userOrg = this.appState.userOrg;
     if (userOrg) return isCrawler(userOrg.role);
     return false;
   }
@@ -248,15 +239,6 @@ export class Org extends LiteElement {
   }
 
   render() {
-    if (this.org === null) {
-      return html`<btrix-not-found></btrix-not-found>`;
-    }
-
-    if (!this.org || !this.userInfo) {
-      // TODO combine loading state with tab panel content
-      return "";
-    }
-
     let tabPanelContent: TemplateResult<1> | string | undefined = "";
 
     switch (this.orgTab) {
@@ -405,7 +387,6 @@ export class Org extends LiteElement {
         }}
       >
         <btrix-file-uploader
-          orgId=${this.orgId}
           ?open=${this.openDialogName === "upload"}
           @request-close=${() => (this.openDialogName = undefined)}
           @uploaded=${() => {
@@ -415,13 +396,11 @@ export class Org extends LiteElement {
           }}
         ></btrix-file-uploader>
         <btrix-new-browser-profile-dialog
-          orgId=${this.orgId}
           ?open=${this.openDialogName === "browser-profile"}
           @sl-hide=${() => (this.openDialogName = undefined)}
         >
         </btrix-new-browser-profile-dialog>
         <btrix-new-workflow-dialog
-          orgId=${this.orgId}
           ?open=${this.openDialogName === "workflow"}
           @sl-hide=${() => (this.openDialogName = undefined)}
           @select-job-type=${(e: SelectJobTypeEvent) => {
@@ -431,7 +410,6 @@ export class Org extends LiteElement {
         >
         </btrix-new-workflow-dialog>
         <btrix-collection-metadata-dialog
-          orgId=${this.orgId}
           ?open=${this.openDialogName === "collection"}
           @sl-hide=${() => (this.openDialogName = undefined)}
           @btrix-collection-saved=${(e: CollectionSavedEvent) => {
@@ -448,7 +426,6 @@ export class Org extends LiteElement {
   private renderDashboard() {
     return html`
       <btrix-dashboard
-        orgId=${this.orgId}
         ?isCrawler=${this.isCrawler}
         ?isAdmin=${this.isAdmin}
         @select-new-dialog=${this.onSelectNewDialog}
@@ -469,7 +446,6 @@ export class Org extends LiteElement {
 
         return html`<btrix-archived-item-qa
           class="flex-1"
-          orgId=${this.orgId}
           itemId=${params.itemId}
           itemPageId=${ifDefined(params.itemPageId)}
           qaRunId=${ifDefined(params.qaRunId)}
@@ -478,7 +454,6 @@ export class Org extends LiteElement {
       }
 
       return html` <btrix-archived-item-detail
-        orgId=${this.orgId}
         crawlId=${params.itemId}
         collectionId=${params.collectionId || ""}
         workflowId=${params.workflowId || ""}
@@ -488,8 +463,6 @@ export class Org extends LiteElement {
     }
 
     return html`<btrix-archived-items
-      userId=${this.userInfo!.id}
-      orgId=${this.orgId}
       ?isCrawler=${this.isCrawler}
       itemType=${ifDefined(params.itemType || undefined)}
       @select-new-dialog=${this.onSelectNewDialog}
@@ -507,7 +480,6 @@ export class Org extends LiteElement {
       return html`
         <btrix-workflow-detail
           class="col-span-5 mt-6"
-          orgId=${this.orgId}
           workflowId=${workflowId}
           openDialogName=${this.viewStateData?.dialog}
           ?isEditing=${isEditing}
@@ -522,7 +494,6 @@ export class Org extends LiteElement {
 
       return html` <btrix-workflows-new
         class="col-span-5 mt-6"
-        orgId=${this.orgId}
         ?isCrawler=${this.isCrawler}
         .initialWorkflow=${workflow}
         .initialSeeds=${seeds}
@@ -532,8 +503,6 @@ export class Org extends LiteElement {
     }
 
     return html`<btrix-workflows-list
-      orgId=${this.orgId}
-      userId=${this.userInfo!.id}
       ?isCrawler=${this.isCrawler}
       @select-new-dialog=${this.onSelectNewDialog}
     ></btrix-workflows-list>`;
@@ -544,7 +513,6 @@ export class Org extends LiteElement {
 
     if (params.browserProfileId) {
       return html`<btrix-browser-profiles-detail
-        .orgId=${this.orgId}
         profileId=${params.browserProfileId}
         ?isCrawler=${this.isCrawler}
       ></btrix-browser-profiles-detail>`;
@@ -552,7 +520,6 @@ export class Org extends LiteElement {
 
     if (params.browserId) {
       return html`<btrix-browser-profiles-new
-        .orgId=${this.orgId}
         .browserId=${params.browserId}
         .browserParams=${{
           name: params.name || "",
@@ -566,7 +533,6 @@ export class Org extends LiteElement {
     }
 
     return html`<btrix-browser-profiles-list
-      .orgId=${this.orgId}
       ?isCrawler=${this.isCrawler}
       @select-new-dialog=${this.onSelectNewDialog}
     ></btrix-browser-profiles-list>`;
@@ -577,8 +543,6 @@ export class Org extends LiteElement {
 
     if (params.collectionId) {
       return html`<btrix-collection-detail
-        orgId=${this.orgId}
-        userId=${this.userInfo!.id}
         collectionId=${params.collectionId}
         collectionTab=${(params.collectionTab as CollectionTab | undefined) ||
         "replay"}
@@ -587,14 +551,12 @@ export class Org extends LiteElement {
     }
 
     return html`<btrix-collections-list
-      orgId=${this.orgId}
       ?isCrawler=${this.isCrawler}
       @select-new-dialog=${this.onSelectNewDialog}
     ></btrix-collections-list>`;
   }
 
   private renderOrgSettings() {
-    if (!this.userInfo || !this.org) return;
     const params = this.params as OrgParams["settings"];
     const activePanel = params.settingsTab || "information";
     const isAddingMember = Object.prototype.hasOwnProperty.call(
@@ -603,7 +565,6 @@ export class Org extends LiteElement {
     );
 
     return html`<btrix-org-settings
-      .orgId=${this.orgId}
       activePanel=${activePanel}
       ?isAddingMember=${isAddingMember}
       @org-user-role-change=${this.onUserRoleChange}
@@ -692,14 +653,15 @@ export class Org extends LiteElement {
   }
 
   private async removeMember(member: Member) {
-    const org = this.org;
-    if (!org) return;
+    if (!this.userOrg) return;
 
     const isSelf = member.email === this.userInfo!.email;
     if (
       isSelf &&
       !window.confirm(
-        msg(str`Are you sure you want to remove yourself from ${org.name}?`),
+        msg(
+          str`Are you sure you want to remove yourself from ${this.userOrg.name}?`,
+        ),
       )
     ) {
       return;
@@ -716,7 +678,7 @@ export class Org extends LiteElement {
       this.notify({
         message: msg(
           str`Successfully removed ${member.name || member.email} from ${
-            org.name
+            this.userOrg.name
           }.`,
         ),
         variant: "success",

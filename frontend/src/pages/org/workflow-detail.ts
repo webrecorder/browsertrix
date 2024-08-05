@@ -50,9 +50,6 @@ const LOGS_PAGE_SIZE = 50;
 @customElement("btrix-workflow-detail")
 export class WorkflowDetail extends LiteElement {
   @property({ type: String })
-  orgId!: string;
-
-  @property({ type: String })
   workflowId!: string;
 
   @property({ type: Boolean })
@@ -561,7 +558,6 @@ export class WorkflowDetail extends LiteElement {
           .initialSeeds=${this.seeds!.items}
           jobType=${this.workflow!.jobType!}
           configId=${this.workflow!.id}
-          orgId=${this.orgId}
           @reset=${() =>
             this.navTo(
               `${this.orgBasePath}/workflows/crawl/${this.workflow!.id}`,
@@ -1009,7 +1005,6 @@ export class WorkflowDetail extends LiteElement {
           <div id="screencast-crawl">
             <btrix-screencast
               authToken=${authToken}
-              orgId=${this.orgId}
               .crawlId=${this.lastCrawlId ?? undefined}
               scale=${this.workflow!.scale}
             ></btrix-screencast>
@@ -1223,7 +1218,6 @@ export class WorkflowDetail extends LiteElement {
         this.lastCrawlId,
         () => html`
           <btrix-crawl-queue
-            orgId=${this.orgId}
             .crawlId=${this.lastCrawlId ?? undefined}
           ></btrix-crawl-queue>
         `,
@@ -1239,7 +1233,6 @@ export class WorkflowDetail extends LiteElement {
       >
         ${this.workflow && this.isDialogVisible
           ? html`<btrix-exclusion-editor
-              orgId=${this.orgId}
               .crawlId=${this.lastCrawlId ?? undefined}
               .config=${this.workflow.config}
               ?isActiveCrawl=${isActive(this.workflow.lastCrawlState)}

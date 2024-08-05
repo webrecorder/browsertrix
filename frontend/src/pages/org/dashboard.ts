@@ -38,9 +38,6 @@ export class Dashboard extends LiteElement {
   @property({ type: Boolean })
   isAdmin?: boolean;
 
-  @property({ type: String })
-  orgId!: string;
-
   @state()
   private metrics?: Metrics;
 
@@ -52,8 +49,14 @@ export class Dashboard extends LiteElement {
     runningTime: "blue",
   };
 
-  willUpdate(changedProperties: PropertyValues<this>) {
-    if (changedProperties.has("orgId")) {
+  willUpdate(changedProperties: PropertyValues<this> & Map<string, unknown>) {
+    if (changedProperties.has("appState.userOrg") && this.orgId) {
+      void this.fetchMetrics();
+    }
+  }
+
+  firstUpdated() {
+    if (this.orgId) {
       void this.fetchMetrics();
     }
   }
@@ -69,7 +72,7 @@ export class Dashboard extends LiteElement {
         class="mb-7 flex items-center justify-end gap-2 border-b pb-3"
       >
         <h1 class="mr-auto min-w-0 text-xl font-semibold leading-8">
-          ${this.org?.name}
+          ${this.userOrg?.name}
         </h1>
         ${when(
           this.isAdmin,

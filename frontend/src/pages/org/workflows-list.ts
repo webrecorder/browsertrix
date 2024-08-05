@@ -70,12 +70,6 @@ export class WorkflowsList extends LiteElement {
     firstSeed: msg("Crawl Start URL"),
   };
 
-  @property({ type: String })
-  orgId!: string;
-
-  @property({ type: String })
-  userId!: string;
-
   @property({ type: Boolean })
   isCrawler!: boolean;
 
@@ -129,18 +123,18 @@ export class WorkflowsList extends LiteElement {
   protected async willUpdate(
     changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {
-    if (changedProperties.has("orgId")) {
+    if (changedProperties.has("appState.userOrg")) {
       void this.fetchConfigSearchValues();
     }
     if (
-      changedProperties.has("orgId") ||
+      changedProperties.has("appState.userOrg") ||
       changedProperties.has("orderBy") ||
       changedProperties.has("filterByCurrentUser") ||
       changedProperties.has("filterByScheduled") ||
       changedProperties.has("filterBy")
     ) {
       void this.fetchWorkflows({
-        page: changedProperties.has("orgId") ? 1 : undefined,
+        page: changedProperties.has("appState.userOrg") ? 1 : undefined,
       });
     }
     if (changedProperties.has("filterByCurrentUser")) {
@@ -603,7 +597,7 @@ export class WorkflowsList extends LiteElement {
           queryParams?.pageSize ||
           this.workflows?.pageSize ||
           INITIAL_PAGE_SIZE,
-        userid: this.filterByCurrentUser ? this.userId : undefined,
+        userid: this.filterByCurrentUser ? this.userInfo?.id : undefined,
         sortBy: this.orderBy.field,
         sortDirection: this.orderBy.direction === "desc" ? -1 : 1,
       },

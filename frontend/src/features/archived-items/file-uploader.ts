@@ -54,9 +54,6 @@ enum AbortReason {
 @localized()
 @customElement("btrix-file-uploader")
 export class FileUploader extends BtrixElement {
-  @property({ type: String })
-  orgId!: string;
-
   @property({ type: Boolean })
   open = false;
 
@@ -262,7 +259,6 @@ export class FileUploader extends BtrixElement {
       <div class="mt-4">
         <btrix-collections-add
           .initialCollections=${this.collectionIds}
-          .orgId=${this.orgId}
           .configId=${"temp"}
           label=${msg("Add to Collection")}
           @collections-change=${(e: CollectionsChangeEvent) =>

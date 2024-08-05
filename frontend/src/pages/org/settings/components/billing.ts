@@ -62,10 +62,12 @@ export class OrgSettingsBilling extends BtrixElement {
   }
 
   private readonly portalUrl = new Task(this, {
-    task: async ([org]) => {
-      if (!org) throw new Error("Missing args");
+    task: async ([appState]) => {
+      if (!appState.settings?.billingEnabled || !appState.org?.subscription)
+        return;
+
       try {
-        const { portalUrl } = await this.getPortalUrl(org.id);
+        const { portalUrl } = await this.getPortalUrl();
 
         if (portalUrl) {
           return portalUrl;
@@ -80,7 +82,7 @@ export class OrgSettingsBilling extends BtrixElement {
         );
       }
     },
-    args: () => [this.org] as const,
+    args: () => [this.appState] as const,
   });
 
   render() {
@@ -160,7 +162,7 @@ export class OrgSettingsBilling extends BtrixElement {
                               html`To upgrade to Pro, contact us at
                                 <a
                                   class=${linkClassList}
-                                  href=${`mailto:${this.salesEmail}?subject=${msg(str`Upgrade Browsertrix plan (${this.org?.name})`)}`}
+                                  href=${`mailto:${this.salesEmail}?subject=${msg(str`Upgrade Browsertrix plan (${this.userOrg?.name})`)}`}
                                   rel="noopener noreferrer nofollow"
                                   >${this.salesEmail}</a
                                 >.`,
@@ -308,7 +310,7 @@ export class OrgSettingsBilling extends BtrixElement {
     return html`
       <a
         class=${manageLinkClasslist}
-        href=${`mailto:${salesEmail}?subject=${msg(str`Pro plan change request (${this.org?.name})`)}`}
+        href=${`mailto:${salesEmail}?subject=${msg(str`Pro plan change request (${this.userOrg?.name})`)}`}
         rel="noopener noreferrer nofollow"
       >
         <sl-icon name="envelope"></sl-icon>
@@ -317,7 +319,7 @@ export class OrgSettingsBilling extends BtrixElement {
     `;
   }
 
-  private async getPortalUrl(orgId: string) {
-    return this.api.fetch<BillingPortal>(`/orgs/${orgId}/billing-portal`);
+  private async getPortalUrl() {
+    return this.api.fetch<BillingPortal>(`/orgs/${this.orgId}/billing-portal`);
   }
 }

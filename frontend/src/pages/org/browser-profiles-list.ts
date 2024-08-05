@@ -36,16 +36,12 @@ const INITIAL_PAGE_SIZE = 20;
  * ```ts
  * <btrix-browser-profiles-list
  *  authState=${authState}
- *  orgId=${orgId}
  * ></btrix-browser-profiles-list>
  * ```
  */
 @localized()
 @customElement("btrix-browser-profiles-list")
 export class BrowserProfilesList extends BtrixElement {
-  @property({ type: String })
-  orgId!: string;
-
   @property({ type: Boolean })
   isCrawler = false;
 
@@ -99,7 +95,10 @@ export class BrowserProfilesList extends BtrixElement {
   protected willUpdate(
     changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {
-    if (changedProperties.has("orgId") || changedProperties.has("sort")) {
+    if (
+      changedProperties.has("appState.userOrg") ||
+      changedProperties.has("sort")
+    ) {
       void this.fetchBrowserProfiles();
     }
   }

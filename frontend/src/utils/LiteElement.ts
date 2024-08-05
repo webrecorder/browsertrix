@@ -27,6 +27,18 @@ export default class LiteElement extends LitElement {
     return this.appState.userInfo;
   }
 
+  protected get userOrg() {
+    return this.appState.userOrg;
+  }
+
+  protected get orgId() {
+    return this.appState.orgId;
+  }
+
+  protected get orgSlug() {
+    return this.appState.orgSlug;
+  }
+
   protected get org() {
     return this.appState.org;
   }

@@ -16,9 +16,6 @@ import LiteElement, { html } from "@/utils/LiteElement";
 @localized()
 @customElement("btrix-new-browser-profile-dialog")
 export class NewBrowserProfileDialog extends LiteElement {
-  @property({ type: String })
-  orgId!: string;
-
   @property({ type: Boolean })
   open = false;
 
@@ -77,7 +74,6 @@ export class NewBrowserProfileDialog extends LiteElement {
         </div>
         <div class="mt-1">
           <btrix-select-crawler
-            orgId=${this.orgId}
             .crawlerChannel=${this.crawlerChannel}
             @on-change=${(e: SelectCrawlerChangeEvent) =>
               (this.crawlerChannel = e.detail.value!)}

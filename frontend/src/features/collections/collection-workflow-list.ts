@@ -7,7 +7,7 @@ import { until } from "lit/directives/until.js";
 import isEqual from "lodash/fp/isEqual";
 import queryString from "query-string";
 
-import { TailwindElement } from "@/classes/TailwindElement";
+import { BtrixElement } from "@/classes/BtrixElement";
 import { APIController } from "@/controllers/api";
 import type {
   APIPaginatedList,
@@ -34,7 +34,7 @@ const CRAWLS_PAGE_SIZE = 50;
  */
 @localized()
 @customElement("btrix-collection-workflow-list")
-export class CollectionWorkflowList extends TailwindElement {
+export class CollectionWorkflowList extends BtrixElement {
   static styles = css`
     :host {
       --border: 1px solid var(--sl-panel-border-color);
@@ -105,9 +105,6 @@ export class CollectionWorkflowList extends TailwindElement {
       border-top: var(--border);
     }
   `;
-
-  @property({ type: String })
-  orgId?: string;
 
   @property({ type: String })
   collectionId?: string;

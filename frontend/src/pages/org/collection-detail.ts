@@ -29,12 +29,6 @@ export type Tab = (typeof TABS)[number];
 @customElement("btrix-collection-detail")
 export class CollectionDetail extends LiteElement {
   @property({ type: String })
-  orgId!: string;
-
-  @property({ type: String })
-  userId!: string;
-
-  @property({ type: String })
   collectionId!: string;
 
   @property({ type: String })
@@ -79,8 +73,10 @@ export class CollectionDetail extends LiteElement {
     },
   };
 
-  protected async willUpdate(changedProperties: PropertyValues<this>) {
-    if (changedProperties.has("orgId")) {
+  protected async willUpdate(
+    changedProperties: PropertyValues<this> & Map<string, unknown>,
+  ) {
+    if (changedProperties.has("appState.userOrg")) {
       this.collection = undefined;
       void this.fetchCollection();
     }
@@ -198,8 +194,6 @@ export class CollectionDetail extends LiteElement {
         </div>
       </btrix-dialog>
       <btrix-collection-items-dialog
-        orgId=${this.orgId}
-        userId=${this.userId}
         collectionId=${this.collectionId}
         collectionName=${this.collection?.name || ""}
         ?isCrawler=${this.isCrawler}
@@ -215,7 +209,6 @@ export class CollectionDetail extends LiteElement {
         this.collection,
         () => html`
           <btrix-collection-metadata-dialog
-            orgId=${this.orgId}
             .collection=${this.collection!}
             ?open=${this.openDialogName === "editMetadata"}
             @sl-hide=${() => (this.openDialogName = undefined)}
@@ -666,7 +659,7 @@ export class CollectionDetail extends LiteElement {
     idx: number,
   ) => html`
     <btrix-archived-item-list-item
-      href=${`/orgs/${this.org?.id}/items/${item.type}/${item.id}?collectionId=${this.collectionId}`}
+      href=${`/orgs/${this.orgId}/items/${item.type}/${item.id}?collectionId=${this.collectionId}`}
       .item=${item}
     >
       ${this.isCrawler

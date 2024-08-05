@@ -23,7 +23,6 @@ export type SelectBrowserProfileChangeEvent =
  * ```ts
  * <btrix-select-browser-profile
  *   authState=${authState}
- *   orgId=${orgId}
  *   on-change=${({value}) => selectedProfile = value}
  * ></btrix-select-browser-profile>
  * ```
@@ -33,9 +32,6 @@ export type SelectBrowserProfileChangeEvent =
 @customElement("btrix-select-browser-profile")
 @localized()
 export class SelectBrowserProfile extends LiteElement {
-  @property({ type: String })
-  orgId!: string;
-
   @property({ type: String })
   profileId?: string;
 

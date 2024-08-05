@@ -20,9 +20,6 @@ export type CollectionSavedEvent = CustomEvent<{
 @localized()
 @customElement("btrix-collection-metadata-dialog")
 export class CollectionMetadataDialog extends LiteElement {
-  @property({ type: String })
-  orgId!: string;
-
   @property({ type: Object })
   collection?: Collection;
 

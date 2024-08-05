@@ -78,9 +78,6 @@ export class ArchivedItemDetail extends BtrixElement {
   showOrgLink = false;
 
   @property({ type: String })
-  orgId?: string;
-
-  @property({ type: String })
   crawlId?: string;
 
   @property({ type: Boolean })
@@ -252,7 +249,6 @@ export class ArchivedItemDetail extends BtrixElement {
             </div> `,
           html`
             <btrix-archived-item-detail-qa
-              .orgId=${this.orgId}
               .crawlId=${this.crawlId}
               .itemType=${this.itemType}
               .crawl=${this.crawl}
