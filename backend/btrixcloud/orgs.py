@@ -27,7 +27,7 @@ from aiostream import stream
 from .models import (
     SUCCESSFUL_STATES,
     RUNNING_STATES,
-    STARTING_STATES,
+    WAITING_STATES,
     BaseCrawl,
     Organization,
     StorageRef,
@@ -890,7 +890,7 @@ class OrgOps:
             {"oid": org.id, "state": {"$in": RUNNING_STATES}}
         )
         workflows_queued_count = await self.crawls_db.count_documents(
-            {"oid": org.id, "state": {"$in": STARTING_STATES}}
+            {"oid": org.id, "state": {"$in": WAITING_STATES}}
         )
         collections_count = await self.colls_db.count_documents({"oid": org.id})
         public_collections_count = await self.colls_db.count_documents(

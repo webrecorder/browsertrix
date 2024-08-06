@@ -135,6 +135,9 @@ export class OrgSettingsBilling extends BtrixElement {
                           </div>
                         `
                       : nothing}
+                    <h5 class="mb-2 mt-4 text-xs leading-none text-neutral-500">
+                      ${msg("Monthly quota")}
+                    </h5>
                     ${this.renderQuotas(org.quotas)}
                   `,
                 )}
@@ -179,6 +182,15 @@ export class OrgSettingsBilling extends BtrixElement {
             `,
           ],
         ])}
+
+        <div class="p-4">
+          <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
+            <h4>${msg("Usage History")}</h4>
+          </btrix-section-heading>
+          <btrix-usage-history-table
+            .org=${this.org}
+          ></btrix-usage-history-table>
+        </div>
       </div>
     `;
   }
@@ -250,7 +262,7 @@ export class OrgSettingsBilling extends BtrixElement {
     <ul class="leading-relaxed text-neutral-700">
       <li>
         ${msg(
-          str`${quotas.maxExecMinutesPerMonth ? humanizeSeconds(quotas.maxExecMinutesPerMonth * 60, undefined, undefined, "long") : msg("Unlimited minutes")} of crawling and QA analysis time per month`,
+          str`${quotas.maxExecMinutesPerMonth ? humanizeSeconds(quotas.maxExecMinutesPerMonth * 60, undefined, undefined, "long") : msg("Unlimited minutes")} of crawl and QA analysis execution time`,
         )}
       </li>
       <li>

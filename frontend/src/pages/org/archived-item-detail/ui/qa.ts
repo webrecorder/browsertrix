@@ -1,10 +1,6 @@
 import { localized, msg, str } from "@lit/localize";
 import { Task } from "@lit/task";
-import type {
-  SlChangeEvent,
-  SlSelect,
-  SlShowEvent,
-} from "@shoelace-style/shoelace";
+import type { SlChangeEvent, SlSelect } from "@shoelace-style/shoelace";
 import {
   css,
   html,
@@ -21,8 +17,6 @@ import { QA_RUNNING_STATES } from "../archived-item-detail";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { type Dialog } from "@/components/ui/dialog";
-import type { MenuItemLink } from "@/components/ui/menu-item-link";
-import type { OverflowDropdown } from "@/components/ui/overflow-dropdown";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import { iconFor as iconForPageReview } from "@/features/qa/page-list/helpers";
 import * as pageApproval from "@/features/qa/page-list/helpers/approval";
@@ -327,6 +321,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
         </div>
       `;
     }
+    const authToken = this.authState!.headers.Authorization.split(" ")[1];
     return qaRuns.map(
       (run, idx) => html`
         <btrix-table-row class=${idx > 0 ? "border-t" : ""}>
@@ -365,28 +360,15 @@ export class ArchivedItemDetailQA extends BtrixElement {
           <btrix-table-cell>${run.userName}</btrix-table-cell>
           <btrix-table-cell class="p-0">
             <div class="col action">
-              <btrix-overflow-dropdown
-                @sl-show=${async (e: SlShowEvent) => {
-                  const dropdown = e.currentTarget as OverflowDropdown;
-                  const downloadLink = dropdown.querySelector<MenuItemLink>(
-                    "btrix-menu-item-link",
-                  );
-
-                  if (!downloadLink) {
-                    console.debug("no download link");
-                    return;
-                  }
-
-                  downloadLink.loading = true;
-                  downloadLink.disabled = false;
-                  downloadLink.href = `/orgs/${this.orgId}/crawls/${this.crawlId}/qa/${run.id}/download`;
-                }}
-              >
+              <btrix-overflow-dropdown>
                 <sl-menu>
                   ${run.state === "canceled"
                     ? nothing
                     : html`
-                        <btrix-menu-item-link href="#" download>
+                        <btrix-menu-item-link
+                          href=${`/api/orgs/${this.orgId}/crawls/${this.crawlId}/qa/${run.id}/download?auth_bearer=${authToken}`}
+                          download
+                        >
                           <sl-icon
                             name="cloud-download"
                             slot="prefix"
