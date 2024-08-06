@@ -197,6 +197,13 @@ export class OrgSettingsBilling extends TailwindElement {
             `,
           ],
         ])}
+
+        <div class="p-4">
+          <h4 class="form-label text-neutral-800">${msg("Usage History")}</h4>
+          <btrix-usage-history-table
+            .org=${ifDefined(this.org)}
+          ></btrix-usage-history-table>
+        </div>
       </div>
     `;
   }
