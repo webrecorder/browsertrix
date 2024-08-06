@@ -119,6 +119,7 @@ class CrawlOperator(BaseOperator):
         """sync crawls"""
 
         status = CrawlStatus(**data.parent.get("status", {}))
+        status.last_state = status.state
 
         spec = data.parent.get("spec", {})
         crawl_id = spec["id"]
@@ -250,11 +251,6 @@ class CrawlOperator(BaseOperator):
 
         else:
             status.scale = 1
-            now = dt_now()
-            await self.crawl_ops.inc_crawl_exec_time(
-                crawl.db_crawl_id, crawl.is_qa, 0, now
-            )
-            status.lastUpdatedTime = to_k8s_date(now)
 
         children = self._load_redis(params, status, data.children)
 
@@ -807,25 +803,13 @@ class CrawlOperator(BaseOperator):
                 status.resync_after = self.fast_retry_secs
                 return status
 
-            # if true (state is set), also run webhook
-            if await self.set_state(
+            # ensure running state is set
+            await self.set_state(
                 "running",
                 status,
                 crawl,
                 allowed_from=["starting", "waiting_capacity"],
-            ):
-                if not crawl.qa_source_crawl_id:
-                    self.run_task(
-                        self.event_webhook_ops.create_crawl_started_notification(
-                            crawl.id, crawl.oid, scheduled=crawl.scheduled
-                        )
-                    )
-                else:
-                    self.run_task(
-                        self.event_webhook_ops.create_qa_analysis_started_notification(
-                            crawl.id, crawl.oid, crawl.qa_source_crawl_id
-                        )
-                    )
+            )
 
             # update lastActiveTime if crawler is running
             if crawler_running:
@@ -967,11 +951,33 @@ class CrawlOperator(BaseOperator):
         """inc exec time tracking"""
         now = dt_now()
 
+        # don't count time crawl is not running
+        if status.state not in RUNNING_STATES:
+            # reset lastUpdatedTime if at least 2 consecutive updates of non-running state
+            if status.last_state not in RUNNING_STATES:
+                status.lastUpdatedTime = to_k8s_date(now)
+            return
+
         update_start_time = await self.crawl_ops.get_crawl_exec_last_update_time(
             crawl.db_crawl_id
         )
 
         if not update_start_time:
+            print("Crawl first started, webhooks called", now, crawl.id)
+            # call initial running webhook
+            if not crawl.qa_source_crawl_id:
+                self.run_task(
+                    self.event_webhook_ops.create_crawl_started_notification(
+                        crawl.id, crawl.oid, scheduled=crawl.scheduled
+                    )
+                )
+            else:
+                self.run_task(
+                    self.event_webhook_ops.create_qa_analysis_started_notification(
+                        crawl.id, crawl.oid, crawl.qa_source_crawl_id
+                    )
+                )
+
             await self.crawl_ops.inc_crawl_exec_time(
                 crawl.db_crawl_id, crawl.is_qa, 0, now
             )
