@@ -102,6 +102,14 @@
 }
 
 @layer components {
+  sl-avatar::part(base) {
+    transition: var(--sl-transition-x-fast) background-color;
+  }
+
+  sl-avatar:hover::part(base) {
+    background-color: var(--sl-color-primary-500);
+  }
+
   /* Add more spacing between label, input and help text */
   .form-label,
   btrix-tag-input::part(form-control-label),

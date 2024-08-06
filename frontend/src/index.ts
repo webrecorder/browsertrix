@@ -312,8 +312,8 @@ export class App extends LiteElement {
             >
               <div
                 class="${showFullLogo
-                  ? "w-[10.5rem]"
-                  : "w-6"} outlin h-6 bg-cover bg-no-repeat"
+                  ? "w-48"
+                  : "w-7"} h-7 bg-cover bg-no-repeat"
                 style="background-image: url(${brandLockupColor})"
                 role="img"
                 title="Browsertrix logo"
@@ -331,7 +331,7 @@ export class App extends LiteElement {
             ${isSuperAdmin
               ? html`
                   <a
-                    class="font-medium text-neutral-500 hover:text-neutral-400"
+                    class="font-medium text-neutral-500 hover:text-primary"
                     href="/"
                     @click=${(e: MouseEvent) => {
                       this.clearSelectedOrg();
@@ -340,7 +340,7 @@ export class App extends LiteElement {
                     >${msg("Admin Dashboard")}</a
                   >
                   <a
-                    class="font-medium text-neutral-500 hover:text-neutral-400"
+                    class="font-medium text-neutral-500 hover:text-primary"
                     href="/crawls"
                     @click=${this.navLink}
                     >${msg("Running Crawls")}</a
@@ -349,14 +349,14 @@ export class App extends LiteElement {
                 `
               : ""}
             ${this.authService.authState
-              ? html`<sl-dropdown placement="bottom-end">
-                  <sl-icon-button
-                    slot="trigger"
-                    name="person-circle"
-                    label=${msg("Open user menu")}
-                    style="font-size: 1.5rem;"
-                  ></sl-icon-button>
-
+              ? html`<sl-dropdown placement="bottom-end" distance="4">
+                  <button slot="trigger">
+                    <sl-avatar
+                      label=${msg("Open user menu")}
+                      shape="rounded"
+                      class="[--size:1.75rem]"
+                    ></sl-avatar>
+                  </button>
                   <sl-menu class="w-60 min-w-min max-w-full">
                     <div class="px-7 py-2">${this.renderMenuUserInfo()}</div>
                     <sl-divider></sl-divider>
@@ -750,7 +750,7 @@ export class App extends LiteElement {
       >
         <button
           slot="trigger"
-          class="font-medium text-primary hover:text-indigo-400"
+          class="font-medium text-primary-700 hover:text-primary"
         >
           ${msg("Jump to Crawl")}
         </button>
