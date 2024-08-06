@@ -19,8 +19,9 @@ from btrixcloud.models import (
     TYPE_ALL_CRAWL_STATES,
     NON_RUNNING_STATES,
     RUNNING_STATES,
+    WAITING_STATES,
     RUNNING_AND_STARTING_ONLY,
-    RUNNING_AND_STARTING_STATES,
+    RUNNING_AND_WAITING_STATES,
     SUCCESSFUL_STATES,
     FAILED_STATES,
     CrawlStats,
@@ -952,9 +953,9 @@ class CrawlOperator(BaseOperator):
         now = dt_now()
 
         # don't count time crawl is not running
-        if status.state not in RUNNING_STATES:
+        if status.state in WAITING_STATES:
             # reset lastUpdatedTime if at least 2 consecutive updates of non-running state
-            if status.last_state not in RUNNING_STATES:
+            if status.last_state in WAITING_STATES:
                 status.lastUpdatedTime = to_k8s_date(now)
             return
 
@@ -1420,7 +1421,7 @@ class CrawlOperator(BaseOperator):
 
         finished = dt_now()
 
-        allowed_from = RUNNING_AND_STARTING_STATES
+        allowed_from = RUNNING_AND_WAITING_STATES
 
         # if set_state returns false, already set to same status, return
         if not await self.set_state(

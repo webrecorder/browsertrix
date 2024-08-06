@@ -44,7 +44,7 @@ from .models import (
     PaginatedCrawlOutResponse,
     PaginatedSeedResponse,
     PaginatedCrawlErrorResponse,
-    RUNNING_AND_STARTING_STATES,
+    RUNNING_AND_WAITING_STATES,
     SUCCESSFUL_STATES,
     NON_RUNNING_STATES,
     ALL_CRAWL_STATES,
@@ -165,7 +165,7 @@ class CrawlOps(BaseCrawlOps):
             query["userid"] = userid
 
         if running_only:
-            query["state"] = {"$in": RUNNING_AND_STARTING_STATES}
+            query["state"] = {"$in": RUNNING_AND_WAITING_STATES}
 
         # Override running_only if state list is explicitly passed
         if state:
@@ -425,7 +425,7 @@ class CrawlOps(BaseCrawlOps):
 
         state, _ = await self.get_crawl_state(crawl_id, False)
 
-        if state not in RUNNING_AND_STARTING_STATES:
+        if state not in RUNNING_AND_WAITING_STATES:
             raise HTTPException(status_code=400, detail="crawl_not_running")
 
         total = 0
@@ -463,7 +463,7 @@ class CrawlOps(BaseCrawlOps):
         limit <= next_offset < limit + step"""
         state, _ = await self.get_crawl_state(crawl_id, False)
 
-        if state not in RUNNING_AND_STARTING_STATES:
+        if state not in RUNNING_AND_WAITING_STATES:
             raise HTTPException(status_code=400, detail="crawl_not_running")
 
         total = 0
@@ -513,7 +513,7 @@ class CrawlOps(BaseCrawlOps):
 
         crawl = await self.get_crawl(crawl_id, org)
 
-        if crawl.state not in RUNNING_AND_STARTING_STATES:
+        if crawl.state not in RUNNING_AND_WAITING_STATES:
             raise HTTPException(status_code=400, detail="crawl_not_running")
 
         cid = crawl.cid
