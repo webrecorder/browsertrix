@@ -53,7 +53,7 @@ export class UsageHistoryTable extends TailwindElement {
         <sl-tooltip>
           <div slot="content" style="text-transform: initial">
             ${msg(
-              "Aggregated time across all crawler instances spent crawling or analyzing a website, i.e. in a 'Running' state",
+              "Aggregated time across all crawler instances that the crawler was actively executing a crawl or QA analysis run, i.e. not in a waiting state",
             )}
           </div>
           <sl-icon name="info-circle" style="vertical-align: -.175em"></sl-icon>
