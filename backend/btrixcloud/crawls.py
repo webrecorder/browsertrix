@@ -617,7 +617,13 @@ class CrawlOps(BaseCrawlOps):
         res = await self.crawls.find_one(
             {"_id": crawl_id, "type": "crawl"}, projection=[field]
         )
-        return res and res.get(field)
+        if not res:
+            return None
+
+        if is_qa:
+            return res.get("qa", {}).get("_lut")
+        else:
+            return res.get("_lut")
 
     async def get_crawl_state(
         self, crawl_id: str, is_qa: bool
