@@ -286,6 +286,13 @@ export class App extends LiteElement {
       homeHref = `/orgs/${this.appState.orgSlug}`;
     }
 
+    const showFullLogo =
+      this.viewState.route === "login" ||
+      !this.authService.authState ||
+      new URLSearchParams(window.location.search).get("mode") === "demo";
+
+    console.log("showFullLogo:", showFullLogo);
+
     return html`
       <div class="border-b bg-neutral-50">
         <nav
@@ -302,7 +309,14 @@ export class App extends LiteElement {
               this.navLink(e);
             }}
           >
-            <img class="h-6" alt="Browsertrix logo" src=${brandLockupColor} />
+            <div
+              class="${showFullLogo
+                ? "w-[10.5rem]"
+                : "w-6"} outlin h-6 bg-cover bg-no-repeat"
+              style="background-image: url(${brandLockupColor})"
+              role="img"
+              title="Browsertrix logo"
+            ></div>
             ${isSuperAdmin
               ? html`<btrix-tag>${msg("Admin")}</btrix-tag>`
               : nothing}
