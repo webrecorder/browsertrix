@@ -291,7 +291,6 @@ export class App extends LiteElement {
       !this.authService.authState ||
       new URLSearchParams(window.location.search).get("mode") === "demo";
 
-    console.log("showFullLogo:", showFullLogo);
 
     return html`
       <div class="border-b bg-neutral-50">
