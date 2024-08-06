@@ -74,10 +74,15 @@ export class OrgSettingsBilling extends TailwindElement {
   }
 
   private readonly portalUrl = new Task(this, {
-    task: async ([org, authState]) => {
-      if (!org || !authState) throw new Error("Missing args");
+    task: async ([appState]) => {
+      if (!appState.settings?.billingEnabled || !appState.org?.subscription)
+        return;
+
       try {
-        const { portalUrl } = await this.getPortalUrl(org.id, authState);
+        const { portalUrl } = await this.getPortalUrl(
+          appState.org.id,
+          this.authState!,
+        );
 
         if (portalUrl) {
           return portalUrl;
@@ -92,7 +97,7 @@ export class OrgSettingsBilling extends TailwindElement {
         );
       }
     },
-    args: () => [this.org, this.authState] as const,
+    args: () => [this.appState] as const,
   });
 
   render() {
