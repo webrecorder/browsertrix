@@ -802,6 +802,7 @@ export class ArchivedItemDetail extends TailwindElement {
                     ? html`<span
                         >${humanizeExecutionSeconds(
                           this.crawl!.crawlExecSeconds,
+                          { displaySeconds: true },
                         )}</span
                       >`
                     : html`<span class="text-0-400">${msg("Pending")}</span>`}

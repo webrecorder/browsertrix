@@ -223,3 +223,6 @@ class CrawlStatus(BaseModel):
 
     # don't include in status, use by metacontroller
     resync_after: Optional[int] = Field(default=None, exclude=True)
+
+    # last state
+    last_state: TYPE_ALL_CRAWL_STATES = Field(default="starting", exclude=True)
