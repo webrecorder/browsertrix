@@ -6,9 +6,6 @@ import queryString from "query-string";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
-import { APIController } from "@/controllers/api";
-import { NavigateController } from "@/controllers/navigate";
-import { NotifyController } from "@/controllers/notify";
 import type { BrowserConnectionChange } from "@/features/browser-profiles/profile-browser";
 import { isApiError } from "@/utils/api";
 
@@ -40,10 +37,6 @@ export class BrowserProfilesNew extends BtrixElement {
     url: "",
   };
 
-  private readonly api = new APIController(this);
-  private readonly notify = new NotifyController(this);
-  private readonly nav = new NavigateController(this);
-
   @state()
   private isSubmitting = false;
 
@@ -67,9 +60,9 @@ export class BrowserProfilesNew extends BtrixElement {
         <a
           class="text-sm font-medium text-neutral-500 hover:text-neutral-600"
           href=${this.browserParams.profileId
-            ? `${this.nav.orgBasePath}/browser-profiles/profile/${this.browserParams.profileId}`
-            : `${this.nav.orgBasePath}/browser-profiles`}
-          @click=${this.nav.link}
+            ? `${this.navigate.orgBasePath}/browser-profiles/profile/${this.browserParams.profileId}`
+            : `${this.navigate.orgBasePath}/browser-profiles`}
+          @click=${this.navigate.link}
         >
           <sl-icon
             name="arrow-left"
@@ -196,7 +189,7 @@ export class BrowserProfilesNew extends BtrixElement {
     if (this.browserId) {
       await this.deleteBrowser(this.browserId);
     }
-    this.nav.to(`${this.nav.orgBasePath}/browser-profiles`);
+    this.navigate.to(`${this.navigate.orgBasePath}/browser-profiles`);
   }
 
   private renderBrowserProfileControls() {
@@ -283,8 +276,8 @@ export class BrowserProfilesNew extends BtrixElement {
       crawlerChannel,
     });
 
-    this.nav.to(
-      `${this.nav.orgBasePath}/browser-profiles/profile/browser/${
+    this.navigate.to(
+      `${this.navigate.orgBasePath}/browser-profiles/profile/browser/${
         data.browserid
       }?${queryString.stringify({
         url,
@@ -321,8 +314,8 @@ export class BrowserProfilesNew extends BtrixElement {
         icon: "check2-circle",
       });
 
-      this.nav.to(
-        `${this.nav.orgBasePath}/browser-profiles/profile/${data.id}`,
+      this.navigate.to(
+        `${this.navigate.orgBasePath}/browser-profiles/profile/${data.id}`,
       );
     } catch (e) {
       this.isSubmitting = false;

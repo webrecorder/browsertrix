@@ -4,7 +4,6 @@ import { html, type TemplateResult } from "lit";
 import { customElement } from "lit/decorators.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import { NavigateController } from "@/controllers/navigate";
 import { OrgReadOnlyReason } from "@/types/org";
 import { formatISODateString } from "@/utils/localization";
 
@@ -19,8 +18,6 @@ type Alert = {
 @localized()
 @customElement("btrix-org-status-banner")
 export class OrgStatusBanner extends BtrixElement {
-  private readonly navigate = new NavigateController(this);
-
   render() {
     if (!this.org) return;
 

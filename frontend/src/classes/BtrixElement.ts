@@ -1,11 +1,18 @@
 import { TailwindElement } from "./TailwindElement";
 
+import { APIController } from "@/controllers/api";
+import { NavigateController } from "@/controllers/navigate";
+import { NotifyController } from "@/controllers/notify";
 import appState, { use } from "@/utils/state";
 
 export class BtrixElement extends TailwindElement {
   /** Access and react to updates to shared state */
   @use()
   appState = appState;
+
+  readonly api = new APIController(this);
+  readonly notify = new NotifyController(this);
+  readonly navigate = new NavigateController(this);
 
   protected get authState() {
     return this.appState.auth;

@@ -18,8 +18,6 @@ import type {
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
 import type { PageChangeEvent } from "@/components/ui/pagination";
-import { APIController } from "@/controllers/api";
-import { NotifyController } from "@/controllers/notify";
 import { type CheckboxChangeEventDetail } from "@/features/archived-items/archived-item-list";
 import type {
   FilterBy,
@@ -158,9 +156,6 @@ export class CollectionItemsDialog extends BtrixElement {
   private readonly dialog!: Dialog;
 
   private savedCollectionItemIDs: string[] = [];
-
-  private readonly api = new APIController(this);
-  private readonly notify = new NotifyController(this);
 
   private readonly tabLabels: Record<Tab, { icon: string; label: string }> = {
     crawl: {

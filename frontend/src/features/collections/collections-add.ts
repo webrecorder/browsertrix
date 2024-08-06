@@ -9,8 +9,6 @@ import queryString from "query-string";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Combobox } from "@/components/ui/combobox";
-import { APIController } from "@/controllers/api";
-import { NotifyController } from "@/controllers/notify";
 import type {
   APIPaginatedList,
   APIPaginationQuery,
@@ -64,9 +62,6 @@ export class CollectionsAdd extends BtrixElement {
 
   @query("btrix-combobox")
   private readonly combobox?: Combobox | null;
-
-  private readonly api = new APIController(this);
-  private readonly notify = new NotifyController(this);
 
   private get searchByValue() {
     return this.input ? this.input.value.trim() : "";

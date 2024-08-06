@@ -6,9 +6,6 @@ import { customElement, property, state } from "lit/decorators.js";
 import { renderInviteMessage } from "./ui/inviteMessage";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import { APIController } from "@/controllers/api";
-import { NavigateController } from "@/controllers/navigate";
-import { NotifyController } from "@/controllers/notify";
 import type { APIUser } from "@/index";
 import type { OrgUpdatedDetail } from "@/pages/invite/ui/org-form";
 import { ROUTES } from "@/routes";
@@ -53,10 +50,6 @@ export class AcceptInvite extends BtrixElement {
     return Boolean(this.authState && this.email);
   }
 
-  readonly _api = new APIController(this);
-  readonly _navigate = new NavigateController(this);
-  readonly _notify = new NotifyController(this);
-
   connectedCallback(): void {
     if (this.token && this.email) {
       super.connectedCallback();
@@ -69,13 +62,13 @@ export class AcceptInvite extends BtrixElement {
     if (this._isLoggedIn) {
       void this.inviteInfo.run();
     } else {
-      this._notify.toast({
+      this.notify.toast({
         message: msg("Please log in to accept this invite."),
         variant: "warning",
         icon: "exclamation-triangle",
       });
 
-      this._navigate.to(
+      this.navigate.to(
         `/log-in?redirectUrl=${encodeURIComponent(
           `${window.location.pathname}${window.location.search}`,
         )}`,
@@ -123,14 +116,14 @@ export class AcceptInvite extends BtrixElement {
                 this._firstAdminOrgInfo
                   ? html`
                       <btrix-org-form
-                        orgId=${this._firstAdminOrgInfo.id}
+                        newOrgId=${this._firstAdminOrgInfo.id}
                         name=${this._firstAdminOrgInfo.name}
                         slug=${this._firstAdminOrgInfo.slug}
                         @btrix-org-updated=${(
                           e: CustomEvent<OrgUpdatedDetail>,
                         ) => {
                           e.stopPropagation();
-                          this._navigate.to(`/orgs/${e.detail.data.slug}`);
+                          this.navigate.to(`/orgs/${e.detail.data.slug}`);
                         }}
                       ></btrix-org-form>
                     `
@@ -157,7 +150,7 @@ export class AcceptInvite extends BtrixElement {
                     : html`
                         <a
                           href=${ROUTES.home}
-                          @click=${this._navigate.link}
+                          @click=${this.navigate.link}
                           class="mt-3 inline-block underline hover:no-underline"
                         >
                           ${msg("Go to home page")}
@@ -173,7 +166,7 @@ export class AcceptInvite extends BtrixElement {
 
   async _getInviteInfo(token: string): Promise<UserOrgInviteInfo | void> {
     try {
-      return await this._api.fetch<UserOrgInviteInfo>(
+      return await this.api.fetch<UserOrgInviteInfo>(
         `/users/me/invite/${token}`,
       );
     } catch (e) {
@@ -224,7 +217,7 @@ export class AcceptInvite extends BtrixElement {
     }
 
     try {
-      const { org } = await this._api.fetch<{ org: UserOrg }>(
+      const { org } = await this.api.fetch<{ org: UserOrg }>(
         `/orgs/invite-accept/${this.token}`,
         {
           method: "POST",
@@ -241,7 +234,7 @@ export class AcceptInvite extends BtrixElement {
 
         await this.updateComplete;
 
-        this._notify.toast({
+        this.notify.toast({
           message: msg(
             str`You've joined ${org.name || inviteInfo.orgName || msg("Browsertrix")}.`,
           ),
@@ -249,7 +242,7 @@ export class AcceptInvite extends BtrixElement {
           icon: "check2-circle",
         });
 
-        this._navigate.to(`/orgs/${org.slug}`);
+        this.navigate.to(`/orgs/${org.slug}`);
       }
     } catch (err) {
       if (isApiError(err) && err.message === "Invalid Invite Code") {
@@ -263,7 +256,7 @@ export class AcceptInvite extends BtrixElement {
   _onDecline() {
     const { orgName } = this.inviteInfo.value || {};
 
-    this._notify.toast({
+    this.notify.toast({
       message: msg(
         str`You've declined to join ${orgName || msg("Browsertrix")}.`,
       ),
@@ -271,10 +264,10 @@ export class AcceptInvite extends BtrixElement {
       icon: "info-circle",
     });
 
-    this._navigate.to(this._navigate.orgBasePath);
+    this.navigate.to(this.navigate.orgBasePath);
   }
 
   async _getCurrentUser(): Promise<APIUser> {
-    return this._api.fetch("/users/me");
+    return this.api.fetch("/users/me");
   }
 }

@@ -10,7 +10,6 @@ import { capitalize } from "lodash";
 import { columns } from "../ui/columns";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import { APIController } from "@/controllers/api";
 import { SubscriptionStatus, type BillingPortal } from "@/types/billing";
 import type { OrgData, OrgQuotas } from "@/types/org";
 import { humanizeSeconds } from "@/utils/executionTimeFormatter";
@@ -35,8 +34,6 @@ export class OrgSettingsBilling extends BtrixElement {
 
   @property({ type: String, noAccessor: true })
   salesEmail?: string;
-
-  private readonly api = new APIController(this);
 
   get portalUrlLabel() {
     const subscription = this.org?.subscription;

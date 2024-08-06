@@ -6,8 +6,7 @@ import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import sortBy from "lodash/fp/sortBy";
 
-import { TailwindElement } from "@/classes/TailwindElement";
-import { APIController } from "@/controllers/api";
+import { BtrixElement } from "@/classes/BtrixElement";
 import { AccessCode, type OrgData } from "@/types/org";
 import { isApiError } from "@/utils/api";
 
@@ -24,7 +23,7 @@ const sortByName = sortBy("name");
  */
 @localized()
 @customElement("btrix-invite-form")
-export class InviteForm extends TailwindElement {
+export class InviteForm extends BtrixElement {
   @property({ type: Array, attribute: false })
   orgs?: OrgData[] = [];
 
@@ -39,8 +38,6 @@ export class InviteForm extends TailwindElement {
 
   @state()
   private isFirstOrgMember: boolean | null = null;
-
-  private readonly api = new APIController(this);
 
   render() {
     let formError;

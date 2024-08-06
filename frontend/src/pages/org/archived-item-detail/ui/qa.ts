@@ -24,9 +24,6 @@ import { type Dialog } from "@/components/ui/dialog";
 import type { MenuItemLink } from "@/components/ui/menu-item-link";
 import type { OverflowDropdown } from "@/components/ui/overflow-dropdown";
 import type { PageChangeEvent } from "@/components/ui/pagination";
-import { APIController } from "@/controllers/api";
-import { NavigateController } from "@/controllers/navigate";
-import { NotifyController } from "@/controllers/notify";
 import { iconFor as iconForPageReview } from "@/features/qa/page-list/helpers";
 import * as pageApproval from "@/features/qa/page-list/helpers/approval";
 import type { SelectDetail } from "@/features/qa/qa-run-dropdown";
@@ -137,10 +134,6 @@ export class ArchivedItemDetailQA extends BtrixElement {
 
   @query("#deleteQARunDialog")
   private readonly deleteQADialog?: Dialog | null;
-
-  private readonly api = new APIController(this);
-  private readonly navigate = new NavigateController(this);
-  private readonly notify = new NotifyController(this);
 
   willUpdate(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("crawlId") && this.crawlId) {

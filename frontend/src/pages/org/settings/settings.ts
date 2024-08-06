@@ -9,9 +9,6 @@ import { when } from "lit/directives/when.js";
 import { columns } from "./ui/columns";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import { APIController } from "@/controllers/api";
-import { NavigateController } from "@/controllers/navigate";
-import { NotifyController } from "@/controllers/notify";
 import type { APIUser } from "@/index";
 import type { APIPaginatedList } from "@/types/api";
 import { isApiError } from "@/utils/api";
@@ -78,10 +75,6 @@ export class OrgSettings extends BtrixElement {
 
   @state()
   private slugValue = "";
-
-  private readonly api = new APIController(this);
-  private readonly navigate = new NavigateController(this);
-  private readonly notify = new NotifyController(this);
 
   private get tabLabels(): Record<Tab, string> {
     return {

@@ -4,8 +4,6 @@ import { customElement, property } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import { APIController } from "@/controllers/api";
-import { NotifyController } from "@/controllers/notify";
 import type { ArchivedItemPage } from "@/types/crawler";
 
 export type UpdatePageApprovalDetail = {
@@ -170,9 +168,6 @@ export class PageQAToolbar extends BtrixElement {
 
   @property({ type: Boolean })
   disabled = false;
-
-  private readonly api = new APIController(this);
-  private readonly notify = new NotifyController(this);
 
   render() {
     const disabled = this.disabled || !this.page;

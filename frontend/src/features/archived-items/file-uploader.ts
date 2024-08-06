@@ -15,9 +15,6 @@ import type {
   Tags,
   TagsChangeEvent,
 } from "@/components/ui/tag-input";
-import { APIController } from "@/controllers/api";
-import { NavigateController } from "@/controllers/navigate";
-import { NotifyController } from "@/controllers/notify";
 import { type CollectionsChangeEvent } from "@/features/collections/collections-add";
 import { APIError } from "@/utils/api";
 import { maxLengthValidator } from "@/utils/form";
@@ -83,10 +80,6 @@ export class FileUploader extends BtrixElement {
 
   @queryAsync("#fileUploadForm")
   private readonly form!: Promise<HTMLFormElement>;
-
-  private readonly api = new APIController(this);
-  private readonly navigate = new NavigateController(this);
-  private readonly notify = new NotifyController(this);
 
   // For fuzzy search:
   private readonly fuse = new Fuse([], {
