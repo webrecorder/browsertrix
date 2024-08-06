@@ -620,10 +620,7 @@ class CrawlOps(BaseCrawlOps):
         if not res:
             return None
 
-        if is_qa:
-            return res.get("qa", {}).get("_lut")
-        else:
-            return res.get("_lut")
+        return res.get("qa", {}).get("_lut") if is_qa else res.get("_lut")
 
     async def get_crawl_state(
         self, crawl_id: str, is_qa: bool
