@@ -321,7 +321,29 @@ export class App extends LiteElement {
             ${when(
               this.authService.authState,
               () => html`
-                <div role="separator" class="ml-2.5 h-6 w-0 border-l"></div>
+                ${isSuperAdmin
+                  ? html`
+                      <div
+                        role="separator"
+                        class="mx-2.5 h-7 w-0 border-l"
+                      ></div>
+                      <a
+                        class="flex items-center gap-2 font-medium text-primary-700 transition-colors hover:text-primary"
+                        href="/"
+                        @click=${(e: MouseEvent) => {
+                          this.clearSelectedOrg();
+                          this.navLink(e);
+                        }}
+                      >
+                        <sl-icon
+                          class="text-lg"
+                          name="house-gear-fill"
+                        ></sl-icon>
+                        ${msg("Admin")}</a
+                      >
+                    `
+                  : nothing}
+                <div role="separator" class="mx-2.5 h-7 w-0 border-l"></div>
                 ${this.renderOrgs()}
               `,
             )}
@@ -329,15 +351,6 @@ export class App extends LiteElement {
           <div class="grid auto-cols-max grid-flow-col items-center gap-5">
             ${isSuperAdmin
               ? html`
-                  <a
-                    class="font-medium text-neutral-500 hover:text-primary"
-                    href="/"
-                    @click=${(e: MouseEvent) => {
-                      this.clearSelectedOrg();
-                      this.navLink(e);
-                    }}
-                    >${msg("Admin Dashboard")}</a
-                  >
                   <a
                     class="font-medium text-neutral-500 hover:text-primary"
                     href="/crawls"
@@ -419,7 +432,7 @@ export class App extends LiteElement {
 
     return html`
       <a
-        class="ml-2.5 font-medium text-neutral-600"
+        class="font-medium text-neutral-600"
         href=${this.orgBasePath}
         @click=${this.navLink}
       >
