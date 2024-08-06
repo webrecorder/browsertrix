@@ -89,7 +89,7 @@ export class App extends LiteElement {
       AppStateService.updateOrgSlug(this.viewState.params.slug || null);
     }
     if (authState) {
-      this.authService.saveLogin(authState);
+      this.authService.saveLogin(authState as unknown as Auth);
       void this.updateUserInfo();
     }
     super.connectedCallback();
@@ -930,7 +930,9 @@ export class App extends LiteElement {
         if (data.name === "auth_storage") {
           if (data.value !== AuthService.storage.getItem()) {
             if (data.value) {
-              this.authService.saveLogin(JSON.parse(data.value) as Auth);
+              this.authService.saveLogin(
+                JSON.parse(data.value) as unknown as Auth,
+              );
               void this.updateUserInfo();
               this.syncViewState();
             } else {
