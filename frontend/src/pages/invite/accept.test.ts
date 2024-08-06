@@ -152,7 +152,7 @@ describe("btrix-accept-invite", () => {
       const orgFormEl = el.shadowRoot!.querySelector<OrgForm>("btrix-org-form");
 
       expect(orgFormEl).attribute(
-        "orgId",
+        "newOrgId",
         "e21ab647-2d0e-489d-97d1-88ac91774942",
       );
       expect(orgFormEl).attribute("name", "Fake Org Name 2");

@@ -26,7 +26,7 @@ describe("btrix-org-form", () => {
     stub(OrgForm.prototype, "_renameOrg");
     const el = await fixture<OrgForm>(
       html`<btrix-org-form
-        id="e21ab647-2d0e-489d-97d1-88ac91774942"
+        newOrgId="e21ab647-2d0e-489d-97d1-88ac91774942"
         name="Fake Org Name"
       ></btrix-org-form>`,
     );
@@ -44,7 +44,7 @@ describe("btrix-org-form", () => {
     stub(OrgForm.prototype, "_renameOrg");
     const el = await fixture<OrgForm>(
       html`<btrix-org-form
-        id="e21ab647-2d0e-489d-97d1-88ac91774942"
+        newOrgId="e21ab647-2d0e-489d-97d1-88ac91774942"
         slug="fake-org-name"
       ></btrix-org-form>`,
     );
@@ -61,7 +61,7 @@ describe("btrix-org-form", () => {
   it("runs rename task on submit", async () => {
     const el = await fixture<OrgForm>(
       html`<btrix-org-form
-        id="e21ab647-2d0e-489d-97d1-88ac91774942"
+        newOrgId="e21ab647-2d0e-489d-97d1-88ac91774942"
       ></btrix-org-form>`,
     );
     stub(el._renameOrgTask, "run");
@@ -96,7 +96,7 @@ describe("btrix-org-form", () => {
   it("renders rename org error", async () => {
     const el = await fixture<OrgForm>(
       html`<btrix-org-form
-        id="e21ab647-2d0e-489d-97d1-88ac91774942"
+        newOrgId="e21ab647-2d0e-489d-97d1-88ac91774942"
       ></btrix-org-form>`,
     );
     stub(el, "_renameOrg").callsFake(async () =>
@@ -118,10 +118,10 @@ describe("btrix-org-form", () => {
     it("updates user app state on success", async () => {
       const el = await fixture<OrgForm>(
         html`<btrix-org-form
-          id="e21ab647-2d0e-489d-97d1-88ac91774942"
+          newOrgId="e21ab647-2d0e-489d-97d1-88ac91774942"
         ></btrix-org-form>`,
       );
-      stub(el._api, "fetch").callsFake(async () => Promise.resolve());
+      stub(el.api, "fetch").callsFake(async () => Promise.resolve());
       stub(el, "_getCurrentUser").callsFake(async () =>
         Promise.resolve({
           id: "740d7b63-b257-4311-ba3f-adc46a5fafb8",
@@ -147,10 +147,10 @@ describe("btrix-org-form", () => {
     it("fires the correct event on success", async () => {
       const el = await fixture<OrgForm>(
         html`<btrix-org-form
-          id="e21ab647-2d0e-489d-97d1-88ac91774942"
+          newOrgId="e21ab647-2d0e-489d-97d1-88ac91774942"
         ></btrix-org-form>`,
       );
-      stub(el._api, "fetch").callsFake(async () => Promise.resolve());
+      stub(el.api, "fetch").callsFake(async () => Promise.resolve());
       stub(el, "_getCurrentUser").callsFake(async () =>
         Promise.resolve({
           id: "740d7b63-b257-4311-ba3f-adc46a5fafb8",

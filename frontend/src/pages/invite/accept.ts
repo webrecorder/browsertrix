@@ -116,7 +116,7 @@ export class AcceptInvite extends BtrixElement {
                 this._firstAdminOrgInfo
                   ? html`
                       <btrix-org-form
-                        orgId=${this._firstAdminOrgInfo.id}
+                        newOrgId=${this._firstAdminOrgInfo.id}
                         name=${this._firstAdminOrgInfo.name}
                         slug=${this._firstAdminOrgInfo.slug}
                         @btrix-org-updated=${(

@@ -4,8 +4,6 @@ import { customElement, property, query, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import { APIController } from "@/controllers/api";
-import { NotifyController } from "@/controllers/notify";
 import { isApiError, type APIError } from "@/utils/api";
 
 const POLL_INTERVAL_SECONDS = 2;
@@ -87,9 +85,6 @@ export class ProfileBrowser extends BtrixElement {
   private readonly iframe?: HTMLIFrameElement;
 
   private pollTimerId?: number;
-
-  private readonly api = new APIController(this);
-  private readonly notify = new NotifyController(this);
 
   connectedCallback() {
     super.connectedCallback();

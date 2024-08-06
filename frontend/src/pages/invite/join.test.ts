@@ -106,7 +106,7 @@ describe("btrix-join", () => {
 
       const orgFormEl = el.querySelector<OrgForm>("btrix-org-form");
 
-      expect(orgFormEl).attribute("orgId", "fake_oid");
+      expect(orgFormEl).attribute("newOrgId", "fake_oid");
       expect(orgFormEl).attribute("name", "Fake Org Name 2");
       expect(orgFormEl).attribute("slug", "fake-org-slug-2");
     });

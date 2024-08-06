@@ -8,7 +8,6 @@ import isEqual from "lodash/fp/isEqual";
 import queryString from "query-string";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import { APIController } from "@/controllers/api";
 import type {
   APIPaginatedList,
   APIPaginationQuery,
@@ -138,8 +137,6 @@ export class CollectionWorkflowList extends BtrixElement {
     /* workflow ID: */ string,
     Promise<Crawl[]>
   >();
-
-  private readonly api = new APIController(this);
 
   protected willUpdate(changedProperties: PropertyValues<this>): void {
     if (changedProperties.has("workflows")) {
