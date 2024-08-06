@@ -283,7 +283,7 @@ export class App extends LiteElement {
     const isSuperAdmin = this.appState.userInfo?.isSuperAdmin;
     let homeHref = "/";
     if (!isSuperAdmin && this.appState.orgSlug) {
-      homeHref = `/orgs/${this.appState.orgSlug}`;
+      homeHref = this.orgBasePath;
     }
 
     const showFullLogo =
@@ -298,34 +298,38 @@ export class App extends LiteElement {
         <nav
           class="mx-auto box-border flex h-12 items-center justify-between px-3 xl:pl-6"
         >
-          <a
-            class="items-between flex gap-2"
-            aria-label="home"
-            href=${homeHref}
-            @click=${(e: MouseEvent) => {
-              if (isSuperAdmin) {
-                this.clearSelectedOrg();
-              }
-              this.navLink(e);
-            }}
-          >
-            <div
-              class="${showFullLogo
-                ? "w-[10.5rem]"
-                : "w-6"} outlin h-6 bg-cover bg-no-repeat"
-              style="background-image: url(${brandLockupColor})"
-              role="img"
-              title="Browsertrix logo"
-            ></div>
+          <div class="flex items-center">
+            <a
+              class="items-between flex gap-2"
+              aria-label="home"
+              href=${homeHref}
+              @click=${(e: MouseEvent) => {
+                if (isSuperAdmin) {
+                  this.clearSelectedOrg();
+                }
+                this.navLink(e);
+              }}
+            >
+              <div
+                class="${showFullLogo
+                  ? "w-[10.5rem]"
+                  : "w-6"} outlin h-6 bg-cover bg-no-repeat"
+                style="background-image: url(${brandLockupColor})"
+                role="img"
+                title="Browsertrix logo"
+              ></div>
+            </a>
+            ${when(
+              this.authService.authState,
+              () => html`
+                <div role="separator" class="ml-2.5 h-6 w-0 border-l"></div>
+                ${this.renderOrgs()}
+              `,
+            )}
+          </div>
+          <div class="grid auto-cols-max grid-flow-col items-center gap-5">
             ${isSuperAdmin
-              ? html`<btrix-tag>${msg("Admin")}</btrix-tag>`
-              : nothing}
-          </a>
-          ${isSuperAdmin
-            ? html`
-                <div
-                  class="grid grid-flow-col items-center gap-3 text-xs md:gap-5 md:text-sm"
-                >
+              ? html`
                   <a
                     class="font-medium text-neutral-500 hover:text-neutral-400"
                     href="/"
@@ -333,7 +337,7 @@ export class App extends LiteElement {
                       this.clearSelectedOrg();
                       this.navLink(e);
                     }}
-                    >${msg("Dashboard")}</a
+                    >${msg("Admin Dashboard")}</a
                   >
                   <a
                     class="font-medium text-neutral-500 hover:text-neutral-400"
@@ -342,45 +346,41 @@ export class App extends LiteElement {
                     >${msg("Running Crawls")}</a
                   >
                   <div class="hidden md:block">${this.renderFindCrawl()}</div>
-                </div>
-              `
-            : ""}
-
-          <div class="grid auto-cols-max grid-flow-col items-center gap-3">
+                `
+              : ""}
             ${this.authService.authState
-              ? html` ${this.renderOrgs()}
-                  <sl-dropdown placement="bottom-end">
-                    <sl-icon-button
-                      slot="trigger"
-                      name="person-circle"
-                      label=${msg("Open user menu")}
-                      style="font-size: 1.5rem;"
-                    ></sl-icon-button>
+              ? html`<sl-dropdown placement="bottom-end">
+                  <sl-icon-button
+                    slot="trigger"
+                    name="person-circle"
+                    label=${msg("Open user menu")}
+                    style="font-size: 1.5rem;"
+                  ></sl-icon-button>
 
-                    <sl-menu class="w-60 min-w-min max-w-full">
-                      <div class="px-7 py-2">${this.renderMenuUserInfo()}</div>
-                      <sl-divider></sl-divider>
-                      <sl-menu-item
-                        @click=${() => this.navigate(ROUTES.accountSettings)}
-                      >
-                        <sl-icon slot="prefix" name="gear"></sl-icon>
-                        ${msg("Account Settings")}
-                      </sl-menu-item>
-                      ${this.appState.userInfo?.isSuperAdmin
-                        ? html` <sl-menu-item
-                            @click=${() => this.navigate(ROUTES.usersInvite)}
-                          >
-                            <sl-icon slot="prefix" name="person-plus"></sl-icon>
-                            ${msg("Invite Users")}
-                          </sl-menu-item>`
-                        : ""}
-                      <sl-divider></sl-divider>
-                      <sl-menu-item @click="${this.onLogOut}">
-                        <sl-icon slot="prefix" name="door-open"></sl-icon>
-                        ${msg("Log Out")}
-                      </sl-menu-item>
-                    </sl-menu>
-                  </sl-dropdown>`
+                  <sl-menu class="w-60 min-w-min max-w-full">
+                    <div class="px-7 py-2">${this.renderMenuUserInfo()}</div>
+                    <sl-divider></sl-divider>
+                    <sl-menu-item
+                      @click=${() => this.navigate(ROUTES.accountSettings)}
+                    >
+                      <sl-icon slot="prefix" name="gear"></sl-icon>
+                      ${msg("Account Settings")}
+                    </sl-menu-item>
+                    ${this.appState.userInfo?.isSuperAdmin
+                      ? html` <sl-menu-item
+                          @click=${() => this.navigate(ROUTES.usersInvite)}
+                        >
+                          <sl-icon slot="prefix" name="person-plus"></sl-icon>
+                          ${msg("Invite Users")}
+                        </sl-menu-item>`
+                      : ""}
+                    <sl-divider></sl-divider>
+                    <sl-menu-item @click="${this.onLogOut}">
+                      <sl-icon slot="prefix" name="door-open"></sl-icon>
+                      ${msg("Log Out")}
+                    </sl-menu-item>
+                  </sl-menu>
+                </sl-dropdown>`
               : html`
                   <a href="/log-in"> ${msg("Log In")} </a>
                   ${this.appState.settings?.registrationEnabled
@@ -419,10 +419,19 @@ export class App extends LiteElement {
     const orgNameLength = 50;
 
     return html`
+      <a
+        class="ml-2.5 font-medium text-neutral-600"
+        href=${this.orgBasePath}
+        @click=${this.navLink}
+      >
+        ${selectedOption.name.slice(0, orgNameLength)}
+      </a>
       <sl-dropdown placement="bottom-end">
-        <sl-button slot="trigger" variant="text" size="small" caret
-          >${selectedOption.name.slice(0, orgNameLength)}</sl-button
-        >
+        <sl-icon-button
+          slot="trigger"
+          name="chevron-expand"
+          label=${msg("Expand org list")}
+        ></sl-icon-button>
         <sl-menu
           @sl-select=${(e: CustomEvent<{ item: { value: string } }>) => {
             const { value } = e.detail.item;
@@ -468,9 +477,7 @@ export class App extends LiteElement {
     if (this.appState.userInfo.isSuperAdmin) {
       return html`
         <div class="mb-2">
-          <sl-tag class="uppercase" variant="primary" size="small"
-            >${msg("admin")}</sl-tag
-          >
+          <btrix-tag>${msg("Admin")}</btrix-tag>
         </div>
         <div class="font-medium text-neutral-700">
           ${this.appState.userInfo.name}
