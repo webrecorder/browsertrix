@@ -27,23 +27,33 @@ export class UsageHistoryTable extends TailwindElement {
   render() {
     if (!this.org) return;
 
+    if (this.org.usage && !Object.keys(this.org.usage).length) {
+      return html`
+        <p class="text-center text-neutral-500">
+          ${msg("No usage history to show.")}
+        </p>
+      `;
+    }
+
     const usageTableCols = [
       msg("Month"),
       html`
         ${msg("Elapsed Time")}
         <sl-tooltip>
           <div slot="content" style="text-transform: initial">
-            ${msg("Total time elapsed between when crawls started and ended")}
+            ${msg(
+              "Total duration of crawls and QA analysis runs, from start to finish",
+            )}
           </div>
           <sl-icon name="info-circle" style="vertical-align: -.175em"></sl-icon>
         </sl-tooltip>
       `,
       html`
-        ${msg("Total Execution Time")}
+        ${msg("Execution Time")}
         <sl-tooltip>
           <div slot="content" style="text-transform: initial">
             ${msg(
-              "Total billable time of all crawler instances this used month",
+              "Aggregated time across all crawler instances spent crawling or analyzing a website, i.e. in a 'Running' state",
             )}
           </div>
           <sl-icon name="info-circle" style="vertical-align: -.175em"></sl-icon>
@@ -53,10 +63,12 @@ export class UsageHistoryTable extends TailwindElement {
 
     if (this.hasMonthlyTime()) {
       usageTableCols.push(
-        html`${msg("Execution: Monthly")}
+        html`${msg("Billable Execution Time")}
           <sl-tooltip>
             <div slot="content" style="text-transform: initial">
-              ${msg("Billable time used, included with monthly plan")}
+              ${msg(
+                "Execution time used that is billable to the current month of the plan",
+              )}
             </div>
             <sl-icon
               name="info-circle"
@@ -67,11 +79,11 @@ export class UsageHistoryTable extends TailwindElement {
     }
     if (this.hasExtraTime()) {
       usageTableCols.push(
-        html`${msg("Execution: Extra")}
+        html`${msg("Rollover Execution Time")}
           <sl-tooltip>
             <div slot="content" style="text-transform: initial">
               ${msg(
-                "Additional units of billable time used, any extra minutes will roll over to next month",
+                "Additional execution time used, of which any extra minutes will roll over to next month as billable time",
               )}
             </div>
             <sl-icon
@@ -83,12 +95,10 @@ export class UsageHistoryTable extends TailwindElement {
     }
     if (this.hasGiftedTime()) {
       usageTableCols.push(
-        html`${msg("Execution: Gifted")}
+        html`${msg("Gifted Execution Time")}
           <sl-tooltip>
             <div slot="content" style="text-transform: initial">
-              ${msg(
-                "Usage of execution time added to your account free of charge",
-              )}
+              ${msg("Execution time used that is free of charge")}
             </div>
             <sl-icon
               name="info-circle"
