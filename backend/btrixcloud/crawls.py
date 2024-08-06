@@ -591,30 +591,33 @@ class CrawlOps(BaseCrawlOps):
                 "qaCrawlExecSeconds": exec_time,
                 "qa.crawlExecSeconds": exec_time,
             }
+            field = "qa._lut"
         else:
             inc_update = {"crawlExecSeconds": exec_time}
+            field = "_lut"
 
         res = await self.crawls.find_one_and_update(
             {
                 "_id": crawl_id,
                 "type": "crawl",
-                "_lut": {"$ne": last_updated_time},
+                field: {"$ne": last_updated_time},
             },
             {
                 "$inc": inc_update,
-                "$set": {"_lut": last_updated_time},
+                "$set": {field: last_updated_time},
             },
         )
         return res is not None
 
     async def get_crawl_exec_last_update_time(
-        self, crawl_id: str
+        self, crawl_id: str, is_qa: bool
     ) -> Optional[datetime]:
         """get crawl last updated time"""
+        field = "_lut" if not is_qa else "qa._lut"
         res = await self.crawls.find_one(
-            {"_id": crawl_id, "type": "crawl"}, projection=["_lut"]
+            {"_id": crawl_id, "type": "crawl"}, projection=[field]
         )
-        return res and res.get("_lut")
+        return res and res.get(field)
 
     async def get_crawl_state(
         self, crawl_id: str, is_qa: bool

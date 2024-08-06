@@ -960,7 +960,7 @@ class CrawlOperator(BaseOperator):
             return
 
         update_start_time = await self.crawl_ops.get_crawl_exec_last_update_time(
-            crawl.db_crawl_id
+            crawl.db_crawl_id, crawl.is_qa
         )
 
         if not update_start_time:
