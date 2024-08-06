@@ -187,9 +187,7 @@ export class OrgSettingsBilling extends BtrixElement {
           <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
             <h4>${msg("Usage History")}</h4>
           </btrix-section-heading>
-          <btrix-usage-history-table
-            .org=${this.org}
-          ></btrix-usage-history-table>
+          <btrix-usage-history-table></btrix-usage-history-table>
         </div>
       </div>
     `;

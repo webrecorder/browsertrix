@@ -1,18 +1,14 @@
 import { localized, msg } from "@lit/localize";
 import { html } from "lit";
-import { customElement, property } from "lit/decorators.js";
+import { customElement } from "lit/decorators.js";
 
-import { TailwindElement } from "@/classes/TailwindElement";
+import { BtrixElement } from "@/classes/BtrixElement";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 import { getLocale } from "@/utils/localization";
-import type { OrgData, YearMonth } from "@/utils/orgs";
 
 @localized()
 @customElement("btrix-usage-history-table")
-export class UsageHistoryTable extends TailwindElement {
-  @property({ type: Object })
-  org: OrgData | null = null;
-
+export class UsageHistoryTable extends BtrixElement {
   private readonly hasMonthlyTime = () =>
     this.org?.monthlyExecSeconds &&
     Object.keys(this.org.monthlyExecSeconds).length;
@@ -108,7 +104,7 @@ export class UsageHistoryTable extends TailwindElement {
       );
     }
 
-    const rows = (Object.entries(this.org.usage || {}) as [YearMonth, number][])
+    const rows = Object.entries(this.org.usage || {})
       // Sort latest
       .reverse()
       .map(([mY, crawlTime]) => {
