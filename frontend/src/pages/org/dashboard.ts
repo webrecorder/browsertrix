@@ -136,7 +136,7 @@ export class Dashboard extends LiteElement {
         )}
       </header>
       <main>
-        <div class="flex flex-col gap-6 md:flex-row">
+        <div class="mb-10 flex flex-col gap-6 md:flex-row">
           ${this.renderCard(
             msg("Storage"),
             (metrics) => html`
@@ -251,6 +251,21 @@ export class Dashboard extends LiteElement {
             `,
           )}
         </div>
+        ${when(
+          this.appState.settings &&
+            !this.appState.settings.billingEnabled &&
+            this.org,
+          (org) => html`
+            <section class="mb-10">
+              <btrix-details open>
+                <span slot="title">${msg("Usage History")}</span>
+                <btrix-usage-history-table
+                  .org=${org}
+                ></btrix-usage-history-table>
+              </btrix-details>
+            </section>
+          `,
+        )}
       </main> `;
   }
 
