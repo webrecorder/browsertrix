@@ -402,7 +402,7 @@ export class App extends LiteElement {
 
   private renderOrgs() {
     const orgs = this.appState.userInfo?.orgs;
-    if (!orgs || orgs.length < 2 || !this.appState.userInfo) return;
+    if (!orgs) return;
 
     const selectedOption = this.appState.orgSlug
       ? orgs.find(({ slug }) => slug === this.appState.orgSlug)
@@ -426,49 +426,54 @@ export class App extends LiteElement {
       >
         ${selectedOption.name.slice(0, orgNameLength)}
       </a>
-      <sl-dropdown placement="bottom-end">
-        <sl-icon-button
-          slot="trigger"
-          name="chevron-expand"
-          label=${msg("Expand org list")}
-        ></sl-icon-button>
-        <sl-menu
-          @sl-select=${(e: CustomEvent<{ item: { value: string } }>) => {
-            const { value } = e.detail.item;
-            if (value) {
-              this.navigate(`/orgs/${value}`);
-            } else {
-              if (this.appState.userInfo) {
-                this.clearSelectedOrg();
-              }
-              this.navigate(`/`);
-            }
-          }}
-        >
-          ${when(
-            this.appState.userInfo.isSuperAdmin,
-            () => html`
-              <sl-menu-item
-                type="checkbox"
-                value=""
-                ?checked=${!selectedOption.slug}
-                >${msg("All Organizations")}</sl-menu-item
-              >
-              <sl-divider></sl-divider>
-            `,
-          )}
-          ${orgs.map(
-            (org) => html`
-              <sl-menu-item
-                type="checkbox"
-                value=${org.slug}
-                ?checked=${org.slug === selectedOption.slug}
-                >${org.name.slice(0, orgNameLength)}</sl-menu-item
-              >
-            `,
-          )}
-        </sl-menu>
-      </sl-dropdown>
+      ${when(
+        orgs.length > 1,
+        () => html`
+          <sl-dropdown placement="bottom-end">
+            <sl-icon-button
+              slot="trigger"
+              name="chevron-expand"
+              label=${msg("Expand org list")}
+            ></sl-icon-button>
+            <sl-menu
+              @sl-select=${(e: CustomEvent<{ item: { value: string } }>) => {
+                const { value } = e.detail.item;
+                if (value) {
+                  this.navigate(`/orgs/${value}`);
+                } else {
+                  if (this.appState.userInfo) {
+                    this.clearSelectedOrg();
+                  }
+                  this.navigate(`/`);
+                }
+              }}
+            >
+              ${when(
+                this.appState.userInfo?.isSuperAdmin,
+                () => html`
+                  <sl-menu-item
+                    type="checkbox"
+                    value=""
+                    ?checked=${!selectedOption.slug}
+                    >${msg("All Organizations")}</sl-menu-item
+                  >
+                  <sl-divider></sl-divider>
+                `,
+              )}
+              ${orgs.map(
+                (org) => html`
+                  <sl-menu-item
+                    type="checkbox"
+                    value=${org.slug}
+                    ?checked=${org.slug === selectedOption.slug}
+                    >${org.name.slice(0, orgNameLength)}</sl-menu-item
+                  >
+                `,
+              )}
+            </sl-menu>
+          </sl-dropdown>
+        `,
+      )}
     `;
   }
 
