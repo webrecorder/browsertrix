@@ -329,7 +329,9 @@ class PageOps:
         crawl_id: str,
     ) -> Dict[str, Union[bool, PageNote]]:
         """Add note to page"""
-        note = PageNote(id=uuid4(), text=text, userid=user.id, userName=user.name)
+        note = PageNote(
+            id=uuid4(), text=text, userid=user.id, userName=user.name, created=dt_now()
+        )
 
         modified = dt_now()
 
@@ -371,7 +373,11 @@ class PageOps:
             raise HTTPException(status_code=404, detail="page_note_not_found")
 
         new_note = PageNote(
-            id=note_in.id, text=note_in.text, userid=user.id, userName=user.name
+            id=note_in.id,
+            text=note_in.text,
+            userid=user.id,
+            userName=user.name,
+            created=dt_now(),
         )
         page_notes[matching_index] = new_note.dict()
 

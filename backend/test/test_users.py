@@ -424,16 +424,14 @@ def test_user_change_role(admin_auth_headers, default_org_id):
 
 def test_forgot_password():
     r = requests.post(
-        f"{API_PREFIX}/auth/forgot-password",
-        json={"email": "no-such-user@example.com"}
+        f"{API_PREFIX}/auth/forgot-password", json={"email": "no-such-user@example.com"}
     )
     # always return success for security reasons even if user doesn't exist
     assert r.status_code == 202
     detail = r.json()["success"] == True
 
     r = requests.post(
-        f"{API_PREFIX}/auth/forgot-password",
-        json={"email": VALID_USER_EMAIL}
+        f"{API_PREFIX}/auth/forgot-password", json={"email": VALID_USER_EMAIL}
     )
     assert r.status_code == 202
     detail = r.json()["success"] == True
