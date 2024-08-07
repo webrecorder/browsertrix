@@ -591,7 +591,7 @@ class CrawlerProxy(BaseModel):
 # ============================================================================
 class CrawlerProxies(BaseModel):
     """List of CrawlerProxy instances for API"""
-
+    default_proxy_id: Optional[str] = None
     servers: List[CrawlerProxy] = []
 
 

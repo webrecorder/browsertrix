@@ -2,7 +2,6 @@ import { localized, msg } from "@lit/localize";
 import { type SlSelect } from "@shoelace-style/shoelace";
 import { html } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import capitalize from "lodash/fp/capitalize";
 
 import type { Proxy } from "@/pages/org/types";
 import type { AuthState } from "@/utils/AuthService";
@@ -23,6 +22,7 @@ export type SelectCrawlerProxyUpdateEvent =
   CustomEvent<SelectCrawlerProxyUpdateDetail>;
 
 type allProxiesAPIResponse = {
+  default_proxy_id: string | null;
   servers: Proxy[];
 };
 
@@ -56,10 +56,13 @@ export class SelectCrawlerProxy extends LiteElement {
   private selectedProxy?: Proxy;
 
   @state()
+  private defaultProxy?: Proxy;
+
+  @state()
   private allProxies?: Proxy[];
 
   protected firstUpdated() {
-    void this.fetchallProxies();
+    void this.fetchAllProxies();
   }
   // credit: https://dev.to/jorik/country-code-to-flag-emoji-a21
   private countryCodeToFlagEmoji(countryCode: String): String {
@@ -80,13 +83,15 @@ export class SelectCrawlerProxy extends LiteElement {
         name="crawlerProxy-select"
         label=${msg("Crawler Proxy Server")}
         value=${this.selectedProxy?.id || ""}
-        placeholder=${msg("No Proxy")}
+        placeholder=${this.defaultProxy
+          ? `${msg(`Default Proxy:`)} ${this.defaultProxy.label}`
+          : msg("No Proxy")}
         hoist
         clearable
         @sl-change=${this.onChange}
         @sl-focus=${() => {
           // Refetch to keep list up to date
-          void this.fetchallProxies();
+          void this.fetchAllProxies();
         }}
         @sl-hide=${this.stopProp}
         @sl-after-hide=${this.stopProp}
@@ -95,9 +100,11 @@ export class SelectCrawlerProxy extends LiteElement {
           (server) =>
             html` <sl-option value=${server.id}>
               ${server.country_code
-                ? this.countryCodeToFlagEmoji(server.country_code)
+                ? html` <span slot="prefix">
+                    ${this.countryCodeToFlagEmoji(server.country_code)}
+                  </span>`
                 : ""}
-              ${capitalize(server.label)}
+              ${server.label}
             </sl-option>`,
         )}
         ${this.selectedProxy
@@ -106,6 +113,16 @@ export class SelectCrawlerProxy extends LiteElement {
                 ${msg("Description:")}
                 <span class="font-monospace"
                   >${this.selectedProxy.description || ""}</span
+                >
+              </div>
+            `
+          : ``}
+        ${!this.selectedProxy && this.defaultProxy
+          ? html`
+              <div slot="help-text">
+                ${msg("Description:")}
+                <span class="font-monospace"
+                  >${this.defaultProxy.description || ""}</span
                 >
               </div>
             `
@@ -133,10 +150,18 @@ export class SelectCrawlerProxy extends LiteElement {
   /**
    * Fetch crawler proxies and update internal state
    */
-  private async fetchallProxies(): Promise<void> {
+  private async fetchAllProxies(): Promise<void> {
     try {
-      const servers = await this.getallProxies();
-      this.allProxies = servers;
+      const data = await this.getAllProxies();
+      const defaultProxyId = data.default_proxy_id;
+
+      this.allProxies = data.servers;
+
+      if (!this.defaultProxy) {
+        this.defaultProxy = this.allProxies.find(
+          ({ id }) => id === defaultProxyId,
+        );
+      }
 
       if (this.proxyId && !this.selectedProxy?.id) {
         this.selectedProxy = this.allProxies.find(
@@ -174,14 +199,14 @@ export class SelectCrawlerProxy extends LiteElement {
     }
   }
 
-  private async getallProxies(): Promise<Proxy[]> {
+  private async getAllProxies(): Promise<allProxiesAPIResponse> {
     const data: allProxiesAPIResponse =
       await this.apiFetch<allProxiesAPIResponse>(
         `/orgs/${this.orgId}/crawlconfigs/crawler-proxies`,
         this.authState!,
       );
 
-    return data.servers;
+    return data;
   }
 
   /**

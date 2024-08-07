@@ -301,9 +301,9 @@ crawler_liveness_port: 6065
 proxies: []
 #  - id: My Proxy # name of the proxy, is shown in the dropdown, has to be lowercase, alphanumeric
 #    url: # proxy connection string, must be a ssh://, socks:// or http:// URL
-#    label: "US Proxy" # optional: label to show instead of the id in the dropdown
+#    label: "US Proxy" # label to show in dropdown
 #    country_code: US # Alpha-2 ISO 3991 country code, https://www.iso.org/obp/ui/#search
-#
+#    description: "Proxy" # optional: description to show for the  proxy
 #    ssh_private_key: |  # requred for ssh:// proxies
 #       # ssh-key needed to connect to the SSH server
 #       <secret key>
