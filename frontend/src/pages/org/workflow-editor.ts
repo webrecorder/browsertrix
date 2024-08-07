@@ -378,17 +378,15 @@ export class CrawlConfigEditor extends LiteElement {
   async willUpdate(
     changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {
-    if (changedProperties.has("jobType") && this.jobType) {
+    if (
+      (changedProperties.has("jobType") && this.jobType) ||
+      (changedProperties.get("initialWorkflow") && this.initialWorkflow)
+    ) {
       this.initializeEditor();
-    }
-    if (changedProperties.has("appState.userOrg")) {
       await this.fetchAPIDefaults();
       if (this.orgId) {
         await this.fetchOrgQuotaDefaults();
       }
-    }
-    if (changedProperties.get("initialWorkflow") && this.initialWorkflow) {
-      this.initializeEditor();
     }
     if (changedProperties.get("progressState") && this.progressState) {
       if (

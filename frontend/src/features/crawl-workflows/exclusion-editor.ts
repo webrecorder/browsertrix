@@ -62,11 +62,7 @@ export class ExclusionEditor extends LiteElement {
   private isLoading = false;
 
   willUpdate(changedProperties: PropertyValues<this> & Map<string, unknown>) {
-    if (
-      changedProperties.has("appState.userOrg") ||
-      changedProperties.has("crawlId") ||
-      changedProperties.has("regex")
-    ) {
+    if (changedProperties.has("crawlId") || changedProperties.has("regex")) {
       void this.fetchQueueMatches();
     }
   }

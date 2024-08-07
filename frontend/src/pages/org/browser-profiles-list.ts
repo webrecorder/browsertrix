@@ -88,10 +88,7 @@ export class BrowserProfilesList extends BtrixElement {
   protected willUpdate(
     changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {
-    if (
-      changedProperties.has("appState.userOrg") ||
-      changedProperties.has("sort")
-    ) {
+    if (changedProperties.has("sort")) {
       void this.fetchBrowserProfiles();
     }
   }

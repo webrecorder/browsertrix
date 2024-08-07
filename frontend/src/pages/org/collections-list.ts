@@ -107,17 +107,13 @@ export class CollectionsList extends LiteElement {
   protected async willUpdate(
     changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {
-    if (changedProperties.has("appState.userOrg")) {
-      this.collections = undefined;
-      void this.fetchSearchValues();
-    }
-    if (
-      changedProperties.has("appState.userOrg") ||
-      changedProperties.has("filterBy") ||
-      changedProperties.has("orderBy")
-    ) {
+    if (changedProperties.has("filterBy") || changedProperties.has("orderBy")) {
       void this.fetchCollections();
     }
+  }
+
+  protected firstUpdated() {
+    void this.fetchSearchValues();
   }
 
   render() {
