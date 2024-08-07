@@ -427,7 +427,9 @@ export class OrgSettings extends BtrixElement {
               value=${AccessCode.owner}
               class="group rounded-md border border-neutral-300 p-2 transition-colors hover:border-neutral-400 attr-[aria-checked=true]:border-primary attr-[aria-checked=true]:bg-primary-50 part-[control]:col-start-1 part-[label]:col-start-1 part-[control]:col-end-2 part-[label]:col-end-3 part-[control]:row-start-1 part-[label]:row-start-1 part-[control]:row-end-2 part-[label]:row-end-3 part-[label]:ml-0 part-[base]:grid part-[label]:grid part-[label]:flex-auto part-[base]:grid-cols-[auto_minmax(0,1fr)] part-[label]:grid-cols-subgrid part-[base]:gap-x-1 part-[label]:gap-y-2"
             >
-              <div class="col-start-2">
+              <div
+                class="col-start-2 flex items-baseline justify-between gap-2"
+              >
                 ${msg("Admin")}
                 <span class="text-xs text-gray-500">
                   ${msg("Manage org and billing settings")}
@@ -461,7 +463,9 @@ export class OrgSettings extends BtrixElement {
               value=${AccessCode.crawler}
               class="group rounded-md border border-neutral-300 p-2 transition-colors hover:border-neutral-400 attr-[aria-checked=true]:border-primary attr-[aria-checked=true]:bg-primary-50 part-[control]:col-start-1 part-[label]:col-start-1 part-[control]:col-end-2 part-[label]:col-end-3 part-[control]:row-start-1 part-[label]:row-start-1 part-[control]:row-end-2 part-[label]:row-end-3 part-[label]:ml-0 part-[base]:grid part-[label]:grid part-[label]:flex-auto part-[base]:grid-cols-[auto_minmax(0,1fr)] part-[label]:grid-cols-subgrid part-[base]:gap-x-1 part-[label]:gap-y-2"
             >
-              <div class="col-start-2">
+              <div
+                class="col-start-2 flex items-baseline justify-between gap-2"
+              >
                 ${msg("Crawler")}
                 <span class="text-xs text-gray-500">
                   ${msg("Create, evaluate, and curate archives")}
@@ -487,7 +491,9 @@ export class OrgSettings extends BtrixElement {
               value=${AccessCode.viewer}
               class="group rounded-md border border-neutral-300 p-2 transition-colors hover:border-neutral-400 attr-[aria-checked=true]:border-primary attr-[aria-checked=true]:bg-primary-50 part-[control]:col-start-1 part-[label]:col-start-1 part-[control]:col-end-2 part-[label]:col-end-3 part-[control]:row-start-1 part-[label]:row-start-1 part-[control]:row-end-2 part-[label]:row-end-3 part-[label]:ml-0 part-[base]:grid part-[label]:grid part-[label]:flex-auto part-[base]:grid-cols-[auto_minmax(0,1fr)] part-[label]:grid-cols-subgrid part-[base]:gap-x-1 part-[label]:gap-y-2"
             >
-              <div class="col-start-2">
+              <div
+                class="col-start-2 flex items-baseline justify-between gap-2"
+              >
                 ${msg("Viewer")}
                 <span class="text-xs text-gray-500">
                   ${msg("View archives and collections")}
