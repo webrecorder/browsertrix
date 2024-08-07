@@ -149,7 +149,7 @@ export class AcceptInvite extends BtrixElement {
                     ? nothing
                     : html`
                         <a
-                          href=${ROUTES.home}
+                          href=${ROUTES.admin}
                           @click=${this.navigate.link}
                           class="mt-3 inline-block underline hover:no-underline"
                         >

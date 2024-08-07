@@ -145,7 +145,7 @@ export class LogInPage extends LiteElement {
   viewState!: ViewState;
 
   @property({ type: String })
-  redirectUrl: string = ROUTES.home;
+  redirectUrl: string = ROUTES.admin;
 
   private readonly formStateService = interpret(machine);
 

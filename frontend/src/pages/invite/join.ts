@@ -97,7 +97,7 @@ export class Join extends LiteElement {
                 html`<btrix-alert variant="danger">
                   <div>${err instanceof Error ? err.message : err}</div>
                   <a
-                    href=${ROUTES.home}
+                    href=${ROUTES.admin}
                     @click=${this.navLink}
                     class="mt-3 inline-block underline hover:no-underline"
                   >
@@ -174,7 +174,7 @@ export class Join extends LiteElement {
       if (inviteInfo?.orgSlug) {
         this.navTo(`/orgs/${inviteInfo.orgSlug}`);
       } else {
-        this.navTo(ROUTES.home);
+        this.navTo(ROUTES.admin);
       }
     }
   }

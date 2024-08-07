@@ -51,7 +51,7 @@ describe("browsertrix-app", () => {
       }),
     );
     const el = await fixture("<browsertrix-app></browsertrix-app>");
-    expect(el).lightDom.descendants("btrix-home");
+    expect(el).lightDom.descendants("btrix-admin");
   });
 
   it("renders when `AuthService.initSessionStorage` rejects", async () => {

@@ -347,7 +347,7 @@ export default class AuthService {
         this.logout();
         const { pathname, search, hash } = window.location;
         const redirectUrl =
-          pathname !== ROUTES.login && pathname !== ROUTES.home
+          pathname !== ROUTES.login && pathname !== ROUTES.admin
             ? `${pathname}${search}${hash}`
             : "";
         window.dispatchEvent(AuthService.createNeedLoginEvent({ redirectUrl }));

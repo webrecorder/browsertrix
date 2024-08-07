@@ -43,7 +43,7 @@ const RESOURCE_NAMES = ["workflow", "collection", "browser-profile", "upload"];
 type ResourceName = (typeof RESOURCE_NAMES)[number];
 export type SelectNewDialogEvent = CustomEvent<ResourceName>;
 export type OrgParams = {
-  home: Record<string, never>;
+  dashboard: Record<string, never>;
   workflows: {
     workflowId?: string;
     jobType?: JobType;
@@ -79,7 +79,7 @@ export type OrgParams = {
 };
 export type OrgTab = keyof OrgParams;
 
-const defaultTab = "home";
+const defaultTab: OrgTab = "dashboard";
 
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -256,7 +256,7 @@ export class Org extends LiteElement {
             choose(
               this.orgTab,
               [
-                ["home", this.renderDashboard],
+                ["dashboard", this.renderDashboard],
                 ["items", this.renderArchivedItem],
                 ["workflows", this.renderWorkflows],
                 ["browser-profiles", this.renderBrowserProfiles],
@@ -285,7 +285,7 @@ export class Org extends LiteElement {
       >
         <nav class="-mx-3 flex items-end overflow-x-auto px-3 xl:px-6">
           ${this.renderNavTab({
-            tabName: "home",
+            tabName: "dashboard",
             label: msg("Overview"),
             path: "",
           })}
@@ -377,7 +377,7 @@ export class Org extends LiteElement {
           ?open=${this.openDialogName === "upload"}
           @request-close=${() => (this.openDialogName = undefined)}
           @uploaded=${() => {
-            if (this.orgTab === "home") {
+            if (this.orgTab === "dashboard") {
               this.navTo(`${this.orgBasePath}/items/upload`);
             }
           }}
