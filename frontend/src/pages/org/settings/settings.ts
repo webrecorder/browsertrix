@@ -429,7 +429,7 @@ export class OrgSettings extends TailwindElement {
           <sl-radio-group name="role" label="Role" value=${AccessCode.viewer}>
             <sl-radio
               value=${AccessCode.owner}
-              class="rounded-md border border-neutral-300 p-2 transition-colors hover:border-neutral-400 attr-[aria-checked=true]:border-primary attr-[aria-checked=true]:bg-primary-50 part-[control]:col-start-1 part-[label]:col-start-1 part-[control]:col-end-2 part-[label]:col-end-3 part-[control]:row-start-1 part-[label]:row-start-1 part-[control]:row-end-2 part-[label]:row-end-3 part-[label]:ml-0 part-[base]:grid part-[label]:grid part-[label]:flex-auto part-[base]:grid-cols-[auto_minmax(0,1fr)] part-[label]:grid-cols-subgrid part-[base]:gap-x-1 part-[label]:gap-y-2"
+              class="group rounded-md border border-neutral-300 p-2 transition-colors hover:border-neutral-400 attr-[aria-checked=true]:border-primary attr-[aria-checked=true]:bg-primary-50 part-[control]:col-start-1 part-[label]:col-start-1 part-[control]:col-end-2 part-[label]:col-end-3 part-[control]:row-start-1 part-[label]:row-start-1 part-[control]:row-end-2 part-[label]:row-end-3 part-[label]:ml-0 part-[base]:grid part-[label]:grid part-[label]:flex-auto part-[base]:grid-cols-[auto_minmax(0,1fr)] part-[label]:grid-cols-subgrid part-[base]:gap-x-1 part-[label]:gap-y-2"
             >
               <div class="col-start-2">
                 ${msg("Admin")}
@@ -440,7 +440,7 @@ export class OrgSettings extends TailwindElement {
               <sl-details
                 @sl-hide=${this.stopProp}
                 @sl-after-hide=${this.stopProp}
-                class="col-span-2 part-[content]:p-2 part-[header]:p-2 part-[content]:pt-0"
+                class="col-span-2 part-[content]:p-2 part-[header]:p-2 part-[content]:pt-0 group-attr-[aria-checked=true]:part-[base]:border-primary/50 group-attr-[aria-checked=true]:part-[summary-icon]:text-primary-700"
               >
                 <span slot="summary" class="text-xs">Permissions</span>
                 <ul class="ms-4 list-disc text-xs text-gray-500">
@@ -463,7 +463,7 @@ export class OrgSettings extends TailwindElement {
             </sl-radio>
             <sl-radio
               value=${AccessCode.crawler}
-              class="rounded-md border border-neutral-300 p-2 transition-colors hover:border-neutral-400 attr-[aria-checked=true]:border-primary attr-[aria-checked=true]:bg-primary-50 part-[control]:col-start-1 part-[label]:col-start-1 part-[control]:col-end-2 part-[label]:col-end-3 part-[control]:row-start-1 part-[label]:row-start-1 part-[control]:row-end-2 part-[label]:row-end-3 part-[label]:ml-0 part-[base]:grid part-[label]:grid part-[label]:flex-auto part-[base]:grid-cols-[auto_minmax(0,1fr)] part-[label]:grid-cols-subgrid part-[base]:gap-x-1 part-[label]:gap-y-2"
+              class="group rounded-md border border-neutral-300 p-2 transition-colors hover:border-neutral-400 attr-[aria-checked=true]:border-primary attr-[aria-checked=true]:bg-primary-50 part-[control]:col-start-1 part-[label]:col-start-1 part-[control]:col-end-2 part-[label]:col-end-3 part-[control]:row-start-1 part-[label]:row-start-1 part-[control]:row-end-2 part-[label]:row-end-3 part-[label]:ml-0 part-[base]:grid part-[label]:grid part-[label]:flex-auto part-[base]:grid-cols-[auto_minmax(0,1fr)] part-[label]:grid-cols-subgrid part-[base]:gap-x-1 part-[label]:gap-y-2"
             >
               <div class="col-start-2">
                 ${msg("Crawler")}
@@ -474,7 +474,7 @@ export class OrgSettings extends TailwindElement {
               <sl-details
                 @sl-hide=${this.stopProp}
                 @sl-after-hide=${this.stopProp}
-                class="col-span-2 part-[content]:p-2 part-[header]:p-2 part-[content]:pt-0"
+                class="col-span-2 part-[content]:p-2 part-[header]:p-2 part-[content]:pt-0 group-attr-[aria-checked=true]:part-[base]:border-primary/50 group-attr-[aria-checked=true]:part-[summary-icon]:text-primary-700"
               >
                 <span slot="summary" class="text-xs">Permissions</span>
                 <ul class="ms-4 list-disc text-xs text-gray-500">
@@ -489,7 +489,7 @@ export class OrgSettings extends TailwindElement {
             </sl-radio>
             <sl-radio
               value=${AccessCode.viewer}
-              class="rounded-md border border-neutral-300 p-2 transition-colors hover:border-neutral-400 attr-[aria-checked=true]:border-primary attr-[aria-checked=true]:bg-primary-50 part-[control]:col-start-1 part-[label]:col-start-1 part-[control]:col-end-2 part-[label]:col-end-3 part-[control]:row-start-1 part-[label]:row-start-1 part-[control]:row-end-2 part-[label]:row-end-3 part-[label]:ml-0 part-[base]:grid part-[label]:grid part-[label]:flex-auto part-[base]:grid-cols-[auto_minmax(0,1fr)] part-[label]:grid-cols-subgrid part-[base]:gap-x-1 part-[label]:gap-y-2"
+              class="group rounded-md border border-neutral-300 p-2 transition-colors hover:border-neutral-400 attr-[aria-checked=true]:border-primary attr-[aria-checked=true]:bg-primary-50 part-[control]:col-start-1 part-[label]:col-start-1 part-[control]:col-end-2 part-[label]:col-end-3 part-[control]:row-start-1 part-[label]:row-start-1 part-[control]:row-end-2 part-[label]:row-end-3 part-[label]:ml-0 part-[base]:grid part-[label]:grid part-[label]:flex-auto part-[base]:grid-cols-[auto_minmax(0,1fr)] part-[label]:grid-cols-subgrid part-[base]:gap-x-1 part-[label]:gap-y-2"
             >
               <div class="col-start-2">
                 ${msg("Viewer")}
@@ -500,7 +500,7 @@ export class OrgSettings extends TailwindElement {
               <sl-details
                 @sl-hide=${this.stopProp}
                 @sl-after-hide=${this.stopProp}
-                class="col-span-2 part-[content]:p-2 part-[header]:p-2 part-[content]:pt-0"
+                class="col-span-2 part-[content]:p-2 part-[header]:p-2 part-[content]:pt-0 group-attr-[aria-checked=true]:part-[base]:border-primary/50 group-attr-[aria-checked=true]:part-[summary-icon]:text-primary-700"
               >
                 <span slot="summary" class="text-xs">Permissions</span>
                 <ul class="ms-4 list-disc text-xs text-gray-500">
