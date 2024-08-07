@@ -287,10 +287,7 @@ export class App extends LiteElement {
     }
 
     const showFullLogo =
-      this.viewState.route === "login" ||
-      !this.authService.authState ||
-      new URLSearchParams(window.location.search).get("mode") === "demo";
-
+      this.viewState.route === "login" || !this.authService.authState;
 
     return html`
       <div class="border-b bg-neutral-50">
@@ -311,8 +308,8 @@ export class App extends LiteElement {
             >
               <div
                 class="${showFullLogo
-                  ? "w-48"
-                  : "w-7"} h-7 bg-cover bg-no-repeat"
+                  ? "w-[10.5rem]"
+                  : "w-6 md:w-[10.5rem]"} h-6 bg-cover bg-no-repeat"
                 style="background-image: url(${brandLockupColor})"
                 role="img"
                 title="Browsertrix logo"
@@ -325,7 +322,7 @@ export class App extends LiteElement {
                   ? html`
                       <div
                         role="separator"
-                        class="mx-2.5 h-7 w-0 border-l"
+                        class="mx-2.5 h-6 w-0 border-l"
                       ></div>
                       <a
                         class="flex items-center gap-2 font-medium text-primary-700 transition-colors hover:text-primary"
