@@ -606,10 +606,8 @@ def init_auth_router(user_manager: UserManager) -> APIRouter:
         email: EmailStr = Body(..., embed=True),
     ):
         user = await user_manager.get_by_email(email)
-        if not user:
-            return None
-
-        await user_manager.forgot_password(user, request)
+        if user:
+            await user_manager.forgot_password(user, request)
         return {"success": True}
 
     @auth_router.post("/reset-password", response_model=SuccessResponse)
