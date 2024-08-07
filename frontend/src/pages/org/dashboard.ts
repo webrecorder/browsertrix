@@ -251,21 +251,14 @@ export class Dashboard extends LiteElement {
             `,
           )}
         </div>
-        ${when(
-          this.appState.settings &&
-            !this.appState.settings.billingEnabled &&
-            this.org,
-          (org) => html`
-            <section class="mb-10">
-              <btrix-details open>
-                <span slot="title">${msg("Usage History")}</span>
-                <btrix-usage-history-table
-                  .org=${org}
-                ></btrix-usage-history-table>
-              </btrix-details>
-            </section>
-          `,
-        )}
+        <section class="mb-10">
+          <btrix-details>
+            <span slot="title">${msg("Usage History")}</span>
+            <btrix-usage-history-table
+              .org=${this.org}
+            ></btrix-usage-history-table>
+          </btrix-details>
+        </section>
       </main> `;
   }
 
