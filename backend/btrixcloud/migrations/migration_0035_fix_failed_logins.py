@@ -24,7 +24,8 @@ class Migration(BaseMigration):
 
         try:
             res = await failed_logins.update_many(
-                {}, [{"$set": {"attempted": "$attempted.attempted"}}]
+                {"attempted.attempted": {"$exists": 1}},
+                [{"$set": {"attempted": "$attempted.attempted"}}],
             )
             updated = res.modified_count
             print(f"{updated} failed logins fixed", flush=True)
