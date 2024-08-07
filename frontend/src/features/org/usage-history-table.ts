@@ -29,7 +29,9 @@ export class UsageHistoryTable extends TailwindElement {
 
     if (this.org.usage && !Object.keys(this.org.usage).length) {
       return html`
-        <p class="text-center text-neutral-500">
+        <p
+          class="rounded border bg-neutral-50 p-3 text-center text-neutral-500"
+        >
           ${msg("No usage history to show.")}
         </p>
       `;
