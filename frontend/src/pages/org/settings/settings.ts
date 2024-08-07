@@ -425,16 +425,18 @@ export class OrgSettings extends BtrixElement {
           <sl-radio-group name="role" label="Role" value=${AccessCode.viewer}>
             <sl-radio
               value=${AccessCode.owner}
-              class="rounded-md border border-neutral-300 p-2 transition-colors hover:border-neutral-400 attr-[aria-checked=true]:border-primary attr-[aria-checked=true]:bg-primary-50 part-[label]:ml-0 part-[base]:flex part-[control]:hidden part-[label]:flex-auto"
+              class="rounded-md border border-neutral-300 p-2 transition-colors hover:border-neutral-400 attr-[aria-checked=true]:border-primary attr-[aria-checked=true]:bg-primary-50 part-[control]:col-start-1 part-[label]:col-start-1 part-[control]:col-end-2 part-[label]:col-end-3 part-[control]:row-start-1 part-[label]:row-start-1 part-[control]:row-end-2 part-[label]:row-end-3 part-[label]:ml-0 part-[base]:grid part-[label]:grid part-[label]:flex-auto part-[base]:grid-cols-[auto_minmax(0,1fr)] part-[label]:grid-cols-subgrid part-[base]:gap-x-1 part-[label]:gap-y-2"
             >
-              ${msg("Admin")}
-              <span class="text-xs text-gray-500">
-                ${msg("Manage org and billing settings")}
-              </span>
+              <div class="col-start-2">
+                ${msg("Admin")}
+                <span class="text-xs text-gray-500">
+                  ${msg("Manage org and billing settings")}
+                </span>
+              </div>
               <sl-details
                 @sl-hide=${this.stopProp}
                 @sl-after-hide=${this.stopProp}
-                class="mt-2 part-[content]:p-2 part-[header]:p-2 part-[content]:pt-0"
+                class="col-span-2 part-[content]:p-2 part-[header]:p-2 part-[content]:pt-0"
               >
                 <span slot="summary" class="text-xs">Permissions</span>
                 <ul class="ms-4 list-disc text-xs text-gray-500">
@@ -457,16 +459,18 @@ export class OrgSettings extends BtrixElement {
             </sl-radio>
             <sl-radio
               value=${AccessCode.crawler}
-              class="rounded-md border border-neutral-300 p-2 transition-colors hover:border-neutral-400 attr-[aria-checked=true]:border-primary attr-[aria-checked=true]:bg-primary-50 part-[label]:ml-0 part-[base]:flex part-[control]:hidden part-[label]:flex-auto"
+              class="rounded-md border border-neutral-300 p-2 transition-colors hover:border-neutral-400 attr-[aria-checked=true]:border-primary attr-[aria-checked=true]:bg-primary-50 part-[control]:col-start-1 part-[label]:col-start-1 part-[control]:col-end-2 part-[label]:col-end-3 part-[control]:row-start-1 part-[label]:row-start-1 part-[control]:row-end-2 part-[label]:row-end-3 part-[label]:ml-0 part-[base]:grid part-[label]:grid part-[label]:flex-auto part-[base]:grid-cols-[auto_minmax(0,1fr)] part-[label]:grid-cols-subgrid part-[base]:gap-x-1 part-[label]:gap-y-2"
             >
-              ${msg("Crawler")}
-              <span class="text-xs text-gray-500">
-                ${msg("Create, evaluate, and curate archives")}
-              </span>
+              <div class="col-start-2">
+                ${msg("Crawler")}
+                <span class="text-xs text-gray-500">
+                  ${msg("Create, evaluate, and curate archives")}
+                </span>
+              </div>
               <sl-details
                 @sl-hide=${this.stopProp}
                 @sl-after-hide=${this.stopProp}
-                class="mt-2 part-[content]:p-2 part-[header]:p-2 part-[content]:pt-0"
+                class="col-span-2 part-[content]:p-2 part-[header]:p-2 part-[content]:pt-0"
               >
                 <span slot="summary" class="text-xs">Permissions</span>
                 <ul class="ms-4 list-disc text-xs text-gray-500">
@@ -481,16 +485,18 @@ export class OrgSettings extends BtrixElement {
             </sl-radio>
             <sl-radio
               value=${AccessCode.viewer}
-              class="rounded-md border border-neutral-300 p-2 transition-colors hover:border-neutral-400 attr-[aria-checked=true]:border-primary attr-[aria-checked=true]:bg-primary-50 part-[label]:ml-0 part-[base]:flex part-[control]:hidden part-[label]:flex-auto"
+              class="rounded-md border border-neutral-300 p-2 transition-colors hover:border-neutral-400 attr-[aria-checked=true]:border-primary attr-[aria-checked=true]:bg-primary-50 part-[control]:col-start-1 part-[label]:col-start-1 part-[control]:col-end-2 part-[label]:col-end-3 part-[control]:row-start-1 part-[label]:row-start-1 part-[control]:row-end-2 part-[label]:row-end-3 part-[label]:ml-0 part-[base]:grid part-[label]:grid part-[label]:flex-auto part-[base]:grid-cols-[auto_minmax(0,1fr)] part-[label]:grid-cols-subgrid part-[base]:gap-x-1 part-[label]:gap-y-2"
             >
-              ${msg("Viewer")}
-              <span class="text-xs text-gray-500">
-                ${msg("View archives and collections")}
-              </span>
+              <div class="col-start-2">
+                ${msg("Viewer")}
+                <span class="text-xs text-gray-500">
+                  ${msg("View archives and collections")}
+                </span>
+              </div>
               <sl-details
                 @sl-hide=${this.stopProp}
                 @sl-after-hide=${this.stopProp}
-                class="mt-2 part-[content]:p-2 part-[header]:p-2 part-[content]:pt-0"
+                class="col-span-2 part-[content]:p-2 part-[header]:p-2 part-[content]:pt-0"
               >
                 <span slot="summary" class="text-xs">Permissions</span>
                 <ul class="ms-4 list-disc text-xs text-gray-500">
