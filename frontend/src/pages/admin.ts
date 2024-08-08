@@ -4,6 +4,7 @@ import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import { type PropertyValues } from "lit";
 import { customElement, state } from "lit/decorators.js";
 
+import needLogin from "@/decorators/needLogin";
 import type { InviteSuccessDetail } from "@/features/accounts/invite-form";
 import type { APIUser } from "@/index";
 import type { APIPaginatedList } from "@/types/api";
@@ -17,15 +18,10 @@ import { formatAPIUser } from "@/utils/user";
 
 /**
  * Superadmin home page
- *
- * Uses custom redirect instead of needLogin decorator to suppress "need login"
- * message when accessing root URL.
- *
- * Only accessed by superadmins. Regular users will be redirected their org.
- * See https://github.com/webrecorder/browsertrix/issues/1972
  */
 @localized()
 @customElement("btrix-admin")
+@needLogin
 export class Admin extends LiteElement {
   @state()
   private orgList?: OrgData[];
@@ -50,19 +46,6 @@ export class Admin extends LiteElement {
   }
 
   private readonly validateOrgNameMax = maxLengthValidator(40);
-
-  connectedCallback() {
-    // TODO move logic to index.ts
-    if (this.authState) {
-      if (this.slug) {
-        this.navTo(`/orgs/${this.slug}`);
-      } else {
-        super.connectedCallback();
-      }
-    } else {
-      this.navTo("/log-in");
-    }
-  }
 
   willUpdate(changedProperties: PropertyValues) {
     if (changedProperties.has("appState.userInfo") && this.userInfo) {

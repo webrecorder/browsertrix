@@ -6,7 +6,6 @@ import { renderInviteMessage } from "./ui/inviteMessage";
 
 import type { SignUpSuccessDetail } from "@/features/accounts/sign-up-form";
 import type { OrgUpdatedDetail } from "@/pages/invite/ui/org-form";
-import { ROUTES } from "@/routes";
 import type { UserOrg, UserOrgInviteInfo } from "@/types/user";
 import AuthService, { type LoggedInEventDetail } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
@@ -97,7 +96,7 @@ export class Join extends LiteElement {
                 html`<btrix-alert variant="danger">
                   <div>${err instanceof Error ? err.message : err}</div>
                   <a
-                    href=${ROUTES.admin}
+                    href=${this.orgBasePath}
                     @click=${this.navLink}
                     class="mt-3 inline-block underline hover:no-underline"
                   >
@@ -174,7 +173,7 @@ export class Join extends LiteElement {
       if (inviteInfo?.orgSlug) {
         this.navTo(`/orgs/${inviteInfo.orgSlug}`);
       } else {
-        this.navTo(ROUTES.admin);
+        this.navTo(this.orgBasePath);
       }
     }
   }

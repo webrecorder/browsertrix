@@ -8,7 +8,6 @@ import { renderInviteMessage } from "./ui/inviteMessage";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { APIUser } from "@/index";
 import type { OrgUpdatedDetail } from "@/pages/invite/ui/org-form";
-import { ROUTES } from "@/routes";
 import type { UserOrg, UserOrgInviteInfo } from "@/types/user";
 import { isApiError } from "@/utils/api";
 import { AppStateService } from "@/utils/state";
@@ -149,7 +148,7 @@ export class AcceptInvite extends BtrixElement {
                     ? nothing
                     : html`
                         <a
-                          href=${ROUTES.admin}
+                          href=${this.navigate.orgBasePath}
                           @click=${this.navigate.link}
                           class="mt-3 inline-block underline hover:no-underline"
                         >
