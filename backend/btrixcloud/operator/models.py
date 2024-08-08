@@ -134,6 +134,8 @@ class PodInfo(BaseModel):
     newMemory: Optional[int] = None
     signalAtMem: Optional[int] = None
 
+    evicted: Optional[bool] = False
+
     def dict(self, *a, **kw):
         res = super().dict(*a, **kw)
         percent = {
@@ -168,15 +170,21 @@ class PodInfo(BaseModel):
             else 0
         )
 
-    def should_restart_pod(self):
+    def should_restart_pod(self, forced: bool = False) -> Optional[str]:
         """return true if pod should be restarted"""
         if self.newMemory and self.newMemory != self.allocated.memory:
-            return True
+            return "newMemory"
 
         if self.newCpu and self.newCpu != self.allocated.cpu:
-            return True
+            return "newCpu"
 
-        return False
+        if self.evicted:
+            return "evicted"
+
+        if forced:
+            return "forced"
+
+        return None
 
 
 # ============================================================================
