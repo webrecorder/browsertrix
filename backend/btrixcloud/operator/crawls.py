@@ -809,7 +809,7 @@ class CrawlOperator(BaseOperator):
                 "running",
                 status,
                 crawl,
-                allowed_from=["starting", "waiting_capacity"],
+                allowed_from=RUNNING_AND_WAITING_STATES,
             )
 
             # update lastActiveTime if crawler is running
@@ -874,6 +874,7 @@ class CrawlOperator(BaseOperator):
         try:
             for name, pod in pods.items():
                 running = False
+                evicted = False
 
                 pstatus = pod["status"]
                 phase = pstatus["phase"]
@@ -881,6 +882,10 @@ class CrawlOperator(BaseOperator):
 
                 if phase in ("Running", "Succeeded"):
                     running = True
+                elif phase == "Failed" and pstatus.get("reason") == "Evicted":
+                    evicted = True
+
+                status.podStatus[name].evicted = evicted
 
                 if "containerStatuses" in pstatus:
                     cstatus = pstatus["containerStatuses"][0]
