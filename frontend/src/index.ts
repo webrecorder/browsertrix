@@ -79,9 +79,11 @@ export class App extends LiteElement {
     } catch (e) {
       console.debug(e);
     }
-    this.syncViewState();
     if (authState) {
       this.authService.saveLogin(authState);
+    }
+    this.syncViewState();
+    if (authState) {
       void this.updateUserInfo();
     }
     super.connectedCallback();
@@ -117,7 +119,7 @@ export class App extends LiteElement {
       (pathname === "/log-in" || pathname === "/reset-password")
     ) {
       // Redirect to logged in home page
-      this.viewState = this.router.match(ROUTES.home);
+      this.viewState = this.router.match(this.orgBasePath);
       window.history.replaceState(this.viewState, "", this.viewState.pathname);
     } else {
       this.viewState = this.router.match(
@@ -218,7 +220,7 @@ export class App extends LiteElement {
 
     if (newViewPath === "/log-in" && this.authService.authState) {
       // Redirect to logged in home page
-      this.viewState = this.router.match(ROUTES.home);
+      this.viewState = this.router.match(this.orgBasePath);
     } else {
       this.viewState = this.router.match(newViewPath);
     }
@@ -642,8 +644,10 @@ export class App extends LiteElement {
           .viewState=${this.viewState}
         ></btrix-reset-password>`;
 
-      case "home":
-        return html`<btrix-home class="w-full md:bg-neutral-50"></btrix-home>`;
+      case "admin":
+        return html`<btrix-admin
+          class="w-full md:bg-neutral-50"
+        ></btrix-admin>`;
 
       case "orgs":
         return html`<btrix-orgs class="w-full md:bg-neutral-50"></btrix-orgs>`;
@@ -652,11 +656,11 @@ export class App extends LiteElement {
         const slug = this.viewState.params.slug;
         const orgPath = this.viewState.pathname;
         const pathname = this.getLocationPathname();
-        const orgTab =
-          pathname
+        const orgTab: OrgTab =
+          (pathname
             .slice(pathname.indexOf(slug) + slug.length)
             .replace(/(^\/|\/$)/, "")
-            .split("/")[0] || "home";
+            .split("/")[0] as "" | OrgTab) || "dashboard";
         return html`<btrix-org
           class="w-full"
           .viewStateData=${this.viewState.data}
@@ -808,7 +812,7 @@ export class App extends LiteElement {
     });
 
     if (!detail.api) {
-      this.navigate(detail.redirectUrl || ROUTES.home);
+      this.navigate(detail.redirectUrl || this.orgBasePath);
     }
 
     if (detail.firstLogin) {
@@ -826,11 +830,13 @@ export class App extends LiteElement {
     this.navigate(ROUTES.login, {
       redirectUrl,
     });
-    this.notify({
-      message: msg("Please log in to continue."),
-      variant: "warning",
-      icon: "exclamation-triangle",
-    });
+    if (redirectUrl && redirectUrl !== "/") {
+      this.notify({
+        message: msg("Please log in to continue."),
+        variant: "warning",
+        icon: "exclamation-triangle",
+      });
+    }
   };
 
   onNavigateTo = (event: CustomEvent<NavigateEventDetail>) => {

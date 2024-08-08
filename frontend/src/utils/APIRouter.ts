@@ -5,7 +5,7 @@ type Routes = { [key: string]: UrlPattern };
 type Paths = { [key: string]: string };
 
 export type ViewState = {
-  // route name, e.g. "home"
+  // route name, e.g. "admin"
   route: string | null;
   // path name
   // e.g. "/dashboard"
