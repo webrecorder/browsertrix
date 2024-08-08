@@ -804,14 +804,6 @@ class CrawlOperator(BaseOperator):
                 status.resync_after = self.fast_retry_secs
                 return status
 
-            # ensure running state is set
-            await self.set_state(
-                "running",
-                status,
-                crawl,
-                allowed_from=RUNNING_AND_WAITING_STATES,
-            )
-
             # update lastActiveTime if crawler is running
             if crawler_running:
                 status.lastActiveTime = to_k8s_date(dt_now())
@@ -1395,24 +1387,20 @@ class CrawlOperator(BaseOperator):
             else:
                 await self.fail_crawl(crawl, status, pods, stats)
 
-        # check for other statuses
+        # check for other statuses, default to "running"
         else:
-            new_status: Optional[TYPE_RUNNING_STATES] = None
-            if status_count.get("running"):
-                if status.state in ("generate-wacz", "uploading-wacz", "pending-wacz"):
-                    new_status = "running"
+            new_status: TYPE_RUNNING_STATES = "running"
 
-            elif status_count.get("generate-wacz"):
+            if status_count.get("generate-wacz"):
                 new_status = "generate-wacz"
             elif status_count.get("uploading-wacz"):
                 new_status = "uploading-wacz"
             elif status_count.get("pending-wait"):
                 new_status = "pending-wait"
 
-            if new_status:
-                await self.set_state(
-                    new_status, status, crawl, allowed_from=RUNNING_STATES
-                )
+            await self.set_state(
+                new_status, status, crawl, allowed_from=RUNNING_AND_WAITING_STATES
+            )
 
         return status
 
