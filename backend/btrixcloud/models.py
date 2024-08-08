@@ -24,7 +24,6 @@ from pydantic import (
 # from fastapi_users import models as fastapi_users_models
 
 from .db import BaseMongoModel
-from .utils import dt_now
 
 # crawl scale for constraint
 MAX_CRAWL_SCALE = int(os.environ.get("MAX_CRAWL_SCALE", 3))
@@ -162,7 +161,7 @@ class FailedLogin(BaseMongoModel):
     Failed login model
     """
 
-    attempted: datetime = dt_now()
+    attempted: datetime
     email: str
 
     # Consecutive failed logins, reset to 0 on successful login or after
@@ -208,8 +207,8 @@ TYPE_RUNNING_STATES = Literal[
 ]
 RUNNING_STATES = get_args(TYPE_RUNNING_STATES)
 
-TYPE_STARTING_STATES = Literal["starting", "waiting_capacity", "waiting_org_limit"]
-STARTING_STATES = get_args(TYPE_STARTING_STATES)
+TYPE_WAITING_STATES = Literal["starting", "waiting_capacity", "waiting_org_limit"]
+WAITING_STATES = get_args(TYPE_WAITING_STATES)
 
 TYPE_FAILED_STATES = Literal[
     "canceled",
@@ -228,8 +227,8 @@ TYPE_SUCCESSFUL_STATES = Literal[
 ]
 SUCCESSFUL_STATES = get_args(TYPE_SUCCESSFUL_STATES)
 
-TYPE_RUNNING_AND_STARTING_STATES = Literal[TYPE_STARTING_STATES, TYPE_RUNNING_STATES]
-RUNNING_AND_STARTING_STATES = [*STARTING_STATES, *RUNNING_STATES]
+TYPE_RUNNING_AND_WAITING_STATES = Literal[TYPE_WAITING_STATES, TYPE_RUNNING_STATES]
+RUNNING_AND_WAITING_STATES = [*WAITING_STATES, *RUNNING_STATES]
 
 RUNNING_AND_STARTING_ONLY = ["starting", *RUNNING_STATES]
 
@@ -237,9 +236,9 @@ TYPE_NON_RUNNING_STATES = Literal[TYPE_FAILED_STATES, TYPE_SUCCESSFUL_STATES]
 NON_RUNNING_STATES = [*FAILED_STATES, *SUCCESSFUL_STATES]
 
 TYPE_ALL_CRAWL_STATES = Literal[
-    TYPE_RUNNING_AND_STARTING_STATES, TYPE_NON_RUNNING_STATES
+    TYPE_RUNNING_AND_WAITING_STATES, TYPE_NON_RUNNING_STATES
 ]
-ALL_CRAWL_STATES = [*RUNNING_AND_STARTING_STATES, *NON_RUNNING_STATES]
+ALL_CRAWL_STATES = [*RUNNING_AND_WAITING_STATES, *NON_RUNNING_STATES]
 
 
 # ============================================================================
@@ -1206,6 +1205,7 @@ class SubscriptionUpdate(BaseModel):
     planId: str
 
     futureCancelDate: Optional[datetime] = None
+    quotas: Optional[OrgQuotas] = None
 
 
 # ============================================================================
@@ -1233,8 +1233,13 @@ class SubscriptionCancelOut(SubscriptionCancel, SubscriptionEventOut):
 class SubscriptionPortalUrlRequest(BaseModel):
     """Request for subscription update pull"""
 
+    returnUrl: str
+
     subId: str
     planId: str
+
+    bytesStored: int
+    execSeconds: int
 
 
 # ============================================================================
@@ -2022,7 +2027,7 @@ class PageNote(BaseModel):
 
     id: UUID
     text: str
-    created: datetime = dt_now()
+    created: datetime
     userid: UUID
     userName: str
 

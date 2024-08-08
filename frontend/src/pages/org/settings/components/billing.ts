@@ -5,6 +5,7 @@ import { css, html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
+import { capitalize } from "lodash";
 
 import { columns } from "../ui/columns";
 
@@ -73,10 +74,15 @@ export class OrgSettingsBilling extends TailwindElement {
   }
 
   private readonly portalUrl = new Task(this, {
-    task: async ([org, authState]) => {
-      if (!org || !authState) throw new Error("Missing args");
+    task: async ([appState]) => {
+      if (!appState.settings?.billingEnabled || !appState.org?.subscription)
+        return;
+
       try {
-        const { portalUrl } = await this.getPortalUrl(org.id, authState);
+        const { portalUrl } = await this.getPortalUrl(
+          appState.org.id,
+          this.authState!,
+        );
 
         if (portalUrl) {
           return portalUrl;
@@ -91,7 +97,7 @@ export class OrgSettingsBilling extends TailwindElement {
         );
       }
     },
-    args: () => [this.org, this.authState] as const,
+    args: () => [this.appState] as const,
   });
 
   render() {
@@ -147,6 +153,9 @@ export class OrgSettingsBilling extends TailwindElement {
                           </div>
                         `
                       : nothing}
+                    <h5 class="mb-2 mt-4 text-xs leading-none text-neutral-500">
+                      ${msg("Monthly quota")}
+                    </h5>
                     ${this.renderQuotas(org.quotas)}
                   `,
                 )}
@@ -171,7 +180,7 @@ export class OrgSettingsBilling extends TailwindElement {
                               html`To upgrade to Pro, contact us at
                                 <a
                                   class=${linkClassList}
-                                  href=${`mailto:${this.salesEmail}?subject=${msg(str`Upgrade Starter plan (${this.org?.name})`)}`}
+                                  href=${`mailto:${this.salesEmail}?subject=${msg(str`Upgrade Browsertrix plan (${this.org?.name})`)}`}
                                   rel="noopener noreferrer nofollow"
                                   >${this.salesEmail}</a
                                 >.`,
@@ -191,8 +200,33 @@ export class OrgSettingsBilling extends TailwindElement {
             `,
           ],
         ])}
+
+        <div class="p-4">
+          <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
+            <h4>${msg("Usage History")}</h4>
+          </btrix-section-heading>
+          <btrix-usage-history-table
+            .org=${ifDefined(this.org)}
+          ></btrix-usage-history-table>
+        </div>
       </div>
     `;
+  }
+
+  private getPlanName(planId: string) {
+    switch (planId) {
+      case "starter":
+        return msg("Starter");
+
+      case "standard":
+        return msg("Standard");
+
+      case "plus":
+        return msg("Plus");
+
+      default:
+        return capitalize(planId);
+    }
   }
 
   private readonly renderSubscriptionDetails = (
@@ -204,7 +238,7 @@ export class OrgSettingsBilling extends TailwindElement {
     if (subscription) {
       tierLabel = html`
         <sl-icon class="text-neutral-500" name="nut"></sl-icon>
-        ${msg("Starter")}
+        ${this.getPlanName(subscription.planId)}
       `;
 
       switch (subscription.status) {
@@ -246,7 +280,7 @@ export class OrgSettingsBilling extends TailwindElement {
     <ul class="leading-relaxed text-neutral-700">
       <li>
         ${msg(
-          str`${quotas.maxPagesPerCrawl ? formatNumber(quotas.maxPagesPerCrawl) : msg("Unlimited")} ${pluralOf("pages", quotas.maxPagesPerCrawl)} per crawl`,
+          str`${quotas.maxExecMinutesPerMonth ? humanizeSeconds(quotas.maxExecMinutesPerMonth * 60, undefined, undefined, "long") : msg("Unlimited minutes")} of crawl and QA analysis execution time`,
         )}
       </li>
       <li>
@@ -256,17 +290,17 @@ export class OrgSettingsBilling extends TailwindElement {
                 value=${quotas.storageQuota}
               ></sl-format-bytes>`
             : msg("Unlimited")}
-          base disk space`,
+          storage`,
+        )}
+      </li>
+      <li>
+        ${msg(
+          str`${quotas.maxPagesPerCrawl ? formatNumber(quotas.maxPagesPerCrawl) : msg("Unlimited")} ${pluralOf("pages", quotas.maxPagesPerCrawl)} per crawl`,
         )}
       </li>
       <li>
         ${msg(
           str`${quotas.maxConcurrentCrawls ? formatNumber(quotas.maxConcurrentCrawls) : msg("Unlimited")} concurrent ${pluralOf("crawls", quotas.maxConcurrentCrawls)}`,
-        )}
-      </li>
-      <li>
-        ${msg(
-          str`${quotas.maxExecMinutesPerMonth ? humanizeSeconds(quotas.maxExecMinutesPerMonth * 60, undefined, undefined, "long") : msg("Unlimited minutes")} of base crawling time per month`,
         )}
       </li>
     </ul>

@@ -44,7 +44,7 @@ from .models import (
     PaginatedCrawlOutResponse,
     PaginatedSeedResponse,
     PaginatedCrawlErrorResponse,
-    RUNNING_AND_STARTING_STATES,
+    RUNNING_AND_WAITING_STATES,
     SUCCESSFUL_STATES,
     NON_RUNNING_STATES,
     ALL_CRAWL_STATES,
@@ -165,7 +165,7 @@ class CrawlOps(BaseCrawlOps):
             query["userid"] = userid
 
         if running_only:
-            query["state"] = {"$in": RUNNING_AND_STARTING_STATES}
+            query["state"] = {"$in": RUNNING_AND_WAITING_STATES}
 
         # Override running_only if state list is explicitly passed
         if state:
@@ -426,7 +426,7 @@ class CrawlOps(BaseCrawlOps):
 
         state, _ = await self.get_crawl_state(crawl_id, False)
 
-        if state not in RUNNING_AND_STARTING_STATES:
+        if state not in RUNNING_AND_WAITING_STATES:
             raise HTTPException(status_code=400, detail="crawl_not_running")
 
         total = 0
@@ -464,7 +464,7 @@ class CrawlOps(BaseCrawlOps):
         limit <= next_offset < limit + step"""
         state, _ = await self.get_crawl_state(crawl_id, False)
 
-        if state not in RUNNING_AND_STARTING_STATES:
+        if state not in RUNNING_AND_WAITING_STATES:
             raise HTTPException(status_code=400, detail="crawl_not_running")
 
         total = 0
@@ -514,7 +514,7 @@ class CrawlOps(BaseCrawlOps):
 
         crawl = await self.get_crawl(crawl_id, org)
 
-        if crawl.state not in RUNNING_AND_STARTING_STATES:
+        if crawl.state not in RUNNING_AND_WAITING_STATES:
             raise HTTPException(status_code=400, detail="crawl_not_running")
 
         cid = crawl.cid
@@ -592,30 +592,36 @@ class CrawlOps(BaseCrawlOps):
                 "qaCrawlExecSeconds": exec_time,
                 "qa.crawlExecSeconds": exec_time,
             }
+            field = "qa._lut"
         else:
             inc_update = {"crawlExecSeconds": exec_time}
+            field = "_lut"
 
         res = await self.crawls.find_one_and_update(
             {
                 "_id": crawl_id,
                 "type": "crawl",
-                "_lut": {"$ne": last_updated_time},
+                field: {"$ne": last_updated_time},
             },
             {
                 "$inc": inc_update,
-                "$set": {"_lut": last_updated_time},
+                "$set": {field: last_updated_time},
             },
         )
         return res is not None
 
     async def get_crawl_exec_last_update_time(
-        self, crawl_id: str
+        self, crawl_id: str, is_qa: bool
     ) -> Optional[datetime]:
         """get crawl last updated time"""
+        field = "_lut" if not is_qa else "qa._lut"
         res = await self.crawls.find_one(
-            {"_id": crawl_id, "type": "crawl"}, projection=["_lut"]
+            {"_id": crawl_id, "type": "crawl"}, projection=[field]
         )
-        return res and res.get("_lut")
+        if not res:
+            return None
+
+        return res.get("qa", {}).get("_lut") if is_qa else res.get("_lut")
 
     async def get_crawl_state(
         self, crawl_id: str, is_qa: bool
