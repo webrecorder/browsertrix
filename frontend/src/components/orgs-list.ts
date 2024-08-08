@@ -9,13 +9,8 @@ import { css, html, nothing } from "lit";
 import { customElement, property, query } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 
-import { TailwindElement } from "@/classes/TailwindElement";
+import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
-import { APIController } from "@/controllers/api";
-import { NavigateController } from "@/controllers/navigate";
-import { NotifyController } from "@/controllers/notify";
-import type { CurrentUser } from "@/types/user";
-import type { AuthState } from "@/utils/AuthService";
 import { formatNumber, getLocale } from "@/utils/localization";
 import type { OrgData } from "@/utils/orgs";
 
@@ -24,18 +19,12 @@ import type { OrgData } from "@/utils/orgs";
  */
 @localized()
 @customElement("btrix-orgs-list")
-export class OrgsList extends TailwindElement {
+export class OrgsList extends BtrixElement {
   static styles = css`
     btrix-table {
       grid-template-columns: min-content [clickable-start] 50ch auto auto auto [clickable-end] min-content;
     }
   `;
-
-  @property({ type: Object })
-  authState?: AuthState;
-
-  @property({ type: Object })
-  userInfo?: CurrentUser;
 
   @property({ type: Array })
   orgList?: OrgData[] = [];
@@ -57,10 +46,6 @@ export class OrgsList extends TailwindElement {
 
   @query("#orgDeleteButton")
   private readonly orgDeleteButton?: SlButton | null;
-
-  private readonly api = new APIController(this);
-  private readonly navigate = new NavigateController(this);
-  private readonly notify = new NotifyController(this);
 
   render() {
     if (this.skeleton) {
@@ -377,7 +362,7 @@ export class OrgsList extends TailwindElement {
     params: Pick<OrgData, "readOnly" | "readOnlyReason">,
   ) {
     try {
-      await this.api.fetch(`/orgs/${org.id}/read-only`, this.authState!, {
+      await this.api.fetch(`/orgs/${org.id}/read-only`, {
         method: "POST",
         body: JSON.stringify(params),
       });
@@ -414,7 +399,7 @@ export class OrgsList extends TailwindElement {
 
   private async deleteOrg(org: OrgData) {
     try {
-      await this.api.fetch(`/orgs/${org.id}`, this.authState!, {
+      await this.api.fetch(`/orgs/${org.id}`, {
         method: "DELETE",
       });
 

@@ -2,28 +2,25 @@ import { localized, msg, str } from "@lit/localize";
 import type { SlInput } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import type { ZxcvbnResult } from "@zxcvbn-ts/core";
-import { LitElement, type PropertyValues } from "lit";
+import { type PropertyValues } from "lit";
 import { customElement, property, queryAsync, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
 
-import type { CurrentUser } from "@/types/user";
+import { TailwindElement } from "@/classes/TailwindElement";
+import needLogin from "@/decorators/needLogin";
 import type { UnderlyingFunction } from "@/types/utils";
 import { isApiError } from "@/utils/api";
-import { needLogin } from "@/utils/auth";
-import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
 import PasswordService from "@/utils/PasswordService";
+import { AppStateService } from "@/utils/state";
 
 const { PASSWORD_MINLENGTH, PASSWORD_MAXLENGTH, PASSWORD_MIN_SCORE } =
   PasswordService;
 
-/**
- * @fires btrix-update-user-info
- */
 @localized()
 @customElement("btrix-request-verify")
-export class RequestVerify extends LitElement {
+export class RequestVerify extends TailwindElement {
   @property({ type: String })
   email!: string;
 
@@ -97,12 +94,6 @@ export class RequestVerify extends LitElement {
 @customElement("btrix-account-settings")
 @needLogin
 export class AccountSettings extends LiteElement {
-  @property({ type: Object })
-  authState?: AuthState;
-
-  @property({ type: Object })
-  userInfo?: CurrentUser;
-
   @state()
   sectionSubmitting: null | "name" | "email" | "password" = null;
 
@@ -323,7 +314,7 @@ export class AccountSettings extends LiteElement {
   });
 
   private async onSubmitName(e: SubmitEvent) {
-    if (!this.userInfo || !this.authState) return;
+    if (!this.userInfo) return;
     const form = e.target as HTMLFormElement;
     const input = form.querySelector("sl-input")!;
     if (!input.checkValidity()) {
@@ -338,7 +329,7 @@ export class AccountSettings extends LiteElement {
     this.sectionSubmitting = "name";
 
     try {
-      await this.apiFetch(`/users/me`, this.authState, {
+      await this.apiFetch(`/users/me`, {
         method: "PATCH",
         body: JSON.stringify({
           email: this.userInfo.email,
@@ -346,7 +337,11 @@ export class AccountSettings extends LiteElement {
         }),
       });
 
-      this.dispatchEvent(new CustomEvent("btrix-update-user-info"));
+      AppStateService.updateUserInfo({
+        ...this.userInfo,
+        name: newName,
+      });
+
       this.notify({
         message: msg("Your name has been updated."),
         variant: "success",
@@ -364,7 +359,7 @@ export class AccountSettings extends LiteElement {
   }
 
   private async onSubmitEmail(e: SubmitEvent) {
-    if (!this.userInfo || !this.authState) return;
+    if (!this.userInfo) return;
     const form = e.target as HTMLFormElement;
     const input = form.querySelector("sl-input")!;
     if (!input.checkValidity()) {
@@ -379,14 +374,18 @@ export class AccountSettings extends LiteElement {
     this.sectionSubmitting = "email";
 
     try {
-      await this.apiFetch(`/users/me`, this.authState, {
+      await this.apiFetch(`/users/me`, {
         method: "PATCH",
         body: JSON.stringify({
           email: newEmail,
         }),
       });
 
-      this.dispatchEvent(new CustomEvent("btrix-update-user-info"));
+      AppStateService.updateUserInfo({
+        ...this.userInfo,
+        email: newEmail,
+      });
+
       this.notify({
         message: msg("Your email has been updated."),
         variant: "success",
@@ -404,7 +403,7 @@ export class AccountSettings extends LiteElement {
   }
 
   private async onSubmitPassword(e: SubmitEvent) {
-    if (!this.userInfo || !this.authState) return;
+    if (!this.userInfo) return;
     const form = e.target as HTMLFormElement;
     const inputs = Array.from(form.querySelectorAll("sl-input"));
     if (inputs.some((input) => !input.checkValidity())) {
@@ -416,7 +415,7 @@ export class AccountSettings extends LiteElement {
     this.sectionSubmitting = "password";
 
     try {
-      await this.apiFetch("/users/me/password-change", this.authState, {
+      await this.apiFetch("/users/me/password-change", {
         method: "PUT",
         body: JSON.stringify({
           email: this.userInfo.email,
@@ -426,7 +425,7 @@ export class AccountSettings extends LiteElement {
       });
 
       this.isChangingPassword = false;
-      this.dispatchEvent(new CustomEvent("btrix-update-user-info"));
+
       this.notify({
         message: msg("Your password has been updated."),
         variant: "success",

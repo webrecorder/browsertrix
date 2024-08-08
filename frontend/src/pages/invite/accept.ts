@@ -5,35 +5,30 @@ import { customElement, property, state } from "lit/decorators.js";
 
 import { renderInviteMessage } from "./ui/inviteMessage";
 
-import { TailwindElement } from "@/classes/TailwindElement";
-import { APIController } from "@/controllers/api";
-import { NavigateController } from "@/controllers/navigate";
-import { NotifyController } from "@/controllers/notify";
+import { BtrixElement } from "@/classes/BtrixElement";
 import type { APIUser } from "@/index";
 import type { OrgUpdatedDetail } from "@/pages/invite/ui/org-form";
 import { ROUTES } from "@/routes";
 import type { UserOrg, UserOrgInviteInfo } from "@/types/user";
 import { isApiError } from "@/utils/api";
-import type { Auth, AuthState } from "@/utils/AuthService";
-import appState, { AppStateService, use } from "@/utils/state";
+import { AppStateService } from "@/utils/state";
 import { formatAPIUser } from "@/utils/user";
 
 import "./ui/org-form";
 
+/**
+ * Page for existing users to accept an org invitation.
+ * Uses custom redirect instead of needLogin decorator to suppress "need login"
+ * message when accessing root URL.
+ */
 @localized()
 @customElement("btrix-accept-invite")
-export class AcceptInvite extends TailwindElement {
-  @property({ type: Object })
-  authState?: AuthState;
-
+export class AcceptInvite extends BtrixElement {
   @property({ type: String })
   token?: string;
 
   @property({ type: String })
   email?: string;
-
-  @use()
-  appState = appState;
 
   @state()
   private serverError?: string;
@@ -42,22 +37,18 @@ export class AcceptInvite extends TailwindElement {
   _firstAdminOrgInfo: null | Pick<UserOrg, "id" | "name" | "slug"> = null;
 
   readonly inviteInfo = new Task(this, {
-    task: async ([authState, token]) => {
-      if (!authState) return;
+    autoRun: false,
+    task: async ([token]) => {
       if (!token) throw new Error("Missing args");
-      const inviteInfo = await this._getInviteInfo({ token, auth: authState });
+      const inviteInfo = await this._getInviteInfo(token);
       return inviteInfo;
     },
-    args: () => [this.authState, this.token] as const,
+    args: () => [this.token] as const,
   });
 
   get _isLoggedIn(): boolean {
     return Boolean(this.authState && this.email);
   }
-
-  readonly _api = new APIController(this);
-  readonly _navigate = new NavigateController(this);
-  readonly _notify = new NotifyController(this);
 
   connectedCallback(): void {
     if (this.token && this.email) {
@@ -68,14 +59,16 @@ export class AcceptInvite extends TailwindElement {
   }
 
   firstUpdated() {
-    if (!this._isLoggedIn) {
-      this._notify.toast({
+    if (this._isLoggedIn) {
+      void this.inviteInfo.run();
+    } else {
+      this.notify.toast({
         message: msg("Please log in to accept this invite."),
         variant: "warning",
         icon: "exclamation-triangle",
       });
 
-      this._navigate.to(
+      this.navigate.to(
         `/log-in?redirectUrl=${encodeURIComponent(
           `${window.location.pathname}${window.location.search}`,
         )}`,
@@ -123,15 +116,14 @@ export class AcceptInvite extends TailwindElement {
                 this._firstAdminOrgInfo
                   ? html`
                       <btrix-org-form
-                        .authState=${this.authState}
-                        orgId=${this._firstAdminOrgInfo.id}
+                        newOrgId=${this._firstAdminOrgInfo.id}
                         name=${this._firstAdminOrgInfo.name}
                         slug=${this._firstAdminOrgInfo.slug}
                         @btrix-org-updated=${(
                           e: CustomEvent<OrgUpdatedDetail>,
                         ) => {
                           e.stopPropagation();
-                          this._navigate.to(`/orgs/${e.detail.data.slug}`);
+                          this.navigate.to(`/orgs/${e.detail.data.slug}`);
                         }}
                       ></btrix-org-form>
                     `
@@ -158,7 +150,7 @@ export class AcceptInvite extends TailwindElement {
                     : html`
                         <a
                           href=${ROUTES.home}
-                          @click=${this._navigate.link}
+                          @click=${this.navigate.link}
                           class="mt-3 inline-block underline hover:no-underline"
                         >
                           ${msg("Go to home page")}
@@ -172,17 +164,10 @@ export class AcceptInvite extends TailwindElement {
     `;
   }
 
-  async _getInviteInfo({
-    auth,
-    token,
-  }: {
-    auth: Auth;
-    token: string;
-  }): Promise<UserOrgInviteInfo | void> {
+  async _getInviteInfo(token: string): Promise<UserOrgInviteInfo | void> {
     try {
-      return await this._api.fetch<UserOrgInviteInfo>(
+      return await this.api.fetch<UserOrgInviteInfo>(
         `/users/me/invite/${token}`,
-        auth,
       );
     } catch (e) {
       console.debug(e);
@@ -197,7 +182,7 @@ export class AcceptInvite extends TailwindElement {
             ),
           );
         case 400: {
-          if (auth.username === this.email) {
+          if (this.authState?.username === this.email) {
             throw new Error(
               msg(
                 str`This is not a valid invite, or it may have expired. If you believe this is an error, please contact ${this.appState.settings?.supportEmail || msg("your Browsertrix administrator")} for help.`,
@@ -206,7 +191,7 @@ export class AcceptInvite extends TailwindElement {
           } else {
             throw new Error(
               msg(
-                str`This invitation is for ${this.email}. You are currently logged in as ${auth.username}. Please log in with the correct email to access this invite.`,
+                str`This invitation is for ${this.email}. You are currently logged in as ${this.authState?.username}. Please log in with the correct email to access this invite.`,
               ),
             );
           }
@@ -232,9 +217,8 @@ export class AcceptInvite extends TailwindElement {
     }
 
     try {
-      const { org } = await this._api.fetch<{ org: UserOrg }>(
+      const { org } = await this.api.fetch<{ org: UserOrg }>(
         `/orgs/invite-accept/${this.token}`,
-        this.authState,
         {
           method: "POST",
         },
@@ -250,7 +234,7 @@ export class AcceptInvite extends TailwindElement {
 
         await this.updateComplete;
 
-        this._notify.toast({
+        this.notify.toast({
           message: msg(
             str`You've joined ${org.name || inviteInfo.orgName || msg("Browsertrix")}.`,
           ),
@@ -258,7 +242,7 @@ export class AcceptInvite extends TailwindElement {
           icon: "check2-circle",
         });
 
-        this._navigate.to(`/orgs/${org.slug}`);
+        this.navigate.to(`/orgs/${org.slug}`);
       }
     } catch (err) {
       if (isApiError(err) && err.message === "Invalid Invite Code") {
@@ -272,7 +256,7 @@ export class AcceptInvite extends TailwindElement {
   _onDecline() {
     const { orgName } = this.inviteInfo.value || {};
 
-    this._notify.toast({
+    this.notify.toast({
       message: msg(
         str`You've declined to join ${orgName || msg("Browsertrix")}.`,
       ),
@@ -280,10 +264,10 @@ export class AcceptInvite extends TailwindElement {
       icon: "info-circle",
     });
 
-    this._navigate.to(this._navigate.orgBasePath);
+    this.navigate.to(this.navigate.orgBasePath);
   }
 
   async _getCurrentUser(): Promise<APIUser> {
-    return this._api.fetch("/users/me", this.authState!);
+    return this.api.fetch("/users/me");
   }
 }

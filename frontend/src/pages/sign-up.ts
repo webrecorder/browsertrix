@@ -1,18 +1,12 @@
 import { localized, msg } from "@lit/localize";
-import { customElement, property, state } from "lit/decorators.js";
+import { customElement, state } from "lit/decorators.js";
 
-import AuthService, {
-  type AuthState,
-  type LoggedInEventDetail,
-} from "@/utils/AuthService";
+import AuthService, { type LoggedInEventDetail } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
 
 @localized()
 @customElement("btrix-sign-up")
 export class SignUp extends LiteElement {
-  @property({ type: Object })
-  authState?: AuthState;
-
   @state()
   isSignedUpWithoutAuth?: boolean;
 
@@ -48,7 +42,8 @@ export class SignUp extends LiteElement {
     `;
   }
 
-  private onSubmit() {
+  private async onSubmit() {
+    await this.updateComplete;
     if (this.authState) {
       this.dispatchEvent(AuthService.createLogOutEvent({ redirect: false }));
     }

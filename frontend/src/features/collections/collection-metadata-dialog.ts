@@ -7,7 +7,6 @@ import { when } from "lit/directives/when.js";
 import type { Dialog } from "@/components/ui/dialog";
 import type { Collection } from "@/types/collection";
 import { isApiError } from "@/utils/api";
-import type { AuthState } from "@/utils/AuthService";
 import { maxLengthValidator } from "@/utils/form";
 import LiteElement, { html } from "@/utils/LiteElement";
 
@@ -21,12 +20,6 @@ export type CollectionSavedEvent = CustomEvent<{
 @localized()
 @customElement("btrix-collection-metadata-dialog")
 export class CollectionMetadataDialog extends LiteElement {
-  @property({ type: Object })
-  authState!: AuthState;
-
-  @property({ type: String })
-  orgId!: string;
-
   @property({ type: Object })
   collection?: Collection;
 
@@ -171,7 +164,7 @@ export class CollectionMetadataDialog extends LiteElement {
         path = `/orgs/${this.orgId}/collections/${this.collection.id}`;
         method = "PATCH";
       }
-      const data = await this.apiFetch<Collection>(path, this.authState!, {
+      const data = await this.apiFetch<Collection>(path, {
         method,
         body,
       });

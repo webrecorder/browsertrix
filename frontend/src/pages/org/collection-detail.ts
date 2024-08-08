@@ -1,6 +1,6 @@
 import { localized, msg, str } from "@lit/localize";
 import type { SlCheckbox } from "@shoelace-style/shoelace";
-import { nothing, type PropertyValues, type TemplateResult } from "lit";
+import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
 import { guard } from "lit/directives/guard.js";
@@ -8,6 +8,7 @@ import { repeat } from "lit/directives/repeat.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
+import { BtrixElement } from "@/classes/BtrixElement";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import type {
   APIPaginatedList,
@@ -16,8 +17,6 @@ import type {
 } from "@/types/api";
 import type { Collection } from "@/types/collection";
 import type { ArchivedItem, Crawl, CrawlState, Upload } from "@/types/crawler";
-import type { AuthState } from "@/utils/AuthService";
-import LiteElement, { html } from "@/utils/LiteElement";
 import { getLocale } from "@/utils/localization";
 
 const ABORT_REASON_THROTTLE = "throttled";
@@ -28,16 +27,7 @@ export type Tab = (typeof TABS)[number];
 
 @localized()
 @customElement("btrix-collection-detail")
-export class CollectionDetail extends LiteElement {
-  @property({ type: Object })
-  authState!: AuthState;
-
-  @property({ type: String })
-  orgId!: string;
-
-  @property({ type: String })
-  userId!: string;
-
+export class CollectionDetail extends BtrixElement {
   @property({ type: String })
   collectionId!: string;
 
@@ -83,12 +73,11 @@ export class CollectionDetail extends LiteElement {
     },
   };
 
-  protected async willUpdate(changedProperties: PropertyValues<this>) {
-    if (changedProperties.has("orgId")) {
-      this.collection = undefined;
-      void this.fetchCollection();
-    }
+  protected async willUpdate(
+    changedProperties: PropertyValues<this> & Map<string, unknown>,
+  ) {
     if (changedProperties.has("collectionId")) {
+      void this.fetchCollection();
       void this.fetchArchivedItems({ page: 1 });
     }
   }
@@ -202,11 +191,8 @@ export class CollectionDetail extends LiteElement {
         </div>
       </btrix-dialog>
       <btrix-collection-items-dialog
-        orgId=${this.orgId}
-        userId=${this.userId}
         collectionId=${this.collectionId}
         collectionName=${this.collection?.name || ""}
-        .authState=${this.authState}
         ?isCrawler=${this.isCrawler}
         ?open=${this.openDialogName === "editItems"}
         @sl-hide=${() => (this.openDialogName = undefined)}
@@ -220,8 +206,6 @@ export class CollectionDetail extends LiteElement {
         this.collection,
         () => html`
           <btrix-collection-metadata-dialog
-            orgId=${this.orgId}
-            .authState=${this.authState}
             .collection=${this.collection!}
             ?open=${this.openDialogName === "editMetadata"}
             @sl-hide=${() => (this.openDialogName = undefined)}
@@ -371,8 +355,8 @@ export class CollectionDetail extends LiteElement {
     <nav class="mb-7">
       <a
         class="text-sm font-medium text-gray-600 hover:text-gray-800"
-        href=${`${this.orgBasePath}/collections`}
-        @click=${this.navLink}
+        href=${`${this.navigate.orgBasePath}/collections`}
+        @click=${this.navigate.link}
       >
         <sl-icon name="arrow-left" class="inline-block align-middle"></sl-icon>
         <span class="inline-block align-middle"
@@ -391,8 +375,8 @@ export class CollectionDetail extends LiteElement {
             <btrix-navigation-button
               .active=${isSelected}
               aria-selected="${isSelected}"
-              href=${`${this.orgBasePath}/collections/view/${this.collectionId}/${tabName}`}
-              @click=${this.navLink}
+              href=${`${this.navigate.orgBasePath}/collections/view/${this.collectionId}/${tabName}`}
+              @click=${this.navigate.link}
             >
               <sl-icon
                 name=${this.tabLabels[tabName].icon.name}
@@ -407,7 +391,7 @@ export class CollectionDetail extends LiteElement {
   };
 
   private readonly renderActions = () => {
-    const authToken = this.authState!.headers.Authorization.split(" ")[1];
+    const authToken = this.authState?.headers.Authorization.split(" ")[1];
 
     return html`
       <sl-dropdown distance="4">
@@ -672,7 +656,7 @@ export class CollectionDetail extends LiteElement {
     idx: number,
   ) => html`
     <btrix-archived-item-list-item
-      href=${`/orgs/${this.appState.orgSlug}/items/${item.type}/${item.id}?collectionId=${this.collectionId}`}
+      href=${`/orgs/${this.orgId}/items/${item.type}/${item.id}?collectionId=${this.collectionId}`}
       .item=${item}
     >
       ${this.isCrawler
@@ -753,9 +737,8 @@ export class CollectionDetail extends LiteElement {
   };
 
   private async onTogglePublic(isPublic: boolean) {
-    const res = await this.apiFetch<{ updated: boolean }>(
+    const res = await this.api.fetch<{ updated: boolean }>(
       `/orgs/${this.orgId}/collections/${this.collectionId}`,
-      this.authState!,
       {
         method: "PATCH",
         body: JSON.stringify({ isPublic }),
@@ -776,23 +759,22 @@ export class CollectionDetail extends LiteElement {
 
     try {
       const name = this.collection.name;
-      const _data: Crawl | Upload = await this.apiFetch(
+      const _data: Crawl | Upload = await this.api.fetch(
         `/orgs/${this.orgId}/collections/${this.collection.id}`,
-        this.authState!,
         {
           method: "DELETE",
         },
       );
 
-      this.navTo(`${this.orgBasePath}/collections`);
+      this.navigate.to(`${this.navigate.orgBasePath}/collections`);
 
-      this.notify({
+      this.notify.toast({
         message: msg(html`Deleted <strong>${name}</strong> Collection.`),
         variant: "success",
         icon: "check2-circle",
       });
     } catch {
-      this.notify({
+      this.notify.toast({
         message: msg("Sorry, couldn't delete Collection at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
@@ -804,7 +786,7 @@ export class CollectionDetail extends LiteElement {
     try {
       this.collection = await this.getCollection();
     } catch (e) {
-      this.notify({
+      this.notify.toast({
         message: msg("Sorry, couldn't retrieve Collection at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
@@ -813,9 +795,8 @@ export class CollectionDetail extends LiteElement {
   }
 
   private async getCollection() {
-    const data = await this.apiFetch<Collection>(
+    const data = await this.api.fetch<Collection>(
       `/orgs/${this.orgId}/collections/${this.collectionId}/replay.json`,
-      this.authState!,
     );
 
     return data;
@@ -832,7 +813,7 @@ export class CollectionDetail extends LiteElement {
       if ((e as Error).name === "AbortError") {
         console.debug("Fetch web captures aborted to throttle");
       } else {
-        this.notify({
+        this.notify.toast({
           message: msg("Sorry, couldn't retrieve web captures at this time."),
           variant: "danger",
           icon: "exclamation-octagon",
@@ -868,9 +849,8 @@ export class CollectionDetail extends LiteElement {
         arrayFormat: "comma",
       },
     );
-    const data = await this.apiFetch<APIPaginatedList<Crawl | Upload>>(
+    const data = await this.api.fetch<APIPaginatedList<Crawl | Upload>>(
       `/orgs/${this.orgId}/all-crawls?collectionId=${this.collectionId}&${query}`,
-      this.authState!,
     );
 
     return data;
@@ -878,9 +858,8 @@ export class CollectionDetail extends LiteElement {
 
   private async removeArchivedItem(id: string, _pageIndex: number) {
     try {
-      await this.apiFetch(
+      await this.api.fetch(
         `/orgs/${this.orgId}/collections/${this.collectionId}/remove`,
-        this.authState!,
         {
           method: "POST",
           body: JSON.stringify({ crawlIds: [id] }),
@@ -889,7 +868,7 @@ export class CollectionDetail extends LiteElement {
 
       const { page, items } = this.archivedItems!;
 
-      this.notify({
+      this.notify.toast({
         message: msg(str`Successfully removed item from Collection.`),
         variant: "success",
         icon: "check2-circle",
@@ -901,7 +880,7 @@ export class CollectionDetail extends LiteElement {
       });
     } catch (e) {
       console.debug((e as Error | undefined)?.message);
-      this.notify({
+      this.notify.toast({
         message: msg(
           "Sorry, couldn't remove item from Collection at this time.",
         ),

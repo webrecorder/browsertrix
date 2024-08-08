@@ -5,12 +5,9 @@ import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import { html } from "lit";
 import { customElement, property, query } from "lit/decorators.js";
 
-import { TailwindElement } from "@/classes/TailwindElement";
-import { APIController } from "@/controllers/api";
-import { NotifyController } from "@/controllers/notify";
+import { BtrixElement } from "@/classes/BtrixElement";
 import { type APIUser } from "@/index";
 import { isApiError } from "@/utils/api";
-import type { AuthState } from "@/utils/AuthService";
 import { maxLengthValidator } from "@/utils/form";
 import slugifyStrict from "@/utils/slugify";
 import { AppStateService } from "@/utils/state";
@@ -30,12 +27,9 @@ export type OrgUpdatedDetail = {
  */
 @localized()
 @customElement("btrix-org-form")
-export class OrgForm extends TailwindElement {
-  @property({ type: Object })
-  authState?: AuthState;
-
+export class OrgForm extends BtrixElement {
   @property({ type: String })
-  orgId?: string;
+  newOrgId?: string;
 
   @property({ type: String })
   name = "";
@@ -46,9 +40,6 @@ export class OrgForm extends TailwindElement {
   @query("#orgForm")
   private readonly form?: HTMLFormElement | null;
 
-  readonly _api = new APIController(this);
-  readonly _notify = new NotifyController(this);
-
   private readonly validateOrgNameMax = maxLengthValidator(40);
 
   readonly _renameOrgTask = new Task(this, {
@@ -58,7 +49,7 @@ export class OrgForm extends TailwindElement {
       const inviteInfo = await this._renameOrg(id, { name, slug });
       return inviteInfo;
     },
-    args: () => [this.orgId, this.name, this.slug] as const,
+    args: () => [this.newOrgId, this.name, this.slug] as const,
   });
 
   render() {
@@ -76,7 +67,7 @@ export class OrgForm extends TailwindElement {
             label=${msg("Org Name")}
             placeholder=${msg("My Organization")}
             autocomplete="off"
-            value=${this.name === this.orgId ? "" : this.name}
+            value=${this.name === this.newOrgId ? "" : this.name}
             minlength="2"
             help-text=${msg("You can change this in your org settings later.")}
             required
@@ -131,7 +122,7 @@ export class OrgForm extends TailwindElement {
     const orgName = params.orgName;
     const orgSlug = slugifyStrict(params.orgSlug);
 
-    void this._renameOrgTask.run([this.orgId, orgName, orgSlug]);
+    void this._renameOrgTask.run([this.newOrgId, orgName, orgSlug]);
   }
 
   async _renameOrg(id: string, params: { name?: string; slug?: string }) {
@@ -140,11 +131,11 @@ export class OrgForm extends TailwindElement {
     const payload = { name, slug };
 
     try {
-      await this._api.fetch(`/orgs/${id}/rename`, this.authState!, {
+      await this.api.fetch(`/orgs/${id}/rename`, {
         method: "POST",
         body: JSON.stringify(payload),
       });
-      this._notify.toast({
+      this.notify.toast({
         message: msg("Org successfully updated."),
         variant: "success",
         icon: "check2-circle",
@@ -186,7 +177,7 @@ export class OrgForm extends TailwindElement {
         }
       }
 
-      this._notify.toast({
+      this.notify.toast({
         message: msg(
           "Sorry, couldn't rename organization at this time. Try again later from org settings.",
         ),
@@ -235,6 +226,6 @@ export class OrgForm extends TailwindElement {
   }
 
   async _getCurrentUser(): Promise<APIUser> {
-    return this._api.fetch("/users/me", this.authState!);
+    return this.api.fetch("/users/me");
   }
 }

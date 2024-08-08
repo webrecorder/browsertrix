@@ -6,11 +6,10 @@ import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
 import type { PageChangeEvent } from "@/components/ui/pagination";
+import needLogin from "@/decorators/needLogin";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { Crawl, CrawlState } from "@/types/crawler";
-import { needLogin } from "@/utils/auth";
-import type { AuthState } from "@/utils/AuthService";
 import { activeCrawlStates } from "@/utils/crawler";
 import LiteElement, { html } from "@/utils/LiteElement";
 
@@ -39,9 +38,6 @@ const ABORT_REASON_THROTTLE = "throttled";
 @customElement("btrix-crawls")
 @needLogin
 export class Crawls extends LiteElement {
-  @property({ type: Object })
-  authState!: AuthState;
-
   @property({ type: String })
   crawlId?: string;
 
@@ -359,7 +355,6 @@ export class Crawls extends LiteElement {
     this.getCrawlsController = new AbortController();
     const data = await this.apiFetch<APIPaginatedList<Crawl>>(
       `/orgs/all/crawls?${query}`,
-      this.authState!,
       {
         signal: this.getCrawlsController.signal,
       },
@@ -372,17 +367,14 @@ export class Crawls extends LiteElement {
   private async getCrawl() {
     const data: Crawl = await this.apiFetch<Crawl>(
       `/orgs/all/crawls/${this.crawlId}/replay.json`,
-      this.authState!,
     );
 
     return data;
   }
 
   private async getSlugLookup() {
-    const data = await this.apiFetch<Record<string, string>>(
-      `/orgs/slug-lookup`,
-      this.authState!,
-    );
+    const data =
+      await this.apiFetch<Record<string, string>>(`/orgs/slug-lookup`);
 
     return data;
   }

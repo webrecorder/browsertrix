@@ -1,4 +1,4 @@
-import AuthService, { type AuthState } from "@/utils/AuthService";
+import AuthService from "@/utils/AuthService";
 import type LiteElement from "@/utils/LiteElement";
 
 /**
@@ -15,19 +15,11 @@ import type LiteElement from "@/utils/LiteElement";
  *
  * @fires btrix-need-login
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function needLogin<T extends { new (...args: any[]): LiteElement }>(
-  constructor: T,
-) {
+export default function needLogin<
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  T extends { new (...args: any[]): LiteElement },
+>(constructor: T) {
   return class extends constructor {
-    authState?: AuthState;
-
-    static get properties() {
-      return {
-        authState: { type: Object },
-      };
-    }
-
     update(changedProperties: Map<string, unknown>) {
       if (this.authState) {
         super.update(changedProperties);

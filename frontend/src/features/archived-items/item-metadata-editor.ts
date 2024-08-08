@@ -10,7 +10,6 @@ import type {
 } from "@/components/ui/tag-input";
 import { type CollectionsChangeEvent } from "@/features/collections/collections-add";
 import type { ArchivedItem } from "@/types/crawler";
-import type { AuthState } from "@/utils/AuthService";
 import { maxLengthValidator } from "@/utils/form";
 import LiteElement, { html } from "@/utils/LiteElement";
 
@@ -18,7 +17,6 @@ import LiteElement, { html } from "@/utils/LiteElement";
  * Usage:
  * ```ts
  * <btrix-item-metadata-editor
- *   .authState=${this.authState}
  *   .crawl=${this.crawl}
  *   ?open=${this.open}
  *   @request-close=${this.requestClose}
@@ -32,9 +30,6 @@ import LiteElement, { html } from "@/utils/LiteElement";
 @localized()
 @customElement("btrix-item-metadata-editor")
 export class CrawlMetadataEditor extends LiteElement {
-  @property({ type: Object })
-  authState?: AuthState;
-
   @property({ type: Object })
   crawl?: ArchivedItem;
 
@@ -130,9 +125,7 @@ export class CrawlMetadataEditor extends LiteElement {
         ></btrix-tag-input>
         <div class="mt-4">
           <btrix-collections-add
-            .authState=${this.authState ?? null}
             .initialCollections=${this.crawl.collectionIds}
-            .orgId=${this.crawl.oid}
             .configId=${"temp"}
             label=${msg("Add to Collection")}
             @collections-change=${(e: CollectionsChangeEvent) =>
@@ -173,7 +166,6 @@ export class CrawlMetadataEditor extends LiteElement {
     try {
       const tags = await this.apiFetch<string[]>(
         `/orgs/${this.crawl.oid}/crawlconfigs/tags`,
-        this.authState!,
       );
 
       // Update search/filter collection
@@ -228,7 +220,6 @@ export class CrawlMetadataEditor extends LiteElement {
     try {
       const data = await this.apiFetch<{ updated: boolean }>(
         `/orgs/${this.crawl.oid}/all-crawls/${this.crawl.id}`,
-        this.authState!,
         {
           method: "PATCH",
           body: JSON.stringify(params),

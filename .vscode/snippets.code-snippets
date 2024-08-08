@@ -1,5 +1,5 @@
 {
-  "Tailwind Component": {
+  "Btrix Component": {
     "scope": "javascript,typescript",
     "prefix": ["component", "@customElement"],
     "body": [
@@ -7,11 +7,11 @@
       "import { html } from \"lit\";",
       "import { customElement } from \"lit/decorators.js\";",
       "",
-      "import { TailwindElement } from \"@/classes/TailwindElement\";",
+      "import { BtrixElement } from \"@/classes/BtrixElement\";",
       "",
       "@localized()",
       "@customElement(\"btrix-${1:component}\")",
-      "export class ${2:Component} extends TailwindElement {",
+      "export class ${2:Component} extends BtrixElement {",
       "\trender() {",
       "\t\treturn html``;",
       "\t}",

@@ -6,6 +6,7 @@ import { Join } from "./join";
 
 import type { OrgForm, OrgUpdatedDetail } from "@/pages/invite/ui/org-form";
 import AuthService from "@/utils/AuthService";
+import { AppStateService } from "@/utils/state";
 
 const mockInviteInfo = {
   inviterEmail: "inviter_fake_email@example.com",
@@ -20,6 +21,7 @@ const mockInviteInfo = {
 
 describe("btrix-join", () => {
   beforeEach(() => {
+    AppStateService.resetAll();
     AuthService.broadcastChannel = new BroadcastChannel(AuthService.storageKey);
     window.localStorage.clear();
     window.sessionStorage.clear();
@@ -104,7 +106,7 @@ describe("btrix-join", () => {
 
       const orgFormEl = el.querySelector<OrgForm>("btrix-org-form");
 
-      expect(orgFormEl).attribute("orgId", "fake_oid");
+      expect(orgFormEl).attribute("newOrgId", "fake_oid");
       expect(orgFormEl).attribute("name", "Fake Org Name 2");
       expect(orgFormEl).attribute("slug", "fake-org-slug-2");
     });

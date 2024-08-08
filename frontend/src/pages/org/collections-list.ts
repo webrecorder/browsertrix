@@ -16,7 +16,6 @@ import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { Collection, CollectionSearchValues } from "@/types/collection";
 import type { UnderlyingFunction } from "@/types/utils";
 import { isApiError } from "@/utils/api";
-import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
 import { getLocale } from "@/utils/localization";
 import noCollectionsImg from "~assets/images/no-collections-found.webp";
@@ -54,12 +53,6 @@ const MIN_SEARCH_LENGTH = 2;
 @localized()
 @customElement("btrix-collections-list")
 export class CollectionsList extends LiteElement {
-  @property({ type: Object })
-  authState!: AuthState;
-
-  @property({ type: String })
-  orgId!: string;
-
   @property({ type: Boolean })
   isCrawler?: boolean;
 
@@ -114,17 +107,13 @@ export class CollectionsList extends LiteElement {
   protected async willUpdate(
     changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {
-    if (changedProperties.has("orgId")) {
-      this.collections = undefined;
-      void this.fetchSearchValues();
-    }
-    if (
-      changedProperties.has("orgId") ||
-      changedProperties.has("filterBy") ||
-      changedProperties.has("orderBy")
-    ) {
+    if (changedProperties.has("filterBy") || changedProperties.has("orderBy")) {
       void this.fetchCollections();
     }
+  }
+
+  protected firstUpdated() {
+    void this.fetchSearchValues();
   }
 
   render() {
@@ -138,7 +127,7 @@ export class CollectionsList extends LiteElement {
               <sl-button
                 variant="primary"
                 size="small"
-                ?disabled=${!this.appState.org || this.appState.org.readOnly}
+                ?disabled=${!this.org || this.org.readOnly}
                 @click=${() => (this.openDialogName = "create")}
               >
                 <sl-icon slot="prefix" name="plus-lg"></sl-icon>
@@ -193,8 +182,6 @@ export class CollectionsList extends LiteElement {
         </div>
       </btrix-dialog>
       <btrix-collection-metadata-dialog
-        orgId=${this.orgId}
-        .authState=${this.authState}
         .collection=${this.openDialogName === "create"
           ? undefined
           : this.selectedCollection}
@@ -561,7 +548,7 @@ export class CollectionsList extends LiteElement {
   `;
 
   private readonly renderActions = (col: Collection) => {
-    const authToken = this.authState!.headers.Authorization.split(" ")[1];
+    const authToken = this.authState?.headers.Authorization.split(" ")[1];
 
     return html`
       <btrix-overflow-dropdown>
@@ -648,14 +635,10 @@ export class CollectionsList extends LiteElement {
   });
 
   private async onTogglePublic(coll: Collection, isPublic: boolean) {
-    await this.apiFetch(
-      `/orgs/${this.orgId}/collections/${coll.id}`,
-      this.authState!,
-      {
-        method: "PATCH",
-        body: JSON.stringify({ isPublic }),
-      },
-    );
+    await this.apiFetch(`/orgs/${this.orgId}/collections/${coll.id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ isPublic }),
+    });
 
     void this.fetchCollections();
   }
@@ -681,7 +664,6 @@ export class CollectionsList extends LiteElement {
       const name = collection.name;
       await this.apiFetch(
         `/orgs/${this.orgId}/collections/${collection.id}`,
-        this.authState!,
         // FIXME API method is GET right now
         {
           method: "DELETE",
@@ -709,7 +691,6 @@ export class CollectionsList extends LiteElement {
     try {
       const searchValues: CollectionSearchValues = await this.apiFetch(
         `/orgs/${this.orgId}/collections/search-values`,
-        this.authState!,
       );
       const names = searchValues.names;
 
@@ -763,7 +744,6 @@ export class CollectionsList extends LiteElement {
 
     const data = await this.apiFetch<APIPaginatedList<Collection>>(
       `/orgs/${this.orgId}/collections?${query}`,
-      this.authState!,
     );
 
     return data;

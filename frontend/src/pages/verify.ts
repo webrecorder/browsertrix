@@ -1,7 +1,7 @@
 import { localized, msg } from "@lit/localize";
 import { customElement, property, state } from "lit/decorators.js";
 
-import AuthService, { type AuthState } from "@/utils/AuthService";
+import AuthService from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
 
 /**
@@ -10,9 +10,6 @@ import LiteElement, { html } from "@/utils/LiteElement";
 @localized()
 @customElement("btrix-verify")
 export class Verify extends LiteElement {
-  @property({ type: Object })
-  authState?: AuthState;
-
   @property({ type: String })
   token?: string;
 
@@ -74,12 +71,12 @@ export class Verify extends LiteElement {
     email: string;
     is_verified: boolean;
   }) {
-    const isLoggedIn = Boolean(this.authState);
-    const shouldLogOut = isLoggedIn && this.authState?.username !== data.email;
+    const shouldLogOut = this.authState?.username !== data.email;
 
     this.notify({
       title: msg("Email address verified"),
-      message: isLoggedIn && !shouldLogOut ? "" : msg("Log in to continue."),
+      message:
+        this.authState && !shouldLogOut ? "" : msg("Log in to continue."),
       variant: "success",
       icon: "check2-circle",
       duration: 10000,
@@ -88,15 +85,13 @@ export class Verify extends LiteElement {
     if (shouldLogOut) {
       this.dispatchEvent(AuthService.createLogOutEvent());
     } else {
-      if (isLoggedIn) {
-        this.dispatchEvent(
-          new CustomEvent("user-info-change", {
-            detail: {
-              isVerified: data.is_verified,
-            },
-          }),
-        );
-      }
+      this.dispatchEvent(
+        new CustomEvent("user-info-change", {
+          detail: {
+            isVerified: data.is_verified,
+          },
+        }),
+      );
 
       this.navTo("/log-in");
     }
