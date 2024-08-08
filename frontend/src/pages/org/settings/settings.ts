@@ -436,19 +436,95 @@ export class OrgSettings extends TailwindElement {
           </sl-input>
         </div>
         <div class="mb-5">
-          <sl-radio-group
-            name="role"
-            label="Permission"
-            value=${AccessCode.viewer}
-          >
-            <sl-radio value=${AccessCode.owner}>
-              ${msg("Admin — Can create crawls and manage org members")}
+          <sl-radio-group name="role" label="Role" value=${AccessCode.viewer}>
+            <sl-radio
+              value=${AccessCode.owner}
+              class="group rounded-md border border-neutral-300 p-2 transition-colors hover:border-neutral-400 attr-[aria-checked=true]:border-primary attr-[aria-checked=true]:bg-primary-50 part-[control]:col-start-1 part-[label]:col-start-1 part-[control]:col-end-2 part-[label]:col-end-3 part-[control]:row-start-1 part-[label]:row-start-1 part-[control]:row-end-2 part-[label]:row-end-3 part-[label]:ml-0 part-[base]:grid part-[label]:grid part-[label]:flex-auto part-[base]:grid-cols-[auto_minmax(0,1fr)] part-[label]:grid-cols-subgrid part-[base]:gap-x-1 part-[label]:gap-y-2"
+            >
+              <div
+                class="col-start-2 flex items-baseline justify-between gap-2"
+              >
+                ${msg("Admin")}
+                <span class="text-xs text-gray-500">
+                  ${msg("Manage org and billing settings")}
+                </span>
+              </div>
+              <sl-details
+                @sl-hide=${this.stopProp}
+                @sl-after-hide=${this.stopProp}
+                class="col-span-2 part-[content]:p-2 part-[header]:p-2 part-[content]:pt-0 group-attr-[aria-checked=true]:part-[base]:border-primary/50 group-attr-[aria-checked=true]:part-[summary-icon]:text-primary-700"
+              >
+                <span slot="summary" class="text-xs">Permissions</span>
+                <ul class="ms-4 list-disc text-xs text-gray-500">
+                  <li class="text-warning">${msg("Manage org members")}</li>
+                  ${this.appState.settings?.billingEnabled &&
+                  html`<li class="text-warning">
+                      ${msg("Edit billing details")}
+                    </li>
+                    <li class="text-warning">
+                      ${msg("Update or cancel subscription")}
+                    </li>`}
+                  <li>${msg("Create crawl workflows")}</li>
+                  <li>${msg("Create browser profiles")}</li>
+                  <li>${msg("Upload archived items")}</li>
+                  <li>${msg("Run QA analysis")}</li>
+                  <li>${msg("Rate and review archived items")}</li>
+                  <li>${msg("Create, edit, and share collections")}</li>
+                </ul>
+              </sl-details>
             </sl-radio>
-            <sl-radio value=${AccessCode.crawler}>
-              ${msg("Crawler — Can create crawls")}
+            <sl-radio
+              value=${AccessCode.crawler}
+              class="group rounded-md border border-neutral-300 p-2 transition-colors hover:border-neutral-400 attr-[aria-checked=true]:border-primary attr-[aria-checked=true]:bg-primary-50 part-[control]:col-start-1 part-[label]:col-start-1 part-[control]:col-end-2 part-[label]:col-end-3 part-[control]:row-start-1 part-[label]:row-start-1 part-[control]:row-end-2 part-[label]:row-end-3 part-[label]:ml-0 part-[base]:grid part-[label]:grid part-[label]:flex-auto part-[base]:grid-cols-[auto_minmax(0,1fr)] part-[label]:grid-cols-subgrid part-[base]:gap-x-1 part-[label]:gap-y-2"
+            >
+              <div
+                class="col-start-2 flex items-baseline justify-between gap-2"
+              >
+                ${msg("Crawler")}
+                <span class="text-xs text-gray-500">
+                  ${msg("Create, evaluate, and curate archives")}
+                </span>
+              </div>
+              <sl-details
+                @sl-hide=${this.stopProp}
+                @sl-after-hide=${this.stopProp}
+                class="col-span-2 part-[content]:p-2 part-[header]:p-2 part-[content]:pt-0 group-attr-[aria-checked=true]:part-[base]:border-primary/50 group-attr-[aria-checked=true]:part-[summary-icon]:text-primary-700"
+              >
+                <span slot="summary" class="text-xs">Permissions</span>
+                <ul class="ms-4 list-disc text-xs text-gray-500">
+                  <li>${msg("Create crawl workflows")}</li>
+                  <li>${msg("Create browser profiles")}</li>
+                  <li>${msg("Upload archived items")}</li>
+                  <li>${msg("Run QA analysis")}</li>
+                  <li>${msg("Rate and review archived items")}</li>
+                  <li>${msg("Create, edit, and share collections")}</li>
+                </ul>
+              </sl-details>
             </sl-radio>
-            <sl-radio value=${AccessCode.viewer}>
-              ${msg("Viewer — Can view crawls")}
+            <sl-radio
+              value=${AccessCode.viewer}
+              class="group rounded-md border border-neutral-300 p-2 transition-colors hover:border-neutral-400 attr-[aria-checked=true]:border-primary attr-[aria-checked=true]:bg-primary-50 part-[control]:col-start-1 part-[label]:col-start-1 part-[control]:col-end-2 part-[label]:col-end-3 part-[control]:row-start-1 part-[label]:row-start-1 part-[control]:row-end-2 part-[label]:row-end-3 part-[label]:ml-0 part-[base]:grid part-[label]:grid part-[label]:flex-auto part-[base]:grid-cols-[auto_minmax(0,1fr)] part-[label]:grid-cols-subgrid part-[base]:gap-x-1 part-[label]:gap-y-2"
+            >
+              <div
+                class="col-start-2 flex items-baseline justify-between gap-2"
+              >
+                ${msg("Viewer")}
+                <span class="text-xs text-gray-500">
+                  ${msg("View archives and collections")}
+                </span>
+              </div>
+              <sl-details
+                @sl-hide=${this.stopProp}
+                @sl-after-hide=${this.stopProp}
+                class="col-span-2 part-[content]:p-2 part-[header]:p-2 part-[content]:pt-0 group-attr-[aria-checked=true]:part-[base]:border-primary/50 group-attr-[aria-checked=true]:part-[summary-icon]:text-primary-700"
+              >
+                <span slot="summary" class="text-xs">Permissions</span>
+                <ul class="ms-4 list-disc text-xs text-gray-500">
+                  <li>${msg("View crawl workflows")}</li>
+                  <li>${msg("View archived items")}</li>
+                  <li>${msg("View collections")}</li>
+                </ul>
+              </sl-details>
             </sl-radio>
           </sl-radio-group>
         </div>
@@ -664,5 +740,14 @@ export class OrgSettings extends TailwindElement {
 
   private async getCurrentUser(): Promise<APIUser> {
     return this.api.fetch("/users/me", this.authState!);
+  }
+
+  /**
+   * Stop propgation of sl-tooltip events.
+   * Prevents bug where sl-dialog closes when tooltip closes
+   * https://github.com/shoelace-style/shoelace/issues/170
+   */
+  private stopProp(e: Event) {
+    e.stopPropagation();
   }
 }
