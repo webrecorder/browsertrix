@@ -281,7 +281,7 @@ export class OrgSettings extends TailwindElement {
     this.slugValue = slugifyStrict(input.value);
 
     input.setCustomValidity(
-      this.slugValue.length < 2 ? "URL Identifier too short" : "",
+      this.slugValue.length < 2 ? msg("URL Identifier too short") : "",
     );
   }
 
