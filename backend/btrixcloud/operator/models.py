@@ -170,19 +170,21 @@ class PodInfo(BaseModel):
             else 0
         )
 
-    def should_restart_pod(self):
+    def should_restart_pod(self, forced: bool = False) -> Optional[str]:
         """return true if pod should be restarted"""
         if self.newMemory and self.newMemory != self.allocated.memory:
-            return True
+            return "newMemory"
 
         if self.newCpu and self.newCpu != self.allocated.cpu:
-            return True
+            return "newCpu"
 
         if self.evicted:
-            print("Restarting evicted pod")
-            return True
+            return "evicted"
 
-        return False
+        if forced:
+            return "forced"
+
+        return None
 
 
 # ============================================================================
