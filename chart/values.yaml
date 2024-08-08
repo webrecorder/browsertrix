@@ -90,7 +90,7 @@ default_org: "My Organization"
 
 # API Image
 # =========================================
-backend_image: "docker.io/webrecorder/browsertrix-backend:1.11.2"
+backend_image: "docker.io/webrecorder/browsertrix-backend:1.12.0-beta.0"
 backend_pull_policy: "Always"
 
 backend_password_secret: "PASSWORD!"
@@ -135,7 +135,7 @@ backend_avg_memory_threshold: 95
 
 # Nginx Image
 # =========================================
-frontend_image: "docker.io/webrecorder/browsertrix-frontend:1.11.2"
+frontend_image: "docker.io/webrecorder/browsertrix-frontend:1.12.0-beta.0"
 frontend_pull_policy: "Always"
 
 frontend_cpu: "10m"
@@ -297,14 +297,32 @@ crawler_session_time_limit_seconds: 18000
 
 crawler_liveness_port: 6065
 
-# optional: use socks5 proxy for crawler and profilebrowser
-# crawler_socks_proxy_host: 192.0.2.1
-# crawler_socks_proxy_port: 9050
+# optional: configure a list of ssh servers to be used as a proxy
+proxies: []
+#  - id: My Proxy # name of the proxy, is shown in the dropdown, has to be lowercase, alphanumeric
+#    url: # proxy connection string, must be a ssh://, socks:// or http:// URL
+#    label: "US Proxy" # label to show in dropdown
+#    country_code: US # Alpha-2 ISO 3991 country code, https://www.iso.org/obp/ui/#search
+#    description: "Proxy" # optional: description to show for the  proxy
+#    ssh_private_key: |  # requred for ssh:// proxies
+#       # ssh-key needed to connect to the SSH server
+#       <secret key>
+#
+#    ssh_host_public_key: |  # optional, for ssh:// proxies-only
+#       # ssh public keys of the SSH server
+#       # use output of `ssh-keyscan $hostname -p $port` for best results
+#       example.invalid:22 SSH-2.0-OpenSSH_9.6p1 Ubuntu-3ubuntu13
+#       example.invalid ssh-rsa AAA[..]
+
+# optional: always proxy with following id by default, if no other proxy settings are set
+# must match one of the proxies in the 'proxies' list
+# default_proxy:
 
 # optional: set the uid, gid and fsgroup for the crawler and profilebrowser pods
-# crawler_uid: 201400007
-# crawler_gid: 201400007
-# crawler_fsgroup: 201400007
+# the following values are used by default:
+# crawler_uid: 201407
+# crawler_gid: 201407
+# crawler_fsgroup: 201407
 
 
 # optional: enable/disable crawler network policy

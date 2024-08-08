@@ -43,9 +43,11 @@ export class BrowserProfilesNew extends TailwindElement {
     crawlerChannel?: string;
     profileId?: string | null;
     navigateUrl?: string;
+    proxyId: string | null;
   } = {
     name: "",
     url: "",
+    proxyId: null,
   };
 
   private readonly api = new APIController(this);
@@ -288,9 +290,11 @@ export class BrowserProfilesNew extends TailwindElement {
     }
 
     const crawlerChannel = this.browserParams.crawlerChannel || "default";
+    const proxyId = this.browserParams.proxyId;
     const data = await this.createBrowser({
       url,
       crawlerChannel,
+      proxyId,
     });
 
     this.nav.to(
@@ -300,6 +304,7 @@ export class BrowserProfilesNew extends TailwindElement {
         url,
         name: this.browserParams.name || msg("My Profile"),
         crawlerChannel,
+        proxyId,
       })}`,
     );
   }
@@ -314,6 +319,7 @@ export class BrowserProfilesNew extends TailwindElement {
       name: formData.get("name"),
       description: formData.get("description"),
       crawlerChannel: this.browserParams.crawlerChannel,
+      proxyId: this.browserParams.proxyId,
     };
 
     try {
@@ -362,13 +368,16 @@ export class BrowserProfilesNew extends TailwindElement {
   private async createBrowser({
     url,
     crawlerChannel,
+    proxyId,
   }: {
     url: string;
     crawlerChannel: string;
+    proxyId: string | null;
   }) {
     const params = {
       url,
       crawlerChannel,
+      proxyId,
     };
 
     return this.api.fetch<{ browserid: string }>(

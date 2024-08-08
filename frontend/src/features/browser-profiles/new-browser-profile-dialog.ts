@@ -10,7 +10,8 @@ import {
 import queryString from "query-string";
 
 import type { Dialog } from "@/components/ui/dialog";
-import { type SelectCrawlerChangeEvent } from "@/components/ui/select-crawler";
+import type { SelectCrawlerChangeEvent } from "@/components/ui/select-crawler";
+import type { SelectCrawlerProxyChangeEvent } from "@/components/ui/select-crawler-proxy";
 import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
 
@@ -31,6 +32,9 @@ export class NewBrowserProfileDialog extends LiteElement {
 
   @state()
   private crawlerChannel = "default";
+
+  @state()
+  private proxyId: string | null = null;
 
   @query("btrix-dialog")
   private readonly dialog?: Dialog;
@@ -88,6 +92,15 @@ export class NewBrowserProfileDialog extends LiteElement {
               (this.crawlerChannel = e.detail.value!)}
           ></btrix-select-crawler>
         </div>
+        <div class="mt-4">
+          <btrix-select-crawler-proxy
+            orgId=${this.orgId}
+            .proxyId="${this.proxyId || ""}"
+            .authState=${this.authState}
+            @on-change=${(e: SelectCrawlerProxyChangeEvent) =>
+              (this.proxyId = e.detail.value!)}
+          ></btrix-select-crawler-proxy>
+        </div>
         <input class="invisible size-0" type="submit" />
       </form>
       <div slot="footer" class="flex justify-between">
@@ -135,6 +148,7 @@ export class NewBrowserProfileDialog extends LiteElement {
       const data = await this.createBrowser({
         url: url,
         crawlerChannel: this.crawlerChannel,
+        proxyId: this.proxyId,
       });
 
       this.notify({
@@ -150,6 +164,7 @@ export class NewBrowserProfileDialog extends LiteElement {
           url,
           name: msg("My Profile"),
           crawlerChannel: this.crawlerChannel,
+          proxyId: this.proxyId,
         })}`,
       );
     } catch (e) {
@@ -165,13 +180,16 @@ export class NewBrowserProfileDialog extends LiteElement {
   private async createBrowser({
     url,
     crawlerChannel,
+    proxyId,
   }: {
     url: string;
     crawlerChannel: string;
+    proxyId: string | null;
   }) {
     const params = {
       url,
       crawlerChannel,
+      proxyId,
     };
 
     return this.apiFetch<{ browserid: string }>(

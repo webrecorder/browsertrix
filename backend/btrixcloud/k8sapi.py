@@ -2,8 +2,8 @@
 
 import os
 import traceback
-
 from typing import Optional
+
 import yaml
 
 from kubernetes_asyncio import client, config
@@ -93,6 +93,7 @@ class K8sAPI:
         storage_filename: str = "",
         profile_filename: str = "",
         qa_source: str = "",
+        proxy_id: str = "",
     ):
         """load job template from yaml"""
         if not crawl_id:
@@ -115,6 +116,7 @@ class K8sAPI:
             "storage_filename": storage_filename,
             "profile_filename": profile_filename,
             "qa_source": qa_source,
+            "proxy_id": proxy_id,
         }
 
         data = self.templates.env.get_template("crawl_job.yaml").render(params)
@@ -136,6 +138,7 @@ class K8sAPI:
         storage_filename: str = "",
         profile_filename: str = "",
         qa_source: str = "",
+        proxy_id: str = "",
     ) -> str:
         """load and init crawl job via k8s api"""
         crawl_id, data = self.new_crawl_job_yaml(
@@ -153,6 +156,7 @@ class K8sAPI:
             storage_filename=storage_filename,
             profile_filename=profile_filename,
             qa_source=qa_source,
+            proxy_id=proxy_id,
         )
 
         # create job directly

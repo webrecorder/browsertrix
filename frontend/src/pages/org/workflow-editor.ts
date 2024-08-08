@@ -42,6 +42,7 @@ import type {
   SelectCrawlerChangeEvent,
   SelectCrawlerUpdateEvent,
 } from "@/components/ui/select-crawler";
+import type { SelectCrawlerProxyChangeEvent } from "@/components/ui/select-crawler-proxy";
 import type { Tab } from "@/components/ui/tab-list";
 import type {
   TagInputEvent,
@@ -134,6 +135,7 @@ type FormState = {
   autoscrollBehavior: boolean;
   userAgent: string | null;
   crawlerChannel: string;
+  proxyId: string | null;
 };
 
 const getDefaultProgressState = (hasConfigId = false): ProgressState => {
@@ -211,6 +213,7 @@ const getDefaultFormState = (): FormState => ({
   autoscrollBehavior: true,
   userAgent: null,
   crawlerChannel: "default",
+  proxyId: null,
 });
 
 function getLocalizedWeekDays() {
@@ -616,6 +619,7 @@ export class CrawlConfigEditor extends LiteElement {
         this.initialWorkflow.config.userAgent ?? defaultFormState.userAgent,
       crawlerChannel:
         this.initialWorkflow.crawlerChannel || defaultFormState.crawlerChannel,
+      proxyId: this.initialWorkflow.proxyId || defaultFormState.proxyId,
       ...formState,
     };
   }
@@ -1755,6 +1759,18 @@ https://archiveweb.page/images/${"logo.svg"}`}
         msg(`Websites that observe the browser’s language setting may serve
         content in that language if available.`),
       )}
+      ${this.renderFormCol(html`
+        <btrix-select-crawler-proxy
+          orgId=${this.orgId}
+          .proxyId="${this.formState.proxyId || ""}"
+          .authState=${this.authState}
+          @on-change=${(e: SelectCrawlerProxyChangeEvent) =>
+            this.updateFormState({
+              proxyId: e.detail.value,
+            })}
+        ></btrix-select-crawler-proxy>
+      `)}
+      ${this.renderHelpTextCol(msg(`Choose a Browsertrix Proxy`))}
     `;
   }
 
@@ -2476,6 +2492,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         ).join(","),
       },
       crawlerChannel: this.formState.crawlerChannel || "default",
+      proxyId: this.formState.proxyId,
     };
 
     return config;

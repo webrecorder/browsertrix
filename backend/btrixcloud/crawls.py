@@ -374,6 +374,7 @@ class CrawlOps(BaseCrawlOps):
             tags=crawlconfig.tags,
             name=crawlconfig.name,
             crawlerChannel=crawlconfig.crawlerChannel,
+            proxyId=crawlconfig.proxyId,
             image=image,
         )
 

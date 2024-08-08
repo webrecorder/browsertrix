@@ -28,6 +28,8 @@ spec:
   profileFilename: "{{ profile_filename }}"
   vncPassword: "{{ vnc_password }}"
 
+  proxyId: "{{ proxy_id }}"
+
   {% if expire_time %}
   expireTime: "{{ expire_time }}"
   {% endif %}
