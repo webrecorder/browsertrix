@@ -15,42 +15,40 @@ export { use };
 // Keyed by org ID
 type Lookup = Record<string, string>;
 
-class AppState {
-  // TODO persist
-  settings: AppSettings | null = null;
-  userInfo: UserInfo | null = null;
-
-  // TODO persist here
-  // @options(persist(window.sessionStorage))
-  auth: Auth | null = null;
-
-  // Store org slug in local storage in order to redirect
-  // to the most recently visited org on next log in
-  @options(persist(window.localStorage))
-  orgSlug: string | null = null;
-
-  // Org details
-  org: OrgData | null | undefined = undefined;
-
-  orgIdLookup: Lookup | null = null;
-
-  // Use `userOrg` to retrieve the basic org info like name,
-  // since `userInfo` will` always available before `org`
-  userOrg: UserOrg | undefined = undefined;
-
-  get orgId() {
-    return this.userOrg?.id || "";
-  }
-}
-
 export function makeAppStateService() {
   // Prevent state updates from any component
   const { state, unlock } = locked();
 
   @state()
-  class LockedAppState extends AppState {}
+  class AppState {
+    // TODO persist
+    settings: AppSettings | null = null;
+    userInfo: UserInfo | null = null;
 
-  const appState = new LockedAppState();
+    // TODO persist here
+    // @options(persist(window.sessionStorage))
+    auth: Auth | null = null;
+
+    // Store org slug in local storage in order to redirect
+    // to the most recently visited org on next log in
+    @options(persist(window.localStorage))
+    orgSlug: string | null = null;
+
+    // Org details
+    org: OrgData | null | undefined = undefined;
+
+    orgIdLookup: Lookup | null = null;
+
+    // Use `userOrg` to retrieve the basic org info like name,
+    // since `userInfo` will` always available before `org`
+    userOrg: UserOrg | undefined = undefined;
+
+    get orgId() {
+      return this.userOrg?.id || "";
+    }
+  }
+
+  const appState = new AppState();
 
   class AppStateActions {
     get appState() {
