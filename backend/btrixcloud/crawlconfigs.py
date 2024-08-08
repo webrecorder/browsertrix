@@ -68,6 +68,7 @@ ALLOWED_SORT_KEYS = (
 
 DEFAULT_PROXY_ID: str | None = os.environ.get("DEFAULT_PROXY_ID")
 
+
 # ============================================================================
 class CrawlConfigOps:
     """Crawl Config Operations"""
@@ -147,7 +148,7 @@ class CrawlConfigOps:
 
             self.crawler_proxies = CrawlerProxies(
                 default_proxy_id=DEFAULT_PROXY_ID,
-                servers=list(self.crawler_proxies_map.values())
+                servers=list(self.crawler_proxies_map.values()),
             )
 
     def set_crawl_ops(self, ops):
