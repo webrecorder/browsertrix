@@ -1,6 +1,6 @@
 import { localized, msg, str } from "@lit/localize";
-import { type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import { choose } from "lit/directives/choose.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 
@@ -239,38 +239,6 @@ export class Org extends LiteElement {
   }
 
   render() {
-    let tabPanelContent: TemplateResult<1> | string | undefined = "";
-
-    switch (this.orgTab) {
-      case "home":
-        tabPanelContent = this.renderDashboard();
-        break;
-      case "items":
-        tabPanelContent = this.renderArchivedItem();
-        break;
-      case "workflows":
-        tabPanelContent = this.renderWorkflows();
-        break;
-      case "browser-profiles":
-        tabPanelContent = this.renderBrowserProfiles();
-        break;
-      case "collections":
-        tabPanelContent = this.renderCollections();
-        break;
-      case "settings": {
-        if (this.isAdmin) {
-          tabPanelContent = this.renderOrgSettings();
-          break;
-        }
-        // falls through
-      }
-      default:
-        tabPanelContent = html`<btrix-not-found
-          class="flex items-center justify-center"
-        ></btrix-not-found>`;
-        break;
-    }
-
     const noMaxWidth =
       this.orgTab === "items" && (this.params as OrgParams["items"]).qaTab;
 
@@ -284,7 +252,26 @@ export class Org extends LiteElement {
             : "w-full max-w-screen-desktop pt-7"} mx-auto box-border flex flex-1 flex-col p-3"
           aria-labelledby="${this.orgTab}-tab"
         >
-          ${tabPanelContent}
+          ${when(this.userOrg, () =>
+            choose(
+              this.orgTab,
+              [
+                ["home", this.renderDashboard],
+                ["items", this.renderArchivedItem],
+                ["workflows", this.renderWorkflows],
+                ["browser-profiles", this.renderBrowserProfiles],
+                ["collections", this.renderCollections],
+                [
+                  "settings",
+                  () => (this.isAdmin ? this.renderOrgSettings() : html``),
+                ],
+              ],
+              () =>
+                html`<btrix-not-found
+                  class="flex items-center justify-center"
+                ></btrix-not-found>`,
+            ),
+          )}
         </main>
         ${this.renderNewResourceDialogs()}
       </div>
@@ -423,7 +410,7 @@ export class Org extends LiteElement {
     `;
   }
 
-  private renderDashboard() {
+  private readonly renderDashboard = () => {
     return html`
       <btrix-dashboard
         ?isCrawler=${this.isCrawler}
@@ -431,9 +418,9 @@ export class Org extends LiteElement {
         @select-new-dialog=${this.onSelectNewDialog}
       ></btrix-dashboard>
     `;
-  }
+  };
 
-  private renderArchivedItem() {
+  private readonly renderArchivedItem = () => {
     const params = this.params as OrgParams["items"];
 
     if (params.itemId) {
@@ -467,9 +454,9 @@ export class Org extends LiteElement {
       itemType=${ifDefined(params.itemType || undefined)}
       @select-new-dialog=${this.onSelectNewDialog}
     ></btrix-archived-items>`;
-  }
+  };
 
-  private renderWorkflows() {
+  private readonly renderWorkflows = () => {
     const params = this.params as OrgParams["workflows"];
     const isEditing = Object.prototype.hasOwnProperty.call(params, "edit");
     const isNewResourceTab =
@@ -506,9 +493,9 @@ export class Org extends LiteElement {
       ?isCrawler=${this.isCrawler}
       @select-new-dialog=${this.onSelectNewDialog}
     ></btrix-workflows-list>`;
-  }
+  };
 
-  private renderBrowserProfiles() {
+  private readonly renderBrowserProfiles = () => {
     const params = this.params as OrgParams["browser-profiles"];
 
     if (params.browserProfileId) {
@@ -536,9 +523,9 @@ export class Org extends LiteElement {
       ?isCrawler=${this.isCrawler}
       @select-new-dialog=${this.onSelectNewDialog}
     ></btrix-browser-profiles-list>`;
-  }
+  };
 
-  private renderCollections() {
+  private readonly renderCollections = () => {
     const params = this.params as OrgParams["collections"];
 
     if (params.collectionId) {
@@ -554,9 +541,9 @@ export class Org extends LiteElement {
       ?isCrawler=${this.isCrawler}
       @select-new-dialog=${this.onSelectNewDialog}
     ></btrix-collections-list>`;
-  }
+  };
 
-  private renderOrgSettings() {
+  private readonly renderOrgSettings = () => {
     const params = this.params as OrgParams["settings"];
     const activePanel = params.settingsTab || "information";
     const isAddingMember = Object.prototype.hasOwnProperty.call(
@@ -570,7 +557,7 @@ export class Org extends LiteElement {
       @org-user-role-change=${this.onUserRoleChange}
       @org-remove-member=${this.onOrgRemoveMember}
     ></btrix-org-settings>`;
-  }
+  };
 
   private async onSelectNewDialog(e: SelectNewDialogEvent) {
     e.stopPropagation();
