@@ -229,7 +229,7 @@ class CrawlOperator(BaseOperator):
         else:
             status.scale = 1
 
-        children = self._load_redis(params, status)
+        children = self._load_redis(params, status, data.children)
 
         storage_path = crawl.storage.get_storage_extra_path(oid)
         storage_secret = crawl.storage.get_storage_secret_name(oid)
@@ -273,7 +273,7 @@ class CrawlOperator(BaseOperator):
             children.extend(await self._load_qa_configmap(params, data.children))
 
         for i in range(0, status.scale):
-            children.extend(self._load_crawler(params, i, data.children))
+            children.extend(self._load_crawler(params, i, status, data.children))
 
         return {
             "status": status.dict(exclude_none=True),
@@ -281,9 +281,13 @@ class CrawlOperator(BaseOperator):
             "resyncAfterSeconds": status.resync_after,
         }
 
-    def _load_redis(self, params: dict[str, Any], status: CrawlStatus):
+    def _load_redis(
+        self, params: dict[str, Any], status: CrawlStatus, children: dict[str, Any]
+    ):
         name = f"redis-{params['id']}"
+        has_pod = name in children[POD]
 
+        pod_info = status.podStatus[name]
         params["name"] = name
         params["cpu"] = params.get("redis_cpu")
         params["memory"] = params.get("redis_memory")
@@ -346,6 +350,7 @@ class CrawlOperator(BaseOperator):
         self,
         params: dict[str, Any],
         i: int,
+        status: CrawlStatus,
         children: dict[str, Any],
     ):
         name = f"crawl-{params['id']}-{i}"
@@ -362,6 +367,7 @@ class CrawlOperator(BaseOperator):
             worker_field = "crawler_workers"
             pri_class = f"crawl-pri-{i}"
 
+        pod_info = status.podStatus[name]
         params["name"] = name
         params["priorityClassName"] = pri_class
         params["cpu"] = params.get(cpu_field)
@@ -372,7 +378,9 @@ class CrawlOperator(BaseOperator):
         params["workers"] = params.get(worker_field) or 1
         params["do_restart"] = False
         if has_pod:
-            restart_reason = pod_info.should_restart_pod(params.get("force_restart"))
+            restart_reason = pod_info.should_restart_pod(
+                params.get("force_restart", False)
+            )
             if restart_reason:
                 print(f"Restarting {name}, reason: {restart_reason}")
                 params["do_restart"] = True
@@ -659,7 +667,7 @@ class CrawlOperator(BaseOperator):
         if redis_pod in pods:
             # if has other pods, keep redis pod until they are removed
             if len(pods) > 1:
-                new_children = self._load_redis(params, status)
+                new_children = self._load_redis(params, status, children)
                 await self.increment_pod_exec_time(pods, crawl, status)
 
         # keep pvs until pods are removed
