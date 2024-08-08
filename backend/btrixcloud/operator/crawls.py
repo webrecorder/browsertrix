@@ -890,14 +890,16 @@ class CrawlOperator(BaseOperator):
                 if "containerStatuses" in pstatus:
                     cstatus = pstatus["containerStatuses"][0]
 
-                    # consider 'ContainerCreating' as running
-                    waiting = cstatus["state"].get("waiting")
-                    if (
-                        phase == "Pending"
-                        and waiting
-                        and waiting.get("reason") == "ContainerCreating"
-                    ):
-                        running = True
+                    # don't consider 'ContainerCreating' as running for now
+                    # may be stuck in this state for other reasons
+                    #
+                    # waiting = cstatus["state"].get("waiting")
+                    # if (
+                    #    phase == "Pending"
+                    #    and waiting
+                    #    and waiting.get("reason") == "ContainerCreating"
+                    # ):
+                    #    running = True
 
                     self.handle_terminated_pod(
                         name, role, status, cstatus["state"].get("terminated")
