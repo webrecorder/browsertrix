@@ -7,6 +7,7 @@ import { registerIconLibrary } from "@shoelace-style/shoelace/dist/utilities/ico
 
 import "@shoelace-style/shoelace/dist/themes/light.css";
 import "@shoelace-style/shoelace/dist/components/alert/alert";
+import "@shoelace-style/shoelace/dist/components/avatar/avatar";
 import "@shoelace-style/shoelace/dist/components/button/button";
 import "@shoelace-style/shoelace/dist/components/icon/icon";
 import "@shoelace-style/shoelace/dist/components/input/input";

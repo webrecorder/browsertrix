@@ -27,7 +27,7 @@ from aiostream import stream
 from .models import (
     SUCCESSFUL_STATES,
     RUNNING_STATES,
-    STARTING_STATES,
+    WAITING_STATES,
     BaseCrawl,
     Organization,
     StorageRef,
@@ -484,7 +484,14 @@ class OrgOps:
             {"$set": query},
             return_document=ReturnDocument.AFTER,
         )
-        return Organization.from_dict(org_data) if org_data else None
+        if not org_data:
+            return None
+
+        org = Organization.from_dict(org_data)
+        if update.quotas:
+            await self.update_quotas(org, update.quotas)
+
+        return org
 
     async def cancel_subscription_data(
         self, cancel: SubscriptionCancel
@@ -883,7 +890,7 @@ class OrgOps:
             {"oid": org.id, "state": {"$in": RUNNING_STATES}}
         )
         workflows_queued_count = await self.crawls_db.count_documents(
-            {"oid": org.id, "state": {"$in": STARTING_STATES}}
+            {"oid": org.id, "state": {"$in": WAITING_STATES}}
         )
         collections_count = await self.colls_db.count_documents({"oid": org.id})
         public_collections_count = await self.colls_db.count_documents(

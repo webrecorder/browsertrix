@@ -6,6 +6,7 @@ export enum SubscriptionStatus {
 
 export type Subscription = {
   status: SubscriptionStatus;
+  planId: string;
   futureCancelDate: null | string; // UTC datetime string
 };
 

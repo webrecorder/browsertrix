@@ -23,7 +23,7 @@ from .models import (
     PaginatedCrawlOutResponse,
     User,
     StorageRef,
-    RUNNING_AND_STARTING_STATES,
+    RUNNING_AND_WAITING_STATES,
     SUCCESSFUL_STATES,
     QARun,
     UpdatedResponse,
@@ -272,7 +272,7 @@ class BaseCrawlOps:
             {
                 "_id": crawl_id,
                 "type": "crawl",
-                "state": {"$in": RUNNING_AND_STARTING_STATES},
+                "state": {"$in": RUNNING_AND_WAITING_STATES},
             },
             {"$set": data},
         )

@@ -18,8 +18,9 @@ from btrixcloud.models import (
     TYPE_ALL_CRAWL_STATES,
     NON_RUNNING_STATES,
     RUNNING_STATES,
+    WAITING_STATES,
     RUNNING_AND_STARTING_ONLY,
-    RUNNING_AND_STARTING_STATES,
+    RUNNING_AND_WAITING_STATES,
     SUCCESSFUL_STATES,
     FAILED_STATES,
     CrawlStats,
@@ -102,6 +103,7 @@ class CrawlOperator(BaseOperator):
         """sync crawls"""
 
         status = CrawlStatus(**data.parent.get("status", {}))
+        status.last_state = status.state
 
         spec = data.parent.get("spec", {})
         crawl_id = spec["id"]
@@ -226,11 +228,6 @@ class CrawlOperator(BaseOperator):
 
         else:
             status.scale = 1
-            now = dt_now()
-            await self.crawl_ops.inc_crawl_exec_time(
-                crawl.db_crawl_id, crawl.is_qa, 0, now
-            )
-            status.lastUpdatedTime = to_k8s_date(now)
 
         children = self._load_redis(params, status)
 
@@ -290,7 +287,13 @@ class CrawlOperator(BaseOperator):
         params["name"] = name
         params["cpu"] = params.get("redis_cpu")
         params["memory"] = params.get("redis_memory")
-        params["init_redis"] = status.initRedis
+        restart_reason = None
+        if has_pod:
+            restart_reason = pod_info.should_restart_pod()
+            if restart_reason:
+                print(f"Restarting {name}, reason: {restart_reason}")
+
+        params["init_redis"] = status.initRedis and not restart_reason
 
         return self.load_from_yaml("redis.yaml", params)
 
@@ -367,9 +370,12 @@ class CrawlOperator(BaseOperator):
         params["cpu_limit"] = self.k8s.max_crawler_cpu_size
         params["enable_auto_resize"] = self.k8s.enable_auto_resize
         params["workers"] = params.get(worker_field) or 1
-        params["do_restart"] = params.get("force_restart") and has_pod
-        if params.get("do_restart"):
-            print(f"Restart {name}")
+        params["do_restart"] = False
+        if has_pod:
+            restart_reason = pod_info.should_restart_pod(params.get("force_restart"))
+            if restart_reason:
+                print(f"Restarting {name}, reason: {restart_reason}")
+                params["do_restart"] = True
 
         return self.load_from_yaml("crawler.yaml", params)
 
@@ -488,7 +494,7 @@ class CrawlOperator(BaseOperator):
                 finished=finished,
                 stats=stats,
             )
-            if res:
+            if res and status.state != state:
                 print(f"Setting state: {status.state} -> {state}, {crawl.id}")
                 status.state = state
                 return True
@@ -755,28 +761,6 @@ class CrawlOperator(BaseOperator):
                 status.resync_after = self.fast_retry_secs
                 return status
 
-            # set state to running (if not already)
-            if status.state not in RUNNING_STATES:
-                # if true (state is set), also run webhook
-                if await self.set_state(
-                    "running",
-                    status,
-                    crawl,
-                    allowed_from=["starting", "waiting_capacity"],
-                ):
-                    if not crawl.qa_source_crawl_id:
-                        self.run_task(
-                            self.event_webhook_ops.create_crawl_started_notification(
-                                crawl.id, crawl.oid, scheduled=crawl.scheduled
-                            )
-                        )
-                    else:
-                        self.run_task(
-                            self.event_webhook_ops.create_qa_analysis_started_notification(
-                                crawl.id, crawl.oid, crawl.qa_source_crawl_id
-                            )
-                        )
-
             # update lastActiveTime if crawler is running
             if crawler_running:
                 status.lastActiveTime = to_k8s_date(dt_now())
@@ -839,6 +823,7 @@ class CrawlOperator(BaseOperator):
         try:
             for name, pod in pods.items():
                 running = False
+                evicted = False
 
                 pstatus = pod["status"]
                 phase = pstatus["phase"]
@@ -846,18 +831,24 @@ class CrawlOperator(BaseOperator):
 
                 if phase in ("Running", "Succeeded"):
                     running = True
+                elif phase == "Failed" and pstatus.get("reason") == "Evicted":
+                    evicted = True
+
+                status.podStatus[name].evicted = evicted
 
                 if "containerStatuses" in pstatus:
                     cstatus = pstatus["containerStatuses"][0]
 
-                    # consider 'ContainerCreating' as running
-                    waiting = cstatus["state"].get("waiting")
-                    if (
-                        phase == "Pending"
-                        and waiting
-                        and waiting.get("reason") == "ContainerCreating"
-                    ):
-                        running = True
+                    # don't consider 'ContainerCreating' as running for now
+                    # may be stuck in this state for other reasons
+                    #
+                    # waiting = cstatus["state"].get("waiting")
+                    # if (
+                    #    phase == "Pending"
+                    #    and waiting
+                    #    and waiting.get("reason") == "ContainerCreating"
+                    # ):
+                    #    running = True
 
                     self.handle_terminated_pod(
                         name, role, status, cstatus["state"].get("terminated")
@@ -917,11 +908,33 @@ class CrawlOperator(BaseOperator):
         """inc exec time tracking"""
         now = dt_now()
 
+        # don't count time crawl is not running
+        if status.state in WAITING_STATES:
+            # reset lastUpdatedTime if at least 2 consecutive updates of non-running state
+            if status.last_state in WAITING_STATES:
+                status.lastUpdatedTime = to_k8s_date(now)
+            return
+
         update_start_time = await self.crawl_ops.get_crawl_exec_last_update_time(
-            crawl.db_crawl_id
+            crawl.db_crawl_id, crawl.is_qa
         )
 
         if not update_start_time:
+            print("Crawl first started, webhooks called", now, crawl.id)
+            # call initial running webhook
+            if not crawl.qa_source_crawl_id:
+                self.run_task(
+                    self.event_webhook_ops.create_crawl_started_notification(
+                        crawl.id, crawl.oid, scheduled=crawl.scheduled
+                    )
+                )
+            else:
+                self.run_task(
+                    self.event_webhook_ops.create_qa_analysis_started_notification(
+                        crawl.id, crawl.oid, crawl.qa_source_crawl_id
+                    )
+                )
+
             await self.crawl_ops.inc_crawl_exec_time(
                 crawl.db_crawl_id, crawl.is_qa, 0, now
             )
@@ -1263,24 +1276,20 @@ class CrawlOperator(BaseOperator):
             else:
                 await self.fail_crawl(crawl, status, pods, stats)
 
-        # check for other statuses
+        # check for other statuses, default to "running"
         else:
-            new_status: Optional[TYPE_RUNNING_STATES] = None
-            if status_count.get("running"):
-                if status.state in ("generate-wacz", "uploading-wacz", "pending-wacz"):
-                    new_status = "running"
+            new_status: TYPE_RUNNING_STATES = "running"
 
-            elif status_count.get("generate-wacz"):
+            if status_count.get("generate-wacz"):
                 new_status = "generate-wacz"
             elif status_count.get("uploading-wacz"):
                 new_status = "uploading-wacz"
             elif status_count.get("pending-wait"):
                 new_status = "pending-wait"
 
-            if new_status:
-                await self.set_state(
-                    new_status, status, crawl, allowed_from=RUNNING_STATES
-                )
+            await self.set_state(
+                new_status, status, crawl, allowed_from=RUNNING_AND_WAITING_STATES
+            )
 
         return status
 
@@ -1296,7 +1305,7 @@ class CrawlOperator(BaseOperator):
 
         finished = dt_now()
 
-        allowed_from = RUNNING_AND_STARTING_STATES
+        allowed_from = RUNNING_AND_WAITING_STATES
 
         # if set_state returns false, already set to same status, return
         if not await self.set_state(

@@ -99,6 +99,18 @@ class PodInfo(BaseModel):
     isNewExit: Optional[bool] = Field(default=None, exclude=True)
     reason: Optional[str] = None
 
+    evicted: Optional[bool] = False
+
+    def should_restart_pod(self, forced: bool = False) -> Optional[str]:
+        """return true if pod should be restarted"""
+        if self.evicted:
+            return "evicted"
+
+        if forced:
+            return "forced"
+
+        return None
+
 
 # ============================================================================
 # pylint: disable=invalid-name
@@ -144,3 +156,6 @@ class CrawlStatus(BaseModel):
 
     # don't include in status, use by metacontroller
     resync_after: Optional[int] = Field(default=None, exclude=True)
+
+    # last state
+    last_state: TYPE_ALL_CRAWL_STATES = Field(default="starting", exclude=True)
