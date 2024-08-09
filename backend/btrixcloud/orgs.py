@@ -489,6 +489,8 @@ class OrgOps:
 
         org = Organization.from_dict(org_data)
         if update.quotas:
+            # don't change gifted minutes here
+            update.quotas.giftedExecMinutes = None
             await self.update_quotas(org, update.quotas)
 
         return org

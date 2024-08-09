@@ -1119,8 +1119,9 @@ class OrgQuotas(BaseModel):
     maxPagesPerCrawl: Optional[int] = 0
     storageQuota: Optional[int] = 0
     maxExecMinutesPerMonth: Optional[int] = 0
-    extraExecMinutes: Optional[int] = 0
-    giftedExecMinutes: Optional[int] = 0
+
+    extraExecMinutes: Optional[int] = None
+    giftedExecMinutes: Optional[int] = None
 
 
 # ============================================================================
