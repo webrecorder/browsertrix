@@ -50,7 +50,6 @@ class BgJobOperator(BaseOperator):
             finished = dt_now()
 
         try:
-            assert finished
             await self.background_job_ops.job_finished(
                 job_id, job_type, UUID(oid), success=success, finished=finished
             )
