@@ -710,7 +710,7 @@ class CrawlOperator(BaseOperator):
             if status.finished:
                 ttl = spec.get("ttlSecondsAfterFinished", DEFAULT_TTL)
                 finished = from_k8s_date(status.finished)
-                if (dt_now() - finished).total_seconds() > ttl >= 0:
+                if finished and (dt_now() - finished).total_seconds() > ttl >= 0:
                     print("CrawlJob expired, deleting: " + crawl.id)
                     finalized = True
             else:
@@ -786,11 +786,9 @@ class CrawlOperator(BaseOperator):
                     # but not right away in case crawler pod is just restarting.
                     # avoids keeping redis pods around while no crawler pods are up
                     # (eg. due to resource constraints)
-                    if status.lastActiveTime and (
-                        (
-                            dt_now() - from_k8s_date(status.lastActiveTime)
-                        ).total_seconds()
-                        > REDIS_TTL
+                    last_active_time = from_k8s_date(status.lastActiveTime)
+                    if last_active_time and (
+                        (dt_now() - last_active_time).total_seconds() > REDIS_TTL
                     ):
                         print(
                             f"Pausing redis, no running crawler pods for >{REDIS_TTL} secs"
@@ -1231,10 +1229,9 @@ class CrawlOperator(BaseOperator):
         # check timeout if timeout time exceeds elapsed time
         if crawl.timeout:
             elapsed = status.elapsedCrawlTime
-            if status.lastUpdatedTime:
-                elapsed += (
-                    dt_now() - from_k8s_date(status.lastUpdatedTime)
-                ).total_seconds()
+            last_updated_time = from_k8s_date(status.lastUpdatedTime)
+            if last_updated_time:
+                elapsed += int((dt_now() - last_updated_time).total_seconds())
 
             if elapsed > crawl.timeout:
                 return "time-limit"
