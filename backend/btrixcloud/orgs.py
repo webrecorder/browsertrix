@@ -32,6 +32,7 @@ from .models import (
     Organization,
     StorageRef,
     OrgQuotas,
+    OrgQuotasIn,
     OrgQuotaUpdate,
     OrgReadOnlyUpdate,
     OrgReadOnlyOnCancel,
@@ -514,7 +515,7 @@ class OrgOps:
         res = await self.orgs.find_one_and_update({"_id": org.id}, {"$set": set_dict})
         return res is not None
 
-    async def update_quotas(self, org: Organization, quotas: OrgQuotas) -> None:
+    async def update_quotas(self, org: Organization, quotas: OrgQuotasIn) -> None:
         """update organization quotas"""
 
         previous_extra_mins = (
@@ -1460,7 +1461,7 @@ def init_orgs_api(
 
     @router.post("/quotas", tags=["organizations"], response_model=UpdatedResponse)
     async def update_quotas(
-        quotas: OrgQuotas,
+        quotas: OrgQuotasIn,
         org: Organization = Depends(org_owner_dep),
         user: User = Depends(user_dep),
     ):
