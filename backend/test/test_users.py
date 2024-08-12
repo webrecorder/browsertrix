@@ -104,7 +104,7 @@ def test_login_user_info(admin_auth_headers, crawler_userid, default_org_id):
     assert user_info["name"] == "new-crawler"
     assert user_info["email"] == CRAWLER_USERNAME
     assert user_info["is_superuser"] is False
-    assert user_info["is_verified"] is False
+    assert user_info["is_verified"]
 
     user_orgs = user_info["orgs"]
     assert len(user_orgs) == 1
