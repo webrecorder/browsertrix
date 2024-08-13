@@ -100,8 +100,15 @@ export class App extends LiteElement {
   }
 
   willUpdate(changedProperties: Map<string, unknown>) {
-    if (changedProperties.get("viewState")) {
-      this.updateOrgSlugIfNeeded();
+    if (changedProperties.has("viewState")) {
+      if (this.viewState.route === "orgs") {
+        this.navigate(this.orgBasePath);
+      } else if (
+        changedProperties.get("viewState") &&
+        this.viewState.route === "org"
+      ) {
+        this.updateOrgSlugIfNeeded();
+      }
     }
   }
 
