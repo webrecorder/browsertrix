@@ -8,19 +8,14 @@ import { when } from "lit/directives/when.js";
 
 import { columns } from "./ui/columns";
 
-import { TailwindElement } from "@/classes/TailwindElement";
-import { APIController } from "@/controllers/api";
-import { NavigateController } from "@/controllers/navigate";
-import { NotifyController } from "@/controllers/notify";
+import { BtrixElement } from "@/classes/BtrixElement";
 import type { APIUser } from "@/index";
 import type { APIPaginatedList } from "@/types/api";
-import type { CurrentUser } from "@/types/user";
 import { isApiError } from "@/utils/api";
-import type { AuthState } from "@/utils/AuthService";
 import { maxLengthValidator } from "@/utils/form";
 import { AccessCode, isAdmin, isCrawler } from "@/utils/orgs";
 import slugifyStrict from "@/utils/slugify";
-import appState, { AppStateService, use } from "@/utils/state";
+import { AppStateService } from "@/utils/state";
 import { formatAPIUser } from "@/utils/user";
 
 import "./components/billing";
@@ -28,18 +23,18 @@ import "./components/billing";
 type Tab = "information" | "members" | "billing";
 type User = {
   email: string;
-  role: number;
+  role: AccessCode;
 };
 type Invite = User & {
   created: string;
   inviterEmail: string;
 };
 export type Member = User & {
-  name: string;
+  name?: string;
 };
 export type UserRoleChangeEvent = CustomEvent<{
   user: Member;
-  newRole: number;
+  newRole: AccessCode;
 }>;
 export type OrgRemoveMemberEvent = CustomEvent<{
   member: Member;
@@ -49,10 +44,7 @@ export type OrgRemoveMemberEvent = CustomEvent<{
  * Usage:
  * ```ts
  * <btrix-org-settings
- *  .authState=${authState}
- *  .userInfo=${userInfo}
  *  .org=${org}
- *  .orgId=${orgId}
  *  ?isAddingMember=${isAddingMember}
  * ></btrix-org-settings>
  * ```
@@ -62,24 +54,12 @@ export type OrgRemoveMemberEvent = CustomEvent<{
  */
 @localized()
 @customElement("btrix-org-settings")
-export class OrgSettings extends TailwindElement {
-  @property({ type: Object })
-  authState?: AuthState;
-
-  @property({ type: Object })
-  userInfo!: CurrentUser;
-
-  @property({ type: String })
-  orgId!: string;
-
+export class OrgSettings extends BtrixElement {
   @property({ type: String })
   activePanel: Tab = "information";
 
   @property({ type: Boolean })
   isAddingMember = false;
-
-  @use()
-  appState = appState;
 
   @state()
   private isSavingOrgName = false;
@@ -95,14 +75,6 @@ export class OrgSettings extends TailwindElement {
 
   @state()
   private slugValue = "";
-
-  private readonly api = new APIController(this);
-  private readonly navigate = new NavigateController(this);
-  private readonly notify = new NotifyController(this);
-
-  private get org() {
-    return this.appState.org;
-  }
 
   private get tabLabels(): Record<Tab, string> {
     return {
@@ -169,7 +141,6 @@ export class OrgSettings extends TailwindElement {
         </btrix-tab-panel>
         <btrix-tab-panel name="billing">
           <btrix-org-settings-billing
-            .authState=${this.authState}
             .salesEmail=${this.appState.settings?.salesEmail}
           ></btrix-org-settings-billing>
         </btrix-tab-panel>
@@ -192,7 +163,7 @@ export class OrgSettings extends TailwindElement {
   }
 
   private renderInformation() {
-    if (!this.org) return;
+    if (!this.userOrg) return;
 
     return html`<div class="rounded-lg border">
       <form @submit=${this.onOrgInfoSubmit}>
@@ -206,7 +177,7 @@ export class OrgSettings extends TailwindElement {
                 label=${msg("Org Name")}
                 placeholder=${msg("My Organization")}
                 autocomplete="off"
-                value=${this.org.name}
+                value=${this.userOrg.name}
                 minlength="2"
                 required
                 help-text=${this.validateOrgNameMax.helpText}
@@ -226,7 +197,7 @@ export class OrgSettings extends TailwindElement {
                 label=${msg("Custom URL Identifier")}
                 placeholder="my-organization"
                 autocomplete="off"
-                value=${this.org.slug}
+                value=${this.orgSlug || ""}
                 minlength="2"
                 maxlength="30"
                 required
@@ -236,7 +207,7 @@ export class OrgSettings extends TailwindElement {
                   }/orgs/${
                     this.slugValue
                       ? slugifyStrict(this.slugValue)
-                      : this.org.slug
+                      : this.orgSlug
                   }`,
                 )}
                 @sl-input=${this.handleSlugInput}
@@ -251,7 +222,7 @@ export class OrgSettings extends TailwindElement {
               <btrix-copy-field
                 class="mb-2"
                 label=${msg("Org ID")}
-                value=${this.org.id}
+                value=${this.orgId}
               ></btrix-copy-field>
             `,
             msg("Use this ID to reference this org in the Browsertrix API."),
@@ -374,7 +345,7 @@ export class OrgSettings extends TailwindElement {
     if (!this.org?.users) return;
 
     let disableButton = false;
-    if (member.email === this.userInfo.email) {
+    if (this.userInfo && member.email === this.userInfo.email) {
       const { [this.userInfo.id]: _currentUser, ...otherUsers } =
         this.org.users;
       const hasOtherAdmin = Object.values(otherUsers).some(({ role }) =>
@@ -477,8 +448,7 @@ export class OrgSettings extends TailwindElement {
 
   private async getPendingInvites() {
     const data = await this.api.fetch<APIPaginatedList<Invite>>(
-      `/orgs/${this.org!.id}/invites`,
-      this.authState!,
+      `/orgs/${this.orgId}/invites`,
     );
 
     return data.items;
@@ -508,7 +478,7 @@ export class OrgSettings extends TailwindElement {
 
     const params = {
       name: orgName,
-      slug: this.org!.slug,
+      slug: this.orgSlug!,
     };
 
     if (this.slugValue) {
@@ -527,7 +497,7 @@ export class OrgSettings extends TailwindElement {
       new CustomEvent("org-user-role-change", {
         detail: {
           user,
-          newRole: Number((e.target as HTMLSelectElement).value),
+          newRole: Number((e.target as HTMLSelectElement).value) as AccessCode,
         },
       }) as UserRoleChangeEvent,
     );
@@ -544,17 +514,13 @@ export class OrgSettings extends TailwindElement {
     this.isSubmittingInvite = true;
 
     try {
-      const _data = await this.api.fetch(
-        `/orgs/${this.orgId}/invite`,
-        this.authState!,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            email: inviteEmail,
-            role: Number(role),
-          }),
-        },
-      );
+      const _data = await this.api.fetch(`/orgs/${this.orgId}/invite`, {
+        method: "POST",
+        body: JSON.stringify({
+          email: inviteEmail,
+          role: Number(role),
+        }),
+      });
 
       this.notify.toast({
         message: msg(str`Successfully invited ${inviteEmail}.`),
@@ -579,20 +545,16 @@ export class OrgSettings extends TailwindElement {
 
   private async removeInvite(invite: Invite) {
     try {
-      await this.api.fetch(
-        `/orgs/${this.orgId}/invites/delete`,
-        this.authState!,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            email: invite.email,
-          }),
-        },
-      );
+      await this.api.fetch(`/orgs/${this.orgId}/invites/delete`, {
+        method: "POST",
+        body: JSON.stringify({
+          email: invite.email,
+        }),
+      });
 
       this.notify.toast({
         message: msg(
-          str`Successfully removed ${invite.email} from ${this.org!.name}.`,
+          str`Successfully removed ${invite.email} from ${this.userOrg?.name}.`,
         ),
         variant: "success",
         icon: "check2-circle",
@@ -616,7 +578,7 @@ export class OrgSettings extends TailwindElement {
 
   private async renameOrg({ name, slug }: { name: string; slug: string }) {
     try {
-      await this.api.fetch(`/orgs/${this.orgId}/rename`, this.authState!, {
+      await this.api.fetch(`/orgs/${this.orgId}/rename`, {
         method: "POST",
         body: JSON.stringify({ name, slug }),
       });
@@ -663,6 +625,6 @@ export class OrgSettings extends TailwindElement {
   }
 
   private async getCurrentUser(): Promise<APIUser> {
-    return this.api.fetch("/users/me", this.authState!);
+    return this.api.fetch("/users/me");
   }
 }

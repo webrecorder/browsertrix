@@ -9,15 +9,12 @@ import { capitalize } from "lodash";
 
 import { columns } from "../ui/columns";
 
-import { TailwindElement } from "@/classes/TailwindElement";
-import { APIController } from "@/controllers/api";
+import { BtrixElement } from "@/classes/BtrixElement";
 import { SubscriptionStatus, type BillingPortal } from "@/types/billing";
 import type { OrgData, OrgQuotas } from "@/types/org";
-import type { Auth, AuthState } from "@/utils/AuthService";
 import { humanizeSeconds } from "@/utils/executionTimeFormatter";
 import { formatNumber, getLocale } from "@/utils/localization";
 import { pluralOf } from "@/utils/pluralize";
-import appState, { use } from "@/utils/state";
 import { tw } from "@/utils/tailwind";
 
 const linkClassList = tw`transition-color text-primary hover:text-primary-500`;
@@ -28,27 +25,15 @@ const manageLinkClasslist = clsx(
 
 @localized()
 @customElement("btrix-org-settings-billing")
-export class OrgSettingsBilling extends TailwindElement {
+export class OrgSettingsBilling extends BtrixElement {
   static styles = css`
     .form-label {
       font-size: var(--sl-input-label-font-size-small);
     }
   `;
 
-  @property({ type: Object })
-  authState?: AuthState;
-
   @property({ type: String, noAccessor: true })
   salesEmail?: string;
-
-  @use()
-  appState = appState;
-
-  private readonly api = new APIController(this);
-
-  private get org() {
-    return this.appState.org;
-  }
 
   get portalUrlLabel() {
     const subscription = this.org?.subscription;
@@ -79,10 +64,7 @@ export class OrgSettingsBilling extends TailwindElement {
         return;
 
       try {
-        const { portalUrl } = await this.getPortalUrl(
-          appState.org.id,
-          this.authState!,
-        );
+        const { portalUrl } = await this.getPortalUrl();
 
         if (portalUrl) {
           return portalUrl;
@@ -180,7 +162,7 @@ export class OrgSettingsBilling extends TailwindElement {
                               html`To upgrade to Pro, contact us at
                                 <a
                                   class=${linkClassList}
-                                  href=${`mailto:${this.salesEmail}?subject=${msg(str`Upgrade Browsertrix plan (${this.org?.name})`)}`}
+                                  href=${`mailto:${this.salesEmail}?subject=${msg(str`Upgrade Browsertrix plan (${this.userOrg?.name})`)}`}
                                   rel="noopener noreferrer nofollow"
                                   >${this.salesEmail}</a
                                 >.`,
@@ -205,9 +187,7 @@ export class OrgSettingsBilling extends TailwindElement {
           <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
             <h4>${msg("Usage History")}</h4>
           </btrix-section-heading>
-          <btrix-usage-history-table
-            .org=${ifDefined(this.org)}
-          ></btrix-usage-history-table>
+          <btrix-usage-history-table></btrix-usage-history-table>
         </div>
       </div>
     `;
@@ -337,7 +317,7 @@ export class OrgSettingsBilling extends TailwindElement {
     return html`
       <a
         class=${manageLinkClasslist}
-        href=${`mailto:${salesEmail}?subject=${msg(str`Pro plan change request (${this.org?.name})`)}`}
+        href=${`mailto:${salesEmail}?subject=${msg(str`Pro plan change request (${this.userOrg?.name})`)}`}
         rel="noopener noreferrer nofollow"
       >
         <sl-icon name="envelope"></sl-icon>
@@ -346,7 +326,7 @@ export class OrgSettingsBilling extends TailwindElement {
     `;
   }
 
-  private async getPortalUrl(orgId: string, auth: Auth) {
-    return this.api.fetch<BillingPortal>(`/orgs/${orgId}/billing-portal`, auth);
+  private async getPortalUrl() {
+    return this.api.fetch<BillingPortal>(`/orgs/${this.orgId}/billing-portal`);
   }
 }

@@ -9,26 +9,21 @@ import type { Profile } from "./types";
 
 import type { SelectNewDialogEvent } from ".";
 
-import { TailwindElement } from "@/classes/TailwindElement";
+import { BtrixElement } from "@/classes/BtrixElement";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import {
   SortDirection,
   type SortValues,
 } from "@/components/ui/table/table-header-cell";
-import { APIController } from "@/controllers/api";
-import { NavigateController } from "@/controllers/navigate";
-import { NotifyController } from "@/controllers/notify";
 import type {
   APIPaginatedList,
   APIPaginationQuery,
   APISortQuery,
 } from "@/types/api";
 import type { Browser } from "@/types/browser";
-import type { AuthState } from "@/utils/AuthService";
 import { html } from "@/utils/LiteElement";
 import { getLocale } from "@/utils/localization";
 import { isArchivingDisabled } from "@/utils/orgs";
-import appState, { use } from "@/utils/state";
 import { tw } from "@/utils/tailwind";
 
 const INITIAL_PAGE_SIZE = 20;
@@ -38,24 +33,14 @@ const INITIAL_PAGE_SIZE = 20;
  * ```ts
  * <btrix-browser-profiles-list
  *  authState=${authState}
- *  orgId=${orgId}
  * ></btrix-browser-profiles-list>
  * ```
  */
 @localized()
 @customElement("btrix-browser-profiles-list")
-export class BrowserProfilesList extends TailwindElement {
-  @property({ type: Object })
-  authState!: AuthState;
-
-  @property({ type: String })
-  orgId!: string;
-
+export class BrowserProfilesList extends BtrixElement {
   @property({ type: Boolean })
   isCrawler = false;
-
-  @use()
-  appState = appState;
 
   @state()
   browserProfiles?: APIPaginatedList<Profile>;
@@ -68,10 +53,6 @@ export class BrowserProfilesList extends TailwindElement {
 
   @state()
   private isLoading = true;
-
-  private get org() {
-    return this.appState.org;
-  }
 
   static styles = css`
     btrix-table {
@@ -104,14 +85,10 @@ export class BrowserProfilesList extends TailwindElement {
     }
   `;
 
-  private readonly api = new APIController(this);
-  private readonly navigate = new NavigateController(this);
-  private readonly notify = new NotifyController(this);
-
   protected willUpdate(
     changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {
-    if (changedProperties.has("orgId") || changedProperties.has("sort")) {
+    if (changedProperties.has("sort")) {
       void this.fetchBrowserProfiles();
     }
   }
@@ -407,7 +384,6 @@ export class BrowserProfilesList extends TailwindElement {
     try {
       const data = await this.api.fetch<Profile & { error?: boolean }>(
         `/orgs/${this.orgId}/profiles/${profile.id}`,
-        this.authState!,
         {
           method: "DELETE",
         },
@@ -448,14 +424,10 @@ export class BrowserProfilesList extends TailwindElement {
       url,
     };
 
-    return this.api.fetch<Browser>(
-      `/orgs/${this.orgId}/profiles/browser`,
-      this.authState!,
-      {
-        method: "POST",
-        body: JSON.stringify(params),
-      },
-    );
+    return this.api.fetch<Browser>(`/orgs/${this.orgId}/profiles/browser`, {
+      method: "POST",
+      body: JSON.stringify(params),
+    });
   }
 
   /**
@@ -499,7 +471,6 @@ export class BrowserProfilesList extends TailwindElement {
 
     const data = await this.api.fetch<APIPaginatedList<Profile>>(
       `/orgs/${this.orgId}/profiles?${query}`,
-      this.authState!,
     );
 
     return data;

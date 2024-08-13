@@ -7,7 +7,6 @@ import type { JobType, Seed, WorkflowParams } from "./types";
 
 import type { SelectNewDialogEvent } from ".";
 
-import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
 
 import "./workflow-editor";
@@ -47,12 +46,6 @@ const defaultValue = {
 @localized()
 @customElement("btrix-workflows-new")
 export class WorkflowsNew extends LiteElement {
-  @property({ type: Object })
-  authState!: AuthState;
-
-  @property({ type: String })
-  orgId!: string;
-
   @property({ type: Boolean })
   isCrawler!: boolean;
 
@@ -73,10 +66,6 @@ export class WorkflowsNew extends LiteElement {
   }
 
   private _initialWorkflow: WorkflowParams = defaultValue;
-
-  private get org() {
-    return this.appState.org;
-  }
 
   private renderHeader() {
     const href = `${this.orgBasePath}/workflows/crawls`;
@@ -125,8 +114,6 @@ export class WorkflowsNew extends LiteElement {
           .initialWorkflow=${this.initialWorkflow}
           .initialSeeds=${this.initialSeeds}
           jobType=${jobType}
-          orgId=${this.orgId}
-          .authState=${this.authState}
           @reset=${async (e: Event) => {
             await (e.target as LitElement).updateComplete;
             this.dispatchEvent(

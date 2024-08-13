@@ -56,7 +56,6 @@ import type {
   ExclusionRemoveEvent,
 } from "@/features/crawl-workflows/queue-exclusion-table";
 import { isApiError, type Detail } from "@/utils/api";
-import type { AuthState } from "@/utils/AuthService";
 import { DEFAULT_MAX_SCALE, DEPTH_SUPPORTED_SCOPES } from "@/utils/crawler";
 import {
   getNextDate,
@@ -255,12 +254,6 @@ type CrawlConfigResponse = {
 @localized()
 @customElement("btrix-workflow-editor")
 export class CrawlConfigEditor extends LiteElement {
-  @property({ type: Object })
-  authState!: AuthState;
-
-  @property({ type: String })
-  orgId!: string;
-
   @property({ type: String })
   configId?: string;
 
@@ -297,10 +290,6 @@ export class CrawlConfigEditor extends LiteElement {
 
   @state()
   private serverError?: TemplateResult | string;
-
-  private get org() {
-    return this.appState.org;
-  }
 
   private maxScale = DEFAULT_MAX_SCALE;
 
@@ -389,17 +378,15 @@ export class CrawlConfigEditor extends LiteElement {
   async willUpdate(
     changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {
-    if (changedProperties.has("jobType") && this.jobType) {
+    if (
+      (changedProperties.has("jobType") && this.jobType) ||
+      (changedProperties.get("initialWorkflow") && this.initialWorkflow)
+    ) {
       this.initializeEditor();
-    }
-    if (changedProperties.has("authState") && this.authState) {
       await this.fetchAPIDefaults();
       if (this.orgId) {
         await this.fetchOrgQuotaDefaults();
       }
-    }
-    if (changedProperties.get("initialWorkflow") && this.initialWorkflow) {
-      this.initializeEditor();
     }
     if (changedProperties.get("progressState") && this.progressState) {
       if (
@@ -420,7 +407,7 @@ export class CrawlConfigEditor extends LiteElement {
         }
       }
     }
-    if (changedProperties.get("orgId") && this.orgId) {
+    if (changedProperties.get("appState.userOrg") && this.orgId) {
       await this.fetchTags();
     }
   }
@@ -1665,9 +1652,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     return html`
       ${this.renderFormCol(html`
         <btrix-select-browser-profile
-          orgId=${this.orgId}
           .profileId=${this.formState.browserProfile?.id}
-          .authState=${this.authState}
           @on-change=${(e: SelectBrowserProfileChangeEvent) =>
             this.updateFormState({
               browserProfile: e.detail.value,
@@ -1680,9 +1665,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       )}
       ${this.renderFormCol(html`
         <btrix-select-crawler
-          orgId=${this.orgId}
           .crawlerChannel=${this.formState.crawlerChannel}
-          .authState=${this.authState}
           @on-change=${(e: SelectCrawlerChangeEvent) =>
             this.updateFormState({
               crawlerChannel: e.detail.value,
@@ -1956,9 +1939,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       )}
       ${this.renderFormCol(html`
         <btrix-collections-add
-          .authState=${this.authState}
           .initialCollections=${this.formState.autoAddCollections}
-          .orgId=${this.orgId}
           .configId=${this.configId}
           emptyText=${msg("Search for a Collection to auto-add crawls")}
           @collections-change=${(e: CollectionsChangeEvent) =>
@@ -2017,7 +1998,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
           const profileName = this.formState.browserProfile?.name;
 
           return html`<btrix-config-details
-            .authState=${this.authState!}
             .crawlConfig=${{
               ...crawlConfig,
               profileName,
@@ -2295,7 +2275,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
       const data = await (this.configId
         ? this.apiFetch<CrawlConfigResponse>(
             `/orgs/${this.orgId}/crawlconfigs/${this.configId}`,
-            this.authState!,
             {
               method: "PATCH",
               body: JSON.stringify(config),
@@ -2303,7 +2282,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
           )
         : this.apiFetch<CrawlConfigResponse>(
             `/orgs/${this.orgId}/crawlconfigs/`,
-            this.authState!,
             {
               method: "POST",
               body: JSON.stringify(config),
@@ -2433,7 +2411,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
     try {
       const tags = await this.apiFetch<string[]>(
         `/orgs/${this.orgId}/crawlconfigs/tags`,
-        this.authState!,
       );
 
       // Update search/filter collection
@@ -2605,7 +2582,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     try {
       const data = await this.apiFetch<{
         quotas: { maxPagesPerCrawl?: number };
-      }>(`/orgs/${this.orgId}`, this.authState!);
+      }>(`/orgs/${this.orgId}`);
       const orgDefaults = {
         ...this.orgDefaults,
       };

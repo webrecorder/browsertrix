@@ -7,10 +7,8 @@ import { when } from "lit/directives/when.js";
 
 import type { SelectNewDialogEvent } from ".";
 
-import type { AuthState } from "@/utils/AuthService";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 import LiteElement, { html } from "@/utils/LiteElement";
-import type { OrgData, YearMonth } from "@/utils/orgs";
 
 type Metrics = {
   storageUsedBytes: number;
@@ -33,20 +31,11 @@ type Metrics = {
 @localized()
 @customElement("btrix-dashboard")
 export class Dashboard extends LiteElement {
-  @property({ type: Object })
-  authState!: AuthState;
-
   @property({ type: Boolean })
   isCrawler?: boolean;
 
   @property({ type: Boolean })
   isAdmin?: boolean;
-
-  @property({ type: String })
-  orgId!: string;
-
-  @property({ type: Object })
-  org: OrgData | null = null;
 
   @state()
   private metrics?: Metrics;
@@ -59,8 +48,14 @@ export class Dashboard extends LiteElement {
     runningTime: "blue",
   };
 
-  willUpdate(changedProperties: PropertyValues<this>) {
-    if (changedProperties.has("orgId")) {
+  willUpdate(changedProperties: PropertyValues<this> & Map<string, unknown>) {
+    if (changedProperties.has("appState.userOrg") && this.orgId) {
+      void this.fetchMetrics();
+    }
+  }
+
+  firstUpdated() {
+    if (this.orgId) {
       void this.fetchMetrics();
     }
   }
@@ -76,7 +71,7 @@ export class Dashboard extends LiteElement {
         class="mb-7 flex items-center justify-end gap-2 border-b pb-3"
       >
         <h1 class="mr-auto min-w-0 text-xl font-semibold leading-8">
-          ${this.org?.name}
+          ${this.userOrg?.name}
         </h1>
         ${when(
           this.isAdmin,
@@ -254,9 +249,7 @@ export class Dashboard extends LiteElement {
         <section class="mb-10">
           <btrix-details>
             <span slot="title">${msg("Usage History")}</span>
-            <btrix-usage-history-table
-              .org=${this.org}
-            ></btrix-usage-history-table>
+            <btrix-usage-history-table></btrix-usage-history-table>
           </btrix-details>
         </section>
       </main> `;
@@ -392,7 +385,7 @@ export class Dashboard extends LiteElement {
     const now = new Date();
     const currentYear = now.getFullYear();
     const currentMonth = String(now.getUTCMonth() + 1).padStart(2, "0");
-    const currentPeriod = `${currentYear}-${currentMonth}` as YearMonth;
+    const currentPeriod = `${currentYear}-${currentMonth}`;
 
     let usageSeconds = 0;
     if (this.org.monthlyExecSeconds) {
@@ -683,7 +676,6 @@ export class Dashboard extends LiteElement {
     try {
       const data = await this.apiFetch<Metrics | undefined>(
         `/orgs/${this.orgId}/metrics`,
-        this.authState!,
       );
 
       this.metrics = data;

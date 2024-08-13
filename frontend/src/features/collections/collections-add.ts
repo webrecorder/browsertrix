@@ -7,10 +7,8 @@ import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
 import queryString from "query-string";
 
-import { TailwindElement } from "@/classes/TailwindElement";
+import { BtrixElement } from "@/classes/BtrixElement";
 import type { Combobox } from "@/components/ui/combobox";
-import { APIController } from "@/controllers/api";
-import { NotifyController } from "@/controllers/notify";
 import type {
   APIPaginatedList,
   APIPaginationQuery,
@@ -18,7 +16,6 @@ import type {
 } from "@/types/api";
 import type { Collection } from "@/types/collection";
 import type { UnderlyingFunction } from "@/types/utils";
-import type { AuthState } from "@/utils/AuthService";
 
 const INITIAL_PAGE_SIZE = 10;
 const MIN_SEARCH_LENGTH = 2;
@@ -31,9 +28,7 @@ export type CollectionsChangeEvent = CustomEvent<{
  * Usage:
  * ```ts
  * <btrix-collections-add
- *   .authState=${this.authState}
  *   .initialCollections=${[]}
- *   .orgId=${this.orgId}
  *   .configId=${this.configId}
  *   @collections-change=${console.log}
  * ></btrix-collections-add>
@@ -42,15 +37,9 @@ export type CollectionsChangeEvent = CustomEvent<{
  */
 @localized()
 @customElement("btrix-collections-add")
-export class CollectionsAdd extends TailwindElement {
-  @property({ type: Object })
-  authState!: AuthState;
-
+export class CollectionsAdd extends BtrixElement {
   @property({ type: Array })
   initialCollections?: string[];
-
-  @property({ type: String })
-  orgId!: string;
 
   @property({ type: String })
   configId?: string;
@@ -73,9 +62,6 @@ export class CollectionsAdd extends TailwindElement {
 
   @query("btrix-combobox")
   private readonly combobox?: Combobox | null;
-
-  private readonly api = new APIController(this);
-  private readonly notify = new NotifyController(this);
 
   private get searchByValue() {
     return this.input ? this.input.value.trim() : "";
@@ -332,7 +318,6 @@ export class CollectionsAdd extends TailwindElement {
     });
     const data = await this.api.fetch<APIPaginatedList<Collection>>(
       `/orgs/${this.orgId}/collections?${query}`,
-      this.authState!,
       { signal },
     );
 
@@ -354,10 +339,7 @@ export class CollectionsAdd extends TailwindElement {
   private readonly getCollection = async (
     collId: string,
   ): Promise<Collection | undefined> => {
-    return this.api.fetch(
-      `/orgs/${this.orgId}/collections/${collId}`,
-      this.authState!,
-    );
+    return this.api.fetch(`/orgs/${this.orgId}/collections/${collId}`);
   };
 
   private async dispatchChange() {
