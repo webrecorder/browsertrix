@@ -2,6 +2,7 @@
 
 import traceback
 import os
+import math
 from pprint import pprint
 from typing import Optional, Any, Sequence
 from datetime import datetime
@@ -1335,7 +1336,9 @@ class CrawlOperator(BaseOperator):
                     and pod_info.allocated.storage
                     and pod_info.used.storage * 2.2 > pod_info.allocated.storage
                 ):
-                    pod_info.newStorage = int(pod_info.used.storage * 2.2)
+                    pod_info.newStorage = (
+                        f"{math.ceil((pod_info.used.storage * 2.2) / 1_000_000_000)}Gi"
+                    )
                     print(
                         f"Attempting to adjust storage to {pod_info.newStorage} for {key}"
                     )
