@@ -34,9 +34,6 @@ export class Dashboard extends LiteElement {
   @property({ type: Boolean })
   isCrawler?: boolean;
 
-  @property({ type: Boolean })
-  isAdmin?: boolean;
-
   @state()
   private metrics?: Metrics;
 
@@ -74,7 +71,7 @@ export class Dashboard extends LiteElement {
           ${this.userOrg?.name}
         </h1>
         ${when(
-          this.isAdmin,
+          this.appState.isAdmin,
           () =>
             html` <sl-icon-button
               href=${`${this.orgBasePath}/settings`}

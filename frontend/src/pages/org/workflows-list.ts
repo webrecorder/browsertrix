@@ -1,7 +1,7 @@
 import { localized, msg, str } from "@lit/localize";
 import type { SlCheckbox } from "@shoelace-style/shoelace";
 import { type PropertyValues } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
+import { customElement, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
@@ -69,9 +69,6 @@ export class WorkflowsList extends LiteElement {
     name: msg("Name"),
     firstSeed: msg("Crawl Start URL"),
   };
-
-  @property({ type: Boolean })
-  isCrawler!: boolean;
 
   @state()
   private workflows?: APIPaginatedList<ListWorkflow>;
@@ -190,12 +187,13 @@ export class WorkflowsList extends LiteElement {
   render() {
     return html`
       <header class="contents">
-        <div class="mb-4 flex w-full justify-between">
-          <h1 class="text-xl font-semibold leading-8">
+        <div class="mb-4 flex w-full justify-end gap-2">
+          <h1 class="mr-auto text-xl font-semibold leading-8">
             ${msg("Crawl Workflows")}
           </h1>
+
           ${when(
-            this.isCrawler,
+            this.appState.isCrawler,
             () => html`
               <sl-button
                 variant="primary"
@@ -413,7 +411,7 @@ export class WorkflowsList extends LiteElement {
   private renderMenuItems(workflow: ListWorkflow) {
     return html`
       ${when(
-        workflow.isCrawlRunning && this.isCrawler,
+        workflow.isCrawlRunning && this.appState.isCrawler,
         // HACK shoelace doesn't current have a way to override non-hover
         // color without resetting the --sl-color-neutral-700 variable
         () => html`
@@ -434,7 +432,7 @@ export class WorkflowsList extends LiteElement {
         `,
       )}
       ${when(
-        this.isCrawler && !workflow.isCrawlRunning,
+        this.appState.isCrawler && !workflow.isCrawlRunning,
         () => html`
           <sl-menu-item
             style="--sl-color-neutral-700: var(--success)"
@@ -447,7 +445,7 @@ export class WorkflowsList extends LiteElement {
         `,
       )}
       ${when(
-        workflow.isCrawlRunning && this.isCrawler,
+        workflow.isCrawlRunning && this.appState.isCrawler,
         // HACK shoelace doesn't current have a way to override non-hover
         // color without resetting the --sl-color-neutral-700 variable
         () => html`
@@ -480,7 +478,7 @@ export class WorkflowsList extends LiteElement {
         `,
       )}
       ${when(
-        this.isCrawler,
+        this.appState.isCrawler,
         () =>
           html` <sl-divider></sl-divider>
             <sl-menu-item
@@ -501,7 +499,7 @@ export class WorkflowsList extends LiteElement {
         ${msg("Copy Tags")}
       </sl-menu-item>
       ${when(
-        this.isCrawler,
+        this.appState.isCrawler,
         () =>
           html` <sl-menu-item
             ?disabled=${isArchivingDisabled(this.org, true)}
