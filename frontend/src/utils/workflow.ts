@@ -6,6 +6,7 @@ import type {
   WorkflowParams,
 } from "@/types/crawler";
 import type { OrgData } from "@/types/org";
+import { DEFAULT_MAX_SCALE } from "@/utils/crawler";
 import { getNextDate, getScheduleInterval } from "@/utils/cron";
 import { regexUnescape } from "@/utils/string";
 
@@ -49,6 +50,17 @@ export type FormState = {
   autoscrollBehavior: boolean;
   userAgent: string | null;
   crawlerChannel: string;
+};
+
+export type WorkflowDefaults = {
+  behaviorTimeoutSeconds?: number;
+  pageLoadTimeoutSeconds?: number;
+  maxPagesPerCrawl?: number;
+  maxScale: number;
+};
+
+export const serverDefaults: WorkflowDefaults = {
+  maxScale: DEFAULT_MAX_SCALE,
 };
 
 export const getDefaultFormState = (): FormState => ({
@@ -238,4 +250,37 @@ export function getInitialFormState(params: {
       params.initialWorkflow.crawlerChannel || defaultFormState.crawlerChannel,
     ...formState,
   };
+}
+
+export async function fetchServerDefaults(): Promise<WorkflowDefaults> {
+  const defaults = { ...serverDefaults };
+
+  try {
+    const resp = await fetch("/api/settings", {
+      headers: { "Content-Type": "application/json" },
+    });
+    if (!resp.ok) {
+      throw new Error(resp.statusText);
+    }
+
+    const data = await resp.json();
+    if (data.defaultBehaviorTimeSeconds > 0) {
+      defaults.behaviorTimeoutSeconds = data.defaultBehaviorTimeSeconds;
+    }
+    if (data.defaultPageLoadTimeSeconds > 0) {
+      defaults.pageLoadTimeoutSeconds = data.defaultPageLoadTimeSeconds;
+    }
+    if (data.maxPagesPerCrawl > 0) {
+      defaults.maxPagesPerCrawl = data.maxPagesPerCrawl;
+    }
+    if (data.maxScale) {
+      defaults.maxScale = data.maxScale;
+    }
+
+    return defaults;
+  } catch (e) {
+    console.debug(e);
+  }
+
+  return defaults;
 }

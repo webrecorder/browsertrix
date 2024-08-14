@@ -48,7 +48,6 @@ import type {
   ExclusionChangeEvent,
   ExclusionRemoveEvent,
 } from "@/features/crawl-workflows/queue-exclusion-table";
-import type { AppSettings } from "@/types/app";
 import type {
   CrawlConfig,
   JobType,
@@ -56,7 +55,7 @@ import type {
   WorkflowParams,
 } from "@/types/crawler";
 import { isApiError, type Detail } from "@/utils/api";
-import { DEFAULT_MAX_SCALE, DEPTH_SUPPORTED_SCOPES } from "@/utils/crawler";
+import { DEPTH_SUPPORTED_SCOPES } from "@/utils/crawler";
 import {
   getUTCSchedule,
   humanizeNextDate,
@@ -68,9 +67,12 @@ import { isArchivingDisabled } from "@/utils/orgs";
 import { regexEscape } from "@/utils/string";
 import {
   BYTES_PER_GB,
+  fetchServerDefaults,
   getDefaultFormState,
   getInitialFormState,
+  serverDefaults,
   type FormState,
+  type WorkflowDefaults,
 } from "@/utils/workflow";
 
 type NewCrawlConfigParams = WorkflowParams & {
@@ -202,19 +204,13 @@ export class WorkflowEditor extends BtrixElement {
   private progressState?: ProgressState;
 
   @state()
-  private orgDefaults?: {
-    behaviorTimeoutSeconds?: number;
-    pageLoadTimeoutSeconds?: number;
-    maxPagesPerCrawl?: number;
-  };
+  private defaults: WorkflowDefaults = serverDefaults;
 
   @state()
   private formState!: FormState;
 
   @state()
   private serverError?: TemplateResult | string;
-
-  private maxScale = DEFAULT_MAX_SCALE;
 
   // For fuzzy search:
   private readonly fuse = new Fuse<string>([], {
@@ -306,7 +302,7 @@ export class WorkflowEditor extends BtrixElement {
       (changedProperties.get("initialWorkflow") && this.initialWorkflow)
     ) {
       this.initializeEditor();
-      await this.fetchAPIDefaults();
+      await fetchServerDefaults();
       if (this.orgId) {
         await this.fetchOrgQuotaDefaults();
       }
@@ -1256,16 +1252,16 @@ https://archiveweb.page/images/${"logo.svg"}`}
             value=${this.formState.pageLimit || ""}
             min=${minPages}
             max=${ifDefined(
-              this.orgDefaults?.maxPagesPerCrawl &&
-                this.orgDefaults.maxPagesPerCrawl < Infinity
-                ? this.orgDefaults.maxPagesPerCrawl
+              this.defaults.maxPagesPerCrawl &&
+                this.defaults.maxPagesPerCrawl < Infinity
+                ? this.defaults.maxPagesPerCrawl
                 : undefined,
             )}
-            placeholder=${this.orgDefaults?.maxPagesPerCrawl
-              ? this.orgDefaults.maxPagesPerCrawl === Infinity
+            placeholder=${this.defaults.maxPagesPerCrawl
+              ? this.defaults.maxPagesPerCrawl === Infinity
                 ? msg("Default: Unlimited")
                 : msg(
-                    str`Default: ${this.orgDefaults.maxPagesPerCrawl.toLocaleString()}`,
+                    str`Default: ${this.defaults.maxPagesPerCrawl.toLocaleString()}`,
                   )
               : ""}
             @sl-input=${onInputMinMax}
@@ -1321,7 +1317,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
             })}
         >
           ${map(
-            range(this.maxScale),
+            range(this.defaults.maxScale),
             (i: number) =>
               html` <sl-radio-button value="${i + 1}" size="small"
                 >${i + 1}×</sl-radio-button
@@ -1340,9 +1336,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
           type="number"
           inputmode="numeric"
           label=${msg("Page Load Timeout")}
-          placeholder=${this.orgDefaults?.pageLoadTimeoutSeconds
+          placeholder=${this.defaults.pageLoadTimeoutSeconds
             ? msg(
-                str`Default: ${this.orgDefaults.pageLoadTimeoutSeconds.toLocaleString()}`,
+                str`Default: ${this.defaults.pageLoadTimeoutSeconds.toLocaleString()}`,
               )
             : "Default: Unlimited"}
           value=${ifDefined(this.formState.pageLoadTimeoutSeconds ?? undefined)}
@@ -1381,9 +1377,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
           type="number"
           inputmode="numeric"
           label=${msg("Behavior Timeout")}
-          placeholder=${this.orgDefaults?.behaviorTimeoutSeconds
+          placeholder=${this.defaults.behaviorTimeoutSeconds
             ? msg(
-                str`Default: ${this.orgDefaults.behaviorTimeoutSeconds.toLocaleString()}`,
+                str`Default: ${this.defaults.behaviorTimeoutSeconds.toLocaleString()}`,
               )
             : msg("Unlimited")}
           value=${ifDefined(this.formState.behaviorTimeoutSeconds ?? undefined)}
@@ -2332,57 +2328,18 @@ https://archiveweb.page/images/${"logo.svg"}`}
     }
   }
 
-  private async fetchAPIDefaults() {
-    try {
-      let settings: AppSettings;
-
-      if (!this.appState.settings) {
-        const resp = await fetch("/api/settings", {
-          headers: { "Content-Type": "application/json" },
-        });
-        if (!resp.ok) {
-          throw new Error(resp.statusText);
-        }
-        settings = (await resp.json()) as AppSettings;
-      } else {
-        settings = this.appState.settings;
-      }
-
-      const orgDefaults = {
-        ...this.orgDefaults,
-      };
-      if (settings.defaultBehaviorTimeSeconds > 0) {
-        orgDefaults.behaviorTimeoutSeconds =
-          settings.defaultBehaviorTimeSeconds;
-      }
-      if (settings.defaultPageLoadTimeSeconds > 0) {
-        orgDefaults.pageLoadTimeoutSeconds =
-          settings.defaultPageLoadTimeSeconds;
-      }
-      if (settings.maxPagesPerCrawl > 0) {
-        orgDefaults.maxPagesPerCrawl = settings.maxPagesPerCrawl;
-      }
-      if (settings.maxScale) {
-        this.maxScale = settings.maxScale;
-      }
-      this.orgDefaults = orgDefaults;
-    } catch (e) {
-      console.debug(e);
-    }
-  }
-
   private async fetchOrgQuotaDefaults() {
     try {
       const data = await this.api.fetch<{
         quotas: { maxPagesPerCrawl?: number };
       }>(`/orgs/${this.orgId}`);
       const orgDefaults = {
-        ...this.orgDefaults,
+        ...this.defaults,
       };
       if (data.quotas.maxPagesPerCrawl && data.quotas.maxPagesPerCrawl > 0) {
         orgDefaults.maxPagesPerCrawl = data.quotas.maxPagesPerCrawl;
       }
-      this.orgDefaults = orgDefaults;
+      this.defaults = orgDefaults;
     } catch (e) {
       console.debug(e);
     }
