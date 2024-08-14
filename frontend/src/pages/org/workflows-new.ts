@@ -9,8 +9,6 @@ import type { SelectNewDialogEvent } from ".";
 
 import LiteElement, { html } from "@/utils/LiteElement";
 
-import "./workflow-editor";
-
 const defaultValue = {
   name: "",
   description: null,

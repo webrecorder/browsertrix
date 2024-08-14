@@ -30,15 +30,6 @@ import flow from "lodash/fp/flow";
 import uniq from "lodash/fp/uniq";
 
 import type {
-  CrawlConfig,
-  JobType,
-  Profile,
-  Seed,
-  SeedConfig,
-  WorkflowParams,
-} from "./types";
-
-import type {
   SelectCrawlerChangeEvent,
   SelectCrawlerUpdateEvent,
 } from "@/components/ui/select-crawler";
@@ -56,6 +47,14 @@ import type {
   ExclusionRemoveEvent,
 } from "@/features/crawl-workflows/queue-exclusion-table";
 import type { AppSettings } from "@/types/app";
+import type {
+  CrawlConfig,
+  JobType,
+  Profile,
+  Seed,
+  SeedConfig,
+  WorkflowParams,
+} from "@/types/crawler";
 import { isApiError, type Detail } from "@/utils/api";
 import { DEFAULT_MAX_SCALE, DEPTH_SUPPORTED_SCOPES } from "@/utils/crawler";
 import {
