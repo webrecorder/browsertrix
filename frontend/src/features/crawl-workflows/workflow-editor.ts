@@ -12,7 +12,12 @@ import type {
 import Fuse from "fuse.js";
 import { mergeDeep } from "immutable";
 import type { LanguageCode } from "iso-639-1";
-import type { LitElement, PropertyValues, TemplateResult } from "lit";
+import {
+  html,
+  type LitElement,
+  type PropertyValues,
+  type TemplateResult,
+} from "lit";
 import {
   customElement,
   property,
@@ -29,6 +34,7 @@ import compact from "lodash/fp/compact";
 import flow from "lodash/fp/flow";
 import uniq from "lodash/fp/uniq";
 
+import { BtrixElement } from "@/classes/BtrixElement";
 import type {
   SelectCrawlerChangeEvent,
   SelectCrawlerUpdateEvent,
@@ -65,7 +71,6 @@ import {
   humanizeSchedule,
 } from "@/utils/cron";
 import { maxLengthValidator } from "@/utils/form";
-import LiteElement, { html } from "@/utils/LiteElement";
 import { getLocale } from "@/utils/localization";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { regexEscape, regexUnescape } from "@/utils/string";
@@ -253,7 +258,7 @@ type CrawlConfigResponse = {
 };
 @localized()
 @customElement("btrix-workflow-editor")
-export class CrawlConfigEditor extends LiteElement {
+export class WorkflowEditor extends BtrixElement {
   @property({ type: String })
   configId?: string;
 
@@ -2270,14 +2275,14 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
     try {
       const data = await (this.configId
-        ? this.apiFetch<CrawlConfigResponse>(
+        ? this.api.fetch<CrawlConfigResponse>(
             `/orgs/${this.orgId}/crawlconfigs/${this.configId}`,
             {
               method: "PATCH",
               body: JSON.stringify(config),
             },
           )
-        : this.apiFetch<CrawlConfigResponse>(
+        : this.api.fetch<CrawlConfigResponse>(
             `/orgs/${this.orgId}/crawlconfigs/`,
             {
               method: "POST",
@@ -2296,14 +2301,14 @@ https://archiveweb.page/images/${"logo.svg"}`}
         message = msg("Workflow updated.");
       }
 
-      this.notify({
+      this.notify.toast({
         message,
         variant: "success",
         icon: "check2-circle",
       });
 
-      this.navTo(
-        `${this.orgBasePath}/workflows/crawl/${this.configId || data.id}${
+      this.navigate.to(
+        `${this.navigate.orgBasePath}/workflows/crawl/${this.configId || data.id}${
           crawlId && !storageQuotaReached && !executionMinutesQuotaReached
             ? "#watch"
             : ""
@@ -2312,7 +2317,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     } catch (e) {
       if (isApiError(e)) {
         if (e.details === "crawl_already_running") {
-          this.notify({
+          this.notify.toast({
             title: msg("Workflow saved without starting crawl."),
             message: msg(
               "Could not run crawl with new workflow settings due to already running crawl.",
@@ -2406,7 +2411,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
   private async fetchTags() {
     this.tagOptions = [];
     try {
-      const tags = await this.apiFetch<string[]>(
+      const tags = await this.api.fetch<string[]>(
         `/orgs/${this.orgId}/crawlconfigs/tags`,
       );
 
@@ -2586,7 +2591,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
   private async fetchOrgQuotaDefaults() {
     try {
-      const data = await this.apiFetch<{
+      const data = await this.api.fetch<{
         quotas: { maxPagesPerCrawl?: number };
       }>(`/orgs/${this.orgId}`);
       const orgDefaults = {
