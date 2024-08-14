@@ -1,3 +1,6 @@
+import { msg } from "@lit/localize";
+import { z } from "zod";
+
 import type { Tags } from "@/components/ui/tag-input";
 import type {
   Profile,
@@ -11,6 +14,24 @@ import { getNextDate, getScheduleInterval } from "@/utils/cron";
 import { regexUnescape } from "@/utils/string";
 
 export const BYTES_PER_GB = 1e9;
+
+export const SECTIONS = [
+  "scope",
+  "perCrawlLimits",
+  "perPageLimits",
+  "browserSettings",
+  "scheduling",
+] as const;
+export const sectionsEnum = z.enum(SECTIONS);
+export type SectionsEnum = z.infer<typeof sectionsEnum>;
+
+export const sectionLabels: Record<SectionsEnum, string> = {
+  scope: msg("Crawl Scope"),
+  perCrawlLimits: msg("Per-Crawl Limits"),
+  perPageLimits: msg("Per-Page Limits"),
+  browserSettings: msg("Browser Settings"),
+  scheduling: msg("Scheduling"),
+};
 
 export type FormState = {
   primarySeedUrl: string;

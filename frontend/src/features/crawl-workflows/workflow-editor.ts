@@ -70,6 +70,7 @@ import {
   fetchServerDefaults,
   getDefaultFormState,
   getInitialFormState,
+  sectionLabels,
   serverDefaults,
   type FormState,
   type WorkflowDefaults,
@@ -389,10 +390,10 @@ export class WorkflowEditor extends BtrixElement {
 
   render() {
     const tabLabels: Record<StepName, string> = {
-      crawlSetup: msg("Scope"),
+      crawlSetup: sectionLabels.scope,
       crawlLimits: msg("Limits"),
-      browserSettings: msg("Browser Settings"),
-      crawlScheduling: msg("Scheduling"),
+      browserSettings: sectionLabels.browserSettings,
+      crawlScheduling: sectionLabels.scheduling,
       crawlMetadata: msg("Metadata"),
       confirmSettings: msg("Review Settings"),
     };
@@ -1228,7 +1229,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       inputEl.helpText = helpText;
     };
     return html`
-      ${this.renderSectionHeading(msg("Per-Crawl Limits"))}
+      ${this.renderSectionHeading(sectionLabels.perCrawlLimits)}
       ${this.renderFormCol(html`
         <sl-mutation-observer
           attr="min"
@@ -1329,7 +1330,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         msg(`Increasing parallel crawler instances can speed up crawls, but may
         increase the chances of getting rate limited.`),
       )}
-      ${this.renderSectionHeading(msg("Per-Page Limits"))}
+      ${this.renderSectionHeading(sectionLabels.perPageLimits)}
       ${this.renderFormCol(html`
         <sl-input
           name="pageLoadTimeoutSeconds"

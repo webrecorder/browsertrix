@@ -8,10 +8,10 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 
 import stylesheet from "./settings.stylesheet.css";
-import { columns } from "./ui/columns";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { APIUser } from "@/index";
+import { columns } from "@/layout/columns";
 import type { APIPaginatedList } from "@/types/api";
 import { isApiError } from "@/utils/api";
 import { maxLengthValidator } from "@/utils/form";
