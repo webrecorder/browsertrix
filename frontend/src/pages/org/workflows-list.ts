@@ -193,6 +193,17 @@ export class WorkflowsList extends LiteElement {
           </h1>
 
           ${when(
+            this.appState.isAdmin,
+            () =>
+              html` <sl-icon-button
+                href=${`${this.orgBasePath}/settings/crawling`}
+                class="size-8 text-lg"
+                name="gear"
+                label=${msg("Edit org crawling settings")}
+                @click=${this.navLink}
+              ></sl-icon-button>`,
+          )}
+          ${when(
             this.appState.isCrawler,
             () => html`
               <sl-button

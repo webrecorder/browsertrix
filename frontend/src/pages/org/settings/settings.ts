@@ -21,10 +21,11 @@ import { AppStateService } from "@/utils/state";
 import { formatAPIUser } from "@/utils/user";
 
 import "./components/billing";
+import "./components/crawling";
 
 const styles = unsafeCSS(stylesheet);
 
-type Tab = "information" | "members" | "billing";
+type Tab = "information" | "members" | "billing" | "crawling";
 type User = {
   email: string;
   role: AccessCode;
@@ -87,6 +88,7 @@ export class OrgSettings extends BtrixElement {
       information: msg("General"),
       members: msg("Members"),
       billing: msg("Billing"),
+      crawling: msg("Crawling"),
     };
   }
 
@@ -135,6 +137,7 @@ export class OrgSettings extends BtrixElement {
                 `,
               ],
               ["billing", () => html`<h3>${msg("Current Plan")}</h3> `],
+              ["crawling", () => html`<h3>${msg("Workflow Defaults")}</h3>`],
             ],
             () => html`<h3>${this.tabLabels[this.activePanel]}</h3>`,
           )}
@@ -144,6 +147,7 @@ export class OrgSettings extends BtrixElement {
         ${when(this.appState.settings?.billingEnabled, () =>
           this.renderTab("billing", "settings/billing"),
         )}
+        ${this.renderTab("crawling", "settings/crawling")}
 
         <btrix-tab-panel name="information">
           ${this.renderInformation()}
@@ -155,6 +159,9 @@ export class OrgSettings extends BtrixElement {
           <btrix-org-settings-billing
             .salesEmail=${this.appState.settings?.salesEmail}
           ></btrix-org-settings-billing>
+        </btrix-tab-panel>
+        <btrix-tab-panel name="crawling">
+          <btrix-org-settings-crawling></btrix-org-settings-crawling>
         </btrix-tab-panel>
       </btrix-tab-list>`;
   }
