@@ -482,8 +482,12 @@ class CrawlOperator(BaseOperator):
 
         pvc = children[PVC].get(name)
         if pvc:
-            src = pvc["spec"]["resources"]["requests"]
-            resources.storage = int(parse_quantity(src.get("storage")))
+            try:
+                src = pvc["status"]["capacity"]
+                resources.storage = int(parse_quantity(src.get("storage")))
+            # pylint: disable=bare-except
+            except:
+                pass
 
     async def set_state(
         self,
