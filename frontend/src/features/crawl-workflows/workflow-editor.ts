@@ -40,11 +40,7 @@ import type {
   SelectCrawlerUpdateEvent,
 } from "@/components/ui/select-crawler";
 import type { Tab } from "@/components/ui/tab-list";
-import type {
-  TagInputEvent,
-  Tags,
-  TagsChangeEvent,
-} from "@/components/ui/tag-input";
+import type { TagInputEvent, TagsChangeEvent } from "@/components/ui/tag-input";
 import type { TimeInputChangeEvent } from "@/components/ui/time-input";
 import { type SelectBrowserProfileChangeEvent } from "@/features/browser-profiles/select-browser-profile";
 import type { CollectionsChangeEvent } from "@/features/collections/collections-add";
@@ -56,16 +52,12 @@ import type { AppSettings } from "@/types/app";
 import type {
   CrawlConfig,
   JobType,
-  Profile,
   Seed,
-  SeedConfig,
   WorkflowParams,
 } from "@/types/crawler";
 import { isApiError, type Detail } from "@/utils/api";
 import { DEFAULT_MAX_SCALE, DEPTH_SUPPORTED_SCOPES } from "@/utils/crawler";
 import {
-  getNextDate,
-  getScheduleInterval,
   getUTCSchedule,
   humanizeNextDate,
   humanizeSchedule,
@@ -73,7 +65,13 @@ import {
 import { maxLengthValidator } from "@/utils/form";
 import { getLocale } from "@/utils/localization";
 import { isArchivingDisabled } from "@/utils/orgs";
-import { regexEscape, regexUnescape } from "@/utils/string";
+import { regexEscape } from "@/utils/string";
+import {
+  BYTES_PER_GB,
+  getDefaultFormState,
+  getInitialFormState,
+  type FormState,
+} from "@/utils/workflow";
 
 type NewCrawlConfigParams = WorkflowParams & {
   runNow: boolean;
@@ -100,45 +98,13 @@ type ProgressState = {
   activeTab: StepName;
   tabs: Tabs;
 };
-type FormState = {
-  primarySeedUrl: string;
-  urlList: string;
-  includeLinkedPages: boolean;
-  useSitemap: boolean;
-  failOnFailedSeed: boolean;
-  customIncludeUrlList: string;
-  crawlTimeoutMinutes: number;
-  behaviorTimeoutSeconds: number | null;
-  pageLoadTimeoutSeconds: number | null;
-  pageExtraDelaySeconds: number | null;
-  postLoadDelaySeconds: number | null;
-  maxCrawlSizeGB: number;
-  maxScopeDepth: number | null;
-  scopeType: WorkflowParams["config"]["scopeType"];
-  exclusions: WorkflowParams["config"]["exclude"];
-  pageLimit: WorkflowParams["config"]["limit"];
-  scale: WorkflowParams["scale"];
-  blockAds: WorkflowParams["config"]["blockAds"];
-  lang: WorkflowParams["config"]["lang"];
-  scheduleType: "date" | "cron" | "none";
-  scheduleFrequency: "daily" | "weekly" | "monthly" | "";
-  scheduleDayOfMonth?: number;
-  scheduleDayOfWeek?: number;
-  scheduleTime?: {
-    hour: number;
-    minute: number;
-    period: "AM" | "PM";
-  };
-  runNow: boolean;
-  jobName: WorkflowParams["name"];
-  browserProfile: Profile | null;
-  tags: Tags;
-  autoAddCollections: string[];
-  description: WorkflowParams["description"];
-  autoscrollBehavior: boolean;
-  userAgent: string | null;
-  crawlerChannel: string;
-};
+
+const DEFAULT_BEHAVIORS = [
+  "autoscroll",
+  "autoplay",
+  "autofetch",
+  "siteSpecific",
+];
 
 const getDefaultProgressState = (hasConfigId = false): ProgressState => {
   let activeTab: StepName = "crawlSetup";
@@ -177,46 +143,6 @@ const getDefaultProgressState = (hasConfigId = false): ProgressState => {
     },
   };
 };
-const getDefaultFormState = (): FormState => ({
-  primarySeedUrl: "",
-  urlList: "",
-  includeLinkedPages: false,
-  useSitemap: false,
-  failOnFailedSeed: false,
-  customIncludeUrlList: "",
-  crawlTimeoutMinutes: 0,
-  maxCrawlSizeGB: 0,
-  behaviorTimeoutSeconds: null,
-  pageLoadTimeoutSeconds: null,
-  pageExtraDelaySeconds: null,
-  postLoadDelaySeconds: null,
-  maxScopeDepth: null,
-  scopeType: "host",
-  exclusions: [],
-  pageLimit: null,
-  scale: 1,
-  blockAds: true,
-  lang: undefined,
-  scheduleType: "none",
-  scheduleFrequency: "weekly",
-  scheduleDayOfMonth: new Date().getDate(),
-  scheduleDayOfWeek: new Date().getDay(),
-  scheduleTime: {
-    hour: 12,
-    minute: 0,
-    period: "AM",
-  },
-  runNow: false,
-  jobName: "",
-  browserProfile: null,
-  tags: [],
-  autoAddCollections: [],
-  description: null,
-  autoscrollBehavior: true,
-  userAgent: null,
-  crawlerChannel: "default",
-});
-
 function getLocalizedWeekDays() {
   const now = new Date();
   // TODO accept locale from locale-picker
@@ -237,15 +163,7 @@ const urlListToArray = flow(
   (str: string) => (str.length ? str.trim().split(/\s+/g) : []),
   trimArray,
 );
-const mapSeedToUrl = (arr: Seed[]) =>
-  arr.map((seed) => (typeof seed === "string" ? seed : seed.url));
-const DEFAULT_BEHAVIORS = [
-  "autoscroll",
-  "autoplay",
-  "autofetch",
-  "siteSpecific",
-];
-const BYTES_PER_GB = 1e9;
+
 const URL_LIST_MAX_URLS = 1000;
 
 type CrawlConfigResponse = {
@@ -449,7 +367,12 @@ export class WorkflowEditor extends BtrixElement {
     this.progressState = getDefaultProgressState(Boolean(this.configId));
     this.formState = {
       ...getDefaultFormState(),
-      ...this.getInitialFormState(),
+      ...getInitialFormState({
+        configId: this.configId,
+        initialSeeds: this.initialSeeds,
+        initialWorkflow: this.initialWorkflow,
+        org: this.org!,
+      }),
     };
     if (!this.formState.lang) {
       this.formState.lang = this.getInitialLang();
@@ -466,147 +389,6 @@ export class WorkflowEditor extends BtrixElement {
       return browserLanguage.slice(0, browserLanguage.indexOf("-"));
     }
     return null;
-  }
-
-  private getInitialFormState(): FormState {
-    const defaultFormState = getDefaultFormState();
-    if (!this.configId) {
-      defaultFormState.runNow = true;
-    }
-    if (!this.initialWorkflow) return defaultFormState;
-    const formState: Partial<FormState> = {};
-    const seedsConfig = this.initialWorkflow.config;
-    let primarySeedConfig: SeedConfig | Seed = seedsConfig;
-    if (this.initialWorkflow.jobType === "seed-crawl") {
-      if (this.initialSeeds) {
-        const firstSeed = this.initialSeeds[0];
-        if (typeof firstSeed === "string") {
-          formState.primarySeedUrl = firstSeed;
-        } else {
-          primarySeedConfig = firstSeed;
-          formState.primarySeedUrl = primarySeedConfig.url;
-        }
-      }
-      if (primarySeedConfig.include?.length) {
-        formState.customIncludeUrlList = primarySeedConfig.include
-          // Unescape regex
-          .map(regexUnescape)
-          .join("\n");
-        // if we have additional include URLs, set to "custom" scope here
-        // to indicate 'Custom Page Prefix' option
-        formState.scopeType = "custom";
-      }
-      const additionalSeeds = this.initialSeeds?.slice(1);
-      if (additionalSeeds?.length) {
-        formState.urlList = mapSeedToUrl(additionalSeeds).join("\n");
-      }
-      formState.useSitemap = seedsConfig.useSitemap;
-    } else {
-      // Treat "custom" like URL list
-      if (this.initialSeeds) {
-        formState.urlList = mapSeedToUrl(this.initialSeeds).join("\n");
-      }
-
-      if (this.initialWorkflow.jobType === "custom") {
-        formState.scopeType = seedsConfig.scopeType || "page";
-      }
-
-      formState.failOnFailedSeed = seedsConfig.failOnFailedSeed;
-    }
-
-    if (this.initialWorkflow.schedule) {
-      formState.scheduleType = "cron";
-      formState.scheduleFrequency = getScheduleInterval(
-        this.initialWorkflow.schedule,
-      );
-      const nextDate = getNextDate(this.initialWorkflow.schedule)!;
-      formState.scheduleDayOfMonth = nextDate.getDate();
-      formState.scheduleDayOfWeek = nextDate.getDay();
-      const hours = nextDate.getHours();
-      formState.scheduleTime = {
-        hour: hours % 12 || 12,
-        minute: nextDate.getMinutes(),
-        period: hours > 11 ? "PM" : "AM",
-      };
-    } else {
-      formState.scheduleType = "none";
-    }
-
-    if (this.initialWorkflow.tags.length) {
-      formState.tags = this.initialWorkflow.tags;
-    }
-
-    if (this.initialWorkflow.autoAddCollections.length) {
-      formState.autoAddCollections = this.initialWorkflow.autoAddCollections;
-    }
-
-    const secondsToMinutes = (value: unknown, fallback = 0) => {
-      if (typeof value === "number" && value > 0) return value / 60;
-      return fallback;
-    };
-
-    const bytesToGB = (value: unknown, fallback = 0) => {
-      if (typeof value === "number" && value > 0)
-        return Math.floor(value / BYTES_PER_GB);
-      return fallback;
-    };
-
-    return {
-      primarySeedUrl: defaultFormState.primarySeedUrl,
-      urlList: defaultFormState.urlList,
-      customIncludeUrlList: defaultFormState.customIncludeUrlList,
-      crawlTimeoutMinutes: secondsToMinutes(
-        this.initialWorkflow.crawlTimeout,
-        defaultFormState.crawlTimeoutMinutes,
-      ),
-      maxCrawlSizeGB: bytesToGB(
-        this.initialWorkflow.maxCrawlSize,
-        defaultFormState.maxCrawlSizeGB,
-      ),
-      behaviorTimeoutSeconds:
-        seedsConfig.behaviorTimeout ?? defaultFormState.behaviorTimeoutSeconds,
-      pageLoadTimeoutSeconds:
-        seedsConfig.pageLoadTimeout ?? defaultFormState.pageLoadTimeoutSeconds,
-      pageExtraDelaySeconds:
-        seedsConfig.pageExtraDelay ?? defaultFormState.pageExtraDelaySeconds,
-      postLoadDelaySeconds:
-        seedsConfig.postLoadDelay ?? defaultFormState.postLoadDelaySeconds,
-      maxScopeDepth: primarySeedConfig.depth ?? defaultFormState.maxScopeDepth,
-      scale: this.initialWorkflow.scale,
-      blockAds: this.initialWorkflow.config.blockAds,
-      lang: this.initialWorkflow.config.lang,
-      scheduleType: defaultFormState.scheduleType,
-      scheduleFrequency: defaultFormState.scheduleFrequency,
-      runNow:
-        this.org?.storageQuotaReached || this.org?.execMinutesQuotaReached
-          ? false
-          : defaultFormState.runNow,
-      tags: this.initialWorkflow.tags,
-      autoAddCollections: this.initialWorkflow.autoAddCollections,
-      jobName: this.initialWorkflow.name || defaultFormState.jobName,
-      description: this.initialWorkflow.description,
-      browserProfile: this.initialWorkflow.profileid
-        ? ({ id: this.initialWorkflow.profileid } as Profile)
-        : defaultFormState.browserProfile,
-      scopeType: primarySeedConfig.scopeType as FormState["scopeType"],
-      exclusions: seedsConfig.exclude,
-      includeLinkedPages: Boolean(
-        primarySeedConfig.extraHops || seedsConfig.extraHops,
-      ),
-      useSitemap: seedsConfig.useSitemap ?? defaultFormState.useSitemap,
-      failOnFailedSeed:
-        seedsConfig.failOnFailedSeed ?? defaultFormState.failOnFailedSeed,
-      pageLimit:
-        this.initialWorkflow.config.limit ?? defaultFormState.pageLimit,
-      autoscrollBehavior: this.initialWorkflow.config.behaviors
-        ? this.initialWorkflow.config.behaviors.includes("autoscroll")
-        : defaultFormState.autoscrollBehavior,
-      userAgent:
-        this.initialWorkflow.config.userAgent ?? defaultFormState.userAgent,
-      crawlerChannel:
-        this.initialWorkflow.crawlerChannel || defaultFormState.crawlerChannel,
-      ...formState,
-    };
   }
 
   render() {
