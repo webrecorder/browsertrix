@@ -388,6 +388,7 @@ class CrawlOperator(BaseOperator):
             params["memory_limit"] = float(params["memory"]) * MEM_LIMIT_PADDING
         else:
             params["memory_limit"] = self.k8s.max_crawler_memory_size
+        params["storage"] = pod_info.newStorage or params.get("crawler_storage")
         params["workers"] = params.get(worker_field) or 1
         params["do_restart"] = False
         if has_pod:
@@ -1324,6 +1325,16 @@ class CrawlOperator(BaseOperator):
             if value > 0 and status.podStatus:
                 pod_info = status.podStatus[key]
                 pod_info.used.storage = value
+
+                if (
+                    status.state == "running"
+                    and pod_info.allocated.storage
+                    and pod_info.used.storage * 2.2 > pod_info.allocated.storage
+                ):
+                    pod_info.newStorage = int(pod_info.used.storage * 2.2)
+                    print(
+                        f"Attempting to adjust storage to {pod_info.newStorage} for {key}"
+                    )
 
         if not status.stopReason:
             status.stopReason = await self.is_crawl_stopping(crawl, status, data)

@@ -17,7 +17,7 @@ spec:
 
   resources:
     requests:
-      storage: {{ crawler_storage }}
+      storage: {{ storage }}
 
   {% if volume_storage_class %}
   storageClassName: {{ volume_storage_class }}
