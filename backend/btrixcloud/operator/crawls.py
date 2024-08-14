@@ -1335,6 +1335,7 @@ class CrawlOperator(BaseOperator):
                     status.state == "running"
                     and pod_info.allocated.storage
                     and pod_info.used.storage * 2.2 > pod_info.allocated.storage
+                    or ((pod_info.allocated.storage - pod_info.used.storage) < 1_000_000_000)
                 ):
                     pod_info.newStorage = (
                         f"{math.ceil((pod_info.used.storage * 2.2) / 1_000_000_000)}Gi"
