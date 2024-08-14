@@ -527,7 +527,7 @@ class CrawlConfigOps:
             config = CrawlConfigOut.from_dict(res)
             # pylint: disable=invalid-name
             if not config.inactive:
-                self._add_curr_crawl_stats(config, await self.get_running_crawl(config))
+                await self._add_running_curr_crawl_stats(config)
             configs.append(config)
 
         return configs, total
@@ -552,14 +552,10 @@ class CrawlConfigOps:
 
         return results
 
-    async def get_running_crawl(
-        self, crawlconfig: Union[CrawlConfig, CrawlConfigOut]
-    ) -> Optional[CrawlOut]:
+    async def get_running_crawl(self, cid: UUID) -> Optional[CrawlOut]:
         """Return the id of currently running crawl for this config, if any"""
         # crawls = await self.crawl_manager.list_running_crawls(cid=crawlconfig.id)
-        crawls, _ = await self.crawl_ops.list_crawls(
-            cid=crawlconfig.id, running_only=True
-        )
+        crawls, _ = await self.crawl_ops.list_crawls(cid=cid, running_only=True)
 
         if len(crawls) == 1:
             return crawls[0]
@@ -568,21 +564,22 @@ class CrawlConfigOps:
 
     async def stats_recompute_last(self, cid: UUID, size: int, inc_crawls: int = 1):
         """recompute stats by incrementing size counter and number of crawls"""
-        update_query: dict[str, object] = {
-            "lastCrawlId": None,
-            "lastCrawlStartTime": None,
-            "lastStartedBy": None,
-            "lastCrawlTime": None,
-            "lastCrawlState": None,
-            "lastCrawlSize": None,
-            "lastCrawlStopping": False,
-            "isCrawlRunning": False,
-        }
+        update_query: dict[str, object] = {}
 
-        match_query = {"cid": cid, "finished": {"$ne": None}, "inactive": {"$ne": True}}
-        last_crawl = await self.crawls.find_one(
-            match_query, sort=[("finished", pymongo.DESCENDING)]
-        )
+        running_crawl = await self.get_running_crawl(cid)
+        # only look up last finished crawl if no crawls running, otherwise
+        # lastCrawl* stats are already for running crawl
+        if not running_crawl:
+            match_query = {
+                "cid": cid,
+                "finished": {"$ne": None},
+                "inactive": {"$ne": True},
+            }
+            last_crawl = await self.crawls.find_one(
+                match_query, sort=[("finished", pymongo.DESCENDING)]
+            )
+        else:
+            last_crawl = None
 
         if last_crawl:
             last_crawl_finished = last_crawl.get("finished")
@@ -596,6 +593,8 @@ class CrawlConfigOps:
             update_query["lastCrawlSize"] = sum(
                 file_.get("size", 0) for file_ in last_crawl.get("files", [])
             )
+            update_query["lastCrawlStopping"] = last_crawl.get("stopping", False)
+            update_query["isCrawlRunning"] = False
 
             if last_crawl_finished:
                 update_query["lastRun"] = last_crawl_finished
@@ -614,16 +613,16 @@ class CrawlConfigOps:
 
         return result is not None
 
-    def _add_curr_crawl_stats(
-        self, crawlconfig: CrawlConfigOut, crawl: Optional[CrawlOut]
-    ):
+    async def _add_running_curr_crawl_stats(self, crawlconfig: CrawlConfigOut):
         """Add stats from current running crawl, if any"""
+        crawl = await self.get_running_crawl(crawlconfig.id)
         if not crawl:
             return
 
         crawlconfig.lastCrawlState = crawl.state
         crawlconfig.lastCrawlSize = crawl.stats.size if crawl.stats else 0
         crawlconfig.lastCrawlStopping = crawl.stopping
+        crawlconfig.isCrawlRunning = True
 
     async def get_crawl_config_out(self, cid: UUID, org: Organization):
         """Return CrawlConfigOut, including state of currently running crawl, if active
@@ -634,9 +633,7 @@ class CrawlConfigOps:
         )
 
         if not crawlconfig.inactive:
-            self._add_curr_crawl_stats(
-                crawlconfig, await self.get_running_crawl(crawlconfig)
-            )
+            await self._add_running_curr_crawl_stats(crawlconfig)
 
         if crawlconfig.profileid:
             crawlconfig.profileName = await self.profiles.get_profile_name(
@@ -713,7 +710,7 @@ class CrawlConfigOps:
 
         query = {"inactive": True}
 
-        is_running = await self.get_running_crawl(crawlconfig) is not None
+        is_running = await self.get_running_crawl(crawlconfig.id) is not None
 
         if is_running:
             raise HTTPException(status_code=400, detail="crawl_running_cant_deactivate")
@@ -827,7 +824,7 @@ class CrawlConfigOps:
         """run new crawl for specified crawlconfig now"""
         self.org_ops.can_write_data(org)
 
-        if await self.get_running_crawl(crawlconfig):
+        if await self.get_running_crawl(crawlconfig.id):
             raise HTTPException(status_code=400, detail="crawl_already_running")
 
         profile_filename = await self.get_profile_filename(crawlconfig.profileid, org)
@@ -922,20 +919,7 @@ async def stats_recompute_all(crawl_configs, crawls, cid: UUID):
     Should only be called when a crawl completes from operator or on migration
     when no crawls are running.
     """
-    update_query: dict[str, object] = {
-        "crawlCount": 0,
-        "crawlSuccessfulCount": 0,
-        "totalSize": 0,
-        "lastCrawlId": None,
-        "lastCrawlStartTime": None,
-        "lastStartedBy": None,
-        "lastStartedByName": None,
-        "lastCrawlTime": None,
-        "lastCrawlState": None,
-        "lastCrawlSize": None,
-        "lastCrawlStopping": False,
-        "isCrawlRunning": False,
-    }
+    update_query: dict[str, object] = {}
 
     match_query = {"cid": cid, "finished": {"$ne": None}}
     count = await crawls.count_documents(match_query)
@@ -948,7 +932,7 @@ async def stats_recompute_all(crawl_configs, crawls, cid: UUID):
         last_crawl: Optional[dict[str, object]] = None
         last_crawl_size = 0
 
-        async for res in crawls.find(match_query).sort("finished", pymongo.DESCENDING):
+        async for res in crawls.find(match_query).sort("finished", pymongo.ASCENDING):
             files = res.get("files", [])
             crawl_size = 0
             for file in files:
@@ -962,7 +946,11 @@ async def stats_recompute_all(crawl_configs, crawls, cid: UUID):
             last_crawl = res
             last_crawl_size = crawl_size
 
-        if last_crawl:
+        # only update last_crawl if no crawls running, otherwise
+        # lastCrawl* stats are already for running crawl
+        running_crawl = await crawl_configs.get_running_crawl(cid)
+
+        if last_crawl and not running_crawl:
             update_query["totalSize"] = total_size
             update_query["crawlSuccessfulCount"] = successful_count
 
@@ -972,6 +960,8 @@ async def stats_recompute_all(crawl_configs, crawls, cid: UUID):
             update_query["lastStartedByName"] = last_crawl.get("userName")
             update_query["lastCrawlState"] = last_crawl.get("state")
             update_query["lastCrawlSize"] = last_crawl_size
+            update_query["lastCrawlStopping"] = last_crawl.get("stopping", False)
+            update_query["isCrawlRunning"] = False
 
             last_crawl_finished = last_crawl.get("finished")
             update_query["lastCrawlTime"] = last_crawl_finished
