@@ -297,26 +297,29 @@ crawler_session_time_limit_seconds: 18000
 
 crawler_liveness_port: 6065
 
-# optional: configure a list of ssh servers to be used as a proxy
-proxies: []
-#  - id: My Proxy # name of the proxy, is shown in the dropdown, has to be lowercase, alphanumeric
-#    url: # proxy connection string, must be a ssh://, socks:// or http:// URL
-#    label: "US Proxy" # label to show in dropdown
-#    country_code: US # Alpha-2 ISO 3991 country code, https://www.iso.org/obp/ui/#search
-#    description: "Proxy" # optional: description to show for the  proxy
-#    ssh_private_key: |  # requred for ssh:// proxies
-#       # ssh-key needed to connect to the SSH server
-#       <secret key>
-#
-#    ssh_host_public_key: |  # optional, for ssh:// proxies-only
-#       # ssh public keys of the SSH server
-#       # use output of `ssh-keyscan $hostname -p $port` for best results
-#       example.invalid:22 SSH-2.0-OpenSSH_9.6p1 Ubuntu-3ubuntu13
-#       example.invalid ssh-rsa AAA[..]
-
 # optional: always proxy with following id by default, if no other proxy settings are set
-# must match one of the proxies in the 'proxies' list
-# default_proxy:
+# must match one of the proxies in the 'browsertrix-proxies' list
+# default_proxy: "proxy-id"
+
+# optional: configure a list of ssh servers to be used as a proxy
+btrix-proxies:
+  enabled: false # enable to deploy proxies configmap and secret
+  crawler_namespace: "crawlers"
+  proxies: []
+  #  - id: proxy-id  # name of the proxy, is shown in the dropdown, has to be lowercase, alphanumeric, can contain dashes
+  #    url: # proxy connection string, must be a ssh://, socks:// or http:// URL
+  #    label: "US Proxy" # label to show in dropdown
+  #    country_code: US # Alpha-2 ISO 3991 country code, https://www.iso.org/obp/ui/#search
+  #    description: "Proxy" # optional: description to show for the  proxy
+  #    ssh_private_key: |  # requred for ssh:// proxies
+  #      # ssh-key needed to connect to the SSH server
+  #        <secret key>
+  #
+  #    ssh_host_public_key: |  # optional, for ssh:// proxies-only
+  #      # ssh public keys of the SSH server
+  #      # use output of `ssh-keyscan $hostname -p $port` for best results
+  #      example.invalid:22 SSH-2.0-OpenSSH_9.6p1 Ubuntu-3ubuntu13
+  #      example.invalid ssh-rsa AAA[..]
 
 # optional: set the uid, gid and fsgroup for the crawler and profilebrowser pods
 # the following values are used by default:

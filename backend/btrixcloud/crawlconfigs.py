@@ -130,25 +130,12 @@ class CrawlConfigOps:
         if "default" not in self.crawler_images_map:
             raise TypeError("The channel list must include a 'default' channel")
 
-        self.crawler_proxies_map = {}
-        with open(os.environ["CRAWLER_PROXIES_JSON"], encoding="utf-8") as fh:
-            proxy_list = json.loads(fh.read())
-            for proxy_data in proxy_list:
-                proxy = CrawlerProxy(
-                    id=proxy_data["id"],
-                    label=proxy_data["label"],
-                    description=proxy_data.get("description", ""),
-                    country_code=proxy_data.get("country_code", ""),
-                    url=proxy_data["url"],
-                    has_host_public_key=bool(proxy_data.get("ssh_host_public_key")),
-                    has_private_key=bool(proxy_data.get("ssh_private_key")),
-                )
+        self._crawler_proxies_last_updated = None
+        self._crawler_proxies_map = None
 
-                self.crawler_proxies_map[proxy.id] = proxy
-
-            self.crawler_proxies = CrawlerProxies(
-                default_proxy_id=DEFAULT_PROXY_ID,
-                servers=list(self.crawler_proxies_map.values()),
+        if DEFAULT_PROXY_ID and DEFAULT_PROXY_ID not in self.crawler_proxies_map:
+            raise ValueError(
+                f"Configured proxies must include DEFAULT_PROXY_ID: {DEFAULT_PROXY_ID}"
             )
 
     def set_crawl_ops(self, ops):
@@ -927,6 +914,48 @@ class CrawlConfigOps:
     ) -> Optional[str]:
         """Get crawler image name by id"""
         return self.crawler_images_map.get(crawler_channel or "")
+
+    @property
+    def crawler_proxies_map(self) -> dict[str, CrawlerProxy]:
+        """Load CrawlerProxy mapping from config"""
+        proxies_last_update_path = os.environ["CRAWLER_PROXIES_LAST_UPDATE"]
+
+        if not os.path.isfile(proxies_last_update_path):
+            return {}
+
+        # return cached data, when last_update timestamp hasn't changed
+        if self._crawler_proxies_last_updated:
+            with open(proxies_last_update_path, encoding="utf-8") as fh:
+                proxies_last_update = int(fh.read().strip())
+                if proxies_last_update == self._crawler_proxies_last_updated:
+                    return self._crawler_proxies_map
+                self._crawler_proxies_last_updated = proxies_last_update
+
+        crawler_proxies_map = {}
+        with open(os.environ["CRAWLER_PROXIES_JSON"], encoding="utf-8") as fh:
+            proxy_list = json.loads(fh.read())
+            for proxy_data in proxy_list:
+                proxy = CrawlerProxy(
+                    id=proxy_data["id"],
+                    label=proxy_data["label"],
+                    description=proxy_data.get("description", ""),
+                    country_code=proxy_data.get("country_code", ""),
+                    url=proxy_data["url"],
+                    has_host_public_key=bool(proxy_data.get("ssh_host_public_key")),
+                    has_private_key=bool(proxy_data.get("ssh_private_key")),
+                )
+
+                crawler_proxies_map[proxy.id] = proxy
+
+        self._crawler_proxies_map = crawler_proxies_map
+        return self._crawler_proxies_map
+
+    @property
+    def crawler_proxies(self):
+        return CrawlerProxies(
+            default_proxy_id=DEFAULT_PROXY_ID,
+            servers=list(self.crawler_proxies_map.values()),
+        )
 
     def get_crawler_proxy(self, proxy_id: str) -> Optional[CrawlerProxy]:
         """Get crawlerProxy by id"""

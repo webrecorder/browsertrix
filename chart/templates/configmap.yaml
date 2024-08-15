@@ -53,7 +53,9 @@ data:
   STORAGES_JSON: "/ops-configs/storages.json"
 
   CRAWLER_CHANNELS_JSON: "/ops-configs/crawler_channels.json"
-  CRAWLER_PROXIES_JSON: "/ops-configs/crawler_proxies.json"
+
+  CRAWLER_PROXIES_LAST_UPDATE: "/ops-proxy-configs/crawler_proxies_last_update"
+  CRAWLER_PROXIES_JSON: "/ops-proxy-configs/crawler_proxies.json"
 
   DEFAULT_PROXY_ID: "{{ .Values.default_proxy }}"
 

@@ -5,7 +5,6 @@ kind: Secret
 metadata:
   name: proxies
   namespace: {{ .Values.crawler_namespace }}
-#type: kubernetes.io/ssh-auth
 type: Opaque
 stringData:
 {{- range .Values.proxies }}
@@ -31,4 +30,15 @@ stringData:
     root:x:0:
     btrix:x:{{ .Values.crawler_gid | default 201407 }}:
 
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ops-proxy-configs
+  namespace: {{ .Release.Namespace }}
+
+type: Opaque
+data:
+  crawler_proxies_last_update: {{ now | unixEpoch | toString | b64enc | quote }}
+  crawler_proxies.json: {{ .Values.proxies | toJson | b64enc | quote }}
 {{- end }}
