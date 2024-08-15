@@ -12,6 +12,12 @@ The first step in creating a new [crawl workflow](crawl-workflows.md) is to choo
 
 ## Scope
 
+??? example "Crawling with HTTP basic auth"
+
+    Both URL List and Seeded crawls support [HTTP Basic Auth](https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication) which can be provided as part of the URL, for example: `https://username:password@example.com`.
+    
+    **These credentials WILL BE WRITTEN into the archive.** We recommend exercising caution and only archiving with dedicated archival accounts, changing your password or deleting the account when finished.
+
 ### List of URLs
 
 `URL List`{ .badge-blue } `Seeded Crawl`{ .badge-orange }
