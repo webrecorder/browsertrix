@@ -76,6 +76,10 @@ spec:
       secret:
         secretName: proxies
         defaultMode: 0600
+    - name: proxies-passwd-hack
+      secret:
+        secretName: proxies-passwd-hack
+        defaultMode: 0600
     {% endif %}
 
   affinity:
@@ -171,11 +175,11 @@ spec:
           subPath: {{ proxy_id }}-known-hosts
           readOnly: true
       {% endif %}
-        - name: proxies
+        - name: proxies-passwd-hack
           mountPath: /etc/passwd
           subPath: passwd
           readOnly: true
-        - name: proxies
+        - name: proxies-passwd-hack
           mountPath: /etc/group
           subPath: group
           readOnly: true

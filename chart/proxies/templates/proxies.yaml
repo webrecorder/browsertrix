@@ -20,16 +20,6 @@ stringData:
 {{- end }}
 
 {{- end }}
-
-  # slightly hacky: override /etc/passwd and /etc/group in crawler to be able to ssh to proxies
-  passwd: |
-    root:x:0:0:root:/root:/bin/bash
-    btrix:btrix:{{ .Values.crawler_uid | default 201407 }}:{{ .Values.crawler_gid | default 201407 }}::/tmp/btrix:/bin/sh
-
-  group: |
-    root:x:0:
-    btrix:x:{{ .Values.crawler_gid | default 201407 }}:
-
 ---
 apiVersion: v1
 kind: Secret
