@@ -774,15 +774,19 @@ class OrgOps:
         If is_qa is true, also update seperate qa only counter
         """
         # pylint: disable=too-many-return-statements, too-many-locals
-        key = "crawlExecSeconds" if is_exec_time else "usage"
         yymm = dt_now().strftime("%Y-%m")
-        inc_query = {f"{key}.{yymm}": duration}
-        if is_qa:
+        inc_query = {}
+
+        if not is_qa:
+            key = "crawlExecSeconds" if is_exec_time else "usage"
+            inc_query[f"{key}.{yymm}"] = duration
+        else:
             qa_key = "qaCrawlExecSeconds" if is_exec_time else "qaUsage"
             inc_query[f"{qa_key}.{yymm}"] = duration
+
         await self.orgs.find_one_and_update({"_id": oid}, {"$inc": inc_query})
 
-        if not is_exec_time:
+        if not is_exec_time or is_qa:
             return
 
         org = await self.get_org_by_id(oid)

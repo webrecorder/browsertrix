@@ -1,5 +1,5 @@
 export const ROUTES = {
-  admin: "/",
+  home: "/",
   join: "/join/:token",
   signUp: "/sign-up",
   acceptInvite: "/invite/accept/:token",

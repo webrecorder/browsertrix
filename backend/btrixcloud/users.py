@@ -37,7 +37,7 @@ from .models import (
     SuccessResponse,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
-from .utils import is_bool
+from .utils import is_bool, dt_now
 
 from .auth import (
     init_jwt_auth,
@@ -525,13 +525,13 @@ class UserManager:
 
         If a FailedLogin object doesn't already exist, create it
         """
-        failed_login = FailedLogin(id=uuid4(), email=email)
+        failed_login = FailedLogin(id=uuid4(), email=email, attempted=dt_now())
 
         await self.failed_logins.find_one_and_update(
             {"email": email},
             {
                 "$setOnInsert": failed_login.to_dict(exclude={"count", "attempted"}),
-                "$set": {"attempted": failed_login.dict(include={"attempted"})},
+                "$set": {"attempted": failed_login.attempted},
                 "$inc": {"count": 1},
             },
             upsert=True,
@@ -606,10 +606,8 @@ def init_auth_router(user_manager: UserManager) -> APIRouter:
         email: EmailStr = Body(..., embed=True),
     ):
         user = await user_manager.get_by_email(email)
-        if not user:
-            return None
-
-        await user_manager.forgot_password(user, request)
+        if user:
+            await user_manager.forgot_password(user, request)
         return {"success": True}
 
     @auth_router.post("/reset-password", response_model=SuccessResponse)

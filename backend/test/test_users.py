@@ -78,6 +78,45 @@ def test_me_id(admin_auth_headers, default_org_id):
     assert r.status_code == 404
 
 
+def test_login_user_info(admin_auth_headers, crawler_userid, default_org_id):
+    # Get default org info for comparison
+    r = requests.get(f"{API_PREFIX}/orgs", headers=admin_auth_headers)
+    default_org = [org for org in r.json()["items"] if org["default"]][0]
+
+    # Log in and check response
+    r = requests.post(
+        f"{API_PREFIX}/auth/jwt/login",
+        data={
+            "username": CRAWLER_USERNAME,
+            "password": CRAWLER_PW,
+            "grant_type": "password",
+        },
+    )
+    data = r.json()
+    assert r.status_code == 200
+    assert data["access_token"]
+    assert data["token_type"] == "bearer"
+
+    user_info = data["user_info"]
+    assert user_info
+
+    assert user_info["id"] == crawler_userid
+    assert user_info["name"] == "new-crawler"
+    assert user_info["email"] == CRAWLER_USERNAME
+    assert user_info["is_superuser"] is False
+    assert user_info["is_verified"]
+
+    user_orgs = user_info["orgs"]
+    assert len(user_orgs) == 1
+    org = user_orgs[0]
+
+    assert org["id"] == default_org_id
+    assert org["name"] == default_org["name"]
+    assert org["slug"] == default_org["slug"]
+    assert org["default"]
+    assert org["role"] == 20
+
+
 def test_login_case_insensitive_email():
     r = requests.post(
         f"{API_PREFIX}/auth/jwt/login",
@@ -420,6 +459,21 @@ def test_user_change_role(admin_auth_headers, default_org_id):
 
     assert r.status_code == 200
     assert r.json()["updated"] == True
+
+
+def test_forgot_password():
+    r = requests.post(
+        f"{API_PREFIX}/auth/forgot-password", json={"email": "no-such-user@example.com"}
+    )
+    # always return success for security reasons even if user doesn't exist
+    assert r.status_code == 202
+    detail = r.json()["success"] == True
+
+    r = requests.post(
+        f"{API_PREFIX}/auth/forgot-password", json={"email": VALID_USER_EMAIL}
+    )
+    assert r.status_code == 202
+    detail = r.json()["success"] == True
 
 
 def test_reset_invalid_password(admin_auth_headers):

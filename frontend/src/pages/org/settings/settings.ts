@@ -210,10 +210,7 @@ export class OrgSettings extends BtrixElement {
                       : this.orgSlug
                   }`,
                 )}
-                @sl-input=${(e: InputEvent) => {
-                  const input = e.target as SlInput;
-                  this.slugValue = input.value;
-                }}
+                @sl-input=${this.handleSlugInput}
               ></sl-input>
             `,
             msg(
@@ -244,6 +241,19 @@ export class OrgSettings extends BtrixElement {
         </footer>
       </form>
     </div>`;
+  }
+
+  private handleSlugInput(e: InputEvent) {
+    const input = e.target as SlInput;
+    // Ideally this would match against the full character map that slugify uses
+    // but this'll do for most use cases
+    const end = input.value.match(/[\s*_+~.,()'"!\-:@]$/g) ? "-" : "";
+    input.value = slugifyStrict(input.value) + end;
+    this.slugValue = slugifyStrict(input.value);
+
+    input.setCustomValidity(
+      this.slugValue.length < 2 ? msg("URL Identifier too short") : "",
+    );
   }
 
   private renderMembers() {

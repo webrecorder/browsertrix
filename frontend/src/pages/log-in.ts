@@ -374,7 +374,7 @@ export class LogInPage extends LiteElement {
         let message = msg("Sorry, invalid username or password");
         if (e.statusCode === 429) {
           message = msg(
-            "Sorry, too many failed login attempts. A reset password link has been sent to your email.",
+            "Sorry, too many failed login attempts. If this is a valid email, a reset password link has been sent to your email.",
           );
         }
         this.formStateService.send({

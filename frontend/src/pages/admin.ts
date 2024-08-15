@@ -17,12 +17,18 @@ import { AppStateService } from "@/utils/state";
 import { formatAPIUser } from "@/utils/user";
 
 /**
- * Superadmin home page
+ * Home page when org is not selected.
+ *
+ * Uses custom redirect instead of needLogin decorator to suppress "need login"
+ * message when accessing root URL.
+ *
+ * Only accessed by superadmins. Regular users will be redirected their org.
+ * See https://github.com/webrecorder/browsertrix/issues/1972
  */
 @localized()
-@customElement("btrix-admin")
+@customElement("btrix-home")
 @needLogin
-export class Admin extends LiteElement {
+export class Home extends LiteElement {
   @state()
   private orgList?: OrgData[];
 
@@ -46,6 +52,19 @@ export class Admin extends LiteElement {
   }
 
   private readonly validateOrgNameMax = maxLengthValidator(40);
+
+  connectedCallback() {
+    console.log("saldfhjkass");
+    if (this.authState) {
+      if (this.slug) {
+        this.navTo(`/orgs/${this.slug}`);
+      } else {
+        super.connectedCallback();
+      }
+    } else {
+      this.navTo("/log-in");
+    }
+  }
 
   willUpdate(changedProperties: PropertyValues) {
     if (changedProperties.has("appState.userInfo") && this.userInfo) {

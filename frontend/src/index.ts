@@ -79,6 +79,7 @@ export class App extends LiteElement {
     } catch (e) {
       console.debug(e);
     }
+    this.syncViewState();
     if (authState) {
       this.authService.saveLogin(authState);
     }
@@ -102,8 +103,15 @@ export class App extends LiteElement {
   }
 
   willUpdate(changedProperties: Map<string, unknown>) {
-    if (changedProperties.get("viewState")) {
-      this.updateOrgSlugIfNeeded();
+    if (changedProperties.has("viewState")) {
+      if (this.viewState.route === "orgs") {
+        this.navigate(this.orgBasePath);
+      } else if (
+        changedProperties.get("viewState") &&
+        this.viewState.route === "org"
+      ) {
+        this.updateOrgSlugIfNeeded();
+      }
     }
   }
 
@@ -644,10 +652,8 @@ export class App extends LiteElement {
           .viewState=${this.viewState}
         ></btrix-reset-password>`;
 
-      case "admin":
-        return html`<btrix-admin
-          class="w-full md:bg-neutral-50"
-        ></btrix-admin>`;
+      case "home":
+        return html`<btrix-home class="w-full md:bg-neutral-50"></btrix-home>`;
 
       case "orgs":
         return html`<btrix-orgs class="w-full md:bg-neutral-50"></btrix-orgs>`;
@@ -656,11 +662,11 @@ export class App extends LiteElement {
         const slug = this.viewState.params.slug;
         const orgPath = this.viewState.pathname;
         const pathname = this.getLocationPathname();
-        const orgTab: OrgTab =
-          (pathname
+        const orgTab =
+          pathname
             .slice(pathname.indexOf(slug) + slug.length)
             .replace(/(^\/|\/$)/, "")
-            .split("/")[0] as "" | OrgTab) || "dashboard";
+            .split("/")[0] || "home";
         return html`<btrix-org
           class="w-full"
           .viewStateData=${this.viewState.data}

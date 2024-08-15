@@ -21,7 +21,7 @@ from fastapi import (
 
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
-from .models import User
+from .models import User, UserOut
 from .utils import dt_now
 
 
@@ -57,6 +57,7 @@ class BearerResponse(BaseModel):
 
     access_token: str
     token_type: str
+    user_info: UserOut
 
 
 # ============================================================================
@@ -181,10 +182,12 @@ def init_jwt_auth(user_manager):
 
     auth_jwt_router = APIRouter()
 
-    def get_bearer_response(user: User):
+    def get_bearer_response(user: User, user_info: UserOut):
         """get token, return bearer response for user"""
         token = create_access_token(user)
-        return BearerResponse(access_token=token, token_type="bearer")
+        return BearerResponse(
+            access_token=token, token_type="bearer", user_info=user_info
+        )
 
     @auth_jwt_router.post("/login", response_model=BearerResponse)
     async def login(
@@ -246,10 +249,12 @@ def init_jwt_auth(user_manager):
 
         # successfully logged in, reset failed logins, return user
         await user_manager.reset_failed_logins(login_email)
-        return get_bearer_response(user)
+        user_info = await user_manager.get_user_info_with_orgs(user)
+        return get_bearer_response(user, user_info)
 
     @auth_jwt_router.post("/refresh", response_model=BearerResponse)
     async def refresh_jwt(user=Depends(current_active_user)):
-        return get_bearer_response(user)
+        user_info = await user_manager.get_user_info_with_orgs(user)
+        return get_bearer_response(user, user_info)
 
     return auth_jwt_router, current_active_user, shared_secret_or_active_user
