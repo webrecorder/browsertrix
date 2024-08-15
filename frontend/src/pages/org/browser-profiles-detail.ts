@@ -8,18 +8,13 @@ import queryString from "query-string";
 
 import type { Profile, ProfileWorkflow } from "./types";
 
-import { TailwindElement } from "@/classes/TailwindElement";
+import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
-import { APIController } from "@/controllers/api";
-import { NavigateController } from "@/controllers/navigate";
-import { NotifyController } from "@/controllers/notify";
 import type { BrowserConnectionChange } from "@/features/browser-profiles/profile-browser";
 import { isApiError } from "@/utils/api";
-import type { AuthState } from "@/utils/AuthService";
 import { maxLengthValidator } from "@/utils/form";
 import { formatNumber, getLocale } from "@/utils/localization";
 import { isArchivingDisabled } from "@/utils/orgs";
-import appState, { use } from "@/utils/state";
 
 const DESCRIPTION_MAXLENGTH = 500;
 
@@ -28,28 +23,18 @@ const DESCRIPTION_MAXLENGTH = 500;
  * ```ts
  * <btrix-browser-profiles-detail
  *  authState=${authState}
- *  orgId=${orgId}
  *  profileId=${profileId}
  * ></btrix-browser-profiles-detail>
  * ```
  */
 @localized()
 @customElement("btrix-browser-profiles-detail")
-export class BrowserProfilesDetail extends TailwindElement {
-  @property({ type: Object, attribute: false })
-  authState!: AuthState;
-
-  @property({ type: String, attribute: false })
-  orgId!: string;
-
+export class BrowserProfilesDetail extends BtrixElement {
   @property({ type: String })
   profileId!: string;
 
   @property({ type: Boolean })
   isCrawler = false;
-
-  @use()
-  appState = appState;
 
   @state()
   private profile?: Profile;
@@ -81,16 +66,8 @@ export class BrowserProfilesDetail extends TailwindElement {
   @query("#discardChangesDialog")
   private readonly discardChangesDialog?: Dialog | null;
 
-  private readonly api = new APIController(this);
-  private readonly navigate = new NavigateController(this);
-  private readonly notify = new NotifyController(this);
-
   private readonly validateNameMax = maxLengthValidator(50);
   private readonly validateDescriptionMax = maxLengthValidator(500);
-
-  get org() {
-    return this.appState.org;
-  }
 
   disconnectedCallback() {
     if (this.browserId) {
@@ -227,8 +204,6 @@ export class BrowserProfilesDetail extends TailwindElement {
                     <div class="flex flex-1 flex-col gap-2">
                       <btrix-profile-browser
                         class="flex-1 overflow-hidden rounded border"
-                        .authState=${this.authState}
-                        orgId=${this.orgId}
                         browserId=${ifDefined(this.browserId)}
                         .origins=${this.profile?.origins}
                         @btrix-browser-load=${() =>
@@ -633,7 +608,6 @@ export class BrowserProfilesDetail extends TailwindElement {
     try {
       const data = await this.api.fetch<Profile & { error: boolean }>(
         `/orgs/${this.orgId}/profiles/${this.profile!.id}`,
-        this.authState!,
         {
           method: "DELETE",
         },
@@ -677,7 +651,6 @@ export class BrowserProfilesDetail extends TailwindElement {
 
     return this.api.fetch<{ browserid: string }>(
       `/orgs/${this.orgId}/profiles/browser`,
-      this.authState!,
       {
         method: "POST",
         body: JSON.stringify(params),
@@ -686,13 +659,9 @@ export class BrowserProfilesDetail extends TailwindElement {
   }
 
   private async deleteBrowser(id: string) {
-    return this.api.fetch(
-      `/orgs/${this.orgId}/profiles/browser/${id}`,
-      this.authState!,
-      {
-        method: "DELETE",
-      },
-    );
+    return this.api.fetch(`/orgs/${this.orgId}/profiles/browser/${id}`, {
+      method: "DELETE",
+    });
   }
 
   /**
@@ -715,7 +684,6 @@ export class BrowserProfilesDetail extends TailwindElement {
   private async getProfile() {
     const data = await this.api.fetch<Profile>(
       `/orgs/${this.orgId}/profiles/${this.profileId}`,
-      this.authState!,
     );
 
     return data;
@@ -734,7 +702,6 @@ export class BrowserProfilesDetail extends TailwindElement {
     try {
       const data = await this.api.fetch<{ updated: boolean }>(
         `/orgs/${this.orgId}/profiles/${this.profileId}`,
-        this.authState!,
         {
           method: "PATCH",
           body: JSON.stringify(params),
@@ -783,7 +750,6 @@ export class BrowserProfilesDetail extends TailwindElement {
     try {
       const data = await this.api.fetch<{ updated: boolean }>(
         `/orgs/${this.orgId}/profiles/${this.profileId}`,
-        this.authState!,
         {
           method: "PATCH",
           body: JSON.stringify(params),

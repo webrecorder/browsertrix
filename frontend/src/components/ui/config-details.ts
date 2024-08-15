@@ -12,7 +12,6 @@ import { RelativeDuration } from "./relative-duration";
 import type { CrawlConfig, Seed, SeedConfig } from "@/pages/org/types";
 import type { Collection } from "@/types/collection";
 import { isApiError } from "@/utils/api";
-import type { AuthState } from "@/utils/AuthService";
 import { DEPTH_SUPPORTED_SCOPES } from "@/utils/crawler";
 import { humanizeSchedule } from "@/utils/cron";
 import LiteElement, { html } from "@/utils/LiteElement";
@@ -21,7 +20,6 @@ import LiteElement, { html } from "@/utils/LiteElement";
  * Usage:
  * ```ts
  * <btrix-config-details
- *   .authState=${this.authState!}
  *   .crawlConfig=${this.crawlConfig}
  * ></btrix-config-details>
  * ```
@@ -29,9 +27,6 @@ import LiteElement, { html } from "@/utils/LiteElement";
 @localized()
 @customElement("btrix-config-details")
 export class ConfigDetails extends LiteElement {
-  @property({ type: Object })
-  authState!: AuthState;
-
   @property({ type: Object })
   crawlConfig?: CrawlConfig;
 
@@ -505,7 +500,6 @@ export class ConfigDetails extends LiteElement {
       for (const collectionId of this.crawlConfig.autoAddCollections) {
         const data = await this.apiFetch<Collection | undefined>(
           `/orgs/${orgId}/collections/${collectionId}`,
-          this.authState!,
         );
         if (data) {
           collections.push(data);

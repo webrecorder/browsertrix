@@ -5,7 +5,6 @@ import { customElement, property, state } from "lit/decorators.js";
 import capitalize from "lodash/fp/capitalize";
 
 import type { CrawlerChannel } from "@/pages/org/types";
-import type { AuthState } from "@/utils/AuthService";
 import LiteElement from "@/utils/LiteElement";
 
 type SelectCrawlerChangeDetail = {
@@ -31,7 +30,6 @@ type CrawlerChannelsAPIResponse = {
  * ```ts
  * <btrix-select-crawler
  *   authState=${authState}
- *   orgId=${orgId}
  *   on-change=${({value}) => selectedCrawler = value}
  * ></btrix-select-crawler>
  * ```
@@ -41,12 +39,6 @@ type CrawlerChannelsAPIResponse = {
 @customElement("btrix-select-crawler")
 @localized()
 export class SelectCrawler extends LiteElement {
-  @property({ type: Object })
-  authState!: AuthState;
-
-  @property({ type: String })
-  orgId!: string;
-
   @property({ type: String })
   crawlerChannel?: string;
 
@@ -164,7 +156,6 @@ export class SelectCrawler extends LiteElement {
     const data: CrawlerChannelsAPIResponse =
       await this.apiFetch<CrawlerChannelsAPIResponse>(
         `/orgs/${this.orgId}/crawlconfigs/crawler-channels`,
-        this.authState!,
       );
 
     return data.channels;

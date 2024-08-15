@@ -4,34 +4,23 @@ import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import queryString from "query-string";
 
-import { TailwindElement } from "@/classes/TailwindElement";
+import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
-import { APIController } from "@/controllers/api";
-import { NavigateController } from "@/controllers/navigate";
-import { NotifyController } from "@/controllers/notify";
 import type { BrowserConnectionChange } from "@/features/browser-profiles/profile-browser";
 import { isApiError } from "@/utils/api";
-import type { AuthState } from "@/utils/AuthService";
 
 /**
  * Usage:
  * ```ts
  * <btrix-browser-profiles-new
  *  authState=${authState}
- *  orgId=${orgId}
  *  browserId=${browserId}
  * ></btrix-browser-profiles-new>
  * ```
  */
 @localized()
 @customElement("btrix-browser-profiles-new")
-export class BrowserProfilesNew extends TailwindElement {
-  @property({ type: Object })
-  authState!: AuthState;
-
-  @property({ type: String })
-  orgId!: string;
-
+export class BrowserProfilesNew extends BtrixElement {
   @property({ type: String })
   browserId!: string;
 
@@ -49,10 +38,6 @@ export class BrowserProfilesNew extends TailwindElement {
     url: "",
     proxyId: null,
   };
-
-  private readonly api = new APIController(this);
-  private readonly notify = new NotifyController(this);
-  private readonly nav = new NavigateController(this);
 
   @state()
   private isSubmitting = false;
@@ -77,9 +62,9 @@ export class BrowserProfilesNew extends TailwindElement {
         <a
           class="text-sm font-medium text-neutral-500 hover:text-neutral-600"
           href=${this.browserParams.profileId
-            ? `${this.nav.orgBasePath}/browser-profiles/profile/${this.browserParams.profileId}`
-            : `${this.nav.orgBasePath}/browser-profiles`}
-          @click=${this.nav.link}
+            ? `${this.navigate.orgBasePath}/browser-profiles/profile/${this.browserParams.profileId}`
+            : `${this.navigate.orgBasePath}/browser-profiles`}
+          @click=${this.navigate.link}
         >
           <sl-icon
             name="arrow-left"
@@ -132,8 +117,6 @@ export class BrowserProfilesNew extends TailwindElement {
       <div class="sticky top-0 flex h-screen flex-col gap-2">
         <btrix-profile-browser
           class="flex-1 overflow-hidden rounded-lg border"
-          .authState=${this.authState}
-          orgId=${this.orgId}
           browserId=${this.browserId}
           initialNavigateUrl=${ifDefined(this.browserParams.navigateUrl)}
           @btrix-browser-load=${() => (this.isBrowserLoaded = true)}
@@ -208,7 +191,7 @@ export class BrowserProfilesNew extends TailwindElement {
     if (this.browserId) {
       await this.deleteBrowser(this.browserId);
     }
-    this.nav.to(`${this.nav.orgBasePath}/browser-profiles`);
+    this.navigate.to(`${this.navigate.orgBasePath}/browser-profiles`);
   }
 
   private renderBrowserProfileControls() {
@@ -297,8 +280,8 @@ export class BrowserProfilesNew extends TailwindElement {
       proxyId,
     });
 
-    this.nav.to(
-      `${this.nav.orgBasePath}/browser-profiles/profile/browser/${
+    this.navigate.to(
+      `${this.navigate.orgBasePath}/browser-profiles/profile/browser/${
         data.browserid
       }?${queryString.stringify({
         url,
@@ -325,7 +308,6 @@ export class BrowserProfilesNew extends TailwindElement {
     try {
       const data = await this.api.fetch<{ id: string }>(
         `/orgs/${this.orgId}/profiles`,
-        this.authState!,
         {
           method: "POST",
           body: JSON.stringify(params),
@@ -338,8 +320,8 @@ export class BrowserProfilesNew extends TailwindElement {
         icon: "check2-circle",
       });
 
-      this.nav.to(
-        `${this.nav.orgBasePath}/browser-profiles/profile/${data.id}`,
+      this.navigate.to(
+        `${this.navigate.orgBasePath}/browser-profiles/profile/${data.id}`,
       );
     } catch (e) {
       this.isSubmitting = false;
@@ -382,7 +364,6 @@ export class BrowserProfilesNew extends TailwindElement {
 
     return this.api.fetch<{ browserid: string }>(
       `/orgs/${this.orgId}/profiles/browser`,
-      this.authState!,
       {
         method: "POST",
         body: JSON.stringify(params),
@@ -394,7 +375,6 @@ export class BrowserProfilesNew extends TailwindElement {
     try {
       const data = await this.api.fetch(
         `/orgs/${this.orgId}/profiles/browser/${id}`,
-        this.authState!,
         {
           method: "DELETE",
         },

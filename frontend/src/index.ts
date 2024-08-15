@@ -2,7 +2,6 @@ import { localized, msg, str } from "@lit/localize";
 import type { SlDialog } from "@shoelace-style/shoelace";
 import { nothing, render, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
-import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 
 import "broadcastchannel-polyfill";
@@ -10,24 +9,23 @@ import "./utils/polyfills";
 
 import type { OrgTab } from "./pages/org";
 import { ROUTES } from "./routes";
-import type { CurrentUser, UserOrg } from "./types/user";
+import type { UserInfo, UserOrg } from "./types/user";
 import APIRouter, { type ViewState } from "./utils/APIRouter";
 import AuthService, {
-  type Auth,
   type AuthEventDetail,
-  type AuthState,
   type LoggedInEventDetail,
   type NeedLoginEventDetail,
 } from "./utils/AuthService";
 import { DEFAULT_MAX_SCALE } from "./utils/crawler";
 import LiteElement, { html } from "./utils/LiteElement";
-import appState, { AppStateService, use } from "./utils/state";
+import { AppStateService } from "./utils/state";
 import { formatAPIUser } from "./utils/user";
 
 import type { NavigateEventDetail } from "@/controllers/navigate";
 import type { NotifyEventDetail } from "@/controllers/notify";
 import { theme } from "@/theme";
 import type { AppSettings } from "@/types/app";
+import { type Auth } from "@/types/auth";
 import brandLockupColor from "~assets/brand/browsertrix-lockup-color.svg";
 
 import "./shoelace";
@@ -65,9 +63,6 @@ export class App extends LiteElement {
   private readonly router = new APIRouter(ROUTES);
   authService = new AuthService();
 
-  @use()
-  appState = appState;
-
   @state()
   private viewState!: ViewState;
 
@@ -78,16 +73,13 @@ export class App extends LiteElement {
   private readonly globalDialog!: SlDialog;
 
   async connectedCallback() {
-    let authState: AuthState = null;
+    let authState: AuthService["authState"] = null;
     try {
       authState = await AuthService.initSessionStorage();
     } catch (e) {
       console.debug(e);
     }
     this.syncViewState();
-    if (this.viewState.route === "org") {
-      AppStateService.updateOrgSlug(this.viewState.params.slug || null);
-    }
     if (authState) {
       this.authService.saveLogin(authState);
       void this.updateUserInfo();
@@ -115,24 +107,37 @@ export class App extends LiteElement {
         changedProperties.get("viewState") &&
         this.viewState.route === "org"
       ) {
-        AppStateService.updateOrgSlug(this.viewState.params.slug || null);
+        this.updateOrgSlugIfNeeded();
       }
     }
   }
 
+  getLocationPathname() {
+    return window.location.pathname;
+  }
+
   private syncViewState() {
+    const pathname = this.getLocationPathname();
+
     if (
       this.authService.authState &&
-      (window.location.pathname === "/log-in" ||
-        window.location.pathname === "/reset-password")
+      (pathname === "/log-in" || pathname === "/reset-password")
     ) {
       // Redirect to logged in home page
       this.viewState = this.router.match(ROUTES.home);
       window.history.replaceState(this.viewState, "", this.viewState.pathname);
     } else {
       this.viewState = this.router.match(
-        `${window.location.pathname}${window.location.search}`,
+        `${pathname}${window.location.search}`,
       );
+      this.updateOrgSlugIfNeeded();
+    }
+  }
+
+  private updateOrgSlugIfNeeded() {
+    const slug = this.viewState.params.slug || null;
+    if (this.viewState.route === "org" && slug !== this.appState.orgSlug) {
+      AppStateService.updateOrgSlug(slug);
     }
   }
 
@@ -156,7 +161,7 @@ export class App extends LiteElement {
 
       if (
         orgs.length &&
-        !this.appState.userInfo!.isSuperAdmin &&
+        !this.userInfo!.isSuperAdmin &&
         !this.appState.orgSlug
       ) {
         const firstOrg = orgs[0].slug;
@@ -256,7 +261,7 @@ export class App extends LiteElement {
   }
 
   private renderAlertBanner() {
-    if (this.appState.userInfo?.orgs && !this.appState.userInfo.orgs.length) {
+    if (this.userInfo?.orgs && !this.userInfo.orgs.length) {
       return this.renderNoOrgsBanner();
     }
   }
@@ -287,7 +292,7 @@ export class App extends LiteElement {
   }
 
   private renderNavBar() {
-    const isSuperAdmin = this.appState.userInfo?.isSuperAdmin;
+    const isSuperAdmin = this.userInfo?.isSuperAdmin;
     let homeHref = "/";
     if (!isSuperAdmin && this.appState.orgSlug) {
       homeHref = this.orgBasePath;
@@ -382,7 +387,7 @@ export class App extends LiteElement {
                       <sl-icon slot="prefix" name="gear"></sl-icon>
                       ${msg("Account Settings")}
                     </sl-menu-item>
-                    ${this.appState.userInfo?.isSuperAdmin
+                    ${this.userInfo?.isSuperAdmin
                       ? html` <sl-menu-item
                           @click=${() => this.navigate(ROUTES.usersInvite)}
                         >
@@ -417,15 +422,15 @@ export class App extends LiteElement {
   }
 
   private renderOrgs() {
-    const orgs = this.appState.userInfo?.orgs;
+    const orgs = this.userInfo?.orgs;
     if (!orgs) return;
 
-    const selectedOption = this.appState.orgSlug
-      ? orgs.find(({ slug }) => slug === this.appState.orgSlug)
+    const selectedOption = this.orgSlug
+      ? orgs.find(({ slug }) => slug === this.orgSlug)
       : { slug: "", name: msg("All Organizations") };
     if (!selectedOption) {
       console.debug(
-        `Couldn't find organization with slug ${this.appState.orgSlug}`,
+        `Couldn't find organization with slug ${this.orgSlug}`,
         orgs,
       );
       return;
@@ -435,13 +440,21 @@ export class App extends LiteElement {
     const orgNameLength = 50;
 
     return html`
-      <a
-        class="font-medium text-neutral-600"
-        href=${this.orgBasePath}
-        @click=${this.navLink}
-      >
-        ${selectedOption.name.slice(0, orgNameLength)}
-      </a>
+      ${selectedOption.slug
+        ? html`
+            <a
+              class="font-medium text-neutral-600"
+              href=${this.orgBasePath}
+              @click=${this.navLink}
+            >
+              ${selectedOption.name.slice(0, orgNameLength)}
+            </a>
+          `
+        : html`
+            <span class="text-neutral-500">
+              ${selectedOption.name.slice(0, orgNameLength)}
+            </span>
+          `}
       ${when(
         orgs.length > 1,
         () => html`
@@ -457,7 +470,7 @@ export class App extends LiteElement {
                 if (value) {
                   this.navigate(`/orgs/${value}`);
                 } else {
-                  if (this.appState.userInfo) {
+                  if (this.userInfo) {
                     this.clearSelectedOrg();
                   }
                   this.navigate(`/`);
@@ -465,7 +478,7 @@ export class App extends LiteElement {
               }}
             >
               ${when(
-                this.appState.userInfo?.isSuperAdmin,
+                this.userInfo?.isSuperAdmin,
                 () => html`
                   <sl-menu-item
                     type="checkbox"
@@ -494,38 +507,34 @@ export class App extends LiteElement {
   }
 
   private renderMenuUserInfo() {
-    if (!this.appState.userInfo) return;
-    if (this.appState.userInfo.isSuperAdmin) {
+    if (!this.userInfo) return;
+    if (this.userInfo.isSuperAdmin) {
       return html`
         <div class="mb-2">
           <btrix-tag>${msg("Admin")}</btrix-tag>
         </div>
-        <div class="font-medium text-neutral-700">
-          ${this.appState.userInfo.name}
-        </div>
+        <div class="font-medium text-neutral-700">${this.userInfo.name}</div>
         <div class="whitespace-nowrap text-xs text-neutral-500">
-          ${this.appState.userInfo.email}
+          ${this.userInfo.email}
         </div>
       `;
     }
 
-    const orgs = this.appState.userInfo.orgs;
+    const orgs = this.userInfo.orgs;
     if (orgs.length === 1) {
       return html`
         <div class="my-1 font-medium text-neutral-700">${orgs[0].name}</div>
-        <div class="text-neutral-500">${this.appState.userInfo.name}</div>
+        <div class="text-neutral-500">${this.userInfo.name}</div>
         <div class="whitespace-nowrap text-xs text-neutral-500">
-          ${this.appState.userInfo.email}
+          ${this.userInfo.email}
         </div>
       `;
     }
 
     return html`
-      <div class="font-medium text-neutral-700">
-        ${this.appState.userInfo.name}
-      </div>
+      <div class="font-medium text-neutral-700">${this.userInfo.name}</div>
       <div class="whitespace-nowrap text-xs text-neutral-500">
-        ${this.appState.userInfo.email}
+        ${this.userInfo.email}
       </div>
     `;
   }
@@ -597,7 +606,6 @@ export class App extends LiteElement {
         if (this.appState.settings.registrationEnabled) {
           return html`<btrix-sign-up
             class="flex w-full items-center justify-center md:bg-neutral-50"
-            .authState="${this.authService.authState}"
           ></btrix-sign-up>`;
         } else {
           return this.renderNotFoundPage();
@@ -609,14 +617,11 @@ export class App extends LiteElement {
           class="flex w-full items-center justify-center md:bg-neutral-50"
           token="${this.viewState.params.token}"
           @user-info-change="${this.onUserInfoChange}"
-          .authState="${this.authService.authState}"
         ></btrix-verify>`;
 
       case "join":
         return html`<btrix-join
           class="flex w-full items-center justify-center md:bg-neutral-50"
-          .authState="${this.authService.authState}"
-          .userInfo="${this.appState.userInfo ?? undefined}"
           token="${this.viewState.params.token}"
           email="${this.viewState.params.email}"
         ></btrix-join>`;
@@ -624,7 +629,6 @@ export class App extends LiteElement {
       case "acceptInvite":
         return html`<btrix-accept-invite
           class="flex w-full items-center justify-center md:bg-neutral-50"
-          .authState="${this.authService.authState}"
           token="${this.viewState.params.token}"
           email="${this.viewState.params.email}"
         ></btrix-accept-invite>`;
@@ -646,33 +650,22 @@ export class App extends LiteElement {
         ></btrix-reset-password>`;
 
       case "home":
-        return html`<btrix-home
-          class="w-full md:bg-neutral-50"
-          @btrix-update-user-info=${this.updateUserInfo}
-          .authState=${this.authService.authState}
-          .userInfo=${this.appState.userInfo ?? undefined}
-          slug=${ifDefined(this.appState.orgSlug ?? undefined)}
-        ></btrix-home>`;
+        return html`<btrix-home class="w-full md:bg-neutral-50"></btrix-home>`;
 
       case "orgs":
-        return html`<btrix-orgs
-          class="w-full md:bg-neutral-50"
-          .authState="${this.authService.authState}"
-          .userInfo="${this.appState.userInfo ?? undefined}"
-        ></btrix-orgs>`;
+        return html`<btrix-orgs class="w-full md:bg-neutral-50"></btrix-orgs>`;
 
       case "org": {
         const slug = this.viewState.params.slug;
         const orgPath = this.viewState.pathname;
+        const pathname = this.getLocationPathname();
         const orgTab =
-          window.location.pathname
-            .slice(window.location.pathname.indexOf(slug) + slug.length)
+          pathname
+            .slice(pathname.indexOf(slug) + slug.length)
             .replace(/(^\/|\/$)/, "")
             .split("/")[0] || "home";
         return html`<btrix-org
           class="w-full"
-          .authState=${this.authService.authState}
-          .userInfo=${this.appState.userInfo ?? undefined}
           .viewStateData=${this.viewState.data}
           .params=${this.viewState.params}
           .maxScale=${this.appState.settings?.maxScale || DEFAULT_MAX_SCALE}
@@ -685,18 +678,13 @@ export class App extends LiteElement {
       case "accountSettings":
         return html`<btrix-account-settings
           class="mx-auto box-border w-full max-w-screen-desktop p-2 md:py-8"
-          @btrix-update-user-info=${this.updateUserInfo}
-          .authState="${this.authService.authState}"
-          .userInfo="${this.appState.userInfo ?? undefined}"
         ></btrix-account-settings>`;
 
       case "usersInvite": {
-        if (this.appState.userInfo) {
-          if (this.appState.userInfo.isSuperAdmin) {
+        if (this.userInfo) {
+          if (this.userInfo.isSuperAdmin) {
             return html`<btrix-users-invite
               class="mx-auto box-border w-full max-w-screen-desktop p-2 md:py-8"
-              .authState="${this.authService.authState}"
-              .userInfo="${this.appState.userInfo}"
             ></btrix-users-invite>`;
           } else {
             return this.renderNotFoundPage();
@@ -708,12 +696,11 @@ export class App extends LiteElement {
 
       case "crawls":
       case "crawl": {
-        if (this.appState.userInfo) {
-          if (this.appState.userInfo.isSuperAdmin) {
+        if (this.userInfo) {
+          if (this.userInfo.isSuperAdmin) {
             return html`<btrix-crawls
               class="w-full"
               @notify=${this.onNotify}
-              .authState=${this.authService.authState}
               crawlId=${this.viewState.params.crawlId}
             ></btrix-crawls>`;
           } else {
@@ -726,12 +713,10 @@ export class App extends LiteElement {
 
       case "awpUploadRedirect": {
         const { orgId, uploadId } = this.viewState.params;
-        if (this.appState.slugLookup) {
-          const slug = this.appState.slugLookup[orgId];
-          if (slug) {
-            this.navigate(`/orgs/${slug}/items/upload/${uploadId}`);
-            return;
-          }
+        const slug = this.userInfo?.orgs.find((org) => org.id === orgId)?.slug;
+        if (slug) {
+          this.navigate(`/orgs/${slug}/items/upload/${uploadId}`);
+          return;
         }
         // falls through
       }
@@ -868,11 +853,11 @@ export class App extends LiteElement {
     }
   };
 
-  onUserInfoChange(event: CustomEvent<Partial<CurrentUser>>) {
+  onUserInfoChange(event: CustomEvent<Partial<UserInfo>>) {
     AppStateService.updateUserInfo({
-      ...this.appState.userInfo,
+      ...this.userInfo,
       ...event.detail,
-    } as CurrentUser);
+    } as UserInfo);
   }
 
   /**
@@ -915,7 +900,7 @@ export class App extends LiteElement {
   };
 
   async getUserInfo(): Promise<APIUser> {
-    return this.apiFetch("/users/me", this.authService.authState!);
+    return this.apiFetch("/users/me");
   }
 
   private clearUser() {

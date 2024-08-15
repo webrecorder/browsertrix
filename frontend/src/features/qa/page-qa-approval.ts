@@ -3,11 +3,8 @@ import { css, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
 
-import { TailwindElement } from "@/classes/TailwindElement";
-import { APIController } from "@/controllers/api";
-import { NotifyController } from "@/controllers/notify";
+import { BtrixElement } from "@/classes/BtrixElement";
 import type { ArchivedItemPage } from "@/types/crawler";
-import { type AuthState } from "@/utils/AuthService";
 
 export type UpdatePageApprovalDetail = {
   id: ArchivedItemPage["id"];
@@ -22,7 +19,7 @@ export type UpdatePageApprovalDetail = {
  */
 @localized()
 @customElement("btrix-page-qa-approval")
-export class PageQAToolbar extends TailwindElement {
+export class PageQAToolbar extends BtrixElement {
   static styles = css`
     :host {
       --btrix-border: 1px solid var(--sl-color-neutral-300);
@@ -160,12 +157,6 @@ export class PageQAToolbar extends TailwindElement {
     }
   `;
 
-  @property({ type: Object, attribute: false })
-  authState?: AuthState;
-
-  @property({ type: String, attribute: false })
-  orgId?: string;
-
   @property({ type: String, attribute: false })
   itemId?: string;
 
@@ -177,9 +168,6 @@ export class PageQAToolbar extends TailwindElement {
 
   @property({ type: Boolean })
   disabled = false;
-
-  private readonly api = new APIController(this);
-  private readonly notify = new NotifyController(this);
 
   render() {
     const disabled = this.disabled || !this.page;
@@ -252,7 +240,6 @@ export class PageQAToolbar extends TailwindElement {
     try {
       await this.api.fetch(
         `/orgs/${this.orgId}/crawls/${this.itemId}/pages/${this.pageId}`,
-        this.authState!,
         {
           method: "PATCH",
           body: JSON.stringify({ approved }),

@@ -1,5 +1,5 @@
 import { localized, msg, str } from "@lit/localize";
-import { initialState, Task } from "@lit/task";
+import { Task } from "@lit/task";
 import type { SlCheckbox, SlSelect } from "@shoelace-style/shoelace";
 import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
@@ -10,19 +10,14 @@ import queryString from "query-string";
 
 import type { ArchivedItem, Crawl, CrawlState, Workflow } from "./types";
 
-import { TailwindElement } from "@/classes/TailwindElement";
+import { BtrixElement } from "@/classes/BtrixElement";
 import { CopyButton } from "@/components/ui/copy-button";
 import type { PageChangeEvent } from "@/components/ui/pagination";
-import { APIController } from "@/controllers/api";
-import { NavigateController } from "@/controllers/navigate";
-import { NotifyController } from "@/controllers/notify";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import { isApiError } from "@/utils/api";
-import type { Auth, AuthState } from "@/utils/AuthService";
 import { finishedCrawlStates, isActive } from "@/utils/crawler";
 import { isArchivingDisabled } from "@/utils/orgs";
-import appState, { use } from "@/utils/state";
 
 type ArchivedItems = APIPaginatedList<ArchivedItem>;
 type SearchFields = "name" | "firstSeed";
@@ -76,29 +71,17 @@ const sortableFields: Record<
  */
 @localized()
 @customElement("btrix-archived-items")
-export class CrawlsList extends TailwindElement {
+export class CrawlsList extends BtrixElement {
   static FieldLabels: Record<SearchFields, string> = {
     name: msg("Name"),
     firstSeed: msg("Crawl Start URL"),
   };
-
-  @property({ type: Object })
-  authState!: AuthState;
-
-  @property({ type: String })
-  userId!: string;
-
-  @property({ type: String })
-  orgId?: string;
 
   @property({ type: Boolean })
   isCrawler!: boolean;
 
   @property({ type: String })
   itemType: ArchivedItem["type"] | null = null;
-
-  @use()
-  appState = appState;
 
   @state()
   private pagination: Required<APIPaginationQuery> = {
@@ -143,33 +126,14 @@ export class CrawlsList extends TailwindElement {
   @query("#stateSelect")
   stateSelect?: SlSelect;
 
-  private get org() {
-    return this.appState.org;
-  }
-
   private readonly archivedItemsTask = new Task(this, {
     task: async (
-      [
-        orgId,
-        authState,
-        userId,
-        itemType,
-        pagination,
-        orderBy,
-        filterBy,
-        filterByCurrentUser,
-      ],
+      [itemType, pagination, orderBy, filterBy, filterByCurrentUser],
       { signal },
     ) => {
-      if (!orgId || !authState || !userId) {
-        return initialState;
-      }
       try {
         const data = await this.getArchivedItems(
           {
-            orgId,
-            authState,
-            userId,
             itemType,
             pagination,
             orderBy,
@@ -202,9 +166,6 @@ export class CrawlsList extends TailwindElement {
     args: () =>
       // TODO consolidate filters into single fetch params
       [
-        this.orgId,
-        this.authState,
-        this.userId,
         this.itemType,
         this.pagination,
         this.orderBy,
@@ -217,10 +178,6 @@ export class CrawlsList extends TailwindElement {
 
   // For fuzzy search:
   private readonly searchKeys = ["name", "firstSeed"];
-
-  private readonly api = new APIController(this);
-  private readonly navigate = new NavigateController(this);
-  private readonly notify = new NotifyController(this);
 
   private get selectedSearchFilterKey() {
     return Object.keys(CrawlsList.FieldLabels).find((key) =>
@@ -367,8 +324,6 @@ export class CrawlsList extends TailwindElement {
         this.isCrawler && this.orgId,
         () => html`
           <btrix-file-uploader
-            orgId=${this.orgId!}
-            .authState=${this.authState}
             ?open=${this.isUploadingArchive}
             @request-close=${() => (this.isUploadingArchive = false)}
             @uploaded=${() => {
@@ -429,7 +384,6 @@ export class CrawlsList extends TailwindElement {
     ${this.itemToEdit
       ? html`
           <btrix-item-metadata-editor
-            .authState=${this.authState}
             .crawl=${this.itemToEdit}
             ?open=${this.isEditingItem}
             @request-close=${() => (this.isEditingItem = false)}
@@ -517,7 +471,7 @@ export class CrawlsList extends TailwindElement {
         </div>
       </div>
 
-      ${this.userId
+      ${this.userInfo?.id
         ? html` <div class="mt-2 flex h-6 justify-end">
             <label>
               <span class="mr-1 text-xs text-neutral-500"
@@ -619,7 +573,7 @@ export class CrawlsList extends TailwindElement {
   private readonly renderMenuItems = (item: ArchivedItem) => {
     // HACK shoelace doesn't current have a way to override non-hover
     // color without resetting the --sl-color-neutral-700 variable
-    const authToken = this.authState!.headers.Authorization.split(" ")[1];
+    const authToken = this.authState?.headers.Authorization.split(" ")[1];
 
     return html`
       ${when(
@@ -749,9 +703,6 @@ export class CrawlsList extends TailwindElement {
 
   private async getArchivedItems(
     params: {
-      orgId: string;
-      authState: Auth;
-      userId: CrawlsList["userId"];
       itemType: CrawlsList["itemType"];
       pagination: CrawlsList["pagination"];
       orderBy: CrawlsList["orderBy"];
@@ -768,7 +719,7 @@ export class CrawlsList extends TailwindElement {
           : finishedCrawlStates,
         page: params.pagination.page,
         pageSize: params.pagination.pageSize,
-        userid: params.filterByCurrentUser ? params.userId : undefined,
+        userid: params.filterByCurrentUser ? this.userInfo!.id : undefined,
         sortBy: params.orderBy.field,
         sortDirection: params.orderBy.direction === "desc" ? -1 : 1,
         crawlType: params.itemType,
@@ -779,8 +730,7 @@ export class CrawlsList extends TailwindElement {
     );
 
     return this.api.fetch<ArchivedItems>(
-      `/orgs/${params.orgId}/all-crawls?${query}`,
-      params.authState,
+      `/orgs/${this.orgId}/all-crawls?${query}`,
       { signal },
     );
   }
@@ -797,7 +747,6 @@ export class CrawlsList extends TailwindElement {
         firstSeeds: string[];
       } = await this.api.fetch(
         `/orgs/${this.orgId}/all-crawls/search-values?${query}`,
-        this.authState!,
       );
 
       // Update search/filter collection
@@ -836,7 +785,6 @@ export class CrawlsList extends TailwindElement {
     try {
       const _data = await this.api.fetch(
         `/orgs/${item.oid}/${apiPath}/delete`,
-        this.authState!,
         {
           method: "POST",
           body: JSON.stringify({
@@ -884,7 +832,6 @@ export class CrawlsList extends TailwindElement {
   async getWorkflow(crawl: Crawl): Promise<Workflow> {
     const data: Workflow = await this.api.fetch(
       `/orgs/${crawl.oid}/crawlconfigs/${crawl.cid}`,
-      this.authState!,
     );
 
     return data;

@@ -70,9 +70,6 @@ export class NewWorkflowDialog extends LitElement {
     }
   `;
 
-  @property({ type: String })
-  orgId!: string;
-
   @property({ type: Boolean })
   open = false;
 

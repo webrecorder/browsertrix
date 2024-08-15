@@ -15,11 +15,9 @@ import type {
   SelectionChangeDetail,
 } from "./collection-workflow-list";
 
-import { TailwindElement } from "@/classes/TailwindElement";
+import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
 import type { PageChangeEvent } from "@/components/ui/pagination";
-import { APIController } from "@/controllers/api";
-import { NotifyController } from "@/controllers/notify";
 import { type CheckboxChangeEventDetail } from "@/features/archived-items/archived-item-list";
 import type {
   FilterBy,
@@ -36,7 +34,6 @@ import type {
 } from "@/types/api";
 import type { ArchivedItem, Crawl, Upload, Workflow } from "@/types/crawler";
 import { isApiError } from "@/utils/api";
-import type { AuthState } from "@/utils/AuthService";
 import { finishedCrawlStates } from "@/utils/crawler";
 
 const TABS = ["crawl", "upload"] as const;
@@ -73,7 +70,7 @@ const DEFAULT_PAGE_SIZE = 10;
 
 @localized()
 @customElement("btrix-collection-items-dialog")
-export class CollectionItemsDialog extends TailwindElement {
+export class CollectionItemsDialog extends BtrixElement {
   static styles = css`
     btrix-dialog {
       --width: var(--btrix-screen-lg);
@@ -88,15 +85,6 @@ export class CollectionItemsDialog extends TailwindElement {
       min-height: calc(100vh - 8.6rem);
     }
   `;
-
-  @property({ type: Object })
-  authState!: AuthState;
-
-  @property({ type: String })
-  orgId!: string;
-
-  @property({ type: String })
-  userId!: string;
 
   @property({ type: Boolean })
   isCrawler?: boolean;
@@ -168,9 +156,6 @@ export class CollectionItemsDialog extends TailwindElement {
   private readonly dialog!: Dialog;
 
   private savedCollectionItemIDs: string[] = [];
-
-  private readonly api = new APIController(this);
-  private readonly notify = new NotifyController(this);
 
   private readonly tabLabels: Record<Tab, { icon: string; label: string }> = {
     crawl: {
@@ -467,8 +452,6 @@ export class CollectionItemsDialog extends TailwindElement {
 
     return html`<section class="flex-1 p-3">
         <btrix-collection-workflow-list
-          .authState=${this.authState}
-          orgId=${this.orgId}
           collectionId=${this.collectionId}
           .workflows=${this.workflows.items}
           .selection=${this.selection}
@@ -661,7 +644,6 @@ export class CollectionItemsDialog extends TailwindElement {
       requests.push(
         this.api.fetch(
           `/orgs/${this.orgId}/collections/${this.collectionId}/add`,
-          this.authState!,
           {
             method: "POST",
             body: JSON.stringify({ crawlIds: add }),
@@ -673,7 +655,6 @@ export class CollectionItemsDialog extends TailwindElement {
       requests.push(
         this.api.fetch(
           `/orgs/${this.orgId}/collections/${this.collectionId}/remove`,
-          this.authState!,
           {
             method: "POST",
             body: JSON.stringify({ crawlIds: remove }),
@@ -732,9 +713,11 @@ export class CollectionItemsDialog extends TailwindElement {
   }
 
   private async fetchCrawls(pageParams: APIPaginationQuery = {}) {
+    const userId = this.userInfo!.id;
+
     try {
       this.crawls = await this.getCrawls({
-        userid: this.showOnlyMine ? this.userId : undefined,
+        userid: this.showOnlyMine ? userId : undefined,
         collectionId: this.collectionId,
         sortBy: this.sortCrawlsBy.field,
         sortDirection: this.sortCrawlsBy.direction,
@@ -745,7 +728,7 @@ export class CollectionItemsDialog extends TailwindElement {
       });
       if (!this.showOnlyInCollection) {
         this.workflows = await this.getWorkflows({
-          userid: this.showOnlyMine ? this.userId : undefined,
+          userid: this.showOnlyMine ? userId : undefined,
           sortBy:
             // NOTE "finished" field doesn't exist in crawlconfigs,
             // `lastRun` is used instead
@@ -765,9 +748,11 @@ export class CollectionItemsDialog extends TailwindElement {
   }
 
   private async fetchUploads(pageParams: APIPaginationQuery = {}) {
+    const userId = this.userInfo!.id;
+
     try {
       this.uploads = await this.getUploads({
-        userid: this.showOnlyMine ? this.userId : undefined,
+        userid: this.showOnlyMine ? userId : undefined,
         collectionId: this.showOnlyInCollection ? this.collectionId : undefined,
         sortBy: this.sortUploadsBy.field,
         sortDirection: this.sortUploadsBy.direction,
@@ -814,7 +799,6 @@ export class CollectionItemsDialog extends TailwindElement {
     );
     const data = await this.api.fetch<APIPaginatedList<Crawl>>(
       `/orgs/${this.orgId}/crawls?${query}`,
-      this.authState!,
     );
 
     return data;
@@ -833,7 +817,6 @@ export class CollectionItemsDialog extends TailwindElement {
     });
     const data = await this.api.fetch<APIPaginatedList<Workflow>>(
       `/orgs/${this.orgId}/crawlconfigs?${query}`,
-      this.authState!,
     );
 
     return data;
@@ -853,7 +836,6 @@ export class CollectionItemsDialog extends TailwindElement {
     });
     const data = await this.api.fetch<APIPaginatedList<Upload>>(
       `/orgs/${this.orgId}/uploads?${query}`,
-      this.authState!,
     );
 
     return data;
@@ -863,12 +845,10 @@ export class CollectionItemsDialog extends TailwindElement {
     if (searchType === "workflow") {
       return this.api.fetch<SearchValues>(
         `/orgs/${this.orgId}/crawlconfigs/search-values`,
-        this.authState!,
       );
     }
     return this.api.fetch<SearchValues>(
       `/orgs/${this.orgId}/all-crawls/search-values?crawlType=${searchType}`,
-      this.authState!,
     );
   }
 
@@ -877,16 +857,12 @@ export class CollectionItemsDialog extends TailwindElement {
     autoAddCollections,
   }: Pick<Workflow, "id" | "autoAddCollections">) {
     try {
-      await this.api.fetch(
-        `/orgs/${this.orgId}/crawlconfigs/${id}`,
-        this.authState!,
-        {
-          method: "PATCH",
-          body: JSON.stringify({
-            autoAddCollections: autoAddCollections,
-          }),
-        },
-      );
+      await this.api.fetch(`/orgs/${this.orgId}/crawlconfigs/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          autoAddCollections: autoAddCollections,
+        }),
+      });
       this.notify.toast({
         message: msg(str`Updated.`),
         variant: "success",

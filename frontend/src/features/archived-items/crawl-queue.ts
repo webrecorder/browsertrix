@@ -9,7 +9,6 @@ import { customElement, property, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import throttle from "lodash/fp/throttle";
 
-import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
 
 type Pages = string[];
@@ -27,9 +26,7 @@ const POLL_INTERVAL_SECONDS = 5;
  * Usage example:
  * ```ts
  * <btrix-crawl-queue
- *   orgId=${this.crawl.oid}
  *   crawlId=${this.crawl.id}
- *   .authState=${this.authState}
  *   regex="skip-me"
  * ></btrix-crawl-queue>
  * ```
@@ -37,12 +34,6 @@ const POLL_INTERVAL_SECONDS = 5;
 @localized()
 @customElement("btrix-crawl-queue")
 export class CrawlQueue extends LiteElement {
-  @property({ type: Object })
-  authState?: AuthState;
-
-  @property({ type: String })
-  orgId?: string;
-
   @property({ type: String })
   crawlId?: string;
 
@@ -86,8 +77,6 @@ export class CrawlQueue extends LiteElement {
 
   willUpdate(changedProperties: PropertyValues<this> & Map<string, unknown>) {
     if (
-      changedProperties.has("authState") ||
-      changedProperties.has("orgId") ||
       changedProperties.has("crawlId") ||
       changedProperties.has("pageSize") ||
       changedProperties.has("regex") ||
@@ -295,7 +284,6 @@ export class CrawlQueue extends LiteElement {
     });
     const data: ResponseData = await this.apiFetch(
       `/orgs/${this.orgId}/crawls/${this.crawlId}/queue?${params.toString()}`,
-      this.authState!,
     );
 
     return data;

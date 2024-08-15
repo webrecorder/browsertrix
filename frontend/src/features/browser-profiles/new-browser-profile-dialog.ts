@@ -10,20 +10,13 @@ import {
 import queryString from "query-string";
 
 import type { Dialog } from "@/components/ui/dialog";
-import type { SelectCrawlerChangeEvent } from "@/components/ui/select-crawler";
-import type { SelectCrawlerProxyChangeEvent } from "@/components/ui/select-crawler-proxy";
-import type { AuthState } from "@/utils/AuthService";
+import { type SelectCrawlerChangeEvent } from "@/components/ui/select-crawler";
+import { type SelectCrawlerProxyChangeEvent } from "@/components/ui/select-crawler-proxy";
 import LiteElement, { html } from "@/utils/LiteElement";
 
 @localized()
 @customElement("btrix-new-browser-profile-dialog")
 export class NewBrowserProfileDialog extends LiteElement {
-  @property({ type: Object })
-  authState!: AuthState;
-
-  @property({ type: String })
-  orgId!: string;
-
   @property({ type: Boolean })
   open = false;
 
@@ -85,9 +78,7 @@ export class NewBrowserProfileDialog extends LiteElement {
         </div>
         <div class="mt-1">
           <btrix-select-crawler
-            orgId=${this.orgId}
             .crawlerChannel=${this.crawlerChannel}
-            .authState=${this.authState}
             @on-change=${(e: SelectCrawlerChangeEvent) =>
               (this.crawlerChannel = e.detail.value!)}
           ></btrix-select-crawler>
@@ -194,7 +185,6 @@ export class NewBrowserProfileDialog extends LiteElement {
 
     return this.apiFetch<{ browserid: string }>(
       `/orgs/${this.orgId}/profiles/browser`,
-      this.authState!,
       {
         method: "POST",
         body: JSON.stringify(params),

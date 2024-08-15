@@ -7,15 +7,13 @@ import { until } from "lit/directives/until.js";
 import isEqual from "lodash/fp/isEqual";
 import queryString from "query-string";
 
-import { TailwindElement } from "@/classes/TailwindElement";
-import { APIController } from "@/controllers/api";
+import { BtrixElement } from "@/classes/BtrixElement";
 import type {
   APIPaginatedList,
   APIPaginationQuery,
   APISortQuery,
 } from "@/types/api";
 import type { Crawl, Workflow } from "@/types/crawler";
-import { type AuthState } from "@/utils/AuthService";
 import { finishedCrawlStates } from "@/utils/crawler";
 import { getLocale } from "@/utils/localization";
 
@@ -35,7 +33,7 @@ const CRAWLS_PAGE_SIZE = 50;
  */
 @localized()
 @customElement("btrix-collection-workflow-list")
-export class CollectionWorkflowList extends TailwindElement {
+export class CollectionWorkflowList extends BtrixElement {
   static styles = css`
     :host {
       --border: 1px solid var(--sl-panel-border-color);
@@ -107,12 +105,6 @@ export class CollectionWorkflowList extends TailwindElement {
     }
   `;
 
-  @property({ type: Object })
-  authState?: AuthState;
-
-  @property({ type: String })
-  orgId?: string;
-
   @property({ type: String })
   collectionId?: string;
 
@@ -145,8 +137,6 @@ export class CollectionWorkflowList extends TailwindElement {
     /* workflow ID: */ string,
     Promise<Crawl[]>
   >();
-
-  private readonly api = new APIController(this);
 
   protected willUpdate(changedProperties: PropertyValues<this>): void {
     if (changedProperties.has("workflows")) {
@@ -343,7 +333,6 @@ export class CollectionWorkflowList extends TailwindElement {
       APIPaginationQuery &
       APISortQuery,
   ) {
-    if (!this.authState) throw new Error("Missing attribute `authState`");
     if (!this.orgId) throw new Error("Missing attribute `orgId`");
 
     const query = queryString.stringify(
@@ -357,7 +346,6 @@ export class CollectionWorkflowList extends TailwindElement {
     );
     const data = await this.api.fetch<APIPaginatedList<Crawl>>(
       `/orgs/${this.orgId}/crawls?${query}`,
-      this.authState,
     );
 
     return data;

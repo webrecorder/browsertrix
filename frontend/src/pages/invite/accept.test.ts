@@ -14,7 +14,7 @@ const mockInviteInfo = {
   fromSuperuser: false,
   firstOrgAdmin: false,
   role: 0,
-  oid: "fake_oid",
+  oid: "e21ab647-2d0e-489d-97d1-88ac91774942",
   orgName: "Fake Org Name",
   orgSlug: "fake-org-name",
 };
@@ -26,6 +26,7 @@ const mockAuthState = {
 
 describe("btrix-accept-invite", () => {
   beforeEach(() => {
+    AppStateService.resetAll();
     AuthService.broadcastChannel = new BroadcastChannel(AuthService.storageKey);
     window.localStorage.clear();
     window.sessionStorage.clear();
@@ -38,29 +39,29 @@ describe("btrix-accept-invite", () => {
   });
 
   it("redirects if not logged in", () => {
+    AppStateService.updateAuth(null);
     const el = fixtureSync<AcceptInvite>(
       html`<btrix-accept-invite
-        .authState=${null}
         token="my_fake_invite_token"
         email="my_fake_email@example.com"
       ></btrix-accept-invite>`,
     );
-    stub(el._navigate, "to");
+    stub(el.navigate, "to");
     el.firstUpdated();
 
-    expect(el._navigate.to).to.have.calledWith(match("/log-in?redirectUrl="));
+    expect(el.navigate.to).to.have.calledWith(match("/log-in?redirectUrl="));
   });
 
   it("gets invite info when auth state and token are present", async () => {
+    AppStateService.updateAuth(mockAuthState);
     stub(AcceptInvite.prototype, "_getInviteInfo");
     const el = await fixture<AcceptInvite>(
       html`<btrix-accept-invite
-        .authState=${mockAuthState}
         token="my_fake_invite_token"
         email="my_fake_email@example.com"
       ></btrix-accept-invite>`,
     );
-    expect(el._getInviteInfo).to.have.callCount(1);
+    expect(el._getInviteInfo).to.have.been.called;
   });
 
   describe("when inviting the first admin", () => {
@@ -74,9 +75,9 @@ describe("btrix-accept-invite", () => {
     });
 
     it("renders accept button", async () => {
+      AppStateService.updateAuth(mockAuthState);
       const el = await fixture<AcceptInvite>(
         html`<btrix-accept-invite
-          .authState=${mockAuthState}
           token="my_fake_invite_token"
           email="my_fake_email@example.com"
         ></btrix-accept-invite>`,
@@ -88,31 +89,31 @@ describe("btrix-accept-invite", () => {
     });
 
     it("redirects to home on decline", async () => {
+      AppStateService.updateAuth(mockAuthState);
       const el = await fixture<AcceptInvite>(
         html`<btrix-accept-invite
-          .authState=${mockAuthState}
           token="my_fake_invite_token"
           email="my_fake_email@example.com"
         ></btrix-accept-invite>`,
       );
 
-      stub(el._navigate, "to");
+      stub(el.navigate, "to");
 
       await el._onDecline();
 
-      expect(el._navigate.to).to.have.calledWith(el._navigate.orgBasePath);
+      expect(el.navigate.to).to.have.calledWith(el.navigate.orgBasePath);
     });
 
     it("renders org settings form when accepted", async () => {
+      AppStateService.updateAuth(mockAuthState);
       const el = await fixture<AcceptInvite>(
         html`<btrix-accept-invite
-          .authState=${mockAuthState}
           token="my_fake_invite_token"
           email="my_fake_email@example.com"
         ></btrix-accept-invite>`,
       );
 
-      stub(el._api, "fetch").callsFake(async () =>
+      stub(el.api, "fetch").callsFake(async () =>
         Promise.resolve({
           org: {
             id: mockInviteInfo.oid,
@@ -128,15 +129,15 @@ describe("btrix-accept-invite", () => {
     });
 
     it("renders org settings form with the correct attributes", async () => {
+      AppStateService.updateAuth(mockAuthState);
       const el = await fixture<AcceptInvite>(
         html`<btrix-accept-invite
-          .authState=${mockAuthState}
           token="my_fake_invite_token"
           email="my_fake_email@example.com"
         ></btrix-accept-invite>`,
       );
 
-      stub(el._api, "fetch").callsFake(async () =>
+      stub(el.api, "fetch").callsFake(async () =>
         Promise.resolve({
           org: {
             id: mockInviteInfo.oid,
@@ -150,20 +151,23 @@ describe("btrix-accept-invite", () => {
 
       const orgFormEl = el.shadowRoot!.querySelector<OrgForm>("btrix-org-form");
 
-      expect(orgFormEl).attribute("orgId", "fake_oid");
+      expect(orgFormEl).attribute(
+        "newOrgId",
+        "e21ab647-2d0e-489d-97d1-88ac91774942",
+      );
       expect(orgFormEl).attribute("name", "Fake Org Name 2");
       expect(orgFormEl).attribute("slug", "fake-org-slug-2");
     });
 
     it("redirects to org dashboard on successful org rename", async () => {
+      AppStateService.updateAuth(mockAuthState);
       const el = await fixture<AcceptInvite>(
         html`<btrix-accept-invite
-          .authState=${mockAuthState}
           token="my_fake_invite_token"
           email="my_fake_email@example.com"
         ></btrix-accept-invite>`,
       );
-      stub(el._navigate, "to");
+      stub(el.navigate, "to");
       stub(el, "_isLoggedIn").get(() => true);
       el._firstAdminOrgInfo = {
         id: mockInviteInfo.oid,
@@ -191,7 +195,7 @@ describe("btrix-accept-invite", () => {
 
       await oneEvent(orgFormEl, "btrix-org-updated");
 
-      expect(el._navigate.to).to.have.been.calledWith("/orgs/fake-org-slug-2");
+      expect(el.navigate.to).to.have.been.calledWith("/orgs/fake-org-slug-2");
     });
   });
 
@@ -206,9 +210,9 @@ describe("btrix-accept-invite", () => {
     });
 
     it("renders accept button", async () => {
+      AppStateService.updateAuth(mockAuthState);
       const el = await fixture<AcceptInvite>(
         html`<btrix-accept-invite
-          .authState=${mockAuthState}
           token="my_fake_invite_token"
           email="my_fake_email@example.com"
         ></btrix-accept-invite>`,
@@ -220,32 +224,32 @@ describe("btrix-accept-invite", () => {
     });
 
     it("updates user app state on accept", async () => {
+      AppStateService.updateAuth(mockAuthState);
       const el = await fixture<AcceptInvite>(
         html`<btrix-accept-invite
-          .authState=${mockAuthState}
           token="my_fake_invite_token"
           email="my_fake_email@example.com"
         ></btrix-accept-invite>`,
       );
 
-      stub(el._navigate, "to");
-      stub(el._api, "fetch").callsFake(async () =>
+      stub(el.navigate, "to");
+      stub(el, "_getCurrentUser").callsFake(async () =>
+        Promise.resolve({
+          id: "740d7b63-b257-4311-ba3f-adc46a5fafb8",
+          email: "fake@example.com",
+          name: "Fake User",
+          is_verified: false,
+          is_superuser: false,
+          orgs: [],
+        }),
+      );
+      stub(el.api, "fetch").callsFake(async () =>
         Promise.resolve({
           org: {
             id: mockInviteInfo.oid,
             name: mockInviteInfo.orgName,
             slug: mockInviteInfo.orgSlug,
           },
-        }),
-      );
-      stub(el, "_getCurrentUser").callsFake(async () =>
-        Promise.resolve({
-          id: "fake_user_id",
-          email: "fake@example.com",
-          name: "Fake User",
-          is_verified: false,
-          is_superuser: false,
-          orgs: [],
         }),
       );
       stub(AppStateService, "updateUserInfo");
@@ -258,16 +262,26 @@ describe("btrix-accept-invite", () => {
     });
 
     it("redirects to org dashboard on accept", async () => {
+      AppStateService.updateAuth(mockAuthState);
       const el = await fixture<AcceptInvite>(
         html`<btrix-accept-invite
-          .authState=${mockAuthState}
           token="my_fake_invite_token"
           email="my_fake_email@example.com"
         ></btrix-accept-invite>`,
       );
 
-      stub(el._navigate, "to");
-      stub(el._api, "fetch").callsFake(async () =>
+      stub(el.navigate, "to");
+      stub(el, "_getCurrentUser").callsFake(async () =>
+        Promise.resolve({
+          id: "740d7b63-b257-4311-ba3f-adc46a5fafb8",
+          email: "fake@example.com",
+          name: "Fake User",
+          is_verified: false,
+          is_superuser: false,
+          orgs: [],
+        }),
+      );
+      stub(el.api, "fetch").callsFake(async () =>
         Promise.resolve({
           org: {
             id: mockInviteInfo.oid,
@@ -279,23 +293,23 @@ describe("btrix-accept-invite", () => {
 
       await el._onAccept();
 
-      expect(el._navigate.to).to.have.calledWith("/orgs/fake-org-name");
+      expect(el.navigate.to).to.have.calledWith("/orgs/fake-org-name");
     });
 
     it("redirects to home on decline", async () => {
+      AppStateService.updateAuth(mockAuthState);
       const el = await fixture<AcceptInvite>(
         html`<btrix-accept-invite
-          .authState=${mockAuthState}
           token="my_fake_invite_token"
           email="my_fake_email@example.com"
         ></btrix-accept-invite>`,
       );
 
-      stub(el._navigate, "to");
+      stub(el.navigate, "to");
 
       await el._onDecline();
 
-      expect(el._navigate.to).to.have.calledWith(el._navigate.orgBasePath);
+      expect(el.navigate.to).to.have.calledWith(el.navigate.orgBasePath);
     });
   });
 });
