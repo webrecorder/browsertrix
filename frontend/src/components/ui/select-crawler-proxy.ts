@@ -4,7 +4,6 @@ import { html } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
 import type { Proxy } from "@/pages/org/types";
-import type { AuthState } from "@/utils/AuthService";
 import LiteElement from "@/utils/LiteElement";
 
 type SelectCrawlerProxyChangeDetail = {
@@ -21,7 +20,7 @@ type SelectCrawlerProxyUpdateDetail = {
 export type SelectCrawlerProxyUpdateEvent =
   CustomEvent<SelectCrawlerProxyUpdateDetail>;
 
-type allProxiesAPIResponse = {
+type AllProxiesAPIResponse = {
   default_proxy_id: string | null;
   servers: Proxy[];
 };
@@ -32,7 +31,6 @@ type allProxiesAPIResponse = {
  * Usage example:
  * ```ts
  * <btrix-select-crawler-proxy
- *   authState=${authState}
  *   orgId=${orgId}
  *   on-change=${({value}) => selectedcrawlerProxy = value}
  * ></btrix-select-crawler-proxy>
@@ -43,12 +41,6 @@ type allProxiesAPIResponse = {
 @customElement("btrix-select-crawler-proxy")
 @localized()
 export class SelectCrawlerProxy extends LiteElement {
-  @property({ type: Object })
-  authState!: AuthState;
-
-  @property({ type: String })
-  orgId!: string;
-
   @property({ type: String })
   proxyId: string | null = null;
 
@@ -199,9 +191,9 @@ export class SelectCrawlerProxy extends LiteElement {
     }
   }
 
-  private async getAllProxies(): Promise<allProxiesAPIResponse> {
-    const data: allProxiesAPIResponse =
-      await this.apiFetch<allProxiesAPIResponse>(
+  private async getAllProxies(): Promise<AllProxiesAPIResponse> {
+    const data: AllProxiesAPIResponse =
+      await this.apiFetch<AllProxiesAPIResponse>(
         `/orgs/${this.orgId}/crawlconfigs/crawler-proxies`,
         this.authState!,
       );
