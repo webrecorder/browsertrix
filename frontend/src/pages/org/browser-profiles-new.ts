@@ -13,7 +13,6 @@ import { isApiError } from "@/utils/api";
  * Usage:
  * ```ts
  * <btrix-browser-profiles-new
- *  authState=${authState}
  *  browserId=${browserId}
  * ></btrix-browser-profiles-new>
  * ```

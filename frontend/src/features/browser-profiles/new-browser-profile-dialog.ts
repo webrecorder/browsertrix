@@ -87,7 +87,6 @@ export class NewBrowserProfileDialog extends LiteElement {
           <btrix-select-crawler-proxy
             orgId=${this.orgId}
             .proxyId="${this.proxyId || ""}"
-            .authState=${this.authState}
             @on-change=${(e: SelectCrawlerProxyChangeEvent) =>
               (this.proxyId = e.detail.value!)}
           ></btrix-select-crawler-proxy>

@@ -195,7 +195,6 @@ export class SelectCrawlerProxy extends LiteElement {
     const data: AllProxiesAPIResponse =
       await this.apiFetch<AllProxiesAPIResponse>(
         `/orgs/${this.orgId}/crawlconfigs/crawler-proxies`,
-        this.authState!,
       );
 
     return data;

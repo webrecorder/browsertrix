@@ -22,7 +22,6 @@ export type SelectBrowserProfileChangeEvent =
  * Usage example:
  * ```ts
  * <btrix-select-browser-profile
- *   authState=${authState}
  *   on-change=${({value}) => selectedProfile = value}
  * ></btrix-select-browser-profile>
  * ```

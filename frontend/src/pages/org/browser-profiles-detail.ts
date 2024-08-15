@@ -22,7 +22,6 @@ const DESCRIPTION_MAXLENGTH = 500;
  * Usage:
  * ```ts
  * <btrix-browser-profiles-detail
- *  authState=${authState}
  *  profileId=${profileId}
  * ></btrix-browser-profiles-detail>
  * ```

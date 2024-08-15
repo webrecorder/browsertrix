@@ -32,7 +32,6 @@ const INITIAL_PAGE_SIZE = 20;
  * Usage:
  * ```ts
  * <btrix-browser-profiles-list
- *  authState=${authState}
  * ></btrix-browser-profiles-list>
  * ```
  */

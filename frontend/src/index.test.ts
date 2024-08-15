@@ -86,7 +86,7 @@ describe("browsertrix-app", () => {
       Promise.resolve(mockAPIUser),
     );
     stub(AuthService.prototype, "startFreshnessCheck").callsFake(() => {});
-    stub(AuthService, "initSessionStorage").callsFake(() =>
+    stub(AuthService, "initSessionStorage").callsFake(async () =>
       Promise.resolve({
         headers: { Authorization: "_fake_headers_" },
         tokenExpiresAt: 0,
@@ -105,7 +105,7 @@ describe("browsertrix-app", () => {
       Promise.resolve(mockAPIUser),
     );
     stub(AuthService.prototype, "startFreshnessCheck").callsFake(() => {});
-    stub(AuthService, "initSessionStorage").callsFake(() =>
+    stub(AuthService, "initSessionStorage").callsFake(async () =>
       Promise.resolve({
         headers: { Authorization: "_fake_headers_" },
         tokenExpiresAt: 0,
@@ -134,7 +134,7 @@ describe("browsertrix-app", () => {
       }),
     );
     stub(AuthService.prototype, "startFreshnessCheck").callsFake(() => {});
-    stub(AuthService, "initSessionStorage").callsFake(() =>
+    stub(AuthService, "initSessionStorage").callsFake(async () =>
       Promise.resolve({
         headers: { Authorization: "_fake_headers_" },
         tokenExpiresAt: 0,

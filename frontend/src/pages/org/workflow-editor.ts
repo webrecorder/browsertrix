@@ -1746,7 +1746,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
         <btrix-select-crawler-proxy
           orgId=${this.orgId}
           .proxyId="${this.formState.proxyId || ""}"
-          .authState=${this.authState}
           @on-change=${(e: SelectCrawlerProxyChangeEvent) =>
             this.updateFormState({
               proxyId: e.detail.value,
