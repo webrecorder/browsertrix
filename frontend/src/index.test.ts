@@ -51,7 +51,7 @@ describe("browsertrix-app", () => {
       }),
     );
     const el = await fixture("<browsertrix-app></browsertrix-app>");
-    expect(el).lightDom.descendants("btrix-admin");
+    expect(el).lightDom.descendants("btrix-home");
   });
 
   // TODO move tests to AuthService
