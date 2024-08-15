@@ -952,6 +952,7 @@ class CrawlConfigOps:
 
     @property
     def crawler_proxies(self):
+        """Get CrawlerProxy configuration"""
         return CrawlerProxies(
             default_proxy_id=DEFAULT_PROXY_ID,
             servers=list(self.crawler_proxies_map.values()),
