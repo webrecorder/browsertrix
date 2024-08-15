@@ -4,6 +4,7 @@ import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import { type PropertyValues } from "lit";
 import { customElement, state } from "lit/decorators.js";
 
+import needLogin from "@/decorators/needLogin";
 import type { InviteSuccessDetail } from "@/features/accounts/invite-form";
 import type { APIUser } from "@/index";
 import type { APIPaginatedList } from "@/types/api";
@@ -26,6 +27,7 @@ import { formatAPIUser } from "@/utils/user";
  */
 @localized()
 @customElement("btrix-home")
+@needLogin
 export class Home extends LiteElement {
   @state()
   private orgList?: OrgData[];
@@ -52,6 +54,7 @@ export class Home extends LiteElement {
   private readonly validateOrgNameMax = maxLengthValidator(40);
 
   connectedCallback() {
+    console.log("saldfhjkass");
     if (this.authState) {
       if (this.slug) {
         this.navTo(`/orgs/${this.slug}`);

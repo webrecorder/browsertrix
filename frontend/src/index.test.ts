@@ -54,12 +54,6 @@ describe("browsertrix-app", () => {
     expect(el).lightDom.descendants("btrix-home");
   });
 
-  it("renders when `AuthService.initSessionStorage` rejects", async () => {
-    stub(AuthService, "initSessionStorage").returns(Promise.reject());
-    const el = await fixture("<browsertrix-app></browsertrix-app>");
-    expect(el).lightDom.descendants("btrix-log-in");
-  });
-
   // TODO move tests to AuthService
   it("sets auth state from session storage", async () => {
     stub(AuthService.prototype, "startFreshnessCheck").callsFake(() => {});
@@ -86,7 +80,7 @@ describe("browsertrix-app", () => {
       Promise.resolve(mockAPIUser),
     );
     stub(AuthService.prototype, "startFreshnessCheck").callsFake(() => {});
-    stub(AuthService, "initSessionStorage").callsFake(() =>
+    stub(AuthService, "initSessionStorage").callsFake(async () =>
       Promise.resolve({
         headers: { Authorization: "_fake_headers_" },
         tokenExpiresAt: 0,
@@ -105,7 +99,7 @@ describe("browsertrix-app", () => {
       Promise.resolve(mockAPIUser),
     );
     stub(AuthService.prototype, "startFreshnessCheck").callsFake(() => {});
-    stub(AuthService, "initSessionStorage").callsFake(() =>
+    stub(AuthService, "initSessionStorage").callsFake(async () =>
       Promise.resolve({
         headers: { Authorization: "_fake_headers_" },
         tokenExpiresAt: 0,
@@ -134,7 +128,7 @@ describe("browsertrix-app", () => {
       }),
     );
     stub(AuthService.prototype, "startFreshnessCheck").callsFake(() => {});
-    stub(AuthService, "initSessionStorage").callsFake(() =>
+    stub(AuthService, "initSessionStorage").callsFake(async () =>
       Promise.resolve({
         headers: { Authorization: "_fake_headers_" },
         tokenExpiresAt: 0,

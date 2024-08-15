@@ -4,7 +4,6 @@ import { assign, createMachine, interpret } from "@xstate/fsm";
 import { type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
-import { ROUTES } from "@/routes";
 import { isApiError } from "@/utils/api";
 import type { ViewState } from "@/utils/APIRouter";
 import AuthService from "@/utils/AuthService";
@@ -145,7 +144,7 @@ export class LogInPage extends LiteElement {
   viewState!: ViewState;
 
   @property({ type: String })
-  redirectUrl: string = ROUTES.home;
+  redirectUrl?: string;
 
   private readonly formStateService = interpret(machine);
 
