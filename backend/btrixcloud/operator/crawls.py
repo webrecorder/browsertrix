@@ -77,7 +77,7 @@ MEM_SOFT_OOM_THRESHOLD = 1.0
 MEM_LIMIT_PADDING = 1.2
 
 # ensure available storage is at least this much times used storage
-AVAIL_STORAGE_THRESHOLD = 2.5
+AVAIL_STORAGE_RATIO = 2.5
 
 
 # pylint: disable=too-many-public-methods, too-many-locals, too-many-branches, too-many-statements
@@ -1337,11 +1337,11 @@ class CrawlOperator(BaseOperator):
                 if (
                     status.state == "running"
                     and pod_info.allocated.storage
-                    and pod_info.used.storage * AVAIL_STORAGE_THRESHOLD
+                    and pod_info.used.storage * AVAIL_STORAGE_RATIO
                     > pod_info.allocated.storage
                 ):
                     new_storage = math.ceil(
-                        pod_info.used.storage * AVAIL_STORAGE_THRESHOLD / 1_000_000_000
+                        pod_info.used.storage * AVAIL_STORAGE_RATIO / 1_000_000_000
                     )
                     pod_info.newStorage = f"{new_storage}Gi"
                     print(
