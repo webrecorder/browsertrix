@@ -25,14 +25,6 @@ export const SECTIONS = [
 export const sectionsEnum = z.enum(SECTIONS);
 export type SectionsEnum = z.infer<typeof sectionsEnum>;
 
-export const sectionLabels: Record<SectionsEnum, string> = {
-  scope: msg("Crawl Scope"),
-  perCrawlLimits: msg("Per-Crawl Limits"),
-  perPageLimits: msg("Per-Page Limits"),
-  browserSettings: msg("Browser Settings"),
-  scheduling: msg("Scheduling"),
-};
-
 export function defaultLabel(value: unknown): string {
   if (value === Infinity) {
     return msg("Default: Unlimited");

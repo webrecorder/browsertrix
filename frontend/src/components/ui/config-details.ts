@@ -11,12 +11,12 @@ import { RelativeDuration } from "./relative-duration";
 
 import type { CrawlConfig, Seed, SeedConfig } from "@/pages/org/types";
 import type { AppSettings } from "@/types/app";
+import sectionStrings from "@/strings/crawl-workflows/section";
 import type { Collection } from "@/types/collection";
 import { isApiError } from "@/utils/api";
 import { DEPTH_SUPPORTED_SCOPES } from "@/utils/crawler";
 import { humanizeSchedule } from "@/utils/cron";
 import LiteElement, { html } from "@/utils/LiteElement";
-import { sectionLabels } from "@/utils/workflow";
 
 /**
  * Usage:
@@ -118,7 +118,7 @@ export class ConfigDetails extends LiteElement {
     return html`
       <section id="crawler-settings" class="mb-8">
         <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
-          <h4>${sectionLabels.scope}</h4>
+          <h4>${sectionStrings.scope}</h4>
         </btrix-section-heading>
         <btrix-desc-list>
           ${when(
@@ -140,7 +140,7 @@ export class ConfigDetails extends LiteElement {
             () => this.renderSetting(msg("Exclusions"), msg("None")),
           )}
           <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
-            <h4>${sectionLabels.perCrawlLimits}</h4>
+            <h4>${sectionStrings.perCrawlLimits}</h4>
           </btrix-section-heading>
           ${this.renderSetting(
             msg("Max Pages"),
@@ -171,7 +171,7 @@ export class ConfigDetails extends LiteElement {
             crawlConfig?.scale ? `${crawlConfig.scale}×` : "",
           )}
           <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
-            <h4>${sectionLabels.perPageLimits}</h4>
+            <h4>${sectionStrings.perPageLimits}</h4>
           </btrix-section-heading>
           ${this.renderSetting(
             msg("Page Load Timeout"),
@@ -208,7 +208,7 @@ export class ConfigDetails extends LiteElement {
       </section>
       <section id="browser-settings" class="mb-8">
         <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
-          <h4>${sectionLabels.browserSettings}</h4>
+          <h4>${sectionStrings.browserSettings}</h4>
         </btrix-section-heading>
         <btrix-desc-list>
           ${this.renderSetting(
@@ -257,7 +257,7 @@ export class ConfigDetails extends LiteElement {
       </section>
       <section id="crawl-scheduling" class="mb-8">
         <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
-          <h4>${sectionLabels.scheduling}</h4>
+          <h4>${sectionStrings.scheduling}</h4>
         </btrix-section-heading>
         <btrix-desc-list>
           ${this.renderSetting(

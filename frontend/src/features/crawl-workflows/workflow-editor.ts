@@ -48,7 +48,8 @@ import type {
   ExclusionChangeEvent,
   ExclusionRemoveEvent,
 } from "@/features/crawl-workflows/queue-exclusion-table";
-import infoText from "@/strings/crawl-workflows/infoText";
+import infoTextStrings from "@/strings/crawl-workflows/infoText";
+import sectionStrings from "@/strings/crawl-workflows/section";
 import type {
   CrawlConfig,
   JobType,
@@ -73,7 +74,6 @@ import {
   getDefaultFormState,
   getInitialFormState,
   getServerDefaults,
-  sectionLabels,
   type FormState,
   type WorkflowDefaults,
 } from "@/utils/workflow";
@@ -398,10 +398,10 @@ export class WorkflowEditor extends BtrixElement {
 
   render() {
     const tabLabels: Record<StepName, string> = {
-      crawlSetup: sectionLabels.scope,
+      crawlSetup: sectionStrings.scope,
       crawlLimits: msg("Limits"),
-      browserSettings: sectionLabels.browserSettings,
-      crawlScheduling: sectionLabels.scheduling,
+      browserSettings: sectionStrings.browserSettings,
+      crawlScheduling: sectionStrings.scheduling,
       crawlMetadata: msg("Metadata"),
       confirmSettings: msg("Review Settings"),
     };
@@ -884,7 +884,7 @@ https://example.com/path`}
               <span class="text-neutral-600">${msg("Add More")}</span>
             </sl-button>
           `)}
-          ${this.renderHelpTextCol(infoText["exclusions"])}
+          ${this.renderHelpTextCol(infoTextStrings["exclusions"])}
         `,
       )}
     `;
@@ -1241,7 +1241,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       inputEl.helpText = helpText;
     };
     return html`
-      ${this.renderSectionHeading(sectionLabels.perCrawlLimits)}
+      ${this.renderSectionHeading(sectionStrings.perCrawlLimits)}
       ${this.renderFormCol(html`
         <sl-mutation-observer
           attr="min"
@@ -1277,7 +1277,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           </sl-input>
         </sl-mutation-observer>
       `)}
-      ${this.renderHelpTextCol(infoText["pageLimit"])}
+      ${this.renderHelpTextCol(infoTextStrings["pageLimit"])}
       ${this.renderFormCol(html`
         <sl-input
           name="crawlTimeoutMinutes"
@@ -1291,7 +1291,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           <span slot="suffix">${msg("minutes")}</span>
         </sl-input>
       `)}
-      ${this.renderHelpTextCol(infoText["crawlTimeoutMinutes"])}
+      ${this.renderHelpTextCol(infoTextStrings["crawlTimeoutMinutes"])}
       ${this.renderFormCol(html`
         <sl-input
           name="maxCrawlSizeGB"
@@ -1305,7 +1305,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           <span slot="suffix">${msg("GB")}</span>
         </sl-input>
       `)}
-      ${this.renderHelpTextCol(infoText["maxCrawlSizeGB"])}
+      ${this.renderHelpTextCol(infoTextStrings["maxCrawlSizeGB"])}
       ${this.renderFormCol(html`
         <sl-radio-group
           name="scale"
@@ -1329,7 +1329,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         msg(`Increasing parallel crawler instances can speed up crawls, but may
         increase the chances of getting rate limited.`),
       )}
-      ${this.renderSectionHeading(sectionLabels.perPageLimits)}
+      ${this.renderSectionHeading(sectionStrings.perPageLimits)}
       ${this.renderFormCol(html`
         <sl-input
           name="pageLoadTimeoutSeconds"
@@ -1344,7 +1344,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           <span slot="suffix">${msg("seconds")}</span>
         </sl-input>
       `)}
-      ${this.renderHelpTextCol(infoText["pageLoadTimeoutSeconds"])}
+      ${this.renderHelpTextCol(infoTextStrings["pageLoadTimeoutSeconds"])}
       ${this.renderFormCol(html`
         <sl-input
           name="postLoadDelaySeconds"
@@ -1358,7 +1358,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           <span slot="suffix">${msg("seconds")}</span>
         </sl-input>
       `)}
-      ${this.renderHelpTextCol(infoText["postLoadDelaySeconds"])}
+      ${this.renderHelpTextCol(infoTextStrings["postLoadDelaySeconds"])}
       ${this.renderFormCol(html`
         <sl-input
           name="behaviorTimeoutSeconds"
@@ -1373,7 +1373,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           <span slot="suffix">${msg("seconds")}</span>
         </sl-input>
       `)}
-      ${this.renderHelpTextCol(infoText["behaviorTimeoutSeconds"])}
+      ${this.renderHelpTextCol(infoTextStrings["behaviorTimeoutSeconds"])}
       ${this.renderFormCol(
         html`<sl-checkbox
           name="autoscrollBehavior"
@@ -1401,7 +1401,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           <span slot="suffix">${msg("seconds")}</span>
         </sl-input>
       `)}
-      ${this.renderHelpTextCol(infoText["pageExtraDelaySeconds"])}
+      ${this.renderHelpTextCol(infoTextStrings["pageExtraDelaySeconds"])}
     `;
   }
 
@@ -1417,7 +1417,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
             })}
         ></btrix-select-browser-profile>
       `)}
-      ${this.renderHelpTextCol(infoText["browserProfile"])}
+      ${this.renderHelpTextCol(infoTextStrings["browserProfile"])}
       ${this.renderFormCol(html`
         <btrix-select-crawler
           .crawlerChannel=${this.formState.crawlerChannel}
@@ -1430,14 +1430,14 @@ https://archiveweb.page/images/${"logo.svg"}`}
         ></btrix-select-crawler>
       `)}
       ${this.showCrawlerChannels
-        ? this.renderHelpTextCol(infoText["crawlerChannel"])
+        ? this.renderHelpTextCol(infoTextStrings["crawlerChannel"])
         : html``}
       ${this.renderFormCol(html`
         <sl-checkbox name="blockAds" ?checked=${this.formState.blockAds}>
           ${msg("Block ads by domain")}
         </sl-checkbox>
       `)}
-      ${this.renderHelpTextCol(infoText["blockAds"], false)}
+      ${this.renderHelpTextCol(infoTextStrings["blockAds"], false)}
       ${this.renderFormCol(html`
         <sl-input
           name="userAgent"
@@ -1448,7 +1448,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         >
         </sl-input>
       `)}
-      ${this.renderHelpTextCol(infoText["userAgent"])}
+      ${this.renderHelpTextCol(infoTextStrings["userAgent"])}
       ${this.renderFormCol(html`
         <btrix-language-select
           .value=${this.formState.lang as LanguageCode}
@@ -1461,7 +1461,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           <span slot="label">${msg("Language")}</span>
         </btrix-language-select>
       `)}
-      ${this.renderHelpTextCol(infoText["lang"])}
+      ${this.renderHelpTextCol(infoTextStrings["lang"])}
     `;
   }
 

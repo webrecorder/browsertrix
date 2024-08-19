@@ -6,12 +6,12 @@ import { ifDefined } from "lit/directives/if-defined.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { columns, type Cols } from "@/layout/columns";
-import infoText from "@/strings/crawl-workflows/infoText";
+import infoTextStrings from "@/strings/crawl-workflows/infoText";
+import sectionStrings from "@/strings/crawl-workflows/section";
 import {
   appDefaults,
   defaultLabel,
   getServerDefaults,
-  sectionLabels,
   type FormState,
   type SectionsEnum,
   type WorkflowDefaults,
@@ -26,7 +26,7 @@ function section(section: SectionsEnum | "exclusions", cols: Cols) {
       <btrix-section-heading
         >${section === "exclusions"
           ? msg("Exclusions")
-          : sectionLabels[section]}</btrix-section-heading
+          : sectionStrings[section]}</btrix-section-heading
       >
       ${columns(cols)}
     </section>
@@ -221,7 +221,7 @@ export class OrgSettingsCrawing extends BtrixElement {
               sectionName as SectionsEnum,
               Object.entries(fields).map(([fieldName, field]) => [
                 field,
-                infoText[fieldName as FieldName],
+                infoTextStrings[fieldName as FieldName],
               ]),
             ),
           ),
