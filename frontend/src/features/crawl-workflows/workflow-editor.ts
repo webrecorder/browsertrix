@@ -34,6 +34,8 @@ import compact from "lodash/fp/compact";
 import flow from "lodash/fp/flow";
 import uniq from "lodash/fp/uniq";
 
+import { helpText } from "./ui/helpText";
+
 import { BtrixElement } from "@/classes/BtrixElement";
 import type {
   SelectCrawlerChangeEvent,
@@ -66,12 +68,13 @@ import { getLocale } from "@/utils/localization";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { regexEscape } from "@/utils/string";
 import {
+  appDefaults,
   BYTES_PER_GB,
-  fetchServerDefaults,
+  defaultLabel,
   getDefaultFormState,
   getInitialFormState,
+  getServerDefaults,
   sectionLabels,
-  serverDefaults,
   type FormState,
   type WorkflowDefaults,
 } from "@/utils/workflow";
@@ -205,7 +208,7 @@ export class WorkflowEditor extends BtrixElement {
   private progressState?: ProgressState;
 
   @state()
-  private defaults: WorkflowDefaults = serverDefaults;
+  private defaults: WorkflowDefaults = appDefaults;
 
   @state()
   private formState!: FormState;
@@ -284,6 +287,7 @@ export class WorkflowEditor extends BtrixElement {
   connectedCallback(): void {
     this.initializeEditor();
     super.connectedCallback();
+    void this.fetchServerDefaults();
 
     window.addEventListener("hashchange", () => {
       const hashValue = window.location.hash.slice(1);
@@ -303,7 +307,6 @@ export class WorkflowEditor extends BtrixElement {
       (changedProperties.get("initialWorkflow") && this.initialWorkflow)
     ) {
       this.initializeEditor();
-      this.defaults = await fetchServerDefaults();
       if (this.orgId) {
         await this.fetchOrgQuotaDefaults();
       }
@@ -360,16 +363,22 @@ export class WorkflowEditor extends BtrixElement {
     void this.fetchTags();
   }
 
+  private async fetchServerDefaults() {
+    this.defaults = await getServerDefaults();
+  }
+
   private initializeEditor() {
     this.progressState = getDefaultProgressState(Boolean(this.configId));
     this.formState = {
       ...getDefaultFormState(),
-      ...getInitialFormState({
-        configId: this.configId,
-        initialSeeds: this.initialSeeds,
-        initialWorkflow: this.initialWorkflow,
-        org: this.org!,
-      }),
+      ...(this.org
+        ? getInitialFormState({
+            configId: this.configId,
+            initialSeeds: this.initialSeeds,
+            initialWorkflow: this.initialWorkflow,
+            org: this.org,
+          })
+        : {}),
     };
     if (!this.formState.lang) {
       this.formState.lang = this.getInitialLang();
@@ -1033,7 +1042,7 @@ https://example.com/path`}
                   ? undefined
                   : this.formState.maxScopeDepth,
               )}
-              placeholder=${msg("Default: Unlimited")}
+              placeholder=${defaultLabel(Infinity)}
               min="0"
               type="number"
               inputmode="numeric"
@@ -1258,29 +1267,26 @@ https://archiveweb.page/images/${"logo.svg"}`}
                 ? this.defaults.maxPagesPerCrawl
                 : undefined,
             )}
-            placeholder=${this.defaults.maxPagesPerCrawl
-              ? this.defaults.maxPagesPerCrawl === Infinity
-                ? msg("Default: Unlimited")
-                : msg(
-                    str`Default: ${this.defaults.maxPagesPerCrawl.toLocaleString()}`,
-                  )
-              : ""}
+            placeholder=${defaultLabel(this.defaults.maxPagesPerCrawl)}
+            help-text=${this.defaults.maxPagesPerCrawl &&
+            this.defaults.maxPagesPerCrawl < Infinity
+              ? msg(
+                  str`Enter a number between 1 and ${this.defaults.maxPagesPerCrawl.toLocaleString()}`,
+                )
+              : msg("Minimum 1 page")}
             @sl-input=${onInputMinMax}
           >
             <span slot="suffix">${msg("pages")}</span>
           </sl-input>
         </sl-mutation-observer>
       `)}
-      ${this.renderHelpTextCol(
-        msg(`Adds a hard limit on the number of pages
-      that will be crawled.`),
-      )}
+      ${this.renderHelpTextCol(helpText("pageLimit"))}
       ${this.renderFormCol(html`
         <sl-input
           name="crawlTimeoutMinutes"
           label=${msg("Crawl Time Limit")}
           value=${this.formState.crawlTimeoutMinutes || ""}
-          placeholder=${msg("Default: Unlimited")}
+          placeholder=${defaultLabel(Infinity)}
           min="0"
           type="number"
           inputmode="numeric"
@@ -1296,7 +1302,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           name="maxCrawlSizeGB"
           label=${msg("Crawl Size Limit")}
           value=${this.formState.maxCrawlSizeGB || ""}
-          placeholder=${msg("Default: Unlimited")}
+          placeholder=${defaultLabel(Infinity)}
           min="0"
           type="number"
           inputmode="numeric"
@@ -1337,11 +1343,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           type="number"
           inputmode="numeric"
           label=${msg("Page Load Timeout")}
-          placeholder=${this.defaults.pageLoadTimeoutSeconds
-            ? msg(
-                str`Default: ${this.defaults.pageLoadTimeoutSeconds.toLocaleString()}`,
-              )
-            : "Default: Unlimited"}
+          placeholder=${defaultLabel(this.defaults.pageLoadTimeoutSeconds)}
           value=${ifDefined(this.formState.pageLoadTimeoutSeconds ?? undefined)}
           min="0"
           @sl-input=${onInputMinMax}
@@ -1360,7 +1362,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           type="number"
           inputmode="numeric"
           label=${msg("Delay After Page Load")}
-          placeholder=${"Default: 0"}
+          placeholder=${defaultLabel(0)}
           value=${ifDefined(this.formState.postLoadDelaySeconds ?? undefined)}
           min="0"
         >
@@ -1378,11 +1380,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           type="number"
           inputmode="numeric"
           label=${msg("Behavior Timeout")}
-          placeholder=${this.defaults.behaviorTimeoutSeconds
-            ? msg(
-                str`Default: ${this.defaults.behaviorTimeoutSeconds.toLocaleString()}`,
-              )
-            : msg("Unlimited")}
+          placeholder=${defaultLabel(this.defaults.behaviorTimeoutSeconds)}
           value=${ifDefined(this.formState.behaviorTimeoutSeconds ?? undefined)}
           min="0"
           @sl-input=${onInputMinMax}
@@ -1413,7 +1411,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           type="number"
           inputmode="numeric"
           label=${msg("Delay Before Next Page")}
-          placeholder=${"Default: 0"}
+          placeholder=${defaultLabel(0)}
           value=${ifDefined(this.formState.pageExtraDelaySeconds ?? undefined)}
           min="0"
         >

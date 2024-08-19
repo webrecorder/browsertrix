@@ -5,9 +5,9 @@ import { html, type TemplateResult } from "lit";
 
 import { tw } from "@/utils/tailwind";
 
-export function columns(
-  cols: [TemplateResult<1>, TemplateResult<1> | string][],
-) {
+export type Cols = [TemplateResult<1>, TemplateResult<1> | string][];
+
+export function columns(cols: Cols) {
   return html`
     <div class="grid grid-cols-5 gap-5">
       ${cols.map(

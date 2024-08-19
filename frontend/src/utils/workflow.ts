@@ -1,4 +1,4 @@
-import { msg } from "@lit/localize";
+import { msg, str } from "@lit/localize";
 import { z } from "zod";
 
 import type { Tags } from "@/components/ui/tag-input";
@@ -32,6 +32,19 @@ export const sectionLabels: Record<SectionsEnum, string> = {
   browserSettings: msg("Browser Settings"),
   scheduling: msg("Scheduling"),
 };
+
+export function defaultLabel(value: unknown): string {
+  if (value === Infinity) {
+    return msg("Default: Unlimited");
+  }
+  if (typeof value === "number") {
+    return msg(str`Default: ${value.toLocaleString()}`);
+  }
+  if (value) {
+    return msg(str`Default: ${value}`);
+  }
+  return "";
+}
 
 export type FormState = {
   primarySeedUrl: string;
@@ -80,7 +93,7 @@ export type WorkflowDefaults = {
   maxScale: number;
 };
 
-export const serverDefaults: WorkflowDefaults = {
+export const appDefaults: WorkflowDefaults = {
   maxScale: DEFAULT_MAX_SCALE,
 };
 
@@ -273,8 +286,8 @@ export function getInitialFormState(params: {
   };
 }
 
-export async function fetchServerDefaults(): Promise<WorkflowDefaults> {
-  const defaults = { ...serverDefaults };
+export async function getServerDefaults(): Promise<WorkflowDefaults> {
+  const defaults = { ...appDefaults };
 
   try {
     const resp = await fetch("/api/settings", {
