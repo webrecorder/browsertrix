@@ -90,7 +90,7 @@ export class ArchivedItemDetail extends BtrixElement {
   qaRuns?: QARun[];
 
   @state()
-  private crawl?: ArchivedItem;
+  crawl?: ArchivedItem;
 
   @state()
   private workflow?: Workflow;
@@ -159,7 +159,10 @@ export class ArchivedItemDetail extends BtrixElement {
         void this.fetchQARuns();
       }
     }
-    if (changedProperties.has("workflowId") && this.workflowId) {
+    if (
+      (changedProperties.has("workflowId") && this.workflowId) ||
+      (changedProperties.has("crawl") && this.crawl?.cid)
+    ) {
       void this.fetchWorkflow();
     }
     if (changedProperties.has("qaRuns")) {
@@ -1004,7 +1007,7 @@ ${this.crawl?.description}
     return html`
       <div aria-live="polite" aria-busy=${!this.crawl || !this.seeds}>
         ${when(
-          this.crawl && this.seeds && (!this.workflowId || this.workflow),
+          this.crawl && this.seeds && this.workflow,
           () => html`
             <btrix-config-details
               .crawlConfig=${{
@@ -1177,7 +1180,12 @@ ${this.crawl?.description}
 
   private async fetchWorkflow(): Promise<void> {
     try {
-      this.workflow = await this.getWorkflow();
+      const id = this.workflowId || this.crawl?.cid;
+      if (!id) {
+        console.debug("no workflow id");
+        return;
+      }
+      this.workflow = await this.getWorkflow(id);
     } catch (e: unknown) {
       console.debug(e);
     }
@@ -1198,10 +1206,8 @@ ${this.crawl?.description}
     return data;
   }
 
-  private async getWorkflow(): Promise<Workflow> {
-    return this.api.fetch<Workflow>(
-      `/orgs/${this.orgId}/crawlconfigs/${this.workflowId}`,
-    );
+  private async getWorkflow(id: string): Promise<Workflow> {
+    return this.api.fetch<Workflow>(`/orgs/${this.orgId}/crawlconfigs/${id}`);
   }
 
   private async fetchCrawlLogs(
