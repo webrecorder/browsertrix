@@ -1,11 +1,11 @@
-import { localized, msg, str } from "@lit/localize";
+import { localized, msg } from "@lit/localize";
 import { css, html } from "lit";
 import { customElement, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import { helpText } from "@/features/crawl-workflows/ui/helpText";
 import { columns, type Cols } from "@/layout/columns";
+import infoText from "@/strings/crawl-workflows/infoText";
 import {
   appDefaults,
   defaultLabel,
@@ -41,24 +41,33 @@ export class OrgSettingsCrawing extends BtrixElement {
     void this.fetchServerDefaults();
   }
 
+  firstUpdated() {
+    console.log(this.orgId);
+  }
+
   render() {
     return html` ${this.renderWorkflowDefaults()} `;
   }
 
   private renderWorkflowDefaults() {
     return html`
-      <div class="rounded-lg border">${this.renderPerCrawlLimits()}</div>
+      <div class="rounded-lg border">
+        ${this.renderPerCrawlLimits()} ${this.renderPerPageLimits()}
+      </div>
     `;
   }
 
   private renderPerCrawlLimits() {
     const pageLimit = html`<sl-input
+      size="small"
       name="pageLimit"
       label=${msg("Max Pages")}
       type="number"
       inputmode="numeric"
-      value=${""}
-      min=${"1"}
+      min=${
+        // TODO handle dynamic min value, same as workflow editor?
+        "1"
+      }
       max=${ifDefined(
         this.defaults.maxPagesPerCrawl &&
           this.defaults.maxPagesPerCrawl < Infinity
@@ -66,16 +75,108 @@ export class OrgSettingsCrawing extends BtrixElement {
           : undefined,
       )}
       placeholder=${defaultLabel(this.defaults.maxPagesPerCrawl)}
-      help-text=${this.defaults.maxPagesPerCrawl &&
-      this.defaults.maxPagesPerCrawl < Infinity
-        ? msg(
-            str`Enter a number between 1 and ${this.defaults.maxPagesPerCrawl.toLocaleString()}`,
-          )
-        : msg("Minimum 1 page")}
     >
       <span slot="suffix">${msg("pages")}</span>
     </sl-input>`;
-    return section("perCrawlLimits", [[pageLimit, helpText("pageLimit")]]);
+
+    const crawlTimeoutMinutes = html`
+      <sl-input
+        size="small"
+        name="crawlTimeoutMinutes"
+        label=${msg("Crawl Time Limit")}
+        placeholder=${defaultLabel(Infinity)}
+        min="0"
+        type="number"
+        inputmode="numeric"
+      >
+        <span slot="suffix">${msg("minutes")}</span>
+      </sl-input>
+    `;
+
+    const maxCrawlSizeGB = html`
+      <sl-input
+        size="small"
+        name="maxCrawlSizeGB"
+        label=${msg("Crawl Size Limit")}
+        placeholder=${defaultLabel(Infinity)}
+        min="0"
+        type="number"
+        inputmode="numeric"
+      >
+        <span slot="suffix">${msg("GB")}</span>
+      </sl-input>
+    `;
+
+    return section("perCrawlLimits", [
+      [pageLimit, infoText["pageLimit"]],
+      [crawlTimeoutMinutes, infoText["crawlTimeoutMinutes"]],
+      [maxCrawlSizeGB, infoText["maxCrawlSizeGB"]],
+    ]);
+  }
+
+  private renderPerPageLimits() {
+    const pageLoadTimeoutSeconds = html`
+      <sl-input
+        size="small"
+        name="pageLoadTimeoutSeconds"
+        type="number"
+        inputmode="numeric"
+        label=${msg("Page Load Timeout")}
+        placeholder=${defaultLabel(this.defaults.pageLoadTimeoutSeconds)}
+        min="0"
+      >
+        <span slot="suffix">${msg("seconds")}</span>
+      </sl-input>
+    `;
+
+    const postLoadDelaySeconds = html`
+      <sl-input
+        size="small"
+        name="postLoadDelaySeconds"
+        type="number"
+        inputmode="numeric"
+        label=${msg("Delay After Page Load")}
+        placeholder=${defaultLabel(0)}
+        min="0"
+      >
+        <span slot="suffix">${msg("seconds")}</span>
+      </sl-input>
+    `;
+
+    const behaviorTimeoutSeconds = html`
+      <sl-input
+        size="small"
+        name="behaviorTimeoutSeconds"
+        type="number"
+        inputmode="numeric"
+        label=${msg("Behavior Timeout")}
+        placeholder=${defaultLabel(this.defaults.behaviorTimeoutSeconds)}
+        min="0"
+      >
+        <span slot="suffix">${msg("seconds")}</span>
+      </sl-input>
+    `;
+
+    const pageExtraDelaySeconds = html`
+      <sl-input
+        size="small"
+        name="pageExtraDelaySeconds"
+        type="number"
+        inputmode="numeric"
+        label=${msg("Delay Before Next Page")}
+        placeholder=${defaultLabel(0)}
+        min="0"
+      >
+        <span slot="suffix">${msg("seconds")}</span>
+      </sl-input>
+    `;
+
+    return section("perPageLimits", [
+      [pageLoadTimeoutSeconds, infoText["pageLoadTimeoutSeconds"]],
+      [postLoadDelaySeconds, infoText["postLoadDelaySeconds"]],
+      [behaviorTimeoutSeconds, infoText["behaviorTimeoutSeconds"]],
+      [pageExtraDelaySeconds, infoText["pageExtraDelaySeconds"]],
+    ]);
   }
 
   private async fetchServerDefaults() {

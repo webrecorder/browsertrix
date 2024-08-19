@@ -86,6 +86,8 @@ export type FormState = {
   crawlerChannel: string;
 };
 
+export type FormStateField = keyof FormState;
+
 export type WorkflowDefaults = {
   behaviorTimeoutSeconds?: number;
   pageLoadTimeoutSeconds?: number;

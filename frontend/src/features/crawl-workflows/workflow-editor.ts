@@ -34,8 +34,6 @@ import compact from "lodash/fp/compact";
 import flow from "lodash/fp/flow";
 import uniq from "lodash/fp/uniq";
 
-import { helpText } from "./ui/helpText";
-
 import { BtrixElement } from "@/classes/BtrixElement";
 import type {
   SelectCrawlerChangeEvent,
@@ -50,6 +48,7 @@ import type {
   ExclusionChangeEvent,
   ExclusionRemoveEvent,
 } from "@/features/crawl-workflows/queue-exclusion-table";
+import infoText from "@/strings/crawl-workflows/infoText";
 import type {
   CrawlConfig,
   JobType,
@@ -211,7 +210,7 @@ export class WorkflowEditor extends BtrixElement {
   private defaults: WorkflowDefaults = appDefaults;
 
   @state()
-  private formState!: FormState;
+  private formState = getDefaultFormState();
 
   @state()
   private serverError?: TemplateResult | string;
@@ -724,7 +723,10 @@ export class WorkflowEditor extends BtrixElement {
     return html`<div class="col-span-5 md:col-span-3">${content}</div> `;
   };
 
-  private renderHelpTextCol(content: TemplateResult | string, padTop = true) {
+  private renderHelpTextCol(
+    content: TemplateResult | string | undefined,
+    padTop = true,
+  ) {
     return html`
       <div class="flex${padTop ? " pt-6" : ""} col-span-5 md:col-span-2">
         <div class="mr-2 text-base">
@@ -1268,19 +1270,13 @@ https://archiveweb.page/images/${"logo.svg"}`}
                 : undefined,
             )}
             placeholder=${defaultLabel(this.defaults.maxPagesPerCrawl)}
-            help-text=${this.defaults.maxPagesPerCrawl &&
-            this.defaults.maxPagesPerCrawl < Infinity
-              ? msg(
-                  str`Enter a number between 1 and ${this.defaults.maxPagesPerCrawl.toLocaleString()}`,
-                )
-              : msg("Minimum 1 page")}
             @sl-input=${onInputMinMax}
           >
             <span slot="suffix">${msg("pages")}</span>
           </sl-input>
         </sl-mutation-observer>
       `)}
-      ${this.renderHelpTextCol(helpText("pageLimit"))}
+      ${this.renderHelpTextCol(infoText["pageLimit"])}
       ${this.renderFormCol(html`
         <sl-input
           name="crawlTimeoutMinutes"
@@ -1294,9 +1290,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           <span slot="suffix">${msg("minutes")}</span>
         </sl-input>
       `)}
-      ${this.renderHelpTextCol(
-        msg(`Gracefully stop the crawler after a specified time limit.`),
-      )}
+      ${this.renderHelpTextCol(infoText["crawlTimeoutMinutes"])}
       ${this.renderFormCol(html`
         <sl-input
           name="maxCrawlSizeGB"
@@ -1310,9 +1304,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           <span slot="suffix">${msg("GB")}</span>
         </sl-input>
       `)}
-      ${this.renderHelpTextCol(
-        msg(`Gracefully stop the crawler after a specified size limit.`),
-      )}
+      ${this.renderHelpTextCol(infoText["maxCrawlSizeGB"])}
       ${this.renderFormCol(html`
         <sl-radio-group
           name="scale"
@@ -1351,11 +1343,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           <span slot="suffix">${msg("seconds")}</span>
         </sl-input>
       `)}
-      ${this.renderHelpTextCol(
-        msg(
-          `Limits amount of time to wait for a page to load. Behaviors will run after this timeout only if the page is partially or fully loaded.`,
-        ),
-      )}
+      ${this.renderHelpTextCol(infoText["pageLoadTimeoutSeconds"])}
       ${this.renderFormCol(html`
         <sl-input
           name="postLoadDelaySeconds"
@@ -1369,11 +1357,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           <span slot="suffix">${msg("seconds")}</span>
         </sl-input>
       `)}
-      ${this.renderHelpTextCol(
-        msg(
-          `Waits on the page after initial HTML page load prior to moving on to next steps such as link extraction and behaviors. Can be useful with pages that are slow to load page contents.`,
-        ),
-      )}
+      ${this.renderHelpTextCol(infoText["postLoadDelaySeconds"])}
       ${this.renderFormCol(html`
         <sl-input
           name="behaviorTimeoutSeconds"
@@ -1388,9 +1372,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           <span slot="suffix">${msg("seconds")}</span>
         </sl-input>
       `)}
-      ${this.renderHelpTextCol(
-        msg(`Limits how long behaviors can run on each page.`),
-      )}
+      ${this.renderHelpTextCol(infoText["behaviorTimeoutSeconds"])}
       ${this.renderFormCol(
         html`<sl-checkbox
           name="autoscrollBehavior"
@@ -1418,11 +1400,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           <span slot="suffix">${msg("seconds")}</span>
         </sl-input>
       `)}
-      ${this.renderHelpTextCol(
-        msg(
-          `Waits on the page after behaviors are complete before moving onto the next page. Can be helpful for rate limiting.`,
-        ),
-      )}
+      ${this.renderHelpTextCol(infoText["pageExtraDelaySeconds"])}
     `;
   }
 

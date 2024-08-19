@@ -137,7 +137,23 @@ export class OrgSettings extends BtrixElement {
                 `,
               ],
               ["billing", () => html`<h3>${msg("Current Plan")}</h3> `],
-              ["crawling", () => html`<h3>${msg("Workflow Defaults")}</h3>`],
+              [
+                "crawling",
+                () =>
+                  html`<h3 class="flex items-center gap-2">
+                    ${msg("Crawl Defaults")}
+                    <sl-tooltip
+                      content=${msg(
+                        "Default settings for all new crawl workflows. Existing workflows will not be affected.",
+                      )}
+                    >
+                      <sl-icon
+                        class="text-base text-neutral-500"
+                        name="info-circle"
+                      ></sl-icon>
+                    </sl-tooltip>
+                  </h3>`,
+              ],
             ],
             () => html`<h3>${this.tabLabels[this.activePanel]}</h3>`,
           )}
