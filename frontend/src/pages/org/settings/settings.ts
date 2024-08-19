@@ -101,7 +101,7 @@ export class OrgSettings extends BtrixElement {
 
   render() {
     return html`<header class="mb-5">
-        <h1 class="text-xl font-semibold leading-8">${msg("Settings")}</h1>
+        <h1 class="text-xl font-semibold leading-8">${msg("Org Settings")}</h1>
       </header>
 
       <btrix-tab-list activePanel=${this.activePanel} hideIndicator>
