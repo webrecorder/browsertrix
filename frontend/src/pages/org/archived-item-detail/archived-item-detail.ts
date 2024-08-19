@@ -1187,7 +1187,11 @@ ${this.crawl?.description}
       }
       this.workflow = await this.getWorkflow(id);
     } catch (e: unknown) {
-      console.debug(e);
+      this.notify.toast({
+        message: msg("Sorry, couldn't load all crawl settings."),
+        variant: "warning",
+        icon: "exclamation-circle",
+      });
     }
   }
 
