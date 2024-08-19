@@ -16,6 +16,12 @@ View and manage your org's current payment plan and associated quotas. Usage his
 
 Set default suggested settings for all new crawl workflows in this tab. When creating a new workflow, org members will see the form pre-filled with default values. Org members can still change or remove these settings when configuring the workflow. Removing a default setting will revert the setting back to Browsertrix defaults. -->
 
+## Billing
+
+`Paid Feature`{ .badge-green }
+
+This tab displays an org's current payment plan and associated quotas along with usage history statistics for previous months.
+
 <!-- ## Limits
 
 This tab lets organization admins set an additional number of allowed overage minutes when the organization's monthly execution minutes quota has been reached. If set, this serves as a hard cap after which all running crawls will be stopped. When set at the default of 0, crawls will be stopped as soon as the monthly quota is reached. -->
