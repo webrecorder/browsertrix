@@ -129,7 +129,7 @@ export class WorkflowDetail extends LiteElement {
     crawls: msg("Crawls"),
     watch: msg("Watch Crawl"),
     logs: msg("Error Logs"),
-    settings: msg("Workflow Settings"),
+    settings: msg("Settings"),
   };
 
   connectedCallback(): void {
