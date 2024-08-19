@@ -20,10 +20,14 @@ import {
 type FieldName = keyof FormState;
 type Field = Record<FieldName, TemplateResult<1>>;
 
-function section(section: SectionsEnum, cols: Cols) {
+function section(section: SectionsEnum | "exclusions", cols: Cols) {
   return html`
     <section class="p-5">
-      <btrix-section-heading>${sectionLabels[section]}</btrix-section-heading>
+      <btrix-section-heading
+        >${section === "exclusions"
+          ? msg("Exclusions")
+          : sectionLabels[section]}</btrix-section-heading
+      >
       ${columns(cols)}
     </section>
   `;
@@ -55,6 +59,20 @@ export class OrgSettingsCrawing extends BtrixElement {
   }
 
   get fields(): Partial<Record<SectionsEnum, Partial<Field>>> {
+    const scope = {
+      exclusions: html`
+        <btrix-queue-exclusion-table
+          pageSize="30"
+          labelClassName="text-xs"
+          editable
+          removable
+        ></btrix-queue-exclusion-table>
+        <sl-button class="mt-1 w-full" size="small">
+          <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+          <span class="text-neutral-600">${msg("Add More")}</span>
+        </sl-button>
+      `,
+    };
     const perCrawlLimits = {
       pageLimit: html`<sl-input
         size="small"
@@ -187,6 +205,7 @@ export class OrgSettingsCrawing extends BtrixElement {
     };
 
     return {
+      scope,
       perCrawlLimits,
       perPageLimits,
       browserSettings,

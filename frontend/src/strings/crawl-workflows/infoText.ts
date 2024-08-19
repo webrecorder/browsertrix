@@ -6,6 +6,8 @@ import { type FormState } from "@/utils/workflow";
 type Field = keyof FormState;
 
 const infoText: Partial<Record<Field, string | TemplateResult>> = {
+  exclusions: msg(`Specify exclusion rules for what pages should not be visited.
+  Exclusions apply to all URLs.`),
   pageLimit: msg(
     "Adds a hard limit on the number of pages that will be crawled.",
   ),

@@ -884,10 +884,7 @@ https://example.com/path`}
               <span class="text-neutral-600">${msg("Add More")}</span>
             </sl-button>
           `)}
-          ${this.renderHelpTextCol(
-            msg(`Specify exclusion rules for what pages should not be visited.
-            Exclusions apply to all URLs.`),
-          )}
+          ${this.renderHelpTextCol(infoText["exclusions"])}
         `,
       )}
     `;
