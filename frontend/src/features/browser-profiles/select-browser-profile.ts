@@ -2,6 +2,7 @@ import { localized, msg } from "@lit/localize";
 import { type SlSelect } from "@shoelace-style/shoelace";
 import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import orderBy from "lodash/fp/orderBy";
 
 import type { Profile } from "@/pages/org/types";
@@ -33,6 +34,9 @@ export type SelectBrowserProfileChangeEvent =
 @localized()
 export class SelectBrowserProfile extends LiteElement {
   @property({ type: String })
+  size?: SlSelect["size"];
+
+  @property({ type: String })
   profileId?: string;
 
   @state()
@@ -54,6 +58,7 @@ export class SelectBrowserProfile extends LiteElement {
         placeholder=${this.browserProfiles
           ? msg("Default Profile")
           : msg("Loading")}
+        size=${ifDefined(this.size)}
         hoist
         @sl-change=${this.onChange}
         @sl-focus=${() => {

@@ -2,6 +2,7 @@ import { localized, msg } from "@lit/localize";
 import { type SlSelect } from "@shoelace-style/shoelace";
 import { html } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import capitalize from "lodash/fp/capitalize";
 
 import type { CrawlerChannel } from "@/pages/org/types";
@@ -40,6 +41,9 @@ type CrawlerChannelsAPIResponse = {
 @localized()
 export class SelectCrawler extends LiteElement {
   @property({ type: String })
+  size?: SlSelect["size"];
+
+  @property({ type: String })
   crawlerChannel?: string;
 
   @state()
@@ -63,6 +67,7 @@ export class SelectCrawler extends LiteElement {
         label=${msg("Crawler Release Channel")}
         value=${this.selectedCrawler?.id || ""}
         placeholder=${msg("Latest")}
+        size=${ifDefined(this.size)}
         hoist
         @sl-change=${this.onChange}
         @sl-focus=${() => {

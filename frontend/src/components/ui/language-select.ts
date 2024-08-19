@@ -38,6 +38,9 @@ export class LanguageSelect extends LitElement {
   `;
 
   @property({ type: String })
+  size?: SlSelect["size"];
+
+  @property({ type: String })
   value?: LanguageCode;
 
   @property({ type: Boolean })
@@ -48,6 +51,7 @@ export class LanguageSelect extends LitElement {
       <sl-select
         placeholder=${msg("Browser Default")}
         value=${ifDefined(this.value)}
+        size=${ifDefined(this.size)}
         ?hoist=${this.hoist}
         @sl-change=${(e: Event) => {
           e.stopPropagation();

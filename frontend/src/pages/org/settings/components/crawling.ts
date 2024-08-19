@@ -157,10 +157,39 @@ export class OrgSettingsCrawing extends BtrixElement {
         </sl-input>
       `,
     };
+    const browserSettings = {
+      browserProfile: html`
+        <btrix-select-browser-profile
+          size="small"
+        ></btrix-select-browser-profile>
+      `,
+      crawlerChannel: html`
+        <btrix-select-crawler size="small"></btrix-select-crawler>
+      `,
+      blockAds: html`<sl-checkbox size="small" name="blockAds">
+        ${msg("Block ads by domain")}
+      </sl-checkbox>`,
+      userAgent: html`
+        <sl-input
+          size="small"
+          name="userAgent"
+          label=${msg("User Agent")}
+          autocomplete="off"
+          placeholder=${msg("Default")}
+        >
+        </sl-input>
+      `,
+      lang: html`
+        <btrix-language-select size="small">
+          <span slot="label">${msg("Language")}</span>
+        </btrix-language-select>
+      `,
+    };
 
     return {
       perCrawlLimits,
       perPageLimits,
+      browserSettings,
     };
   }
 

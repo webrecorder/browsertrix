@@ -5,10 +5,7 @@ import { html, type TemplateResult } from "lit";
 
 import { tw } from "@/utils/tailwind";
 
-export type Cols = [
-  TemplateResult<1>,
-  TemplateResult<1> | string | undefined,
-][];
+export type Cols = [TemplateResult<1>, TemplateResult | string | undefined][];
 
 export function columns(cols: Cols) {
   return html`
@@ -17,7 +14,7 @@ export function columns(cols: Cols) {
         ([main, info]) => html`
           <div class=${tw`col-span-5 self-baseline md:col-span-3`}>${main}</div>
           <div
-            class="col-span-5 mb-6 flex gap-2 text-neutral-500 md:col-span-2 md:mb-0 md:mt-8"
+            class="col-span-5 mb-6 flex gap-2 text-neutral-500 md:col-span-2 md:mb-0 md:mt-6"
           >
             <div class="text-base">
               <sl-icon name="info-circle"></sl-icon>

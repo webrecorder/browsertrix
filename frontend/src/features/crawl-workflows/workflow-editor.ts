@@ -728,11 +728,15 @@ export class WorkflowEditor extends BtrixElement {
     padTop = true,
   ) {
     return html`
-      <div class="flex${padTop ? " pt-6" : ""} col-span-5 md:col-span-2">
+      <div
+        class="flex${padTop
+          ? " pt-6"
+          : ""} col-span-5 text-neutral-500 md:col-span-2"
+      >
         <div class="mr-2 text-base">
           <sl-icon name="info-circle"></sl-icon>
         </div>
-        <div class="mt-0.5 text-xs text-neutral-500">${content}</div>
+        <div class="mt-0.5 text-xs">${content}</div>
       </div>
     `;
   }
@@ -1416,10 +1420,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
             })}
         ></btrix-select-browser-profile>
       `)}
-      ${this.renderHelpTextCol(
-        msg(`Choose a custom profile to make use of saved cookies and logged-in
-        accounts. Note that websites may log profiles out after a period of time.`),
-      )}
+      ${this.renderHelpTextCol(infoText["browserProfile"])}
       ${this.renderFormCol(html`
         <btrix-select-crawler
           .crawlerChannel=${this.formState.crawlerChannel}
@@ -1432,30 +1433,14 @@ https://archiveweb.page/images/${"logo.svg"}`}
         ></btrix-select-crawler>
       `)}
       ${this.showCrawlerChannels
-        ? this.renderHelpTextCol(
-            msg(
-              `Choose a Browsertrix Crawler Release Channel. If available, other versions may provide new/experimental crawling features.`,
-            ),
-          )
+        ? this.renderHelpTextCol(infoText["crawlerChannel"])
         : html``}
       ${this.renderFormCol(html`
         <sl-checkbox name="blockAds" ?checked=${this.formState.blockAds}>
           ${msg("Block ads by domain")}
         </sl-checkbox>
       `)}
-      ${this.renderHelpTextCol(
-        msg(
-          html`Blocks advertising content from being loaded. Uses
-            <a
-              href="https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts"
-              class="text-blue-600 hover:text-blue-500"
-              target="_blank"
-              rel="noopener noreferrer nofollow"
-              >Steven Black’s Hosts file</a
-            >.`,
-        ),
-        false,
-      )}
+      ${this.renderHelpTextCol(infoText["blockAds"], false)}
       ${this.renderFormCol(html`
         <sl-input
           name="userAgent"
@@ -1466,19 +1451,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         >
         </sl-input>
       `)}
-      ${this.renderHelpTextCol(
-        msg(
-          html`Set custom user agent for crawler browsers to use in requests.
-            For common user agents see
-            <a
-              href="https://www.useragents.me/"
-              class="text-blue-600 hover:text-blue-500"
-              target="_blank"
-              rel="noopener noreferrer nofollow"
-              >Useragents.me</a
-            >.`,
-        ),
-      )}
+      ${this.renderHelpTextCol(infoText["userAgent"])}
       ${this.renderFormCol(html`
         <btrix-language-select
           .value=${this.formState.lang as LanguageCode}
@@ -1491,10 +1464,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           <span slot="label">${msg("Language")}</span>
         </btrix-language-select>
       `)}
-      ${this.renderHelpTextCol(
-        msg(`Websites that observe the browser’s language setting may serve
-        content in that language if available.`),
-      )}
+      ${this.renderHelpTextCol(infoText["lang"])}
     `;
   }
 
