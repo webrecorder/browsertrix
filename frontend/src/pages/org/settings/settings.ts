@@ -3,6 +3,7 @@ import type { SlInput } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import { html, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import { choose } from "lit/directives/choose.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 
@@ -104,27 +105,33 @@ export class OrgSettings extends BtrixElement {
       </header>
 
       <btrix-tab-list activePanel=${this.activePanel} hideIndicator>
-        <header slot="header" class="flex h-5 items-end justify-between">
-          ${when(
-            this.activePanel === "members",
-            () => html`
-              <h3>${msg("Active Members")}</h3>
-              <sl-button
-                href=${`${this.navigate.orgBasePath}/settings/members?invite`}
-                variant="primary"
-                size="small"
-                @click=${this.navigate.link}
-              >
-                <sl-icon
-                  slot="prefix"
-                  name="person-add"
-                  aria-hidden="true"
-                  library="default"
-                ></sl-icon>
-                ${msg("Invite New Member")}
-              </sl-button>
-            `,
-            () => html` <h3>${this.tabLabels[this.activePanel]}</h3> `,
+        <header slot="header" class="flex h-7 items-end justify-between">
+          ${choose(
+            this.activePanel,
+            [
+              [
+                "members",
+                () => html`
+                  <h3>${msg("Active Members")}</h3>
+                  <sl-button
+                    href=${`${this.navigate.orgBasePath}/settings/members?invite`}
+                    variant="primary"
+                    size="small"
+                    @click=${this.navigate.link}
+                  >
+                    <sl-icon
+                      slot="prefix"
+                      name="person-add"
+                      aria-hidden="true"
+                      library="default"
+                    ></sl-icon>
+                    ${msg("Invite New Member")}
+                  </sl-button>
+                `,
+              ],
+              ["billing", () => html`<h3>${msg("Current Plan")}</h3> `],
+            ],
+            () => html`<h3>${this.tabLabels[this.activePanel]}</h3>`,
           )}
         </header>
         ${this.renderTab("information", "settings")}
@@ -167,67 +174,69 @@ export class OrgSettings extends BtrixElement {
 
     return html`<div class="rounded-lg border">
       <form @submit=${this.onOrgInfoSubmit}>
-        ${columns([
-          [
-            html`
-              <sl-input
-                class="with-max-help-text mb-2"
-                name="orgName"
-                size="small"
-                label=${msg("Org Name")}
-                placeholder=${msg("My Organization")}
-                autocomplete="off"
-                value=${this.userOrg.name}
-                minlength="2"
-                required
-                help-text=${this.validateOrgNameMax.helpText}
-                @sl-input=${this.validateOrgNameMax.validate}
-              ></sl-input>
-            `,
-            msg(
-              "Name of your organization that is visible to all org members.",
-            ),
-          ],
-          [
-            html`
-              <sl-input
-                class="mb-2"
-                name="orgSlug"
-                size="small"
-                label=${msg("Custom URL Identifier")}
-                placeholder="my-organization"
-                autocomplete="off"
-                value=${this.orgSlug || ""}
-                minlength="2"
-                maxlength="30"
-                required
-                help-text=${msg(
-                  str`Org home page: ${window.location.protocol}//${
-                    window.location.hostname
-                  }/orgs/${
-                    this.slugValue
-                      ? slugifyStrict(this.slugValue)
-                      : this.orgSlug
-                  }`,
-                )}
-                @sl-input=${this.handleSlugInput}
-              ></sl-input>
-            `,
-            msg(
-              "Customize your organization's web address for accessing Browsertrix.",
-            ),
-          ],
-          [
-            html`
-              <btrix-copy-field
-                class="mb-2"
-                label=${msg("Org ID")}
-                value=${this.orgId}
-              ></btrix-copy-field>
-            `,
-            msg("Use this ID to reference this org in the Browsertrix API."),
-          ],
-        ])}
+        <div class="p-5">
+          ${columns([
+            [
+              html`
+                <sl-input
+                  class="with-max-help-text mb-2"
+                  name="orgName"
+                  size="small"
+                  label=${msg("Org Name")}
+                  placeholder=${msg("My Organization")}
+                  autocomplete="off"
+                  value=${this.userOrg.name}
+                  minlength="2"
+                  required
+                  help-text=${this.validateOrgNameMax.helpText}
+                  @sl-input=${this.validateOrgNameMax.validate}
+                ></sl-input>
+              `,
+              msg(
+                "Name of your organization that is visible to all org members.",
+              ),
+            ],
+            [
+              html`
+                <sl-input
+                  class="mb-2"
+                  name="orgSlug"
+                  size="small"
+                  label=${msg("Custom URL Identifier")}
+                  placeholder="my-organization"
+                  autocomplete="off"
+                  value=${this.orgSlug || ""}
+                  minlength="2"
+                  maxlength="30"
+                  required
+                  help-text=${msg(
+                    str`Org home page: ${window.location.protocol}//${
+                      window.location.hostname
+                    }/orgs/${
+                      this.slugValue
+                        ? slugifyStrict(this.slugValue)
+                        : this.orgSlug
+                    }`,
+                  )}
+                  @sl-input=${this.handleSlugInput}
+                ></sl-input>
+              `,
+              msg(
+                "Customize your organization's web address for accessing Browsertrix.",
+              ),
+            ],
+            [
+              html`
+                <btrix-copy-field
+                  class="mb-2"
+                  label=${msg("Org ID")}
+                  value=${this.orgId}
+                ></btrix-copy-field>
+              `,
+              msg("Use this ID to reference this org in the Browsertrix API."),
+            ],
+          ])}
+        </div>
         <footer class="flex justify-end border-t px-4 py-3">
           <sl-button
             class="inline-control-button"
@@ -281,14 +290,13 @@ export class OrgSettings extends BtrixElement {
         </btrix-data-table>
       </section>
 
-      ${when(
-        this.pendingInvites.length,
-        () => html`
-          <section class="mt-7">
-            <h3 class="mb-2 text-lg font-semibold">
-              ${msg("Pending Invites")}
-            </h3>
-
+      <section class="mt-7">
+        <header>
+          <h3 class="mb-2 text-lg font-medium">${msg("Pending Invites")}</h3>
+        </header>
+        ${when(
+          this.pendingInvites.length,
+          () => html`
             <btrix-data-table
               .columns=${[
                 msg("Email"),
@@ -303,9 +311,16 @@ export class OrgSettings extends BtrixElement {
               .columnWidths=${columnWidths}
             >
             </btrix-data-table>
-          </section>
-        `,
-      )}
+          `,
+          () => html`
+            <p
+              class="rounded border bg-neutral-50 p-3 text-center text-neutral-500"
+            >
+              ${msg("No pending invites to show.")}
+            </p>
+          `,
+        )}
+      </section>
 
       <btrix-dialog
         .label=${msg("Invite New Member")}

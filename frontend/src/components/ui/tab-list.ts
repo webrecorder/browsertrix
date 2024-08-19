@@ -90,7 +90,8 @@ export class TabList extends TailwindElement {
         "header"
         "main";
       grid-template-columns: 1fr;
-      grid-gap: 1.5rem;
+      grid-column-gap: 1.5rem;
+      grid-row-gap: 1rem;
     }
 
     @media only screen and (min-width: ${TWO_COL_SCREEN_MIN_CSS}) {

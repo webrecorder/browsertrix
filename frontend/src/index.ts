@@ -387,7 +387,7 @@ export class App extends LiteElement {
                     <sl-menu-item
                       @click=${() => this.navigate(ROUTES.accountSettings)}
                     >
-                      <sl-icon slot="prefix" name="gear"></sl-icon>
+                      <sl-icon slot="prefix" name="person-gear"></sl-icon>
                       ${msg("Account Settings")}
                     </sl-menu-item>
                     ${this.userInfo?.isSuperAdmin

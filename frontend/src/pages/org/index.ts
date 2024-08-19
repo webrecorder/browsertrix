@@ -22,7 +22,7 @@ import { isApiError } from "@/utils/api";
 import type { ViewState } from "@/utils/APIRouter";
 import { DEFAULT_MAX_SCALE } from "@/utils/crawler";
 import LiteElement, { html } from "@/utils/LiteElement";
-import { isAdmin, isCrawler, type OrgData } from "@/utils/orgs";
+import { type OrgData } from "@/utils/orgs";
 import { AppStateService } from "@/utils/state";
 
 import "./workflow-detail";
@@ -112,18 +112,6 @@ export class Org extends LiteElement {
 
   @state()
   private isCreateDialogVisible = false;
-
-  private get isAdmin() {
-    const userOrg = this.appState.userOrg;
-    if (userOrg) return isAdmin(userOrg.role);
-    return false;
-  }
-
-  private get isCrawler() {
-    const userOrg = this.appState.userOrg;
-    if (userOrg) return isCrawler(userOrg.role);
-    return false;
-  }
 
   connectedCallback() {
     super.connectedCallback();
@@ -263,7 +251,8 @@ export class Org extends LiteElement {
                 ["collections", this.renderCollections],
                 [
                   "settings",
-                  () => (this.isAdmin ? this.renderOrgSettings() : html``),
+                  () =>
+                    this.appState.isAdmin ? this.renderOrgSettings() : html``,
                 ],
               ],
               () =>
@@ -304,17 +293,17 @@ export class Org extends LiteElement {
             label: msg("Collections"),
             path: "collections",
           })}
-          ${when(this.isCrawler, () =>
+          ${when(this.appState.isCrawler, () =>
             this.renderNavTab({
               tabName: "browser-profiles",
               label: msg("Browser Profiles"),
               path: "browser-profiles",
             }),
           )}
-          ${when(this.isAdmin || this.userInfo?.isSuperAdmin, () =>
+          ${when(this.appState.isAdmin || this.userInfo?.isSuperAdmin, () =>
             this.renderNavTab({
               tabName: "settings",
-              label: msg("Org Settings"),
+              label: msg("Settings"),
               path: "settings",
             }),
           )}
@@ -356,7 +345,7 @@ export class Org extends LiteElement {
   }
 
   private renderNewResourceDialogs() {
-    if (!this.orgId || !this.isCrawler) {
+    if (!this.orgId || !this.appState.isCrawler) {
       return;
     }
     if (!this.isCreateDialogVisible) {
@@ -413,8 +402,8 @@ export class Org extends LiteElement {
   private readonly renderDashboard = () => {
     return html`
       <btrix-dashboard
-        ?isCrawler=${this.isCrawler}
-        ?isAdmin=${this.isAdmin}
+        ?isCrawler=${this.appState.isCrawler}
+        ?isAdmin=${this.appState.isAdmin}
         @select-new-dialog=${this.onSelectNewDialog}
       ></btrix-dashboard>
     `;
@@ -425,7 +414,7 @@ export class Org extends LiteElement {
 
     if (params.itemId) {
       if (params.qaTab) {
-        if (!this.isCrawler) {
+        if (!this.appState.isCrawler) {
           return html`<btrix-not-found
             class="flex items-center justify-center"
           ></btrix-not-found>`;
@@ -445,12 +434,12 @@ export class Org extends LiteElement {
         collectionId=${params.collectionId || ""}
         workflowId=${params.workflowId || ""}
         itemType=${params.itemType || "crawl"}
-        ?isCrawler=${this.isCrawler}
+        ?isCrawler=${this.appState.isCrawler}
       ></btrix-archived-item-detail>`;
     }
 
     return html`<btrix-archived-items
-      ?isCrawler=${this.isCrawler}
+      ?isCrawler=${this.appState.isCrawler}
       itemType=${ifDefined(params.itemType || undefined)}
       @select-new-dialog=${this.onSelectNewDialog}
     ></btrix-archived-items>`;
@@ -470,7 +459,7 @@ export class Org extends LiteElement {
           workflowId=${workflowId}
           openDialogName=${this.viewStateData?.dialog}
           ?isEditing=${isEditing}
-          ?isCrawler=${this.isCrawler}
+          ?isCrawler=${this.appState.isCrawler}
           .maxScale=${this.maxScale}
         ></btrix-workflow-detail>
       `;
@@ -481,7 +470,7 @@ export class Org extends LiteElement {
 
       return html` <btrix-workflows-new
         class="col-span-5 mt-6"
-        ?isCrawler=${this.isCrawler}
+        ?isCrawler=${this.appState.isCrawler}
         .initialWorkflow=${workflow}
         .initialSeeds=${seeds}
         jobType=${ifDefined(params.jobType)}
@@ -490,7 +479,6 @@ export class Org extends LiteElement {
     }
 
     return html`<btrix-workflows-list
-      ?isCrawler=${this.isCrawler}
       @select-new-dialog=${this.onSelectNewDialog}
     ></btrix-workflows-list>`;
   };
@@ -501,7 +489,7 @@ export class Org extends LiteElement {
     if (params.browserProfileId) {
       return html`<btrix-browser-profiles-detail
         profileId=${params.browserProfileId}
-        ?isCrawler=${this.isCrawler}
+        ?isCrawler=${this.appState.isCrawler}
       ></btrix-browser-profiles-detail>`;
     }
 
@@ -520,7 +508,7 @@ export class Org extends LiteElement {
     }
 
     return html`<btrix-browser-profiles-list
-      ?isCrawler=${this.isCrawler}
+      ?isCrawler=${this.appState.isCrawler}
       @select-new-dialog=${this.onSelectNewDialog}
     ></btrix-browser-profiles-list>`;
   };
@@ -533,12 +521,12 @@ export class Org extends LiteElement {
         collectionId=${params.collectionId}
         collectionTab=${(params.collectionTab as CollectionTab | undefined) ||
         "replay"}
-        ?isCrawler=${this.isCrawler}
+        ?isCrawler=${this.appState.isCrawler}
       ></btrix-collection-detail>`;
     }
 
     return html`<btrix-collections-list
-      ?isCrawler=${this.isCrawler}
+      ?isCrawler=${this.appState.isCrawler}
       @select-new-dialog=${this.onSelectNewDialog}
     ></btrix-collections-list>`;
   };

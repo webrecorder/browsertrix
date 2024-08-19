@@ -9,6 +9,7 @@ import type { AppSettings } from "@/types/app";
 import { authSchema, type Auth } from "@/types/auth";
 import type { OrgData } from "@/types/org";
 import { userInfoSchema, type UserInfo, type UserOrg } from "@/types/user";
+import { isAdmin, isCrawler } from "@/utils/orgs";
 
 export { use };
 
@@ -45,6 +46,18 @@ export function makeAppStateService() {
 
     get orgId() {
       return this.userOrg?.id || "";
+    }
+
+    get isAdmin() {
+      const userOrg = this.userOrg;
+      if (userOrg) return isAdmin(userOrg.role);
+      return false;
+    }
+
+    get isCrawler() {
+      const userOrg = this.userOrg;
+      if (userOrg) return isCrawler(userOrg.role);
+      return false;
     }
   }
 
