@@ -303,7 +303,7 @@ export class WorkflowEditor extends BtrixElement {
       (changedProperties.get("initialWorkflow") && this.initialWorkflow)
     ) {
       this.initializeEditor();
-      await fetchServerDefaults();
+      this.defaults = await fetchServerDefaults();
       if (this.orgId) {
         await this.fetchOrgQuotaDefaults();
       }
