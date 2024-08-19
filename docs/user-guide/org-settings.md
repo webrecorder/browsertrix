@@ -22,6 +22,10 @@ Set default suggested settings for all new crawl workflows in this tab. When cre
 
 This tab displays an org's current payment plan and associated quotas along with usage history statistics for previous months.
 
+## Crawl Workflows
+
+This tab lets admins change the default suggested values for new crawl workflows. These defaults are not enforced and users can set their own values, or revert them back to the server-set defaults and limits.
+
 <!-- ## Limits
 
 This tab lets organization admins set an additional number of allowed overage minutes when the organization's monthly execution minutes quota has been reached. If set, this serves as a hard cap after which all running crawls will be stopped. When set at the default of 0, crawls will be stopped as soon as the monthly quota is reached. -->
