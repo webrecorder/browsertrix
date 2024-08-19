@@ -1,4 +1,5 @@
 import { localized, msg } from "@lit/localize";
+import { serialize } from "@shoelace-style/shoelace";
 import { css, html, type TemplateResult } from "lit";
 import { customElement, state } from "lit/decorators.js";
 import { guard } from "lit/directives/guard.js";
@@ -215,19 +216,34 @@ export class OrgSettingsCrawing extends BtrixElement {
   private renderWorkflowDefaults() {
     return html`
       <div class="rounded-lg border">
-        ${guard([this.defaults], () =>
-          Object.entries(this.fields).map(([sectionName, fields]) =>
-            section(
-              sectionName as SectionsEnum,
-              Object.entries(fields).map(([fieldName, field]) => [
-                field,
-                infoTextStrings[fieldName as FieldName],
-              ]),
+        <form @submit=${this.onSubmit}>
+          ${guard([this.defaults], () =>
+            Object.entries(this.fields).map(([sectionName, fields]) =>
+              section(
+                sectionName as SectionsEnum,
+                Object.entries(fields).map(([fieldName, field]) => [
+                  field,
+                  infoTextStrings[fieldName as FieldName],
+                ]),
+              ),
             ),
-          ),
-        )}
+          )}
+          <footer class="flex justify-end border-t px-4 py-3">
+            <sl-button type="submit" size="small" variant="primary">
+              ${msg("Save Changes")}
+            </sl-button>
+          </footer>
+        </form>
       </div>
     `;
+  }
+
+  private onSubmit(e: SubmitEvent) {
+    e.preventDefault();
+
+    const form = e.target as HTMLFormElement;
+    const values = serialize(form);
+    console.log(values);
   }
 
   private async fetchServerDefaults() {

@@ -267,7 +267,6 @@ export class OrgSettings extends BtrixElement {
         </div>
         <footer class="flex justify-end border-t px-4 py-3">
           <sl-button
-            class="inline-control-button"
             type="submit"
             size="small"
             variant="primary"
