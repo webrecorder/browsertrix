@@ -77,7 +77,7 @@ export class SelectBrowserProfile extends LiteElement {
                 <div class="text-xs">
                   <sl-format-date
                     lang=${getLocale()}
-                    date=${`${profile.created}Z` /** Z for UTC */}
+                    date=${`${profile.modified}Z` /** Z for UTC */}
                     month="2-digit"
                     day="2-digit"
                     year="2-digit"
@@ -100,36 +100,40 @@ export class SelectBrowserProfile extends LiteElement {
 
     return html`
       <div
-        class="mt-2 flex justify-between rounded border bg-neutral-50 p-2 text-sm"
+        class="mt-2 rounded border bg-slate-50 text-neutral-600 shadow-inner shadow-slate-200"
       >
         ${this.selectedProfile.description
-          ? html`<em class="text-slate-500"
-              >${this.selectedProfile.description}</em
-            >`
+          ? html`<div class="border-b p-3">
+              <div class="mb-2 text-xs text-neutral-400">
+                ${msg("Description:")}
+              </div>
+              <div class="truncate text-xs">
+                ${this.selectedProfile.description}
+              </div>
+            </div>`
           : ""}
-        <span>
-          ${msg("Last edited:")}
-          <sl-format-date
-            lang=${getLocale()}
-            date=${`${this.selectedProfile.created}Z` /** Z for UTC */}
-            month="2-digit"
-            day="2-digit"
-            year="2-digit"
-          ></sl-format-date>
-        </span>
-        <a
-          href=${`${this.orgBasePath}/browser-profiles/profile/${this.selectedProfile.id}`}
-          class="font-medium text-primary hover:text-indigo-500"
-          target="_blank"
-        >
-          <span class="mr-1 inline-block align-middle"
-            >${msg("Check profile")}</span
+        <div class="flex items-center justify-between p-2">
+          <div class="px-1 text-xs">
+            ${msg("Last updated")}
+            <sl-format-date
+              lang=${getLocale()}
+              date=${`${this.selectedProfile.modified}Z` /** Z for UTC */}
+              month="2-digit"
+              day="2-digit"
+              year="2-digit"
+              hour="2-digit"
+              minute="2-digit"
+            ></sl-format-date>
+          </div>
+          <sl-button
+            size="small"
+            href=${`${this.orgBasePath}/browser-profiles/profile/${this.selectedProfile.id}`}
+            target="_blank"
           >
-          <sl-icon
-            class="inline-block align-middle"
-            name="box-arrow-up-right"
-          ></sl-icon>
-        </a>
+            <sl-icon slot="suffix" name="box-arrow-up-right"></sl-icon>
+            ${msg("Check Profile")}
+          </sl-button>
+        </div>
       </div>
     `;
   }
@@ -188,7 +192,7 @@ export class SelectBrowserProfile extends LiteElement {
     try {
       const data = await this.getProfiles();
 
-      this.browserProfiles = orderBy(["name", "created"])(["asc", "desc"])(
+      this.browserProfiles = orderBy(["name", "modified"])(["asc", "desc"])(
         data,
       ) as Profile[];
 
