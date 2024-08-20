@@ -53,13 +53,17 @@ export class LanguageSelect extends LitElement {
         value=${ifDefined(this.value)}
         size=${ifDefined(this.size)}
         ?hoist=${this.hoist}
-        @sl-change=${(e: Event) => {
+        @sl-change=${async (e: Event) => {
           e.stopPropagation();
+
+          this.value = (e.target as SlSelect).value as LanguageCode;
+
+          await this.updateComplete;
 
           this.dispatchEvent(
             new CustomEvent("on-change", {
               detail: {
-                value: (e.target as SlSelect).value,
+                value: this.value,
               },
             }),
           );

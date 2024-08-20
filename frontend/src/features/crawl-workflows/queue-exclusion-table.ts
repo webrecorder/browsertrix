@@ -45,6 +45,7 @@ function formatValue(type: Exclusion["type"], value: Exclusion["value"]) {
  * @TODO Refactor to always be uncontrolled field
  * so that callers don't need to maintain their
  * own exclusions state
+ * @TODO Return value when using shoelace serialize
  *
  * @fires btrix-change ExclusionChangeEvent
  * @fires btrix-remove ExclusionRemoveEvent

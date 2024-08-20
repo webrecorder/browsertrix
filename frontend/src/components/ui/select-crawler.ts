@@ -63,7 +63,7 @@ export class SelectCrawler extends LiteElement {
 
     return html`
       <sl-select
-        name="crawlerChannel-select"
+        name="crawlerChannel"
         label=${msg("Crawler Release Channel")}
         value=${this.selectedCrawler?.id || ""}
         placeholder=${msg("Latest")}
