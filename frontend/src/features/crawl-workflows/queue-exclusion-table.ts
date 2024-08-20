@@ -1,5 +1,5 @@
 import { localized, msg, str } from "@lit/localize";
-import { type PropertyValues, type TemplateResult } from "lit";
+import { css, html, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { html as staticHtml, unsafeStatic } from "lit/static-html.js";
@@ -7,9 +7,9 @@ import RegexColorize from "regex-colorize";
 
 import type { Exclusion } from "./queue-exclusion-form";
 
+import { TailwindElement } from "@/classes/TailwindElement";
 import { type PageChangeEvent } from "@/components/ui/pagination";
 import type { SeedConfig } from "@/pages/org/types";
-import LiteElement, { html } from "@/utils/LiteElement";
 import { regexEscape, regexUnescape } from "@/utils/string";
 
 export type ExclusionChangeEvent = CustomEvent<{
@@ -41,12 +41,23 @@ function formatValue(type: Exclusion["type"], value: Exclusion["value"]) {
  * </btrix-queue-exclusion-table>
  * ```
  *
- * @event on-change ExclusionChangeEvent
- * @event on-remove ExclusionRemoveEvent
+ * @fires btrix-change ExclusionChangeEvent
+ * @fires btrix-remove ExclusionRemoveEvent
  */
 @customElement("btrix-queue-exclusion-table")
 @localized()
-export class QueueExclusionTable extends LiteElement {
+export class QueueExclusionTable extends TailwindElement {
+  static styles = css`
+    sl-input {
+      --sl-input-border-radius-medium: 0;
+      --sl-input-font-family: var(--sl-font-mono);
+      --sl-input-spacing-medium: var(--sl-spacing-small);
+    }
+
+    sl-input:not([data-invalid]) {
+      --sl-input-border-width: 0;
+    }
+  `;
   @property({ type: Array })
   exclusions?: SeedConfig["exclude"];
 
@@ -131,17 +142,6 @@ export class QueueExclusionTable extends LiteElement {
       this.getColumnClassNames(0, this.results.length, true);
 
     return html`
-      <style>
-        btrix-queue-exclusion-table sl-input {
-          --sl-input-border-radius-medium: 0;
-          --sl-input-font-family: var(--sl-font-mono);
-          --sl-input-spacing-medium: var(--sl-spacing-small);
-        }
-
-        btrix-queue-exclusion-table sl-input:not([data-invalid]) {
-          --sl-input-border-width: 0;
-        }
-      </style>
       <div class="mb-2 flex items-center justify-between leading-tight">
         <div class=${ifDefined(this.labelClassName)}>
           ${this.label ?? msg("Exclusions")}
@@ -433,7 +433,7 @@ export class QueueExclusionTable extends LiteElement {
     this.exclusionToRemove = value;
 
     this.dispatchEvent(
-      new CustomEvent("on-remove", {
+      new CustomEvent("btrix-remove", {
         detail: {
           regex: formatValue(type, value),
           index,
@@ -452,7 +452,7 @@ export class QueueExclusionTable extends LiteElement {
     index: number;
   }) {
     this.dispatchEvent(
-      new CustomEvent("on-change", {
+      new CustomEvent("btrix-change", {
         detail: {
           index,
           regex: formatValue(type, value),

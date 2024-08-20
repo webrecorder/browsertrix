@@ -870,8 +870,8 @@ https://example.com/path`}
               pageSize="30"
               editable
               removable
-              @on-remove=${this.handleRemoveRegex}
-              @on-change=${this.handleChangeRegex}
+              @btrix-remove=${this.handleRemoveRegex}
+              @btrix-change=${this.handleChangeRegex}
             ></btrix-queue-exclusion-table>
             <sl-button
               class="mt-1 w-full"
@@ -1122,8 +1122,8 @@ https://example.net`}
                 pageSize="10"
                 editable
                 removable
-                @on-remove=${this.handleRemoveRegex}
-                @on-change=${this.handleChangeRegex}
+                @btrix-remove=${this.handleRemoveRegex}
+                @btrix-change=${this.handleChangeRegex}
               ></btrix-queue-exclusion-table>
               <sl-button
                 class="mt-1 w-full"
