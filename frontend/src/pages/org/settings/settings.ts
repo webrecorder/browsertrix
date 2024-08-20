@@ -510,6 +510,7 @@ export class OrgSettings extends BtrixElement {
                     </li>`}
                   <li>${msg("Edit org name and URL")}</li>
                   <li>${msg("Manage org members")}</li>
+                  <li>${msg("View and edit org defaults")}</li>
                 </ul>
               </sl-details>
             </sl-radio>
