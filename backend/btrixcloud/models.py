@@ -497,6 +497,29 @@ class UpdateCrawlConfig(BaseModel):
 
 
 # ============================================================================
+class CrawlConfigDefaults(BaseModel):
+    """Crawl Config Org Defaults"""
+
+    limit: Optional[int] = None
+
+    pageLoadTimeout: Optional[int] = None
+    postLoadDelay: Optional[int] = None
+    behaviorTimeout: Optional[int] = None
+    pageExtraDelay: Optional[int] = None
+
+    blockAds: Optional[bool] = None
+
+    profileid: Optional[UUID] = None
+    crawlerChannel: Optional[str] = None
+
+    lang: Optional[str] = None
+
+    userAgent: Optional[str] = None
+
+    exclude: Optional[List[str]] = None
+
+
+# ============================================================================
 class CrawlConfigAddedResponse(BaseModel):
     """Response model for adding crawlconfigs"""
 
@@ -1337,6 +1360,8 @@ class OrgOut(BaseMongoModel):
 
     subscription: Optional[Subscription] = None
 
+    crawlingDefaults: Optional[CrawlConfigDefaults] = None
+
 
 # ============================================================================
 class Organization(BaseMongoModel):
@@ -1387,6 +1412,8 @@ class Organization(BaseMongoModel):
     readOnlyReason: Optional[str] = None
 
     subscription: Optional[Subscription] = None
+
+    crawlingDefaults: Optional[CrawlConfigDefaults] = None
 
     def is_owner(self, user):
         """Check if user is owner"""
