@@ -70,6 +70,8 @@ export class LanguageSelect extends LitElement {
         }}
       >
         <div slot="label"><slot name="label">${msg("Language")}</slot></div>
+        <sl-option>${msg("Browser Default")}</sl-option>
+        <sl-divider></sl-divider>
         ${languages.map(
           ({ code, name, nativeName }) => html`
             <sl-option value=${code}>
