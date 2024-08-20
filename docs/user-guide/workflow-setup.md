@@ -18,7 +18,7 @@ The first step in creating a new [crawl workflow](crawl-workflows.md) is to choo
     
     **These credentials WILL BE WRITTEN into the archive.** We recommend exercising caution and only archiving with dedicated archival accounts, changing your password or deleting the account when finished.
 
-### List of URLs
+### Crawl URL(s)
 
 `URL List`{ .badge-blue } `Seeded Crawl`{ .badge-orange }
 
@@ -30,10 +30,10 @@ It is also available under the _Additional URLs_ section for Seeded Crawls where
 
 `URL List`{ .badge-blue }
 
-When enabled, the crawler will visit all the links it finds within each page defined in the _List of URLs_ field.
+When enabled, the crawler will visit all the links it finds within each page defined in the _Crawl URL(s)_ field.
 
 ??? example "Crawling tags & search queries with URL List crawls"
-    This setting can be useful for crawling the content of specific tags or search queries. Specify the tag or search query URL(s) in the _List of URLs_ field, e.g: `https://example.com/search?q=tag`, and enable _Include Any Linked Page_ to crawl all the content present on that search query page.
+    This setting can be useful for crawling the content of specific tags or search queries. Specify the tag or search query URL(s) in the _Crawl URL(s)_ field, e.g: `https://example.com/search?q=tag`, and enable _Include Any Linked Page_ to crawl all the content present on that search query page.
 
 ### Fail Crawl on Failed URL
 
@@ -235,7 +235,7 @@ When enabled, a crawl will run immediately on save as if the `Run Immediately on
 
 ### Name
 
-Allows a custom name to be set for the workflow. If no name is set, the workflow's name will be set to the _Crawl Start URL_. For URL List crawls, the workflow's name will be set to the first URL present in the _List of URLs_ field, with an added `(+x)` where `x` represents the total number of URLs in the list.
+Allows a custom name to be set for the workflow. If no name is set, the workflow's name will be set to the _Crawl Start URL_. For URL List crawls, the workflow's name will be set to the first URL present in the _Crawl URL(s)_ field, with an added `(+x)` where `x` represents the total number of URLs in the list.
 
 ### Description
 

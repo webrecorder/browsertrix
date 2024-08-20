@@ -951,7 +951,7 @@ export class CrawlConfigEditor extends LiteElement {
         <sl-textarea
           name="urlList"
           class="textarea-wrap"
-          label=${msg("List of URLs")}
+          label=${msg("Crawl URL(s)")}
           rows="10"
           autocomplete="off"
           inputmode="url"
@@ -1364,7 +1364,7 @@ https://example.net`}
             ${this.renderFormCol(html`
               <sl-textarea
                 name="urlList"
-                label=${msg("List of URLs")}
+                label=${msg("Crawl URL(s)")}
                 rows="3"
                 autocomplete="off"
                 inputmode="url"
