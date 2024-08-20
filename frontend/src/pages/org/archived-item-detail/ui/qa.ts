@@ -281,8 +281,8 @@ export class ArchivedItemDetailQA extends BtrixElement {
           </btrix-card>
 
           <div>
-            <h4 class="mb-2 mt-4 text-lg leading-8">
-              <span class="font-semibold tabular-nums">${msg("Pages")}</span>
+            <h4 class="mb-2 mt-4 text-lg tabular-nums leading-8">
+              <span class="font-semibold">${msg("Pages")}</span>
               ${this.pages != null
                 ? `(${this.pages.total.toLocaleString()})`
                 : html`<sl-skeleton
