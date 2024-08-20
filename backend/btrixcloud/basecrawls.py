@@ -254,8 +254,13 @@ class BaseCrawlOps:
         if update_values.get("reviewStatus"):
             crawl = BaseCrawl.from_dict(result)
 
-            await self.event_webhook_ops.create_crawl_reviewed_notification(
-                crawl.id, crawl.oid, crawl.reviewStatus, crawl.description
+            asyncio.create_task(
+                self.event_webhook_ops.create_crawl_reviewed_notification(
+                    crawl.id,
+                    crawl.oid,
+                    crawl.reviewStatus,
+                    crawl.description,
+                )
             )
 
         return {"updated": True}
