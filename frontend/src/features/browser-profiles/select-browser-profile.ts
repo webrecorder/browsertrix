@@ -89,6 +89,32 @@ export class SelectBrowserProfile extends LiteElement {
         ${this.browserProfiles && !this.browserProfiles.length
           ? this.renderNoProfiles()
           : ""}
+        ${this.selectedProfile
+          ? html`
+              <div slot="help-text" class="flex justify-between">
+                <span>
+                  ${msg("Last updated")}
+                  <sl-format-date
+                    lang=${getLocale()}
+                    date=${`${this.selectedProfile.modified}Z` /** Z for UTC */}
+                    month="2-digit"
+                    day="2-digit"
+                    year="2-digit"
+                    hour="2-digit"
+                    minute="2-digit"
+                  ></sl-format-date>
+                </span>
+                <a
+                  class="flex items-center gap-1 text-blue-500 hover:text-blue-600"
+                  href=${`${this.orgBasePath}/browser-profiles/profile/${this.selectedProfile.id}`}
+                  target="_blank"
+                >
+                  ${msg("Check Profile")}
+                  <sl-icon name="box-arrow-up-right"></sl-icon>
+                </a>
+              </div>
+            `
+          : nothing}
       </sl-select>
 
       ${this.browserProfiles?.length ? this.renderSelectedProfileInfo() : ""}
@@ -96,46 +122,19 @@ export class SelectBrowserProfile extends LiteElement {
   }
 
   private renderSelectedProfileInfo() {
-    if (!this.selectedProfile) return;
+    if (!this.selectedProfile?.description) return;
 
-    return html`
-      <div class="mt-2 rounded border text-neutral-600">
-        ${this.selectedProfile.description
-          ? html` <btrix-details class="pt-1" style="--margin-bottom: 0">
-              <div slot="title" class="text-neutral-500">
-                ${msg("Description")}
-              </div>
-              <!-- display: inline -->
-              <div
-                class="whitespace-pre-line border-b p-3 text-xs leading-normal"
-                >${this.selectedProfile.description}</div
-              >
-            </btrix-details>`
-          : nothing}
-        <div class="flex items-center justify-between p-2">
-          <div class="px-1 text-xs">
-            ${msg("Last updated")}
-            <sl-format-date
-              lang=${getLocale()}
-              date=${`${this.selectedProfile.modified}Z` /** Z for UTC */}
-              month="2-digit"
-              day="2-digit"
-              year="2-digit"
-              hour="2-digit"
-              minute="2-digit"
-            ></sl-format-date>
-          </div>
-          <sl-button
-            size="small"
-            href=${`${this.orgBasePath}/browser-profiles/profile/${this.selectedProfile.id}`}
-            target="_blank"
-          >
-            <sl-icon slot="suffix" name="box-arrow-up-right"></sl-icon>
-            ${msg("Check Profile")}
-          </sl-button>
+    return html`<div class="my-2 rounded border pl-1">
+      <btrix-details style="--margin-bottom: 0; --border-bottom: 0;">
+        <div slot="title" class="text-xs leading-normal text-neutral-600">
+          ${msg("Description")}
         </div>
-      </div>
-    `;
+        <!-- display: inline -->
+        <div class="whitespace-pre-line p-3 text-xs leading-normal"
+          >${this.selectedProfile.description}</div
+        >
+      </btrix-details>
+    </div>`;
   }
 
   private renderNoProfiles() {
