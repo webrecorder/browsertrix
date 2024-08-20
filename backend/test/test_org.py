@@ -60,19 +60,17 @@ def test_update_org_crawling_defaults(admin_auth_headers, default_org_id):
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/defaults/crawling",
         headers=admin_auth_headers,
-        json={"limit": 2, "lang": "fr"},
+        json={"maxCrawlSize": 200000, "lang": "fr"},
     )
 
     assert r.status_code == 200
     assert r.json()["updated"] == True
 
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}", headers=admin_auth_headers
-    )
+    r = requests.get(f"{API_PREFIX}/orgs/{default_org_id}", headers=admin_auth_headers)
 
     data = r.json()
     assert data["crawlingDefaults"]
-    assert data["crawlingDefaults"]["limit"] == 2
+    assert data["crawlingDefaults"]["maxCrawlSize"] == 200000
     assert data["crawlingDefaults"]["lang"] == "fr"
 
 

@@ -500,7 +500,8 @@ class UpdateCrawlConfig(BaseModel):
 class CrawlConfigDefaults(BaseModel):
     """Crawl Config Org Defaults"""
 
-    limit: Optional[int] = None
+    crawlTimeout: Optional[int] = None
+    maxCrawlSize: Optional[int] = None
 
     pageLoadTimeout: Optional[int] = None
     postLoadDelay: Optional[int] = None
