@@ -241,7 +241,17 @@ export class QueueExclusionTable extends TailwindElement {
             label=${msg("Remove exclusion")}
             class="text-base hover:text-danger"
             name="trash3"
-            @click=${() => void this.removeExclusion(exclusion, index)}
+            @click=${() => {
+              if (this.exclusions?.length === 1) {
+                void this.updateExclusion({
+                  type: exclusion.type,
+                  value: "",
+                  index,
+                });
+              } else {
+                void this.removeExclusion(exclusion, index);
+              }
+            }}
           ></sl-icon-button>
         </td>
       </tr>
