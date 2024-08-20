@@ -105,7 +105,10 @@ export class SelectBrowserProfile extends LiteElement {
               <div class="mb-2 text-xs text-neutral-500">
                 ${msg("Description:")}
               </div>
-              <div class="text-xs">${this.selectedProfile.description}</div>
+              <!-- display: inline -->
+              <div class="whitespace-pre-line text-xs leading-normal"
+                >${this.selectedProfile.description}</div
+              >
             </div>`
           : ""}
         <div class="flex items-center justify-between p-2">
