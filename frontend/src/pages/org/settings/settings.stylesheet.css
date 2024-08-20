@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  sl-radio.radio-card {
+    @apply cursor-pointer rounded-md border border-neutral-300 p-2 transition-colors;
+    &:hover {
+      @apply border-neutral-400;
+    }
+    &[aria-checked="true"] {
+      @apply border-primary bg-primary-50;
+    }
+    &::part(base) {
+      @apply grid grid-cols-[auto_minmax(0,1fr)] gap-x-1;
+    }
+    &::part(control) {
+      @apply col-start-1 col-end-2 row-start-1 row-end-2;
+    }
+    &::part(label) {
+      @apply col-start-1 col-end-3 row-start-1 row-end-3 ml-0 grid flex-auto grid-cols-subgrid gap-y-2;
+    }
+  }
+  sl-details.details-card {
+    @apply col-span-2;
+    &::part(header) {
+      @apply p-2;
+    }
+    &::part(content) {
+      @apply p-2 pt-0;
+    }
+  }
+  sl-radio.radio-card[aria-checked="true"] sl-details.details-card {
+    &::part(base) {
+      @apply border-primary/50;
+    }
+    &::part(summary-icon) {
+      @apply text-primary-700;
+    }
+  }
+}

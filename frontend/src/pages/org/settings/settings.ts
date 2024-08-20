@@ -1,13 +1,13 @@
 import { localized, msg, str } from "@lit/localize";
 import type { SlInput } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
-import clsx from "clsx";
-import { html, type PropertyValues } from "lit";
+import { html, unsafeCSS, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 
+import stylesheet from "./settings.stylesheet.css";
 import { columns } from "./ui/columns";
 
 import { BtrixElement } from "@/classes/BtrixElement";
@@ -21,6 +21,8 @@ import { AppStateService } from "@/utils/state";
 import { formatAPIUser } from "@/utils/user";
 
 import "./components/billing";
+
+const styles = unsafeCSS(stylesheet);
 
 type Tab = "information" | "members" | "billing";
 type User = {
@@ -57,6 +59,8 @@ export type OrgRemoveMemberEvent = CustomEvent<{
 @localized()
 @customElement("btrix-org-settings")
 export class OrgSettings extends BtrixElement {
+  static styles = styles;
+
   @property({ type: String })
   activePanel: Tab = "information";
 
@@ -424,25 +428,7 @@ export class OrgSettings extends BtrixElement {
         </div>
         <div class="mb-5">
           <sl-radio-group name="role" label="Role" value=${AccessCode.viewer}>
-            <sl-radio
-              value=${AccessCode.owner}
-              class=${clsx([
-                // Base styles
-                "group rounded-md border border-neutral-300 p-2 transition-colors hover:border-neutral-400",
-
-                // When checked
-                "attr-[aria-checked=true]:border-primary attr-[aria-checked=true]:bg-primary-50",
-
-                // Part: radio control
-                "part-[control]:col-start-1 part-[control]:col-end-2  part-[control]:row-start-1  part-[control]:row-end-2",
-
-                // Part: radio base
-                "part-[base]:grid part-[base]:grid-cols-[auto_minmax(0,1fr)] part-[base]:gap-x-1",
-
-                // Part: radio label
-                "part-[label]:col-start-1 part-[label]:col-end-3 part-[label]:row-start-1 part-[label]:row-end-3 part-[label]:ml-0 part-[label]:grid part-[label]:flex-auto part-[label]:grid-cols-subgrid part-[label]:gap-y-2",
-              ])}
-            >
+            <sl-radio value=${AccessCode.owner} class="radio-card">
               <div
                 class="col-start-2 flex items-baseline justify-between gap-2"
               >
@@ -454,12 +440,13 @@ export class OrgSettings extends BtrixElement {
               <sl-details
                 @sl-hide=${this.stopProp}
                 @sl-after-hide=${this.stopProp}
-                class="col-span-2 part-[content]:p-2 part-[header]:p-2 part-[content]:pt-0 group-attr-[aria-checked=true]:part-[base]:border-primary/50 group-attr-[aria-checked=true]:part-[summary-icon]:text-primary-700"
+                class="details-card"
               >
                 <span slot="summary" class="text-xs"
                   >${msg("Permissions")}</span
                 >
                 <ul class="ms-4 list-disc text-xs text-gray-500">
+                  <li class="text-warning">${msg("Edit org name and URL")}</li>
                   <li class="text-warning">${msg("Manage org members")}</li>
                   ${this.appState.settings?.billingEnabled &&
                   html`<li class="text-warning">
@@ -477,22 +464,19 @@ export class OrgSettings extends BtrixElement {
                 </ul>
               </sl-details>
             </sl-radio>
-            <sl-radio
-              value=${AccessCode.crawler}
-              class="group rounded-md border border-neutral-300 p-2 transition-colors hover:border-neutral-400 attr-[aria-checked=true]:border-primary attr-[aria-checked=true]:bg-primary-50 part-[control]:col-start-1 part-[label]:col-start-1 part-[control]:col-end-2 part-[label]:col-end-3 part-[control]:row-start-1 part-[label]:row-start-1 part-[control]:row-end-2 part-[label]:row-end-3 part-[label]:ml-0 part-[base]:grid part-[label]:grid part-[label]:flex-auto part-[base]:grid-cols-[auto_minmax(0,1fr)] part-[label]:grid-cols-subgrid part-[base]:gap-x-1 part-[label]:gap-y-2"
-            >
+            <sl-radio value=${AccessCode.crawler} class="radio-card">
               <div
                 class="col-start-2 flex items-baseline justify-between gap-2"
               >
                 ${msg("Crawler")}
                 <span class="text-xs text-gray-500">
-                  ${msg("Create, evaluate, and curate archives")}
+                  ${msg("Create, evaluate, and curate archived items")}
                 </span>
               </div>
               <sl-details
                 @sl-hide=${this.stopProp}
                 @sl-after-hide=${this.stopProp}
-                class="col-span-2 part-[content]:p-2 part-[header]:p-2 part-[content]:pt-0 group-attr-[aria-checked=true]:part-[base]:border-primary/50 group-attr-[aria-checked=true]:part-[summary-icon]:text-primary-700"
+                class="details-card"
               >
                 <span slot="summary" class="text-xs">Permissions</span>
                 <ul class="ms-4 list-disc text-xs text-gray-500">
@@ -505,22 +489,19 @@ export class OrgSettings extends BtrixElement {
                 </ul>
               </sl-details>
             </sl-radio>
-            <sl-radio
-              value=${AccessCode.viewer}
-              class="group rounded-md border border-neutral-300 p-2 transition-colors hover:border-neutral-400 attr-[aria-checked=true]:border-primary attr-[aria-checked=true]:bg-primary-50 part-[control]:col-start-1 part-[label]:col-start-1 part-[control]:col-end-2 part-[label]:col-end-3 part-[control]:row-start-1 part-[label]:row-start-1 part-[control]:row-end-2 part-[label]:row-end-3 part-[label]:ml-0 part-[base]:grid part-[label]:grid part-[label]:flex-auto part-[base]:grid-cols-[auto_minmax(0,1fr)] part-[label]:grid-cols-subgrid part-[base]:gap-x-1 part-[label]:gap-y-2"
-            >
+            <sl-radio value=${AccessCode.viewer} class="radio-card">
               <div
                 class="col-start-2 flex items-baseline justify-between gap-2"
               >
                 ${msg("Viewer")}
                 <span class="text-xs text-gray-500">
-                  ${msg("View archives and collections")}
+                  ${msg("View archived items and collections")}
                 </span>
               </div>
               <sl-details
                 @sl-hide=${this.stopProp}
                 @sl-after-hide=${this.stopProp}
-                class="col-span-2 part-[content]:p-2 part-[header]:p-2 part-[content]:pt-0 group-attr-[aria-checked=true]:part-[base]:border-primary/50 group-attr-[aria-checked=true]:part-[summary-icon]:text-primary-700"
+                class="details-card"
               >
                 <span slot="summary" class="text-xs">Permissions</span>
                 <ul class="ms-4 list-disc text-xs text-gray-500">
