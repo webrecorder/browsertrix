@@ -264,16 +264,18 @@ export class BrowserProfilesDetail extends BtrixElement {
             `,
           )}
         </header>
-        <div class="rounded border p-5">
-          ${this.profile
+        <!-- display: inline -->
+        <div
+          class="leading whitespace-pre-line rounded border p-5 leading-relaxed first-line:leading-[0]"
+          >${this.profile
             ? this.profile.description ||
               html`
                 <div class="text-center text-neutral-400">
-                  ${msg("No description added.")}
+                  &nbsp;${msg("No description added.")}
                 </div>
               `
-            : nothing}
-        </div>
+            : nothing}</div
+        >
       </section>
 
       <section class="mb-7">

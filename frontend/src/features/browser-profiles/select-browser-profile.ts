@@ -1,6 +1,6 @@
 import { localized, msg } from "@lit/localize";
 import { type SlSelect } from "@shoelace-style/shoelace";
-import { html } from "lit";
+import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import orderBy from "lodash/fp/orderBy";
 
@@ -77,7 +77,7 @@ export class SelectBrowserProfile extends LiteElement {
                 <div class="text-xs">
                   <sl-format-date
                     lang=${getLocale()}
-                    date=${`${profile.created}Z` /** Z for UTC */}
+                    date=${`${profile.modified}Z` /** Z for UTC */}
                     month="2-digit"
                     day="2-digit"
                     year="2-digit"
@@ -89,6 +89,32 @@ export class SelectBrowserProfile extends LiteElement {
         ${this.browserProfiles && !this.browserProfiles.length
           ? this.renderNoProfiles()
           : ""}
+        ${this.selectedProfile
+          ? html`
+              <div slot="help-text" class="flex justify-between">
+                <span>
+                  ${msg("Last updated")}
+                  <sl-format-date
+                    lang=${getLocale()}
+                    date=${`${this.selectedProfile.modified}Z` /** Z for UTC */}
+                    month="2-digit"
+                    day="2-digit"
+                    year="2-digit"
+                    hour="2-digit"
+                    minute="2-digit"
+                  ></sl-format-date>
+                </span>
+                <a
+                  class="flex items-center gap-1 text-blue-500 hover:text-blue-600"
+                  href=${`${this.orgBasePath}/browser-profiles/profile/${this.selectedProfile.id}`}
+                  target="_blank"
+                >
+                  ${msg("Check Profile")}
+                  <sl-icon name="box-arrow-up-right"></sl-icon>
+                </a>
+              </div>
+            `
+          : nothing}
       </sl-select>
 
       ${this.browserProfiles?.length ? this.renderSelectedProfileInfo() : ""}
@@ -96,42 +122,19 @@ export class SelectBrowserProfile extends LiteElement {
   }
 
   private renderSelectedProfileInfo() {
-    if (!this.selectedProfile) return;
+    if (!this.selectedProfile?.description) return;
 
-    return html`
-      <div
-        class="mt-2 flex justify-between rounded border bg-neutral-50 p-2 text-sm"
-      >
-        ${this.selectedProfile.description
-          ? html`<em class="text-slate-500"
-              >${this.selectedProfile.description}</em
-            >`
-          : ""}
-        <span>
-          ${msg("Last edited:")}
-          <sl-format-date
-            lang=${getLocale()}
-            date=${`${this.selectedProfile.created}Z` /** Z for UTC */}
-            month="2-digit"
-            day="2-digit"
-            year="2-digit"
-          ></sl-format-date>
-        </span>
-        <a
-          href=${`${this.orgBasePath}/browser-profiles/profile/${this.selectedProfile.id}`}
-          class="font-medium text-primary hover:text-indigo-500"
-          target="_blank"
+    return html`<div class="my-2 rounded border pl-1">
+      <btrix-details style="--margin-bottom: 0; --border-bottom: 0;">
+        <div slot="title" class="text-xs leading-normal text-neutral-600">
+          ${msg("Description")}
+        </div>
+        <!-- display: inline -->
+        <div class="whitespace-pre-line p-3 text-xs leading-normal"
+          >${this.selectedProfile.description}</div
         >
-          <span class="mr-1 inline-block align-middle"
-            >${msg("Check profile")}</span
-          >
-          <sl-icon
-            class="inline-block align-middle"
-            name="box-arrow-up-right"
-          ></sl-icon>
-        </a>
-      </div>
-    `;
+      </btrix-details>
+    </div>`;
   }
 
   private renderNoProfiles() {
@@ -188,7 +191,7 @@ export class SelectBrowserProfile extends LiteElement {
     try {
       const data = await this.getProfiles();
 
-      this.browserProfiles = orderBy(["name", "created"])(["asc", "desc"])(
+      this.browserProfiles = orderBy(["name", "modified"])(["asc", "desc"])(
         data,
       ) as Profile[];
 
