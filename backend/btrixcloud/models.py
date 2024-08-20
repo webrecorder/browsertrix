@@ -1115,12 +1115,28 @@ REASON_CANCELED = "subscriptionCanceled"
 class OrgQuotas(BaseModel):
     """Organization quotas (settable by superadmin)"""
 
-    maxConcurrentCrawls: Optional[int] = 0
-    maxPagesPerCrawl: Optional[int] = 0
-    storageQuota: Optional[int] = 0
-    maxExecMinutesPerMonth: Optional[int] = 0
-    extraExecMinutes: Optional[int] = 0
-    giftedExecMinutes: Optional[int] = 0
+    storageQuota: int = 0
+    maxExecMinutesPerMonth: int = 0
+
+    maxConcurrentCrawls: int = 0
+    maxPagesPerCrawl: int = 0
+
+    extraExecMinutes: int = 0
+    giftedExecMinutes: int = 0
+
+
+# ============================================================================
+class OrgQuotasIn(BaseModel):
+    """Update for existing OrgQuotas"""
+
+    storageQuota: Optional[int] = None
+    maxExecMinutesPerMonth: Optional[int] = None
+
+    maxConcurrentCrawls: Optional[int] = None
+    maxPagesPerCrawl: Optional[int] = None
+
+    extraExecMinutes: Optional[int] = None
+    giftedExecMinutes: Optional[int] = None
 
 
 # ============================================================================
@@ -1176,7 +1192,7 @@ class SubscriptionUpdate(BaseModel):
     planId: str
 
     futureCancelDate: Optional[datetime] = None
-    quotas: Optional[OrgQuotas] = None
+    quotas: Optional[OrgQuotasIn] = None
 
 
 # ============================================================================
