@@ -254,19 +254,19 @@ export class ArchivedItemDetailQA extends BtrixElement {
                   <p>
                     ${msg(html`
                       <span class="text-primary">${htmlCount}</span>
-                      HTML ${pluralOf("Pages", htmlCount)}
+                      HTML ${pluralOf("pages", htmlCount)}
                     `)}
                   </p>
                   <p>
                     ${msg(html`
                       <span class="text-neutral-600">${fileCount}</span>
-                      Non-HTML Files Captured As ${pluralOf("Pages", fileCount)}
+                      Non-HTML files captured as ${pluralOf("pages", fileCount)}
                     `)}
                   </p>
                   <p>
                     ${msg(html`
                       <span class="text-danger">${errorCount}</span>
-                      Failed ${pluralOf("Pages", errorCount)}
+                      Failed ${pluralOf("pages", errorCount)}
                     `)}
                   </p>
                 </div> `

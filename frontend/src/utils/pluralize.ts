@@ -56,32 +56,6 @@ const plurals = {
       id: "pages.plural.other",
     }),
   },
-  Pages: {
-    zero: msg("Pages", {
-      desc: 'plural form of "Page" for zero pages',
-      id: "Pages.plural.zero",
-    }),
-    one: msg("Page", {
-      desc: 'singular form for "Page"',
-      id: "Pages.plural.one",
-    }),
-    two: msg("Pages", {
-      desc: 'plural form of "Page" for two pages',
-      id: "Pages.plural.two",
-    }),
-    few: msg("Pages", {
-      desc: 'plural form of "Page" for few pages',
-      id: "Pages.plural.few",
-    }),
-    many: msg("Pages", {
-      desc: 'plural form of "Page" for many pages',
-      id: "Pages.plural.many",
-    }),
-    other: msg("Pages", {
-      desc: 'plural form of "Page" for multiple/other pages',
-      id: "Pages.plural.other",
-    }),
-  },
   comments: {
     zero: msg("comments", {
       desc: 'plural form of "comment" for zero comments',
