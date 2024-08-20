@@ -1,6 +1,6 @@
 import { localized, msg } from "@lit/localize";
 import { type SlSelect } from "@shoelace-style/shoelace";
-import { html } from "lit";
+import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import orderBy from "lodash/fp/orderBy";
 
@@ -101,16 +101,17 @@ export class SelectBrowserProfile extends LiteElement {
     return html`
       <div class="mt-2 rounded border text-neutral-600">
         ${this.selectedProfile.description
-          ? html`<div class="border-b p-3">
-              <div class="mb-2 text-xs text-neutral-500">
-                ${msg("Description:")}
+          ? html` <btrix-details class="pt-1" style="--margin-bottom: 0">
+              <div slot="title" class="text-neutral-500">
+                ${msg("Description")}
               </div>
               <!-- display: inline -->
-              <div class="whitespace-pre-line text-xs leading-normal"
+              <div
+                class="whitespace-pre-line border-b p-3 text-xs leading-normal"
                 >${this.selectedProfile.description}</div
               >
-            </div>`
-          : ""}
+            </btrix-details>`
+          : nothing}
         <div class="flex items-center justify-between p-2">
           <div class="px-1 text-xs">
             ${msg("Last updated")}

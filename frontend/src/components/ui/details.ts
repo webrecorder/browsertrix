@@ -29,6 +29,7 @@ export class Details extends LitElement {
   // postcss-lit-disable-next-line
   static styles = css`
     :host {
+      --margin-bottom: var(--sl-spacing-2x-small);
       display: block;
     }
 
@@ -47,7 +48,7 @@ export class Details extends LitElement {
 
     details[aria-disabled="false"] summary {
       border-bottom: 1px solid var(--sl-panel-border-color);
-      margin-bottom: var(--sl-spacing-x-small);
+      margin-bottom: var(--margin-bottom);
       cursor: pointer;
       user-select: none;
     }
