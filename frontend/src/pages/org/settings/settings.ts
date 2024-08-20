@@ -434,7 +434,9 @@ export class OrgSettings extends BtrixElement {
               >
                 ${msg("Admin")}
                 <span class="text-xs text-gray-500">
-                  ${msg("Manage org and billing settings")}
+                  ${this.appState.settings?.billingEnabled
+                    ? msg("Manage org and billing settings")
+                    : msg("Manage org")}
                 </span>
               </div>
               <sl-details
@@ -450,10 +452,10 @@ export class OrgSettings extends BtrixElement {
                   <li class="text-warning">${msg("Manage org members")}</li>
                   ${this.appState.settings?.billingEnabled &&
                   html`<li class="text-warning">
-                      ${msg("Edit billing details")}
+                      ${msg("Manage subscription")}
                     </li>
                     <li class="text-warning">
-                      ${msg("Update or cancel subscription")}
+                      ${msg("Manage billing details")}
                     </li>`}
                   <li>${msg("Create crawl workflows")}</li>
                   <li>${msg("Create browser profiles")}</li>
@@ -506,7 +508,7 @@ export class OrgSettings extends BtrixElement {
                 <span slot="summary" class="text-xs">Permissions</span>
                 <ul class="ms-4 list-disc text-xs text-gray-500">
                   <li>${msg("View crawl workflows")}</li>
-                  <li>${msg("View archived items")}</li>
+                  <li>${msg("View, replay, and download archived items")}</li>
                   <li>${msg("View collections")}</li>
                 </ul>
               </sl-details>
