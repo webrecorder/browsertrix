@@ -590,7 +590,7 @@ class OrgOps:
         """Update crawling defaults"""
         res = await self.orgs.find_one_and_update(
             {"_id": org.id},
-            {"$set": {"crawlingDefaults": defaults.dict()}},
+            {"$set": {"crawlingDefaults": defaults.model_dump()}},
             return_document=ReturnDocument.AFTER,
         )
         return res is not None
