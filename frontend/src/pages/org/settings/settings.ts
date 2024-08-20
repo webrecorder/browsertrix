@@ -428,6 +428,58 @@ export class OrgSettings extends BtrixElement {
         </div>
         <div class="mb-5">
           <sl-radio-group name="role" label="Role" value=${AccessCode.viewer}>
+            <sl-radio value=${AccessCode.viewer} class="radio-card">
+              <div
+                class="col-start-2 flex items-baseline justify-between gap-2"
+              >
+                ${msg("Viewer")}
+                <span class="text-xs text-gray-500">
+                  ${msg("View archived items and collections")}
+                </span>
+              </div>
+              <sl-details
+                @sl-hide=${this.stopProp}
+                @sl-after-hide=${this.stopProp}
+                class="details-card text-xs"
+              >
+                <span slot="summary">Permissions</span>
+                <ul class="ms-4 list-disc text-gray-500">
+                  <li>${msg("View crawl workflows")}</li>
+                  <li>${msg("View, replay, and download archived items")}</li>
+                  <li>${msg("View collections")}</li>
+                </ul>
+              </sl-details>
+            </sl-radio>
+
+            <sl-radio value=${AccessCode.crawler} class="radio-card">
+              <div
+                class="col-start-2 flex items-baseline justify-between gap-2"
+              >
+                ${msg("Crawler")}
+                <span class="text-xs text-gray-500">
+                  ${msg("Create, evaluate, and curate archived items")}
+                </span>
+              </div>
+              <sl-details
+                @sl-hide=${this.stopProp}
+                @sl-after-hide=${this.stopProp}
+                class="details-card text-xs"
+              >
+                <span slot="summary">Permissions</span>
+                <p class="mb-1 text-gray-500">
+                  ${msg("All Viewer permissions, plus:")}
+                </p>
+                <ul class="ms-4 list-disc text-gray-500">
+                  <li>${msg("Create crawl workflows")}</li>
+                  <li>${msg("Create browser profiles")}</li>
+                  <li>${msg("Upload archived items")}</li>
+                  <li>${msg("Run QA analysis")}</li>
+                  <li>${msg("Rate and review archived items")}</li>
+                  <li>${msg("Create, edit, and share collections")}</li>
+                </ul>
+              </sl-details>
+            </sl-radio>
+
             <sl-radio value=${AccessCode.owner} class="radio-card">
               <div
                 class="col-start-2 flex items-baseline justify-between gap-2"
@@ -442,14 +494,13 @@ export class OrgSettings extends BtrixElement {
               <sl-details
                 @sl-hide=${this.stopProp}
                 @sl-after-hide=${this.stopProp}
-                class="details-card"
+                class="details-card text-xs"
               >
-                <span slot="summary" class="text-xs"
-                  >${msg("Permissions")}</span
-                >
-                <ul class="ms-4 list-disc text-xs text-gray-500">
-                  <li class="text-warning">${msg("Edit org name and URL")}</li>
-                  <li class="text-warning">${msg("Manage org members")}</li>
+                <span slot="summary">${msg("Permissions")}</span>
+                <p class="mb-1 text-gray-500">
+                  ${msg("All Crawler permissions, plus:")}
+                </p>
+                <ul class="ms-4 list-disc text-gray-500">
                   ${this.appState.settings?.billingEnabled &&
                   html`<li class="text-warning">
                       ${msg("Manage subscription")}
@@ -457,59 +508,8 @@ export class OrgSettings extends BtrixElement {
                     <li class="text-warning">
                       ${msg("Manage billing details")}
                     </li>`}
-                  <li>${msg("Create crawl workflows")}</li>
-                  <li>${msg("Create browser profiles")}</li>
-                  <li>${msg("Upload archived items")}</li>
-                  <li>${msg("Run QA analysis")}</li>
-                  <li>${msg("Rate and review archived items")}</li>
-                  <li>${msg("Create, edit, and share collections")}</li>
-                </ul>
-              </sl-details>
-            </sl-radio>
-            <sl-radio value=${AccessCode.crawler} class="radio-card">
-              <div
-                class="col-start-2 flex items-baseline justify-between gap-2"
-              >
-                ${msg("Crawler")}
-                <span class="text-xs text-gray-500">
-                  ${msg("Create, evaluate, and curate archived items")}
-                </span>
-              </div>
-              <sl-details
-                @sl-hide=${this.stopProp}
-                @sl-after-hide=${this.stopProp}
-                class="details-card"
-              >
-                <span slot="summary" class="text-xs">Permissions</span>
-                <ul class="ms-4 list-disc text-xs text-gray-500">
-                  <li>${msg("Create crawl workflows")}</li>
-                  <li>${msg("Create browser profiles")}</li>
-                  <li>${msg("Upload archived items")}</li>
-                  <li>${msg("Run QA analysis")}</li>
-                  <li>${msg("Rate and review archived items")}</li>
-                  <li>${msg("Create, edit, and share collections")}</li>
-                </ul>
-              </sl-details>
-            </sl-radio>
-            <sl-radio value=${AccessCode.viewer} class="radio-card">
-              <div
-                class="col-start-2 flex items-baseline justify-between gap-2"
-              >
-                ${msg("Viewer")}
-                <span class="text-xs text-gray-500">
-                  ${msg("View archived items and collections")}
-                </span>
-              </div>
-              <sl-details
-                @sl-hide=${this.stopProp}
-                @sl-after-hide=${this.stopProp}
-                class="details-card"
-              >
-                <span slot="summary" class="text-xs">Permissions</span>
-                <ul class="ms-4 list-disc text-xs text-gray-500">
-                  <li>${msg("View crawl workflows")}</li>
-                  <li>${msg("View, replay, and download archived items")}</li>
-                  <li>${msg("View collections")}</li>
+                  <li>${msg("Edit org name and URL")}</li>
+                  <li>${msg("Manage org members")}</li>
                 </ul>
               </sl-details>
             </sl-radio>
