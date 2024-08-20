@@ -99,17 +99,13 @@ export class SelectBrowserProfile extends LiteElement {
     if (!this.selectedProfile) return;
 
     return html`
-      <div
-        class="mt-2 rounded border bg-slate-50 text-neutral-600 shadow-inner shadow-slate-200"
-      >
+      <div class="mt-2 rounded border text-neutral-600">
         ${this.selectedProfile.description
           ? html`<div class="border-b p-3">
-              <div class="mb-2 text-xs text-neutral-400">
+              <div class="mb-2 text-xs text-neutral-500">
                 ${msg("Description:")}
               </div>
-              <div class="truncate text-xs">
-                ${this.selectedProfile.description}
-              </div>
+              <div class="text-xs">${this.selectedProfile.description}</div>
             </div>`
           : ""}
         <div class="flex items-center justify-between p-2">
