@@ -44,10 +44,7 @@ import type { TagInputEvent, TagsChangeEvent } from "@/components/ui/tag-input";
 import type { TimeInputChangeEvent } from "@/components/ui/time-input";
 import { type SelectBrowserProfileChangeEvent } from "@/features/browser-profiles/select-browser-profile";
 import type { CollectionsChangeEvent } from "@/features/collections/collections-add";
-import type {
-  ExclusionChangeEvent,
-  ExclusionRemoveEvent,
-} from "@/features/crawl-workflows/queue-exclusion-table";
+import type { QueueExclusionTable } from "@/features/crawl-workflows/queue-exclusion-table";
 import infoTextStrings from "@/strings/crawl-workflows/infoText";
 import sectionStrings from "@/strings/crawl-workflows/section";
 import type {
@@ -870,19 +867,10 @@ https://example.com/path`}
               pageSize="30"
               editable
               removable
+              uncontrolled
               @btrix-remove=${this.handleRemoveRegex}
               @btrix-change=${this.handleChangeRegex}
             ></btrix-queue-exclusion-table>
-            <sl-button
-              class="mt-1 w-full"
-              @click=${() =>
-                this.updateFormState({
-                  exclusions: [""],
-                })}
-            >
-              <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-              <span class="text-neutral-600">${msg("Add More")}</span>
-            </sl-button>
           `)}
           ${this.renderHelpTextCol(infoTextStrings["exclusions"])}
         `,
@@ -1122,19 +1110,10 @@ https://example.net`}
                 pageSize="10"
                 editable
                 removable
+                uncontrolled
                 @btrix-remove=${this.handleRemoveRegex}
                 @btrix-change=${this.handleChangeRegex}
               ></btrix-queue-exclusion-table>
-              <sl-button
-                class="mt-1 w-full"
-                @click=${() =>
-                  this.updateFormState({
-                    exclusions: [""],
-                  })}
-              >
-                <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-                <span class="text-neutral-600">${msg("Add More")}</span>
-              </sl-button>
             `)}
             ${this.renderHelpTextCol(
               msg(
@@ -1780,8 +1759,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
     return jobName;
   }
 
-  private async handleRemoveRegex(e: ExclusionRemoveEvent) {
-    const { index } = e.detail;
+  private async handleRemoveRegex(e: CustomEvent) {
+    const { exclusions } = e.target as QueueExclusionTable;
+
     if (!this.formState.exclusions) {
       this.updateFormState(
         {
@@ -1790,13 +1770,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         true,
       );
     } else {
-      const { exclusions: exclude } = this.formState;
-      this.updateFormState(
-        {
-          exclusions: [...exclude.slice(0, index), ...exclude.slice(index + 1)],
-        },
-        true,
-      );
+      this.updateFormState({ exclusions }, true);
     }
 
     // Check if we removed an erroring input
@@ -1806,17 +1780,10 @@ https://archiveweb.page/images/${"logo.svg"}`}
     this.syncTabErrorState(table);
   }
 
-  private handleChangeRegex(e: ExclusionChangeEvent) {
-    const { regex, index } = e.detail;
+  private handleChangeRegex(e: CustomEvent) {
+    const { exclusions } = e.target as QueueExclusionTable;
 
-    const nextExclusions = [...this.formState.exclusions!];
-    nextExclusions[index] = regex;
-    this.updateFormState(
-      {
-        exclusions: nextExclusions,
-      },
-      true,
-    );
+    this.updateFormState({ exclusions }, true);
   }
 
   private readonly validateOnBlur = async (e: Event) => {

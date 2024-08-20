@@ -2,6 +2,7 @@ import { localized, msg, str } from "@lit/localize";
 import { css, html, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
+import { when } from "lit/directives/when.js";
 import { html as staticHtml, unsafeStatic } from "lit/static-html.js";
 import RegexColorize from "regex-colorize";
 
@@ -41,6 +42,10 @@ function formatValue(type: Exclusion["type"], value: Exclusion["value"]) {
  * </btrix-queue-exclusion-table>
  * ```
  *
+ * @TODO Refactor to always be uncontrolled field
+ * so that callers don't need to maintain their
+ * own exclusions state
+ *
  * @fires btrix-change ExclusionChangeEvent
  * @fires btrix-remove ExclusionRemoveEvent
  */
@@ -58,8 +63,17 @@ export class QueueExclusionTable extends TailwindElement {
       --sl-input-border-width: 0;
     }
   `;
+
   @property({ type: Array })
   exclusions?: SeedConfig["exclude"];
+
+  /**
+   * @deprecated Refactor to always be uncontrolled
+   * field so that callers don't need to maintain their
+   * own exclusions state
+   */
+  @property({ type: Boolean, noAccessor: true })
+  uncontrolled = false;
 
   // TODO switch to LitElement & slotted label
   @property({ type: String })
@@ -90,9 +104,9 @@ export class QueueExclusionTable extends TailwindElement {
   }
 
   willUpdate(changedProperties: PropertyValues<this> & Map<string, unknown>) {
-    if (changedProperties.get("exclusions") && this.exclusions) {
+    if (changedProperties.has("exclusions") && this.exclusions) {
       if (
-        changedProperties.get("exclusions")!.toString() ===
+        changedProperties.get("exclusions")?.toString() ===
         this.exclusions.toString()
       ) {
         // Check list equality
@@ -180,6 +194,23 @@ export class QueueExclusionTable extends TailwindElement {
           ${this.results.map(this.renderItem)}
         </tbody>
       </table>
+      ${when(
+        this.editable,
+        () => html`
+          <sl-button
+            class="mt-1 w-full"
+            @click=${() =>
+              void this.updateExclusion({
+                type: "text",
+                value: "",
+                index: this.exclusions?.length || 0,
+              })}
+          >
+            <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+            <span class="text-neutral-600">${msg("Add More")}</span>
+          </sl-button>
+        `,
+      )}
     `;
   }
 
@@ -209,7 +240,7 @@ export class QueueExclusionTable extends TailwindElement {
             label=${msg("Remove exclusion")}
             class="text-base hover:text-danger"
             name="trash3"
-            @click=${() => this.removeExclusion(exclusion, index)}
+            @click=${() => void this.removeExclusion(exclusion, index)}
           ></sl-icon-button>
         </td>
       </tr>
@@ -237,7 +268,7 @@ export class QueueExclusionTable extends TailwindElement {
           @sl-hide=${this.stopProp}
           @sl-after-hide=${this.stopProp}
           @sl-change=${(e: Event) => {
-            this.updateExclusion({
+            void this.updateExclusion({
               type: (e.target as HTMLSelectElement).value as Exclusion["type"],
               value: exclusion.value,
               index,
@@ -274,7 +305,7 @@ export class QueueExclusionTable extends TailwindElement {
           autocorrect="off"
           minlength=${MIN_LENGTH}
           @sl-clear=${() => {
-            this.updateExclusion({
+            void this.updateExclusion({
               type: exclusion.type,
               value: "",
               index,
@@ -303,7 +334,7 @@ export class QueueExclusionTable extends TailwindElement {
             }
             inputElem.reportValidity();
 
-            this.updateExclusion(params);
+            void this.updateExclusion(params);
           }}
         ></sl-input>
       `;
@@ -429,20 +460,31 @@ export class QueueExclusionTable extends TailwindElement {
     });
   }
 
-  private removeExclusion({ value, type }: Exclusion, index: number) {
+  private async removeExclusion({ value, type }: Exclusion, index: number) {
     this.exclusionToRemove = value;
+    const exclusions = this.exclusions || [];
+    const regex = formatValue(type, value);
+
+    if (this.uncontrolled) {
+      this.exclusions = [
+        ...exclusions.slice(0, index),
+        ...exclusions.slice(index + 1),
+      ];
+    }
+
+    await this.updateComplete;
 
     this.dispatchEvent(
       new CustomEvent("btrix-remove", {
         detail: {
-          regex: formatValue(type, value),
           index,
+          regex,
         },
       }) as ExclusionRemoveEvent,
     );
   }
 
-  private updateExclusion({
+  private async updateExclusion({
     type,
     value,
     index,
@@ -451,11 +493,24 @@ export class QueueExclusionTable extends TailwindElement {
     value: Exclusion["value"];
     index: number;
   }) {
+    const exclusions = this.exclusions || [];
+    const regex = formatValue(type, value);
+
+    if (this.uncontrolled) {
+      this.exclusions = [
+        ...exclusions.slice(0, index),
+        regex,
+        ...exclusions.slice(index + 1),
+      ];
+    }
+
+    await this.updateComplete;
+
     this.dispatchEvent(
       new CustomEvent("btrix-change", {
         detail: {
           index,
-          regex: formatValue(type, value),
+          regex,
         },
       }) as ExclusionChangeEvent,
     );

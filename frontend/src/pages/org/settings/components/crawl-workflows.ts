@@ -6,9 +6,11 @@ import { guard } from "lit/directives/guard.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import type { QueueExclusionTable } from "@/features/crawl-workflows/queue-exclusion-table";
 import { columns, type Cols } from "@/layout/columns";
 import infoTextStrings from "@/strings/crawl-workflows/infoText";
 import sectionStrings from "@/strings/crawl-workflows/section";
+import type { SeedConfig } from "@/types/crawler";
 import {
   appDefaults,
   defaultLabel,
@@ -20,6 +22,8 @@ import {
 
 type FieldName = keyof FormState;
 type Field = Record<FieldName, TemplateResult<1>>;
+
+const PLACEHOLDER_EXCLUSIONS = ["", "", ""]; // Add empty slot
 
 function section(section: SectionsEnum | "exclusions", cols: Cols) {
   return html`
@@ -46,13 +50,17 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
   @state()
   private defaults: WorkflowDefaults = appDefaults;
 
+  @state()
+  private config: Partial<SeedConfig> = {};
+
   connectedCallback() {
     super.connectedCallback();
+
     void this.fetchServerDefaults();
   }
 
   firstUpdated() {
-    console.log(this.orgId);
+    void this.fetchOrgDefaults();
   }
 
   render() {
@@ -63,15 +71,21 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
     const scope = {
       exclusions: html`
         <btrix-queue-exclusion-table
+          .exclusions=${this.config.exclude}
           pageSize="30"
           labelClassName="text-xs"
           editable
           removable
+          uncontrolled
+          @btrix-change=${(e: CustomEvent) => {
+            const { exclusions } = e.target as QueueExclusionTable;
+            console.log(exclusions, this.config.exclude);
+          }}
+          @btrix-remove=${(e: CustomEvent) => {
+            const { exclusions } = e.target as QueueExclusionTable;
+            console.log(exclusions, this.config.exclude);
+          }}
         ></btrix-queue-exclusion-table>
-        <sl-button class="mt-1 w-full" size="small">
-          <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-          <span class="text-neutral-600">${msg("Add More")}</span>
-        </sl-button>
       `,
     };
     const perCrawlLimits = {
@@ -217,7 +231,7 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
     return html`
       <div class="rounded-lg border">
         <form @submit=${this.onSubmit}>
-          ${guard([this.defaults], () =>
+          ${guard([this.defaults, this.config], () =>
             Object.entries(this.fields).map(([sectionName, fields]) =>
               section(
                 sectionName as SectionsEnum,
@@ -244,6 +258,22 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
     const form = e.target as HTMLFormElement;
     const values = serialize(form);
     console.log(values);
+  }
+
+  private async fetchOrgDefaults() {
+    if (!this.orgId) {
+      console.debug("no org id");
+      return;
+    }
+
+    try {
+      // TODO
+      this.config = await Promise.resolve({
+        exclude: PLACEHOLDER_EXCLUSIONS,
+      });
+    } catch (e) {
+      console.debug(e);
+    }
   }
 
   private async fetchServerDefaults() {
