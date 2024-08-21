@@ -326,9 +326,9 @@ export class App extends LiteElement {
     return html`
       <div class="border-b bg-neutral-50">
         <nav
-          class="mx-auto box-border flex h-12 items-center justify-between px-3 xl:pl-6"
+          class="box-border flex min-h-12 flex-wrap items-center gap-x-5 gap-y-3 p-3 md:py-0 xl:pl-6"
         >
-          <div class="flex items-center">
+          <div class="order-1 flex flex-1 items-center">
             <a
               class="items-between flex gap-2"
               aria-label="home"
@@ -343,7 +343,7 @@ export class App extends LiteElement {
               <div
                 class="${showFullLogo
                   ? "w-[10.5rem]"
-                  : "w-6 md:w-[10.5rem]"} h-6 bg-cover bg-no-repeat"
+                  : "w-6 lg:w-[10.5rem]"} h-6 bg-cover bg-no-repeat"
                 style="background-image: url(${brandLockupColor})"
                 role="img"
                 title="Browsertrix logo"
@@ -379,25 +379,16 @@ export class App extends LiteElement {
               `,
             )}
           </div>
-          <div class="grid auto-cols-max grid-flow-col items-center gap-5">
-            ${isSuperAdmin
-              ? html`
-                  <a
-                    class="font-medium text-neutral-500 hover:text-primary"
-                    href="/crawls"
-                    @click=${this.navLink}
-                    >${msg("Running Crawls")}</a
-                  >
-                  <div class="hidden md:block">${this.renderFindCrawl()}</div>
-                `
-              : ""}
-            ${this.authService.authState
-              ? html`<button
+          <div class="order-2 flex flex-grow-0 items-center gap-4 md:order-3">
+            ${this.authState
+              ? html` <button
                     class="flex items-center gap-2 leading-none text-neutral-500 hover:text-primary"
                     @click=${() => void this.userGuideDrawer.show()}
                   >
                     <sl-icon name="book" class="size-4 text-base"></sl-icon>
-                    ${msg("User Guide")}
+                    <span class="sr-only lg:not-sr-only"
+                      >${msg("User Guide")}</span
+                    >
                   </button>
                   <sl-tooltip
                     content=${msg(
@@ -414,10 +405,14 @@ export class App extends LiteElement {
                         name="patch-question"
                         class="size-4 text-base"
                       ></sl-icon>
-                      ${msg("Help")}
+                      <span class="sr-only lg:not-sr-only">${msg("Help")}</span>
                     </a>
                   </sl-tooltip>
-                  <sl-dropdown placement="bottom-end" distance="4">
+                  <sl-dropdown
+                    class="ml-auto"
+                    placement="bottom-end"
+                    distance="4"
+                  >
                     <button slot="trigger">
                       <sl-avatar
                         label=${msg("Open user menu")}
@@ -450,6 +445,21 @@ export class App extends LiteElement {
                     </sl-menu>
                   </sl-dropdown>`
               : this.renderSignUpLink()}
+          </div>
+          <div
+            class="order-3 grid w-full auto-cols-max grid-flow-col items-center gap-5 md:order-2 md:w-auto"
+          >
+            ${isSuperAdmin
+              ? html`
+                  <a
+                    class="font-medium text-neutral-500 hover:text-primary"
+                    href="/crawls"
+                    @click=${this.navLink}
+                    >${msg("Running Crawls")}</a
+                  >
+                  <div class="hidden md:block">${this.renderFindCrawl()}</div>
+                `
+              : nothing}
           </div>
         </nav>
       </div>
@@ -487,21 +497,23 @@ export class App extends LiteElement {
     const orgNameLength = 50;
 
     return html`
-      ${selectedOption.slug
-        ? html`
-            <a
-              class="font-medium text-neutral-600"
-              href=${this.orgBasePath}
-              @click=${this.navLink}
-            >
-              ${selectedOption.name.slice(0, orgNameLength)}
-            </a>
-          `
-        : html`
-            <span class="text-neutral-500">
-              ${selectedOption.name.slice(0, orgNameLength)}
-            </span>
-          `}
+      <div class="w-32 truncate sm:w-52 md:w-auto">
+        ${selectedOption.slug
+          ? html`
+              <a
+                class="font-medium text-neutral-600"
+                href=${this.orgBasePath}
+                @click=${this.navLink}
+              >
+                ${selectedOption.name.slice(0, orgNameLength)}
+              </a>
+            `
+          : html`
+              <span class="text-neutral-500">
+                ${selectedOption.name.slice(0, orgNameLength)}
+              </span>
+            `}
+      </div>
       ${when(
         orgs.length > 1,
         () => html`
