@@ -573,9 +573,9 @@ export class App extends LiteElement {
             ${msg("Documentation")}
           </a>
         </div>
-        <div class="flex items-center justify-center gap-2 leading-none">
-          ${this.version
-            ? html`
+        ${this.version
+          ? html`
+              <div class="flex items-center justify-center gap-2 leading-none">
                 <btrix-copy-button
                   class="size-4 text-neutral-400"
                   .getValue=${() => this.version}
@@ -585,9 +585,9 @@ export class App extends LiteElement {
                 <span class="font-monostyle text-xs text-neutral-400">
                   ${this.version}
                 </span>
-              `
-            : ""}
-        </div>
+              </div>
+            `
+          : nothing}
       </footer>
     `;
   }
