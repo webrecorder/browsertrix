@@ -228,7 +228,7 @@ export class ConfigDetails extends LiteElement {
               () =>
                 crawlConfig?.profileName ||
                 html`<span class="text-neutral-400"
-                  >${msg("Default Profile")}</span
+                  >${msg("Crawler Default")}</span
                 >`,
             ),
           )}

@@ -62,8 +62,9 @@ export class SelectBrowserProfile extends LiteElement {
         label=${msg("Browser Profile")}
         value=${this.selectedProfile?.id || ""}
         placeholder=${this.browserProfiles
-          ? msg("Default Profile")
+          ? msg("Crawler Default")
           : msg("Loading")}
+        help-text=${msg("Default Browsertrix crawler profile will be used")}
         size=${ifDefined(this.size)}
         hoist
         @sl-change=${this.onChange}
@@ -76,7 +77,7 @@ export class SelectBrowserProfile extends LiteElement {
       >
         ${this.browserProfiles
           ? html`
-              <sl-option value="">${msg("Default Profile")}</sl-option>
+              <sl-option value="">${msg("Crawler Default")}</sl-option>
               <sl-divider></sl-divider>
             `
           : html` <sl-spinner slot="prefix"></sl-spinner> `}
@@ -152,7 +153,7 @@ export class SelectBrowserProfile extends LiteElement {
     return html`
       <div class="mx-2 text-sm text-neutral-500">
         <span class="inline-block align-middle"
-          >${msg("No additional browser profiles found.")}</span
+          >${msg("No custom browser profiles found.")}</span
         >
         <a
           href=${`${this.orgBasePath}/browser-profiles?new`}
