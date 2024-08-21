@@ -405,23 +405,23 @@ export class App extends LiteElement {
                     </sl-menu-item>
                   </sl-menu>
                 </sl-dropdown>`
-              : html`
-                  <a href="/log-in"> ${msg("Log In")} </a>
-                  ${this.appState.settings?.registrationEnabled
-                    ? html`
-                        <sl-button
-                          variant="text"
-                          @click="${() => this.navigate("/sign-up")}"
-                        >
-                          ${msg("Sign up")}
-                        </sl-button>
-                      `
-                    : html``}
-                `}
+              : this.renderSignUpLink()}
           </div>
         </nav>
       </div>
     `;
+  }
+
+  private renderSignUpLink() {
+    if (!this.appState.settings) return;
+
+    if (this.appState.settings.registrationEnabled) {
+      return html`
+        <sl-button variant="text" @click="${() => this.navigate("/sign-up")}">
+          ${msg("Sign Up")}
+        </sl-button>
+      `;
+    }
   }
 
   private renderOrgs() {
