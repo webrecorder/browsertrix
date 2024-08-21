@@ -46,6 +46,7 @@ def test_api_settings():
         "maxScale": 3,
         "defaultPageLoadTimeSeconds": 120,
         "billingEnabled": True,
+        "signUpUrl": "",
         "salesEmail": "",
         "supportEmail": "",
     }

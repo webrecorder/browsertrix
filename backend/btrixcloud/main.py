@@ -115,6 +115,8 @@ class SettingsResponse(BaseModel):
 
     billingEnabled: bool
 
+    signUpUrl: str = ""
+
     salesEmail: str = ""
     supportEmail: str = ""
 
