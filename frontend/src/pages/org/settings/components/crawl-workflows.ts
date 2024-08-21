@@ -15,6 +15,7 @@ import sectionStrings from "@/strings/crawl-workflows/section";
 import { crawlingDefaultsSchema, type CrawlingDefaults } from "@/types/org";
 import {
   appDefaults,
+  BYTES_PER_GB,
   defaultLabel,
   getServerDefaults,
   type FormState,
@@ -86,61 +87,48 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
       `,
     };
     const perCrawlLimits = {
-      pageLimit: html`<sl-input
-        size="small"
-        name="limit"
-        label=${msg("Max Pages")}
-        value=${ifDefined(orgDefaults.limit)}
-        type="number"
-        inputmode="numeric"
-        min=${
-          // TODO handle dynamic min value, same as workflow editor?
-          "1"
-        }
-        max=${ifDefined(
-          this.defaults.maxPagesPerCrawl &&
-            this.defaults.maxPagesPerCrawl < Infinity
-            ? this.defaults.maxPagesPerCrawl
-            : undefined,
-        )}
-        placeholder=${defaultLabel(this.defaults.maxPagesPerCrawl)}
-      >
-        <span slot="suffix">${msg("pages")}</span>
-      </sl-input>`,
-      // crawlTimeoutMinutes: html`
-      //   <sl-input
-      //     size="small"
-      //     name="crawlTimeoutMinutes"
-      //     label=${msg("Crawl Time Limit")}
-      //     value=${orgDefaults.crawlTimeout}
-      //     placeholder=${defaultLabel(Infinity)}
-      //     min="0"
-      //     type="number"
-      //     inputmode="numeric"
-      //   >
-      //     <span slot="suffix">${msg("minutes")}</span>
-      //   </sl-input>
-      // `,
-      // maxCrawlSizeGB: html`
-      //   <sl-input
-      //     size="small"
-      //     name="maxCrawlSizeGB"
-      //     label=${msg("Crawl Size Limit")}
-      //     value=${orgDefaults.maxCrawlSizeGB}
-      //     placeholder=${defaultLabel(Infinity)}
-      //     min="0"
-      //     type="number"
-      //     inputmode="numeric"
-      //   >
-      //     <span slot="suffix">${msg("GB")}</span>
-      //   </sl-input>
-      // `,
+      crawlTimeoutMinutes: html`
+        <sl-input
+          size="small"
+          name="crawlTimeoutMinutes"
+          label=${msg("Crawl Time Limit")}
+          value=${ifDefined(
+            typeof orgDefaults.crawlTimeout === "number"
+              ? orgDefaults.crawlTimeout / 60
+              : undefined,
+          )}
+          placeholder=${defaultLabel(Infinity)}
+          min="0"
+          type="number"
+          inputmode="numeric"
+        >
+          <span slot="suffix">${msg("minutes")}</span>
+        </sl-input>
+      `,
+      maxCrawlSizeGB: html`
+        <sl-input
+          size="small"
+          name="maxCrawlSizeGB"
+          label=${msg("Crawl Size Limit")}
+          value=${ifDefined(
+            typeof orgDefaults.maxCrawlSize === "number"
+              ? orgDefaults.maxCrawlSize / BYTES_PER_GB
+              : undefined,
+          )}
+          placeholder=${defaultLabel(Infinity)}
+          min="0"
+          type="number"
+          inputmode="numeric"
+        >
+          <span slot="suffix">${msg("GB")}</span>
+        </sl-input>
+      `,
     };
     const perPageLimits = {
       pageLoadTimeoutSeconds: html`
         <sl-input
           size="small"
-          name="pageLoadTimeout"
+          name="pageLoadTimeoutSeconds"
           type="number"
           inputmode="numeric"
           label=${msg("Page Load Timeout")}
@@ -154,7 +142,7 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
       postLoadDelaySeconds: html`
         <sl-input
           size="small"
-          name="postLoadDelay"
+          name="postLoadDelaySeconds"
           type="number"
           inputmode="numeric"
           label=${msg("Delay After Page Load")}
@@ -168,7 +156,7 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
       behaviorTimeoutSeconds: html`
         <sl-input
           size="small"
-          name="behaviorTimeout"
+          name="behaviorTimeoutSeconds"
           type="number"
           inputmode="numeric"
           label=${msg("Behavior Timeout")}
@@ -182,7 +170,7 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
       pageExtraDelaySeconds: html`
         <sl-input
           size="small"
-          name="pageExtraDelay"
+          name="pageExtraDelaySeconds"
           type="number"
           inputmode="numeric"
           label=${msg("Delay Before Next Page")}
@@ -277,10 +265,12 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
     const values = serialize(form) as Record<string, string>;
     const parseNumber = (value: string) => (value ? Number(value) : undefined);
     const parsedValues: CrawlingDefaults = {
-      limit: parseNumber(values.limit),
-      // crawlTimeout: values.crawlTimeoutMinutes
-      //   ? formatNumber(values.crawlTimeoutMinutes) * 60
-      //   : null,
+      crawlTimeout: values.crawlTimeoutMinutes
+        ? Number(values.crawlTimeoutMinutes) * 60
+        : undefined,
+      maxCrawlSize: values.maxCrawlSizeGB
+        ? Number(values.maxCrawlSizeGB) * BYTES_PER_GB
+        : undefined,
       pageLoadTimeout: parseNumber(values.pageLoadTimeout),
       postLoadDelay: parseNumber(values.postLoadDelay),
       behaviorTimeout: parseNumber(values.behaviorTimeout),
@@ -292,6 +282,7 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
       lang: this.languageSelect?.value,
       exclude: this.exclusionTable?.exclusions?.filter((v) => v) || [],
     };
+    // Set null or empty strings to undefined
     const params = Object.entries(parsedValues).reduce(
       (acc, [k, v]) => ({
         ...acc,

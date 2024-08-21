@@ -33,7 +33,8 @@ const YEAR_MONTH_REGEX = /^\d{4}-\d{2}$/;
 export const yearMonthSchema = z.string().regex(YEAR_MONTH_REGEX);
 
 export const crawlingDefaultsSchema = z.object({
-  limit: z.number().optional(),
+  crawlTimeout: z.number().optional(),
+  maxCrawlSize: z.number().optional(),
   pageLoadTimeout: z.number().optional(),
   postLoadDelay: z.number().optional(),
   behaviorTimeout: z.number().optional(),
