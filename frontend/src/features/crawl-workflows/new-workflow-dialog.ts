@@ -25,7 +25,7 @@ export class NewWorkflowDialog extends TailwindElement {
         style="--width: 46rem"
       >
         <div
-          class="mb-7 flex flex-col items-center justify-center gap-7 md:flex-row md:items-start md:gap-16"
+          class="mb-7 mt-5 flex flex-col items-center justify-center gap-7 md:flex-row md:items-start md:gap-16"
         >
           <button
             class="group block w-[16.5rem] text-left"
@@ -46,7 +46,7 @@ export class NewWorkflowDialog extends TailwindElement {
                 <div
                   class="my-2 text-lg font-semibold leading-none transition-colors group-hover:text-primary-700"
                 >
-                  ${msg("Predetermined URLs")}
+                  ${msg("Known URLs")}
                 </div>
                 <p class="text-balance leading-normal text-neutral-700">
                   ${msg(
@@ -93,8 +93,8 @@ export class NewWorkflowDialog extends TailwindElement {
         >
           <p class="mb-3">
             ${msg(
-              html`Choose <strong>Predetermined URLs</strong> (aka a "URL List"
-                crawl type) if:`,
+              html`Choose <strong>Known URLs</strong> (aka a "URL List" crawl
+                type) if:`,
             )}
           </p>
           <ul class="mb-3 list-disc pl-5">
