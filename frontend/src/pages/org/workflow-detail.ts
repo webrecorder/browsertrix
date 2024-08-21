@@ -702,24 +702,19 @@ export class WorkflowDetail extends LiteElement {
             <sl-icon name="files" slot="prefix"></sl-icon>
             ${msg("Duplicate Workflow")}
           </sl-menu-item>
-          ${when(!this.lastCrawlId, () => {
-            const shouldDeactivate = workflow.crawlCount && !workflow.inactive;
-            return html`
+          ${when(
+            !this.lastCrawlId,
+            () => html`
               <sl-divider></sl-divider>
               <sl-menu-item
                 style="--sl-color-neutral-700: var(--danger)"
-                @click=${() =>
-                  shouldDeactivate
-                    ? void this.deactivate()
-                    : void this.delete()}
+                @click=${() => void this.delete()}
               >
                 <sl-icon name="trash3" slot="prefix"></sl-icon>
-                ${shouldDeactivate
-                  ? msg("Deactivate Workflow")
-                  : msg("Delete Workflow")}
+                ${msg("Delete Workflow")}
               </sl-menu-item>
-            `;
-          })}
+            `,
+          )}
         </sl-menu>
       </sl-dropdown>
     `;
@@ -1477,40 +1472,8 @@ export class WorkflowDetail extends LiteElement {
     });
   }
 
-  private async deactivate(): Promise<void> {
-    if (!this.workflow) return;
-
-    try {
-      await this.apiFetch(
-        `/orgs/${this.orgId}/crawlconfigs/${this.workflow.id}`,
-        {
-          method: "DELETE",
-        },
-      );
-
-      this.workflow = {
-        ...this.workflow,
-        inactive: true,
-      };
-
-      this.notify({
-        message: msg(html`Deactivated <strong>${this.renderName()}</strong>.`),
-        variant: "success",
-        icon: "check2-circle",
-      });
-    } catch {
-      this.notify({
-        message: msg("Sorry, couldn't deactivate Workflow at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-      });
-    }
-  }
-
   private async delete(): Promise<void> {
     if (!this.workflow) return;
-
-    const isDeactivating = this.workflow.crawlCount > 0;
 
     try {
       await this.apiFetch(
@@ -1523,17 +1486,13 @@ export class WorkflowDetail extends LiteElement {
       this.navTo(`${this.orgBasePath}/workflows/crawls`);
 
       this.notify({
-        message: isDeactivating
-          ? msg(html`Deactivated <strong>${this.renderName()}</strong>.`)
-          : msg(html`Deleted <strong>${this.renderName()}</strong>.`),
+        message: msg(html`Deleted <strong>${this.renderName()}</strong>.`),
         variant: "success",
         icon: "check2-circle",
       });
     } catch {
       this.notify({
-        message: isDeactivating
-          ? msg("Sorry, couldn't deactivate Workflow at this time.")
-          : msg("Sorry, couldn't delete Workflow at this time."),
+        message: msg("Sorry, couldn't delete Crawl Workflow at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
       });
