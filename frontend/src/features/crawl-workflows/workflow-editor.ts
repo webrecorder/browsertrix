@@ -45,6 +45,7 @@ import type { TimeInputChangeEvent } from "@/components/ui/time-input";
 import { type SelectBrowserProfileChangeEvent } from "@/features/browser-profiles/select-browser-profile";
 import type { CollectionsChangeEvent } from "@/features/collections/collections-add";
 import type { QueueExclusionTable } from "@/features/crawl-workflows/queue-exclusion-table";
+import { infoCol, inputCol } from "@/layout/columns";
 import infoTextStrings from "@/strings/crawl-workflows/infoText";
 import sectionStrings from "@/strings/crawl-workflows/section";
 import type {
@@ -64,6 +65,7 @@ import { maxLengthValidator } from "@/utils/form";
 import { getLocale } from "@/utils/localization";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { regexEscape } from "@/utils/string";
+import { tw } from "@/utils/tailwind";
 import {
   appDefaults,
   BYTES_PER_GB,
@@ -708,31 +710,18 @@ export class WorkflowEditor extends BtrixElement {
     `;
   }
 
-  private readonly renderFormCol = (content: TemplateResult) => {
-    return html`<div class="col-span-5 md:col-span-3">${content}</div> `;
-  };
-
   private renderHelpTextCol(
     content: TemplateResult | string | undefined,
     padTop = true,
   ) {
-    return html`
-      <div
-        class="flex${padTop
-          ? " pt-6"
-          : ""} col-span-5 text-neutral-500 md:col-span-2"
-      >
-        <div class="mr-2 text-base">
-          <sl-icon name="info-circle"></sl-icon>
-        </div>
-        <div class="mt-0.5 text-xs">${content}</div>
-      </div>
-    `;
+    if (!content) return;
+
+    return infoCol(content, padTop ? tw`md:pt-[2.35rem]` : tw`md:pt-1`);
   }
 
   private readonly renderUrlListSetup = (isCustom = false) => {
     return html`
-      ${this.renderFormCol(html`
+      ${inputCol(html`
         <sl-textarea
           name="urlList"
           class="textarea-wrap"
@@ -784,7 +773,7 @@ https://example.com/path`}
       ${when(
         isCustom,
         () => html`
-          ${this.renderFormCol(html`
+          ${inputCol(html`
             <sl-select
               name="scopeType"
               label=${msg("Crawl Scope")}
@@ -823,7 +812,7 @@ https://example.com/path`}
           )}
         `,
       )}
-      ${this.renderFormCol(
+      ${inputCol(
         html`<sl-checkbox
           name="includeLinkedPages"
           ?checked=${this.formState.includeLinkedPages}
@@ -836,7 +825,7 @@ https://example.com/path`}
         URL.`),
         false,
       )}
-      ${this.renderFormCol(
+      ${inputCol(
         html`<sl-checkbox
           name="failOnFailedSeed"
           ?checked=${this.formState.failOnFailedSeed}
@@ -853,7 +842,7 @@ https://example.com/path`}
       ${when(
         this.formState.includeLinkedPages || this.jobType === "custom",
         () => html`
-          ${this.renderFormCol(html`
+          ${inputCol(html`
             <btrix-queue-exclusion-table
               .exclusions=${this.formState.exclusions}
               pageSize="30"
@@ -948,7 +937,7 @@ https://example.com/path`}
     const maxAdditionalURls = 100;
 
     return html`
-      ${this.renderFormCol(html`
+      ${inputCol(html`
         <sl-input
           name="primarySeedUrl"
           label=${msg("Crawl Start URL")}
@@ -983,7 +972,7 @@ https://example.com/path`}
         ></sl-input>
       `)}
       ${this.renderHelpTextCol(msg(`The starting point of your crawl.`))}
-      ${this.renderFormCol(html`
+      ${inputCol(html`
         <sl-select
           name="scopeType"
           label=${msg("Start URL Scope")}
@@ -1016,7 +1005,7 @@ https://example.com/path`}
       ${when(
         DEPTH_SUPPORTED_SCOPES.includes(this.formState.scopeType!),
         () => html`
-          ${this.renderFormCol(html`
+          ${inputCol(html`
             <sl-input
               name="maxScopeDepth"
               label=${msg("Max Depth")}
@@ -1043,7 +1032,7 @@ https://example.com/path`}
       ${when(
         this.formState.scopeType === "custom",
         () => html`
-          ${this.renderFormCol(html`
+          ${inputCol(html`
             <sl-textarea
               name="customIncludeUrlList"
               label=${msg("Extra URL Prefixes in Scope")}
@@ -1062,7 +1051,7 @@ https://example.net`}
           )}
         `,
       )}
-      ${this.renderFormCol(html`
+      ${inputCol(html`
         <sl-checkbox
           name="includeLinkedPages"
           ?checked=${this.formState.includeLinkedPages}
@@ -1075,7 +1064,7 @@ https://example.net`}
         Start URL Scope.`),
         false,
       )}
-      ${this.renderFormCol(html`
+      ${inputCol(html`
         <sl-checkbox name="useSitemap" ?checked=${this.formState.useSitemap}>
           ${msg("Check for sitemap")}
         </sl-checkbox>
@@ -1094,8 +1083,8 @@ https://example.net`}
               ? html`<btrix-badge>${exclusions.length}</btrix-badge>`
               : ""}</span
           >
-          <div class="grid grid-cols-5 gap-4 py-2">
-            ${this.renderFormCol(html`
+          <div class="grid grid-cols-5 gap-5 py-2">
+            ${inputCol(html`
               <btrix-queue-exclusion-table
                 label=""
                 .exclusions=${this.formState.exclusions}
@@ -1125,7 +1114,7 @@ https://example.net`}
               : ""}
           </span>
           <div class="grid grid-cols-5 gap-4 py-2">
-            ${this.renderFormCol(html`
+            ${inputCol(html`
               <sl-textarea
                 name="urlList"
                 label=${msg("Crawl URL(s)")}
@@ -1213,7 +1202,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     };
     return html`
       ${this.renderSectionHeading(sectionStrings.perCrawlLimits)}
-      ${this.renderFormCol(html`
+      ${inputCol(html`
         <sl-mutation-observer
           attr="min"
           @sl-mutation=${async (e: CustomEvent) => {
@@ -1249,7 +1238,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         </sl-mutation-observer>
       `)}
       ${this.renderHelpTextCol(infoTextStrings["pageLimit"])}
-      ${this.renderFormCol(html`
+      ${inputCol(html`
         <sl-input
           name="crawlTimeoutMinutes"
           label=${msg("Crawl Time Limit")}
@@ -1263,7 +1252,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         </sl-input>
       `)}
       ${this.renderHelpTextCol(infoTextStrings["crawlTimeoutMinutes"])}
-      ${this.renderFormCol(html`
+      ${inputCol(html`
         <sl-input
           name="maxCrawlSizeGB"
           label=${msg("Crawl Size Limit")}
@@ -1277,7 +1266,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         </sl-input>
       `)}
       ${this.renderHelpTextCol(infoTextStrings["maxCrawlSizeGB"])}
-      ${this.renderFormCol(html`
+      ${inputCol(html`
         <sl-radio-group
           name="scale"
           label=${msg("Crawler Instances")}
@@ -1301,7 +1290,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         increase the chances of getting rate limited.`),
       )}
       ${this.renderSectionHeading(sectionStrings.perPageLimits)}
-      ${this.renderFormCol(html`
+      ${inputCol(html`
         <sl-input
           name="pageLoadTimeoutSeconds"
           type="number"
@@ -1316,7 +1305,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         </sl-input>
       `)}
       ${this.renderHelpTextCol(infoTextStrings["pageLoadTimeoutSeconds"])}
-      ${this.renderFormCol(html`
+      ${inputCol(html`
         <sl-input
           name="postLoadDelaySeconds"
           type="number"
@@ -1330,7 +1319,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         </sl-input>
       `)}
       ${this.renderHelpTextCol(infoTextStrings["postLoadDelaySeconds"])}
-      ${this.renderFormCol(html`
+      ${inputCol(html`
         <sl-input
           name="behaviorTimeoutSeconds"
           type="number"
@@ -1345,7 +1334,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         </sl-input>
       `)}
       ${this.renderHelpTextCol(infoTextStrings["behaviorTimeoutSeconds"])}
-      ${this.renderFormCol(
+      ${inputCol(
         html`<sl-checkbox
           name="autoscrollBehavior"
           ?checked=${this.formState.autoscrollBehavior}
@@ -1359,7 +1348,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         ),
         false,
       )}
-      ${this.renderFormCol(html`
+      ${inputCol(html`
         <sl-input
           name="pageExtraDelaySeconds"
           type="number"
@@ -1379,7 +1368,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
   private renderCrawlBehaviors() {
     if (!this.formState.lang) throw new Error("missing formstate.lang");
     return html`
-      ${this.renderFormCol(html`
+      ${inputCol(html`
         <btrix-select-browser-profile
           .profileId=${this.formState.browserProfile?.id}
           @on-change=${(e: SelectBrowserProfileChangeEvent) =>
@@ -1389,7 +1378,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         ></btrix-select-browser-profile>
       `)}
       ${this.renderHelpTextCol(infoTextStrings["browserProfile"])}
-      ${this.renderFormCol(html`
+      ${inputCol(html`
         <btrix-select-crawler
           .crawlerChannel=${this.formState.crawlerChannel}
           @on-change=${(e: SelectCrawlerChangeEvent) =>
@@ -1403,13 +1392,13 @@ https://archiveweb.page/images/${"logo.svg"}`}
       ${this.showCrawlerChannels
         ? this.renderHelpTextCol(infoTextStrings["crawlerChannel"])
         : html``}
-      ${this.renderFormCol(html`
+      ${inputCol(html`
         <sl-checkbox name="blockAds" ?checked=${this.formState.blockAds}>
           ${msg("Block ads by domain")}
         </sl-checkbox>
       `)}
       ${this.renderHelpTextCol(infoTextStrings["blockAds"], false)}
-      ${this.renderFormCol(html`
+      ${inputCol(html`
         <sl-input
           name="userAgent"
           label=${msg("User Agent")}
@@ -1420,7 +1409,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         </sl-input>
       `)}
       ${this.renderHelpTextCol(infoTextStrings["userAgent"])}
-      ${this.renderFormCol(html`
+      ${inputCol(html`
         <btrix-language-select
           .value=${this.formState.lang as LanguageCode}
           @on-change=${(e: CustomEvent) => {
@@ -1438,7 +1427,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
   private renderJobScheduling() {
     return html`
-      ${this.renderFormCol(html`
+      ${inputCol(html`
         <sl-radio-group
           label=${msg("Crawl Schedule")}
           name="scheduleType"
@@ -1466,7 +1455,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     const utcSchedule = this.utcSchedule;
     return html`
       ${this.renderSectionHeading(msg("Set Schedule"))}
-      ${this.renderFormCol(html`
+      ${inputCol(html`
         <sl-select
           name="scheduleFrequency"
           label=${msg("Frequency")}
@@ -1494,7 +1483,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       ${when(
         this.formState.scheduleFrequency === "weekly",
         () => html`
-          ${this.renderFormCol(html`
+          ${inputCol(html`
             <sl-radio-group
               name="scheduleDayOfWeek"
               label=${msg("Day")}
@@ -1520,7 +1509,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       ${when(
         this.formState.scheduleFrequency === "monthly",
         () => html`
-          ${this.renderFormCol(html`
+          ${inputCol(html`
             <sl-input
               name="scheduleDayOfMonth"
               label=${msg("Date")}
@@ -1538,7 +1527,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           )}
         `,
       )}
-      ${this.renderFormCol(html`
+      ${inputCol(html`
         <btrix-time-input
           hour=${ifDefined(this.formState.scheduleTime?.hour)}
           minute=${ifDefined(this.formState.scheduleTime?.minute)}
@@ -1582,7 +1571,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
   private renderJobMetadata() {
     return html`
-      ${this.renderFormCol(html`
+      ${inputCol(html`
         <sl-input
           class="with-max-help-text"
           name="jobName"
@@ -1598,7 +1587,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         msg(`Customize this Workflow's name. Workflows are named after
         the first Crawl URL by default.`),
       )}
-      ${this.renderFormCol(html`
+      ${inputCol(html`
         <sl-textarea
           class="with-max-help-text"
           name="description"
@@ -1614,7 +1603,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         ></sl-textarea>
       `)}
       ${this.renderHelpTextCol(msg(`Provide details about this Workflow.`))}
-      ${this.renderFormCol(html`
+      ${inputCol(html`
         <btrix-tag-input
           .initialTags=${this.formState.tags}
           .tagOptions=${this.tagOptions}
@@ -1632,7 +1621,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         msg(`Create or assign this crawl (and its outputs) to one or more tags
         to help organize your archived items.`),
       )}
-      ${this.renderFormCol(html`
+      ${inputCol(html`
         <btrix-collections-add
           .initialCollections=${this.formState.autoAddCollections}
           .configId=${this.configId}
