@@ -20,13 +20,10 @@ export class NewWorkflowDialog extends TailwindElement {
   render() {
     return html`
       <btrix-dialog
-        .label=${msg("Create a New Workflow")}
+        .label=${msg("What would you like to crawl?")}
         .open=${this.open}
         style="--width: 46rem"
       >
-        <p class="mb-7 mt-3 px-4 text-base text-neutral-700">
-          ${msg("What would you like to crawl?")}
-        </p>
         <div
           class="mb-7 flex flex-col items-center justify-center gap-7 md:flex-row md:items-start md:gap-16"
         >
@@ -46,7 +43,9 @@ export class NewWorkflowDialog extends TailwindElement {
                 src=${urlListSvg}
               />
               <figcaption class="p-1">
-                <div class="my-2 text-lg font-semibold leading-none">
+                <div
+                  class="my-2 text-lg font-semibold leading-none transition-colors group-hover:text-primary-700"
+                >
                   ${msg("Predetermined URLs")}
                 </div>
                 <p class="text-balance leading-normal text-neutral-700">
@@ -73,7 +72,9 @@ export class NewWorkflowDialog extends TailwindElement {
                 src=${seededCrawlSvg}
               />
               <figcaption class="p-1">
-                <div class="my-2 text-lg font-semibold leading-none">
+                <div
+                  class="my-2 text-lg font-semibold leading-none transition-colors group-hover:text-primary-700"
+                >
                   ${msg("Automated Discovery")}
                 </div>
                 <p class="text-balance leading-normal text-neutral-700">
