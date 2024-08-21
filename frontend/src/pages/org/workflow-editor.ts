@@ -55,6 +55,7 @@ import type {
   ExclusionChangeEvent,
   ExclusionRemoveEvent,
 } from "@/features/crawl-workflows/queue-exclusion-table";
+import type { AppSettings } from "@/types/app";
 import { isApiError, type Detail } from "@/utils/api";
 import { DEFAULT_MAX_SCALE, DEPTH_SUPPORTED_SCOPES } from "@/utils/crawler";
 import {
@@ -2547,27 +2548,36 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
   private async fetchAPIDefaults() {
     try {
-      const resp = await fetch("/api/settings", {
-        headers: { "Content-Type": "application/json" },
-      });
-      if (!resp.ok) {
-        throw new Error(resp.statusText);
+      let settings: AppSettings;
+
+      if (!this.appState.settings) {
+        const resp = await fetch("/api/settings", {
+          headers: { "Content-Type": "application/json" },
+        });
+        if (!resp.ok) {
+          throw new Error(resp.statusText);
+        }
+        settings = (await resp.json()) as AppSettings;
+      } else {
+        settings = this.appState.settings;
       }
+
       const orgDefaults = {
         ...this.orgDefaults,
       };
-      const data = await resp.json();
-      if (data.defaultBehaviorTimeSeconds > 0) {
-        orgDefaults.behaviorTimeoutSeconds = data.defaultBehaviorTimeSeconds;
+      if (settings.defaultBehaviorTimeSeconds > 0) {
+        orgDefaults.behaviorTimeoutSeconds =
+          settings.defaultBehaviorTimeSeconds;
       }
-      if (data.defaultPageLoadTimeSeconds > 0) {
-        orgDefaults.pageLoadTimeoutSeconds = data.defaultPageLoadTimeSeconds;
+      if (settings.defaultPageLoadTimeSeconds > 0) {
+        orgDefaults.pageLoadTimeoutSeconds =
+          settings.defaultPageLoadTimeSeconds;
       }
-      if (data.maxPagesPerCrawl > 0) {
-        orgDefaults.maxPagesPerCrawl = data.maxPagesPerCrawl;
+      if (settings.maxPagesPerCrawl > 0) {
+        orgDefaults.maxPagesPerCrawl = settings.maxPagesPerCrawl;
       }
-      if (data.maxScale) {
-        this.maxScale = data.maxScale;
+      if (settings.maxScale) {
+        this.maxScale = settings.maxScale;
       }
       this.orgDefaults = orgDefaults;
     } catch (e) {

@@ -340,6 +340,12 @@ export class LogInPage extends LiteElement {
   }
 
   async checkBackendInitialized() {
+    if (this.appState.settings) {
+      this.formStateService.send("BACKEND_INITIALIZED");
+
+      return;
+    }
+
     const resp = await fetch("/api/settings");
     if (resp.status === 200) {
       this.formStateService.send("BACKEND_INITIALIZED");

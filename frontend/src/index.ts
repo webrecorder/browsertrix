@@ -99,7 +99,10 @@ export class App extends LiteElement {
     });
 
     this.startSyncBrowserTabs();
-    void this.fetchAppSettings();
+
+    if (!this.appState.settings) {
+      void this.fetchAppSettings();
+    }
   }
 
   willUpdate(changedProperties: Map<string, unknown>) {

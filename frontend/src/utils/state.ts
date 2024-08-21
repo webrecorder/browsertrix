@@ -22,7 +22,7 @@ export function makeAppStateService() {
 
   @state()
   class AppState {
-    // TODO persist
+    @options(persist(window.localStorage))
     settings: AppSettings | null = null;
 
     @options(persist(window.sessionStorage))
