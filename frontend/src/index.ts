@@ -1,5 +1,5 @@
 import { localized, msg, str } from "@lit/localize";
-import type { SlDialog } from "@shoelace-style/shoelace";
+import type { SlDialog, SlDrawer } from "@shoelace-style/shoelace";
 import { nothing, render, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
@@ -71,6 +71,9 @@ export class App extends LiteElement {
 
   @query("#globalDialog")
   private readonly globalDialog!: SlDialog;
+
+  @query("#userGuideDrawer")
+  private readonly userGuideDrawer!: SlDrawer;
 
   async connectedCallback() {
     let authState: AuthService["authState"] = null;
@@ -260,6 +263,22 @@ export class App extends LiteElement {
         @sl-after-hide=${() => (this.globalDialogContent = {})}
         >${this.globalDialogContent.body}</sl-dialog
       >
+
+      <sl-drawer
+        id="userGuideDrawer"
+        label=${msg("User Guide")}
+        style="--body-spacing: 0; --header-spacing: var(--sl-spacing-small); --footer-spacing: var(--sl-spacing-x-small);"
+      >
+        <iframe
+          class="size-full"
+          src="https://docs.browsertrix.com/user-guide/"
+        ></iframe>
+        <sl-button size="small" slot="footer" variant="text">
+          <sl-icon slot="suffix" name="box-arrow-up-right"></sl-icon>
+          ${msg("Open in new window")}</sl-button
+        >
+        <sl-button size="small" slot="footer">${msg("Close")}</sl-button>
+      </sl-drawer>
     `;
   }
 
@@ -373,38 +392,63 @@ export class App extends LiteElement {
                 `
               : ""}
             ${this.authService.authState
-              ? html`<sl-dropdown placement="bottom-end" distance="4">
-                  <button slot="trigger">
-                    <sl-avatar
-                      label=${msg("Open user menu")}
-                      shape="rounded"
-                      class="[--size:1.75rem]"
-                    ></sl-avatar>
+              ? html`<button
+                    class="flex items-center gap-2 leading-none text-neutral-500 hover:text-primary"
+                    @click=${() => void this.userGuideDrawer.show()}
+                  >
+                    <sl-icon name="book" class="size-4 text-base"></sl-icon>
+                    ${msg("User Guide")}
                   </button>
-                  <sl-menu class="w-60 min-w-min max-w-full">
-                    <div class="px-7 py-2">${this.renderMenuUserInfo()}</div>
-                    <sl-divider></sl-divider>
-                    <sl-menu-item
-                      @click=${() => this.navigate(ROUTES.accountSettings)}
+                  <sl-tooltip
+                    content=${msg(
+                      "Need help with something that's not covered in our guide? Ask the community help forum",
+                    )}
+                  >
+                    <a
+                      class="flex items-center gap-2 leading-none text-neutral-500 hover:text-primary"
+                      href="https://forum.webrecorder.net/c/help/5"
+                      target="_blank"
+                      rel="noopener"
                     >
-                      <sl-icon slot="prefix" name="person-gear"></sl-icon>
-                      ${msg("Account Settings")}
-                    </sl-menu-item>
-                    ${this.userInfo?.isSuperAdmin
-                      ? html` <sl-menu-item
-                          @click=${() => this.navigate(ROUTES.usersInvite)}
-                        >
-                          <sl-icon slot="prefix" name="person-plus"></sl-icon>
-                          ${msg("Invite Users")}
-                        </sl-menu-item>`
-                      : ""}
-                    <sl-divider></sl-divider>
-                    <sl-menu-item @click="${this.onLogOut}">
-                      <sl-icon slot="prefix" name="door-open"></sl-icon>
-                      ${msg("Log Out")}
-                    </sl-menu-item>
-                  </sl-menu>
-                </sl-dropdown>`
+                      <sl-icon
+                        name="patch-question"
+                        class="size-4 text-base"
+                      ></sl-icon>
+                      ${msg("Help")}
+                    </a>
+                  </sl-tooltip>
+                  <sl-dropdown placement="bottom-end" distance="4">
+                    <button slot="trigger">
+                      <sl-avatar
+                        label=${msg("Open user menu")}
+                        shape="rounded"
+                        class="[--size:1.75rem]"
+                      ></sl-avatar>
+                    </button>
+                    <sl-menu class="w-60 min-w-min max-w-full">
+                      <div class="px-7 py-2">${this.renderMenuUserInfo()}</div>
+                      <sl-divider></sl-divider>
+                      <sl-menu-item
+                        @click=${() => this.navigate(ROUTES.accountSettings)}
+                      >
+                        <sl-icon slot="prefix" name="person-gear"></sl-icon>
+                        ${msg("Account Settings")}
+                      </sl-menu-item>
+                      ${this.userInfo?.isSuperAdmin
+                        ? html` <sl-menu-item
+                            @click=${() => this.navigate(ROUTES.usersInvite)}
+                          >
+                            <sl-icon slot="prefix" name="person-plus"></sl-icon>
+                            ${msg("Invite Users")}
+                          </sl-menu-item>`
+                        : ""}
+                      <sl-divider></sl-divider>
+                      <sl-menu-item @click="${this.onLogOut}">
+                        <sl-icon slot="prefix" name="door-open"></sl-icon>
+                        ${msg("Log Out")}
+                      </sl-menu-item>
+                    </sl-menu>
+                  </sl-dropdown>`
               : this.renderSignUpLink()}
           </div>
         </nav>
