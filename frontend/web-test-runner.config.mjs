@@ -53,6 +53,7 @@ export default {
         "node_modules/color/**/*",
         "node_modules/slugify/**/*",
         "node_modules/pretty-ms/**/*",
+        "node_modules/parse-ms/**/*",
       ],
     }),
     importMapsPlugin({

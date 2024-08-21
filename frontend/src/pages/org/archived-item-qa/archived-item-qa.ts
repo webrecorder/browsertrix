@@ -9,7 +9,7 @@ import { choose } from "lit/directives/choose.js";
 import { guard } from "lit/directives/guard.js";
 import { until } from "lit/directives/until.js";
 import { when } from "lit/directives/when.js";
-import { throttle } from "lodash/fp";
+import throttle from "lodash/fp/throttle";
 import queryString from "query-string";
 
 import stylesheet from "./archived-item-qa.stylesheet.css";
