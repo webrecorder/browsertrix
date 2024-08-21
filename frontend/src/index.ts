@@ -545,57 +545,49 @@ export class App extends LiteElement {
   private renderFooter() {
     return html`
       <footer
-        class="mx-auto box-border flex w-full max-w-screen-desktop flex-col justify-between gap-4 p-3 md:flex-row"
+        class="mx-auto box-border flex w-full max-w-screen-desktop flex-col items-center justify-between gap-4 p-3 md:flex-row"
       >
         <!-- <div> -->
         <!-- TODO re-enable when translations are added -->
         <!-- <btrix-locale-picker></btrix-locale-picker> -->
         <!-- </div> -->
-        <div class="flex items-center justify-center">
+        <div>
           <a
-            class="flex items-center gap-2 text-neutral-400 hover:text-primary"
+            class="flex items-center gap-2 leading-none text-neutral-400 hover:text-primary"
             href="https://github.com/webrecorder/browsertrix"
             target="_blank"
             rel="noopener"
           >
-            <sl-icon
-              name="github"
-              class="inline-block size-4 align-middle text-base"
-            ></sl-icon>
-            Source Code
+            <sl-icon name="github" class="size-4 text-base"></sl-icon>
+            ${msg("Source Code")}
           </a>
         </div>
-        <div class="flex items-center justify-center">
+        <div>
           <a
-            class="flex items-center gap-2 text-neutral-400 hover:text-primary"
+            class="flex items-center gap-2 leading-none text-neutral-400 hover:text-primary"
             href="https://docs.browsertrix.com"
             target="_blank"
             rel="noopener"
           >
-            <sl-icon
-              name="book-half"
-              class="inline-block size-4 align-middle text-base"
-            ></sl-icon>
-            Documentation
+            <sl-icon name="book-half" class="size-4 text-base"></sl-icon>
+            ${msg("Documentation")}
           </a>
         </div>
-        <div class="flex items-center justify-center">
-          ${this.version
-            ? html`
+        ${this.version
+          ? html`
+              <div class="flex items-center justify-center gap-2 leading-none">
                 <btrix-copy-button
-                  class="mr-2 size-4 text-neutral-400"
+                  class="size-4 text-neutral-400"
                   .getValue=${() => this.version}
-                  content=${msg("Copy Version Code")}
+                  content=${msg("Copy Browsertrix Version")}
                   size="x-small"
                 ></btrix-copy-button>
-                <span
-                  class="font-monostyle inline-block align-middle text-xs text-neutral-400"
-                >
+                <span class="font-monostyle text-xs text-neutral-400">
                   ${this.version}
                 </span>
-              `
-            : ""}
-        </div>
+              </div>
+            `
+          : nothing}
       </footer>
     `;
   }
