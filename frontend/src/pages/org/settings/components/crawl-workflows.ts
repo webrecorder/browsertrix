@@ -215,7 +215,7 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
           label=${msg("User Agent")}
           value=${ifDefined(orgDefaults.userAgent)}
           autocomplete="off"
-          placeholder=${msg("Default")}
+          placeholder=${msg("Default: Browser User Agent")}
         >
         </sl-input>
       `,

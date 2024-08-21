@@ -1391,7 +1391,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           name="userAgent"
           label=${msg("User Agent")}
           autocomplete="off"
-          placeholder=${msg("Default")}
+          placeholder=${msg("Default: Browser User Agent")}
           value=${this.formState.userAgent || ""}
         >
         </sl-input>

@@ -62,9 +62,8 @@ export class SelectBrowserProfile extends LiteElement {
         label=${msg("Browser Profile")}
         value=${this.selectedProfile?.id || ""}
         placeholder=${this.browserProfiles
-          ? msg("Crawler Default")
+          ? msg("No custom profile")
           : msg("Loading")}
-        help-text=${msg("Default Browsertrix crawler profile will be used")}
         size=${ifDefined(this.size)}
         hoist
         @sl-change=${this.onChange}
@@ -77,7 +76,7 @@ export class SelectBrowserProfile extends LiteElement {
       >
         ${this.browserProfiles
           ? html`
-              <sl-option value="">${msg("Crawler Default")}</sl-option>
+              <sl-option value="">${msg("No custom profile")}</sl-option>
               <sl-divider></sl-divider>
             `
           : html` <sl-spinner slot="prefix"></sl-spinner> `}
@@ -101,9 +100,9 @@ export class SelectBrowserProfile extends LiteElement {
         ${this.browserProfiles && !this.browserProfiles.length
           ? this.renderNoProfiles()
           : ""}
-        ${this.selectedProfile
-          ? html`
-              <div slot="help-text" class="flex justify-between">
+        <div slot="help-text" class="flex justify-between">
+          ${this.selectedProfile
+            ? html`
                 <span>
                   ${msg("Last updated")}
                   <sl-format-date
@@ -124,9 +123,20 @@ export class SelectBrowserProfile extends LiteElement {
                   ${msg("Check Profile")}
                   <sl-icon name="box-arrow-up-right"></sl-icon>
                 </a>
-              </div>
-            `
-          : nothing}
+              `
+            : this.browserProfiles
+              ? html`
+                  <a
+                    class="ml-auto flex items-center gap-1 text-blue-500 hover:text-blue-600"
+                    href=${`${this.orgBasePath}/browser-profiles`}
+                    target="_blank"
+                  >
+                    ${msg("View Profiles")}
+                    <sl-icon name="box-arrow-up-right"></sl-icon>
+                  </a>
+                `
+              : nothing}
+        </div>
       </sl-select>
 
       ${this.browserProfiles?.length ? this.renderSelectedProfileInfo() : ""}
@@ -153,7 +163,7 @@ export class SelectBrowserProfile extends LiteElement {
     return html`
       <div class="mx-2 text-sm text-neutral-500">
         <span class="inline-block align-middle"
-          >${msg("No custom browser profiles found.")}</span
+          >${msg("This org doesn't have any custom profiles yet.")}</span
         >
         <a
           href=${`${this.orgBasePath}/browser-profiles?new`}
@@ -171,7 +181,7 @@ export class SelectBrowserProfile extends LiteElement {
             }
           }}
           ><span class="inline-block align-middle"
-            >${msg("Create a browser profile")}</span
+            >${msg("Create profile")}</span
           >
           <sl-icon
             class="inline-block align-middle"
