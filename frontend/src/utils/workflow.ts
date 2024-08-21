@@ -1,6 +1,8 @@
 import { msg, str } from "@lit/localize";
 import { z } from "zod";
 
+import { getLang } from "./localization";
+
 import type { Tags } from "@/components/ui/tag-input";
 import type {
   Profile,
@@ -110,7 +112,7 @@ export const getDefaultFormState = (): FormState => ({
   pageLimit: null,
   scale: 1,
   blockAds: true,
-  lang: undefined,
+  lang: getLang(),
   scheduleType: "none",
   scheduleFrequency: "weekly",
   scheduleDayOfMonth: new Date().getDate(),
@@ -246,7 +248,7 @@ export function getInitialFormState(params: {
     maxScopeDepth: primarySeedConfig.depth ?? defaultFormState.maxScopeDepth,
     scale: params.initialWorkflow.scale,
     blockAds: params.initialWorkflow.config.blockAds,
-    lang: params.initialWorkflow.config.lang,
+    lang: params.initialWorkflow.config.lang ?? defaultFormState.lang,
     scheduleType: defaultFormState.scheduleType,
     scheduleFrequency: defaultFormState.scheduleFrequency,
     runNow:

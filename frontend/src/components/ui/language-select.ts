@@ -6,6 +6,8 @@ import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import sortBy from "lodash/fp/sortBy";
 
+import { getLang } from "@/utils/localization";
+
 const languages = sortBy("name")(
   ISO6391.getLanguages(ISO6391.getAllCodes()),
 ) as unknown as {
@@ -40,7 +42,7 @@ export class LanguageSelect extends LitElement {
   @property({ type: String })
   size?: SlSelect["size"];
 
-  @property({ type: String, noAccessor: true })
+  @property({ type: String })
   value?: LanguageCode;
 
   @property({ type: Boolean })
@@ -50,13 +52,15 @@ export class LanguageSelect extends LitElement {
     return html`
       <sl-select
         placeholder=${msg("Browser Default")}
-        value=${ifDefined(this.value)}
+        value=${ifDefined(this.value || getLang() || undefined)}
         size=${ifDefined(this.size)}
         ?hoist=${this.hoist}
         @sl-change=${async (e: Event) => {
           e.stopPropagation();
 
-          this.value = (e.target as SlSelect).value as LanguageCode;
+          const { value } = e.target as SlSelect;
+
+          this.value = value as LanguageCode;
 
           await this.updateComplete;
 
@@ -70,8 +74,6 @@ export class LanguageSelect extends LitElement {
         }}
       >
         <div slot="label"><slot name="label">${msg("Language")}</slot></div>
-        <sl-option>${msg("Browser Default")}</sl-option>
-        <sl-divider></sl-divider>
         ${languages.map(
           ({ code, name, nativeName }) => html`
             <sl-option value=${code}>

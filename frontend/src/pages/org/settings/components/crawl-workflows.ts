@@ -1,4 +1,5 @@
 import { localized, msg } from "@lit/localize";
+import type { SlButton } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import type { LanguageCode } from "iso-639-1";
 import { css, html, type TemplateResult } from "lit";
@@ -59,6 +60,9 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
   @query("btrix-language-select")
   languageSelect?: LanguageSelect | null;
 
+  @query('sl-button[type="submit"]')
+  submitButton?: SlButton | null;
+
   connectedCallback() {
     super.connectedCallback();
 
@@ -77,7 +81,9 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
     const scope = {
       exclusions: html`
         <btrix-queue-exclusion-table
-          .exclusions=${orgDefaults.exclude}
+          .exclusions=${orgDefaults.exclude?.length === 0
+            ? PLACEHOLDER_EXCLUSIONS
+            : orgDefaults.exclude}
           pageSize="30"
           labelClassName="text-xs"
           editable
@@ -219,6 +225,9 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
             orgDefaults.lang ? (orgDefaults.lang as LanguageCode) : undefined,
           )}
           size="small"
+          @on-change=${(e: CustomEvent<{ value: string | undefined }>) => {
+            console.log(e.detail.value);
+          }}
         >
           <span slot="label">${msg("Language")}</span>
         </btrix-language-select>
@@ -271,17 +280,18 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
       maxCrawlSize: values.maxCrawlSizeGB
         ? Number(values.maxCrawlSizeGB) * BYTES_PER_GB
         : undefined,
-      pageLoadTimeout: parseNumber(values.pageLoadTimeout),
-      postLoadDelay: parseNumber(values.postLoadDelay),
-      behaviorTimeout: parseNumber(values.behaviorTimeout),
-      pageExtraDelay: parseNumber(values.pageExtraDelay),
+      pageLoadTimeout: parseNumber(values.pageLoadTimeoutSeconds),
+      postLoadDelay: parseNumber(values.postLoadDelaySeconds),
+      behaviorTimeout: parseNumber(values.behaviorTimeoutSeconds),
+      pageExtraDelay: parseNumber(values.pageExtraDelaySeconds),
       blockAds: values.blockAds === "on",
       profileid: values.profileid,
       crawlerChannel: values.crawlerChannel,
       userAgent: values.userAgent,
-      lang: this.languageSelect?.value,
+      lang: this.languageSelect?.value || undefined,
       exclude: this.exclusionTable?.exclusions?.filter((v) => v) || [],
     };
+
     // Set null or empty strings to undefined
     const params = Object.entries(parsedValues).reduce(
       (acc, [k, v]) => ({
@@ -293,6 +303,8 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
     );
 
     crawlingDefaultsSchema.parse(params);
+
+    this.submitButton?.setAttribute("loading", "true");
 
     try {
       await this.api.fetch(`/orgs/${this.orgId}/defaults/crawling`, {
@@ -314,6 +326,8 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
         icon: "exclamation-octagon",
       });
     }
+
+    this.submitButton?.removeAttribute("loading");
   }
 
   private async fetchServerDefaults() {

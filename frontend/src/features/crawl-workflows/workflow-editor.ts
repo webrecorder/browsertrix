@@ -370,21 +370,9 @@ export class WorkflowEditor extends BtrixElement {
       initialWorkflow: this.initialWorkflow,
       org: this.org,
     });
-    if (!this.formState.lang) {
-      this.formState.lang = this.getInitialLang();
-    }
     if (!this.formState.exclusions?.length) {
       this.formState.exclusions = [""]; // Add empty slot
     }
-  }
-
-  private getInitialLang() {
-    // Default to current user browser language
-    const browserLanguage = window.navigator.language;
-    if (browserLanguage) {
-      return browserLanguage.slice(0, browserLanguage.indexOf("-"));
-    }
-    return null;
   }
 
   render() {

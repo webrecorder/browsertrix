@@ -198,15 +198,7 @@ export class QueueExclusionTable extends TailwindElement {
       ${when(
         this.editable,
         () => html`
-          <sl-button
-            class="mt-1 w-full"
-            @click=${() =>
-              void this.updateExclusion({
-                type: "text",
-                value: "",
-                index: this.exclusions?.length || 0,
-              })}
-          >
+          <sl-button class="mt-1 w-full" @click=${() => void this.addInput()}>
             <sl-icon slot="prefix" name="plus-lg"></sl-icon>
             <span class="text-neutral-600">${msg("Add More")}</span>
           </sl-button>
@@ -493,6 +485,14 @@ export class QueueExclusionTable extends TailwindElement {
         },
       }) as ExclusionRemoveEvent,
     );
+  }
+
+  private async addInput() {
+    await this.updateExclusion({
+      type: "text",
+      value: "",
+      index: this.exclusions?.length || 0,
+    });
   }
 
   private async updateExclusion({

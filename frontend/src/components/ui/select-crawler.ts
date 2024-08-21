@@ -1,6 +1,6 @@
 import { localized, msg } from "@lit/localize";
 import { type SlSelect } from "@shoelace-style/shoelace";
-import { html } from "lit";
+import { html, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import capitalize from "lodash/fp/capitalize";
@@ -52,8 +52,14 @@ export class SelectCrawler extends LiteElement {
   @state()
   private crawlerChannels?: CrawlerChannel[];
 
+  willUpdate(changedProperties: PropertyValues<this>) {
+    if (changedProperties.has("crawlerChannel")) {
+      void this.updateSelectedCrawlerChannel();
+    }
+  }
+
   protected firstUpdated() {
-    void this.fetchCrawlerChannels();
+    void this.updateSelectedCrawlerChannel();
   }
 
   render() {
@@ -113,6 +119,43 @@ export class SelectCrawler extends LiteElement {
     );
   }
 
+  private async updateSelectedCrawlerChannel() {
+    await this.fetchCrawlerChannels();
+    await this.updateComplete;
+
+    if (!this.crawlerChannels) return;
+
+    if (this.crawlerChannel && !this.selectedCrawler) {
+      this.selectedCrawler = this.crawlerChannels.find(
+        ({ id }) => id === this.crawlerChannel,
+      );
+    }
+
+    if (!this.selectedCrawler) {
+      this.crawlerChannel = "default";
+      this.dispatchEvent(
+        new CustomEvent("on-change", {
+          detail: {
+            value: "default",
+          },
+        }),
+      );
+      this.selectedCrawler = this.crawlerChannels.find(
+        ({ id }) => id === this.crawlerChannel,
+      );
+    }
+
+    await this.updateComplete;
+
+    this.dispatchEvent(
+      new CustomEvent<SelectCrawlerUpdateDetail>("on-update", {
+        detail: {
+          show: this.crawlerChannels.length > 1,
+        },
+      }),
+    );
+  }
+
   /**
    * Fetch crawler channels and update internal state
    */
@@ -120,34 +163,6 @@ export class SelectCrawler extends LiteElement {
     try {
       const channels = await this.getCrawlerChannels();
       this.crawlerChannels = channels;
-
-      if (this.crawlerChannel && !this.selectedCrawler) {
-        this.selectedCrawler = this.crawlerChannels.find(
-          ({ id }) => id === this.crawlerChannel,
-        );
-      }
-
-      if (!this.selectedCrawler) {
-        this.crawlerChannel = "default";
-        this.dispatchEvent(
-          new CustomEvent("on-change", {
-            detail: {
-              value: "default",
-            },
-          }),
-        );
-        this.selectedCrawler = this.crawlerChannels.find(
-          ({ id }) => id === this.crawlerChannel,
-        );
-      }
-
-      this.dispatchEvent(
-        new CustomEvent<SelectCrawlerUpdateDetail>("on-update", {
-          detail: {
-            show: this.crawlerChannels.length > 1,
-          },
-        }),
-      );
     } catch (e) {
       this.notify({
         message: msg("Sorry, couldn't retrieve crawler channels at this time."),
