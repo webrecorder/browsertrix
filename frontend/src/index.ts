@@ -253,7 +253,9 @@ export class App extends LiteElement {
       <div class="min-w-screen flex min-h-screen flex-col">
         ${this.renderNavBar()} ${this.renderAlertBanner()}
         <main class="relative flex flex-auto">${this.renderPage()}</main>
-        <div class="border-t border-neutral-100">${this.renderFooter()}</div>
+        <div class="mt-7 border-t border-neutral-100">
+          ${this.renderFooter()}
+        </div>
       </div>
 
       <sl-dialog
@@ -267,8 +269,12 @@ export class App extends LiteElement {
       <sl-drawer
         id="userGuideDrawer"
         label=${msg("User Guide")}
-        style="--body-spacing: 0; --header-spacing: var(--sl-spacing-small); --footer-spacing: var(--sl-spacing-2x-small);"
+        style="--body-spacing: 0; --footer-spacing: var(--sl-spacing-2x-small);"
       >
+        <span slot="label" class="flex items-center gap-3">
+          <sl-icon name="book" class=""></sl-icon>
+          <span>${msg("User Guide")}</span>
+        </span>
         <iframe
           class="size-full"
           src="https://docs.browsertrix.com/user-guide/"
@@ -325,7 +331,7 @@ export class App extends LiteElement {
     return html`
       <div class="border-b bg-neutral-50">
         <nav
-          class="box-border flex min-h-12 flex-wrap items-center gap-x-5 gap-y-3 p-3 md:py-0 xl:pl-6"
+          class="box-border flex min-h-12 flex-wrap items-center gap-x-5 gap-y-3 p-3 leading-none md:py-0 xl:pl-6"
         >
           <div class="order-1 flex flex-1 items-center">
             <a
@@ -349,7 +355,7 @@ export class App extends LiteElement {
               ></div>
             </a>
             ${when(
-              this.authService.authState,
+              this.userInfo,
               () => html`
                 ${isSuperAdmin
                   ? html`
@@ -380,33 +386,22 @@ export class App extends LiteElement {
           </div>
           <div class="order-2 flex flex-grow-0 items-center gap-4 md:order-3">
             ${this.authState
-              ? html` <button
-                    class="flex items-center gap-2 leading-none text-neutral-500 hover:text-primary"
-                    @click=${() => void this.userGuideDrawer.show()}
-                  >
-                    <sl-icon name="book" class="size-4 text-base"></sl-icon>
-                    <span class="sr-only lg:not-sr-only"
-                      >${msg("User Guide")}</span
-                    >
-                  </button>
-                  <sl-tooltip
-                    content=${msg(
-                      "Need help with something that's not covered in our guide? Ask the community help forum",
-                    )}
-                  >
-                    <a
-                      class="flex items-center gap-2 leading-none text-neutral-500 hover:text-primary"
-                      href="https://forum.webrecorder.net/c/help/5"
-                      target="_blank"
-                      rel="noopener"
-                    >
-                      <sl-icon
-                        name="patch-question"
-                        class="size-4 text-base"
-                      ></sl-icon>
-                      <span class="sr-only lg:not-sr-only">${msg("Help")}</span>
-                    </a>
-                  </sl-tooltip>
+              ? html`${this.userInfo && !isSuperAdmin
+                    ? html`
+                        <button
+                          class="flex items-center gap-2 leading-none text-neutral-500 hover:text-primary"
+                          @click=${() => void this.userGuideDrawer.show()}
+                        >
+                          <sl-icon
+                            name="book"
+                            class="mt-px size-4 text-base"
+                          ></sl-icon>
+                          <span class="sr-only lg:not-sr-only"
+                            >${msg("User Guide")}</span
+                          >
+                        </button>
+                      `
+                    : nothing}
                   <sl-dropdown
                     class="ml-auto"
                     placement="bottom-end"
@@ -445,11 +440,11 @@ export class App extends LiteElement {
                   </sl-dropdown>`
               : this.renderSignUpLink()}
           </div>
-          <div
-            class="order-3 grid w-full auto-cols-max grid-flow-col items-center gap-5 md:order-2 md:w-auto"
-          >
-            ${isSuperAdmin
-              ? html`
+          ${isSuperAdmin
+            ? html`
+                <div
+                  class="order-3 grid w-full auto-cols-max grid-flow-col items-center gap-5 md:order-2 md:w-auto"
+                >
                   <a
                     class="font-medium text-neutral-500 hover:text-primary"
                     href="/crawls"
@@ -457,9 +452,9 @@ export class App extends LiteElement {
                     >${msg("Running Crawls")}</a
                   >
                   <div class="hidden md:block">${this.renderFindCrawl()}</div>
-                `
-              : nothing}
-          </div>
+                </div>
+              `
+            : nothing}
         </nav>
       </div>
     `;
@@ -496,7 +491,7 @@ export class App extends LiteElement {
     const orgNameLength = 50;
 
     return html`
-      <div class="w-32 truncate sm:w-52 md:w-auto">
+      <div class="max-w-32 truncate sm:max-w-52 md:max-w-none">
         ${selectedOption.slug
           ? html`
               <a
@@ -620,12 +615,12 @@ export class App extends LiteElement {
         <div>
           <a
             class="flex items-center gap-2 leading-none text-neutral-400 hover:text-primary"
-            href="https://docs.browsertrix.com"
+            href="https://forum.webrecorder.net/c/help/5"
             target="_blank"
             rel="noopener"
           >
-            <sl-icon name="book-half" class="size-4 text-base"></sl-icon>
-            ${msg("Documentation")}
+            <sl-icon name="patch-question" class="size-4 text-base"></sl-icon>
+            <span class="sr-only lg:not-sr-only">${msg("Help Forum")}</span>
           </a>
         </div>
         ${this.version
