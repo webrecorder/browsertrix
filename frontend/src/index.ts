@@ -267,7 +267,7 @@ export class App extends LiteElement {
       <sl-drawer
         id="userGuideDrawer"
         label=${msg("User Guide")}
-        style="--body-spacing: 0; --header-spacing: var(--sl-spacing-small); --footer-spacing: var(--sl-spacing-x-small);"
+        style="--body-spacing: 0; --header-spacing: var(--sl-spacing-small); --footer-spacing: var(--sl-spacing-2x-small);"
       >
         <iframe
           class="size-full"
