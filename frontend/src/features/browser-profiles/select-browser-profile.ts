@@ -1,6 +1,6 @@
 import { localized, msg } from "@lit/localize";
 import { type SlSelect } from "@shoelace-style/shoelace";
-import { html, nothing } from "lit";
+import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import orderBy from "lodash/fp/orderBy";
@@ -45,8 +45,10 @@ export class SelectBrowserProfile extends LiteElement {
   @state()
   private browserProfiles?: Profile[];
 
-  protected firstUpdated() {
-    void this.fetchBrowserProfiles();
+  willUpdate(changedProperties: PropertyValues<this>) {
+    if (changedProperties.has("profileId")) {
+      void this.updateSelectedProfile();
+    }
   }
 
   render() {
@@ -175,10 +177,12 @@ export class SelectBrowserProfile extends LiteElement {
     `;
   }
 
-  private onChange(e: Event) {
+  private async onChange(e: Event) {
     this.selectedProfile = this.browserProfiles?.find(
-      ({ id }) => id === (e.target as SlSelect | null)!.value,
+      ({ id }) => id === (e.target as SlSelect | null)?.value,
     );
+
+    await this.updateComplete;
 
     this.dispatchEvent(
       new CustomEvent<SelectBrowserProfileChangeDetail>("on-change", {
@@ -187,6 +191,17 @@ export class SelectBrowserProfile extends LiteElement {
         },
       }),
     );
+  }
+
+  private async updateSelectedProfile() {
+    await this.fetchBrowserProfiles();
+    await this.updateComplete;
+
+    if (this.profileId && !this.selectedProfile) {
+      this.selectedProfile = this.browserProfiles?.find(
+        ({ id }) => id === this.profileId,
+      );
+    }
   }
 
   /**
@@ -199,12 +214,6 @@ export class SelectBrowserProfile extends LiteElement {
       this.browserProfiles = orderBy(["name", "modified"])(["asc", "desc"])(
         data,
       ) as Profile[];
-
-      if (this.profileId && !this.selectedProfile) {
-        this.selectedProfile = this.browserProfiles.find(
-          ({ id }) => id === this.profileId,
-        );
-      }
     } catch (e) {
       this.notify({
         message: msg("Sorry, couldn't retrieve browser profiles at this time."),
