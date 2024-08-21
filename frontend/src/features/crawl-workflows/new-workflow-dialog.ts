@@ -87,7 +87,7 @@ export class NewWorkflowDialog extends TailwindElement {
           </button>
         </div>
         <sl-details
-          summary=${msg("Need more help deciding?")}
+          summary=${msg("Need help deciding?")}
           @sl-hide=${this.stopProp}
           @sl-after-hide=${this.stopProp}
         >
