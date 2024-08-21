@@ -52,6 +52,7 @@ export default {
         "node_modules/lodash/**/*",
         "node_modules/color/**/*",
         "node_modules/slugify/**/*",
+        "node_modules/pretty-ms/**/*",
       ],
     }),
     importMapsPlugin({
