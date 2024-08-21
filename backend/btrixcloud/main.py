@@ -143,6 +143,7 @@ def main() -> None:
         maxPagesPerCrawl=int(os.environ.get("MAX_PAGES_PER_CRAWL", 0)),
         maxScale=int(os.environ.get("MAX_CRAWL_SCALE", 3)),
         billingEnabled=is_bool(os.environ.get("BILLING_ENABLED")),
+        signUpUrl=os.environ.get("SIGN_UP_URL", ""),
         salesEmail=os.environ.get("SALES_EMAIL", ""),
         supportEmail=os.environ.get("EMAIL_SUPPORT", ""),
     )
