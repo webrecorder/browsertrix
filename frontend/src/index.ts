@@ -84,8 +84,7 @@ export class App extends LiteElement {
       this.authService.saveLogin(authState);
     }
     this.syncViewState();
-    if (authState) {
-      console.log("connectedCallback userInfo?:", this.userInfo);
+    if (authState && !this.userInfo) {
       void this.fetchAndUpdateUserInfo();
     }
     super.connectedCallback();
@@ -177,8 +176,6 @@ export class App extends LiteElement {
     AppStateService.updateUserInfo(userInfo);
 
     const orgs = userInfo.orgs;
-
-    console.log(userInfo, orgs, this.appState.orgSlug);
 
     if (orgs.length && !userInfo.isSuperAdmin && !this.appState.orgSlug) {
       const firstOrg = orgs[0].slug;

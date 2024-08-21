@@ -24,10 +24,11 @@ export function makeAppStateService() {
   class AppState {
     // TODO persist
     settings: AppSettings | null = null;
+
+    @options(persist(window.sessionStorage))
     userInfo: UserInfo | null = null;
 
     // TODO persist here
-    // @options(persist(window.sessionStorage))
     auth: Auth | null = null;
 
     // Store org slug in local storage in order to redirect
@@ -42,7 +43,7 @@ export function makeAppStateService() {
 
     // Use `userOrg` to retrieve the basic org info like name,
     // since `userInfo` will` always available before `org`
-    userOrg: UserOrg | undefined = undefined;
+    userOrg: UserOrg | null = null;
 
     get orgId() {
       return this.userOrg?.id || "";
@@ -86,6 +87,8 @@ export function makeAppStateService() {
       userInfoSchema.nullable().parse(userInfo);
 
       appState.userInfo = userInfo;
+
+      console.log(appState.orgSlug);
 
       if (
         userInfo?.orgs.length &&
@@ -140,13 +143,18 @@ export function makeAppStateService() {
     private _resetUser() {
       appState.auth = null;
       appState.userInfo = null;
+      appState.userOrg = null;
       appState.orgSlug = null;
     }
 
     private _updateUserOrg() {
-      appState.userOrg = appState.userInfo?.orgs.find(
-        ({ slug }) => slug === appState.orgSlug,
-      );
+      console.log("appState.orgSlug:", appState.orgSlug);
+      appState.userOrg =
+        (appState.orgSlug &&
+          appState.userInfo?.orgs.find(
+            ({ slug }) => slug === appState.orgSlug,
+          )) ||
+        null;
     }
   }
 
