@@ -24,8 +24,8 @@ export class NewWorkflowDialog extends TailwindElement {
         .open=${this.open}
         style="--width: 46rem"
       >
-        <p class="mb-7 mt-3 text-base text-neutral-700">
-          ${msg("How do you want to specify which pages to crawl?")}
+        <p class="mb-7 mt-3 px-4 text-base text-neutral-700">
+          ${msg("What would you like to crawl?")}
         </p>
         <div
           class="mb-7 flex flex-col items-center justify-center gap-7 md:flex-row md:items-start md:gap-16"
