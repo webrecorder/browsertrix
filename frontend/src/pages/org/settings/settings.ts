@@ -1,12 +1,13 @@
 import { localized, msg, str } from "@lit/localize";
 import type { SlInput } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
-import { html, type PropertyValues } from "lit";
+import { html, unsafeCSS, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 
+import stylesheet from "./settings.stylesheet.css";
 import { columns } from "./ui/columns";
 
 import { BtrixElement } from "@/classes/BtrixElement";
@@ -20,6 +21,8 @@ import { AppStateService } from "@/utils/state";
 import { formatAPIUser } from "@/utils/user";
 
 import "./components/billing";
+
+const styles = unsafeCSS(stylesheet);
 
 type Tab = "information" | "members" | "billing";
 type User = {
@@ -56,6 +59,8 @@ export type OrgRemoveMemberEvent = CustomEvent<{
 @localized()
 @customElement("btrix-org-settings")
 export class OrgSettings extends BtrixElement {
+  static styles = styles;
+
   @property({ type: String })
   activePanel: Tab = "information";
 
@@ -422,19 +427,92 @@ export class OrgSettings extends BtrixElement {
           </sl-input>
         </div>
         <div class="mb-5">
-          <sl-radio-group
-            name="role"
-            label="Permission"
-            value=${AccessCode.viewer}
-          >
-            <sl-radio value=${AccessCode.owner}>
-              ${msg("Admin — Can create crawls and manage org members")}
+          <sl-radio-group name="role" label="Role" value=${AccessCode.viewer}>
+            <sl-radio value=${AccessCode.viewer} class="radio-card">
+              <div
+                class="col-start-2 flex items-baseline justify-between gap-2"
+              >
+                ${msg("Viewer")}
+                <span class="text-xs text-gray-500">
+                  ${msg("View archived items and collections")}
+                </span>
+              </div>
+              <sl-details
+                @sl-hide=${this.stopProp}
+                @sl-after-hide=${this.stopProp}
+                class="details-card text-xs"
+              >
+                <span slot="summary">Permissions</span>
+                <ul class="ms-4 list-disc text-gray-500">
+                  <li>${msg("View crawl workflows")}</li>
+                  <li>${msg("View, replay, and download archived items")}</li>
+                  <li>${msg("View collections")}</li>
+                </ul>
+              </sl-details>
             </sl-radio>
-            <sl-radio value=${AccessCode.crawler}>
-              ${msg("Crawler — Can create crawls")}
+
+            <sl-radio value=${AccessCode.crawler} class="radio-card">
+              <div
+                class="col-start-2 flex items-baseline justify-between gap-2"
+              >
+                ${msg("Crawler")}
+                <span class="text-xs text-gray-500">
+                  ${msg("Create, evaluate, and curate archived items")}
+                </span>
+              </div>
+              <sl-details
+                @sl-hide=${this.stopProp}
+                @sl-after-hide=${this.stopProp}
+                class="details-card text-xs"
+              >
+                <span slot="summary">Permissions</span>
+                <p class="mb-1 text-gray-500">
+                  ${msg("All Viewer permissions, plus:")}
+                </p>
+                <ul class="ms-4 list-disc text-gray-500">
+                  <li>${msg("Create crawl workflows")}</li>
+                  <li>${msg("Create browser profiles")}</li>
+                  <li>${msg("Upload archived items")}</li>
+                  <li>${msg("Run QA analysis")}</li>
+                  <li>${msg("Rate and review archived items")}</li>
+                  <li>${msg("Create, edit, and share collections")}</li>
+                </ul>
+              </sl-details>
             </sl-radio>
-            <sl-radio value=${AccessCode.viewer}>
-              ${msg("Viewer — Can view crawls")}
+
+            <sl-radio value=${AccessCode.owner} class="radio-card">
+              <div
+                class="col-start-2 flex items-baseline justify-between gap-2"
+              >
+                ${msg("Admin")}
+                <span class="text-xs text-gray-500">
+                  ${this.appState.settings?.billingEnabled
+                    ? msg("Manage org and billing settings")
+                    : msg("Manage org")}
+                </span>
+              </div>
+              <sl-details
+                @sl-hide=${this.stopProp}
+                @sl-after-hide=${this.stopProp}
+                class="details-card text-xs"
+              >
+                <span slot="summary">${msg("Permissions")}</span>
+                <p class="mb-1 text-gray-500">
+                  ${msg("All Crawler permissions, plus:")}
+                </p>
+                <ul class="ms-4 list-disc text-gray-500">
+                  ${this.appState.settings?.billingEnabled &&
+                  html`<li class="text-warning">
+                      ${msg("Manage subscription")}
+                    </li>
+                    <li class="text-warning">
+                      ${msg("Manage billing details")}
+                    </li>`}
+                  <li>${msg("Edit org name and URL")}</li>
+                  <li>${msg("Manage org members")}</li>
+                  <li>${msg("View and edit org defaults")}</li>
+                </ul>
+              </sl-details>
             </sl-radio>
           </sl-radio-group>
         </div>
@@ -641,5 +719,14 @@ export class OrgSettings extends BtrixElement {
 
   private async getCurrentUser(): Promise<APIUser> {
     return this.api.fetch("/users/me");
+  }
+
+  /**
+   * Stop propgation of sl-tooltip events.
+   * Prevents bug where sl-dialog closes when tooltip closes
+   * https://github.com/shoelace-style/shoelace/issues/170
+   */
+  private stopProp(e: Event) {
+    e.stopPropagation();
   }
 }
