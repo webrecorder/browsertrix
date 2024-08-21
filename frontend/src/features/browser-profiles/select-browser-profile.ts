@@ -51,6 +51,10 @@ export class SelectBrowserProfile extends LiteElement {
     }
   }
 
+  firstUpdated() {
+    void this.updateSelectedProfile();
+  }
+
   render() {
     return html`
       <sl-select

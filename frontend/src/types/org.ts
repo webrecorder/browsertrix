@@ -89,7 +89,7 @@ export const orgDataSchema = z.object({
   readOnlyReason: z.union([orgReadOnlyReasonSchema, z.string()]).nullable(),
   readOnlyOnCancel: z.boolean(),
   subscription: subscriptionSchema.nullable(),
-  crawlingDefaults: crawlingDefaultsSchema.optional(),
+  crawlingDefaults: crawlingDefaultsSchema.nullable(),
 });
 export type OrgData = z.infer<typeof orgDataSchema>;
 

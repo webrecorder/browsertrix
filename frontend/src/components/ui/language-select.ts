@@ -40,7 +40,7 @@ export class LanguageSelect extends LitElement {
   @property({ type: String })
   size?: SlSelect["size"];
 
-  @property({ type: String })
+  @property({ type: String, noAccessor: true })
   value?: LanguageCode;
 
   @property({ type: Boolean })
