@@ -327,7 +327,7 @@ export class ConfigDetails extends LiteElement {
 
     return html`
       ${this.renderSetting(
-        msg("List of URLs"),
+        msg("Crawl URL(s)"),
         html`
           <ul>
             ${this.seeds?.map(
