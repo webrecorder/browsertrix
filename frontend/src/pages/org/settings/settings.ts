@@ -678,8 +678,7 @@ export class OrgSettings extends BtrixElement {
 
       const user = await this.getCurrentUser();
 
-      AppStateService.updateUserInfo(formatAPIUser(user));
-      AppStateService.updateOrgSlug(slug);
+      AppStateService.updateUser(formatAPIUser(user), slug);
 
       this.navigate.to(`${this.navigate.orgBasePath}/settings`);
 

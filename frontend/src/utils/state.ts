@@ -41,9 +41,23 @@ export function makeAppStateService() {
 
     orgIdLookup: Lookup | null = null;
 
-    // Use `userOrg` to retrieve the basic org info like name,
-    // since `userInfo` will` always available before `org`
-    userOrg: UserOrg | null = null;
+    // Since org slug is used to ID an org, use `userOrg`
+    // to retrieve the basic org info like name and ID
+    // before other org details are available
+    get userOrg(): UserOrg | null {
+      const userOrg =
+        (appState.orgSlug &&
+          appState.userInfo?.orgs.find(
+            ({ slug }) => slug === appState.orgSlug,
+          )) ||
+        null;
+
+      if (!userOrg) {
+        console.debug("no user org matching slug in state");
+      }
+
+      return userOrg;
+    }
 
     get orgId() {
       return this.userOrg?.id || "";
@@ -83,30 +97,26 @@ export function makeAppStateService() {
 
     @transaction()
     @unlock()
-    updateUserInfo(userInfo: AppState["userInfo"]) {
+    updateUser(userInfo: AppState["userInfo"], orgSlug?: AppState["orgSlug"]) {
       userInfoSchema.nullable().parse(userInfo);
 
       appState.userInfo = userInfo;
 
-      console.log(appState.orgSlug);
-
-      if (
+      if (orgSlug) {
+        appState.orgSlug = orgSlug;
+      } else if (
         userInfo?.orgs.length &&
         !userInfo.isSuperAdmin &&
         !appState.orgSlug
       ) {
         appState.orgSlug = userInfo.orgs[0].slug;
       }
-
-      this._updateUserOrg();
     }
 
     @transaction()
     @unlock()
     updateOrgSlug(orgSlug: AppState["orgSlug"]) {
       appState.orgSlug = orgSlug;
-
-      this._updateUserOrg();
     }
 
     @unlock()
@@ -143,18 +153,7 @@ export function makeAppStateService() {
     private _resetUser() {
       appState.auth = null;
       appState.userInfo = null;
-      appState.userOrg = null;
       appState.orgSlug = null;
-    }
-
-    private _updateUserOrg() {
-      console.log("appState.orgSlug:", appState.orgSlug);
-      appState.userOrg =
-        (appState.orgSlug &&
-          appState.userInfo?.orgs.find(
-            ({ slug }) => slug === appState.orgSlug,
-          )) ||
-        null;
     }
   }
 

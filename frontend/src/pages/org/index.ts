@@ -138,12 +138,7 @@ export class Org extends LiteElement {
   }
 
   async willUpdate(changedProperties: Map<string, unknown>) {
-    if (
-      (changedProperties.has("appState.userInfo") ||
-        changedProperties.has("slug")) &&
-      this.userInfo &&
-      this.slug
-    ) {
+    if (changedProperties.has("slug") && this.userInfo && this.slug) {
       if (this.userOrg) {
         void this.updateOrg();
       } else {

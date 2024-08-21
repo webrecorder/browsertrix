@@ -407,9 +407,6 @@ export class CrawlConfigEditor extends LiteElement {
         }
       }
     }
-    if (changedProperties.get("appState.userOrg") && this.orgId) {
-      await this.fetchTags();
-    }
   }
 
   async updated(

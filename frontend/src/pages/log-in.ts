@@ -362,7 +362,7 @@ export class LogInPage extends LiteElement {
     try {
       const data = await AuthService.login({ email: username, password });
 
-      AppStateService.updateUserInfo(formatAPIUser(data.user));
+      AppStateService.updateUser(formatAPIUser(data.user));
 
       await this.updateComplete;
 

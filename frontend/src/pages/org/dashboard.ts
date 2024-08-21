@@ -46,7 +46,7 @@ export class Dashboard extends LiteElement {
   };
 
   willUpdate(changedProperties: PropertyValues<this> & Map<string, unknown>) {
-    if (changedProperties.has("appState.userOrg") && this.orgId) {
+    if (changedProperties.has("appState.orgSlug") && this.orgId) {
       void this.fetchMetrics();
     }
   }

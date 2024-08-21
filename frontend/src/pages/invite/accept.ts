@@ -228,8 +228,7 @@ export class AcceptInvite extends BtrixElement {
       } else {
         const user = await this._getCurrentUser();
 
-        AppStateService.updateUserInfo(formatAPIUser(user));
-        AppStateService.updateOrgSlug(org.slug);
+        AppStateService.updateUser(formatAPIUser(user), org.slug);
 
         await this.updateComplete;
 

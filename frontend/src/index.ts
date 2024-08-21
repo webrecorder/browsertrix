@@ -157,7 +157,7 @@ export class App extends LiteElement {
     try {
       const user = await this.getUserInfo();
 
-      AppStateService.updateUserInfo(formatAPIUser(user));
+      AppStateService.updateUser(formatAPIUser(user));
     } catch (err) {
       if ((err as Error | null | undefined)?.message === "Unauthorized") {
         console.debug(
@@ -167,19 +167,6 @@ export class App extends LiteElement {
         this.clearUser();
         this.navigate(ROUTES.login);
       }
-    }
-  }
-
-  private async updateUserInfoState(user: APIUser) {
-    const userInfo = formatAPIUser(user);
-
-    AppStateService.updateUserInfo(userInfo);
-
-    const orgs = userInfo.orgs;
-
-    if (orgs.length && !userInfo.isSuperAdmin && !this.appState.orgSlug) {
-      const firstOrg = orgs[0].slug;
-      AppStateService.updateOrgSlug(firstOrg);
     }
   }
 
@@ -820,7 +807,7 @@ export class App extends LiteElement {
 
     if (!this.userInfo) {
       if (detail.user) {
-        AppStateService.updateUserInfo(formatAPIUser(detail.user));
+        AppStateService.updateUser(formatAPIUser(detail.user));
       } else {
         void this.fetchAndUpdateUserInfo();
       }
@@ -858,7 +845,7 @@ export class App extends LiteElement {
   };
 
   onUserInfoChange(event: CustomEvent<Partial<UserInfo>>) {
-    AppStateService.updateUserInfo({
+    AppStateService.updateUser({
       ...this.userInfo,
       ...event.detail,
     } as UserInfo);
