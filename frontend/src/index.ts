@@ -562,7 +562,7 @@ export class App extends LiteElement {
               name="github"
               class="inline-block size-4 align-middle text-base"
             ></sl-icon>
-            Source Code
+            ${msg("Source Code")}
           </a>
         </div>
         <div class="flex items-center justify-center">
@@ -576,7 +576,7 @@ export class App extends LiteElement {
               name="book-half"
               class="inline-block size-4 align-middle text-base"
             ></sl-icon>
-            Documentation
+            ${msg("Documentation")}
           </a>
         </div>
         <div class="flex items-center justify-center">
