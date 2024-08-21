@@ -138,7 +138,7 @@ export function getInitialFormState(params: {
   configId?: string;
   initialSeeds?: Seed[];
   initialWorkflow?: WorkflowParams;
-  org: OrgData;
+  org?: OrgData | null;
 }): FormState {
   const defaultFormState = getDefaultFormState();
   if (!params.configId) {
@@ -223,6 +223,7 @@ export function getInitialFormState(params: {
   };
 
   return {
+    ...defaultFormState,
     primarySeedUrl: defaultFormState.primarySeedUrl,
     urlList: defaultFormState.urlList,
     customIncludeUrlList: defaultFormState.customIncludeUrlList,
@@ -249,7 +250,7 @@ export function getInitialFormState(params: {
     scheduleType: defaultFormState.scheduleType,
     scheduleFrequency: defaultFormState.scheduleFrequency,
     runNow:
-      params.org.storageQuotaReached || params.org.execMinutesQuotaReached
+      params.org?.storageQuotaReached || params.org?.execMinutesQuotaReached
         ? false
         : defaultFormState.runNow,
     tags: params.initialWorkflow.tags,
@@ -260,7 +261,7 @@ export function getInitialFormState(params: {
       ? ({ id: params.initialWorkflow.profileid } as Profile)
       : defaultFormState.browserProfile,
     scopeType: primarySeedConfig.scopeType as FormState["scopeType"],
-    exclusions: seedsConfig.exclude,
+    exclusions: seedsConfig.exclude?.length === 0 ? [""] : seedsConfig.exclude,
     includeLinkedPages: Boolean(
       primarySeedConfig.extraHops || seedsConfig.extraHops,
     ),

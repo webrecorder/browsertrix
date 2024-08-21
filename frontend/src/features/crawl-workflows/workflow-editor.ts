@@ -183,7 +183,7 @@ export class WorkflowEditor extends BtrixElement {
   configId?: string;
 
   @property({ type: String })
-  jobType?: JobType;
+  jobType!: JobType;
 
   @property({ type: Object })
   initialWorkflow?: WorkflowParams;
@@ -298,14 +298,8 @@ export class WorkflowEditor extends BtrixElement {
   async willUpdate(
     changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {
-    if (
-      (changedProperties.has("jobType") && this.jobType) ||
-      (changedProperties.get("initialWorkflow") && this.initialWorkflow)
-    ) {
+    if (changedProperties.get("initialWorkflow") && this.initialWorkflow) {
       this.initializeEditor();
-      if (this.orgId) {
-        await this.fetchOrgQuotaDefaults();
-      }
     }
     if (changedProperties.get("progressState") && this.progressState) {
       if (
@@ -356,7 +350,10 @@ export class WorkflowEditor extends BtrixElement {
       )
       ?.focus();
 
-    void this.fetchTags();
+    if (this.orgId) {
+      void this.fetchTags();
+      void this.fetchOrgQuotaDefaults();
+    }
   }
 
   private async fetchServerDefaults() {
@@ -365,17 +362,12 @@ export class WorkflowEditor extends BtrixElement {
 
   private initializeEditor() {
     this.progressState = getDefaultProgressState(Boolean(this.configId));
-    this.formState = {
-      ...getDefaultFormState(),
-      ...(this.org
-        ? getInitialFormState({
-            configId: this.configId,
-            initialSeeds: this.initialSeeds,
-            initialWorkflow: this.initialWorkflow,
-            org: this.org,
-          })
-        : {}),
-    };
+    this.formState = getInitialFormState({
+      configId: this.configId,
+      initialSeeds: this.initialSeeds,
+      initialWorkflow: this.initialWorkflow,
+      org: this.org,
+    });
     if (!this.formState.lang) {
       this.formState.lang = this.getInitialLang();
     }
@@ -2114,7 +2106,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
   private parseConfig(): NewCrawlConfigParams {
     const config: NewCrawlConfigParams = {
-      jobType: this.jobType || "custom",
+      jobType: this.jobType,
       name: this.formState.jobName || "",
       description: this.formState.description,
       scale: this.formState.scale,

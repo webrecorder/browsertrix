@@ -2,6 +2,7 @@ import { localized, msg } from "@lit/localize";
 import { mergeDeep } from "immutable";
 import type { LitElement } from "lit";
 import { customElement, property } from "lit/decorators.js";
+import { when } from "lit/directives/when.js";
 
 import type { JobType, Seed, WorkflowParams } from "./types";
 
@@ -17,7 +18,7 @@ const defaultValue = {
   config: {
     seeds: [],
     scopeType: "prefix",
-    exclude: [""],
+    exclude: [],
     behaviorTimeout: null,
     pageLoadTimeout: null,
     pageExtraDelay: null,
@@ -53,17 +54,8 @@ export class WorkflowsNew extends LiteElement {
   @property({ type: String })
   jobType?: JobType;
 
-  // Use custom property accessor to prevent
-  // overriding default Workflow values
   @property({ type: Object })
-  get initialWorkflow(): WorkflowParams {
-    return this._initialWorkflow;
-  }
-  set initialWorkflow(val: Partial<WorkflowParams>) {
-    this._initialWorkflow = mergeDeep(this._initialWorkflow, val);
-  }
-
-  private _initialWorkflow: WorkflowParams = defaultValue;
+  initialWorkflow?: WorkflowParams;
 
   private renderHeader() {
     const href = `${this.orgBasePath}/workflows/crawls`;
@@ -96,7 +88,7 @@ export class WorkflowsNew extends LiteElement {
       custom: msg("Custom"),
     };
 
-    const jobType = this.initialWorkflow.jobType || this.jobType;
+    const jobType = this.initialWorkflow?.jobType || this.jobType;
 
     if (!this.isCrawler) {
       return this.renderNoAccess();
@@ -108,19 +100,44 @@ export class WorkflowsNew extends LiteElement {
         <h2 class="mb-6 text-xl font-semibold">
           ${msg(html`New Crawl Workflow &mdash; ${jobTypeLabels[jobType]}`)}
         </h2>
-        <btrix-workflow-editor
-          .initialWorkflow=${this.initialWorkflow}
-          .initialSeeds=${this.initialSeeds}
-          jobType=${jobType}
-          @reset=${async (e: Event) => {
-            await (e.target as LitElement).updateComplete;
-            this.dispatchEvent(
-              new CustomEvent("select-new-dialog", {
-                detail: "workflow",
-              }) as SelectNewDialogEvent,
-            );
-          }}
-        ></btrix-workflow-editor>
+        ${when(this.org, (org) => {
+          const initialWorkflow = mergeDeep(
+            defaultValue,
+            {
+              profileid: org.crawlingDefaults?.profileid,
+              config: {
+                exclude: org.crawlingDefaults?.exclude,
+                behaviorTimeout: org.crawlingDefaults?.behaviorTimeout,
+                pageLoadTimeout: org.crawlingDefaults?.pageLoadTimeout,
+                pageExtraDelay: org.crawlingDefaults?.pageExtraDelay,
+                postLoadDelay: org.crawlingDefaults?.postLoadDelay,
+                userAgent: org.crawlingDefaults?.userAgent,
+                blockAds: org.crawlingDefaults?.blockAds,
+                lang: org.crawlingDefaults?.lang,
+              },
+              // crawlTimeout: null,
+              // maxCrawlSize: null,
+              crawlerChannel: org.crawlingDefaults?.crawlerChannel,
+            },
+            this.initialWorkflow || {},
+          );
+
+          return html`
+            <btrix-workflow-editor
+              .initialWorkflow=${initialWorkflow}
+              .initialSeeds=${this.initialSeeds}
+              jobType=${jobType}
+              @reset=${async (e: Event) => {
+                await (e.target as LitElement).updateComplete;
+                this.dispatchEvent(
+                  new CustomEvent("select-new-dialog", {
+                    detail: "workflow",
+                  }) as SelectNewDialogEvent,
+                );
+              }}
+            ></btrix-workflow-editor>
+          `;
+        })}
       `;
     }
 

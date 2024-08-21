@@ -210,7 +210,7 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
       blockAds: html`<sl-checkbox
         size="small"
         name="blockAds"
-        ?checked=${orgDefaults.blockAds}
+        ?checked=${orgDefaults.blockAds ?? true}
       >
         ${msg("Block ads by domain")}
       </sl-checkbox>`,
