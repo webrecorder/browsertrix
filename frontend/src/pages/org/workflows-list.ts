@@ -500,14 +500,28 @@ export class WorkflowsList extends LiteElement {
       </sl-menu-item>
       ${when(
         this.appState.isCrawler,
-        () =>
-          html` <sl-menu-item
+        () => html`
+          <sl-menu-item
             ?disabled=${isArchivingDisabled(this.org, true)}
             @click=${() => void this.duplicateConfig(workflow)}
           >
             <sl-icon name="files" slot="prefix"></sl-icon>
             ${msg("Duplicate Workflow")}
-          </sl-menu-item>`,
+          </sl-menu-item>
+          ${when(
+            !workflow.lastCrawlId,
+            () => html`
+              <sl-divider></sl-divider>
+              <sl-menu-item
+                style="--sl-color-neutral-700: var(--danger)"
+                @click=${() => void this.delete(workflow)}
+              >
+                <sl-icon name="trash3" slot="prefix"></sl-icon>
+                ${msg("Delete Workflow")}
+              </sl-menu-item>
+            `,
+          )}
+        `,
       )}
     `;
   }
@@ -656,29 +670,6 @@ export class WorkflowsList extends LiteElement {
     }
   }
 
-  private async deactivate(workflow: ListWorkflow): Promise<void> {
-    try {
-      await this.apiFetch(`/orgs/${this.orgId}/crawlconfigs/${workflow.id}`, {
-        method: "DELETE",
-      });
-
-      void this.fetchWorkflows();
-      this.notify({
-        message: msg(
-          html`Deactivated <strong>${this.renderName(workflow)}</strong>.`,
-        ),
-        variant: "success",
-        icon: "check2-circle",
-      });
-    } catch {
-      this.notify({
-        message: msg("Sorry, couldn't deactivate Workflow at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-      });
-    }
-  }
-
   private async delete(workflow: ListWorkflow): Promise<void> {
     try {
       await this.apiFetch(`/orgs/${this.orgId}/crawlconfigs/${workflow.id}`, {
@@ -688,7 +679,7 @@ export class WorkflowsList extends LiteElement {
       void this.fetchWorkflows();
       this.notify({
         message: msg(
-          html`Deleted <strong>${this.renderName(workflow)}</strong>.`,
+          html`Deleted <strong>${this.renderName(workflow)}</strong> Workflow.`,
         ),
         variant: "success",
         icon: "check2-circle",
