@@ -1,7 +1,8 @@
+import "./org";
+
 import(/* webpackChunkName: "admin" */ "./admin");
 import(/* webpackChunkName: "sign-up" */ "./sign-up");
 import(/* webpackChunkName: "log-in" */ "./log-in");
-import(/* webpackChunkName: "org" */ "./org");
 import(/* webpackChunkName: "crawls" */ "./crawls");
 import(/* webpackChunkName: "join" */ "./invite/join");
 import(/* webpackChunkName: "verify" */ "./verify");

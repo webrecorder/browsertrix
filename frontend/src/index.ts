@@ -655,7 +655,6 @@ export class App extends LiteElement {
           .viewStateData=${this.viewState.data}
           .params=${this.viewState.params}
           .maxScale=${this.appState.settings?.maxScale || DEFAULT_MAX_SCALE}
-          slug=${slug}
           orgPath=${orgPath.split(slug)[1]}
           orgTab=${orgTab as OrgTab}
         ></btrix-org>`;

@@ -3,6 +3,7 @@ import { customElement, property, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
+import isEqual from "lodash/fp/isEqual";
 
 import type { QATab } from "./archived-item-qa/types";
 import type { Tab as CollectionTab } from "./collection-detail";
@@ -27,17 +28,18 @@ import { AppStateService } from "@/utils/state";
 
 import "./workflow-detail";
 import "./workflows-list";
-import "./workflows-new";
 import "./archived-item-detail";
 import "./archived-items";
-import "./archived-item-qa/archived-item-qa";
 import "./collections-list";
 import "./collection-detail";
 import "./browser-profiles-detail";
 import "./browser-profiles-list";
-import "./browser-profiles-new";
 import "./settings/settings";
 import "./dashboard";
+
+import(/* webpackChunkName: "org" */ "./archived-item-qa/archived-item-qa");
+import(/* webpackChunkName: "org" */ "./workflows-new");
+import(/* webpackChunkName: "org" */ "./browser-profiles-new");
 
 const RESOURCE_NAMES = ["workflow", "collection", "browser-profile", "upload"];
 type ResourceName = (typeof RESOURCE_NAMES)[number];
@@ -91,9 +93,6 @@ export class Org extends LiteElement {
   @property({ type: Object })
   viewStateData?: ViewState["data"];
 
-  @property({ type: String })
-  slug!: string;
-
   // Path after `/orgs/:orgId/`
   @property({ type: String })
   orgPath!: string;
@@ -138,7 +137,11 @@ export class Org extends LiteElement {
   }
 
   async willUpdate(changedProperties: Map<string, unknown>) {
-    if (changedProperties.has("slug") && this.userInfo && this.slug) {
+    if (
+      changedProperties.has("appState.orgSlug") &&
+      this.userInfo &&
+      this.orgSlug
+    ) {
       if (this.userOrg) {
         void this.updateOrg();
       } else {
@@ -186,7 +189,9 @@ export class Org extends LiteElement {
     try {
       const org = await this.getOrg(this.orgId);
 
-      AppStateService.updateOrg(org);
+      if (!isEqual(this.org, org)) {
+        AppStateService.updateOrg(org);
+      }
     } catch (e) {
       console.debug(e);
       this.notify({
@@ -200,14 +205,14 @@ export class Org extends LiteElement {
   async firstUpdated() {
     // if slug is actually an orgId (UUID), attempt to lookup the slug
     // and redirect to the slug url
-    if (UUID_REGEX.test(this.slug)) {
-      const org = await this.getOrg(this.slug);
+    if (this.orgSlug && UUID_REGEX.test(this.orgSlug)) {
+      const org = await this.getOrg(this.orgSlug);
       const actualSlug = org?.slug;
       if (actualSlug) {
         this.navTo(
           window.location.href
             .slice(window.location.origin.length)
-            .replace(this.slug, actualSlug),
+            .replace(this.orgSlug, actualSlug),
         );
         return;
       }
