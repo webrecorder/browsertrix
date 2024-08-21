@@ -157,7 +157,8 @@ export class App extends LiteElement {
     }
     try {
       const user = await this.getUserInfo();
-      void this.updateUserInfoState(user);
+
+      AppStateService.updateUserInfo(formatAPIUser(user));
     } catch (err) {
       if ((err as Error | null | undefined)?.message === "Unauthorized") {
         console.debug(
@@ -820,10 +821,12 @@ export class App extends LiteElement {
       this.onFirstLogin({ email: detail.username });
     }
 
-    if (detail.user) {
-      void this.updateUserInfoState(detail.user);
-    } else {
-      void this.fetchAndUpdateUserInfo();
+    if (!this.userInfo) {
+      if (detail.user) {
+        AppStateService.updateUserInfo(formatAPIUser(detail.user));
+      } else {
+        void this.fetchAndUpdateUserInfo();
+      }
     }
   }
 

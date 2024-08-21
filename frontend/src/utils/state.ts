@@ -87,6 +87,14 @@ export function makeAppStateService() {
 
       appState.userInfo = userInfo;
 
+      if (
+        userInfo?.orgs.length &&
+        !userInfo.isSuperAdmin &&
+        !appState.orgSlug
+      ) {
+        appState.orgSlug = userInfo.orgs[0].slug;
+      }
+
       this._updateUserOrg();
     }
 
