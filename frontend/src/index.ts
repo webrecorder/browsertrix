@@ -277,7 +277,6 @@ export class App extends LiteElement {
           <sl-icon slot="suffix" name="box-arrow-up-right"></sl-icon>
           ${msg("Open in new window")}</sl-button
         >
-        <sl-button size="small" slot="footer">${msg("Close")}</sl-button>
       </sl-drawer>
     `;
   }
