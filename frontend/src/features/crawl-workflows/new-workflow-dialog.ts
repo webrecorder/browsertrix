@@ -129,7 +129,7 @@ export class NewWorkflowDialog extends TailwindElement {
             <li>
               ${msg(
                 html`You're archiving a website <em>and</em> external pages
-                  linked out of the webpage`,
+                  linked to from the website`,
               )}
             </li>
           </ul>
