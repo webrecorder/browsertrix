@@ -1486,13 +1486,15 @@ export class WorkflowDetail extends LiteElement {
       this.navTo(`${this.orgBasePath}/workflows/crawls`);
 
       this.notify({
-        message: msg(html`Deleted <strong>${this.renderName()}</strong>.`),
+        message: msg(
+          html`Deleted <strong>${this.renderName()}</strong> Workflow.`,
+        ),
         variant: "success",
         icon: "check2-circle",
       });
     } catch {
       this.notify({
-        message: msg("Sorry, couldn't delete Crawl Workflow at this time."),
+        message: msg("Sorry, couldn't delete Workflow at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
       });
