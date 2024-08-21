@@ -579,7 +579,7 @@ export class App extends LiteElement {
                 <btrix-copy-button
                   class="size-4 text-neutral-400"
                   .getValue=${() => this.version}
-                  content=${msg("Copy Version Code")}
+                  content=${msg("Copy Browsertrix Version")}
                   size="x-small"
                 ></btrix-copy-button>
                 <span class="font-monostyle text-xs text-neutral-400">
