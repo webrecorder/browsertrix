@@ -54,7 +54,6 @@ export class Home extends LiteElement {
   private readonly validateOrgNameMax = maxLengthValidator(40);
 
   connectedCallback() {
-    console.log("saldfhjkass");
     if (this.authState) {
       if (this.slug) {
         this.navTo(`/orgs/${this.slug}`);
