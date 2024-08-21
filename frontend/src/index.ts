@@ -85,7 +85,8 @@ export class App extends LiteElement {
     }
     this.syncViewState();
     if (authState) {
-      void this.updateUserInfo();
+      console.log("connectedCallback userInfo?:", this.userInfo);
+      void this.fetchAndUpdateUserInfo();
     }
     super.connectedCallback();
 
@@ -150,26 +151,13 @@ export class App extends LiteElement {
     AppStateService.updateSettings(settings);
   }
 
-  /**
-   * @deprecate Components should update user info directly through `AppStateService`
-   */
-  private async updateUserInfo(e?: CustomEvent) {
+  private async fetchAndUpdateUserInfo(e?: CustomEvent) {
     if (e) {
       e.stopPropagation();
     }
     try {
-      const userInfo = await this.getUserInfo();
-      AppStateService.updateUserInfo(formatAPIUser(userInfo));
-      const orgs = userInfo.orgs;
-
-      if (
-        orgs.length &&
-        !this.userInfo!.isSuperAdmin &&
-        !this.appState.orgSlug
-      ) {
-        const firstOrg = orgs[0].slug;
-        AppStateService.updateOrgSlug(firstOrg);
-      }
+      const user = await this.getUserInfo();
+      void this.updateUserInfoState(user);
     } catch (err) {
       if ((err as Error | null | undefined)?.message === "Unauthorized") {
         console.debug(
@@ -179,6 +167,21 @@ export class App extends LiteElement {
         this.clearUser();
         this.navigate(ROUTES.login);
       }
+    }
+  }
+
+  private async updateUserInfoState(user: APIUser) {
+    const userInfo = formatAPIUser(user);
+
+    AppStateService.updateUserInfo(userInfo);
+
+    const orgs = userInfo.orgs;
+
+    console.log(userInfo, orgs, this.appState.orgSlug);
+
+    if (orgs.length && !userInfo.isSuperAdmin && !this.appState.orgSlug) {
+      const firstOrg = orgs[0].slug;
+      AppStateService.updateOrgSlug(firstOrg);
     }
   }
 
@@ -817,7 +820,11 @@ export class App extends LiteElement {
       this.onFirstLogin({ email: detail.username });
     }
 
-    void this.updateUserInfo();
+    if (detail.user) {
+      void this.updateUserInfoState(detail.user);
+    } else {
+      void this.fetchAndUpdateUserInfo();
+    }
   }
 
   onNeedLogin = (e: CustomEvent<NeedLoginEventDetail>) => {
@@ -955,7 +962,7 @@ export class App extends LiteElement {
           if (data.value !== AuthService.storage.getItem()) {
             if (data.value) {
               this.authService.saveLogin(JSON.parse(data.value) as Auth);
-              void this.updateUserInfo();
+              void this.fetchAndUpdateUserInfo();
               this.syncViewState();
             } else {
               this.clearUser();
