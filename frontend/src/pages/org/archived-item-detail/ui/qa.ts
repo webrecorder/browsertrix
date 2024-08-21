@@ -249,33 +249,45 @@ export class ArchivedItemDetailQA extends BtrixElement {
                 </sl-tooltip>
               </div>
             </div>
-            <div>
-              <p>
-                <span class="text-primary">${htmlCount}</span> ${msg(
-                  "HTML Pages",
-                )}
-              </p>
-              <p>
-                <span class="text-neutral-600">${fileCount}</span> ${msg(
-                  "Non-HTML Files Captured As Pages",
-                )}
-              </p>
-              <p>
-                <span class="text-danger">${errorCount}</span> ${msg(
-                  "Failed Pages",
-                )}
-              </p>
-            </div>
+            ${this.crawl
+              ? html`<div class="tabular-nums">
+                  <p>
+                    ${msg(html`
+                      <span class="text-primary">${htmlCount}</span>
+                      HTML ${pluralOf("pages", htmlCount)}
+                    `)}
+                  </p>
+                  <p>
+                    ${msg(html`
+                      <span class="text-neutral-600">${fileCount}</span>
+                      Non-HTML files captured as ${pluralOf("pages", fileCount)}
+                    `)}
+                  </p>
+                  <p>
+                    ${msg(html`
+                      <span class="text-danger">${errorCount}</span>
+                      Failed ${pluralOf("pages", errorCount)}
+                    `)}
+                  </p>
+                </div> `
+              : html`
+                  <sl-skeleton class="mb-[5px] w-24"></sl-skeleton>
+                  <sl-skeleton class="mb-[5px] w-64"></sl-skeleton>
+                  <sl-skeleton class="mb-[5px] w-28"></sl-skeleton>
+                `}
             ${when(this.mostRecentNonFailedQARun && this.qaRuns, (qaRuns) =>
               this.renderAnalysis(qaRuns),
             )}
           </btrix-card>
 
           <div>
-            <h4 class="mb-2 mt-4 text-lg leading-8">
-              <span class="font-semibold">${msg("Pages")}</span> (${(
-                this.pages?.total ?? 0
-              ).toLocaleString()})
+            <h4 class="mb-2 mt-4 text-lg tabular-nums leading-8">
+              <span class="font-semibold">${msg("Pages")}</span>
+              ${this.pages != null
+                ? `(${this.pages.total.toLocaleString()})`
+                : html`<sl-skeleton
+                    class="inline-block h-6 w-5 align-[-6px]"
+                  ></sl-skeleton>`}
             </h4>
           </div>
           ${this.renderPageListControls()} ${this.renderPageList()}
