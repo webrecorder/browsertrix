@@ -20,7 +20,7 @@ test("test", async ({ baseURL }) => {
       );
     }
     await page.fill('input[name="password"]', devPassword);
-    await page.click('a:has-text("Log In")');
+    await page.click('sl-button:has-text("Log In")');
   } finally {
     await browser.close();
   }
