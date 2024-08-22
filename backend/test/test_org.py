@@ -56,6 +56,24 @@ def test_get_org_crawler(crawler_auth_headers, default_org_id):
     assert data.get("users") == {}
 
 
+def test_update_org_crawling_defaults(admin_auth_headers, default_org_id):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/defaults/crawling",
+        headers=admin_auth_headers,
+        json={"maxCrawlSize": 200000, "lang": "fr"},
+    )
+
+    assert r.status_code == 200
+    assert r.json()["updated"] == True
+
+    r = requests.get(f"{API_PREFIX}/orgs/{default_org_id}", headers=admin_auth_headers)
+
+    data = r.json()
+    assert data["crawlingDefaults"]
+    assert data["crawlingDefaults"]["maxCrawlSize"] == 200000
+    assert data["crawlingDefaults"]["lang"] == "fr"
+
+
 def test_rename_org(admin_auth_headers, default_org_id):
     UPDATED_NAME = "updated org name"
     UPDATED_SLUG = "updated-org-name"
