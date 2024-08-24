@@ -9,6 +9,7 @@ import "@shoelace-style/shoelace/dist/themes/light.css";
 import "@shoelace-style/shoelace/dist/components/alert/alert";
 import "@shoelace-style/shoelace/dist/components/avatar/avatar";
 import "@shoelace-style/shoelace/dist/components/button/button";
+import "@shoelace-style/shoelace/dist/components/drawer/drawer";
 import "@shoelace-style/shoelace/dist/components/icon/icon";
 import "@shoelace-style/shoelace/dist/components/input/input";
 import "@shoelace-style/shoelace/dist/components/checkbox/checkbox";

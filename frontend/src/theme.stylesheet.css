@@ -340,6 +340,20 @@
     border: 1px solid theme(colors.gray.200);
     border-radius: var(--sl-input-border-radius-small);
   }
+
+  sl-drawer::part(header) {
+    --header-spacing: var(--sl-spacing-small);
+  }
+
+  sl-drawer::part(title) {
+    font-size: var(--font-size-base);
+    font-weight: var(--sl-font-weight-medium);
+    line-height: 1.5;
+  }
+
+  sl-drawer::part(footer) {
+    border-top: 1px solid var(--sl-panel-border-color);
+  }
 }
 
 /* Following styles won't work with layers */

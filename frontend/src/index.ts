@@ -1,5 +1,5 @@
 import { localized, msg, str } from "@lit/localize";
-import type { SlDialog } from "@shoelace-style/shoelace";
+import type { SlDialog, SlDrawer } from "@shoelace-style/shoelace";
 import { nothing, render, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
@@ -71,6 +71,9 @@ export class App extends LiteElement {
 
   @query("#globalDialog")
   private readonly globalDialog!: SlDialog;
+
+  @query("#userGuideDrawer")
+  private readonly userGuideDrawer!: SlDrawer;
 
   async connectedCallback() {
     let authState: AuthService["authState"] = null;
@@ -250,7 +253,9 @@ export class App extends LiteElement {
       <div class="min-w-screen flex min-h-screen flex-col">
         ${this.renderNavBar()} ${this.renderAlertBanner()}
         <main class="relative flex flex-auto">${this.renderPage()}</main>
-        <div class="border-t border-neutral-100">${this.renderFooter()}</div>
+        <div class="mt-7 border-t border-neutral-100">
+          ${this.renderFooter()}
+        </div>
       </div>
 
       <sl-dialog
@@ -260,6 +265,25 @@ export class App extends LiteElement {
         @sl-after-hide=${() => (this.globalDialogContent = {})}
         >${this.globalDialogContent.body}</sl-dialog
       >
+
+      <sl-drawer
+        id="userGuideDrawer"
+        label=${msg("User Guide")}
+        style="--body-spacing: 0; --footer-spacing: var(--sl-spacing-2x-small);"
+      >
+        <span slot="label" class="flex items-center gap-3">
+          <sl-icon name="book" class=""></sl-icon>
+          <span>${msg("User Guide")}</span>
+        </span>
+        <iframe
+          class="size-full"
+          src="https://docs.browsertrix.com/user-guide/"
+        ></iframe>
+        <sl-button size="small" slot="footer" variant="text">
+          <sl-icon slot="suffix" name="box-arrow-up-right"></sl-icon>
+          ${msg("Open in new window")}</sl-button
+        >
+      </sl-drawer>
     `;
   }
 
@@ -307,9 +331,9 @@ export class App extends LiteElement {
     return html`
       <div class="border-b bg-neutral-50">
         <nav
-          class="mx-auto box-border flex h-12 items-center justify-between px-3 xl:pl-6"
+          class="box-border flex min-h-12 flex-wrap items-center gap-x-5 gap-y-3 p-3 leading-none md:py-0 xl:pl-6"
         >
-          <div class="flex items-center">
+          <div class="order-1 flex flex-1 items-center">
             <a
               class="items-between flex gap-2"
               aria-label="home"
@@ -324,14 +348,14 @@ export class App extends LiteElement {
               <div
                 class="${showFullLogo
                   ? "w-[10.5rem]"
-                  : "w-6 md:w-[10.5rem]"} h-6 bg-cover bg-no-repeat"
+                  : "w-6 lg:w-[10.5rem]"} h-6 bg-cover bg-no-repeat"
                 style="background-image: url(${brandLockupColor})"
                 role="img"
                 title="Browsertrix logo"
               ></div>
             </a>
             ${when(
-              this.authService.authState,
+              this.userInfo,
               () => html`
                 ${isSuperAdmin
                   ? html`
@@ -360,9 +384,67 @@ export class App extends LiteElement {
               `,
             )}
           </div>
-          <div class="grid auto-cols-max grid-flow-col items-center gap-5">
-            ${isSuperAdmin
-              ? html`
+          <div class="order-2 flex flex-grow-0 items-center gap-4 md:order-3">
+            ${this.authState
+              ? html`${this.userInfo && !isSuperAdmin
+                    ? html`
+                        <button
+                          class="flex items-center gap-2 leading-none text-neutral-500 hover:text-primary"
+                          @click=${() => void this.userGuideDrawer.show()}
+                        >
+                          <sl-icon
+                            name="book"
+                            class="mt-px size-4 text-base"
+                          ></sl-icon>
+                          <span class="sr-only lg:not-sr-only"
+                            >${msg("User Guide")}</span
+                          >
+                        </button>
+                      `
+                    : nothing}
+                  <sl-dropdown
+                    class="ml-auto"
+                    placement="bottom-end"
+                    distance="4"
+                  >
+                    <button slot="trigger">
+                      <sl-avatar
+                        label=${msg("Open user menu")}
+                        shape="rounded"
+                        class="[--size:1.75rem]"
+                      ></sl-avatar>
+                    </button>
+                    <sl-menu class="w-60 min-w-min max-w-full">
+                      <div class="px-7 py-2">${this.renderMenuUserInfo()}</div>
+                      <sl-divider></sl-divider>
+                      <sl-menu-item
+                        @click=${() => this.navigate(ROUTES.accountSettings)}
+                      >
+                        <sl-icon slot="prefix" name="person-gear"></sl-icon>
+                        ${msg("Account Settings")}
+                      </sl-menu-item>
+                      ${this.userInfo?.isSuperAdmin
+                        ? html` <sl-menu-item
+                            @click=${() => this.navigate(ROUTES.usersInvite)}
+                          >
+                            <sl-icon slot="prefix" name="person-plus"></sl-icon>
+                            ${msg("Invite Users")}
+                          </sl-menu-item>`
+                        : ""}
+                      <sl-divider></sl-divider>
+                      <sl-menu-item @click="${this.onLogOut}">
+                        <sl-icon slot="prefix" name="door-open"></sl-icon>
+                        ${msg("Log Out")}
+                      </sl-menu-item>
+                    </sl-menu>
+                  </sl-dropdown>`
+              : this.renderSignUpLink()}
+          </div>
+          ${isSuperAdmin
+            ? html`
+                <div
+                  class="order-3 grid w-full auto-cols-max grid-flow-col items-center gap-5 md:order-2 md:w-auto"
+                >
                   <a
                     class="font-medium text-neutral-500 hover:text-primary"
                     href="/crawls"
@@ -370,43 +452,9 @@ export class App extends LiteElement {
                     >${msg("Running Crawls")}</a
                   >
                   <div class="hidden md:block">${this.renderFindCrawl()}</div>
-                `
-              : ""}
-            ${this.authService.authState
-              ? html`<sl-dropdown placement="bottom-end" distance="4">
-                  <button slot="trigger">
-                    <sl-avatar
-                      label=${msg("Open user menu")}
-                      shape="rounded"
-                      class="[--size:1.75rem]"
-                    ></sl-avatar>
-                  </button>
-                  <sl-menu class="w-60 min-w-min max-w-full">
-                    <div class="px-7 py-2">${this.renderMenuUserInfo()}</div>
-                    <sl-divider></sl-divider>
-                    <sl-menu-item
-                      @click=${() => this.navigate(ROUTES.accountSettings)}
-                    >
-                      <sl-icon slot="prefix" name="person-gear"></sl-icon>
-                      ${msg("Account Settings")}
-                    </sl-menu-item>
-                    ${this.userInfo?.isSuperAdmin
-                      ? html` <sl-menu-item
-                          @click=${() => this.navigate(ROUTES.usersInvite)}
-                        >
-                          <sl-icon slot="prefix" name="person-plus"></sl-icon>
-                          ${msg("Invite Users")}
-                        </sl-menu-item>`
-                      : ""}
-                    <sl-divider></sl-divider>
-                    <sl-menu-item @click="${this.onLogOut}">
-                      <sl-icon slot="prefix" name="door-open"></sl-icon>
-                      ${msg("Log Out")}
-                    </sl-menu-item>
-                  </sl-menu>
-                </sl-dropdown>`
-              : this.renderSignUpLink()}
-          </div>
+                </div>
+              `
+            : nothing}
         </nav>
       </div>
     `;
@@ -443,21 +491,23 @@ export class App extends LiteElement {
     const orgNameLength = 50;
 
     return html`
-      ${selectedOption.slug
-        ? html`
-            <a
-              class="font-medium text-neutral-600"
-              href=${this.orgBasePath}
-              @click=${this.navLink}
-            >
-              ${selectedOption.name.slice(0, orgNameLength)}
-            </a>
-          `
-        : html`
-            <span class="text-neutral-500">
-              ${selectedOption.name.slice(0, orgNameLength)}
-            </span>
-          `}
+      <div class="max-w-32 truncate sm:max-w-52 md:max-w-none">
+        ${selectedOption.slug
+          ? html`
+              <a
+                class="font-medium text-neutral-600"
+                href=${this.orgBasePath}
+                @click=${this.navLink}
+              >
+                ${selectedOption.name.slice(0, orgNameLength)}
+              </a>
+            `
+          : html`
+              <span class="text-neutral-500">
+                ${selectedOption.name.slice(0, orgNameLength)}
+              </span>
+            `}
+      </div>
       ${when(
         orgs.length > 1,
         () => html`
@@ -565,12 +615,12 @@ export class App extends LiteElement {
         <div>
           <a
             class="flex items-center gap-2 leading-none text-neutral-400 hover:text-primary"
-            href="https://docs.browsertrix.com"
+            href="https://forum.webrecorder.net/c/help/5"
             target="_blank"
             rel="noopener"
           >
-            <sl-icon name="book-half" class="size-4 text-base"></sl-icon>
-            ${msg("Documentation")}
+            <sl-icon name="patch-question" class="size-4 text-base"></sl-icon>
+            <span class="sr-only lg:not-sr-only">${msg("Help Forum")}</span>
           </a>
         </div>
         ${this.version
