@@ -309,9 +309,11 @@ class CrawlConfigOps:
         changed = changed or (
             self.check_attr_changed(orig_crawl_config, update, "crawlTimeout")
         )
-
         changed = changed or (
             self.check_attr_changed(orig_crawl_config, update, "maxCrawlSize")
+        )
+        changed = changed or (
+            self.check_attr_changed(orig_crawl_config, update, "crawlerChannel")
         )
         changed = changed or (
             self.check_attr_changed(orig_crawl_config, update, "crawlFilenameTemplate")
