@@ -244,9 +244,7 @@ export class App extends LiteElement {
       <div class="min-w-screen flex min-h-screen flex-col">
         ${this.renderNavBar()} ${this.renderAlertBanner()}
         <main class="relative flex flex-auto">${this.renderPage()}</main>
-        <div class="mt-7 border-t border-neutral-100">
-          ${this.renderFooter()}
-        </div>
+        <div class="border-t border-neutral-100">${this.renderFooter()}</div>
       </div>
 
       <sl-dialog
@@ -611,7 +609,7 @@ export class App extends LiteElement {
             rel="noopener"
           >
             <sl-icon name="patch-question" class="size-4 text-base"></sl-icon>
-            <span class="sr-only lg:not-sr-only">${msg("Help Forum")}</span>
+            ${msg("Help Forum")}
           </a>
         </div>
         ${this.version
