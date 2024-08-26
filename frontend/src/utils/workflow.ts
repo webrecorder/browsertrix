@@ -1,6 +1,7 @@
 import { msg, str } from "@lit/localize";
 import { z } from "zod";
 
+import { getAppSettings } from "./app";
 import { getLang } from "./localization";
 
 import type { Tags } from "@/components/ui/tag-input";
@@ -287,14 +288,8 @@ export async function getServerDefaults(): Promise<WorkflowDefaults> {
   const defaults = { ...appDefaults };
 
   try {
-    const resp = await fetch("/api/settings", {
-      headers: { "Content-Type": "application/json" },
-    });
-    if (!resp.ok) {
-      throw new Error(resp.statusText);
-    }
+    const data = await getAppSettings();
 
-    const data = await resp.json();
     if (data.defaultBehaviorTimeSeconds > 0) {
       defaults.behaviorTimeoutSeconds = data.defaultBehaviorTimeSeconds;
     }

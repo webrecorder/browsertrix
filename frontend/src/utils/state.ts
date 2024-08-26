@@ -5,10 +5,10 @@ import { locked, options, transaction, use } from "lit-shared-state";
 
 import { persist } from "./persist";
 
-import type { AppSettings } from "@/types/app";
 import { authSchema, type Auth } from "@/types/auth";
 import type { OrgData } from "@/types/org";
 import { userInfoSchema, type UserInfo, type UserOrg } from "@/types/user";
+import type { AppSettings } from "@/utils/app";
 import { isAdmin, isCrawler } from "@/utils/orgs";
 
 export { use };

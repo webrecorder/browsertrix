@@ -24,8 +24,8 @@ import { formatAPIUser } from "./utils/user";
 import type { NavigateEventDetail } from "@/controllers/navigate";
 import type { NotifyEventDetail } from "@/controllers/notify";
 import { theme } from "@/theme";
-import type { AppSettings } from "@/types/app";
 import { type Auth } from "@/types/auth";
+import { getAppSettings } from "@/utils/app";
 import brandLockupColor from "~assets/brand/browsertrix-lockup-color.svg";
 
 import "./shoelace";
@@ -151,7 +151,7 @@ export class App extends LiteElement {
   }
 
   private async fetchAppSettings() {
-    const settings = await this.getAppSettings();
+    const settings = await getAppSettings();
 
     AppStateService.updateSettings(settings);
   }
@@ -173,33 +173,6 @@ export class App extends LiteElement {
         this.clearUser();
         this.navigate(ROUTES.login);
       }
-    }
-  }
-
-  async getAppSettings(): Promise<AppSettings> {
-    const resp = await fetch("/api/settings", {
-      headers: { "Content-Type": "application/json" },
-    });
-
-    if (resp.status === 200) {
-      const body = (await resp.json()) as AppSettings;
-
-      return body;
-    } else {
-      console.debug(resp);
-
-      return {
-        registrationEnabled: false,
-        jwtTokenLifetime: 0,
-        defaultBehaviorTimeSeconds: 0,
-        defaultPageLoadTimeSeconds: 0,
-        maxPagesPerCrawl: 0,
-        maxScale: 0,
-        billingEnabled: false,
-        signUpUrl: "",
-        salesEmail: "",
-        supportEmail: "",
-      };
     }
   }
 

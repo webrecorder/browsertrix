@@ -10,10 +10,10 @@ import RegexColorize from "regex-colorize";
 import { RelativeDuration } from "./relative-duration";
 
 import type { CrawlConfig, Seed, SeedConfig } from "@/pages/org/types";
-import type { AppSettings } from "@/types/app";
 import sectionStrings from "@/strings/crawl-workflows/section";
 import type { Collection } from "@/types/collection";
 import { isApiError } from "@/utils/api";
+import { getAppSettings } from "@/utils/app";
 import { DEPTH_SUPPORTED_SCOPES } from "@/utils/crawler";
 import { humanizeSchedule } from "@/utils/cron";
 import LiteElement, { html } from "@/utils/LiteElement";
@@ -510,19 +510,7 @@ export class ConfigDetails extends LiteElement {
 
   private async fetchAPIDefaults() {
     try {
-      let settings: AppSettings;
-
-      if (!this.appState.settings) {
-        const resp = await fetch("/api/settings", {
-          headers: { "Content-Type": "application/json" },
-        });
-        if (!resp.ok) {
-          throw new Error(resp.statusText);
-        }
-        settings = (await resp.json()) as AppSettings;
-      } else {
-        settings = this.appState.settings;
-      }
+      const settings = await getAppSettings();
       const orgDefaults = {
         ...this.orgDefaults,
       };
