@@ -2,6 +2,7 @@
 
 import traceback
 import os
+import math
 from pprint import pprint
 from typing import Optional, Any, Sequence
 from datetime import datetime
@@ -74,6 +75,9 @@ MEM_SOFT_OOM_THRESHOLD = 1.0
 
 # set memory limit to this much of request for extra padding
 MEM_LIMIT_PADDING = 1.2
+
+# ensure available storage is at least this much times used storage
+AVAIL_STORAGE_RATIO = 2.5
 
 
 # pylint: disable=too-many-public-methods, too-many-locals, too-many-branches, too-many-statements
@@ -388,6 +392,7 @@ class CrawlOperator(BaseOperator):
             params["memory_limit"] = float(params["memory"]) * MEM_LIMIT_PADDING
         else:
             params["memory_limit"] = self.k8s.max_crawler_memory_size
+        params["storage"] = pod_info.newStorage or params.get("crawler_storage")
         params["workers"] = params.get(worker_field) or 1
         params["do_restart"] = False
         if has_pod:
@@ -481,8 +486,12 @@ class CrawlOperator(BaseOperator):
 
         pvc = children[PVC].get(name)
         if pvc:
-            src = pvc["spec"]["resources"]["requests"]
-            resources.storage = int(parse_quantity(src.get("storage")))
+            try:
+                src = pvc["status"]["capacity"]
+                resources.storage = int(parse_quantity(src.get("storage")))
+            # pylint: disable=bare-except
+            except:
+                pass
 
     async def set_state(
         self,
@@ -1324,6 +1333,20 @@ class CrawlOperator(BaseOperator):
             if value > 0 and status.podStatus:
                 pod_info = status.podStatus[key]
                 pod_info.used.storage = value
+
+                if (
+                    status.state == "running"
+                    and pod_info.allocated.storage
+                    and pod_info.used.storage * AVAIL_STORAGE_RATIO
+                    > pod_info.allocated.storage
+                ):
+                    new_storage = math.ceil(
+                        pod_info.used.storage * AVAIL_STORAGE_RATIO / 1_000_000_000
+                    )
+                    pod_info.newStorage = f"{new_storage}Gi"
+                    print(
+                        f"Attempting to adjust storage to {pod_info.newStorage} for {key}"
+                    )
 
         if not status.stopReason:
             status.stopReason = await self.is_crawl_stopping(crawl, status, data)
