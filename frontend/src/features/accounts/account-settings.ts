@@ -337,7 +337,7 @@ export class AccountSettings extends LiteElement {
         }),
       });
 
-      AppStateService.updateUserInfo({
+      AppStateService.updateUser({
         ...this.userInfo,
         name: newName,
       });
@@ -381,7 +381,7 @@ export class AccountSettings extends LiteElement {
         }),
       });
 
-      AppStateService.updateUserInfo({
+      AppStateService.updateUser({
         ...this.userInfo,
         email: newEmail,
       });

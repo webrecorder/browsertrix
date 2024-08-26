@@ -10,6 +10,7 @@ import RegexColorize from "regex-colorize";
 import { RelativeDuration } from "./relative-duration";
 
 import type { CrawlConfig, Seed, SeedConfig } from "@/pages/org/types";
+import type { AppSettings } from "@/types/app";
 import type { Collection } from "@/types/collection";
 import { isApiError } from "@/utils/api";
 import { DEPTH_SUPPORTED_SCOPES } from "@/utils/crawler";
@@ -506,28 +507,33 @@ export class ConfigDetails extends LiteElement {
 
   private async fetchAPIDefaults() {
     try {
-      const resp = await fetch("/api/settings", {
-        headers: { "Content-Type": "application/json" },
-      });
-      if (!resp.ok) {
-        throw new Error(resp.statusText);
+      let settings: AppSettings;
+
+      if (!this.appState.settings) {
+        const resp = await fetch("/api/settings", {
+          headers: { "Content-Type": "application/json" },
+        });
+        if (!resp.ok) {
+          throw new Error(resp.statusText);
+        }
+        settings = (await resp.json()) as AppSettings;
+      } else {
+        settings = this.appState.settings;
       }
       const orgDefaults = {
         ...this.orgDefaults,
       };
-      const data = (await resp.json()) as {
-        defaultBehaviorTimeSeconds: number;
-        defaultPageLoadTimeSeconds: number;
-        maxPagesPerCrawl: number;
-      };
-      if (data.defaultBehaviorTimeSeconds > 0) {
-        orgDefaults.behaviorTimeoutSeconds = data.defaultBehaviorTimeSeconds;
+
+      if (settings.defaultBehaviorTimeSeconds > 0) {
+        orgDefaults.behaviorTimeoutSeconds =
+          settings.defaultBehaviorTimeSeconds;
       }
-      if (data.defaultPageLoadTimeSeconds > 0) {
-        orgDefaults.pageLoadTimeoutSeconds = data.defaultPageLoadTimeSeconds;
+      if (settings.defaultPageLoadTimeSeconds > 0) {
+        orgDefaults.pageLoadTimeoutSeconds =
+          settings.defaultPageLoadTimeSeconds;
       }
-      if (data.maxPagesPerCrawl > 0) {
-        orgDefaults.maxPagesPerCrawl = data.maxPagesPerCrawl;
+      if (settings.maxPagesPerCrawl > 0) {
+        orgDefaults.maxPagesPerCrawl = settings.maxPagesPerCrawl;
       }
       this.orgDefaults = orgDefaults;
     } catch (e) {

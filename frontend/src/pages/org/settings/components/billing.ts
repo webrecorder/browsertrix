@@ -5,7 +5,7 @@ import { css, html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
-import { capitalize } from "lodash";
+import capitalize from "lodash/fp/capitalize";
 
 import { columns } from "../ui/columns";
 

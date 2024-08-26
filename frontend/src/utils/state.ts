@@ -22,12 +22,13 @@ export function makeAppStateService() {
 
   @state()
   class AppState {
-    // TODO persist
+    @options(persist(window.localStorage))
     settings: AppSettings | null = null;
+
+    @options(persist(window.sessionStorage))
     userInfo: UserInfo | null = null;
 
     // TODO persist here
-    // @options(persist(window.sessionStorage))
     auth: Auth | null = null;
 
     // Store org slug in local storage in order to redirect
@@ -40,9 +41,23 @@ export function makeAppStateService() {
 
     orgIdLookup: Lookup | null = null;
 
-    // Use `userOrg` to retrieve the basic org info like name,
-    // since `userInfo` will` always available before `org`
-    userOrg: UserOrg | undefined = undefined;
+    // Since org slug is used to ID an org, use `userOrg`
+    // to retrieve the basic org info like name and ID
+    // before other org details are available
+    get userOrg(): UserOrg | null {
+      const userOrg =
+        (appState.orgSlug &&
+          appState.userInfo?.orgs.find(
+            ({ slug }) => slug === appState.orgSlug,
+          )) ||
+        null;
+
+      if (!userOrg) {
+        console.debug("no user org matching slug in state");
+      }
+
+      return userOrg;
+    }
 
     get orgId() {
       return this.userOrg?.id || "";
@@ -82,20 +97,26 @@ export function makeAppStateService() {
 
     @transaction()
     @unlock()
-    updateUserInfo(userInfo: AppState["userInfo"]) {
+    updateUser(userInfo: AppState["userInfo"], orgSlug?: AppState["orgSlug"]) {
       userInfoSchema.nullable().parse(userInfo);
 
       appState.userInfo = userInfo;
 
-      this._updateUserOrg();
+      if (orgSlug) {
+        appState.orgSlug = orgSlug;
+      } else if (
+        userInfo?.orgs.length &&
+        !userInfo.isSuperAdmin &&
+        !appState.orgSlug
+      ) {
+        appState.orgSlug = userInfo.orgs[0].slug;
+      }
     }
 
     @transaction()
     @unlock()
     updateOrgSlug(orgSlug: AppState["orgSlug"]) {
       appState.orgSlug = orgSlug;
-
-      this._updateUserOrg();
     }
 
     @unlock()
@@ -133,12 +154,6 @@ export function makeAppStateService() {
       appState.auth = null;
       appState.userInfo = null;
       appState.orgSlug = null;
-    }
-
-    private _updateUserOrg() {
-      appState.userOrg = appState.userInfo?.orgs.find(
-        ({ slug }) => slug === appState.orgSlug,
-      );
     }
   }
 

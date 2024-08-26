@@ -359,7 +359,7 @@ export class Home extends LiteElement {
         body: JSON.stringify(params),
       });
       const userInfo = await this.getUserInfo();
-      AppStateService.updateUserInfo(formatAPIUser(userInfo));
+      AppStateService.updateUser(formatAPIUser(userInfo));
 
       this.notify({
         message: msg(str`Created new org named "${params.name}".`),

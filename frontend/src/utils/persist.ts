@@ -12,10 +12,7 @@ const STORAGE_KEY_PREFIX = "btrix.app";
 export const persist = (storage: Storage): StateOptions => ({
   set(stateVar: StateVar, v: string) {
     storage.setItem(`${STORAGE_KEY_PREFIX}.${stateVar.key}`, JSON.stringify(v));
-    stateVar.notifyObservers(
-      `${STORAGE_KEY_PREFIX}.${stateVar.key}`,
-      stateVar.value,
-    );
+    stateVar.value = v;
   },
   get(stateVar: ReadonlyStateVar) {
     const stored = storage.getItem(`${STORAGE_KEY_PREFIX}.${stateVar.key}`);

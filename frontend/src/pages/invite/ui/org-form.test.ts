@@ -7,6 +7,7 @@ import { OrgForm } from "./org-form";
 
 import AuthService from "@/utils/AuthService";
 import { AppStateService } from "@/utils/state";
+import { formatAPIUser } from "@/utils/user";
 
 describe("btrix-org-form", () => {
   beforeEach(() => {
@@ -116,32 +117,32 @@ describe("btrix-org-form", () => {
 
   describe("#_renameOrg", () => {
     it("updates user app state on success", async () => {
+      const user = {
+        id: "740d7b63-b257-4311-ba3f-adc46a5fafb8",
+        email: "fake@example.com",
+        name: "Fake User",
+        is_verified: false,
+        is_superuser: false,
+        orgs: [],
+      };
       const el = await fixture<OrgForm>(
         html`<btrix-org-form
           newOrgId="e21ab647-2d0e-489d-97d1-88ac91774942"
         ></btrix-org-form>`,
       );
       stub(el.api, "fetch").callsFake(async () => Promise.resolve());
-      stub(el, "_getCurrentUser").callsFake(async () =>
-        Promise.resolve({
-          id: "740d7b63-b257-4311-ba3f-adc46a5fafb8",
-          email: "fake@example.com",
-          name: "Fake User",
-          is_verified: false,
-          is_superuser: false,
-          orgs: [],
-        }),
-      );
-      stub(AppStateService, "updateUserInfo");
-      stub(AppStateService, "updateOrgSlug");
+      stub(el, "_getCurrentUser").callsFake(async () => Promise.resolve(user));
+      stub(AppStateService, "updateUser");
 
       await el._renameOrg("e21ab647-2d0e-489d-97d1-88ac91774942", {
         name: "Fake Org Name 2",
         slug: "fake-org-name-2",
       });
 
-      expect(AppStateService.updateUserInfo).to.have.callCount(1);
-      expect(AppStateService.updateOrgSlug).to.have.callCount(1);
+      expect(AppStateService.updateUser).to.have.been.calledWith(
+        formatAPIUser(user),
+        "fake-org-name-2",
+      );
     });
 
     it("fires the correct event on success", async () => {

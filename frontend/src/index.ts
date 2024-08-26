@@ -87,8 +87,8 @@ export class App extends LiteElement {
       this.authService.saveLogin(authState);
     }
     this.syncViewState();
-    if (authState) {
-      void this.updateUserInfo();
+    if (authState && !this.userInfo) {
+      void this.fetchAndUpdateUserInfo();
     }
     super.connectedCallback();
 
@@ -102,7 +102,10 @@ export class App extends LiteElement {
     });
 
     this.startSyncBrowserTabs();
-    void this.fetchAppSettings();
+
+    if (!this.appState.settings) {
+      void this.fetchAppSettings();
+    }
   }
 
   willUpdate(changedProperties: Map<string, unknown>) {
@@ -153,26 +156,14 @@ export class App extends LiteElement {
     AppStateService.updateSettings(settings);
   }
 
-  /**
-   * @deprecate Components should update user info directly through `AppStateService`
-   */
-  private async updateUserInfo(e?: CustomEvent) {
+  private async fetchAndUpdateUserInfo(e?: CustomEvent) {
     if (e) {
       e.stopPropagation();
     }
     try {
-      const userInfo = await this.getUserInfo();
-      AppStateService.updateUserInfo(formatAPIUser(userInfo));
-      const orgs = userInfo.orgs;
+      const user = await this.getUserInfo();
 
-      if (
-        orgs.length &&
-        !this.userInfo!.isSuperAdmin &&
-        !this.appState.orgSlug
-      ) {
-        const firstOrg = orgs[0].slug;
-        AppStateService.updateOrgSlug(firstOrg);
-      }
+      AppStateService.updateUser(formatAPIUser(user));
     } catch (err) {
       if ((err as Error | null | undefined)?.message === "Unauthorized") {
         console.debug(
@@ -714,7 +705,6 @@ export class App extends LiteElement {
           .viewStateData=${this.viewState.data}
           .params=${this.viewState.params}
           .maxScale=${this.appState.settings?.maxScale || DEFAULT_MAX_SCALE}
-          slug=${slug}
           orgPath=${orgPath.split(slug)[1]}
           orgTab=${orgTab as OrgTab}
         ></btrix-org>`;
@@ -867,7 +857,13 @@ export class App extends LiteElement {
       this.onFirstLogin({ email: detail.username });
     }
 
-    void this.updateUserInfo();
+    if (!this.userInfo) {
+      if (detail.user) {
+        AppStateService.updateUser(formatAPIUser(detail.user));
+      } else {
+        void this.fetchAndUpdateUserInfo();
+      }
+    }
   }
 
   onNeedLogin = (e: CustomEvent<NeedLoginEventDetail>) => {
@@ -901,7 +897,7 @@ export class App extends LiteElement {
   };
 
   onUserInfoChange(event: CustomEvent<Partial<UserInfo>>) {
-    AppStateService.updateUserInfo({
+    AppStateService.updateUser({
       ...this.userInfo,
       ...event.detail,
     } as UserInfo);
@@ -1005,7 +1001,7 @@ export class App extends LiteElement {
           if (data.value !== AuthService.storage.getItem()) {
             if (data.value) {
               this.authService.saveLogin(JSON.parse(data.value) as Auth);
-              void this.updateUserInfo();
+              void this.fetchAndUpdateUserInfo();
               this.syncViewState();
             } else {
               this.clearUser();
