@@ -51,15 +51,7 @@ export class NavigateController implements ReactiveController {
     this.host.dispatchEvent(evt);
   };
 
-  /**
-   * Bind to anchor tag to prevent full page navigation
-   * @example
-   * ```ts
-   * <a href="/" @click=${this.navigate.link}>go</a>
-   * ```
-   * @param event Click event
-   */
-  link = (event: MouseEvent, _href?: string, resetScroll = true): void => {
+  handleAnchorClick = (event: MouseEvent) => {
     if (
       // Detect keypress for opening in a new tab
       event.ctrlKey ||
@@ -69,10 +61,26 @@ export class NavigateController implements ReactiveController {
       // Account for event prevented on anchor tag
       event.defaultPrevented
     ) {
-      return;
+      return false;
     }
 
     event.preventDefault();
+
+    return true;
+  };
+
+  /**
+   * Bind to anchor tag to prevent full page navigation
+   * @example
+   * ```ts
+   * <a href="/" @click=${this.navigate.link}>go</a>
+   * ```
+   * @param event Click event
+   */
+  link = (event: MouseEvent, _href?: string, resetScroll = true): void => {
+    if (!this.handleAnchorClick(event)) {
+      return;
+    }
 
     const el = event.currentTarget as HTMLAnchorElement | null;
 
