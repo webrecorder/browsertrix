@@ -22,7 +22,7 @@ export function makeAppStateService() {
 
   @state()
   class AppState {
-    @options(persist(window.localStorage))
+    @options(persist(window.localStorage, /* TTL minutes: */ 60 * 24))
     settings: AppSettings | null = null;
 
     @options(persist(window.sessionStorage))
@@ -140,7 +140,6 @@ export function makeAppStateService() {
     @unlock()
     resetAll() {
       appState.settings = null;
-      appState.org = undefined;
       this._resetUser();
     }
 
@@ -154,6 +153,7 @@ export function makeAppStateService() {
       appState.auth = null;
       appState.userInfo = null;
       appState.orgSlug = null;
+      appState.org = undefined;
     }
   }
 

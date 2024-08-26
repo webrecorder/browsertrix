@@ -965,7 +965,7 @@ export class App extends LiteElement {
   private clearUser() {
     this.authService.logout();
     this.authService = new AuthService();
-    AppStateService.resetUser();
+    AppStateService.resetAll();
   }
 
   private showDialog(content: DialogContent) {
