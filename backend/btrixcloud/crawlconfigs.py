@@ -593,7 +593,7 @@ class CrawlConfigOps:
             update_query["lastCrawlSize"] = sum(
                 file_.get("size", 0) for file_ in last_crawl.get("files", [])
             )
-            update_query["lastCrawlStopping"] = last_crawl.get("stopping", False)
+            update_query["lastCrawlStopping"] = False
             update_query["isCrawlRunning"] = False
 
             if last_crawl_finished:
@@ -960,7 +960,7 @@ async def stats_recompute_all(crawl_configs, crawls, cid: UUID):
             update_query["lastStartedByName"] = last_crawl.get("userName")
             update_query["lastCrawlState"] = last_crawl.get("state")
             update_query["lastCrawlSize"] = last_crawl_size
-            update_query["lastCrawlStopping"] = last_crawl.get("stopping", False)
+            update_query["lastCrawlStopping"] = False
             update_query["isCrawlRunning"] = False
 
             last_crawl_finished = last_crawl.get("finished")
