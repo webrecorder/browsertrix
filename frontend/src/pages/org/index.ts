@@ -17,6 +17,7 @@ import type { QuotaUpdateDetail } from "@/controllers/api";
 import needLogin from "@/decorators/needLogin";
 import type { CollectionSavedEvent } from "@/features/collections/collection-metadata-dialog";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
+import { type ORG_ROUTES } from "@/stores/router";
 import type { Crawl, JobType } from "@/types/crawler";
 import type { UserOrg } from "@/types/user";
 import { isApiError } from "@/utils/api";
@@ -79,9 +80,7 @@ export type OrgParams = {
     settingsTab?: "information" | "members";
   };
 };
-export type OrgTab = keyof OrgParams;
-
-const defaultTab = "home";
+export type OrgTab = keyof typeof ORG_ROUTES;
 
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -92,16 +91,6 @@ const UUID_REGEX =
 export class Org extends LiteElement {
   @property({ type: Object })
   viewStateData?: ViewState["data"];
-
-  // Path after `/orgs/:orgId/`
-  @property({ type: String })
-  orgPath!: string;
-
-  @property({ type: Object })
-  params: OrgParams[OrgTab] = {};
-
-  @property({ type: String })
-  orgTab: OrgTab = defaultTab;
 
   @property({ type: Number })
   maxScale: number = DEFAULT_MAX_SCALE;
@@ -227,8 +216,10 @@ export class Org extends LiteElement {
   }
 
   render() {
-    const noMaxWidth =
-      this.orgTab === "items" && (this.params as OrgParams["items"]).qaTab;
+    if (!this.router.value) return;
+
+    const { route } = this.router.value;
+    const noMaxWidth = route === "itemReview";
 
     return html`
       <div class="flex min-h-full flex-col">
@@ -238,19 +229,25 @@ export class Org extends LiteElement {
           class="${noMaxWidth
             ? "w-full"
             : "w-full max-w-screen-desktop pt-7"} mx-auto box-border flex flex-1 flex-col p-3"
-          aria-labelledby="${this.orgTab}-tab"
+          aria-labelledby="${route}-tab"
         >
           ${when(this.userOrg, () =>
             choose(
-              this.orgTab,
+              route,
               [
-                ["home", this.renderDashboard],
-                ["items", this.renderArchivedItem],
-                ["workflows", this.renderWorkflows],
-                ["browser-profiles", this.renderBrowserProfiles],
-                ["collections", this.renderCollections],
+                ["orgDashboard", this.renderDashboard],
+                ["crawlWorkflows", () => html`TODO`],
+                ["crawlWorkflow", () => html`TODO`],
+                ["items", () => html`TODO`],
+                ["item", () => html`TODO`],
+                ["itemReview", () => html`TODO`],
+                ["collections", () => html`TODO`],
+                ["collection", () => html`TODO`],
+                ["browserProfiles", () => html`TODO`],
+                ["browserProfile", () => html`TODO`],
+                ["newBrowserProfile", this.renderDashboard],
                 [
-                  "settings",
+                  "orgSettings",
                   () =>
                     this.appState.isAdmin ? this.renderOrgSettings() : html``,
                 ],
@@ -274,12 +271,12 @@ export class Org extends LiteElement {
       >
         <nav class="-mx-3 flex items-end overflow-x-auto px-3 xl:px-6">
           ${this.renderNavTab({
-            tabName: "home",
+            tabName: "orgDashboard",
             label: msg("Overview"),
             path: "",
           })}
           ${this.renderNavTab({
-            tabName: "workflows",
+            tabName: "crawlWorkflows",
             label: msg("Crawling"),
             path: "workflows/crawls",
           })}
@@ -295,14 +292,14 @@ export class Org extends LiteElement {
           })}
           ${when(this.appState.isCrawler, () =>
             this.renderNavTab({
-              tabName: "browser-profiles",
+              tabName: "browserProfiles",
               label: msg("Browser Profiles"),
               path: "browser-profiles",
             }),
           )}
           ${when(this.appState.isAdmin || this.userInfo?.isSuperAdmin, () =>
             this.renderNavTab({
-              tabName: "settings",
+              tabName: "orgSettings",
               label: msg("Settings"),
               path: "settings",
             }),
@@ -323,7 +320,7 @@ export class Org extends LiteElement {
     label: string;
     path: string;
   }) {
-    const isActive = this.orgTab === tabName;
+    const isActive = this.router.value?.route === tabName;
 
     return html`
       <a
@@ -366,7 +363,7 @@ export class Org extends LiteElement {
           ?open=${this.openDialogName === "upload"}
           @request-close=${() => (this.openDialogName = undefined)}
           @uploaded=${() => {
-            if (this.orgTab === "home") {
+            if (this.router.value?.route === "orgDashboard") {
               this.navTo(`${this.orgBasePath}/items/upload`);
             }
           }}
@@ -410,7 +407,10 @@ export class Org extends LiteElement {
   };
 
   private readonly renderArchivedItem = () => {
-    const params = this.params as OrgParams["items"];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const params = this.router.value?.params as any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const search = this.router.value?.search as any;
 
     if (params.itemId) {
       if (params.qaTab) {
@@ -431,8 +431,8 @@ export class Org extends LiteElement {
 
       return html` <btrix-archived-item-detail
         crawlId=${params.itemId}
-        collectionId=${params.collectionId || ""}
-        workflowId=${params.workflowId || ""}
+        collectionId=${search.collectionId || ""}
+        workflowId=${search.workflowId || ""}
         itemType=${params.itemType || "crawl"}
         ?isCrawler=${this.appState.isCrawler}
       ></btrix-archived-item-detail>`;
@@ -446,7 +446,10 @@ export class Org extends LiteElement {
   };
 
   private readonly renderWorkflows = () => {
-    const params = this.params as OrgParams["workflows"];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const params = this.router.value?.params as any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const search = this.router.value?.search as any;
     const isEditing = Object.prototype.hasOwnProperty.call(params, "edit");
     const isNewResourceTab =
       Object.prototype.hasOwnProperty.call(params, "new") && params.jobType;
@@ -473,7 +476,7 @@ export class Org extends LiteElement {
         ?isCrawler=${this.appState.isCrawler}
         .initialWorkflow=${workflow}
         .initialSeeds=${seeds}
-        jobType=${ifDefined(params.jobType)}
+        jobType=${ifDefined(search.jobType)}
         @select-new-dialog=${this.onSelectNewDialog}
       ></btrix-workflows-new>`;
     }
@@ -484,7 +487,10 @@ export class Org extends LiteElement {
   };
 
   private readonly renderBrowserProfiles = () => {
-    const params = this.params as OrgParams["browser-profiles"];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const params = this.router.value?.params as any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const search = this.router.value?.search as any;
 
     if (params.browserProfileId) {
       return html`<btrix-browser-profiles-detail
@@ -497,12 +503,12 @@ export class Org extends LiteElement {
       return html`<btrix-browser-profiles-new
         .browserId=${params.browserId}
         .browserParams=${{
-          name: params.name || "",
-          url: params.url || "",
-          description: params.description,
-          crawlerChannel: params.crawlerChannel,
-          profileId: params.profileId,
-          navigateUrl: params.navigateUrl,
+          name: search.name || "",
+          url: search.url || "",
+          description: search.description,
+          crawlerChannel: search.crawlerChannel,
+          profileId: search.profileId,
+          navigateUrl: search.navigateUrl,
         }}
       ></btrix-browser-profiles-new>`;
     }
@@ -514,7 +520,8 @@ export class Org extends LiteElement {
   };
 
   private readonly renderCollections = () => {
-    const params = this.params as OrgParams["collections"];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const params = this.router.value?.params as any;
 
     if (params.collectionId) {
       return html`<btrix-collection-detail
@@ -532,10 +539,13 @@ export class Org extends LiteElement {
   };
 
   private readonly renderOrgSettings = () => {
-    const params = this.params as OrgParams["settings"];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const params = this.router.value?.params as any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const search = this.router.value?.search as any;
     const activePanel = params.settingsTab || "information";
     const isAddingMember = Object.prototype.hasOwnProperty.call(
-      this.params,
+      search,
       "invite",
     );
 

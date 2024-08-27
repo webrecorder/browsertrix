@@ -22,8 +22,8 @@ const BROWSER_PROFILE_ROUTES = {
   newBrowserProfile: "/orgs/:slug/browser-profiles/profile/browser/:browserId",
 };
 
-const ORG_ROUTES = {
-  org: "/orgs/:slug",
+export const ORG_ROUTES = {
+  orgDashboard: "/orgs/:slug",
   orgSettings: "/orgs/:slug/settings/:settingsTab?",
   ...WORKFLOW_ROUTES,
   ...ARCHIVED_ITEM_ROUTES,

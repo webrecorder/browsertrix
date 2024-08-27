@@ -7,7 +7,6 @@ import { when } from "lit/directives/when.js";
 import "broadcastchannel-polyfill";
 import "./utils/polyfills";
 
-import type { OrgTab } from "./pages/org";
 import { ROUTES } from "./routes";
 import type { UserInfo, UserOrg } from "./types/user";
 import APIRouter, { type ViewState } from "./utils/APIRouter";
@@ -241,8 +240,6 @@ export class App extends LiteElement {
   }
 
   render() {
-    console.log("router:", this.router.value);
-
     return html`
       <div class="min-w-screen flex min-h-screen flex-col">
         ${this.renderNavBar()} ${this.renderAlertBanner()}
@@ -652,7 +649,9 @@ export class App extends LiteElement {
   }
 
   private renderPage() {
-    switch (this.viewState.route) {
+    if (!this.router.value) return;
+
+    switch (this.router.value.route) {
       case "signUp": {
         if (!this.appState.settings) {
           return nothing;
@@ -706,28 +705,6 @@ export class App extends LiteElement {
       case "home":
         return html`<btrix-home class="w-full md:bg-neutral-50"></btrix-home>`;
 
-      case "orgs":
-        return html`<btrix-orgs class="w-full md:bg-neutral-50"></btrix-orgs>`;
-
-      case "org": {
-        const slug = this.viewState.params.slug;
-        const orgPath = this.viewState.pathname;
-        const pathname = this.getLocationPathname();
-        const orgTab =
-          pathname
-            .slice(pathname.indexOf(slug) + slug.length)
-            .replace(/(^\/|\/$)/, "")
-            .split("/")[0] || "home";
-        return html`<btrix-org
-          class="w-full"
-          .viewStateData=${this.viewState.data}
-          .params=${this.viewState.params}
-          .maxScale=${this.appState.settings?.maxScale || DEFAULT_MAX_SCALE}
-          orgPath=${orgPath.split(slug)[1]}
-          orgTab=${orgTab as OrgTab}
-        ></btrix-org>`;
-      }
-
       case "accountSettings":
         return html`<btrix-account-settings
           class="mx-auto box-border w-full max-w-screen-desktop p-2 md:py-8"
@@ -774,11 +751,13 @@ export class App extends LiteElement {
         // falls through
       }
 
-      case "components":
-        return html`<btrix-components></btrix-components>`;
-
-      default:
-        return this.renderNotFoundPage();
+      default: {
+        return html`<btrix-org
+          class="w-full"
+          .viewStateData=${this.viewState.data}
+          .maxScale=${this.appState.settings?.maxScale || DEFAULT_MAX_SCALE}
+        ></btrix-org>`;
+      }
     }
   }
 
