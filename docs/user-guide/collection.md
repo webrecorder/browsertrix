@@ -1,4 +1,4 @@
-# Overview of collections
+# Intro to collections
 
 ## Create a Collection
 

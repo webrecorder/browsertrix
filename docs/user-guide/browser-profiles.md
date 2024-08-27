@@ -1,4 +1,4 @@
-# Overview of browser profiles
+# Intro to browser profiles
 
 Browser profiles are saved instances of a web browsing session that can be reused to crawl websites as they were configured, with any cookies, saved login sessions, or browser settings. Using a pre-configured profile also means that content that can only be viewed by logged in users can be archived, without archiving the actual login credentials.
 

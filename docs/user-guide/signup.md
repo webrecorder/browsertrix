@@ -1,6 +1,6 @@
 # Register for an account
 
-!!! note
+!!! note "Self-hosting?"
 
     This guide only applies to hosted Browsertrix accounts. If you're self-hosting Browsertrix, [enable open registration](../deploy/customization.md#enable-open-registration) to allow others to sign up for an account on your instance.
 

@@ -1,6 +1,8 @@
 # Modifying running crawls
 
-Once you click "Run Crawl", a workflow can be in five possible states:
+## In Progress Status
+
+A crawl workflow that is in progress can be in one of five possible states:
 
 | Status | Description |
 | ---- | ---- |

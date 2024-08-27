@@ -6,7 +6,9 @@ We'll walk you through your first crawl. Open up a webpage that you'd like to cr
 
 To start crawling with hosted Browsertrix, you'll need a Browsertrix account. [Sign up for an account](./signup.md) and log in.
 
-If you'd like to try Browsertrix before signing up, or you have specialized hosting requirements, you can host Browsertrix yourself. [Set up Browsertrix](../deploy/index.md) on your system and log in as your admin user.
+!!! note "Self-hosting"
+
+    If you'd like to try Browsertrix before signing up, or you have specialized hosting requirements, you can host Browsertrix yourself. [Set up Browsertrix](../deploy/index.md) on your system and log in as your admin user.
 
 ## Starting the crawl
 
