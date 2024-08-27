@@ -10,12 +10,10 @@ theme:
   name: material
   custom_dir: docs/overrides
   features:
-    - navigation.sections
     - navigation.tabs
     - navigation.tabs.sticky
     - navigation.instant
     - navigation.tracking
-    - navigation.indexes
     - navigation.footer
     - content.code.copy
     - content.action.edit
