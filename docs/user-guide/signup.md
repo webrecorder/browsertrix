@@ -4,7 +4,7 @@
 
     This guide only applies to hosted Browsertrix accounts. If you're self-hosting Browsertrix, you'll need to [enable open registration](../deploy/customization.md#enable-open-registration).
 
-To use Browsertrix, [choose a plan](https://browsertrix.com/). We offer a variety of plans for individuals, teams, and organizations of all sizes.
+To sign up for Browsertrix, [choose a plan](https://browsertrix.com/). We offer a variety of plans for individuals, teams, and organizations of all sizes.
 
 ## Register your org
 
