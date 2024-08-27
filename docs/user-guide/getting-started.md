@@ -32,4 +32,4 @@ After running your first crawl, check out the following to learn more about Brow
 - Best practices for crawling with [browser profiles](browser-profiles.md) to capture content only available when logged in to a website.
 - Managing archived items, including [uploading previously archived content](archived-items.md#uploading-web-archives).
 - Organizing and combining archived items with [collections](collections.md) for sharing and export.
-- If you're an admin: [Inviting collaborators to your org](org-members.md).
+- [Invite collaborators](org-members.md) to your org.

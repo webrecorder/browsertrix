@@ -26,7 +26,7 @@ The archived item details page is composed of the following sections, though som
 
 ### Overview
 
-View the item's metadata and statistics associated with its creation process.
+View metadata and statistics associated with how the archived item was created.
 
 Metadata can be edited by pressing the pencil icon at the top right of the metadata section to edit the item's description, tags, and collections it is associated with.
 
