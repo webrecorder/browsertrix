@@ -1,6 +1,6 @@
 import { localized, msg, str } from "@lit/localize";
 import type { SlSelect } from "@shoelace-style/shoelace";
-import type { PropertyValues, TemplateResult } from "lit";
+import { type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { until } from "lit/directives/until.js";
@@ -390,26 +390,42 @@ export class WorkflowDetail extends LiteElement {
   }
 
   private renderHeader(workflowId?: string) {
+    const breadcrumbs = [
+      html`<sl-breadcrumb-item
+        href="${this.orgBasePath}/workflows/crawls"
+        @click=${this.navLink}
+      >
+        ${msg("Crawl Workflows")}
+      </sl-breadcrumb-item>`,
+    ];
+
+    if (this.workflow) {
+      breadcrumbs.push(
+        this.isEditing
+          ? html`<sl-breadcrumb-item
+              href="${this.orgBasePath}/workflows/crawl/${workflowId}"
+              @click=${this.navLink}
+            >
+              ${this.renderName()}
+            </sl-breadcrumb-item>`
+          : html`<sl-breadcrumb-item>
+              ${this.renderName()}
+            </sl-breadcrumb-item>`,
+      );
+    }
+
+    if (this.isEditing) {
+      breadcrumbs.push(
+        html`<sl-breadcrumb-item>
+          ${msg("Edit Workflow Settings")}
+        </sl-breadcrumb-item>`,
+      );
+    }
+
     return html`
-      <nav class="col-span-1">
-        <a
-          class="text-sm font-medium text-gray-600 hover:text-gray-800"
-          href=${`${this.orgBasePath}/workflows${
-            workflowId ? `/crawl/${workflowId}` : "/crawls"
-          }`}
-          @click=${this.navLink}
-        >
-          <sl-icon
-            name="arrow-left"
-            class="inline-block align-middle"
-          ></sl-icon>
-          <span class="inline-block align-middle"
-            >${workflowId
-              ? msg(html`Back to ${this.renderName()}`)
-              : msg("Back to Crawl Workflows")}</span
-          >
-        </a>
-      </nav>
+      <sl-breadcrumb class="col-span-1">
+        ${breadcrumbs.map((bc) => bc)}
+      </sl-breadcrumb>
     `;
   }
 

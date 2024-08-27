@@ -30,6 +30,12 @@ import "@shoelace-style/shoelace/dist/components/progress-bar/progress-bar";
 import "@shoelace-style/shoelace/dist/components/progress-ring/progress-ring";
 
 import(
+  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/breadcrumb/breadcrumb"
+);
+import(
+  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/breadcrumb-item/breadcrumb-item"
+);
+import(
   /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/dialog/dialog"
 );
 import(

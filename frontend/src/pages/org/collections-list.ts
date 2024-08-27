@@ -119,7 +119,7 @@ export class CollectionsList extends LiteElement {
   render() {
     return html`
       <header class="contents">
-        <div class="mb-4 flex w-full justify-between">
+        <div class="mb-3 mt-7 flex w-full justify-between">
           <h1 class="text-xl font-semibold leading-8">${msg("Collections")}</h1>
           ${when(
             this.isCrawler,

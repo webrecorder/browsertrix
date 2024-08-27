@@ -187,7 +187,7 @@ export class WorkflowsList extends LiteElement {
   render() {
     return html`
       <header class="contents">
-        <div class="mb-4 flex w-full justify-end gap-2">
+        <div class="mb-3 mt-7 flex w-full justify-end gap-2">
           <h1 class="mr-auto text-xl font-semibold leading-8">
             ${msg("Crawl Workflows")}
           </h1>

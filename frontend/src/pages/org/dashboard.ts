@@ -65,7 +65,7 @@ export class Dashboard extends LiteElement {
       this.metrics.storageUsedBytes >= this.metrics.storageQuotaBytes;
 
     return html`<header
-        class="mb-7 flex items-center justify-end gap-2 border-b pb-3"
+        class="mb-6 mt-7 flex items-center justify-end gap-2 border-b pb-3"
       >
         <h1 class="mr-auto min-w-0 text-xl font-semibold leading-8">
           ${this.userOrg?.name}

@@ -107,7 +107,7 @@ export class OrgSettings extends BtrixElement {
   }
 
   render() {
-    return html`<header class="mb-5">
+    return html`<header class="mb-3 mt-7">
         <h1 class="text-xl font-semibold leading-8">${msg("Org Settings")}</h1>
       </header>
 
