@@ -49,6 +49,7 @@ export type OrgParams = {
   home: Record<string, never>;
   workflows: {
     workflowId?: string;
+    itemId?: string;
     jobType?: JobType;
     new?: ResourceName;
   };
@@ -74,6 +75,8 @@ export type OrgParams = {
   };
   collections: {
     collectionId?: string;
+    itemId?: string;
+    itemType?: string;
     collectionTab?: string;
   };
   settings: {
@@ -475,8 +478,6 @@ export class Org extends LiteElement {
 
       return html`<btrix-archived-item-detail
         crawlId=${params.itemId}
-        collectionId=${params.collectionId || ""}
-        workflowId=${params.workflowId || ""}
         itemType=${params.itemType || "crawl"}
         ?isCrawler=${this.appState.isCrawler}
       ></btrix-archived-item-detail>`;
@@ -497,9 +498,18 @@ export class Org extends LiteElement {
     const workflowId = params.workflowId;
 
     if (workflowId) {
+      if (params.itemId) {
+        return html`<btrix-archived-item-detail
+          crawlId=${params.itemId}
+          workflowId=${workflowId}
+          itemType="crawl"
+          ?isCrawler=${this.appState.isCrawler}
+        ></btrix-archived-item-detail>`;
+      }
+
       return html`
         <btrix-workflow-detail
-          class="col-span-5 mt-6"
+          class="col-span-5"
           workflowId=${workflowId}
           openDialogName=${this.viewStateData?.dialog}
           ?isEditing=${isEditing}
@@ -561,6 +571,14 @@ export class Org extends LiteElement {
     const params = this.params as OrgParams["collections"];
 
     if (params.collectionId) {
+      if (params.itemId) {
+        return html`<btrix-archived-item-detail
+          crawlId=${params.itemId}
+          collectionId=${params.collectionId}
+          itemType=${params.itemType}
+          ?isCrawler=${this.appState.isCrawler}
+        ></btrix-archived-item-detail>`;
+      }
       return html`<btrix-collection-detail
         collectionId=${params.collectionId}
         collectionTab=${(params.collectionTab as CollectionTab | undefined) ||

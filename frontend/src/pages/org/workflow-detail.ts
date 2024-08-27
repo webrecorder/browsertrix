@@ -28,6 +28,7 @@ import {
   DEFAULT_MAX_SCALE,
   inactiveCrawlStates,
   isActive,
+  renderName,
 } from "@/utils/crawler";
 import { humanizeSchedule } from "@/utils/cron";
 import LiteElement, { html } from "@/utils/LiteElement";
@@ -406,7 +407,7 @@ export class WorkflowDetail extends LiteElement {
               href="${this.orgBasePath}/workflows/crawl/${workflowId}"
               @click=${this.navLink}
             >
-              ${this.renderName()}
+              ${renderName(this.workflow)}
             </sl-breadcrumb-item>`
           : html`<sl-breadcrumb-item>
               ${this.renderName()}
@@ -417,7 +418,13 @@ export class WorkflowDetail extends LiteElement {
     if (this.isEditing) {
       breadcrumbs.push(
         html`<sl-breadcrumb-item>
-          ${msg("Edit Workflow Settings")}
+          ${msg("Edit Settings")}
+        </sl-breadcrumb-item>`,
+      );
+    } else if (this.activePanel) {
+      breadcrumbs.push(
+        html`<sl-breadcrumb-item>
+          ${this.tabLabels[this.activePanel]}
         </sl-breadcrumb-item>`,
       );
     }
@@ -875,7 +882,7 @@ export class WorkflowDetail extends LiteElement {
                 this.crawls!.items.map(
                   (crawl: Crawl) =>
                     html` <btrix-crawl-list-item
-                      href=${`/orgs/${this.appState.orgSlug}/items/crawl/${crawl.id}?workflowId=${this.workflowId}`}
+                      href=${`${this.orgBasePath}/workflows/crawl/${this.workflowId}/items/${crawl.id}`}
                       .crawl=${crawl}
                     >
                       ${when(

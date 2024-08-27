@@ -27,6 +27,7 @@ import {
   activeCrawlStates,
   finishedCrawlStates,
   isActive,
+  renderName,
 } from "@/utils/crawler";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 import { getLocale } from "@/utils/localization";
@@ -345,36 +346,8 @@ export class ArchivedItemDetail extends BtrixElement {
         break;
     }
 
-    let label = "Back";
-    if (this.workflowId) {
-      label = msg("Back to Crawl Workflow");
-    } else if (this.collectionId) {
-      label = msg("Back to Collection");
-    } else if (this.crawl) {
-      if (this.crawl.type === "upload") {
-        label = msg("Back to All Uploads");
-      } else {
-        label = msg("Back to All Crawls");
-      }
-      // TODO have a "Back to Archived Items" link & label when we have the info to tell
-      // https://github.com/webrecorder/browsertrix-cloud/issues/1526
-    }
-
     return html`
-      <div class="mb-7">
-        <a
-          class="text-sm font-medium text-neutral-500 hover:text-neutral-600"
-          href=${this.listUrl}
-          @click=${this.navigate.link}
-        >
-          <sl-icon
-            name="arrow-left"
-            class="inline-block align-middle"
-          ></sl-icon>
-          <span class="inline-block align-middle">${label}</span>
-        </a>
-      </div>
-
+      <div class="mb-7">${this.renderBreadcrumbs()}</div>
       <div class="mb-4">${this.renderHeader()}</div>
 
       <main>
@@ -401,35 +374,123 @@ export class ArchivedItemDetail extends BtrixElement {
     `;
   }
 
-  private renderName() {
-    if (!this.crawl)
-      return html`<sl-skeleton class="inline-block h-8 w-60"></sl-skeleton>`;
+  private renderBreadcrumbs() {
+    const breadcrumbs = [];
 
-    if (this.crawl.name)
-      return html`<span class="truncate">${this.crawl.name}</span>`;
-    if (!this.crawl.firstSeed || !this.crawl.seedCount) return this.crawl.id;
-    const remainder = this.crawl.seedCount - 1;
-    let crawlName: TemplateResult = html`<span class="truncate"
-      >${this.crawl.firstSeed}</span
-    >`;
-    if (remainder) {
-      if (remainder === 1) {
-        crawlName = msg(
-          html`<span class="truncate">${this.crawl.firstSeed}</span>
-            <span class="whitespace-nowrap text-neutral-500"
-              >+${remainder} URL</span
-            >`,
+    if (this.workflowId) {
+      breadcrumbs.push(
+        html`<sl-breadcrumb-item
+          href="${this.navigate.orgBasePath}/workflows/crawls"
+          @click=${this.navigate.link}
+        >
+          ${msg("Crawl Workflows")}
+        </sl-breadcrumb-item>`,
+      );
+
+      if (this.workflow) {
+        breadcrumbs.push(
+          html`<sl-breadcrumb-item
+            href="${this.navigate.orgBasePath}/workflows/crawl/${this
+              .workflowId}"
+            @click=${this.navigate.link}
+          >
+            ${renderName(this.workflow)}
+          </sl-breadcrumb-item>`,
+          html`<sl-breadcrumb-item
+            href="${this.navigate.orgBasePath}/workflows/crawl/${this
+              .workflowId}#crawls"
+            @click=${this.navigate.link}
+          >
+            ${msg("Crawls")}
+          </sl-breadcrumb-item>`,
+        );
+
+        if (this.crawl) {
+          breadcrumbs.push(html`
+            <sl-breadcrumb-item>
+              <sl-format-date
+                lang=${getLocale()}
+                date=${`${this.crawl.finished}Z` /** Z for UTC */}
+                month="2-digit"
+                day="2-digit"
+                year="2-digit"
+                hour="numeric"
+                minute="numeric"
+                timeZoneName="short"
+              ></sl-format-date>
+            </sl-breadcrumb-item>
+          `);
+        }
+      }
+    } else if (this.collectionId) {
+      breadcrumbs.push(
+        html`<sl-breadcrumb-item
+          href="${this.navigate.orgBasePath}/collections"
+          @click=${this.navigate.link}
+        >
+          ${msg("Collections")}
+        </sl-breadcrumb-item>`,
+      );
+
+      if (this.workflow) {
+        breadcrumbs.push(
+          html`<sl-breadcrumb-item
+            href="${this.navigate.orgBasePath}/collections/view/${this
+              .collectionId}/items"
+            @click=${this.navigate.link}
+          >
+            <!-- TODO name -->
+            ${msg("Collection Archived Items")}
+          </sl-breadcrumb-item>`,
+        );
+
+        if (this.crawl) {
+          breadcrumbs.push(html`
+            <sl-breadcrumb-item> ${renderName(this.crawl)} </sl-breadcrumb-item>
+          `);
+        }
+      }
+    } else if (this.crawl) {
+      breadcrumbs.push(
+        html`<sl-breadcrumb-item
+          href="${this.navigate.orgBasePath}/items"
+          @click=${this.navigate.link}
+        >
+          ${msg("Archived Items")}
+        </sl-breadcrumb-item>`,
+      );
+
+      if (this.crawl.type === "upload") {
+        breadcrumbs.push(
+          html`<sl-breadcrumb-item
+            href="${this.navigate.orgBasePath}/items/upload"
+            @click=${this.navigate.link}
+          >
+            ${msg("Uploads")}
+          </sl-breadcrumb-item>`,
         );
       } else {
-        crawlName = msg(
-          html`<span class="truncate">${this.crawl.firstSeed}</span>
-            <span class="whitespace-nowrap text-neutral-500"
-              >+${remainder} URLs</span
-            >`,
+        breadcrumbs.push(
+          html`<sl-breadcrumb-item
+            href="${this.navigate.orgBasePath}/items/crawl"
+            @click=${this.navigate.link}
+          >
+            ${msg("Crawls")}
+          </sl-breadcrumb-item>`,
         );
       }
+
+      breadcrumbs.push(
+        html`<sl-breadcrumb-item>
+          ${renderName(this.crawl)}
+        </sl-breadcrumb-item>`,
+        // TODO tab
+      );
     }
-    return crawlName;
+
+    return html`
+      <sl-breadcrumb>${breadcrumbs.map((bc) => bc)}</sl-breadcrumb>
+    `;
   }
 
   private renderNav() {

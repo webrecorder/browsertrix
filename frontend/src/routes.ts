@@ -13,9 +13,9 @@ export const ROUTES = {
   org: [
     "/orgs/:slug",
     // Org sections:
-    "(/workflows(/crawls)(/crawl/:workflowId))",
+    "(/workflows(/crawls)(/crawl/:workflowId)(/items/:itemId))",
     "(/items(/:itemType(/:itemId(/review/:qaTab))))",
-    "(/collections(/new)(/view/:collectionId(/:collectionTab)))",
+    "(/collections(/new)(/view/:collectionId(/:collectionTab(/:itemType/:itemId))))",
     "(/browser-profiles(/profile(/browser/:browserId)(/:browserProfileId)))",
     "(/settings(/:settingsTab))",
   ].join(""),
