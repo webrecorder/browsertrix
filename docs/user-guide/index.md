@@ -1,29 +1,15 @@
-# Welcome!
+# Welcome
 
-Welcome to the Browsertrix User Guide. This page covers the basics of using Browsertrix, Webrecorder's high-fidelity web archiving system.
+Browsertrix is an intuitive, open-source, automated web archiving system. Archive, replay, and share websites exactly as they were at a certain point in time.
 
-## Getting Started
+Browsertrix is hosted by Webrecorder, a leading expert in web archiving. Our goal is to make web archiving easier and more accessible to everyone through open-source tools, easy-to-use interfaces, and community building.
 
-To get started crawling with Browsertrix:
+This user guide documents features, terminology, and settings in the Browsertrix web interface. The user guide is organized similarly to the web interface to make it easier to browse. You can also use the search box up top to search by topic.
 
-1. Create an account and join an organization [as described here](signup.md).
-2. After being redirected to the organization's [overview page](overview.md), click the _Create New_ button in the top right and select _[Crawl Workflow](crawl-workflows.md)_ to begin configuring your first crawl!
-3. For a simple crawl, choose the _Seeded Crawl_ option, and enter a page url in the _Crawl Start URL_ field. By default, the crawler will archive all pages under the starting path.
-4. Next, click _Review & Save_, and ensure the _Run on Save_ option is selected. Then click _Save Workflow_.
-5. Wait a moment for the crawler to start and watch as it archives the website!
+If you have any feedback on our documentation [we'd love to hear it](mailto:docs-feedback@webrecorder.net).
 
----
+For help with a certain topic, try our [community help forum](https://forum.webrecorder.net/c/help/5).
 
-After running your first crawl, check out the following to learn more about Browsertrix's features:
+For bug reports or feature requests, please open a [GitHub issue](https://github.com/webrecorder/browsertrix/issues/new/choose).
 
-- A detailed list of [crawl workflow setup](workflow-setup.md) options.
-- Adding [exclusions](workflow-setup.md#exclusions) to limit your crawl's scope and evading crawler traps by [editing exclusion rules while crawling](running-crawl.md#live-exclusion-editing).
-- Best practices for crawling with [browser profiles](browser-profiles.md) to capture content only available when logged in to a website.
-- Managing archived items, including [uploading previously archived content](archived-items.md#uploading-web-archives).
-- Organizing and combining archived items with [collections](collections.md) for sharing and export.
-- If you're an admin: [Inviting collaborators to your org](org-members.md).
-
-
-### Have more questions?
-
-While our aim is to create intuitive interfaces, sometimes the complexities of web archiving require a little more explanation. If there's something that you found especially confusing or frustrating [please get in touch](mailto:docs-feedback@webrecorder.net)!
+Thanks for choosing Browsertrix! Ready for [your first crawl](./getting-started.md)?

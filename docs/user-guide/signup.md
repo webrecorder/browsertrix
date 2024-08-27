@@ -8,7 +8,7 @@ To sign up for Browsertrix, [choose a plan](https://browsertrix.com/). We offer 
 
 ## Register your org
 
-After you finish setting up your subscription, you'll receive an email from us with a link to set up your org. A Browsertrix org, or organization, is your workspace for web archiving. If you’re archiving collaboratively, an org workspace can be shared between team members.
+After you finish setting up your subscription, you'll receive an email from us with a link to set up your org (organization.)
 
 Choose an org name that's unique and memorable, like the name of your company or organization. Your org URL identifier will determine the unique URL of the org's home page.
 
