@@ -17,6 +17,8 @@ See [browsertrix.com](https://browsertrix.com) for a feature overview and inform
 
 The full docs for using, deploying, and developing Browsertrix are available at: [https://docs.browsertrix.com](https://docs.browsertrix.com)
 
+Our docs are created with [Material for MKDocs](https://squidfunk.github.io/mkdocs-material/).
+
 ## Deployment
 
 The latest deployment documentation is available at: [https://docs.browsertrix.com/deploy](https://docs.browsertrix.com/deploy)
