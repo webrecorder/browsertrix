@@ -680,7 +680,7 @@ export class CollectionDetail extends BtrixElement {
     idx: number,
   ) => html`
     <btrix-archived-item-list-item
-      href=${`${this.navigate.orgBasePath}/collections/view/${this.collectionId}/items/${item.type}/${item.id}?collName=${window.encodeURIComponent(this.collection?.name || "")}`}
+      href=${`${this.navigate.orgBasePath}/collections/view/${this.collectionId}/items/${item.type}/${item.id}`}
       .item=${item}
     >
       ${this.isCrawler
