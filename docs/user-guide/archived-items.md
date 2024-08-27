@@ -32,7 +32,7 @@ Metadata can be edited by pressing the pencil icon at the top right of the metad
 
 ### Quality Assurance
 
-The Quality Assurance tab displays crawl quality information collected from analysis runs and user assessment of pages. This is where you can start new analysis runs, view quality metrics from older runs, and delete previous analysis runs. This tab is not available for uploaded archived items and not accessible for users with [viewer permissions](org-settings.md#permission-levels).
+The Quality Assurance tab displays crawl quality information collected from analysis runs and user assessment of pages. This is where you can start new analysis runs, view quality metrics from older runs, and delete previous analysis runs. This tab is not available for uploaded archived items and not accessible for users with [viewer permissions](org-members.md).
 
 The pages list provides a record of all pages within the archived item, as well as any ratings or notes given to the page during review. If analysis has been run, clicking on a page in the pages list will go to that page in the review interface.
 
