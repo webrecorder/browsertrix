@@ -22,7 +22,8 @@ export function makeAppStateService() {
 
   @state()
   class AppState {
-    @options(persist(window.localStorage, /* TTL minutes: */ 60 * 24))
+    // @TODO Persist in local storage with expiry
+    @options(persist(window.sessionStorage))
     settings: AppSettings | null = null;
 
     @options(persist(window.sessionStorage))
