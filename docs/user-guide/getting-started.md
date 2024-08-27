@@ -1,6 +1,6 @@
 # Your first crawl
 
-We'll walk you through your first crawl. Open up a webpage that you'd like to crawl and note the URL for later.
+Let’s crawl your first webpage! Start by opening up a webpage that you'd like to crawl, and note the URL for later.
 
 ## Logging in
 
