@@ -87,6 +87,7 @@ nav:
         - user-guide/org-members.md
       - Account Settings:
         - user-guide/user-settings.md
+      - user-guide/contribute.md
 
 markdown_extensions:
   - toc:
