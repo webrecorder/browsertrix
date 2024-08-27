@@ -351,20 +351,44 @@ export class CollectionDetail extends BtrixElement {
       </section>`;
   };
 
-  private readonly renderHeader = () => html`
-    <nav class="mb-7">
-      <a
-        class="text-sm font-medium text-gray-600 hover:text-gray-800"
+  private readonly renderHeader = () => {
+    const breadcrumbs = [
+      html`<sl-breadcrumb-item
         href=${`${this.navigate.orgBasePath}/collections`}
         @click=${this.navigate.link}
       >
-        <sl-icon name="arrow-left" class="inline-block align-middle"></sl-icon>
-        <span class="inline-block align-middle"
-          >${msg("Back to Collections")}</span
-        >
-      </a>
-    </nav>
-  `;
+        ${msg("Collections")}
+      </sl-breadcrumb-item>`,
+    ];
+
+    if (this.collection) {
+      if (this.collectionTab) {
+        breadcrumbs.push(
+          html`<sl-breadcrumb-item
+            href=${`${this.navigate.orgBasePath}/collections/view/${this.collectionId}`}
+            @click=${this.navigate.link}
+          >
+            ${this.collection.name}
+          </sl-breadcrumb-item>`,
+          html`<sl-breadcrumb-item>
+            ${this.tabLabels[this.collectionTab].text}
+          </sl-breadcrumb-item>`,
+        );
+      } else {
+        breadcrumbs.push(
+          html`<sl-breadcrumb-item>
+            ${this.collection.name}
+          </sl-breadcrumb-item>`,
+        );
+      }
+    }
+
+    return html`
+      <div class="mb-7">
+        <sl-breadcrumb> ${breadcrumbs.map((bc) => bc)} </sl-breadcrumb>
+      </div>
+    `;
+  };
 
   private readonly renderTabs = () => {
     return html`
@@ -656,7 +680,7 @@ export class CollectionDetail extends BtrixElement {
     idx: number,
   ) => html`
     <btrix-archived-item-list-item
-      href=${`${this.navigate.orgBasePath}/collections/view/${this.collectionId}/items/${item.type}/${item.id}`}
+      href=${`${this.navigate.orgBasePath}/collections/view/${this.collectionId}/items/${item.type}/${item.id}?collName=${window.encodeURIComponent(this.collection?.name || "")}`}
       .item=${item}
     >
       ${this.isCrawler

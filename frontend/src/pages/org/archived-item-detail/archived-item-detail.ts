@@ -432,23 +432,30 @@ export class ArchivedItemDetail extends BtrixElement {
         </sl-breadcrumb-item>`,
       );
 
-      if (this.workflow) {
+      if (this.crawl) {
+        const collection = this.crawl.collections.find(
+          ({ id }) => id === this.collectionId,
+        );
+
         breadcrumbs.push(
+          html`<sl-breadcrumb-item
+            href="${this.navigate.orgBasePath}/collections/view/${this
+              .collectionId}"
+            @click=${this.navigate.link}
+          >
+            ${collection?.name || msg("Collection")}
+          </sl-breadcrumb-item>`,
           html`<sl-breadcrumb-item
             href="${this.navigate.orgBasePath}/collections/view/${this
               .collectionId}/items"
             @click=${this.navigate.link}
           >
-            <!-- TODO name -->
-            ${msg("Collection Archived Items")}
+            ${msg("Archived Items")}
+          </sl-breadcrumb-item>`,
+          html`<sl-breadcrumb-item>
+            ${renderName(this.crawl)}
           </sl-breadcrumb-item>`,
         );
-
-        if (this.crawl) {
-          breadcrumbs.push(html`
-            <sl-breadcrumb-item> ${renderName(this.crawl)} </sl-breadcrumb-item>
-          `);
-        }
       }
     } else if (this.crawl) {
       breadcrumbs.push(
