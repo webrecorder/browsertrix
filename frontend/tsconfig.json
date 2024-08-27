@@ -2,7 +2,7 @@
   "compilerOptions": {
     "outDir": "./dist/",
     "module": "esnext",
-    "target": "es6",
+    "target": "ES2018",
     "moduleResolution": "node",
     "allowJs": true,
     "strict": true,
