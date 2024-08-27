@@ -1,3 +1,4 @@
+import { StoreController } from "@nanostores/lit";
 import { html, LitElement } from "lit";
 
 import appState, { use } from "./state";
@@ -5,6 +6,7 @@ import appState, { use } from "./state";
 import { APIController } from "@/controllers/api";
 import { NavigateController } from "@/controllers/navigate";
 import { NotifyController } from "@/controllers/notify";
+import { $router } from "@/stores/router";
 
 export { html };
 
@@ -15,9 +17,10 @@ export default class LiteElement extends LitElement {
   @use()
   appState = appState;
 
-  private readonly apiController = new APIController(this);
-  private readonly notifyController = new NotifyController(this);
-  private readonly navigateController = new NavigateController(this);
+  readonly apiController = new APIController(this);
+  readonly notifyController = new NotifyController(this);
+  readonly navigateController = new NavigateController(this);
+  readonly router = new StoreController(this, $router);
 
   protected get authState() {
     return this.appState.auth;

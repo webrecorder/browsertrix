@@ -1,5 +1,6 @@
 import type { ReactiveController, ReactiveControllerHost } from "lit";
 
+import { $router } from "@/stores/router";
 import appState from "@/utils/state";
 
 export type NavigateEventDetail = {
@@ -48,6 +49,9 @@ export class NavigateController implements ReactiveController {
       bubbles: true,
       composed: true,
     });
+
+    $router.open(new URL(url, window.location.origin).pathname);
+
     this.host.dispatchEvent(evt);
   };
 
@@ -82,15 +86,17 @@ export class NavigateController implements ReactiveController {
       return;
     }
 
-    const el = event.currentTarget as HTMLAnchorElement | null;
+    const el = event.currentTarget as HTMLAnchorElement;
 
-    if (el?.ariaDisabled === "true") {
+    if (el.ariaDisabled === "true") {
       return;
     }
 
+    $router.open(new URL(el.href, window.location.origin).pathname);
+
     const evt = new CustomEvent<NavigateEventDetail>(NAVIGATE_EVENT_NAME, {
       detail: {
-        url: (event.currentTarget as HTMLAnchorElement).href,
+        url: el.href,
         resetScroll,
       },
       bubbles: true,

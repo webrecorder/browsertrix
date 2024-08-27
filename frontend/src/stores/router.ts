@@ -1,29 +1,30 @@
 import { createRouter } from "@nanostores/router";
 
 const WORKFLOW_ROUTES = {
-  crawlWorkflows: "/workflows/crawls",
-  crawlWorkflow: "/workflows/crawl/:workflowId",
+  crawlWorkflows: "/orgs/:slug/workflows/crawls",
+  crawlWorkflow: "/orgs/:slug/workflows/crawl/:workflowId",
 };
 
 const ARCHIVED_ITEM_ROUTES = {
-  items: /\/items\/(?<itemType>crawl|upload)/,
-  item: /\/items\/(?<itemType>crawl|upload)\/(?<itemId>\d+)/,
-  itemReview: "/items/crawl/:itemId/review/:qaTab",
+  items: "/orgs/:slug/items/:itemType?",
+  item: "/orgs/:slug/items/:itemType/:itemId",
+  itemReview: "/orgs/:slug/items/crawl/:itemId/review/:qaTab",
 };
 
 const COLLECTION_ROUTES = {
-  collections: "/collections",
-  collection: "/collections/view/:collectionId/:collectionTab?",
+  collections: "/orgs/:slug/collections",
+  collection: "/orgs/:slug/collections/view/:collectionId/:collectionTab?",
 };
 
 const BROWSER_PROFILE_ROUTES = {
-  browserProfiles: "/browser-profiles",
-  browserProfile: "/browser-profiles/profile/:browserProfileId",
-  newBrowserProfile: "/browser-profiles/profile/browser/:browserId",
+  browserProfiles: "/orgs/:slug/browser-profiles",
+  browserProfile: "/orgs/:slug/browser-profiles/profile/:browserProfileId",
+  newBrowserProfile: "/orgs/:slug/browser-profiles/profile/browser/:browserId",
 };
 
 const ORG_ROUTES = {
   org: "/orgs/:slug",
+  orgSettings: "/orgs/:slug/settings/:settingsTab?",
   ...WORKFLOW_ROUTES,
   ...ARCHIVED_ITEM_ROUTES,
   ...COLLECTION_ROUTES,
@@ -50,4 +51,4 @@ export const ROUTES = {
   awpUploadRedirect: "/orgs/:orgId/artifacts/upload/:uploadId",
 } as const;
 
-export const $router = createRouter(ROUTES);
+export const $router = createRouter(ROUTES, { links: false });

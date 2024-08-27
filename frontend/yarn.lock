@@ -878,6 +878,11 @@
   resolved "https://registry.yarnpkg.com/@mdn/browser-compat-data/-/browser-compat-data-4.2.1.tgz#1fead437f3957ceebe2e8c3f46beccdb9bc575b8"
   integrity sha512-EWUguj2kd7ldmrF9F+vI5hUOralPd+sdsUnYbRy33vZTuZkduC1shE9TtEMEjAQwyfyMb4ole5KtjF8MsnQOlA==
 
+"@nanostores/lit@^0.2.2":
+  version "0.2.2"
+  resolved "https://registry.yarnpkg.com/@nanostores/lit/-/lit-0.2.2.tgz#b315151176c1708ddd664a4c236d2e334dddb424"
+  integrity sha512-EK01p3rdr1z9vhWn/vLBIvkgSRvfJTjuJwl1Os1a2K73LOIQEuojREAuo+aYIThCnURQsF3oNirll0tLaeW4Dg==
+
 "@nanostores/router@^0.15.1":
   version "0.15.1"
   resolved "https://registry.yarnpkg.com/@nanostores/router/-/router-0.15.1.tgz#561e3ec8a63648da0ecca7402f26db6af3d8d35b"

@@ -60,7 +60,7 @@ export class App extends LiteElement {
   @property({ type: String })
   version?: string;
 
-  private readonly router = new APIRouter(ROUTES);
+  private readonly apiRouter = new APIRouter(ROUTES);
   authService = new AuthService();
 
   @state()
@@ -133,10 +133,10 @@ export class App extends LiteElement {
       (pathname === "/log-in" || pathname === "/reset-password")
     ) {
       // Redirect to logged in home page
-      this.viewState = this.router.match(this.orgBasePath);
+      this.viewState = this.apiRouter.match(this.orgBasePath);
       window.history.replaceState(this.viewState, "", this.viewState.pathname);
     } else {
-      this.viewState = this.router.match(
+      this.viewState = this.apiRouter.match(
         `${pathname}${window.location.search}`,
       );
       this.updateOrgSlugIfNeeded();
@@ -223,9 +223,9 @@ export class App extends LiteElement {
 
     if (newViewPath === "/log-in" && this.authService.authState) {
       // Redirect to logged in home page
-      this.viewState = this.router.match(this.orgBasePath);
+      this.viewState = this.apiRouter.match(this.orgBasePath);
     } else {
-      this.viewState = this.router.match(newViewPath);
+      this.viewState = this.apiRouter.match(newViewPath);
     }
 
     this.viewState.data = state;
@@ -241,6 +241,8 @@ export class App extends LiteElement {
   }
 
   render() {
+    console.log("router:", this.router.value);
+
     return html`
       <div class="min-w-screen flex min-h-screen flex-col">
         ${this.renderNavBar()} ${this.renderAlertBanner()}

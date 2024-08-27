@@ -1,8 +1,11 @@
+import { StoreController } from "@nanostores/lit";
+
 import { TailwindElement } from "./TailwindElement";
 
 import { APIController } from "@/controllers/api";
 import { NavigateController } from "@/controllers/navigate";
 import { NotifyController } from "@/controllers/notify";
+import { $router } from "@/stores/router";
 import appState, { use } from "@/utils/state";
 
 export class BtrixElement extends TailwindElement {
@@ -13,6 +16,7 @@ export class BtrixElement extends TailwindElement {
   readonly api = new APIController(this);
   readonly notify = new NotifyController(this);
   readonly navigate = new NavigateController(this);
+  readonly router = new StoreController(this, $router);
 
   protected get authState() {
     return this.appState.auth;
