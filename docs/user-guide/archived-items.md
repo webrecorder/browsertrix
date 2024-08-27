@@ -62,7 +62,7 @@ The files tab lists the individually downloadable WACZ files that make up the ar
 
 ### Error Logs
 
-View a list of errors that may have been encountered during crawling. Clicking an errors in the list will reveal additional information.
+View a list of errors that may have been encountered during crawling. Clicking an error in the list will reveal additional information.
 
 All log entries with that were recorded in the creation of the archived item can be downloaded in JSONL format by pressing the _Download Logs_ button.
 
