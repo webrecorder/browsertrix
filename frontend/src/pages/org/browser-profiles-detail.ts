@@ -86,21 +86,7 @@ export class BrowserProfilesDetail extends BtrixElement {
       this.profile.resource.replicas.length > 0;
     const none = html`<span class="text-neutral-400">${msg("None")}</span>`;
 
-    return html`<div class="mb-7">
-        <a
-          class="text-sm font-medium text-neutral-500 hover:text-neutral-600"
-          href=${`${this.navigate.orgBasePath}/browser-profiles`}
-          @click=${this.navigate.link}
-        >
-          <sl-icon
-            name="arrow-left"
-            class="inline-block align-middle"
-          ></sl-icon>
-          <span class="inline-block align-middle"
-            >${msg("Back to Browser Profiles")}</span
-          >
-        </a>
-      </div>
+    return html`<div class="mb-7">${this.renderBreadcrumbs()}</div>
 
       <header class="mb-3 items-center justify-between md:flex">
         <h1 class="min-w-0 flex-1 truncate text-xl font-medium leading-7">
@@ -322,6 +308,22 @@ export class BrowserProfilesDetail extends BtrixElement {
       >
         ${this.isEditDialogContentVisible ? this.renderEditProfile() : nothing}
       </btrix-dialog> `;
+  }
+
+  private renderBreadcrumbs() {
+    const breadcrumbs = [
+      html`<sl-breadcrumb-item
+        href="${this.navigate.orgBasePath}/browser-profiles"
+        @click=${this.navigate.link}
+      >
+        ${msg("Browser Profiles")}
+      </sl-breadcrumb-item>`,
+      html`<sl-breadcrumb-item>${this.profile?.name}</sl-breadcrumb-item>`,
+    ];
+
+    return html`
+      <sl-breadcrumb> ${breadcrumbs.map((bc) => bc)} </sl-breadcrumb>
+    `;
   }
 
   private renderCrawlWorkflows() {

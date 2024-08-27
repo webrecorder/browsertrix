@@ -575,7 +575,7 @@ export class Org extends LiteElement {
         return html`<btrix-archived-item-detail
           crawlId=${params.itemId}
           collectionId=${params.collectionId}
-          itemType=${params.itemType}
+          itemType=${ifDefined(params.itemType)}
           ?isCrawler=${this.appState.isCrawler}
         ></btrix-archived-item-detail>`;
       }

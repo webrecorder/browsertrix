@@ -56,25 +56,7 @@ export class BrowserProfilesNew extends BtrixElement {
 
   render() {
     return html`
-      <div class="mb-7">
-        <a
-          class="text-sm font-medium text-neutral-500 hover:text-neutral-600"
-          href=${this.browserParams.profileId
-            ? `${this.navigate.orgBasePath}/browser-profiles/profile/${this.browserParams.profileId}`
-            : `${this.navigate.orgBasePath}/browser-profiles`}
-          @click=${this.navigate.link}
-        >
-          <sl-icon
-            name="arrow-left"
-            class="inline-block align-middle"
-          ></sl-icon>
-          <span class="inline-block align-middle"
-            >${this.browserParams.profileId
-              ? msg("Back to Profile")
-              : msg("Back to Browser Profiles")}</span
-          >
-        </a>
-      </div>
+      <div class="mb-7">${this.renderBreadcrumbs()}</div>
 
       <header class="mb-3">
         <h1 class="min-w-0 flex-1 truncate text-xl font-medium leading-7">
@@ -162,6 +144,44 @@ export class BrowserProfilesNew extends BtrixElement {
           </sl-button>
         </div>
       </btrix-dialog>
+    `;
+  }
+
+  private renderBreadcrumbs() {
+    const breadcrumbs = [
+      html`<sl-breadcrumb-item
+        href="${this.navigate.orgBasePath}/browser-profiles"
+        @click=${this.navigate.link}
+      >
+        ${msg("Browser Profiles")}
+      </sl-breadcrumb-item>`,
+    ];
+
+    if (this.browserParams.profileId) {
+      breadcrumbs.push(
+        html`<sl-breadcrumb-item
+          href="${this.navigate.orgBasePath}/browser-profiles/profile/${this
+            .browserParams.profileId}"
+          @click=${this.navigate.link}
+        >
+          ${this.browserParams.name
+            ? msg(this.browserParams.name)
+            : msg("Browser Profile")}
+        </sl-breadcrumb-item>`,
+        html`<sl-breadcrumb-item
+          >${msg("Duplicate Profile")}</sl-breadcrumb-item
+        >`,
+      );
+    } else {
+      breadcrumbs.push(
+        html`<sl-breadcrumb-item
+          >${msg("New Browser Profile")}</sl-breadcrumb-item
+        >`,
+      );
+    }
+
+    return html`
+      <sl-breadcrumb>${breadcrumbs.map((bc) => bc)}</sl-breadcrumb>
     `;
   }
 
