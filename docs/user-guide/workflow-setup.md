@@ -1,20 +1,8 @@
-# Configure a crawl workflow
-
-## Crawl Type
-
-The first step in creating a new [crawl workflow](crawl-workflows.md) is to choose what type of crawl you want to run. Crawl types are fixed and cannot be converted or changed later.
-
-### Known URLs
-
-`URL List`{ .badge-blue }
-:   The crawler visits every URL specified in a list, and optionally every URL linked on those pages.
-
-### Automated Discovery
-
-`Seeded Crawl`{ .badge-orange }
-:   The crawler automatically discovers and archives pages starting from a single seed URL.
+# Crawl workflow settings
 
 ## Scope
+
+Specify the range and depth of your crawl.
 
 ??? example "Crawling with HTTP basic auth"
 
@@ -124,6 +112,8 @@ This can be useful for avoiding crawler traps — sites that may automatically g
 
 ## Limits
 
+Enforce maximum limits on your crawl.
+
 ### Max Pages
 
 Adds a hard limit on the number of pages that will be crawled. The crawl will be gracefully stopped after this limit is reached.
@@ -162,6 +152,8 @@ Waits on the page for a set period of elapsed time after any behaviors have fini
 
 ## Browser Settings
 
+Configure the browser used to visit URLs during the crawl.
+
 ### Browser Profile
 
 Sets the [_Browser Profile_](browser-profiles.md) to be used for this crawl.
@@ -198,6 +190,8 @@ Sets the browser's [user agent](https://developer.mozilla.org/en-US/docs/Web/HTT
 Sets the browser's language setting. Useful for crawling websites that detect the browser's language setting and serve content accordingly.
 
 ## Scheduling
+
+Automatically start crawls at a specific date or periodically.
 
 !!! tip "Tip: Scheduling crawl workflows with logged-in browser profiles"
     Some websites will log users out after a set period of time. When crawling with a custom [browser profile](browser-profiles.md) that is logged into a website, we recommend checking the profile before crawling to ensure it is still logged in.
@@ -237,6 +231,8 @@ When enabled, a crawl will run immediately on save as if the `Run Immediately on
 
 ## Metadata
 
+Describe and organize your crawl workflow and the resulting archived items.
+
 ### Name
 
 Allows a custom name to be set for the workflow. If no name is set, the workflow's name will be set to the _Crawl Start URL_. For URL List crawls, the workflow's name will be set to the first URL present in the _Crawl URL(s)_ field, with an added `(+x)` where `x` represents the total number of URLs in the list.
@@ -251,4 +247,4 @@ Apply tags to the workflow. Tags applied to the workflow will propagate to every
 
 ### Collection Auto-Add
 
-Search for and specify [collections](collections.md) that this crawl workflow should automatically add content to as soon as crawling finishes. Canceled and Failed crawls will not be automatically added to collections.
+Search for and specify [collections](collections.md) that this crawl workflow should automatically add archived items to as soon as crawling finishes. Canceled and Failed crawls will not be added to collections.

@@ -1,10 +1,28 @@
-# Introduction to crawl workflows
+# Getting started with crawl workflows
 
 Crawl workflows enable you to run crawls, which in turn produces an [archived item](./archived-items.md). A crawl workflow consists of a list of configuration options that instruct the crawler what it should capture and metadata about the workflow itself.
 
 ## Create a Crawl Workflow
 
-You can create new crawl workflows from the Crawling page, or the  _Create New ..._ shortcut from the org overview. A detailed breakdown of available settings can be found in the [workflow configuration guide](workflow-setup.md).
+You can create new crawl workflows from the Crawling page, or the  _Create New ..._ shortcut from the org overview.
+
+### Choose what to crawl
+
+The first step in creating a new [crawl workflow](crawl-workflows.md) is to choose what you'd like to crawl. This determines whether the crawl type will be **URL List** or **Seeded Crawl**. Crawl types can't be changed after the workflow is created—you'll need to create a new crawl workflow.
+
+#### Known URLs `URL List`{ .badge-blue }
+
+Crawl a single page, or choose this option if you already know the URL of every page you'd like to crawl. The crawler will visit every URL specified in a list, and optionally every URL linked on those pages.
+
+A URL list is simpler to configure, since you don't need to worry about configuring the workflow to exclude parts of the website that you may not want to archive.
+
+#### Automated Discovery `Seeded Crawl`{ .badge-orange }
+
+Let the crawler automatically discover pages based on a domain or start page that you specify.
+
+Seeded crawls are great for advanced use cases where you don't need (or want) to know every single URL of the website that you're archiving.
+
+Upon choosing you can begin to set up your workflow. A detailed breakdown of available settings can be found in the [workflow settings guide](workflow-setup.md).
 
 ## Run Crawl
 

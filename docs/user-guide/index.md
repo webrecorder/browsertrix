@@ -17,7 +17,7 @@ To get started crawling with Browsertrix:
 After running your first crawl, check out the following to learn more about Browsertrix's features:
 
 - A detailed list of [crawl workflow setup](workflow-setup.md) options.
-- Adding [exclusions](workflow-setup.md#exclusions) to limit your crawl's scope and evading crawler traps by [editing exclusion rules while crawling](crawl-workflows.md#live-exclusion-editing).
+- Adding [exclusions](workflow-setup.md#exclusions) to limit your crawl's scope and evading crawler traps by [editing exclusion rules while crawling](running-crawl.md#live-exclusion-editing).
 - Best practices for crawling with [browser profiles](browser-profiles.md) to capture content only available when logged in to a website.
 - Managing archived items, including [uploading previously archived content](archived-items.md#uploading-web-archives).
 - Organizing and combining archived items with [collections](collections.md) for sharing and export.

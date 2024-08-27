@@ -77,12 +77,14 @@ nav:
       - Archived Items:
         - user-guide/archived-items.md
         - user-guide/review.md
-      - Collections:
         - user-guide/collections.md
+      - Collections:
+        - user-guide/collection.md
       - Browser Profiles:
         - user-guide/browser-profiles.md
       - Org Settings:
         - user-guide/org-settings.md
+        - user-guide/org-members.md
       - Account Settings:
         - user-guide/user-settings.md
 

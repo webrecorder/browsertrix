@@ -1,4 +1,4 @@
-# Configure your user account
+# Change your name, email, or password
 
 ## Display Name
 
