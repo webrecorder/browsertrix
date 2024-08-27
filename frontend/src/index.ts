@@ -25,7 +25,7 @@ import type { NavigateEventDetail } from "@/controllers/navigate";
 import type { NotifyEventDetail } from "@/controllers/notify";
 import { theme } from "@/theme";
 import { type Auth } from "@/types/auth";
-import { getAppSettings } from "@/utils/app";
+import { type AppSettings } from "@/utils/app";
 import brandLockupColor from "~assets/brand/browsertrix-lockup-color.svg";
 
 import "./shoelace";
@@ -59,6 +59,9 @@ export type APIUser = {
 export class App extends LiteElement {
   @property({ type: String })
   version?: string;
+
+  @property({ type: Object })
+  settings?: AppSettings;
 
   private readonly router = new APIRouter(ROUTES);
   authService = new AuthService();
@@ -102,13 +105,12 @@ export class App extends LiteElement {
     });
 
     this.startSyncBrowserTabs();
-
-    if (!this.appState.settings) {
-      void this.fetchAppSettings();
-    }
   }
 
   willUpdate(changedProperties: Map<string, unknown>) {
+    if (changedProperties.has("settings")) {
+      AppStateService.updateSettings(this.settings || null);
+    }
     if (changedProperties.has("viewState")) {
       if (this.viewState.route === "orgs") {
         this.navigate(this.orgBasePath);
@@ -148,12 +150,6 @@ export class App extends LiteElement {
     if (this.viewState.route === "org" && slug !== this.appState.orgSlug) {
       AppStateService.updateOrgSlug(slug);
     }
-  }
-
-  private async fetchAppSettings() {
-    const settings = await getAppSettings();
-
-    AppStateService.updateSettings(settings);
   }
 
   private async fetchAndUpdateUserInfo(e?: CustomEvent) {
