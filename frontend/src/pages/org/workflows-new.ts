@@ -57,37 +57,44 @@ export class WorkflowsNew extends LiteElement {
   @property({ type: Object })
   initialWorkflow?: WorkflowParams;
 
+  private readonly jobTypeLabels: Record<JobType, string> = {
+    "url-list": msg("URL List"),
+    "seed-crawl": msg("Seeded Crawl"),
+    custom: msg("Custom"),
+  };
+
   private renderHeader() {
-    const href = `${this.orgBasePath}/workflows/crawls`;
-    const label = msg("Back to Crawl Workflows");
+    const breadcrumbs = [
+      html`<sl-breadcrumb-item
+        href="${this.orgBasePath}/workflows"
+        @click=${this.navLink}
+      >
+        ${msg("Crawl Workflows")}
+      </sl-breadcrumb-item>`,
+      html`<sl-breadcrumb-item
+        href="${this.orgBasePath}/workflows?new=workflow"
+        @click=${this.navLink}
+      >
+        ${msg("New Workflow")}
+      </sl-breadcrumb-item>`,
+    ];
+
+    const jobType = this.initialWorkflow.jobType || this.jobType;
+
+    if (jobType) {
+      breadcrumbs.push(
+        html`<sl-breadcrumb-item>
+          ${this.jobTypeLabels[jobType]}
+        </sl-breadcrumb-item>`,
+      );
+    }
 
     return html`
-      <nav class="mb-5">
-        <a
-          class="text-sm font-medium text-gray-600 hover:text-gray-800"
-          href=${href}
-          @click=${(e: MouseEvent) => {
-            this.navLink(e);
-            this.jobType = undefined;
-          }}
-        >
-          <sl-icon
-            name="arrow-left"
-            class="inline-block align-middle"
-          ></sl-icon>
-          <span class="inline-block align-middle">${label}</span>
-        </a>
-      </nav>
+      <sl-breadcrumb> ${breadcrumbs.map((bc) => bc)} </sl-breadcrumb>
     `;
   }
 
   render() {
-    const jobTypeLabels: Record<JobType, string> = {
-      "url-list": msg("URL List"),
-      "seed-crawl": msg("Seeded Crawl"),
-      custom: msg("Custom"),
-    };
-
     const jobType = this.initialWorkflow?.jobType || this.jobType;
 
     if (!this.isCrawler) {
@@ -96,9 +103,9 @@ export class WorkflowsNew extends LiteElement {
 
     if (jobType) {
       return html`
-        ${this.renderHeader()}
+        <div class="mb-5">${this.renderHeader()}</div>
         <h2 class="mb-6 text-xl font-semibold">
-          ${msg(html`New Crawl Workflow &mdash; ${jobTypeLabels[jobType]}`)}
+          ${msg("New")} ${this.jobTypeLabels[jobType]}
         </h2>
         ${when(this.org, (org) => {
           const initialWorkflow = mergeDeep(
