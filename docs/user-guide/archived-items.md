@@ -1,6 +1,6 @@
 # Intro to archived items
 
-Archived Items consist of one or more WACZ files created by a crawl workflow, or uploaded to Browsertrix. They can be individually replayed, or combined with other archived items in a [collection](collections.md). The Archived Items page lists all items in the organization.
+Archived items consist of one or more WACZ files created by a crawl workflow, or uploaded to Browsertrix. They can be individually replayed, or combined with other archived items in a [collection](collections.md). The **Archived Items** page lists all items in the organization.
 
 ## Uploading Web Archives
 
@@ -26,13 +26,13 @@ The archived item details page is composed of the following sections, though som
 
 ### Overview
 
-The Overview tab displays the item's metadata and statistics associated with its creation process.
+View the item's metadata and statistics associated with its creation process.
 
 Metadata can be edited by pressing the pencil icon at the top right of the metadata section to edit the item's description, tags, and collections it is associated with.
 
 ### Quality Assurance
 
-The Quality Assurance tab displays crawl quality information collected from analysis runs and user assessment of pages. This is where you can start new analysis runs, view quality metrics from older runs, and delete previous analysis runs. This tab is not available for uploaded archived items and not accessible for users with [viewer permissions](org-members.md).
+View crawl quality information collected from analysis runs, review crawled pages, and start new analysis runs. QA is only available for crawls and org members with [crawler permissions](org-members.md).
 
 The pages list provides a record of all pages within the archived item, as well as any ratings or notes given to the page during review. If analysis has been run, clicking on a page in the pages list will go to that page in the review interface.
 
@@ -50,7 +50,7 @@ Like running a crawl workflow, running crawl analysis also uses execution time. 
 
 ### Replay
 
-The Replay tab displays the web content contained within the archived item.
+View a high-fidelity replay of the website at the time it was archived.
 
 For more details on navigating web archives within ReplayWeb.page, see the [ReplayWeb.page user documentation.](https://replayweb.page/docs/user-guide/exploring/)
 
@@ -58,14 +58,14 @@ For more details on navigating web archives within ReplayWeb.page, see the [Repl
 
 While crawling, Browsertrix will output one or more WACZ files — the crawler aims to output files in consistently sized chunks, and each [crawler instance](workflow-setup.md#crawler-instances) will output separate WACZ files.
 
-The Files tab lists the individually downloadable WACZ files that make up the archived item as well as their file sizes and backup status. To combine one or more archived items and download them all as a single WACZ file, add them to a collection and [download the collection](collections.md#downloading-collections).
+The files tab lists the individually downloadable WACZ files that make up the archived item as well as their file sizes and backup status. To combine one or more archived items and download them all as a single WACZ file, add them to a collection and [download the collection](collections.md#downloading-collections).
 
 ### Error Logs
 
-The Error Logs tab displays a list of errors encountered during crawling. Clicking an errors in the list will reveal additional information.
+View a list of errors that may have been encountered during crawling. Clicking an errors in the list will reveal additional information.
 
-All log entries with that were recorded in the creation of the Archived Item can be downloaded in JSONL format by pressing the _Download Logs_ button.
+All log entries with that were recorded in the creation of the archived item can be downloaded in JSONL format by pressing the _Download Logs_ button.
 
 ### Crawl Settings
 
-The Crawl Settings tab displays the crawl workflow configuration options that were used to generate the resulting archived item. Many of these settings also apply when running crawl analysis.
+View the crawl workflow configuration options that were used to generate the resulting archived item. Many of these settings also apply when running crawl analysis.
