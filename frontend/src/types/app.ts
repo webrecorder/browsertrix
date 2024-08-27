@@ -6,6 +6,7 @@ export type AppSettings = {
   maxPagesPerCrawl: number;
   maxScale: number;
   billingEnabled: boolean;
+  signUpUrl: string;
   salesEmail: string;
   supportEmail: string;
 };

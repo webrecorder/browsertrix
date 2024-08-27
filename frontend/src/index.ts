@@ -196,6 +196,7 @@ export class App extends LiteElement {
         maxPagesPerCrawl: 0,
         maxScale: 0,
         billingEnabled: false,
+        signUpUrl: "",
         salesEmail: "",
         supportEmail: "",
       };
@@ -450,11 +451,28 @@ export class App extends LiteElement {
   }
 
   private renderSignUpLink() {
-    if (!this.appState.settings) return;
+    const { registrationEnabled, signUpUrl } = this.appState.settings || {};
 
-    if (this.appState.settings.registrationEnabled) {
+    if (registrationEnabled) {
       return html`
-        <sl-button variant="text" @click="${() => this.navigate("/sign-up")}">
+        <sl-button
+          href="/sign-up"
+          size="small"
+          @click="${(e: MouseEvent) => {
+            if (!this.navHandleAnchorClick(e)) {
+              return;
+            }
+            this.navigate("/sign-up");
+          }}"
+        >
+          ${msg("Sign Up")}
+        </sl-button>
+      `;
+    }
+
+    if (signUpUrl) {
+      return html`
+        <sl-button href=${signUpUrl} size="small">
           ${msg("Sign Up")}
         </sl-button>
       `;
@@ -947,7 +965,7 @@ export class App extends LiteElement {
   private clearUser() {
     this.authService.logout();
     this.authService = new AuthService();
-    AppStateService.resetUser();
+    AppStateService.resetAll();
   }
 
   private showDialog(content: DialogContent) {

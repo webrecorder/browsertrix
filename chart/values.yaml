@@ -60,9 +60,10 @@ volume_storage_class:
 # if set, set the node selector 'nodeType' to this crawling pods
 # crawler_node_type:
 
+# if set to  "1", enables open registration
 registration_enabled: "0"
 
-# if set, along with 'registration_enabled', will add registrated users to this org
+# if set, along with 'registration_enabled', will add registered users to this org
 # registration_org_id: ""
 
 jwt_token_lifetime_minutes: 1440
@@ -112,6 +113,11 @@ profile_browser_idle_seconds: 60
 
 # set to true to enable subscriptions API and Billing tab
 billing_enabled: false
+
+# set URL to external sign-up page
+# the internal sign-up page will take precedence if
+# `registration_enabled` is set to `"1"``
+sign_up_url: ""
 
 # set e-mail to show for subscriptions related info
 sales_email: ""

@@ -22,7 +22,8 @@ export function makeAppStateService() {
 
   @state()
   class AppState {
-    @options(persist(window.localStorage))
+    // @TODO Persist in local storage with expiry
+    @options(persist(window.sessionStorage))
     settings: AppSettings | null = null;
 
     @options(persist(window.sessionStorage))
@@ -140,7 +141,6 @@ export function makeAppStateService() {
     @unlock()
     resetAll() {
       appState.settings = null;
-      appState.org = undefined;
       this._resetUser();
     }
 
@@ -154,6 +154,7 @@ export function makeAppStateService() {
       appState.auth = null;
       appState.userInfo = null;
       appState.orgSlug = null;
+      appState.org = undefined;
     }
   }
 

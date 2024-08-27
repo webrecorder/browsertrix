@@ -54,6 +54,13 @@ export default class LiteElement extends LitElement {
   /**
    * @deprecated New components should use NavigateController directly
    */
+  navHandleAnchorClick = (
+    ...args: Parameters<NavigateController["handleAnchorClick"]>
+  ) => this.navigateController.handleAnchorClick(...args);
+
+  /**
+   * @deprecated New components should use NavigateController directly
+   */
   navTo = (...args: Parameters<NavigateController["to"]>) =>
     this.navigateController.to(...args);
 
