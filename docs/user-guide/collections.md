@@ -1,4 +1,4 @@
-# Add to collection
+# Add to Collection
 
 Collections are the primary way of organizing and combining archived items into groups for presentation.
 

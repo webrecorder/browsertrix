@@ -1,4 +1,4 @@
-# Join an existing org
+# Join an Existing Org
 
 If you've received an email inviting you to an org, you can join the org by accepting the invitation.
 
