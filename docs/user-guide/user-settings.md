@@ -1,4 +1,4 @@
-# Change your name, email, or password
+# Change Your Name, Email, or Password
 
 ## Display Name
 

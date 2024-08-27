@@ -1,4 +1,4 @@
-# Register for an account
+# Register For an Account
 
 !!! note "Self-hosting?"
 
@@ -6,13 +6,13 @@
 
 To sign up for Browsertrix, [choose a plan](https://browsertrix.com/). We offer a variety of plans for individuals, teams, and organizations of all sizes.
 
-## Register your org
+## Register Your Org
 
 After you finish setting up your subscription, you'll receive an email from us with a link to set up your org (organization.)
 
 Choose an org name that's unique and memorable, like the name of your company or organization. Your org URL identifier will determine the unique URL of the org's home page.
 
-## Configure your user account
+## Configure Your User Account
 
 Create a password and display name. Your display name is the name that is visible to other org members. For example, your display name will be visible in crawl workflows that you create or run.
 
