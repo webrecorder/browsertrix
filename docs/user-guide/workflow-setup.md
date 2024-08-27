@@ -1,4 +1,4 @@
-# Crawl Workflow Setup
+# Create a crawl workflow
 
 ## Crawl Type
 

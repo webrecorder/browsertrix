@@ -64,18 +64,25 @@ nav:
       - develop/frontend-dev.md
       - develop/docs.md
   - User Guide:
-      - user-guide/index.md
-      - user-guide/signup.md
+      - Getting Started:
+        - user-guide/index.md
+        - user-guide/signup.md
+      - Org Overview:
+        - user-guide/overview.md
       - Crawling:
         - user-guide/crawl-workflows.md
         - user-guide/workflow-setup.md
+      - Archived Items:
+        - user-guide/archived-items.md
+        - user-guide/review.md
+      - Collections:
+        - user-guide/collections.md
+      - Browser Profiles:
         - user-guide/browser-profiles.md
-      - user-guide/overview.md
-      - user-guide/archived-items.md
-      - user-guide/review.md
-      - user-guide/collections.md
-      - user-guide/org-settings.md
-      - user-guide/user-settings.md
+      - Org Settings:
+        - user-guide/org-settings.md
+      - Account Settings:
+        - user-guide/user-settings.md
 
 markdown_extensions:
   - toc:

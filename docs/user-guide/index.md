@@ -1,4 +1,4 @@
-# Browsertrix User Guide
+# Welcome!
 
 Welcome to the Browsertrix User Guide. This page covers the basics of using Browsertrix, Webrecorder's high-fidelity web archiving system.
 

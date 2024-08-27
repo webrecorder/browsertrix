@@ -1,4 +1,4 @@
-# Signup
+# Register for an account
 
 ## Invite Link
 

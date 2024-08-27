@@ -1,4 +1,4 @@
-# Org Overview
+# Usage stats and quotas
 
 The overview page delivers key statistics about the organization's resource usage. It also lets users create crawl workflows, uploaded archived items, collections, and browser profiles through the _Create New ..._ button.
 

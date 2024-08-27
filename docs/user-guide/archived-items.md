@@ -1,4 +1,4 @@
-# Archived Items
+# Introduction to archived items
 
 Archived Items consist of one or more WACZ files created by a crawl workflow, or uploaded to Browsertrix. They can be individually replayed, or combined with other archived items in a [collection](collections.md). The Archived Items page lists all items in the organization.
 

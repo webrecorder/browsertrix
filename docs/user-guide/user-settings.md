@@ -1,4 +1,4 @@
-# Account Settings
+# Configure your user account
 
 ## Display Name
 

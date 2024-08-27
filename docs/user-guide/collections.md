@@ -1,4 +1,4 @@
-# Collections
+# Organize archived items into a collection
 
 Collections are the primary way of organizing and combining archived items into groups for presentation.
 

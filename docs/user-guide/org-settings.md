@@ -1,4 +1,4 @@
-# Org Settings
+# Change org name or URL
 
 The Org Settings page is only available to organization admins. It can be found in the main navigation menu.
 

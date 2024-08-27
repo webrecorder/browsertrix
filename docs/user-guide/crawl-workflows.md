@@ -1,4 +1,4 @@
-# Crawl Workflows
+# Introduction to crawl workflows
 
 Crawl Workflows consist of a list of configuration options that instruct the crawler what it should capture.
 
