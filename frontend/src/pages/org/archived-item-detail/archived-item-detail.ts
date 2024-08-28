@@ -40,12 +40,10 @@ import "./ui/qa";
 const SECTIONS = [
   "overview",
   "qa",
-  "watch",
   "replay",
   "files",
   "logs",
   "config",
-  "exclusions",
 ] as const;
 type SectionName = (typeof SECTIONS)[number];
 
@@ -117,6 +115,18 @@ export class ArchivedItemDetail extends BtrixElement {
 
   @query("#cancelQARunDialog")
   private readonly cancelQARunDialog?: Dialog | null;
+
+  private readonly tabLabels: Omit<
+    Record<SectionName, string>,
+    "watch" | "exclusions"
+  > = {
+    overview: msg("Overview"),
+    qa: msg("Quality Assurance"),
+    replay: msg("Replay"),
+    files: msg("Files"),
+    logs: msg("Error Logs"),
+    config: msg("Crawl Settings"),
+  };
 
   private get listUrl(): string {
     let path = "items";
@@ -455,9 +465,15 @@ export class ArchivedItemDetail extends BtrixElement {
         });
       }
 
-      breadcrumbs.push({
-        content: renderName(this.crawl),
-      });
+      breadcrumbs.push(
+        {
+          href: `${this.navigate.orgBasePath}/items/${this.crawl.type}/${this.crawlId}`,
+          content: renderName(this.crawl),
+        },
+        {
+          content: this.tabLabels[this.activeTab],
+        },
+      );
     }
 
     return pageBreadcrumbs(breadcrumbs);
@@ -466,13 +482,11 @@ export class ArchivedItemDetail extends BtrixElement {
   private renderNav() {
     const renderNavItem = ({
       section,
-      label,
       iconLibrary,
       icon,
       detail,
     }: {
       section: SectionName;
-      label: string;
       iconLibrary: "app" | "default";
       icon: string;
       detail?: TemplateResult<1>;
@@ -493,7 +507,7 @@ export class ArchivedItemDetail extends BtrixElement {
             aria-hidden="true"
             library=${iconLibrary}
           ></sl-icon>
-          ${label}${detail}</btrix-navigation-button
+          ${this.tabLabels[section]}${detail}</btrix-navigation-button
         >
       `;
     };
@@ -506,7 +520,6 @@ export class ArchivedItemDetail extends BtrixElement {
           section: "overview",
           iconLibrary: "default",
           icon: "info-circle-fill",
-          label: msg("Overview"),
         })}
         ${when(
           this.itemType === "crawl" && this.isCrawler,
@@ -515,7 +528,6 @@ export class ArchivedItemDetail extends BtrixElement {
               section: "qa",
               iconLibrary: "default",
               icon: "clipboard2-data-fill",
-              label: msg("Quality Assurance"),
               detail: html`<btrix-beta-icon></btrix-beta-icon>`,
             })}
           `,
@@ -524,13 +536,11 @@ export class ArchivedItemDetail extends BtrixElement {
           section: "replay",
           iconLibrary: "app",
           icon: "replaywebpage",
-          label: msg("Replay"),
         })}
         ${renderNavItem({
           section: "files",
           iconLibrary: "default",
           icon: "folder-fill",
-          label: msg("Files"),
         })}
         ${when(
           this.itemType === "crawl",
@@ -539,13 +549,11 @@ export class ArchivedItemDetail extends BtrixElement {
               section: "logs",
               iconLibrary: "default",
               icon: "terminal-fill",
-              label: msg("Error Logs"),
             })}
             ${renderNavItem({
               section: "config",
               iconLibrary: "default",
               icon: "file-code-fill",
-              label: msg("Crawl Settings"),
             })}
           `,
         )}

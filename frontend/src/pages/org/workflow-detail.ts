@@ -271,30 +271,32 @@ export class WorkflowDetail extends LiteElement {
       <div class="grid grid-cols-1 gap-7">
         <div class="col-span-1">${this.renderBreadcrumbs()}</div>
 
-        <header class="col-span-1 flex flex-wrap gap-2">
-          <btrix-detail-page-title
-            .item=${this.workflow}
-          ></btrix-detail-page-title>
-          ${when(
-            this.workflow?.inactive,
-            () => html`
-              <btrix-badge class="inline-block align-middle" variant="warning"
-                >${msg("Inactive")}</btrix-badge
-              >
-            `,
-          )}
-
-          <div class="flex-0 ml-auto flex flex-wrap justify-end gap-2">
+        <div>
+          <header class="col-span-1 mb-3 flex flex-wrap gap-2">
+            <btrix-detail-page-title
+              .item=${this.workflow}
+            ></btrix-detail-page-title>
             ${when(
-              this.isCrawler && this.workflow && !this.workflow.inactive,
-              this.renderActions,
+              this.workflow?.inactive,
+              () => html`
+                <btrix-badge class="inline-block align-middle" variant="warning"
+                  >${msg("Inactive")}</btrix-badge
+                >
+              `,
             )}
-          </div>
-        </header>
 
-        <section class="col-span-1 rounded-lg border px-4 py-2">
-          ${this.renderDetails()}
-        </section>
+            <div class="flex-0 ml-auto flex flex-wrap justify-end gap-2">
+              ${when(
+                this.isCrawler && this.workflow && !this.workflow.inactive,
+                this.renderActions,
+              )}
+            </div>
+          </header>
+
+          <section class="col-span-1 rounded-lg border px-4 py-2">
+            ${this.renderDetails()}
+          </section>
+        </div>
 
         ${when(this.workflow, this.renderTabList, this.renderLoading)}
       </div>
@@ -399,26 +401,20 @@ export class WorkflowDetail extends LiteElement {
     ];
 
     if (this.workflow) {
-      breadcrumbs.push(
-        this.isEditing
-          ? {
-              href: `${this.orgBasePath}/workflows/crawl/${this.workflowId}`,
-              content: this.renderName(),
-            }
-          : {
-              content: this.renderName(),
-            },
-      );
-    }
+      breadcrumbs.push({
+        href: `${this.orgBasePath}/workflows/crawl/${this.workflowId}`,
+        content: this.renderName(),
+      });
 
-    if (this.isEditing) {
-      breadcrumbs.push({
-        content: msg("Edit Settings"),
-      });
-    } else if (this.activePanel) {
-      breadcrumbs.push({
-        content: this.tabLabels[this.activePanel],
-      });
+      if (this.isEditing) {
+        breadcrumbs.push({
+          content: msg("Edit Settings"),
+        });
+      } else if (this.activePanel) {
+        breadcrumbs.push({
+          content: this.tabLabels[this.activePanel],
+        });
+      }
     }
 
     return pageBreadcrumbs(breadcrumbs);
