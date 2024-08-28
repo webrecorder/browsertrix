@@ -15,6 +15,7 @@ import {
   SortDirection,
   type SortValues,
 } from "@/components/ui/table/table-header-cell";
+import { pageHeader } from "@/layouts/pageHeader";
 import type {
   APIPaginatedList,
   APIPaginationQuery,
@@ -94,35 +95,30 @@ export class BrowserProfilesList extends BtrixElement {
   }
 
   render() {
-    return html`<header>
-        <div
-          class="mb-3 mt-7 flex flex-wrap justify-between gap-2 border-b pb-3"
-        >
-          <h1 class="mb-2 text-xl font-semibold leading-8 md:mb-0">
-            ${msg("Browser Profiles")}
-          </h1>
-          ${when(
-            this.isCrawler,
-            () => html`
-              <sl-button
-                variant="primary"
-                size="small"
-                ?disabled=${isArchivingDisabled(this.org)}
-                @click=${() => {
-                  this.dispatchEvent(
-                    new CustomEvent("select-new-dialog", {
-                      detail: "browser-profile",
-                    }) as SelectNewDialogEvent,
-                  );
-                }}
-              >
-                <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-                ${msg("New Browser Profile")}
-              </sl-button>
-            `,
-          )}
-        </div>
-      </header>
+    return html`${pageHeader(
+        msg("Browser Profiles"),
+        when(
+          this.isCrawler,
+          () => html`
+            <sl-button
+              variant="primary"
+              size="small"
+              ?disabled=${isArchivingDisabled(this.org)}
+              @click=${() => {
+                this.dispatchEvent(
+                  new CustomEvent("select-new-dialog", {
+                    detail: "browser-profile",
+                  }) as SelectNewDialogEvent,
+                );
+              }}
+            >
+              <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+              ${msg("New Browser Profile")}
+            </sl-button>
+          `,
+        ),
+        tw`mb-3`,
+      )}
       <div class="pb-1">${this.renderTable()}</div>`;
   }
 

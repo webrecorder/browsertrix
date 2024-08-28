@@ -1,7 +1,7 @@
 import { localized, msg, str } from "@lit/localize";
 import type { SlInput } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
-import { html, nothing, unsafeCSS, type PropertyValues } from "lit";
+import { html, unsafeCSS, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -12,12 +12,14 @@ import stylesheet from "./settings.stylesheet.css";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { APIUser } from "@/index";
 import { columns } from "@/layouts/columns";
+import { pageHeader } from "@/layouts/pageHeader";
 import type { APIPaginatedList } from "@/types/api";
 import { isApiError } from "@/utils/api";
 import { maxLengthValidator } from "@/utils/form";
 import { AccessCode, isAdmin, isCrawler } from "@/utils/orgs";
 import slugifyStrict from "@/utils/slugify";
 import { AppStateService } from "@/utils/state";
+import { tw } from "@/utils/tailwind";
 import { formatAPIUser } from "@/utils/user";
 
 import "./components/billing";
@@ -107,21 +109,21 @@ export class OrgSettings extends BtrixElement {
   }
 
   render() {
-    return html`<header
-        class="mb-5 mt-7 flex items-end justify-between border-b pb-3"
-      >
-        <h1 class="text-xl font-semibold leading-8">${msg("Org Settings")}</h1>
-        ${this.userInfo?.orgs && this.userInfo.orgs.length > 1 && this.userOrg
-          ? html`
-              <div class="text-neutral-400">
-                ${msg(
-                  html`Viewing
-                    <strong class="font-medium">${this.userOrg.name}</strong>`,
-                )}
-              </div>
-            `
-          : nothing}
-      </header>
+    return html` ${pageHeader(
+        msg("Org Settings"),
+        when(
+          this.userInfo?.orgs && this.userInfo.orgs.length > 1 && this.userOrg,
+          (userOrg) => html`
+            <div class="text-neutral-400">
+              ${msg(
+                html`Viewing
+                  <strong class="font-medium">${userOrg.name}</strong>`,
+              )}
+            </div>
+          `,
+        ),
+        tw`mb-3 lg:mb-5`,
+      )}
 
       <btrix-tab-list activePanel=${this.activePanel} hideIndicator>
         <header slot="header" class="flex h-7 items-end justify-between">

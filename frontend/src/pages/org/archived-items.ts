@@ -14,10 +14,12 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import { CopyButton } from "@/components/ui/copy-button";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
+import { pageHeader } from "@/layouts/pageHeader";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import { isApiError } from "@/utils/api";
 import { finishedCrawlStates, isActive } from "@/utils/crawler";
 import { isArchivingDisabled } from "@/utils/orgs";
+import { tw } from "@/utils/tailwind";
 
 type ArchivedItems = APIPaginatedList<ArchivedItem>;
 type SearchFields = "name" | "firstSeed";
@@ -255,14 +257,10 @@ export class CrawlsList extends BtrixElement {
 
     return html`
       <main>
-        <header class="contents">
-          <div
-            class="mb-3 mt-7 flex flex-wrap justify-between gap-2 border-b pb-3"
-          >
-            <h1 class="mb-2 text-xl font-semibold leading-8 md:mb-0">
-              ${msg("Archived Items")}
-            </h1>
-            ${when(
+        <div class="contents">
+          ${pageHeader(
+            msg("Archived Items"),
+            when(
               this.isCrawler,
               () => html`
                 <sl-tooltip
@@ -280,8 +278,9 @@ export class CrawlsList extends BtrixElement {
                   </sl-button>
                 </sl-tooltip>
               `,
-            )}
-          </div>
+            ),
+            tw`mb-3`,
+          )}
           <div class="mb-3 flex gap-2">
             ${listTypes.map(({ label, itemType, icon }) => {
               const isSelected = itemType === this.itemType;
@@ -304,7 +303,7 @@ export class CrawlsList extends BtrixElement {
           >
             ${this.renderControls()}
           </div>
-        </header>
+        </div>
 
         ${this.archivedItemsTask.render({
           initial: () => html`
