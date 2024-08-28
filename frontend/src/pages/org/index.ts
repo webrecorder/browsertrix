@@ -231,6 +231,10 @@ export class Org extends LiteElement {
       this.orgTab === "items" && (this.params as OrgParams["items"]).qaTab;
 
     return html`
+      <btrix-browser-title
+        title=${ifDefined(this.userOrg?.name)}
+      ></btrix-browser-title>
+
       <div class="flex min-h-full flex-col">
         <btrix-org-status-banner></btrix-org-status-banner>
         ${this.renderOrgNavBar()}
@@ -438,7 +442,7 @@ export class Org extends LiteElement {
       ></btrix-archived-item-detail>`;
     }
 
-    return html`<btrix-archived-items
+    return html` <btrix-archived-items
       ?isCrawler=${this.appState.isCrawler}
       itemType=${ifDefined(params.itemType || undefined)}
       @select-new-dialog=${this.onSelectNewDialog}

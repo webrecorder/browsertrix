@@ -95,14 +95,16 @@ export class Crawls extends LiteElement {
   }
 
   render() {
-    return html` <div
-      class="mx-auto box-border w-full max-w-screen-desktop px-3 py-4"
-    >
-      ${this.crawlId
-        ? // Render loading indicator while preparing to redirect
-          this.renderLoading()
-        : this.renderCrawls()}
-    </div>`;
+    return html`<btrix-browser-title
+        title=${msg("Running crawls")}
+      ></btrix-browser-title>
+
+      <div class="mx-auto box-border w-full max-w-screen-desktop px-3 py-4">
+        ${this.crawlId
+          ? // Render loading indicator while preparing to redirect
+            this.renderLoading()
+          : this.renderCrawls()}
+      </div>`;
   }
 
   private renderCrawls() {
