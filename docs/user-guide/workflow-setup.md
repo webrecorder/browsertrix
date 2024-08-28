@@ -1,8 +1,14 @@
 # Crawl Workflow Settings
 
+One of the key features of Browsertrix is the ability to refine crawler settings to the exact specifications of your crawl and website.
+
+Changes to a setting will only apply to subsequent crawls.
+
+Crawl settings are shown in the crawl workflow detail **Settings** tab and in the archived item **Crawl Settings** tab.
+
 ## Scope
 
-Specify the range and depth of your crawl.
+Specify the range and depth of your crawl. Different settings will be shown depending on whether you chose _Known URLs_ (crawl type of **URL List**) or _Automated Discovery_ (crawl type of **Seeded Crawl**) when creating a new workflow.
 
 ??? example "Crawling with HTTP basic auth"
 
@@ -10,40 +16,32 @@ Specify the range and depth of your crawl.
     
     **These credentials WILL BE WRITTEN into the archive.** We recommend exercising caution and only archiving with dedicated archival accounts, changing your password or deleting the account when finished.
 
-### Crawl URL(s)
+### Crawl Type: URL List
 
-`URL List`{ .badge-blue } `Seeded Crawl`{ .badge-orange }
+#### Crawl URL(s)
 
-This list informs the crawler what pages it should capture as part of a URL List crawl.
+A list of one or more URLs that the crawler should visit and capture.
 
-It is also available under the _Additional URLs_ section for Seeded Crawls where it can accept arbitrary URLs that will be crawled regardless of other scoping rules.
-
-### Include Any Linked Page
-
-`URL List`{ .badge-blue }
+#### Include Any Linked Page
 
 When enabled, the crawler will visit all the links it finds within each page defined in the _Crawl URL(s)_ field.
 
 ??? example "Crawling tags & search queries with URL List crawls"
     This setting can be useful for crawling the content of specific tags or search queries. Specify the tag or search query URL(s) in the _Crawl URL(s)_ field, e.g: `https://example.com/search?q=tag`, and enable _Include Any Linked Page_ to crawl all the content present on that search query page.
 
-### Fail Crawl on Failed URL
-
-`URL List`{ .badge-blue }
+#### Fail Crawl on Failed URL
 
 When enabled, the crawler will fail the entire crawl if any of the provided URLs are invalid or unsuccessfully crawled. The resulting archived item will have a status of "Failed".
 
-### Crawl Start URL
+### Crawl Type: Seeded Crawl
 
-`Seeded Crawl`{ .badge-orange }
+#### Crawl Start URL
 
 This is the first page that the crawler will visit. It's important to set _Crawl Start URL_ that accurately represents the scope of the pages you wish to crawl as the _Start URL Scope_ selection will depend on this field's contents.
 
 You must specify the protocol (likely `http://` or `https://`) as a part of the URL entered into this field.
 
-### Start URL Scope
-
-`Seeded Crawl`{ .badge-orange }
+#### Start URL Scope
 
 `Hashtag Links Only`
 :   This scope will ignore links that lead to other addresses such as `example.com/path` and will instead instruct the crawler to visit hashtag links such as `example.com/#linkedsection`.
@@ -62,39 +60,29 @@ You must specify the protocol (likely `http://` or `https://`) as a part of the 
 `Custom Page Prefix`
 :   This scope will crawl all pages that begin with the _Crawl Start URL_ as well as pages from any URL that begin with the URLs listed in `Extra URL Prefixes in Scope`
 
-### Max Depth
-
-`Seeded Crawl`{ .badge-orange }
+#### Max Depth
 
 Only shown with a _Start URL Scope_ of `Pages on This Domain` and above, the _Max Depth_ setting instructs the crawler to stop visiting new links past a specified depth.
 
-### Extra URL Prefixes in Scope
-
-`Seeded Crawl`{ .badge-orange }
+#### Extra URL Prefixes in Scope
 
 Only shown with a _Start URL Scope_ of `Custom Page Prefix`, this field accepts additional URLs or domains that will be crawled if URLs that lead to them are found.
 
 This can be useful for crawling websites that span multiple domains such as `example.org` and `example.net`
 
-### Include Any Linked Page ("one hop out")
-
-`Seeded Crawl`{ .badge-orange }
+#### Include Any Linked Page ("one hop out")
 
 When enabled, the crawler will visit all the links it finds within each page, regardless of the _Start URL Scope_ setting.
 
 This can be useful for capturing links on a page that lead outside the website that is being crawled but should still be included in the archive for context.
 
-### Check For Sitemap
-
-`Seeded Crawl`{ .badge-orange }
+#### Check For Sitemap
 
 When enabled, the crawler will check for a sitemap at /sitemap.xml and use it to discover pages to crawl if found. It will not crawl pages found in the sitemap that do not meet the crawl's scope settings or limits.
 
 This can be useful for discovering and capturing pages on a website that aren't linked to from the seed and which might not otherwise be captured.
 
 ### Exclusions
-
-`URL List`{ .badge-blue } `Seeded Crawl`{ .badge-orange }
 
 The exclusions table will instruct the crawler to ignore links it finds on pages where all or part of the link matches an exclusion found in the table. The table is only available in URL List crawls when _Include Any Linked Page_ is enabled.
 

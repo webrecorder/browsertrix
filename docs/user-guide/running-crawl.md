@@ -1,6 +1,8 @@
 # Modifying Running Crawls
 
-## In-Progress Statuses
+Running crawls can be modified from the crawl workflow **Watch Crawl** tab. You may want to modify a runnning crawl if you find that the workflow is crawling pages that you didn't intend to archive, or if you want a boost of speed.
+
+## Crawl Workflow Status
 
 A crawl workflow that is in progress can be in one of the following states:
 

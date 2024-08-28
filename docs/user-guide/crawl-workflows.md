@@ -1,10 +1,14 @@
 # Intro to Crawl Workflows
 
-Crawl workflows enable you to run crawls, which in turn produce [archived items](./archived-items.md). A crawl workflow consists of configuration options that instruct the crawler what it should capture and metadata about the workflow itself.
+Crawl workflows are the bread and butter of automated browser-based crawling. A crawl workflow enables you to specify how and what the crawler should capture on a website.
+
+A finished crawl results in an [archived item](./archived-items.md) that can be downloaded and shared. To easily identify and find archived items within your org, you can automatically name and tag archived items through custom workflow metadata.
+
+You can create, view, search for, and run crawl workflows from the **Crawling** page.
 
 ## Create a Crawl Workflow
 
-You can create new crawl workflows from the **Crawling** page, or the  _Create New ..._ shortcut from **Overview**.
+Create new crawl workflows from the **Crawling** page, or the  _Create New ..._ shortcut from **Overview**.
 
 ### Choose what to crawl
 
@@ -34,4 +38,4 @@ Re-running a crawl workflow can be useful to capture a website as it changes ove
 
 ## Status
 
-Finished crawl workflows inherit the [status of the last archived item they created](archived-items.md#status). Crawl workflows that are in progress maintain their [own statuses](./running-crawl.md#in-progress-status).
+Finished crawl workflows inherit the [status of the last archived item they created](archived-items.md#status). Crawl workflows that are in progress maintain their [own statuses](./running-crawl.md#crawl-workflow-status).
