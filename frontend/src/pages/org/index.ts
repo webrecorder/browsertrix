@@ -476,8 +476,10 @@ export class Org extends LiteElement {
         ></btrix-archived-item-qa>`;
       }
 
-      return html`<btrix-archived-item-detail
+      return html` <btrix-archived-item-detail
         crawlId=${params.itemId}
+        collectionId=${params.collectionId || ""}
+        workflowId=${params.workflowId || ""}
         itemType=${params.itemType || "crawl"}
         ?isCrawler=${this.appState.isCrawler}
       ></btrix-archived-item-detail>`;
