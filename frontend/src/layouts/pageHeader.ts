@@ -25,19 +25,17 @@ function navigateBreadcrumb(e: MouseEvent, href: string) {
 export function pageBreadcrumbs(breadcrumbs: Breadcrumb[]) {
   return html`
     <sl-breadcrumb>
-      ${breadcrumbs.map(({ href, content }) =>
-        content
-          ? html`
-              <sl-breadcrumb-item
-                href=${ifDefined(href)}
-                @click=${href
-                  ? (e: MouseEvent) => navigateBreadcrumb(e, href)
-                  : undefined}
-              >
-                ${content}
-              </sl-breadcrumb-item>
-            `
-          : nothing,
+      ${breadcrumbs.map(
+        ({ href, content }) => html`
+          <sl-breadcrumb-item
+            href=${ifDefined(href)}
+            @click=${href
+              ? (e: MouseEvent) => navigateBreadcrumb(e, href)
+              : undefined}
+          >
+            ${content || html`<sl-skeleton class="w-48"></sl-skeleton>`}
+          </sl-breadcrumb-item>
+        `,
       )}
     </sl-breadcrumb>
   `;
