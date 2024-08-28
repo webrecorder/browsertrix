@@ -123,7 +123,7 @@ export class ArchivedItemDetail extends BtrixElement {
     overview: msg("Overview"),
     qa: msg("Quality Assurance"),
     replay: msg("Replay"),
-    files: msg("Files"),
+    files: msg("WACZ Files"),
     logs: msg("Error Logs"),
     config: msg("Crawl Settings"),
   };
@@ -250,8 +250,7 @@ export class ArchivedItemDetail extends BtrixElement {
         }
         sectionContent = this.renderPanel(
           html`${this.renderTitle(
-              html`${msg("Quality Assurance")}
-                <btrix-beta-badge></btrix-beta-badge>`,
+              html`${this.tabLabels.qa} <btrix-beta-badge></btrix-beta-badge>`,
             )}
             <div class="ml-auto flex flex-wrap justify-end gap-2">
               ${when(this.qaRuns, this.renderQAHeader)}
@@ -271,13 +270,15 @@ export class ArchivedItemDetail extends BtrixElement {
         break;
       }
       case "replay":
-        sectionContent = this.renderPanel(msg("Replay"), this.renderReplay(), [
-          tw`overflow-hidden rounded-lg border`,
-        ]);
+        sectionContent = this.renderPanel(
+          this.tabLabels.replay,
+          this.renderReplay(),
+          [tw`overflow-hidden rounded-lg border`],
+        );
         break;
       case "files":
         sectionContent = this.renderPanel(
-          html` ${this.renderTitle(msg("Files"))}
+          html` ${this.renderTitle(this.tabLabels.files)}
             <sl-tooltip content=${msg("Download all files as a single WACZ")}>
               <sl-button
                 href=${`/api/orgs/${this.orgId}/all-crawls/${this.crawlId}/download?auth_bearer=${authToken}`}
@@ -286,7 +287,7 @@ export class ArchivedItemDetail extends BtrixElement {
                 variant="primary"
               >
                 <sl-icon slot="prefix" name="cloud-download"></sl-icon>
-                ${msg("Download Item")}
+                ${msg("Download as Multi-WACZ")}
               </sl-button>
             </sl-tooltip>`,
           this.renderFiles(),
@@ -294,7 +295,7 @@ export class ArchivedItemDetail extends BtrixElement {
         break;
       case "logs":
         sectionContent = this.renderPanel(
-          html` ${this.renderTitle(msg("Error Logs"))}
+          html` ${this.renderTitle(this.tabLabels.logs)}
             <sl-button
               href=${`/api/orgs/${this.orgId}/crawls/${this.crawlId}/logs?auth_bearer=${authToken}`}
               download=${`btrix-${this.crawlId}-logs.txt`}
@@ -309,7 +310,7 @@ export class ArchivedItemDetail extends BtrixElement {
         break;
       case "config":
         sectionContent = this.renderPanel(
-          msg("Crawl Settings"),
+          this.tabLabels.config,
           this.renderConfig(),
           [tw`rounded-lg border p-4`],
         );
