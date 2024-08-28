@@ -99,9 +99,7 @@ export class Home extends LiteElement {
 
     if (this.userInfo.orgs.length && !this.orgList) {
       return html`
-        <btrix-document-title
-          title=${msg("Admin dashboard")}
-        ></btrix-document-title>
+        <btrix-title title=${msg("Admin dashboard")}></btrix-title>
 
         <div class="my-24 flex items-center justify-center text-3xl">
           <sl-spinner></sl-spinner>
@@ -110,9 +108,7 @@ export class Home extends LiteElement {
     }
 
     return html`
-      <btrix-document-title
-        title=${msg("Admin dashboard")}
-      ></btrix-document-title>
+      <btrix-title title=${msg("Admin dashboard")}></btrix-title>
 
       <div class="bg-white">
         <header

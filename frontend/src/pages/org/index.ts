@@ -232,9 +232,7 @@ export class Org extends LiteElement {
       this.orgTab === "items" && (this.params as OrgParams["items"]).qaTab;
 
     return html`
-      <btrix-document-title
-        title=${ifDefined(this.userOrg?.name)}
-      ></btrix-document-title>
+      <btrix-title title=${ifDefined(this.userOrg?.name)}></btrix-title>
 
       <div class="flex min-h-full flex-col">
         <btrix-org-status-banner></btrix-org-status-banner>
@@ -253,36 +251,36 @@ export class Org extends LiteElement {
                 [
                   "items",
                   () => html`
-                    <btrix-document-title
+                    <btrix-title
                       title=${`${msg("Archived Items")} - ${userOrg.name}`}
-                    ></btrix-document-title>
+                    ></btrix-title>
                     ${this.renderArchivedItem()}
                   `,
                 ],
                 [
                   "workflows",
                   () => html`
-                    <btrix-document-title
+                    <btrix-title
                       title=${`${msg("Crawl Workflows")} - ${userOrg.name}`}
-                    ></btrix-document-title>
+                    ></btrix-title>
                     ${this.renderWorkflows()}
                   `,
                 ],
                 [
                   "browser-profiles",
                   () => html`
-                    <btrix-document-title
+                    <btrix-title
                       title=${`${msg("Browser Profiles")} - ${userOrg.name}`}
-                    ></btrix-document-title>
+                    ></btrix-title>
                     ${this.renderBrowserProfiles()}
                   `,
                 ],
                 [
                   "collections",
                   () => html`
-                    <btrix-document-title
+                    <btrix-title
                       title=${`${msg("Collections")} - ${userOrg.name}`}
-                    ></btrix-document-title>
+                    ></btrix-title>
                     ${this.renderCollections()}
                   `,
                 ],
@@ -291,9 +289,9 @@ export class Org extends LiteElement {
                   () =>
                     this.appState.isAdmin
                       ? html`
-                          <btrix-document-title
+                          <btrix-title
                             title=${`${msg("Org Settings")} - ${userOrg.name}`}
-                          ></btrix-document-title>
+                          ></btrix-title>
                           ${this.renderOrgSettings()}
                         `
                       : nothing,

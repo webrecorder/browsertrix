@@ -1,6 +1,6 @@
 import "./ui";
 import "./utils";
-import "./document-title";
+import "./title";
 
 import("./orgs-list");
 import("./not-found");

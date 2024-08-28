@@ -95,9 +95,7 @@ export class Crawls extends LiteElement {
   }
 
   render() {
-    return html`<btrix-document-title
-        title=${msg("Running crawls")}
-      ></btrix-document-title>
+    return html`<btrix-title title=${msg("Running crawls")}></btrix-title>
 
       <div class="mx-auto box-border w-full max-w-screen-desktop px-3 py-4">
         ${this.crawlId
