@@ -165,7 +165,7 @@ export class BrowserProfilesNew extends BtrixElement {
           @click=${this.navigate.link}
         >
           ${this.browserParams.name
-            ? msg(this.browserParams.name)
+            ? this.browserParams.name
             : msg("Browser Profile")}
         </sl-breadcrumb-item>`,
         html`<sl-breadcrumb-item
