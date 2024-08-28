@@ -2,7 +2,7 @@
 
 ## In-Progress Statuses
 
-A crawl workflow that is in progress can be in one of five possible states:
+A crawl workflow that is in progress can be in one of the following states:
 
 | Status | Description |
 | ---- | ---- |
