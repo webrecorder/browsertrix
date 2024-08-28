@@ -1,10 +1,7 @@
-name: docs-publish
+name: Publish Docs
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'docs/**'
+  workflow_dispatch:
+  
   release:
     types: [published]
 
