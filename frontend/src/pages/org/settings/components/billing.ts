@@ -8,7 +8,7 @@ import { when } from "lit/directives/when.js";
 import capitalize from "lodash/fp/capitalize";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import { columns } from "@/layout/columns";
+import { columns } from "@/layouts/columns";
 import { SubscriptionStatus, type BillingPortal } from "@/types/billing";
 import type { OrgData, OrgQuotas } from "@/types/org";
 import { humanizeSeconds } from "@/utils/executionTimeFormatter";

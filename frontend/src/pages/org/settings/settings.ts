@@ -11,7 +11,7 @@ import stylesheet from "./settings.stylesheet.css";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { APIUser } from "@/index";
-import { columns } from "@/layout/columns";
+import { columns } from "@/layouts/columns";
 import type { APIPaginatedList } from "@/types/api";
 import { isApiError } from "@/utils/api";
 import { maxLengthValidator } from "@/utils/form";

@@ -10,7 +10,7 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { LanguageSelect } from "@/components/ui/language-select";
 import type { QueueExclusionTable } from "@/features/crawl-workflows/queue-exclusion-table";
-import { columns, type Cols } from "@/layout/columns";
+import { columns, type Cols } from "@/layouts/columns";
 import infoTextStrings from "@/strings/crawl-workflows/infoText";
 import sectionStrings from "@/strings/crawl-workflows/section";
 import { crawlingDefaultsSchema, type CrawlingDefaults } from "@/types/org";

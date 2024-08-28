@@ -45,7 +45,7 @@ import type { TimeInputChangeEvent } from "@/components/ui/time-input";
 import { type SelectBrowserProfileChangeEvent } from "@/features/browser-profiles/select-browser-profile";
 import type { CollectionsChangeEvent } from "@/features/collections/collections-add";
 import type { QueueExclusionTable } from "@/features/crawl-workflows/queue-exclusion-table";
-import { infoCol, inputCol } from "@/layout/columns";
+import { infoCol, inputCol } from "@/layouts/columns";
 import infoTextStrings from "@/strings/crawl-workflows/infoText";
 import sectionStrings from "@/strings/crawl-workflows/section";
 import type {
