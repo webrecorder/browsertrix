@@ -1,5 +1,47 @@
+import type { SlBreadcrumb } from "@shoelace-style/shoelace";
 import clsx from "clsx";
 import { html, nothing, type TemplateResult } from "lit";
+import { ifDefined } from "lit/directives/if-defined.js";
+
+import { NavigateController } from "@/controllers/navigate";
+
+export type Breadcrumb = {
+  href?: string;
+  content?: string | TemplateResult;
+};
+
+function navigateBreadcrumb(e: MouseEvent, href: string) {
+  e.preventDefault();
+
+  const el = e.target as SlBreadcrumb;
+  const evt = NavigateController.createNavigateEvent({
+    url: href,
+    resetScroll: true,
+  });
+
+  el.dispatchEvent(evt);
+}
+
+export function pageBreadcrumbs(breadcrumbs: Breadcrumb[]) {
+  return html`
+    <sl-breadcrumb>
+      ${breadcrumbs.map(({ href, content }) =>
+        content
+          ? html`
+              <sl-breadcrumb-item
+                href=${ifDefined(href)}
+                @click=${href
+                  ? (e: MouseEvent) => navigateBreadcrumb(e, href)
+                  : undefined}
+              >
+                ${content}
+              </sl-breadcrumb-item>
+            `
+          : nothing,
+      )}
+    </sl-breadcrumb>
+  `;
+}
 
 export function pageTitle(title?: string | TemplateResult) {
   return html`

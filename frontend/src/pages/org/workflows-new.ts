@@ -8,6 +8,7 @@ import type { JobType, Seed, WorkflowParams } from "./types";
 
 import type { SelectNewDialogEvent } from ".";
 
+import { pageBreadcrumbs, type Breadcrumb } from "@/layouts/pageHeader";
 import LiteElement, { html } from "@/utils/LiteElement";
 
 const defaultValue = {
@@ -63,35 +64,27 @@ export class WorkflowsNew extends LiteElement {
     custom: msg("Custom"),
   };
 
-  private renderHeader() {
-    const breadcrumbs = [
-      html`<sl-breadcrumb-item
-        href="${this.orgBasePath}/workflows"
-        @click=${this.navLink}
-      >
-        ${msg("Crawl Workflows")}
-      </sl-breadcrumb-item>`,
-      html`<sl-breadcrumb-item
-        href="${this.orgBasePath}/workflows?new=workflow"
-        @click=${this.navLink}
-      >
-        ${msg("New Workflow")}
-      </sl-breadcrumb-item>`,
+  private renderBreadcrumbs() {
+    const breadcrumbs: Breadcrumb[] = [
+      {
+        href: `${this.orgBasePath}/workflows`,
+        content: msg("Crawl Workflows"),
+      },
+      {
+        href: `${this.orgBasePath}/workflows?new=workflow`,
+        content: msg("New Workflow"),
+      },
     ];
 
     const jobType = this.initialWorkflow.jobType || this.jobType;
 
     if (jobType) {
-      breadcrumbs.push(
-        html`<sl-breadcrumb-item>
-          ${this.jobTypeLabels[jobType]}
-        </sl-breadcrumb-item>`,
-      );
+      breadcrumbs.push({
+        content: this.jobTypeLabels[jobType],
+      });
     }
 
-    return html`
-      <sl-breadcrumb> ${breadcrumbs.map((bc) => bc)} </sl-breadcrumb>
-    `;
+    return pageBreadcrumbs(breadcrumbs);
   }
 
   render() {
@@ -103,7 +96,7 @@ export class WorkflowsNew extends LiteElement {
 
     if (jobType) {
       return html`
-        <div class="mb-5">${this.renderHeader()}</div>
+        <div class="mb-5">${this.renderBreadcrumbs()}</div>
         <h2 class="mb-6 text-xl font-semibold">
           ${msg("New")} ${this.jobTypeLabels[jobType]}
         </h2>

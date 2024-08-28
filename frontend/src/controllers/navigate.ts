@@ -19,6 +19,13 @@ const NAVIGATE_EVENT_NAME: keyof NavigateEventMap = "btrix-navigate";
  * Manage app navigation
  */
 export class NavigateController implements ReactiveController {
+  static createNavigateEvent = (detail: NavigateEventDetail) =>
+    new CustomEvent<NavigateEventDetail>(NAVIGATE_EVENT_NAME, {
+      detail,
+      bubbles: true,
+      composed: true,
+    });
+
   private readonly host: ReactiveControllerHost & EventTarget;
 
   get orgBasePath() {
@@ -43,10 +50,11 @@ export class NavigateController implements ReactiveController {
     resetScroll = true,
     replace = false,
   ): void => {
-    const evt = new CustomEvent<NavigateEventDetail>(NAVIGATE_EVENT_NAME, {
-      detail: { url, state, resetScroll, replace },
-      bubbles: true,
-      composed: true,
+    const evt = NavigateController.createNavigateEvent({
+      url,
+      state,
+      resetScroll,
+      replace,
     });
     this.host.dispatchEvent(evt);
   };
@@ -88,13 +96,9 @@ export class NavigateController implements ReactiveController {
       return;
     }
 
-    const evt = new CustomEvent<NavigateEventDetail>(NAVIGATE_EVENT_NAME, {
-      detail: {
-        url: (event.currentTarget as HTMLAnchorElement).href,
-        resetScroll,
-      },
-      bubbles: true,
-      composed: true,
+    const evt = NavigateController.createNavigateEvent({
+      url: (event.currentTarget as HTMLAnchorElement).href,
+      resetScroll,
     });
     this.host.dispatchEvent(evt);
   };

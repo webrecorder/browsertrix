@@ -12,6 +12,7 @@ import { type Dialog } from "@/components/ui/dialog";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import { RelativeDuration } from "@/components/ui/relative-duration";
 import type { CrawlLog } from "@/features/archived-items/crawl-logs";
+import { pageBreadcrumbs, type Breadcrumb } from "@/layouts/pageHeader";
 import type { APIPaginatedList } from "@/types/api";
 import type {
   ArchivedItem,
@@ -375,62 +376,47 @@ export class ArchivedItemDetail extends BtrixElement {
   }
 
   private renderBreadcrumbs() {
-    const breadcrumbs = [];
+    const breadcrumbs: Breadcrumb[] = [];
 
     if (this.workflowId) {
-      breadcrumbs.push(
-        html`<sl-breadcrumb-item
-          href="${this.navigate.orgBasePath}/workflows/crawls"
-          @click=${this.navigate.link}
-        >
-          ${msg("Crawl Workflows")}
-        </sl-breadcrumb-item>`,
-      );
+      breadcrumbs.push({
+        href: `${this.navigate.orgBasePath}/workflows/crawls`,
+        content: msg("Crawl Workflows"),
+      });
 
       if (this.workflow) {
         breadcrumbs.push(
-          html`<sl-breadcrumb-item
-            href="${this.navigate.orgBasePath}/workflows/crawl/${this
-              .workflowId}"
-            @click=${this.navigate.link}
-          >
-            ${renderName(this.workflow)}
-          </sl-breadcrumb-item>`,
-          html`<sl-breadcrumb-item
-            href="${this.navigate.orgBasePath}/workflows/crawl/${this
-              .workflowId}#crawls"
-            @click=${this.navigate.link}
-          >
-            ${msg("Crawls")}
-          </sl-breadcrumb-item>`,
+          {
+            href: `${this.navigate.orgBasePath}/workflows/crawl/${this.workflowId}`,
+            content: renderName(this.workflow),
+          },
+          {
+            href: `${this.navigate.orgBasePath}/workflows/crawl/${this.workflowId}#crawls`,
+
+            content: msg("Crawls"),
+          },
         );
 
         if (this.crawl) {
-          breadcrumbs.push(html`
-            <sl-breadcrumb-item>
-              <sl-format-date
-                lang=${getLocale()}
-                date=${`${this.crawl.finished}Z` /** Z for UTC */}
-                month="2-digit"
-                day="2-digit"
-                year="2-digit"
-                hour="numeric"
-                minute="numeric"
-                timeZoneName="short"
-              ></sl-format-date>
-            </sl-breadcrumb-item>
-          `);
+          breadcrumbs.push({
+            content: html`<sl-format-date
+              lang=${getLocale()}
+              date=${`${this.crawl.finished}Z` /** Z for UTC */}
+              month="2-digit"
+              day="2-digit"
+              year="2-digit"
+              hour="numeric"
+              minute="numeric"
+              timeZoneName="short"
+            ></sl-format-date>`,
+          });
         }
       }
     } else if (this.collectionId) {
-      breadcrumbs.push(
-        html`<sl-breadcrumb-item
-          href="${this.navigate.orgBasePath}/collections"
-          @click=${this.navigate.link}
-        >
-          ${msg("Collections")}
-        </sl-breadcrumb-item>`,
-      );
+      breadcrumbs.push({
+        href: `${this.navigate.orgBasePath}/collections`,
+        content: msg("Collections"),
+      });
 
       if (this.crawl) {
         const collection = this.crawl.collections.find(
@@ -438,66 +424,43 @@ export class ArchivedItemDetail extends BtrixElement {
         );
 
         breadcrumbs.push(
-          html`<sl-breadcrumb-item
-            href="${this.navigate.orgBasePath}/collections/view/${this
-              .collectionId}"
-            @click=${this.navigate.link}
-          >
-            ${collection?.name || msg("Collection")}
-          </sl-breadcrumb-item>`,
-          html`<sl-breadcrumb-item
-            href="${this.navigate.orgBasePath}/collections/view/${this
-              .collectionId}/items"
-            @click=${this.navigate.link}
-          >
-            ${msg("Archived Items")}
-          </sl-breadcrumb-item>`,
-          html`<sl-breadcrumb-item>
-            ${renderName(this.crawl)}
-          </sl-breadcrumb-item>`,
+          {
+            href: `${this.navigate.orgBasePath}/collections/view/${this.collectionId}`,
+            content: collection?.name || msg("Collection"),
+          },
+          {
+            href: `${this.navigate.orgBasePath}/collections/view/${this.collectionId}/items`,
+            content: msg("Archived Items"),
+          },
+          {
+            content: renderName(this.crawl),
+          },
         );
       }
     } else if (this.crawl) {
-      breadcrumbs.push(
-        html`<sl-breadcrumb-item
-          href="${this.navigate.orgBasePath}/items"
-          @click=${this.navigate.link}
-        >
-          ${msg("Archived Items")}
-        </sl-breadcrumb-item>`,
-      );
+      breadcrumbs.push({
+        href: `${this.navigate.orgBasePath}/items`,
+        content: msg("Archived Items"),
+      });
 
       if (this.crawl.type === "upload") {
-        breadcrumbs.push(
-          html`<sl-breadcrumb-item
-            href="${this.navigate.orgBasePath}/items/upload"
-            @click=${this.navigate.link}
-          >
-            ${msg("Uploads")}
-          </sl-breadcrumb-item>`,
-        );
+        breadcrumbs.push({
+          href: `${this.navigate.orgBasePath}/items/upload`,
+          content: msg("Uploads"),
+        });
       } else {
-        breadcrumbs.push(
-          html`<sl-breadcrumb-item
-            href="${this.navigate.orgBasePath}/items/crawl"
-            @click=${this.navigate.link}
-          >
-            ${msg("Crawls")}
-          </sl-breadcrumb-item>`,
-        );
+        breadcrumbs.push({
+          href: `${this.navigate.orgBasePath}/items/crawl`,
+          content: msg("Crawls"),
+        });
       }
 
-      breadcrumbs.push(
-        html`<sl-breadcrumb-item>
-          ${renderName(this.crawl)}
-        </sl-breadcrumb-item>`,
-        // TODO tab
-      );
+      breadcrumbs.push({
+        content: renderName(this.crawl),
+      });
     }
 
-    return html`
-      <sl-breadcrumb>${breadcrumbs.map((bc) => bc)}</sl-breadcrumb>
-    `;
+    return pageBreadcrumbs(breadcrumbs);
   }
 
   private renderNav() {

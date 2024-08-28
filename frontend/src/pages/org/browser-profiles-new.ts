@@ -7,6 +7,7 @@ import queryString from "query-string";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
 import type { BrowserConnectionChange } from "@/features/browser-profiles/profile-browser";
+import { pageBreadcrumbs, type Breadcrumb } from "@/layouts/pageHeader";
 import { isApiError } from "@/utils/api";
 
 /**
@@ -148,41 +149,32 @@ export class BrowserProfilesNew extends BtrixElement {
   }
 
   private renderBreadcrumbs() {
-    const breadcrumbs = [
-      html`<sl-breadcrumb-item
-        href="${this.navigate.orgBasePath}/browser-profiles"
-        @click=${this.navigate.link}
-      >
-        ${msg("Browser Profiles")}
-      </sl-breadcrumb-item>`,
+    const breadcrumbs: Breadcrumb[] = [
+      {
+        href: `${this.navigate.orgBasePath}/browser-profiles`,
+        content: msg("Browser Profiles"),
+      },
     ];
 
     if (this.browserParams.profileId) {
       breadcrumbs.push(
-        html`<sl-breadcrumb-item
-          href="${this.navigate.orgBasePath}/browser-profiles/profile/${this
-            .browserParams.profileId}"
-          @click=${this.navigate.link}
-        >
-          ${this.browserParams.name
+        {
+          href: `${this.navigate.orgBasePath}/browser-profiles/profile/${this.browserParams.profileId}`,
+          content: this.browserParams.name
             ? this.browserParams.name
-            : msg("Browser Profile")}
-        </sl-breadcrumb-item>`,
-        html`<sl-breadcrumb-item
-          >${msg("Duplicate Profile")}</sl-breadcrumb-item
-        >`,
+            : msg("Browser Profile"),
+        },
+        {
+          content: msg("Duplicate Profile"),
+        },
       );
     } else {
-      breadcrumbs.push(
-        html`<sl-breadcrumb-item
-          >${msg("New Browser Profile")}</sl-breadcrumb-item
-        >`,
-      );
+      breadcrumbs.push({
+        content: msg("New Browser Profile"),
+      });
     }
 
-    return html`
-      <sl-breadcrumb>${breadcrumbs.map((bc) => bc)}</sl-breadcrumb>
-    `;
+    return pageBreadcrumbs(breadcrumbs);
   }
 
   private async onBrowserError() {

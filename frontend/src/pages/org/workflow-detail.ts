@@ -22,13 +22,13 @@ import { type IntersectEvent } from "@/components/utils/observable";
 import type { CrawlLog } from "@/features/archived-items/crawl-logs";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { ExclusionEditor } from "@/features/crawl-workflows/exclusion-editor";
+import { pageBreadcrumbs, type Breadcrumb } from "@/layouts/pageHeader";
 import type { APIPaginatedList } from "@/types/api";
 import { isApiError } from "@/utils/api";
 import {
   DEFAULT_MAX_SCALE,
   inactiveCrawlStates,
   isActive,
-  renderName,
 } from "@/utils/crawler";
 import { humanizeSchedule } from "@/utils/cron";
 import LiteElement, { html } from "@/utils/LiteElement";
@@ -269,7 +269,7 @@ export class WorkflowDetail extends LiteElement {
 
     return html`
       <div class="grid grid-cols-1 gap-7">
-        ${this.renderHeader()}
+        <div class="col-span-1">${this.renderBreadcrumbs()}</div>
 
         <header class="col-span-1 flex flex-wrap gap-2">
           <btrix-detail-page-title
@@ -390,50 +390,38 @@ export class WorkflowDetail extends LiteElement {
     `;
   }
 
-  private renderHeader(workflowId?: string) {
-    const breadcrumbs = [
-      html`<sl-breadcrumb-item
-        href="${this.orgBasePath}/workflows/crawls"
-        @click=${this.navLink}
-      >
-        ${msg("Crawl Workflows")}
-      </sl-breadcrumb-item>`,
+  private renderBreadcrumbs() {
+    const breadcrumbs: Breadcrumb[] = [
+      {
+        href: `${this.orgBasePath}/workflows/crawls`,
+        content: msg("Crawl Workflows"),
+      },
     ];
 
     if (this.workflow) {
       breadcrumbs.push(
         this.isEditing
-          ? html`<sl-breadcrumb-item
-              href="${this.orgBasePath}/workflows/crawl/${workflowId}"
-              @click=${this.navLink}
-            >
-              ${renderName(this.workflow)}
-            </sl-breadcrumb-item>`
-          : html`<sl-breadcrumb-item>
-              ${this.renderName()}
-            </sl-breadcrumb-item>`,
+          ? {
+              href: `${this.orgBasePath}/workflows/crawl/${this.workflowId}`,
+              content: this.renderName(),
+            }
+          : {
+              content: this.renderName(),
+            },
       );
     }
 
     if (this.isEditing) {
-      breadcrumbs.push(
-        html`<sl-breadcrumb-item>
-          ${msg("Edit Settings")}
-        </sl-breadcrumb-item>`,
-      );
+      breadcrumbs.push({
+        content: msg("Edit Settings"),
+      });
     } else if (this.activePanel) {
-      breadcrumbs.push(
-        html`<sl-breadcrumb-item>
-          ${this.tabLabels[this.activePanel]}
-        </sl-breadcrumb-item>`,
-      );
+      breadcrumbs.push({
+        content: this.tabLabels[this.activePanel],
+      });
     }
 
-    return html`
-      <sl-breadcrumb class="col-span-1">
-        ${breadcrumbs.map((bc) => bc)}
-      </sl-breadcrumb>
-    `;
+    return pageBreadcrumbs(breadcrumbs);
   }
 
   private readonly renderTabList = () => html`
@@ -565,7 +553,7 @@ export class WorkflowDetail extends LiteElement {
   }
 
   private readonly renderEditor = () => html`
-    ${this.renderHeader(this.workflow!.id)}
+    <div class="col-span-1">${this.renderBreadcrumbs()}</div>
 
     <header>
       <h2 class="break-all text-xl font-semibold leading-10">

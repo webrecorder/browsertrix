@@ -11,6 +11,7 @@ import type { Profile, ProfileWorkflow } from "./types";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
 import type { BrowserConnectionChange } from "@/features/browser-profiles/profile-browser";
+import { pageBreadcrumbs } from "@/layouts/pageHeader";
 import { isApiError } from "@/utils/api";
 import { maxLengthValidator } from "@/utils/form";
 import { formatNumber, getLocale } from "@/utils/localization";
@@ -312,18 +313,16 @@ export class BrowserProfilesDetail extends BtrixElement {
 
   private renderBreadcrumbs() {
     const breadcrumbs = [
-      html`<sl-breadcrumb-item
-        href="${this.navigate.orgBasePath}/browser-profiles"
-        @click=${this.navigate.link}
-      >
-        ${msg("Browser Profiles")}
-      </sl-breadcrumb-item>`,
-      html`<sl-breadcrumb-item>${this.profile?.name}</sl-breadcrumb-item>`,
+      {
+        href: `${this.navigate.orgBasePath}/browser-profiles`,
+        content: msg("Browser Profiles"),
+      },
+      {
+        content: this.profile?.name,
+      },
     ];
 
-    return html`
-      <sl-breadcrumb> ${breadcrumbs.map((bc) => bc)} </sl-breadcrumb>
-    `;
+    return pageBreadcrumbs(breadcrumbs);
   }
 
   private renderCrawlWorkflows() {
