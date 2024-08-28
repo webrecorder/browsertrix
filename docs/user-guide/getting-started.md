@@ -1,4 +1,4 @@
-# Your first crawl
+# Your First Crawl
 
 Let’s crawl your first webpage! Start by opening up a webpage that you'd like to crawl, and note the URL for later.
 

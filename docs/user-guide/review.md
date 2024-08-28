@@ -1,4 +1,4 @@
-# Review crawl quality
+# Review Crawl Quality
 
 The crawl **Review** page provides a streamlined interface for quality assurance (QA). Assess and assign a score to the capture quality of an archived item using the heuristics collected during crawl analysis.
 
