@@ -1,54 +1,41 @@
-# Crawl Workflows
+# Intro to Crawl Workflows
 
-Crawl Workflows consist of a list of configuration options that instruct the crawler what it should capture.
+Crawl workflows are the bread and butter of automated browser-based crawling. A crawl workflow enables you to specify how and what the crawler should capture on a website.
 
-## Creating and Editing Crawl Workflows
+A finished crawl results in an [archived item](./archived-items.md) that can be downloaded and shared. To easily identify and find archived items within your org, you can automatically name and tag archived items through custom workflow metadata.
 
-New Crawl Workflows can be created from the Crawling page. A detailed breakdown of available settings can be found [here](workflow-setup.md).
+You can create, view, search for, and run crawl workflows from the **Crawling** page.
+
+## Create a Crawl Workflow
+
+Create new crawl workflows from the **Crawling** page, or the  _Create New ..._ shortcut from **Overview**.
+
+### Choose what to crawl
+
+The first step in creating a new crawl workflow is to choose what you'd like to crawl. This determines whether the crawl type will be **URL List** or **Seeded Crawl**. Crawl types can't be changed after the workflow is created—you'll need to create a new crawl workflow.
+
+#### Known URLs `URL List`{ .badge-blue }
+
+Choose this option if you already know the URL of every page you'd like to crawl. The crawler will visit every URL specified in a list, and optionally every URL linked on those pages.
+
+A URL list is simpler to configure, since you don't need to worry about configuring the workflow to exclude parts of the website that you may not want to archive.
+
+#### Automated Discovery `Seeded Crawl`{ .badge-orange }
+
+Let the crawler automatically discover pages based on a domain or start page that you specify.
+
+Seeded crawls are great for advanced use cases where you don't need (or want) to know every single URL of the website that you're archiving.
+
+After deciding what type of crawl you'd like to run, you can begin to set up your workflow. A detailed breakdown of available settings can be found in the [workflow settings guide](workflow-setup.md).
+
+## Run Crawl
+
+Run a crawl workflow by clicking _Run Crawl_ in the actions menu of the workflow in the crawl workflow list, or by clicking the _Run Crawl_ button on the workflow's details page.
+
+While crawling, the **Watch Crawl** section displays a list of queued URLs that will be visited, and streams the current state of the browser windows as they visit pages from the queue. You can [modify the crawl live](./running-crawl.md) by adding URL exclusions or changing the number of crawling instances.
+
+Re-running a crawl workflow can be useful to capture a website as it changes over time, or to run with an updated [crawl scope](workflow-setup.md#scope).
 
 ## Status
 
-Crawl Workflows inherit the [status of the last item they created](archived-items.md#status). When a workflow has been instructed to run it can have have five possible states:
-
-| Status | Description |
-| ---- | ---- |
-| <span class="status-waiting">:bootstrap-hourglass-split: Waiting</span>     | The workflow can't start running yet but it is queued to run when resources are available. |
-| <span class="status-waiting">:btrix-status-dot: Starting</span>       | New resources are starting up. Crawling should begin shortly.|
-| <span class="status-success">:btrix-status-dot: Running</span>        | The crawler is finding and capturing pages! |
-| <span class="status-waiting">:btrix-status-dot: Stopping</span> | A user has instructed this workflow to stop. Finishing capture of the current pages.|
-| <span class="status-waiting">:btrix-status-dot: Finishing Crawl</span> | The workflow has finished crawling and data is being packaged into WACZ files.|
-| <span class="status-waiting">:btrix-status-dot: Uploading WACZ</span> | WACZ files have been created and are being transferred to storage.|
-
-## Running Crawl Workflows
-
-Crawl workflows can be run from the actions menu of the workflow in the crawl workflow list, or by clicking the _Run Crawl_ button on the workflow's details page.
-
-While crawling, the Watch Crawl page displays a list of queued URLs that will be visited, and streams the current state of the browser windows as they visit pages from the queue.
-
-Running a crawl workflow that has successfully run previously can be useful to capture content as it changes over time, or to run with an updated [Crawl Scope](workflow-setup.md#scope).
-
-### Live Exclusion Editing
-
-While [exclusions](workflow-setup.md#exclusions) can be set before running a crawl workflow, sometimes while crawling the crawler may find new parts of the site that weren't previously known about and shouldn't be crawled, or get stuck browsing parts of a website that automatically generate URLs known as ["crawler traps"](https://en.wikipedia.org/wiki/Spider_trap).
-
-If the crawl queue is filled with URLs that should not be crawled, use the _Edit Exclusions_ button on the Watch Crawl page to instruct the crawler what pages should be excluded from the queue.
-
-Exclusions added while crawling are applied to the same exclusion table saved in the workflow's settings and will be used the next time the crawl workflow is run unless they are manually removed.
-
-### Changing the Amount of Crawler Instances
-
-Like exclusions, the [crawler instance](workflow-setup.md#crawler-instances) scale can also be adjusted while crawling. On the Watch Crawl page, press the _Edit Crawler Instances_ button, and set the desired value.
-
-Unlike exclusions, this change will not be applied to future workflow runs.
-
-## Ending a Crawl
-
-If a crawl workflow is not crawling websites as intended it may be preferable to end crawling operations and update the crawl workflow's settings before trying again. There are two operations to end crawls, available both on the workflow's details page, or as part of the actions menu in the workflow list.
-
-### Stopping
-
-Stopping a crawl will throw away the crawl queue but otherwise gracefully end the process and save anything that has been collected. Stopped crawls show up in the list of Archived Items and can be used like any other item in the app.
-
-### Canceling
-
-Canceling a crawl will throw away all data collected and immediately end the process. Canceled crawls do not show up in the list of Archived Items, though a record of the runtime and workflow settings can be found in the crawl workflow's list of crawls.
+Finished crawl workflows inherit the [status of the last archived item they created](archived-items.md#status). Crawl workflows that are in progress maintain their [own statuses](./running-crawl.md#crawl-workflow-status).
