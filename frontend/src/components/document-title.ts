@@ -2,10 +2,10 @@ import { LitElement, type PropertyValues } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
 /**
- * Updates document title
+ * Updates user's browser title bar
  */
-@customElement("btrix-browser-title")
-export class BrowserTitle extends LitElement {
+@customElement("btrix-document-title")
+export class DocumentTitle extends LitElement {
   @property({ type: String })
   title = "";
 
