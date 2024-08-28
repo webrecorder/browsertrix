@@ -1,4 +1,5 @@
 import { localized, msg, str } from "@lit/localize";
+import { nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -244,19 +245,58 @@ export class Org extends LiteElement {
             : "w-full max-w-screen-desktop pt-7"} mx-auto box-border flex flex-1 flex-col p-3"
           aria-labelledby="${this.orgTab}-tab"
         >
-          ${when(this.userOrg, () =>
+          ${when(this.userOrg, (userOrg) =>
             choose(
               this.orgTab,
               [
                 ["home", this.renderDashboard],
-                ["items", this.renderArchivedItem],
-                ["workflows", this.renderWorkflows],
-                ["browser-profiles", this.renderBrowserProfiles],
-                ["collections", this.renderCollections],
+                [
+                  "items",
+                  () => html`
+                    <btrix-browser-title
+                      title=${`${msg("Archived Items")} - ${userOrg.name}`}
+                    ></btrix-browser-title>
+                    ${this.renderArchivedItem()}
+                  `,
+                ],
+                [
+                  "workflows",
+                  () => html`
+                    <btrix-browser-title
+                      title=${`${msg("Crawl Workflows")} - ${userOrg.name}`}
+                    ></btrix-browser-title>
+                    ${this.renderWorkflows()}
+                  `,
+                ],
+                [
+                  "browser-profiles",
+                  () => html`
+                    <btrix-browser-title
+                      title=${`${msg("Browser Profiles")} - ${userOrg.name}`}
+                    ></btrix-browser-title>
+                    ${this.renderBrowserProfiles()}
+                  `,
+                ],
+                [
+                  "collections",
+                  () => html`
+                    <btrix-browser-title
+                      title=${`${msg("Collections")} - ${userOrg.name}`}
+                    ></btrix-browser-title>
+                    ${this.renderCollections()}
+                  `,
+                ],
                 [
                   "settings",
                   () =>
-                    this.appState.isAdmin ? this.renderOrgSettings() : html``,
+                    this.appState.isAdmin
+                      ? html`
+                          <btrix-browser-title
+                            title=${`${msg("Org Settings")} - ${userOrg.name}`}
+                          ></btrix-browser-title>
+                          ${this.renderOrgSettings()}
+                        `
+                      : nothing,
                 ],
               ],
               () =>
@@ -433,7 +473,7 @@ export class Org extends LiteElement {
         ></btrix-archived-item-qa>`;
       }
 
-      return html` <btrix-archived-item-detail
+      return html`<btrix-archived-item-detail
         crawlId=${params.itemId}
         collectionId=${params.collectionId || ""}
         workflowId=${params.workflowId || ""}
@@ -442,7 +482,7 @@ export class Org extends LiteElement {
       ></btrix-archived-item-detail>`;
     }
 
-    return html` <btrix-archived-items
+    return html`<btrix-archived-items
       ?isCrawler=${this.appState.isCrawler}
       itemType=${ifDefined(params.itemType || undefined)}
       @select-new-dialog=${this.onSelectNewDialog}
