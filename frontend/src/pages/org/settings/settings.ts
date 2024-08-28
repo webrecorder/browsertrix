@@ -1,7 +1,7 @@
 import { localized, msg, str } from "@lit/localize";
 import type { SlInput } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
-import { html, unsafeCSS, type PropertyValues } from "lit";
+import { html, nothing, unsafeCSS, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -107,8 +107,20 @@ export class OrgSettings extends BtrixElement {
   }
 
   render() {
-    return html`<header class="mb-3 mt-7">
+    return html`<header
+        class="mb-5 mt-7 flex items-end justify-between border-b pb-3"
+      >
         <h1 class="text-xl font-semibold leading-8">${msg("Org Settings")}</h1>
+        ${this.userInfo?.orgs && this.userInfo.orgs.length > 1 && this.userOrg
+          ? html`
+              <div class="text-neutral-400">
+                ${msg(
+                  html`Viewing
+                    <strong class="font-medium">${this.userOrg.name}</strong>`,
+                )}
+              </div>
+            `
+          : nothing}
       </header>
 
       <btrix-tab-list activePanel=${this.activePanel} hideIndicator>
