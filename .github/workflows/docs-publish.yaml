@@ -1,10 +1,5 @@
 name: docs-publish
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'docs/**'
   release:
     types: [published]
 
