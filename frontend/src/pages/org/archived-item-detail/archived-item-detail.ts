@@ -469,7 +469,7 @@ export class ArchivedItemDetail extends BtrixElement {
       breadcrumbs.push(
         {
           href: `${this.navigate.orgBasePath}/items/${this.crawl.type}/${this.crawlId}`,
-          content: renderName(this.crawl),
+          content: renderName(this.crawl, tw`max-w-48`),
         },
         {
           content: this.tabLabels[this.activeTab],

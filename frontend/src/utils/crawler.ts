@@ -1,7 +1,6 @@
 import { msg, str } from "@lit/localize";
+import clsx from "clsx";
 import { html, type TemplateResult } from "lit";
-
-import { tw } from "./tailwind";
 
 import type { ArchivedItem, CrawlState, Workflow } from "@/types/crawler";
 
@@ -46,31 +45,34 @@ export function isActive(state: CrawlState | null) {
   return state && activeCrawlStates.includes(state);
 }
 
-export function renderName(item: ArchivedItem | Workflow) {
-  if (item.name) return html`<div class=${tw`truncate`}>${item.name}</div>`;
+export function renderName(item: ArchivedItem | Workflow, className?: string) {
+  if (item.name)
+    return html`<div class=${clsx("truncate", className)}>${item.name}</div>`;
   if (item.firstSeed && item.seedCount) {
     const remainder = item.seedCount - 1;
     let nameSuffix: string | TemplateResult<1> = "";
     if (remainder) {
       if (remainder === 1) {
-        nameSuffix = html`<div class=${tw`ml-1`}>
+        nameSuffix = html`<div class="ml-1">
           ${msg(str`+${remainder} URL`)}
         </div>`;
       } else {
-        nameSuffix = html`<div class=${tw`ml-1`}>
+        nameSuffix = html`<div class="ml-1">
           ${msg(str`+${remainder} URLs`)}
         </div>`;
       }
     }
     return html`
-      <div class=${tw`inline-flex w-full overflow-hidden whitespace-nowrap`}>
-        <div class=${tw`min-w-0 truncate`}>${item.firstSeed}</div>
+      <div class="inline-flex w-full overflow-hidden whitespace-nowrap">
+        <div class=${clsx("min-w-0 truncate", className)}>
+          ${item.firstSeed}
+        </div>
         ${nameSuffix}
       </div>
     `;
   }
 
-  return html`<div class=${tw`truncate text-neutral-500`}>
+  return html`<div class=${clsx("truncate text-neutral-500", className)}>
     ${msg("(unnamed item)")}
   </div>`;
 }
