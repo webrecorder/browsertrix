@@ -187,9 +187,8 @@ spec:
       {% endif %}
     {% endif %}
 
-{% if not enable_auto_resize %}
       resources:
-{% if memory_limit %}
+{% if memory_limit and not enable_auto_resize %}
         limits:
           memory: "{{ memory_limit }}"
 {% endif %}
@@ -197,7 +196,6 @@ spec:
         requests:
           cpu: "{{ cpu }}"
           memory: "{{ memory }}"
-{% endif %}
 
       {% if crawler_liveness_port and crawler_liveness_port != '0' %}
       livenessProbe:
