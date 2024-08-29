@@ -924,14 +924,14 @@ class CrawlConfigOps:
             return {}
 
         # return cached data, when last_update timestamp hasn't changed
-        if self._crawler_proxies_last_updated:
+        if self._crawler_proxies_last_updated and self._crawler_proxies_map:
             with open(proxies_last_update_path, encoding="utf-8") as fh:
                 proxies_last_update = int(fh.read().strip())
                 if proxies_last_update == self._crawler_proxies_last_updated:
                     return self._crawler_proxies_map
                 self._crawler_proxies_last_updated = proxies_last_update
 
-        crawler_proxies_map = {}
+        crawler_proxies_map: dict[str, CrawlerProxy] = {}
         with open(os.environ["CRAWLER_PROXIES_JSON"], encoding="utf-8") as fh:
             proxy_list = json.loads(fh.read())
             for proxy_data in proxy_list:
