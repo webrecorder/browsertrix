@@ -1219,7 +1219,7 @@ class SubscriptionUpdate(BaseModel):
     planId: str
 
     futureCancelDate: Optional[BtrixDatetime] = None
-    quotas: Optional[OrgQuotas] = None
+    quotas: Optional[OrgQuotasIn] = None
 
 
 # ============================================================================
