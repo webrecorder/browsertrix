@@ -39,6 +39,7 @@ from .models import (
     CrawlConfigSearchValues,
     CrawlConfigUpdateResponse,
     CrawlConfigDeletedResponse,
+    BtrixDatetime
 )
 from .utils import dt_now, slug_from_name
 
@@ -851,7 +852,7 @@ class CrawlConfigOps:
             raise HTTPException(status_code=500, detail=f"Error starting crawl: {exc}")
 
     async def set_config_current_crawl_info(
-        self, cid: UUID, crawl_id: str, crawl_start: datetime, user: User
+        self, cid: UUID, crawl_id: str, crawl_start: BtrixDatetime, user: User
     ):
         """Set current crawl info in config when crawl begins"""
         result = await self.crawl_configs.find_one_and_update(

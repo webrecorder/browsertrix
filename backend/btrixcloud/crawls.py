@@ -7,7 +7,6 @@ import os
 import re
 import contextlib
 import urllib.parse
-from datetime import datetime
 from uuid import UUID
 
 from typing import Optional, List, Dict, Union, Any, Sequence, AsyncIterator
@@ -58,6 +57,7 @@ from .models import (
     CrawlScaleResponse,
     CrawlQueueResponse,
     MatchCrawlQueueResponse,
+    BtrixDatetime
 )
 
 
@@ -547,7 +547,7 @@ class CrawlOps(BaseCrawlOps):
         is_qa: bool,
         state: TYPE_ALL_CRAWL_STATES,
         allowed_from: Sequence[TYPE_ALL_CRAWL_STATES],
-        finished: Optional[datetime] = None,
+        finished: Optional[BtrixDatetime] = None,
         stats: Optional[CrawlStats] = None,
     ) -> bool:
         """update crawl state and other properties in db if state has changed"""
@@ -582,7 +582,7 @@ class CrawlOps(BaseCrawlOps):
         crawl_id: str,
         is_qa: bool,
         exec_time: int,
-        last_updated_time: datetime,
+        last_updated_time: BtrixDatetime,
     ) -> bool:
         """increment exec time"""
         # update both crawl-shared qa exec seconds and per-qa run exec seconds
@@ -611,7 +611,7 @@ class CrawlOps(BaseCrawlOps):
 
     async def get_crawl_exec_last_update_time(
         self, crawl_id: str, is_qa: bool
-    ) -> Optional[datetime]:
+    ) -> Optional[BtrixDatetime]:
         """get crawl last updated time"""
         field = "_lut" if not is_qa else "qa._lut"
         res = await self.crawls.find_one(
@@ -624,7 +624,7 @@ class CrawlOps(BaseCrawlOps):
 
     async def get_crawl_state(
         self, crawl_id: str, is_qa: bool
-    ) -> tuple[Optional[TYPE_ALL_CRAWL_STATES], Optional[datetime]]:
+    ) -> tuple[Optional[TYPE_ALL_CRAWL_STATES], Optional[BtrixDatetime]]:
         """return current crawl state of a crawl"""
         prefix = "" if not is_qa else "qa."
 
