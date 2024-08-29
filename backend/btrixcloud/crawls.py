@@ -720,6 +720,8 @@ class CrawlOps(BaseCrawlOps):
             data["duration"] = 0
             duration_seconds = 0
             if crawl.started and crawl.finished:
+                # Hack to avoid an error stemming from comparing timezone-aware and
+                # naive datetimes, but there's certainly a better way
                 naive_started = crawl.started.replace(tzinfo=None)
                 duration = crawl.finished - naive_started
                 duration_seconds = int(duration.total_seconds())
