@@ -364,8 +364,24 @@ export class ArchivedItemQA extends BtrixElement {
     return html`
       ${this.renderHidden()}
 
-      <div class="grid--header pb-3 border-b">
-        ${this.renderBreadcrumbs()}
+      <div class="grid--header pb-3 h-8 border-b flex items-center">
+        ${this.renderBreadcrumbs()} ${when(
+          this.finishedQARuns,
+          (qaRuns) => html`
+            <btrix-qa-run-dropdown
+              slot="suffix"
+              .items=${qaRuns}
+              selectedId=${this.qaRunId || ""}
+              @btrix-select=${(e: CustomEvent<SelectDetail>) => {
+                const params = new URLSearchParams(searchParams);
+                params.set("qaRunId", e.detail.item.id);
+                this.navigate.to(
+                  `${window.location.pathname}?${params.toString()}`,
+                );
+              }}
+            ></btrix-qa-run-dropdown>
+          `,
+        )}
       </div>
 
       <article class="qa-grid min-h-screen grid gap-x-6 gap-y-0 lg:snap-start">
@@ -570,8 +586,6 @@ export class ArchivedItemQA extends BtrixElement {
   }
 
   private renderBreadcrumbs() {
-    const searchParams = new URLSearchParams(window.location.search);
-
     const breadcrumbs = [
       {
         href: `${this.navigate.orgBasePath}/items`,
@@ -586,26 +600,7 @@ export class ArchivedItemQA extends BtrixElement {
         content: msg("Quality Assurance"),
       },
       {
-        content: html`
-          ${msg("Review")}
-          ${when(
-            this.finishedQARuns,
-            (qaRuns) => html`
-              <btrix-qa-run-dropdown
-                slot="suffix"
-                .items=${qaRuns}
-                selectedId=${this.qaRunId || ""}
-                @btrix-select=${(e: CustomEvent<SelectDetail>) => {
-                  const params = new URLSearchParams(searchParams);
-                  params.set("qaRunId", e.detail.item.id);
-                  this.navigate.to(
-                    `${window.location.pathname}?${params.toString()}`,
-                  );
-                }}
-              ></btrix-qa-run-dropdown>
-            `,
-          )}
-        `,
+        content: msg("Review"),
       },
     ];
 
