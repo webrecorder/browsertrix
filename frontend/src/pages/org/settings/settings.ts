@@ -8,10 +8,10 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 
 import stylesheet from "./settings.stylesheet.css";
-import { columns } from "./ui/columns";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { APIUser } from "@/index";
+import { columns } from "@/layouts/columns";
 import type { APIPaginatedList } from "@/types/api";
 import { isApiError } from "@/utils/api";
 import { maxLengthValidator } from "@/utils/form";
@@ -21,10 +21,11 @@ import { AppStateService } from "@/utils/state";
 import { formatAPIUser } from "@/utils/user";
 
 import "./components/billing";
+import "./components/crawling-defaults";
 
 const styles = unsafeCSS(stylesheet);
 
-type Tab = "information" | "members" | "billing";
+type Tab = "information" | "members" | "billing" | "crawling-defaults";
 type User = {
   email: string;
   role: AccessCode;
@@ -87,6 +88,7 @@ export class OrgSettings extends BtrixElement {
       information: msg("General"),
       members: msg("Members"),
       billing: msg("Billing"),
+      "crawling-defaults": msg("Crawling Defaults"),
     };
   }
 
@@ -135,6 +137,23 @@ export class OrgSettings extends BtrixElement {
                 `,
               ],
               ["billing", () => html`<h3>${msg("Current Plan")}</h3> `],
+              [
+                "crawling-defaults",
+                () =>
+                  html`<h3 class="flex items-center gap-2">
+                    ${msg("Crawling Defaults")}
+                    <sl-tooltip
+                      content=${msg(
+                        "Default settings for all new crawl workflows. Existing workflows will not be affected.",
+                      )}
+                    >
+                      <sl-icon
+                        class="text-base text-neutral-500"
+                        name="info-circle"
+                      ></sl-icon>
+                    </sl-tooltip>
+                  </h3>`,
+              ],
             ],
             () => html`<h3>${this.tabLabels[this.activePanel]}</h3>`,
           )}
@@ -144,6 +163,7 @@ export class OrgSettings extends BtrixElement {
         ${when(this.appState.settings?.billingEnabled, () =>
           this.renderTab("billing", "settings/billing"),
         )}
+        ${this.renderTab("crawling-defaults", "settings/crawling-defaults")}
 
         <btrix-tab-panel name="information">
           ${this.renderInformation()}
@@ -155,6 +175,9 @@ export class OrgSettings extends BtrixElement {
           <btrix-org-settings-billing
             .salesEmail=${this.appState.settings?.salesEmail}
           ></btrix-org-settings-billing>
+        </btrix-tab-panel>
+        <btrix-tab-panel name="crawling-defaults">
+          <btrix-org-settings-crawling-defaults></btrix-org-settings-crawling-defaults>
         </btrix-tab-panel>
       </btrix-tab-list>`;
   }
@@ -244,7 +267,6 @@ export class OrgSettings extends BtrixElement {
         </div>
         <footer class="flex justify-end border-t px-4 py-3">
           <sl-button
-            class="inline-control-button"
             type="submit"
             size="small"
             variant="primary"

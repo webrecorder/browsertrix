@@ -20,6 +20,22 @@
     <link rel="manifest" href="/manifest.webmanifest" />
   </head>
   <body>
+    <script>
+      window
+        .fetch("/api/settings", {
+          headers: { "Content-Type": "application/json" },
+        })
+        .then((resp) => resp.json())
+        .then((settings) => {
+          const app = document.querySelector("browsertrix-app");
+
+          if (app && settings) {
+            app.settings = settings;
+          }
+        })
+        .catch(console.debug);
+    </script>
+
     <browsertrix-app
       version="v<%= version %>-<%= commitHash %>"
     ></browsertrix-app>

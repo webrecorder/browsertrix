@@ -1,15 +1,16 @@
 import { localized, msg, str } from "@lit/localize";
-import { type PropertyValues, type TemplateResult } from "lit";
+import { css, html, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
+import { when } from "lit/directives/when.js";
 import { html as staticHtml, unsafeStatic } from "lit/static-html.js";
 import RegexColorize from "regex-colorize";
 
 import type { Exclusion } from "./queue-exclusion-form";
 
+import { TailwindElement } from "@/classes/TailwindElement";
 import { type PageChangeEvent } from "@/components/ui/pagination";
 import type { SeedConfig } from "@/pages/org/types";
-import LiteElement, { html } from "@/utils/LiteElement";
 import { regexEscape, regexUnescape } from "@/utils/string";
 
 export type ExclusionChangeEvent = CustomEvent<{
@@ -41,14 +42,39 @@ function formatValue(type: Exclusion["type"], value: Exclusion["value"]) {
  * </btrix-queue-exclusion-table>
  * ```
  *
- * @event on-change ExclusionChangeEvent
- * @event on-remove ExclusionRemoveEvent
+ * @TODO Refactor to always be uncontrolled field
+ * so that callers don't need to maintain their
+ * own exclusions state
+ * @TODO Return value when using shoelace serialize
+ *
+ * @fires btrix-change ExclusionChangeEvent
+ * @fires btrix-remove ExclusionRemoveEvent
  */
 @customElement("btrix-queue-exclusion-table")
 @localized()
-export class QueueExclusionTable extends LiteElement {
+export class QueueExclusionTable extends TailwindElement {
+  static styles = css`
+    sl-input {
+      --sl-input-border-radius-medium: 0;
+      --sl-input-font-family: var(--sl-font-mono);
+      --sl-input-spacing-medium: var(--sl-spacing-small);
+    }
+
+    sl-input:not([data-invalid]) {
+      --sl-input-border-width: 0;
+    }
+  `;
+
   @property({ type: Array })
   exclusions?: SeedConfig["exclude"];
+
+  /**
+   * @deprecated Refactor to always be uncontrolled
+   * field so that callers don't need to maintain their
+   * own exclusions state
+   */
+  @property({ type: Boolean, noAccessor: true })
+  uncontrolled = false;
 
   // TODO switch to LitElement & slotted label
   @property({ type: String })
@@ -79,9 +105,9 @@ export class QueueExclusionTable extends LiteElement {
   }
 
   willUpdate(changedProperties: PropertyValues<this> & Map<string, unknown>) {
-    if (changedProperties.get("exclusions") && this.exclusions) {
+    if (changedProperties.has("exclusions") && this.exclusions) {
       if (
-        changedProperties.get("exclusions")!.toString() ===
+        changedProperties.get("exclusions")?.toString() ===
         this.exclusions.toString()
       ) {
         // Check list equality
@@ -131,17 +157,6 @@ export class QueueExclusionTable extends LiteElement {
       this.getColumnClassNames(0, this.results.length, true);
 
     return html`
-      <style>
-        btrix-queue-exclusion-table sl-input {
-          --sl-input-border-radius-medium: 0;
-          --sl-input-font-family: var(--sl-font-mono);
-          --sl-input-spacing-medium: var(--sl-spacing-small);
-        }
-
-        btrix-queue-exclusion-table sl-input:not([data-invalid]) {
-          --sl-input-border-width: 0;
-        }
-      </style>
       <div class="mb-2 flex items-center justify-between leading-tight">
         <div class=${ifDefined(this.labelClassName)}>
           ${this.label ?? msg("Exclusions")}
@@ -180,6 +195,15 @@ export class QueueExclusionTable extends LiteElement {
           ${this.results.map(this.renderItem)}
         </tbody>
       </table>
+      ${when(
+        this.editable,
+        () => html`
+          <sl-button class="mt-1 w-full" @click=${() => void this.addInput()}>
+            <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+            <span class="text-neutral-600">${msg("Add More")}</span>
+          </sl-button>
+        `,
+      )}
     `;
   }
 
@@ -209,7 +233,17 @@ export class QueueExclusionTable extends LiteElement {
             label=${msg("Remove exclusion")}
             class="text-base hover:text-danger"
             name="trash3"
-            @click=${() => this.removeExclusion(exclusion, index)}
+            @click=${() => {
+              if (this.exclusions?.length === 1) {
+                void this.updateExclusion({
+                  type: exclusion.type,
+                  value: "",
+                  index,
+                });
+              } else {
+                void this.removeExclusion(exclusion, index);
+              }
+            }}
           ></sl-icon-button>
         </td>
       </tr>
@@ -237,7 +271,7 @@ export class QueueExclusionTable extends LiteElement {
           @sl-hide=${this.stopProp}
           @sl-after-hide=${this.stopProp}
           @sl-change=${(e: Event) => {
-            this.updateExclusion({
+            void this.updateExclusion({
               type: (e.target as HTMLSelectElement).value as Exclusion["type"],
               value: exclusion.value,
               index,
@@ -274,7 +308,7 @@ export class QueueExclusionTable extends LiteElement {
           autocorrect="off"
           minlength=${MIN_LENGTH}
           @sl-clear=${() => {
-            this.updateExclusion({
+            void this.updateExclusion({
               type: exclusion.type,
               value: "",
               index,
@@ -303,7 +337,7 @@ export class QueueExclusionTable extends LiteElement {
             }
             inputElem.reportValidity();
 
-            this.updateExclusion(params);
+            void this.updateExclusion(params);
           }}
         ></sl-input>
       `;
@@ -429,20 +463,39 @@ export class QueueExclusionTable extends LiteElement {
     });
   }
 
-  private removeExclusion({ value, type }: Exclusion, index: number) {
+  private async removeExclusion({ value, type }: Exclusion, index: number) {
     this.exclusionToRemove = value;
+    const exclusions = this.exclusions || [];
+    const regex = formatValue(type, value);
+
+    if (this.uncontrolled) {
+      this.exclusions = [
+        ...exclusions.slice(0, index),
+        ...exclusions.slice(index + 1),
+      ];
+    }
+
+    await this.updateComplete;
 
     this.dispatchEvent(
-      new CustomEvent("on-remove", {
+      new CustomEvent("btrix-remove", {
         detail: {
-          regex: formatValue(type, value),
           index,
+          regex,
         },
       }) as ExclusionRemoveEvent,
     );
   }
 
-  private updateExclusion({
+  private async addInput() {
+    await this.updateExclusion({
+      type: "text",
+      value: "",
+      index: this.exclusions?.length || 0,
+    });
+  }
+
+  private async updateExclusion({
     type,
     value,
     index,
@@ -451,11 +504,24 @@ export class QueueExclusionTable extends LiteElement {
     value: Exclusion["value"];
     index: number;
   }) {
+    const exclusions = this.exclusions || [];
+    const regex = formatValue(type, value);
+
+    if (this.uncontrolled) {
+      this.exclusions = [
+        ...exclusions.slice(0, index),
+        regex,
+        ...exclusions.slice(index + 1),
+      ];
+    }
+
+    await this.updateComplete;
+
     this.dispatchEvent(
-      new CustomEvent("on-change", {
+      new CustomEvent("btrix-change", {
         detail: {
           index,
-          regex: formatValue(type, value),
+          regex,
         },
       }) as ExclusionChangeEvent,
     );
