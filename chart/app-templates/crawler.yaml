@@ -237,8 +237,8 @@ spec:
     containerPolicies:
     - containerName: "crawler"
       minAllowed:
-        cpu: "{{ cpu }}"
-        memory: "{{ memory }}"
+        cpu: "{{ div cpu 2 }}"
+        memory: "{{ div memory 2 }}"
       maxAllowed:
       {% if cpu_limit %}
         cpu: "{{ cpu_limit }}"
