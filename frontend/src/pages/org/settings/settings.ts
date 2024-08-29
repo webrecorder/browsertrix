@@ -21,11 +21,11 @@ import { AppStateService } from "@/utils/state";
 import { formatAPIUser } from "@/utils/user";
 
 import "./components/billing";
-import "./components/crawl-workflows";
+import "./components/crawling-defaults";
 
 const styles = unsafeCSS(stylesheet);
 
-type Tab = "information" | "members" | "billing" | "crawl-workflows";
+type Tab = "information" | "members" | "billing" | "crawling-defaults";
 type User = {
   email: string;
   role: AccessCode;
@@ -88,7 +88,7 @@ export class OrgSettings extends BtrixElement {
       information: msg("General"),
       members: msg("Members"),
       billing: msg("Billing"),
-      "crawl-workflows": msg("Crawl Workflows"),
+      "crawling-defaults": msg("Crawling Defaults"),
     };
   }
 
@@ -138,10 +138,10 @@ export class OrgSettings extends BtrixElement {
               ],
               ["billing", () => html`<h3>${msg("Current Plan")}</h3> `],
               [
-                "crawl-workflows",
+                "crawling-defaults",
                 () =>
                   html`<h3 class="flex items-center gap-2">
-                    ${msg("Crawl Defaults")}
+                    ${msg("Crawling Defaults")}
                     <sl-tooltip
                       content=${msg(
                         "Default settings for all new crawl workflows. Existing workflows will not be affected.",
@@ -163,7 +163,7 @@ export class OrgSettings extends BtrixElement {
         ${when(this.appState.settings?.billingEnabled, () =>
           this.renderTab("billing", "settings/billing"),
         )}
-        ${this.renderTab("crawl-workflows", "settings/crawl-workflows")}
+        ${this.renderTab("crawling-defaults", "settings/crawling-defaults")}
 
         <btrix-tab-panel name="information">
           ${this.renderInformation()}
@@ -176,8 +176,8 @@ export class OrgSettings extends BtrixElement {
             .salesEmail=${this.appState.settings?.salesEmail}
           ></btrix-org-settings-billing>
         </btrix-tab-panel>
-        <btrix-tab-panel name="crawl-workflows">
-          <btrix-org-settings-crawl-workflows></btrix-org-settings-crawl-workflows>
+        <btrix-tab-panel name="crawling-defaults">
+          <btrix-org-settings-crawling-defaults></btrix-org-settings-crawling-defaults>
         </btrix-tab-panel>
       </btrix-tab-list>`;
   }
