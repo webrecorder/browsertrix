@@ -12,9 +12,9 @@ Change your organization's name and URL identifier in this tab. Choose an org na
 
 View and manage your org's current payment plan and associated quotas. Usage history statistics for previous months are shown here to better inform your plan and quota requirements.
 
-## Crawl Workflows
+## Crawling Defaults
 
-Set default suggested settings for all new crawl workflows in this tab. When creating a new workflow, org members will see the form pre-filled with default values. Org members can still change or remove these settings when configuring the workflow. Removing a default setting will revert the setting back to Browsertrix defaults.
+Set default suggested settings for all new crawl workflows. When creating a new workflow, org members will see the form pre-filled with these default values. Org members can still change or remove these settings when configuring the workflow. Removing a default setting will revert the setting back to Browsertrix' defaults.
 
 <!-- ## Limits
 
