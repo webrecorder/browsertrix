@@ -721,8 +721,10 @@ class CrawlOperator(BaseOperator):
             # keep parent until ttl expired, if any
             if status.finished:
                 ttl = spec.get("ttlSecondsAfterFinished", DEFAULT_TTL)
-                finished = from_k8s_date(status.finished)
-                if finished and (dt_now() - finished).total_seconds() > ttl >= 0:
+                if (
+                    status.finished
+                    and (dt_now() - status.finished).total_seconds() > ttl >= 0
+                ):
                     print("CrawlJob expired, deleting: " + crawl.id)
                     finalized = True
             else:
