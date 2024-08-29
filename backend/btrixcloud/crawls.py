@@ -57,7 +57,7 @@ from .models import (
     CrawlScaleResponse,
     CrawlQueueResponse,
     MatchCrawlQueueResponse,
-    BtrixDatetime
+    BtrixDatetime,
 )
 
 

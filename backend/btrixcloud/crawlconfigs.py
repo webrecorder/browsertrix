@@ -38,7 +38,7 @@ from .models import (
     CrawlConfigSearchValues,
     CrawlConfigUpdateResponse,
     CrawlConfigDeletedResponse,
-    BtrixDatetime
+    BtrixDatetime,
 )
 from .utils import dt_now, slug_from_name
 

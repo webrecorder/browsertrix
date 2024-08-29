@@ -12,7 +12,13 @@ from email.mime.multipart import MIMEMultipart
 from fastapi import HTTPException
 from fastapi.templating import Jinja2Templates
 
-from .models import CreateReplicaJob, DeleteReplicaJob, Organization, InvitePending, BtrixDatetime
+from .models import (
+    CreateReplicaJob,
+    DeleteReplicaJob,
+    Organization,
+    InvitePending,
+    BtrixDatetime,
+)
 from .utils import is_bool, get_origin
 
 

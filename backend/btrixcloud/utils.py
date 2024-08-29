@@ -19,7 +19,6 @@ from fastapi.responses import StreamingResponse
 from pymongo.errors import DuplicateKeyError
 from slugify import slugify
 
-
 default_origin = os.environ.get("APP_ORIGIN", "")
 
 
@@ -33,7 +32,7 @@ class JSONSerializer(json.JSONEncoder):
             return str(o)
 
         if isinstance(o, datetime):
-            return o.isoformat()
+            return f"{o:%Y-%m-%dT%H:%M:%S}Z"
 
         return super().default(o)
 
@@ -45,7 +44,14 @@ def get_templates_dir() -> str:
 
 def from_k8s_date(string: str) -> Optional[datetime]:
     """convert k8s date string to datetime"""
-    return datetime.fromisoformat(string[:-1]) if string else None
+    if not string:
+        return None
+
+    print(f"FROM_K8S_DATE INPUT STRING: {string}", flush=True)
+
+    dt_str = string[:-1]
+    dt_str = dt_str if dt_str.endswith("Z") else f"{dt_str}Z"
+    return datetime.fromisoformat(dt_str)
 
 
 def to_k8s_date(dt_val: datetime) -> str:

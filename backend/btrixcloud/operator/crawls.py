@@ -30,7 +30,7 @@ from btrixcloud.models import (
     CrawlCompleteIn,
     StorageRef,
     Organization,
-    BtrixDatetime
+    BtrixDatetime,
 )
 
 from btrixcloud.utils import from_k8s_date, to_k8s_date, dt_now

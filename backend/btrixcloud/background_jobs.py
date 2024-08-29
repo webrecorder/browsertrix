@@ -23,7 +23,7 @@ from .models import (
     StorageRef,
     User,
     SuccessResponse,
-    BtrixDatetime
+    BtrixDatetime,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import dt_now
