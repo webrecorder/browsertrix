@@ -187,6 +187,7 @@ spec:
       {% endif %}
     {% endif %}
 
+{% if not enable_auto_resize %}
       resources:
 {% if memory_limit %}
         limits:
@@ -196,6 +197,7 @@ spec:
         requests:
           cpu: "{{ cpu }}"
           memory: "{{ memory }}"
+{% endif %}
 
       {% if crawler_liveness_port and crawler_liveness_port != '0' %}
       livenessProbe:
@@ -236,9 +238,9 @@ spec:
   resourcePolicy:
     containerPolicies:
     - containerName: "crawler"
-      minAllowed:
-        cpu: "{{ cpu / 2 }}"
-        memory: "{{ memory / 2 }}"
+      #minAllowed:
+      #  cpu: "{{ cpu / 2 }}"
+      #  memory: "{{ memory / 2 }}"
       maxAllowed:
       {% if cpu_limit %}
         cpu: "{{ cpu_limit }}"
