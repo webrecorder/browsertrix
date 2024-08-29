@@ -5,7 +5,7 @@ from uuid import UUID
 from typing import Optional, DefaultDict, Literal, Annotated, Any
 from pydantic import BaseModel, Field
 from kubernetes.utils import parse_quantity
-from btrixcloud.models import StorageRef, TYPE_ALL_CRAWL_STATES, BtrixDatetime
+from btrixcloud.models import StorageRef, TYPE_ALL_CRAWL_STATES
 
 
 BTRIX_API = "btrix.cloud/v1"
@@ -202,7 +202,7 @@ class CrawlStatus(BaseModel):
     scale: int = 1
     filesAdded: int = 0
     filesAddedSize: int = 0
-    finished: Optional[BtrixDatetime] = None
+    finished: Optional[str] = None
     stopping: bool = False
     stopReason: Optional[StopReason] = None
     initRedis: bool = False

@@ -1,6 +1,7 @@
 """k8s background jobs"""
 
 import asyncio
+from datetime import datetime
 from typing import Optional, Tuple, Union, List, Dict, TYPE_CHECKING, cast
 from uuid import UUID
 
@@ -23,7 +24,6 @@ from .models import (
     StorageRef,
     User,
     SuccessResponse,
-    BtrixDatetime,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import dt_now
@@ -279,7 +279,7 @@ class BackgroundJobOps:
         job_type: str,
         oid: UUID,
         success: bool,
-        finished: BtrixDatetime,
+        finished: datetime,
     ) -> None:
         """Update job as finished, including
         job-specific task handling"""

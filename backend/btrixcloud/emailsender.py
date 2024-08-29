@@ -158,7 +158,7 @@ class EmailSender:
         self,
         job: Union[CreateReplicaJob, DeleteReplicaJob],
         org: Organization,
-        finished: BtrixDatetime,
+        finished: datetime,
         receiver_email: str,
     ):
         """Send background job failed email to superuser"""

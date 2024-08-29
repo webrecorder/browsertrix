@@ -30,7 +30,6 @@ from btrixcloud.models import (
     CrawlCompleteIn,
     StorageRef,
     Organization,
-    BtrixDatetime,
 )
 
 from btrixcloud.utils import from_k8s_date, to_k8s_date, dt_now
@@ -500,7 +499,7 @@ class CrawlOperator(BaseOperator):
         status: CrawlStatus,
         crawl: CrawlSpec,
         allowed_from: Sequence[TYPE_ALL_CRAWL_STATES],
-        finished: Optional[BtrixDatetime] = None,
+        finished: Optional[datetime] = None,
         stats: Optional[CrawlStats] = None,
     ):
         """set status state and update db, if changed
@@ -548,7 +547,7 @@ class CrawlOperator(BaseOperator):
             if actual_state:
                 status.state = actual_state
             if finished:
-                status.finished = finished
+                status.finished = to_k8s_date(finished)
 
             if actual_state != state:
                 print(
@@ -722,10 +721,8 @@ class CrawlOperator(BaseOperator):
             # keep parent until ttl expired, if any
             if status.finished:
                 ttl = spec.get("ttlSecondsAfterFinished", DEFAULT_TTL)
-                if (
-                    status.finished
-                    and (dt_now() - status.finished).total_seconds() > ttl >= 0
-                ):
+                finished = from_k8s_date(status.finished)
+                if finished and (dt_now() - finished).total_seconds() > ttl >= 0:
                     print("CrawlJob expired, deleting: " + crawl.id)
                     finalized = True
             else:
@@ -1455,11 +1452,11 @@ class CrawlOperator(BaseOperator):
         ):
             print("already finished, ignoring mark_finished")
             if not status.finished:
-                status.finished = finished
+                status.finished = to_k8s_date(finished)
 
             return False
 
-        status.finished = finished
+        status.finished = to_k8s_date(finished)
 
         if state in SUCCESSFUL_STATES:
             await self.inc_crawl_complete_stats(crawl, finished)
@@ -1517,7 +1514,7 @@ class CrawlOperator(BaseOperator):
         # finally, delete job
         await self.k8s.delete_crawl_job(crawl.id)
 
-    async def inc_crawl_complete_stats(self, crawl: CrawlSpec, finished: BtrixDatetime):
+    async def inc_crawl_complete_stats(self, crawl: CrawlSpec, finished: datetime):
         """Increment Crawl Stats"""
 
         started = from_k8s_date(crawl.started)
