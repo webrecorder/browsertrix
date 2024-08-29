@@ -188,7 +188,7 @@ spec:
     {% endif %}
 
       resources:
-{% if memory_limit and not enable_auto_resize %}
+{% if memory_limit %}
         limits:
           memory: "{{ memory_limit }}"
 {% endif %}
@@ -236,14 +236,7 @@ spec:
   resourcePolicy:
     containerPolicies:
     - containerName: "crawler"
-      #minAllowed:
-      #  cpu: "{{ cpu / 2 }}"
-      #  memory: "{{ memory / 2 }}"
       maxAllowed:
-      {% if cpu_limit %}
-        cpu: "{{ cpu_limit }}"
-      {% endif %}
-      {% if memory_limit %}
-        memory: "{{ memory_limit }}"
-      {% endif %}
+        cpu: "{{ cpu }}"
+        memory: "{{ memory }}"
 {% endif %}
