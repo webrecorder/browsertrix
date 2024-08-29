@@ -124,7 +124,9 @@ export class AccountSettings extends LiteElement {
   render() {
     if (!this.userInfo) return;
     return html`
-      <btrix-title title=${msg("Account Settings")}></btrix-title>
+      <btrix-document-title
+        title=${msg("Account Settings")}
+      ></btrix-document-title>
 
       <div class="mx-auto max-w-screen-sm">
         <h1 class="mb-7 text-xl font-semibold leading-8">
