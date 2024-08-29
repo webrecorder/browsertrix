@@ -11,8 +11,8 @@ import json
 
 import humanize
 
-from redis import asyncio as exceptions
 from kubernetes.utils import parse_quantity
+from redis import asyncio as exceptions
 
 from btrixcloud.models import (
     TYPE_NON_RUNNING_STATES,
@@ -376,11 +376,15 @@ class CrawlOperator(BaseOperator):
         pod_info = status.podStatus[name]
         params["name"] = name
         params["priorityClassName"] = pri_class
+
         params["cpu"] = params.get(cpu_field)
+        params["cpu_limit"] = self.k8s.max_crawler_cpu_size
+
         params["memory"] = params.get(mem_field)
         params["memory_limit"] = self.k8s.max_crawler_memory_size
-        params["cpu_limit"] = self.k8s.max_crawler_cpu_size
+
         params["enable_auto_resize"] = self.k8s.enable_auto_resize
+
         params["storage"] = pod_info.newStorage or params.get("crawler_storage")
         params["workers"] = params.get(worker_field) or 1
         params["do_restart"] = False
@@ -773,14 +777,6 @@ class CrawlOperator(BaseOperator):
                 # if no crawler / no redis, resync after N seconds
                 status.resync_after = self.fast_retry_secs
                 return status
-
-            # ensure running state is set
-            await self.set_state(
-                "running",
-                status,
-                crawl,
-                allowed_from=RUNNING_AND_WAITING_STATES,
-            )
 
             # update lastActiveTime if crawler is running
             if crawler_running:
