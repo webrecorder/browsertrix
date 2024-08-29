@@ -30,6 +30,7 @@ from btrixcloud.models import (
     CrawlCompleteIn,
     StorageRef,
     Organization,
+    BtrixDatetime
 )
 
 from btrixcloud.utils import from_k8s_date, to_k8s_date, dt_now
@@ -499,7 +500,7 @@ class CrawlOperator(BaseOperator):
         status: CrawlStatus,
         crawl: CrawlSpec,
         allowed_from: Sequence[TYPE_ALL_CRAWL_STATES],
-        finished: Optional[datetime] = None,
+        finished: Optional[BtrixDatetime] = None,
         stats: Optional[CrawlStats] = None,
     ):
         """set status state and update db, if changed
@@ -1516,7 +1517,7 @@ class CrawlOperator(BaseOperator):
         # finally, delete job
         await self.k8s.delete_crawl_job(crawl.id)
 
-    async def inc_crawl_complete_stats(self, crawl: CrawlSpec, finished: datetime):
+    async def inc_crawl_complete_stats(self, crawl: CrawlSpec, finished: BtrixDatetime):
         """Increment Crawl Stats"""
 
         started = from_k8s_date(crawl.started)

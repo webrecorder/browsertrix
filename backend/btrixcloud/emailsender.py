@@ -1,6 +1,5 @@
 """ Basic Email Sending Support"""
 
-from datetime import datetime
 import os
 import smtplib
 import ssl
@@ -13,7 +12,7 @@ from email.mime.multipart import MIMEMultipart
 from fastapi import HTTPException
 from fastapi.templating import Jinja2Templates
 
-from .models import CreateReplicaJob, DeleteReplicaJob, Organization, InvitePending
+from .models import CreateReplicaJob, DeleteReplicaJob, Organization, InvitePending, BtrixDatetime
 from .utils import is_bool, get_origin
 
 
@@ -153,7 +152,7 @@ class EmailSender:
         self,
         job: Union[CreateReplicaJob, DeleteReplicaJob],
         org: Organization,
-        finished: datetime,
+        finished: BtrixDatetime,
         receiver_email: str,
     ):
         """Send background job failed email to superuser"""
