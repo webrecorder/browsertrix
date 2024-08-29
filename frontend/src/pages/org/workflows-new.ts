@@ -76,7 +76,7 @@ export class WorkflowsNew extends LiteElement {
       },
     ];
 
-    const jobType = this.initialWorkflow.jobType || this.jobType;
+    const jobType = this.initialWorkflow?.jobType || this.jobType;
 
     if (jobType) {
       breadcrumbs.push({

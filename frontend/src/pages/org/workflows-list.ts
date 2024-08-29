@@ -195,13 +195,15 @@ export class WorkflowsList extends LiteElement {
             ${when(
               this.appState.isAdmin,
               () =>
-                html` <sl-icon-button
-                  href=${`${this.orgBasePath}/settings/crawling-defaults`}
-                  class="size-8 text-lg"
-                  name="gear"
-                  label=${msg("Edit org crawling settings")}
-                  @click=${this.navLink}
-                ></sl-icon-button>`,
+                html`<sl-tooltip content=${msg("Configure crawling defaults")}>
+                  <sl-icon-button
+                    href=${`${this.orgBasePath}/settings/crawling-defaults`}
+                    class="size-8 text-lg"
+                    name="gear"
+                    label=${msg("Edit org crawling settings")}
+                    @click=${this.navLink}
+                  ></sl-icon-button>
+                </sl-tooltip>`,
             )}
             ${when(
               this.appState.isCrawler,
