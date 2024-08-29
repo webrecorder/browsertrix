@@ -24,19 +24,26 @@ function navigateBreadcrumb(e: MouseEvent, href: string) {
 
 export function pageBreadcrumbs(breadcrumbs: Breadcrumb[]) {
   return html`
-    <sl-breadcrumb>
-      ${breadcrumbs.map(
-        ({ href, content }) => html`
-          <sl-breadcrumb-item
-            href=${ifDefined(href)}
-            @click=${href
-              ? (e: MouseEvent) => navigateBreadcrumb(e, href)
-              : undefined}
-          >
-            ${content || html`<sl-skeleton class="w-48"></sl-skeleton>`}
-          </sl-breadcrumb-item>
-        `,
-      )}
+    <sl-breadcrumb class="part-[base]:h-6">
+      ${breadcrumbs.length
+        ? breadcrumbs.map(
+            ({ href, content }) => html`
+              <sl-breadcrumb-item
+                href=${ifDefined(href)}
+                @click=${href
+                  ? (e: MouseEvent) => navigateBreadcrumb(e, href)
+                  : undefined}
+              >
+                ${content || html`<sl-skeleton class="w-48"></sl-skeleton>`}
+              </sl-breadcrumb-item>
+            `,
+          )
+        : html`<sl-breadcrumb-item>
+              <sl-skeleton class="w-48"></sl-skeleton>
+            </sl-breadcrumb-item>
+            <sl-breadcrumb-item>
+              <sl-skeleton class="w-48"></sl-skeleton>
+            </sl-breadcrumb-item>`}
     </sl-breadcrumb>
   `;
 }
