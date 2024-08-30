@@ -144,7 +144,7 @@ Sets the [_Browser Profile_](browser-profiles.md) to be used for this crawl.
 
 ### Browser Windows
 
-Sets the number of browser windows that are open and visiting pages during a crawl. Increasing the number of browser windows will speed up crawls by capturing more pages in parallel. 
+Sets the number of browser windows that are used to visit webpages while crawling. Increasing the number of browser windows will speed up crawls by capturing more pages in parallel.
 
 There are some trade-offs:
 
