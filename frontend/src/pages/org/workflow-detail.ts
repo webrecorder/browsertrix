@@ -952,7 +952,9 @@ export class WorkflowDetail extends LiteElement {
             : skeleton,
         )}
         ${this.renderDetailItem(msg("Browser Windows"), () =>
-          this.workflow ? this.workflow.scale : skeleton,
+          this.workflow && this.appState.settings
+            ? this.workflow.scale * this.appState.settings.numBrowsers
+            : skeleton,
         )}
       </btrix-desc-list>
     `;

@@ -168,7 +168,9 @@ export class ConfigDetails extends LiteElement {
           )}
           ${this.renderSetting(
             msg("Browser Windows"),
-            crawlConfig?.scale ? `${crawlConfig.scale}×` : "",
+            crawlConfig?.scale && this.appState.settings
+              ? `${crawlConfig.scale * this.appState.settings.numBrowsers}`
+              : "",
           )}
           <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
             <h4>${sectionStrings.perPageLimits}</h4>
