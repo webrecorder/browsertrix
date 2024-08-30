@@ -493,7 +493,7 @@ export class WorkflowDetail extends LiteElement {
       return html` <h3>${this.tabLabels[this.activePanel]}</h3>
         <sl-button
           size="small"
-          ?disabled=${!this.workflow?.isCrawlRunning}
+          ?disabled=${this.workflow?.lastCrawlState !== "running"}
           @click=${() => (this.openDialogName = "scale")}
         >
           <sl-icon
