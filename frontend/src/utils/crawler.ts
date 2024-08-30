@@ -7,31 +7,49 @@ import { pluralOf } from "./pluralize";
 
 import type { ArchivedItem, CrawlState, Workflow } from "@/types/crawler";
 
-export const activeCrawlStates: CrawlState[] = [
-  "starting",
-  "waiting_org_limit",
-  "waiting_capacity",
+// Match backend TYPE_RUNNING_STATES in models.py
+const RUNNING_STATES: CrawlState[] = [
   "running",
+  "pending-wait",
   "generate-wacz",
   "uploading-wacz",
-  "pending-wait",
-  "stopping",
-];
+] as const;
 
-export const finishedCrawlStates: CrawlState[] = [
+// Match backend TYPE_WAITING_STATES in models.py
+const WAITING_STATES: CrawlState[] = [
+  "starting",
+  "waiting_capacity",
+  "waiting_org_limit",
+] as const;
+
+// Match backend TYPE_SUCCESSFUL_STATES in models.py
+const SUCCESSFUL_STATES: CrawlState[] = [
   "complete",
   "stopped_by_user",
   "stopped_storage_quota_reached",
   "stopped_time_quota_reached",
   "stopped_org_readonly",
-];
+] as const;
 
-export const inactiveCrawlStates: CrawlState[] = [
-  ...finishedCrawlStates,
+// Match backend TYPE_FAILED_STATES in models.py
+const FAILED_STATES: CrawlState[] = [
   "canceled",
+  "failed",
   "skipped_storage_quota_reached",
   "skipped_time_quota_reached",
-  "failed",
+] as const;
+
+// Match backend TYPE_RUNNING_AND_WAITING_STATES in models.py
+export const activeCrawlStates: CrawlState[] = [
+  ...WAITING_STATES,
+  ...RUNNING_STATES,
+];
+
+export const finishedCrawlStates = SUCCESSFUL_STATES;
+
+export const inactiveCrawlStates: CrawlState[] = [
+  ...SUCCESSFUL_STATES,
+  ...FAILED_STATES,
 ];
 
 export const DEFAULT_MAX_SCALE = 3;
