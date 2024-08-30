@@ -720,7 +720,10 @@ class CrawlOps(BaseCrawlOps):
             data["duration"] = 0
             duration_seconds = 0
             if crawl.started and crawl.finished:
-                duration = crawl.finished - crawl.started
+                # TODO: Why is crawl.started timezone naive? If we remove this, we get
+                # TypeError: can't subtract offset-naive and offset-aware datetimes
+                naive_started = crawl.started.replace(tzinfo=None)
+                duration = crawl.finished - naive_started
                 duration_seconds = int(duration.total_seconds())
                 if duration_seconds:
                     data["duration"] = duration_seconds
