@@ -87,10 +87,12 @@ export type WorkflowDefaults = {
   behaviorTimeoutSeconds?: number;
   pageLoadTimeoutSeconds?: number;
   maxPagesPerCrawl?: number;
+  numBrowsers: number;
   maxScale: number;
 };
 
 export const appDefaults: WorkflowDefaults = {
+  numBrowsers: 1,
   maxScale: DEFAULT_MAX_SCALE,
 };
 
@@ -302,6 +304,7 @@ export async function getServerDefaults(): Promise<WorkflowDefaults> {
     if (data.maxScale) {
       defaults.maxScale = data.maxScale;
     }
+    defaults.numBrowsers = data.numBrowsers;
 
     return defaults;
   } catch (e) {

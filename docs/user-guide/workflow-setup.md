@@ -144,7 +144,12 @@ Sets the [_Browser Profile_](browser-profiles.md) to be used for this crawl.
 
 ### Browser Windows
 
-Increasing the number of browser windows will speed up crawls by capturing more pages in parallel. This will also increase the amount of traffic sent to the website and may result in a higher chance of getting rate limited.
+Sets the number of browser windows that are open and visiting pages during a crawl. Increasing the number of browser windows will speed up crawls by capturing more pages in parallel. 
+
+There are some trade-offs:
+
+- This may result in a higher chance of getting rate limited due to the increase in traffic sent to the website.
+- More execution minutes will be used per-crawl.
 
 ### Crawler Release Channel
 

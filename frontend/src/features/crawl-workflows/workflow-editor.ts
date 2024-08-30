@@ -1357,14 +1357,21 @@ https://archiveweb.page/images/${"logo.svg"}`}
             range(this.defaults.maxScale),
             (i: number) =>
               html` <sl-radio-button value="${i + 1}" size="small"
-                >${i + 1}×</sl-radio-button
+                >${(i + 1) * this.defaults.numBrowsers}</sl-radio-button
               >`,
           )}
         </sl-radio-group>
       `)}
       ${this.renderHelpTextCol(
-        msg(`Increasing parallel browser windows can speed up crawls, but may
-        increase the chances of getting rate limited.`),
+        html`${msg(
+            `Increase the number of open browser windows during a crawl. This will speed up your crawl by effectively running more crawlers at the same time.`,
+          )}
+          <a
+            href="https://docs.browsertrix.com/user-guide/workflow-setup/#browser-windows"
+            class="text-blue-600 hover:text-blue-500"
+            target="_blank"
+            >${msg("See caveats")}</a
+          >.`,
       )}
       ${inputCol(html`
         <btrix-select-crawler
