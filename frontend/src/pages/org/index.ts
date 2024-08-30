@@ -18,7 +18,7 @@ import type { QuotaUpdateDetail } from "@/controllers/api";
 import needLogin from "@/decorators/needLogin";
 import type { CollectionSavedEvent } from "@/features/collections/collection-metadata-dialog";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
-import type { Crawl, JobType } from "@/types/crawler";
+import type { JobType } from "@/types/crawler";
 import type { UserOrg } from "@/types/user";
 import { isApiError } from "@/utils/api";
 import type { ViewState } from "@/utils/APIRouter";
@@ -45,23 +45,22 @@ import(/* webpackChunkName: "org" */ "./browser-profiles-new");
 const RESOURCE_NAMES = ["workflow", "collection", "browser-profile", "upload"];
 type ResourceName = (typeof RESOURCE_NAMES)[number];
 export type SelectNewDialogEvent = CustomEvent<ResourceName>;
+type ArchivedItemPageParams = {
+  itemId?: string;
+  itemType?: string;
+  itemPageId?: string;
+  qaTab?: QATab;
+  qaRunId?: string;
+  workflowId?: string;
+  collectionId?: string;
+};
 export type OrgParams = {
   home: Record<string, never>;
-  workflows: {
-    workflowId?: string;
-    itemId?: string;
+  workflows: ArchivedItemPageParams & {
     jobType?: JobType;
     new?: ResourceName;
   };
-  items: {
-    itemType?: Crawl["type"];
-    itemId?: string;
-    itemPageId?: string;
-    qaTab?: QATab;
-    qaRunId?: string;
-    workflowId?: string;
-    collectionId?: string;
-  };
+  items: ArchivedItemPageParams;
   "browser-profiles": {
     browserProfileId?: string;
     browserId?: string;
@@ -73,10 +72,7 @@ export type OrgParams = {
     profileId?: string;
     navigateUrl?: string;
   };
-  collections: {
-    collectionId?: string;
-    itemId?: string;
-    itemType?: string;
+  collections: ArchivedItemPageParams & {
     collectionTab?: string;
   };
   settings: {
@@ -231,8 +227,7 @@ export class Org extends LiteElement {
   }
 
   render() {
-    const noMaxWidth =
-      this.orgTab === "items" && (this.params as OrgParams["items"]).qaTab;
+    const noMaxWidth = (this.params as OrgParams["items"]).qaTab;
 
     return html`
       <btrix-document-title
@@ -501,6 +496,17 @@ export class Org extends LiteElement {
 
     if (workflowId) {
       if (params.itemId) {
+        if (params.qaTab) {
+          return html`<btrix-archived-item-qa
+            class="flex-1"
+            itemId=${params.itemId}
+            workflowId=${workflowId}
+            itemPageId=${ifDefined(params.itemPageId)}
+            qaRunId=${ifDefined(params.qaRunId)}
+            tab=${params.qaTab}
+          ></btrix-archived-item-qa>`;
+        }
+
         return html`<btrix-archived-item-detail
           crawlId=${params.itemId}
           workflowId=${workflowId}
@@ -578,6 +584,16 @@ export class Org extends LiteElement {
 
     if (params.collectionId) {
       if (params.itemId) {
+        if (params.qaTab) {
+          return html`<btrix-archived-item-qa
+            class="flex-1"
+            itemId=${params.itemId}
+            collectionId=${params.collectionId}
+            itemPageId=${ifDefined(params.itemPageId)}
+            qaRunId=${ifDefined(params.qaRunId)}
+            tab=${params.qaTab}
+          ></btrix-archived-item-qa>`;
+        }
         return html`<btrix-archived-item-detail
           crawlId=${params.itemId}
           collectionId=${params.collectionId}

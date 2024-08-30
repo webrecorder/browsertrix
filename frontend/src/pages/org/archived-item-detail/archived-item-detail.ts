@@ -1076,9 +1076,11 @@ ${this.crawl?.description}
     const qaIsRunning = this.isQAActive;
     const qaIsAvailable = !!this.mostRecentNonFailedQARun;
 
+    console.log(new URL(window.location.href).pathname);
+
     const reviewLink =
       qaIsAvailable && this.qaRunId
-        ? `${this.navigate.orgBasePath}/items/crawl/${this.crawlId}/review/screenshots?qaRunId=${this.qaRunId}`
+        ? `${new URL(window.location.href).pathname}/review/screenshots?qaRunId=${this.qaRunId}`
         : undefined;
 
     return html`

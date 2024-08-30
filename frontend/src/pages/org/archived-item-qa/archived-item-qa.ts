@@ -95,6 +95,12 @@ export class ArchivedItemQA extends BtrixElement {
   qaRunId?: string;
 
   @property({ type: String })
+  workflowId?: string;
+
+  @property({ type: String })
+  collectionId?: string;
+
+  @property({ type: String })
   tab: QATypes.QATab = "screenshots";
 
   @state()
