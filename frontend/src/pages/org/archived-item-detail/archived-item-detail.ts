@@ -21,13 +21,11 @@ import type {
   Seed,
   Workflow,
 } from "@/types/crawler";
-import type { CrawlState } from "@/types/crawlState";
 import type { QARun } from "@/types/qa";
 import { isApiError } from "@/utils/api";
 import {
-  activeCrawlStates,
-  finishedCrawlStates,
   isActive,
+  isNotFailed,
   isSuccessfullyFinished,
   renderName,
 } from "@/utils/crawler";
@@ -50,10 +48,6 @@ const SECTIONS = [
 type SectionName = (typeof SECTIONS)[number];
 
 const POLL_INTERVAL_SECONDS = 5;
-export const QA_RUNNING_STATES = [
-  "starting",
-  ...activeCrawlStates,
-] as CrawlState[];
 
 /**
  * Usage:
@@ -195,9 +189,7 @@ export class ArchivedItemDetail extends BtrixElement {
     if (changedProperties.has("qaRuns")) {
       // Latest QA run that's either running or finished:
       this.mostRecentNonFailedQARun = this.qaRuns?.find((run) =>
-        (
-          [...QA_RUNNING_STATES, ...finishedCrawlStates] as readonly string[]
-        ).includes(run.state),
+        isNotFailed(run),
       );
     }
     if (
@@ -1487,9 +1479,7 @@ ${this.item?.description}
       });
     }
 
-    this.isQAActive = Boolean(
-      this.qaRuns?.[0] && QA_RUNNING_STATES.includes(this.qaRuns[0].state),
-    );
+    this.isQAActive = Boolean(this.qaRuns?.[0] && isActive(this.qaRuns[0]));
 
     if (this.isQAActive) {
       // Clear current timer, if it exists

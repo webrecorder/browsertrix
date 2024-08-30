@@ -13,8 +13,6 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
-import { QA_RUNNING_STATES } from "../archived-item-detail";
-
 import { BtrixElement } from "@/classes/BtrixElement";
 import { type Dialog } from "@/components/ui/dialog";
 import type { PageChangeEvent } from "@/components/ui/pagination";
@@ -28,7 +26,7 @@ import type {
 } from "@/types/api";
 import { type ArchivedItem, type ArchivedItemPage } from "@/types/crawler";
 import type { QARun } from "@/types/qa";
-import { isSuccessfullyFinished } from "@/utils/crawler";
+import { isActive, isSuccessfullyFinished } from "@/utils/crawler";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 import { formatNumber, getLocale } from "@/utils/localization";
 import { pluralOf } from "@/utils/pluralize";
@@ -465,8 +463,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
 
   private renderAnalysis(qaRuns: QARun[]) {
     const isRunning =
-      this.mostRecentNonFailedQARun &&
-      QA_RUNNING_STATES.includes(this.mostRecentNonFailedQARun.state);
+      this.mostRecentNonFailedQARun && isActive(this.mostRecentNonFailedQARun);
     const qaRun = qaRuns.find(({ id }) => id === this.qaRunId);
 
     if (!qaRun && isRunning) {
@@ -495,9 +492,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
               this.qaRunId === finishedQARuns[0]?.id;
 
             const finishedAndRunningQARuns = qaRuns.filter(
-              (qaRun) =>
-                isSuccessfullyFinished(qaRun) ||
-                QA_RUNNING_STATES.includes(qaRun.state),
+              (qaRun) => isSuccessfullyFinished(qaRun) || isActive(qaRun),
             );
             const mostRecentSelected =
               this.qaRunId === finishedAndRunningQARuns[0]?.id;

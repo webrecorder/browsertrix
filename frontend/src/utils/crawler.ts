@@ -4,6 +4,7 @@ import { html, type TemplateResult } from "lit";
 
 import type { ArchivedItem, Crawl, Workflow } from "@/types/crawler";
 import {
+  FAILED_STATES,
   RUNNING_AND_WAITING_STATES,
   SUCCESSFUL_AND_FAILED_STATES,
   SUCCESSFUL_STATES,
@@ -37,6 +38,12 @@ export function isActive({ state, stopping }: Partial<Crawl | QARun>) {
 
 export function isSuccessfullyFinished({ state }: { state: string }) {
   return state && (SUCCESSFUL_STATES as readonly string[]).includes(state);
+}
+
+export function isNotFailed({ state }: { state: string }) {
+  return (
+    state && !(FAILED_STATES as readonly string[]).some((str) => str === state)
+  );
 }
 
 export function renderName(item: ArchivedItem | Workflow, className?: string) {
