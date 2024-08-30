@@ -378,12 +378,13 @@ class CrawlOperator(BaseOperator):
         params["priorityClassName"] = pri_class
 
         params["cpu"] = params.get(cpu_field)
-        params["cpu_limit"] = self.k8s.max_crawler_cpu_size
 
         params["memory"] = params.get(mem_field)
         params["memory_limit"] = self.k8s.max_crawler_memory_size
 
         params["enable_auto_resize"] = self.k8s.enable_auto_resize
+        params["max_crawler_cpu_request"] = self.k8s.max_crawler_cpu_request
+        params["max_crawler_memory_request"] = self.k8s.max_crawler_memory_request
 
         params["storage"] = pod_info.newStorage or params.get("crawler_storage")
         params["workers"] = params.get(worker_field) or 1

@@ -57,7 +57,9 @@ data:
   MIN_QA_CRAWLER_IMAGE: "{{ .Values.min_qa_crawler_image }}"
 
   MAX_CRAWLER_MEMORY: "{{ .Values.max_crawler_memory }}"
-  MAX_CRAWLER_CPU: "{{ .Values.max_crawler_cpu }}"
+
+  MAX_CRAWLER_MEMORY_REQUEST: "{{ .Values.max_crawler_memory_request }}"
+  MAX_CRAWLER_CPU_REQUEST: "{{ .Values.max_crawler_cpu_request }}"
 
   ENABLE_AUTO_RESIZE_CRAWLERS: "{{ .Values.enable_auto_resize_crawlers }}"
 

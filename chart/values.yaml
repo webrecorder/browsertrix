@@ -270,6 +270,8 @@ crawler_extra_memory_per_browser: 768Mi
 # crawler_memory = crawler_memory_base + crawler_memory_per_extra_browser * (crawler_browser_instances - 1)
 # crawler_memory:
 
+# max crawler memory limit, unbound if not set
+# max_crawler_memory:
 
 # optional: defaults to crawler_memory_base and crawler_cpu_base if not set
 # profile_browser_memory:
@@ -291,13 +293,13 @@ crawler_extra_memory_per_browser: 768Mi
 # or https://github.com/kubernetes/autoscaler/blob/master/vertical-pod-autoscaler/README.md
 enable_auto_resize_crawlers: false
 
-# max memory per crawler instance
-# recommended to be set if using VPA, otherwise no upper bound
-# max_crawler_memory:
+# max requested memory -- only used with VPA to allow resizing upwards
+# defaults to 'crawler_memory' if unset
+# max_crawler_memory_request:
 
-# max CPU per crawler instance
-# recommended to be set if using VPA, otherwise no upper bound
-# max_crawler_cpu:
+# max requested CPU per crawler instance -- only used with VPA to allow resizing upwards
+# defaults to 'crawler_cpu' if unset
+# max_crawler_cpu_request:
 
 
 # Other Crawler Settings

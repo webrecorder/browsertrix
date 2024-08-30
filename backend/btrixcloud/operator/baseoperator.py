@@ -35,7 +35,9 @@ class K8sOpAPI(K8sAPI):
     enable_auto_resize: bool
 
     max_crawler_memory_size: int
-    max_crawler_cpu_size: float
+
+    max_crawler_memory_request: int
+    max_crawler_cpu_request: float
 
     def __init__(self):
         super().__init__()
@@ -95,23 +97,20 @@ class K8sOpAPI(K8sAPI):
             qa_memory = crawler_memory
             print(f"memory = {crawler_memory}")
 
-        max_crawler_memory_size = 0
-        max_crawler_memory = os.environ.get("MAX_CRAWLER_MEMORY")
-        if max_crawler_memory:
-            max_crawler_memory_size = int(parse_quantity(max_crawler_memory))
+        self.max_crawler_memory_size = int(
+            parse_quantity(os.environ.get("MAX_CRAWLER_MEMORY", "0"))
+        )
 
-        self.max_crawler_memory_size = max_crawler_memory_size or crawler_memory
+        print(f"crawler memory limit: {self.max_crawler_memory_size}")
 
-        print(f"max crawler memory size: {self.max_crawler_memory_size}")
-
-        max_crawler_cpu_size = 0.0
-        max_crawler_cpu = os.environ.get("MAX_CRAWLER_CPU")
-        if max_crawler_cpu:
-            max_crawler_cpu_size = float(parse_quantity(max_crawler_cpu))
-
-        self.max_crawler_cpu_size = max_crawler_cpu_size or crawler_cpu
-
-        print(f"max crawler cpu: {self.max_crawler_cpu_size}")
+        self.max_crawler_memory_request = (
+            int(parse_quantity(os.environ.get("MAX_CRAWLER_MEMORY_REQUEST", "0")))
+            or crawler_memory
+        )
+        self.max_crawler_cpu_request = (
+            float(parse_quantity(os.environ.get("MAX_CRAWLER_CPU_REQUEST", "0")))
+            or crawler_cpu
+        )
 
         p["crawler_cpu"] = crawler_cpu
         p["crawler_memory"] = crawler_memory
@@ -146,6 +145,9 @@ class K8sOpAPI(K8sAPI):
             os.environ.get("ENABLE_AUTO_RESIZE_CRAWLERS")
         )
         print("Auto-Resize Enabled:", self.enable_auto_resize)
+        if self.enable_auto_resize:
+            print(f"Auto-Resize Max Memory Request: {self.max_crawler_memory_request}")
+            print(f"Auto-Resize Mem CPU Request: {self.max_crawler_cpu_request}")
 
 
 # pylint: disable=too-many-instance-attributes, too-many-arguments
