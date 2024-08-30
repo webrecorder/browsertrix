@@ -1266,12 +1266,12 @@ export class WorkflowDetail extends LiteElement {
 
     return html`
       <div>
-        <sl-radio-group
-          value=${this.workflow.scale}
-          help-text=${msg(
-            "This change will only apply to the currently running crawl.",
+        <p class="mb-4 text-neutral-600">
+          ${msg(
+            "Change the number of browser windows running in parallel. This change will take effect immediately on the currently running crawl and update crawl workflow settings.",
           )}
-        >
+        </p>
+        <sl-radio-group value=${this.workflow.scale}>
           ${scaleOptions.map(
             ({ value, label }) => html`
               <sl-radio-button
