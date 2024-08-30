@@ -6,7 +6,7 @@ Changes to a setting will only apply to subsequent crawls.
 
 Crawl settings are shown in the crawl workflow detail **Settings** tab and in the archived item **Crawl Settings** tab.
 
-## Scope
+## Crawl Scope
 
 Specify the range and depth of your crawl. Different settings will be shown depending on whether you chose _Known URLs_ (crawl type of **URL List**) or _Automated Discovery_ (crawl type of **Seeded Crawl**) when creating a new workflow.
 
