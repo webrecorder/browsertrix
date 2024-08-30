@@ -5,7 +5,13 @@ import { html, type TemplateResult } from "lit";
 import { formatNumber } from "./localization";
 import { pluralOf } from "./pluralize";
 
-import type { ArchivedItem, CrawlState, Workflow } from "@/types/crawler";
+import type {
+  ArchivedItem,
+  Crawl,
+  CrawlState,
+  Workflow,
+} from "@/types/crawler";
+import type { QARun } from "@/types/qa";
 
 // Match backend TYPE_RUNNING_STATES in models.py
 const RUNNING_STATES: CrawlState[] = [
@@ -62,8 +68,8 @@ export const DEPTH_SUPPORTED_SCOPES = [
   "any",
 ];
 
-export function isActive(state: CrawlState | null) {
-  return state && activeCrawlStates.includes(state);
+export function isActive({ state, stopping }: Partial<Crawl | QARun>) {
+  return (state && activeCrawlStates.includes(state)) || stopping === true;
 }
 
 export function renderName(item: ArchivedItem | Workflow, className?: string) {

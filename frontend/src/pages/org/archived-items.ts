@@ -635,7 +635,7 @@ export class CrawlsList extends BtrixElement {
         `,
       )}
       ${when(
-        this.isCrawler && !isActive(item.state),
+        this.isCrawler && (item.type !== "crawl" || !isActive(item)),
         () => html`
           <sl-divider></sl-divider>
           <sl-menu-item

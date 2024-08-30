@@ -675,7 +675,8 @@ export class ArchivedItemDetail extends BtrixElement {
             `,
           )}
           ${when(
-            this.isCrawler && !isActive(this.item.state),
+            this.isCrawler &&
+              (this.item.type !== "crawl" || !isActive(this.item)),
             () => html`
               <sl-divider></sl-divider>
               <sl-menu-item

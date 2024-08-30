@@ -363,7 +363,7 @@ export class ArchivedItemQA extends BtrixElement {
     const currentQARun = this.finishedQARuns?.find(
       ({ id }) => id === this.qaRunId,
     );
-    const disableReview = !currentQARun || isActive(currentQARun.state);
+    const disableReview = !currentQARun || isActive(currentQARun);
 
     return html`
       ${this.renderHidden()}

@@ -982,7 +982,10 @@ export class WorkflowDetail extends LiteElement {
               ${waitingMsg}
             </p>
           </div>`
-        : isActive(this.workflow.lastCrawlState)
+        : isActive({
+              state: this.workflow.lastCrawlState,
+              stopping: this.workflow.lastCrawlStopping,
+            })
           ? html`
               ${isStopping
                 ? html`
@@ -1227,7 +1230,12 @@ export class WorkflowDetail extends LiteElement {
           ? html`<btrix-exclusion-editor
               .crawlId=${this.lastCrawlId ?? undefined}
               .config=${this.workflow.config}
-              ?isActiveCrawl=${isActive(this.workflow.lastCrawlState)}
+              ?isActiveCrawl=${this.workflow.lastCrawlState
+                ? isActive({
+                    state: this.workflow.lastCrawlState,
+                    stopping: this.workflow.lastCrawlStopping,
+                  })
+                : false}
               @on-success=${this.handleExclusionChange}
             ></btrix-exclusion-editor>`
           : ""}

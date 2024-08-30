@@ -13,6 +13,7 @@ export type QARun = {
     size: number;
   };
   resources?: { crawlId: string; name: string; path: string }[];
+  stopping?: boolean | null;
 };
 
 export type ArchivedItemQAPage = ArchivedItemPage & {
