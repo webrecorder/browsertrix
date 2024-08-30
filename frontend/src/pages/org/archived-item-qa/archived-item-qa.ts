@@ -94,10 +94,10 @@ export class ArchivedItemQA extends BtrixElement {
   qaRunId?: string;
 
   @property({ type: String })
-  workflowId?: string;
+  collectionId?: string;
 
   @property({ type: String })
-  collectionId?: string;
+  workflowId?: string;
 
   @property({ type: String })
   tab: QATypes.QATab = "screenshots";
@@ -360,6 +360,7 @@ export class ArchivedItemQA extends BtrixElement {
   render() {
     const crawlBaseUrl = `${this.navigate.orgBasePath}/items/crawl/${this.itemId}`;
     const searchParams = new URLSearchParams(window.location.search);
+    const itemName = this.item ? renderName(this.item) : nothing;
     const [prevPage, currentPage, nextPage] = this.getPageListSliceByCurrent();
     const currentQARun = this.finishedQARuns?.find(
       ({ id }) => id === this.qaRunId,
@@ -369,31 +370,71 @@ export class ArchivedItemQA extends BtrixElement {
     return html`
       ${this.renderHidden()}
 
-      <div class="grid--header pb-3 h-8 border-b flex items-center">
+      <div class="flex items-center">
         ${this.renderBackLink()}
-        <sl-icon name="chevron-right"></sl-icon>
-        ${when(
-          this.finishedQARuns,
-          (qaRuns) => html`
-            <btrix-qa-run-dropdown
-              slot="suffix"
-              .items=${qaRuns}
-              selectedId=${this.qaRunId || ""}
-              @btrix-select=${(e: CustomEvent<SelectDetail>) => {
-                const params = new URLSearchParams(searchParams);
-                params.set("qaRunId", e.detail.item.id);
-                this.navigate.to(
-                  `${window.location.pathname}?${params.toString()}`,
-                );
-              }}
-            ></btrix-qa-run-dropdown>
-          `,
-        )}
+        <div class="text-neutral-400" role="separator">/</div>
+        <h1 class="text-neutral-400 ml-3">
+          ${msg("QA Review")}
+          <btrix-beta-badge placement="right"></btrix-beta-badge>
+        </h1>
       </div>
 
       <article class="qa-grid min-h-screen grid gap-x-6 gap-y-0 lg:snap-start">
+        <header
+          class="grid--header flex flex-wrap items-center justify-between gap-1 border-b py-2"
+        >
+          <div class="flex items-center gap-2 overflow-hidden">
+            <h2
+              class="flex-1 flex-shrink-0 min-w-32 truncate text-base font-semibold leading-tight"
+            >
+              ${itemName}
+            </h2>
+            ${when(
+              this.finishedQARuns,
+              (qaRuns) => html`
+                <btrix-qa-run-dropdown
+                  .items=${qaRuns}
+                  selectedId=${this.qaRunId || ""}
+                  @btrix-select=${(e: CustomEvent<SelectDetail>) => {
+                    const params = new URLSearchParams(searchParams);
+                    params.set("qaRunId", e.detail.item.id);
+                    this.navigate.to(
+                      `${window.location.pathname}?${params.toString()}`,
+                    );
+                  }}
+                ></btrix-qa-run-dropdown>
+              `,
+            )}
+          </div>
+          <div class="ml-auto flex">
+            <sl-button
+              size="small"
+              variant="text"
+              href=${`${crawlBaseUrl}#qa`}
+              @click=${this.navigate.link}
+              >${msg("Exit Review")}</sl-button
+            >
+            <sl-tooltip
+              content=${msg(
+                "Reviews are temporarily disabled during analysis runs.",
+              )}
+              ?disabled=${!disableReview}
+            >
+              <sl-button
+                variant="success"
+                size="small"
+                @click=${() => void this.reviewDialog?.show()}
+                ?disabled=${disableReview}
+              >
+                <sl-icon slot="prefix" name="patch-check"> </sl-icon>
+                ${msg("Finish Review")}
+              </sl-button>
+            </sl-tooltip>
+          </div>
+        </header>
+
         <div
-          class="grid--pageToolbar flex flex-wrap items-center justify-stretch gap-2 overflow-hidden border-b py-3 @container"
+          class="grid--pageToolbar flex flex-wrap items-center justify-stretch gap-2 overflow-hidden border-b py-2 @container"
         >
           <h3
             class="flex-auto flex-shrink-0 flex-grow basis-32 truncate text-base font-semibold text-neutral-700"
@@ -500,38 +541,11 @@ export class ArchivedItemQA extends BtrixElement {
         <section
           class="grid--pageList grid grid-rows-[auto_1fr] *:min-h-0 *:min-w-0"
         >
-          <div class="flex justify-between items-center py-3">
-            <h3
-              class="text-base font-semibold leading-none text-neutral-800"
-            >
-              ${msg("Pages")}
-            </h3>
-            <div class="ml-auto flex">
-              <sl-button
-                size="small"
-                variant="text"
-                href=${`${crawlBaseUrl}#qa`}
-                @click=${this.navigate.link}
-                >${msg("Exit Review")}</sl-button
-              >
-              <sl-tooltip
-                content=${msg(
-                  "Reviews are temporarily disabled during analysis runs.",
-                )}
-                ?disabled=${!disableReview}
-              >
-                <sl-button
-                  variant="success"
-                  size="small"
-                  @click=${() => void this.reviewDialog?.show()}
-                  ?disabled=${disableReview}
-                >
-                  <sl-icon slot="prefix" name="patch-check"> </sl-icon>
-                  ${msg("Finish Review")}
-                </sl-button>
-              </sl-tooltip>
-            </div>
-          </div>
+          <h3
+            class="my-4 text-base font-semibold leading-none text-neutral-800"
+          >
+            ${msg("Pages")}
+          </h3>
           <btrix-qa-page-list
             class="flex flex-col lg:contain-size"
             .qaRunId=${this.qaRunId}
@@ -593,22 +607,24 @@ export class ArchivedItemQA extends BtrixElement {
   }
 
   private renderBackLink() {
-    let backLink = `${this.navigate.orgBasePath}/items/${this.item?.type}/${this.itemId}#qa`;
+    let backLink = `${this.navigate.orgBasePath}/items/crawl/${this.itemId}#qa`;
 
     if (this.workflowId) {
       backLink = `${this.navigate.orgBasePath}/workflows/crawl/${this.workflowId}/items/${this.itemId}#qa`;
     } else if (this.collectionId) {
-      backLink = `${this.navigate.orgBasePath}/collections/view/${this.collectionId}/items/${this.item?.type}/${this.itemId}#qa`;
+      backLink = `${this.navigate.orgBasePath}/collections/view/${this.collectionId}/items/crawl/${this.itemId}#qa`;
     }
 
     return html`
       <sl-button
+        class="-ml-4"
         variant="text"
         size="small"
         href=${backLink}
         @click=${this.navigate.link}
       >
-        ${this.item ? renderName(this.item) : ""}
+        <sl-icon name="chevron-left"></sl-icon>
+        ${msg("Back to Crawl")}
       </sl-button>
     `;
   }
