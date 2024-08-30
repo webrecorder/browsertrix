@@ -18,7 +18,7 @@ import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { ExclusionEditor } from "@/features/crawl-workflows/exclusion-editor";
 import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
 import type { APIPaginatedList } from "@/types/api";
-import type { CrawlState } from "@/types/crawlState";
+import { type CrawlState } from "@/types/crawlState";
 import { isApiError } from "@/utils/api";
 import {
   DEFAULT_MAX_SCALE,
@@ -118,11 +118,10 @@ export class WorkflowDetail extends LiteElement {
   private getWorkflowPromise?: Promise<Workflow>;
   private getSeedsPromise?: Promise<APIPaginatedList<Seed>>;
 
-  private get isExplicitRunningOrStarting() {
-    if (!this.workflow?.isCrawlRunning) return false;
-
+  private get isExplicitRunning() {
     return (
-      this.workflow.lastCrawlState === "starting" ||
+      this.workflow?.isCrawlRunning &&
+      !this.workflow.lastCrawlStopping &&
       this.workflow.lastCrawlState === "running"
     );
   }
@@ -688,7 +687,7 @@ export class WorkflowDetail extends LiteElement {
               </sl-menu-item>
               <sl-menu-item
                 @click=${() => (this.openDialogName = "exclusions")}
-                ?disabled=${!this.isExplicitRunningOrStarting}
+                ?disabled=${!this.isExplicitRunning}
               >
                 <sl-icon name="table" slot="prefix"></sl-icon>
                 ${msg("Edit Exclusions")}
@@ -965,54 +964,46 @@ export class WorkflowDetail extends LiteElement {
   private readonly renderWatchCrawl = () => {
     if (!this.authState || !this.workflow?.lastCrawlState) return "";
 
-    let waitingMsg = null;
+    // Show custom message if crawl is active but not explicitly running
+    let waitingMsg: string | null = null;
 
-    switch (this.workflow.lastCrawlState) {
-      case "starting":
-        waitingMsg = msg("Crawl starting...");
-        break;
+    if (!this.isExplicitRunning) {
+      switch (this.workflow.lastCrawlState) {
+        case "starting":
+          waitingMsg = msg("Crawl starting...");
+          break;
 
-      case "waiting_capacity":
-        waitingMsg = msg(
-          "Crawl waiting for available resources before it can continue...",
-        );
-        break;
+        case "waiting_capacity":
+          waitingMsg = msg(
+            "Crawl waiting for available resources before it can continue...",
+          );
+          break;
 
-      case "waiting_org_limit":
-        waitingMsg = msg(
-          "Crawl waiting for others to finish, concurrent limit per Organization reached...",
-        );
-        break;
+        case "waiting_org_limit":
+          waitingMsg = msg(
+            "Crawl waiting for others to finish, concurrent limit per Organization reached...",
+          );
+          break;
+
+        case "pending-wait":
+        case "generate-wacz":
+        case "uploading-wacz":
+          waitingMsg = msg("Crawl finishing...");
+          break;
+
+        default:
+          if (this.workflow.lastCrawlStopping) {
+            waitingMsg = msg("Crawl stopping...");
+          }
+          break;
+      }
     }
 
-    const isStopping = this.workflow.lastCrawlStopping;
     const authToken = this.authState.headers.Authorization.split(" ")[1];
 
     return html`
-      ${waitingMsg
-        ? html`<div class="rounded border p-3">
-            <p class="text-sm text-neutral-600 motion-safe:animate-pulse">
-              ${waitingMsg}
-            </p>
-          </div>`
-        : isActive({
-              state: this.workflow.lastCrawlState,
-              stopping: this.workflow.lastCrawlStopping,
-            })
-          ? html`
-              ${isStopping
-                ? html`
-                    <div class="mb-4">
-                      <btrix-alert variant="warning" class="text-sm">
-                        ${msg("Crawl stopping...")}
-                      </btrix-alert>
-                    </div>
-                  `
-                : ""}
-            `
-          : this.renderInactiveCrawlMessage()}
       ${when(
-        this.isExplicitRunningOrStarting && this.workflow,
+        this.isExplicitRunning && this.workflow,
         (workflow) => html`
           <div id="screencast-crawl">
             <btrix-screencast
@@ -1025,6 +1016,14 @@ export class WorkflowDetail extends LiteElement {
           <section class="mt-4">${this.renderCrawlErrors()}</section>
           <section class="mt-8">${this.renderExclusions()}</section>
         `,
+        () =>
+          waitingMsg
+            ? html`<div class="rounded border p-3">
+                <p class="text-sm text-neutral-600 motion-safe:animate-pulse">
+                  ${waitingMsg}
+                </p>
+              </div>`
+            : this.renderInactiveCrawlMessage(),
       )}
     `;
   };
