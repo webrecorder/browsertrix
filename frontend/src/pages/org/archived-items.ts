@@ -8,7 +8,7 @@ import { repeat } from "lit/directives/repeat.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
-import type { ArchivedItem, Crawl, CrawlState, Workflow } from "./types";
+import type { ArchivedItem, Crawl, Workflow } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { CopyButton } from "@/components/ui/copy-button";
@@ -16,6 +16,7 @@ import type { PageChangeEvent } from "@/components/ui/pagination";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { pageHeader } from "@/layouts/pageHeader";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
+import type { CrawlState } from "@/types/crawlState";
 import { isApiError } from "@/utils/api";
 import { finishedCrawlStates, isActive } from "@/utils/crawler";
 import { isArchivingDisabled } from "@/utils/orgs";

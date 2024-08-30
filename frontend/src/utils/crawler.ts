@@ -2,16 +2,11 @@ import { msg } from "@lit/localize";
 import clsx from "clsx";
 import { html, type TemplateResult } from "lit";
 
-import { formatNumber } from "./localization";
-import { pluralOf } from "./pluralize";
-
-import type {
-  ArchivedItem,
-  Crawl,
-  CrawlState,
-  Workflow,
-} from "@/types/crawler";
+import type { ArchivedItem, Crawl, Workflow } from "@/types/crawler";
+import type { CrawlState } from "@/types/crawlState";
 import type { QARun } from "@/types/qa";
+import { formatNumber } from "@/utils/localization";
+import { pluralOf } from "@/utils/pluralize";
 
 // Match backend TYPE_RUNNING_STATES in models.py
 const RUNNING_STATES: CrawlState[] = [

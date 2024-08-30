@@ -9,7 +9,8 @@ import type { PageChangeEvent } from "@/components/ui/pagination";
 import needLogin from "@/decorators/needLogin";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
-import type { Crawl, CrawlState } from "@/types/crawler";
+import type { Crawl } from "@/types/crawler";
+import type { CrawlState } from "@/types/crawlState";
 import { activeCrawlStates } from "@/utils/crawler";
 import LiteElement, { html } from "@/utils/LiteElement";
 

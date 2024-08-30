@@ -18,10 +18,10 @@ import type {
   ArchivedItem,
   Crawl,
   CrawlConfig,
-  CrawlState,
   Seed,
   Workflow,
 } from "@/types/crawler";
+import type { CrawlState } from "@/types/crawlState";
 import type { QARun } from "@/types/qa";
 import { isApiError } from "@/utils/api";
 import {
@@ -194,7 +194,9 @@ export class ArchivedItemDetail extends BtrixElement {
     if (changedProperties.has("qaRuns")) {
       // Latest QA run that's either running or finished:
       this.mostRecentNonFailedQARun = this.qaRuns?.find((run) =>
-        [...QA_RUNNING_STATES, ...finishedCrawlStates].includes(run.state),
+        (
+          [...QA_RUNNING_STATES, ...finishedCrawlStates] as readonly string[]
+        ).includes(run.state),
       );
     }
     if (

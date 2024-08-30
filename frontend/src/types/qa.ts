@@ -1,4 +1,5 @@
-import type { ArchivedItemPage, CrawlState } from "./crawler";
+import type { ArchivedItemPage } from "@/types/crawler";
+import type { CrawlState } from "@/types/crawlState";
 
 export type QARun = {
   id: string;

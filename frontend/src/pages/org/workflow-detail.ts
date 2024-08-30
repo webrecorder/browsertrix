@@ -7,13 +7,7 @@ import { until } from "lit/directives/until.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
-import type {
-  Crawl,
-  CrawlState,
-  Seed,
-  Workflow,
-  WorkflowParams,
-} from "./types";
+import type { Crawl, Seed, Workflow, WorkflowParams } from "./types";
 
 import { CopyButton } from "@/components/ui/copy-button";
 import type { PageChangeEvent } from "@/components/ui/pagination";
@@ -24,6 +18,7 @@ import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { ExclusionEditor } from "@/features/crawl-workflows/exclusion-editor";
 import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
 import type { APIPaginatedList } from "@/types/api";
+import type { CrawlState } from "@/types/crawlState";
 import { isApiError } from "@/utils/api";
 import {
   DEFAULT_MAX_SCALE,
