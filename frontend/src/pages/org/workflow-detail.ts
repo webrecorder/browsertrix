@@ -498,19 +498,30 @@ export class WorkflowDetail extends LiteElement {
         </sl-icon-button>`;
     }
     if (this.activePanel === "watch" && this.isCrawler) {
+      const enableEditBrowserWindows =
+        this.workflow?.isCrawlRunning && !this.workflow.lastCrawlStopping;
       return html` <h3>${this.tabLabels[this.activePanel]}</h3>
-        <sl-button
-          size="small"
-          ?disabled=${!this.workflow?.isCrawlRunning}
-          @click=${() => (this.openDialogName = "scale")}
-        >
-          <sl-icon
-            name="plus-slash-minus"
-            slot="prefix"
-            label=${msg("Increase or decrease")}
-          ></sl-icon>
-          <span>${msg("Edit Browser Windows")}</span>
-        </sl-button>`;
+        <div>
+          <sl-tooltip
+            content=${msg(
+              "Browser windows can only be edited while a crawl is starting or running",
+            )}
+            ?disabled=${enableEditBrowserWindows}
+          >
+            <sl-button
+              size="small"
+              ?disabled=${!enableEditBrowserWindows}
+              @click=${() => (this.openDialogName = "scale")}
+            >
+              <sl-icon
+                name="plus-slash-minus"
+                slot="prefix"
+                label=${msg("Increase or decrease")}
+              ></sl-icon>
+              <span>${msg("Edit Browser Windows")}</span>
+            </sl-button>
+          </sl-tooltip>
+        </div>`;
     }
     if (this.activePanel === "logs") {
       const authToken = this.authState?.headers.Authorization.split(" ")[1];
@@ -678,7 +689,7 @@ export class WorkflowDetail extends LiteElement {
             `,
           )}
           ${when(
-            workflow.isCrawlRunning,
+            workflow.isCrawlRunning && !workflow.lastCrawlStopping,
             () => html`
               <sl-divider></sl-divider>
               <sl-menu-item @click=${() => (this.openDialogName = "scale")}>

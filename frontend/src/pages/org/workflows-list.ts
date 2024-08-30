@@ -494,7 +494,9 @@ export class WorkflowsList extends LiteElement {
         `,
       )}
       ${when(
-        workflow.isCrawlRunning && this.appState.isCrawler,
+        this.appState.isCrawler &&
+          workflow.isCrawlRunning &&
+          !workflow.lastCrawlStopping,
         // HACK shoelace doesn't current have a way to override non-hover
         // color without resetting the --sl-color-neutral-700 variable
         () => html`
