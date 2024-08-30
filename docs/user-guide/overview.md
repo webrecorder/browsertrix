@@ -21,7 +21,7 @@ The crawling panel lists the number of currently running and waiting crawls, as 
 For organizations with a set execution minute limit, the crawling panel displays a graph of how much execution time has been used and how much is currently remaining. Monthly execution time limits reset on the first of each month at 12:00 AM GMT.
 
 ??? Question "How is execution time calculated?"
-    Execution time is the total runtime of all [_Crawler Instances_](workflow-setup.md/#browser-windows) during a crawl. For instance, if _Crawler Instances_ scale is set to 2× and each crawler instance uses 2 minutes of active crawling time, execution time for the crawl will be 4 minutes. Like elapsed time, this is tracked as the crawl runs so changing the _Crawler Instances_ scale while a crawl is running may change the amount of execution time used in a given time period.
+    Execution time is the total runtime of scaled by the [_Browser Windows_](workflow-setup.md/#browser-windows) setting increment value during a crawl. Like elapsed time, this is tracked as the crawl runs so changing the amount of _Browser Windows_ while a crawl is running may change the amount of execution time used in a given time period.
 
 ## Collections
 
