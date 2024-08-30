@@ -1258,11 +1258,14 @@ export class WorkflowDetail extends LiteElement {
     if (!this.workflow) return;
 
     const scaleOptions = [];
-    for (let value = 1; value <= this.maxScale; value++) {
-      scaleOptions.push({
-        value,
-        label: `${value}×`,
-      });
+
+    if (this.appState.settings) {
+      for (let value = 1; value <= this.maxScale; value++) {
+        scaleOptions.push({
+          value,
+          label: value * this.appState.settings.numBrowsers,
+        });
+      }
     }
 
     return html`
