@@ -597,7 +597,19 @@ export class ArchivedItemDetail extends BtrixElement {
             : ""}
           ${this.isCrawler
             ? this.crawl
-              ? this.renderMenu()
+              ? html`
+                  ${this.crawl.type === "crawl"
+                    ? html`<sl-button
+                        size="small"
+                        href=${`${this.navigate.orgBasePath}/workflows/crawl/${this.crawl.cid}`}
+                        @click=${this.navigate.link}
+                      >
+                        <sl-icon name="file-code-fill" slot="prefix"></sl-icon>
+                        ${msg("Go to Workflow")}
+                      </sl-button>`
+                    : nothing}
+                  ${this.renderMenu()}
+                `
               : html`<sl-skeleton
                   class="h-8 w-24 [--border-radius:theme(borderRadius.sm)]"
                 ></sl-skeleton>`
