@@ -196,7 +196,7 @@ export class WorkflowsList extends LiteElement {
             this.appState.isAdmin,
             () =>
               html` <sl-icon-button
-                href=${`${this.orgBasePath}/settings/crawling`}
+                href=${`${this.orgBasePath}/settings/crawling-defaults`}
                 class="size-8 text-lg"
                 name="gear"
                 label=${msg("Edit org crawling settings")}
