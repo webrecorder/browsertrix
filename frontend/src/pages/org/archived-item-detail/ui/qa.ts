@@ -462,11 +462,11 @@ export class ArchivedItemDetailQA extends BtrixElement {
     html`<div class="min-w-32"><sl-spinner class="size-4"></sl-spinner></div>`;
 
   private renderAnalysis(qaRuns: QARun[]) {
-    const isRunning =
+    const isRunningOrStarting =
       this.mostRecentNonFailedQARun && isActive(this.mostRecentNonFailedQARun);
     const qaRun = qaRuns.find(({ id }) => id === this.qaRunId);
 
-    if (!qaRun && isRunning) {
+    if (!qaRun && isRunningOrStarting) {
       return html`<btrix-alert class="mb-3" variant="success">
         ${msg("Running QA analysis on pages...")}
       </btrix-alert>`;
@@ -560,7 +560,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
                   ? this.renderMeter(
                       qaRun.stats.found,
                       this.qaStats.value.screenshotMatch,
-                      isRunning,
+                      isRunningOrStarting,
                     )
                   : this.renderMeter()}
               </btrix-table-cell>
@@ -574,7 +574,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
                   ? this.renderMeter(
                       qaRun.stats.found,
                       this.qaStats.value.textMatch,
-                      isRunning,
+                      isRunningOrStarting,
                     )
                   : this.renderMeter()}
               </btrix-table-cell>

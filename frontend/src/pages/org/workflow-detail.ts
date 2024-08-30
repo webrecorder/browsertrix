@@ -118,6 +118,15 @@ export class WorkflowDetail extends LiteElement {
   private getWorkflowPromise?: Promise<Workflow>;
   private getSeedsPromise?: Promise<APIPaginatedList<Seed>>;
 
+  private get isExplicitRunningOrStarting() {
+    if (!this.workflow?.isCrawlRunning) return false;
+
+    return (
+      this.workflow.lastCrawlState === "starting" ||
+      this.workflow.lastCrawlState === "running"
+    );
+  }
+
   private readonly tabLabels: Record<Tab, string> = {
     crawls: msg("Crawls"),
     watch: msg("Watch Crawl"),
@@ -381,6 +390,15 @@ export class WorkflowDetail extends LiteElement {
           >
         </div>
       </btrix-dialog>
+      <btrix-dialog
+        .label=${msg("Edit Browser Windows")}
+        .open=${this.openDialogName === "scale"}
+        @sl-request-close=${() => (this.openDialogName = undefined)}
+        @sl-show=${this.showDialog}
+        @sl-after-hide=${() => (this.isDialogVisible = false)}
+      >
+        ${this.isDialogVisible ? this.renderEditScale() : ""}
+      </btrix-dialog>
     `;
   }
 
@@ -484,7 +502,7 @@ export class WorkflowDetail extends LiteElement {
       return html` <h3>${this.tabLabels[this.activePanel]}</h3>
         <sl-button
           size="small"
-          ?disabled=${this.workflow?.lastCrawlState !== "running"}
+          ?disabled=${!this.workflow?.isCrawlRunning}
           @click=${() => (this.openDialogName = "scale")}
         >
           <sl-icon
@@ -670,6 +688,7 @@ export class WorkflowDetail extends LiteElement {
               </sl-menu-item>
               <sl-menu-item
                 @click=${() => (this.openDialogName = "exclusions")}
+                ?disabled=${!this.isExplicitRunningOrStarting}
               >
                 <sl-icon name="table" slot="prefix"></sl-icon>
                 ${msg("Edit Exclusions")}
@@ -966,7 +985,6 @@ export class WorkflowDetail extends LiteElement {
         break;
     }
 
-    const isRunning = this.workflow.lastCrawlState === "running";
     const isStopping = this.workflow.lastCrawlStopping;
     const authToken = this.authState.headers.Authorization.split(" ")[1];
 
@@ -994,7 +1012,7 @@ export class WorkflowDetail extends LiteElement {
             `
           : this.renderInactiveCrawlMessage()}
       ${when(
-        isRunning && this.workflow,
+        this.isExplicitRunningOrStarting && this.workflow,
         (workflow) => html`
           <div id="screencast-crawl">
             <btrix-screencast
@@ -1006,16 +1024,6 @@ export class WorkflowDetail extends LiteElement {
 
           <section class="mt-4">${this.renderCrawlErrors()}</section>
           <section class="mt-8">${this.renderExclusions()}</section>
-
-          <btrix-dialog
-            .label=${msg("Edit Browser Windows")}
-            .open=${this.openDialogName === "scale"}
-            @sl-request-close=${() => (this.openDialogName = undefined)}
-            @sl-show=${this.showDialog}
-            @sl-after-hide=${() => (this.isDialogVisible = false)}
-          >
-            ${this.isDialogVisible ? this.renderEditScale() : ""}
-          </btrix-dialog>
         `,
       )}
     `;
