@@ -51,7 +51,7 @@ export class UsageHistoryTable extends BtrixElement {
         <sl-tooltip>
           <div slot="content" style="text-transform: initial">
             ${msg(
-              "Aggregated time that the crawler was actively executing a crawl or QA analysis run, i.e. not in a waiting state",
+              "Aggregated time across all browser windows that the crawler was actively executing a crawl or QA analysis run, i.e. not in a waiting state",
             )}
           </div>
           <sl-icon name="info-circle" style="vertical-align: -.175em"></sl-icon>
