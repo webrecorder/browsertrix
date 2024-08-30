@@ -167,7 +167,7 @@ export class ConfigDetails extends LiteElement {
             renderSize(crawlConfig?.maxCrawlSize),
           )}
           ${this.renderSetting(
-            msg("Crawler Instances"),
+            msg("Browser Windows"),
             crawlConfig?.scale ? `${crawlConfig.scale}×` : "",
           )}
           <btrix-section-heading style="--margin: var(--sl-spacing-medium)">

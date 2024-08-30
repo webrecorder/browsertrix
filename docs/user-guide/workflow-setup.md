@@ -114,10 +114,6 @@ The crawl will be gracefully stopped after this set period of elapsed time.
 
 The crawl will be gracefully stopped after reaching this set size in GB.
 
-### Crawler Instances
-
-Increasing the amount of crawler instances will speed up crawls by using additional browser windows to capture more pages in parallel. This will also increase the amount of traffic sent to the website and may result in a higher chance of getting rate limited.
-
 ### Page Load Timeout
 
 Limits amount of elapsed time to wait for a page to load. Behaviors will run after this timeout only if the page is partially or fully loaded.
@@ -145,6 +141,10 @@ Configure the browser used to visit URLs during the crawl.
 ### Browser Profile
 
 Sets the [_Browser Profile_](browser-profiles.md) to be used for this crawl.
+
+### Browser Windows
+
+Increasing the number of browser windows will speed up crawls by capturing more pages in parallel. This will also increase the amount of traffic sent to the website and may result in a higher chance of getting rate limited.
 
 ### Crawler Release Channel
 

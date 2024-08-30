@@ -475,7 +475,7 @@ export class WorkflowsList extends LiteElement {
               )}
           >
             <sl-icon name="plus-slash-minus" slot="prefix"></sl-icon>
-            ${msg("Edit Crawler Instances")}
+            ${msg("Edit Browser Windows")}
           </sl-menu-item>
           <sl-menu-item
             @click=${() =>

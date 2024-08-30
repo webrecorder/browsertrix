@@ -1254,29 +1254,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
         </sl-input>
       `)}
       ${this.renderHelpTextCol(infoTextStrings["maxCrawlSizeGB"])}
-      ${inputCol(html`
-        <sl-radio-group
-          name="scale"
-          label=${msg("Crawler Instances")}
-          value=${this.formState.scale}
-          @sl-change=${(e: Event) =>
-            this.updateFormState({
-              scale: +(e.target as SlCheckbox).value,
-            })}
-        >
-          ${map(
-            range(this.defaults.maxScale),
-            (i: number) =>
-              html` <sl-radio-button value="${i + 1}" size="small"
-                >${i + 1}×</sl-radio-button
-              >`,
-          )}
-        </sl-radio-group>
-      `)}
-      ${this.renderHelpTextCol(
-        msg(`Increasing parallel crawler instances can speed up crawls, but may
-        increase the chances of getting rate limited.`),
-      )}
       ${this.renderSectionHeading(sectionStrings.perPageLimits)}
       ${inputCol(html`
         <sl-input
@@ -1366,6 +1343,29 @@ https://archiveweb.page/images/${"logo.svg"}`}
         ></btrix-select-browser-profile>
       `)}
       ${this.renderHelpTextCol(infoTextStrings["browserProfile"])}
+      ${inputCol(html`
+        <sl-radio-group
+          name="scale"
+          label=${msg("Browser Windows")}
+          value=${this.formState.scale}
+          @sl-change=${(e: Event) =>
+            this.updateFormState({
+              scale: +(e.target as SlCheckbox).value,
+            })}
+        >
+          ${map(
+            range(this.defaults.maxScale),
+            (i: number) =>
+              html` <sl-radio-button value="${i + 1}" size="small"
+                >${i + 1}×</sl-radio-button
+              >`,
+          )}
+        </sl-radio-group>
+      `)}
+      ${this.renderHelpTextCol(
+        msg(`Increasing parallel browser windows can speed up crawls, but may
+        increase the chances of getting rate limited.`),
+      )}
       ${inputCol(html`
         <btrix-select-crawler
           .crawlerChannel=${this.formState.crawlerChannel}

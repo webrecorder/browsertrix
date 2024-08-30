@@ -496,8 +496,12 @@ export class WorkflowDetail extends LiteElement {
           ?disabled=${!this.workflow?.isCrawlRunning}
           @click=${() => (this.openDialogName = "scale")}
         >
-          <sl-icon name="plus-slash-minus" slot="prefix"></sl-icon>
-          <span> ${msg("Edit Crawler Instances")} </span>
+          <sl-icon
+            name="plus-slash-minus"
+            slot="prefix"
+            label=${msg("Increase or decrease")}
+          ></sl-icon>
+          <span>${msg("Edit Browser Windows")}</span>
         </sl-button>`;
     }
     if (this.activePanel === "logs") {
@@ -675,7 +679,7 @@ export class WorkflowDetail extends LiteElement {
               <sl-divider></sl-divider>
               <sl-menu-item @click=${() => (this.openDialogName = "scale")}>
                 <sl-icon name="plus-slash-minus" slot="prefix"></sl-icon>
-                ${msg("Edit Crawler Instances")}
+                ${msg("Edit Browser Windows")}
               </sl-menu-item>
               <sl-menu-item
                 @click=${() => (this.openDialogName = "exclusions")}
@@ -947,7 +951,7 @@ export class WorkflowDetail extends LiteElement {
               ></sl-format-bytes>`
             : skeleton,
         )}
-        ${this.renderDetailItem(msg("Crawler Instances"), () =>
+        ${this.renderDetailItem(msg("Browser Windows"), () =>
           this.workflow ? this.workflow.scale : skeleton,
         )}
       </btrix-desc-list>
@@ -1016,7 +1020,7 @@ export class WorkflowDetail extends LiteElement {
           <section class="mt-8">${this.renderExclusions()}</section>
 
           <btrix-dialog
-            .label=${msg("Edit Crawler Instances")}
+            .label=${msg("Browser Windows")}
             .open=${this.openDialogName === "scale"}
             @sl-request-close=${() => (this.openDialogName = undefined)}
             @sl-show=${this.showDialog}
