@@ -1020,7 +1020,7 @@ export class WorkflowDetail extends LiteElement {
           <section class="mt-8">${this.renderExclusions()}</section>
 
           <btrix-dialog
-            .label=${msg("Browser Windows")}
+            .label=${msg("Edit Browser Windows")}
             .open=${this.openDialogName === "scale"}
             @sl-request-close=${() => (this.openDialogName = undefined)}
             @sl-show=${this.showDialog}
