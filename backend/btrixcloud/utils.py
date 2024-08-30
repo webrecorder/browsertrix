@@ -45,7 +45,7 @@ def get_templates_dir() -> str:
 
 def from_k8s_date(string: str) -> Optional[datetime]:
     """convert k8s date string to datetime"""
-    return datetime.fromisoformat(string[:-1]).replace(tzinfo=None) if string else None
+    return datetime.fromisoformat(string).replace(tzinfo=None) if string else None
 
 
 def to_k8s_date(dt_val: datetime) -> str:
