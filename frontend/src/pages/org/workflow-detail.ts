@@ -1343,7 +1343,7 @@ export class WorkflowDetail extends LiteElement {
       if (data.scaled) {
         void this.fetchWorkflow();
         this.notify({
-          message: msg("Updated crawl scale."),
+          message: msg("Updated number of browser windows."),
           variant: "success",
           icon: "check2-circle",
         });
@@ -1352,7 +1352,9 @@ export class WorkflowDetail extends LiteElement {
       }
     } catch {
       this.notify({
-        message: msg("Sorry, couldn't change crawl scale at this time."),
+        message: msg(
+          "Sorry, couldn't change number of browser windows at this time.",
+        ),
         variant: "danger",
         icon: "exclamation-octagon",
       });
