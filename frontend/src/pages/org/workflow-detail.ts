@@ -1268,7 +1268,7 @@ export class WorkflowDetail extends LiteElement {
       <div>
         <p class="mb-4 text-neutral-600">
           ${msg(
-            "Change the number of browser windows running in parallel. This change will take effect immediately on the currently running crawl and update crawl workflow settings.",
+            "Change the number of browser windows crawling in parallel. This change will take effect immediately on the currently running crawl and update crawl workflow settings.",
           )}
         </p>
         <sl-radio-group value=${this.workflow.scale}>
