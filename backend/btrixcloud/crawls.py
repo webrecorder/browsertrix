@@ -714,8 +714,11 @@ class CrawlOps(BaseCrawlOps):
             data["userid"] = str(crawl.userid)
             data["user"] = user_emails.get(crawl.userid)
 
-            data["started"] = str(crawl.started)
-            data["finished"] = str(crawl.finished)
+            # TODO: This is only necessary because crawl.started has +00:00 instead
+            # of Z if we do str(crawl.started), indicating a data issue I haven't quite
+            # caught yet - why is this one date treated differently in the db?
+            data["started"] = crawl.started.isoformat("T") + "Z"
+            data["finished"] = crawl.started.isoformat("T") + "Z"
 
             data["duration"] = 0
             duration_seconds = 0
