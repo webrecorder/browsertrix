@@ -47,9 +47,7 @@ def from_k8s_date(string: str) -> Optional[datetime]:
     if not string:
         return None
 
-    return datetime.fromisoformat(string[:-1]).replace(
-        microsecond=0, tzinfo=timezone.utc
-    )
+    return datetime.fromisoformat(string[:-1]).replace(tzinfo=timezone.utc)
 
 
 def to_k8s_date(dt_val: datetime) -> str:
