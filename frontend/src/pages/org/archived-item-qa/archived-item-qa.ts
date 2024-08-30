@@ -30,7 +30,6 @@ import {
 } from "@/features/qa/page-list/page-list";
 import { type UpdatePageApprovalDetail } from "@/features/qa/page-qa-approval";
 import type { SelectDetail } from "@/features/qa/qa-run-dropdown";
-import { pageBreadcrumbs } from "@/layouts/pageHeader";
 import type {
   APIPaginatedList,
   APIPaginationQuery,
@@ -371,7 +370,9 @@ export class ArchivedItemQA extends BtrixElement {
       ${this.renderHidden()}
 
       <div class="grid--header pb-3 h-8 border-b flex items-center">
-        ${this.renderBreadcrumbs()} ${when(
+        ${this.renderBackLink()}
+        <sl-icon name="chevron-right"></sl-icon>
+        ${when(
           this.finishedQARuns,
           (qaRuns) => html`
             <btrix-qa-run-dropdown
@@ -591,26 +592,25 @@ export class ArchivedItemQA extends BtrixElement {
     `;
   }
 
-  private renderBreadcrumbs() {
-    const breadcrumbs = [
-      {
-        href: `${this.navigate.orgBasePath}/items`,
-        content: msg("Archived Items"),
-      },
-      {
-        href: `${this.navigate.orgBasePath}/items/crawl/${this.itemId}`,
-        content: this.item ? renderName(this.item) : undefined,
-      },
-      {
-        href: `${this.navigate.orgBasePath}/items/crawl/${this.itemId}#qa`,
-        content: msg("Quality Assurance"),
-      },
-      {
-        content: msg("Review"),
-      },
-    ];
+  private renderBackLink() {
+    let backLink = `${this.navigate.orgBasePath}/items/${this.item?.type}/${this.itemId}#qa`;
 
-    return pageBreadcrumbs(breadcrumbs);
+    if (this.workflowId) {
+      backLink = `${this.navigate.orgBasePath}/workflows/crawl/${this.workflowId}/items/${this.itemId}#qa`;
+    } else if (this.collectionId) {
+      backLink = `${this.navigate.orgBasePath}/collections/view/${this.collectionId}/items/${this.item?.type}/${this.itemId}#qa`;
+    }
+
+    return html`
+      <sl-button
+        variant="text"
+        size="small"
+        href=${backLink}
+        @click=${this.navigate.link}
+      >
+        ${this.item ? renderName(this.item) : ""}
+      </sl-button>
+    `;
   }
 
   private renderReviewDialog() {
