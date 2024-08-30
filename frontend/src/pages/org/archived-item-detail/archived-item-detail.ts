@@ -28,6 +28,7 @@ import {
   activeCrawlStates,
   finishedCrawlStates,
   isActive,
+  isSuccessfullyFinished,
   renderName,
 } from "@/utils/crawler";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
@@ -146,8 +147,8 @@ export class ArchivedItemDetail extends BtrixElement {
   private timerId?: number;
 
   private get isActive(): boolean | null {
-    if (!this.item) return null;
-    return activeCrawlStates.includes(this.item.state);
+    if (!this.item || this.item.type !== "crawl") return null;
+    return isActive(this.item);
   }
 
   private get hasFiles(): boolean | null {
@@ -664,7 +665,7 @@ export class ArchivedItemDetail extends BtrixElement {
             ${msg("Copy Tags")}
           </sl-menu-item>
           ${when(
-            finishedCrawlStates.includes(this.item.state),
+            isSuccessfullyFinished(this.item),
             () => html`
               <sl-divider></sl-divider>
               <btrix-menu-item-link

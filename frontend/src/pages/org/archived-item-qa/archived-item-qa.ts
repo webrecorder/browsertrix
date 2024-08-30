@@ -38,7 +38,12 @@ import type {
 } from "@/types/api";
 import type { ArchivedItem, ArchivedItemPageComment } from "@/types/crawler";
 import type { ArchivedItemQAPage, QARun } from "@/types/qa";
-import { finishedCrawlStates, isActive, renderName } from "@/utils/crawler";
+import {
+  isActive,
+  isSuccessfullyFinished,
+  renderName,
+  type finishedCrawlStates,
+} from "@/utils/crawler";
 import { maxLengthValidator } from "@/utils/form";
 import { formatISODateString, getLocale } from "@/utils/localization";
 import { tw } from "@/utils/tailwind";
@@ -1178,9 +1183,9 @@ export class ArchivedItemQA extends BtrixElement {
 
   private async fetchQARuns(): Promise<void> {
     try {
-      this.finishedQARuns = (await this.getQARuns()).filter(({ state }) =>
-        finishedCrawlStates.includes(state),
-      );
+      this.finishedQARuns = (await this.getQARuns()).filter((qaRun) =>
+        isSuccessfullyFinished(qaRun),
+      ) as ArchivedItemQA["finishedQARuns"];
     } catch {
       this.notify.toast({
         message: msg("Sorry, couldn't retrieve analysis runs at this time."),

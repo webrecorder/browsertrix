@@ -28,7 +28,7 @@ import type {
 } from "@/types/api";
 import { type ArchivedItem, type ArchivedItemPage } from "@/types/crawler";
 import type { QARun } from "@/types/qa";
-import { finishedCrawlStates } from "@/utils/crawler";
+import { isSuccessfullyFinished } from "@/utils/crawler";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 import { formatNumber, getLocale } from "@/utils/localization";
 import { pluralOf } from "@/utils/pluralize";
@@ -488,16 +488,16 @@ export class ArchivedItemDetailQA extends BtrixElement {
         <div class="flex flex-wrap items-center gap-x-3">
           ${msg("HTML Page Match Analysis")}
           ${when(this.qaRuns, (qaRuns) => {
-            const finishedQARuns = qaRuns.filter(({ state }) =>
-              finishedCrawlStates.includes(state),
+            const finishedQARuns = qaRuns.filter((qaRun) =>
+              isSuccessfullyFinished(qaRun),
             );
             const latestFinishedSelected =
               this.qaRunId === finishedQARuns[0]?.id;
 
             const finishedAndRunningQARuns = qaRuns.filter(
-              ({ state }) =>
-                finishedCrawlStates.includes(state) ||
-                QA_RUNNING_STATES.includes(state),
+              (qaRun) =>
+                isSuccessfullyFinished(qaRun) ||
+                QA_RUNNING_STATES.includes(qaRun.state),
             );
             const mostRecentSelected =
               this.qaRunId === finishedAndRunningQARuns[0]?.id;

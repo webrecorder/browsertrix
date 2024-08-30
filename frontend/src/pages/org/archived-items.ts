@@ -18,7 +18,11 @@ import { pageHeader } from "@/layouts/pageHeader";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { CrawlState } from "@/types/crawlState";
 import { isApiError } from "@/utils/api";
-import { finishedCrawlStates, isActive } from "@/utils/crawler";
+import {
+  finishedCrawlStates,
+  isActive,
+  isSuccessfullyFinished,
+} from "@/utils/crawler";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { tw } from "@/utils/tailwind";
 
@@ -623,7 +627,7 @@ export class CrawlsList extends BtrixElement {
         ${msg("Copy Tags")}
       </sl-menu-item>
       ${when(
-        finishedCrawlStates.includes(item.state),
+        isSuccessfullyFinished(item),
         () => html`
           <sl-divider></sl-divider>
           <btrix-menu-item-link
