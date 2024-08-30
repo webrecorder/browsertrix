@@ -32,7 +32,8 @@ class JSONSerializer(json.JSONEncoder):
             return str(o)
 
         if isinstance(o, datetime):
-            return f"{o:%Y-%m-%dT%H:%M:%S}Z"
+            # Returns UTC but without Z suffix for easier import
+            return o.isoformat()
 
         return super().default(o)
 
