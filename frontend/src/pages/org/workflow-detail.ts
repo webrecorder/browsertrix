@@ -562,17 +562,15 @@ export class WorkflowDetail extends LiteElement {
     </header>
 
     ${when(
-      !this.isLoading && this.seeds,
-      () => html`
+      !this.isLoading && this.seeds && this.workflow,
+      (workflow) => html`
         <btrix-workflow-editor
-          .initialWorkflow=${this.workflow}
+          .initialWorkflow=${workflow}
           .initialSeeds=${this.seeds!.items}
-          jobType=${this.workflow!.jobType!}
-          configId=${this.workflow!.id}
+          jobType=${workflow.jobType!}
+          configId=${workflow.id}
           @reset=${() =>
-            this.navTo(
-              `${this.orgBasePath}/workflows/crawl/${this.workflow!.id}`,
-            )}
+            this.navTo(`${this.orgBasePath}/workflows/crawl/${workflow.id}`)}
         ></btrix-workflow-editor>
       `,
       this.renderLoading,
@@ -736,36 +734,36 @@ export class WorkflowDetail extends LiteElement {
       <btrix-desc-list horizontal>
         ${this.renderDetailItem(
           msg("Status"),
-          () => html`
+          (workflow) => html`
             <btrix-crawl-status
-              state=${this.workflow!.lastCrawlState || msg("No Crawls Yet")}
-              ?stopping=${this.workflow?.lastCrawlStopping}
+              state=${workflow.lastCrawlState || msg("No Crawls Yet")}
+              ?stopping=${workflow.lastCrawlStopping}
             ></btrix-crawl-status>
           `,
         )}
         ${this.renderDetailItem(
           msg("Total Size"),
-          () =>
+          (workflow) =>
             html` <sl-format-bytes
-              value=${Number(this.workflow!.totalSize)}
+              value=${Number(workflow.totalSize)}
               display="narrow"
             ></sl-format-bytes>`,
         )}
-        ${this.renderDetailItem(msg("Schedule"), () =>
-          this.workflow!.schedule
+        ${this.renderDetailItem(msg("Schedule"), (workflow) =>
+          workflow.schedule
             ? html`
                 <div>
-                  ${humanizeSchedule(this.workflow!.schedule, {
+                  ${humanizeSchedule(workflow.schedule, {
                     length: "short",
                   })}
                 </div>
               `
             : html`<span class="text-neutral-400">${msg("No Schedule")}</span>`,
         )}
-        ${this.renderDetailItem(msg("Created By"), () =>
+        ${this.renderDetailItem(msg("Created By"), (workflow) =>
           msg(
-            str`${this.workflow!.createdByName} on ${this.dateFormatter.format(
-              new Date(`${this.workflow!.created}Z`),
+            str`${workflow.createdByName} on ${this.dateFormatter.format(
+              new Date(`${workflow.created}Z`),
             )}`,
           ),
         )}
@@ -775,7 +773,7 @@ export class WorkflowDetail extends LiteElement {
 
   private renderDetailItem(
     label: string | TemplateResult,
-    renderContent: () => TemplateResult | string | number,
+    renderContent: (workflow: Workflow) => TemplateResult | string | number,
   ) {
     return html`
       <btrix-desc-list-item label=${label}>
@@ -1008,13 +1006,13 @@ export class WorkflowDetail extends LiteElement {
             `
           : this.renderInactiveCrawlMessage()}
       ${when(
-        isRunning,
-        () => html`
+        isRunning && this.workflow,
+        (workflow) => html`
           <div id="screencast-crawl">
             <btrix-screencast
               authToken=${authToken}
               .crawlId=${this.lastCrawlId ?? undefined}
-              scale=${this.workflow!.scale}
+              scale=${workflow.scale}
             ></btrix-screencast>
           </div>
 
@@ -1045,12 +1043,10 @@ export class WorkflowDetail extends LiteElement {
         </p>
         <div class="mt-4">
           ${when(
-            this.workflow?.lastCrawlId,
-            () => html`
+            this.workflow?.lastCrawlId && this.workflow,
+            (workflow) => html`
               <sl-button
-                href=${`${this.orgBasePath}/items/crawl/${
-                  this.workflow!.lastCrawlId
-                }#replay`}
+                href=${`${this.orgBasePath}/items/crawl/${workflow.lastCrawlId}#replay`}
                 variant="primary"
                 size="small"
                 @click=${this.navLink}
@@ -1065,12 +1061,10 @@ export class WorkflowDetail extends LiteElement {
             `,
           )}
           ${when(
-            this.isCrawler,
-            () =>
+            this.isCrawler && this.workflow,
+            (workflow) =>
               html` <sl-button
-                href=${`${this.orgBasePath}/items/crawl/${
-                  this.workflow!.lastCrawlId
-                }#qa`}
+                href=${`${this.orgBasePath}/items/crawl/${workflow.lastCrawlId}#qa`}
                 size="small"
                 @click=${this.navLink}
               >
@@ -1576,7 +1570,7 @@ export class WorkflowDetail extends LiteElement {
   private async runNow(): Promise<void> {
     try {
       const data = await this.apiFetch<{ started: string | null }>(
-        `/orgs/${this.orgId}/crawlconfigs/${this.workflow!.id}/run`,
+        `/orgs/${this.orgId}/crawlconfigs/${this.workflowId}/run`,
         {
           method: "POST",
         },
