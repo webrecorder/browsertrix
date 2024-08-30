@@ -11,6 +11,7 @@ import type { Profile, ProfileWorkflow } from "./types";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
 import type { BrowserConnectionChange } from "@/features/browser-profiles/profile-browser";
+import { pageBreadcrumbs } from "@/layouts/pageHeader";
 import { isApiError } from "@/utils/api";
 import { maxLengthValidator } from "@/utils/form";
 import { formatNumber, getLocale } from "@/utils/localization";
@@ -86,21 +87,7 @@ export class BrowserProfilesDetail extends BtrixElement {
       this.profile.resource.replicas.length > 0;
     const none = html`<span class="text-neutral-400">${msg("None")}</span>`;
 
-    return html`<div class="mb-7">
-        <a
-          class="text-sm font-medium text-neutral-500 hover:text-neutral-600"
-          href=${`${this.navigate.orgBasePath}/browser-profiles`}
-          @click=${this.navigate.link}
-        >
-          <sl-icon
-            name="arrow-left"
-            class="inline-block align-middle"
-          ></sl-icon>
-          <span class="inline-block align-middle"
-            >${msg("Back to Browser Profiles")}</span
-          >
-        </a>
-      </div>
+    return html`<div class="mb-7">${this.renderBreadcrumbs()}</div>
 
       <header class="mb-3 items-center justify-between md:flex">
         <h1 class="min-w-0 flex-1 truncate text-xl font-medium leading-7">
@@ -322,6 +309,20 @@ export class BrowserProfilesDetail extends BtrixElement {
       >
         ${this.isEditDialogContentVisible ? this.renderEditProfile() : nothing}
       </btrix-dialog> `;
+  }
+
+  private renderBreadcrumbs() {
+    const breadcrumbs = [
+      {
+        href: `${this.navigate.orgBasePath}/browser-profiles`,
+        content: msg("Browser Profiles"),
+      },
+      {
+        content: this.profile?.name,
+      },
+    ];
+
+    return pageBreadcrumbs(breadcrumbs);
   }
 
   private renderCrawlWorkflows() {

@@ -12,12 +12,14 @@ import type { SelectNewDialogEvent } from ".";
 
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import type { CollectionSavedEvent } from "@/features/collections/collection-metadata-dialog";
+import { pageHeader } from "@/layouts/pageHeader";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { Collection, CollectionSearchValues } from "@/types/collection";
 import type { UnderlyingFunction } from "@/types/utils";
 import { isApiError } from "@/utils/api";
 import LiteElement, { html } from "@/utils/LiteElement";
 import { getLocale } from "@/utils/localization";
+import { tw } from "@/utils/tailwind";
 import noCollectionsImg from "~assets/images/no-collections-found.webp";
 
 type Collections = APIPaginatedList<Collection>;
@@ -118,10 +120,10 @@ export class CollectionsList extends LiteElement {
 
   render() {
     return html`
-      <header class="contents">
-        <div class="mb-4 flex w-full justify-between">
-          <h1 class="text-xl font-semibold leading-8">${msg("Collections")}</h1>
-          ${when(
+      <div class="contents">
+        ${pageHeader(
+          msg("Collections"),
+          when(
             this.isCrawler,
             () => html`
               <sl-button
@@ -134,9 +136,10 @@ export class CollectionsList extends LiteElement {
                 ${msg("New Collection")}
               </sl-button>
             `,
-          )}
-        </div>
-      </header>
+          ),
+          tw`border-b-transparent`,
+        )}
+      </div>
 
       <link rel="preload" as="image" href=${noCollectionsImg} />
       ${when(this.fetchErrorStatusCode, this.renderFetchError, () =>

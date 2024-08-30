@@ -49,6 +49,7 @@ export type OrgParams = {
   home: Record<string, never>;
   workflows: {
     workflowId?: string;
+    itemId?: string;
     jobType?: JobType;
     new?: ResourceName;
   };
@@ -74,6 +75,8 @@ export type OrgParams = {
   };
   collections: {
     collectionId?: string;
+    itemId?: string;
+    itemType?: string;
     collectionTab?: string;
   };
   settings: {
@@ -242,7 +245,7 @@ export class Org extends LiteElement {
         <main
           class="${noMaxWidth
             ? "w-full"
-            : "w-full max-w-screen-desktop pt-7"} mx-auto box-border flex flex-1 flex-col p-3"
+            : "w-full max-w-screen-desktop"} mx-auto box-border flex flex-1 flex-col p-3"
           aria-labelledby="${this.orgTab}-tab"
         >
           ${when(this.userOrg, (userOrg) =>
@@ -473,7 +476,7 @@ export class Org extends LiteElement {
         ></btrix-archived-item-qa>`;
       }
 
-      return html`<btrix-archived-item-detail
+      return html` <btrix-archived-item-detail
         crawlId=${params.itemId}
         collectionId=${params.collectionId || ""}
         workflowId=${params.workflowId || ""}
@@ -497,9 +500,18 @@ export class Org extends LiteElement {
     const workflowId = params.workflowId;
 
     if (workflowId) {
+      if (params.itemId) {
+        return html`<btrix-archived-item-detail
+          crawlId=${params.itemId}
+          workflowId=${workflowId}
+          itemType="crawl"
+          ?isCrawler=${this.appState.isCrawler}
+        ></btrix-archived-item-detail>`;
+      }
+
       return html`
         <btrix-workflow-detail
-          class="col-span-5 mt-6"
+          class="col-span-5"
           workflowId=${workflowId}
           openDialogName=${this.viewStateData?.dialog}
           ?isEditing=${isEditing}
@@ -561,6 +573,14 @@ export class Org extends LiteElement {
     const params = this.params as OrgParams["collections"];
 
     if (params.collectionId) {
+      if (params.itemId) {
+        return html`<btrix-archived-item-detail
+          crawlId=${params.itemId}
+          collectionId=${params.collectionId}
+          itemType=${ifDefined(params.itemType)}
+          ?isCrawler=${this.appState.isCrawler}
+        ></btrix-archived-item-detail>`;
+      }
       return html`<btrix-collection-detail
         collectionId=${params.collectionId}
         collectionTab=${(params.collectionTab as CollectionTab | undefined) ||

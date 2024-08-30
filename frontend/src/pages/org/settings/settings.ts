@@ -12,12 +12,14 @@ import stylesheet from "./settings.stylesheet.css";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { APIUser } from "@/index";
 import { columns } from "@/layouts/columns";
+import { pageHeader } from "@/layouts/pageHeader";
 import type { APIPaginatedList } from "@/types/api";
 import { isApiError } from "@/utils/api";
 import { maxLengthValidator } from "@/utils/form";
 import { AccessCode, isAdmin, isCrawler } from "@/utils/orgs";
 import slugifyStrict from "@/utils/slugify";
 import { AppStateService } from "@/utils/state";
+import { tw } from "@/utils/tailwind";
 import { formatAPIUser } from "@/utils/user";
 
 import "./components/billing";
@@ -107,9 +109,21 @@ export class OrgSettings extends BtrixElement {
   }
 
   render() {
-    return html`<header class="mb-5">
-        <h1 class="text-xl font-semibold leading-8">${msg("Org Settings")}</h1>
-      </header>
+    return html` ${pageHeader(
+        msg("Org Settings"),
+        when(
+          this.userInfo?.orgs && this.userInfo.orgs.length > 1 && this.userOrg,
+          (userOrg) => html`
+            <div class="text-neutral-400">
+              ${msg(
+                html`Viewing
+                  <strong class="font-medium">${userOrg.name}</strong>`,
+              )}
+            </div>
+          `,
+        ),
+        tw`mb-3 lg:mb-5`,
+      )}
 
       <btrix-tab-list activePanel=${this.activePanel} hideIndicator>
         <header slot="header" class="flex h-7 items-end justify-between">

@@ -13,10 +13,12 @@ import type { SelectNewDialogEvent } from ".";
 import { CopyButton } from "@/components/ui/copy-button";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import { type SelectEvent } from "@/components/ui/search-combobox";
+import { pageHeader } from "@/layouts/pageHeader";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import { isApiError } from "@/utils/api";
 import LiteElement, { html } from "@/utils/LiteElement";
 import { isArchivingDisabled } from "@/utils/orgs";
+import { tw } from "@/utils/tailwind";
 
 type SearchFields = "name" | "firstSeed";
 type SortField = "lastRun" | "name" | "firstSeed" | "created" | "modified";
@@ -186,48 +188,50 @@ export class WorkflowsList extends LiteElement {
 
   render() {
     return html`
-      <header class="contents">
-        <div class="mb-4 flex w-full justify-end gap-2">
-          <h1 class="mr-auto text-xl font-semibold leading-8">
-            ${msg("Crawl Workflows")}
-          </h1>
-
-          ${when(
-            this.appState.isAdmin,
-            () =>
-              html` <sl-icon-button
-                href=${`${this.orgBasePath}/settings/crawling-defaults`}
-                class="size-8 text-lg"
-                name="gear"
-                label=${msg("Edit org crawling settings")}
-                @click=${this.navLink}
-              ></sl-icon-button>`,
-          )}
-          ${when(
-            this.appState.isCrawler,
-            () => html`
-              <sl-button
-                variant="primary"
-                size="small"
-                ?disabled=${this.org?.readOnly}
-                @click=${() => {
-                  this.dispatchEvent(
-                    new CustomEvent("select-new-dialog", {
-                      detail: "workflow",
-                    }) as SelectNewDialogEvent,
-                  );
-                }}
-              >
-                <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-                ${msg("New Workflow")}
-              </sl-button>
-            `,
-          )}
-        </div>
+      <div class="contents">
+        ${pageHeader(
+          msg("Crawl Workflows"),
+          html`
+            ${when(
+              this.appState.isAdmin,
+              () =>
+                html`<sl-tooltip content=${msg("Configure crawling defaults")}>
+                  <sl-icon-button
+                    href=${`${this.orgBasePath}/settings/crawling-defaults`}
+                    class="size-8 text-lg"
+                    name="gear"
+                    label=${msg("Edit org crawling settings")}
+                    @click=${this.navLink}
+                  ></sl-icon-button>
+                </sl-tooltip>`,
+            )}
+            ${when(
+              this.appState.isCrawler,
+              () => html`
+                <sl-button
+                  variant="primary"
+                  size="small"
+                  ?disabled=${this.org?.readOnly}
+                  @click=${() => {
+                    this.dispatchEvent(
+                      new CustomEvent("select-new-dialog", {
+                        detail: "workflow",
+                      }) as SelectNewDialogEvent,
+                    );
+                  }}
+                >
+                  <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+                  ${msg("New Workflow")}
+                </sl-button>
+              `,
+            )}
+          `,
+          tw`border-b-transparent`,
+        )}
         <div class="sticky top-2 z-10 mb-3 rounded-lg border bg-neutral-50 p-4">
           ${this.renderControls()}
         </div>
-      </header>
+      </div>
 
       ${when(
         this.fetchErrorStatusCode,

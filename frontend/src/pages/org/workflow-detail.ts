@@ -1,6 +1,6 @@
 import { localized, msg, str } from "@lit/localize";
 import type { SlSelect } from "@shoelace-style/shoelace";
-import type { PropertyValues, TemplateResult } from "lit";
+import { type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { until } from "lit/directives/until.js";
@@ -22,6 +22,7 @@ import { type IntersectEvent } from "@/components/utils/observable";
 import type { CrawlLog } from "@/features/archived-items/crawl-logs";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { ExclusionEditor } from "@/features/crawl-workflows/exclusion-editor";
+import { pageBreadcrumbs, type Breadcrumb } from "@/layouts/pageHeader";
 import type { APIPaginatedList } from "@/types/api";
 import { isApiError } from "@/utils/api";
 import {
@@ -268,32 +269,34 @@ export class WorkflowDetail extends LiteElement {
 
     return html`
       <div class="grid grid-cols-1 gap-7">
-        ${this.renderHeader()}
+        <div class="col-span-1">${this.renderBreadcrumbs()}</div>
 
-        <header class="col-span-1 flex flex-wrap gap-2">
-          <btrix-detail-page-title
-            .item=${this.workflow}
-          ></btrix-detail-page-title>
-          ${when(
-            this.workflow?.inactive,
-            () => html`
-              <btrix-badge class="inline-block align-middle" variant="warning"
-                >${msg("Inactive")}</btrix-badge
-              >
-            `,
-          )}
-
-          <div class="flex-0 ml-auto flex flex-wrap justify-end gap-2">
+        <div>
+          <header class="col-span-1 mb-3 flex flex-wrap gap-2">
+            <btrix-detail-page-title
+              .item=${this.workflow}
+            ></btrix-detail-page-title>
             ${when(
-              this.isCrawler && this.workflow && !this.workflow.inactive,
-              this.renderActions,
+              this.workflow?.inactive,
+              () => html`
+                <btrix-badge class="inline-block align-middle" variant="warning"
+                  >${msg("Inactive")}</btrix-badge
+                >
+              `,
             )}
-          </div>
-        </header>
 
-        <section class="col-span-1 rounded-lg border px-4 py-2">
-          ${this.renderDetails()}
-        </section>
+            <div class="flex-0 ml-auto flex flex-wrap justify-end gap-2">
+              ${when(
+                this.isCrawler && this.workflow && !this.workflow.inactive,
+                this.renderActions,
+              )}
+            </div>
+          </header>
+
+          <section class="col-span-1 rounded-lg border px-4 py-2">
+            ${this.renderDetails()}
+          </section>
+        </div>
 
         ${when(this.workflow, this.renderTabList, this.renderLoading)}
       </div>
@@ -389,28 +392,32 @@ export class WorkflowDetail extends LiteElement {
     `;
   }
 
-  private renderHeader(workflowId?: string) {
-    return html`
-      <nav class="col-span-1">
-        <a
-          class="text-sm font-medium text-gray-600 hover:text-gray-800"
-          href=${`${this.orgBasePath}/workflows${
-            workflowId ? `/crawl/${workflowId}` : "/crawls"
-          }`}
-          @click=${this.navLink}
-        >
-          <sl-icon
-            name="arrow-left"
-            class="inline-block align-middle"
-          ></sl-icon>
-          <span class="inline-block align-middle"
-            >${workflowId
-              ? msg(html`Back to ${this.renderName()}`)
-              : msg("Back to Crawl Workflows")}</span
-          >
-        </a>
-      </nav>
-    `;
+  private renderBreadcrumbs() {
+    const breadcrumbs: Breadcrumb[] = [
+      {
+        href: `${this.orgBasePath}/workflows/crawls`,
+        content: msg("Crawl Workflows"),
+      },
+    ];
+
+    if (this.workflow) {
+      breadcrumbs.push({
+        href: `${this.orgBasePath}/workflows/crawl/${this.workflowId}`,
+        content: this.renderName(),
+      });
+
+      if (this.isEditing) {
+        breadcrumbs.push({
+          content: msg("Edit Settings"),
+        });
+      } else if (this.activePanel) {
+        breadcrumbs.push({
+          content: this.tabLabels[this.activePanel],
+        });
+      }
+    }
+
+    return pageBreadcrumbs(breadcrumbs);
   }
 
   private readonly renderTabList = () => html`
@@ -542,7 +549,7 @@ export class WorkflowDetail extends LiteElement {
   }
 
   private readonly renderEditor = () => html`
-    ${this.renderHeader(this.workflow!.id)}
+    <div class="col-span-1">${this.renderBreadcrumbs()}</div>
 
     <header>
       <h2 class="break-all text-xl font-semibold leading-10">
@@ -859,7 +866,7 @@ export class WorkflowDetail extends LiteElement {
                 this.crawls!.items.map(
                   (crawl: Crawl) =>
                     html` <btrix-crawl-list-item
-                      href=${`/orgs/${this.appState.orgSlug}/items/crawl/${crawl.id}?workflowId=${this.workflowId}`}
+                      href=${`${this.orgBasePath}/workflows/crawl/${this.workflowId}/items/${crawl.id}`}
                       .crawl=${crawl}
                     >
                       ${when(
