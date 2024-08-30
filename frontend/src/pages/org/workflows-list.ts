@@ -511,6 +511,7 @@ export class WorkflowsList extends LiteElement {
             ${msg("Edit Browser Windows")}
           </sl-menu-item>
           <sl-menu-item
+            ?disabled=${workflow.lastCrawlState !== "running"}
             @click=${() =>
               this.navTo(`${this.orgBasePath}/workflows/${workflow.id}#watch`, {
                 dialog: "exclusions",
