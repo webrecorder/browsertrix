@@ -3,6 +3,7 @@
 import os
 import smtplib
 import ssl
+from datetime import datetime
 from uuid import UUID
 from typing import Optional, Union
 
@@ -17,7 +18,6 @@ from .models import (
     DeleteReplicaJob,
     Organization,
     InvitePending,
-    BtrixDatetime,
 )
 from .utils import is_bool, get_origin
 
