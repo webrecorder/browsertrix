@@ -56,7 +56,7 @@ For more details on navigating web archives within ReplayWeb.page, see the [Repl
 
 ### Exporting Files
 
-While crawling, Browsertrix will output one or more WACZ files — the crawler aims to output files in consistently sized chunks, and each [crawler instance](workflow-setup.md#browser-windows) will output separate WACZ files.
+While crawling, Browsertrix will output one or more WACZ files — the crawler aims to output files in consistently sized chunks, and each crawler will output separate WACZ files.
 
 The **WACZ Files** tab lists the individually downloadable WACZ files that make up the archived item as well as their file sizes and backup status.
 
