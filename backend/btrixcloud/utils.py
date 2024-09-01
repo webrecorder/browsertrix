@@ -55,7 +55,7 @@ def to_k8s_date(dt_val: datetime) -> str:
 
 def dt_now() -> datetime:
     """get current ts"""
-    return datetime.now(timezone.utc).replace(microsecond=0, tzinfo=None)
+    return datetime.now(timezone.utc).replace(microsecond=0)
 
 
 def ts_now() -> str:
