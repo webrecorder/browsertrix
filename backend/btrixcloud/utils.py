@@ -43,14 +43,9 @@ def get_templates_dir() -> str:
     return os.path.join(os.path.dirname(__file__), "templates")
 
 
-def from_k8s_date(string: str) -> Optional[datetime]:
+def str_to_date(string: str) -> Optional[datetime]:
     """convert k8s date string to datetime"""
     return datetime.fromisoformat(string) if string else None
-
-
-def to_k8s_date(dt_val: datetime) -> str:
-    """convert datetime to string for k8s"""
-    return date_to_str(dt_val)
 
 
 def date_to_str(dt_val: datetime) -> str:
@@ -61,11 +56,6 @@ def date_to_str(dt_val: datetime) -> str:
 def dt_now() -> datetime:
     """get current ts"""
     return datetime.now(timezone.utc).replace(microsecond=0)
-
-
-def dt_now_str() -> str:
-    """get current ts as string"""
-    return date_to_str(dt_now())
 
 
 def run_once_lock(name) -> bool:
