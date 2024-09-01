@@ -32,7 +32,7 @@ from btrixcloud.models import (
     Organization,
 )
 
-from btrixcloud.utils import from_k8s_date, to_k8s_date, dt_now
+from btrixcloud.utils import from_k8s_date, to_k8s_date, dt_now, date_to_str
 
 from .baseoperator import BaseOperator, Redis
 from .models import (
@@ -1083,14 +1083,15 @@ class CrawlOperator(BaseOperator):
         )
         status.lastUpdatedTime = to_k8s_date(now)
 
-    def should_mark_waiting(self, state, started):
+    def should_mark_waiting(self, state: TYPE_ALL_CRAWL_STATES, started: str) -> bool:
         """Should the crawl be marked as waiting for capacity?"""
         if state in RUNNING_STATES:
             return True
 
         if state == "starting":
-            started = from_k8s_date(started)
-            return (dt_now() - started).total_seconds() > STARTING_TIME_SECS
+            started_dt = from_k8s_date(started)
+            if started_dt:
+                return (dt_now() - started_dt).total_seconds() > STARTING_TIME_SECS
 
         return False
 
@@ -1183,7 +1184,7 @@ class CrawlOperator(BaseOperator):
     def get_log_line(self, message, details):
         """get crawler error line for logging"""
         err = {
-            "timestamp": dt_now().isoformat(),
+            "timestamp": date_to_str(dt_now()),
             "logLevel": "error",
             "context": "k8s",
             "message": message,

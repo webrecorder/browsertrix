@@ -33,7 +33,7 @@ class JSONSerializer(json.JSONEncoder):
             return str(o)
 
         if isinstance(o, datetime):
-            return o.isoformat()
+            return date_to_str(o)
 
         return super().default(o)
 
@@ -45,12 +45,17 @@ def get_templates_dir() -> str:
 
 def from_k8s_date(string: str) -> Optional[datetime]:
     """convert k8s date string to datetime"""
-    return datetime.fromisoformat(string[:-1]) if string else None
+    return datetime.fromisoformat(string) if string else None
 
 
 def to_k8s_date(dt_val: datetime) -> str:
     """convert datetime to string for k8s"""
-    return dt_val.isoformat("T") + "Z"
+    return date_to_str(dt_val)
+
+
+def date_to_str(dt_val: datetime) -> str:
+    """convert date to isostring with "Z" """
+    return dt_val.isoformat().replace("+00:00", "Z")
 
 
 def dt_now() -> datetime:
@@ -58,9 +63,9 @@ def dt_now() -> datetime:
     return datetime.now(timezone.utc).replace(microsecond=0)
 
 
-def ts_now() -> str:
-    """get current ts"""
-    return str(dt_now())
+def dt_now_str() -> str:
+    """get current ts as string"""
+    return date_to_str(dt_now())
 
 
 def run_once_lock(name) -> bool:
