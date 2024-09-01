@@ -32,7 +32,7 @@ from btrixcloud.models import (
     Organization,
 )
 
-from btrixcloud.utils import str_to_date, date_to_str, dt_now, date_to_str
+from btrixcloud.utils import str_to_date, date_to_str, dt_now
 
 from .baseoperator import BaseOperator, Redis
 from .models import (
