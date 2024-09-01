@@ -409,7 +409,7 @@ class CrawlOperator(BaseOperator):
             resources = json.loads(configmap["data"]["qa-config.json"])["resources"]
             for resource in resources:
                 expire_at = str_to_date(resource["expireAt"])
-                if expire_at <= now:
+                if expire_at and expire_at <= now:
                     print(f"Refreshing QA configmap for QA run: {name}")
                     return True
 
