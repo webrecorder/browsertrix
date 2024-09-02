@@ -107,6 +107,11 @@ class ProfileOps:
         if not crawler_image:
             raise HTTPException(status_code=404, detail="crawler_not_found")
 
+        if profile_launch.proxyId and not self.crawlconfigs.can_org_use_proxy(
+            org, profile_launch.proxyId
+        ):
+            raise HTTPException(status_code=404, detail="proxy_not_found")
+
         browserid = await self.crawl_manager.run_profile_browser(
             str(user.id),
             str(org.id),

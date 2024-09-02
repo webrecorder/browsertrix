@@ -297,8 +297,9 @@ crawler_session_time_limit_seconds: 18000
 
 crawler_liveness_port: 6065
 
-# optional: always proxy with following id by default, if no other proxy settings are set
-# must match one of the proxies in the 'browsertrix-proxies' list
+# optional: use this proxy by default, when no other proxy is set for the crawl
+# must match one of the proxy ids in the 'btrix-proxies.proxies' list
+# will set the proxy to shared
 # default_proxy: "proxy-id"
 
 # optional: configure a list of ssh servers to be used as a proxy
@@ -311,6 +312,7 @@ btrix-proxies:
   #    label: "US Proxy" # label to show in dropdown
   #    country_code: US # Alpha-2 ISO 3991 country code, https://www.iso.org/obp/ui/#search
   #    description: "Proxy" # optional: description to show for the  proxy
+  #    shared: false # optional: set to true, to make proxy availble for all orgs
   #    ssh_private_key: |  # requred for ssh:// proxies
   #      # ssh-key needed to connect to the SSH server
   #        <secret key>

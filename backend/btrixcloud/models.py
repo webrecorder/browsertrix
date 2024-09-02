@@ -583,8 +583,9 @@ class CrawlerProxy(BaseModel):
     label: str
     description: str = ""
     country_code: str = ""
-    has_host_public_key: bool
-    has_private_key: bool
+    has_host_public_key: bool = False
+    has_private_key: bool = False
+    shared: bool = False
 
 
 # ============================================================================
@@ -593,6 +594,14 @@ class CrawlerProxies(BaseModel):
 
     default_proxy_id: Optional[str] = None
     servers: List[CrawlerProxy] = []
+
+
+# ============================================================================
+class OrgProxies(BaseModel):
+    """Org proxy settings for API"""
+
+    allowSharedProxies: bool
+    allowedProxies: list[str]
 
 
 # ============================================================================
@@ -1417,6 +1426,9 @@ class Organization(BaseMongoModel):
     readOnlyReason: Optional[str] = None
 
     subscription: Optional[Subscription] = None
+
+    allowSharedProxies: bool = True
+    allowedProxies: list[str] = []
 
     def is_owner(self, user):
         """Check if user is owner"""

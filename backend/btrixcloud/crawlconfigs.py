@@ -43,7 +43,7 @@ from .models import (
     CrawlerProxy,
     CrawlerProxies,
 )
-from .utils import dt_now, slug_from_name
+from .utils import dt_now, slug_from_name, is_bool
 
 if TYPE_CHECKING:
     from .orgs import OrgOps
@@ -133,7 +133,7 @@ class CrawlConfigOps:
         self._crawler_proxies_last_updated = None
         self._crawler_proxies_map = None
 
-        if DEFAULT_PROXY_ID and DEFAULT_PROXY_ID not in self.crawler_proxies_map:
+        if DEFAULT_PROXY_ID and DEFAULT_PROXY_ID not in self.get_crawler_proxies_map():
             raise ValueError(
                 f"Configured proxies must include DEFAULT_PROXY_ID: {DEFAULT_PROXY_ID}"
             )
@@ -207,6 +207,11 @@ class CrawlConfigOps:
         # ensure profile is valid, if provided
         if profileid:
             await self.profiles.get_profile(profileid, org)
+
+        # ensure proxyId is valid and available for org
+        if config_in.proxyId:
+            if not self.can_org_use_proxy(org, config_in.proxyId):
+                raise HTTPException(status_code=404, detail="proxy_not_found")
 
         now = dt_now()
         crawlconfig = CrawlConfig(
@@ -846,6 +851,9 @@ class CrawlConfigOps:
         if await self.get_running_crawl(crawlconfig):
             raise HTTPException(status_code=400, detail="crawl_already_running")
 
+        if crawlconfig.proxyId and not self.can_org_use_proxy(org, crawlconfig.proxyId):
+            raise HTTPException(status_code=404, detail="proxy_not_found")
+
         profile_filename = await self.get_profile_filename(crawlconfig.profileid, org)
         storage_filename = (
             crawlconfig.crawlFilenameTemplate or self.default_filename_template
@@ -915,8 +923,7 @@ class CrawlConfigOps:
         """Get crawler image name by id"""
         return self.crawler_images_map.get(crawler_channel or "")
 
-    @property
-    def crawler_proxies_map(self) -> dict[str, CrawlerProxy]:
+    def get_crawler_proxies_map(self) -> dict[str, CrawlerProxy]:
         """Load CrawlerProxy mapping from config"""
         proxies_last_update_path = os.environ["CRAWLER_PROXIES_LAST_UPDATE"]
 
@@ -943,6 +950,8 @@ class CrawlConfigOps:
                     url=proxy_data["url"],
                     has_host_public_key=bool(proxy_data.get("ssh_host_public_key")),
                     has_private_key=bool(proxy_data.get("ssh_private_key")),
+                    shared=is_bool(proxy_data.get("shared"))
+                    or proxy_data["id"] == DEFAULT_PROXY_ID,
                 )
 
                 crawler_proxies_map[proxy.id] = proxy
@@ -950,17 +959,30 @@ class CrawlConfigOps:
         self._crawler_proxies_map = crawler_proxies_map
         return self._crawler_proxies_map
 
-    @property
-    def crawler_proxies(self):
+    def get_crawler_proxies(self):
         """Get CrawlerProxy configuration"""
         return CrawlerProxies(
             default_proxy_id=DEFAULT_PROXY_ID,
-            servers=list(self.crawler_proxies_map.values()),
+            servers=list(self.get_crawler_proxies_map().values()),
         )
 
     def get_crawler_proxy(self, proxy_id: str) -> Optional[CrawlerProxy]:
         """Get crawlerProxy by id"""
-        return self.crawler_proxies_map.get(proxy_id)
+        return self.get_crawler_proxies_map().get(proxy_id)
+
+    def can_org_use_proxy(self, org: Organization, proxy: CrawlerProxy | str) -> bool:
+        """Checks if org is able to use proxy"""
+        if isinstance(proxy, str):
+            _proxy = self.get_crawler_proxy(proxy)
+        else:
+            _proxy = proxy
+
+        if _proxy is None:
+            return False
+
+        return (
+            _proxy.shared and org.allowSharedProxies
+        ) or _proxy.id in org.allowedProxies
 
     def get_warc_prefix(self, org: Organization, crawlconfig: CrawlConfig) -> str:
         """Generate WARC prefix slug from org slug, name or url
@@ -1134,10 +1156,25 @@ def init_crawl_config_api(
 
     @router.get("/crawler-proxies", response_model=CrawlerProxies)
     async def get_crawler_proxies(
-        # pylint: disable=unused-argument
         org: Organization = Depends(org_crawl_dep),
     ):
-        return ops.crawler_proxies
+        return CrawlerProxies(
+            default_proxy_id=DEFAULT_PROXY_ID,
+            servers=[
+                proxy
+                for proxy in ops.get_crawler_proxies_map().values()
+                if ops.can_org_use_proxy(org, proxy)
+            ],
+        )
+
+    @router.get("/crawler-proxies/all", response_model=CrawlerProxies)
+    async def get_all_crawler_proxies(
+        user: User = Depends(user_dep),
+    ):
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+
+        return ops.get_crawler_proxies
 
     @router.get("/{cid}/seeds", response_model=PaginatedSeedResponse)
     async def get_crawl_config_seeds(
