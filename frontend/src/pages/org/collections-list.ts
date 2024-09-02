@@ -533,7 +533,7 @@ export class CollectionsList extends LiteElement {
       <btrix-table-cell>
         <sl-format-date
           lang=${getLocale()}
-          date=${`${col.modified}Z`}
+          date=${col.modified}
           month="2-digit"
           day="2-digit"
           year="2-digit"
