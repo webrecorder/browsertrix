@@ -9,7 +9,7 @@ from datetime import timedelta
 
 from fastapi import HTTPException
 
-from .utils import dt_now, to_k8s_date
+from .utils import dt_now, date_to_str
 from .k8sapi import K8sAPI
 
 from .models import StorageRef, CrawlConfig, BgJobType
@@ -53,7 +53,7 @@ class CrawlManager(K8sAPI):
             "idle_timeout": os.environ.get("IDLE_TIMEOUT", "60"),
             "url": url,
             "vnc_password": secrets.token_hex(16),
-            "expire_time": to_k8s_date(dt_now() + timedelta(seconds=30)),
+            "expire_time": date_to_str(dt_now() + timedelta(seconds=30)),
             "crawler_image": crawler_image,
         }
 
@@ -237,12 +237,12 @@ class CrawlManager(K8sAPI):
         """return ping profile browser"""
         expire_at = dt_now() + timedelta(seconds=30)
         await self._patch_job(
-            browserid, {"expireTime": to_k8s_date(expire_at)}, "profilejobs"
+            browserid, {"expireTime": date_to_str(expire_at)}, "profilejobs"
         )
 
     async def rollover_restart_crawl(self, crawl_id: str) -> dict:
         """Rolling restart of crawl by updating restartTime field"""
-        update = to_k8s_date(dt_now())
+        update = date_to_str(dt_now())
         return await self._patch_job(crawl_id, {"restartTime": update})
 
     async def scale_crawl(self, crawl_id: str, scale: int = 1) -> dict:

@@ -1,9 +1,9 @@
 """ Basic Email Sending Support"""
 
+from datetime import datetime
 import os
 import smtplib
 import ssl
-from datetime import datetime
 from uuid import UUID
 from typing import Optional, Union
 
@@ -13,12 +13,7 @@ from email.mime.multipart import MIMEMultipart
 from fastapi import HTTPException
 from fastapi.templating import Jinja2Templates
 
-from .models import (
-    CreateReplicaJob,
-    DeleteReplicaJob,
-    Organization,
-    InvitePending,
-)
+from .models import CreateReplicaJob, DeleteReplicaJob, Organization, InvitePending
 from .utils import is_bool, get_origin
 
 

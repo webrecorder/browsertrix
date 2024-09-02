@@ -2,6 +2,7 @@
 
 import asyncio
 import traceback
+from datetime import datetime
 from typing import TYPE_CHECKING, Optional, Tuple, List, Dict, Any, Union
 from uuid import UUID, uuid4
 
@@ -28,10 +29,9 @@ from .models import (
     DeletedResponse,
     PageNoteAddedResponse,
     PageNoteUpdatedResponse,
-    BtrixDatetime,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
-from .utils import from_k8s_date, str_list_to_bools, dt_now
+from .utils import str_to_date, str_list_to_bools, dt_now
 
 if TYPE_CHECKING:
     from .crawls import CrawlOps
@@ -112,7 +112,7 @@ class PageOps:
             loadState=page_dict.get("loadState"),
             status=status,
             mime=page_dict.get("mime", "text/html"),
-            ts=(from_k8s_date(ts) if ts else dt_now()),
+            ts=(str_to_date(ts) if ts else dt_now()),
         )
         p.compute_page_type()
         return p
@@ -302,7 +302,7 @@ class PageOps:
         user: Optional[User] = None,
     ) -> Dict[str, bool]:
         """Update page manual review"""
-        query: Dict[str, Union[Optional[bool], str, BtrixDatetime, UUID]] = {
+        query: Dict[str, Union[Optional[bool], str, datetime, UUID]] = {
             "approved": approved
         }
         query["modified"] = dt_now()

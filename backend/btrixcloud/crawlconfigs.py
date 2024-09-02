@@ -10,8 +10,8 @@ import asyncio
 import json
 import re
 import os
-from uuid import UUID, uuid4
 from datetime import datetime
+from uuid import UUID, uuid4
 import urllib.parse
 
 import pymongo

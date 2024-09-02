@@ -19,8 +19,9 @@ from pydantic import (
     RootModel,
     BeforeValidator,
     TypeAdapter,
-    PlainSerializer,
 )
+
+# from fastapi_users import models as fastapi_users_models
 
 from .db import BaseMongoModel
 
@@ -45,10 +46,6 @@ HttpUrl = Annotated[
     str, BeforeValidator(lambda value: str(http_url_adapter.validate_python(value)))
 ]
 
-BtrixDatetime = Annotated[
-    datetime, PlainSerializer(lambda d: f"{d:%Y-%m-%dT%H:%M:%S}Z", return_type=str)
-]
-
 
 # pylint: disable=invalid-name, too-many-lines
 # ============================================================================
@@ -71,7 +68,7 @@ class InvitePending(BaseMongoModel):
     """An invite for a new user, with an email and invite token as id"""
 
     id: UUID
-    created: BtrixDatetime
+    created: datetime
     tokenHash: str
     inviterEmail: str
     fromSuperuser: Optional[bool] = False
@@ -86,7 +83,7 @@ class InvitePending(BaseMongoModel):
 class InviteOut(BaseModel):
     """Single invite output model"""
 
-    created: BtrixDatetime
+    created: datetime
     inviterEmail: str
     inviterName: str
     oid: Optional[UUID] = None
@@ -164,7 +161,7 @@ class FailedLogin(BaseMongoModel):
     Failed login model
     """
 
-    attempted: BtrixDatetime
+    attempted: datetime
     email: str
 
     # Consecutive failed logins, reset to 0 on successful login or after
@@ -370,7 +367,7 @@ class ConfigRevision(BaseMongoModel):
     maxCrawlSize: Optional[int] = 0
     scale: Scale = 1
 
-    modified: BtrixDatetime
+    modified: datetime
     modifiedBy: Optional[UUID] = None
 
     rev: int = 0
@@ -404,10 +401,10 @@ class CrawlConfigAdditional(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
 
-    created: BtrixDatetime
+    created: datetime
     createdBy: Optional[UUID] = None
 
-    modified: Optional[BtrixDatetime] = None
+    modified: Optional[datetime] = None
     modifiedBy: Optional[UUID] = None
 
     autoAddCollections: Optional[List[UUID]] = []
@@ -423,13 +420,13 @@ class CrawlConfigAdditional(BaseModel):
     totalSize: Optional[int] = 0
 
     lastCrawlId: Optional[str] = None
-    lastCrawlStartTime: Optional[BtrixDatetime] = None
+    lastCrawlStartTime: Optional[datetime] = None
     lastStartedBy: Optional[UUID] = None
-    lastCrawlTime: Optional[BtrixDatetime] = None
+    lastCrawlTime: Optional[datetime] = None
     lastCrawlState: Optional[str] = None
     lastCrawlSize: Optional[int] = None
 
-    lastRun: Optional[BtrixDatetime] = None
+    lastRun: Optional[datetime] = None
 
     isCrawlRunning: Optional[bool] = False
 
@@ -650,7 +647,7 @@ class CrawlFile(BaseFile):
     """file from a crawl"""
 
     presignedUrl: Optional[str] = None
-    expireAt: Optional[BtrixDatetime] = None
+    expireAt: Optional[datetime] = None
 
 
 # ============================================================================
@@ -686,8 +683,8 @@ class CoreCrawlable(BaseModel):
     userid: UUID
     userName: Optional[str] = None
 
-    started: BtrixDatetime
-    finished: Optional[BtrixDatetime] = None
+    started: datetime
+    finished: Optional[datetime] = None
 
     state: str
 
@@ -752,8 +749,8 @@ class CrawlOut(BaseMongoModel):
     name: Optional[str] = None
     description: Optional[str] = None
 
-    started: BtrixDatetime
-    finished: Optional[BtrixDatetime] = None
+    started: datetime
+    finished: Optional[datetime] = None
 
     state: str
 
@@ -793,7 +790,7 @@ class CrawlOut(BaseMongoModel):
     qaRunCount: int = 0
     activeQAStats: Optional[CrawlStats] = None
     lastQAState: Optional[str] = None
-    lastQAStarted: Optional[BtrixDatetime] = None
+    lastQAStarted: Optional[datetime] = None
 
     filePageCount: Optional[int] = 0
     errorPageCount: Optional[int] = 0
@@ -891,8 +888,8 @@ class QARunOut(BaseModel):
 
     userName: Optional[str] = None
 
-    started: BtrixDatetime
-    finished: Optional[BtrixDatetime] = None
+    started: datetime
+    finished: Optional[datetime] = None
 
     state: str
 
@@ -1006,7 +1003,7 @@ class Collection(BaseMongoModel):
     name: str = Field(..., min_length=1)
     oid: UUID
     description: Optional[str] = None
-    modified: Optional[BtrixDatetime] = None
+    modified: Optional[datetime] = None
 
     crawlCount: Optional[int] = 0
     pageCount: Optional[int] = 0
@@ -1171,7 +1168,7 @@ class SubscriptionEventOut(BaseModel):
     """Fields to add to output models for subscription events"""
 
     oid: UUID
-    timestamp: BtrixDatetime
+    timestamp: datetime
 
 
 # ============================================================================
@@ -1218,7 +1215,7 @@ class SubscriptionUpdate(BaseModel):
     status: str
     planId: str
 
-    futureCancelDate: Optional[BtrixDatetime] = None
+    futureCancelDate: Optional[datetime] = None
     quotas: Optional[OrgQuotasIn] = None
 
 
@@ -1271,7 +1268,7 @@ class Subscription(BaseModel):
     status: str
     planId: str
 
-    futureCancelDate: Optional[BtrixDatetime] = None
+    futureCancelDate: Optional[datetime] = None
     readOnlyOnCancel: bool = False
 
 
@@ -1304,7 +1301,7 @@ class OrgCreate(BaseModel):
 class OrgQuotaUpdate(BaseModel):
     """Organization quota update (to track changes over time)"""
 
-    modified: BtrixDatetime
+    modified: datetime
     update: OrgQuotas
 
 
@@ -1342,7 +1339,7 @@ class OrgOut(BaseMongoModel):
     slug: str
     users: Dict[str, Any] = {}
 
-    created: Optional[BtrixDatetime] = None
+    created: Optional[datetime] = None
 
     default: bool = False
     bytesStored: int
@@ -1392,7 +1389,7 @@ class Organization(BaseMongoModel):
     slug: str
     users: Dict[str, UserRole] = {}
 
-    created: Optional[BtrixDatetime] = None
+    created: Optional[datetime] = None
 
     default: bool = False
 
@@ -1648,10 +1645,10 @@ class Profile(BaseMongoModel):
     origins: List[str]
     resource: Optional[ProfileFile] = None
 
-    created: Optional[BtrixDatetime] = None
+    created: Optional[datetime] = None
     createdBy: Optional[UUID] = None
     createdByName: Optional[str] = None
-    modified: Optional[BtrixDatetime] = None
+    modified: Optional[datetime] = None
     modifiedBy: Optional[UUID] = None
     modifiedByName: Optional[str] = None
 
@@ -1943,8 +1940,8 @@ class WebhookNotification(BaseMongoModel):
     ]
     success: bool = False
     attempts: int = 0
-    created: BtrixDatetime
-    lastAttempted: Optional[BtrixDatetime] = None
+    created: datetime
+    lastAttempted: Optional[datetime] = None
 
 
 # ============================================================================
@@ -1968,10 +1965,10 @@ class BackgroundJob(BaseMongoModel):
     type: BgJobType
     oid: UUID
     success: Optional[bool] = None
-    started: BtrixDatetime
-    finished: Optional[BtrixDatetime] = None
+    started: datetime
+    finished: Optional[datetime] = None
 
-    previousAttempts: Optional[List[Dict[str, Optional[BtrixDatetime]]]] = None
+    previousAttempts: Optional[List[Dict[str, Optional[datetime]]]] = None
 
 
 # ============================================================================
@@ -2042,7 +2039,7 @@ class PageNote(BaseModel):
 
     id: UUID
     text: str
-    created: BtrixDatetime
+    created: datetime
     userid: UUID
     userName: str
 
@@ -2068,14 +2065,14 @@ class Page(BaseMongoModel):
     # core page data
     url: AnyHttpUrl
     title: Optional[str] = None
-    ts: Optional[BtrixDatetime] = None
+    ts: Optional[datetime] = None
     loadState: Optional[int] = None
     status: Optional[int] = None
     mime: Optional[str] = None
 
     # manual review
     userid: Optional[UUID] = None
-    modified: Optional[BtrixDatetime] = None
+    modified: Optional[datetime] = None
     approved: Optional[bool] = None
     notes: List[PageNote] = []
 

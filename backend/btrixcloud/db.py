@@ -43,6 +43,7 @@ def init_db():
 
     client = motor.motor_asyncio.AsyncIOMotorClient(
         db_url,
+        tz_aware=True,
         uuidRepresentation="standard",
         connectTimeoutMS=120000,
         serverSelectionTimeoutMS=120000,

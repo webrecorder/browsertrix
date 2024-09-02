@@ -31,7 +31,7 @@ from .models import (
     CrawlSearchValuesResponse,
 )
 from .pagination import paginated_format, DEFAULT_PAGE_SIZE
-from .utils import dt_now
+from .utils import dt_now, date_to_str
 
 if TYPE_CHECKING:
     from .crawlconfigs import CrawlConfigOps
@@ -494,7 +494,7 @@ class BaseCrawlOps:
 
             expire_at_str = ""
             if file_.expireAt:
-                expire_at_str = file_.expireAt.isoformat()
+                expire_at_str = date_to_str(file_.expireAt)
 
             out_files.append(
                 CrawlFileOut(

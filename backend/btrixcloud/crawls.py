@@ -19,7 +19,12 @@ from redis.asyncio.client import Redis
 import pymongo
 
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
-from .utils import dt_now, parse_jsonl_error_messages, stream_dict_list_as_csv
+from .utils import (
+    dt_now,
+    date_to_str,
+    parse_jsonl_error_messages,
+    stream_dict_list_as_csv,
+)
 from .basecrawls import BaseCrawlOps
 from .crawlmanager import CrawlManager
 from .models import (
@@ -714,19 +719,13 @@ class CrawlOps(BaseCrawlOps):
             data["userid"] = str(crawl.userid)
             data["user"] = user_emails.get(crawl.userid)
 
-            # TODO: This is only necessary because crawl.started has +00:00 instead
-            # of Z if we do str(crawl.started), indicating a data issue I haven't quite
-            # caught yet - why is this one date treated differently in the db?
-            data["started"] = crawl.started.isoformat("T") + "Z"
-            data["finished"] = crawl.finished.isoformat("T") + "Z"
+            data["started"] = date_to_str(crawl.started) if crawl.started else ""
+            data["finished"] = date_to_str(crawl.finished) if crawl.finished else ""
 
             data["duration"] = 0
             duration_seconds = 0
             if crawl.started and crawl.finished:
-                # TODO: Why is crawl.started timezone naive? If we remove this, we get
-                # TypeError: can't subtract offset-naive and offset-aware datetimes
-                naive_started = crawl.started.replace(tzinfo=None)
-                duration = crawl.finished - naive_started
+                duration = crawl.finished - crawl.started
                 duration_seconds = int(duration.total_seconds())
                 if duration_seconds:
                     data["duration"] = duration_seconds
