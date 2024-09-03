@@ -324,7 +324,30 @@ export class ArchivedItemDetail extends BtrixElement {
         break;
       case "config":
         sectionContent = this.renderPanel(
-          this.tabLabels.config,
+          html`
+            ${this.renderTitle(html`
+              ${this.tabLabels.config}
+              <sl-tooltip
+                content=${msg("Workflow settings used to run this crawl")}
+              >
+                <sl-icon
+                  class="text-base text-neutral-500"
+                  name="info-circle"
+                ></sl-icon>
+              </sl-tooltip>
+            `)}
+            <sl-button
+              size="small"
+              variant="primary"
+              href="${this.navigate.orgBasePath}/workflows/crawl/${this.item
+                ?.cid}?edit"
+              ?disabled=${!this.item}
+              @click=${this.navigate.link}
+            >
+              <sl-icon slot="prefix" name="gear"></sl-icon>
+              ${msg("Edit Workflow")}
+            </sl-button>
+          `,
           this.renderConfig(),
           [tw`rounded-lg border p-4`],
         );
@@ -670,7 +693,11 @@ export class ArchivedItemDetail extends BtrixElement {
   }
 
   private renderTitle(title: string | TemplateResult<1>) {
-    return html`<h2 class="text-lg font-semibold leading-8">${title}</h2>`;
+    return html`<h2
+      class="flex items-center gap-2 text-lg font-semibold leading-8"
+    >
+      ${title}
+    </h2>`;
   }
 
   private renderPanel(
