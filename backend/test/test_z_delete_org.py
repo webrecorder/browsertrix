@@ -54,9 +54,32 @@ def test_delete_org_superadmin(admin_auth_headers, default_org_id):
         f"{API_PREFIX}/orgs/{default_org_id}", headers=admin_auth_headers
     )
     assert r.status_code == 200
-    assert r.json()["deleted"]
+    data = r.json()
+    assert data["deleted"]
 
-    # Ensure items got deleted
+    job_id = data["id"]
+
+    # Check that background job is launched and eventually succeeds
+    max_attempts = 18
+    attempts = 1
+    while attempts <= max_attempts:
+        try:
+            r = requests.get(
+                f"{API_PREFIX}/orgs/all/jobs/{job_id}", headers=admin_auth_headers
+            )
+            assert r.status_code == 200
+            data = r.json()
+            if data["success"]:
+                break
+            time.sleep(10)
+        except:
+            pass
+        attempts += 1
+
+    # Ensure org and items got deleted
+    r = requests.get(f"{API_PREFIX}/orgs/{default_org_id}", headers=admin_auth_headers)
+    assert r.status_code == 404
+
     for item_id in item_ids:
         r = requests.get(
             f"{API_PREFIX}/orgs/all/all-crawls/{item_id}/replay.json",

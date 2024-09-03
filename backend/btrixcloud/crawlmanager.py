@@ -110,6 +110,34 @@ class CrawlManager(K8sAPI):
 
         return job_id
 
+    async def run_delete_org_job(
+        self,
+        oid: str,
+        backend_image: str,
+        pull_policy: str,
+        existing_job_id: Optional[str] = None,
+    ):
+        """run job to delete org and all of its data"""
+
+        if existing_job_id:
+            job_id = existing_job_id
+        else:
+            job_id = f"delete-org-{oid}-{secrets.token_hex(5)}"
+
+        params = {
+            "id": job_id,
+            "oid": oid,
+            "job_type": BgJobType.DELETE_ORG.value,
+            "backend_image": backend_image,
+            "pull_policy": pull_policy,
+        }
+
+        data = self.templates.env.get_template("delete_org_job.yaml").render(params)
+
+        await self.create_from_yaml(data)
+
+        return job_id
+
     async def create_crawl_job(
         self,
         crawlconfig: CrawlConfig,

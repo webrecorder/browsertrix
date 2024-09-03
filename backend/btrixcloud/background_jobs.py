@@ -1,6 +1,7 @@
 """k8s background jobs"""
 
 import asyncio
+import os
 from datetime import datetime
 from typing import Optional, Tuple, Union, List, Dict, TYPE_CHECKING, cast
 from uuid import UUID
@@ -19,6 +20,7 @@ from .models import (
     BgJobType,
     CreateReplicaJob,
     DeleteReplicaJob,
+    DeleteOrgJob,
     PaginatedBackgroundJobResponse,
     AnyJob,
     StorageRef,
@@ -273,6 +275,51 @@ class BackgroundJobOps:
             )
             return None
 
+    async def create_delete_org_job(
+        self,
+        org: Organization,
+        existing_job_id: Optional[str] = None,
+    ) -> Optional[str]:
+        """Create background job to delete org and its data"""
+
+        try:
+            job_id = await self.crawl_manager.run_delete_org_job(
+                oid=str(org.id),
+                backend_image=os.environ.get("BACKEND_IMAGE", ""),
+                pull_policy=os.environ.get("BACKEND_IMAGE_PULL_POLICY", ""),
+                existing_job_id=existing_job_id,
+            )
+            if existing_job_id:
+                delete_org_job = await self.get_background_job(existing_job_id, org.id)
+                previous_attempt = {
+                    "started": delete_org_job.started,
+                    "finished": delete_org_job.finished,
+                }
+                if delete_org_job.previousAttempts:
+                    delete_org_job.previousAttempts.append(previous_attempt)
+                else:
+                    delete_org_job.previousAttempts = [previous_attempt]
+                delete_org_job.started = dt_now()
+                delete_org_job.finished = None
+                delete_org_job.success = None
+            else:
+                delete_org_job = DeleteOrgJob(
+                    id=job_id,
+                    oid=org.id,
+                    started=dt_now(),
+                )
+
+            await self.jobs.find_one_and_update(
+                {"_id": job_id}, {"$set": delete_org_job.to_dict()}, upsert=True
+            )
+
+            return job_id
+        # pylint: disable=broad-exception-caught
+        except Exception as exc:
+            # pylint: disable=raise-missing-from
+            print(f"warning: delete org job could not be started: {exc}")
+            return None
+
     async def job_finished(
         self,
         job_id: str,
@@ -316,10 +363,13 @@ class BackgroundJobOps:
         )
 
     async def get_background_job(
-        self, job_id: str, oid: UUID
-    ) -> Union[CreateReplicaJob, DeleteReplicaJob]:
+        self, job_id: str, oid: Optional[UUID] = None
+    ) -> Union[CreateReplicaJob, DeleteReplicaJob, DeleteOrgJob]:
         """Get background job"""
-        query: dict[str, object] = {"_id": job_id, "oid": oid}
+        query: dict[str, object] = {"_id": job_id}
+        if oid:
+            query["oid"] = oid
+
         res = await self.jobs.find_one(query)
         if not res:
             raise HTTPException(status_code=404, detail="job_not_found")
@@ -331,9 +381,10 @@ class BackgroundJobOps:
         if data["type"] == BgJobType.CREATE_REPLICA:
             return CreateReplicaJob.from_dict(data)
 
-        return DeleteReplicaJob.from_dict(data)
+        if data["type"] == BgJobType.DELETE_REPLICA:
+            return DeleteReplicaJob.from_dict(data)
 
-        # return BackgroundJob.from_dict(data)
+        return DeleteOrgJob.from_dict(data)
 
     async def list_background_jobs(
         self,
@@ -432,9 +483,8 @@ class BackgroundJobOps:
         if job.success:
             raise HTTPException(status_code=400, detail="job_already_succeeded")
 
-        file = await self.get_replica_job_file(job, org)
-
         if job.type == BgJobType.CREATE_REPLICA:
+            file = await self.get_replica_job_file(job, org)
             primary_storage = self.storage_ops.get_org_storage_by_ref(org, file.storage)
             primary_endpoint, bucket_suffix = self.strip_bucket(
                 primary_storage.endpoint_url
@@ -452,12 +502,19 @@ class BackgroundJobOps:
             )
 
         if job.type == BgJobType.DELETE_REPLICA:
+            file = await self.get_replica_job_file(job, org)
             await self.create_delete_replica_job(
                 org,
                 file,
                 job.object_id,
                 job.object_type,
                 job.replica_storage,
+                existing_job_id=job_id,
+            )
+
+        if job.type == BgJobType.DELETE_ORG:
+            await self.create_delete_org_job(
+                org,
                 existing_job_id=job_id,
             )
 
@@ -522,6 +579,14 @@ def init_background_jobs_api(
     ):
         """Retrieve information for background job"""
         return await ops.get_background_job(job_id, org.id)
+
+    @app.post("/orgs/all/jobs/{job_id}", response_model=SuccessResponse, tags=["jobs"])
+    async def get_background_job_all_orgs(job_id: str, user: User = Depends(user_dep)):
+        """Retry failed background jobs from all orgs"""
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+
+        return await ops.get_background_job(job_id)
 
     @router.post("/{job_id}/retry", response_model=SuccessResponse)
     async def retry_background_job(

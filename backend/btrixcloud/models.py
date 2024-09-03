@@ -1966,6 +1966,7 @@ class BgJobType(str, Enum):
 
     CREATE_REPLICA = "create-replica"
     DELETE_REPLICA = "delete-replica"
+    DELETE_ORG = "delete-org"
 
 
 # ============================================================================
@@ -2005,9 +2006,18 @@ class DeleteReplicaJob(BackgroundJob):
 
 
 # ============================================================================
+class DeleteOrgJob(BackgroundJob):
+    """Model for tracking deletion of org data jobs"""
+
+    type: Literal[BgJobType.DELETE_ORG] = BgJobType.DELETE_ORG
+
+
+# ============================================================================
 # Union of all job types, for response model
 
-AnyJob = RootModel[Union[CreateReplicaJob, DeleteReplicaJob, BackgroundJob]]
+AnyJob = RootModel[
+    Union[CreateReplicaJob, DeleteReplicaJob, BackgroundJob, DeleteOrgJob]
+]
 
 
 # ============================================================================
@@ -2225,6 +2235,13 @@ class DeletedResponse(BaseModel):
     """Response for delete API endpoints"""
 
     deleted: bool
+
+
+# ============================================================================
+class DeletedResponseId(DeletedResponse):
+    """Response for delete API endpoints that return job id"""
+
+    id: str
 
 
 # ============================================================================
