@@ -480,8 +480,6 @@ export class Org extends LiteElement {
           class="flex-1"
           itemId=${params.itemId}
           itemPageId=${ifDefined(params.itemPageId)}
-          collectionId=${params.collectionId || ""}
-          workflowId=${params.workflowId || ""}
           qaRunId=${ifDefined(params.qaRunId)}
           tab=${params.qaTab}
         ></btrix-archived-item-qa>`;

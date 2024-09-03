@@ -35,16 +35,17 @@ export function breadcrumbSeparator() {
 const separator = breadcrumbSeparator();
 const skeleton = html`<sl-skeleton class="w-48"></sl-skeleton>`;
 
-function breadcrumbLink({ href, content }: Breadcrumb) {
+function breadcrumbLink({ href, content }: Breadcrumb, classNames?: string) {
   if (!content) return skeleton;
 
   return html`
     <a
       class=${clsx(
-        tw`flex h-5 max-w-[30ch] items-center gap-2 truncate whitespace-nowrap leading-5`,
+        tw`flex h-5 items-center gap-1 truncate whitespace-nowrap leading-5`,
         href
           ? tw`font-medium text-neutral-400 transition-colors hover:text-neutral-500`
           : null,
+        classNames,
       )}
       href=${ifDefined(href)}
       @click=${href
@@ -62,7 +63,8 @@ function pageBreadcrumbs(breadcrumbs: Breadcrumb[]) {
       ${breadcrumbs.length
         ? breadcrumbs.map(
             (breadcrumb, i) => html`
-              ${i !== 0 ? separator : nothing} ${breadcrumbLink(breadcrumb)}
+              ${i !== 0 ? separator : nothing}
+              ${breadcrumbLink(breadcrumb, tw`max-w-[30ch]`)}
             `,
           )
         : html`${skeleton} ${separator} ${skeleton}`}

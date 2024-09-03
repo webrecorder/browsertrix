@@ -30,7 +30,7 @@ import {
 } from "@/features/qa/page-list/page-list";
 import { type UpdatePageApprovalDetail } from "@/features/qa/page-qa-approval";
 import type { SelectDetail } from "@/features/qa/qa-run-dropdown";
-import { breadcrumbSeparator, pageBack } from "@/layouts/pageHeader";
+import { pageBack } from "@/layouts/pageHeader";
 import type {
   APIPaginatedList,
   APIPaginationQuery,
@@ -93,12 +93,6 @@ export class ArchivedItemQA extends BtrixElement {
 
   @property({ type: String })
   qaRunId?: string;
-
-  @property({ type: String })
-  collectionId?: string;
-
-  @property({ type: String })
-  workflowId?: string;
 
   @property({ type: String })
   tab: QATypes.QATab = "screenshots";
@@ -373,11 +367,6 @@ export class ArchivedItemQA extends BtrixElement {
 
       <div class="flex items-center">
         ${this.renderBackLink()}
-        <div class="mx-2">${breadcrumbSeparator()}</div>
-        <h1 class="text-neutral-500 font-medium">
-          ${msg("Review Crawl")}
-          <btrix-beta-badge placement="right"></btrix-beta-badge>
-        </h1>
       </div>
 
       <article class="qa-grid min-h-screen grid gap-x-6 gap-y-0 lg:snap-start">
@@ -385,25 +374,27 @@ export class ArchivedItemQA extends BtrixElement {
           class="grid--header flex flex-wrap items-center justify-between gap-1 border-b py-2"
         >
           <div class="flex items-center gap-2 overflow-hidden">
-            <h2
-              class="flex-1 flex-shrink-0 min-w-32 truncate text-base font-semibold leading-tight"
+            <h1
+              class="flex gap-1 flex-1 flex-shrink-0 min-w-32 truncate text-base font-semibold leading-tight"
             >
-              ${itemName}
-            </h2>
+              ${msg("Review")} ${itemName}
+            </h1>
             ${when(
               this.finishedQARuns,
               (qaRuns) => html`
-                <btrix-qa-run-dropdown
-                  .items=${qaRuns}
-                  selectedId=${this.qaRunId || ""}
-                  @btrix-select=${(e: CustomEvent<SelectDetail>) => {
-                    const params = new URLSearchParams(searchParams);
-                    params.set("qaRunId", e.detail.item.id);
-                    this.navigate.to(
-                      `${window.location.pathname}?${params.toString()}`,
-                    );
-                  }}
-                ></btrix-qa-run-dropdown>
+                <sl-tooltip content=${msg("Select Analysis Run")}>
+                  <btrix-qa-run-dropdown
+                    .items=${qaRuns}
+                    selectedId=${this.qaRunId || ""}
+                    @btrix-select=${(e: CustomEvent<SelectDetail>) => {
+                      const params = new URLSearchParams(searchParams);
+                      params.set("qaRunId", e.detail.item.id);
+                      this.navigate.to(
+                        `${window.location.pathname}?${params.toString()}`,
+                      );
+                    }}
+                  ></btrix-qa-run-dropdown>
+                </sl-tooltip>
               `,
             )}
           </div>
@@ -542,11 +533,11 @@ export class ArchivedItemQA extends BtrixElement {
         <section
           class="grid--pageList grid grid-rows-[auto_1fr] *:min-h-0 *:min-w-0"
         >
-          <h3
+          <h2
             class="my-4 text-base font-semibold leading-none text-neutral-800"
           >
             ${msg("Pages")}
-          </h3>
+          </h2>
           <btrix-qa-page-list
             class="flex flex-col lg:contain-size"
             .qaRunId=${this.qaRunId}
@@ -608,17 +599,9 @@ export class ArchivedItemQA extends BtrixElement {
   }
 
   private renderBackLink() {
-    let backLink = `${this.navigate.orgBasePath}/items/crawl/${this.itemId}#qa`;
-
-    if (this.workflowId) {
-      backLink = `${this.navigate.orgBasePath}/workflows/crawl/${this.workflowId}/items/${this.itemId}#qa`;
-    } else if (this.collectionId) {
-      backLink = `${this.navigate.orgBasePath}/collections/view/${this.collectionId}/items/crawl/${this.itemId}#qa`;
-    }
-
     return pageBack({
-      href: backLink,
-      content: msg("Crawl QA"),
+      href: `${this.navigate.orgBasePath}/workflows/crawl/${this.item?.cid}/items/${this.itemId}#qa`,
+      content: this.item ? renderName(this.item) : undefined,
     });
   }
 
