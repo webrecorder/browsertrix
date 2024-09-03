@@ -2,20 +2,24 @@ import { localized, msg, str } from "@lit/localize";
 import type {
   SlButton,
   SlChangeEvent,
+  SlCheckbox,
   SlInput,
+  SlMenuItem,
 } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import { css, html, nothing } from "lit";
-import { customElement, property, query } from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
+import type { ProxiesAPIResponse, Proxy } from "@/types/crawler";
 import { formatNumber, getLocale } from "@/utils/localization";
 import type { OrgData } from "@/utils/orgs";
 
 /**
  * @fires update-quotas
+ * @fires update-proxies
  */
 @localized()
 @customElement("btrix-orgs-list")
@@ -35,8 +39,14 @@ export class OrgsList extends BtrixElement {
   @property({ type: Object })
   currOrg?: OrgData | null = null;
 
+  @state()
+  private allProxies?: Proxy[];
+
   @query("#orgQuotaDialog")
   private readonly orgQuotaDialog?: Dialog | null;
+
+  @query("#orgProxiesDialog")
+  private readonly orgProxiesDialog?: Dialog | null;
 
   @query("#orgReadOnlyDialog")
   private readonly orgReadOnlyDialog?: Dialog | null;
@@ -79,8 +89,8 @@ export class OrgsList extends BtrixElement {
         </btrix-table-body>
       </btrix-table>
 
-      ${this.renderOrgQuotas()} ${this.renderOrgReadOnly()}
-      ${this.renderOrgDelete()}
+      ${this.renderOrgQuotas()} ${this.renderOrgProxies()}
+      ${this.renderOrgReadOnly()} ${this.renderOrgDelete()}
     `;
   }
 
@@ -133,6 +143,67 @@ export class OrgsList extends BtrixElement {
             @click="${this.onSubmitQuotas}"
             variant="primary"
             >${msg("Update Quotas")}
+          </sl-button>
+        </div>
+      </btrix-dialog>
+    `;
+  }
+
+  private renderOrgProxies() {
+    return html`
+      <btrix-dialog
+        id="orgProxiesDialog"
+        .label=${msg(str`Proxy Settings for: ${this.currOrg?.name || ""}`)}
+        @sl-after-hide=${() => (this.currOrg = null)}
+        @sl-show=${() => {
+          if (this.currOrg) {
+            void this.fetchAllProxies(this.currOrg);
+          }
+        }}
+      >
+        <sl-checkbox
+          class="mb-3 last:mb-0"
+          name="allowSharedProxies"
+          ?checked=${this.currOrg?.allowSharedProxies}
+          @sl-input="${this.onUpdateAllowSharedProxies}"
+          >${msg("Allow shared proxies")}</sl-checkbox
+        >
+
+        <sl-menu @sl-select="${this.onUpdateAllowedProxies}">
+          ${this.allProxies
+            ?.filter((server) => server.shared)
+            .map(
+              (server) =>
+                html` <sl-menu-item
+                  type="checkbox"
+                  value=${server.id}
+                  ?checked=${this.currOrg?.allowedProxies.indexOf(server.id) !=
+                  -1}
+                >
+                  <code>${server.id}</code>: ${server.label}
+                </sl-menu-item>`,
+            )}
+          ${this.allProxies
+            ?.filter((server) => !server.shared)
+            .map(
+              (server) =>
+                html` <sl-menu-item
+                  type="checkbox"
+                  value=${server.id}
+                  ?checked=${this.currOrg?.allowedProxies.indexOf(server.id) !=
+                  -1}
+                >
+                  <code>${server.id}</code>: ${server.label}
+                </sl-menu-item>`,
+            )}
+        </sl-menu>
+
+        <div slot="footer" class="flex justify-end">
+          <sl-button
+            size="small"
+            @click="${this.onSubmitProxies}"
+            variant="primary"
+            >${msg("Update Proxy Settings")}
           </sl-button>
         </div>
       </btrix-dialog>
@@ -329,6 +400,27 @@ export class OrgsList extends BtrixElement {
     }
   }
 
+  private onUpdateAllowSharedProxies(e: CustomEvent) {
+    const inputEl = e.target as SlCheckbox;
+    if (this.currOrg) {
+      this.currOrg.allowSharedProxies = inputEl.checked;
+    }
+  }
+
+  private onUpdateAllowedProxies(e: CustomEvent) {
+    const inputEl = e.detail.item as SlMenuItem;
+    if (this.currOrg && inputEl.type === "checkbox") {
+      const proxyId = inputEl.value;
+      const proxyIndex = this.currOrg.allowedProxies.indexOf(proxyId);
+      const hasProxy = proxyIndex != -1;
+      if (inputEl.checked) {
+        if (!hasProxy) this.currOrg.allowedProxies.push(proxyId);
+      } else if (hasProxy) {
+        this.currOrg.allowedProxies.splice(proxyIndex, 1);
+      }
+    }
+  }
+
   private onSubmitQuotas() {
     if (this.currOrg) {
       this.dispatchEvent(
@@ -336,6 +428,16 @@ export class OrgsList extends BtrixElement {
       );
 
       void this.orgQuotaDialog?.hide();
+    }
+  }
+
+  private onSubmitProxies() {
+    if (this.currOrg) {
+      this.dispatchEvent(
+        new CustomEvent("update-proxies", { detail: this.currOrg }),
+      );
+
+      void this.orgProxiesDialog?.hide();
     }
   }
 
@@ -397,6 +499,22 @@ export class OrgsList extends BtrixElement {
     }
   }
 
+  private async fetchAllProxies(org: OrgData) {
+    try {
+      const data = await this.api.fetch<ProxiesAPIResponse>(
+        `/orgs/${org.id}/crawlconfigs/crawler-proxies/all`,
+      );
+      this.allProxies = data.servers;
+    } catch (e) {
+      console.debug(e);
+
+      this.notify.toast({
+        message: msg("Sorry, couldn't get all proxies at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
   private async deleteOrg(org: OrgData) {
     try {
       await this.api.fetch(`/orgs/${org.id}`, {
@@ -536,6 +654,15 @@ export class OrgsList extends BtrixElement {
               >
                 <sl-icon slot="prefix" name="gear"></sl-icon>
                 ${msg("Edit Quotas")}
+              </sl-menu-item>
+              <sl-menu-item
+                @click=${() => {
+                  this.currOrg = org;
+                  void this.orgProxiesDialog?.show();
+                }}
+              >
+                <sl-icon slot="prefix" name="globe2"></sl-icon>
+                ${msg("Edit Proxies")}
               </sl-menu-item>
               ${org.readOnly
                 ? html`

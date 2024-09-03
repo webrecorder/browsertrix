@@ -3,7 +3,7 @@ import { type SlSelect } from "@shoelace-style/shoelace";
 import { html } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
-import type { Proxy } from "@/pages/org/types";
+import type { ProxiesAPIResponse, Proxy } from "@/pages/org/types";
 import LiteElement from "@/utils/LiteElement";
 
 type SelectCrawlerProxyChangeDetail = {
@@ -19,11 +19,6 @@ type SelectCrawlerProxyUpdateDetail = {
 
 export type SelectCrawlerProxyUpdateEvent =
   CustomEvent<SelectCrawlerProxyUpdateDetail>;
-
-type AllProxiesAPIResponse = {
-  default_proxy_id: string | null;
-  servers: Proxy[];
-};
 
 /**
  * Crawler proxy select dropdown
@@ -54,7 +49,7 @@ export class SelectCrawlerProxy extends LiteElement {
   private allProxies?: Proxy[];
 
   protected firstUpdated() {
-    void this.fetchAllProxies();
+    void this.fetchOrgProxies();
   }
   // credit: https://dev.to/jorik/country-code-to-flag-emoji-a21
   private countryCodeToFlagEmoji(countryCode: String): String {
@@ -83,7 +78,7 @@ export class SelectCrawlerProxy extends LiteElement {
         @sl-change=${this.onChange}
         @sl-focus=${() => {
           // Refetch to keep list up to date
-          void this.fetchAllProxies();
+          void this.fetchOrgProxies();
         }}
         @sl-hide=${this.stopProp}
         @sl-after-hide=${this.stopProp}
@@ -142,9 +137,9 @@ export class SelectCrawlerProxy extends LiteElement {
   /**
    * Fetch crawler proxies and update internal state
    */
-  private async fetchAllProxies(): Promise<void> {
+  private async fetchOrgProxies(): Promise<void> {
     try {
-      const data = await this.getAllProxies();
+      const data = await this.getOrgProxies();
       const defaultProxyId = data.default_proxy_id;
 
       this.allProxies = data.servers;
@@ -191,13 +186,10 @@ export class SelectCrawlerProxy extends LiteElement {
     }
   }
 
-  private async getAllProxies(): Promise<AllProxiesAPIResponse> {
-    const data: AllProxiesAPIResponse =
-      await this.apiFetch<AllProxiesAPIResponse>(
-        `/orgs/${this.orgId}/crawlconfigs/crawler-proxies`,
-      );
-
-    return data;
+  private async getOrgProxies(): Promise<ProxiesAPIResponse> {
+    return this.apiFetch<ProxiesAPIResponse>(
+      `/orgs/${this.orgId}/crawlconfigs/crawler-proxies`,
+    );
   }
 
   /**

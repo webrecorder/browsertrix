@@ -218,6 +218,12 @@ export type Proxy = {
   label: string;
   country_code: string | null;
   description: string | null;
+  shared: boolean;
+};
+
+export type ProxiesAPIResponse = {
+  default_proxy_id: string | null;
+  servers: Proxy[];
 };
 
 export type ArchivedItem = Crawl | Upload;

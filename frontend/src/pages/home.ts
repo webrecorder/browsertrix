@@ -171,6 +171,7 @@ export class Home extends LiteElement {
             <btrix-orgs-list
               .orgList=${this.orgList}
               @update-quotas=${this.onUpdateOrgQuotas}
+              @update-proxies=${this.onUpdateOrgProxies}
             ></btrix-orgs-list>
           </section>
         </div>
@@ -399,6 +400,18 @@ export class Home extends LiteElement {
     await this.apiFetch(`/orgs/${org.id}/quotas`, {
       method: "POST",
       body: JSON.stringify(org.quotas),
+    });
+  }
+
+  async onUpdateOrgProxies(e: CustomEvent) {
+    const org = e.detail as OrgData;
+
+    await this.apiFetch(`/orgs/${org.id}/proxies`, {
+      method: "POST",
+      body: JSON.stringify({
+        allowSharedProxies: org.allowSharedProxies,
+        allowedProxies: org.allowedProxies,
+      }),
     });
   }
 
