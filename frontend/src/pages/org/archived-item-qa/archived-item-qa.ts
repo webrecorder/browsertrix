@@ -30,6 +30,7 @@ import {
 } from "@/features/qa/page-list/page-list";
 import { type UpdatePageApprovalDetail } from "@/features/qa/page-qa-approval";
 import type { SelectDetail } from "@/features/qa/qa-run-dropdown";
+import { breadcrumbSeparator, pageBack } from "@/layouts/pageHeader";
 import type {
   APIPaginatedList,
   APIPaginationQuery,
@@ -372,9 +373,9 @@ export class ArchivedItemQA extends BtrixElement {
 
       <div class="flex items-center">
         ${this.renderBackLink()}
-        <div class="text-neutral-400" role="separator">/</div>
-        <h1 class="text-neutral-400 ml-3">
-          ${msg("QA Review")}
+        <div role="separator">${breadcrumbSeparator()}</div>
+        <h1 class="text-neutral-500 font-medium ml-3">
+          ${msg("Review Crawl")}
           <btrix-beta-badge placement="right"></btrix-beta-badge>
         </h1>
       </div>
@@ -615,18 +616,10 @@ export class ArchivedItemQA extends BtrixElement {
       backLink = `${this.navigate.orgBasePath}/collections/view/${this.collectionId}/items/crawl/${this.itemId}#qa`;
     }
 
-    return html`
-      <sl-button
-        class="-ml-4"
-        variant="text"
-        size="small"
-        href=${backLink}
-        @click=${this.navigate.link}
-      >
-        <sl-icon name="chevron-left"></sl-icon>
-        ${msg("Back to Crawl")}
-      </sl-button>
-    `;
+    return pageBack({
+      href: backLink,
+      content: msg("Crawl QA"),
+    });
   }
 
   private renderReviewDialog() {

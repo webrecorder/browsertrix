@@ -1,3 +1,4 @@
+import { msg } from "@lit/localize";
 import type { SlBreadcrumb } from "@shoelace-style/shoelace";
 import clsx from "clsx";
 import { html, nothing, type TemplateResult } from "lit";
@@ -22,9 +23,16 @@ function navigateBreadcrumb(e: MouseEvent, href: string) {
   el.dispatchEvent(evt);
 }
 
+export function breadcrumbSeparator() {
+  return html`
+    <span slot="separator" class="font-mono font-thin text-neutral-400">/</span>
+  `;
+}
+
 export function pageBreadcrumbs(breadcrumbs: Breadcrumb[]) {
   return html`
     <sl-breadcrumb class="part-[base]:h-6">
+      ${breadcrumbSeparator()}
       ${breadcrumbs.length
         ? breadcrumbs.map(
             ({ href, content }) => html`
@@ -45,6 +53,24 @@ export function pageBreadcrumbs(breadcrumbs: Breadcrumb[]) {
               <sl-skeleton class="w-48"></sl-skeleton>
             </sl-breadcrumb-item>`}
     </sl-breadcrumb>
+  `;
+}
+
+export function pageBack(nav: Breadcrumb) {
+  const { href } = nav;
+  if (!href) return;
+
+  return html`
+    <sl-button
+      class="-ml-4"
+      variant="text"
+      size="small"
+      href=${href}
+      @click=${(e: MouseEvent) => navigateBreadcrumb(e, href)}
+    >
+      <sl-icon slot="prefix" name="chevron-left"></sl-icon>
+      ${nav.content ? html` ${msg("Back to")} ${nav.content}` : msg("Back")}
+    </sl-button>
   `;
 }
 
