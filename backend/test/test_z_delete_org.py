@@ -62,18 +62,27 @@ def test_delete_org_superadmin(admin_auth_headers, default_org_id):
     # Check that background job is launched and eventually succeeds
     max_attempts = 18
     attempts = 1
-    while attempts <= max_attempts:
+    while True:
         try:
             r = requests.get(
                 f"{API_PREFIX}/orgs/all/jobs/{job_id}", headers=admin_auth_headers
             )
             assert r.status_code == 200
-            data = r.json()
-            if data["success"]:
+            success = r.json()["success"]
+
+            if success:
                 break
+
+            if success is False:
+                assert False
+
+            if attempts >= max_attempts:
+                assert False
+
             time.sleep(10)
         except:
             pass
+
         attempts += 1
 
     # Ensure org and items got deleted
