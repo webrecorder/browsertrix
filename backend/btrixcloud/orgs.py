@@ -514,6 +514,7 @@ class OrgOps:
         return res is not None
 
     async def update_proxies(self, org: Organization, proxies: OrgProxies) -> None:
+        """Update org proxy settings"""
         await self.orgs.find_one_and_update(
             {"_id": org.id},
             {
