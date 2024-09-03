@@ -46,11 +46,6 @@ const RESOURCE_NAMES = ["workflow", "collection", "browser-profile", "upload"];
 type ResourceName = (typeof RESOURCE_NAMES)[number];
 export type SelectNewDialogEvent = CustomEvent<ResourceName>;
 type ArchivedItemPageParams = {
-  itemId?: string;
-  itemType?: string;
-  itemPageId?: string;
-  qaTab?: QATab;
-  qaRunId?: string;
   workflowId?: string;
   collectionId?: string;
 };
@@ -60,7 +55,13 @@ export type OrgParams = {
     jobType?: JobType;
     new?: ResourceName;
   };
-  items: ArchivedItemPageParams;
+  items: ArchivedItemPageParams & {
+    itemId?: string;
+    itemType?: string;
+    itemPageId?: string;
+    qaTab?: QATab;
+    qaRunId?: string;
+  };
   "browser-profiles": {
     browserProfileId?: string;
     browserId?: string;
@@ -177,6 +178,11 @@ export class Org extends LiteElement {
           this.navTo(`${url.pathname}${url.search}`);
         }
       }
+    } else if (changedProperties.has("params")) {
+      const dialogName = this.getDialogName();
+      if (dialogName && !this.openDialogName) {
+        this.openDialog(dialogName);
+      }
     }
   }
 
@@ -218,8 +224,16 @@ export class Org extends LiteElement {
       }
     }
     // Sync URL to create dialog
+    const dialogName = this.getDialogName();
+    if (dialogName) this.openDialog(dialogName);
+  }
+
+  private getDialogName() {
     const url = new URL(window.location.href);
-    const dialogName = url.searchParams.get("new");
+    return url.searchParams.get("new");
+  }
+
+  private openDialog(dialogName: string) {
     if (dialogName && RESOURCE_NAMES.includes(dialogName)) {
       this.openDialogName = dialogName;
       this.isCreateDialogVisible = true;
@@ -466,6 +480,8 @@ export class Org extends LiteElement {
           class="flex-1"
           itemId=${params.itemId}
           itemPageId=${ifDefined(params.itemPageId)}
+          collectionId=${params.collectionId || ""}
+          workflowId=${params.workflowId || ""}
           qaRunId=${ifDefined(params.qaRunId)}
           tab=${params.qaTab}
         ></btrix-archived-item-qa>`;
@@ -495,26 +511,6 @@ export class Org extends LiteElement {
     const workflowId = params.workflowId;
 
     if (workflowId) {
-      if (params.itemId) {
-        if (params.qaTab) {
-          return html`<btrix-archived-item-qa
-            class="flex-1"
-            itemId=${params.itemId}
-            workflowId=${workflowId}
-            itemPageId=${ifDefined(params.itemPageId)}
-            qaRunId=${ifDefined(params.qaRunId)}
-            tab=${params.qaTab}
-          ></btrix-archived-item-qa>`;
-        }
-
-        return html`<btrix-archived-item-detail
-          crawlId=${params.itemId}
-          workflowId=${workflowId}
-          itemType="crawl"
-          ?isCrawler=${this.appState.isCrawler}
-        ></btrix-archived-item-detail>`;
-      }
-
       return html`
         <btrix-workflow-detail
           class="col-span-5"
@@ -531,7 +527,7 @@ export class Org extends LiteElement {
       const { workflow, seeds } = this.viewStateData || {};
 
       return html` <btrix-workflows-new
-        class="col-span-5 mt-6"
+        class="col-span-5"
         ?isCrawler=${this.appState.isCrawler}
         .initialWorkflow=${workflow}
         .initialSeeds=${seeds}
@@ -583,24 +579,6 @@ export class Org extends LiteElement {
     const params = this.params as OrgParams["collections"];
 
     if (params.collectionId) {
-      if (params.itemId) {
-        if (params.qaTab) {
-          return html`<btrix-archived-item-qa
-            class="flex-1"
-            itemId=${params.itemId}
-            collectionId=${params.collectionId}
-            itemPageId=${ifDefined(params.itemPageId)}
-            qaRunId=${ifDefined(params.qaRunId)}
-            tab=${params.qaTab}
-          ></btrix-archived-item-qa>`;
-        }
-        return html`<btrix-archived-item-detail
-          crawlId=${params.itemId}
-          collectionId=${params.collectionId}
-          itemType=${ifDefined(params.itemType)}
-          ?isCrawler=${this.appState.isCrawler}
-        ></btrix-archived-item-detail>`;
-      }
       return html`<btrix-collection-detail
         collectionId=${params.collectionId}
         collectionTab=${(params.collectionTab as CollectionTab | undefined) ||

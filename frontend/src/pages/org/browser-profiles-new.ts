@@ -7,7 +7,7 @@ import queryString from "query-string";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
 import type { BrowserConnectionChange } from "@/features/browser-profiles/profile-browser";
-import { pageBreadcrumbs, type Breadcrumb } from "@/layouts/pageHeader";
+import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
 import { isApiError } from "@/utils/api";
 
 /**
@@ -168,13 +168,9 @@ export class BrowserProfilesNew extends BtrixElement {
           content: msg("Duplicate Profile"),
         },
       );
-    } else {
-      breadcrumbs.push({
-        content: msg("New Browser Profile"),
-      });
     }
 
-    return pageBreadcrumbs(breadcrumbs);
+    return pageNav(breadcrumbs);
   }
 
   private async onBrowserError() {

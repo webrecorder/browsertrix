@@ -373,8 +373,8 @@ export class ArchivedItemQA extends BtrixElement {
 
       <div class="flex items-center">
         ${this.renderBackLink()}
-        <div role="separator">${breadcrumbSeparator()}</div>
-        <h1 class="text-neutral-500 font-medium ml-3">
+        <div class="mx-2">${breadcrumbSeparator()}</div>
+        <h1 class="text-neutral-500 font-medium">
           ${msg("Review Crawl")}
           <btrix-beta-badge placement="right"></btrix-beta-badge>
         </h1>

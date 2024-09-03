@@ -5,6 +5,7 @@ import { html, nothing, type TemplateResult } from "lit";
 import { ifDefined } from "lit/directives/if-defined.js";
 
 import { NavigateController } from "@/controllers/navigate";
+import { tw } from "@/utils/tailwind";
 
 export type Breadcrumb = {
   href?: string;
@@ -24,54 +25,61 @@ function navigateBreadcrumb(e: MouseEvent, href: string) {
 }
 
 export function breadcrumbSeparator() {
+  return html`<span
+    class="font-mono font-thin text-neutral-300"
+    role="separator"
+    >/</span
+  > `;
+}
+
+const separator = breadcrumbSeparator();
+const skeleton = html`<sl-skeleton class="w-48"></sl-skeleton>`;
+
+function breadcrumbLink({ href, content }: Breadcrumb) {
+  if (!content) return skeleton;
+
   return html`
-    <span slot="separator" class="font-mono font-thin text-neutral-400">/</span>
+    <a
+      class=${clsx(
+        tw`flex h-5 max-w-[30ch] items-center gap-2 truncate whitespace-nowrap leading-5`,
+        href
+          ? tw`font-medium text-neutral-400 transition-colors hover:text-neutral-500`
+          : null,
+      )}
+      href=${ifDefined(href)}
+      @click=${href
+        ? (e: MouseEvent) => navigateBreadcrumb(e, href)
+        : undefined}
+    >
+      ${content}
+    </a>
   `;
 }
 
-export function pageBreadcrumbs(breadcrumbs: Breadcrumb[]) {
+function pageBreadcrumbs(breadcrumbs: Breadcrumb[]) {
   return html`
-    <sl-breadcrumb class="part-[base]:h-6">
-      ${breadcrumbSeparator()}
+    <nav class="flex flex-wrap items-center gap-2 text-neutral-400">
       ${breadcrumbs.length
         ? breadcrumbs.map(
-            ({ href, content }) => html`
-              <sl-breadcrumb-item
-                href=${ifDefined(href)}
-                @click=${href
-                  ? (e: MouseEvent) => navigateBreadcrumb(e, href)
-                  : undefined}
-              >
-                ${content || html`<sl-skeleton class="w-48"></sl-skeleton>`}
-              </sl-breadcrumb-item>
+            (breadcrumb, i) => html`
+              ${i !== 0 ? separator : nothing} ${breadcrumbLink(breadcrumb)}
             `,
           )
-        : html`<sl-breadcrumb-item>
-              <sl-skeleton class="w-48"></sl-skeleton>
-            </sl-breadcrumb-item>
-            <sl-breadcrumb-item>
-              <sl-skeleton class="w-48"></sl-skeleton>
-            </sl-breadcrumb-item>`}
-    </sl-breadcrumb>
+        : html`${skeleton} ${separator} ${skeleton}`}
+    </nav>
   `;
 }
 
-export function pageBack(nav: Breadcrumb) {
-  const { href } = nav;
+export function pageBack({ href, content }: Breadcrumb) {
   if (!href) return;
 
-  return html`
-    <sl-button
-      class="-ml-4"
-      variant="text"
-      size="small"
-      href=${href}
-      @click=${(e: MouseEvent) => navigateBreadcrumb(e, href)}
-    >
-      <sl-icon slot="prefix" name="chevron-left"></sl-icon>
-      ${nav.content ? html` ${msg("Back to")} ${nav.content}` : msg("Back")}
-    </sl-button>
-  `;
+  return breadcrumbLink({
+    href,
+    content: html`
+      <sl-icon name="chevron-left" class="size-4 text-neutral-400"></sl-icon>
+      ${content ? html` ${msg("Back to")} ${content}` : msg("Back")}
+    `,
+  });
 }
 
 export function pageTitle(title?: string | TemplateResult) {
@@ -80,6 +88,14 @@ export function pageTitle(title?: string | TemplateResult) {
       ${title || html`<sl-skeleton class="my-.5 h-5 w-60"></sl-skeleton>`}
     </h1>
   `;
+}
+
+export function pageNav(breadcrumbs: Breadcrumb[]) {
+  if (breadcrumbs.length === 1) {
+    return pageBack(breadcrumbs[0]);
+  }
+
+  return pageBreadcrumbs(breadcrumbs);
 }
 
 export function pageHeader(

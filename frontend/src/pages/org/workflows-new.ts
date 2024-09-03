@@ -8,7 +8,7 @@ import type { JobType, Seed, WorkflowParams } from "./types";
 
 import type { SelectNewDialogEvent } from ".";
 
-import { pageBreadcrumbs, type Breadcrumb } from "@/layouts/pageHeader";
+import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
 import LiteElement, { html } from "@/utils/LiteElement";
 
 const defaultValue = {
@@ -84,7 +84,7 @@ export class WorkflowsNew extends LiteElement {
       });
     }
 
-    return pageBreadcrumbs(breadcrumbs);
+    return pageNav(breadcrumbs);
   }
 
   render() {

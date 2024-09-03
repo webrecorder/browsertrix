@@ -22,7 +22,7 @@ import { type IntersectEvent } from "@/components/utils/observable";
 import type { CrawlLog } from "@/features/archived-items/crawl-logs";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { ExclusionEditor } from "@/features/crawl-workflows/exclusion-editor";
-import { pageBreadcrumbs, type Breadcrumb } from "@/layouts/pageHeader";
+import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
 import type { APIPaginatedList } from "@/types/api";
 import { isApiError } from "@/utils/api";
 import {
@@ -397,24 +397,23 @@ export class WorkflowDetail extends LiteElement {
       },
     ];
 
-    if (this.workflow) {
-      breadcrumbs.push({
-        href: `${this.orgBasePath}/workflows/crawl/${this.workflowId}`,
-        content: this.renderName(),
-      });
-
-      if (this.isEditing) {
-        breadcrumbs.push({
+    if (this.isEditing) {
+      breadcrumbs.push(
+        {
+          href: `${this.orgBasePath}/workflows/crawl/${this.workflowId}`,
+          content: this.workflow ? this.renderName() : undefined,
+        },
+        {
           content: msg("Edit Settings"),
-        });
-      } else if (this.activePanel) {
-        breadcrumbs.push({
-          content: this.tabLabels[this.activePanel],
-        });
-      }
+        },
+      );
+    } else {
+      breadcrumbs.push({
+        content: this.workflow ? this.renderName() : undefined,
+      });
     }
 
-    return pageBreadcrumbs(breadcrumbs);
+    return pageNav(breadcrumbs);
   }
 
   private readonly renderTabList = () => html`
@@ -552,10 +551,8 @@ export class WorkflowDetail extends LiteElement {
   private readonly renderEditor = () => html`
     <div class="col-span-1">${this.renderBreadcrumbs()}</div>
 
-    <header>
-      <h2 class="break-all text-xl font-semibold leading-10">
-        ${this.renderName()}
-      </h2>
+    <header class="col-span-1 mb-3 flex flex-wrap gap-2">
+      <btrix-detail-page-title .item=${this.workflow}></btrix-detail-page-title>
     </header>
 
     ${when(
@@ -865,7 +862,7 @@ export class WorkflowDetail extends LiteElement {
                 this.crawls!.items.map(
                   (crawl: Crawl) =>
                     html` <btrix-crawl-list-item
-                      href=${`${this.orgBasePath}/workflows/crawl/${this.workflowId}/items/${crawl.id}`}
+                      href=${`${this.orgBasePath}/items/crawl/${crawl.id}?workflowId=${this.workflowId}`}
                       .crawl=${crawl}
                     >
                       ${when(
