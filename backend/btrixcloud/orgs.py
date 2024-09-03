@@ -1490,7 +1490,7 @@ def init_orgs_api(
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
-        await ops.update_quotas(org, proxies)
+        await ops.update_proxies(org, proxies)
 
         return {"updated": True}
 

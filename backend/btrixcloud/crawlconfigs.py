@@ -43,7 +43,7 @@ from .models import (
     CrawlerProxy,
     CrawlerProxies,
 )
-from .utils import dt_now, slug_from_name, is_bool
+from .utils import dt_now, slug_from_name
 
 if TYPE_CHECKING:
     from .orgs import OrgOps
@@ -950,7 +950,7 @@ class CrawlConfigOps:
                     url=proxy_data["url"],
                     has_host_public_key=bool(proxy_data.get("ssh_host_public_key")),
                     has_private_key=bool(proxy_data.get("ssh_private_key")),
-                    shared=is_bool(proxy_data.get("shared"))
+                    shared=proxy_data.get("shared", False)
                     or proxy_data["id"] == DEFAULT_PROXY_ID,
                 )
 
@@ -972,6 +972,7 @@ class CrawlConfigOps:
 
     def can_org_use_proxy(self, org: Organization, proxy: CrawlerProxy | str) -> bool:
         """Checks if org is able to use proxy"""
+
         if isinstance(proxy, str):
             _proxy = self.get_crawler_proxy(proxy)
         else:
@@ -1174,7 +1175,7 @@ def init_crawl_config_api(
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
-        return ops.get_crawler_proxies
+        return ops.get_crawler_proxies()
 
     @router.get("/{cid}/seeds", response_model=PaginatedSeedResponse)
     async def get_crawl_config_seeds(

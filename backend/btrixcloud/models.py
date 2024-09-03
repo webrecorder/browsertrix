@@ -1376,6 +1376,9 @@ class OrgOut(BaseMongoModel):
 
     subscription: Optional[Subscription] = None
 
+    allowSharedProxies: bool = True
+    allowedProxies: list[str] = []
+
 
 # ============================================================================
 class Organization(BaseMongoModel):
