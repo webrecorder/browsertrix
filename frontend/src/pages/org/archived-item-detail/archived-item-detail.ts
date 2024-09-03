@@ -562,18 +562,7 @@ export class ArchivedItemDetail extends BtrixElement {
   }
 
   private renderHeader() {
-    let parentPageLabel: TemplateResult | null = null;
-
-    if (this.workflowId || this.collectionId) {
-      parentPageLabel = html`<div class="mb-1 font-medium text-neutral-400">
-        ${this.workflowId
-          ? msg("Viewing Workflow Crawl")
-          : msg("Viewing Archived Item in Collection")}
-      </div>`;
-    }
-
     return html`
-      ${parentPageLabel}
       <header class="mb-3 flex flex-wrap gap-2 border-b pb-3">
         <btrix-detail-page-title .item=${this.crawl}></btrix-detail-page-title>
         <div class="ml-auto flex flex-wrap justify-end gap-2">
