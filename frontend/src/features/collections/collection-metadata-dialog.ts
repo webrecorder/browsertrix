@@ -1,14 +1,15 @@
 import { localized, msg, str } from "@lit/localize";
 import { type SlInput } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
+import { html } from "lit";
 import { customElement, property, queryAsync, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 
+import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
 import type { Collection } from "@/types/collection";
 import { isApiError } from "@/utils/api";
 import { maxLengthValidator } from "@/utils/form";
-import LiteElement, { html } from "@/utils/LiteElement";
 
 export type CollectionSavedEvent = CustomEvent<{
   id: string;
@@ -19,7 +20,7 @@ export type CollectionSavedEvent = CustomEvent<{
  */
 @localized()
 @customElement("btrix-collection-metadata-dialog")
-export class CollectionMetadataDialog extends LiteElement {
+export class CollectionMetadataDialog extends BtrixElement {
   @property({ type: Object })
   collection?: Collection;
 
@@ -164,7 +165,7 @@ export class CollectionMetadataDialog extends LiteElement {
         path = `/orgs/${this.orgId}/collections/${this.collection.id}`;
         method = "PATCH";
       }
-      const data = await this.apiFetch<Collection>(path, {
+      const data = await this.api.fetch<Collection>(path, {
         method,
         body,
       });
@@ -176,7 +177,7 @@ export class CollectionMetadataDialog extends LiteElement {
           },
         }) as CollectionSavedEvent,
       );
-      this.notify({
+      this.notify.toast({
         message: msg(
           str`Successfully saved "${data.name || name}" Collection.`,
         ),
@@ -189,7 +190,7 @@ export class CollectionMetadataDialog extends LiteElement {
       if (message === "collection_name_taken") {
         message = msg("This name is already taken.");
       }
-      this.notify({
+      this.notify.toast({
         message: message || msg("Something unexpected went wrong"),
         variant: "danger",
         icon: "exclamation-octagon",
