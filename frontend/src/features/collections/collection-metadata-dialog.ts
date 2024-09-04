@@ -125,6 +125,7 @@ export class CollectionMetadataDialog extends BtrixElement {
         ${when(
           !this.collection,
           () => html`
+            <sl-divider></sl-divider>
             <label>
               <sl-switch name="isPublic"
                 >${msg("Publicly Accessible")}</sl-switch
