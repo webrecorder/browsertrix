@@ -115,15 +115,13 @@ export class CollectionMetadataDialog extends BtrixElement {
           help-text=${this.validateNameMax.helpText}
           @sl-input=${this.validateNameMax.validate}
         ></sl-input>
-
-        <fieldset>
-          <label class="form-label">${msg("Description")}</label>
-          <btrix-markdown-editor
-            name="description"
-            initialValue=${this.collection?.description || ""}
-            maxlength=${4000}
-          ></btrix-markdown-editor>
-        </fieldset>
+        <sl-divider></sl-divider>
+        <btrix-markdown-editor
+          label=${msg("Description")}
+          name="description"
+          initialValue=${this.collection?.description || ""}
+          maxlength=${4000}
+        ></btrix-markdown-editor>
         ${when(
           !this.collection,
           () => html`

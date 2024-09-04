@@ -1,7 +1,8 @@
 import { msg, str } from "@lit/localize";
+import clsx from "clsx";
 import { wrap, type AwaitableInstance } from "ink-mde";
-import { css, html } from "lit";
-import { customElement, property, query } from "lit/decorators.js";
+import { css, html, nothing, type PropertyValues } from "lit";
+import { customElement, property, query, state } from "lit/decorators.js";
 import { ref } from "lit/directives/ref.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
@@ -48,6 +49,11 @@ export class MarkdownEditor extends TailwindElement {
       min-height: 8rem;
     }
 
+    .previewMode .ink-mde-textarea,
+    .previewMode .helpText {
+      display: none;
+    }
+
     /* TODO check why style wasn't applied */
     .cm-announced {
       position: absolute;
@@ -61,6 +67,9 @@ export class MarkdownEditor extends TailwindElement {
       border-width: 0;
     }
   `;
+
+  @property({ type: String })
+  label = "";
 
   @property({ type: String })
   initialValue = "";
@@ -77,10 +86,23 @@ export class MarkdownEditor extends TailwindElement {
   @query("textarea")
   private readonly textarea?: HTMLTextAreaElement | null;
 
+  @state()
+  private preview = false;
+
   private editor?: AwaitableInstance;
 
   public checkValidity() {
     return this.textarea?.checkValidity();
+  }
+
+  protected willUpdate(changedProperties: PropertyValues<this>): void {
+    if (
+      changedProperties.has("initialValue") &&
+      this.initialValue &&
+      !this.value
+    ) {
+      this.value = this.initialValue;
+    }
   }
 
   disconnectedCallback(): void {
@@ -92,13 +114,34 @@ export class MarkdownEditor extends TailwindElement {
   render() {
     const isInvalid = this.maxlength && this.value.length > this.maxlength;
     return html`
-      <fieldset ?data-invalid=${isInvalid} ?data-user-invalid=${isInvalid}>
+      <fieldset
+        class=${clsx(this.preview ? "previewMode" : "")}
+        ?data-invalid=${isInvalid}
+        ?data-user-invalid=${isInvalid}
+      >
+        <div class="mb-2 flex items-end justify-between">
+          <label class="form-label mb-0">${this.label}</label>
+          <sl-switch
+            size="small"
+            ?checked=${this.preview}
+            @sl-change=${() => (this.preview = !this.preview)}
+          >
+            <span class="text-neutral-600">${msg("Preview")}</span>
+          </sl-switch>
+        </div>
+        ${this.preview
+          ? html`<div class="min-h-36 rounded border px-4">
+              <btrix-markdown-viewer
+                .value=${this.value}
+              ></btrix-markdown-viewer>
+            </div>`
+          : nothing}
         <textarea
           name=${this.name}
           ${ref(this.initEditor as () => void)}
         ></textarea>
-        <div class="form-help-text flex justify-between">
-          <p>
+        <div class="helpText flex items-baseline justify-between">
+          <p class="text-xs">
             ${msg(
               html`Supports
                 <a
@@ -112,7 +155,11 @@ export class MarkdownEditor extends TailwindElement {
           </p>
 
           ${this.maxlength
-            ? html`<div>${getHelpText(this.maxlength, this.value.length)}</div>`
+            ? html`<div>
+                <p class="form-help-text">
+                  ${getHelpText(this.maxlength, this.value.length)}
+                </p>
+              </div>`
             : ""}
         </div>
       </fieldset>
