@@ -18,13 +18,13 @@ The first step in creating a new crawl workflow is to choose what you'd like to 
 
 Choose this option if you already know the URL of every page you'd like to crawl. The crawler will visit every URL specified in a list, and optionally every URL linked on those pages.
 
-A URL list is simpler to configure, since you don't need to worry about configuring the workflow to exclude parts of the website that you may not want to archive.
+A URL List workflow is simpler to configure, since you don't need to worry about configuring the workflow to exclude parts of the website that you may not want to archive.
 
 #### Seeded Crawl
 
 Let the crawler automatically discover pages based on a domain or start page that you specify.
 
-Seeded crawls are great for advanced use cases where you don't need (or want) to know every single URL of the website that you're archiving.
+Seeded Crawl workflows are great for advanced use cases where you don't need (or want) to know every single URL of the website that you're archiving.
 
 After deciding what type of crawl you'd like to run, you can begin to set up your workflow. A detailed breakdown of available settings can be found in the [workflow settings guide](workflow-setup.md).
 

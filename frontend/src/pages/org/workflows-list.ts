@@ -213,15 +213,14 @@ export class WorkflowsList extends LiteElement {
                   distance="4"
                   placement="bottom-end"
                   @sl-select=${(e: SlSelectEvent) => {
-                    const value = e.detail.item
-                      .value as SelectJobTypeEvent["detail"];
+                    const { value } = e.detail.item;
 
                     if (value) {
                       this.dispatchEvent(
                         new CustomEvent<SelectJobTypeEvent["detail"]>(
                           "select-job-type",
                           {
-                            detail: value,
+                            detail: value as SelectJobTypeEvent["detail"],
                           },
                         ),
                       );

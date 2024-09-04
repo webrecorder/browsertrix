@@ -107,7 +107,7 @@ export class NewWorkflowDialog extends TailwindElement {
           </ul>
           <p class="mb-3">
             ${msg(
-              html`A URL List crawl is simpler to configure, since you don't
+              html`A URL List workflow is simpler to configure, since you don't
               need to worry about configuring the workflow to exclude parts of
               the website that you may not want to archive.`,
             )}
@@ -132,10 +132,10 @@ export class NewWorkflowDialog extends TailwindElement {
           </ul>
           <p class="mb-3">
             ${msg(
-              html`Seeded Crawls are great for advanced use cases where you
-              don't need to know every single URL that you want to archive. You
-              can configure reasonable crawl limits and page limits so that you
-              don't crawl more than you need to.`,
+              html`Seeded Crawl workflows are great for advanced use cases where
+              you don't need to know every single URL that you want to archive.
+              You can configure reasonable crawl limits and page limits so that
+              you don't crawl more than you need to.`,
             )}
           </p>
           <p>
