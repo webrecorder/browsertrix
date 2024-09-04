@@ -107,16 +107,13 @@ export class NewWorkflowDialog extends TailwindElement {
           </ul>
           <p class="mb-3">
             ${msg(
-              html`A URL List is simpler to configure, since you don't need to
-              worry about configuring the workflow to exclude parts of the
-              website that you may not want to archive.`,
+              html`A URL List crawl is simpler to configure, since you don't
+              need to worry about configuring the workflow to exclude parts of
+              the website that you may not want to archive.`,
             )}
           </p>
           <p class="mb-3">
-            ${msg(
-              html`Choose <strong>Automated Discovery</strong> (aka a "Seeded
-                Crawl" crawl type) if:`,
-            )}
+            ${msg(html`Choose <strong>Seeded Site</strong> if:`)}
           </p>
           <ul class="mb-3 list-disc pl-5">
             <li>${msg("You want to archive an entire website")}</li>
@@ -135,7 +132,7 @@ export class NewWorkflowDialog extends TailwindElement {
           </ul>
           <p class="mb-3">
             ${msg(
-              html`Seeded crawls are great for advanced use cases where you
+              html`Seeded Site crawls are great for advanced use cases where you
               don't need to know every single URL that you want to archive. You
               can configure reasonable crawl limits and page limits so that you
               don't crawl more than you need to.`,
