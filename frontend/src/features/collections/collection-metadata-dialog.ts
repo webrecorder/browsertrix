@@ -35,7 +35,7 @@ export class CollectionMetadataDialog extends BtrixElement {
   open = false;
 
   @state()
-  private isDialogVisible = false;
+  isDialogVisible = false;
 
   @state()
   private isSubmitting = false;
@@ -47,7 +47,6 @@ export class CollectionMetadataDialog extends BtrixElement {
   private readonly form!: Promise<HTMLFormElement>;
 
   private readonly validateNameMax = maxLengthValidator(50);
-
   render() {
     return html` <btrix-dialog
       label=${this.collection
@@ -115,7 +114,6 @@ export class CollectionMetadataDialog extends BtrixElement {
           required
           help-text=${this.validateNameMax.helpText}
           @sl-input=${this.validateNameMax.validate}
-          autofocus
         ></sl-input>
 
         <fieldset>
@@ -168,12 +166,15 @@ export class CollectionMetadataDialog extends BtrixElement {
 
     const form = event.target as HTMLFormElement;
     const nameInput = form.querySelector<SlInput>('sl-input[name="name"]');
-    if (!nameInput?.checkValidity()) {
+    if (
+      !nameInput?.checkValidity() ||
+      !this.descriptionEditor?.checkValidity()
+    ) {
       return;
     }
 
     const { name, isPublic } = serialize(form);
-    const description = this.descriptionEditor?.value;
+    const description = this.descriptionEditor.value;
 
     this.isSubmitting = true;
     try {

@@ -5206,7 +5206,7 @@ inherits@2.0.3:
   resolved "https://registry.npmjs.org/inherits/-/inherits-2.0.3.tgz"
   integrity sha512-x00IRNXNy63jwGkJmzPigoySHbaqpNuzKbBOmzK+g2OdZpQ9w+sxCN+VSB3ja7IAge2OP2qpfxTjeNcyjmW1uw==
 
-ink-mde@^0.33.0:
+ink-mde@~0.33.0:
   version "0.33.0"
   resolved "https://registry.yarnpkg.com/ink-mde/-/ink-mde-0.33.0.tgz#39af448ec899af2ce1d8fcced5043e0a69491555"
   integrity sha512-kymsm0x3y/LcWNctSSTXo8jdADIMG82BrVNZiLtQGyu5mEoDVzFUdbIJgDBhssh6YdJJn2ElG3rCqWDSpxwWXA==

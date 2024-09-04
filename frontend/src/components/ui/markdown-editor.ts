@@ -1,12 +1,12 @@
-// cSpell:words wysimark
-
-import { ink, type AwaitableInstance } from "ink-mde";
+import { msg, str } from "@lit/localize";
+import { wrap, type AwaitableInstance } from "ink-mde";
 import { css, html } from "lit";
-import { customElement, property } from "lit/decorators.js";
+import { customElement, property, query } from "lit/decorators.js";
 import { ref } from "lit/directives/ref.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import { getHelpText } from "@/utils/form";
+import { formatNumber } from "@/utils/localization";
 
 type MarkdownChangeDetail = {
   value: string;
@@ -21,6 +21,7 @@ export type MarkdownChangeEvent = CustomEvent<MarkdownChangeDetail>;
 @customElement("btrix-markdown-editor")
 export class MarkdownEditor extends TailwindElement {
   static styles = css`
+    /* TODO check why style wasn't applied */
     .cm-announced {
       position: absolute;
       width: 1px;
@@ -46,30 +47,33 @@ export class MarkdownEditor extends TailwindElement {
   @property({ type: Number })
   maxlength?: number;
 
+  @query("textarea")
+  private readonly textarea?: HTMLTextAreaElement | null;
+
   private editor?: AwaitableInstance;
 
-  // protected updated(changedProperties: PropertyValues<this>) {
-  //   if (changedProperties.has("initialValue") && this.initialValue) {
-  //     this.hiddenInput!.value = this.initialValue;
-  //     if (this.editor) {
-  //       this.editor.update(this.initialValue);
-  //     }
-  //   }
-  // }
+  public checkValidity() {
+    return this.textarea?.checkValidity();
+  }
+
+  disconnectedCallback(): void {
+    super.disconnectedCallback();
+
+    this.editor?.destroy();
+  }
 
   render() {
     const isInvalid = this.maxlength && this.value.length > this.maxlength;
     return html`
       <fieldset
-        class="markdown-editor-wrapper with-max-help-text"
+        class="with-max-help-text"
         ?data-invalid=${isInvalid}
         ?data-user-invalid=${isInvalid}
       >
-        <input name=${this.name} type="hidden" />
-        <div
-          class="markdown-editor font-sm"
+        <textarea
+          name=${this.name}
           ${ref(this.initEditor as () => void)}
-        ></div>
+        ></textarea>
         ${this.maxlength
           ? html`<div class="form-help-text">
               ${getHelpText(this.maxlength, this.value.length)}
@@ -79,17 +83,31 @@ export class MarkdownEditor extends TailwindElement {
     `;
   }
 
-  private initEditor(el: HTMLDivElement | null) {
+  private initEditor(el: HTMLTextAreaElement | null) {
     if (!el) return;
 
-    this.editor = ink(el, {
+    if (this.editor) {
+      this.editor.destroy();
+    }
+
+    this.editor = wrap(el, {
       doc: this.initialValue,
       hooks: {
+        beforeUpdate: (doc: string) => {
+          if (this.maxlength) {
+            this.textarea?.setCustomValidity(
+              doc.length > this.maxlength
+                ? msg(
+                    str`Please shorten the description to ${formatNumber(this.maxlength)} or fewer characters.`,
+                  )
+                : "",
+            );
+          }
+        },
         afterUpdate: async (doc: string) => {
           this.value = doc;
 
           await this.updateComplete;
-
           this.dispatchEvent(
             new CustomEvent<MarkdownChangeDetail>("btrix-change", {
               detail: {
