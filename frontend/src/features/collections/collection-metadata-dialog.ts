@@ -2,11 +2,18 @@ import { localized, msg, str } from "@lit/localize";
 import { type SlInput } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import { html } from "lit";
-import { customElement, property, queryAsync, state } from "lit/decorators.js";
+import {
+  customElement,
+  property,
+  query,
+  queryAsync,
+  state,
+} from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
+import type { MarkdownEditor } from "@/components/ui/markdown-editor";
 import type { Collection } from "@/types/collection";
 import { isApiError } from "@/utils/api";
 import { maxLengthValidator } from "@/utils/form";
@@ -32,6 +39,9 @@ export class CollectionMetadataDialog extends BtrixElement {
 
   @state()
   private isSubmitting = false;
+
+  @query("btrix-markdown-editor")
+  private readonly descriptionEditor?: MarkdownEditor | null;
 
   @queryAsync("#collectionForm")
   private readonly form!: Promise<HTMLFormElement>;
@@ -162,7 +172,9 @@ export class CollectionMetadataDialog extends BtrixElement {
       return;
     }
 
-    const { name, description, isPublic } = serialize(form);
+    const { name, isPublic } = serialize(form);
+    const description = this.descriptionEditor?.value;
+
     this.isSubmitting = true;
     try {
       const body = JSON.stringify({
