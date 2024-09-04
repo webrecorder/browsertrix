@@ -21,6 +21,33 @@ export type MarkdownChangeEvent = CustomEvent<MarkdownChangeDetail>;
 @customElement("btrix-markdown-editor")
 export class MarkdownEditor extends TailwindElement {
   static styles = css`
+    :host {
+      --ink-border-radius: var(--sl-input-border-radius-medium);
+      --ink-color: var(--sl-input-color);
+      --ink-block-background-color: var(--sl-color-neutral-50);
+      --ink-block-padding: var(--sl-input-spacing-small);
+    }
+
+    .ink-mde {
+      border: solid var(--sl-input-border-width) var(--sl-input-border-color);
+    }
+
+    .ink-mde-toolbar {
+      border-top-left-radius: var(--ink-border-radius);
+      border-top-right-radius: var(--ink-border-radius);
+      border-bottom: 1px solid var(--sl-panel-border-color);
+    }
+
+    .ink-mde .ink-mde-toolbar .ink-button {
+      width: 2rem;
+      height: 2rem;
+    }
+
+    .ink-mde .ink-mde-editor {
+      padding: var(--sl-input-spacing-medium);
+      min-height: 8rem;
+    }
+
     /* TODO check why style wasn't applied */
     .cm-announced {
       position: absolute;
@@ -65,20 +92,29 @@ export class MarkdownEditor extends TailwindElement {
   render() {
     const isInvalid = this.maxlength && this.value.length > this.maxlength;
     return html`
-      <fieldset
-        class="with-max-help-text"
-        ?data-invalid=${isInvalid}
-        ?data-user-invalid=${isInvalid}
-      >
+      <fieldset ?data-invalid=${isInvalid} ?data-user-invalid=${isInvalid}>
         <textarea
           name=${this.name}
           ${ref(this.initEditor as () => void)}
         ></textarea>
-        ${this.maxlength
-          ? html`<div class="form-help-text">
-              ${getHelpText(this.maxlength, this.value.length)}
-            </div>`
-          : ""}
+        <div class="form-help-text flex justify-between">
+          <p>
+            ${msg(
+              html`Supports
+                <a
+                  class="text-blue-500 hover:text-blue-600"
+                  href="https://github.github.com/gfm/#what-is-markdown-"
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                  >GitHub Flavored Markdown</a
+                >.`,
+            )}
+          </p>
+
+          ${this.maxlength
+            ? html`<div>${getHelpText(this.maxlength, this.value.length)}</div>`
+            : ""}
+        </div>
       </fieldset>
     `;
   }
