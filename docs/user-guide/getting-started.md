@@ -15,7 +15,7 @@ To start crawling with hosted Browsertrix, you'll need a Browsertrix account. [S
 Once you've logged in you should see your org [overview](overview.md). If you land somewhere else, navigate to **Overview**.
 
 1. Tap the _Create New..._ shortcut and select **Crawl Workflow**.
-2. Choose **Known URLs**. We'll get into the details of the options [later](./crawl-workflows.md), but this is a good starting point for a simple crawl.
+2. Choose **URL List**. We'll get into the details of the options [later](./crawl-workflows.md), but this is a good starting point for a simple crawl.
 3. Enter the URL of the webpage that you noted earlier in **Crawl URL(s)**.
 4. Tap _Review & Save_.
 5. Tap _Save Workflow_.

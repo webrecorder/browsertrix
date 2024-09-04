@@ -43,14 +43,15 @@ export class NewWorkflowDialog extends TailwindElement {
                 src=${urlListSvg}
               />
               <figcaption class="p-1">
-                <div
-                  class="my-2 text-lg font-semibold leading-none transition-colors group-hover:text-primary-700"
-                >
-                  ${msg("Known URLs")}
+                <div class="leading none my-2 font-semibold">
+                  <div class="transition-colors group-hover:text-primary-700">
+                    ${msg("URL List")}:
+                  </div>
+                  <div class="text-lg">${msg("One or more known URLs")}</div>
                 </div>
-                <p class="text-balance leading-normal text-neutral-700">
+                <p class="leading-normal text-neutral-700">
                   ${msg(
-                    "Choose this option to crawl a single page, or if you already know the URL of every page you'd like to crawl.",
+                    "Choose this option if you already know the URL of every page you'd like to crawl and don't need to include any additional pages beyond one hop out.",
                   )}
                 </p>
               </figcaption>
@@ -72,14 +73,15 @@ export class NewWorkflowDialog extends TailwindElement {
                 src=${seededCrawlSvg}
               />
               <figcaption class="p-1">
-                <div
-                  class="my-2 text-lg font-semibold leading-none transition-colors group-hover:text-primary-700"
-                >
-                  ${msg("Automated Discovery")}
+                <div class="leading none my-2 font-semibold">
+                  <div class="transition-colors group-hover:text-primary-700">
+                    ${msg("Seeded Site")}:
+                  </div>
+                  <div class="text-lg">${msg("Website or directory")}</div>
                 </div>
-                <p class="text-balance leading-normal text-neutral-700">
+                <p class="leading-normal text-neutral-700">
                   ${msg(
-                    "Let the crawler automatically discover pages based on a domain or start page that you specify.",
+                    "Specify a domain name, start page URL, or path on a website and let the crawler automatically find pages within that scope.",
                   )}
                 </p>
               </figcaption>
@@ -91,24 +93,21 @@ export class NewWorkflowDialog extends TailwindElement {
           @sl-hide=${this.stopProp}
           @sl-after-hide=${this.stopProp}
         >
-          <p class="mb-3">
-            ${msg(
-              html`Choose <strong>Known URLs</strong> (aka a "URL List" crawl
-                type) if:`,
-            )}
-          </p>
+          <p class="mb-3">${msg(html`Choose <strong>URL List</strong> if:`)}</p>
           <ul class="mb-3 list-disc pl-5">
             <li>${msg("You want to archive a single page on a website")}</li>
             <li>
-              ${msg("You're archiving just a few specific pages on a website")}
+              ${msg("You have a list of URLs that you can copy-and-paste")}
             </li>
             <li>
-              ${msg("You have a list of URLs that you can copy-and-paste")}
+              ${msg(
+                "You're archiving specific URLs across different domain names",
+              )}
             </li>
           </ul>
           <p class="mb-3">
             ${msg(
-              html`A URL list is simpler to configure, since you don't need to
+              html`A URL List is simpler to configure, since you don't need to
               worry about configuring the workflow to exclude parts of the
               website that you may not want to archive.`,
             )}

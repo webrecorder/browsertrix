@@ -14,7 +14,7 @@ Create new crawl workflows from the **Crawling** page, or the  _Create New ..._ 
 
 The first step in creating a new crawl workflow is to choose what you'd like to crawl. This determines whether the crawl type will be **URL List** or **Seeded Crawl**. Crawl types can't be changed after the workflow is created—you'll need to create a new crawl workflow.
 
-#### Known URLs `URL List`{ .badge-blue }
+#### URL List
 
 Choose this option if you already know the URL of every page you'd like to crawl. The crawler will visit every URL specified in a list, and optionally every URL linked on those pages.
 

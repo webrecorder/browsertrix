@@ -8,7 +8,7 @@ Crawl settings are shown in the crawl workflow detail **Settings** tab and in th
 
 ## Crawl Scope
 
-Specify the range and depth of your crawl. Different settings will be shown depending on whether you chose _Known URLs_ (crawl type of **URL List**) or _Automated Discovery_ (crawl type of **Seeded Crawl**) when creating a new workflow.
+Specify the range and depth of your crawl. Different settings will be shown depending on whether you chose _URL List_ or _Automated Discovery_ (crawl type of **Seeded Crawl**) when creating a new workflow.
 
 ??? example "Crawling with HTTP basic auth"
 
