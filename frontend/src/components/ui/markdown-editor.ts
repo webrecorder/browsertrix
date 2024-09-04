@@ -1,11 +1,11 @@
 // cSpell:words wysimark
 
-import { createWysimark } from "@wysimark/standalone";
-import { html, LitElement, type PropertyValues } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
-import { guard } from "lit/directives/guard.js";
-import flatten from "lodash/fp/flatten";
+import { ink, type AwaitableInstance } from "ink-mde";
+import { html, type PropertyValues } from "lit";
+import { customElement, property, query } from "lit/decorators.js";
+import { ref } from "lit/directives/ref.js";
 
+import { TailwindElement } from "@/classes/TailwindElement";
 import { getHelpText } from "@/utils/form";
 
 type MarkdownChangeDetail = {
@@ -19,7 +19,7 @@ export type MarkdownChangeEvent = CustomEvent<MarkdownChangeDetail>;
  * @event on-change MarkdownChangeEvent
  */
 @customElement("btrix-markdown-editor")
-export class MarkdownEditor extends LitElement {
+export class MarkdownEditor extends TailwindElement {
   @property({ type: String })
   initialValue = "";
 
@@ -29,150 +29,95 @@ export class MarkdownEditor extends LitElement {
   @property({ type: Number })
   maxlength?: number;
 
-  @state()
-  value = "";
+  @query('input[type="hidden"]')
+  private readonly hiddenInput?: HTMLInputElement | null;
 
-  private mutationObserver?: MutationObserver;
-
-  createRenderRoot() {
-    // Disable shadow DOM for wysimark to work
-    return this;
-  }
-
-  disconnectedCallback(): void {
-    super.disconnectedCallback();
-    this.mutationObserver?.disconnect();
-  }
+  private editor?: AwaitableInstance;
 
   protected updated(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("initialValue") && this.initialValue) {
-      this.value = this.initialValue;
-      this.initEditor();
-    }
-  }
-
-  protected firstUpdated(): void {
-    if (!this.initialValue) {
-      this.initEditor();
+      this.hiddenInput!.value = this.initialValue;
+      if (this.editor) {
+        this.editor.update(this.initialValue);
+      }
     }
   }
 
   render() {
-    const isInvalid = this.maxlength && this.value.length > this.maxlength;
+    const value = this.hiddenInput!.value;
+    const isInvalid = this.maxlength && value.length > this.maxlength;
     return html`
       <fieldset
         class="markdown-editor-wrapper with-max-help-text"
         ?data-invalid=${isInvalid}
         ?data-user-invalid=${isInvalid}
       >
-        <input name=${this.name} type="hidden" value="${this.value}" />
-        ${guard(
-          [this.initialValue],
-          () => html`
-            <style>
-              .markdown-editor-wrapper[data-user-invalid] {
-                --select-editor-color: var(--sl-color-danger-400);
-              }
-              .markdown-editor-wrapper[data-user-invalid]
-                .markdown-editor
-                > div {
-                border: 1px solid var(--sl-color-danger-400);
-              }
-              .markdown-editor {
-                --blue-100: var(--sl-color-blue-100);
-              }
-              /* NOTE wysimark doesn't support customization or
-              a way of selecting elements as of 2.2.15
-              https://github.com/portive/wysimark/issues/10 */
-              /* Editor container: */
-              .markdown-editor > div {
-                overflow: hidden;
-                border-radius: var(--sl-input-border-radius-medium);
-                font-family: var(--sl-font-sans);
-                font-size: 1rem;
-              }
-              /* Hide unsupported button features */
-              /* Table, images: */
-              .markdown-editor > div > div > div > div:nth-child(9),
-              .markdown-editor > div > div > div > div:nth-child(10) {
-                display: none !important;
-              }
-              .markdown-editor div[role="textbox"] {
-                font-size: var(--sl-font-size-medium);
-                padding: var(--sl-spacing-small) var(--sl-spacing-medium);
-              }
-            </style>
-            <div class="markdown-editor font-sm"></div>
-          `,
-        )}
+        <input name=${this.name} type="hidden" />
+        <div
+          class="markdown-editor font-sm"
+          ${ref(this.initEditor as () => void)}
+        ></div>
         ${this.maxlength
           ? html`<div class="form-help-text">
-              ${getHelpText(this.maxlength, this.value.length)}
+              ${getHelpText(this.maxlength, value.length)}
             </div>`
           : ""}
       </fieldset>
     `;
   }
 
-  private initEditor() {
-    const editor = createWysimark(this.querySelector(".markdown-editor")!, {
-      initialMarkdown: this.initialValue,
-      minHeight: "12rem",
-      onChange: async () => {
-        const value = editor.getMarkdown();
-        const input = this.querySelector<HTMLTextAreaElement>(
-          `input[name=${this.name}]`,
-        );
-        input!.value = value;
-        this.value = value;
-        await this.updateComplete;
-        this.dispatchEvent(
-          new CustomEvent<MarkdownChangeDetail>("on-change", {
-            detail: {
-              value: value,
-            },
-          }),
-        );
+  private initEditor(el: HTMLDivElement | null) {
+    if (!el) return;
+
+    this.editor = ink(el, {
+      doc: this.initialValue,
+      hooks: {
+        afterUpdate: (doc: string) => {
+          this.hiddenInput!.value = doc;
+          console.log("doc:", doc);
+        },
+      },
+      interface: {
+        appearance: "light",
+        attribution: false,
+        autocomplete: false,
+        toolbar: true,
+      },
+      toolbar: {
+        bold: true,
+        code: false,
+        codeBlock: false,
+        heading: true,
+        image: false,
+        italic: true,
+        link: true,
+        list: true,
+        orderedList: true,
+        quote: false,
+        taskList: false,
+        upload: false,
       },
     });
 
-    this.initStylesObserver();
-  }
-
-  /**
-   * @HACK Wysimark doesn't currently offer a callback when styles are initialized
-   */
-  private initStylesObserver() {
-    if (this.mutationObserver) return this.mutationObserver;
-
-    const emotionStyles = document.head.querySelectorAll("style[data-emotion]");
-
-    if (emotionStyles.length) {
-      [...emotionStyles].forEach((style) => {
-        this.renderRoot.appendChild(style.cloneNode(true));
-      });
-
-      return;
-    }
-
-    this.mutationObserver = new MutationObserver((records) => {
-      const emotionStyles = flatten(
-        records.map(({ addedNodes }) =>
-          [...addedNodes].filter(
-            (el: unknown) => (el as HTMLElement).dataset.emotion,
-          ),
-        ),
-      );
-
-      if (emotionStyles.length) {
-        emotionStyles.forEach((style) => {
-          this.renderRoot.appendChild(style.cloneNode(true));
-        });
-
-        this.mutationObserver?.disconnect();
-      }
-    });
-
-    this.mutationObserver.observe(document.head, { childList: true });
+    // const editor = createWysimark(this.querySelector(".markdown-editor")!, {
+    //   initialMarkdown: this.initialValue,
+    //   minHeight: "12rem",
+    //   onChange: async () => {
+    //     const value = editor.getMarkdown();
+    //     const input = this.querySelector<HTMLTextAreaElement>(
+    //       `input[name=${this.name}]`,
+    //     );
+    //     input!.value = value;
+    //     this.value = value;
+    //     await this.updateComplete;
+    //     this.dispatchEvent(
+    //       new CustomEvent<MarkdownChangeDetail>("on-change", {
+    //         detail: {
+    //           value: value,
+    //         },
+    //       }),
+    //     );
+    //   },
+    // });
   }
 }
