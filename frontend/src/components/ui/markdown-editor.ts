@@ -108,7 +108,7 @@ export class MarkdownEditor extends TailwindElement {
               html`Supports
                 <a
                   class="text-blue-500 hover:text-blue-600"
-                  href="https://github.github.com/gfm/#what-is-markdown-"
+                  href="https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax"
                   target="_blank"
                   rel="noopener noreferrer nofollow"
                   >GitHub Flavored Markdown</a

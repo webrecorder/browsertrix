@@ -4,6 +4,10 @@
 
 You can create a collection from the Collections page, or the  _Create New ..._ shortcut from the org overview.
 
+## Collection Description
+
+The description can be formatted with basic [Markdown](https://github.github.com/gfm/#what-is-markdown-) syntax to include headings, bolded and italicized text, lists, and links. The editor is powered by [ink-mde](https://github.com/davidmyersdev/ink-mde), an open source Markdown editor.
+
 ## Sharing Collections
 
 Collections are private by default, but can be made public by marking them as sharable in the Metadata step of collection creation, or by toggling the _Collection is Shareable_ switch in the share collection dialogue.
