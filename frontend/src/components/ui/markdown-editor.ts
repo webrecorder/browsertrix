@@ -4,6 +4,7 @@ import { createWysimark } from "@wysimark/standalone";
 import { html, LitElement, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { guard } from "lit/directives/guard.js";
+import flatten from "lodash/fp/flatten";
 
 import { getHelpText } from "@/utils/form";
 
@@ -31,9 +32,16 @@ export class MarkdownEditor extends LitElement {
   @state()
   value = "";
 
+  private mutationObserver?: MutationObserver;
+
   createRenderRoot() {
-    // Disable shadow DOM for styles to work
+    // Disable shadow DOM for wysimark to work
     return this;
+  }
+
+  disconnectedCallback(): void {
+    super.disconnectedCallback();
+    this.mutationObserver?.disconnect();
   }
 
   protected updated(changedProperties: PropertyValues<this>) {
@@ -127,5 +135,44 @@ export class MarkdownEditor extends LitElement {
         );
       },
     });
+
+    this.initStylesObserver();
+  }
+
+  /**
+   * @HACK Wysimark doesn't currently offer a callback when styles are initialized
+   */
+  private initStylesObserver() {
+    if (this.mutationObserver) return this.mutationObserver;
+
+    const emotionStyles = document.head.querySelectorAll("style[data-emotion]");
+
+    if (emotionStyles.length) {
+      [...emotionStyles].forEach((style) => {
+        this.renderRoot.appendChild(style.cloneNode(true));
+      });
+
+      return;
+    }
+
+    this.mutationObserver = new MutationObserver((records) => {
+      const emotionStyles = flatten(
+        records.map(({ addedNodes }) =>
+          [...addedNodes].filter(
+            (el: unknown) => (el as HTMLElement).dataset.emotion,
+          ),
+        ),
+      );
+
+      if (emotionStyles.length) {
+        emotionStyles.forEach((style) => {
+          this.renderRoot.appendChild(style.cloneNode(true));
+        });
+
+        this.mutationObserver?.disconnect();
+      }
+    });
+
+    this.mutationObserver.observe(document.head, { childList: true });
   }
 }
