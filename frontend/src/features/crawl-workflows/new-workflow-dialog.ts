@@ -75,7 +75,7 @@ export class NewWorkflowDialog extends TailwindElement {
               <figcaption class="p-1">
                 <div class="leading none my-2 font-semibold">
                   <div class="transition-colors group-hover:text-primary-700">
-                    ${msg("Seeded Site")}:
+                    ${msg("Seeded Crawl")}:
                   </div>
                   <div class="text-lg">${msg("Website or directory")}</div>
                 </div>
@@ -101,7 +101,7 @@ export class NewWorkflowDialog extends TailwindElement {
             </li>
             <li>
               ${msg(
-                "You're archiving specific URLs across different domain names",
+                "You want to include URLs with different domain names in the same crawl",
               )}
             </li>
           </ul>
@@ -113,7 +113,7 @@ export class NewWorkflowDialog extends TailwindElement {
             )}
           </p>
           <p class="mb-3">
-            ${msg(html`Choose <strong>Seeded Site</strong> if:`)}
+            ${msg(html`Choose <strong>Seeded Crawl</strong> if:`)}
           </p>
           <ul class="mb-3 list-disc pl-5">
             <li>${msg("You want to archive an entire website")}</li>
@@ -132,7 +132,7 @@ export class NewWorkflowDialog extends TailwindElement {
           </ul>
           <p class="mb-3">
             ${msg(
-              html`Seeded Site crawls are great for advanced use cases where you
+              html`Seeded Crawls are great for advanced use cases where you
               don't need to know every single URL that you want to archive. You
               can configure reasonable crawl limits and page limits so that you
               don't crawl more than you need to.`,

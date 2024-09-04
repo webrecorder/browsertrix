@@ -536,6 +536,10 @@ export class Org extends LiteElement {
 
     return html`<btrix-workflows-list
       @select-new-dialog=${this.onSelectNewDialog}
+      @select-job-type=${(e: SelectJobTypeEvent) => {
+        this.openDialogName = undefined;
+        this.navTo(`${this.orgBasePath}/workflows?new&jobType=${e.detail}`);
+      }}
     ></btrix-workflows-list>`;
   };
 

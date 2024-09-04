@@ -20,7 +20,7 @@ Choose this option if you already know the URL of every page you'd like to crawl
 
 A URL list is simpler to configure, since you don't need to worry about configuring the workflow to exclude parts of the website that you may not want to archive.
 
-#### Automated Discovery `Seeded Crawl`{ .badge-orange }
+#### Seeded Crawl
 
 Let the crawler automatically discover pages based on a domain or start page that you specify.
 
