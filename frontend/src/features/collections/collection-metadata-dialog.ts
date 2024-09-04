@@ -28,6 +28,9 @@ export class CollectionMetadataDialog extends BtrixElement {
   open = false;
 
   @state()
+  private isDialogVisible = false;
+
+  @state()
   private isSubmitting = false;
 
   @queryAsync("#collectionForm")
@@ -41,8 +44,55 @@ export class CollectionMetadataDialog extends BtrixElement {
         ? msg("Edit Collection Metadata")
         : msg("Create a New Collection")}
       ?open=${this.open}
+      @sl-show=${() => (this.isDialogVisible = true)}
+      @sl-after-hide=${() => (this.isDialogVisible = false)}
       style="--width: 46rem"
     >
+      ${when(this.isDialogVisible, () => this.renderForm())}
+      <div slot="footer" class="flex items-center justify-end gap-3">
+        <sl-button
+          class="mr-auto"
+          size="small"
+          @click=${async () => {
+            // Using reset method instead of type="reset" fixes
+            // incorrect getRootNode in Chrome
+            (await this.form).reset();
+          }}
+          >${msg("Cancel")}</sl-button
+        >
+        ${when(
+          !this.collection,
+          () => html`
+            <aside class="text-xs text-neutral-500">
+              ${msg("You can rename your collection later")}
+            </aside>
+          `,
+        )}
+
+        <sl-button
+          variant="primary"
+          size="small"
+          ?loading=${this.isSubmitting}
+          ?disabled=${this.isSubmitting}
+          @click=${async () => {
+            // Using submit method instead of type="submit" fixes
+            // incorrect getRootNode in Chrome
+            const form = await this.form;
+            const submitInput = form.querySelector<HTMLInputElement>(
+              'input[type="submit"]',
+            );
+            form.requestSubmit(submitInput);
+          }}
+          >${this.collection
+            ? msg("Save")
+            : msg("Create Collection")}</sl-button
+        >
+      </div>
+    </btrix-dialog>`;
+  }
+
+  private renderForm() {
+    return html`
       <form id="collectionForm" @reset=${this.onReset} @submit=${this.onSubmit}>
         <sl-input
           class="with-max-help-text mb-2"
@@ -91,46 +141,7 @@ export class CollectionMetadataDialog extends BtrixElement {
 
         <input class="invisible size-0" type="submit" />
       </form>
-      <div slot="footer" class="flex items-center justify-end gap-3">
-        <sl-button
-          class="mr-auto"
-          size="small"
-          @click=${async () => {
-            // Using reset method instead of type="reset" fixes
-            // incorrect getRootNode in Chrome
-            (await this.form).reset();
-          }}
-          >${msg("Cancel")}</sl-button
-        >
-        ${when(
-          !this.collection,
-          () => html`
-            <aside class="text-xs text-neutral-500">
-              ${msg("You can rename your collection later")}
-            </aside>
-          `,
-        )}
-
-        <sl-button
-          variant="primary"
-          size="small"
-          ?loading=${this.isSubmitting}
-          ?disabled=${this.isSubmitting}
-          @click=${async () => {
-            // Using submit method instead of type="submit" fixes
-            // incorrect getRootNode in Chrome
-            const form = await this.form;
-            const submitInput = form.querySelector<HTMLInputElement>(
-              'input[type="submit"]',
-            );
-            form.requestSubmit(submitInput);
-          }}
-          >${this.collection
-            ? msg("Save")
-            : msg("Create Collection")}</sl-button
-        >
-      </div>
-    </btrix-dialog>`;
+    `;
   }
 
   private async hideDialog() {
