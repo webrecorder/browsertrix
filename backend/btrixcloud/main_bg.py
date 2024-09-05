@@ -111,13 +111,15 @@ async def main():
 
     org_ops.set_ops(base_crawl_ops, profile_ops, coll_ops, background_job_ops)
 
-    # Refactor, improve error handling
+    # Run job
     if job_type == BgJobType.DELETE_REPLICA:
         if not oid:
-            return
+            print("Org id missing, quitting")
+            return 1
         org = await org_ops.get_org_by_id(UUID(oid))
         if not org:
-            return
+            print("Org id invalid, quitting")
+            return 1
 
         try:
             await org_ops.delete_org_and_data(org, user_manager)
