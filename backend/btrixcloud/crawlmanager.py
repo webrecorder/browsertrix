@@ -136,14 +136,6 @@ class CrawlManager(K8sAPI):
 
         await self.create_from_yaml(data)
 
-        # Attempt to use default namespace to have access to secrets,
-        # results in 403 forbidden: default service account cannot create
-        # resources "jobs" in API group "batch" in namespace "default"
-        # await self.create_from_yaml(
-        #     data,
-        #     namespace=os.environ.get("DEFAULT_NAMESPACE", "default")
-        # )
-
         return job_id
 
     async def create_crawl_job(

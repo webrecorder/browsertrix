@@ -42,8 +42,6 @@ spec:
             - configMapRef:
                 name: backend-env-config
             - secretRef:
-                name: backend-auth
-            - secretRef:
                 name: mongo-auth
 
           volumeMounts:
