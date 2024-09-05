@@ -132,7 +132,7 @@ class CrawlManager(K8sAPI):
             "pull_policy": pull_policy,
         }
 
-        data = self.templates.env.get_template("delete_org_job.yaml").render(params)
+        data = self.templates.env.get_template("background_job.yaml").render(params)
 
         await self.create_from_yaml(data)
 
