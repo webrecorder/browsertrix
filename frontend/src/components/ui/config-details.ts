@@ -166,10 +166,6 @@ export class ConfigDetails extends LiteElement {
             msg("Crawl Size Limit"),
             renderSize(crawlConfig?.maxCrawlSize),
           )}
-          ${this.renderSetting(
-            msg("Crawler Instances"),
-            crawlConfig?.scale ? `${crawlConfig.scale}×` : "",
-          )}
           <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
             <h4>${sectionStrings.perPageLimits}</h4>
           </btrix-section-heading>
@@ -231,6 +227,12 @@ export class ConfigDetails extends LiteElement {
                   >${msg("No custom profile")}</span
                 >`,
             ),
+          )}
+          ${this.renderSetting(
+            msg("Browser Windows"),
+            crawlConfig?.scale && this.appState.settings
+              ? `${crawlConfig.scale * this.appState.settings.numBrowsers}`
+              : "",
           )}
           ${this.renderSetting(
             msg("Crawler Channel (Exact Crawler Version)"),

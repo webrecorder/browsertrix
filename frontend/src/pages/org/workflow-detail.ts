@@ -493,11 +493,15 @@ export class WorkflowDetail extends LiteElement {
       return html` <h3>${this.tabLabels[this.activePanel]}</h3>
         <sl-button
           size="small"
-          ?disabled=${!this.workflow?.isCrawlRunning}
+          ?disabled=${this.workflow?.lastCrawlState !== "running"}
           @click=${() => (this.openDialogName = "scale")}
         >
-          <sl-icon name="plus-slash-minus" slot="prefix"></sl-icon>
-          <span> ${msg("Edit Crawler Instances")} </span>
+          <sl-icon
+            name="plus-slash-minus"
+            slot="prefix"
+            label=${msg("Increase or decrease")}
+          ></sl-icon>
+          <span>${msg("Edit Browser Windows")}</span>
         </sl-button>`;
     }
     if (this.activePanel === "logs") {
@@ -558,17 +562,15 @@ export class WorkflowDetail extends LiteElement {
     </header>
 
     ${when(
-      !this.isLoading && this.seeds,
-      () => html`
+      !this.isLoading && this.seeds && this.workflow,
+      (workflow) => html`
         <btrix-workflow-editor
-          .initialWorkflow=${this.workflow}
+          .initialWorkflow=${workflow}
           .initialSeeds=${this.seeds!.items}
-          jobType=${this.workflow!.jobType!}
-          configId=${this.workflow!.id}
+          jobType=${workflow.jobType!}
+          configId=${workflow.id}
           @reset=${() =>
-            this.navTo(
-              `${this.orgBasePath}/workflows/crawl/${this.workflow!.id}`,
-            )}
+            this.navTo(`${this.orgBasePath}/workflows/crawl/${workflow.id}`)}
         ></btrix-workflow-editor>
       `,
       this.renderLoading,
@@ -675,7 +677,7 @@ export class WorkflowDetail extends LiteElement {
               <sl-divider></sl-divider>
               <sl-menu-item @click=${() => (this.openDialogName = "scale")}>
                 <sl-icon name="plus-slash-minus" slot="prefix"></sl-icon>
-                ${msg("Edit Crawler Instances")}
+                ${msg("Edit Browser Windows")}
               </sl-menu-item>
               <sl-menu-item
                 @click=${() => (this.openDialogName = "exclusions")}
@@ -732,36 +734,36 @@ export class WorkflowDetail extends LiteElement {
       <btrix-desc-list horizontal>
         ${this.renderDetailItem(
           msg("Status"),
-          () => html`
+          (workflow) => html`
             <btrix-crawl-status
-              state=${this.workflow!.lastCrawlState || msg("No Crawls Yet")}
-              ?stopping=${this.workflow?.lastCrawlStopping}
+              state=${workflow.lastCrawlState || msg("No Crawls Yet")}
+              ?stopping=${workflow.lastCrawlStopping}
             ></btrix-crawl-status>
           `,
         )}
         ${this.renderDetailItem(
           msg("Total Size"),
-          () =>
+          (workflow) =>
             html` <sl-format-bytes
-              value=${Number(this.workflow!.totalSize)}
+              value=${Number(workflow.totalSize)}
               display="narrow"
             ></sl-format-bytes>`,
         )}
-        ${this.renderDetailItem(msg("Schedule"), () =>
-          this.workflow!.schedule
+        ${this.renderDetailItem(msg("Schedule"), (workflow) =>
+          workflow.schedule
             ? html`
                 <div>
-                  ${humanizeSchedule(this.workflow!.schedule, {
+                  ${humanizeSchedule(workflow.schedule, {
                     length: "short",
                   })}
                 </div>
               `
             : html`<span class="text-neutral-400">${msg("No Schedule")}</span>`,
         )}
-        ${this.renderDetailItem(msg("Created By"), () =>
+        ${this.renderDetailItem(msg("Created By"), (workflow) =>
           msg(
-            str`${this.workflow!.createdByName} on ${this.dateFormatter.format(
-              new Date(`${this.workflow!.created}Z`),
+            str`${workflow.createdByName} on ${this.dateFormatter.format(
+              new Date(`${workflow.created}Z`),
             )}`,
           ),
         )}
@@ -771,7 +773,7 @@ export class WorkflowDetail extends LiteElement {
 
   private renderDetailItem(
     label: string | TemplateResult,
-    renderContent: () => TemplateResult | string | number,
+    renderContent: (workflow: Workflow) => TemplateResult | string | number,
   ) {
     return html`
       <btrix-desc-list-item label=${label}>
@@ -947,8 +949,10 @@ export class WorkflowDetail extends LiteElement {
               ></sl-format-bytes>`
             : skeleton,
         )}
-        ${this.renderDetailItem(msg("Crawler Instances"), () =>
-          this.workflow ? this.workflow.scale : skeleton,
+        ${this.renderDetailItem(msg("Browser Windows"), () =>
+          this.workflow && this.appState.settings
+            ? this.workflow.scale * this.appState.settings.numBrowsers
+            : skeleton,
         )}
       </btrix-desc-list>
     `;
@@ -1002,13 +1006,13 @@ export class WorkflowDetail extends LiteElement {
             `
           : this.renderInactiveCrawlMessage()}
       ${when(
-        isRunning,
-        () => html`
+        isRunning && this.workflow,
+        (workflow) => html`
           <div id="screencast-crawl">
             <btrix-screencast
               authToken=${authToken}
               .crawlId=${this.lastCrawlId ?? undefined}
-              scale=${this.workflow!.scale}
+              scale=${workflow.scale}
             ></btrix-screencast>
           </div>
 
@@ -1016,7 +1020,7 @@ export class WorkflowDetail extends LiteElement {
           <section class="mt-8">${this.renderExclusions()}</section>
 
           <btrix-dialog
-            .label=${msg("Edit Crawler Instances")}
+            .label=${msg("Edit Browser Windows")}
             .open=${this.openDialogName === "scale"}
             @sl-request-close=${() => (this.openDialogName = undefined)}
             @sl-show=${this.showDialog}
@@ -1039,12 +1043,10 @@ export class WorkflowDetail extends LiteElement {
         </p>
         <div class="mt-4">
           ${when(
-            this.workflow?.lastCrawlId,
-            () => html`
+            this.workflow?.lastCrawlId && this.workflow,
+            (workflow) => html`
               <sl-button
-                href=${`${this.orgBasePath}/items/crawl/${
-                  this.workflow!.lastCrawlId
-                }#replay`}
+                href=${`${this.orgBasePath}/items/crawl/${workflow.lastCrawlId}#replay`}
                 variant="primary"
                 size="small"
                 @click=${this.navLink}
@@ -1059,12 +1061,10 @@ export class WorkflowDetail extends LiteElement {
             `,
           )}
           ${when(
-            this.isCrawler,
-            () =>
+            this.isCrawler && this.workflow,
+            (workflow) =>
               html` <sl-button
-                href=${`${this.orgBasePath}/items/crawl/${
-                  this.workflow!.lastCrawlId
-                }#qa`}
+                href=${`${this.orgBasePath}/items/crawl/${workflow.lastCrawlId}#qa`}
                 size="small"
                 @click=${this.navLink}
               >
@@ -1254,21 +1254,24 @@ export class WorkflowDetail extends LiteElement {
     if (!this.workflow) return;
 
     const scaleOptions = [];
-    for (let value = 1; value <= this.maxScale; value++) {
-      scaleOptions.push({
-        value,
-        label: `${value}×`,
-      });
+
+    if (this.appState.settings) {
+      for (let value = 1; value <= this.maxScale; value++) {
+        scaleOptions.push({
+          value,
+          label: value * this.appState.settings.numBrowsers,
+        });
+      }
     }
 
     return html`
       <div>
-        <sl-radio-group
-          value=${this.workflow.scale}
-          help-text=${msg(
-            "This change will only apply to the currently running crawl.",
+        <p class="mb-4 text-neutral-600">
+          ${msg(
+            "Change the number of browser windows crawling in parallel. This change will take effect immediately on the currently running crawl and update crawl workflow settings.",
           )}
-        >
+        </p>
+        <sl-radio-group value=${this.workflow.scale}>
           ${scaleOptions.map(
             ({ value, label }) => html`
               <sl-radio-button
@@ -1340,7 +1343,7 @@ export class WorkflowDetail extends LiteElement {
       if (data.scaled) {
         void this.fetchWorkflow();
         this.notify({
-          message: msg("Updated crawl scale."),
+          message: msg("Updated number of browser windows."),
           variant: "success",
           icon: "check2-circle",
         });
@@ -1349,7 +1352,9 @@ export class WorkflowDetail extends LiteElement {
       }
     } catch {
       this.notify({
-        message: msg("Sorry, couldn't change crawl scale at this time."),
+        message: msg(
+          "Sorry, couldn't change number of browser windows at this time.",
+        ),
         variant: "danger",
         icon: "exclamation-octagon",
       });
@@ -1567,7 +1572,7 @@ export class WorkflowDetail extends LiteElement {
   private async runNow(): Promise<void> {
     try {
       const data = await this.apiFetch<{ started: string | null }>(
-        `/orgs/${this.orgId}/crawlconfigs/${this.workflow!.id}/run`,
+        `/orgs/${this.orgId}/crawlconfigs/${this.workflowId}/run`,
         {
           method: "POST",
         },

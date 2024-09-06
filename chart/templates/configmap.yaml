@@ -56,6 +56,8 @@ data:
 
   MIN_QA_CRAWLER_IMAGE: "{{ .Values.min_qa_crawler_image }}"
 
+  NUM_BROWSERS: "{{ .Values.crawler_browser_instances }}"
+
   MAX_CRAWLER_MEMORY: "{{ .Values.max_crawler_memory }}"
 
   ENABLE_AUTO_RESIZE_CRAWLERS: "{{ .Values.enable_auto_resize_crawlers }}"

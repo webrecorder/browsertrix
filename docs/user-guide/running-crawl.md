@@ -23,9 +23,9 @@ If the crawl queue is filled with URLs that should not be crawled, use the _Edit
 
 Exclusions added while crawling are applied to the same exclusion table saved in the workflow's settings and will be used the next time the crawl workflow is run unless they are manually removed.
 
-## Changing the Number of Crawler Instances
+## Changing the Number of Browser Windows
 
-Like exclusions, the [crawler instance](workflow-setup.md#crawler-instances) scale can also be adjusted while crawling. On the Watch Crawl page, press the _Edit Crawler Instances_ button, and set the desired value.
+Like exclusions, the number of [browser windows](workflow-setup.md#browser-windows) can also be adjusted while crawling. On the **Watch Crawl** tab, press the _Edit Browser Windows_ button, and set the desired value.
 
 Unlike exclusions, this change will not be applied to future workflow runs.
 

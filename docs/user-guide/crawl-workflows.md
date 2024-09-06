@@ -34,7 +34,7 @@ Run a crawl workflow by clicking _Run Crawl_ in the actions menu of the workflow
 
 While crawling, the **Watch Crawl** section displays a list of queued URLs that will be visited, and streams the current state of the browser windows as they visit pages from the queue. You can [modify the crawl live](./running-crawl.md) by adding URL exclusions or changing the number of crawling instances.
 
-Re-running a crawl workflow can be useful to capture a website as it changes over time, or to run with an updated [crawl scope](workflow-setup.md#scope).
+Re-running a crawl workflow can be useful to capture a website as it changes over time, or to run with an updated [crawl scope](workflow-setup.md#crawl-scope).
 
 ## Status
 
