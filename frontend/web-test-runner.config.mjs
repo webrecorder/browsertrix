@@ -70,9 +70,6 @@ export default {
             "@shoelace-style/shoelace/dist/themes/light.css": fileURLToPath(
               new URL("./src/__mocks__/_empty.js", import.meta.url),
             ),
-            "@wysimark/standalone": fileURLToPath(
-              new URL("./src/__mocks__/_empty.js", import.meta.url),
-            ),
           },
         },
       },

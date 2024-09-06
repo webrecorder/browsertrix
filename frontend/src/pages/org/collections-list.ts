@@ -1,7 +1,7 @@
 import { localized, msg, str } from "@lit/localize";
 import type { SlInput, SlMenuItem } from "@shoelace-style/shoelace";
 import Fuse from "fuse.js";
-import { type PropertyValues } from "lit";
+import { html, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { guard } from "lit/directives/guard.js";
 import { when } from "lit/directives/when.js";
@@ -10,6 +10,7 @@ import queryString from "query-string";
 
 import type { SelectNewDialogEvent } from ".";
 
+import { BtrixElement } from "@/classes/BtrixElement";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import type { CollectionSavedEvent } from "@/features/collections/collection-metadata-dialog";
 import { pageHeader } from "@/layouts/pageHeader";
@@ -17,7 +18,6 @@ import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { Collection, CollectionSearchValues } from "@/types/collection";
 import type { UnderlyingFunction } from "@/types/utils";
 import { isApiError } from "@/utils/api";
-import LiteElement, { html } from "@/utils/LiteElement";
 import { getLocale } from "@/utils/localization";
 import { tw } from "@/utils/tailwind";
 import noCollectionsImg from "~assets/images/no-collections-found.webp";
@@ -54,7 +54,7 @@ const MIN_SEARCH_LENGTH = 2;
 
 @localized()
 @customElement("btrix-collections-list")
-export class CollectionsList extends LiteElement {
+export class CollectionsList extends BtrixElement {
   @property({ type: Boolean })
   isCrawler?: boolean;
 
@@ -159,43 +159,51 @@ export class CollectionsList extends LiteElement {
 
       <btrix-dialog
         .label=${msg("Delete Collection?")}
-        .open=${this.openDialogName === "delete"}
+        ?open=${this.openDialogName === "delete"}
         @sl-hide=${() => (this.openDialogName = undefined)}
         @sl-after-hide=${() => (this.isDialogVisible = false)}
       >
-        ${msg(
-          html`Are you sure you want to delete
-            <strong>${this.selectedCollection?.name}</strong>?`,
+        ${when(
+          this.isDialogVisible,
+          () => html`
+            ${msg(
+              html`Are you sure you want to delete
+                <strong>${this.selectedCollection?.name}</strong>?`,
+            )}
+            <div slot="footer" class="flex justify-between">
+              <sl-button
+                size="small"
+                @click=${() => (this.openDialogName = undefined)}
+                >${msg("Cancel")}</sl-button
+              >
+              <sl-button
+                size="small"
+                variant="primary"
+                @click=${async () => {
+                  await this.deleteCollection(this.selectedCollection!);
+                  this.openDialogName = undefined;
+                }}
+                >${msg("Delete Collection")}</sl-button
+              >
+            </div>
+          `,
         )}
-        <div slot="footer" class="flex justify-between">
-          <sl-button
-            size="small"
-            @click=${() => (this.openDialogName = undefined)}
-            >${msg("Cancel")}</sl-button
-          >
-          <sl-button
-            size="small"
-            variant="primary"
-            @click=${async () => {
-              await this.deleteCollection(this.selectedCollection!);
-              this.openDialogName = undefined;
-            }}
-            >${msg("Delete Collection")}</sl-button
-          >
         </div>
       </btrix-dialog>
       <btrix-collection-metadata-dialog
-        .collection=${this.openDialogName === "create"
-          ? undefined
-          : this.selectedCollection}
-        ?open=${this.openDialogName === "create" ||
-        this.openDialogName === "editMetadata"}
+        .collection=${
+          this.openDialogName === "create" ? undefined : this.selectedCollection
+        }
+        ?open=${
+          this.openDialogName === "create" ||
+          this.openDialogName === "editMetadata"
+        }
         @sl-hide=${() => (this.openDialogName = undefined)}
         @sl-after-hide=${() => (this.selectedCollection = undefined)}
         @btrix-collection-saved=${(e: CollectionSavedEvent) => {
           if (this.openDialogName === "create") {
-            this.navTo(
-              `${this.orgBasePath}/collections/view/${e.detail.id}/items`,
+            this.navigate.to(
+              `${this.navigate.orgBasePath}/collections/view/${e.detail.id}/items`,
             );
           } else {
             void this.fetchCollections();
@@ -511,8 +519,8 @@ export class CollectionsList extends LiteElement {
       <btrix-table-cell rowClickTarget="a">
         <a
           class="block truncate py-2"
-          href=${`${this.orgBasePath}/collections/view/${col.id}`}
-          @click=${this.navLink}
+          href=${`${this.navigate.orgBasePath}/collections/view/${col.id}`}
+          @click=${this.navigate.link}
         >
           ${col.name}
         </a>
@@ -638,7 +646,7 @@ export class CollectionsList extends LiteElement {
   });
 
   private async onTogglePublic(coll: Collection, isPublic: boolean) {
-    await this.apiFetch(`/orgs/${this.orgId}/collections/${coll.id}`, {
+    await this.api.fetch(`/orgs/${this.orgId}/collections/${coll.id}`, {
       method: "PATCH",
       body: JSON.stringify({ isPublic }),
     });
@@ -665,7 +673,7 @@ export class CollectionsList extends LiteElement {
   private async deleteCollection(collection: Collection): Promise<void> {
     try {
       const name = collection.name;
-      await this.apiFetch(
+      await this.api.fetch(
         `/orgs/${this.orgId}/collections/${collection.id}`,
         // FIXME API method is GET right now
         {
@@ -676,13 +684,13 @@ export class CollectionsList extends LiteElement {
       this.selectedCollection = undefined;
       void this.fetchCollections();
 
-      this.notify({
+      this.notify.toast({
         message: msg(html`Deleted <strong>${name}</strong> Collection.`),
         variant: "success",
         icon: "check2-circle",
       });
     } catch {
-      this.notify({
+      this.notify.toast({
         message: msg("Sorry, couldn't delete Collection at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
@@ -692,7 +700,7 @@ export class CollectionsList extends LiteElement {
 
   private async fetchSearchValues() {
     try {
-      const searchValues: CollectionSearchValues = await this.apiFetch(
+      const searchValues: CollectionSearchValues = await this.api.fetch(
         `/orgs/${this.orgId}/collections/search-values`,
       );
       const names = searchValues.names;
@@ -719,7 +727,7 @@ export class CollectionsList extends LiteElement {
       if (isApiError(e)) {
         this.fetchErrorStatusCode = e.statusCode;
       } else {
-        this.notify({
+        this.notify.toast({
           message: msg("Sorry, couldn't retrieve Collections at this time."),
           variant: "danger",
           icon: "exclamation-octagon",
@@ -745,7 +753,7 @@ export class CollectionsList extends LiteElement {
       },
     );
 
-    const data = await this.apiFetch<APIPaginatedList<Collection>>(
+    const data = await this.api.fetch<APIPaginatedList<Collection>>(
       `/orgs/${this.orgId}/collections?${query}`,
     );
 

@@ -1,7 +1,7 @@
 import { localized, msg, str } from "@lit/localize";
 import type { SlCheckbox } from "@shoelace-style/shoelace";
 import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
 import { guard } from "lit/directives/guard.js";
 import { repeat } from "lit/directives/repeat.js";
@@ -52,6 +52,12 @@ export class CollectionDetail extends BtrixElement {
 
   @state()
   private showShareInfo = false;
+
+  @query(".description")
+  private readonly description?: HTMLElement | null;
+
+  @query(".descriptionExpandBtn")
+  private readonly descriptionExpandBtn?: HTMLElement | null;
 
   // Use to cancel requests
   private getArchivedItemsController: AbortController | null = null;
@@ -726,16 +732,19 @@ export class CollectionDetail extends BtrixElement {
 
   private async checkTruncateDescription() {
     await this.updateComplete;
+
     window.requestAnimationFrame(() => {
-      const description = this.querySelector<HTMLElement>(".description");
-      if (description?.scrollHeight ?? 0 > (description?.clientHeight ?? 0)) {
-        this.querySelector(".descriptionExpandBtn")?.classList.remove("hidden");
+      if (
+        this.description?.scrollHeight ??
+        0 > (this.description?.clientHeight ?? 0)
+      ) {
+        this.descriptionExpandBtn?.classList.remove("hidden");
       }
     });
   }
 
   private readonly toggleTruncateDescription = () => {
-    const description = this.querySelector<HTMLElement>(".description");
+    const description = this.description;
     if (!description) {
       console.debug("no .description");
       return;
