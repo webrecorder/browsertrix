@@ -10,6 +10,7 @@ import queryString from "query-string";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { PageChangeEvent } from "@/components/ui/pagination";
+import { pageBreadcrumbs, type Breadcrumb } from "@/layouts/pageHeader";
 import type {
   APIPaginatedList,
   APIPaginationQuery,
@@ -91,7 +92,7 @@ export class CollectionDetail extends BtrixElement {
   }
 
   render() {
-    return html`${this.renderHeader()}
+    return html` <div class="mb-7">${this.renderBreadcrumbs()}</div>
       <header class="items-center gap-2 pb-3 md:flex">
         <div class="mb-2 flex w-full items-center gap-2 md:mb-0">
           ${this.collection?.isPublic
@@ -351,20 +352,34 @@ export class CollectionDetail extends BtrixElement {
       </section>`;
   };
 
-  private readonly renderHeader = () => html`
-    <nav class="mb-7">
-      <a
-        class="text-sm font-medium text-gray-600 hover:text-gray-800"
-        href=${`${this.navigate.orgBasePath}/collections`}
-        @click=${this.navigate.link}
-      >
-        <sl-icon name="arrow-left" class="inline-block align-middle"></sl-icon>
-        <span class="inline-block align-middle"
-          >${msg("Back to Collections")}</span
-        >
-      </a>
-    </nav>
-  `;
+  private readonly renderBreadcrumbs = () => {
+    const breadcrumbs: Breadcrumb[] = [
+      {
+        href: `${this.navigate.orgBasePath}/collections`,
+        content: msg("Collections"),
+      },
+    ];
+
+    if (this.collection) {
+      if (this.collectionTab) {
+        breadcrumbs.push(
+          {
+            href: `${this.navigate.orgBasePath}/collections/view/${this.collectionId}`,
+            content: this.collection.name,
+          },
+          {
+            content: this.tabLabels[this.collectionTab].text,
+          },
+        );
+      } else {
+        breadcrumbs.push({
+          content: this.collection.name,
+        });
+      }
+    }
+
+    return pageBreadcrumbs(breadcrumbs);
+  };
 
   private readonly renderTabs = () => {
     return html`
@@ -656,7 +671,7 @@ export class CollectionDetail extends BtrixElement {
     idx: number,
   ) => html`
     <btrix-archived-item-list-item
-      href=${`/orgs/${this.orgId}/items/${item.type}/${item.id}?collectionId=${this.collectionId}`}
+      href=${`${this.navigate.orgBasePath}/collections/view/${this.collectionId}/items/${item.type}/${item.id}`}
       .item=${item}
     >
       ${this.isCrawler

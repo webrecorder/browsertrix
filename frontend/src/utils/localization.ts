@@ -57,3 +57,12 @@ export const formatISODateString = (
       ...options,
     },
   );
+
+export function getLang() {
+  // Default to current user browser language
+  const browserLanguage = window.navigator.language;
+  if (browserLanguage) {
+    return browserLanguage.slice(0, browserLanguage.indexOf("-"));
+  }
+  return null;
+}

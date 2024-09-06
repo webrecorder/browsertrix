@@ -43,6 +43,7 @@ def test_api_settings():
         "jwtTokenLifetime": 86400,
         "defaultBehaviorTimeSeconds": 300,
         "maxPagesPerCrawl": 4,
+        "numBrowsers": 2,
         "maxScale": 3,
         "defaultPageLoadTimeSeconds": 120,
         "billingEnabled": True,

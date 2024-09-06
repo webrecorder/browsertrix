@@ -87,6 +87,10 @@ export class AcceptInvite extends BtrixElement {
     }
 
     return html`
+      <btrix-document-title
+        title=${msg("Accept invitation")}
+      ></btrix-document-title>
+
       <section
         class="flex min-h-full w-full flex-col justify-center gap-12 p-5 md:flex-row md:gap-16 md:py-16"
       >

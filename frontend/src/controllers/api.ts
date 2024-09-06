@@ -57,25 +57,31 @@ export class APIController implements ReactiveController {
       const storageQuotaReached = body.storageQuotaReached;
       const executionMinutesQuotaReached = body.execMinutesQuotaReached;
       if (typeof storageQuotaReached === "boolean") {
-        this.host.dispatchEvent(
-          new CustomEvent<QuotaUpdateDetail>("btrix-storage-quota-update", {
-            detail: { reached: storageQuotaReached },
-            bubbles: true,
-            composed: true,
-          }),
-        );
-      }
-      if (typeof executionMinutesQuotaReached === "boolean") {
-        this.host.dispatchEvent(
-          new CustomEvent<QuotaUpdateDetail>(
-            "btrix-execution-minutes-quota-update",
-            {
-              detail: { reached: executionMinutesQuotaReached },
+        if (storageQuotaReached !== appState.org?.storageQuotaReached) {
+          this.host.dispatchEvent(
+            new CustomEvent<QuotaUpdateDetail>("btrix-storage-quota-update", {
+              detail: { reached: storageQuotaReached },
               bubbles: true,
               composed: true,
-            },
-          ),
-        );
+            }),
+          );
+        }
+      }
+      if (typeof executionMinutesQuotaReached === "boolean") {
+        if (
+          executionMinutesQuotaReached != appState.org?.execMinutesQuotaReached
+        ) {
+          this.host.dispatchEvent(
+            new CustomEvent<QuotaUpdateDetail>(
+              "btrix-execution-minutes-quota-update",
+              {
+                detail: { reached: executionMinutesQuotaReached },
+                bubbles: true,
+                composed: true,
+              },
+            ),
+          );
+        }
       }
 
       return body as T;
