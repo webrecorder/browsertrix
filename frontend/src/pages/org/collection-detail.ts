@@ -661,7 +661,7 @@ export class CollectionDetail extends BtrixElement {
     idx: number,
   ) => html`
     <btrix-archived-item-list-item
-      href=${`${this.navigate.orgBasePath}/items/${item.type}/${item.id}?collectionId=${this.collectionId}`}
+      href=${`${this.navigate.orgBasePath}/${item.type === "crawl" ? `workflows/${item.cid}/crawls` : `items/${item.type}`}/${item.id}?collectionId=${this.collectionId}`}
       .item=${item}
     >
       ${this.isCrawler

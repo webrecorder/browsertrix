@@ -272,7 +272,7 @@ export class ArchivedItemDetail extends BtrixElement {
           html`
             <btrix-archived-item-detail-qa
               .crawlId=${this.itemId}
-              .itemType=${this.itemType}
+              .workflowId=${this.workflowId}
               .crawl=${this.item}
               .qaRuns=${this.qaRuns}
               .qaRunId=${this.qaRunId}

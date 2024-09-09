@@ -87,10 +87,10 @@ export class ArchivedItemDetailQA extends BtrixElement {
   `;
 
   @property({ type: String, attribute: false })
-  crawlId?: string;
+  workflowId?: string;
 
   @property({ type: String, attribute: false })
-  itemType: ArchivedItem["type"] = "crawl";
+  crawlId?: string;
 
   @property({ type: Object, attribute: false })
   crawl?: ArchivedItem;
@@ -771,7 +771,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
                   ${this.qaRunId
                     ? html`
                         <a
-                          href=${`${this.navigate.orgBasePath}/items/${this.itemType}/${this.crawlId}/review/screenshots?qaRunId=${this.qaRunId}&itemPageId=${page.id}`}
+                          href=${`${this.navigate.orgBasePath}/workflows/${this.workflowId}/crawls/${this.crawlId}/review/screenshots?qaRunId=${this.qaRunId}&itemPageId=${page.id}`}
                           title=${msg(str`Review "${page.title ?? page.url}"`)}
                           @click=${this.navigate.link}
                         >
