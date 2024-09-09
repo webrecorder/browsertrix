@@ -14,6 +14,7 @@ import { mergeDeep } from "immutable";
 import type { LanguageCode } from "iso-639-1";
 import {
   html,
+  nothing,
   type LitElement,
   type PropertyValues,
   type TemplateResult,
@@ -694,6 +695,8 @@ export class WorkflowEditor extends BtrixElement {
   }
 
   private readonly renderScope = () => {
+    const exclusions = trimArray(this.formState.exclusions || []);
+
     return html`
       ${inputCol(html`
         <sl-select
@@ -728,6 +731,39 @@ export class WorkflowEditor extends BtrixElement {
       ${this.formState.scopeType === "page"
         ? this.renderPageScope()
         : this.renderSiteScope()}
+      ${this.formState.scopeType !== "page" || this.formState.includeLinkedPages
+        ? html`
+            <div class="col-span-5">
+              <btrix-details ?open=${exclusions.length > 0}>
+                <span slot="title"
+                  >${msg("Exclude Pages")}
+                  ${exclusions.length
+                    ? html`<btrix-badge>${exclusions.length}</btrix-badge>`
+                    : ""}</span
+                >
+                <div class="grid grid-cols-5 gap-5 py-2">
+                  ${inputCol(html`
+                    <btrix-queue-exclusion-table
+                      label=""
+                      .exclusions=${this.formState.exclusions}
+                      pageSize="10"
+                      editable
+                      removable
+                      uncontrolled
+                      @btrix-remove=${this.handleRemoveRegex}
+                      @btrix-change=${this.handleChangeRegex}
+                    ></btrix-queue-exclusion-table>
+                  `)}
+                  ${this.renderHelpTextCol(
+                    msg(
+                      `Specify exclusion rules for what pages should not be visited.`,
+                    ),
+                  )}
+                </div>
+              </btrix-details>
+            </div>
+          `
+        : nothing}
     `;
   };
 
@@ -742,7 +778,7 @@ export class WorkflowEditor extends BtrixElement {
           inputmode="url"
           value=${this.formState.urlList}
           placeholder=${`https://webrecorder.net/blog
-https://archiveweb.page/images/${"logo.svg"}`}
+https://archiveweb.page/guide`}
           @keyup=${async (e: KeyboardEvent) => {
             if (e.key === "Enter") {
               const inputEl = e.target as SlInput;
@@ -877,7 +913,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
         break;
     }
 
-    const exclusions = trimArray(this.formState.exclusions || []);
     const additionalUrlList = urlListToArray(this.formState.urlList);
 
     return html`
@@ -1053,35 +1088,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
             ${this.renderHelpTextCol(
               msg(str`The crawler will visit and record each URL listed here. Other
               links on these pages will not be crawled. You can enter up to ${MAX_ADDITIONAL_URLS.toLocaleString()} URLs.`),
-            )}
-          </div>
-        </btrix-details>
-      </div>
-      <div class="col-span-5">
-        <btrix-details ?open=${exclusions.length > 0}>
-          <span slot="title"
-            >${msg("Exclude Pages")}
-            ${exclusions.length
-              ? html`<btrix-badge>${exclusions.length}</btrix-badge>`
-              : ""}</span
-          >
-          <div class="grid grid-cols-5 gap-5 py-2">
-            ${inputCol(html`
-              <btrix-queue-exclusion-table
-                label=""
-                .exclusions=${this.formState.exclusions}
-                pageSize="10"
-                editable
-                removable
-                uncontrolled
-                @btrix-remove=${this.handleRemoveRegex}
-                @btrix-change=${this.handleChangeRegex}
-              ></btrix-queue-exclusion-table>
-            `)}
-            ${this.renderHelpTextCol(
-              msg(
-                `Specify exclusion rules for what pages should not be visited.`,
-              ),
             )}
           </div>
         </btrix-details>
