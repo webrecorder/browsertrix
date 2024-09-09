@@ -333,7 +333,7 @@ export class ConfigDetails extends LiteElement {
 
     return html`
       ${this.renderSetting(
-        msg("Crawl URL(s)"),
+        msg("Page URL(s)"),
         html`
           <ul>
             ${this.seeds?.map(
@@ -375,14 +375,16 @@ export class ConfigDetails extends LiteElement {
       primarySeedConfig?.include || seedsConfig.include || [];
     return html`
       ${this.renderSetting(
-        msg("Primary Seed URL"),
-        html`<a
-          class="text-blue-600 hover:text-blue-500 hover:underline"
-          href="${primarySeedUrl!}"
-          target="_blank"
-          rel="noreferrer"
-          >${primarySeedUrl}</a
-        >`,
+        msg("Crawl Start URL"),
+        primarySeedUrl
+          ? html`<a
+              class="text-blue-600 hover:text-blue-500 hover:underline"
+              href="${primarySeedUrl}"
+              target="_blank"
+              rel="noreferrer"
+              >${primarySeedUrl}</a
+            >`
+          : undefined,
         true,
       )}
       ${this.renderSetting(

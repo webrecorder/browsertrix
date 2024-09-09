@@ -1,5 +1,5 @@
 import { localized, msg, str } from "@lit/localize";
-import type { SlCheckbox } from "@shoelace-style/shoelace";
+import type { SlCheckbox, SlSelectEvent } from "@shoelace-style/shoelace";
 import { type PropertyValues } from "lit";
 import { customElement, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -13,6 +13,7 @@ import type { SelectNewDialogEvent } from ".";
 import { CopyButton } from "@/components/ui/copy-button";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import { type SelectEvent } from "@/components/ui/search-combobox";
+import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
 import { pageHeader } from "@/layouts/pageHeader";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import { isApiError } from "@/utils/api";
@@ -208,21 +209,54 @@ export class WorkflowsList extends LiteElement {
             ${when(
               this.appState.isCrawler,
               () => html`
-                <sl-button
-                  variant="primary"
-                  size="small"
-                  ?disabled=${this.org?.readOnly}
-                  @click=${() => {
-                    this.dispatchEvent(
-                      new CustomEvent("select-new-dialog", {
-                        detail: "workflow",
-                      }) as SelectNewDialogEvent,
-                    );
+                <sl-dropdown
+                  distance="4"
+                  placement="bottom-end"
+                  @sl-select=${(e: SlSelectEvent) => {
+                    const { value } = e.detail.item;
+
+                    if (value) {
+                      this.dispatchEvent(
+                        new CustomEvent<SelectJobTypeEvent["detail"]>(
+                          "select-job-type",
+                          {
+                            detail: value as SelectJobTypeEvent["detail"],
+                          },
+                        ),
+                      );
+                    } else {
+                      this.dispatchEvent(
+                        new CustomEvent("select-new-dialog", {
+                          detail: "workflow",
+                        }) as SelectNewDialogEvent,
+                      );
+                    }
                   }}
                 >
-                  <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-                  ${msg("New Workflow")}
-                </sl-button>
+                  <sl-button
+                    slot="trigger"
+                    size="small"
+                    variant="primary"
+                    caret
+                    ?disabled=${this.org?.readOnly}
+                  >
+                    <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+                    ${msg("New Workflow...")}
+                  </sl-button>
+                  <sl-menu>
+                    <sl-menu-item value="url-list">
+                      ${msg("Page List")}
+                    </sl-menu-item>
+                    <sl-menu-item value="seed-crawl">
+                      ${msg("Site Crawl")}
+                    </sl-menu-item>
+                    <sl-divider> </sl-divider>
+                    <sl-menu-item>
+                      <sl-icon slot="prefix" name="question-circle"></sl-icon>
+                      ${msg("Help me decide")}
+                    </sl-menu-item>
+                  </sl-menu>
+                </sl-dropdown>
               `,
             )}
           `,
