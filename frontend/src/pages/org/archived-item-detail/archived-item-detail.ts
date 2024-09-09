@@ -1040,7 +1040,6 @@ ${this.item?.description}
             <btrix-config-details
               .crawlConfig=${{
                 ...this.item,
-                jobType: this.workflow?.jobType,
               } as CrawlConfig}
               .seeds=${this.seeds!.items}
               hideMetadata

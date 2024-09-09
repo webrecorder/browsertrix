@@ -18,7 +18,7 @@ import type { QuotaUpdateDetail } from "@/controllers/api";
 import needLogin from "@/decorators/needLogin";
 import type { CollectionSavedEvent } from "@/features/collections/collection-metadata-dialog";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
-import type { JobType } from "@/types/crawler";
+import type { WorkflowParams } from "@/types/crawler";
 import type { UserOrg } from "@/types/user";
 import { isApiError } from "@/utils/api";
 import type { ViewState } from "@/utils/APIRouter";
@@ -52,8 +52,10 @@ type ArchivedItemPageParams = {
 };
 export type OrgParams = {
   home: Record<string, never>;
-  workflows: ArchivedItemPageParams & {
-    jobType?: JobType;
+  workflows: {
+    workflowId?: string;
+    itemId?: string;
+    scopeType?: WorkflowParams["config"]["scopeType"];
     new?: ResourceName;
     itemPageId?: string;
     qaTab?: QATab;
@@ -437,7 +439,9 @@ export class Org extends LiteElement {
           @sl-hide=${() => (this.openDialogName = undefined)}
           @select-job-type=${(e: SelectJobTypeEvent) => {
             this.openDialogName = undefined;
-            this.navTo(`${this.orgBasePath}/workflows?new&jobType=${e.detail}`);
+            this.navTo(
+              `${this.orgBasePath}/workflows?new&scopeType=${e.detail}`,
+            );
           }}
         >
         </btrix-new-workflow-dialog>
@@ -489,7 +493,7 @@ export class Org extends LiteElement {
     const params = this.params as OrgParams["workflows"];
     const isEditing = Object.prototype.hasOwnProperty.call(params, "edit");
     const isNewResourceTab =
-      Object.prototype.hasOwnProperty.call(params, "new") && params.jobType;
+      Object.prototype.hasOwnProperty.call(params, "new") && params.scopeType;
     const workflowId = params.workflowId;
 
     if (workflowId) {
@@ -540,7 +544,7 @@ export class Org extends LiteElement {
         ?isCrawler=${this.appState.isCrawler}
         .initialWorkflow=${workflow}
         .initialSeeds=${seeds}
-        jobType=${ifDefined(params.jobType)}
+        scopeType=${ifDefined(params.scopeType)}
         @select-new-dialog=${this.onSelectNewDialog}
       ></btrix-workflows-new>`;
     }
@@ -549,7 +553,7 @@ export class Org extends LiteElement {
       @select-new-dialog=${this.onSelectNewDialog}
       @select-job-type=${(e: SelectJobTypeEvent) => {
         this.openDialogName = undefined;
-        this.navTo(`${this.orgBasePath}/workflows?new&jobType=${e.detail}`);
+        this.navTo(`${this.orgBasePath}/workflows?new&scopeType=${e.detail}`);
       }}
     ></btrix-workflows-list>`;
   };

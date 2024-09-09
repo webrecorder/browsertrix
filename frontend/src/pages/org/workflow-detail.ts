@@ -584,7 +584,6 @@ export class WorkflowDetail extends LiteElement {
         <btrix-workflow-editor
           .initialWorkflow=${workflow}
           .initialSeeds=${this.seeds!.items}
-          jobType=${workflow.jobType!}
           configId=${workflow.id}
           @reset=${() =>
             this.navTo(`${this.orgBasePath}/workflows/${workflow.id}`)}
@@ -1480,13 +1479,10 @@ export class WorkflowDetail extends LiteElement {
       name: this.workflow.name ? msg(str`${this.workflow.name} Copy`) : "",
     };
 
-    this.navTo(
-      `${this.orgBasePath}/workflows?new&jobType=${workflowParams.jobType}`,
-      {
-        workflow: workflowParams,
-        seeds: this.seeds?.items,
-      },
-    );
+    this.navTo(`${this.orgBasePath}/workflows?new`, {
+      workflow: workflowParams,
+      seeds: this.seeds?.items,
+    });
 
     this.notify({
       message: msg(str`Copied Workflow to new template.`),

@@ -244,10 +244,10 @@ export class WorkflowsList extends LiteElement {
                     ${msg("New Workflow...")}
                   </sl-button>
                   <sl-menu>
-                    <sl-menu-item value="url-list">
+                    <sl-menu-item value="page">
                       ${msg("Page List")}
                     </sl-menu-item>
-                    <sl-menu-item value="seed-crawl">
+                    <sl-menu-item value="prefix">
                       ${msg("Site Crawl")}
                     </sl-menu-item>
                     <sl-divider> </sl-divider>
@@ -688,13 +688,10 @@ export class WorkflowsList extends LiteElement {
       name: workflow.name ? msg(str`${workflow.name} Copy`) : "",
     };
 
-    this.navTo(
-      `${this.orgBasePath}/workflows?new&jobType=${workflowParams.jobType}`,
-      {
-        workflow: workflowParams,
-        seeds: seeds.items,
-      },
-    );
+    this.navTo(`${this.orgBasePath}/workflows?new`, {
+      workflow: workflowParams,
+      seeds: seeds.items,
+    });
 
     if (seeds.total > SEEDS_MAX) {
       this.notify({

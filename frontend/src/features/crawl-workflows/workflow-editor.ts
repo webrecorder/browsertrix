@@ -25,7 +25,6 @@ import {
   queryAsync,
   state,
 } from "lit/decorators.js";
-import { choose } from "lit/directives/choose.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { map } from "lit/directives/map.js";
 import { range } from "lit/directives/range.js";
@@ -48,12 +47,7 @@ import type { QueueExclusionTable } from "@/features/crawl-workflows/queue-exclu
 import { infoCol, inputCol } from "@/layouts/columns";
 import infoTextStrings from "@/strings/crawl-workflows/infoText";
 import sectionStrings from "@/strings/crawl-workflows/section";
-import type {
-  CrawlConfig,
-  JobType,
-  Seed,
-  WorkflowParams,
-} from "@/types/crawler";
+import type { CrawlConfig, Seed, WorkflowParams } from "@/types/crawler";
 import { isApiError, type Detail } from "@/utils/api";
 import { DEPTH_SUPPORTED_SCOPES } from "@/utils/crawler";
 import {
@@ -110,6 +104,7 @@ const DEFAULT_BEHAVIORS = [
   "autofetch",
   "siteSpecific",
 ];
+const MAX_ADDITIONAL_URLS = 100;
 
 const getDefaultProgressState = (hasConfigId = false): ProgressState => {
   let activeTab: StepName = "crawlSetup";
@@ -185,9 +180,6 @@ export class WorkflowEditor extends BtrixElement {
   @property({ type: String })
   configId?: string;
 
-  @property({ type: String })
-  jobType!: JobType;
-
   @property({ type: Object })
   initialWorkflow?: WorkflowParams;
 
@@ -249,11 +241,11 @@ export class WorkflowEditor extends BtrixElement {
     NonNullable<FormState["scopeType"]>,
     string
   > = {
-    prefix: msg("Pages in the Same Directory"),
-    host: msg("Pages on This Domain"),
-    domain: msg("Pages on This Domain & Subdomains"),
-    "page-spa": msg("Hashtag Links Only"),
-    page: msg("Page"),
+    prefix: msg("Pages in a Directory"),
+    host: msg("Pages on a Domain"),
+    domain: msg("Pages on a Domain & Subdomains"),
+    "page-spa": msg("Hashtag Links on Single Page"),
+    page: msg("Page List"),
     custom: msg("Custom Page Prefix"),
     any: msg("Any"),
   };
@@ -429,16 +421,9 @@ export class WorkflowEditor extends BtrixElement {
           )}
 
           <btrix-tab-panel name="newJobConfig-crawlSetup" class="scroll-m-3">
-            ${this.renderPanelContent(
-              html`
-                ${choose(this.jobType, [
-                  ["url-list", () => this.renderUrlListSetup(false)],
-                  ["seed-crawl", () => this.renderSeededCrawlSetup()],
-                  ["custom", () => this.renderUrlListSetup(true)],
-                ])}
-              `,
-              { isFirst: true },
-            )}
+            ${this.renderPanelContent(this.renderScope(), {
+              isFirst: true,
+            })}
           </btrix-tab-panel>
           <btrix-tab-panel name="newJobConfig-crawlLimits" class="scroll-m-3">
             ${this.renderPanelContent(this.renderCrawlLimits())}
@@ -708,26 +693,65 @@ export class WorkflowEditor extends BtrixElement {
     return infoCol(content, padTop ? tw`md:pt-[2.35rem]` : tw`md:pt-1`);
   }
 
-  private readonly renderUrlListSetup = (isCustom = false) => {
+  private readonly renderScope = () => {
+    return html`
+      ${inputCol(html`
+        <sl-select
+          name="scopeType"
+          label=${msg("Crawl Scope")}
+          value=${this.formState.scopeType!}
+          @sl-change=${(e: Event) =>
+            this.updateFormState({
+              scopeType: (e.target as HTMLSelectElement)
+                .value as FormState["scopeType"],
+            })}
+        >
+          <sl-option value="page"> ${this.scopeTypeLabels["page"]} </sl-option>
+          <sl-option value="page-spa">
+            ${this.scopeTypeLabels["page-spa"]}
+          </sl-option>
+          <sl-option value="prefix">
+            ${this.scopeTypeLabels["prefix"]}
+          </sl-option>
+          <sl-option value="host"> ${this.scopeTypeLabels["host"]} </sl-option>
+          <sl-option value="domain">
+            ${this.scopeTypeLabels["domain"]}
+          </sl-option>
+          <sl-option value="custom">
+            ${this.scopeTypeLabels["custom"]}
+          </sl-option>
+        </sl-select>
+      `)}
+      ${this.renderHelpTextCol(
+        msg(`Tells the crawler which pages it can visit.`),
+      )}
+      ${this.formState.scopeType === "page"
+        ? this.renderPageScope()
+        : this.renderSiteScope()}
+    `;
+  };
+
+  private readonly renderPageScope = () => {
     return html`
       ${inputCol(html`
         <sl-textarea
           name="urlList"
-          class="textarea-wrap"
           label=${msg("Page URL(s)")}
-          rows="10"
+          rows="3"
           autocomplete="off"
           inputmode="url"
           value=${this.formState.urlList}
-          placeholder=${`https://example.com
-https://example.com/path`}
-          required
+          placeholder=${`https://webrecorder.net/blog
+https://archiveweb.page/images/${"logo.svg"}`}
           @keyup=${async (e: KeyboardEvent) => {
             if (e.key === "Enter") {
               const inputEl = e.target as SlInput;
               await inputEl.updateComplete;
               if (!inputEl.value) return;
-              const { isValid, helpText } = this.validateUrlList(inputEl.value);
+              const { isValid, helpText } = this.validateUrlList(
+                inputEl.value,
+                MAX_ADDITIONAL_URLS,
+              );
               inputEl.helpText = helpText;
               if (isValid) {
                 inputEl.setCustomValidity("");
@@ -745,7 +769,10 @@ https://example.com/path`}
           @sl-change=${async (e: CustomEvent) => {
             const inputEl = e.target as SlInput;
             if (!inputEl.value) return;
-            const { isValid, helpText } = this.validateUrlList(inputEl.value);
+            const { isValid, helpText } = this.validateUrlList(
+              inputEl.value,
+              MAX_ADDITIONAL_URLS,
+            );
             inputEl.helpText = helpText;
             if (isValid) {
               inputEl.setCustomValidity("");
@@ -756,99 +783,27 @@ https://example.com/path`}
         ></sl-textarea>
       `)}
       ${this.renderHelpTextCol(
-        msg(str`The crawler will visit and record each URL listed in the order
-        defined here. You can enter a maximum of ${URL_LIST_MAX_URLS.toLocaleString()} URLs, separated by a new line.`),
+        msg(str`The crawler will visit and record each URL listed here. Other
+              links on these pages will not be crawled. You can enter up to ${MAX_ADDITIONAL_URLS.toLocaleString()} URLs.`),
       )}
-      ${when(
-        isCustom,
-        () => html`
-          ${inputCol(html`
-            <sl-select
-              name="scopeType"
-              label=${msg("Crawl Scope")}
-              value=${this.formState.scopeType!}
-              @sl-change=${(e: Event) =>
-                this.updateFormState({
-                  scopeType: (e.target as HTMLSelectElement)
-                    .value as FormState["scopeType"],
-                })}
-            >
-              <sl-option value="prefix">
-                ${this.scopeTypeLabels["prefix"]}
-              </sl-option>
-              <sl-option value="host">
-                ${this.scopeTypeLabels["host"]}
-              </sl-option>
-              <sl-option value="domain">
-                ${this.scopeTypeLabels["domain"]}
-              </sl-option>
-              <sl-option value="page-spa">
-                ${this.scopeTypeLabels["page-spa"]}
-              </sl-option>
-              <sl-option value="page">
-                ${this.scopeTypeLabels["page"]}
-              </sl-option>
-              <sl-option value="custom">
-                ${this.scopeTypeLabels["custom"]}
-              </sl-option>
-              <sl-option value="any">
-                ${this.scopeTypeLabels["any"]}
-              </sl-option>
-            </sl-select>
-          `)}
-          ${this.renderHelpTextCol(
-            msg(`Tells the crawler which pages it can visit.`),
-          )}
-        `,
-      )}
-      ${inputCol(
-        html`<sl-checkbox
+      ${inputCol(html`
+        <sl-checkbox
           name="includeLinkedPages"
           ?checked=${this.formState.includeLinkedPages}
         >
-          ${msg("Include any linked page")}
-        </sl-checkbox>`,
-      )}
-      ${this.renderHelpTextCol(
-        msg(`If checked, the crawler will visit pages one link away from a Crawl
-        URL.`),
-        false,
-      )}
-      ${inputCol(
-        html`<sl-checkbox
-          name="failOnFailedSeed"
-          ?checked=${this.formState.failOnFailedSeed}
-        >
-          ${msg("Fail crawl on failed URL")}
-        </sl-checkbox>`,
-      )}
+          ${msg("Include any linked page (“one hop out”)")}
+        </sl-checkbox>
+      `)}
       ${this.renderHelpTextCol(
         msg(
-          `If checked, the crawler will fail the entire crawl if any of the provided URLs are invalid or unsuccessfully crawled.`,
+          `If checked, the crawler will visit pages one link away from the specified page URL.`,
         ),
         false,
-      )}
-      ${when(
-        this.formState.includeLinkedPages || this.jobType === "custom",
-        () => html`
-          ${inputCol(html`
-            <btrix-queue-exclusion-table
-              .exclusions=${this.formState.exclusions}
-              pageSize="30"
-              editable
-              removable
-              uncontrolled
-              @btrix-remove=${this.handleRemoveRegex}
-              @btrix-change=${this.handleChangeRegex}
-            ></btrix-queue-exclusion-table>
-          `)}
-          ${this.renderHelpTextCol(infoTextStrings["exclusions"])}
-        `,
       )}
     `;
   };
 
-  private readonly renderSeededCrawlSetup = () => {
+  private readonly renderSiteScope = () => {
     const urlPlaceholder = "https://example.com/path/page.html";
     let exampleUrl = new URL(urlPlaceholder);
     if (this.formState.primarySeedUrl) {
@@ -921,9 +876,9 @@ https://example.com/path`}
         helpText = "";
         break;
     }
+
     const exclusions = trimArray(this.formState.exclusions || []);
     const additionalUrlList = urlListToArray(this.formState.urlList);
-    const maxAdditionalURls = 100;
 
     return html`
       ${inputCol(html`
@@ -958,38 +913,32 @@ https://example.com/path`}
               inputEl.setCustomValidity(text);
             }
           }}
-        ></sl-input>
-      `)}
-      ${this.renderHelpTextCol(msg(`The starting point of your crawl.`))}
-      ${inputCol(html`
-        <sl-select
-          name="scopeType"
-          label=${msg("Start URL Scope")}
-          value=${this.formState.scopeType!}
-          @sl-change=${(e: Event) =>
-            this.updateFormState({
-              scopeType: (e.target as HTMLSelectElement)
-                .value as FormState["scopeType"],
-            })}
         >
           <div slot="help-text">${helpText}</div>
-          <sl-option value="page-spa">
-            ${this.scopeTypeLabels["page-spa"]}
-          </sl-option>
-          <sl-option value="prefix">
-            ${this.scopeTypeLabels["prefix"]}
-          </sl-option>
-          <sl-option value="host"> ${this.scopeTypeLabels["host"]} </sl-option>
-          <sl-option value="domain">
-            ${this.scopeTypeLabels["domain"]}
-          </sl-option>
-          <sl-option value="custom">
-            ${this.scopeTypeLabels["custom"]}
-          </sl-option>
-        </sl-select>
+        </sl-input>
       `)}
-      ${this.renderHelpTextCol(
-        msg(`Tells the crawler which pages it can visit.`),
+      ${this.renderHelpTextCol(msg(`The starting point of your crawl.`))}
+      ${when(
+        this.formState.scopeType === "custom",
+        () => html`
+          ${inputCol(html`
+            <sl-textarea
+              name="customIncludeUrlList"
+              label=${msg("Extra URL Prefixes in Scope")}
+              rows="3"
+              autocomplete="off"
+              inputmode="url"
+              value=${this.formState.customIncludeUrlList}
+              placeholder=${`https://example.org
+https://example.net`}
+              required
+            ></sl-textarea>
+          `)}
+          ${this.renderHelpTextCol(
+            msg(`If the crawler finds pages outside of the Crawl Scope they
+            will only be saved if they begin with URLs listed here.`),
+          )}
+        `,
       )}
       ${when(
         DEPTH_SUPPORTED_SCOPES.includes(this.formState.scopeType!),
@@ -1013,30 +962,8 @@ https://example.com/path`}
           `)}
           ${this.renderHelpTextCol(
             msg(
-              `Limits how many hops away the crawler can visit while staying within the Start URL Scope.`,
+              `Limits how many hops away the crawler can visit while staying within the Crawl Scope.`,
             ),
-          )}
-        `,
-      )}
-      ${when(
-        this.formState.scopeType === "custom",
-        () => html`
-          ${inputCol(html`
-            <sl-textarea
-              name="customIncludeUrlList"
-              label=${msg("Extra URL Prefixes in Scope")}
-              rows="3"
-              autocomplete="off"
-              inputmode="url"
-              value=${this.formState.customIncludeUrlList}
-              placeholder=${`https://example.org
-https://example.net`}
-              required
-            ></sl-textarea>
-          `)}
-          ${this.renderHelpTextCol(
-            msg(`If the crawler finds pages outside of the Start URL Scope they
-            will only be saved if they begin with URLs listed here.`),
           )}
         `,
       )}
@@ -1050,7 +977,7 @@ https://example.net`}
       `)}
       ${this.renderHelpTextCol(
         msg(`If checked, the crawler will visit pages one link away outside of
-        Start URL Scope.`),
+        Crawl Scope.`),
         false,
       )}
       ${inputCol(html`
@@ -1064,40 +991,11 @@ https://example.net`}
         ),
         false,
       )}
-      <div class="col-span-5">
-        <btrix-details ?open=${exclusions.length > 0}>
-          <span slot="title"
-            >${msg("Exclusions")}
-            ${exclusions.length
-              ? html`<btrix-badge>${exclusions.length}</btrix-badge>`
-              : ""}</span
-          >
-          <div class="grid grid-cols-5 gap-5 py-2">
-            ${inputCol(html`
-              <btrix-queue-exclusion-table
-                label=""
-                .exclusions=${this.formState.exclusions}
-                pageSize="10"
-                editable
-                removable
-                uncontrolled
-                @btrix-remove=${this.handleRemoveRegex}
-                @btrix-change=${this.handleChangeRegex}
-              ></btrix-queue-exclusion-table>
-            `)}
-            ${this.renderHelpTextCol(
-              msg(
-                `Specify exclusion rules for what pages should not be visited.`,
-              ),
-            )}
-          </div></btrix-details
-        >
-      </div>
 
       <div class="col-span-5">
         <btrix-details>
           <span slot="title">
-            ${msg("Additional URLs")}
+            ${msg("Additional Pages")}
             ${additionalUrlList.length
               ? html`<btrix-badge>${additionalUrlList.length}</btrix-badge>`
               : ""}
@@ -1120,7 +1018,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
                     if (!inputEl.value) return;
                     const { isValid, helpText } = this.validateUrlList(
                       inputEl.value,
-                      maxAdditionalURls,
+                      MAX_ADDITIONAL_URLS,
                     );
                     inputEl.helpText = helpText;
                     if (isValid) {
@@ -1141,7 +1039,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
                   if (!inputEl.value) return;
                   const { isValid, helpText } = this.validateUrlList(
                     inputEl.value,
-                    maxAdditionalURls,
+                    MAX_ADDITIONAL_URLS,
                   );
                   inputEl.helpText = helpText;
                   if (isValid) {
@@ -1154,7 +1052,36 @@ https://archiveweb.page/images/${"logo.svg"}`}
             `)}
             ${this.renderHelpTextCol(
               msg(str`The crawler will visit and record each URL listed here. Other
-              links on these pages will not be crawled. You can enter up to ${maxAdditionalURls.toLocaleString()} URLs.`),
+              links on these pages will not be crawled. You can enter up to ${MAX_ADDITIONAL_URLS.toLocaleString()} URLs.`),
+            )}
+          </div>
+        </btrix-details>
+      </div>
+      <div class="col-span-5">
+        <btrix-details ?open=${exclusions.length > 0}>
+          <span slot="title"
+            >${msg("Exclude Pages")}
+            ${exclusions.length
+              ? html`<btrix-badge>${exclusions.length}</btrix-badge>`
+              : ""}</span
+          >
+          <div class="grid grid-cols-5 gap-5 py-2">
+            ${inputCol(html`
+              <btrix-queue-exclusion-table
+                label=""
+                .exclusions=${this.formState.exclusions}
+                pageSize="10"
+                editable
+                removable
+                uncontrolled
+                @btrix-remove=${this.handleRemoveRegex}
+                @btrix-change=${this.handleChangeRegex}
+              ></btrix-queue-exclusion-table>
+            `)}
+            ${this.renderHelpTextCol(
+              msg(
+                `Specify exclusion rules for what pages should not be visited.`,
+              ),
             )}
           </div>
         </btrix-details>
@@ -1167,7 +1094,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     const minPages = Math.max(
       1,
       urlListToArray(this.formState.urlList).length +
-        (this.jobType === "seed-crawl" ? 1 : 0),
+        (this.formState.scopeType === "page" ? 0 : 1),
     );
     const onInputMinMax = async (e: CustomEvent) => {
       const inputEl = e.target as SlInput;
@@ -1662,7 +1589,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
               <a
                 href="${crawlSetupUrl}"
                 class="bold underline hover:no-underline"
-                >Crawl Setup</a
+                >Scope</a
               >. <br /><br />
               Please fix to continue.`,
           );
@@ -1697,10 +1624,11 @@ https://archiveweb.page/images/${"logo.svg"}`}
   };
 
   private hasRequiredFields(): boolean {
-    if (this.jobType === "seed-crawl") {
-      return Boolean(this.formState.primarySeedUrl);
+    if (this.formState.scopeType === "page") {
+      return Boolean(this.formState.urlList);
     }
-    return Boolean(this.formState.urlList);
+
+    return Boolean(this.formState.primarySeedUrl);
   }
 
   private async scrollToPanelTop() {
@@ -1710,30 +1638,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
         behavior: "smooth",
       });
     }
-  }
-
-  private getDefaultJobName() {
-    // Set default crawl name based on seed URLs
-    if (!this.formState.primarySeedUrl && !this.formState.urlList) {
-      return;
-    }
-    let jobName = "";
-    if (this.jobType === "seed-crawl") {
-      jobName = this.formState.primarySeedUrl;
-    } else {
-      const urlList = urlListToArray(this.formState.urlList);
-
-      const firstUrl = urlList[0].trim();
-      if (urlList.length > 1) {
-        const remainder = urlList.length - 1;
-        jobName = msg(
-          str`${firstUrl} + ${formatNumber(remainder, { notation: "compact" })} more ${pluralOf("URLs", remainder)}`,
-        );
-      } else {
-        jobName = firstUrl;
-      }
-    }
-    return jobName;
   }
 
   private async handleRemoveRegex(e: CustomEvent) {
@@ -2091,7 +1995,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
   private parseConfig(): NewCrawlConfigParams {
     const config: NewCrawlConfigParams = {
-      jobType: this.jobType,
+      // Job types are now merged into a single type
+      jobType: "custom",
       name: this.formState.jobName || "",
       description: this.formState.description,
       scale: this.formState.scale,
@@ -2103,9 +2008,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
       tags: this.formState.tags,
       autoAddCollections: this.formState.autoAddCollections,
       config: {
-        ...(this.jobType === "seed-crawl"
-          ? this.parseSeededConfig()
-          : this.parseUrlListConfig()),
+        ...(this.formState.scopeType === "page"
+          ? this.parseUrlListConfig()
+          : this.parseSeededConfig()),
         behaviorTimeout: this.formState.behaviorTimeoutSeconds,
         pageLoadTimeout: this.formState.pageLoadTimeoutSeconds,
         pageExtraDelay: this.formState.pageExtraDelaySeconds,

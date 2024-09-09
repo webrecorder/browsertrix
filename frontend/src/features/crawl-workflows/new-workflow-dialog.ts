@@ -6,7 +6,7 @@ import { TailwindElement } from "@/classes/TailwindElement";
 import seededCrawlSvg from "~assets/images/new-crawl-config_Seeded-Crawl.svg";
 import urlListSvg from "~assets/images/new-crawl-config_URL-List.svg";
 
-export type SelectJobTypeEvent = CustomEvent<"url-list" | "seed-crawl">;
+export type SelectJobTypeEvent = CustomEvent<"page" | "prefix">;
 
 /**
  * @event select-job-type SelectJobTypeEvent
@@ -32,7 +32,7 @@ export class NewWorkflowDialog extends TailwindElement {
             @click=${() => {
               this.dispatchEvent(
                 new CustomEvent("select-job-type", {
-                  detail: "url-list",
+                  detail: "page",
                 }) as SelectJobTypeEvent,
               );
             }}
@@ -62,7 +62,7 @@ export class NewWorkflowDialog extends TailwindElement {
             @click=${() => {
               this.dispatchEvent(
                 new CustomEvent("select-job-type", {
-                  detail: "seed-crawl",
+                  detail: "prefix",
                 }) as SelectJobTypeEvent,
               );
             }}

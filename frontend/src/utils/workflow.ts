@@ -108,7 +108,7 @@ export const getDefaultFormState = (): FormState => ({
   pageExtraDelaySeconds: null,
   postLoadDelaySeconds: null,
   maxScopeDepth: null,
-  scopeType: "host",
+  scopeType: "page",
   exclusions: [],
   pageLimit: null,
   scale: 1,
@@ -151,7 +151,7 @@ export function getInitialFormState(params: {
   const formState: Partial<FormState> = {};
   const seedsConfig = params.initialWorkflow.config;
   let primarySeedConfig: SeedConfig | Seed = seedsConfig;
-  if (params.initialWorkflow.jobType === "seed-crawl") {
+  if (params.initialWorkflow.config.scopeType !== "page") {
     if (params.initialSeeds) {
       const firstSeed = params.initialSeeds[0];
       if (typeof firstSeed === "string") {

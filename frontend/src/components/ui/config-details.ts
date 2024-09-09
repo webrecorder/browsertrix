@@ -124,9 +124,9 @@ export class ConfigDetails extends LiteElement {
         </btrix-section-heading>
         <btrix-desc-list>
           ${when(
-            crawlConfig?.jobType === "seed-crawl",
-            this.renderConfirmSeededSettings,
+            crawlConfig?.config.scopeType === "page",
             this.renderConfirmUrlListSettings,
+            this.renderConfirmSeededSettings,
           )}
           ${when(
             exclusions.length,
@@ -391,7 +391,7 @@ export class ConfigDetails extends LiteElement {
         true,
       )}
       ${this.renderSetting(
-        msg("Crawl Scope"),
+        msg("Scope"),
         this.scopeTypeLabels[
           primarySeedConfig!.scopeType || seedsConfig.scopeType!
         ],
