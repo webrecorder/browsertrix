@@ -18,7 +18,7 @@ Specify the range and depth of your crawl. Different settings will be shown depe
 
 ### Crawl Type: Page List
 
-#### Crawl URL(s)
+#### Page URL(s)
 
 A list of one or more URLs that the crawler should visit and capture.
 

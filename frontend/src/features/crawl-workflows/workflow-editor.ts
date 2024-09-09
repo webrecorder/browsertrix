@@ -713,7 +713,7 @@ export class WorkflowEditor extends BtrixElement {
         <sl-textarea
           name="urlList"
           class="textarea-wrap"
-          label=${msg("Crawl URL(s)")}
+          label=${msg("Page URL(s)")}
           rows="10"
           autocomplete="off"
           inputmode="url"
@@ -1105,7 +1105,7 @@ https://example.net`}
             ${inputCol(html`
               <sl-textarea
                 name="urlList"
-                label=${msg("Crawl URL(s)")}
+                label=${msg("Page URL(s)")}
                 rows="3"
                 autocomplete="off"
                 inputmode="url"
