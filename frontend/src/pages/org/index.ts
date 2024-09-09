@@ -1,4 +1,5 @@
 import { localized, msg, str } from "@lit/localize";
+import { nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -48,6 +49,7 @@ export type OrgParams = {
   home: Record<string, never>;
   workflows: {
     workflowId?: string;
+    itemId?: string;
     jobType?: JobType;
     new?: ResourceName;
   };
@@ -73,6 +75,8 @@ export type OrgParams = {
   };
   collections: {
     collectionId?: string;
+    itemId?: string;
+    itemType?: string;
     collectionTab?: string;
   };
   settings: {
@@ -231,28 +235,71 @@ export class Org extends LiteElement {
       this.orgTab === "items" && (this.params as OrgParams["items"]).qaTab;
 
     return html`
+      <btrix-document-title
+        title=${ifDefined(this.userOrg?.name)}
+      ></btrix-document-title>
+
       <div class="flex min-h-full flex-col">
         <btrix-org-status-banner></btrix-org-status-banner>
         ${this.renderOrgNavBar()}
         <main
           class="${noMaxWidth
             ? "w-full"
-            : "w-full max-w-screen-desktop pt-7"} mx-auto box-border flex flex-1 flex-col p-3"
+            : "w-full max-w-screen-desktop"} mx-auto box-border flex flex-1 flex-col p-3"
           aria-labelledby="${this.orgTab}-tab"
         >
-          ${when(this.userOrg, () =>
+          ${when(this.userOrg, (userOrg) =>
             choose(
               this.orgTab,
               [
                 ["home", this.renderDashboard],
-                ["items", this.renderArchivedItem],
-                ["workflows", this.renderWorkflows],
-                ["browser-profiles", this.renderBrowserProfiles],
-                ["collections", this.renderCollections],
+                [
+                  "items",
+                  () => html`
+                    <btrix-document-title
+                      title=${`${msg("Archived Items")} - ${userOrg.name}`}
+                    ></btrix-document-title>
+                    ${this.renderArchivedItem()}
+                  `,
+                ],
+                [
+                  "workflows",
+                  () => html`
+                    <btrix-document-title
+                      title=${`${msg("Crawl Workflows")} - ${userOrg.name}`}
+                    ></btrix-document-title>
+                    ${this.renderWorkflows()}
+                  `,
+                ],
+                [
+                  "browser-profiles",
+                  () => html`
+                    <btrix-document-title
+                      title=${`${msg("Browser Profiles")} - ${userOrg.name}`}
+                    ></btrix-document-title>
+                    ${this.renderBrowserProfiles()}
+                  `,
+                ],
+                [
+                  "collections",
+                  () => html`
+                    <btrix-document-title
+                      title=${`${msg("Collections")} - ${userOrg.name}`}
+                    ></btrix-document-title>
+                    ${this.renderCollections()}
+                  `,
+                ],
                 [
                   "settings",
                   () =>
-                    this.appState.isAdmin ? this.renderOrgSettings() : html``,
+                    this.appState.isAdmin
+                      ? html`
+                          <btrix-document-title
+                            title=${`${msg("Org Settings")} - ${userOrg.name}`}
+                          ></btrix-document-title>
+                          ${this.renderOrgSettings()}
+                        `
+                      : nothing,
                 ],
               ],
               () =>
@@ -453,9 +500,18 @@ export class Org extends LiteElement {
     const workflowId = params.workflowId;
 
     if (workflowId) {
+      if (params.itemId) {
+        return html`<btrix-archived-item-detail
+          crawlId=${params.itemId}
+          workflowId=${workflowId}
+          itemType="crawl"
+          ?isCrawler=${this.appState.isCrawler}
+        ></btrix-archived-item-detail>`;
+      }
+
       return html`
         <btrix-workflow-detail
-          class="col-span-5 mt-6"
+          class="col-span-5"
           workflowId=${workflowId}
           openDialogName=${this.viewStateData?.dialog}
           ?isEditing=${isEditing}
@@ -517,6 +573,14 @@ export class Org extends LiteElement {
     const params = this.params as OrgParams["collections"];
 
     if (params.collectionId) {
+      if (params.itemId) {
+        return html`<btrix-archived-item-detail
+          crawlId=${params.itemId}
+          collectionId=${params.collectionId}
+          itemType=${ifDefined(params.itemType)}
+          ?isCrawler=${this.appState.isCrawler}
+        ></btrix-archived-item-detail>`;
+      }
       return html`<btrix-collection-detail
         collectionId=${params.collectionId}
         collectionTab=${(params.collectionTab as CollectionTab | undefined) ||

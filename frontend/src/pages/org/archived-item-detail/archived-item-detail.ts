@@ -12,6 +12,7 @@ import { type Dialog } from "@/components/ui/dialog";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import { RelativeDuration } from "@/components/ui/relative-duration";
 import type { CrawlLog } from "@/features/archived-items/crawl-logs";
+import { pageBreadcrumbs, type Breadcrumb } from "@/layouts/pageHeader";
 import type { APIPaginatedList } from "@/types/api";
 import type {
   ArchivedItem,
@@ -27,6 +28,7 @@ import {
   activeCrawlStates,
   finishedCrawlStates,
   isActive,
+  renderName,
 } from "@/utils/crawler";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 import { getLocale } from "@/utils/localization";
@@ -38,12 +40,10 @@ import "./ui/qa";
 const SECTIONS = [
   "overview",
   "qa",
-  "watch",
   "replay",
   "files",
   "logs",
   "config",
-  "exclusions",
 ] as const;
 type SectionName = (typeof SECTIONS)[number];
 
@@ -115,6 +115,18 @@ export class ArchivedItemDetail extends BtrixElement {
 
   @query("#cancelQARunDialog")
   private readonly cancelQARunDialog?: Dialog | null;
+
+  private readonly tabLabels: Omit<
+    Record<SectionName, string>,
+    "watch" | "exclusions"
+  > = {
+    overview: msg("Overview"),
+    qa: msg("Quality Assurance"),
+    replay: msg("Replay"),
+    files: msg("WACZ Files"),
+    logs: msg("Error Logs"),
+    config: msg("Crawl Settings"),
+  };
 
   private get listUrl(): string {
     let path = "items";
@@ -238,8 +250,7 @@ export class ArchivedItemDetail extends BtrixElement {
         }
         sectionContent = this.renderPanel(
           html`${this.renderTitle(
-              html`${msg("Quality Assurance")}
-                <btrix-beta-badge></btrix-beta-badge>`,
+              html`${this.tabLabels.qa} <btrix-beta-badge></btrix-beta-badge>`,
             )}
             <div class="ml-auto flex flex-wrap justify-end gap-2">
               ${when(this.qaRuns, this.renderQAHeader)}
@@ -259,13 +270,15 @@ export class ArchivedItemDetail extends BtrixElement {
         break;
       }
       case "replay":
-        sectionContent = this.renderPanel(msg("Replay"), this.renderReplay(), [
-          tw`overflow-hidden rounded-lg border`,
-        ]);
+        sectionContent = this.renderPanel(
+          this.tabLabels.replay,
+          this.renderReplay(),
+          [tw`overflow-hidden rounded-lg border`],
+        );
         break;
       case "files":
         sectionContent = this.renderPanel(
-          html` ${this.renderTitle(msg("Files"))}
+          html` ${this.renderTitle(this.tabLabels.files)}
             <sl-tooltip content=${msg("Download all files as a single WACZ")}>
               <sl-button
                 href=${`/api/orgs/${this.orgId}/all-crawls/${this.crawlId}/download?auth_bearer=${authToken}`}
@@ -274,7 +287,7 @@ export class ArchivedItemDetail extends BtrixElement {
                 variant="primary"
               >
                 <sl-icon slot="prefix" name="cloud-download"></sl-icon>
-                ${msg("Download Item")}
+                ${msg("Download as Multi-WACZ")}
               </sl-button>
             </sl-tooltip>`,
           this.renderFiles(),
@@ -282,7 +295,7 @@ export class ArchivedItemDetail extends BtrixElement {
         break;
       case "logs":
         sectionContent = this.renderPanel(
-          html` ${this.renderTitle(msg("Error Logs"))}
+          html` ${this.renderTitle(this.tabLabels.logs)}
             <sl-button
               href=${`/api/orgs/${this.orgId}/crawls/${this.crawlId}/logs?auth_bearer=${authToken}`}
               download=${`btrix-${this.crawlId}-logs.txt`}
@@ -297,7 +310,7 @@ export class ArchivedItemDetail extends BtrixElement {
         break;
       case "config":
         sectionContent = this.renderPanel(
-          msg("Crawl Settings"),
+          this.tabLabels.config,
           this.renderConfig(),
           [tw`rounded-lg border p-4`],
         );
@@ -345,36 +358,8 @@ export class ArchivedItemDetail extends BtrixElement {
         break;
     }
 
-    let label = "Back";
-    if (this.workflowId) {
-      label = msg("Back to Crawl Workflow");
-    } else if (this.collectionId) {
-      label = msg("Back to Collection");
-    } else if (this.crawl) {
-      if (this.crawl.type === "upload") {
-        label = msg("Back to All Uploads");
-      } else {
-        label = msg("Back to All Crawls");
-      }
-      // TODO have a "Back to Archived Items" link & label when we have the info to tell
-      // https://github.com/webrecorder/browsertrix-cloud/issues/1526
-    }
-
     return html`
-      <div class="mb-7">
-        <a
-          class="text-sm font-medium text-neutral-500 hover:text-neutral-600"
-          href=${this.listUrl}
-          @click=${this.navigate.link}
-        >
-          <sl-icon
-            name="arrow-left"
-            class="inline-block align-middle"
-          ></sl-icon>
-          <span class="inline-block align-middle">${label}</span>
-        </a>
-      </div>
-
+      <div class="mb-7">${this.renderBreadcrumbs()}</div>
       <div class="mb-4">${this.renderHeader()}</div>
 
       <main>
@@ -401,47 +386,108 @@ export class ArchivedItemDetail extends BtrixElement {
     `;
   }
 
-  private renderName() {
-    if (!this.crawl)
-      return html`<sl-skeleton class="inline-block h-8 w-60"></sl-skeleton>`;
+  private renderBreadcrumbs() {
+    const breadcrumbs: Breadcrumb[] = [];
 
-    if (this.crawl.name)
-      return html`<span class="truncate">${this.crawl.name}</span>`;
-    if (!this.crawl.firstSeed || !this.crawl.seedCount) return this.crawl.id;
-    const remainder = this.crawl.seedCount - 1;
-    let crawlName: TemplateResult = html`<span class="truncate"
-      >${this.crawl.firstSeed}</span
-    >`;
-    if (remainder) {
-      if (remainder === 1) {
-        crawlName = msg(
-          html`<span class="truncate">${this.crawl.firstSeed}</span>
-            <span class="whitespace-nowrap text-neutral-500"
-              >+${remainder} URL</span
-            >`,
+    if (this.workflowId) {
+      breadcrumbs.push({
+        href: `${this.navigate.orgBasePath}/workflows/crawls`,
+        content: msg("Crawl Workflows"),
+      });
+
+      if (this.workflow) {
+        breadcrumbs.push(
+          {
+            href: `${this.navigate.orgBasePath}/workflows/crawl/${this.workflowId}`,
+            content: renderName(this.workflow),
+          },
+          {
+            href: `${this.navigate.orgBasePath}/workflows/crawl/${this.workflowId}#crawls`,
+
+            content: msg("Crawls"),
+          },
         );
-      } else {
-        crawlName = msg(
-          html`<span class="truncate">${this.crawl.firstSeed}</span>
-            <span class="whitespace-nowrap text-neutral-500"
-              >+${remainder} URLs</span
-            >`,
+
+        if (this.crawl) {
+          breadcrumbs.push({
+            content: html`<sl-format-date
+              lang=${getLocale()}
+              date=${`${this.crawl.finished}Z` /** Z for UTC */}
+              month="2-digit"
+              day="2-digit"
+              year="2-digit"
+              hour="numeric"
+              minute="numeric"
+              timeZoneName="short"
+            ></sl-format-date>`,
+          });
+        }
+      }
+    } else if (this.collectionId) {
+      breadcrumbs.push({
+        href: `${this.navigate.orgBasePath}/collections`,
+        content: msg("Collections"),
+      });
+
+      if (this.crawl) {
+        const collection = this.crawl.collections.find(
+          ({ id }) => id === this.collectionId,
+        );
+
+        breadcrumbs.push(
+          {
+            href: `${this.navigate.orgBasePath}/collections/view/${this.collectionId}`,
+            content: collection?.name || msg("Collection"),
+          },
+          {
+            href: `${this.navigate.orgBasePath}/collections/view/${this.collectionId}/items`,
+            content: msg("Archived Items"),
+          },
+          {
+            content: renderName(this.crawl),
+          },
         );
       }
+    } else if (this.crawl) {
+      breadcrumbs.push({
+        href: `${this.navigate.orgBasePath}/items`,
+        content: msg("Archived Items"),
+      });
+
+      if (this.crawl.type === "upload") {
+        breadcrumbs.push({
+          href: `${this.navigate.orgBasePath}/items/upload`,
+          content: msg("Uploads"),
+        });
+      } else {
+        breadcrumbs.push({
+          href: `${this.navigate.orgBasePath}/items/crawl`,
+          content: msg("Crawls"),
+        });
+      }
+
+      breadcrumbs.push(
+        {
+          href: `${this.navigate.orgBasePath}/items/${this.crawl.type}/${this.crawlId}`,
+          content: renderName(this.crawl, tw`max-w-48`),
+        },
+        {
+          content: this.tabLabels[this.activeTab],
+        },
+      );
     }
-    return crawlName;
+
+    return pageBreadcrumbs(breadcrumbs);
   }
 
   private renderNav() {
     const renderNavItem = ({
       section,
-      label,
       iconLibrary,
       icon,
       detail,
     }: {
       section: SectionName;
-      label: string;
       iconLibrary: "app" | "default";
       icon: string;
       detail?: TemplateResult<1>;
@@ -462,7 +508,7 @@ export class ArchivedItemDetail extends BtrixElement {
             aria-hidden="true"
             library=${iconLibrary}
           ></sl-icon>
-          ${label}${detail}</btrix-navigation-button
+          ${this.tabLabels[section]}${detail}</btrix-navigation-button
         >
       `;
     };
@@ -475,7 +521,6 @@ export class ArchivedItemDetail extends BtrixElement {
           section: "overview",
           iconLibrary: "default",
           icon: "info-circle-fill",
-          label: msg("Overview"),
         })}
         ${when(
           this.itemType === "crawl" && this.isCrawler,
@@ -484,7 +529,6 @@ export class ArchivedItemDetail extends BtrixElement {
               section: "qa",
               iconLibrary: "default",
               icon: "clipboard2-data-fill",
-              label: msg("Quality Assurance"),
               detail: html`<btrix-beta-icon></btrix-beta-icon>`,
             })}
           `,
@@ -493,13 +537,11 @@ export class ArchivedItemDetail extends BtrixElement {
           section: "replay",
           iconLibrary: "app",
           icon: "replaywebpage",
-          label: msg("Replay"),
         })}
         ${renderNavItem({
           section: "files",
           iconLibrary: "default",
           icon: "folder-fill",
-          label: msg("Files"),
         })}
         ${when(
           this.itemType === "crawl",
@@ -508,13 +550,11 @@ export class ArchivedItemDetail extends BtrixElement {
               section: "logs",
               iconLibrary: "default",
               icon: "terminal-fill",
-              label: msg("Error Logs"),
             })}
             ${renderNavItem({
               section: "config",
               iconLibrary: "default",
               icon: "file-code-fill",
-              label: msg("Crawl Settings"),
             })}
           `,
         )}
@@ -523,7 +563,18 @@ export class ArchivedItemDetail extends BtrixElement {
   }
 
   private renderHeader() {
+    let parentPageLabel: TemplateResult | null = null;
+
+    if (this.workflowId || this.collectionId) {
+      parentPageLabel = html`<div class="mb-1 font-medium text-neutral-400">
+        ${this.workflowId
+          ? msg("Viewing Workflow Crawl")
+          : msg("Viewing Archived Item in Collection")}
+      </div>`;
+    }
+
     return html`
+      ${parentPageLabel}
       <header class="mb-3 flex flex-wrap gap-2 border-b pb-3">
         <btrix-detail-page-title .item=${this.crawl}></btrix-detail-page-title>
         <div class="ml-auto flex flex-wrap justify-end gap-2">

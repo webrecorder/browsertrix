@@ -1,11 +1,11 @@
-// cSpell:words wysimark
+import { msg, str } from "@lit/localize";
+import { wrap, type AwaitableInstance } from "ink-mde";
+import { css, html, type PropertyValues } from "lit";
+import { customElement, property, query } from "lit/decorators.js";
 
-import { createWysimark } from "@wysimark/standalone";
-import { html, LitElement, type PropertyValues } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
-import { guard } from "lit/directives/guard.js";
-
+import { TailwindElement } from "@/classes/TailwindElement";
 import { getHelpText } from "@/utils/form";
+import { formatNumber } from "@/utils/localization";
 
 type MarkdownChangeDetail = {
   value: string;
@@ -15,116 +15,172 @@ export type MarkdownChangeEvent = CustomEvent<MarkdownChangeDetail>;
 /**
  * Edit and preview text in markdown
  *
- * @event on-change MarkdownChangeEvent
+ * @fires btrix-change MarkdownChangeEvent
  */
 @customElement("btrix-markdown-editor")
-export class MarkdownEditor extends LitElement {
+export class MarkdownEditor extends TailwindElement {
+  static styles = css`
+    :host {
+      --ink-border-radius: var(--sl-input-border-radius-medium);
+      --ink-color: var(--sl-input-color);
+      --ink-block-background-color: var(--sl-color-neutral-50);
+      --ink-block-padding: var(--sl-input-spacing-small);
+    }
+
+    .ink-mde {
+      border: solid var(--sl-input-border-width) var(--sl-input-border-color);
+    }
+
+    .ink-mde-toolbar {
+      border-top-left-radius: var(--ink-border-radius);
+      border-top-right-radius: var(--ink-border-radius);
+      border-bottom: 1px solid var(--sl-panel-border-color);
+    }
+
+    .ink-mde .ink-mde-toolbar .ink-button {
+      width: 2rem;
+      height: 2rem;
+    }
+
+    /* TODO check why style wasn't applied */
+    .cm-announced {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border-width: 0;
+    }
+  `;
+
+  @property({ type: String })
+  label = "";
+
   @property({ type: String })
   initialValue = "";
 
   @property({ type: String })
-  name = "markdown";
+  value = "";
 
   @property({ type: Number })
   maxlength?: number;
 
-  @state()
-  value = "";
+  @query("#editor-textarea")
+  private readonly textarea?: HTMLTextAreaElement | null;
 
-  createRenderRoot() {
-    // Disable shadow DOM for styles to work
-    return this;
+  private editor?: AwaitableInstance;
+
+  public checkValidity() {
+    return this.textarea?.checkValidity();
   }
 
-  protected updated(changedProperties: PropertyValues<this>) {
-    if (changedProperties.has("initialValue") && this.initialValue) {
+  protected willUpdate(changedProperties: PropertyValues<this>): void {
+    if (
+      changedProperties.has("initialValue") &&
+      this.initialValue &&
+      !this.value
+    ) {
       this.value = this.initialValue;
-      this.initEditor();
     }
+  }
+
+  disconnectedCallback(): void {
+    super.disconnectedCallback();
+    this.editor?.destroy();
   }
 
   protected firstUpdated(): void {
-    if (!this.initialValue) {
-      this.initEditor();
-    }
+    this.initEditor();
   }
 
   render() {
     const isInvalid = this.maxlength && this.value.length > this.maxlength;
     return html`
-      <fieldset
-        class="markdown-editor-wrapper with-max-help-text"
-        ?data-invalid=${isInvalid}
-        ?data-user-invalid=${isInvalid}
-      >
-        <input name=${this.name} type="hidden" value="${this.value}" />
-        ${guard(
-          [this.initialValue],
-          () => html`
-            <style>
-              .markdown-editor-wrapper[data-user-invalid] {
-                --select-editor-color: var(--sl-color-danger-400);
-              }
-              .markdown-editor-wrapper[data-user-invalid]
-                .markdown-editor
-                > div {
-                border: 1px solid var(--sl-color-danger-400);
-              }
-              .markdown-editor {
-                --blue-100: var(--sl-color-blue-100);
-              }
-              /* NOTE wysimark doesn't support customization or
-              a way of selecting elements as of 2.2.15
-              https://github.com/portive/wysimark/issues/10 */
-              /* Editor container: */
-              .markdown-editor > div {
-                overflow: hidden;
-                border-radius: var(--sl-input-border-radius-medium);
-                font-family: var(--sl-font-sans);
-                font-size: 1rem;
-              }
-              /* Hide unsupported button features */
-              /* Table, images: */
-              .markdown-editor > div > div > div > div:nth-child(9),
-              .markdown-editor > div > div > div > div:nth-child(10) {
-                display: none !important;
-              }
-              .markdown-editor div[role="textbox"] {
-                font-size: var(--sl-font-size-medium);
-                padding: var(--sl-spacing-small) var(--sl-spacing-medium);
-              }
-            </style>
-            <div class="markdown-editor font-sm"></div>
-          `,
-        )}
-        ${this.maxlength
-          ? html`<div class="form-help-text">
-              ${getHelpText(this.maxlength, this.value.length)}
-            </div>`
-          : ""}
+      <fieldset ?data-invalid=${isInvalid} ?data-user-invalid=${isInvalid}>
+        <label class="form-label">${this.label}</label>
+        <textarea id="editor-textarea"></textarea>
+        <div class="helpText flex items-baseline justify-between">
+          <p class="text-xs">
+            ${msg(
+              html`Supports
+                <a
+                  class="text-blue-500 hover:text-blue-600"
+                  href="https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax"
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                  >GitHub Flavored Markdown</a
+                >.`,
+            )}
+          </p>
+
+          ${this.maxlength
+            ? html`<div>
+                <p class="form-help-text">
+                  ${getHelpText(this.maxlength, this.value.length)}
+                </p>
+              </div>`
+            : ""}
+        </div>
       </fieldset>
     `;
   }
 
   private initEditor() {
-    const editor = createWysimark(this.querySelector(".markdown-editor")!, {
-      initialMarkdown: this.initialValue,
-      minHeight: "12rem",
-      onChange: async () => {
-        const value = editor.getMarkdown();
-        const input = this.querySelector<HTMLTextAreaElement>(
-          `input[name=${this.name}]`,
-        );
-        input!.value = value;
-        this.value = value;
-        await this.updateComplete;
-        this.dispatchEvent(
-          new CustomEvent<MarkdownChangeDetail>("on-change", {
-            detail: {
-              value: value,
-            },
-          }),
-        );
+    if (!this.textarea) return;
+
+    if (this.editor) {
+      this.editor.destroy();
+    }
+
+    this.editor = wrap(this.textarea, {
+      doc: this.initialValue,
+      hooks: {
+        beforeUpdate: (doc: string) => {
+          if (this.maxlength) {
+            this.textarea?.setCustomValidity(
+              doc.length > this.maxlength
+                ? msg(
+                    str`Please shorten the description to ${formatNumber(this.maxlength)} or fewer characters.`,
+                  )
+                : "",
+            );
+          }
+        },
+        afterUpdate: async (doc: string) => {
+          this.value = doc;
+
+          await this.updateComplete;
+          this.dispatchEvent(
+            new CustomEvent<MarkdownChangeDetail>("btrix-change", {
+              detail: {
+                value: doc,
+              },
+            }),
+          );
+        },
+      },
+      interface: {
+        appearance: "light",
+        attribution: false,
+        autocomplete: false,
+        toolbar: true,
+      },
+      toolbar: {
+        bold: true,
+        code: false,
+        codeBlock: false,
+        heading: true,
+        image: false,
+        italic: true,
+        link: true,
+        list: true,
+        orderedList: true,
+        quote: false,
+        taskList: false,
+        upload: false,
       },
     });
   }

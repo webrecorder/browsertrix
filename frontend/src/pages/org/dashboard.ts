@@ -7,6 +7,7 @@ import { when } from "lit/directives/when.js";
 
 import type { SelectNewDialogEvent } from ".";
 
+import { pageHeader } from "@/layouts/pageHeader";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 import LiteElement, { html } from "@/utils/LiteElement";
 
@@ -64,69 +65,69 @@ export class Dashboard extends LiteElement {
       this.metrics.storageQuotaBytes > 0 &&
       this.metrics.storageUsedBytes >= this.metrics.storageQuotaBytes;
 
-    return html`<header
-        class="mb-7 flex items-center justify-end gap-2 border-b pb-3"
-      >
-        <h1 class="mr-auto min-w-0 text-xl font-semibold leading-8">
-          ${this.userOrg?.name}
-        </h1>
-        ${when(
-          this.appState.isAdmin,
-          () =>
-            html` <sl-icon-button
-              href=${`${this.orgBasePath}/settings`}
-              class="size-8 text-lg"
-              name="gear"
-              label=${msg("Edit org settings")}
-              @click=${this.navLink}
-            ></sl-icon-button>`,
-        )}
-        ${when(
-          this.isCrawler,
-          () =>
-            html` <sl-dropdown
-              distance="4"
-              placement="bottom-end"
-              @sl-select=${(e: SlSelectEvent) => {
-                this.dispatchEvent(
-                  new CustomEvent("select-new-dialog", {
-                    detail: e.detail.item.value,
-                  }) as SelectNewDialogEvent,
-                );
-              }}
-            >
-              <sl-button
-                slot="trigger"
-                size="small"
-                variant="primary"
-                caret
-                ?disabled=${this.org?.readOnly}
+    return html`
+      ${pageHeader(
+        this.userOrg?.name,
+        html`
+          ${when(
+            this.appState.isAdmin,
+            () =>
+              html` <sl-icon-button
+                href=${`${this.orgBasePath}/settings`}
+                class="size-8 text-base"
+                name="gear"
+                label=${msg("Edit org settings")}
+                @click=${this.navLink}
+              ></sl-icon-button>`,
+          )}
+          ${when(
+            this.isCrawler,
+            () =>
+              html` <sl-dropdown
+                distance="4"
+                placement="bottom-end"
+                @sl-select=${(e: SlSelectEvent) => {
+                  this.dispatchEvent(
+                    new CustomEvent("select-new-dialog", {
+                      detail: e.detail.item.value,
+                    }) as SelectNewDialogEvent,
+                  );
+                }}
               >
-                <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-                ${msg("Create New...")}
-              </sl-button>
-              <sl-menu>
-                <sl-menu-item value="workflow"
-                  >${msg("Crawl Workflow")}</sl-menu-item
+                <sl-button
+                  slot="trigger"
+                  size="small"
+                  variant="primary"
+                  caret
+                  ?disabled=${this.org?.readOnly}
                 >
-                <sl-menu-item
-                  value="upload"
-                  ?disabled=${!this.metrics || quotaReached}
-                  >${msg("Upload")}</sl-menu-item
-                >
-                <sl-menu-item value="collection">
-                  ${msg("Collection")}
-                </sl-menu-item>
-                <sl-menu-item
-                  value="browser-profile"
-                  ?disabled=${!this.metrics || quotaReached}
-                >
-                  ${msg("Browser Profile")}
-                </sl-menu-item>
-              </sl-menu>
-            </sl-dropdown>`,
-        )}
-      </header>
+                  <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+                  ${msg("Create New...")}
+                </sl-button>
+                <sl-menu>
+                  <sl-menu-item value="workflow"
+                    >${msg("Crawl Workflow")}</sl-menu-item
+                  >
+                  <sl-menu-item
+                    value="upload"
+                    ?disabled=${!this.metrics || quotaReached}
+                    >${msg("Upload")}</sl-menu-item
+                  >
+                  <sl-menu-item value="collection">
+                    ${msg("Collection")}
+                  </sl-menu-item>
+                  <sl-menu-item
+                    value="browser-profile"
+                    ?disabled=${!this.metrics || quotaReached}
+                  >
+                    ${msg("Browser Profile")}
+                  </sl-menu-item>
+                </sl-menu>
+              </sl-dropdown>`,
+          )}
+        `,
+        "mb-6",
+      )}
       <main>
         <div class="mb-10 flex flex-col gap-6 md:flex-row">
           ${this.renderCard(
@@ -249,7 +250,8 @@ export class Dashboard extends LiteElement {
             <btrix-usage-history-table></btrix-usage-history-table>
           </btrix-details>
         </section>
-      </main> `;
+      </main>
+    `;
   }
 
   private renderStorageMeter(metrics: Metrics) {

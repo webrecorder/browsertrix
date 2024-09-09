@@ -6,6 +6,7 @@ export default {
   maxPagesPerCrawl: 0,
   maxScale: 0,
   billingEnabled: true,
+  signUpUrl: "",
   salesEmail: "",
   supportEmail: "",
 };

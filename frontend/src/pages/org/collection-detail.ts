@@ -1,7 +1,7 @@
 import { localized, msg, str } from "@lit/localize";
 import type { SlCheckbox } from "@shoelace-style/shoelace";
 import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
 import { guard } from "lit/directives/guard.js";
 import { repeat } from "lit/directives/repeat.js";
@@ -10,6 +10,7 @@ import queryString from "query-string";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { PageChangeEvent } from "@/components/ui/pagination";
+import { pageBreadcrumbs, type Breadcrumb } from "@/layouts/pageHeader";
 import type {
   APIPaginatedList,
   APIPaginationQuery,
@@ -52,6 +53,12 @@ export class CollectionDetail extends BtrixElement {
   @state()
   private showShareInfo = false;
 
+  @query(".description")
+  private readonly description?: HTMLElement | null;
+
+  @query(".descriptionExpandBtn")
+  private readonly descriptionExpandBtn?: HTMLElement | null;
+
   // Use to cancel requests
   private getArchivedItemsController: AbortController | null = null;
 
@@ -91,7 +98,7 @@ export class CollectionDetail extends BtrixElement {
   }
 
   render() {
-    return html`${this.renderHeader()}
+    return html` <div class="mb-7">${this.renderBreadcrumbs()}</div>
       <header class="items-center gap-2 pb-3 md:flex">
         <div class="mb-2 flex w-full items-center gap-2 md:mb-0">
           ${this.collection?.isPublic
@@ -351,20 +358,34 @@ export class CollectionDetail extends BtrixElement {
       </section>`;
   };
 
-  private readonly renderHeader = () => html`
-    <nav class="mb-7">
-      <a
-        class="text-sm font-medium text-gray-600 hover:text-gray-800"
-        href=${`${this.navigate.orgBasePath}/collections`}
-        @click=${this.navigate.link}
-      >
-        <sl-icon name="arrow-left" class="inline-block align-middle"></sl-icon>
-        <span class="inline-block align-middle"
-          >${msg("Back to Collections")}</span
-        >
-      </a>
-    </nav>
-  `;
+  private readonly renderBreadcrumbs = () => {
+    const breadcrumbs: Breadcrumb[] = [
+      {
+        href: `${this.navigate.orgBasePath}/collections`,
+        content: msg("Collections"),
+      },
+    ];
+
+    if (this.collection) {
+      if (this.collectionTab) {
+        breadcrumbs.push(
+          {
+            href: `${this.navigate.orgBasePath}/collections/view/${this.collectionId}`,
+            content: this.collection.name,
+          },
+          {
+            content: this.tabLabels[this.collectionTab].text,
+          },
+        );
+      } else {
+        breadcrumbs.push({
+          content: this.collection.name,
+        });
+      }
+    }
+
+    return pageBreadcrumbs(breadcrumbs);
+  };
 
   private readonly renderTabs = () => {
     return html`
@@ -656,7 +677,7 @@ export class CollectionDetail extends BtrixElement {
     idx: number,
   ) => html`
     <btrix-archived-item-list-item
-      href=${`/orgs/${this.orgId}/items/${item.type}/${item.id}?collectionId=${this.collectionId}`}
+      href=${`${this.navigate.orgBasePath}/collections/view/${this.collectionId}/items/${item.type}/${item.id}`}
       .item=${item}
     >
       ${this.isCrawler
@@ -711,16 +732,19 @@ export class CollectionDetail extends BtrixElement {
 
   private async checkTruncateDescription() {
     await this.updateComplete;
+
     window.requestAnimationFrame(() => {
-      const description = this.querySelector<HTMLElement>(".description");
-      if (description?.scrollHeight ?? 0 > (description?.clientHeight ?? 0)) {
-        this.querySelector(".descriptionExpandBtn")?.classList.remove("hidden");
+      if (
+        this.description?.scrollHeight ??
+        0 > (this.description?.clientHeight ?? 0)
+      ) {
+        this.descriptionExpandBtn?.classList.remove("hidden");
       }
     });
   }
 
   private readonly toggleTruncateDescription = () => {
-    const description = this.querySelector<HTMLElement>(".description");
+    const description = this.description;
     if (!description) {
       console.debug("no .description");
       return;

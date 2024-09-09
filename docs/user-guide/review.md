@@ -1,6 +1,6 @@
-# Crawl Review
+# Review Crawl Quality
 
-The Crawl Review page provides a streamlined interface for assessing the capture quality of pages within an archived item using the heuristics collected during crawl analysis.
+The crawl **Review** page provides a streamlined interface for quality assurance (QA). Assess and assign a score to the capture quality of an archived item using the heuristics collected during crawl analysis.
 
 Crawls can only be reviewed once [crawl analysis](archived-items.md#crawl-analysis) has been run. If multiple analysis runs have been completed, the page analysis heuristics will be used from the selected analysis run, which are displayed next to the archived item name. The most recent analysis run is selected by default, but you can choose to display data from any other completed or stopped analysis run here as well.
 
@@ -10,7 +10,7 @@ Crawl analysis generates comparisons across three heuristics that can indicate w
 
 ### Screenshot Comparison
 
-Screenshots are compared by measuring the perceived difference between color samples and by the intensity of difference between pixels. These metrics are provided by the open-source tool [Pixelmatch](https://observablehq.com/@mourner/pixelmatch-demo).
+Screenshots are compared by measuring the perceived difference between color samples and by the intensity of difference between pixels. These metrics are provided by the open source tool [Pixelmatch](https://observablehq.com/@mourner/pixelmatch-demo).
 
 Discrepancies between crawl and replay screenshots may occur because resources aren't loaded or rendered properly (usually indicating a replay issue).
 

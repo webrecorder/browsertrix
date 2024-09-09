@@ -7,6 +7,7 @@ import queryString from "query-string";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
 import type { BrowserConnectionChange } from "@/features/browser-profiles/profile-browser";
+import { pageBreadcrumbs, type Breadcrumb } from "@/layouts/pageHeader";
 import { isApiError } from "@/utils/api";
 
 /**
@@ -56,25 +57,7 @@ export class BrowserProfilesNew extends BtrixElement {
 
   render() {
     return html`
-      <div class="mb-7">
-        <a
-          class="text-sm font-medium text-neutral-500 hover:text-neutral-600"
-          href=${this.browserParams.profileId
-            ? `${this.navigate.orgBasePath}/browser-profiles/profile/${this.browserParams.profileId}`
-            : `${this.navigate.orgBasePath}/browser-profiles`}
-          @click=${this.navigate.link}
-        >
-          <sl-icon
-            name="arrow-left"
-            class="inline-block align-middle"
-          ></sl-icon>
-          <span class="inline-block align-middle"
-            >${this.browserParams.profileId
-              ? msg("Back to Profile")
-              : msg("Back to Browser Profiles")}</span
-          >
-        </a>
-      </div>
+      <div class="mb-7">${this.renderBreadcrumbs()}</div>
 
       <header class="mb-3">
         <h1 class="min-w-0 flex-1 truncate text-xl font-medium leading-7">
@@ -163,6 +146,35 @@ export class BrowserProfilesNew extends BtrixElement {
         </div>
       </btrix-dialog>
     `;
+  }
+
+  private renderBreadcrumbs() {
+    const breadcrumbs: Breadcrumb[] = [
+      {
+        href: `${this.navigate.orgBasePath}/browser-profiles`,
+        content: msg("Browser Profiles"),
+      },
+    ];
+
+    if (this.browserParams.profileId) {
+      breadcrumbs.push(
+        {
+          href: `${this.navigate.orgBasePath}/browser-profiles/profile/${this.browserParams.profileId}`,
+          content: this.browserParams.name
+            ? this.browserParams.name
+            : msg("Browser Profile"),
+        },
+        {
+          content: msg("Duplicate Profile"),
+        },
+      );
+    } else {
+      breadcrumbs.push({
+        content: msg("New Browser Profile"),
+      });
+    }
+
+    return pageBreadcrumbs(breadcrumbs);
   }
 
   private async onBrowserError() {

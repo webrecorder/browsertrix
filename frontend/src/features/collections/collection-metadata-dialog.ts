@@ -1,14 +1,22 @@
 import { localized, msg, str } from "@lit/localize";
 import { type SlInput } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
-import { customElement, property, queryAsync, state } from "lit/decorators.js";
+import { html } from "lit";
+import {
+  customElement,
+  property,
+  query,
+  queryAsync,
+  state,
+} from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 
+import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
+import type { MarkdownEditor } from "@/components/ui/markdown-editor";
 import type { Collection } from "@/types/collection";
 import { isApiError } from "@/utils/api";
 import { maxLengthValidator } from "@/utils/form";
-import LiteElement, { html } from "@/utils/LiteElement";
 
 export type CollectionSavedEvent = CustomEvent<{
   id: string;
@@ -19,7 +27,7 @@ export type CollectionSavedEvent = CustomEvent<{
  */
 @localized()
 @customElement("btrix-collection-metadata-dialog")
-export class CollectionMetadataDialog extends LiteElement {
+export class CollectionMetadataDialog extends BtrixElement {
   @property({ type: Object })
   collection?: Collection;
 
@@ -27,69 +35,29 @@ export class CollectionMetadataDialog extends LiteElement {
   open = false;
 
   @state()
+  isDialogVisible = false;
+
+  @state()
   private isSubmitting = false;
+
+  @query("btrix-markdown-editor")
+  private readonly descriptionEditor?: MarkdownEditor | null;
 
   @queryAsync("#collectionForm")
   private readonly form!: Promise<HTMLFormElement>;
 
   private readonly validateNameMax = maxLengthValidator(50);
-
   render() {
     return html` <btrix-dialog
       label=${this.collection
         ? msg("Edit Collection Metadata")
         : msg("Create a New Collection")}
       ?open=${this.open}
+      @sl-show=${() => (this.isDialogVisible = true)}
+      @sl-after-hide=${() => (this.isDialogVisible = false)}
       style="--width: 46rem"
     >
-      <form id="collectionForm" @reset=${this.onReset} @submit=${this.onSubmit}>
-        <sl-input
-          class="with-max-help-text mb-2"
-          id="collectionForm-name-input"
-          name="name"
-          label=${msg("Collection Name")}
-          value=${this.collection?.name || ""}
-          placeholder=${msg("My Collection")}
-          autocomplete="off"
-          required
-          help-text=${this.validateNameMax.helpText}
-          @sl-input=${this.validateNameMax.validate}
-          autofocus
-        ></sl-input>
-
-        <fieldset>
-          <label class="form-label">${msg("Description")}</label>
-          <btrix-markdown-editor
-            name="description"
-            initialValue=${this.collection?.description || ""}
-            maxlength=${4000}
-          ></btrix-markdown-editor>
-        </fieldset>
-        ${when(
-          !this.collection,
-          () => html`
-            <label>
-              <sl-switch name="isPublic"
-                >${msg("Publicly Accessible")}</sl-switch
-              >
-              <sl-tooltip
-                content=${msg(
-                  "Enable public access to make Collections shareable. Only people with the shared link can view your Collection.",
-                )}
-                hoist
-                @sl-hide=${this.stopProp}
-                @sl-after-hide=${this.stopProp}
-                ><sl-icon
-                  class="ml-1 inline-block align-middle text-slate-500"
-                  name="info-circle"
-                ></sl-icon
-              ></sl-tooltip>
-            </label>
-          `,
-        )}
-
-        <input class="invisible size-0" type="submit" />
-      </form>
+      ${when(this.isDialogVisible, () => this.renderForm())}
       <div slot="footer" class="flex items-center justify-end gap-3">
         <sl-button
           class="mr-auto"
@@ -132,6 +100,57 @@ export class CollectionMetadataDialog extends LiteElement {
     </btrix-dialog>`;
   }
 
+  private renderForm() {
+    return html`
+      <form id="collectionForm" @reset=${this.onReset} @submit=${this.onSubmit}>
+        <sl-input
+          class="with-max-help-text mb-2"
+          id="collectionForm-name-input"
+          name="name"
+          label=${msg("Collection Name")}
+          value=${this.collection?.name || ""}
+          placeholder=${msg("My Collection")}
+          autocomplete="off"
+          required
+          help-text=${this.validateNameMax.helpText}
+          @sl-input=${this.validateNameMax.validate}
+        ></sl-input>
+        <sl-divider></sl-divider>
+        <btrix-markdown-editor
+          label=${msg("Description")}
+          name="description"
+          initialValue=${this.collection?.description || ""}
+          maxlength=${4000}
+        ></btrix-markdown-editor>
+        ${when(
+          !this.collection,
+          () => html`
+            <sl-divider></sl-divider>
+            <label>
+              <sl-switch name="isPublic"
+                >${msg("Publicly Accessible")}</sl-switch
+              >
+              <sl-tooltip
+                content=${msg(
+                  "Enable public access to make Collections shareable. Only people with the shared link can view your Collection.",
+                )}
+                hoist
+                @sl-hide=${this.stopProp}
+                @sl-after-hide=${this.stopProp}
+                ><sl-icon
+                  class="ml-1 inline-block align-middle text-slate-500"
+                  name="info-circle"
+                ></sl-icon
+              ></sl-tooltip>
+            </label>
+          `,
+        )}
+
+        <input class="invisible size-0" type="submit" />
+      </form>
+    `;
+  }
+
   private async hideDialog() {
     void (await this.form).closest<Dialog>("btrix-dialog")!.hide();
   }
@@ -146,11 +165,16 @@ export class CollectionMetadataDialog extends LiteElement {
 
     const form = event.target as HTMLFormElement;
     const nameInput = form.querySelector<SlInput>('sl-input[name="name"]');
-    if (!nameInput?.checkValidity()) {
+    if (
+      !nameInput?.checkValidity() ||
+      !this.descriptionEditor?.checkValidity()
+    ) {
       return;
     }
 
-    const { name, description, isPublic } = serialize(form);
+    const { name, isPublic } = serialize(form);
+    const description = this.descriptionEditor.value;
+
     this.isSubmitting = true;
     try {
       const body = JSON.stringify({
@@ -164,7 +188,7 @@ export class CollectionMetadataDialog extends LiteElement {
         path = `/orgs/${this.orgId}/collections/${this.collection.id}`;
         method = "PATCH";
       }
-      const data = await this.apiFetch<Collection>(path, {
+      const data = await this.api.fetch<Collection>(path, {
         method,
         body,
       });
@@ -176,7 +200,7 @@ export class CollectionMetadataDialog extends LiteElement {
           },
         }) as CollectionSavedEvent,
       );
-      this.notify({
+      this.notify.toast({
         message: msg(
           str`Successfully saved "${data.name || name}" Collection.`,
         ),
@@ -189,7 +213,7 @@ export class CollectionMetadataDialog extends LiteElement {
       if (message === "collection_name_taken") {
         message = msg("This name is already taken.");
       }
-      this.notify({
+      this.notify.toast({
         message: message || msg("Something unexpected went wrong"),
         variant: "danger",
         icon: "exclamation-octagon",

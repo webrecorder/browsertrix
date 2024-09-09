@@ -24,8 +24,8 @@ import { formatAPIUser } from "./utils/user";
 import type { NavigateEventDetail } from "@/controllers/navigate";
 import type { NotifyEventDetail } from "@/controllers/notify";
 import { theme } from "@/theme";
-import type { AppSettings } from "@/types/app";
 import { type Auth } from "@/types/auth";
+import { type AppSettings } from "@/utils/app";
 import brandLockupColor from "~assets/brand/browsertrix-lockup-color.svg";
 
 import "./shoelace";
@@ -59,6 +59,9 @@ export type APIUser = {
 export class App extends LiteElement {
   @property({ type: String })
   version?: string;
+
+  @property({ type: Object })
+  settings?: AppSettings;
 
   private readonly router = new APIRouter(ROUTES);
   authService = new AuthService();
@@ -102,13 +105,12 @@ export class App extends LiteElement {
     });
 
     this.startSyncBrowserTabs();
-
-    if (!this.appState.settings) {
-      void this.fetchAppSettings();
-    }
   }
 
   willUpdate(changedProperties: Map<string, unknown>) {
+    if (changedProperties.has("settings")) {
+      AppStateService.updateSettings(this.settings || null);
+    }
     if (changedProperties.has("viewState")) {
       if (this.viewState.route === "orgs") {
         this.navigate(this.orgBasePath);
@@ -150,12 +152,6 @@ export class App extends LiteElement {
     }
   }
 
-  private async fetchAppSettings() {
-    const settings = await this.getAppSettings();
-
-    AppStateService.updateSettings(settings);
-  }
-
   private async fetchAndUpdateUserInfo(e?: CustomEvent) {
     if (e) {
       e.stopPropagation();
@@ -173,33 +169,6 @@ export class App extends LiteElement {
         this.clearUser();
         this.navigate(ROUTES.login);
       }
-    }
-  }
-
-  async getAppSettings(): Promise<AppSettings> {
-    const resp = await fetch("/api/settings", {
-      headers: { "Content-Type": "application/json" },
-    });
-
-    if (resp.status === 200) {
-      const body = (await resp.json()) as AppSettings;
-
-      return body;
-    } else {
-      console.debug(resp);
-
-      return {
-        registrationEnabled: false,
-        jwtTokenLifetime: 0,
-        defaultBehaviorTimeSeconds: 0,
-        defaultPageLoadTimeSeconds: 0,
-        maxPagesPerCrawl: 0,
-        maxScale: 0,
-        billingEnabled: false,
-        signUpUrl: "",
-        salesEmail: "",
-        supportEmail: "",
-      };
     }
   }
 

@@ -167,6 +167,10 @@ Text
 
 The `~~~` is used to separate the sections. If only two sections are provided, the email template is treated as plain text, if three, an HTML email with plain text fallback is sent.
 
-## Signing WACZ files
+## Signing WACZ Files
 
 Browsertrix has the ability to cryptographically sign WACZ files with [Authsign](https://github.com/webrecorder/authsign). The ``signer`` setting can be used to enable this feature and configure Authsign.
+
+## Enable Open Registration
+
+You can enable sign-ups by setting `registration_enabled` to `"1"`. Once enabled, your users can register by visiting `/sign-up`.

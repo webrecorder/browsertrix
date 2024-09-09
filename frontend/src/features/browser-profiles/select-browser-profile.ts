@@ -1,7 +1,8 @@
 import { localized, msg } from "@lit/localize";
 import { type SlSelect } from "@shoelace-style/shoelace";
-import { html, nothing } from "lit";
+import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import orderBy from "lodash/fp/orderBy";
 
 import type { Profile } from "@/pages/org/types";
@@ -33,6 +34,9 @@ export type SelectBrowserProfileChangeEvent =
 @localized()
 export class SelectBrowserProfile extends LiteElement {
   @property({ type: String })
+  size?: SlSelect["size"];
+
+  @property({ type: String })
   profileId?: string;
 
   @state()
@@ -41,8 +45,14 @@ export class SelectBrowserProfile extends LiteElement {
   @state()
   private browserProfiles?: Profile[];
 
-  protected firstUpdated() {
-    void this.fetchBrowserProfiles();
+  willUpdate(changedProperties: PropertyValues<this>) {
+    if (changedProperties.has("profileId")) {
+      void this.updateSelectedProfile();
+    }
+  }
+
+  firstUpdated() {
+    void this.updateSelectedProfile();
   }
 
   render() {
@@ -52,8 +62,9 @@ export class SelectBrowserProfile extends LiteElement {
         label=${msg("Browser Profile")}
         value=${this.selectedProfile?.id || ""}
         placeholder=${this.browserProfiles
-          ? msg("Default Profile")
+          ? msg("No custom profile")
           : msg("Loading")}
+        size=${ifDefined(this.size)}
         hoist
         @sl-change=${this.onChange}
         @sl-focus=${() => {
@@ -65,7 +76,7 @@ export class SelectBrowserProfile extends LiteElement {
       >
         ${this.browserProfiles
           ? html`
-              <sl-option value="">${msg("Default Profile")}</sl-option>
+              <sl-option value="">${msg("No custom profile")}</sl-option>
               <sl-divider></sl-divider>
             `
           : html` <sl-spinner slot="prefix"></sl-spinner> `}
@@ -89,9 +100,9 @@ export class SelectBrowserProfile extends LiteElement {
         ${this.browserProfiles && !this.browserProfiles.length
           ? this.renderNoProfiles()
           : ""}
-        ${this.selectedProfile
-          ? html`
-              <div slot="help-text" class="flex justify-between">
+        <div slot="help-text" class="flex justify-between">
+          ${this.selectedProfile
+            ? html`
                 <span>
                   ${msg("Last updated")}
                   <sl-format-date
@@ -112,9 +123,20 @@ export class SelectBrowserProfile extends LiteElement {
                   ${msg("Check Profile")}
                   <sl-icon name="box-arrow-up-right"></sl-icon>
                 </a>
-              </div>
-            `
-          : nothing}
+              `
+            : this.browserProfiles
+              ? html`
+                  <a
+                    class="ml-auto flex items-center gap-1 text-blue-500 hover:text-blue-600"
+                    href=${`${this.orgBasePath}/browser-profiles`}
+                    target="_blank"
+                  >
+                    ${msg("View Profiles")}
+                    <sl-icon name="box-arrow-up-right"></sl-icon>
+                  </a>
+                `
+              : nothing}
+        </div>
       </sl-select>
 
       ${this.browserProfiles?.length ? this.renderSelectedProfileInfo() : ""}
@@ -141,7 +163,7 @@ export class SelectBrowserProfile extends LiteElement {
     return html`
       <div class="mx-2 text-sm text-neutral-500">
         <span class="inline-block align-middle"
-          >${msg("No additional browser profiles found.")}</span
+          >${msg("This org doesn't have any custom profiles yet.")}</span
         >
         <a
           href=${`${this.orgBasePath}/browser-profiles?new`}
@@ -159,7 +181,7 @@ export class SelectBrowserProfile extends LiteElement {
             }
           }}
           ><span class="inline-block align-middle"
-            >${msg("Create a browser profile")}</span
+            >${msg("Create profile")}</span
           >
           <sl-icon
             class="inline-block align-middle"
@@ -170,10 +192,12 @@ export class SelectBrowserProfile extends LiteElement {
     `;
   }
 
-  private onChange(e: Event) {
+  private async onChange(e: Event) {
     this.selectedProfile = this.browserProfiles?.find(
-      ({ id }) => id === (e.target as SlSelect | null)!.value,
+      ({ id }) => id === (e.target as SlSelect | null)?.value,
     );
+
+    await this.updateComplete;
 
     this.dispatchEvent(
       new CustomEvent<SelectBrowserProfileChangeDetail>("on-change", {
@@ -182,6 +206,17 @@ export class SelectBrowserProfile extends LiteElement {
         },
       }),
     );
+  }
+
+  private async updateSelectedProfile() {
+    await this.fetchBrowserProfiles();
+    await this.updateComplete;
+
+    if (this.profileId && !this.selectedProfile) {
+      this.selectedProfile = this.browserProfiles?.find(
+        ({ id }) => id === this.profileId,
+      );
+    }
   }
 
   /**
@@ -194,12 +229,6 @@ export class SelectBrowserProfile extends LiteElement {
       this.browserProfiles = orderBy(["name", "modified"])(["asc", "desc"])(
         data,
       ) as Profile[];
-
-      if (this.profileId && !this.selectedProfile) {
-        this.selectedProfile = this.browserProfiles.find(
-          ({ id }) => id === this.profileId,
-        );
-      }
     } catch (e) {
       this.notify({
         message: msg("Sorry, couldn't retrieve browser profiles at this time."),
