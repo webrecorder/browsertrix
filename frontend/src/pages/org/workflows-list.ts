@@ -501,24 +501,18 @@ export class WorkflowsList extends LiteElement {
           <sl-divider></sl-divider>
           <sl-menu-item
             @click=${() =>
-              this.navTo(
-                `${this.orgBasePath}/workflows/crawl/${workflow.id}#watch`,
-                {
-                  dialog: "scale",
-                },
-              )}
+              this.navTo(`${this.orgBasePath}/workflows/${workflow.id}#watch`, {
+                dialog: "scale",
+              })}
           >
             <sl-icon name="plus-slash-minus" slot="prefix"></sl-icon>
             ${msg("Edit Browser Windows")}
           </sl-menu-item>
           <sl-menu-item
             @click=${() =>
-              this.navTo(
-                `${this.orgBasePath}/workflows/crawl/${workflow.id}#watch`,
-                {
-                  dialog: "exclusions",
-                },
-              )}
+              this.navTo(`${this.orgBasePath}/workflows/${workflow.id}#watch`, {
+                dialog: "exclusions",
+              })}
           >
             <sl-icon name="table" slot="prefix"></sl-icon>
             ${msg("Edit Exclusions")}
@@ -532,9 +526,7 @@ export class WorkflowsList extends LiteElement {
           html` <sl-divider></sl-divider>
             <sl-menu-item
               @click=${() =>
-                this.navTo(
-                  `${this.orgBasePath}/workflows/crawl/${workflow.id}?edit`,
-                )}
+                this.navTo(`${this.orgBasePath}/workflows/${workflow.id}?edit`)}
             >
               <sl-icon name="gear" slot="prefix"></sl-icon>
               ${msg("Edit Workflow Settings")}
@@ -799,7 +791,7 @@ export class WorkflowsList extends LiteElement {
             <br />
             <a
               class="underline hover:no-underline"
-              href="${this.orgBasePath}/workflows/crawl/${workflow.id}#watch"
+              href="${this.orgBasePath}/workflows/${workflow.id}#watch"
               @click=${this.navLink.bind(this)}
               >Watch crawl</a
             >`,

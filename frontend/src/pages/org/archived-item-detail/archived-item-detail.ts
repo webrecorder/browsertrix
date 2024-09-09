@@ -76,7 +76,7 @@ export class ArchivedItemDetail extends BtrixElement {
   showOrgLink = false;
 
   @property({ type: String })
-  crawlId?: string;
+  itemId?: string;
 
   @property({ type: Boolean })
   isCrawler = false;
@@ -173,7 +173,7 @@ export class ArchivedItemDetail extends BtrixElement {
   }
 
   willUpdate(changedProperties: PropertyValues<this>) {
-    if (changedProperties.has("crawlId") && this.crawlId) {
+    if (changedProperties.has("itemId") && this.itemId) {
       void this.fetchCrawl();
       void this.fetchCrawlLogs();
       if (this.itemType === "crawl") {
@@ -271,7 +271,7 @@ export class ArchivedItemDetail extends BtrixElement {
             </div> `,
           html`
             <btrix-archived-item-detail-qa
-              .crawlId=${this.crawlId}
+              .crawlId=${this.itemId}
               .itemType=${this.itemType}
               .crawl=${this.item}
               .qaRuns=${this.qaRuns}
@@ -295,7 +295,7 @@ export class ArchivedItemDetail extends BtrixElement {
           html` ${this.renderTitle(this.tabLabels.files)}
             <sl-tooltip content=${msg("Download all files as a single WACZ")}>
               <sl-button
-                href=${`/api/orgs/${this.orgId}/all-crawls/${this.crawlId}/download?auth_bearer=${authToken}`}
+                href=${`/api/orgs/${this.orgId}/all-crawls/${this.itemId}/download?auth_bearer=${authToken}`}
                 download
                 size="small"
                 variant="primary"
@@ -311,8 +311,8 @@ export class ArchivedItemDetail extends BtrixElement {
         sectionContent = this.renderPanel(
           html` ${this.renderTitle(this.tabLabels.logs)}
             <sl-button
-              href=${`/api/orgs/${this.orgId}/crawls/${this.crawlId}/logs?auth_bearer=${authToken}`}
-              download=${`btrix-${this.crawlId}-logs.txt`}
+              href=${`/api/orgs/${this.orgId}/crawls/${this.itemId}/logs?auth_bearer=${authToken}`}
+              download=${`btrix-${this.itemId}-logs.txt`}
               size="small"
               variant="primary"
             >
@@ -339,7 +339,7 @@ export class ArchivedItemDetail extends BtrixElement {
             <sl-button
               size="small"
               variant="primary"
-              href="${this.navigate.orgBasePath}/workflows/crawl/${this.item
+              href="${this.navigate.orgBasePath}/workflows/${this.item
                 ?.cid}?edit"
               ?disabled=${!this.item}
               @click=${this.navigate.link}
@@ -429,15 +429,15 @@ export class ArchivedItemDetail extends BtrixElement {
     if (this.itemType === "crawl") {
       breadcrumbs.push(
         {
-          href: `${this.navigate.orgBasePath}/workflows/crawls`,
+          href: `${this.navigate.orgBasePath}/workflows`,
           content: msg("Crawl Workflows"),
         },
         {
-          href: `${this.navigate.orgBasePath}/workflows/crawl/${this.item?.cid}`,
+          href: `${this.navigate.orgBasePath}/workflows/${this.item?.cid}`,
           content: this.workflow ? renderName(this.workflow) : undefined,
         },
         {
-          href: `${this.navigate.orgBasePath}/workflows/crawl/${this.item?.cid}#crawls`,
+          href: `${this.navigate.orgBasePath}/workflows/${this.item?.cid}#crawls`,
           content: msg("Crawls"),
         },
       );
@@ -639,7 +639,7 @@ export class ArchivedItemDetail extends BtrixElement {
               <sl-menu-item
                 @click=${() =>
                   this.navigate.to(
-                    `${this.navigate.orgBasePath}/workflows/crawl/${this.item?.cid}`,
+                    `${this.navigate.orgBasePath}/workflows/${this.item?.cid}`,
                   )}
               >
                 <sl-icon name="arrow-return-right" slot="prefix"></sl-icon>
@@ -666,7 +666,7 @@ export class ArchivedItemDetail extends BtrixElement {
             () => html`
               <sl-divider></sl-divider>
               <btrix-menu-item-link
-                href=${`/api/orgs/${this.orgId}/all-crawls/${this.crawlId}/download?auth_bearer=${authToken}`}
+                href=${`/api/orgs/${this.orgId}/all-crawls/${this.itemId}/download?auth_bearer=${authToken}`}
                 download
               >
                 <sl-icon name="cloud-download" slot="prefix"></sl-icon>
@@ -720,7 +720,7 @@ export class ArchivedItemDetail extends BtrixElement {
     if (!this.item) return;
     const replaySource = `/api/orgs/${this.item.oid}/${
       this.item.type === "upload" ? "uploads" : "crawls"
-    }/${this.crawlId}/replay.json`;
+    }/${this.itemId}/replay.json`;
 
     const headers = this.authState?.headers;
 
@@ -1232,14 +1232,14 @@ ${this.item?.description}
   private async getCrawl(): Promise<Crawl> {
     const apiPath = `/orgs/${this.orgId}/${
       this.itemType === "upload" ? "uploads" : "crawls"
-    }/${this.crawlId}/replay.json`;
+    }/${this.itemId}/replay.json`;
     return this.api.fetch<Crawl>(apiPath);
   }
 
   private async getSeeds() {
     // NOTE Returns first 1000 seeds (backend pagination max)
     const data = await this.api.fetch<APIPaginatedList<Seed>>(
-      `/orgs/${this.orgId}/crawls/${this.crawlId}/seeds`,
+      `/orgs/${this.orgId}/crawls/${this.itemId}/seeds`,
     );
     return data;
   }
@@ -1272,7 +1272,7 @@ ${this.item?.description}
     const pageSize = params.pageSize || this.logs?.pageSize || 50;
 
     const data = (await this.api.fetch)<APIPaginatedList<CrawlLog>>(
-      `/orgs/${this.orgId}/crawls/${this.crawlId}/errors?page=${page}&pageSize=${pageSize}`,
+      `/orgs/${this.orgId}/crawls/${this.itemId}/errors?page=${page}&pageSize=${pageSize}`,
     );
 
     return data;
@@ -1281,7 +1281,7 @@ ${this.item?.description}
   private async cancel() {
     if (window.confirm(msg("Are you sure you want to cancel the crawl?"))) {
       const data = await this.api.fetch<{ success: boolean }>(
-        `/orgs/${this.item!.oid}/crawls/${this.crawlId}/cancel`,
+        `/orgs/${this.item!.oid}/crawls/${this.itemId}/cancel`,
         {
           method: "POST",
         },
@@ -1302,7 +1302,7 @@ ${this.item?.description}
   private async stop() {
     if (window.confirm(msg("Are you sure you want to stop the crawl?"))) {
       const data = await this.api.fetch<{ success: boolean }>(
-        `/orgs/${this.item!.oid}/crawls/${this.crawlId}/stop`,
+        `/orgs/${this.item!.oid}/crawls/${this.itemId}/stop`,
         {
           method: "POST",
         },
@@ -1379,7 +1379,7 @@ ${this.item?.description}
   private async startQARun() {
     try {
       const result = await this.api.fetch<{ started: string }>(
-        `/orgs/${this.orgId}/crawls/${this.crawlId}/qa/start`,
+        `/orgs/${this.orgId}/crawls/${this.itemId}/qa/start`,
         {
           method: "POST",
         },
@@ -1413,7 +1413,7 @@ ${this.item?.description}
   private async stopQARun() {
     try {
       const data = await this.api.fetch<{ success: boolean }>(
-        `/orgs/${this.item!.oid}/crawls/${this.crawlId}/qa/stop`,
+        `/orgs/${this.item!.oid}/crawls/${this.itemId}/qa/stop`,
         {
           method: "POST",
         },
@@ -1444,7 +1444,7 @@ ${this.item?.description}
   private async cancelQARun() {
     try {
       const data = await this.api.fetch<{ success: boolean }>(
-        `/orgs/${this.item!.oid}/crawls/${this.crawlId}/qa/cancel`,
+        `/orgs/${this.item!.oid}/crawls/${this.itemId}/qa/cancel`,
         {
           method: "POST",
         },
@@ -1505,7 +1505,7 @@ ${this.item?.description}
 
   private async getQARuns(): Promise<QARun[]> {
     return this.api.fetch<QARun[]>(
-      `/orgs/${this.orgId}/crawls/${this.crawlId}/qa`,
+      `/orgs/${this.orgId}/crawls/${this.itemId}/qa`,
     );
   }
 }

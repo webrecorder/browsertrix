@@ -280,7 +280,7 @@ export class Crawls extends LiteElement {
   }
 
   private readonly renderCrawlItem = (crawl: Crawl) => {
-    const crawlPath = `/orgs/${this.slugLookup[crawl.oid]}/items/crawl/${
+    const crawlPath = `/orgs/${this.slugLookup[crawl.oid]}/workflows/${crawl.cid}/crawls/${
       crawl.id
     }`;
     return html`

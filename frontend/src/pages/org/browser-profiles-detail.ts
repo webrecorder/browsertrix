@@ -336,7 +336,7 @@ export class BrowserProfilesDetail extends BtrixElement {
             >
               <a
                 class="block p-2 transition-colors focus-within:bg-neutral-50 hover:bg-neutral-50"
-                href=${`${this.navigate.orgBasePath}/workflows/crawl/${workflow.id}`}
+                href=${`${this.navigate.orgBasePath}/workflows/${workflow.id}`}
                 @click=${this.navigate.link}
               >
                 ${this.renderWorkflowName(workflow)}

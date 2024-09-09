@@ -231,7 +231,7 @@ export class WorkflowListItem extends LitElement {
         }
         e.preventDefault();
         await this.updateComplete;
-        const href = `/orgs/${this.orgSlug}/workflows/crawl/${
+        const href = `/orgs/${this.orgSlug}/workflows/${
           this.workflow?.id
         }#${this.workflow?.isCrawlRunning ? "watch" : "crawls"}`;
         this.navigate.to(href);

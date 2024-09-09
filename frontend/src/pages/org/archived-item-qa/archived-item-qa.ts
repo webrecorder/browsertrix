@@ -86,6 +86,9 @@ export class ArchivedItemQA extends BtrixElement {
   static styles = styles;
 
   @property({ type: String })
+  workflowId?: string;
+
+  @property({ type: String })
   itemId?: string;
 
   @property({ type: String })
@@ -353,7 +356,7 @@ export class ArchivedItemQA extends BtrixElement {
   }
 
   render() {
-    const crawlBaseUrl = `${this.navigate.orgBasePath}/items/crawl/${this.itemId}`;
+    const crawlBaseUrl = `${this.navigate.orgBasePath}/workflows/${this.workflowId}/crawls/${this.itemId}`;
     const searchParams = new URLSearchParams(window.location.search);
     const itemName = this.item ? renderName(this.item) : nothing;
     const [prevPage, currentPage, nextPage] = this.getPageListSliceByCurrent();
@@ -600,7 +603,7 @@ export class ArchivedItemQA extends BtrixElement {
 
   private renderBackLink() {
     return pageBack({
-      href: `${this.navigate.orgBasePath}/items/crawl/${this.itemId}?workflowId=${this.item?.cid}#qa`,
+      href: `${this.navigate.orgBasePath}/workflows/${this.workflowId}/crawls/${this.itemId}?workflowId=${this.item?.cid}#qa`,
       content: this.item ? renderName(this.item) : undefined,
     });
   }
@@ -1490,7 +1493,7 @@ export class ArchivedItemQA extends BtrixElement {
       void this.reviewDialog?.hide();
 
       this.navigate.to(
-        `${this.navigate.orgBasePath}/items/crawl/${this.itemId}#qa`,
+        `${this.navigate.orgBasePath}/workflows/${this.workflowId}/crawls/${this.itemId}#qa`,
       );
       this.notify.toast({
         message: msg("Saved QA review."),

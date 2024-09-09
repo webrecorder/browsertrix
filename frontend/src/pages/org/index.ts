@@ -46,6 +46,7 @@ const RESOURCE_NAMES = ["workflow", "collection", "browser-profile", "upload"];
 type ResourceName = (typeof RESOURCE_NAMES)[number];
 export type SelectNewDialogEvent = CustomEvent<ResourceName>;
 type ArchivedItemPageParams = {
+  itemId?: string;
   workflowId?: string;
   collectionId?: string;
 };
@@ -54,13 +55,12 @@ export type OrgParams = {
   workflows: ArchivedItemPageParams & {
     jobType?: JobType;
     new?: ResourceName;
-  };
-  items: ArchivedItemPageParams & {
-    itemId?: string;
-    itemType?: string;
     itemPageId?: string;
     qaTab?: QATab;
     qaRunId?: string;
+  };
+  items: ArchivedItemPageParams & {
+    itemType?: string;
   };
   "browser-profiles": {
     browserProfileId?: string;
@@ -241,7 +241,7 @@ export class Org extends LiteElement {
   }
 
   render() {
-    const noMaxWidth = (this.params as OrgParams["items"]).qaTab;
+    const noMaxWidth = (this.params as OrgParams["workflows"]).qaTab;
 
     return html`
       <btrix-document-title
@@ -337,7 +337,7 @@ export class Org extends LiteElement {
           ${this.renderNavTab({
             tabName: "workflows",
             label: msg("Crawling"),
-            path: "workflows/crawls",
+            path: "workflows",
           })}
           ${this.renderNavTab({
             tabName: "items",
@@ -469,24 +469,8 @@ export class Org extends LiteElement {
     const params = this.params as OrgParams["items"];
 
     if (params.itemId) {
-      if (params.qaTab) {
-        if (!this.appState.isCrawler) {
-          return html`<btrix-not-found
-            class="flex items-center justify-center"
-          ></btrix-not-found>`;
-        }
-
-        return html`<btrix-archived-item-qa
-          class="flex-1"
-          itemId=${params.itemId}
-          itemPageId=${ifDefined(params.itemPageId)}
-          qaRunId=${ifDefined(params.qaRunId)}
-          tab=${params.qaTab}
-        ></btrix-archived-item-qa>`;
-      }
-
       return html` <btrix-archived-item-detail
-        crawlId=${params.itemId}
+        itemId=${params.itemId}
         collectionId=${params.collectionId || ""}
         workflowId=${params.workflowId || ""}
         itemType=${params.itemType || "crawl"}
@@ -509,6 +493,33 @@ export class Org extends LiteElement {
     const workflowId = params.workflowId;
 
     if (workflowId) {
+      if (params.itemId) {
+        if (params.qaTab) {
+          if (!this.appState.isCrawler) {
+            return html`<btrix-not-found
+              class="flex items-center justify-center"
+            ></btrix-not-found>`;
+          }
+
+          return html`<btrix-archived-item-qa
+            class="flex-1"
+            workflowId=${workflowId}
+            itemId=${params.itemId}
+            itemPageId=${ifDefined(params.itemPageId)}
+            qaRunId=${ifDefined(params.qaRunId)}
+            tab=${params.qaTab}
+          ></btrix-archived-item-qa>`;
+        }
+
+        return html` <btrix-archived-item-detail
+          itemId=${params.itemId}
+          collectionId=${params.collectionId || ""}
+          workflowId=${workflowId}
+          itemType="crawl"
+          ?isCrawler=${this.appState.isCrawler}
+        ></btrix-archived-item-detail>`;
+      }
+
       return html`
         <btrix-workflow-detail
           class="col-span-5"

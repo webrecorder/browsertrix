@@ -1974,7 +1974,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       });
 
       this.navigate.to(
-        `${this.navigate.orgBasePath}/workflows/crawl/${this.configId || data.id}${
+        `${this.navigate.orgBasePath}/workflows/${this.configId || data.id}${
           crawlId && !storageQuotaReached && !executionMinutesQuotaReached
             ? "#watch"
             : ""

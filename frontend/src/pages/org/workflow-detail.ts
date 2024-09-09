@@ -392,7 +392,7 @@ export class WorkflowDetail extends LiteElement {
   private renderBreadcrumbs() {
     const breadcrumbs: Breadcrumb[] = [
       {
-        href: `${this.orgBasePath}/workflows/crawls`,
+        href: `${this.orgBasePath}/workflows`,
         content: msg("Crawl Workflows"),
       },
     ];
@@ -400,7 +400,7 @@ export class WorkflowDetail extends LiteElement {
     if (this.isEditing) {
       breadcrumbs.push(
         {
-          href: `${this.orgBasePath}/workflows/crawl/${this.workflowId}`,
+          href: `${this.orgBasePath}/workflows/${this.workflowId}`,
           content: this.workflow ? this.renderName() : undefined,
         },
         {
@@ -480,7 +480,7 @@ export class WorkflowDetail extends LiteElement {
           label=${msg("Edit workflow settings")}
           @click=${() =>
             this.navTo(
-              `/orgs/${this.appState.orgSlug}/workflows/crawl/${this.workflow?.id}?edit`,
+              `/orgs/${this.appState.orgSlug}/workflows/${this.workflow?.id}?edit`,
             )}
         >
         </sl-icon-button>`;
@@ -564,7 +564,7 @@ export class WorkflowDetail extends LiteElement {
           jobType=${workflow.jobType!}
           configId=${workflow.id}
           @reset=${() =>
-            this.navTo(`${this.orgBasePath}/workflows/crawl/${workflow.id}`)}
+            this.navTo(`${this.orgBasePath}/workflows/${workflow.id}`)}
         ></btrix-workflow-editor>
       `,
       this.renderLoading,
@@ -685,7 +685,7 @@ export class WorkflowDetail extends LiteElement {
           <sl-menu-item
             @click=${() =>
               this.navTo(
-                `/orgs/${this.appState.orgSlug}/workflows/crawl/${workflow.id}?edit`,
+                `/orgs/${this.appState.orgSlug}/workflows/${workflow.id}?edit`,
               )}
           >
             <sl-icon name="gear" slot="prefix"></sl-icon>
@@ -862,7 +862,7 @@ export class WorkflowDetail extends LiteElement {
                 this.crawls!.items.map(
                   (crawl: Crawl) =>
                     html` <btrix-crawl-list-item
-                      href=${`${this.orgBasePath}/items/crawl/${crawl.id}?workflowId=${this.workflowId}`}
+                      href=${`${this.orgBasePath}/workflows/${this.workflowId}/crawls/${crawl.id}`}
                       .crawl=${crawl}
                     >
                       ${when(
@@ -1485,7 +1485,7 @@ export class WorkflowDetail extends LiteElement {
         },
       );
 
-      this.navTo(`${this.orgBasePath}/workflows/crawls`);
+      this.navTo(`${this.orgBasePath}/workflows`);
 
       this.notify({
         message: msg(
