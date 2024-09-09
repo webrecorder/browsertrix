@@ -704,10 +704,9 @@ export class WorkflowEditor extends BtrixElement {
           label=${msg("Crawl Scope")}
           value=${this.formState.scopeType!}
           @sl-change=${(e: Event) =>
-            this.updateFormState({
-              scopeType: (e.target as HTMLSelectElement)
-                .value as FormState["scopeType"],
-            })}
+            this.changeScopeType(
+              (e.target as HTMLSelectElement).value as FormState["scopeType"],
+            )}
         >
           <sl-option value="page"> ${this.scopeTypeLabels["page"]} </sl-option>
           <sl-option value="page-spa">
@@ -1628,6 +1627,23 @@ https://archiveweb.page/images/${"logo.svg"}`}
       ${errorAlert}
     `;
   };
+
+  private changeScopeType(value: FormState["scopeType"]) {
+    const prevScopeType = this.formState.scopeType;
+    const formState: Partial<FormState> = {
+      scopeType: value,
+    };
+    const urls = urlListToArray(this.formState.urlList);
+
+    if (prevScopeType === "page") {
+      formState.primarySeedUrl = urls[0];
+      formState.urlList = urls.slice(1).join("\n");
+    } else if (value === "page") {
+      formState.urlList = [this.formState.primarySeedUrl, ...urls].join("\n");
+    }
+
+    this.updateFormState(formState);
+  }
 
   private hasRequiredFields(): boolean {
     if (this.formState.scopeType === "page") {
