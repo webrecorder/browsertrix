@@ -59,8 +59,8 @@ export class WorkflowsNew extends LiteElement {
   initialWorkflow?: WorkflowParams;
 
   private readonly jobTypeLabels: Record<JobType, string> = {
-    "url-list": msg("URL List"),
-    "seed-crawl": msg("Seeded Crawl"),
+    "url-list": msg("Page List"),
+    "seed-crawl": msg("Site Crawl"),
     custom: msg("Custom"),
   };
 

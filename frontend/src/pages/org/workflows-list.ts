@@ -245,10 +245,10 @@ export class WorkflowsList extends LiteElement {
                   </sl-button>
                   <sl-menu>
                     <sl-menu-item value="url-list">
-                      ${msg("URL List")}
+                      ${msg("Page List")}
                     </sl-menu-item>
                     <sl-menu-item value="seed-crawl">
-                      ${msg("Seeded Crawl")}
+                      ${msg("Site Crawl")}
                     </sl-menu-item>
                     <sl-divider> </sl-divider>
                     <sl-menu-item>

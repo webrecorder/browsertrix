@@ -45,13 +45,13 @@ export class NewWorkflowDialog extends TailwindElement {
               <figcaption class="p-1">
                 <div class="leading none my-2 font-semibold">
                   <div class="transition-colors group-hover:text-primary-700">
-                    ${msg("URL List")}:
+                    ${msg("Page List")}:
                   </div>
-                  <div class="text-lg">${msg("One or more known URLs")}</div>
+                  <div class="text-lg">${msg("One or more URLs")}</div>
                 </div>
                 <p class="leading-normal text-neutral-700">
                   ${msg(
-                    "Choose this option if you already know the URL of every page you'd like to crawl and don't need to include any additional pages beyond one hop out.",
+                    "Choose this option if you know the URL of every page you'd like to crawl and don't need to include any additional pages beyond one hop out.",
                   )}
                 </p>
               </figcaption>
@@ -75,7 +75,7 @@ export class NewWorkflowDialog extends TailwindElement {
               <figcaption class="p-1">
                 <div class="leading none my-2 font-semibold">
                   <div class="transition-colors group-hover:text-primary-700">
-                    ${msg("Seeded Crawl")}:
+                    ${msg("Site Crawl")}:
                   </div>
                   <div class="text-lg">${msg("Website or directory")}</div>
                 </div>
@@ -93,7 +93,9 @@ export class NewWorkflowDialog extends TailwindElement {
           @sl-hide=${this.stopProp}
           @sl-after-hide=${this.stopProp}
         >
-          <p class="mb-3">${msg(html`Choose <strong>URL List</strong> if:`)}</p>
+          <p class="mb-3">
+            ${msg(html`Choose <strong>Page List</strong> if:`)}
+          </p>
           <ul class="mb-3 list-disc pl-5">
             <li>${msg("You want to archive a single page on a website")}</li>
             <li>
@@ -107,13 +109,13 @@ export class NewWorkflowDialog extends TailwindElement {
           </ul>
           <p class="mb-3">
             ${msg(
-              html`A URL List workflow is simpler to configure, since you don't
+              html`A Page List workflow is simpler to configure, since you don't
               need to worry about configuring the workflow to exclude parts of
               the website that you may not want to archive.`,
             )}
           </p>
           <p class="mb-3">
-            ${msg(html`Choose <strong>Seeded Crawl</strong> if:`)}
+            ${msg(html`Choose <strong>Site Crawl</strong> if:`)}
           </p>
           <ul class="mb-3 list-disc pl-5">
             <li>${msg("You want to archive an entire website")}</li>
@@ -132,7 +134,7 @@ export class NewWorkflowDialog extends TailwindElement {
           </ul>
           <p class="mb-3">
             ${msg(
-              html`Seeded Crawl workflows are great for advanced use cases where
+              html`Site Crawl workflows are great for advanced use cases where
               you don't need to know every single URL that you want to archive.
               You can configure reasonable crawl limits and page limits so that
               you don't crawl more than you need to.`,
