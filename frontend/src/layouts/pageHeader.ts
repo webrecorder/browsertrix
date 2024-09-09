@@ -26,7 +26,7 @@ function navigateBreadcrumb(e: MouseEvent, href: string) {
 
 export function breadcrumbSeparator() {
   return html`<span
-    class="font-mono font-thin text-neutral-300"
+    class="font-mono font-thin text-neutral-400"
     role="separator"
     >/</span
   > `;
@@ -43,8 +43,8 @@ function breadcrumbLink({ href, content }: Breadcrumb, classNames?: string) {
       class=${clsx(
         tw`flex h-5 items-center gap-1 truncate whitespace-nowrap leading-5`,
         href
-          ? tw`font-medium text-neutral-400 transition-colors hover:text-neutral-500`
-          : null,
+          ? tw`font-medium text-neutral-500 transition-colors hover:text-neutral-700`
+          : tw`font-medium text-primary`,
         classNames,
       )}
       href=${ifDefined(href)}
@@ -59,7 +59,7 @@ function breadcrumbLink({ href, content }: Breadcrumb, classNames?: string) {
 
 function pageBreadcrumbs(breadcrumbs: Breadcrumb[]) {
   return html`
-    <nav class="flex flex-wrap items-center gap-2 text-neutral-400">
+    <nav class="flex flex-wrap items-center gap-2 text-neutral-500">
       ${breadcrumbs.length
         ? breadcrumbs.map(
             (breadcrumb, i) => html`
@@ -78,7 +78,7 @@ export function pageBack({ href, content }: Breadcrumb) {
   return breadcrumbLink({
     href,
     content: html`
-      <sl-icon name="chevron-left" class="size-4 text-neutral-400"></sl-icon>
+      <sl-icon name="chevron-left" class="size-4 text-neutral-500"></sl-icon>
       ${content ? html` ${msg("Back to")} ${content}` : msg("Back")}
     `,
   });
