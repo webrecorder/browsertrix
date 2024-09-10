@@ -1,13 +1,13 @@
 import type { CrawlState } from "./crawlState";
 
-type ScopeType =
+export type ScopeType =
   | "prefix"
   | "host"
   | "domain"
   | "page"
   | "page-spa"
-  | "any"
-  | "custom";
+  | "custom"
+  | "any";
 
 export type Seed = {
   url: string;

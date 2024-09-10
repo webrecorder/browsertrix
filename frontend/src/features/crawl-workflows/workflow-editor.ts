@@ -48,7 +48,12 @@ import type { QueueExclusionTable } from "@/features/crawl-workflows/queue-exclu
 import { infoCol, inputCol } from "@/layouts/columns";
 import infoTextStrings from "@/strings/crawl-workflows/infoText";
 import sectionStrings from "@/strings/crawl-workflows/section";
-import type { CrawlConfig, Seed, WorkflowParams } from "@/types/crawler";
+import type {
+  CrawlConfig,
+  ScopeType,
+  Seed,
+  WorkflowParams,
+} from "@/types/crawler";
 import { isApiError, type Detail } from "@/utils/api";
 import { DEPTH_SUPPORTED_SCOPES } from "@/utils/crawler";
 import {
@@ -73,6 +78,8 @@ import {
   type WorkflowDefaults,
 } from "@/utils/workflow";
 
+type CrawlScope = Exclude<ScopeType, "any"> | PageListScopeType;
+type PageListScopeType = "page-list";
 type NewCrawlConfigParams = WorkflowParams & {
   runNow: boolean;
   config: WorkflowParams["config"] & {
@@ -159,6 +166,10 @@ function validURL(url: string) {
   );
 }
 
+function isPageScopeType(scope?: ScopeType | PageListScopeType) {
+  return scope === "page" || scope === "page-list";
+}
+
 const trimArray = flow(uniq, compact);
 const urlListToArray = flow(
   (str: string) => (str.length ? str.trim().split(/\s+/g) : []),
@@ -238,17 +249,14 @@ export class WorkflowEditor extends BtrixElement {
 
   private readonly daysOfWeek = getLocalizedWeekDays();
 
-  private readonly scopeTypeLabels: Record<
-    NonNullable<FormState["scopeType"]>,
-    string
-  > = {
+  private readonly scopeTypeLabels: Record<CrawlScope, string> = {
     prefix: msg("Pages in a Directory"),
     host: msg("Pages on a Domain"),
     domain: msg("Pages on a Domain & Subdomains"),
-    "page-spa": msg("Hashtag Links on Single Page"),
-    page: msg("Page List"),
+    "page-spa": msg("Hashtags on a Page"),
+    page: msg("Single Page"),
+    "page-list": msg("List of Pages"),
     custom: msg("Custom Page Prefix"),
-    any: msg("Any"),
   };
 
   private readonly scheduleTypeLabels: Record<
@@ -708,7 +716,10 @@ export class WorkflowEditor extends BtrixElement {
               (e.target as HTMLSelectElement).value as FormState["scopeType"],
             )}
         >
-          <sl-option value="page"> ${this.scopeTypeLabels["page"]} </sl-option>
+          <sl-option value="page">${this.scopeTypeLabels["page"]}</sl-option>
+          <sl-option value="page-list">
+            ${this.scopeTypeLabels["page-list"]}
+          </sl-option>
           <sl-option value="page-spa">
             ${this.scopeTypeLabels["page-spa"]}
           </sl-option>
@@ -727,10 +738,11 @@ export class WorkflowEditor extends BtrixElement {
       ${this.renderHelpTextCol(
         msg(`Tells the crawler which pages it can visit.`),
       )}
-      ${this.formState.scopeType === "page"
+      ${isPageScopeType(this.formState.scopeType)
         ? this.renderPageScope()
         : this.renderSiteScope()}
-      ${this.formState.scopeType !== "page" || this.formState.includeLinkedPages
+      ${!isPageScopeType(this.formState.scopeType) ||
+      this.formState.includeLinkedPages
         ? html`
             <div class="col-span-5">
               <btrix-details ?open=${exclusions.length > 0}>
@@ -768,59 +780,102 @@ export class WorkflowEditor extends BtrixElement {
 
   private readonly renderPageScope = () => {
     return html`
-      ${inputCol(html`
-        <sl-textarea
-          name="urlList"
-          label=${msg("Page URL(s)")}
-          rows="3"
-          autocomplete="off"
-          inputmode="url"
-          value=${this.formState.urlList}
-          placeholder=${`https://webrecorder.net/blog
+      ${this.formState.scopeType === "page"
+        ? html`
+            ${inputCol(html`
+              <sl-input
+                name="urlList"
+                label=${msg("Page URL")}
+                autocomplete="off"
+                inputmode="url"
+                placeholder="https://webrecorder.net/blog"
+                value=${this.formState.urlList}
+                required
+                @sl-input=${async (e: Event) => {
+                  const inputEl = e.target as SlInput;
+                  await inputEl.updateComplete;
+                  this.updateFormState(
+                    {
+                      urlList: inputEl.value,
+                    },
+                    true,
+                  );
+                  if (!inputEl.checkValidity() && validURL(inputEl.value)) {
+                    inputEl.setCustomValidity("");
+                    inputEl.helpText = "";
+                  }
+                }}
+                @sl-blur=${async (e: Event) => {
+                  const inputEl = e.target as SlInput;
+                  await inputEl.updateComplete;
+                  if (inputEl.value && !validURL(inputEl.value)) {
+                    const text = msg("Please enter a valid URL.");
+                    inputEl.helpText = text;
+                    inputEl.setCustomValidity(text);
+                  }
+                }}
+              >
+              </sl-input>
+            `)}
+            ${this.renderHelpTextCol(
+              msg(str`The crawler will visit this URL.`),
+            )}
+          `
+        : html`
+            ${inputCol(html`
+              <sl-textarea
+                name="urlList"
+                label=${msg("Page URLs")}
+                rows="3"
+                autocomplete="off"
+                inputmode="url"
+                value=${this.formState.urlList}
+                placeholder=${`https://webrecorder.net/blog
 https://archiveweb.page/guide`}
-          @keyup=${async (e: KeyboardEvent) => {
-            if (e.key === "Enter") {
-              const inputEl = e.target as SlInput;
-              await inputEl.updateComplete;
-              if (!inputEl.value) return;
-              const { isValid, helpText } = this.validateUrlList(
-                inputEl.value,
-                MAX_ADDITIONAL_URLS,
-              );
-              inputEl.helpText = helpText;
-              if (isValid) {
-                inputEl.setCustomValidity("");
-              } else {
-                inputEl.setCustomValidity(helpText);
-              }
-            }
-          }}
-          @sl-input=${(e: CustomEvent) => {
-            const inputEl = e.target as SlInput;
-            if (!inputEl.value) {
-              inputEl.helpText = msg("At least 1 URL is required.");
-            }
-          }}
-          @sl-change=${async (e: CustomEvent) => {
-            const inputEl = e.target as SlInput;
-            if (!inputEl.value) return;
-            const { isValid, helpText } = this.validateUrlList(
-              inputEl.value,
-              MAX_ADDITIONAL_URLS,
-            );
-            inputEl.helpText = helpText;
-            if (isValid) {
-              inputEl.setCustomValidity("");
-            } else {
-              inputEl.setCustomValidity(helpText);
-            }
-          }}
-        ></sl-textarea>
-      `)}
-      ${this.renderHelpTextCol(
-        msg(str`The crawler will visit and record each URL listed here. Other
-              links on these pages will not be crawled. You can enter up to ${MAX_ADDITIONAL_URLS.toLocaleString()} URLs.`),
-      )}
+                @keyup=${async (e: KeyboardEvent) => {
+                  if (e.key === "Enter") {
+                    const inputEl = e.target as SlInput;
+                    await inputEl.updateComplete;
+                    if (!inputEl.value) return;
+                    const { isValid, helpText } = this.validateUrlList(
+                      inputEl.value,
+                      MAX_ADDITIONAL_URLS,
+                    );
+                    inputEl.helpText = helpText;
+                    if (isValid) {
+                      inputEl.setCustomValidity("");
+                    } else {
+                      inputEl.setCustomValidity(helpText);
+                    }
+                  }
+                }}
+                @sl-input=${(e: CustomEvent) => {
+                  const inputEl = e.target as SlInput;
+                  if (!inputEl.value) {
+                    inputEl.helpText = msg("At least 1 URL is required.");
+                  }
+                }}
+                @sl-change=${async (e: CustomEvent) => {
+                  const inputEl = e.target as SlInput;
+                  if (!inputEl.value) return;
+                  const { isValid, helpText } = this.validateUrlList(
+                    inputEl.value,
+                    MAX_ADDITIONAL_URLS,
+                  );
+                  inputEl.helpText = helpText;
+                  if (isValid) {
+                    inputEl.setCustomValidity("");
+                  } else {
+                    inputEl.setCustomValidity(helpText);
+                  }
+                }}
+              ></sl-textarea>
+            `)}
+            ${this.renderHelpTextCol(
+              msg(str`The crawler will visit and record each URL listed here. Other
+              links on these pages will not be crawled unless “one hop out” is enabled. You can enter up to ${MAX_ADDITIONAL_URLS.toLocaleString()} URLs.`),
+            )}
+          `}
       ${inputCol(html`
         <sl-checkbox
           name="includeLinkedPages"
@@ -1099,7 +1154,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     const minPages = Math.max(
       1,
       urlListToArray(this.formState.urlList).length +
-        (this.formState.scopeType === "page" ? 0 : 1),
+        (isPageScopeType(this.formState.scopeType) ? 0 : 1),
     );
     const onInputMinMax = async (e: CustomEvent) => {
       const inputEl = e.target as SlInput;
@@ -1635,10 +1690,10 @@ https://archiveweb.page/images/${"logo.svg"}`}
     };
     const urls = urlListToArray(this.formState.urlList);
 
-    if (prevScopeType === "page") {
+    if (isPageScopeType(prevScopeType)) {
       formState.primarySeedUrl = urls[0];
       formState.urlList = urls.slice(1).join("\n");
-    } else if (value === "page") {
+    } else if (isPageScopeType(value)) {
       formState.urlList = [this.formState.primarySeedUrl, ...urls].join("\n");
     }
 
@@ -1646,7 +1701,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
   }
 
   private hasRequiredFields(): boolean {
-    if (this.formState.scopeType === "page") {
+    if (isPageScopeType(this.formState.scopeType)) {
       return Boolean(this.formState.urlList);
     }
 
@@ -2030,7 +2085,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       tags: this.formState.tags,
       autoAddCollections: this.formState.autoAddCollections,
       config: {
-        ...(this.formState.scopeType === "page"
+        ...(isPageScopeType(this.formState.scopeType)
           ? this.parseUrlListConfig()
           : this.parseSeededConfig()),
         behaviorTimeout: this.formState.behaviorTimeoutSeconds,
