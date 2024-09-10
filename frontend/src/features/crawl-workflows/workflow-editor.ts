@@ -78,8 +78,6 @@ import {
   type WorkflowDefaults,
 } from "@/utils/workflow";
 
-type CrawlScope = Exclude<ScopeType, "any"> | PageListScopeType;
-type PageListScopeType = "page-list";
 type NewCrawlConfigParams = WorkflowParams & {
   runNow: boolean;
   config: WorkflowParams["config"] & {
@@ -166,13 +164,13 @@ function validURL(url: string) {
   );
 }
 
-function isPageScopeType(scope?: ScopeType | PageListScopeType) {
+function isPageScopeType(scope?: FormState["scopeType"]) {
   return scope === "page" || scope === "page-list";
 }
 
 const trimArray = flow(uniq, compact);
 const urlListToArray = flow(
-  (str: string) => (str.length ? str.trim().split(/\s+/g) : []),
+  (str?: string) => (str?.length ? str.trim().split(/\s+/g) : []),
   trimArray,
 );
 
@@ -191,6 +189,9 @@ type CrawlConfigResponse = {
 export class WorkflowEditor extends BtrixElement {
   @property({ type: String })
   configId?: string;
+
+  @property({ type: String })
+  initialScopeType?: "page-list" | "prefix";
 
   @property({ type: Object })
   initialWorkflow?: WorkflowParams;
@@ -249,11 +250,11 @@ export class WorkflowEditor extends BtrixElement {
 
   private readonly daysOfWeek = getLocalizedWeekDays();
 
-  private readonly scopeTypeLabels: Record<CrawlScope, string> = {
+  private readonly scopeTypeLabels: Record<FormState["scopeType"], string> = {
     prefix: msg("Pages in a Directory"),
     host: msg("Pages on a Domain"),
     domain: msg("Pages on a Domain & Subdomains"),
-    "page-spa": msg("Hashtags on a Page"),
+    "page-spa": msg("Page Hashes"),
     page: msg("Single Page"),
     "page-list": msg("List of Pages"),
     custom: msg("Custom Page Prefix"),
@@ -366,15 +367,18 @@ export class WorkflowEditor extends BtrixElement {
 
   private initializeEditor() {
     this.progressState = getDefaultProgressState(Boolean(this.configId));
-    this.formState = getInitialFormState({
+    const formState = getInitialFormState({
       configId: this.configId,
       initialSeeds: this.initialSeeds,
       initialWorkflow: this.initialWorkflow,
       org: this.org,
     });
-    if (!this.formState.exclusions?.length) {
-      this.formState.exclusions = [""]; // Add empty slot
+
+    if (this.initialScopeType) {
+      formState.scopeType = this.initialScopeType;
     }
+
+    this.formState = formState;
   }
 
   render() {
@@ -710,7 +714,7 @@ export class WorkflowEditor extends BtrixElement {
         <sl-select
           name="scopeType"
           label=${msg("Crawl Scope")}
-          value=${this.formState.scopeType!}
+          value=${this.formState.scopeType}
           @sl-change=${(e: Event) =>
             this.changeScopeType(
               (e.target as HTMLSelectElement).value as FormState["scopeType"],
@@ -786,9 +790,9 @@ export class WorkflowEditor extends BtrixElement {
               <sl-input
                 name="urlList"
                 label=${msg("Page URL")}
+                placeholder="https://webrecorder.net/blog"
                 autocomplete="off"
                 inputmode="url"
-                placeholder="https://webrecorder.net/blog"
                 value=${this.formState.urlList}
                 required
                 @sl-input=${async (e: Event) => {
@@ -826,12 +830,13 @@ export class WorkflowEditor extends BtrixElement {
               <sl-textarea
                 name="urlList"
                 label=${msg("Page URLs")}
+                placeholder=${`https://webrecorder.net/blog
+https://archiveweb.page/guide`}
                 rows="3"
                 autocomplete="off"
                 inputmode="url"
                 value=${this.formState.urlList}
-                placeholder=${`https://webrecorder.net/blog
-https://archiveweb.page/guide`}
+                required
                 @keyup=${async (e: KeyboardEvent) => {
                   if (e.key === "Enter") {
                     const inputEl = e.target as SlInput;
@@ -940,16 +945,13 @@ https://archiveweb.page/guide`}
         break;
       case "page-spa":
         helpText = msg(
-          html`Will only visit
-            <span class="break-word text-blue-500"
-              >${exampleDomain}${examplePathname}</span
-            >
-            hash anchor links, e.g.
+          html`Will crawl hash anchor links as pages. For example,
             <span class="break-word text-blue-500"
               >${exampleDomain}${examplePathname}</span
             ><span class="break-word font-medium text-blue-500"
               >#example-page</span
-            >`,
+            >
+            will be treated as a separate page.`,
         );
         break;
       case "custom":
@@ -1030,7 +1032,7 @@ https://example.net`}
         `,
       )}
       ${when(
-        DEPTH_SUPPORTED_SCOPES.includes(this.formState.scopeType!),
+        DEPTH_SUPPORTED_SCOPES.includes(this.formState.scopeType),
         () => html`
           ${inputCol(html`
             <sl-input
@@ -1140,8 +1142,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
               ></sl-textarea>
             `)}
             ${this.renderHelpTextCol(
-              msg(str`The crawler will visit and record each URL listed here. Other
-              links on these pages will not be crawled. You can enter up to ${MAX_ADDITIONAL_URLS.toLocaleString()} URLs.`),
+              msg(
+                str`The crawler will visit and record each URL listed here. You can enter up to ${MAX_ADDITIONAL_URLS.toLocaleString()} URLs.`,
+              ),
             )}
           </div>
         </btrix-details>
@@ -1690,11 +1693,20 @@ https://archiveweb.page/images/${"logo.svg"}`}
     };
     const urls = urlListToArray(this.formState.urlList);
 
-    if (isPageScopeType(prevScopeType)) {
-      formState.primarySeedUrl = urls[0];
-      formState.urlList = urls.slice(1).join("\n");
-    } else if (isPageScopeType(value)) {
-      formState.urlList = [this.formState.primarySeedUrl, ...urls].join("\n");
+    const isPageScope = isPageScopeType(value);
+    const isPrevPageScope = isPageScopeType(prevScopeType);
+
+    if (isPageScope === isPrevPageScope) {
+      if (isPageScope) {
+        formState.urlList = urls[0];
+      }
+    } else {
+      if (isPrevPageScope) {
+        formState.primarySeedUrl = urls[0];
+        formState.urlList = urls.slice(1).join("\n");
+      } else if (isPageScope) {
+        formState.urlList = [this.formState.primarySeedUrl, ...urls].join("\n");
+      }
     }
 
     this.updateFormState(formState);
@@ -2117,7 +2129,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         const newSeed: Seed = { url: seedUrl, scopeType: "page" };
         return newSeed;
       }),
-      scopeType: "page" as FormState["scopeType"],
+      scopeType: "page" as NewCrawlConfigParams["config"]["scopeType"],
       extraHops: this.formState.includeLinkedPages ? 1 : 0,
       useSitemap: false,
       failOnFailedSeed: this.formState.failOnFailedSeed,
@@ -2147,7 +2159,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       scopeType:
         this.formState.scopeType === "custom"
           ? "prefix"
-          : this.formState.scopeType,
+          : (this.formState.scopeType as ScopeType),
       include:
         this.formState.scopeType === "custom"
           ? [...includeUrlList.map((url) => regexEscape(url))]
@@ -2155,13 +2167,13 @@ https://archiveweb.page/images/${"logo.svg"}`}
       extraHops: this.formState.includeLinkedPages ? 1 : 0,
     };
 
-    if (DEPTH_SUPPORTED_SCOPES.includes(this.formState.scopeType!)) {
+    if (DEPTH_SUPPORTED_SCOPES.includes(this.formState.scopeType)) {
       primarySeed.depth = this.formState.maxScopeDepth;
     }
 
     const config = {
       seeds: [primarySeed, ...additionalSeedUrlList],
-      scopeType: this.formState.scopeType,
+      scopeType: this.formState.scopeType as ScopeType,
       useSitemap: this.formState.useSitemap,
       failOnFailedSeed: false,
     };

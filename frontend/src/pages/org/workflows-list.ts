@@ -244,7 +244,7 @@ export class WorkflowsList extends LiteElement {
                     ${msg("New Workflow...")}
                   </sl-button>
                   <sl-menu>
-                    <sl-menu-item value="page">
+                    <sl-menu-item value="page-list">
                       ${msg("Page List")}
                     </sl-menu-item>
                     <sl-menu-item value="prefix">

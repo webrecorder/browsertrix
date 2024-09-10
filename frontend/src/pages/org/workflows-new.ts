@@ -10,7 +10,6 @@ import type { SelectNewDialogEvent } from ".";
 
 import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
 import LiteElement, { html } from "@/utils/LiteElement";
-import { getDefaultFormState } from "@/utils/workflow";
 
 const defaultValue = {
   name: "",
@@ -54,8 +53,7 @@ export class WorkflowsNew extends LiteElement {
   initialSeeds?: Seed[];
 
   @property({ type: String })
-  scopeType: WorkflowParams["config"]["scopeType"] =
-    getDefaultFormState().scopeType;
+  scopeType: "page-list" | "prefix" = "page-list";
 
   @property({ type: Object })
   initialWorkflow?: WorkflowParams;
@@ -103,17 +101,11 @@ export class WorkflowsNew extends LiteElement {
             crawlerChannel: org.crawlingDefaults?.crawlerChannel,
           },
           this.initialWorkflow || {},
-          this.scopeType
-            ? {
-                config: {
-                  scopeType: this.scopeType,
-                },
-              }
-            : {},
         );
 
         return html`
           <btrix-workflow-editor
+            .initialScopeType=${this.scopeType}
             .initialWorkflow=${initialWorkflow}
             .initialSeeds=${this.initialSeeds}
             @reset=${async (e: Event) => {

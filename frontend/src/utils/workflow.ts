@@ -7,6 +7,7 @@ import { getLang } from "./localization";
 import type { Tags } from "@/components/ui/tag-input";
 import type {
   Profile,
+  ScopeType,
   Seed,
   SeedConfig,
   WorkflowParams,
@@ -55,7 +56,7 @@ export type FormState = {
   postLoadDelaySeconds: number | null;
   maxCrawlSizeGB: number;
   maxScopeDepth: number | null;
-  scopeType: WorkflowParams["config"]["scopeType"];
+  scopeType: Exclude<ScopeType, "any"> | "page-list";
   exclusions: WorkflowParams["config"]["exclude"];
   pageLimit: WorkflowParams["config"]["limit"];
   scale: WorkflowParams["scale"];
@@ -179,10 +180,6 @@ export function getInitialFormState(params: {
     // Treat "custom" like URL list
     if (params.initialSeeds) {
       formState.urlList = mapSeedToUrl(params.initialSeeds).join("\n");
-    }
-
-    if (params.initialWorkflow.jobType === "custom") {
-      formState.scopeType = seedsConfig.scopeType || "page";
     }
 
     formState.failOnFailedSeed = seedsConfig.failOnFailedSeed;
