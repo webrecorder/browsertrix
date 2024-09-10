@@ -11,7 +11,7 @@ import type { Profile, ProfileWorkflow } from "./types";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
 import type { BrowserConnectionChange } from "@/features/browser-profiles/profile-browser";
-import { pageBreadcrumbs } from "@/layouts/pageHeader";
+import { pageNav } from "@/layouts/pageHeader";
 import { isApiError } from "@/utils/api";
 import { maxLengthValidator } from "@/utils/form";
 import { formatNumber, getLocale } from "@/utils/localization";
@@ -323,7 +323,7 @@ export class BrowserProfilesDetail extends BtrixElement {
       },
     ];
 
-    return pageBreadcrumbs(breadcrumbs);
+    return pageNav(breadcrumbs);
   }
 
   private renderCrawlWorkflows() {
@@ -336,7 +336,7 @@ export class BrowserProfilesDetail extends BtrixElement {
             >
               <a
                 class="block p-2 transition-colors focus-within:bg-neutral-50 hover:bg-neutral-50"
-                href=${`${this.navigate.orgBasePath}/workflows/crawl/${workflow.id}`}
+                href=${`${this.navigate.orgBasePath}/workflows/${workflow.id}`}
                 @click=${this.navigate.link}
               >
                 ${this.renderWorkflowName(workflow)}

@@ -18,7 +18,7 @@ import type { QuotaUpdateDetail } from "@/controllers/api";
 import needLogin from "@/decorators/needLogin";
 import type { CollectionSavedEvent } from "@/features/collections/collection-metadata-dialog";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
-import type { Crawl, JobType } from "@/types/crawler";
+import type { JobType } from "@/types/crawler";
 import type { UserOrg } from "@/types/user";
 import { isApiError } from "@/utils/api";
 import type { ViewState } from "@/utils/APIRouter";
@@ -45,22 +45,22 @@ import(/* webpackChunkName: "org" */ "./browser-profiles-new");
 const RESOURCE_NAMES = ["workflow", "collection", "browser-profile", "upload"];
 type ResourceName = (typeof RESOURCE_NAMES)[number];
 export type SelectNewDialogEvent = CustomEvent<ResourceName>;
+type ArchivedItemPageParams = {
+  itemId?: string;
+  workflowId?: string;
+  collectionId?: string;
+};
 export type OrgParams = {
   home: Record<string, never>;
-  workflows: {
-    workflowId?: string;
-    itemId?: string;
+  workflows: ArchivedItemPageParams & {
     jobType?: JobType;
     new?: ResourceName;
-  };
-  items: {
-    itemType?: Crawl["type"];
-    itemId?: string;
     itemPageId?: string;
     qaTab?: QATab;
     qaRunId?: string;
-    workflowId?: string;
-    collectionId?: string;
+  };
+  items: ArchivedItemPageParams & {
+    itemType?: string;
   };
   "browser-profiles": {
     browserProfileId?: string;
@@ -73,10 +73,7 @@ export type OrgParams = {
     profileId?: string;
     navigateUrl?: string;
   };
-  collections: {
-    collectionId?: string;
-    itemId?: string;
-    itemType?: string;
+  collections: ArchivedItemPageParams & {
     collectionTab?: string;
   };
   settings: {
@@ -181,6 +178,11 @@ export class Org extends LiteElement {
           this.navTo(`${url.pathname}${url.search}`);
         }
       }
+    } else if (changedProperties.has("params")) {
+      const dialogName = this.getDialogName();
+      if (dialogName && !this.openDialogName) {
+        this.openDialog(dialogName);
+      }
     }
   }
 
@@ -222,8 +224,16 @@ export class Org extends LiteElement {
       }
     }
     // Sync URL to create dialog
+    const dialogName = this.getDialogName();
+    if (dialogName) this.openDialog(dialogName);
+  }
+
+  private getDialogName() {
     const url = new URL(window.location.href);
-    const dialogName = url.searchParams.get("new");
+    return url.searchParams.get("new");
+  }
+
+  private openDialog(dialogName: string) {
     if (dialogName && RESOURCE_NAMES.includes(dialogName)) {
       this.openDialogName = dialogName;
       this.isCreateDialogVisible = true;
@@ -231,8 +241,7 @@ export class Org extends LiteElement {
   }
 
   render() {
-    const noMaxWidth =
-      this.orgTab === "items" && (this.params as OrgParams["items"]).qaTab;
+    const noMaxWidth = (this.params as OrgParams["workflows"]).qaTab;
 
     return html`
       <btrix-document-title
@@ -328,7 +337,7 @@ export class Org extends LiteElement {
           ${this.renderNavTab({
             tabName: "workflows",
             label: msg("Crawling"),
-            path: "workflows/crawls",
+            path: "workflows",
           })}
           ${this.renderNavTab({
             tabName: "items",
@@ -460,24 +469,8 @@ export class Org extends LiteElement {
     const params = this.params as OrgParams["items"];
 
     if (params.itemId) {
-      if (params.qaTab) {
-        if (!this.appState.isCrawler) {
-          return html`<btrix-not-found
-            class="flex items-center justify-center"
-          ></btrix-not-found>`;
-        }
-
-        return html`<btrix-archived-item-qa
-          class="flex-1"
-          itemId=${params.itemId}
-          itemPageId=${ifDefined(params.itemPageId)}
-          qaRunId=${ifDefined(params.qaRunId)}
-          tab=${params.qaTab}
-        ></btrix-archived-item-qa>`;
-      }
-
       return html` <btrix-archived-item-detail
-        crawlId=${params.itemId}
+        itemId=${params.itemId}
         collectionId=${params.collectionId || ""}
         workflowId=${params.workflowId || ""}
         itemType=${params.itemType || "crawl"}
@@ -501,8 +494,26 @@ export class Org extends LiteElement {
 
     if (workflowId) {
       if (params.itemId) {
-        return html`<btrix-archived-item-detail
-          crawlId=${params.itemId}
+        if (params.qaTab) {
+          if (!this.appState.isCrawler) {
+            return html`<btrix-not-found
+              class="flex items-center justify-center"
+            ></btrix-not-found>`;
+          }
+
+          return html`<btrix-archived-item-qa
+            class="flex-1"
+            workflowId=${workflowId}
+            itemId=${params.itemId}
+            itemPageId=${ifDefined(params.itemPageId)}
+            qaRunId=${ifDefined(params.qaRunId)}
+            tab=${params.qaTab}
+          ></btrix-archived-item-qa>`;
+        }
+
+        return html` <btrix-archived-item-detail
+          itemId=${params.itemId}
+          collectionId=${params.collectionId || ""}
           workflowId=${workflowId}
           itemType="crawl"
           ?isCrawler=${this.appState.isCrawler}
@@ -525,7 +536,7 @@ export class Org extends LiteElement {
       const { workflow, seeds } = this.viewStateData || {};
 
       return html` <btrix-workflows-new
-        class="col-span-5 mt-6"
+        class="col-span-5"
         ?isCrawler=${this.appState.isCrawler}
         .initialWorkflow=${workflow}
         .initialSeeds=${seeds}
@@ -577,14 +588,6 @@ export class Org extends LiteElement {
     const params = this.params as OrgParams["collections"];
 
     if (params.collectionId) {
-      if (params.itemId) {
-        return html`<btrix-archived-item-detail
-          crawlId=${params.itemId}
-          collectionId=${params.collectionId}
-          itemType=${ifDefined(params.itemType)}
-          ?isCrawler=${this.appState.isCrawler}
-        ></btrix-archived-item-detail>`;
-      }
       return html`<btrix-collection-detail
         collectionId=${params.collectionId}
         collectionTab=${(params.collectionTab as CollectionTab | undefined) ||

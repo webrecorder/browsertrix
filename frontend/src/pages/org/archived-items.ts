@@ -559,7 +559,7 @@ export class CrawlsList extends BtrixElement {
 
   private readonly renderArchivedItem = (item: ArchivedItem) => html`
     <btrix-archived-item-list-item
-      href=${`${this.navigate.orgBasePath}/items/${item.type}/${item.id}`}
+      href=${`${this.navigate.orgBasePath}/${item.type === "crawl" ? `workflows/${item.cid}/crawls` : `items/${item.type}`}/${item.id}`}
       .item=${item}
       ?showStatus=${this.itemType !== null}
     >
@@ -598,7 +598,7 @@ export class CrawlsList extends BtrixElement {
             <sl-menu-item
               @click=${() =>
                 this.navigate.to(
-                  `${this.navigate.orgBasePath}/workflows/crawl/${item.cid}`,
+                  `${this.navigate.orgBasePath}/workflows/${item.cid}`,
                 )}
             >
               <sl-icon name="arrow-return-right" slot="prefix"></sl-icon>
