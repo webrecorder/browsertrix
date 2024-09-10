@@ -10,6 +10,7 @@ import RegexColorize from "regex-colorize";
 import { RelativeDuration } from "./relative-duration";
 
 import type { CrawlConfig, Seed, SeedConfig } from "@/pages/org/types";
+import scopeTypeLabel from "@/strings/crawl-workflows/scopeType";
 import sectionStrings from "@/strings/crawl-workflows/section";
 import type { Collection } from "@/types/collection";
 import { isApiError } from "@/utils/api";
@@ -53,19 +54,6 @@ export class ConfigDetails extends LiteElement {
 
   @state()
   private collections: Collection[] = [];
-
-  private readonly scopeTypeLabels: Record<
-    NonNullable<CrawlConfig["config"]["scopeType"]>,
-    string
-  > = {
-    prefix: msg("Path Begins with This URL"),
-    host: msg("Pages on This Domain"),
-    domain: msg("Pages on This Domain & Subdomains"),
-    "page-spa": msg("Single Page App (In-Page Links Only)"),
-    page: msg("Page"),
-    custom: msg("Custom"),
-    any: msg("Any"),
-  };
 
   async connectedCallback() {
     super.connectedCallback();
@@ -392,9 +380,7 @@ export class ConfigDetails extends LiteElement {
       )}
       ${this.renderSetting(
         msg("Scope"),
-        this.scopeTypeLabels[
-          primarySeedConfig!.scopeType || seedsConfig.scopeType!
-        ],
+        scopeTypeLabel[primarySeedConfig!.scopeType || seedsConfig.scopeType!],
       )}
       ${this.renderSetting(
         msg("Extra URL Prefixes in Scope"),

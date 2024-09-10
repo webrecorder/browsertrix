@@ -161,7 +161,6 @@
   }
 
   sl-menu-label::part(base) {
-    /* color: var(--sl-color-neutral-400); */
     font-weight: var(--sl-font-weight-medium);
   }
 

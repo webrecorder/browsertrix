@@ -42,6 +42,8 @@ export function defaultLabel(value: unknown): string {
   return "";
 }
 
+export type PageListScopeType = "page-list";
+
 export type FormState = {
   primarySeedUrl: string;
   urlList: string;
@@ -56,7 +58,7 @@ export type FormState = {
   postLoadDelaySeconds: number | null;
   maxCrawlSizeGB: number;
   maxScopeDepth: number | null;
-  scopeType: Exclude<ScopeType, "any"> | "page-list";
+  scopeType: Exclude<ScopeType, "any"> | PageListScopeType;
   exclusions: WorkflowParams["config"]["exclude"];
   pageLimit: WorkflowParams["config"]["limit"];
   scale: WorkflowParams["scale"];

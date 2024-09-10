@@ -47,6 +47,7 @@ import type { CollectionsChangeEvent } from "@/features/collections/collections-
 import type { QueueExclusionTable } from "@/features/crawl-workflows/queue-exclusion-table";
 import { infoCol, inputCol } from "@/layouts/columns";
 import infoTextStrings from "@/strings/crawl-workflows/infoText";
+import scopeTypeLabels from "@/strings/crawl-workflows/scopeType";
 import sectionStrings from "@/strings/crawl-workflows/section";
 import type {
   CrawlConfig,
@@ -248,16 +249,6 @@ export class WorkflowEditor extends BtrixElement {
   }
 
   private readonly daysOfWeek = getLocalizedWeekDays();
-
-  private readonly scopeTypeLabels: Record<FormState["scopeType"], string> = {
-    prefix: msg("Pages in a Directory"),
-    host: msg("Pages on a Domain"),
-    domain: msg("Pages on a Domain & Subdomains"),
-    "page-spa": msg("Page Hashes"),
-    page: msg("Single Page"),
-    "page-list": msg("List of Pages"),
-    custom: msg("Custom Page Prefix"),
-  };
 
   private readonly scheduleTypeLabels: Record<
     FormState["scheduleType"],
@@ -719,26 +710,22 @@ export class WorkflowEditor extends BtrixElement {
               (e.target as HTMLSelectElement).value as FormState["scopeType"],
             )}
         >
-          <sl-menu-label>${msg("Page Crawl")}</sl-menu-label>
-          <sl-option value="page">${this.scopeTypeLabels["page"]}</sl-option>
-          <sl-option value="page-list">
-            ${this.scopeTypeLabels["page-list"]}
-          </sl-option>
-          <sl-divider></sl-divider>
-          <sl-menu-label>${msg("Site Crawl")}</sl-menu-label>
-          <sl-option value="page-spa">
-            ${this.scopeTypeLabels["page-spa"]}
-          </sl-option>
-          <sl-option value="prefix">
-            ${this.scopeTypeLabels["prefix"]}
-          </sl-option>
-          <sl-option value="host"> ${this.scopeTypeLabels["host"]} </sl-option>
-          <sl-option value="domain">
-            ${this.scopeTypeLabels["domain"]}
-          </sl-option>
-          <sl-option value="custom">
-            ${this.scopeTypeLabels["custom"]}
-          </sl-option>
+          ${(
+            [
+              "page",
+              "page-list",
+              "page-spa",
+              "prefix",
+              "host",
+              "domain",
+              "custom",
+            ] as (keyof typeof scopeTypeLabels)[]
+          ).map(
+            (scope) =>
+              html`<sl-option value="${scope}">
+                ${scopeTypeLabels[scope]}
+              </sl-option>`,
+          )}
         </sl-select>
       `)}
       ${this.renderHelpTextCol(
