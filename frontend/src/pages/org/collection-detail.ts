@@ -17,15 +17,10 @@ import type {
   APISortQuery,
 } from "@/types/api";
 import type { Collection } from "@/types/collection";
-<<<<<<< HEAD
-import type { ArchivedItem, Crawl, CrawlState, Upload } from "@/types/crawler";
-import { formatNumber, getLocale } from "@/utils/localization";
-import { pluralOf } from "@/utils/pluralize";
-=======
 import type { ArchivedItem, Crawl, Upload } from "@/types/crawler";
 import type { CrawlState } from "@/types/crawlState";
-import { getLocale } from "@/utils/localization";
->>>>>>> a2d70547 (update crawl state)
+import { formatNumber, getLocale } from "@/utils/localization";
+import { pluralOf } from "@/utils/pluralize";
 
 const ABORT_REASON_THROTTLE = "throttled";
 const DESCRIPTION_MAX_HEIGHT_PX = 200;
