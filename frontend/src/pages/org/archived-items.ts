@@ -8,7 +8,7 @@ import { repeat } from "lit/directives/repeat.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
-import type { ArchivedItem, Crawl, CrawlState, Workflow } from "./types";
+import type { ArchivedItem, Crawl, Workflow } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { CopyButton } from "@/components/ui/copy-button";
@@ -16,8 +16,13 @@ import type { PageChangeEvent } from "@/components/ui/pagination";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { pageHeader } from "@/layouts/pageHeader";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
+import type { CrawlState } from "@/types/crawlState";
 import { isApiError } from "@/utils/api";
-import { finishedCrawlStates, isActive } from "@/utils/crawler";
+import {
+  finishedCrawlStates,
+  isActive,
+  isSuccessfullyFinished,
+} from "@/utils/crawler";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { tw } from "@/utils/tailwind";
 
@@ -622,7 +627,7 @@ export class CrawlsList extends BtrixElement {
         ${msg("Copy Tags")}
       </sl-menu-item>
       ${when(
-        finishedCrawlStates.includes(item.state),
+        isSuccessfullyFinished(item),
         () => html`
           <sl-divider></sl-divider>
           <btrix-menu-item-link
@@ -635,7 +640,7 @@ export class CrawlsList extends BtrixElement {
         `,
       )}
       ${when(
-        this.isCrawler && !isActive(item.state),
+        this.isCrawler && (item.type !== "crawl" || !isActive(item)),
         () => html`
           <sl-divider></sl-divider>
           <sl-menu-item

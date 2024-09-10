@@ -714,42 +714,14 @@
 <trans-unit id="sb62f4eaa41f130ab">
   <source>What would you like to crawl?</source>
 </trans-unit>
-<trans-unit id="s5ffd73b74acb2eaa">
-  <source>Known URLs</source>
-</trans-unit>
-<trans-unit id="sb49c47a3e2f5f21f">
-  <source>Choose this option to crawl a single page, or if you already know the URL of every page you'd like to crawl.</source>
-</trans-unit>
-<trans-unit id="s3c0192cd9205d1e7">
-  <source>Automated Discovery</source>
-</trans-unit>
-<trans-unit id="s6f0073add55cd733">
-  <source>Let the crawler automatically discover pages based on a domain or start page that you specify.</source>
-</trans-unit>
 <trans-unit id="s7a82a346a5c00640">
   <source>Need help deciding?</source>
-</trans-unit>
-<trans-unit id="h5a5d2338204a3ebc">
-  <source>Choose <x id="0" equiv-text="&lt;strong&gt;"/>Known URLs<x id="1" equiv-text="&lt;/strong&gt;"/> (aka a "URL List" crawl
-                type) if:</source>
 </trans-unit>
 <trans-unit id="sb947597b1af186d4">
   <source>You want to archive a single page on a website</source>
 </trans-unit>
-<trans-unit id="sa40db523badc5c03">
-  <source>You're archiving just a few specific pages on a website</source>
-</trans-unit>
 <trans-unit id="sbf17262f3872712d">
   <source>You have a list of URLs that you can copy-and-paste</source>
-</trans-unit>
-<trans-unit id="hc43a8ccecf3cd55a">
-  <source>A URL list is simpler to configure, since you don't need to
-              worry about configuring the workflow to exclude parts of the
-              website that you may not want to archive.</source>
-</trans-unit>
-<trans-unit id="h6dcd9c533c310297">
-  <source>Choose <x id="0" equiv-text="&lt;strong&gt;"/>Automated Discovery<x id="1" equiv-text="&lt;/strong&gt;"/> (aka a "Seeded
-                Crawl" crawl type) if:</source>
 </trans-unit>
 <trans-unit id="sf2a0e93879d8ac24">
   <source>You want to archive an entire website</source>
@@ -761,12 +733,6 @@
 <trans-unit id="h5711c8b307827832">
   <source>You're archiving a website <x id="0" equiv-text="&lt;em&gt;"/>and<x id="1" equiv-text="&lt;/em&gt;"/> external pages
                   linked to from the website</source>
-</trans-unit>
-<trans-unit id="hcc59d4214edd7f7d">
-  <source>Seeded crawls are great for advanced use cases where you
-              don't need to know every single URL that you want to archive. You
-              can configure reasonable crawl limits and page limits so that you
-              don't crawl more than you need to.</source>
 </trans-unit>
 <trans-unit id="hc76a9160bbdb615c">
   <source>Once you choose a crawl type, you can't go back and change
@@ -1224,10 +1190,6 @@
 <trans-unit id="s5d966c90d8dc06e6">
   <source>Are you sure you want to stop the crawl?</source>
 </trans-unit>
-<trans-unit id="h7c0f7620f388e9ec">
-  <source>Started crawl from <x id="0" equiv-text="&lt;strong&gt;${this.renderName(workflow)}&lt;/strong&gt;"/>.
-            <x id="1" equiv-text="&lt;br&gt;&#10;            &lt;a class=&quot;underline hover:no-underline&quot; href=&quot;${this.orgBasePath}/workflows/crawl/${workflow.id}#watch&quot; @click=&quot;${this.navLink.bind(this)}&quot;&gt;"/>Watch crawl<x id="2" equiv-text="&lt;/a&gt;"/></source>
-</trans-unit>
 <trans-unit id="sfecdd5e13f68c9ba">
   <source>Approved</source>
 </trans-unit>
@@ -1453,12 +1415,6 @@
 <trans-unit id="s2e46f937929109fd">
   <source>Uploads</source>
 </trans-unit>
-<trans-unit id="s8a172bf54a0db8da">
-  <source>Viewing Workflow Crawl</source>
-</trans-unit>
-<trans-unit id="scd2ae7722d803b9c">
-  <source>Viewing Archived Item in Collection</source>
-</trans-unit>
 <trans-unit id="sa71de39189a9e9cd">
   <source>Go to Workflow</source>
 </trans-unit>
@@ -1494,7 +1450,7 @@
 </trans-unit>
 <trans-unit id="h1dc2f6235d169989">
   <source>Manual start by
-                          <x id="0" equiv-text="&lt;span&gt;${this.crawl!.userName || this.crawl!.userid}&lt;/span&gt;"/></source>
+                          <x id="0" equiv-text="&lt;span&gt;${this.item!.userName || this.item!.userid}&lt;/span&gt;"/></source>
 </trans-unit>
 <trans-unit id="hdfcda45e7d5c5ab4">
   <source>Scheduled start</source>
@@ -2203,17 +2159,8 @@
 <trans-unit id="s36fd1256980b5f58">
   <source>Sorry, couldn't submit QA review at this time.</source>
 </trans-unit>
-<trans-unit id="s602704084f6c7796">
-  <source>URL List</source>
-</trans-unit>
-<trans-unit id="sf74a7ef270ece7ea">
-  <source>Seeded Crawl</source>
-</trans-unit>
 <trans-unit id="sf0cab2483f66aa2e">
   <source>Custom</source>
-</trans-unit>
-<trans-unit id="s3741f519c32ac391">
-  <source>New</source>
 </trans-unit>
 <trans-unit id="saa63c0c9ca0eac98">
   <source>You don't have permission to create a new Workflow.</source>
@@ -2324,17 +2271,11 @@
 <trans-unit id="s063b2ed6541c9181">
   <source>Run on a Recurring Basis</source>
 </trans-unit>
-<trans-unit id="sd8f69a8563eb74e3">
-  <source>Crawl URL(s)</source>
-</trans-unit>
 <trans-unit id="scd8de6628aaada05">
   <source>Include Any Linked Page</source>
 </trans-unit>
 <trans-unit id="sce646d8060e6c775">
   <source>Fail Crawl On Failed URL</source>
-</trans-unit>
-<trans-unit id="sc578fe08950cbb3b">
-  <source>Primary Seed URL</source>
 </trans-unit>
 <trans-unit id="s00147a7c30a80117">
   <source>Extra URL Prefixes in Scope</source>
@@ -3761,6 +3702,84 @@
 <trans-unit id="items.plural.one">
   <source>item</source>
   <note from="lit-localize">singular form for "item"</note>
+</trans-unit>
+<trans-unit id="s24a06fd949e2d65b">
+  <source>Back to</source>
+</trans-unit>
+<trans-unit id="s7ee7b202edc2481e">
+  <source>Page List</source>
+</trans-unit>
+<trans-unit id="s1e2e5062a253c739">
+  <source>One or more URLs</source>
+</trans-unit>
+<trans-unit id="sc33daa5130000a11">
+  <source>Choose this option if you know the URL of every page you'd like to crawl and don't need to include any additional pages beyond one hop out.</source>
+</trans-unit>
+<trans-unit id="s008f62e40844e6d5">
+  <source>Site Crawl</source>
+</trans-unit>
+<trans-unit id="s46bd7b046b0ca6d4">
+  <source>Website or directory</source>
+</trans-unit>
+<trans-unit id="sa7264597ca290e44">
+  <source>Specify a domain name, start page URL, or path on a website and let the crawler automatically find pages within that scope.</source>
+</trans-unit>
+<trans-unit id="hb653cf5693a98f6b">
+  <source>Choose <x id="0" equiv-text="&lt;strong&gt;"/>Page List<x id="1" equiv-text="&lt;/strong&gt;"/> if:</source>
+</trans-unit>
+<trans-unit id="s16addd6732b613fd">
+  <source>You want to include URLs with different domain names in the same crawl</source>
+</trans-unit>
+<trans-unit id="h25ccce1baa96d993">
+  <source>A Page List workflow is simpler to configure, since you don't
+              need to worry about configuring the workflow to exclude parts of
+              the website that you may not want to archive.</source>
+</trans-unit>
+<trans-unit id="hc5b85948ffe0eb76">
+  <source>Choose <x id="0" equiv-text="&lt;strong&gt;"/>Site Crawl<x id="1" equiv-text="&lt;/strong&gt;"/> if:</source>
+</trans-unit>
+<trans-unit id="hddd64e30f6ade731">
+  <source>Site Crawl workflows are great for advanced use cases where
+              you don't need to know every single URL that you want to archive.
+              You can configure reasonable crawl limits and page limits so that
+              you don't crawl more than you need to.</source>
+</trans-unit>
+<trans-unit id="s33807afa94c15a25">
+  <source>Browser windows can only be edited while a crawl is starting or running</source>
+</trans-unit>
+<trans-unit id="s4cb3d6de6b76708d">
+  <source>Crawl finishing...</source>
+</trans-unit>
+<trans-unit id="sa4808f93f7b11e58">
+  <source>New Workflow...</source>
+</trans-unit>
+<trans-unit id="s73fb3e7a0629951c">
+  <source>Help me decide</source>
+</trans-unit>
+<trans-unit id="ha60886587b96e32c">
+  <source>Started crawl from <x id="0" equiv-text="&lt;strong&gt;${this.renderName(workflow)}&lt;/strong&gt;"/>.
+            <x id="1" equiv-text="&lt;br&gt;&#10;            &lt;a class=&quot;underline hover:no-underline&quot; href=&quot;${this.orgBasePath}/workflows/${workflow.id}#watch&quot; @click=&quot;${this.navLink.bind(this)}&quot;&gt;"/>Watch crawl<x id="2" equiv-text="&lt;/a&gt;"/></source>
+</trans-unit>
+<trans-unit id="sb32ae1652df8c7ad">
+  <source>Workflow settings used to run this crawl</source>
+</trans-unit>
+<trans-unit id="sa74e88ae69ff57ca">
+  <source>Edit Workflow</source>
+</trans-unit>
+<trans-unit id="sd813c96a1d891cdc">
+  <source>Select Analysis Run</source>
+</trans-unit>
+<trans-unit id="sd3c4adf4cc6d1668">
+  <source>New <x id="0" equiv-text="${this.jobTypeLabels[jobType]}"/> Workflow</source>
+</trans-unit>
+<trans-unit id="sdd3e1b91cb27a4d5">
+  <source>Page URL(s)</source>
+</trans-unit>
+<trans-unit id="s4201222224dff23c">
+  <source>Crawl: <x id="0" equiv-text="${crawlStatus.label}"/></source>
+</trans-unit>
+<trans-unit id="s0eb7c300368b2a58">
+  <source>Upload: <x id="0" equiv-text="${crawlStatus.label}"/></source>
 </trans-unit>
 </body>
 </file>

@@ -2,37 +2,21 @@ import { msg } from "@lit/localize";
 import clsx from "clsx";
 import { html, type TemplateResult } from "lit";
 
-import { formatNumber } from "./localization";
-import { pluralOf } from "./pluralize";
+import type { ArchivedItem, Crawl, Workflow } from "@/types/crawler";
+import {
+  FAILED_STATES,
+  RUNNING_AND_WAITING_STATES,
+  SUCCESSFUL_AND_FAILED_STATES,
+  SUCCESSFUL_STATES,
+} from "@/types/crawlState";
+import type { QARun } from "@/types/qa";
+import { formatNumber } from "@/utils/localization";
+import { pluralOf } from "@/utils/pluralize";
 
-import type { ArchivedItem, CrawlState, Workflow } from "@/types/crawler";
-
-export const activeCrawlStates: CrawlState[] = [
-  "starting",
-  "waiting_org_limit",
-  "waiting_capacity",
-  "running",
-  "generate-wacz",
-  "uploading-wacz",
-  "pending-wait",
-  "stopping",
-];
-
-export const finishedCrawlStates: CrawlState[] = [
-  "complete",
-  "stopped_by_user",
-  "stopped_storage_quota_reached",
-  "stopped_time_quota_reached",
-  "stopped_org_readonly",
-];
-
-export const inactiveCrawlStates: CrawlState[] = [
-  ...finishedCrawlStates,
-  "canceled",
-  "skipped_storage_quota_reached",
-  "skipped_time_quota_reached",
-  "failed",
-];
+// Match backend TYPE_RUNNING_AND_WAITING_STATES in models.py
+export const activeCrawlStates = RUNNING_AND_WAITING_STATES;
+export const finishedCrawlStates = SUCCESSFUL_STATES;
+export const inactiveCrawlStates = SUCCESSFUL_AND_FAILED_STATES;
 
 export const DEFAULT_MAX_SCALE = 3;
 
@@ -44,8 +28,22 @@ export const DEPTH_SUPPORTED_SCOPES = [
   "any",
 ];
 
-export function isActive(state: CrawlState | null) {
-  return state && activeCrawlStates.includes(state);
+export function isActive({ state, stopping }: Partial<Crawl | QARun>) {
+  return (
+    (state &&
+      (activeCrawlStates as readonly string[]).includes(state as string)) ||
+    stopping === true
+  );
+}
+
+export function isSuccessfullyFinished({ state }: { state: string }) {
+  return state && (SUCCESSFUL_STATES as readonly string[]).includes(state);
+}
+
+export function isNotFailed({ state }: { state: string }) {
+  return (
+    state && !(FAILED_STATES as readonly string[]).some((str) => str === state)
+  );
 }
 
 export function renderName(item: ArchivedItem | Workflow, className?: string) {

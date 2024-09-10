@@ -17,7 +17,8 @@ import type {
   APISortQuery,
 } from "@/types/api";
 import type { Collection } from "@/types/collection";
-import type { ArchivedItem, Crawl, CrawlState, Upload } from "@/types/crawler";
+import type { ArchivedItem, Crawl, Upload } from "@/types/crawler";
+import type { CrawlState } from "@/types/crawlState";
 import { formatNumber, getLocale } from "@/utils/localization";
 import { pluralOf } from "@/utils/pluralize";
 

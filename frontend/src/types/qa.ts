@@ -1,4 +1,5 @@
-import type { ArchivedItemPage, CrawlState } from "./crawler";
+import type { ArchivedItemPage } from "@/types/crawler";
+import type { CrawlState } from "@/types/crawlState";
 
 export type QARun = {
   id: string;
@@ -13,6 +14,7 @@ export type QARun = {
     size: number;
   };
   resources?: { crawlId: string; name: string; path: string }[];
+  stopping?: boolean | null;
 };
 
 export type ArchivedItemQAPage = ArchivedItemPage & {

@@ -1,3 +1,5 @@
+import type { CrawlState } from "./crawlState";
+
 type ScopeType =
   | "prefix"
   | "host"
@@ -122,25 +124,6 @@ export type Profile = {
   };
   crawlerChannel?: string;
 };
-
-export type CrawlState =
-  | "starting"
-  | "waiting_capacity"
-  | "waiting_org_limit"
-  | "running"
-  | "generate-wacz"
-  | "uploading-wacz"
-  | "pending-wait"
-  | "stopping"
-  | "complete"
-  | "failed"
-  | "skipped_storage_quota_reached"
-  | "skipped_time_quota_reached"
-  | "canceled"
-  | "stopped_by_user"
-  | "stopped_storage_quota_reached"
-  | "stopped_time_quota_reached"
-  | "stopped_org_readonly";
 
 // TODO maybe convert this to an enum?
 export enum ReviewStatus {

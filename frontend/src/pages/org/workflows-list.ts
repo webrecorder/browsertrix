@@ -494,7 +494,9 @@ export class WorkflowsList extends LiteElement {
         `,
       )}
       ${when(
-        workflow.isCrawlRunning && this.appState.isCrawler,
+        this.appState.isCrawler &&
+          workflow.isCrawlRunning &&
+          !workflow.lastCrawlStopping,
         // HACK shoelace doesn't current have a way to override non-hover
         // color without resetting the --sl-color-neutral-700 variable
         () => html`
@@ -509,6 +511,7 @@ export class WorkflowsList extends LiteElement {
             ${msg("Edit Browser Windows")}
           </sl-menu-item>
           <sl-menu-item
+            ?disabled=${workflow.lastCrawlState !== "running"}
             @click=${() =>
               this.navTo(`${this.orgBasePath}/workflows/${workflow.id}#watch`, {
                 dialog: "exclusions",

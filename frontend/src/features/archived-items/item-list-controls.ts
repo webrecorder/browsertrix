@@ -7,8 +7,6 @@ import { ifDefined } from "lit/directives/if-defined.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import { type SelectEvent } from "@/components/ui/search-combobox";
-import { CrawlStatus } from "@/features/archived-items/crawl-status";
-import { finishedCrawlStates } from "@/utils/crawler";
 
 export type FilterBy = Partial<Record<string, string>>;
 export type SearchValues = {
@@ -119,29 +117,6 @@ export class ItemListControls extends TailwindElement {
         }}
       >
       </btrix-search-combobox>
-    `;
-  }
-
-  private renderStatusFilter() {
-    const viewOptions = finishedCrawlStates.map((state) => {
-      const { icon, label } = CrawlStatus.getContent(state);
-      return html`<sl-option value=${state}>${icon}${label}</sl-option>`;
-    });
-
-    return html`
-      <div class="flex items-center gap-2">
-        <div class="text-neutral-500">${msg("Status:")}</div>
-        <sl-select
-          class="flex-1 md:min-w-[15rem]"
-          size="small"
-          pill
-          multiple
-          placeholder=${msg("Any")}
-          @sl-change=${async (_e: CustomEvent) => {}}
-        >
-          ${viewOptions}
-        </sl-select>
-      </div>
     `;
   }
 

@@ -18,16 +18,15 @@ import type {
   ArchivedItem,
   Crawl,
   CrawlConfig,
-  CrawlState,
   Seed,
   Workflow,
 } from "@/types/crawler";
 import type { QARun } from "@/types/qa";
 import { isApiError } from "@/utils/api";
 import {
-  activeCrawlStates,
-  finishedCrawlStates,
   isActive,
+  isNotFailed,
+  isSuccessfullyFinished,
   renderName,
 } from "@/utils/crawler";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
@@ -49,10 +48,6 @@ const SECTIONS = [
 type SectionName = (typeof SECTIONS)[number];
 
 const POLL_INTERVAL_SECONDS = 5;
-export const QA_RUNNING_STATES = [
-  "starting",
-  ...activeCrawlStates,
-] as CrawlState[];
 
 /**
  * Usage:
@@ -146,8 +141,8 @@ export class ArchivedItemDetail extends BtrixElement {
   private timerId?: number;
 
   private get isActive(): boolean | null {
-    if (!this.item) return null;
-    return activeCrawlStates.includes(this.item.state);
+    if (!this.item || this.item.type !== "crawl") return null;
+    return isActive(this.item);
   }
 
   private get hasFiles(): boolean | null {
@@ -194,7 +189,7 @@ export class ArchivedItemDetail extends BtrixElement {
     if (changedProperties.has("qaRuns")) {
       // Latest QA run that's either running or finished:
       this.mostRecentNonFailedQARun = this.qaRuns?.find((run) =>
-        [...QA_RUNNING_STATES, ...finishedCrawlStates].includes(run.state),
+        isNotFailed(run),
       );
     }
     if (
@@ -662,7 +657,7 @@ export class ArchivedItemDetail extends BtrixElement {
             ${msg("Copy Tags")}
           </sl-menu-item>
           ${when(
-            finishedCrawlStates.includes(this.item.state),
+            isSuccessfullyFinished(this.item),
             () => html`
               <sl-divider></sl-divider>
               <btrix-menu-item-link
@@ -675,7 +670,8 @@ export class ArchivedItemDetail extends BtrixElement {
             `,
           )}
           ${when(
-            this.isCrawler && !isActive(this.item.state),
+            this.isCrawler &&
+              (this.item.type !== "crawl" || !isActive(this.item)),
             () => html`
               <sl-divider></sl-divider>
               <sl-menu-item
@@ -1483,9 +1479,7 @@ ${this.item?.description}
       });
     }
 
-    this.isQAActive = Boolean(
-      this.qaRuns?.[0] && QA_RUNNING_STATES.includes(this.qaRuns[0].state),
-    );
+    this.isQAActive = Boolean(this.qaRuns?.[0] && isActive(this.qaRuns[0]));
 
     if (this.isQAActive) {
       // Clear current timer, if it exists

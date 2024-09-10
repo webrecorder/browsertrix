@@ -5,7 +5,7 @@ import { customElement, property } from "lit/decorators.js";
 import startCase from "lodash/fp/startCase";
 
 import { TailwindElement } from "@/classes/TailwindElement";
-import type { CrawlState } from "@/types/crawler";
+import type { CrawlState } from "@/types/crawlState";
 import { animatePulse } from "@/utils/css";
 
 type CrawlType = "crawl" | "upload" | "qa";
