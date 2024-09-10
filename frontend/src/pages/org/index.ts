@@ -18,7 +18,6 @@ import type { QuotaUpdateDetail } from "@/controllers/api";
 import needLogin from "@/decorators/needLogin";
 import type { CollectionSavedEvent } from "@/features/collections/collection-metadata-dialog";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
-import type { WorkflowParams } from "@/types/crawler";
 import type { UserOrg } from "@/types/user";
 import { isApiError } from "@/utils/api";
 import type { ViewState } from "@/utils/APIRouter";
@@ -26,6 +25,7 @@ import { DEFAULT_MAX_SCALE } from "@/utils/crawler";
 import LiteElement, { html } from "@/utils/LiteElement";
 import { type OrgData } from "@/utils/orgs";
 import { AppStateService } from "@/utils/state";
+import type { FormState as WorkflowFormState } from "@/utils/workflow";
 
 import "./workflow-detail";
 import "./workflows-list";
@@ -52,10 +52,8 @@ type ArchivedItemPageParams = {
 };
 export type OrgParams = {
   home: Record<string, never>;
-  workflows: {
-    workflowId?: string;
-    itemId?: string;
-    scopeType?: WorkflowParams["config"]["scopeType"];
+  workflows: ArchivedItemPageParams & {
+    scopeType?: WorkflowFormState["scopeType"];
     new?: ResourceName;
     itemPageId?: string;
     qaTab?: QATab;
@@ -440,7 +438,7 @@ export class Org extends LiteElement {
           @select-job-type=${(e: SelectJobTypeEvent) => {
             this.openDialogName = undefined;
             this.navTo(
-              `${this.orgBasePath}/workflows?new&scopeType=${e.detail}`,
+              `${this.orgBasePath}/workflows/new?scopeType=${e.detail}`,
             );
           }}
         >
@@ -492,8 +490,6 @@ export class Org extends LiteElement {
   private readonly renderWorkflows = () => {
     const params = this.params as OrgParams["workflows"];
     const isEditing = Object.prototype.hasOwnProperty.call(params, "edit");
-    const isNewResourceTab =
-      Object.prototype.hasOwnProperty.call(params, "new") && params.scopeType;
     const workflowId = params.workflowId;
 
     if (workflowId) {
@@ -536,7 +532,7 @@ export class Org extends LiteElement {
       `;
     }
 
-    if (isNewResourceTab) {
+    if (this.orgPath.startsWith("/workflows/new")) {
       const { workflow, seeds } = this.viewStateData || {};
 
       return html` <btrix-workflows-new
@@ -553,7 +549,7 @@ export class Org extends LiteElement {
       @select-new-dialog=${this.onSelectNewDialog}
       @select-job-type=${(e: SelectJobTypeEvent) => {
         this.openDialogName = undefined;
-        this.navTo(`${this.orgBasePath}/workflows?new&scopeType=${e.detail}`);
+        this.navTo(`${this.orgBasePath}/workflows/new?scopeType=${e.detail}`);
       }}
     ></btrix-workflows-list>`;
   };

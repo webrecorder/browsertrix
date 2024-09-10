@@ -62,9 +62,8 @@ import {
   humanizeSchedule,
 } from "@/utils/cron";
 import { maxLengthValidator } from "@/utils/form";
-import { formatNumber, getLocale } from "@/utils/localization";
+import { getLocale } from "@/utils/localization";
 import { isArchivingDisabled } from "@/utils/orgs";
-import { pluralOf } from "@/utils/pluralize";
 import { regexEscape } from "@/utils/string";
 import { tw } from "@/utils/tailwind";
 import {
@@ -191,7 +190,7 @@ export class WorkflowEditor extends BtrixElement {
   configId?: string;
 
   @property({ type: String })
-  initialScopeType?: "page-list" | "prefix";
+  initialScopeType?: FormState["scopeType"];
 
   @property({ type: Object })
   initialWorkflow?: WorkflowParams;

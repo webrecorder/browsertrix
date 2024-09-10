@@ -688,7 +688,7 @@ export class WorkflowsList extends LiteElement {
       name: workflow.name ? msg(str`${workflow.name} Copy`) : "",
     };
 
-    this.navTo(`${this.orgBasePath}/workflows?new`, {
+    this.navTo(`${this.orgBasePath}/workflows/new`, {
       workflow: workflowParams,
       seeds: seeds.items,
     });

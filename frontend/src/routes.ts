@@ -13,7 +13,7 @@ export const ROUTES = {
   org: [
     "/orgs/:slug",
     // Org sections:
-    "(/workflows(/:workflowId(/crawls/:itemId(/review/:qaTab))))",
+    "(/workflows(/new)(/:workflowId(/crawls/:itemId(/review/:qaTab))))",
     "(/items(/:itemType(/:itemId)))",
     "(/collections(/new)(/view/:collectionId(/:collectionTab)))",
     "(/browser-profiles(/profile(/browser/:browserId)(/:browserProfileId)))",
