@@ -77,7 +77,7 @@ MEM_SOFT_OOM_THRESHOLD = 1.0
 MEM_LIMIT_PADDING = 1.2
 
 # ensure available storage is at least this much times used storage
-AVAIL_STORAGE_RATIO = 2.5
+AVAIL_STORAGE_RATIO = 1.1
 
 
 # pylint: disable=too-many-public-methods, too-many-locals, too-many-branches, too-many-statements
