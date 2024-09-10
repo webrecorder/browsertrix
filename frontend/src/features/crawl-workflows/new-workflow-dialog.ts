@@ -26,10 +26,10 @@ export class NewWorkflowDialog extends TailwindElement {
         style="--width: 46rem"
       >
         <div
-          class="mb-7 mt-5 flex flex-col items-center justify-center gap-7 md:flex-row md:items-start md:gap-16"
+          class="mb-7 mt-5 flex flex-col items-center justify-center gap-6 md:flex-row md:items-start md:gap-16"
         >
           <button
-            class="group block w-[16.5rem] text-left"
+            class="group block w-[17rem] text-left"
             @click=${() => {
               this.dispatchEvent(
                 new CustomEvent("select-job-type", {
@@ -46,9 +46,9 @@ export class NewWorkflowDialog extends TailwindElement {
               <figcaption class="p-1">
                 <div class="leading none my-2 font-semibold">
                   <div class="transition-colors group-hover:text-primary-700">
-                    ${msg("Page List")}:
+                    ${msg("Page Crawl")}:
                   </div>
-                  <div class="text-lg">${msg("One or more URLs")}</div>
+                  <div class="text-lg">${msg("One or more page URLs")}</div>
                 </div>
                 <p class="leading-normal text-neutral-700">
                   ${msg(
@@ -59,7 +59,7 @@ export class NewWorkflowDialog extends TailwindElement {
             </figure>
           </button>
           <button
-            class="group block w-[16.5rem] text-left"
+            class="group block w-[17rem] text-left"
             @click=${() => {
               this.dispatchEvent(
                 new CustomEvent("select-job-type", {
@@ -78,7 +78,9 @@ export class NewWorkflowDialog extends TailwindElement {
                   <div class="transition-colors group-hover:text-primary-700">
                     ${msg("Site Crawl")}:
                   </div>
-                  <div class="text-lg">${msg("Website or directory")}</div>
+                  <div class="text-lg">
+                    ${msg("Entire website or directory")}
+                  </div>
                 </div>
                 <p class="leading-normal text-neutral-700">
                   ${msg(
@@ -95,7 +97,7 @@ export class NewWorkflowDialog extends TailwindElement {
           @sl-after-hide=${this.stopProp}
         >
           <p class="mb-3">
-            ${msg(html`Choose <strong>Page List</strong> if:`)}
+            ${msg(html`Choose <strong>Page Crawl</strong> if:`)}
           </p>
           <ul class="mb-3 list-disc pl-5">
             <li>${msg("You want to archive a single page on a website")}</li>
@@ -110,9 +112,9 @@ export class NewWorkflowDialog extends TailwindElement {
           </ul>
           <p class="mb-3">
             ${msg(
-              html`A Page List workflow is simpler to configure, since you don't
-              need to worry about configuring the workflow to exclude parts of
-              the website that you may not want to archive.`,
+              html`A Page Crawl workflow is simpler to configure, since you
+              don't need to worry about configuring the workflow to exclude
+              parts of the website that you may not want to archive.`,
             )}
           </p>
           <p class="mb-3">

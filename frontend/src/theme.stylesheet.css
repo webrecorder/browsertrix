@@ -155,9 +155,14 @@
     line-height: 1.5;
   }
 
-  /* Align left edge with menu item */
+  /* Align left edge with selected item */
   sl-select sl-menu-label::part(base) {
-    padding-left: calc(var(--sl-spacing-2x-small) + 1.5em);
+    padding-left: var(--sl-spacing-medium);
+  }
+
+  sl-menu-label::part(base) {
+    /* color: var(--sl-color-neutral-400); */
+    font-weight: var(--sl-font-weight-medium);
   }
 
   /* Add border to menu */

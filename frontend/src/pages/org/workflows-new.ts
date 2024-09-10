@@ -54,7 +54,7 @@ export class WorkflowsNew extends LiteElement {
   initialSeeds?: Seed[];
 
   @property({ type: String })
-  scopeType: WorkflowFormState["scopeType"] = "page-list";
+  scopeType?: WorkflowFormState["scopeType"];
 
   @property({ type: Object })
   initialWorkflow?: WorkflowParams;
@@ -105,7 +105,8 @@ export class WorkflowsNew extends LiteElement {
 
         return html`
           <btrix-workflow-editor
-            .initialScopeType=${this.scopeType}
+            .initialScopeType=${this.scopeType ||
+            initialWorkflow.config.scopeType}
             .initialWorkflow=${initialWorkflow}
             .initialSeeds=${this.initialSeeds}
             @reset=${async (e: Event) => {

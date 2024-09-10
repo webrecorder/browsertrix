@@ -245,7 +245,7 @@ export class WorkflowsList extends LiteElement {
                   </sl-button>
                   <sl-menu>
                     <sl-menu-item value="page-list">
-                      ${msg("Page List")}
+                      ${msg("Page Crawl")}
                     </sl-menu-item>
                     <sl-menu-item value="prefix">
                       ${msg("Site Crawl")}

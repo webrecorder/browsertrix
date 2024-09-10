@@ -719,10 +719,13 @@ export class WorkflowEditor extends BtrixElement {
               (e.target as HTMLSelectElement).value as FormState["scopeType"],
             )}
         >
+          <sl-menu-label>${msg("Page Crawl")}</sl-menu-label>
           <sl-option value="page">${this.scopeTypeLabels["page"]}</sl-option>
           <sl-option value="page-list">
             ${this.scopeTypeLabels["page-list"]}
           </sl-option>
+          <sl-divider></sl-divider>
+          <sl-menu-label>${msg("Site Crawl")}</sl-menu-label>
           <sl-option value="page-spa">
             ${this.scopeTypeLabels["page-spa"]}
           </sl-option>
