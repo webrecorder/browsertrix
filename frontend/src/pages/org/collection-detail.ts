@@ -18,7 +18,8 @@ import type {
 } from "@/types/api";
 import type { Collection } from "@/types/collection";
 import type { ArchivedItem, Crawl, CrawlState, Upload } from "@/types/crawler";
-import { getLocale } from "@/utils/localization";
+import { formatNumber, getLocale } from "@/utils/localization";
+import { pluralOf } from "@/utils/pluralize";
 
 const ABORT_REASON_THROTTLE = "throttled";
 const DESCRIPTION_MAX_HEIGHT_PX = 200;
@@ -61,10 +62,6 @@ export class CollectionDetail extends BtrixElement {
 
   // Use to cancel requests
   private getArchivedItemsController: AbortController | null = null;
-
-  private readonly numberFormatter = new Intl.NumberFormat(getLocale(), {
-    notation: "compact",
-  });
 
   private readonly tabLabels: Record<
     Tab,
@@ -481,10 +478,10 @@ export class CollectionDetail extends BtrixElement {
   private renderInfoBar() {
     return html`
       <btrix-desc-list horizontal>
-        ${this.renderDetailItem(msg("Archived Items"), (col) =>
-          col.crawlCount === 1
-            ? msg("1 item")
-            : msg(str`${this.numberFormatter.format(col.crawlCount)} items`),
+        ${this.renderDetailItem(
+          msg("Archived Items"),
+          (col) =>
+            `${formatNumber(col.crawlCount)} ${pluralOf("items", col.crawlCount)}`,
         )}
         ${this.renderDetailItem(
           msg("Total Size"),
@@ -494,10 +491,10 @@ export class CollectionDetail extends BtrixElement {
               display="narrow"
             ></sl-format-bytes>`,
         )}
-        ${this.renderDetailItem(msg("Total Pages"), (col) =>
-          col.pageCount === 1
-            ? msg("1 page")
-            : msg(str`${this.numberFormatter.format(col.pageCount)} pages`),
+        ${this.renderDetailItem(
+          msg("Total Pages"),
+          (col) =>
+            `${formatNumber(col.pageCount)} ${pluralOf("pages", col.pageCount)}`,
         )}
         ${this.renderDetailItem(
           msg("Last Updated"),

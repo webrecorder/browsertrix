@@ -1,4 +1,4 @@
-import { localized, msg, str } from "@lit/localize";
+import { localized, msg } from "@lit/localize";
 import type { SlInput, SlMenuItem } from "@shoelace-style/shoelace";
 import Fuse from "fuse.js";
 import { html, type PropertyValues } from "lit";
@@ -18,9 +18,13 @@ import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { Collection, CollectionSearchValues } from "@/types/collection";
 import type { UnderlyingFunction } from "@/types/utils";
 import { isApiError } from "@/utils/api";
-import { getLocale } from "@/utils/localization";
+import { formatNumber, getLocale } from "@/utils/localization";
+import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
 import noCollectionsImg from "~assets/images/no-collections-found.webp";
+
+const formatNumberCompact = (v: number) =>
+  formatNumber(v, { notation: "compact" });
 
 type Collections = APIPaginatedList<Collection>;
 type SearchFields = "name";
@@ -101,10 +105,6 @@ export class CollectionsList extends BtrixElement {
   private get hasSearchStr() {
     return this.searchByValue.length >= MIN_SEARCH_LENGTH;
   }
-
-  private readonly numberFormatter = new Intl.NumberFormat(getLocale(), {
-    notation: "compact",
-  });
 
   protected async willUpdate(
     changedProperties: PropertyValues<this> & Map<string, unknown>,
@@ -526,9 +526,7 @@ export class CollectionsList extends BtrixElement {
         </a>
       </btrix-table-cell>
       <btrix-table-cell>
-        ${col.crawlCount === 1
-          ? msg("1 item")
-          : msg(str`${this.numberFormatter.format(col.crawlCount)} items`)}
+        ${formatNumber(col.crawlCount)} ${pluralOf("items", col.crawlCount)}
       </btrix-table-cell>
       <btrix-table-cell>
         <sl-format-bytes
@@ -537,9 +535,8 @@ export class CollectionsList extends BtrixElement {
         ></sl-format-bytes>
       </btrix-table-cell>
       <btrix-table-cell>
-        ${col.pageCount === 1
-          ? msg("1 page")
-          : msg(str`${this.numberFormatter.format(col.pageCount)} pages`)}
+        ${formatNumberCompact(col.pageCount)}
+        ${pluralOf("pages", col.pageCount)}
       </btrix-table-cell>
       <btrix-table-cell>
         <sl-format-date

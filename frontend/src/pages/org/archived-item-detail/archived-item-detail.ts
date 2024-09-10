@@ -31,8 +31,9 @@ import {
   renderName,
 } from "@/utils/crawler";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
-import { getLocale } from "@/utils/localization";
+import { formatNumber, getLocale } from "@/utils/localization";
 import { isArchivingDisabled } from "@/utils/orgs";
+import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
 
 import "./ui/qa";
@@ -141,8 +142,6 @@ export class ArchivedItemDetail extends BtrixElement {
     }
     return `${this.navigate.orgBasePath}/${path}`;
   }
-
-  private readonly numberFormatter = new Intl.NumberFormat(getLocale());
 
   private timerId?: number;
 
@@ -864,15 +863,13 @@ export class ArchivedItemDetail extends BtrixElement {
                               ? " text-purple-600"
                               : ""} font-mono"
                           >
-                            ${this.numberFormatter.format(
-                              +this.crawl.stats.done,
-                            )}
+                            ${formatNumber(+this.crawl.stats.done)}
                             <span class="text-0-400">/</span>
-                            ${this.numberFormatter.format(
-                              +this.crawl.stats.found,
-                            )}
+                            ${formatNumber(+this.crawl.stats.found)}
                           </span>
-                          <span>${msg("pages")}</span>`
+                          <span
+                            >${pluralOf("pages", +this.crawl.stats.found)}</span
+                          >`
                       : ""}`
                 : html`<span class="text-0-400">${msg("Unknown")}</span>`}`
             : html`<sl-skeleton class="h-[16px] w-24"></sl-skeleton>`}

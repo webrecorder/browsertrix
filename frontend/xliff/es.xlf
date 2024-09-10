@@ -127,11 +127,8 @@
 <trans-unit id="s2fe988430f978df3">
   <source>Download Collection</source>
 </trans-unit>
-<trans-unit id="sbaf87689cccc53eb">
-  <source>1 item</source>
-</trans-unit>
 <trans-unit id="s125a86b2f45bbb25">
-  <source><x id="0" equiv-text="${this.numberFormatter.format(col.crawlCount)}"/> items</source>
+  <source><x id="0" equiv-text="${item.crawlCount}"/> items</source>
 </trans-unit>
 <trans-unit id="s88f9e7f4ecc07ede">
   <source>Total Size</source>
@@ -139,11 +136,8 @@
 <trans-unit id="sabe8b8c669e05b8d">
   <source>Total Pages</source>
 </trans-unit>
-<trans-unit id="sba6064b92a06844f">
-  <source>1 page</source>
-</trans-unit>
 <trans-unit id="s279de934d8a18e21">
-  <source><x id="0" equiv-text="${this.numberFormatter.format(col.pageCount)}"/> pages</source>
+  <source><x id="0" equiv-text="${pageCount.toLocaleString()}"/> pages</source>
 </trans-unit>
 <trans-unit id="s3512b3c95c7a5c3a">
   <source>Last Updated</source>
@@ -194,13 +188,13 @@
   <source>Sorry, couldn't remove item from Collection at this time.</source>
 </trans-unit>
 <trans-unit id="sd77c5f8da91d0729">
-  <source>Maximum <x id="0" equiv-text="${numberFormatter.format(maxLength)}"/> characters</source>
+  <source>Maximum <x id="0" equiv-text="${formatNumber(maxLength)}"/> characters</source>
 </trans-unit>
 <trans-unit id="sa1c466807a6fdfb7">
-  <source><x id="0" equiv-text="${numberFormatter.format(overMax)}"/> character over limit</source>
+  <source><x id="0" equiv-text="${formatNumber(overMax)}"/> character over limit</source>
 </trans-unit>
 <trans-unit id="s8b6894f4bfec27c0">
-  <source><x id="0" equiv-text="${numberFormatter.format(overMax)}"/> characters over limit</source>
+  <source><x id="0" equiv-text="${formatNumber(overMax)}"/> characters over limit</source>
 </trans-unit>
 <trans-unit id="se1f5b61904654dba">
   <source>Please shorten this text to <x id="0" equiv-text="${maxLength}"/> or fewer characters.</source>
@@ -268,23 +262,16 @@
   <source>Pro</source>
 </trans-unit>
 <trans-unit id="sd069593586fce913">
-  <source><x id="0" equiv-text="${quotas.maxExecMinutesPerMonth ? humanizeSeconds(quotas.maxExecMinutesPerMonth * 60, undefined, undefined, &quot;long&quot;) : msg(&quot;Unlimited minutes&quot;)}"/> of crawl and QA analysis execution time</source>
+  <source><x id="0" equiv-text="${maxExecMinutesPerMonth || msg(&quot;Unlimited minutes&quot;)}"/> of crawl and QA analysis execution time</source>
 </trans-unit>
 <trans-unit id="s1228a18c03355491">
   <source>Unlimited minutes</source>
 </trans-unit>
-<trans-unit id="he250f07e9b8c3fa2">
-  <source><x id="0" equiv-text="${quotas.storageQuota&#10;    ? html `&lt;sl-format-bytes&#10;                value=${quotas.storageQuota}&#10;              &gt;&lt;/sl-format-bytes&gt;`&#10;    : msg(&quot;Unlimited&quot;)}"/>
-          storage</source>
-</trans-unit>
 <trans-unit id="se9ef1815463f8000">
   <source>Unlimited</source>
 </trans-unit>
-<trans-unit id="sfd47c98f79eda5bf">
-  <source><x id="0" equiv-text="${quotas.maxPagesPerCrawl ? formatNumber(quotas.maxPagesPerCrawl) : msg(&quot;Unlimited&quot;)} ${pluralOf(&quot;pages&quot;, quotas.maxPagesPerCrawl)}"/> per crawl</source>
-</trans-unit>
 <trans-unit id="s8e49ef99717ff3d4">
-  <source><x id="0" equiv-text="${quotas.maxConcurrentCrawls ? formatNumber(quotas.maxConcurrentCrawls) : msg(&quot;Unlimited&quot;)}"/> concurrent <x id="1" equiv-text="${pluralOf(&quot;crawls&quot;, quotas.maxConcurrentCrawls)}"/></source>
+  <source><x id="0" equiv-text="${formatNumber(quotas.maxConcurrentCrawls)}"/> concurrent <x id="1" equiv-text="${pluralOf(&quot;crawls&quot;, quotas.maxConcurrentCrawls)}"/></source>
 </trans-unit>
 <trans-unit id="sc27403512c49c425">
   <source>Pro plan change request (<x id="0" equiv-text="${this.userOrg?.name}"/>)</source>
@@ -352,11 +339,8 @@
 <trans-unit id="s0e3006648a1a80a5">
   <source>Add “<x id="0" equiv-text="${this.inputValue.toLocaleLowerCase()}"/>”</source>
 </trans-unit>
-<trans-unit id="s0a959a05c322b9ed">
-  <source>+<x id="0" equiv-text="${remainder}"/> URL</source>
-</trans-unit>
 <trans-unit id="s1eee55ca9401677a">
-  <source>+<x id="0" equiv-text="${remainder}"/> URLs</source>
+  <source>+<x id="0" equiv-text="${this.total.toLocaleString()}"/> URLs</source>
 </trans-unit>
 <trans-unit id="sfff90c46fdba31db">
   <source>(unnamed item)</source>
@@ -1034,9 +1018,6 @@
 </trans-unit>
 <trans-unit id="se72232cb8fce7869">
   <source>Pages Crawled</source>
-</trans-unit>
-<trans-unit id="s5dd12f8b7981d806">
-  <source><x id="0" equiv-text="${this.numberFormatter.format(+(this.lastCrawlStats.done || 0))}"/> / <x id="1" equiv-text="${this.numberFormatter.format(+(this.lastCrawlStats.found || 0))}"/></source>
 </trans-unit>
 <trans-unit id="s1582c2bf884b8052">
   <source>Run Duration</source>
@@ -2648,13 +2629,7 @@
   <source>QA Analysis Runs</source>
 </trans-unit>
 <trans-unit id="s1b210718400e7ea8">
-  <source><x id="0" equiv-text="${this.numberFormatter.format(pagesComplete)}"/> page</source>
-</trans-unit>
-<trans-unit id="sb788f9b4d02fe2b9">
-  <source><x id="0" equiv-text="${this.numberFormatter.format(pagesComplete)}"/> / <x id="1" equiv-text="${this.numberFormatter.format(pagesFound)}"/> page</source>
-</trans-unit>
-<trans-unit id="s0da3183dc15e5d3e">
-  <source><x id="0" equiv-text="${this.numberFormatter.format(pagesComplete)}"/> / <x id="1" equiv-text="${this.numberFormatter.format(pagesFound)}"/> pages</source>
+  <source><x id="0" equiv-text="${pageCount.toLocaleString()}"/> page</source>
 </trans-unit>
 <trans-unit id="s92921878e886e36d">
   <source>Duration</source>
@@ -2845,18 +2820,6 @@
 </trans-unit>
 <trans-unit id="s13e37d380ccd180d">
   <source>No changes to save</source>
-</trans-unit>
-<trans-unit id="s8875ce479bcfe166">
-  <source>Adding 1 item</source>
-</trans-unit>
-<trans-unit id="sc7047b9b6b83dc7e">
-  <source>Adding <x id="0" equiv-text="${addCount.toLocaleString()}"/> items</source>
-</trans-unit>
-<trans-unit id="s92106e318f0c908c">
-  <source>Removing 1 item</source>
-</trans-unit>
-<trans-unit id="sd42142b95bd53b60">
-  <source>Removing <x id="0" equiv-text="${removeCount.toLocaleString()}"/> items</source>
 </trans-unit>
 <trans-unit id="s4a0cbea3f0b22976">
   <source>Save Selection</source>
@@ -3104,12 +3067,6 @@
               <x id="1" equiv-text="&lt;a href=&quot;${crawlSetupUrl}&quot; class=&quot;bold underline hover:no-underline&quot;&gt;"/>Crawl Setup<x id="2" equiv-text="&lt;/a&gt;"/>. <x id="3" equiv-text="&lt;br&gt;&lt;br&gt;"/>
               Please fix to continue.</source>
 </trans-unit>
-<trans-unit id="s0d880cda554b2fee">
-  <source><x id="0" equiv-text="${firstUrl}"/> + <x id="1" equiv-text="${remainder}"/> more URL</source>
-</trans-unit>
-<trans-unit id="s495d73feeec1e7c7">
-  <source><x id="0" equiv-text="${firstUrl}"/> + <x id="1" equiv-text="${remainder}"/> more URLs</source>
-</trans-unit>
 <trans-unit id="s265a8f6e25a8c5f2">
   <source>Workflow created.</source>
 </trans-unit>
@@ -3154,12 +3111,6 @@
 </trans-unit>
 <trans-unit id="sa84bc532c73403ed">
   <source>Running for <x id="0" equiv-text="${RelativeDuration.humanize(diff, {&#10;    compact: true,&#10;})}"/></source>
-</trans-unit>
-<trans-unit id="scb7a7733d5719fee">
-  <source><x id="0" equiv-text="${workflow.crawlCount}"/> crawl</source>
-</trans-unit>
-<trans-unit id="s32b82a13b01237c7">
-  <source><x id="0" equiv-text="${this.numberFormatter.format(workflow.crawlCount || 0)}"/> crawls</source>
 </trans-unit>
 <trans-unit id="s8eb4021572d41d99">
   <source>Name &amp; Schedule</source>
@@ -3767,6 +3718,49 @@
 <trans-unit id="s09421b07b5d1e9e6">
   <source>PM</source>
   <note from="lit-localize">Time AM/PM</note>
+</trans-unit>
+<trans-unit id="h9083eded7901e66a">
+  <source><x id="0" equiv-text="${quotas.storageQuota&#10;    ? html `&lt;sl-format-bytes&#10;                  value=${quotas.storageQuota}&#10;                &gt;&lt;/sl-format-bytes&gt;`&#10;    : msg(&quot;Unlimited&quot;)}"/>
+            storage</source>
+</trans-unit>
+<trans-unit id="s1d6a13ef53c51ee9">
+  <source><x id="0" equiv-text="${maxPagesPerCrawl || msg(&quot;Unlimited pages&quot;)}"/> per crawl</source>
+</trans-unit>
+<trans-unit id="s41de0883966c23c8">
+  <source>Unlimited pages</source>
+</trans-unit>
+<trans-unit id="s35ccaf9d67c65607">
+  <source>Unlimited concurrent crawls</source>
+</trans-unit>
+<trans-unit id="s8ad4a17ab2b75854">
+  <source>Adding <x id="0" equiv-text="${formatNumber(addCount)} ${pluralOf(&quot;items&quot;, addCount)}"/></source>
+</trans-unit>
+<trans-unit id="sbea722837f683db1">
+  <source><x id="0" equiv-text="${firstUrl}"/> + <x id="1" equiv-text="${formatNumber(remainder, { notation: &quot;compact&quot; })}"/> more <x id="2" equiv-text="${pluralOf(&quot;URLs&quot;, remainder)}"/></source>
+</trans-unit>
+<trans-unit id="items.plural.few">
+  <source>items</source>
+  <note from="lit-localize">plural form of "item" for few items</note>
+</trans-unit>
+<trans-unit id="items.plural.many">
+  <source>items</source>
+  <note from="lit-localize">plural form of "item" for many items</note>
+</trans-unit>
+<trans-unit id="items.plural.other">
+  <source>items</source>
+  <note from="lit-localize">plural form of "item" for multiple/other items</note>
+</trans-unit>
+<trans-unit id="items.plural.two">
+  <source>items</source>
+  <note from="lit-localize">plural form of "item" for two items</note>
+</trans-unit>
+<trans-unit id="items.plural.zero">
+  <source>items</source>
+  <note from="lit-localize">plural form of "item" for zero items</note>
+</trans-unit>
+<trans-unit id="items.plural.one">
+  <source>item</source>
+  <note from="lit-localize">singular form for "item"</note>
 </trans-unit>
 </body>
 </file>
