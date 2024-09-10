@@ -1,14 +1,5 @@
 name: Frontend Build Check
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'frontend/src/**'
-      - 'frontend/*.json'
-      - 'frontend/*.js'
-      - 'frontend/*.ts'
-      - '.github/workflows/frontend-build-check.yaml'
   pull_request:
     paths:
       - 'frontend/src/**'
