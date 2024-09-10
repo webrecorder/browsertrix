@@ -1,6 +1,9 @@
-import { msg, str } from "@lit/localize";
+import { msg } from "@lit/localize";
 import clsx from "clsx";
 import { html, type TemplateResult } from "lit";
+
+import { formatNumber } from "./localization";
+import { pluralOf } from "./pluralize";
 
 import type { ArchivedItem, CrawlState, Workflow } from "@/types/crawler";
 
@@ -52,15 +55,10 @@ export function renderName(item: ArchivedItem | Workflow, className?: string) {
     const remainder = item.seedCount - 1;
     let nameSuffix: string | TemplateResult<1> = "";
     if (remainder) {
-      if (remainder === 1) {
-        nameSuffix = html`<div class="ml-1">
-          ${msg(str`+${remainder} URL`)}
-        </div>`;
-      } else {
-        nameSuffix = html`<div class="ml-1">
-          ${msg(str`+${remainder} URLs`)}
-        </div>`;
-      }
+      nameSuffix = html`<div class="ml-1">
+        +${formatNumber(remainder, { notation: "compact" })}
+        ${pluralOf("URLs", remainder)}
+      </div>`;
     }
     return html`
       <div class="inline-flex w-full overflow-hidden whitespace-nowrap">

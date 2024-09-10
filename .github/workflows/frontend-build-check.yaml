@@ -1,5 +1,14 @@
 name: Frontend Build Check
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'frontend/src/**'
+      - 'frontend/*.json'
+      - 'frontend/*.js'
+      - 'frontend/*.ts'
+      - '.github/workflows/frontend-build-check.yaml'
   pull_request:
     paths:
       - 'frontend/src/**'
@@ -42,9 +51,12 @@ jobs:
       - name: Unit tests
         working-directory: frontend
         run: yarn test
+      - name: Check extracted strings
+        working-directory: frontend
+        run: yarn localize:extract && git diff-index HEAD --
       - name: Localization build
         working-directory: frontend
-        run: yarn localize:prepare
+        run: yarn localize:build
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2

@@ -32,7 +32,7 @@ import {
 } from "@/utils/crawler";
 import { humanizeSchedule } from "@/utils/cron";
 import LiteElement, { html } from "@/utils/LiteElement";
-import { getLocale } from "@/utils/localization";
+import { formatNumber, getLocale } from "@/utils/localization";
 import { isArchivingDisabled } from "@/utils/orgs";
 
 const SECTIONS = ["crawls", "watch", "settings", "logs"] as const;
@@ -110,9 +110,6 @@ export class WorkflowDetail extends LiteElement {
   @state()
   private filterBy: Partial<Record<keyof Crawl, string | CrawlState[]>> = {};
 
-  private readonly numberFormatter = new Intl.NumberFormat(getLocale(), {
-    // notation: "compact",
-  });
   private readonly dateFormatter = new Intl.DateTimeFormat(getLocale(), {
     year: "numeric",
     month: "numeric",
@@ -924,13 +921,9 @@ export class WorkflowDetail extends LiteElement {
       <btrix-desc-list horizontal>
         ${this.renderDetailItem(msg("Pages Crawled"), () =>
           this.lastCrawlStats
-            ? msg(
-                str`${this.numberFormatter.format(
-                  +(this.lastCrawlStats.done || 0),
-                )} / ${this.numberFormatter.format(
-                  +(this.lastCrawlStats.found || 0),
-                )}`,
-              )
+            ? `${formatNumber(
+                +(this.lastCrawlStats.done || 0),
+              )} / ${formatNumber(+(this.lastCrawlStats.found || 0))}`
             : html`<sl-spinner></sl-spinner>`,
         )}
         ${this.renderDetailItem(msg("Run Duration"), () =>

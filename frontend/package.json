@@ -95,7 +95,6 @@
     "lint:lit-analyzer": "lit-analyzer",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "localize:prepare": "yarn localize:extract && yarn localize:build",
     "localize:extract": "lit-localize extract",
     "localize:build": "lit-localize build"
   },
@@ -123,11 +122,7 @@
     "chromium": "^3.0.3"
   },
   "lint-staged": {
-    "*.{ts,js}": [
-      "prettier --write",
-      "eslint --fix --quiet"
-    ],
-    "*.{html,css,json,webmanifest}": "prettier --write"
+    "*.{ts,js,html,css,json,webmanifest}": "prettier --write"
   },
   "husky": {
     "hooks": {
