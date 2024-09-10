@@ -9,7 +9,12 @@ import RegexColorize from "regex-colorize";
 
 import { RelativeDuration } from "./relative-duration";
 
-import type { CrawlConfig, Seed, SeedConfig } from "@/pages/org/types";
+import {
+  ScopeType,
+  type CrawlConfig,
+  type Seed,
+  type SeedConfig,
+} from "@/pages/org/types";
 import scopeTypeLabel from "@/strings/crawl-workflows/scopeType";
 import sectionStrings from "@/strings/crawl-workflows/section";
 import type { Collection } from "@/types/collection";
@@ -112,7 +117,7 @@ export class ConfigDetails extends LiteElement {
         </btrix-section-heading>
         <btrix-desc-list>
           ${when(
-            crawlConfig?.config.scopeType === "page",
+            crawlConfig?.config.scopeType === ScopeType.Page,
             this.renderConfirmUrlListSettings,
             this.renderConfirmSeededSettings,
           )}

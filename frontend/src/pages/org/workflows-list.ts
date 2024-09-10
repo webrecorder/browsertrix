@@ -6,7 +6,13 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
-import type { ListWorkflow, Seed, Workflow, WorkflowParams } from "./types";
+import {
+  ScopeType,
+  type ListWorkflow,
+  type Seed,
+  type Workflow,
+  type WorkflowParams,
+} from "./types";
 
 import type { SelectNewDialogEvent } from ".";
 
@@ -20,6 +26,7 @@ import { isApiError } from "@/utils/api";
 import LiteElement, { html } from "@/utils/LiteElement";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { tw } from "@/utils/tailwind";
+import { FormOnlyScopeType } from "@/utils/workflow";
 
 type SearchFields = "name" | "firstSeed";
 type SortField = "lastRun" | "name" | "firstSeed" | "created" | "modified";
@@ -244,13 +251,13 @@ export class WorkflowsList extends LiteElement {
                     ${msg("New Workflow...")}
                   </sl-button>
                   <sl-menu>
-                    <sl-menu-item value="page-list">
+                    <sl-menu-item value=${FormOnlyScopeType.PageList}>
                       ${msg("Page Crawl")}
                     </sl-menu-item>
-                    <sl-menu-item value="prefix">
+                    <sl-menu-item value=${ScopeType.Prefix}>
                       ${msg("Site Crawl")}
                     </sl-menu-item>
-                    <sl-divider> </sl-divider>
+                    <sl-divider></sl-divider>
                     <sl-menu-item>
                       <sl-icon slot="prefix" name="question-circle"></sl-icon>
                       ${msg("Help me decide")}

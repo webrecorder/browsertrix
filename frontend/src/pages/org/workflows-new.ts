@@ -2,9 +2,10 @@ import { localized, msg } from "@lit/localize";
 import { mergeDeep } from "immutable";
 import type { LitElement } from "lit";
 import { customElement, property } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 
-import type { Seed, WorkflowParams } from "./types";
+import { ScopeType, type Seed, type WorkflowParams } from "./types";
 
 import type { SelectNewDialogEvent } from ".";
 
@@ -19,7 +20,7 @@ const defaultValue = {
   schedule: "",
   config: {
     seeds: [],
-    scopeType: "page",
+    scopeType: ScopeType.Page,
     exclude: [],
     behaviorTimeout: null,
     pageLoadTimeout: null,
@@ -103,10 +104,13 @@ export class WorkflowsNew extends LiteElement {
           this.initialWorkflow || {},
         );
 
+        const scopeType = this.scopeType || initialWorkflow.config.scopeType;
+
         return html`
           <btrix-workflow-editor
-            .initialScopeType=${this.scopeType ||
-            initialWorkflow.config.scopeType}
+            initialScopeType=${ifDefined(
+              scopeType === ScopeType.Any ? undefined : scopeType,
+            )}
             .initialWorkflow=${initialWorkflow}
             .initialSeeds=${this.initialSeeds}
             @reset=${async (e: Event) => {

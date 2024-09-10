@@ -49,11 +49,11 @@ import { infoCol, inputCol } from "@/layouts/columns";
 import infoTextStrings from "@/strings/crawl-workflows/infoText";
 import scopeTypeLabels from "@/strings/crawl-workflows/scopeType";
 import sectionStrings from "@/strings/crawl-workflows/section";
-import type {
-  CrawlConfig,
+import {
   ScopeType,
-  Seed,
-  WorkflowParams,
+  type CrawlConfig,
+  type Seed,
+  type WorkflowParams,
 } from "@/types/crawler";
 import { isApiError, type Detail } from "@/utils/api";
 import { DEPTH_SUPPORTED_SCOPES } from "@/utils/crawler";
@@ -71,6 +71,7 @@ import {
   appDefaults,
   BYTES_PER_GB,
   defaultLabel,
+  FormOnlyScopeType,
   getDefaultFormState,
   getInitialFormState,
   getServerDefaults,
@@ -165,7 +166,7 @@ function validURL(url: string) {
 }
 
 function isPageScopeType(scope?: FormState["scopeType"]) {
-  return scope === "page" || scope === "page-list";
+  return scope === ScopeType.Page || scope === FormOnlyScopeType.PageList;
 }
 
 const trimArray = flow(uniq, compact);
@@ -710,22 +711,32 @@ export class WorkflowEditor extends BtrixElement {
               (e.target as HTMLSelectElement).value as FormState["scopeType"],
             )}
         >
-          ${(
-            [
-              "page",
-              "page-list",
-              "page-spa",
-              "prefix",
-              "host",
-              "domain",
-              "custom",
-            ] as (keyof typeof scopeTypeLabels)[]
-          ).map(
-            (scope) =>
-              html`<sl-option value="${scope}">
-                ${scopeTypeLabels[scope]}
-              </sl-option>`,
-          )}
+          <sl-menu-label>${msg("Page Crawl")}</sl-menu-label>
+          <sl-option value=${ScopeType.Page}
+            >${scopeTypeLabels[ScopeType.Page]}</sl-option
+          >
+          <sl-option value=${FormOnlyScopeType.PageList}>
+            ${scopeTypeLabels[FormOnlyScopeType.PageList]}
+          </sl-option>
+          <sl-divider></sl-divider>
+          <sl-menu-label>${msg("Site Crawl")}</sl-menu-label>
+          <sl-option value=${ScopeType.Prefix}>
+            ${scopeTypeLabels[ScopeType.Prefix]}
+          </sl-option>
+          <sl-option value=${ScopeType.Host}>
+            ${scopeTypeLabels[ScopeType.Host]}
+          </sl-option>
+          <sl-option value=${ScopeType.Domain}>
+            ${scopeTypeLabels[ScopeType.Domain]}
+          </sl-option>
+          <sl-divider></sl-divider>
+          <sl-menu-label>${msg("Advanced")}</sl-menu-label>
+          <sl-option value=${ScopeType.SPA}>
+            ${scopeTypeLabels[ScopeType.SPA]}
+          </sl-option>
+          <sl-option value=${ScopeType.Custom}>
+            ${scopeTypeLabels[ScopeType.Custom]}
+          </sl-option>
         </sl-select>
       `)}
       ${this.renderHelpTextCol(
@@ -773,7 +784,7 @@ export class WorkflowEditor extends BtrixElement {
 
   private readonly renderPageScope = () => {
     return html`
-      ${this.formState.scopeType === "page"
+      ${this.formState.scopeType === ScopeType.Page
         ? html`
             ${inputCol(html`
               <sl-input
@@ -905,7 +916,7 @@ https://archiveweb.page/guide`}
     let helpText: TemplateResult | string;
 
     switch (this.formState.scopeType) {
-      case "prefix":
+      case ScopeType.Prefix:
         helpText = msg(
           html`Will crawl all pages and paths in the same directory, e.g.
             <span class="break-word break-word text-blue-500"
@@ -918,21 +929,21 @@ https://archiveweb.page/guide`}
             >`,
         );
         break;
-      case "host":
+      case ScopeType.Host:
         helpText = msg(
           html`Will crawl all pages on
             <span class="text-blue-500">${exampleHost}</span> and ignore pages
             on any subdomains.`,
         );
         break;
-      case "domain":
+      case ScopeType.Domain:
         helpText = msg(
           html`Will crawl all pages on
             <span class="text-blue-500">${exampleHost}</span> and
             <span class="text-blue-500">subdomain.${exampleHost}</span>.`,
         );
         break;
-      case "page-spa":
+      case ScopeType.SPA:
         helpText = msg(
           html`Will crawl hash anchor links as pages. For example,
             <span class="break-word text-blue-500"
@@ -943,7 +954,7 @@ https://archiveweb.page/guide`}
             will be treated as a separate page.`,
         );
         break;
-      case "custom":
+      case ScopeType.Custom:
         helpText = msg(
           html`Will crawl all page URLs that begin with
             <span class="break-word text-blue-500"
@@ -999,7 +1010,7 @@ https://archiveweb.page/guide`}
       `)}
       ${this.renderHelpTextCol(msg(`The starting point of your crawl.`))}
       ${when(
-        this.formState.scopeType === "custom",
+        this.formState.scopeType === ScopeType.Custom,
         () => html`
           ${inputCol(html`
             <sl-textarea
@@ -2115,10 +2126,10 @@ https://archiveweb.page/images/${"logo.svg"}`}
   > {
     const config = {
       seeds: urlListToArray(this.formState.urlList).map((seedUrl) => {
-        const newSeed: Seed = { url: seedUrl, scopeType: "page" };
+        const newSeed: Seed = { url: seedUrl, scopeType: ScopeType.Page };
         return newSeed;
       }),
-      scopeType: "page" as NewCrawlConfigParams["config"]["scopeType"],
+      scopeType: ScopeType.Page,
       extraHops: this.formState.includeLinkedPages ? 1 : 0,
       useSitemap: false,
       failOnFailedSeed: this.formState.failOnFailedSeed,
@@ -2137,7 +2148,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       : [];
     const additionalSeedUrlList = this.formState.urlList
       ? urlListToArray(this.formState.urlList).map((seedUrl) => {
-          const newSeed: Seed = { url: seedUrl, scopeType: "page" };
+          const newSeed: Seed = { url: seedUrl, scopeType: ScopeType.Page };
           return newSeed;
         })
       : [];
@@ -2146,11 +2157,11 @@ https://archiveweb.page/images/${"logo.svg"}`}
       // the 'custom' scope here indicates we have extra URLs, actually set to 'prefix'
       // scope on backend to ensure seed URL is also added as part of standard prefix scope
       scopeType:
-        this.formState.scopeType === "custom"
-          ? "prefix"
+        this.formState.scopeType === ScopeType.Custom
+          ? ScopeType.Prefix
           : (this.formState.scopeType as ScopeType),
       include:
-        this.formState.scopeType === "custom"
+        this.formState.scopeType === ScopeType.Custom
           ? [...includeUrlList.map((url) => regexEscape(url))]
           : [],
       extraHops: this.formState.includeLinkedPages ? 1 : 0,

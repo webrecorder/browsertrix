@@ -1,13 +1,14 @@
 import type { CrawlState } from "./crawlState";
 
-export type ScopeType =
-  | "prefix"
-  | "host"
-  | "domain"
-  | "page"
-  | "page-spa"
-  | "custom"
-  | "any";
+export enum ScopeType {
+  Prefix = "prefix",
+  Host = "host",
+  Domain = "domain",
+  Page = "page",
+  SPA = "page-spa",
+  Custom = "custom",
+  Any = "any",
+}
 
 export type Seed = {
   url: string;

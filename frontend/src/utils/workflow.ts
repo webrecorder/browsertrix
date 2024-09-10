@@ -5,12 +5,12 @@ import { getAppSettings } from "./app";
 import { getLang } from "./localization";
 
 import type { Tags } from "@/components/ui/tag-input";
-import type {
-  Profile,
+import {
   ScopeType,
-  Seed,
-  SeedConfig,
-  WorkflowParams,
+  type Profile,
+  type Seed,
+  type SeedConfig,
+  type WorkflowParams,
 } from "@/types/crawler";
 import type { OrgData } from "@/types/org";
 import { DEFAULT_MAX_SCALE } from "@/utils/crawler";
@@ -42,7 +42,9 @@ export function defaultLabel(value: unknown): string {
   return "";
 }
 
-export type PageListScopeType = "page-list";
+export enum FormOnlyScopeType {
+  PageList = "page-list",
+}
 
 export type FormState = {
   primarySeedUrl: string;
@@ -58,7 +60,7 @@ export type FormState = {
   postLoadDelaySeconds: number | null;
   maxCrawlSizeGB: number;
   maxScopeDepth: number | null;
-  scopeType: Exclude<ScopeType, "any"> | PageListScopeType;
+  scopeType: Exclude<ScopeType, ScopeType.Any> | FormOnlyScopeType;
   exclusions: WorkflowParams["config"]["exclude"];
   pageLimit: WorkflowParams["config"]["limit"];
   scale: WorkflowParams["scale"];
@@ -111,7 +113,7 @@ export const getDefaultFormState = (): FormState => ({
   pageExtraDelaySeconds: null,
   postLoadDelaySeconds: null,
   maxScopeDepth: null,
-  scopeType: "page",
+  scopeType: ScopeType.Page,
   exclusions: [],
   pageLimit: null,
   scale: 1,
@@ -154,7 +156,7 @@ export function getInitialFormState(params: {
   const formState: Partial<FormState> = {};
   const seedsConfig = params.initialWorkflow.config;
   let primarySeedConfig: SeedConfig | Seed = seedsConfig;
-  if (params.initialWorkflow.config.scopeType !== "page") {
+  if (params.initialWorkflow.config.scopeType !== ScopeType.Page) {
     if (params.initialSeeds) {
       const firstSeed = params.initialSeeds[0];
       if (typeof firstSeed === "string") {
@@ -171,7 +173,7 @@ export function getInitialFormState(params: {
         .join("\n");
       // if we have additional include URLs, set to "custom" scope here
       // to indicate 'Custom Page Prefix' option
-      formState.scopeType = "custom";
+      formState.scopeType = ScopeType.Custom;
     }
     const additionalSeeds = params.initialSeeds?.slice(1);
     if (additionalSeeds?.length) {
