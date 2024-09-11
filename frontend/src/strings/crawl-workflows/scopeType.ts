@@ -7,7 +7,7 @@ const scopeType: Record<ScopeType | FormOnlyScopeType, string> = {
   ["page-list"]: msg("List of Pages"),
   prefix: msg("Pages in Same Directory"),
   host: msg("Pages on Same Domain"),
-  domain: msg("Pages on Same Domain & Subdomains"),
+  domain: msg("Pages on Same Domain + Subdomains"),
   "page-spa": msg("Page Hashes"),
   page: msg("Single Page"),
   custom: msg("Custom Page Prefix"),

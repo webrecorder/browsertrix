@@ -819,9 +819,7 @@ export class WorkflowEditor extends BtrixElement {
               >
               </sl-input>
             `)}
-            ${this.renderHelpTextCol(
-              msg(str`The crawler will visit this URL.`),
-            )}
+            ${this.renderHelpTextCol(msg(str`The URL of the page to crawl.`))}
           `
         : html`
             ${inputCol(html`
@@ -875,8 +873,9 @@ https://archiveweb.page/guide`}
               ></sl-textarea>
             `)}
             ${this.renderHelpTextCol(
-              msg(str`The crawler will visit and record each URL listed here. Other
-              links on these pages will not be crawled unless “one hop out” is enabled. You can enter up to ${MAX_ADDITIONAL_URLS.toLocaleString()} URLs.`),
+              msg(
+                str`The crawler will visit and record each URL listed here. You can enter up to ${MAX_ADDITIONAL_URLS.toLocaleString()} URLs.`,
+              ),
             )}
           `}
       ${inputCol(html`
@@ -888,9 +887,7 @@ https://archiveweb.page/guide`}
         </sl-checkbox>
       `)}
       ${this.renderHelpTextCol(
-        msg(
-          `If checked, the crawler will visit pages one link away from the specified page URL.`,
-        ),
+        msg(`If checked, the crawler will visit pages one link away.`),
         false,
       )}
     `;

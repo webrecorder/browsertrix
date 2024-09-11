@@ -12,17 +12,17 @@ Create new crawl workflows from the **Crawling** page, or the  _Create New ..._ 
 
 ### Choose what to crawl
 
-The first step in creating a new crawl workflow is to choose what you'd like to crawl. This determines whether the crawl type will be **Page List** or **Site Crawl**. Crawl types can't be changed after the workflow is created—you'll need to create a new crawl workflow.
+The first step in creating a new crawl workflow is to choose what you'd like to crawl by defining a **Crawl Scope**. Crawl scopes are categorized as a **Page Crawl** or **Site Crawl**.
 
-#### Page List
+#### Page Crawl
 
-Choose this option if you already know the URL of every page you'd like to crawl. The crawler will visit every URL specified in a list, and optionally every URL linked on those pages.
+Choose one of these crawl scopes if you know the URL of every page you'd like to crawl and don't need to include any additional pages beyond one hop out.
 
-A Page List workflow is simpler to configure, since you don't need to worry about configuring the workflow to exclude parts of the website that you may not want to archive.
+A Page Crawl workflow is simpler to configure, since you don't need to worry about configuring the workflow to exclude parts of the website that you may not want to archive.
 
 #### Site Crawl
 
-Let the crawler automatically discover pages based on a domain or start page that you specify.
+Choose one of these crawl scopes to have the the crawler automatically find pages based on a domain name, start page URL, or directory on a website.
 
 Site Crawl workflows are great for advanced use cases where you don't need (or want) to know every single URL of the website that you're archiving.
 

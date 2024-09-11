@@ -6,83 +6,112 @@ Changes to a setting will only apply to subsequent crawls.
 
 Crawl settings are shown in the crawl workflow detail **Settings** tab and in the archived item **Crawl Settings** tab.
 
-## Crawl Scope
+## Scope
 
-Specify the range and depth of your crawl. Different settings will be shown depending on whether you chose _URL List_ or _Site Crawl_ when creating a new workflow.
+Specify the range and depth of your crawl.
+
+Crawl scopes are categorized as a **Page Crawl** or **Site Crawl**:
+
+_Page Crawl_
+:   Choose one of these crawl scopes if you know the URL of every page you'd like to crawl and don't need to include any additional pages beyond one hop out.
+
+    A Page Crawl workflow can be simpler to configure, since you don't need to worry about configuring the workflow to exclude parts of the website that you may not want to archive.
+
+    ??? info "Page Crawl Use Cases"
+        - You want to archive a social media post (`Single Page`)
+        - You have a list of URLs that you can copy-and-paste (`List of Pages`)
+        - You want to include URLs with different domain names in the same crawl (`List of Pages`)
+
+_Site Crawl_
+:   Choose one of these crawl scopes to have the the crawler automatically find pages based on a domain name, start page URL, or directory on a website.
+
+    Site Crawl workflows are great for advanced use cases where you don't need (or want) to know every single URL of the website that you're archiving.
+
+    ??? info "Site Crawl Use Cases"
+        - You're archiving a subset of a website, like everything under _website.com/your-username_ (`Pages in Same Directory`)
+        - You're archiving an entire website _and_ external pages linked to from the website (`Pages on Same Domain` + _Include Any Linked Page_ checked)
+
+### Crawl Scope Options
+
+#### Page Crawl
+
+`Single Page`
+:   Crawls a single URL and does not include any linked pages.
+
+`List of Pages`
+:   Crawls only specified URLs and does not include any linked pages.
+
+`Page Hashes`
+:   This scope will ignore links that lead to other addresses such as `example.com/path` and will instead instruct the crawler to visit hashtag links such as `example.com/#linkedsection` and treat them as distinct pages.
+
+    This scope can be useful for crawling certain web apps that may not use unique URLs for their pages.
+
+#### Site Crawl
+
+`Pages in Same Directory`
+:   This scope will only crawl pages in the same directory as the _Crawl Start URL_. If `example.com/path` is set as the _Crawl Start URL_, `example.com/path/path2` will be crawled but `example.com/path3` will not.
+
+`Pages on Same Domain`
+:   This scope will crawl all pages on the domain entered as the _Crawl Start URL_ however it will ignore subdomains such as `subdomain.example.com`.
+
+`Pages on Same Domain + Subdomains`
+:   This scope will crawl all pages on the domain and any subdomains found. If `example.com` is set as the _Crawl Start URL_, both pages on `example.com` and `subdomain.example.com` will be crawled.
+
+`Custom Page Prefix`
+:   This scope will crawl all pages that begin with the _Crawl Start URL_ as well as pages from any URL that begin with the URLs listed in `Extra URL Prefixes in Scope`
+
+### Page URL(s)
+
+One or more URLs of the page to crawl. URLs must follow [valid URL syntax](https://www.w3.org/Addressing/URL/url-spec.html). For example, if you're crawling a page that can be accessed on the public internet, your URL should start with `http://` or `https://`.
 
 ??? example "Crawling with HTTP basic auth"
 
-    Both Page List and Site Crawls support [HTTP Basic Auth](https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication) which can be provided as part of the URL, for example: `https://username:password@example.com`.
+    All crawl scopes support [HTTP Basic Auth](https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication) which can be provided as part of the URL, for example: `https://username:password@example.com`.
     
     **These credentials WILL BE WRITTEN into the archive.** We recommend exercising caution and only archiving with dedicated archival accounts, changing your password or deleting the account when finished.
 
-### Crawl Type: Page List
+### Crawl Start URL
 
-#### Page URL(s)
+This is the first page that the crawler will visit. _Site Crawl_ scopes are based on this URL.
 
-A list of one or more URLs that the crawler should visit and capture.
-
-#### Include Any Linked Page
+### Include Any Linked Page
 
 When enabled, the crawler will visit all the links it finds within each page defined in the _Crawl URL(s)_ field.
 
 ??? example "Crawling tags & search queries with Page List crawls"
     This setting can be useful for crawling the content of specific tags or search queries. Specify the tag or search query URL(s) in the _Crawl URL(s)_ field, e.g: `https://example.com/search?q=tag`, and enable _Include Any Linked Page_ to crawl all the content present on that search query page.
 
-#### Fail Crawl on Failed URL
+### Fail Crawl on Failed URL
 
 When enabled, the crawler will fail the entire crawl if any of the provided URLs are invalid or unsuccessfully crawled. The resulting archived item will have a status of "Failed".
 
-### Crawl Type: Site Crawl
+### Max Depth
 
-#### Crawl Start URL
+Instructs the crawler to stop visiting new links past a specified depth.
 
-This is the first page that the crawler will visit. It's important to set _Crawl Start URL_ that accurately represents the scope of the pages you wish to crawl as the _Start URL Scope_ selection will depend on this field's contents.
+### Extra URL Prefixes in Scope
 
-You must specify the protocol (likely `http://` or `https://`) as a part of the URL entered into this field.
+This field accepts additional URLs or domains that will be crawled if URLs that lead to them are found.
 
-#### Start URL Scope
+This can be useful for crawling websites that span multiple domains such as `example.org` and `example.net`.
 
-`Hashtag Links Only`
-:   This scope will ignore links that lead to other addresses such as `example.com/path` and will instead instruct the crawler to visit hashtag links such as `example.com/#linkedsection`.
+### Include Any Linked Page ("one hop out")
 
-    This scope can be useful for crawling certain web apps that may not use unique URLs for their pages.
-
-`Pages in the Same Directory`
-:   This scope will only crawl pages in the same directory as the _Crawl Start URL_. If `example.com/path` is set as the _Crawl Start URL_, `example.com/path/path2` will be crawled but `example.com/path3` will not.
-
-`Pages on This Domain`
-:   This scope will crawl all pages on the domain entered as the _Crawl Start URL_ however it will ignore subdomains such as `subdomain.example.com`.
-
-`Pages on This Domain and Subdomains`
-:   This scope will crawl all pages on the domain and any subdomains found. If `example.com` is set as the _Crawl Start URL_, both pages on `example.com` and `subdomain.example.com` will be crawled.
-
-`Custom Page Prefix`
-:   This scope will crawl all pages that begin with the _Crawl Start URL_ as well as pages from any URL that begin with the URLs listed in `Extra URL Prefixes in Scope`
-
-#### Max Depth
-
-Only shown with a _Start URL Scope_ of `Pages on This Domain` and above, the _Max Depth_ setting instructs the crawler to stop visiting new links past a specified depth.
-
-#### Extra URL Prefixes in Scope
-
-Only shown with a _Start URL Scope_ of `Custom Page Prefix`, this field accepts additional URLs or domains that will be crawled if URLs that lead to them are found.
-
-This can be useful for crawling websites that span multiple domains such as `example.org` and `example.net`
-
-#### Include Any Linked Page ("one hop out")
-
-When enabled, the crawler will visit all the links it finds within each page, regardless of the _Start URL Scope_ setting.
+When enabled, the crawler bypasses the _Crawl Scope_ setting to visit links it finds in each page within scope. The crawler will not visit links it finds in the pages found outside of scope (hence only "one hop out".)
 
 This can be useful for capturing links on a page that lead outside the website that is being crawled but should still be included in the archive for context.
 
-#### Check For Sitemap
+### Check For Sitemap
 
 When enabled, the crawler will check for a sitemap at /sitemap.xml and use it to discover pages to crawl if found. It will not crawl pages found in the sitemap that do not meet the crawl's scope settings or limits.
 
 This can be useful for discovering and capturing pages on a website that aren't linked to from the seed and which might not otherwise be captured.
 
-### Exclusions
+### Additional Pages
+
+A list of page URLs outside of the _Crawl Scope_ to include in the crawl.
+
+### Exclude Pages
 
 The exclusions table will instruct the crawler to ignore links it finds on pages where all or part of the link matches an exclusion found in the table. The table is only available in Page List crawls when _Include Any Linked Page_ is enabled.
 
