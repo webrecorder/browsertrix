@@ -60,6 +60,8 @@ data:
 
   MAX_CRAWLER_MEMORY: "{{ .Values.max_crawler_memory }}"
 
+  CRAWLER_MIN_AVAIL_STORAGE_RATIO: "{{ .Values.crawler_min_avail_storage_ratio }}"
+
   ENABLE_AUTO_RESIZE_CRAWLERS: "{{ .Values.enable_auto_resize_crawlers }}"
 
   BILLING_ENABLED: "{{ .Values.billing_enabled }}"
