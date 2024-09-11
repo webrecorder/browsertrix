@@ -718,6 +718,9 @@ export class WorkflowEditor extends BtrixElement {
           <sl-option value=${FormOnlyScopeType.PageList}>
             ${scopeTypeLabels[FormOnlyScopeType.PageList]}
           </sl-option>
+          <sl-option value=${ScopeType.SPA}>
+            ${scopeTypeLabels[ScopeType.SPA]}
+          </sl-option>
           <sl-divider></sl-divider>
           <sl-menu-label>${msg("Site Crawl")}</sl-menu-label>
           <sl-option value=${ScopeType.Prefix}>
@@ -728,11 +731,6 @@ export class WorkflowEditor extends BtrixElement {
           </sl-option>
           <sl-option value=${ScopeType.Domain}>
             ${scopeTypeLabels[ScopeType.Domain]}
-          </sl-option>
-          <sl-divider></sl-divider>
-          <sl-menu-label>${msg("Advanced")}</sl-menu-label>
-          <sl-option value=${ScopeType.SPA}>
-            ${scopeTypeLabels[ScopeType.SPA]}
           </sl-option>
           <sl-option value=${ScopeType.Custom}>
             ${scopeTypeLabels[ScopeType.Custom]}
