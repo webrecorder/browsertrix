@@ -54,6 +54,10 @@ export type APIUser = {
   orgs: UserOrg[];
 };
 
+export interface UserGuideEventMap {
+  "btrix-user-guide-show": CustomEvent<{ src?: string }>;
+}
+
 @localized()
 @customElement("browsertrix-app")
 export class App extends LiteElement {
@@ -100,11 +104,22 @@ export class App extends LiteElement {
     this.addEventListener("btrix-need-login", this.onNeedLogin);
     this.addEventListener("btrix-logged-in", this.onLoggedIn);
     this.addEventListener("btrix-log-out", this.onLogOut);
+    this.attachUserGuideListeners();
     window.addEventListener("popstate", () => {
       this.syncViewState();
     });
 
     this.startSyncBrowserTabs();
+  }
+
+  private attachUserGuideListeners() {
+    this.addEventListener(
+      "btrix-user-guide-show",
+      (e: UserGuideEventMap["btrix-user-guide-show"]) => {
+        e.stopPropagation();
+        this.showUserGuide(e.detail.src);
+      },
+    );
   }
 
   willUpdate(changedProperties: Map<string, unknown>) {
@@ -349,7 +364,7 @@ export class App extends LiteElement {
                     ? html`
                         <button
                           class="flex items-center gap-2 leading-none text-neutral-500 hover:text-primary"
-                          @click=${() => void this.userGuideDrawer.show()}
+                          @click=${() => this.showUserGuide()}
                         >
                           <sl-icon
                             name="book"
@@ -812,6 +827,20 @@ export class App extends LiteElement {
         </div>
       </sl-dropdown>
     `;
+  }
+
+  private showUserGuide(src?: string) {
+    void this.userGuideDrawer.show();
+
+    const iframe = this.userGuideDrawer.querySelector("iframe");
+
+    if (iframe) {
+      if (src && iframe.src !== src) {
+        iframe.src = src;
+      }
+    } else {
+      console.debug("user guide iframe not found");
+    }
   }
 
   onLogOut(event: CustomEvent<{ redirect?: boolean } | null>) {

@@ -7,9 +7,9 @@ import { when } from "lit/directives/when.js";
 
 import { ScopeType, type Seed, type WorkflowParams } from "./types";
 
-import type { SelectNewDialogEvent } from ".";
-
+import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
 import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
+import type { SelectNewDialogEvent } from "@/pages/org/index";
 import LiteElement, { html } from "@/utils/LiteElement";
 import type { FormState as WorkflowFormState } from "@/utils/workflow";
 
@@ -81,7 +81,25 @@ export class WorkflowsNew extends LiteElement {
 
     return html`
       <div class="mb-5">${this.renderBreadcrumbs()}</div>
-      <h2 class="mb-6 text-xl font-semibold">${msg("New Crawl Workflow")}</h2>
+      <header class="flex items-center justify-between">
+        <h2 class="mb-6 text-xl font-semibold">${msg("New Crawl Workflow")}</h2>
+        <sl-button
+          size="small"
+          @click=${() => {
+            this.dispatchEvent(
+              new CustomEvent("btrix-user-guide-show", {
+                detail: {
+                  src: "https://docs.browsertrix.com/user-guide/workflow-setup/#scope",
+                },
+                bubbles: true,
+              }),
+            );
+          }}
+        >
+          <sl-icon slot="prefix" name="book"></sl-icon>
+          ${msg("Setup Guide")}
+        </sl-button>
+      </header>
       ${when(this.org, (org) => {
         const initialWorkflow = mergeDeep(
           defaultValue,
@@ -124,6 +142,13 @@ export class WorkflowsNew extends LiteElement {
           ></btrix-workflow-editor>
         `;
       })}
+
+      <btrix-new-workflow-dialog
+        @select-job-type=${(e: SelectJobTypeEvent) => {
+          e.stopPropagation();
+        }}
+      >
+      </btrix-new-workflow-dialog>
     `;
   }
 

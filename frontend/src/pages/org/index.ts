@@ -432,17 +432,6 @@ export class Org extends LiteElement {
           @sl-hide=${() => (this.openDialogName = undefined)}
         >
         </btrix-new-browser-profile-dialog>
-        <btrix-new-workflow-dialog
-          ?open=${this.openDialogName === "workflow"}
-          @sl-hide=${() => (this.openDialogName = undefined)}
-          @select-job-type=${(e: SelectJobTypeEvent) => {
-            this.openDialogName = undefined;
-            this.navTo(
-              `${this.orgBasePath}/workflows/new?scopeType=${e.detail}`,
-            );
-          }}
-        >
-        </btrix-new-workflow-dialog>
         <btrix-collection-metadata-dialog
           ?open=${this.openDialogName === "collection"}
           @sl-hide=${() => (this.openDialogName = undefined)}

@@ -737,9 +737,9 @@ export class WorkflowEditor extends BtrixElement {
           </sl-option>
         </sl-select>
       `)}
-      ${this.renderHelpTextCol(
-        msg(`Tells the crawler which pages it can visit.`),
-      )}
+      ${this.renderHelpTextCol(html`
+        <p>${msg(`Tells the crawler which pages it can visit.`)}</p>
+      `)}
       ${isPageScopeType(this.formState.scopeType)
         ? this.renderPageScope()
         : this.renderSiteScope()}

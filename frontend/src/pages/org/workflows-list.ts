@@ -14,8 +14,6 @@ import {
   type WorkflowParams,
 } from "./types";
 
-import type { SelectNewDialogEvent } from ".";
-
 import { CopyButton } from "@/components/ui/copy-button";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import { type SelectEvent } from "@/components/ui/search-combobox";
@@ -243,12 +241,6 @@ export class WorkflowsList extends LiteElement {
                             },
                           ),
                         );
-                      } else {
-                        this.dispatchEvent(
-                          new CustomEvent("select-new-dialog", {
-                            detail: "workflow",
-                          }) as SelectNewDialogEvent,
-                        );
                       }
                     }}
                   >
@@ -287,11 +279,6 @@ export class WorkflowsList extends LiteElement {
                       </sl-menu-item>
                       <sl-menu-item value=${ScopeType.Custom}>
                         ${scopeTypeLabels[ScopeType.Custom]}
-                      </sl-menu-item>
-                      <sl-divider></sl-divider>
-                      <sl-menu-item>
-                        <sl-icon slot="prefix" name="question-circle"></sl-icon>
-                        ${msg("Help me decide")}
                       </sl-menu-item>
                     </sl-menu>
                   </sl-dropdown>
