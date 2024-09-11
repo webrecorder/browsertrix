@@ -90,7 +90,7 @@ class CrawlOperator(BaseOperator):
     fast_retry_secs: int
     log_failed_crawl_lines: int
 
-    min_avail_storage_ratio: int
+    min_avail_storage_ratio: float
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -104,11 +104,11 @@ class CrawlOperator(BaseOperator):
         self.log_failed_crawl_lines = int(os.environ.get("LOG_FAILED_CRAWL_LINES") or 0)
 
         # ensure available storage is at least this much times used storage
-        self.min_avail_storage_ratio = int(
+        self.min_avail_storage_ratio = float(
             os.environ.get("CRAWLER_MIN_AVAIL_STORAGE_RATIO" or 0)
         )
 
-        print("Min Crawler Ratio:", self.min_avail_storage_ratio)
+        print("Min Crawler Avail Size Ratio:", self.min_avail_storage_ratio)
 
     def init_routes(self, app):
         """init routes for this operator"""
