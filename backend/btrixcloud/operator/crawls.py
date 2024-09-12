@@ -76,9 +76,6 @@ MEM_SOFT_OOM_THRESHOLD = 1.0
 # set memory limit to this much of request for extra padding
 MEM_LIMIT_PADDING = 1.2
 
-# ensure available storage is at least this much times used storage
-AVAIL_STORAGE_RATIO = 2.5
-
 
 # pylint: disable=too-many-public-methods, too-many-locals, too-many-branches, too-many-statements
 # pylint: disable=invalid-name, too-many-lines, too-many-return-statements
@@ -93,6 +90,8 @@ class CrawlOperator(BaseOperator):
     fast_retry_secs: int
     log_failed_crawl_lines: int
 
+    min_avail_storage_ratio: float
+
     def __init__(self, *args):
         super().__init__(*args)
 
@@ -103,6 +102,11 @@ class CrawlOperator(BaseOperator):
         self.fast_retry_secs = int(os.environ.get("FAST_RETRY_SECS") or 0)
 
         self.log_failed_crawl_lines = int(os.environ.get("LOG_FAILED_CRAWL_LINES") or 0)
+
+        # ensure available storage is at least this much times used storage
+        self.min_avail_storage_ratio = float(
+            os.environ.get("CRAWLER_MIN_AVAIL_STORAGE_RATIO") or 0
+        )
 
     def init_routes(self, app):
         """init routes for this operator"""
@@ -1336,12 +1340,15 @@ class CrawlOperator(BaseOperator):
 
                 if (
                     status.state == "running"
+                    and self.min_avail_storage_ratio
                     and pod_info.allocated.storage
-                    and pod_info.used.storage * AVAIL_STORAGE_RATIO
+                    and pod_info.used.storage * self.min_avail_storage_ratio
                     > pod_info.allocated.storage
                 ):
                     new_storage = math.ceil(
-                        pod_info.used.storage * AVAIL_STORAGE_RATIO / 1_000_000_000
+                        pod_info.used.storage
+                        * self.min_avail_storage_ratio
+                        / 1_000_000_000
                     )
                     pod_info.newStorage = f"{new_storage}Gi"
                     print(
