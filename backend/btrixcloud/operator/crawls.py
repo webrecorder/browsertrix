@@ -108,8 +108,6 @@ class CrawlOperator(BaseOperator):
             os.environ.get("CRAWLER_MIN_AVAIL_STORAGE_RATIO" or 0)
         )
 
-        print("Min Crawler Avail Size Ratio:", self.min_avail_storage_ratio)
-
     def init_routes(self, app):
         """init routes for this operator"""
 
