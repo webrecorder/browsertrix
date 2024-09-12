@@ -9,7 +9,8 @@ import type { PageChangeEvent } from "@/components/ui/pagination";
 import needLogin from "@/decorators/needLogin";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
-import type { Crawl, CrawlState } from "@/types/crawler";
+import type { Crawl } from "@/types/crawler";
+import type { CrawlState } from "@/types/crawlState";
 import { activeCrawlStates } from "@/utils/crawler";
 import LiteElement, { html } from "@/utils/LiteElement";
 
@@ -95,14 +96,16 @@ export class Crawls extends LiteElement {
   }
 
   render() {
-    return html` <div
-      class="mx-auto box-border w-full max-w-screen-desktop px-3 py-4"
-    >
-      ${this.crawlId
-        ? // Render loading indicator while preparing to redirect
-          this.renderLoading()
-        : this.renderCrawls()}
-    </div>`;
+    return html`<btrix-document-title
+        title=${msg("Running crawls")}
+      ></btrix-document-title>
+
+      <div class="mx-auto box-border w-full max-w-screen-desktop px-3 py-4">
+        ${this.crawlId
+          ? // Render loading indicator while preparing to redirect
+            this.renderLoading()
+          : this.renderCrawls()}
+      </div>`;
   }
 
   private renderCrawls() {
@@ -278,7 +281,7 @@ export class Crawls extends LiteElement {
   }
 
   private readonly renderCrawlItem = (crawl: Crawl) => {
-    const crawlPath = `/orgs/${this.slugLookup[crawl.oid]}/items/crawl/${
+    const crawlPath = `/orgs/${this.slugLookup[crawl.oid]}/workflows/${crawl.cid}/crawls/${
       crawl.id
     }`;
     return html`

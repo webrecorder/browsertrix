@@ -1,6 +1,7 @@
 import { APIError } from "./api";
 import appState, { AppStateService } from "./state";
 
+import type { APIUser } from "@/index";
 import { ROUTES } from "@/routes";
 import type { Auth } from "@/types/auth";
 
@@ -15,6 +16,7 @@ export type LoggedInEventDetail = Auth & {
   api?: boolean;
   firstLogin?: boolean;
   redirectUrl?: string;
+  user?: APIUser;
 };
 
 export type NeedLoginEventDetail = {
@@ -127,7 +129,7 @@ export default class AuthService {
   }: {
     email: string;
     password: string;
-  }): Promise<Auth> {
+  }): Promise<Auth & { user: APIUser }> {
     const resp = await fetch("/api/auth/jwt/login", {
       method: "POST",
       headers: {
@@ -150,6 +152,7 @@ export default class AuthService {
     const data = (await resp.json()) as {
       token_type: string;
       access_token: string;
+      user_info: APIUser;
     };
     const token = AuthService.decodeToken(data.access_token);
     const authHeaders = AuthService.parseAuthHeaders(data);
@@ -158,6 +161,7 @@ export default class AuthService {
       username: email,
       headers: authHeaders,
       tokenExpiresAt: token.exp * 1000,
+      user: data.user_info,
     };
   }
 
@@ -347,7 +351,7 @@ export default class AuthService {
         this.logout();
         const { pathname, search, hash } = window.location;
         const redirectUrl =
-          pathname !== ROUTES.login && pathname !== ROUTES.home
+          pathname !== ROUTES.login && pathname !== "/"
             ? `${pathname}${search}${hash}`
             : "";
         window.dispatchEvent(AuthService.createNeedLoginEvent({ redirectUrl }));

@@ -10,7 +10,7 @@ Instead of rebuilding the entire frontend image to view your UI changes, you can
 
 The frontend development server requires an existing backend that has been deployed locally or is in production. See [Deploying Browsertrix](../deploy/index.md).
 
-### 2. Node.js ≥18 and Yarn 1
+### 2. Node.js ≥18
 
 To check if you already have Node.js installed, run the following command in your command line terminal:
 
@@ -18,19 +18,34 @@ To check if you already have Node.js installed, run the following command in you
 node --version
 ```
 
-You should see a version number like `v18.12.1`. If you see a command line error instead of a version number, [install Node.js](https://nodejs.org) before continuing.
+You should see a version number like `v18.12.1`. If you see a command line error instead of a version number, [install Node.js](https://nodejs.org/en/download/package-manager) before continuing.
 
 ??? question "What if my other project requires a different version of Node.js?"
 
     You can use [Node Version Manager](https://nodejs.org/en/download/package-manager#nvm) to install multiple Node.js versions and switch versions between projects.
 
-To check your Yarn installation:
+### 3. Yarn 1 (Classic)
+To verify your Yarn installation:
 
 ```sh
 yarn --version
 ```
 
-You should see a version number like `1.22.19`. If you do not, [install or upgrade Yarn](https://classic.yarnpkg.com/en/docs/install).
+If your Yarn version starts with `1` (e.g. `1.22.22`) you're good to go.
+
+If Yarn isn't installed, install [Yarn 1 (Classic)](https://classic.yarnpkg.com/en/docs/install#mac-stable).
+
+If your Yarn version is `2.0` or greater, run the following from your Browsertrix project directory to enable Yarn 1:
+
+
+```sh
+cd frontend
+corepack enable
+corepack install
+```
+
+Check out the full [Yarn + Corepack installation guide](https://yarnpkg.com/corepack) for more details.
+
 
 ## Quickstart
 

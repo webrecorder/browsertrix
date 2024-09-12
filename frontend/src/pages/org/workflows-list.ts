@@ -1,7 +1,7 @@
 import { localized, msg, str } from "@lit/localize";
-import type { SlCheckbox } from "@shoelace-style/shoelace";
+import type { SlCheckbox, SlSelectEvent } from "@shoelace-style/shoelace";
 import { type PropertyValues } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
+import { customElement, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
@@ -13,10 +13,13 @@ import type { SelectNewDialogEvent } from ".";
 import { CopyButton } from "@/components/ui/copy-button";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import { type SelectEvent } from "@/components/ui/search-combobox";
+import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
+import { pageHeader } from "@/layouts/pageHeader";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import { isApiError } from "@/utils/api";
 import LiteElement, { html } from "@/utils/LiteElement";
 import { isArchivingDisabled } from "@/utils/orgs";
+import { tw } from "@/utils/tailwind";
 
 type SearchFields = "name" | "firstSeed";
 type SortField = "lastRun" | "name" | "firstSeed" | "created" | "modified";
@@ -69,9 +72,6 @@ export class WorkflowsList extends LiteElement {
     name: msg("Name"),
     firstSeed: msg("Crawl Start URL"),
   };
-
-  @property({ type: Boolean })
-  isCrawler!: boolean;
 
   @state()
   private workflows?: APIPaginatedList<ListWorkflow>;
@@ -189,36 +189,83 @@ export class WorkflowsList extends LiteElement {
 
   render() {
     return html`
-      <header class="contents">
-        <div class="mb-4 flex w-full justify-between">
-          <h1 class="text-xl font-semibold leading-8">
-            ${msg("Crawl Workflows")}
-          </h1>
-          ${when(
-            this.isCrawler,
-            () => html`
-              <sl-button
-                variant="primary"
-                size="small"
-                ?disabled=${this.org?.readOnly}
-                @click=${() => {
-                  this.dispatchEvent(
-                    new CustomEvent("select-new-dialog", {
-                      detail: "workflow",
-                    }) as SelectNewDialogEvent,
-                  );
-                }}
-              >
-                <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-                ${msg("New Workflow")}
-              </sl-button>
-            `,
-          )}
-        </div>
+      <div class="contents">
+        ${pageHeader(
+          msg("Crawl Workflows"),
+          html`
+            ${when(
+              this.appState.isAdmin,
+              () =>
+                html`<sl-tooltip content=${msg("Configure crawling defaults")}>
+                  <sl-icon-button
+                    href=${`${this.orgBasePath}/settings/crawling-defaults`}
+                    class="size-8 text-lg"
+                    name="gear"
+                    label=${msg("Edit org crawling settings")}
+                    @click=${this.navLink}
+                  ></sl-icon-button>
+                </sl-tooltip>`,
+            )}
+            ${when(
+              this.appState.isCrawler,
+              () => html`
+                <sl-dropdown
+                  distance="4"
+                  placement="bottom-end"
+                  @sl-select=${(e: SlSelectEvent) => {
+                    const { value } = e.detail.item;
+
+                    if (value) {
+                      this.dispatchEvent(
+                        new CustomEvent<SelectJobTypeEvent["detail"]>(
+                          "select-job-type",
+                          {
+                            detail: value as SelectJobTypeEvent["detail"],
+                          },
+                        ),
+                      );
+                    } else {
+                      this.dispatchEvent(
+                        new CustomEvent("select-new-dialog", {
+                          detail: "workflow",
+                        }) as SelectNewDialogEvent,
+                      );
+                    }
+                  }}
+                >
+                  <sl-button
+                    slot="trigger"
+                    size="small"
+                    variant="primary"
+                    caret
+                    ?disabled=${this.org?.readOnly}
+                  >
+                    <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+                    ${msg("New Workflow...")}
+                  </sl-button>
+                  <sl-menu>
+                    <sl-menu-item value="url-list">
+                      ${msg("Page List")}
+                    </sl-menu-item>
+                    <sl-menu-item value="seed-crawl">
+                      ${msg("Site Crawl")}
+                    </sl-menu-item>
+                    <sl-divider> </sl-divider>
+                    <sl-menu-item>
+                      <sl-icon slot="prefix" name="question-circle"></sl-icon>
+                      ${msg("Help me decide")}
+                    </sl-menu-item>
+                  </sl-menu>
+                </sl-dropdown>
+              `,
+            )}
+          `,
+          tw`border-b-transparent`,
+        )}
         <div class="sticky top-2 z-10 mb-3 rounded-lg border bg-neutral-50 p-4">
           ${this.renderControls()}
         </div>
-      </header>
+      </div>
 
       ${when(
         this.fetchErrorStatusCode,
@@ -413,7 +460,7 @@ export class WorkflowsList extends LiteElement {
   private renderMenuItems(workflow: ListWorkflow) {
     return html`
       ${when(
-        workflow.isCrawlRunning && this.isCrawler,
+        workflow.isCrawlRunning && this.appState.isCrawler,
         // HACK shoelace doesn't current have a way to override non-hover
         // color without resetting the --sl-color-neutral-700 variable
         () => html`
@@ -434,7 +481,7 @@ export class WorkflowsList extends LiteElement {
         `,
       )}
       ${when(
-        this.isCrawler && !workflow.isCrawlRunning,
+        this.appState.isCrawler && !workflow.isCrawlRunning,
         () => html`
           <sl-menu-item
             style="--sl-color-neutral-700: var(--success)"
@@ -447,31 +494,28 @@ export class WorkflowsList extends LiteElement {
         `,
       )}
       ${when(
-        workflow.isCrawlRunning && this.isCrawler,
+        this.appState.isCrawler &&
+          workflow.isCrawlRunning &&
+          !workflow.lastCrawlStopping,
         // HACK shoelace doesn't current have a way to override non-hover
         // color without resetting the --sl-color-neutral-700 variable
         () => html`
           <sl-divider></sl-divider>
           <sl-menu-item
             @click=${() =>
-              this.navTo(
-                `${this.orgBasePath}/workflows/crawl/${workflow.id}#watch`,
-                {
-                  dialog: "scale",
-                },
-              )}
+              this.navTo(`${this.orgBasePath}/workflows/${workflow.id}#watch`, {
+                dialog: "scale",
+              })}
           >
             <sl-icon name="plus-slash-minus" slot="prefix"></sl-icon>
-            ${msg("Edit Crawler Instances")}
+            ${msg("Edit Browser Windows")}
           </sl-menu-item>
           <sl-menu-item
+            ?disabled=${workflow.lastCrawlState !== "running"}
             @click=${() =>
-              this.navTo(
-                `${this.orgBasePath}/workflows/crawl/${workflow.id}#watch`,
-                {
-                  dialog: "exclusions",
-                },
-              )}
+              this.navTo(`${this.orgBasePath}/workflows/${workflow.id}#watch`, {
+                dialog: "exclusions",
+              })}
           >
             <sl-icon name="table" slot="prefix"></sl-icon>
             ${msg("Edit Exclusions")}
@@ -480,14 +524,12 @@ export class WorkflowsList extends LiteElement {
         `,
       )}
       ${when(
-        this.isCrawler,
+        this.appState.isCrawler,
         () =>
           html` <sl-divider></sl-divider>
             <sl-menu-item
               @click=${() =>
-                this.navTo(
-                  `${this.orgBasePath}/workflows/crawl/${workflow.id}?edit`,
-                )}
+                this.navTo(`${this.orgBasePath}/workflows/${workflow.id}?edit`)}
             >
               <sl-icon name="gear" slot="prefix"></sl-icon>
               ${msg("Edit Workflow Settings")}
@@ -501,15 +543,29 @@ export class WorkflowsList extends LiteElement {
         ${msg("Copy Tags")}
       </sl-menu-item>
       ${when(
-        this.isCrawler,
-        () =>
-          html` <sl-menu-item
+        this.appState.isCrawler,
+        () => html`
+          <sl-menu-item
             ?disabled=${isArchivingDisabled(this.org, true)}
             @click=${() => void this.duplicateConfig(workflow)}
           >
             <sl-icon name="files" slot="prefix"></sl-icon>
             ${msg("Duplicate Workflow")}
-          </sl-menu-item>`,
+          </sl-menu-item>
+          ${when(
+            !workflow.lastCrawlId,
+            () => html`
+              <sl-divider></sl-divider>
+              <sl-menu-item
+                style="--sl-color-neutral-700: var(--danger)"
+                @click=${() => void this.delete(workflow)}
+              >
+                <sl-icon name="trash3" slot="prefix"></sl-icon>
+                ${msg("Delete Workflow")}
+              </sl-menu-item>
+            `,
+          )}
+        `,
       )}
     `;
   }
@@ -658,29 +714,6 @@ export class WorkflowsList extends LiteElement {
     }
   }
 
-  private async deactivate(workflow: ListWorkflow): Promise<void> {
-    try {
-      await this.apiFetch(`/orgs/${this.orgId}/crawlconfigs/${workflow.id}`, {
-        method: "DELETE",
-      });
-
-      void this.fetchWorkflows();
-      this.notify({
-        message: msg(
-          html`Deactivated <strong>${this.renderName(workflow)}</strong>.`,
-        ),
-        variant: "success",
-        icon: "check2-circle",
-      });
-    } catch {
-      this.notify({
-        message: msg("Sorry, couldn't deactivate Workflow at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-      });
-    }
-  }
-
   private async delete(workflow: ListWorkflow): Promise<void> {
     try {
       await this.apiFetch(`/orgs/${this.orgId}/crawlconfigs/${workflow.id}`, {
@@ -690,7 +723,7 @@ export class WorkflowsList extends LiteElement {
       void this.fetchWorkflows();
       this.notify({
         message: msg(
-          html`Deleted <strong>${this.renderName(workflow)}</strong>.`,
+          html`Deleted <strong>${this.renderName(workflow)}</strong> Workflow.`,
         ),
         variant: "success",
         icon: "check2-circle",
@@ -761,7 +794,7 @@ export class WorkflowsList extends LiteElement {
             <br />
             <a
               class="underline hover:no-underline"
-              href="${this.orgBasePath}/workflows/crawl/${workflow.id}#watch"
+              href="${this.orgBasePath}/workflows/${workflow.id}#watch"
               @click=${this.navLink.bind(this)}
               >Watch crawl</a
             >`,

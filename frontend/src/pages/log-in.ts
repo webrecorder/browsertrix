@@ -4,11 +4,12 @@ import { assign, createMachine, interpret } from "@xstate/fsm";
 import { type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
-import { ROUTES } from "@/routes";
 import { isApiError } from "@/utils/api";
 import type { ViewState } from "@/utils/APIRouter";
 import AuthService from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
+import { AppStateService } from "@/utils/state";
+import { formatAPIUser } from "@/utils/user";
 
 type FormContext = {
   successMessage?: string;
@@ -145,7 +146,7 @@ export class LogInPage extends LiteElement {
   viewState!: ViewState;
 
   @property({ type: String })
-  redirectUrl: string = ROUTES.home;
+  redirectUrl?: string;
 
   private readonly formStateService = interpret(machine);
 
@@ -339,6 +340,12 @@ export class LogInPage extends LiteElement {
   }
 
   async checkBackendInitialized() {
+    if (this.appState.settings) {
+      this.formStateService.send("BACKEND_INITIALIZED");
+
+      return;
+    }
+
     const resp = await fetch("/api/settings");
     if (resp.status === 200) {
       this.formStateService.send("BACKEND_INITIALIZED");
@@ -360,6 +367,10 @@ export class LogInPage extends LiteElement {
 
     try {
       const data = await AuthService.login({ email: username, password });
+
+      AppStateService.updateUser(formatAPIUser(data.user));
+
+      await this.updateComplete;
 
       this.dispatchEvent(
         AuthService.createLoggedInEvent({

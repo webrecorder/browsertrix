@@ -1,26 +1,33 @@
 import { localized, msg, str } from "@lit/localize";
 import type { SlInput } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
-import { html, type PropertyValues } from "lit";
+import { html, unsafeCSS, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import { choose } from "lit/directives/choose.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 
-import { columns } from "./ui/columns";
+import stylesheet from "./settings.stylesheet.css";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { APIUser } from "@/index";
+import { columns } from "@/layouts/columns";
+import { pageHeader } from "@/layouts/pageHeader";
 import type { APIPaginatedList } from "@/types/api";
 import { isApiError } from "@/utils/api";
 import { maxLengthValidator } from "@/utils/form";
 import { AccessCode, isAdmin, isCrawler } from "@/utils/orgs";
 import slugifyStrict from "@/utils/slugify";
 import { AppStateService } from "@/utils/state";
+import { tw } from "@/utils/tailwind";
 import { formatAPIUser } from "@/utils/user";
 
 import "./components/billing";
+import "./components/crawling-defaults";
 
-type Tab = "information" | "members" | "billing";
+const styles = unsafeCSS(stylesheet);
+
+type Tab = "information" | "members" | "billing" | "crawling-defaults";
 type User = {
   email: string;
   role: AccessCode;
@@ -55,6 +62,8 @@ export type OrgRemoveMemberEvent = CustomEvent<{
 @localized()
 @customElement("btrix-org-settings")
 export class OrgSettings extends BtrixElement {
+  static styles = styles;
+
   @property({ type: String })
   activePanel: Tab = "information";
 
@@ -81,6 +90,7 @@ export class OrgSettings extends BtrixElement {
       information: msg("General"),
       members: msg("Members"),
       billing: msg("Billing"),
+      "crawling-defaults": msg("Crawling Defaults"),
     };
   }
 
@@ -99,32 +109,67 @@ export class OrgSettings extends BtrixElement {
   }
 
   render() {
-    return html`<header class="mb-5">
-        <h1 class="text-xl font-semibold leading-8">${msg("Org Settings")}</h1>
-      </header>
+    return html` ${pageHeader(
+        msg("Org Settings"),
+        when(
+          this.userInfo?.orgs && this.userInfo.orgs.length > 1 && this.userOrg,
+          (userOrg) => html`
+            <div class="text-neutral-400">
+              ${msg(
+                html`Viewing
+                  <strong class="font-medium">${userOrg.name}</strong>`,
+              )}
+            </div>
+          `,
+        ),
+        tw`mb-3 lg:mb-5`,
+      )}
 
       <btrix-tab-list activePanel=${this.activePanel} hideIndicator>
-        <header slot="header" class="flex h-5 items-end justify-between">
-          ${when(
-            this.activePanel === "members",
-            () => html`
-              <h3>${msg("Active Members")}</h3>
-              <sl-button
-                href=${`${this.navigate.orgBasePath}/settings/members?invite`}
-                variant="primary"
-                size="small"
-                @click=${this.navigate.link}
-              >
-                <sl-icon
-                  slot="prefix"
-                  name="person-add"
-                  aria-hidden="true"
-                  library="default"
-                ></sl-icon>
-                ${msg("Invite New Member")}
-              </sl-button>
-            `,
-            () => html` <h3>${this.tabLabels[this.activePanel]}</h3> `,
+        <header slot="header" class="flex h-7 items-end justify-between">
+          ${choose(
+            this.activePanel,
+            [
+              [
+                "members",
+                () => html`
+                  <h3>${msg("Active Members")}</h3>
+                  <sl-button
+                    href=${`${this.navigate.orgBasePath}/settings/members?invite`}
+                    variant="primary"
+                    size="small"
+                    @click=${this.navigate.link}
+                  >
+                    <sl-icon
+                      slot="prefix"
+                      name="person-add"
+                      aria-hidden="true"
+                      library="default"
+                    ></sl-icon>
+                    ${msg("Invite New Member")}
+                  </sl-button>
+                `,
+              ],
+              ["billing", () => html`<h3>${msg("Current Plan")}</h3> `],
+              [
+                "crawling-defaults",
+                () =>
+                  html`<h3 class="flex items-center gap-2">
+                    ${msg("Crawling Defaults")}
+                    <sl-tooltip
+                      content=${msg(
+                        "Default settings for all new crawl workflows. Existing workflows will not be affected.",
+                      )}
+                    >
+                      <sl-icon
+                        class="text-base text-neutral-500"
+                        name="info-circle"
+                      ></sl-icon>
+                    </sl-tooltip>
+                  </h3>`,
+              ],
+            ],
+            () => html`<h3>${this.tabLabels[this.activePanel]}</h3>`,
           )}
         </header>
         ${this.renderTab("information", "settings")}
@@ -132,6 +177,7 @@ export class OrgSettings extends BtrixElement {
         ${when(this.appState.settings?.billingEnabled, () =>
           this.renderTab("billing", "settings/billing"),
         )}
+        ${this.renderTab("crawling-defaults", "settings/crawling-defaults")}
 
         <btrix-tab-panel name="information">
           ${this.renderInformation()}
@@ -143,6 +189,9 @@ export class OrgSettings extends BtrixElement {
           <btrix-org-settings-billing
             .salesEmail=${this.appState.settings?.salesEmail}
           ></btrix-org-settings-billing>
+        </btrix-tab-panel>
+        <btrix-tab-panel name="crawling-defaults">
+          <btrix-org-settings-crawling-defaults></btrix-org-settings-crawling-defaults>
         </btrix-tab-panel>
       </btrix-tab-list>`;
   }
@@ -167,70 +216,71 @@ export class OrgSettings extends BtrixElement {
 
     return html`<div class="rounded-lg border">
       <form @submit=${this.onOrgInfoSubmit}>
-        ${columns([
-          [
-            html`
-              <sl-input
-                class="with-max-help-text mb-2"
-                name="orgName"
-                size="small"
-                label=${msg("Org Name")}
-                placeholder=${msg("My Organization")}
-                autocomplete="off"
-                value=${this.userOrg.name}
-                minlength="2"
-                required
-                help-text=${this.validateOrgNameMax.helpText}
-                @sl-input=${this.validateOrgNameMax.validate}
-              ></sl-input>
-            `,
-            msg(
-              "Name of your organization that is visible to all org members.",
-            ),
-          ],
-          [
-            html`
-              <sl-input
-                class="mb-2"
-                name="orgSlug"
-                size="small"
-                label=${msg("Custom URL Identifier")}
-                placeholder="my-organization"
-                autocomplete="off"
-                value=${this.orgSlug || ""}
-                minlength="2"
-                maxlength="30"
-                required
-                help-text=${msg(
-                  str`Org home page: ${window.location.protocol}//${
-                    window.location.hostname
-                  }/orgs/${
-                    this.slugValue
-                      ? slugifyStrict(this.slugValue)
-                      : this.orgSlug
-                  }`,
-                )}
-                @sl-input=${this.handleSlugInput}
-              ></sl-input>
-            `,
-            msg(
-              "Customize your organization's web address for accessing Browsertrix.",
-            ),
-          ],
-          [
-            html`
-              <btrix-copy-field
-                class="mb-2"
-                label=${msg("Org ID")}
-                value=${this.orgId}
-              ></btrix-copy-field>
-            `,
-            msg("Use this ID to reference this org in the Browsertrix API."),
-          ],
-        ])}
+        <div class="p-5">
+          ${columns([
+            [
+              html`
+                <sl-input
+                  class="with-max-help-text mb-2"
+                  name="orgName"
+                  size="small"
+                  label=${msg("Org Name")}
+                  placeholder=${msg("My Organization")}
+                  autocomplete="off"
+                  value=${this.userOrg.name}
+                  minlength="2"
+                  required
+                  help-text=${this.validateOrgNameMax.helpText}
+                  @sl-input=${this.validateOrgNameMax.validate}
+                ></sl-input>
+              `,
+              msg(
+                "Name of your organization that is visible to all org members.",
+              ),
+            ],
+            [
+              html`
+                <sl-input
+                  class="mb-2"
+                  name="orgSlug"
+                  size="small"
+                  label=${msg("Custom URL Identifier")}
+                  placeholder="my-organization"
+                  autocomplete="off"
+                  value=${this.orgSlug || ""}
+                  minlength="2"
+                  maxlength="30"
+                  required
+                  help-text=${msg(
+                    str`Org home page: ${window.location.protocol}//${
+                      window.location.hostname
+                    }/orgs/${
+                      this.slugValue
+                        ? slugifyStrict(this.slugValue)
+                        : this.orgSlug
+                    }`,
+                  )}
+                  @sl-input=${this.handleSlugInput}
+                ></sl-input>
+              `,
+              msg(
+                "Customize your organization's web address for accessing Browsertrix.",
+              ),
+            ],
+            [
+              html`
+                <btrix-copy-field
+                  class="mb-2"
+                  label=${msg("Org ID")}
+                  value=${this.orgId}
+                ></btrix-copy-field>
+              `,
+              msg("Use this ID to reference this org in the Browsertrix API."),
+            ],
+          ])}
+        </div>
         <footer class="flex justify-end border-t px-4 py-3">
           <sl-button
-            class="inline-control-button"
             type="submit"
             size="small"
             variant="primary"
@@ -281,14 +331,13 @@ export class OrgSettings extends BtrixElement {
         </btrix-data-table>
       </section>
 
-      ${when(
-        this.pendingInvites.length,
-        () => html`
-          <section class="mt-7">
-            <h3 class="mb-2 text-lg font-semibold">
-              ${msg("Pending Invites")}
-            </h3>
-
+      <section class="mt-7">
+        <header>
+          <h3 class="mb-2 text-lg font-medium">${msg("Pending Invites")}</h3>
+        </header>
+        ${when(
+          this.pendingInvites.length,
+          () => html`
             <btrix-data-table
               .columns=${[
                 msg("Email"),
@@ -303,9 +352,16 @@ export class OrgSettings extends BtrixElement {
               .columnWidths=${columnWidths}
             >
             </btrix-data-table>
-          </section>
-        `,
-      )}
+          `,
+          () => html`
+            <p
+              class="rounded border bg-neutral-50 p-3 text-center text-neutral-500"
+            >
+              ${msg("No pending invites to show.")}
+            </p>
+          `,
+        )}
+      </section>
 
       <btrix-dialog
         .label=${msg("Invite New Member")}
@@ -407,19 +463,92 @@ export class OrgSettings extends BtrixElement {
           </sl-input>
         </div>
         <div class="mb-5">
-          <sl-radio-group
-            name="role"
-            label="Permission"
-            value=${AccessCode.viewer}
-          >
-            <sl-radio value=${AccessCode.owner}>
-              ${msg("Admin — Can create crawls and manage org members")}
+          <sl-radio-group name="role" label="Role" value=${AccessCode.viewer}>
+            <sl-radio value=${AccessCode.viewer} class="radio-card">
+              <div
+                class="col-start-2 flex items-baseline justify-between gap-2"
+              >
+                ${msg("Viewer")}
+                <span class="text-xs text-gray-500">
+                  ${msg("View archived items and collections")}
+                </span>
+              </div>
+              <sl-details
+                @sl-hide=${this.stopProp}
+                @sl-after-hide=${this.stopProp}
+                class="details-card text-xs"
+              >
+                <span slot="summary">Permissions</span>
+                <ul class="ms-4 list-disc text-gray-500">
+                  <li>${msg("View crawl workflows")}</li>
+                  <li>${msg("View, replay, and download archived items")}</li>
+                  <li>${msg("View collections")}</li>
+                </ul>
+              </sl-details>
             </sl-radio>
-            <sl-radio value=${AccessCode.crawler}>
-              ${msg("Crawler — Can create crawls")}
+
+            <sl-radio value=${AccessCode.crawler} class="radio-card">
+              <div
+                class="col-start-2 flex items-baseline justify-between gap-2"
+              >
+                ${msg("Crawler")}
+                <span class="text-xs text-gray-500">
+                  ${msg("Create, evaluate, and curate archived items")}
+                </span>
+              </div>
+              <sl-details
+                @sl-hide=${this.stopProp}
+                @sl-after-hide=${this.stopProp}
+                class="details-card text-xs"
+              >
+                <span slot="summary">Permissions</span>
+                <p class="mb-1 text-gray-500">
+                  ${msg("All Viewer permissions, plus:")}
+                </p>
+                <ul class="ms-4 list-disc text-gray-500">
+                  <li>${msg("Create crawl workflows")}</li>
+                  <li>${msg("Create browser profiles")}</li>
+                  <li>${msg("Upload archived items")}</li>
+                  <li>${msg("Run QA analysis")}</li>
+                  <li>${msg("Rate and review archived items")}</li>
+                  <li>${msg("Create, edit, and share collections")}</li>
+                </ul>
+              </sl-details>
             </sl-radio>
-            <sl-radio value=${AccessCode.viewer}>
-              ${msg("Viewer — Can view crawls")}
+
+            <sl-radio value=${AccessCode.owner} class="radio-card">
+              <div
+                class="col-start-2 flex items-baseline justify-between gap-2"
+              >
+                ${msg("Admin")}
+                <span class="text-xs text-gray-500">
+                  ${this.appState.settings?.billingEnabled
+                    ? msg("Manage org and billing settings")
+                    : msg("Manage org")}
+                </span>
+              </div>
+              <sl-details
+                @sl-hide=${this.stopProp}
+                @sl-after-hide=${this.stopProp}
+                class="details-card text-xs"
+              >
+                <span slot="summary">${msg("Permissions")}</span>
+                <p class="mb-1 text-gray-500">
+                  ${msg("All Crawler permissions, plus:")}
+                </p>
+                <ul class="ms-4 list-disc text-gray-500">
+                  ${this.appState.settings?.billingEnabled &&
+                  html`<li class="text-warning">
+                      ${msg("Manage subscription")}
+                    </li>
+                    <li class="text-warning">
+                      ${msg("Manage billing details")}
+                    </li>`}
+                  <li>${msg("Edit org name and URL")}</li>
+                  <li>${msg("Manage org members")}</li>
+                  <li>${msg("View and edit org defaults")}</li>
+                </ul>
+              </sl-details>
             </sl-radio>
           </sl-radio-group>
         </div>
@@ -585,8 +714,7 @@ export class OrgSettings extends BtrixElement {
 
       const user = await this.getCurrentUser();
 
-      AppStateService.updateUserInfo(formatAPIUser(user));
-      AppStateService.updateOrgSlug(slug);
+      AppStateService.updateUser(formatAPIUser(user), slug);
 
       this.navigate.to(`${this.navigate.orgBasePath}/settings`);
 
@@ -626,5 +754,14 @@ export class OrgSettings extends BtrixElement {
 
   private async getCurrentUser(): Promise<APIUser> {
     return this.api.fetch("/users/me");
+  }
+
+  /**
+   * Stop propgation of sl-tooltip events.
+   * Prevents bug where sl-dialog closes when tooltip closes
+   * https://github.com/shoelace-style/shoelace/issues/170
+   */
+  private stopProp(e: Event) {
+    e.stopPropagation();
   }
 }

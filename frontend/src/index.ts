@@ -1,5 +1,5 @@
 import { localized, msg, str } from "@lit/localize";
-import type { SlDialog } from "@shoelace-style/shoelace";
+import type { SlDialog, SlDrawer } from "@shoelace-style/shoelace";
 import { nothing, render, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
@@ -24,8 +24,8 @@ import { formatAPIUser } from "./utils/user";
 import type { NavigateEventDetail } from "@/controllers/navigate";
 import type { NotifyEventDetail } from "@/controllers/notify";
 import { theme } from "@/theme";
-import type { AppSettings } from "@/types/app";
 import { type Auth } from "@/types/auth";
+import { type AppSettings } from "@/utils/app";
 import brandLockupColor from "~assets/brand/browsertrix-lockup-color.svg";
 
 import "./shoelace";
@@ -60,6 +60,9 @@ export class App extends LiteElement {
   @property({ type: String })
   version?: string;
 
+  @property({ type: Object })
+  settings?: AppSettings;
+
   private readonly router = new APIRouter(ROUTES);
   authService = new AuthService();
 
@@ -72,6 +75,9 @@ export class App extends LiteElement {
   @query("#globalDialog")
   private readonly globalDialog!: SlDialog;
 
+  @query("#userGuideDrawer")
+  private readonly userGuideDrawer!: SlDrawer;
+
   async connectedCallback() {
     let authState: AuthService["authState"] = null;
     try {
@@ -82,7 +88,10 @@ export class App extends LiteElement {
     this.syncViewState();
     if (authState) {
       this.authService.saveLogin(authState);
-      void this.updateUserInfo();
+    }
+    this.syncViewState();
+    if (authState && !this.userInfo) {
+      void this.fetchAndUpdateUserInfo();
     }
     super.connectedCallback();
 
@@ -96,10 +105,12 @@ export class App extends LiteElement {
     });
 
     this.startSyncBrowserTabs();
-    void this.fetchAppSettings();
   }
 
   willUpdate(changedProperties: Map<string, unknown>) {
+    if (changedProperties.has("settings")) {
+      AppStateService.updateSettings(this.settings || null);
+    }
     if (changedProperties.has("viewState")) {
       if (this.viewState.route === "orgs") {
         this.navigate(this.orgBasePath);
@@ -124,7 +135,7 @@ export class App extends LiteElement {
       (pathname === "/log-in" || pathname === "/reset-password")
     ) {
       // Redirect to logged in home page
-      this.viewState = this.router.match(ROUTES.home);
+      this.viewState = this.router.match(this.orgBasePath);
       window.history.replaceState(this.viewState, "", this.viewState.pathname);
     } else {
       this.viewState = this.router.match(
@@ -141,32 +152,14 @@ export class App extends LiteElement {
     }
   }
 
-  private async fetchAppSettings() {
-    const settings = await this.getAppSettings();
-
-    AppStateService.updateSettings(settings);
-  }
-
-  /**
-   * @deprecate Components should update user info directly through `AppStateService`
-   */
-  private async updateUserInfo(e?: CustomEvent) {
+  private async fetchAndUpdateUserInfo(e?: CustomEvent) {
     if (e) {
       e.stopPropagation();
     }
     try {
-      const userInfo = await this.getUserInfo();
-      AppStateService.updateUserInfo(formatAPIUser(userInfo));
-      const orgs = userInfo.orgs;
+      const user = await this.getUserInfo();
 
-      if (
-        orgs.length &&
-        !this.userInfo!.isSuperAdmin &&
-        !this.appState.orgSlug
-      ) {
-        const firstOrg = orgs[0].slug;
-        AppStateService.updateOrgSlug(firstOrg);
-      }
+      AppStateService.updateUser(formatAPIUser(user));
     } catch (err) {
       if ((err as Error | null | undefined)?.message === "Unauthorized") {
         console.debug(
@@ -176,32 +169,6 @@ export class App extends LiteElement {
         this.clearUser();
         this.navigate(ROUTES.login);
       }
-    }
-  }
-
-  async getAppSettings(): Promise<AppSettings> {
-    const resp = await fetch("/api/settings", {
-      headers: { "Content-Type": "application/json" },
-    });
-
-    if (resp.status === 200) {
-      const body = (await resp.json()) as AppSettings;
-
-      return body;
-    } else {
-      console.debug(resp);
-
-      return {
-        registrationEnabled: false,
-        jwtTokenLifetime: 0,
-        defaultBehaviorTimeSeconds: 0,
-        defaultPageLoadTimeSeconds: 0,
-        maxPagesPerCrawl: 0,
-        maxScale: 0,
-        billingEnabled: false,
-        salesEmail: "",
-        supportEmail: "",
-      };
     }
   }
 
@@ -225,7 +192,7 @@ export class App extends LiteElement {
 
     if (newViewPath === "/log-in" && this.authService.authState) {
       // Redirect to logged in home page
-      this.viewState = this.router.match(ROUTES.home);
+      this.viewState = this.router.match(this.orgBasePath);
     } else {
       this.viewState = this.router.match(newViewPath);
     }
@@ -257,6 +224,25 @@ export class App extends LiteElement {
         @sl-after-hide=${() => (this.globalDialogContent = {})}
         >${this.globalDialogContent.body}</sl-dialog
       >
+
+      <sl-drawer
+        id="userGuideDrawer"
+        label=${msg("User Guide")}
+        style="--body-spacing: 0; --footer-spacing: var(--sl-spacing-2x-small);"
+      >
+        <span slot="label" class="flex items-center gap-3">
+          <sl-icon name="book" class=""></sl-icon>
+          <span>${msg("User Guide")}</span>
+        </span>
+        <iframe
+          class="size-full"
+          src="https://docs.browsertrix.com/user-guide/"
+        ></iframe>
+        <sl-button size="small" slot="footer" variant="text">
+          <sl-icon slot="suffix" name="box-arrow-up-right"></sl-icon>
+          ${msg("Open in new window")}</sl-button
+        >
+      </sl-drawer>
     `;
   }
 
@@ -304,9 +290,9 @@ export class App extends LiteElement {
     return html`
       <div class="border-b bg-neutral-50">
         <nav
-          class="mx-auto box-border flex h-12 items-center justify-between px-3 xl:pl-6"
+          class="box-border flex min-h-12 flex-wrap items-center gap-x-5 gap-y-3 p-3 leading-none md:py-0 xl:pl-6"
         >
-          <div class="flex items-center">
+          <div class="order-1 flex flex-1 items-center">
             <a
               class="items-between flex gap-2"
               aria-label="home"
@@ -321,14 +307,14 @@ export class App extends LiteElement {
               <div
                 class="${showFullLogo
                   ? "w-[10.5rem]"
-                  : "w-6 md:w-[10.5rem]"} h-6 bg-cover bg-no-repeat"
+                  : "w-6 lg:w-[10.5rem]"} h-6 bg-cover bg-no-repeat"
                 style="background-image: url(${brandLockupColor})"
                 role="img"
                 title="Browsertrix logo"
               ></div>
             </a>
             ${when(
-              this.authService.authState,
+              this.userInfo,
               () => html`
                 ${isSuperAdmin
                   ? html`
@@ -357,9 +343,67 @@ export class App extends LiteElement {
               `,
             )}
           </div>
-          <div class="grid auto-cols-max grid-flow-col items-center gap-5">
-            ${isSuperAdmin
-              ? html`
+          <div class="order-2 flex flex-grow-0 items-center gap-4 md:order-3">
+            ${this.authState
+              ? html`${this.userInfo && !isSuperAdmin
+                    ? html`
+                        <button
+                          class="flex items-center gap-2 leading-none text-neutral-500 hover:text-primary"
+                          @click=${() => void this.userGuideDrawer.show()}
+                        >
+                          <sl-icon
+                            name="book"
+                            class="mt-px size-4 text-base"
+                          ></sl-icon>
+                          <span class="sr-only lg:not-sr-only"
+                            >${msg("User Guide")}</span
+                          >
+                        </button>
+                      `
+                    : nothing}
+                  <sl-dropdown
+                    class="ml-auto"
+                    placement="bottom-end"
+                    distance="4"
+                  >
+                    <button slot="trigger">
+                      <sl-avatar
+                        label=${msg("Open user menu")}
+                        shape="rounded"
+                        class="[--size:1.75rem]"
+                      ></sl-avatar>
+                    </button>
+                    <sl-menu class="w-60 min-w-min max-w-full">
+                      <div class="px-7 py-2">${this.renderMenuUserInfo()}</div>
+                      <sl-divider></sl-divider>
+                      <sl-menu-item
+                        @click=${() => this.navigate(ROUTES.accountSettings)}
+                      >
+                        <sl-icon slot="prefix" name="person-gear"></sl-icon>
+                        ${msg("Account Settings")}
+                      </sl-menu-item>
+                      ${this.userInfo?.isSuperAdmin
+                        ? html` <sl-menu-item
+                            @click=${() => this.navigate(ROUTES.usersInvite)}
+                          >
+                            <sl-icon slot="prefix" name="person-plus"></sl-icon>
+                            ${msg("Invite Users")}
+                          </sl-menu-item>`
+                        : ""}
+                      <sl-divider></sl-divider>
+                      <sl-menu-item @click="${this.onLogOut}">
+                        <sl-icon slot="prefix" name="door-open"></sl-icon>
+                        ${msg("Log Out")}
+                      </sl-menu-item>
+                    </sl-menu>
+                  </sl-dropdown>`
+              : this.renderSignUpLink()}
+          </div>
+          ${isSuperAdmin
+            ? html`
+                <div
+                  class="order-3 grid w-full auto-cols-max grid-flow-col items-center gap-5 md:order-2 md:w-auto"
+                >
                   <a
                     class="font-medium text-neutral-500 hover:text-primary"
                     href="/crawls"
@@ -367,58 +411,41 @@ export class App extends LiteElement {
                     >${msg("Running Crawls")}</a
                   >
                   <div class="hidden md:block">${this.renderFindCrawl()}</div>
-                `
-              : ""}
-            ${this.authService.authState
-              ? html`<sl-dropdown placement="bottom-end" distance="4">
-                  <button slot="trigger">
-                    <sl-avatar
-                      label=${msg("Open user menu")}
-                      shape="rounded"
-                      class="[--size:1.75rem]"
-                    ></sl-avatar>
-                  </button>
-                  <sl-menu class="w-60 min-w-min max-w-full">
-                    <div class="px-7 py-2">${this.renderMenuUserInfo()}</div>
-                    <sl-divider></sl-divider>
-                    <sl-menu-item
-                      @click=${() => this.navigate(ROUTES.accountSettings)}
-                    >
-                      <sl-icon slot="prefix" name="gear"></sl-icon>
-                      ${msg("Account Settings")}
-                    </sl-menu-item>
-                    ${this.userInfo?.isSuperAdmin
-                      ? html` <sl-menu-item
-                          @click=${() => this.navigate(ROUTES.usersInvite)}
-                        >
-                          <sl-icon slot="prefix" name="person-plus"></sl-icon>
-                          ${msg("Invite Users")}
-                        </sl-menu-item>`
-                      : ""}
-                    <sl-divider></sl-divider>
-                    <sl-menu-item @click="${this.onLogOut}">
-                      <sl-icon slot="prefix" name="door-open"></sl-icon>
-                      ${msg("Log Out")}
-                    </sl-menu-item>
-                  </sl-menu>
-                </sl-dropdown>`
-              : html`
-                  <a href="/log-in"> ${msg("Log In")} </a>
-                  ${this.appState.settings?.registrationEnabled
-                    ? html`
-                        <sl-button
-                          variant="text"
-                          @click="${() => this.navigate("/sign-up")}"
-                        >
-                          ${msg("Sign up")}
-                        </sl-button>
-                      `
-                    : html``}
-                `}
-          </div>
+                </div>
+              `
+            : nothing}
         </nav>
       </div>
     `;
+  }
+
+  private renderSignUpLink() {
+    const { registrationEnabled, signUpUrl } = this.appState.settings || {};
+
+    if (registrationEnabled) {
+      return html`
+        <sl-button
+          href="/sign-up"
+          size="small"
+          @click="${(e: MouseEvent) => {
+            if (!this.navHandleAnchorClick(e)) {
+              return;
+            }
+            this.navigate("/sign-up");
+          }}"
+        >
+          ${msg("Sign Up")}
+        </sl-button>
+      `;
+    }
+
+    if (signUpUrl) {
+      return html`
+        <sl-button href=${signUpUrl} size="small">
+          ${msg("Sign Up")}
+        </sl-button>
+      `;
+    }
   }
 
   private renderOrgs() {
@@ -440,21 +467,23 @@ export class App extends LiteElement {
     const orgNameLength = 50;
 
     return html`
-      ${selectedOption.slug
-        ? html`
-            <a
-              class="font-medium text-neutral-600"
-              href=${this.orgBasePath}
-              @click=${this.navLink}
-            >
-              ${selectedOption.name.slice(0, orgNameLength)}
-            </a>
-          `
-        : html`
-            <span class="text-neutral-500">
-              ${selectedOption.name.slice(0, orgNameLength)}
-            </span>
-          `}
+      <div class="max-w-32 truncate sm:max-w-52 md:max-w-none">
+        ${selectedOption.slug
+          ? html`
+              <a
+                class="font-medium text-neutral-600"
+                href=${this.orgBasePath}
+                @click=${this.navLink}
+              >
+                ${selectedOption.name.slice(0, orgNameLength)}
+              </a>
+            `
+          : html`
+              <span class="text-neutral-500">
+                ${selectedOption.name.slice(0, orgNameLength)}
+              </span>
+            `}
+      </div>
       ${when(
         orgs.length > 1,
         () => html`
@@ -542,57 +571,49 @@ export class App extends LiteElement {
   private renderFooter() {
     return html`
       <footer
-        class="mx-auto box-border flex w-full max-w-screen-desktop flex-col justify-between gap-4 p-3 md:flex-row"
+        class="mx-auto box-border flex w-full max-w-screen-desktop flex-col items-center justify-between gap-4 p-3 md:flex-row"
       >
         <!-- <div> -->
         <!-- TODO re-enable when translations are added -->
         <!-- <btrix-locale-picker></btrix-locale-picker> -->
         <!-- </div> -->
-        <div class="flex items-center justify-center">
+        <div>
           <a
-            class="flex items-center gap-2 text-neutral-400 hover:text-primary"
+            class="flex items-center gap-2 leading-none text-neutral-400 hover:text-primary"
             href="https://github.com/webrecorder/browsertrix"
             target="_blank"
             rel="noopener"
           >
-            <sl-icon
-              name="github"
-              class="inline-block size-4 align-middle text-base"
-            ></sl-icon>
-            Source Code
+            <sl-icon name="github" class="size-4 text-base"></sl-icon>
+            ${msg("Source Code")}
           </a>
         </div>
-        <div class="flex items-center justify-center">
+        <div>
           <a
-            class="flex items-center gap-2 text-neutral-400 hover:text-primary"
-            href="https://docs.browsertrix.com"
+            class="flex items-center gap-2 leading-none text-neutral-400 hover:text-primary"
+            href="https://forum.webrecorder.net/c/help/5"
             target="_blank"
             rel="noopener"
           >
-            <sl-icon
-              name="book-half"
-              class="inline-block size-4 align-middle text-base"
-            ></sl-icon>
-            Documentation
+            <sl-icon name="patch-question" class="size-4 text-base"></sl-icon>
+            ${msg("Help Forum")}
           </a>
         </div>
-        <div class="flex items-center justify-center">
-          ${this.version
-            ? html`
+        ${this.version
+          ? html`
+              <div class="flex items-center justify-center gap-2 leading-none">
                 <btrix-copy-button
-                  class="mr-2 size-4 text-neutral-400"
+                  class="size-4 text-neutral-400"
                   .getValue=${() => this.version}
-                  content=${msg("Copy Version Code")}
+                  content=${msg("Copy Browsertrix Version")}
                   size="x-small"
                 ></btrix-copy-button>
-                <span
-                  class="font-monostyle inline-block align-middle text-xs text-neutral-400"
-                >
+                <span class="font-monostyle text-xs text-neutral-400">
                   ${this.version}
                 </span>
-              `
-            : ""}
-        </div>
+              </div>
+            `
+          : nothing}
       </footer>
     `;
   }
@@ -669,7 +690,6 @@ export class App extends LiteElement {
           .viewStateData=${this.viewState.data}
           .params=${this.viewState.params}
           .maxScale=${this.appState.settings?.maxScale || DEFAULT_MAX_SCALE}
-          slug=${slug}
           orgPath=${orgPath.split(slug)[1]}
           orgTab=${orgTab as OrgTab}
         ></btrix-org>`;
@@ -815,14 +835,20 @@ export class App extends LiteElement {
     });
 
     if (!detail.api) {
-      this.navigate(detail.redirectUrl || ROUTES.home);
+      this.navigate(detail.redirectUrl || this.orgBasePath);
     }
 
     if (detail.firstLogin) {
       this.onFirstLogin({ email: detail.username });
     }
 
-    void this.updateUserInfo();
+    if (!this.userInfo) {
+      if (detail.user) {
+        AppStateService.updateUser(formatAPIUser(detail.user));
+      } else {
+        void this.fetchAndUpdateUserInfo();
+      }
+    }
   }
 
   onNeedLogin = (e: CustomEvent<NeedLoginEventDetail>) => {
@@ -833,11 +859,13 @@ export class App extends LiteElement {
     this.navigate(ROUTES.login, {
       redirectUrl,
     });
-    this.notify({
-      message: msg("Please log in to continue."),
-      variant: "warning",
-      icon: "exclamation-triangle",
-    });
+    if (redirectUrl && redirectUrl !== "/") {
+      this.notify({
+        message: msg("Please log in to continue."),
+        variant: "warning",
+        icon: "exclamation-triangle",
+      });
+    }
   };
 
   onNavigateTo = (event: CustomEvent<NavigateEventDetail>) => {
@@ -854,7 +882,7 @@ export class App extends LiteElement {
   };
 
   onUserInfoChange(event: CustomEvent<Partial<UserInfo>>) {
-    AppStateService.updateUserInfo({
+    AppStateService.updateUser({
       ...this.userInfo,
       ...event.detail,
     } as UserInfo);
@@ -906,7 +934,7 @@ export class App extends LiteElement {
   private clearUser() {
     this.authService.logout();
     this.authService = new AuthService();
-    AppStateService.resetUser();
+    AppStateService.resetAll();
   }
 
   private showDialog(content: DialogContent) {
@@ -958,7 +986,7 @@ export class App extends LiteElement {
           if (data.value !== AuthService.storage.getItem()) {
             if (data.value) {
               this.authService.saveLogin(JSON.parse(data.value) as Auth);
-              void this.updateUserInfo();
+              void this.fetchAndUpdateUserInfo();
               this.syncViewState();
             } else {
               this.clearUser();

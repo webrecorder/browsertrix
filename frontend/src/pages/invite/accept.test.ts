@@ -7,6 +7,7 @@ import { AcceptInvite } from "./accept";
 import type { OrgForm, OrgUpdatedDetail } from "@/pages/invite/ui/org-form";
 import AuthService from "@/utils/AuthService";
 import { AppStateService } from "@/utils/state";
+import { formatAPIUser } from "@/utils/user";
 
 const mockInviteInfo = {
   inviterEmail: "inviter_fake_email@example.com",
@@ -224,6 +225,14 @@ describe("btrix-accept-invite", () => {
     });
 
     it("updates user app state on accept", async () => {
+      const user = {
+        id: "740d7b63-b257-4311-ba3f-adc46a5fafb8",
+        email: "fake@example.com",
+        name: "Fake User",
+        is_verified: false,
+        is_superuser: false,
+        orgs: [],
+      };
       AppStateService.updateAuth(mockAuthState);
       const el = await fixture<AcceptInvite>(
         html`<btrix-accept-invite
@@ -233,16 +242,7 @@ describe("btrix-accept-invite", () => {
       );
 
       stub(el.navigate, "to");
-      stub(el, "_getCurrentUser").callsFake(async () =>
-        Promise.resolve({
-          id: "740d7b63-b257-4311-ba3f-adc46a5fafb8",
-          email: "fake@example.com",
-          name: "Fake User",
-          is_verified: false,
-          is_superuser: false,
-          orgs: [],
-        }),
-      );
+      stub(el, "_getCurrentUser").callsFake(async () => Promise.resolve(user));
       stub(el.api, "fetch").callsFake(async () =>
         Promise.resolve({
           org: {
@@ -252,13 +252,14 @@ describe("btrix-accept-invite", () => {
           },
         }),
       );
-      stub(AppStateService, "updateUserInfo");
-      stub(AppStateService, "updateOrgSlug");
+      stub(AppStateService, "updateUser");
 
       await el._onAccept();
 
-      expect(AppStateService.updateUserInfo).to.have.callCount(1);
-      expect(AppStateService.updateOrgSlug).to.have.callCount(1);
+      expect(AppStateService.updateUser).to.have.been.calledWith(
+        formatAPIUser(user),
+        mockInviteInfo.orgSlug,
+      );
     });
 
     it("redirects to org dashboard on accept", async () => {

@@ -133,6 +133,7 @@ class PodInfo(BaseModel):
 
     newCpu: Optional[int] = None
     newMemory: Optional[int] = None
+    newStorage: Optional[str] = None
     signalAtMem: Optional[int] = None
 
     evicted: Optional[bool] = False

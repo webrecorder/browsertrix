@@ -6,7 +6,7 @@
 
 &nbsp;
 
-Browsertrix is an open-source cloud-native high-fidelity browser-based crawling service designed
+Browsertrix is a cloud-native, high-fidelity, browser-based crawling service designed
 to make web archiving easier and more accessible for everyone.
 
 The service provides an API and UI for scheduling crawls and viewing results, and managing all aspects of crawling process. This system provides the orchestration and management around crawling, while the actual crawling is performed using [Browsertrix Crawler](https://github.com/webrecorder/browsertrix-crawler) containers, which are launched for each crawl.
@@ -16,6 +16,8 @@ See [browsertrix.com](https://browsertrix.com) for a feature overview and inform
 ## Documentation
 
 The full docs for using, deploying, and developing Browsertrix are available at: [https://docs.browsertrix.com](https://docs.browsertrix.com)
+
+Our docs are created with [Material for MKDocs](https://squidfunk.github.io/mkdocs-material/).
 
 ## Deployment
 

@@ -257,7 +257,7 @@ def test_update_sub(admin_auth_headers):
         "subId": "123",
         "status": "paused_payment_failed",
         "planId": "basic",
-        "futureCancelDate": "2028-12-26T01:02:03",
+        "futureCancelDate": "2028-12-26T01:02:03Z",
         "readOnlyOnCancel": False,
     }
 
@@ -466,7 +466,7 @@ def test_subscription_events_log(admin_auth_headers, non_default_org_id):
             "oid": new_subs_oid,
             "status": "paused_payment_failed",
             "planId": "basic",
-            "futureCancelDate": "2028-12-26T01:02:03",
+            "futureCancelDate": "2028-12-26T01:02:03Z",
             "quotas": None,
         },
         {
@@ -479,10 +479,10 @@ def test_subscription_events_log(admin_auth_headers, non_default_org_id):
             "quotas": {
                 "maxPagesPerCrawl": 50,
                 "storageQuota": 500000,
-                "extraExecMinutes": 0,
-                "giftedExecMinutes": 0,
-                "maxConcurrentCrawls": 0,
-                "maxExecMinutesPerMonth": 0,
+                "extraExecMinutes": None,
+                "giftedExecMinutes": None,
+                "maxConcurrentCrawls": None,
+                "maxExecMinutesPerMonth": None,
             },
         },
         {"subId": "123", "oid": new_subs_oid, "type": "cancel"},
@@ -534,7 +534,7 @@ def test_subscription_events_log_filter_sub_id(admin_auth_headers):
             "oid": new_subs_oid,
             "status": "paused_payment_failed",
             "planId": "basic",
-            "futureCancelDate": "2028-12-26T01:02:03",
+            "futureCancelDate": "2028-12-26T01:02:03Z",
             "quotas": None,
         },
         {
@@ -547,10 +547,10 @@ def test_subscription_events_log_filter_sub_id(admin_auth_headers):
             "quotas": {
                 "maxPagesPerCrawl": 50,
                 "storageQuota": 500000,
-                "extraExecMinutes": 0,
-                "giftedExecMinutes": 0,
-                "maxConcurrentCrawls": 0,
-                "maxExecMinutesPerMonth": 0,
+                "extraExecMinutes": None,
+                "giftedExecMinutes": None,
+                "maxConcurrentCrawls": None,
+                "maxExecMinutesPerMonth": None,
             },
         },
         {"subId": "123", "oid": new_subs_oid, "type": "cancel"},
@@ -595,7 +595,7 @@ def test_subscription_events_log_filter_oid(admin_auth_headers):
             "oid": new_subs_oid,
             "status": "paused_payment_failed",
             "planId": "basic",
-            "futureCancelDate": "2028-12-26T01:02:03",
+            "futureCancelDate": "2028-12-26T01:02:03Z",
             "quotas": None,
         },
         {
@@ -608,10 +608,10 @@ def test_subscription_events_log_filter_oid(admin_auth_headers):
             "quotas": {
                 "maxPagesPerCrawl": 50,
                 "storageQuota": 500000,
-                "extraExecMinutes": 0,
-                "giftedExecMinutes": 0,
-                "maxConcurrentCrawls": 0,
-                "maxExecMinutesPerMonth": 0,
+                "extraExecMinutes": None,
+                "giftedExecMinutes": None,
+                "maxConcurrentCrawls": None,
+                "maxExecMinutesPerMonth": None,
             },
         },
         {"subId": "123", "oid": new_subs_oid, "type": "cancel"},
@@ -643,10 +643,10 @@ def test_subscription_events_log_filter_plan_id(admin_auth_headers):
             "quotas": {
                 "maxPagesPerCrawl": 50,
                 "storageQuota": 500000,
-                "extraExecMinutes": 0,
-                "giftedExecMinutes": 0,
-                "maxConcurrentCrawls": 0,
-                "maxExecMinutesPerMonth": 0,
+                "extraExecMinutes": None,
+                "giftedExecMinutes": None,
+                "maxConcurrentCrawls": None,
+                "maxExecMinutesPerMonth": None,
             },
         }
     ]
@@ -694,10 +694,10 @@ def test_subscription_events_log_filter_status(admin_auth_headers):
             "quotas": {
                 "maxPagesPerCrawl": 50,
                 "storageQuota": 500000,
-                "extraExecMinutes": 0,
-                "giftedExecMinutes": 0,
-                "maxConcurrentCrawls": 0,
-                "maxExecMinutesPerMonth": 0,
+                "extraExecMinutes": None,
+                "giftedExecMinutes": None,
+                "maxConcurrentCrawls": None,
+                "maxExecMinutesPerMonth": None,
             },
         },
     ]

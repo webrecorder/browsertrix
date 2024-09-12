@@ -1,15 +1,15 @@
-import { localized, msg } from "@lit/localize";
+import { localized, msg, str } from "@lit/localize";
 import { mergeDeep } from "immutable";
 import type { LitElement } from "lit";
 import { customElement, property } from "lit/decorators.js";
+import { when } from "lit/directives/when.js";
 
 import type { JobType, Seed, WorkflowParams } from "./types";
 
 import type { SelectNewDialogEvent } from ".";
 
+import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
 import LiteElement, { html } from "@/utils/LiteElement";
-
-import "./workflow-editor";
 
 const defaultValue = {
   name: "",
@@ -19,7 +19,7 @@ const defaultValue = {
   config: {
     seeds: [],
     scopeType: "prefix",
-    exclude: [""],
+    exclude: [],
     behaviorTimeout: null,
     pageLoadTimeout: null,
     pageExtraDelay: null,
@@ -56,50 +56,40 @@ export class WorkflowsNew extends LiteElement {
   @property({ type: String })
   jobType?: JobType;
 
-  // Use custom property accessor to prevent
-  // overriding default Workflow values
   @property({ type: Object })
-  get initialWorkflow(): WorkflowParams {
-    return this._initialWorkflow;
-  }
-  set initialWorkflow(val: Partial<WorkflowParams>) {
-    this._initialWorkflow = mergeDeep(this._initialWorkflow, val);
-  }
+  initialWorkflow?: WorkflowParams;
 
-  private _initialWorkflow: WorkflowParams = defaultValue;
+  private readonly jobTypeLabels: Record<JobType, string> = {
+    "url-list": msg("Page List"),
+    "seed-crawl": msg("Site Crawl"),
+    custom: msg("Custom"),
+  };
 
-  private renderHeader() {
-    const href = `${this.orgBasePath}/workflows/crawls`;
-    const label = msg("Back to Crawl Workflows");
+  private renderBreadcrumbs() {
+    const breadcrumbs: Breadcrumb[] = [
+      {
+        href: `${this.orgBasePath}/workflows`,
+        content: msg("Crawl Workflows"),
+      },
+      {
+        href: `${this.orgBasePath}/workflows?new=workflow`,
+        content: msg("New Workflow"),
+      },
+    ];
 
-    return html`
-      <nav class="mb-5">
-        <a
-          class="text-sm font-medium text-gray-600 hover:text-gray-800"
-          href=${href}
-          @click=${(e: MouseEvent) => {
-            this.navLink(e);
-            this.jobType = undefined;
-          }}
-        >
-          <sl-icon
-            name="arrow-left"
-            class="inline-block align-middle"
-          ></sl-icon>
-          <span class="inline-block align-middle">${label}</span>
-        </a>
-      </nav>
-    `;
+    const jobType = this.initialWorkflow?.jobType || this.jobType;
+
+    if (jobType) {
+      breadcrumbs.push({
+        content: this.jobTypeLabels[jobType],
+      });
+    }
+
+    return pageNav(breadcrumbs);
   }
 
   render() {
-    const jobTypeLabels: Record<JobType, string> = {
-      "url-list": msg("URL List"),
-      "seed-crawl": msg("Seeded Crawl"),
-      custom: msg("Custom"),
-    };
-
-    const jobType = this.initialWorkflow.jobType || this.jobType;
+    const jobType = this.initialWorkflow?.jobType || this.jobType;
 
     if (!this.isCrawler) {
       return this.renderNoAccess();
@@ -107,23 +97,48 @@ export class WorkflowsNew extends LiteElement {
 
     if (jobType) {
       return html`
-        ${this.renderHeader()}
+        <div class="mb-5">${this.renderBreadcrumbs()}</div>
         <h2 class="mb-6 text-xl font-semibold">
-          ${msg(html`New Crawl Workflow &mdash; ${jobTypeLabels[jobType]}`)}
+          ${msg(str`New ${this.jobTypeLabels[jobType]} Workflow`)}
         </h2>
-        <btrix-workflow-editor
-          .initialWorkflow=${this.initialWorkflow}
-          .initialSeeds=${this.initialSeeds}
-          jobType=${jobType}
-          @reset=${async (e: Event) => {
-            await (e.target as LitElement).updateComplete;
-            this.dispatchEvent(
-              new CustomEvent("select-new-dialog", {
-                detail: "workflow",
-              }) as SelectNewDialogEvent,
-            );
-          }}
-        ></btrix-workflow-editor>
+        ${when(this.org, (org) => {
+          const initialWorkflow = mergeDeep(
+            defaultValue,
+            {
+              profileid: org.crawlingDefaults?.profileid,
+              config: {
+                exclude: org.crawlingDefaults?.exclude,
+                behaviorTimeout: org.crawlingDefaults?.behaviorTimeout,
+                pageLoadTimeout: org.crawlingDefaults?.pageLoadTimeout,
+                pageExtraDelay: org.crawlingDefaults?.pageExtraDelay,
+                postLoadDelay: org.crawlingDefaults?.postLoadDelay,
+                userAgent: org.crawlingDefaults?.userAgent,
+                blockAds: org.crawlingDefaults?.blockAds,
+                lang: org.crawlingDefaults?.lang,
+              },
+              crawlTimeout: org.crawlingDefaults?.crawlTimeout,
+              maxCrawlSize: org.crawlingDefaults?.maxCrawlSize,
+              crawlerChannel: org.crawlingDefaults?.crawlerChannel,
+            },
+            this.initialWorkflow || {},
+          );
+
+          return html`
+            <btrix-workflow-editor
+              .initialWorkflow=${initialWorkflow}
+              .initialSeeds=${this.initialSeeds}
+              jobType=${jobType}
+              @reset=${async (e: Event) => {
+                await (e.target as LitElement).updateComplete;
+                this.dispatchEvent(
+                  new CustomEvent("select-new-dialog", {
+                    detail: "workflow",
+                  }) as SelectNewDialogEvent,
+                );
+              }}
+            ></btrix-workflow-editor>
+          `;
+        })}
       `;
     }
 

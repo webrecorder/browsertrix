@@ -15,7 +15,8 @@ import type {
 } from "@/types/api";
 import type { Crawl, Workflow } from "@/types/crawler";
 import { finishedCrawlStates } from "@/utils/crawler";
-import { getLocale } from "@/utils/localization";
+import { formatNumber, getLocale } from "@/utils/localization";
+import { pluralOf } from "@/utils/pluralize";
 
 export type SelectionChangeDetail = {
   selection: Record<string, boolean>;
@@ -278,7 +279,7 @@ export class CollectionWorkflowList extends BtrixElement {
           <div class="col-span-3 md:col-span-1">
             <sl-format-date
               lang=${getLocale()}
-              date=${`${crawl.finished}Z`}
+              date=${crawl.finished}
               month="2-digit"
               day="2-digit"
               year="2-digit"
@@ -358,15 +359,10 @@ export class CollectionWorkflowList extends BtrixElement {
       const remainder = workflow.seedCount - 1;
       let nameSuffix: string | TemplateResult<1> = "";
       if (remainder) {
-        if (remainder === 1) {
-          nameSuffix = html`<span class="ml-1"
-            >${msg(str`+${remainder} URL`)}</span
-          >`;
-        } else {
-          nameSuffix = html`<span class="ml-1"
-            >${msg(str`+${remainder} URLs`)}</span
-          >`;
-        }
+        nameSuffix = html`<span class="ml-1"
+          >+${formatNumber(remainder, { notation: "compact" })}
+          ${pluralOf("URLs", remainder)}</span
+        >`;
       }
       return html`
         <div class="flex overflow-hidden whitespace-nowrap">

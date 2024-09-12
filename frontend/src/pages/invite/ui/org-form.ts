@@ -210,8 +210,7 @@ export class OrgForm extends BtrixElement {
     try {
       const user = await this._getCurrentUser();
 
-      AppStateService.updateUserInfo(formatAPIUser(user));
-      AppStateService.updateOrgSlug(data.slug);
+      AppStateService.updateUser(formatAPIUser(user), data.slug);
     } catch (e) {
       console.debug(e);
     }

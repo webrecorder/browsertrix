@@ -32,6 +32,7 @@ from .models import (
     Organization,
     StorageRef,
     OrgQuotas,
+    OrgQuotasIn,
     OrgQuotaUpdate,
     OrgReadOnlyUpdate,
     OrgReadOnlyOnCancel,
@@ -55,6 +56,7 @@ from .models import (
     PaginatedOrgOutResponse,
     CrawlConfig,
     Crawl,
+    CrawlConfigDefaults,
     UploadedCrawl,
     ConfigRevision,
     Profile,
@@ -490,6 +492,8 @@ class OrgOps:
 
         org = Organization.from_dict(org_data)
         if update.quotas:
+            # don't change gifted minutes here
+            update.quotas.giftedExecMinutes = None
             await self.update_quotas(org, update.quotas)
 
         return org
@@ -525,7 +529,7 @@ class OrgOps:
             },
         )
 
-    async def update_quotas(self, org: Organization, quotas: OrgQuotas) -> None:
+    async def update_quotas(self, org: Organization, quotas: OrgQuotasIn) -> None:
         """update organization quotas"""
 
         previous_extra_mins = (
@@ -592,6 +596,17 @@ class OrgOps:
         res = await self.orgs.find_one_and_update(
             {"_id": org.id},
             {"$set": {"webhookUrls": urls.dict(exclude_unset=True)}},
+            return_document=ReturnDocument.AFTER,
+        )
+        return res is not None
+
+    async def update_crawling_defaults(
+        self, org: Organization, defaults: CrawlConfigDefaults
+    ):
+        """Update crawling defaults"""
+        res = await self.orgs.find_one_and_update(
+            {"_id": org.id},
+            {"$set": {"crawlingDefaults": defaults.model_dump()}},
             return_document=ReturnDocument.AFTER,
         )
         return res is not None
@@ -1471,7 +1486,7 @@ def init_orgs_api(
 
     @router.post("/quotas", tags=["organizations"], response_model=UpdatedResponse)
     async def update_quotas(
-        quotas: OrgQuotas,
+        quotas: OrgQuotasIn,
         org: Organization = Depends(org_owner_dep),
         user: User = Depends(user_dep),
     ):
@@ -1556,6 +1571,16 @@ def init_orgs_api(
 
         await ops.change_user_role(org, other_user.id, update.role)
 
+        return {"updated": True}
+
+    @router.post(
+        "/defaults/crawling", tags=["organizations"], response_model=UpdatedResponse
+    )
+    async def update_crawling_defaults(
+        defaults: CrawlConfigDefaults,
+        org: Organization = Depends(org_owner_dep),
+    ):
+        await ops.update_crawling_defaults(org, defaults)
         return {"updated": True}
 
     @router.post(

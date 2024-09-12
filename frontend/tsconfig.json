@@ -13,6 +13,7 @@
     "sourceMap": true,
     "inlineSources": true,
     "skipLibCheck": true,
+    "esModuleInterop": true,
     "plugins": [
       {
         "name": "ts-lit-plugin",

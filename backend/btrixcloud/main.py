@@ -111,9 +111,12 @@ class SettingsResponse(BaseModel):
     defaultPageLoadTimeSeconds: int
 
     maxPagesPerCrawl: int
+    numBrowsers: int
     maxScale: int
 
     billingEnabled: bool
+
+    signUpUrl: str = ""
 
     salesEmail: str = ""
     supportEmail: str = ""
@@ -141,8 +144,10 @@ def main() -> None:
             os.environ.get("DEFAULT_PAGE_LOAD_TIME_SECONDS", 120)
         ),
         maxPagesPerCrawl=int(os.environ.get("MAX_PAGES_PER_CRAWL", 0)),
+        numBrowsers=int(os.environ.get("NUM_BROWSERS", 1)),
         maxScale=int(os.environ.get("MAX_CRAWL_SCALE", 3)),
         billingEnabled=is_bool(os.environ.get("BILLING_ENABLED")),
+        signUpUrl=os.environ.get("SIGN_UP_URL", ""),
         salesEmail=os.environ.get("SALES_EMAIL", ""),
         supportEmail=os.environ.get("EMAIL_SUPPORT", ""),
     )

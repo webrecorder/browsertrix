@@ -1,29 +1,20 @@
-# Org Settings
+# Change Org Settings
 
-The Org Settings page is only available to organization admins. It can be found in the main navigation menu.
+Settings that apply to the entire organization are found in the **Settings** page. If you're an org admin, you'll see the link to _Settings_ in the org navigation bar.
 
-## Org Information
+## General
 
-This tab lets you change the organization's name. This name must be unique.
+Change your organization's name and URL identifier in this tab. Choose an org name that's unique and memorable, like the name of your company or organization. Org name and URLs are unique to each Browsertrix instance (for example, on browsertrix.com) and you may be asked to change the org name or URL identifier if either are already in use by another org.
 
-## Members
+## Billing
 
-This tab lists all current members who have access to the organization, as well as any invited members who have not yet accepted an invitation to join the organization. In the _Active Members_ table, admins can change the permission level of all users in the organization, including other admins. At least one user must be an admin per-organization. Admins can also remove members by pressing the trash button.
+`Paid Feature`{ .badge-green }
 
-Admins can add new members to the organization by pressing the _Invite New Member_ button. Enter the email address associated with the user, select the appropriate role, and press _Invite_ to send a link to join the organization via email.
+View and manage your org's current payment plan and associated quotas. Usage history statistics for previous months are shown here to better inform your plan and quota requirements.
 
-Sent invites can be invalidated by pressing the trash button in the relevant _Pending Invites_ table row.
+## Crawling Defaults
 
-### Permission Levels
-
-`Viewer`
-:   Users with the viewer role have read-only access to all material within the organization. They cannot create or edit archived items, crawl workflows, browser profiles, or collections. They also do not have access to any crawl analysis or review tools.
-
-`Crawler`
-:   Users with the crawler role can create crawl workflows and collections, but they cannot delete existing archived items that they were not responsible for creating.
-
-`Admin`
-:   Users with the administrator role have full access to the organization, including its settings page.
+Set default suggested settings for all new crawl workflows. When creating a new workflow, org members will see the form pre-filled with these default values. Org members can still change or remove these settings when configuring the workflow. Removing a default setting will revert the setting back to Browsertrix' defaults.
 
 <!-- ## Limits
 

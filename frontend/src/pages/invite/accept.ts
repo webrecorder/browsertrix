@@ -8,7 +8,6 @@ import { renderInviteMessage } from "./ui/inviteMessage";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { APIUser } from "@/index";
 import type { OrgUpdatedDetail } from "@/pages/invite/ui/org-form";
-import { ROUTES } from "@/routes";
 import type { UserOrg, UserOrgInviteInfo } from "@/types/user";
 import { isApiError } from "@/utils/api";
 import { AppStateService } from "@/utils/state";
@@ -88,6 +87,10 @@ export class AcceptInvite extends BtrixElement {
     }
 
     return html`
+      <btrix-document-title
+        title=${msg("Accept invitation")}
+      ></btrix-document-title>
+
       <section
         class="flex min-h-full w-full flex-col justify-center gap-12 p-5 md:flex-row md:gap-16 md:py-16"
       >
@@ -149,7 +152,7 @@ export class AcceptInvite extends BtrixElement {
                     ? nothing
                     : html`
                         <a
-                          href=${ROUTES.home}
+                          href=${this.navigate.orgBasePath}
                           @click=${this.navigate.link}
                           class="mt-3 inline-block underline hover:no-underline"
                         >
@@ -229,8 +232,7 @@ export class AcceptInvite extends BtrixElement {
       } else {
         const user = await this._getCurrentUser();
 
-        AppStateService.updateUserInfo(formatAPIUser(user));
-        AppStateService.updateOrgSlug(org.slug);
+        AppStateService.updateUser(formatAPIUser(user), org.slug);
 
         await this.updateComplete;
 

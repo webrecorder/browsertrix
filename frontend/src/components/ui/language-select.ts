@@ -6,6 +6,8 @@ import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import sortBy from "lodash/fp/sortBy";
 
+import { getLang } from "@/utils/localization";
+
 const languages = sortBy("name")(
   ISO6391.getLanguages(ISO6391.getAllCodes()),
 ) as unknown as {
@@ -38,6 +40,9 @@ export class LanguageSelect extends LitElement {
   `;
 
   @property({ type: String })
+  size?: SlSelect["size"];
+
+  @property({ type: String })
   value?: LanguageCode;
 
   @property({ type: Boolean })
@@ -47,15 +52,22 @@ export class LanguageSelect extends LitElement {
     return html`
       <sl-select
         placeholder=${msg("Browser Default")}
-        value=${ifDefined(this.value)}
+        value=${ifDefined(this.value || getLang() || undefined)}
+        size=${ifDefined(this.size)}
         ?hoist=${this.hoist}
-        @sl-change=${(e: Event) => {
+        @sl-change=${async (e: Event) => {
           e.stopPropagation();
+
+          const { value } = e.target as SlSelect;
+
+          this.value = value as LanguageCode;
+
+          await this.updateComplete;
 
           this.dispatchEvent(
             new CustomEvent("on-change", {
               detail: {
-                value: (e.target as SlSelect).value,
+                value: this.value,
               },
             }),
           );

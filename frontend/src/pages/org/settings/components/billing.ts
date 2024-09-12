@@ -5,11 +5,10 @@ import { css, html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
-import { capitalize } from "lodash";
-
-import { columns } from "../ui/columns";
+import capitalize from "lodash/fp/capitalize";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import { columns } from "@/layouts/columns";
 import { SubscriptionStatus, type BillingPortal } from "@/types/billing";
 import type { OrgData, OrgQuotas } from "@/types/org";
 import { humanizeSeconds } from "@/utils/executionTimeFormatter";
@@ -84,32 +83,38 @@ export class OrgSettingsBilling extends BtrixElement {
 
   render() {
     return html`
-      <div class="rounded-lg border">
+      <section class="-mt-5">
         ${columns([
           [
             html`
-              <h4 class="form-label text-neutral-800">
-                ${msg("Current Plan")}
-              </h4>
-              <div class="rounded border px-4 pb-4">
-                ${when(
-                  this.org,
-                  (org) => html`
-                    <div
-                      class="mb-3 flex items-center justify-between border-b py-2"
-                    >
-                      <div
-                        class="flex items-center gap-2 text-base font-semibold leading-none"
-                      >
-                        ${this.renderSubscriptionDetails(org.subscription)}
-                      </div>
-                      ${org.subscription
+              <div class="mt-5 rounded-lg border px-4 pb-4">
+                <div
+                  class="mb-3 flex items-center justify-between border-b py-2"
+                >
+                  <div
+                    class="flex items-center gap-2 text-base font-semibold leading-none"
+                  >
+                    ${when(
+                      this.org,
+                      (org) => this.renderSubscriptionDetails(org.subscription),
+                      () => html` <sl-skeleton></sl-skeleton> `,
+                    )}
+                  </div>
+                  ${when(
+                    this.org,
+                    (org) =>
+                      org.subscription
                         ? this.renderPortalLink()
                         : this.salesEmail
                           ? this.renderContactSalesLink(this.salesEmail)
-                          : nothing}
-                    </div>
-                    ${org.subscription?.futureCancelDate
+                          : nothing,
+                    () => html` <sl-skeleton></sl-skeleton> `,
+                  )}
+                </div>
+                ${when(
+                  this.org,
+                  (org) =>
+                    org.subscription?.futureCancelDate
                       ? html`
                           <div
                             class="mb-3 flex items-center gap-2 border-b pb-3 text-neutral-500"
@@ -124,7 +129,7 @@ export class OrgSettingsBilling extends BtrixElement {
                                   <sl-format-date
                                     lang=${getLocale()}
                                     class="truncate"
-                                    date="${org.subscription.futureCancelDate}Z"
+                                    date=${org.subscription.futureCancelDate}
                                     month="long"
                                     day="numeric"
                                     year="numeric"
@@ -134,12 +139,20 @@ export class OrgSettingsBilling extends BtrixElement {
                             </span>
                           </div>
                         `
-                      : nothing}
-                    <h5 class="mb-2 mt-4 text-xs leading-none text-neutral-500">
-                      ${msg("Monthly quota")}
-                    </h5>
-                    ${this.renderQuotas(org.quotas)}
-                  `,
+                      : nothing,
+                  () => html` <sl-skeleton></sl-skeleton> `,
+                )}
+                <h5 class="mb-2 mt-4 text-xs leading-none text-neutral-500">
+                  ${msg("Monthly quota")}
+                </h5>
+                ${when(
+                  this.org,
+                  (org) => this.renderQuotas(org.quotas),
+                  () =>
+                    html` <sl-skeleton class="mb-2"></sl-skeleton>
+                      <sl-skeleton class="mb-2"></sl-skeleton>
+                      <sl-skeleton class="mb-2"></sl-skeleton>
+                      <sl-skeleton class="mb-2"></sl-skeleton>`,
                 )}
               </div>
             `,
@@ -182,14 +195,20 @@ export class OrgSettingsBilling extends BtrixElement {
             `,
           ],
         ])}
-
-        <div class="p-4">
-          <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
-            <h4>${msg("Usage History")}</h4>
-          </btrix-section-heading>
-          <btrix-usage-history-table></btrix-usage-history-table>
-        </div>
-      </div>
+      </section>
+      <section class="mt-7">
+        <header>
+          <h3 class="mb-2 text-lg font-medium">${msg("Usage History")}</h3>
+        </header>
+        ${when(
+          this.org,
+          () => html` <btrix-usage-history-table></btrix-usage-history-table> `,
+          () =>
+            html`<div class="flex justify-center rounded border p-5 text-xl">
+              <sl-spinner></sl-spinner>
+            </div>`,
+        )}
+      </section>
     `;
   }
 
@@ -256,35 +275,48 @@ export class OrgSettingsBilling extends BtrixElement {
       : nothing}`;
   };
 
-  private readonly renderQuotas = (quotas: OrgQuotas) => html`
-    <ul class="leading-relaxed text-neutral-700">
-      <li>
-        ${msg(
-          str`${quotas.maxExecMinutesPerMonth ? humanizeSeconds(quotas.maxExecMinutesPerMonth * 60, undefined, undefined, "long") : msg("Unlimited minutes")} of crawl and QA analysis execution time`,
-        )}
-      </li>
-      <li>
-        ${msg(
-          html`${quotas.storageQuota
-            ? html`<sl-format-bytes
-                value=${quotas.storageQuota}
-              ></sl-format-bytes>`
-            : msg("Unlimited")}
-          storage`,
-        )}
-      </li>
-      <li>
-        ${msg(
-          str`${quotas.maxPagesPerCrawl ? formatNumber(quotas.maxPagesPerCrawl) : msg("Unlimited")} ${pluralOf("pages", quotas.maxPagesPerCrawl)} per crawl`,
-        )}
-      </li>
-      <li>
-        ${msg(
-          str`${quotas.maxConcurrentCrawls ? formatNumber(quotas.maxConcurrentCrawls) : msg("Unlimited")} concurrent ${pluralOf("crawls", quotas.maxConcurrentCrawls)}`,
-        )}
-      </li>
-    </ul>
-  `;
+  private readonly renderQuotas = (quotas: OrgQuotas) => {
+    const maxExecMinutesPerMonth =
+      quotas.maxExecMinutesPerMonth &&
+      humanizeSeconds(
+        quotas.maxExecMinutesPerMonth * 60,
+        undefined,
+        undefined,
+        "long",
+      );
+    const maxPagesPerCrawl =
+      quotas.maxPagesPerCrawl &&
+      `${formatNumber(quotas.maxPagesPerCrawl)} ${pluralOf("pages", quotas.maxPagesPerCrawl)}`;
+    const maxConcurrentCrawls =
+      quotas.maxConcurrentCrawls &&
+      msg(
+        str`${formatNumber(quotas.maxConcurrentCrawls)} concurrent ${pluralOf("crawls", quotas.maxConcurrentCrawls)}`,
+      );
+
+    return html`
+      <ul class="leading-relaxed text-neutral-700">
+        <li>
+          ${msg(
+            str`${maxExecMinutesPerMonth || msg("Unlimited minutes")} of crawl and QA analysis execution time`,
+          )}
+        </li>
+        <li>
+          ${msg(
+            html`${quotas.storageQuota
+              ? html`<sl-format-bytes
+                  value=${quotas.storageQuota}
+                ></sl-format-bytes>`
+              : msg("Unlimited")}
+            storage`,
+          )}
+        </li>
+        <li>
+          ${msg(str`${maxPagesPerCrawl || msg("Unlimited pages")} per crawl`)}
+        </li>
+        <li>${maxConcurrentCrawls || msg("Unlimited concurrent crawls")}</li>
+      </ul>
+    `;
+  };
 
   private renderPortalLink() {
     return html`

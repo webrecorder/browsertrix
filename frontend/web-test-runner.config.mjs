@@ -52,6 +52,8 @@ export default {
         "node_modules/lodash/**/*",
         "node_modules/color/**/*",
         "node_modules/slugify/**/*",
+        "node_modules/pretty-ms/**/*",
+        "node_modules/parse-ms/**/*",
       ],
     }),
     importMapsPlugin({
@@ -66,9 +68,6 @@ export default {
               new URL("./src/__mocks__/_empty.js", import.meta.url),
             ),
             "@shoelace-style/shoelace/dist/themes/light.css": fileURLToPath(
-              new URL("./src/__mocks__/_empty.js", import.meta.url),
-            ),
-            "@wysimark/standalone": fileURLToPath(
               new URL("./src/__mocks__/_empty.js", import.meta.url),
             ),
           },

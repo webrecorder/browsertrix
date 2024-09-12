@@ -12,25 +12,27 @@ import { type Dialog } from "@/components/ui/dialog";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import { RelativeDuration } from "@/components/ui/relative-duration";
 import type { CrawlLog } from "@/features/archived-items/crawl-logs";
+import { pageBack, pageNav, type Breadcrumb } from "@/layouts/pageHeader";
 import type { APIPaginatedList } from "@/types/api";
 import type {
   ArchivedItem,
   Crawl,
   CrawlConfig,
-  CrawlState,
   Seed,
   Workflow,
 } from "@/types/crawler";
 import type { QARun } from "@/types/qa";
 import { isApiError } from "@/utils/api";
 import {
-  activeCrawlStates,
-  finishedCrawlStates,
   isActive,
+  isNotFailed,
+  isSuccessfullyFinished,
+  renderName,
 } from "@/utils/crawler";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
-import { getLocale } from "@/utils/localization";
+import { formatNumber, getLocale } from "@/utils/localization";
 import { isArchivingDisabled } from "@/utils/orgs";
+import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
 
 import "./ui/qa";
@@ -38,20 +40,14 @@ import "./ui/qa";
 const SECTIONS = [
   "overview",
   "qa",
-  "watch",
   "replay",
   "files",
   "logs",
   "config",
-  "exclusions",
 ] as const;
 type SectionName = (typeof SECTIONS)[number];
 
 const POLL_INTERVAL_SECONDS = 5;
-export const QA_RUNNING_STATES = [
-  "starting",
-  ...activeCrawlStates,
-] as CrawlState[];
 
 /**
  * Usage:
@@ -75,7 +71,7 @@ export class ArchivedItemDetail extends BtrixElement {
   showOrgLink = false;
 
   @property({ type: String })
-  crawlId?: string;
+  itemId?: string;
 
   @property({ type: Boolean })
   isCrawler = false;
@@ -90,7 +86,7 @@ export class ArchivedItemDetail extends BtrixElement {
   qaRuns?: QARun[];
 
   @state()
-  private crawl?: ArchivedItem;
+  item?: ArchivedItem;
 
   @state()
   private workflow?: Workflow;
@@ -116,38 +112,63 @@ export class ArchivedItemDetail extends BtrixElement {
   @query("#cancelQARunDialog")
   private readonly cancelQARunDialog?: Dialog | null;
 
+  private readonly tabLabels: Omit<
+    Record<SectionName, string>,
+    "watch" | "exclusions"
+  > = {
+    overview: msg("Overview"),
+    qa: msg("Quality Assurance"),
+    replay: msg("Replay"),
+    files: msg("WACZ Files"),
+    logs: msg("Error Logs"),
+    config: msg("Crawl Settings"),
+  };
+
   private get listUrl(): string {
     let path = "items";
     if (this.workflowId) {
       path = `workflows/crawl/${this.workflowId}#crawls`;
     } else if (this.collectionId) {
       path = `collections/view/${this.collectionId}/items`;
-    } else if (this.crawl?.type === "upload") {
+    } else if (this.item?.type === "upload") {
       path = "items/upload";
-    } else if (this.crawl?.type === "crawl") {
+    } else if (this.item?.type === "crawl") {
       path = "items/crawl";
     }
     return `${this.navigate.orgBasePath}/${path}`;
   }
 
-  private readonly numberFormatter = new Intl.NumberFormat(getLocale());
-
   private timerId?: number;
 
   private get isActive(): boolean | null {
-    if (!this.crawl) return null;
-    return activeCrawlStates.includes(this.crawl.state);
+    if (!this.item || this.item.type !== "crawl") return null;
+    return isActive(this.item);
   }
 
   private get hasFiles(): boolean | null {
-    if (!this.crawl) return null;
-    if (!this.crawl.resources) return false;
+    if (!this.item) return null;
+    if (!this.item.resources) return false;
 
-    return this.crawl.resources.length > 0;
+    return this.item.resources.length > 0;
+  }
+
+  private get formattedFinishedDate() {
+    if (!this.item) return;
+
+    return html`<sl-format-date
+      lang=${getLocale()}
+      date=${this.item.finished}
+      month="2-digit"
+      day="2-digit"
+      year="2-digit"
+      hour="numeric"
+      minute="numeric"
+      timeZoneName="short"
+    ></sl-format-date>`;
   }
 
   willUpdate(changedProperties: PropertyValues<this>) {
-    if (changedProperties.has("crawlId") && this.crawlId) {
+    if (changedProperties.has("itemId") && this.itemId) {
       void this.fetchCrawl();
       void this.fetchCrawlLogs();
       if (this.itemType === "crawl") {
@@ -159,13 +180,16 @@ export class ArchivedItemDetail extends BtrixElement {
         void this.fetchQARuns();
       }
     }
-    if (changedProperties.has("workflowId") && this.workflowId) {
+    if (
+      (changedProperties.has("workflowId") && this.workflowId) ||
+      (changedProperties.has("item") && this.item?.cid)
+    ) {
       void this.fetchWorkflow();
     }
     if (changedProperties.has("qaRuns")) {
       // Latest QA run that's either running or finished:
       this.mostRecentNonFailedQARun = this.qaRuns?.find((run) =>
-        [...QA_RUNNING_STATES, ...finishedCrawlStates].includes(run.state),
+        isNotFailed(run),
       );
     }
     if (
@@ -235,17 +259,16 @@ export class ArchivedItemDetail extends BtrixElement {
         }
         sectionContent = this.renderPanel(
           html`${this.renderTitle(
-              html`${msg("Quality Assurance")}
-                <btrix-beta-badge></btrix-beta-badge>`,
+              html`${this.tabLabels.qa} <btrix-beta-badge></btrix-beta-badge>`,
             )}
             <div class="ml-auto flex flex-wrap justify-end gap-2">
               ${when(this.qaRuns, this.renderQAHeader)}
             </div> `,
           html`
             <btrix-archived-item-detail-qa
-              .crawlId=${this.crawlId}
-              .itemType=${this.itemType}
-              .crawl=${this.crawl}
+              .crawlId=${this.itemId}
+              .workflowId=${this.workflowId}
+              .crawl=${this.item}
               .qaRuns=${this.qaRuns}
               .qaRunId=${this.qaRunId}
               .mostRecentNonFailedQARun=${this.mostRecentNonFailedQARun}
@@ -256,22 +279,24 @@ export class ArchivedItemDetail extends BtrixElement {
         break;
       }
       case "replay":
-        sectionContent = this.renderPanel(msg("Replay"), this.renderReplay(), [
-          tw`overflow-hidden rounded-lg border`,
-        ]);
+        sectionContent = this.renderPanel(
+          this.tabLabels.replay,
+          this.renderReplay(),
+          [tw`overflow-hidden rounded-lg border`],
+        );
         break;
       case "files":
         sectionContent = this.renderPanel(
-          html` ${this.renderTitle(msg("Files"))}
+          html` ${this.renderTitle(this.tabLabels.files)}
             <sl-tooltip content=${msg("Download all files as a single WACZ")}>
               <sl-button
-                href=${`/api/orgs/${this.orgId}/all-crawls/${this.crawlId}/download?auth_bearer=${authToken}`}
+                href=${`/api/orgs/${this.orgId}/all-crawls/${this.itemId}/download?auth_bearer=${authToken}`}
                 download
                 size="small"
                 variant="primary"
               >
                 <sl-icon slot="prefix" name="cloud-download"></sl-icon>
-                ${msg("Download Item")}
+                ${msg("Download as Multi-WACZ")}
               </sl-button>
             </sl-tooltip>`,
           this.renderFiles(),
@@ -279,10 +304,10 @@ export class ArchivedItemDetail extends BtrixElement {
         break;
       case "logs":
         sectionContent = this.renderPanel(
-          html` ${this.renderTitle(msg("Error Logs"))}
+          html` ${this.renderTitle(this.tabLabels.logs)}
             <sl-button
-              href=${`/api/orgs/${this.orgId}/crawls/${this.crawlId}/logs?auth_bearer=${authToken}`}
-              download=${`btrix-${this.crawlId}-logs.txt`}
+              href=${`/api/orgs/${this.orgId}/crawls/${this.itemId}/logs?auth_bearer=${authToken}`}
+              download=${`btrix-${this.itemId}-logs.txt`}
               size="small"
               variant="primary"
             >
@@ -294,7 +319,30 @@ export class ArchivedItemDetail extends BtrixElement {
         break;
       case "config":
         sectionContent = this.renderPanel(
-          msg("Crawl Settings"),
+          html`
+            ${this.renderTitle(html`
+              ${this.tabLabels.config}
+              <sl-tooltip
+                content=${msg("Workflow settings used to run this crawl")}
+              >
+                <sl-icon
+                  class="text-base text-neutral-500"
+                  name="info-circle"
+                ></sl-icon>
+              </sl-tooltip>
+            `)}
+            <sl-button
+              size="small"
+              variant="primary"
+              href="${this.navigate.orgBasePath}/workflows/${this.item
+                ?.cid}?edit"
+              ?disabled=${!this.item}
+              @click=${this.navigate.link}
+            >
+              <sl-icon slot="prefix" name="gear"></sl-icon>
+              ${msg("Edit Workflow")}
+            </sl-button>
+          `,
           this.renderConfig(),
           [tw`rounded-lg border p-4`],
         );
@@ -342,36 +390,8 @@ export class ArchivedItemDetail extends BtrixElement {
         break;
     }
 
-    let label = "Back";
-    if (this.workflowId) {
-      label = msg("Back to Crawl Workflow");
-    } else if (this.collectionId) {
-      label = msg("Back to Collection");
-    } else if (this.crawl) {
-      if (this.crawl.type === "upload") {
-        label = msg("Back to All Uploads");
-      } else {
-        label = msg("Back to All Crawls");
-      }
-      // TODO have a "Back to Archived Items" link & label when we have the info to tell
-      // https://github.com/webrecorder/browsertrix-cloud/issues/1526
-    }
-
     return html`
-      <div class="mb-7">
-        <a
-          class="text-sm font-medium text-neutral-500 hover:text-neutral-600"
-          href=${this.listUrl}
-          @click=${this.navigate.link}
-        >
-          <sl-icon
-            name="arrow-left"
-            class="inline-block align-middle"
-          ></sl-icon>
-          <span class="inline-block align-middle">${label}</span>
-        </a>
-      </div>
-
+      <div class="mb-7">${this.renderBreadcrumbs()}</div>
       <div class="mb-4">${this.renderHeader()}</div>
 
       <main>
@@ -390,7 +410,7 @@ export class ArchivedItemDetail extends BtrixElement {
       </main>
 
       <btrix-item-metadata-editor
-        .crawl=${this.crawl}
+        .crawl=${this.item}
         ?open=${this.openDialogName === "metadata"}
         @request-close=${() => (this.openDialogName = undefined)}
         @updated=${() => void this.fetchCrawl()}
@@ -398,47 +418,80 @@ export class ArchivedItemDetail extends BtrixElement {
     `;
   }
 
-  private renderName() {
-    if (!this.crawl)
-      return html`<sl-skeleton class="inline-block h-8 w-60"></sl-skeleton>`;
+  private renderBreadcrumbs() {
+    const breadcrumbs: Breadcrumb[] = [];
 
-    if (this.crawl.name)
-      return html`<span class="truncate">${this.crawl.name}</span>`;
-    if (!this.crawl.firstSeed || !this.crawl.seedCount) return this.crawl.id;
-    const remainder = this.crawl.seedCount - 1;
-    let crawlName: TemplateResult = html`<span class="truncate"
-      >${this.crawl.firstSeed}</span
-    >`;
-    if (remainder) {
-      if (remainder === 1) {
-        crawlName = msg(
-          html`<span class="truncate">${this.crawl.firstSeed}</span>
-            <span class="whitespace-nowrap text-neutral-500"
-              >+${remainder} URL</span
-            >`,
-        );
-      } else {
-        crawlName = msg(
-          html`<span class="truncate">${this.crawl.firstSeed}</span>
-            <span class="whitespace-nowrap text-neutral-500"
-              >+${remainder} URLs</span
-            >`,
-        );
+    if (this.itemType === "crawl") {
+      breadcrumbs.push(
+        {
+          href: `${this.navigate.orgBasePath}/workflows`,
+          content: msg("Crawl Workflows"),
+        },
+        {
+          href: `${this.navigate.orgBasePath}/workflows/${this.item?.cid}`,
+          content: this.workflow ? renderName(this.workflow) : undefined,
+        },
+        {
+          href: `${this.navigate.orgBasePath}/workflows/${this.item?.cid}#crawls`,
+          content: msg("Crawls"),
+        },
+      );
+
+      if (this.item) {
+        breadcrumbs.push({
+          content: this.formattedFinishedDate,
+        });
       }
+    } else {
+      breadcrumbs.push({
+        href: `${this.navigate.orgBasePath}/items`,
+        content: msg("Archived Items"),
+      });
+
+      breadcrumbs.push(
+        {
+          href: `${this.navigate.orgBasePath}/items/upload`,
+          content: msg("Uploads"),
+        },
+        {
+          content: this.item ? renderName(this.item) : undefined,
+        },
+      );
     }
-    return crawlName;
+
+    const renderCollection = () => {
+      const breadcrumb = {
+        href: `${this.navigate.orgBasePath}/collections`,
+        content: msg("Collections"),
+      };
+
+      const collection = this.item?.collections.find(
+        ({ id }) => id === this.collectionId,
+      );
+
+      if (collection?.name) {
+        breadcrumb.href = `${this.navigate.orgBasePath}/collections/view/${this.collectionId}`;
+        breadcrumb.content = collection.name;
+      }
+
+      return html`
+        <div class="mb-3 border-b pb-3">${pageBack(breadcrumb)}</div>
+      `;
+    };
+
+    return html`
+      ${when(this.collectionId, renderCollection)} ${pageNav(breadcrumbs)}
+    `;
   }
 
   private renderNav() {
     const renderNavItem = ({
       section,
-      label,
       iconLibrary,
       icon,
       detail,
     }: {
       section: SectionName;
-      label: string;
       iconLibrary: "app" | "default";
       icon: string;
       detail?: TemplateResult<1>;
@@ -459,7 +512,7 @@ export class ArchivedItemDetail extends BtrixElement {
             aria-hidden="true"
             library=${iconLibrary}
           ></sl-icon>
-          ${label}${detail}</btrix-navigation-button
+          ${this.tabLabels[section]}${detail}</btrix-navigation-button
         >
       `;
     };
@@ -472,7 +525,6 @@ export class ArchivedItemDetail extends BtrixElement {
           section: "overview",
           iconLibrary: "default",
           icon: "info-circle-fill",
-          label: msg("Overview"),
         })}
         ${when(
           this.itemType === "crawl" && this.isCrawler,
@@ -481,7 +533,6 @@ export class ArchivedItemDetail extends BtrixElement {
               section: "qa",
               iconLibrary: "default",
               icon: "clipboard2-data-fill",
-              label: msg("Quality Assurance"),
               detail: html`<btrix-beta-icon></btrix-beta-icon>`,
             })}
           `,
@@ -490,13 +541,11 @@ export class ArchivedItemDetail extends BtrixElement {
           section: "replay",
           iconLibrary: "app",
           icon: "replaywebpage",
-          label: msg("Replay"),
         })}
         ${renderNavItem({
           section: "files",
           iconLibrary: "default",
           icon: "folder-fill",
-          label: msg("Files"),
         })}
         ${when(
           this.itemType === "crawl",
@@ -505,13 +554,11 @@ export class ArchivedItemDetail extends BtrixElement {
               section: "logs",
               iconLibrary: "default",
               icon: "terminal-fill",
-              label: msg("Error Logs"),
             })}
             ${renderNavItem({
               section: "config",
               iconLibrary: "default",
               icon: "file-code-fill",
-              label: msg("Crawl Settings"),
             })}
           `,
         )}
@@ -522,7 +569,7 @@ export class ArchivedItemDetail extends BtrixElement {
   private renderHeader() {
     return html`
       <header class="mb-3 flex flex-wrap gap-2 border-b pb-3">
-        <btrix-detail-page-title .item=${this.crawl}></btrix-detail-page-title>
+        <btrix-detail-page-title .item=${this.item}></btrix-detail-page-title>
         <div class="ml-auto flex flex-wrap justify-end gap-2">
           ${this.isActive
             ? html`
@@ -543,7 +590,7 @@ export class ArchivedItemDetail extends BtrixElement {
               `
             : ""}
           ${this.isCrawler
-            ? this.crawl
+            ? this.item
               ? this.renderMenu()
               : html`<sl-skeleton
                   class="h-8 w-24 [--border-radius:theme(borderRadius.sm)]"
@@ -555,7 +602,7 @@ export class ArchivedItemDetail extends BtrixElement {
   }
 
   private renderMenu() {
-    if (!this.crawl) return;
+    if (!this.item) return;
 
     const authToken = this.authState?.headers.Authorization.split(" ")[1];
 
@@ -587,15 +634,14 @@ export class ArchivedItemDetail extends BtrixElement {
               <sl-menu-item
                 @click=${() =>
                   this.navigate.to(
-                    `${this.navigate.orgBasePath}/workflows/crawl/${this.crawl?.cid}`,
+                    `${this.navigate.orgBasePath}/workflows/${this.item?.cid}`,
                   )}
               >
                 <sl-icon name="arrow-return-right" slot="prefix"></sl-icon>
                 ${msg("Go to Workflow")}
               </sl-menu-item>
               <sl-menu-item
-                @click=${() =>
-                  CopyButton.copyToClipboard(this.crawl?.cid || "")}
+                @click=${() => CopyButton.copyToClipboard(this.item?.cid || "")}
               >
                 <sl-icon name="copy" slot="prefix"></sl-icon>
                 ${msg("Copy Workflow ID")}
@@ -604,18 +650,18 @@ export class ArchivedItemDetail extends BtrixElement {
           )}
           <sl-menu-item
             @click=${() =>
-              CopyButton.copyToClipboard(this.crawl!.tags.join(", "))}
-            ?disabled=${!this.crawl.tags.length}
+              CopyButton.copyToClipboard(this.item!.tags.join(", "))}
+            ?disabled=${!this.item.tags.length}
           >
             <sl-icon name="tags" slot="prefix"></sl-icon>
             ${msg("Copy Tags")}
           </sl-menu-item>
           ${when(
-            finishedCrawlStates.includes(this.crawl.state),
+            isSuccessfullyFinished(this.item),
             () => html`
               <sl-divider></sl-divider>
               <btrix-menu-item-link
-                href=${`/api/orgs/${this.orgId}/all-crawls/${this.crawlId}/download?auth_bearer=${authToken}`}
+                href=${`/api/orgs/${this.orgId}/all-crawls/${this.itemId}/download?auth_bearer=${authToken}`}
                 download
               >
                 <sl-icon name="cloud-download" slot="prefix"></sl-icon>
@@ -624,7 +670,8 @@ export class ArchivedItemDetail extends BtrixElement {
             `,
           )}
           ${when(
-            this.isCrawler && !isActive(this.crawl.state),
+            this.isCrawler &&
+              (this.item.type !== "crawl" || !isActive(this.item)),
             () => html`
               <sl-divider></sl-divider>
               <sl-menu-item
@@ -642,7 +689,11 @@ export class ArchivedItemDetail extends BtrixElement {
   }
 
   private renderTitle(title: string | TemplateResult<1>) {
-    return html`<h2 class="text-lg font-semibold leading-8">${title}</h2>`;
+    return html`<h2
+      class="flex items-center gap-2 text-lg font-semibold leading-8"
+    >
+      ${title}
+    </h2>`;
   }
 
   private renderPanel(
@@ -662,10 +713,10 @@ export class ArchivedItemDetail extends BtrixElement {
   }
 
   private renderReplay() {
-    if (!this.crawl) return;
-    const replaySource = `/api/orgs/${this.crawl.oid}/${
-      this.crawl.type === "upload" ? "uploads" : "crawls"
-    }/${this.crawlId}/replay.json`;
+    if (!this.item) return;
+    const replaySource = `/api/orgs/${this.item.oid}/${
+      this.item.type === "upload" ? "uploads" : "crawls"
+    }/${this.itemId}/replay.json`;
 
     const headers = this.authState?.headers;
 
@@ -680,9 +731,9 @@ export class ArchivedItemDetail extends BtrixElement {
           ? html`<div id="replay-crawl" class="aspect-4/3 overflow-hidden">
               <replay-web-page
                 source="${replaySource}"
-                url="${(this.crawl.seedCount === 1 && this.crawl.firstSeed) ||
+                url="${(this.item.seedCount === 1 && this.item.firstSeed) ||
                 ""}"
-                coll="${ifDefined(this.crawl.id)}"
+                coll="${ifDefined(this.item.id)}"
                 config="${config}"
                 replayBase="/replay/"
                 noSandbox="true"
@@ -705,36 +756,27 @@ export class ArchivedItemDetail extends BtrixElement {
     return html`
       <btrix-desc-list>
         <btrix-desc-list-item label=${msg("Status")}>
-          ${this.crawl
+          ${this.item
             ? html`
                 <btrix-crawl-status
-                  state=${this.crawl.state}
-                  type=${this.crawl.type}
+                  state=${this.item.state}
+                  type=${this.item.type}
                 ></btrix-crawl-status>
               `
             : html`<sl-skeleton class="mb-[3px] h-[16px] w-24"></sl-skeleton>`}
         </btrix-desc-list-item>
-        ${when(this.crawl, () =>
-          this.crawl!.type === "upload"
+        ${when(this.item, () =>
+          this.item!.type === "upload"
             ? html`
                 <btrix-desc-list-item label=${msg("Uploaded")}>
-                  <sl-format-date
-                    lang=${getLocale()}
-                    date=${`${this.crawl!.finished}Z` /** Z for UTC */}
-                    month="2-digit"
-                    day="2-digit"
-                    year="2-digit"
-                    hour="numeric"
-                    minute="numeric"
-                    timeZoneName="short"
-                  ></sl-format-date>
+                  ${this.formattedFinishedDate}
                 </btrix-desc-list-item>
               `
             : html`
                 <btrix-desc-list-item label=${msg("Start Time")}>
                   <sl-format-date
                     lang=${getLocale()}
-                    date=${`${this.crawl!.started}Z` /** Z for UTC */}
+                    date=${this.item!.started}
                     month="2-digit"
                     day="2-digit"
                     year="2-digit"
@@ -744,29 +786,20 @@ export class ArchivedItemDetail extends BtrixElement {
                   ></sl-format-date>
                 </btrix-desc-list-item>
                 <btrix-desc-list-item label=${msg("Finish Time")}>
-                  ${this.crawl!.finished
-                    ? html`<sl-format-date
-                        lang=${getLocale()}
-                        date=${`${this.crawl!.finished}Z` /** Z for UTC */}
-                        month="2-digit"
-                        day="2-digit"
-                        year="2-digit"
-                        hour="numeric"
-                        minute="numeric"
-                        timeZoneName="short"
-                      ></sl-format-date>`
+                  ${this.item!.finished
+                    ? this.formattedFinishedDate
                     : html`<span class="text-0-400">${msg("Pending")}</span>`}
                 </btrix-desc-list-item>
                 <btrix-desc-list-item label=${msg("Elapsed Time")}>
-                  ${this.crawl!.finished
+                  ${this.item!.finished
                     ? html`${RelativeDuration.humanize(
-                        new Date(`${this.crawl!.finished}Z`).valueOf() -
-                          new Date(`${this.crawl!.started}Z`).valueOf(),
+                        new Date(this.item!.finished).valueOf() -
+                          new Date(this.item!.started).valueOf(),
                       )}`
                     : html`
                         <span class="text-purple-600">
                           <btrix-relative-duration
-                            value=${`${this.crawl!.started}Z`}
+                            value=${this.item!.started}
                             unitCount="3"
                             tickSeconds="1"
                           ></btrix-relative-duration>
@@ -774,21 +807,21 @@ export class ArchivedItemDetail extends BtrixElement {
                       `}
                 </btrix-desc-list-item>
                 <btrix-desc-list-item label=${msg("Execution Time")}>
-                  ${this.crawl!.finished
+                  ${this.item!.finished
                     ? html`<span
                         >${humanizeExecutionSeconds(
-                          this.crawl!.crawlExecSeconds,
+                          this.item!.crawlExecSeconds,
                           { displaySeconds: true },
                         )}</span
                       >`
                     : html`<span class="text-0-400">${msg("Pending")}</span>`}
                 </btrix-desc-list-item>
                 <btrix-desc-list-item label=${msg("Initiator")}>
-                  ${this.crawl!.manual
+                  ${this.item!.manual
                     ? msg(
                         html`Manual start by
                           <span
-                            >${this.crawl!.userName || this.crawl!.userid}</span
+                            >${this.item!.userName || this.item!.userid}</span
                           >`,
                       )
                     : msg(html`Scheduled start`)}
@@ -797,37 +830,35 @@ export class ArchivedItemDetail extends BtrixElement {
         )}
 
         <btrix-desc-list-item label=${msg("Size")}>
-          ${this.crawl
-            ? html`${this.crawl.fileSize
+          ${this.item
+            ? html`${this.item.fileSize
                 ? html`<sl-format-bytes
-                      value=${this.crawl.fileSize || 0}
+                      value=${this.item.fileSize || 0}
                       display="narrow"
                     ></sl-format-bytes
-                    >${this.crawl.stats
+                    >${this.item.stats
                       ? html`<span>,</span
                           ><span
                             class="tracking-tighter${this.isActive
                               ? " text-purple-600"
                               : ""} font-mono"
                           >
-                            ${this.numberFormatter.format(
-                              +this.crawl.stats.done,
-                            )}
+                            ${formatNumber(+this.item.stats.done)}
                             <span class="text-0-400">/</span>
-                            ${this.numberFormatter.format(
-                              +this.crawl.stats.found,
-                            )}
+                            ${formatNumber(+this.item.stats.found)}
                           </span>
-                          <span>${msg("pages")}</span>`
+                          <span
+                            >${pluralOf("pages", +this.item.stats.found)}</span
+                          >`
                       : ""}`
                 : html`<span class="text-0-400">${msg("Unknown")}</span>`}`
             : html`<sl-skeleton class="h-[16px] w-24"></sl-skeleton>`}
         </btrix-desc-list-item>
         ${this.renderCrawlChannelVersion()}
         <btrix-desc-list-item label=${msg("Crawl ID")}>
-          ${this.crawl
+          ${this.item
             ? html`<btrix-copy-field
-                value="${this.crawl.id}"
+                value="${this.item.id}"
               ></btrix-copy-field>`
             : html`<sl-skeleton class="mb-[3px] h-[16px] w-24"></sl-skeleton>`}
         </btrix-desc-list-item>
@@ -836,13 +867,13 @@ export class ArchivedItemDetail extends BtrixElement {
   }
 
   private renderCrawlChannelVersion() {
-    if (!this.crawl) {
+    if (!this.item) {
       return html``;
     }
 
     const text =
-      capitalize(this.crawl.crawlerChannel || "default") +
-      (this.crawl.image ? ` (${this.crawl.image})` : "");
+      capitalize(this.item.crawlerChannel || "default") +
+      (this.item.image ? ` (${this.item.image})` : "");
 
     return html` <btrix-desc-list-item
       label=${msg("Crawler Channel (Exact Crawler Version)")}
@@ -859,13 +890,13 @@ export class ArchivedItemDetail extends BtrixElement {
       <btrix-desc-list>
         <btrix-desc-list-item label=${msg("Description")}>
           ${when(
-            this.crawl,
+            this.item,
             () =>
               when(
-                this.crawl!.description?.length,
+                this.item!.description?.length,
                 () =>
                   html`<pre class="whitespace-pre-line font-sans">
-${this.crawl?.description}
+${this.item?.description}
                 </pre
                   >`,
                 () => noneText,
@@ -875,12 +906,12 @@ ${this.crawl?.description}
         </btrix-desc-list-item>
         <btrix-desc-list-item label=${msg("Tags")}>
           ${when(
-            this.crawl,
+            this.item,
             () =>
               when(
-                this.crawl!.tags.length,
+                this.item!.tags.length,
                 () =>
-                  this.crawl!.tags.map(
+                  this.item!.tags.map(
                     (tag) =>
                       html`<btrix-tag class="mr-2 mt-1">${tag}</btrix-tag>`,
                   ),
@@ -891,13 +922,13 @@ ${this.crawl?.description}
         </btrix-desc-list-item>
         <btrix-desc-list-item label=${msg("In Collections")}>
           ${when(
-            this.crawl,
+            this.item,
             () =>
               when(
-                this.crawl!.collections.length,
+                this.item!.collections.length,
                 () => html`
                   <ul>
-                    ${this.crawl!.collections.map(
+                    ${this.item!.collections.map(
                       ({ id, name }) =>
                         html`<li class="mt-1">
                           <a
@@ -924,7 +955,7 @@ ${this.crawl?.description}
       ${this.hasFiles
         ? html`
             <ul class="rounded-lg border text-sm">
-              ${this.crawl!.resources!.map(
+              ${this.item!.resources!.map(
                 (file) => html`
                   <li
                     class="flex justify-between border-t p-3 first:border-t-0"
@@ -1002,13 +1033,13 @@ ${this.crawl?.description}
 
   private renderConfig() {
     return html`
-      <div aria-live="polite" aria-busy=${!this.crawl || !this.seeds}>
+      <div aria-live="polite" aria-busy=${!this.item || !this.seeds}>
         ${when(
-          this.crawl && this.seeds && (!this.workflowId || this.workflow),
+          this.item && this.seeds && this.workflow,
           () => html`
             <btrix-config-details
               .crawlConfig=${{
-                ...this.crawl,
+                ...this.item,
                 jobType: this.workflow?.jobType,
               } as CrawlConfig}
               .seeds=${this.seeds!.items}
@@ -1025,9 +1056,11 @@ ${this.crawl?.description}
     const qaIsRunning = this.isQAActive;
     const qaIsAvailable = !!this.mostRecentNonFailedQARun;
 
+    console.log(new URL(window.location.href).pathname);
+
     const reviewLink =
       qaIsAvailable && this.qaRunId
-        ? `${this.navigate.orgBasePath}/items/crawl/${this.crawlId}/review/screenshots?qaRunId=${this.qaRunId}`
+        ? `${new URL(window.location.href).pathname}/review/screenshots?qaRunId=${this.qaRunId}`
         : undefined;
 
     return html`
@@ -1151,7 +1184,7 @@ ${this.crawl?.description}
    */
   private async fetchCrawl(): Promise<void> {
     try {
-      this.crawl = await this.getCrawl();
+      this.item = await this.getCrawl();
     } catch {
       this.notify.toast({
         message: msg("Sorry, couldn't retrieve crawl at this time."),
@@ -1177,31 +1210,38 @@ ${this.crawl?.description}
 
   private async fetchWorkflow(): Promise<void> {
     try {
-      this.workflow = await this.getWorkflow();
+      const id = this.workflowId || this.item?.cid;
+      if (!id) {
+        console.debug("no workflow id");
+        return;
+      }
+      this.workflow = await this.getWorkflow(id);
     } catch (e: unknown) {
-      console.debug(e);
+      this.notify.toast({
+        message: msg("Sorry, couldn't load all crawl settings."),
+        variant: "warning",
+        icon: "exclamation-circle",
+      });
     }
   }
 
   private async getCrawl(): Promise<Crawl> {
     const apiPath = `/orgs/${this.orgId}/${
       this.itemType === "upload" ? "uploads" : "crawls"
-    }/${this.crawlId}/replay.json`;
+    }/${this.itemId}/replay.json`;
     return this.api.fetch<Crawl>(apiPath);
   }
 
   private async getSeeds() {
     // NOTE Returns first 1000 seeds (backend pagination max)
     const data = await this.api.fetch<APIPaginatedList<Seed>>(
-      `/orgs/${this.orgId}/crawls/${this.crawlId}/seeds`,
+      `/orgs/${this.orgId}/crawls/${this.itemId}/seeds`,
     );
     return data;
   }
 
-  private async getWorkflow(): Promise<Workflow> {
-    return this.api.fetch<Workflow>(
-      `/orgs/${this.orgId}/crawlconfigs/${this.workflowId}`,
-    );
+  private async getWorkflow(id: string): Promise<Workflow> {
+    return this.api.fetch<Workflow>(`/orgs/${this.orgId}/crawlconfigs/${id}`);
   }
 
   private async fetchCrawlLogs(
@@ -1228,7 +1268,7 @@ ${this.crawl?.description}
     const pageSize = params.pageSize || this.logs?.pageSize || 50;
 
     const data = (await this.api.fetch)<APIPaginatedList<CrawlLog>>(
-      `/orgs/${this.orgId}/crawls/${this.crawlId}/errors?page=${page}&pageSize=${pageSize}`,
+      `/orgs/${this.orgId}/crawls/${this.itemId}/errors?page=${page}&pageSize=${pageSize}`,
     );
 
     return data;
@@ -1237,7 +1277,7 @@ ${this.crawl?.description}
   private async cancel() {
     if (window.confirm(msg("Are you sure you want to cancel the crawl?"))) {
       const data = await this.api.fetch<{ success: boolean }>(
-        `/orgs/${this.crawl!.oid}/crawls/${this.crawlId}/cancel`,
+        `/orgs/${this.item!.oid}/crawls/${this.itemId}/cancel`,
         {
           method: "POST",
         },
@@ -1258,7 +1298,7 @@ ${this.crawl?.description}
   private async stop() {
     if (window.confirm(msg("Are you sure you want to stop the crawl?"))) {
       const data = await this.api.fetch<{ success: boolean }>(
-        `/orgs/${this.crawl!.oid}/crawls/${this.crawlId}/stop`,
+        `/orgs/${this.item!.oid}/crawls/${this.itemId}/stop`,
         {
           method: "POST",
         },
@@ -1295,13 +1335,13 @@ ${this.crawl?.description}
 
     try {
       const _data = await this.api.fetch(
-        `/orgs/${this.crawl!.oid}/${
-          this.crawl!.type === "crawl" ? "crawls" : "uploads"
+        `/orgs/${this.item!.oid}/${
+          this.item!.type === "crawl" ? "crawls" : "uploads"
         }/delete`,
         {
           method: "POST",
           body: JSON.stringify({
-            crawl_ids: [this.crawl!.id],
+            crawl_ids: [this.item!.id],
           }),
         },
       );
@@ -1335,7 +1375,7 @@ ${this.crawl?.description}
   private async startQARun() {
     try {
       const result = await this.api.fetch<{ started: string }>(
-        `/orgs/${this.orgId}/crawls/${this.crawlId}/qa/start`,
+        `/orgs/${this.orgId}/crawls/${this.itemId}/qa/start`,
         {
           method: "POST",
         },
@@ -1369,7 +1409,7 @@ ${this.crawl?.description}
   private async stopQARun() {
     try {
       const data = await this.api.fetch<{ success: boolean }>(
-        `/orgs/${this.crawl!.oid}/crawls/${this.crawlId}/qa/stop`,
+        `/orgs/${this.item!.oid}/crawls/${this.itemId}/qa/stop`,
         {
           method: "POST",
         },
@@ -1400,7 +1440,7 @@ ${this.crawl?.description}
   private async cancelQARun() {
     try {
       const data = await this.api.fetch<{ success: boolean }>(
-        `/orgs/${this.crawl!.oid}/crawls/${this.crawlId}/qa/cancel`,
+        `/orgs/${this.item!.oid}/crawls/${this.itemId}/qa/cancel`,
         {
           method: "POST",
         },
@@ -1439,9 +1479,7 @@ ${this.crawl?.description}
       });
     }
 
-    this.isQAActive = Boolean(
-      this.qaRuns?.[0] && QA_RUNNING_STATES.includes(this.qaRuns[0].state),
-    );
+    this.isQAActive = Boolean(this.qaRuns?.[0] && isActive(this.qaRuns[0]));
 
     if (this.isQAActive) {
       // Clear current timer, if it exists
@@ -1461,7 +1499,7 @@ ${this.crawl?.description}
 
   private async getQARuns(): Promise<QARun[]> {
     return this.api.fetch<QARun[]>(
-      `/orgs/${this.orgId}/crawls/${this.crawlId}/qa`,
+      `/orgs/${this.orgId}/crawls/${this.itemId}/qa`,
     );
   }
 }

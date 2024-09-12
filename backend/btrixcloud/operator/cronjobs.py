@@ -4,7 +4,7 @@ from uuid import UUID
 from typing import Optional
 import yaml
 
-from btrixcloud.utils import to_k8s_date, dt_now
+from btrixcloud.utils import date_to_str, dt_now
 from .models import MCDecoratorSyncData, CJS, MCDecoratorSyncResponse
 from .baseoperator import BaseOperator
 
@@ -31,7 +31,7 @@ class CronJobOperator(BaseOperator):
         """get final response to indicate cronjob created job is finished"""
 
         if not finished:
-            finished = to_k8s_date(dt_now())
+            finished = date_to_str(dt_now())
 
         status = None
         # set status on decorated job to indicate that its finished
@@ -151,7 +151,7 @@ class CronJobOperator(BaseOperator):
             crawl_id, is_qa=False
         )
         if finished:
-            finished_str = to_k8s_date(finished)
+            finished_str = date_to_str(finished)
             set_status = False
             # mark job as completed
             if not data.object["status"].get("succeeded"):

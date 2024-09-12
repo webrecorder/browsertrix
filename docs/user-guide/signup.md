@@ -1,9 +1,23 @@
-# Signup
+# Register For an Account
 
-## Invite Link
+!!! note "Self-hosting?"
 
-If you have been sent an [invite](org-settings.md#members), enter a name and password to create a new account. Your account will be added to the organization you were invited to by an organization admin.
+    This guide only applies to hosted Browsertrix accounts. If you're self-hosting Browsertrix, [enable open registration](../deploy/customization.md#enable-open-registration) to allow others to sign up for an account on your instance.
 
-## Open Registration
+To sign up for Browsertrix, [choose a plan](https://browsertrix.com/). We offer a variety of plans for individuals, teams, and organizations of all sizes.
 
-If the server has enabled signups and you have been given a registration link, enter your email address, name, and password to create a new account. Your account will be added to the server's default organization.
+## Register Your Org
+
+After you finish setting up your subscription, you'll receive an email from us with a link to set up your org (organization.)
+
+Choose an org name that's unique and memorable, like the name of your company or organization. Your org URL identifier will determine the unique URL of the org's home page.
+
+## Configure Your User Account
+
+Create a password and display name. Your display name is the name that is visible to other org members. For example, your display name will be visible in crawl workflows that you create or run.
+
+Once you've completed this step, you're in! Next, familiarize yourself with the [org overview](./overview.md), head over to [crawl workflows](./crawl-workflows.md), or [invite team members](./org-settings.md).
+
+## Can't complete sign-up or have a question?
+
+Don't hesitate to [reach out to us](mailto:support@webrecorder.org) if you encounter any issues while signing up.

@@ -26,8 +26,12 @@ import { NavigateController } from "@/controllers/navigate";
 import type { ListWorkflow } from "@/types/crawler";
 import { humanizeSchedule } from "@/utils/cron";
 import { srOnly, truncate } from "@/utils/css";
-import { getLocale } from "@/utils/localization";
+import { formatNumber, getLocale } from "@/utils/localization";
 import { numberFormatter } from "@/utils/number";
+import { pluralOf } from "@/utils/pluralize";
+
+const formatNumberCompact = (v: number) =>
+  formatNumber(v, { notation: "compact" });
 
 // postcss-lit-disable-next-line
 const mediumBreakpointCss = css`30rem`;
@@ -213,10 +217,6 @@ export class WorkflowListItem extends LitElement {
 
   private readonly navigate = new NavigateController(this);
 
-  private readonly numberFormatter = numberFormatter(getLocale(), {
-    notation: "compact",
-  });
-
   render() {
     const notSpecified = html`<span class="notSpecified" role="presentation"
       >---</span
@@ -231,7 +231,7 @@ export class WorkflowListItem extends LitElement {
         }
         e.preventDefault();
         await this.updateComplete;
-        const href = `/orgs/${this.orgSlug}/workflows/crawl/${
+        const href = `/orgs/${this.orgSlug}/workflows/${
           this.workflow?.id
         }#${this.workflow?.isCrawlRunning ? "watch" : "crawls"}`;
         this.navigate.to(href);
@@ -277,7 +277,7 @@ export class WorkflowListItem extends LitElement {
             if (workflow.lastCrawlTime && workflow.lastCrawlStartTime) {
               return html`<sl-format-date
                   lang=${getLocale()}
-                  date="${workflow.lastRun.toString()}Z"
+                  date="${workflow.lastRun.toString()}"
                   month="2-digit"
                   day="2-digit"
                   year="2-digit"
@@ -286,8 +286,8 @@ export class WorkflowListItem extends LitElement {
                 ></sl-format-date>
                 ${msg(
                   str`in ${RelativeDuration.humanize(
-                    new Date(`${workflow.lastCrawlTime}Z`).valueOf() -
-                      new Date(`${workflow.lastCrawlStartTime}Z`).valueOf(),
+                    new Date(workflow.lastCrawlTime).valueOf() -
+                      new Date(workflow.lastCrawlStartTime).valueOf(),
                     { compact: true },
                   )}`,
                 )}`;
@@ -295,7 +295,7 @@ export class WorkflowListItem extends LitElement {
             if (workflow.lastCrawlStartTime) {
               const diff =
                 new Date().valueOf() -
-                new Date(`${workflow.lastCrawlStartTime}Z`).valueOf();
+                new Date(workflow.lastCrawlStartTime).valueOf();
               if (diff < 1000) {
                 return "";
               }
@@ -353,14 +353,9 @@ export class WorkflowListItem extends LitElement {
           })}
         </div>
         <div class="desc">
-          ${this.safeRender((workflow) =>
-            workflow.crawlCount === 1
-              ? msg(str`${workflow.crawlCount} crawl`)
-              : msg(
-                  str`${this.numberFormatter.format(
-                    workflow.crawlCount || 0,
-                  )} crawls`,
-                ),
+          ${this.safeRender(
+            (workflow) =>
+              `${formatNumberCompact(workflow.crawlCount)} ${pluralOf("crawls", workflow.crawlCount)}`,
           )}
         </div>
       </div>
@@ -376,7 +371,7 @@ export class WorkflowListItem extends LitElement {
             (workflow) => html`
               <sl-format-date
                 lang=${getLocale()}
-                date="${workflow.modified.toString()}Z"
+                date="${workflow.modified}"
                 month="2-digit"
                 day="2-digit"
                 year="2-digit"
@@ -420,15 +415,10 @@ export class WorkflowListItem extends LitElement {
     const remainder = workflow.seedCount - 1;
     let nameSuffix: string | TemplateResult<1> = "";
     if (remainder) {
-      if (remainder === 1) {
-        nameSuffix = html`<span class="additionalUrls"
-          >${msg(str`+${remainder} URL`)}</span
-        >`;
-      } else {
-        nameSuffix = html`<span class="additionalUrls"
-          >${msg(str`+${remainder} URLs`)}</span
-        >`;
-      }
+      nameSuffix = html`<span class="additionalUrls"
+        >+${formatNumber(remainder, { notation: "compact" })}
+        ${pluralOf("URLs", remainder)}</span
+      >`;
     }
     return html`
       <span class="primaryUrl truncate">${workflow.firstSeed}</span

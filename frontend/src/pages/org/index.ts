@@ -1,8 +1,10 @@
 import { localized, msg, str } from "@lit/localize";
+import { nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
+import isEqual from "lodash/fp/isEqual";
 
 import type { QATab } from "./archived-item-qa/types";
 import type { Tab as CollectionTab } from "./collection-detail";
@@ -16,47 +18,49 @@ import type { QuotaUpdateDetail } from "@/controllers/api";
 import needLogin from "@/decorators/needLogin";
 import type { CollectionSavedEvent } from "@/features/collections/collection-metadata-dialog";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
-import type { Crawl, JobType } from "@/types/crawler";
+import type { JobType } from "@/types/crawler";
 import type { UserOrg } from "@/types/user";
 import { isApiError } from "@/utils/api";
 import type { ViewState } from "@/utils/APIRouter";
 import { DEFAULT_MAX_SCALE } from "@/utils/crawler";
 import LiteElement, { html } from "@/utils/LiteElement";
-import { isAdmin, isCrawler, type OrgData } from "@/utils/orgs";
+import { type OrgData } from "@/utils/orgs";
 import { AppStateService } from "@/utils/state";
 
 import "./workflow-detail";
 import "./workflows-list";
-import "./workflows-new";
 import "./archived-item-detail";
 import "./archived-items";
-import "./archived-item-qa/archived-item-qa";
 import "./collections-list";
 import "./collection-detail";
 import "./browser-profiles-detail";
 import "./browser-profiles-list";
-import "./browser-profiles-new";
 import "./settings/settings";
 import "./dashboard";
+
+import(/* webpackChunkName: "org" */ "./archived-item-qa/archived-item-qa");
+import(/* webpackChunkName: "org" */ "./workflows-new");
+import(/* webpackChunkName: "org" */ "./browser-profiles-new");
 
 const RESOURCE_NAMES = ["workflow", "collection", "browser-profile", "upload"];
 type ResourceName = (typeof RESOURCE_NAMES)[number];
 export type SelectNewDialogEvent = CustomEvent<ResourceName>;
+type ArchivedItemPageParams = {
+  itemId?: string;
+  workflowId?: string;
+  collectionId?: string;
+};
 export type OrgParams = {
   home: Record<string, never>;
-  workflows: {
-    workflowId?: string;
+  workflows: ArchivedItemPageParams & {
     jobType?: JobType;
     new?: ResourceName;
-  };
-  items: {
-    itemType?: Crawl["type"];
-    itemId?: string;
     itemPageId?: string;
     qaTab?: QATab;
     qaRunId?: string;
-    workflowId?: string;
-    collectionId?: string;
+  };
+  items: ArchivedItemPageParams & {
+    itemType?: string;
   };
   "browser-profiles": {
     browserProfileId?: string;
@@ -69,8 +73,7 @@ export type OrgParams = {
     profileId?: string;
     navigateUrl?: string;
   };
-  collections: {
-    collectionId?: string;
+  collections: ArchivedItemPageParams & {
     collectionTab?: string;
   };
   settings: {
@@ -91,9 +94,6 @@ export class Org extends LiteElement {
   @property({ type: Object })
   viewStateData?: ViewState["data"];
 
-  @property({ type: String })
-  slug!: string;
-
   // Path after `/orgs/:orgId/`
   @property({ type: String })
   orgPath!: string;
@@ -112,18 +112,6 @@ export class Org extends LiteElement {
 
   @state()
   private isCreateDialogVisible = false;
-
-  private get isAdmin() {
-    const userOrg = this.appState.userOrg;
-    if (userOrg) return isAdmin(userOrg.role);
-    return false;
-  }
-
-  private get isCrawler() {
-    const userOrg = this.appState.userOrg;
-    if (userOrg) return isCrawler(userOrg.role);
-    return false;
-  }
 
   connectedCallback() {
     super.connectedCallback();
@@ -151,10 +139,9 @@ export class Org extends LiteElement {
 
   async willUpdate(changedProperties: Map<string, unknown>) {
     if (
-      (changedProperties.has("appState.userInfo") ||
-        changedProperties.has("slug")) &&
+      changedProperties.has("appState.orgSlug") &&
       this.userInfo &&
-      this.slug
+      this.orgSlug
     ) {
       if (this.userOrg) {
         void this.updateOrg();
@@ -191,6 +178,11 @@ export class Org extends LiteElement {
           this.navTo(`${url.pathname}${url.search}`);
         }
       }
+    } else if (changedProperties.has("params")) {
+      const dialogName = this.getDialogName();
+      if (dialogName && !this.openDialogName) {
+        this.openDialog(dialogName);
+      }
     }
   }
 
@@ -203,7 +195,9 @@ export class Org extends LiteElement {
     try {
       const org = await this.getOrg(this.orgId);
 
-      AppStateService.updateOrg(org);
+      if (!isEqual(this.org, org)) {
+        AppStateService.updateOrg(org);
+      }
     } catch (e) {
       console.debug(e);
       this.notify({
@@ -217,21 +211,29 @@ export class Org extends LiteElement {
   async firstUpdated() {
     // if slug is actually an orgId (UUID), attempt to lookup the slug
     // and redirect to the slug url
-    if (UUID_REGEX.test(this.slug)) {
-      const org = await this.getOrg(this.slug);
+    if (this.orgSlug && UUID_REGEX.test(this.orgSlug)) {
+      const org = await this.getOrg(this.orgSlug);
       const actualSlug = org?.slug;
       if (actualSlug) {
         this.navTo(
           window.location.href
             .slice(window.location.origin.length)
-            .replace(this.slug, actualSlug),
+            .replace(this.orgSlug, actualSlug),
         );
         return;
       }
     }
     // Sync URL to create dialog
+    const dialogName = this.getDialogName();
+    if (dialogName) this.openDialog(dialogName);
+  }
+
+  private getDialogName() {
     const url = new URL(window.location.href);
-    const dialogName = url.searchParams.get("new");
+    return url.searchParams.get("new");
+  }
+
+  private openDialog(dialogName: string) {
     if (dialogName && RESOURCE_NAMES.includes(dialogName)) {
       this.openDialogName = dialogName;
       this.isCreateDialogVisible = true;
@@ -239,31 +241,74 @@ export class Org extends LiteElement {
   }
 
   render() {
-    const noMaxWidth =
-      this.orgTab === "items" && (this.params as OrgParams["items"]).qaTab;
+    const noMaxWidth = (this.params as OrgParams["workflows"]).qaTab;
 
     return html`
+      <btrix-document-title
+        title=${ifDefined(this.userOrg?.name)}
+      ></btrix-document-title>
+
       <div class="flex min-h-full flex-col">
         <btrix-org-status-banner></btrix-org-status-banner>
         ${this.renderOrgNavBar()}
         <main
           class="${noMaxWidth
             ? "w-full"
-            : "w-full max-w-screen-desktop pt-7"} mx-auto box-border flex flex-1 flex-col p-3"
+            : "w-full max-w-screen-desktop"} mx-auto box-border flex flex-1 flex-col p-3"
           aria-labelledby="${this.orgTab}-tab"
         >
-          ${when(this.userOrg, () =>
+          ${when(this.userOrg, (userOrg) =>
             choose(
               this.orgTab,
               [
                 ["home", this.renderDashboard],
-                ["items", this.renderArchivedItem],
-                ["workflows", this.renderWorkflows],
-                ["browser-profiles", this.renderBrowserProfiles],
-                ["collections", this.renderCollections],
+                [
+                  "items",
+                  () => html`
+                    <btrix-document-title
+                      title=${`${msg("Archived Items")} - ${userOrg.name}`}
+                    ></btrix-document-title>
+                    ${this.renderArchivedItem()}
+                  `,
+                ],
+                [
+                  "workflows",
+                  () => html`
+                    <btrix-document-title
+                      title=${`${msg("Crawl Workflows")} - ${userOrg.name}`}
+                    ></btrix-document-title>
+                    ${this.renderWorkflows()}
+                  `,
+                ],
+                [
+                  "browser-profiles",
+                  () => html`
+                    <btrix-document-title
+                      title=${`${msg("Browser Profiles")} - ${userOrg.name}`}
+                    ></btrix-document-title>
+                    ${this.renderBrowserProfiles()}
+                  `,
+                ],
+                [
+                  "collections",
+                  () => html`
+                    <btrix-document-title
+                      title=${`${msg("Collections")} - ${userOrg.name}`}
+                    ></btrix-document-title>
+                    ${this.renderCollections()}
+                  `,
+                ],
                 [
                   "settings",
-                  () => (this.isAdmin ? this.renderOrgSettings() : html``),
+                  () =>
+                    this.appState.isAdmin
+                      ? html`
+                          <btrix-document-title
+                            title=${`${msg("Org Settings")} - ${userOrg.name}`}
+                          ></btrix-document-title>
+                          ${this.renderOrgSettings()}
+                        `
+                      : nothing,
                 ],
               ],
               () =>
@@ -292,7 +337,7 @@ export class Org extends LiteElement {
           ${this.renderNavTab({
             tabName: "workflows",
             label: msg("Crawling"),
-            path: "workflows/crawls",
+            path: "workflows",
           })}
           ${this.renderNavTab({
             tabName: "items",
@@ -304,17 +349,17 @@ export class Org extends LiteElement {
             label: msg("Collections"),
             path: "collections",
           })}
-          ${when(this.isCrawler, () =>
+          ${when(this.appState.isCrawler, () =>
             this.renderNavTab({
               tabName: "browser-profiles",
               label: msg("Browser Profiles"),
               path: "browser-profiles",
             }),
           )}
-          ${when(this.isAdmin || this.userInfo?.isSuperAdmin, () =>
+          ${when(this.appState.isAdmin || this.userInfo?.isSuperAdmin, () =>
             this.renderNavTab({
               tabName: "settings",
-              label: msg("Org Settings"),
+              label: msg("Settings"),
               path: "settings",
             }),
           )}
@@ -356,7 +401,7 @@ export class Org extends LiteElement {
   }
 
   private renderNewResourceDialogs() {
-    if (!this.orgId || !this.isCrawler) {
+    if (!this.orgId || !this.appState.isCrawler) {
       return;
     }
     if (!this.isCreateDialogVisible) {
@@ -413,8 +458,8 @@ export class Org extends LiteElement {
   private readonly renderDashboard = () => {
     return html`
       <btrix-dashboard
-        ?isCrawler=${this.isCrawler}
-        ?isAdmin=${this.isAdmin}
+        ?isCrawler=${this.appState.isCrawler}
+        ?isAdmin=${this.appState.isAdmin}
         @select-new-dialog=${this.onSelectNewDialog}
       ></btrix-dashboard>
     `;
@@ -424,33 +469,17 @@ export class Org extends LiteElement {
     const params = this.params as OrgParams["items"];
 
     if (params.itemId) {
-      if (params.qaTab) {
-        if (!this.isCrawler) {
-          return html`<btrix-not-found
-            class="flex items-center justify-center"
-          ></btrix-not-found>`;
-        }
-
-        return html`<btrix-archived-item-qa
-          class="flex-1"
-          itemId=${params.itemId}
-          itemPageId=${ifDefined(params.itemPageId)}
-          qaRunId=${ifDefined(params.qaRunId)}
-          tab=${params.qaTab}
-        ></btrix-archived-item-qa>`;
-      }
-
       return html` <btrix-archived-item-detail
-        crawlId=${params.itemId}
+        itemId=${params.itemId}
         collectionId=${params.collectionId || ""}
         workflowId=${params.workflowId || ""}
         itemType=${params.itemType || "crawl"}
-        ?isCrawler=${this.isCrawler}
+        ?isCrawler=${this.appState.isCrawler}
       ></btrix-archived-item-detail>`;
     }
 
     return html`<btrix-archived-items
-      ?isCrawler=${this.isCrawler}
+      ?isCrawler=${this.appState.isCrawler}
       itemType=${ifDefined(params.itemType || undefined)}
       @select-new-dialog=${this.onSelectNewDialog}
     ></btrix-archived-items>`;
@@ -464,13 +493,40 @@ export class Org extends LiteElement {
     const workflowId = params.workflowId;
 
     if (workflowId) {
+      if (params.itemId) {
+        if (params.qaTab) {
+          if (!this.appState.isCrawler) {
+            return html`<btrix-not-found
+              class="flex items-center justify-center"
+            ></btrix-not-found>`;
+          }
+
+          return html`<btrix-archived-item-qa
+            class="flex-1"
+            workflowId=${workflowId}
+            itemId=${params.itemId}
+            itemPageId=${ifDefined(params.itemPageId)}
+            qaRunId=${ifDefined(params.qaRunId)}
+            tab=${params.qaTab}
+          ></btrix-archived-item-qa>`;
+        }
+
+        return html` <btrix-archived-item-detail
+          itemId=${params.itemId}
+          collectionId=${params.collectionId || ""}
+          workflowId=${workflowId}
+          itemType="crawl"
+          ?isCrawler=${this.appState.isCrawler}
+        ></btrix-archived-item-detail>`;
+      }
+
       return html`
         <btrix-workflow-detail
-          class="col-span-5 mt-6"
+          class="col-span-5"
           workflowId=${workflowId}
           openDialogName=${this.viewStateData?.dialog}
           ?isEditing=${isEditing}
-          ?isCrawler=${this.isCrawler}
+          ?isCrawler=${this.appState.isCrawler}
           .maxScale=${this.maxScale}
         ></btrix-workflow-detail>
       `;
@@ -480,8 +536,8 @@ export class Org extends LiteElement {
       const { workflow, seeds } = this.viewStateData || {};
 
       return html` <btrix-workflows-new
-        class="col-span-5 mt-6"
-        ?isCrawler=${this.isCrawler}
+        class="col-span-5"
+        ?isCrawler=${this.appState.isCrawler}
         .initialWorkflow=${workflow}
         .initialSeeds=${seeds}
         jobType=${ifDefined(params.jobType)}
@@ -490,8 +546,11 @@ export class Org extends LiteElement {
     }
 
     return html`<btrix-workflows-list
-      ?isCrawler=${this.isCrawler}
       @select-new-dialog=${this.onSelectNewDialog}
+      @select-job-type=${(e: SelectJobTypeEvent) => {
+        this.openDialogName = undefined;
+        this.navTo(`${this.orgBasePath}/workflows?new&jobType=${e.detail}`);
+      }}
     ></btrix-workflows-list>`;
   };
 
@@ -501,7 +560,7 @@ export class Org extends LiteElement {
     if (params.browserProfileId) {
       return html`<btrix-browser-profiles-detail
         profileId=${params.browserProfileId}
-        ?isCrawler=${this.isCrawler}
+        ?isCrawler=${this.appState.isCrawler}
       ></btrix-browser-profiles-detail>`;
     }
 
@@ -520,7 +579,7 @@ export class Org extends LiteElement {
     }
 
     return html`<btrix-browser-profiles-list
-      ?isCrawler=${this.isCrawler}
+      ?isCrawler=${this.appState.isCrawler}
       @select-new-dialog=${this.onSelectNewDialog}
     ></btrix-browser-profiles-list>`;
   };
@@ -533,12 +592,12 @@ export class Org extends LiteElement {
         collectionId=${params.collectionId}
         collectionTab=${(params.collectionTab as CollectionTab | undefined) ||
         "replay"}
-        ?isCrawler=${this.isCrawler}
+        ?isCrawler=${this.appState.isCrawler}
       ></btrix-collection-detail>`;
     }
 
     return html`<btrix-collections-list
-      ?isCrawler=${this.isCrawler}
+      ?isCrawler=${this.appState.isCrawler}
       @select-new-dialog=${this.onSelectNewDialog}
     ></btrix-collections-list>`;
   };

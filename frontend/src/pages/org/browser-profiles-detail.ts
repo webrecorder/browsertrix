@@ -3,7 +3,7 @@ import { html, nothing, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
-import { capitalize } from "lodash/fp";
+import capitalize from "lodash/fp/capitalize";
 import queryString from "query-string";
 
 import type { Profile, ProfileWorkflow } from "./types";
@@ -11,10 +11,12 @@ import type { Profile, ProfileWorkflow } from "./types";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
 import type { BrowserConnectionChange } from "@/features/browser-profiles/profile-browser";
+import { pageNav } from "@/layouts/pageHeader";
 import { isApiError } from "@/utils/api";
 import { maxLengthValidator } from "@/utils/form";
 import { formatNumber, getLocale } from "@/utils/localization";
 import { isArchivingDisabled } from "@/utils/orgs";
+import { pluralOf } from "@/utils/pluralize";
 
 const DESCRIPTION_MAXLENGTH = 500;
 
@@ -85,21 +87,7 @@ export class BrowserProfilesDetail extends BtrixElement {
       this.profile.resource.replicas.length > 0;
     const none = html`<span class="text-neutral-400">${msg("None")}</span>`;
 
-    return html`<div class="mb-7">
-        <a
-          class="text-sm font-medium text-neutral-500 hover:text-neutral-600"
-          href=${`${this.navigate.orgBasePath}/browser-profiles`}
-          @click=${this.navigate.link}
-        >
-          <sl-icon
-            name="arrow-left"
-            class="inline-block align-middle"
-          ></sl-icon>
-          <span class="inline-block align-middle"
-            >${msg("Back to Browser Profiles")}</span
-          >
-        </a>
-      </div>
+    return html`<div class="mb-7">${this.renderBreadcrumbs()}</div>
 
       <header class="mb-3 items-center justify-between md:flex">
         <h1 class="min-w-0 flex-1 truncate text-xl font-medium leading-7">
@@ -130,7 +118,7 @@ export class BrowserProfilesDetail extends BtrixElement {
               ? html`
                   <sl-format-date
                     lang=${getLocale()}
-                    date=${`${this.profile.created}Z` /** Z for UTC */}
+                    date=${this.profile.created}
                     month="2-digit"
                     day="2-digit"
                     year="2-digit"
@@ -146,10 +134,8 @@ export class BrowserProfilesDetail extends BtrixElement {
               ? html` <sl-format-date
                   lang=${getLocale()}
                   date=${
-                    `${
-                      // NOTE older profiles may not have "modified" data
-                      this.profile.modified || this.profile.created
-                    }Z` /** Z for UTC */
+                    // NOTE older profiles may not have "modified" data
+                    this.profile.modified || this.profile.created
                   }
                   month="2-digit"
                   day="2-digit"
@@ -263,16 +249,18 @@ export class BrowserProfilesDetail extends BtrixElement {
             `,
           )}
         </header>
-        <div class="rounded border p-5">
-          ${this.profile
+        <!-- display: inline -->
+        <div
+          class="leading whitespace-pre-line rounded border p-5 leading-relaxed first-line:leading-[0]"
+          >${this.profile
             ? this.profile.description ||
               html`
                 <div class="text-center text-neutral-400">
-                  ${msg("No description added.")}
+                  &nbsp;${msg("No description added.")}
                 </div>
               `
-            : nothing}
-        </div>
+            : nothing}</div
+        >
       </section>
 
       <section class="mb-7">
@@ -321,6 +309,20 @@ export class BrowserProfilesDetail extends BtrixElement {
       </btrix-dialog> `;
   }
 
+  private renderBreadcrumbs() {
+    const breadcrumbs = [
+      {
+        href: `${this.navigate.orgBasePath}/browser-profiles`,
+        content: msg("Browser Profiles"),
+      },
+      {
+        content: this.profile?.name,
+      },
+    ];
+
+    return pageNav(breadcrumbs);
+  }
+
   private renderCrawlWorkflows() {
     if (this.profile?.crawlconfigs?.length) {
       return html`<ul>
@@ -331,7 +333,7 @@ export class BrowserProfilesDetail extends BtrixElement {
             >
               <a
                 class="block p-2 transition-colors focus-within:bg-neutral-50 hover:bg-neutral-50"
-                href=${`${this.navigate.orgBasePath}/workflows/crawl/${workflow.id}`}
+                href=${`${this.navigate.orgBasePath}/workflows/${workflow.id}`}
                 @click=${this.navigate.link}
               >
                 ${this.renderWorkflowName(workflow)}
@@ -356,15 +358,10 @@ export class BrowserProfilesDetail extends BtrixElement {
     const remainder = workflow.seedCount - 1;
     let nameSuffix: string | TemplateResult<1> = "";
     if (remainder) {
-      if (remainder === 1) {
-        nameSuffix = html`<span class="ml-2 text-neutral-500"
-          >${msg(str`+${remainder} URL`)}</span
-        >`;
-      } else {
-        nameSuffix = html`<span class="ml-2 text-neutral-500"
-          >${msg(str`+${remainder} URLs`)}</span
-        >`;
-      }
+      nameSuffix = html`<span class="ml-2 text-neutral-500"
+        >+${formatNumber(remainder, { notation: "compact" })}
+        ${pluralOf("URLs", remainder)}</span
+      >`;
     }
     return html`
       <span class="primaryUrl truncate">${workflow.firstSeed}</span

@@ -4,6 +4,7 @@ import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import { type PropertyValues } from "lit";
 import { customElement, state } from "lit/decorators.js";
 
+import needLogin from "@/decorators/needLogin";
 import type { InviteSuccessDetail } from "@/features/accounts/invite-form";
 import type { APIUser } from "@/index";
 import type { APIPaginatedList } from "@/types/api";
@@ -26,6 +27,7 @@ import { formatAPIUser } from "@/utils/user";
  */
 @localized()
 @customElement("btrix-home")
+@needLogin
 export class Home extends LiteElement {
   @state()
   private orgList?: OrgData[];
@@ -97,6 +99,10 @@ export class Home extends LiteElement {
 
     if (this.userInfo.orgs.length && !this.orgList) {
       return html`
+        <btrix-document-title
+          title=${msg("Admin dashboard")}
+        ></btrix-document-title>
+
         <div class="my-24 flex items-center justify-center text-3xl">
           <sl-spinner></sl-spinner>
         </div>
@@ -104,6 +110,10 @@ export class Home extends LiteElement {
     }
 
     return html`
+      <btrix-document-title
+        title=${msg("Admin dashboard")}
+      ></btrix-document-title>
+
       <div class="bg-white">
         <header
           class="mx-auto box-border w-full max-w-screen-desktop px-3 py-4 md:py-8"
@@ -358,7 +368,7 @@ export class Home extends LiteElement {
         body: JSON.stringify(params),
       });
       const userInfo = await this.getUserInfo();
-      AppStateService.updateUserInfo(formatAPIUser(userInfo));
+      AppStateService.updateUser(formatAPIUser(userInfo));
 
       this.notify({
         message: msg(str`Created new org named "${params.name}".`),

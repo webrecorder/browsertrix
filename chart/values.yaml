@@ -60,9 +60,10 @@ volume_storage_class:
 # if set, set the node selector 'nodeType' to this crawling pods
 # crawler_node_type:
 
+# if set to  "1", enables open registration
 registration_enabled: "0"
 
-# if set, along with 'registration_enabled', will add registrated users to this org
+# if set, along with 'registration_enabled', will add registered users to this org
 # registration_org_id: ""
 
 jwt_token_lifetime_minutes: 1440
@@ -74,7 +75,7 @@ allow_dupe_invites: "0"
 invite_expire_seconds: 604800
 
 # base url for replayweb.page
-rwp_base_url: "https://cdn.jsdelivr.net/npm/replaywebpage@1.8.15/"
+rwp_base_url: "https://cdn.jsdelivr.net/npm/replaywebpage@2.1.4/"
 
 superuser:
   # set this to enable a superuser admin
@@ -112,6 +113,11 @@ profile_browser_idle_seconds: 60
 
 # set to true to enable subscriptions API and Billing tab
 billing_enabled: false
+
+# set URL to external sign-up page
+# the internal sign-up page will take precedence if
+# `registration_enabled` is set to `"1"``
+sign_up_url: ""
 
 # set e-mail to show for subscriptions related info
 sales_email: ""
@@ -282,12 +288,19 @@ enable_auto_resize_crawlers: false
 # the workdir is used to store the browser profile data and other temporary files
 # profile_browser_workdir_size: 4Gi
 
+
 # Other Crawler Settings
 # ----------------------
 
 # minimum size allocated to each crawler
 # should be at least double crawl session size to ensure space for WACZ and browser profile data
-crawler_storage: "26Gi"
+crawler_storage: "25Gi"
+
+
+# if set, will ensure 'crawler_storage' is at least this times used storage
+# eg. if crawler session reaches 10Gb, and this value is 2.5, will attempt
+# to resize to at least 25Gb.
+crawler_min_avail_storage_ratio: 2.5
 
 # max size at which crawler will commit current crawl session
 crawler_session_size_limit_bytes: "10000000000"

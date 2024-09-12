@@ -1,6 +1,6 @@
 """ Operator handler for ProfileJobs """
 
-from btrixcloud.utils import from_k8s_date, dt_now
+from btrixcloud.utils import str_to_date, dt_now
 
 from btrixcloud.models import StorageRef
 
@@ -23,7 +23,7 @@ class ProfileOperator(BaseOperator):
         """sync profile browsers"""
         spec = data.parent.get("spec", {})
 
-        expire_time = from_k8s_date(spec.get("expireTime"))
+        expire_time = str_to_date(spec.get("expireTime"))
         browserid = spec.get("id")
 
         if expire_time and dt_now() >= expire_time:

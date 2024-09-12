@@ -32,6 +32,22 @@ export type OrgQuotas = z.infer<typeof orgQuotasSchema>;
 const YEAR_MONTH_REGEX = /^\d{4}-\d{2}$/;
 export const yearMonthSchema = z.string().regex(YEAR_MONTH_REGEX);
 
+export const crawlingDefaultsSchema = z.object({
+  crawlTimeout: z.number().optional(),
+  maxCrawlSize: z.number().optional(),
+  pageLoadTimeout: z.number().optional(),
+  postLoadDelay: z.number().optional(),
+  behaviorTimeout: z.number().optional(),
+  pageExtraDelay: z.number().optional(),
+  blockAds: z.boolean().optional(),
+  profileid: z.string().optional(),
+  crawlerChannel: z.string().optional(),
+  lang: z.string().optional(),
+  userAgent: z.string().optional(),
+  exclude: z.array(z.string()),
+});
+export type CrawlingDefaults = z.infer<typeof crawlingDefaultsSchema>;
+
 export const orgDataSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
@@ -73,6 +89,7 @@ export const orgDataSchema = z.object({
   readOnlyReason: z.union([orgReadOnlyReasonSchema, z.string()]).nullable(),
   readOnlyOnCancel: z.boolean(),
   subscription: subscriptionSchema.nullable(),
+  crawlingDefaults: crawlingDefaultsSchema.nullable(),
   allowSharedProxies: z.boolean(),
   allowedProxies: z.array(z.string()),
 });
