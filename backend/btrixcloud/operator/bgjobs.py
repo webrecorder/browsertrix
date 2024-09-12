@@ -4,7 +4,7 @@ from uuid import UUID
 import traceback
 
 from btrixcloud.utils import (
-    from_k8s_date,
+    str_to_date,
     dt_now,
 )
 
@@ -45,7 +45,7 @@ class BgJobOperator(BaseOperator):
 
         finished = None
         if completion_time:
-            finished = from_k8s_date(completion_time)
+            finished = str_to_date(completion_time)
         if not finished:
             finished = dt_now()
 

@@ -19,7 +19,12 @@ from redis.asyncio.client import Redis
 import pymongo
 
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
-from .utils import dt_now, parse_jsonl_error_messages, stream_dict_list_as_csv
+from .utils import (
+    dt_now,
+    date_to_str,
+    parse_jsonl_error_messages,
+    stream_dict_list_as_csv,
+)
 from .basecrawls import BaseCrawlOps
 from .crawlmanager import CrawlManager
 from .models import (
@@ -714,8 +719,8 @@ class CrawlOps(BaseCrawlOps):
             data["userid"] = str(crawl.userid)
             data["user"] = user_emails.get(crawl.userid)
 
-            data["started"] = str(crawl.started)
-            data["finished"] = str(crawl.finished)
+            data["started"] = date_to_str(crawl.started) if crawl.started else ""
+            data["finished"] = date_to_str(crawl.finished) if crawl.finished else ""
 
             data["duration"] = 0
             duration_seconds = 0

@@ -134,6 +134,7 @@ def test_update_collection(
     global modified
     modified = data["modified"]
     assert modified
+    assert modified.endswith("Z")
 
 
 def test_rename_collection(

@@ -781,7 +781,7 @@ export class WorkflowDetail extends LiteElement {
         ${this.renderDetailItem(msg("Created By"), (workflow) =>
           msg(
             str`${workflow.createdByName} on ${this.dateFormatter.format(
-              new Date(`${workflow.created}Z`),
+              new Date(workflow.created),
             )}`,
           ),
         )}
@@ -951,7 +951,7 @@ export class WorkflowDetail extends LiteElement {
           this.lastCrawlStartTime
             ? RelativeDuration.humanize(
                 new Date().valueOf() -
-                  new Date(`${this.lastCrawlStartTime}Z`).valueOf(),
+                  new Date(this.lastCrawlStartTime).valueOf(),
               )
             : skeleton,
         )}
@@ -1589,8 +1589,7 @@ export class WorkflowDetail extends LiteElement {
         },
       );
       this.lastCrawlId = data.started;
-      // remove 'Z' from timestamp to match API response
-      this.lastCrawlStartTime = new Date().toISOString().slice(0, -1);
+      this.lastCrawlStartTime = new Date().toISOString();
       this.logs = undefined;
       void this.fetchWorkflow();
       this.goToTab("watch");
