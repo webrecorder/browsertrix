@@ -105,7 +105,7 @@ class CrawlOperator(BaseOperator):
 
         # ensure available storage is at least this much times used storage
         self.min_avail_storage_ratio = float(
-            os.environ.get("CRAWLER_MIN_AVAIL_STORAGE_RATIO" or 0)
+            os.environ.get("CRAWLER_MIN_AVAIL_STORAGE_RATIO") or 0
         )
 
     def init_routes(self, app):
