@@ -1420,12 +1420,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
           <span slot="label">${msg("Language")}</span>
         </btrix-language-select>
       `)}
-      <<<<<<< HEAD:frontend/src/pages/org/workflow-editor.ts
-      ${this.renderHelpTextCol(
-        msg(`Websites that observe the browser’s language setting may serve
-        content in that language if available.`),
-      )}
-      ${this.renderFormCol(html`
+      ${this.renderHelpTextCol(infoTextStrings["lang"])}
+      ${inputCol(html`
         <btrix-select-crawler-proxy
           orgId=${this.orgId}
           .proxyId="${this.formState.proxyId || ""}"
@@ -1435,9 +1431,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
             })}
         ></btrix-select-crawler-proxy>
       `)}
-      ${this.renderHelpTextCol(msg(`Choose a Browsertrix Proxy`))} =======
-      ${this.renderHelpTextCol(infoTextStrings["lang"])} >>>>>>>
-      main:frontend/src/features/crawl-workflows/workflow-editor.ts
+      ${this.renderHelpTextCol(infoTextStrings["proxyId"])}
     `;
   }
 
