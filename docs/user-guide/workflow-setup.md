@@ -8,17 +8,17 @@ Crawl settings are shown in the crawl workflow detail **Settings** tab and in th
 
 ## Crawl Scope
 
-Specify the range and depth of your crawl. Different settings will be shown depending on whether you chose _Known URLs_ (crawl type of **URL List**) or _Automated Discovery_ (crawl type of **Seeded Crawl**) when creating a new workflow.
+Specify the range and depth of your crawl. Different settings will be shown depending on whether you chose _URL List_ or _Site Crawl_ when creating a new workflow.
 
 ??? example "Crawling with HTTP basic auth"
 
-    Both URL List and Seeded crawls support [HTTP Basic Auth](https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication) which can be provided as part of the URL, for example: `https://username:password@example.com`.
+    Both Page List and Site Crawls support [HTTP Basic Auth](https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication) which can be provided as part of the URL, for example: `https://username:password@example.com`.
     
     **These credentials WILL BE WRITTEN into the archive.** We recommend exercising caution and only archiving with dedicated archival accounts, changing your password or deleting the account when finished.
 
-### Crawl Type: URL List
+### Crawl Type: Page List
 
-#### Crawl URL(s)
+#### Page URL(s)
 
 A list of one or more URLs that the crawler should visit and capture.
 
@@ -26,14 +26,14 @@ A list of one or more URLs that the crawler should visit and capture.
 
 When enabled, the crawler will visit all the links it finds within each page defined in the _Crawl URL(s)_ field.
 
-??? example "Crawling tags & search queries with URL List crawls"
+??? example "Crawling tags & search queries with Page List crawls"
     This setting can be useful for crawling the content of specific tags or search queries. Specify the tag or search query URL(s) in the _Crawl URL(s)_ field, e.g: `https://example.com/search?q=tag`, and enable _Include Any Linked Page_ to crawl all the content present on that search query page.
 
 #### Fail Crawl on Failed URL
 
 When enabled, the crawler will fail the entire crawl if any of the provided URLs are invalid or unsuccessfully crawled. The resulting archived item will have a status of "Failed".
 
-### Crawl Type: Seeded Crawl
+### Crawl Type: Site Crawl
 
 #### Crawl Start URL
 
@@ -84,7 +84,7 @@ This can be useful for discovering and capturing pages on a website that aren't 
 
 ### Exclusions
 
-The exclusions table will instruct the crawler to ignore links it finds on pages where all or part of the link matches an exclusion found in the table. The table is only available in URL List crawls when _Include Any Linked Page_ is enabled.
+The exclusions table will instruct the crawler to ignore links it finds on pages where all or part of the link matches an exclusion found in the table. The table is only available in Page List crawls when _Include Any Linked Page_ is enabled.
 
 This can be useful for avoiding crawler traps — sites that may automatically generate pages such as calendars or filter options — or other pages that should not be crawled according to their URL.
 
@@ -228,7 +228,7 @@ Describe and organize your crawl workflow and the resulting archived items.
 
 ### Name
 
-Allows a custom name to be set for the workflow. If no name is set, the workflow's name will be set to the _Crawl Start URL_. For URL List crawls, the workflow's name will be set to the first URL present in the _Crawl URL(s)_ field, with an added `(+x)` where `x` represents the total number of URLs in the list.
+Allows a custom name to be set for the workflow. If no name is set, the workflow's name will be set to the _Crawl Start URL_. For Page List crawls, the workflow's name will be set to the first URL present in the _Crawl URL(s)_ field, with an added `(+x)` where `x` represents the total number of URLs in the list.
 
 ### Description
 

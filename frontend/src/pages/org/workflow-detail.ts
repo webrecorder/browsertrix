@@ -7,13 +7,7 @@ import { until } from "lit/directives/until.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
-import type {
-  Crawl,
-  CrawlState,
-  Seed,
-  Workflow,
-  WorkflowParams,
-} from "./types";
+import type { Crawl, Seed, Workflow, WorkflowParams } from "./types";
 
 import { CopyButton } from "@/components/ui/copy-button";
 import type { PageChangeEvent } from "@/components/ui/pagination";
@@ -22,8 +16,9 @@ import { type IntersectEvent } from "@/components/utils/observable";
 import type { CrawlLog } from "@/features/archived-items/crawl-logs";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { ExclusionEditor } from "@/features/crawl-workflows/exclusion-editor";
-import { pageBreadcrumbs, type Breadcrumb } from "@/layouts/pageHeader";
+import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
 import type { APIPaginatedList } from "@/types/api";
+import { type CrawlState } from "@/types/crawlState";
 import { isApiError } from "@/utils/api";
 import {
   DEFAULT_MAX_SCALE,
@@ -32,7 +27,7 @@ import {
 } from "@/utils/crawler";
 import { humanizeSchedule } from "@/utils/cron";
 import LiteElement, { html } from "@/utils/LiteElement";
-import { getLocale } from "@/utils/localization";
+import { formatNumber, getLocale } from "@/utils/localization";
 import { isArchivingDisabled } from "@/utils/orgs";
 
 const SECTIONS = ["crawls", "watch", "settings", "logs"] as const;
@@ -110,9 +105,6 @@ export class WorkflowDetail extends LiteElement {
   @state()
   private filterBy: Partial<Record<keyof Crawl, string | CrawlState[]>> = {};
 
-  private readonly numberFormatter = new Intl.NumberFormat(getLocale(), {
-    // notation: "compact",
-  });
   private readonly dateFormatter = new Intl.DateTimeFormat(getLocale(), {
     year: "numeric",
     month: "numeric",
@@ -125,6 +117,14 @@ export class WorkflowDetail extends LiteElement {
 
   private getWorkflowPromise?: Promise<Workflow>;
   private getSeedsPromise?: Promise<APIPaginatedList<Seed>>;
+
+  private get isExplicitRunning() {
+    return (
+      this.workflow?.isCrawlRunning &&
+      !this.workflow.lastCrawlStopping &&
+      this.workflow.lastCrawlState === "running"
+    );
+  }
 
   private readonly tabLabels: Record<Tab, string> = {
     crawls: msg("Crawls"),
@@ -389,35 +389,43 @@ export class WorkflowDetail extends LiteElement {
           >
         </div>
       </btrix-dialog>
+      <btrix-dialog
+        .label=${msg("Edit Browser Windows")}
+        .open=${this.openDialogName === "scale"}
+        @sl-request-close=${() => (this.openDialogName = undefined)}
+        @sl-show=${this.showDialog}
+        @sl-after-hide=${() => (this.isDialogVisible = false)}
+      >
+        ${this.isDialogVisible ? this.renderEditScale() : ""}
+      </btrix-dialog>
     `;
   }
 
   private renderBreadcrumbs() {
     const breadcrumbs: Breadcrumb[] = [
       {
-        href: `${this.orgBasePath}/workflows/crawls`,
+        href: `${this.orgBasePath}/workflows`,
         content: msg("Crawl Workflows"),
       },
     ];
 
-    if (this.workflow) {
-      breadcrumbs.push({
-        href: `${this.orgBasePath}/workflows/crawl/${this.workflowId}`,
-        content: this.renderName(),
-      });
-
-      if (this.isEditing) {
-        breadcrumbs.push({
+    if (this.isEditing) {
+      breadcrumbs.push(
+        {
+          href: `${this.orgBasePath}/workflows/${this.workflowId}`,
+          content: this.workflow ? this.renderName() : undefined,
+        },
+        {
           content: msg("Edit Settings"),
-        });
-      } else if (this.activePanel) {
-        breadcrumbs.push({
-          content: this.tabLabels[this.activePanel],
-        });
-      }
+        },
+      );
+    } else {
+      breadcrumbs.push({
+        content: this.workflow ? this.renderName() : undefined,
+      });
     }
 
-    return pageBreadcrumbs(breadcrumbs);
+    return pageNav(breadcrumbs);
   }
 
   private readonly renderTabList = () => html`
@@ -484,25 +492,36 @@ export class WorkflowDetail extends LiteElement {
           label=${msg("Edit workflow settings")}
           @click=${() =>
             this.navTo(
-              `/orgs/${this.appState.orgSlug}/workflows/crawl/${this.workflow?.id}?edit`,
+              `/orgs/${this.appState.orgSlug}/workflows/${this.workflow?.id}?edit`,
             )}
         >
         </sl-icon-button>`;
     }
     if (this.activePanel === "watch" && this.isCrawler) {
+      const enableEditBrowserWindows =
+        this.workflow?.isCrawlRunning && !this.workflow.lastCrawlStopping;
       return html` <h3>${this.tabLabels[this.activePanel]}</h3>
-        <sl-button
-          size="small"
-          ?disabled=${this.workflow?.lastCrawlState !== "running"}
-          @click=${() => (this.openDialogName = "scale")}
-        >
-          <sl-icon
-            name="plus-slash-minus"
-            slot="prefix"
-            label=${msg("Increase or decrease")}
-          ></sl-icon>
-          <span>${msg("Edit Browser Windows")}</span>
-        </sl-button>`;
+        <div>
+          <sl-tooltip
+            content=${msg(
+              "Browser windows can only be edited while a crawl is starting or running",
+            )}
+            ?disabled=${enableEditBrowserWindows}
+          >
+            <sl-button
+              size="small"
+              ?disabled=${!enableEditBrowserWindows}
+              @click=${() => (this.openDialogName = "scale")}
+            >
+              <sl-icon
+                name="plus-slash-minus"
+                slot="prefix"
+                label=${msg("Increase or decrease")}
+              ></sl-icon>
+              <span>${msg("Edit Browser Windows")}</span>
+            </sl-button>
+          </sl-tooltip>
+        </div>`;
     }
     if (this.activePanel === "logs") {
       const authToken = this.authState?.headers.Authorization.split(" ")[1];
@@ -555,10 +574,8 @@ export class WorkflowDetail extends LiteElement {
   private readonly renderEditor = () => html`
     <div class="col-span-1">${this.renderBreadcrumbs()}</div>
 
-    <header>
-      <h2 class="break-all text-xl font-semibold leading-10">
-        ${this.renderName()}
-      </h2>
+    <header class="col-span-1 mb-3 flex flex-wrap gap-2">
+      <btrix-detail-page-title .item=${this.workflow}></btrix-detail-page-title>
     </header>
 
     ${when(
@@ -570,7 +587,7 @@ export class WorkflowDetail extends LiteElement {
           jobType=${workflow.jobType!}
           configId=${workflow.id}
           @reset=${() =>
-            this.navTo(`${this.orgBasePath}/workflows/crawl/${workflow.id}`)}
+            this.navTo(`${this.orgBasePath}/workflows/${workflow.id}`)}
         ></btrix-workflow-editor>
       `,
       this.renderLoading,
@@ -672,7 +689,7 @@ export class WorkflowDetail extends LiteElement {
             `,
           )}
           ${when(
-            workflow.isCrawlRunning,
+            workflow.isCrawlRunning && !workflow.lastCrawlStopping,
             () => html`
               <sl-divider></sl-divider>
               <sl-menu-item @click=${() => (this.openDialogName = "scale")}>
@@ -681,6 +698,7 @@ export class WorkflowDetail extends LiteElement {
               </sl-menu-item>
               <sl-menu-item
                 @click=${() => (this.openDialogName = "exclusions")}
+                ?disabled=${!this.isExplicitRunning}
               >
                 <sl-icon name="table" slot="prefix"></sl-icon>
                 ${msg("Edit Exclusions")}
@@ -691,7 +709,7 @@ export class WorkflowDetail extends LiteElement {
           <sl-menu-item
             @click=${() =>
               this.navTo(
-                `/orgs/${this.appState.orgSlug}/workflows/crawl/${workflow.id}?edit`,
+                `/orgs/${this.appState.orgSlug}/workflows/${workflow.id}?edit`,
               )}
           >
             <sl-icon name="gear" slot="prefix"></sl-icon>
@@ -868,7 +886,7 @@ export class WorkflowDetail extends LiteElement {
                 this.crawls!.items.map(
                   (crawl: Crawl) =>
                     html` <btrix-crawl-list-item
-                      href=${`${this.orgBasePath}/workflows/crawl/${this.workflowId}/items/${crawl.id}`}
+                      href=${`${this.orgBasePath}/workflows/${this.workflowId}/crawls/${crawl.id}`}
                       .crawl=${crawl}
                     >
                       ${when(
@@ -924,13 +942,9 @@ export class WorkflowDetail extends LiteElement {
       <btrix-desc-list horizontal>
         ${this.renderDetailItem(msg("Pages Crawled"), () =>
           this.lastCrawlStats
-            ? msg(
-                str`${this.numberFormatter.format(
-                  +(this.lastCrawlStats.done || 0),
-                )} / ${this.numberFormatter.format(
-                  +(this.lastCrawlStats.found || 0),
-                )}`,
-              )
+            ? `${formatNumber(
+                +(this.lastCrawlStats.done || 0),
+              )} / ${formatNumber(+(this.lastCrawlStats.found || 0))}`
             : html`<sl-spinner></sl-spinner>`,
         )}
         ${this.renderDetailItem(msg("Run Duration"), () =>
@@ -961,52 +975,46 @@ export class WorkflowDetail extends LiteElement {
   private readonly renderWatchCrawl = () => {
     if (!this.authState || !this.workflow?.lastCrawlState) return "";
 
-    let waitingMsg = null;
+    // Show custom message if crawl is active but not explicitly running
+    let waitingMsg: string | null = null;
 
-    switch (this.workflow.lastCrawlState) {
-      case "starting":
-        waitingMsg = msg("Crawl starting...");
-        break;
+    if (!this.isExplicitRunning) {
+      switch (this.workflow.lastCrawlState) {
+        case "starting":
+          waitingMsg = msg("Crawl starting...");
+          break;
 
-      case "waiting_capacity":
-        waitingMsg = msg(
-          "Crawl waiting for available resources before it can continue...",
-        );
-        break;
+        case "waiting_capacity":
+          waitingMsg = msg(
+            "Crawl waiting for available resources before it can continue...",
+          );
+          break;
 
-      case "waiting_org_limit":
-        waitingMsg = msg(
-          "Crawl waiting for others to finish, concurrent limit per Organization reached...",
-        );
-        break;
+        case "waiting_org_limit":
+          waitingMsg = msg(
+            "Crawl waiting for others to finish, concurrent limit per Organization reached...",
+          );
+          break;
+
+        case "pending-wait":
+        case "generate-wacz":
+        case "uploading-wacz":
+          waitingMsg = msg("Crawl finishing...");
+          break;
+
+        default:
+          if (this.workflow.lastCrawlStopping) {
+            waitingMsg = msg("Crawl stopping...");
+          }
+          break;
+      }
     }
 
-    const isRunning = this.workflow.lastCrawlState === "running";
-    const isStopping = this.workflow.lastCrawlStopping;
     const authToken = this.authState.headers.Authorization.split(" ")[1];
 
     return html`
-      ${waitingMsg
-        ? html`<div class="rounded border p-3">
-            <p class="text-sm text-neutral-600 motion-safe:animate-pulse">
-              ${waitingMsg}
-            </p>
-          </div>`
-        : isActive(this.workflow.lastCrawlState)
-          ? html`
-              ${isStopping
-                ? html`
-                    <div class="mb-4">
-                      <btrix-alert variant="warning" class="text-sm">
-                        ${msg("Crawl stopping...")}
-                      </btrix-alert>
-                    </div>
-                  `
-                : ""}
-            `
-          : this.renderInactiveCrawlMessage()}
       ${when(
-        isRunning && this.workflow,
+        this.isExplicitRunning && this.workflow,
         (workflow) => html`
           <div id="screencast-crawl">
             <btrix-screencast
@@ -1018,17 +1026,15 @@ export class WorkflowDetail extends LiteElement {
 
           <section class="mt-4">${this.renderCrawlErrors()}</section>
           <section class="mt-8">${this.renderExclusions()}</section>
-
-          <btrix-dialog
-            .label=${msg("Edit Browser Windows")}
-            .open=${this.openDialogName === "scale"}
-            @sl-request-close=${() => (this.openDialogName = undefined)}
-            @sl-show=${this.showDialog}
-            @sl-after-hide=${() => (this.isDialogVisible = false)}
-          >
-            ${this.isDialogVisible ? this.renderEditScale() : ""}
-          </btrix-dialog>
         `,
+        () =>
+          waitingMsg
+            ? html`<div class="rounded border p-3">
+                <p class="text-sm text-neutral-600 motion-safe:animate-pulse">
+                  ${waitingMsg}
+                </p>
+              </div>`
+            : this.renderInactiveCrawlMessage(),
       )}
     `;
   };
@@ -1237,7 +1243,12 @@ export class WorkflowDetail extends LiteElement {
           ? html`<btrix-exclusion-editor
               .crawlId=${this.lastCrawlId ?? undefined}
               .config=${this.workflow.config}
-              ?isActiveCrawl=${isActive(this.workflow.lastCrawlState)}
+              ?isActiveCrawl=${this.workflow.lastCrawlState
+                ? isActive({
+                    state: this.workflow.lastCrawlState,
+                    stopping: this.workflow.lastCrawlStopping,
+                  })
+                : false}
               @on-success=${this.handleExclusionChange}
             ></btrix-exclusion-editor>`
           : ""}
@@ -1495,7 +1506,7 @@ export class WorkflowDetail extends LiteElement {
         },
       );
 
-      this.navTo(`${this.orgBasePath}/workflows/crawls`);
+      this.navTo(`${this.orgBasePath}/workflows`);
 
       this.notify({
         message: msg(

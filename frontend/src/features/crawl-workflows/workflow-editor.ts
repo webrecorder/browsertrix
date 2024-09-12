@@ -62,8 +62,9 @@ import {
   humanizeSchedule,
 } from "@/utils/cron";
 import { maxLengthValidator } from "@/utils/form";
-import { getLocale } from "@/utils/localization";
+import { formatNumber, getLocale } from "@/utils/localization";
 import { isArchivingDisabled } from "@/utils/orgs";
+import { pluralOf } from "@/utils/pluralize";
 import { regexEscape } from "@/utils/string";
 import { tw } from "@/utils/tailwind";
 import {
@@ -713,7 +714,7 @@ export class WorkflowEditor extends BtrixElement {
         <sl-textarea
           name="urlList"
           class="textarea-wrap"
-          label=${msg("Crawl URL(s)")}
+          label=${msg("Page URL(s)")}
           rows="10"
           autocomplete="off"
           inputmode="url"
@@ -1105,7 +1106,7 @@ https://example.net`}
             ${inputCol(html`
               <sl-textarea
                 name="urlList"
-                label=${msg("Crawl URL(s)")}
+                label=${msg("Page URL(s)")}
                 rows="3"
                 autocomplete="off"
                 inputmode="url"
@@ -1725,11 +1726,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
       const firstUrl = urlList[0].trim();
       if (urlList.length > 1) {
         const remainder = urlList.length - 1;
-        if (remainder === 1) {
-          jobName = msg(str`${firstUrl} + ${remainder} more URL`);
-        } else {
-          jobName = msg(str`${firstUrl} + ${remainder} more URLs`);
-        }
+        jobName = msg(
+          str`${firstUrl} + ${formatNumber(remainder, { notation: "compact" })} more ${pluralOf("URLs", remainder)}`,
+        );
       } else {
         jobName = firstUrl;
       }
@@ -1975,7 +1974,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       });
 
       this.navigate.to(
-        `${this.navigate.orgBasePath}/workflows/crawl/${this.configId || data.id}${
+        `${this.navigate.orgBasePath}/workflows/${this.configId || data.id}${
           crawlId && !storageQuotaReached && !executionMinutesQuotaReached
             ? "#watch"
             : ""

@@ -2,6 +2,7 @@
 module.exports = {
   plugins: [
     "@ianvs/prettier-plugin-sort-imports",
+    "@prettier/plugin-xml",
     "prettier-plugin-tailwindcss",
   ],
   tailwindFunctions: ["tw"],
@@ -24,5 +25,17 @@ module.exports = {
     "",
   ],
   importOrderParserPlugins: ["typescript", "decorators-legacy"],
-  importOrderTypeScriptVersion: "5.0.0",
+  overrides: [
+    {
+      files: "**/*.xlf",
+      options: {
+        parser: "xml",
+        proseWrap: "never",
+        printWidth: Infinity,
+        xmlSortAttributesByKey: true,
+        xmlWhitespaceSensitivity: "preserve",
+        xmlSelfClosingSpace: false,
+      },
+    },
+  ],
 };

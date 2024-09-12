@@ -275,35 +275,48 @@ export class OrgSettingsBilling extends BtrixElement {
       : nothing}`;
   };
 
-  private readonly renderQuotas = (quotas: OrgQuotas) => html`
-    <ul class="leading-relaxed text-neutral-700">
-      <li>
-        ${msg(
-          str`${quotas.maxExecMinutesPerMonth ? humanizeSeconds(quotas.maxExecMinutesPerMonth * 60, undefined, undefined, "long") : msg("Unlimited minutes")} of crawl and QA analysis execution time`,
-        )}
-      </li>
-      <li>
-        ${msg(
-          html`${quotas.storageQuota
-            ? html`<sl-format-bytes
-                value=${quotas.storageQuota}
-              ></sl-format-bytes>`
-            : msg("Unlimited")}
-          storage`,
-        )}
-      </li>
-      <li>
-        ${msg(
-          str`${quotas.maxPagesPerCrawl ? formatNumber(quotas.maxPagesPerCrawl) : msg("Unlimited")} ${pluralOf("pages", quotas.maxPagesPerCrawl)} per crawl`,
-        )}
-      </li>
-      <li>
-        ${msg(
-          str`${quotas.maxConcurrentCrawls ? formatNumber(quotas.maxConcurrentCrawls) : msg("Unlimited")} concurrent ${pluralOf("crawls", quotas.maxConcurrentCrawls)}`,
-        )}
-      </li>
-    </ul>
-  `;
+  private readonly renderQuotas = (quotas: OrgQuotas) => {
+    const maxExecMinutesPerMonth =
+      quotas.maxExecMinutesPerMonth &&
+      humanizeSeconds(
+        quotas.maxExecMinutesPerMonth * 60,
+        undefined,
+        undefined,
+        "long",
+      );
+    const maxPagesPerCrawl =
+      quotas.maxPagesPerCrawl &&
+      `${formatNumber(quotas.maxPagesPerCrawl)} ${pluralOf("pages", quotas.maxPagesPerCrawl)}`;
+    const maxConcurrentCrawls =
+      quotas.maxConcurrentCrawls &&
+      msg(
+        str`${formatNumber(quotas.maxConcurrentCrawls)} concurrent ${pluralOf("crawls", quotas.maxConcurrentCrawls)}`,
+      );
+
+    return html`
+      <ul class="leading-relaxed text-neutral-700">
+        <li>
+          ${msg(
+            str`${maxExecMinutesPerMonth || msg("Unlimited minutes")} of crawl and QA analysis execution time`,
+          )}
+        </li>
+        <li>
+          ${msg(
+            html`${quotas.storageQuota
+              ? html`<sl-format-bytes
+                  value=${quotas.storageQuota}
+                ></sl-format-bytes>`
+              : msg("Unlimited")}
+            storage`,
+          )}
+        </li>
+        <li>
+          ${msg(str`${maxPagesPerCrawl || msg("Unlimited pages")} per crawl`)}
+        </li>
+        <li>${maxConcurrentCrawls || msg("Unlimited concurrent crawls")}</li>
+      </ul>
+    `;
+  };
 
   private renderPortalLink() {
     return html`

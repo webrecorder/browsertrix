@@ -30,6 +30,32 @@ const plurals = {
       id: "crawls.plural.other",
     }),
   },
+  items: {
+    zero: msg("items", {
+      desc: 'plural form of "item" for zero items',
+      id: "items.plural.zero",
+    }),
+    one: msg("item", {
+      desc: 'singular form for "item"',
+      id: "items.plural.one",
+    }),
+    two: msg("items", {
+      desc: 'plural form of "item" for two items',
+      id: "items.plural.two",
+    }),
+    few: msg("items", {
+      desc: 'plural form of "item" for few items',
+      id: "items.plural.few",
+    }),
+    many: msg("items", {
+      desc: 'plural form of "item" for many items',
+      id: "items.plural.many",
+    }),
+    other: msg("items", {
+      desc: 'plural form of "item" for multiple/other items',
+      id: "items.plural.other",
+    }),
+  },
   pages: {
     zero: msg("pages", {
       desc: 'plural form of "page" for zero pages',

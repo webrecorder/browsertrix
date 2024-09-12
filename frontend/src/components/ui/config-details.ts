@@ -17,6 +17,8 @@ import { getAppSettings } from "@/utils/app";
 import { DEPTH_SUPPORTED_SCOPES } from "@/utils/crawler";
 import { humanizeSchedule } from "@/utils/cron";
 import LiteElement, { html } from "@/utils/LiteElement";
+import { formatNumber } from "@/utils/localization";
+import { pluralOf } from "@/utils/pluralize";
 
 /**
  * Usage:
@@ -146,13 +148,13 @@ export class ConfigDetails extends LiteElement {
             msg("Max Pages"),
             when(
               maxPages,
-              () => msg(str`${maxPages!.toLocaleString()} pages`),
+              (val: number | string) =>
+                `${formatNumber(+val)} ${pluralOf("pages", +val)}`,
               () =>
                 this.orgDefaults?.maxPagesPerCrawl
-                  ? html`<span class="text-neutral-400"
-                      >${msg(
-                        str`${this.orgDefaults.maxPagesPerCrawl.toLocaleString()} pages`,
-                      )}
+                  ? html`<span class="text-neutral-400">
+                      ${formatNumber(this.orgDefaults.maxPagesPerCrawl)}
+                      ${pluralOf("pages", this.orgDefaults.maxPagesPerCrawl)}
                       ${msg("(default)")}</span
                     >`
                   : undefined,
@@ -316,7 +318,8 @@ export class ConfigDetails extends LiteElement {
                           html`<sl-tag class="mr-2 mt-1" variant="neutral">
                             ${coll.name}
                             <span class="font-monostyle pl-1 text-xs">
-                              (${msg(str`${coll.crawlCount} items`)})
+                              (${formatNumber(coll.crawlCount)}
+                              ${pluralOf("items", coll.crawlCount)})
                             </span>
                           </sl-tag>`,
                       )
@@ -333,7 +336,7 @@ export class ConfigDetails extends LiteElement {
 
     return html`
       ${this.renderSetting(
-        msg("Crawl URL(s)"),
+        msg("Page URL(s)"),
         html`
           <ul>
             ${this.seeds?.map(
@@ -375,14 +378,16 @@ export class ConfigDetails extends LiteElement {
       primarySeedConfig?.include || seedsConfig.include || [];
     return html`
       ${this.renderSetting(
-        msg("Primary Seed URL"),
-        html`<a
-          class="text-blue-600 hover:text-blue-500 hover:underline"
-          href="${primarySeedUrl!}"
-          target="_blank"
-          rel="noreferrer"
-          >${primarySeedUrl}</a
-        >`,
+        msg("Crawl Start URL"),
+        primarySeedUrl
+          ? html`<a
+              class="text-blue-600 hover:text-blue-500 hover:underline"
+              href="${primarySeedUrl}"
+              target="_blank"
+              rel="noreferrer"
+              >${primarySeedUrl}</a
+            >`
+          : undefined,
         true,
       )}
       ${this.renderSetting(

@@ -1,7 +1,7 @@
 import { localized, msg, str } from "@lit/localize";
 import type { SlCheckbox } from "@shoelace-style/shoelace";
 import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
 import { guard } from "lit/directives/guard.js";
 import { repeat } from "lit/directives/repeat.js";
@@ -10,15 +10,17 @@ import queryString from "query-string";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { PageChangeEvent } from "@/components/ui/pagination";
-import { pageBreadcrumbs, type Breadcrumb } from "@/layouts/pageHeader";
+import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
 import type {
   APIPaginatedList,
   APIPaginationQuery,
   APISortQuery,
 } from "@/types/api";
 import type { Collection } from "@/types/collection";
-import type { ArchivedItem, Crawl, CrawlState, Upload } from "@/types/crawler";
-import { getLocale } from "@/utils/localization";
+import type { ArchivedItem, Crawl, Upload } from "@/types/crawler";
+import type { CrawlState } from "@/types/crawlState";
+import { formatNumber, getLocale } from "@/utils/localization";
+import { pluralOf } from "@/utils/pluralize";
 
 const ABORT_REASON_THROTTLE = "throttled";
 const DESCRIPTION_MAX_HEIGHT_PX = 200;
@@ -53,12 +55,14 @@ export class CollectionDetail extends BtrixElement {
   @state()
   private showShareInfo = false;
 
+  @query(".description")
+  private readonly description?: HTMLElement | null;
+
+  @query(".descriptionExpandBtn")
+  private readonly descriptionExpandBtn?: HTMLElement | null;
+
   // Use to cancel requests
   private getArchivedItemsController: AbortController | null = null;
-
-  private readonly numberFormatter = new Intl.NumberFormat(getLocale(), {
-    notation: "compact",
-  });
 
   private readonly tabLabels: Record<
     Tab,
@@ -95,20 +99,22 @@ export class CollectionDetail extends BtrixElement {
     return html` <div class="mb-7">${this.renderBreadcrumbs()}</div>
       <header class="items-center gap-2 pb-3 md:flex">
         <div class="mb-2 flex w-full items-center gap-2 md:mb-0">
-          ${this.collection?.isPublic
-            ? html`
-                <sl-tooltip content=${msg("Shareable")}>
-                  <sl-icon
-                    class="text-lg text-success-600"
-                    name="people-fill"
-                  ></sl-icon>
-                </sl-tooltip>
-              `
-            : html`
-                <sl-tooltip content=${msg("Private")}>
-                  <sl-icon class="text-lg" name="eye-slash-fill"></sl-icon>
-                </sl-tooltip>
-              `}
+          <div class="flex size-8 items-center justify-center">
+            ${this.collection?.isPublic
+              ? html`
+                  <sl-tooltip content=${msg("Shareable")}>
+                    <sl-icon
+                      class="text-lg text-success-600"
+                      name="people-fill"
+                    ></sl-icon>
+                  </sl-tooltip>
+                `
+              : html`
+                  <sl-tooltip content=${msg("Private")}>
+                    <sl-icon class="text-lg" name="eye-slash-fill"></sl-icon>
+                  </sl-tooltip>
+                `}
+          </div>
           <h1 class="min-w-0 flex-1 truncate text-xl font-semibold leading-7">
             ${this.collection?.name ||
             html`<sl-skeleton class="w-96"></sl-skeleton>`}
@@ -358,27 +364,12 @@ export class CollectionDetail extends BtrixElement {
         href: `${this.navigate.orgBasePath}/collections`,
         content: msg("Collections"),
       },
+      {
+        content: this.collection?.name,
+      },
     ];
 
-    if (this.collection) {
-      if (this.collectionTab) {
-        breadcrumbs.push(
-          {
-            href: `${this.navigate.orgBasePath}/collections/view/${this.collectionId}`,
-            content: this.collection.name,
-          },
-          {
-            content: this.tabLabels[this.collectionTab].text,
-          },
-        );
-      } else {
-        breadcrumbs.push({
-          content: this.collection.name,
-        });
-      }
-    }
-
-    return pageBreadcrumbs(breadcrumbs);
+    return pageNav(breadcrumbs);
   };
 
   private readonly renderTabs = () => {
@@ -475,10 +466,10 @@ export class CollectionDetail extends BtrixElement {
   private renderInfoBar() {
     return html`
       <btrix-desc-list horizontal>
-        ${this.renderDetailItem(msg("Archived Items"), (col) =>
-          col.crawlCount === 1
-            ? msg("1 item")
-            : msg(str`${this.numberFormatter.format(col.crawlCount)} items`),
+        ${this.renderDetailItem(
+          msg("Archived Items"),
+          (col) =>
+            `${formatNumber(col.crawlCount)} ${pluralOf("items", col.crawlCount)}`,
         )}
         ${this.renderDetailItem(
           msg("Total Size"),
@@ -488,10 +479,10 @@ export class CollectionDetail extends BtrixElement {
               display="narrow"
             ></sl-format-bytes>`,
         )}
-        ${this.renderDetailItem(msg("Total Pages"), (col) =>
-          col.pageCount === 1
-            ? msg("1 page")
-            : msg(str`${this.numberFormatter.format(col.pageCount)} pages`),
+        ${this.renderDetailItem(
+          msg("Total Pages"),
+          (col) =>
+            `${formatNumber(col.pageCount)} ${pluralOf("pages", col.pageCount)}`,
         )}
         ${this.renderDetailItem(
           msg("Last Updated"),
@@ -671,7 +662,7 @@ export class CollectionDetail extends BtrixElement {
     idx: number,
   ) => html`
     <btrix-archived-item-list-item
-      href=${`${this.navigate.orgBasePath}/collections/view/${this.collectionId}/items/${item.type}/${item.id}`}
+      href=${`${this.navigate.orgBasePath}/${item.type === "crawl" ? `workflows/${item.cid}/crawls` : `items/${item.type}`}/${item.id}?collectionId=${this.collectionId}`}
       .item=${item}
     >
       ${this.isCrawler
@@ -726,16 +717,19 @@ export class CollectionDetail extends BtrixElement {
 
   private async checkTruncateDescription() {
     await this.updateComplete;
+
     window.requestAnimationFrame(() => {
-      const description = this.querySelector<HTMLElement>(".description");
-      if (description?.scrollHeight ?? 0 > (description?.clientHeight ?? 0)) {
-        this.querySelector(".descriptionExpandBtn")?.classList.remove("hidden");
+      if (
+        this.description?.scrollHeight ??
+        0 > (this.description?.clientHeight ?? 0)
+      ) {
+        this.descriptionExpandBtn?.classList.remove("hidden");
       }
     });
   }
 
   private readonly toggleTruncateDescription = () => {
-    const description = this.querySelector<HTMLElement>(".description");
+    const description = this.description;
     if (!description) {
       console.debug("no .description");
       return;

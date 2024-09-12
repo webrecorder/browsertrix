@@ -1,4 +1,4 @@
-import { localized, msg } from "@lit/localize";
+import { localized, msg, str } from "@lit/localize";
 import { mergeDeep } from "immutable";
 import type { LitElement } from "lit";
 import { customElement, property } from "lit/decorators.js";
@@ -8,7 +8,7 @@ import type { JobType, Seed, WorkflowParams } from "./types";
 
 import type { SelectNewDialogEvent } from ".";
 
-import { pageBreadcrumbs, type Breadcrumb } from "@/layouts/pageHeader";
+import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
 import LiteElement, { html } from "@/utils/LiteElement";
 
 const defaultValue = {
@@ -59,8 +59,8 @@ export class WorkflowsNew extends LiteElement {
   initialWorkflow?: WorkflowParams;
 
   private readonly jobTypeLabels: Record<JobType, string> = {
-    "url-list": msg("URL List"),
-    "seed-crawl": msg("Seeded Crawl"),
+    "url-list": msg("Page List"),
+    "seed-crawl": msg("Site Crawl"),
     custom: msg("Custom"),
   };
 
@@ -84,7 +84,7 @@ export class WorkflowsNew extends LiteElement {
       });
     }
 
-    return pageBreadcrumbs(breadcrumbs);
+    return pageNav(breadcrumbs);
   }
 
   render() {
@@ -98,7 +98,7 @@ export class WorkflowsNew extends LiteElement {
       return html`
         <div class="mb-5">${this.renderBreadcrumbs()}</div>
         <h2 class="mb-6 text-xl font-semibold">
-          ${msg("New")} ${this.jobTypeLabels[jobType]}
+          ${msg(str`New ${this.jobTypeLabels[jobType]} Workflow`)}
         </h2>
         ${when(this.org, (org) => {
           const initialWorkflow = mergeDeep(

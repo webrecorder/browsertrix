@@ -11,7 +11,7 @@
  * </btrix-crawl-list>
  * ```
  */
-import { localized, msg, str } from "@lit/localize";
+import { localized, msg } from "@lit/localize";
 import { css, html, nothing, type TemplateResult } from "lit";
 import {
   customElement,
@@ -27,7 +27,11 @@ import { RelativeDuration } from "@/components/ui/relative-duration";
 import { NavigateController } from "@/controllers/navigate";
 import type { Crawl } from "@/types/crawler";
 import { renderName } from "@/utils/crawler";
-import { getLocale } from "@/utils/localization";
+import { formatNumber, getLocale } from "@/utils/localization";
+import { pluralOf } from "@/utils/pluralize";
+
+const formatNumberCompact = (v: number) =>
+  formatNumber(v, { notation: "compact" });
 
 /**
  * @slot menu
@@ -65,10 +69,6 @@ export class CrawlListItem extends TailwindElement {
 
   @query("btrix-overflow-dropdown")
   dropdownMenu!: OverflowDropdown;
-
-  private readonly numberFormatter = new Intl.NumberFormat(getLocale(), {
-    notation: "compact",
-  });
 
   private readonly navigate = new NavigateController(this);
 
@@ -121,6 +121,7 @@ export class CrawlListItem extends TailwindElement {
         </btrix-table-cell>
       `;
     }
+
     return html`
       <btrix-table-row
         class=${this.href
@@ -204,21 +205,10 @@ export class CrawlListItem extends TailwindElement {
             const pagesComplete = +(crawl.stats?.done || 0);
             const pagesFound = +(crawl.stats?.found || 0);
             if (crawl.finished) {
-              return pagesComplete === 1
-                ? msg(str`${this.numberFormatter.format(pagesComplete)} page`)
-                : msg(str`${this.numberFormatter.format(pagesComplete)} pages`);
+              return `${formatNumberCompact(pagesComplete)} ${pluralOf("pages", pagesComplete)}`;
             }
-            return pagesFound === 1
-              ? msg(
-                  str`${this.numberFormatter.format(
-                    pagesComplete,
-                  )} / ${this.numberFormatter.format(pagesFound)} page`,
-                )
-              : msg(
-                  str`${this.numberFormatter.format(
-                    pagesComplete,
-                  )} / ${this.numberFormatter.format(pagesFound)} pages`,
-                );
+
+            return `${formatNumberCompact(pagesComplete)} / ${formatNumberCompact(pagesFound)} ${pluralOf("pages", pagesFound)}`;
           })}
         </btrix-table-cell>
         <btrix-table-cell>
