@@ -18,11 +18,11 @@ jobs:
       working-directory: ./frontend
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Setup Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           cache: 'yarn'
           cache-dependency-path: frontend/yarn.lock
       - name: Install dependencies
@@ -43,7 +43,7 @@ jobs:
         id: build-frontend
       - name: Run Playwright tests
         run: cd frontend && yarn playwright test
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: playwright-report
