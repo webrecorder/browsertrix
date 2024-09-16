@@ -3,6 +3,7 @@ import type { SlDialog, SlDrawer } from "@shoelace-style/shoelace";
 import { nothing, render, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
+import isEqual from "lodash/fp/isEqual";
 
 import "broadcastchannel-polyfill";
 import "./utils/polyfills";
@@ -157,10 +158,17 @@ export class App extends LiteElement {
       this.viewState = this.router.match(this.orgBasePath);
       window.history.replaceState(this.viewState, "", this.viewState.pathname);
     } else {
-      this.viewState = this.router.match(
+      const nextViewState = this.router.match(
         `${pathname}${window.location.search}`,
       );
-      this.updateOrgSlugIfNeeded();
+      if (
+        !(this.viewState as unknown) ||
+        (this.viewState.pathname !== nextViewState.pathname &&
+          !isEqual(this.viewState.params, nextViewState.params))
+      ) {
+        this.viewState = nextViewState;
+        this.updateOrgSlugIfNeeded();
+      }
     }
   }
 
