@@ -365,7 +365,7 @@ export class ConfigDetails extends LiteElement {
     const includeUrlList = primarySeedConfig?.include || config.include || [];
     const exclusions = config.exclude || [];
     const scopeType = (primarySeedConfig?.scopeType || config.scopeType)!;
-    console.log("scopeType:", scopeType);
+
     return html`
       ${this.renderSetting(
         msg("Crawl Start URL"),

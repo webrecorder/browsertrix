@@ -8,6 +8,7 @@ import { when } from "lit/directives/when.js";
 import { ScopeType, type Seed, type WorkflowParams } from "./types";
 
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
+import type { UserGuideEventMap } from "@/index";
 import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
 import type { SelectNewDialogEvent } from "@/pages/org/index";
 import LiteElement, { html } from "@/utils/LiteElement";
@@ -87,9 +88,11 @@ export class WorkflowsNew extends LiteElement {
           size="small"
           @click=${() => {
             this.dispatchEvent(
-              new CustomEvent("btrix-user-guide-show", {
+              new CustomEvent<
+                UserGuideEventMap["btrix-user-guide-show"]["detail"]
+              >("btrix-user-guide-show", {
                 detail: {
-                  src: "https://docs.browsertrix.com/user-guide/workflow-setup/#scope",
+                  path: "/user-guide/workflow-setup/#scope",
                 },
                 bubbles: true,
               }),

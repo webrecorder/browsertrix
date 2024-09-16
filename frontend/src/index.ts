@@ -26,6 +26,7 @@ import type { NotifyEventDetail } from "@/controllers/notify";
 import { theme } from "@/theme";
 import { type Auth } from "@/types/auth";
 import { type AppSettings } from "@/utils/app";
+import { tw } from "@/utils/tailwind";
 import brandLockupColor from "~assets/brand/browsertrix-lockup-color.svg";
 
 import "./shoelace";
@@ -55,7 +56,7 @@ export type APIUser = {
 };
 
 export interface UserGuideEventMap {
-  "btrix-user-guide-show": CustomEvent<{ src?: string }>;
+  "btrix-user-guide-show": CustomEvent<{ path?: string }>;
 }
 
 @localized()
@@ -63,6 +64,9 @@ export interface UserGuideEventMap {
 export class App extends LiteElement {
   @property({ type: String })
   version?: string;
+
+  @property({ type: String })
+  docsUrl = "https://docs.browsertrix.com/";
 
   @property({ type: Object })
   settings?: AppSettings;
@@ -117,7 +121,7 @@ export class App extends LiteElement {
       "btrix-user-guide-show",
       (e: UserGuideEventMap["btrix-user-guide-show"]) => {
         e.stopPropagation();
-        this.showUserGuide(e.detail.src);
+        this.showUserGuide(e.detail.path);
       },
     );
   }
@@ -250,8 +254,8 @@ export class App extends LiteElement {
           <span>${msg("User Guide")}</span>
         </span>
         <iframe
-          class="size-full"
-          src="https://docs.browsertrix.com/user-guide/"
+          class="size-full transition-opacity duration-slow"
+          src="${this.docsUrl}/user-guide/"
         ></iframe>
         <sl-button size="small" slot="footer" variant="text">
           <sl-icon slot="suffix" name="box-arrow-up-right"></sl-icon>
@@ -829,15 +833,28 @@ export class App extends LiteElement {
     `;
   }
 
-  private showUserGuide(src?: string) {
-    void this.userGuideDrawer.show();
-
+  private showUserGuide(pathName?: string) {
     const iframe = this.userGuideDrawer.querySelector("iframe");
 
     if (iframe) {
-      if (src && iframe.src !== src) {
-        iframe.src = src;
+      const oneLoad = () => {
+        iframe.classList.remove(tw`opacity-0`);
+        iframe.removeEventListener("load", oneLoad);
+      };
+
+      iframe.classList.add(tw`opacity-0`);
+
+      if (pathName) {
+        if (iframe.src.slice(this.docsUrl.length) !== pathName) {
+          iframe.addEventListener("load", oneLoad);
+          iframe.src = `${this.docsUrl}${pathName}`;
+        }
+      } else {
+        iframe.addEventListener("load", oneLoad);
+        iframe.src = this.docsUrl;
       }
+
+      void this.userGuideDrawer.show();
     } else {
       console.debug("user guide iframe not found");
     }
