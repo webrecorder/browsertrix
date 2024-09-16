@@ -44,8 +44,7 @@ theme:
     view: bootstrap/eye
 
 nav:
-  - Overview:
-    - index.md
+  - Overview: index.md
   - User Guide:
       - Getting Started:
         - user-guide/index.md
@@ -74,7 +73,7 @@ nav:
         - user-guide/user-settings.md
       - user-guide/contribute.md
   - Self-Hosting:
-      - deploy/index.md
+      - Overview: deploy/index.md
       - deploy/local.md
       - deploy/remote.md
       - deploy/customization.md
