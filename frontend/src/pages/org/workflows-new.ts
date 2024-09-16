@@ -1,6 +1,5 @@
 import { localized, msg } from "@lit/localize";
 import { mergeDeep } from "immutable";
-import type { LitElement } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
@@ -9,7 +8,6 @@ import { ScopeType, type Seed, type WorkflowParams } from "./types";
 
 import type { UserGuideEventMap } from "@/index";
 import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
-import type { SelectNewDialogEvent } from "@/pages/org/index";
 import LiteElement, { html } from "@/utils/LiteElement";
 import type { FormState as WorkflowFormState } from "@/utils/workflow";
 
@@ -133,14 +131,6 @@ export class WorkflowsNew extends LiteElement {
             )}
             .initialWorkflow=${initialWorkflow}
             .initialSeeds=${this.initialSeeds}
-            @reset=${async (e: Event) => {
-              await (e.target as LitElement).updateComplete;
-              this.dispatchEvent(
-                new CustomEvent("select-new-dialog", {
-                  detail: "workflow",
-                }) as SelectNewDialogEvent,
-              );
-            }}
           ></btrix-workflow-editor>
         `;
       })}

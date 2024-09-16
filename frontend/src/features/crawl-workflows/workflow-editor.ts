@@ -622,12 +622,7 @@ export class WorkflowEditor extends BtrixElement {
     }
     return html`
       ${isFirst
-        ? html`
-            <sl-button class="mr-auto" size="small" type="reset">
-              <sl-icon slot="prefix" name="chevron-left"></sl-icon>
-              ${msg("Start Over")}
-            </sl-button>
-          `
+        ? nothing
         : html`
             <sl-button class="mr-auto" size="small" @click=${this.backStep}>
               <sl-icon slot="prefix" name="chevron-left"></sl-icon>
