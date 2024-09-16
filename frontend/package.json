@@ -96,7 +96,7 @@
     "lint:lit-analyzer": "lit-analyzer",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "localize:extract": "lit-localize extract",
+    "localize:extract": "lit-localize extract && prettier --write xliff/*.xlf",
     "localize:build": "lit-localize build"
   },
   "devDependencies": {
