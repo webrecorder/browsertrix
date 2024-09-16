@@ -123,7 +123,7 @@
     "chromium": "^3.0.3"
   },
   "lint-staged": {
-    "*.{ts,js,html,css,json,webmanifest,xlf}": "prettier --write"
+    "*.{ts,js,html,css,json,webmanifest}": "prettier --write"
   },
   "husky": {
     "hooks": {
