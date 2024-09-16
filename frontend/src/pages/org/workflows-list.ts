@@ -714,13 +714,10 @@ export class WorkflowsList extends LiteElement {
       name: workflow.name ? msg(str`${workflow.name} Copy`) : "",
     };
 
-    this.navTo(
-      `${this.orgBasePath}/workflows/new?scopeType=${fullWorkflow.config.scopeType}`,
-      {
-        workflow: workflowParams,
-        seeds: seeds.items,
-      },
-    );
+    this.navTo(`${this.orgBasePath}/workflows/new`, {
+      workflow: workflowParams,
+      seeds: seeds.items,
+    });
 
     if (seeds.total > SEEDS_MAX) {
       this.notify({

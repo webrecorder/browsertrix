@@ -522,14 +522,14 @@ export class Org extends LiteElement {
     }
 
     if (this.orgPath.startsWith("/workflows/new")) {
-      const { workflow, seeds } = this.viewStateData || {};
+      const { workflow, seeds, scopeType } = this.viewStateData || {};
 
       return html` <btrix-workflows-new
         class="col-span-5"
         ?isCrawler=${this.appState.isCrawler}
         .initialWorkflow=${workflow}
         .initialSeeds=${seeds}
-        scopeType=${ifDefined(params.scopeType)}
+        scopeType=${ifDefined(scopeType)}
         @select-new-dialog=${this.onSelectNewDialog}
       ></btrix-workflows-new>`;
     }
@@ -538,7 +538,9 @@ export class Org extends LiteElement {
       @select-new-dialog=${this.onSelectNewDialog}
       @select-job-type=${(e: SelectJobTypeEvent) => {
         this.openDialogName = undefined;
-        this.navTo(`${this.orgBasePath}/workflows/new?scopeType=${e.detail}`);
+        this.navTo(`${this.orgBasePath}/workflows/new`, {
+          scopeType: e.detail,
+        });
       }}
     ></btrix-workflows-list>`;
   };
