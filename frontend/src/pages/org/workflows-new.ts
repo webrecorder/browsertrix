@@ -7,7 +7,6 @@ import { when } from "lit/directives/when.js";
 
 import { ScopeType, type Seed, type WorkflowParams } from "./types";
 
-import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
 import type { UserGuideEventMap } from "@/index";
 import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
 import type { SelectNewDialogEvent } from "@/pages/org/index";
@@ -145,13 +144,6 @@ export class WorkflowsNew extends LiteElement {
           ></btrix-workflow-editor>
         `;
       })}
-
-      <btrix-new-workflow-dialog
-        @select-job-type=${(e: SelectJobTypeEvent) => {
-          e.stopPropagation();
-        }}
-      >
-      </btrix-new-workflow-dialog>
     `;
   }
 
