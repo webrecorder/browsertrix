@@ -73,7 +73,7 @@ nav:
       - Account Settings:
         - user-guide/user-settings.md
       - user-guide/contribute.md
-  - Deploy:
+  - Self-Hosting:
       - deploy/index.md
       - deploy/local.md
       - deploy/remote.md
@@ -84,7 +84,7 @@ nav:
         - deploy/ansible/k3s.md
       - Administration:
         - deploy/admin/org-import-export.md
-  - Develop:
+  - Development:
       - develop/index.md
       - develop/local-dev-setup.md
       - develop/frontend-dev.md

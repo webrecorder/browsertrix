@@ -16,11 +16,11 @@ Browsertrix Docs are organized into the following sections. If you have feedback
 
 Instructions on how to web archive [using the Browsertrix software](./user-guide/index.md).
 
-### Deploy
+### Self-Hosting
 
-Instructions on how to [install, set up, and deploy Browsertrix](./deploy/index.md) when self-hosting.
+Instructions on how to install, set up, and deploy [self-hosted Browsertrix](./deploy/index.md).
 
-### Develop
+### Development
 
 Get the latest [Browsertrix source](https://github.com/webrecorder/browsertrix) using Git and [install locally](./deploy/local.md) to develop Browsertrix.
 
