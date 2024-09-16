@@ -1479,10 +1479,13 @@ export class WorkflowDetail extends LiteElement {
       name: this.workflow.name ? msg(str`${this.workflow.name} Copy`) : "",
     };
 
-    this.navTo(`${this.orgBasePath}/workflows/new`, {
-      workflow: workflowParams,
-      seeds: this.seeds?.items,
-    });
+    this.navTo(
+      `${this.orgBasePath}/workflows/new?scopeType=${this.workflow.config.scopeType || ""}`,
+      {
+        workflow: workflowParams,
+        seeds: this.seeds?.items,
+      },
+    );
 
     this.notify({
       message: msg(str`Copied Workflow to new template.`),

@@ -115,11 +115,13 @@ export class ConfigDetails extends LiteElement {
             (config) => html`
               ${this.renderSetting(
                 msg("Crawl Scope"),
-                when(
-                  this.seeds,
-                  (seeds) =>
-                    scopeTypeLabel[seeds[0]?.scopeType || config.scopeType!],
-                ),
+                when(this.seeds, (seeds) => {
+                  if (!config.scopeType) return;
+                  if (isPageScopeType(config.scopeType) && seeds.length > 1) {
+                    return scopeTypeLabel[WorkflowScopeType.PageList];
+                  }
+                  return scopeTypeLabel[config.scopeType];
+                }),
               )}
               ${isPageScopeType(config.scopeType)
                 ? this.renderConfirmUrlListSettings(config)
@@ -364,7 +366,7 @@ export class ConfigDetails extends LiteElement {
     const primarySeedUrl = (primarySeedConfig as Seed | undefined)?.url;
     const includeUrlList = primarySeedConfig?.include || config.include || [];
     const exclusions = config.exclude || [];
-    const scopeType = (primarySeedConfig?.scopeType || config.scopeType)!;
+    const scopeType = config.scopeType!;
 
     return html`
       ${this.renderSetting(

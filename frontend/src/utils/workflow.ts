@@ -13,7 +13,10 @@ import {
   type WorkflowParams,
 } from "@/types/crawler";
 import type { OrgData } from "@/types/org";
-import type { NewWorkflowOnlyScopeType } from "@/types/workflow";
+import {
+  WorkflowScopeType,
+  type NewWorkflowOnlyScopeType,
+} from "@/types/workflow";
 import { DEFAULT_MAX_SCALE } from "@/utils/crawler";
 import { getNextDate, getScheduleInterval } from "@/utils/cron";
 import { regexUnescape } from "@/utils/string";
@@ -180,8 +183,8 @@ export function getInitialFormState(params: {
     }
     formState.useSitemap = seedsConfig.useSitemap;
   } else {
-    // Treat "custom" like URL list
-    if (params.initialSeeds) {
+    if (params.initialSeeds && params.initialSeeds.length > 1) {
+      formState.scopeType = WorkflowScopeType.PageList;
       formState.urlList = mapSeedToUrl(params.initialSeeds).join("\n");
     }
 
