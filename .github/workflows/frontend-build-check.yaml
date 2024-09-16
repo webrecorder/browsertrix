@@ -44,7 +44,7 @@ jobs:
         run: yarn test
       - name: Check extracted strings
         working-directory: frontend
-        run: yarn localize:extract && git diff-index HEAD --
+        run: yarn localize:extract && git diff-index --quiet HEAD --
       - name: Localization build
         working-directory: frontend
         run: yarn localize:build
