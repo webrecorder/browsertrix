@@ -4,14 +4,32 @@ hide:
     - toc
 ---
 
-# Home
+# Browsertrix Docs
 
-Welcome to the Browsertrix official user guide and developer docs. These docs will contain the following sections.
+Browsertrix is an open source, automated web archiving system by [Webrecorder](https://webrecorder.net/). [Sign up](./user-guide/signup.md) to get started with hosted Browsertrix, or follow our deployment guides to self-host.
 
-- [Deployment Guide](deploy/index.md) — How to install and deploy Browsertrix on your local machine, or in the cloud.
-- [Developer Docs](develop/index.md) — Information on developing Browsertrix itself.
-- [User Guide](user-guide/index.md) — Instructions and reference for using Browsertrix.
+## Documentation
 
-If you are unfamiliar with Browsertrix, please check out [our website](https://browsertrix.com), or the main repository at [https://github.com/webrecorder/browsertrix](https://github.com/webrecorder/browsertrix)
+Browsertrix Docs are organized into the following sections. If you have feedback on the docs, please feel free to [reach out to us](mailto:docs-feedback@webrecorder.net).
 
-If something is missing, unclear, or seems incorrect, please open an [issue](https://github.com/webrecorder/browsertrix/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc) and we'll try to make sure that your questions get answered here in the future!
+### User Guide
+
+Instructions on how to web archive [using the Browsertrix software](./user-guide/index.md).
+
+### Deploy
+
+Instructions on how to [install, set up, and deploy Browsertrix](./deploy/index.md) when self-hosting.
+
+### Develop
+
+Get the latest [Browsertrix source](https://github.com/webrecorder/browsertrix) using Git and [install locally](./deploy/local.md) to develop Browsertrix.
+
+## Support
+
+For help with a specific topic, try our [community help forum](https://forum.webrecorder.net/c/help/5).
+
+Dedicated professional support is available with a custom subscription or support contract. Check out [our plans](https://browsertrix.com/) for details.
+
+## Bugs
+
+For bug reports or feature requests, please open a [GitHub issue](https://github.com/webrecorder/browsertrix/issues/new/choose).
