@@ -44,7 +44,7 @@ jobs:
         run: yarn test
       - name: Check extracted strings
         working-directory: frontend
-        run: yarn localize:extract && if ! git diff-index --quiet HEAD -- ; then echo "Error extracting strings, please run \`yarn localize:extract\` from the \`frontend\` directory and commit the results."; false; fi
+        run: yarn localize:extract && if ! git diff-index --exit-code HEAD -- ; then echo "Error extracting strings, please run \`yarn localize:extract\` from the \`frontend\` directory and commit the results."; false; fi
       - name: Localization build
         working-directory: frontend
         run: yarn localize:build
