@@ -21,11 +21,11 @@ import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow
 import { pageHeader } from "@/layouts/pageHeader";
 import scopeTypeLabels from "@/strings/crawl-workflows/scopeType";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
+import { NewWorkflowOnlyScopeType } from "@/types/workflow";
 import { isApiError } from "@/utils/api";
 import LiteElement, { html } from "@/utils/LiteElement";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { tw } from "@/utils/tailwind";
-import { FormOnlyScopeType } from "@/utils/workflow";
 
 type SearchFields = "name" | "firstSeed";
 type SortField = "lastRun" | "name" | "firstSeed" | "created" | "modified";
@@ -260,8 +260,8 @@ export class WorkflowsList extends LiteElement {
                       <sl-menu-item value=${ScopeType.Page}
                         >${scopeTypeLabels[ScopeType.Page]}</sl-menu-item
                       >
-                      <sl-menu-item value=${FormOnlyScopeType.PageList}>
-                        ${scopeTypeLabels[FormOnlyScopeType.PageList]}
+                      <sl-menu-item value=${NewWorkflowOnlyScopeType.PageList}>
+                        ${scopeTypeLabels[NewWorkflowOnlyScopeType.PageList]}
                       </sl-menu-item>
                       <sl-menu-item value=${ScopeType.SPA}>
                         ${scopeTypeLabels[ScopeType.SPA]}

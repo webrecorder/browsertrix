@@ -106,7 +106,7 @@ export class WorkflowsNew extends LiteElement {
           {
             profileid: org.crawlingDefaults?.profileid,
             config: {
-              exclude: org.crawlingDefaults?.exclude,
+              exclude: org.crawlingDefaults?.exclude || [""],
               behaviorTimeout: org.crawlingDefaults?.behaviorTimeout,
               pageLoadTimeout: org.crawlingDefaults?.pageLoadTimeout,
               pageExtraDelay: org.crawlingDefaults?.pageExtraDelay,

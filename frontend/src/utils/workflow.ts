@@ -13,6 +13,7 @@ import {
   type WorkflowParams,
 } from "@/types/crawler";
 import type { OrgData } from "@/types/org";
+import type { NewWorkflowOnlyScopeType } from "@/types/workflow";
 import { DEFAULT_MAX_SCALE } from "@/utils/crawler";
 import { getNextDate, getScheduleInterval } from "@/utils/cron";
 import { regexUnescape } from "@/utils/string";
@@ -42,10 +43,6 @@ export function defaultLabel(value: unknown): string {
   return "";
 }
 
-export enum FormOnlyScopeType {
-  PageList = "page-list",
-}
-
 export type FormState = {
   primarySeedUrl: string;
   urlList: string;
@@ -60,7 +57,9 @@ export type FormState = {
   postLoadDelaySeconds: number | null;
   maxCrawlSizeGB: number;
   maxScopeDepth: number | null;
-  scopeType: Exclude<ScopeType, ScopeType.Any> | FormOnlyScopeType;
+  scopeType:
+    | Exclude<ScopeType, ScopeType.Any>
+    | (typeof NewWorkflowOnlyScopeType)[keyof typeof NewWorkflowOnlyScopeType];
   exclusions: WorkflowParams["config"]["exclude"];
   pageLimit: WorkflowParams["config"]["limit"];
   scale: WorkflowParams["scale"];

@@ -55,8 +55,9 @@ import {
   type Seed,
   type WorkflowParams,
 } from "@/types/crawler";
+import { NewWorkflowOnlyScopeType } from "@/types/workflow";
 import { isApiError, type Detail } from "@/utils/api";
-import { DEPTH_SUPPORTED_SCOPES } from "@/utils/crawler";
+import { DEPTH_SUPPORTED_SCOPES, isPageScopeType } from "@/utils/crawler";
 import {
   getUTCSchedule,
   humanizeNextDate,
@@ -71,7 +72,6 @@ import {
   appDefaults,
   BYTES_PER_GB,
   defaultLabel,
-  FormOnlyScopeType,
   getDefaultFormState,
   getInitialFormState,
   getServerDefaults,
@@ -163,10 +163,6 @@ function validURL(url: string) {
   return /((((https?):(?:\/\/)?)(?:[-;:&=+$,\w]+@)?[A-Za-z0-9.-]+|(?:www\.|[-;:&=+$,\w]+@)[A-Za-z0-9.-]+)((?:\/[+~%/.\w\-_]*)?\??(?:[-+=&;%@.\w_]*)#?(?:[.!/\\\w]*))?)/.test(
     url,
   );
-}
-
-function isPageScopeType(scope?: FormState["scopeType"]) {
-  return scope === ScopeType.Page || scope === FormOnlyScopeType.PageList;
 }
 
 const trimArray = flow(uniq, compact);
@@ -715,8 +711,8 @@ export class WorkflowEditor extends BtrixElement {
           <sl-option value=${ScopeType.Page}
             >${scopeTypeLabels[ScopeType.Page]}</sl-option
           >
-          <sl-option value=${FormOnlyScopeType.PageList}>
-            ${scopeTypeLabels[FormOnlyScopeType.PageList]}
+          <sl-option value=${NewWorkflowOnlyScopeType.PageList}>
+            ${scopeTypeLabels[NewWorkflowOnlyScopeType.PageList]}
           </sl-option>
           <sl-option value=${ScopeType.SPA}>
             ${scopeTypeLabels[ScopeType.SPA]}
@@ -1032,7 +1028,7 @@ https://example.net`}
           ${inputCol(html`
             <sl-input
               name="maxScopeDepth"
-              label=${msg("Max Depth")}
+              label=${msg("Max Depth in Scope")}
               value=${ifDefined(
                 this.formState.maxScopeDepth === null
                   ? undefined
@@ -1090,7 +1086,7 @@ https://example.net`}
             ${inputCol(html`
               <sl-textarea
                 name="urlList"
-                label=${msg("Page URL(s)")}
+                label=${msg("Page URLs")}
                 rows="3"
                 autocomplete="off"
                 inputmode="url"
@@ -1636,21 +1632,26 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
   private readonly renderConfirmSettings = () => {
     const errorAlert = when(this.formHasError, () => {
+      const pageScope = isPageScopeType(this.formState.scopeType);
       const crawlSetupUrl = `${window.location.href.split("#")[0]}#crawlSetup`;
       const errorMessage = this.hasRequiredFields()
         ? msg(
             "There are issues with this Workflow. Please go through previous steps and fix all issues to continue.",
           )
-        : msg(
-            html`There is an issue with this Crawl Workflow:<br /><br />Crawl
-              URL(s) required in
-              <a
-                href="${crawlSetupUrl}"
-                class="bold underline hover:no-underline"
-                >Scope</a
-              >. <br /><br />
-              Please fix to continue.`,
-          );
+        : html`
+            ${msg("There is an issue with this Crawl Workflow:")}<br /><br />
+            ${msg(
+              html`${pageScope ? msg("Page URL(s)") : msg("Crawl Start URL")}
+                required in
+                <a
+                  href="${crawlSetupUrl}"
+                  class="bold underline hover:no-underline"
+                  >Scope</a
+                >. `,
+            )}
+            <br /><br />
+            ${msg("Please fix to continue.")}
+          `;
 
       return this.renderErrorAlert(errorMessage);
     });

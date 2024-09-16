@@ -1,9 +1,11 @@
 import { msg } from "@lit/localize";
 
-import type { ScopeType } from "@/types/crawler";
-import type { FormOnlyScopeType } from "@/utils/workflow";
+import type { WorkflowScopeType } from "@/types/workflow";
 
-const scopeType: Record<ScopeType | FormOnlyScopeType, string> = {
+const scopeType: Record<
+  (typeof WorkflowScopeType)[keyof typeof WorkflowScopeType],
+  string
+> = {
   ["page-list"]: msg("List of Pages"),
   prefix: msg("Pages in Same Directory"),
   host: msg("Pages on Same Domain"),

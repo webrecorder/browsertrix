@@ -85,7 +85,7 @@ When enabled, the crawler will visit all the links it finds within each page def
 
 When enabled, the crawler will fail the entire crawl if any of the provided URLs are invalid or unsuccessfully crawled. The resulting archived item will have a status of "Failed".
 
-### Max Depth
+### Max Depth in Scope
 
 Instructs the crawler to stop visiting new links past a specified depth.
 
