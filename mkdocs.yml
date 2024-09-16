@@ -61,6 +61,7 @@ nav:
       - develop/local-dev-setup.md
       - develop/frontend-dev.md
       - develop/docs.md
+      - develop/backend-hot-reload-and-debugger.md
   - User Guide:
       - Getting Started:
         - user-guide/index.md
