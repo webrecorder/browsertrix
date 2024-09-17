@@ -10,19 +10,13 @@ Browsertrix is an open source web archiving system created by [Webrecorder](http
 
 ## Documentation
 
-Browsertrix' Docs are organized into the following sections. If you have feedback on the docs, please feel free to [reach out to us](mailto:docs-feedback@webrecorder.net).
+Docs are organized into the following sections:
 
-### User Guide
+- [User Guide](./user-guide/index.md) — Instructions on how to use Browsertrix to create and share web archives.
+- [Self-Hosting](./deploy/index.md) — Instructions on how to install, set up, and deploy self-hosted Browsertrix.
+- [Development](./develop/index.md) — Contribute to the open source development of Browsertrix software.
 
-Instructions on how to create and share web archives [using the Browsertrix software](./user-guide/index.md).
-
-### Self-Hosting
-
-Instructions on how to install, set up, and deploy [self-hosted Browsertrix](./deploy/index.md).
-
-### Development
-
-Get the latest [Browsertrix source code](https://github.com/webrecorder/browsertrix) using Git and [install locally](./deploy/local.md) to develop Browsertrix.
+If you have feedback on the docs, please feel free to [reach out to us](mailto:docs-feedback@webrecorder.net).
 
 ## Support
 
