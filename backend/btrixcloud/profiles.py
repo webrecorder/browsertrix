@@ -91,9 +91,12 @@ class ProfileOps:
         """Create new profile"""
         prev_profile_path = ""
         prev_profile_id = ""
+        prev_proxy_id = ""
         if profile_launch.profileId:
-            prev_profile_path = await self.get_profile_storage_path(
-                profile_launch.profileId, org
+            prev_profile_path, prev_proxy_id = (
+                await self.get_profile_storage_path_and_proxy(
+                    profile_launch.profileId, org
+                )
             )
 
             if not prev_profile_path:
@@ -107,9 +110,10 @@ class ProfileOps:
         if not crawler_image:
             raise HTTPException(status_code=404, detail="crawler_not_found")
 
-        if profile_launch.proxyId and not self.crawlconfigs.can_org_use_proxy(
-            org, profile_launch.proxyId
-        ):
+        # use either specified proxyId or if none, use proxyId from existing profile
+        proxy_id = profile_launch.proxyId or prev_proxy_id
+
+        if proxy_id and not self.crawlconfigs.can_org_use_proxy(org, proxy_id):
             raise HTTPException(status_code=404, detail="proxy_not_found")
 
         browserid = await self.crawl_manager.run_profile_browser(
@@ -120,7 +124,7 @@ class ProfileOps:
             crawler_image=crawler_image,
             baseprofile=prev_profile_id,
             profile_filename=prev_profile_path,
-            proxy_id=profile_launch.proxyId or "",
+            proxy_id=proxy_id,
         )
 
         if not browserid:
@@ -368,18 +372,19 @@ class ProfileOps:
 
         return ProfileWithCrawlConfigs(crawlconfigs=crawlconfigs, **profile.dict())
 
-    async def get_profile_storage_path(
+    async def get_profile_storage_path_and_proxy(
         self, profileid: UUID, org: Optional[Organization] = None
-    ) -> str:
+    ) -> tuple[str, str]:
         """return profile path filename (relative path) for given profile id and org"""
         try:
             profile = await self.get_profile(profileid, org)
-            return profile.resource.filename if profile.resource else ""
+            storage_path = profile.resource.filename if profile.resource else ""
+            return storage_path, profile.proxyId or ""
         # pylint: disable=bare-except
         except:
             pass
 
-        return ""
+        return "", ""
 
     async def get_profile_name(
         self, profileid: UUID, org: Optional[Organization] = None

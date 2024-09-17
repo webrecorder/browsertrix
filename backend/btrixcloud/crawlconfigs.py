@@ -181,7 +181,9 @@ class CrawlConfigOps:
         if not profileid:
             return ""
 
-        profile_filename = await self.profiles.get_profile_storage_path(profileid, org)
+        profile_filename, _ = await self.profiles.get_profile_storage_path_and_proxy(
+            profileid, org
+        )
         if not profile_filename:
             raise HTTPException(status_code=400, detail="invalid_profile_id")
 
