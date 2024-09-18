@@ -2,6 +2,7 @@ gunicorn
 uvicorn[standard]
 fastapi==0.103.2
 motor==3.3.1
+pymongo==4.8.0
 passlib
 PyJWT==2.8.0
 pydantic==2.8.2
