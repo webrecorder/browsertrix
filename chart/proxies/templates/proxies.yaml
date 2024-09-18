@@ -4,7 +4,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: proxies
-  namespace: {{ .Values.crawler_namespace }}
+  namespace: {{ .Values.crawler_namespace | default "crawlers" }}
 type: Opaque
 stringData:
 {{- range .Values.proxies }}
