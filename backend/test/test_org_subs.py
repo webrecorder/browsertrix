@@ -14,6 +14,8 @@ VALID_PASSWORD = "ValidPassW0rd!"
 
 invite_email = "Test-User@ExampLe.com"
 
+invite_email_lwc_domain = "Test-User@example.com"
+
 
 def test_create_sub_org_invalid_auth(crawler_auth_headers):
     r = requests.post(
@@ -434,7 +436,7 @@ def test_subscription_events_log(admin_auth_headers, non_default_org_id):
             "oid": new_subs_oid,
             "status": "active",
             "planId": "basic",
-            "firstAdminInviteEmail": "test-user@example.com",
+            "firstAdminInviteEmail": invite_email_lwc_domain,
             "quotas": {
                 "maxConcurrentCrawls": 1,
                 "maxPagesPerCrawl": 100,
@@ -450,7 +452,7 @@ def test_subscription_events_log(admin_auth_headers, non_default_org_id):
             "oid": new_subs_oid_2,
             "status": "active",
             "planId": "basic",
-            "firstAdminInviteEmail": "test-user@example.com",
+            "firstAdminInviteEmail": invite_email_lwc_domain,
             "quotas": {
                 "maxConcurrentCrawls": 1,
                 "maxPagesPerCrawl": 100,
@@ -518,7 +520,7 @@ def test_subscription_events_log_filter_sub_id(admin_auth_headers):
             "oid": new_subs_oid,
             "status": "active",
             "planId": "basic",
-            "firstAdminInviteEmail": "test-user@example.com",
+            "firstAdminInviteEmail": invite_email_lwc_domain,
             "quotas": {
                 "maxConcurrentCrawls": 1,
                 "maxPagesPerCrawl": 100,
@@ -579,7 +581,7 @@ def test_subscription_events_log_filter_oid(admin_auth_headers):
             "oid": new_subs_oid,
             "status": "active",
             "planId": "basic",
-            "firstAdminInviteEmail": "test-user@example.com",
+            "firstAdminInviteEmail": invite_email_lwc_domain,
             "quotas": {
                 "maxConcurrentCrawls": 1,
                 "maxPagesPerCrawl": 100,
@@ -674,7 +676,7 @@ def test_subscription_events_log_filter_status(admin_auth_headers):
             "oid": new_subs_oid,
             "status": "active",
             "planId": "basic",
-            "firstAdminInviteEmail": "test-user@example.com",
+            "firstAdminInviteEmail": invite_email_lwc_domain,
             "quotas": {
                 "maxConcurrentCrawls": 1,
                 "maxPagesPerCrawl": 100,
