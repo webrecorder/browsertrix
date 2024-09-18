@@ -6,7 +6,7 @@
 
 Browsertrix is designed to be a cloud-native application running in Kubernetes.
 
-However, despite the name, it is perfectly reasonable to deploy Browsertrix locally using one of the many available local Kubernetes options.
+However, it is perfectly reasonable to deploy Browsertrix locally using one of the many available local Kubernetes options.
 
 The main requirements for Browsertrix are:
 
