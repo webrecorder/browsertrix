@@ -12,15 +12,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Setup Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'yarn'
           cache-dependency-path: frontend/yarn.lock
       - name: Restore cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: frontend/dist
           key: ${{ runner.os }}-btrix-frontend-build-${{ hashFiles('frontend/dist') }}
@@ -44,7 +44,7 @@ jobs:
         run: yarn test
       - name: Check extracted strings
         working-directory: frontend
-        run: yarn localize:extract && git diff-index HEAD --
+        run: yarn localize:extract && if ! git diff --quiet -- ; then echo "Error extracting strings, please run \`yarn localize:extract\` from the \`frontend\` directory and commit the results."; false; fi
       - name: Localization build
         working-directory: frontend
         run: yarn localize:build
