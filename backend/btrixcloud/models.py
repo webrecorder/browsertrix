@@ -15,7 +15,8 @@ from pydantic import (
     Field,
     HttpUrl as HttpUrlNonStr,
     AnyHttpUrl as AnyHttpUrlNonStr,
-    EmailStr,
+    EmailStr as CasedEmailStr,
+    validate_email,
     RootModel,
     BeforeValidator,
     TypeAdapter,
@@ -45,6 +46,15 @@ http_url_adapter = TypeAdapter(HttpUrlNonStr)
 HttpUrl = Annotated[
     str, BeforeValidator(lambda value: str(http_url_adapter.validate_python(value)))
 ]
+
+
+# pylint: disable=too-few-public-methods
+class EmailStr(CasedEmailStr):
+    """EmailStr type that lowercases the full email"""
+
+    @classmethod
+    def _validate(cls, value: CasedEmailStr, /) -> CasedEmailStr:
+        return validate_email(value)[1].lower()
 
 
 # pylint: disable=invalid-name, too-many-lines
