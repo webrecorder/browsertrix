@@ -50,7 +50,7 @@ def test_me_with_orgs(crawler_auth_headers, default_org_id):
     assert r.status_code == 200
 
     data = r.json()
-    assert data["email"] == CRAWLER_USERNAME
+    assert data["email"] == CRAWLER_USERNAME_LOWERCASE
     assert data["id"]
     # assert data["is_active"]
     assert data["is_superuser"] is False
@@ -102,7 +102,7 @@ def test_login_user_info(admin_auth_headers, crawler_userid, default_org_id):
 
     assert user_info["id"] == crawler_userid
     assert user_info["name"] == "new-crawler"
-    assert user_info["email"] == CRAWLER_USERNAME
+    assert user_info["email"] == CRAWLER_USERNAME_LOWERCASE
     assert user_info["is_superuser"] is False
     assert user_info["is_verified"]
 
