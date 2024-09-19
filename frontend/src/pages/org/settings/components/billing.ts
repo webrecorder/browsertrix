@@ -129,7 +129,7 @@ export class OrgSettingsBilling extends BtrixElement {
                                   <sl-format-date
                                     lang=${getLocale()}
                                     class="truncate"
-                                    date="${org.subscription.futureCancelDate}Z"
+                                    date=${org.subscription.futureCancelDate}
                                     month="long"
                                     day="numeric"
                                     year="numeric"

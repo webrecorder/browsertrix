@@ -344,7 +344,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
           <btrix-table-cell>
             <sl-format-date
               lang=${getLocale()}
-              date=${`${run.started}Z`}
+              date=${run.started}
               month="2-digit"
               day="2-digit"
               year="2-digit"
@@ -357,7 +357,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
               ? html`
                   <sl-format-date
                     lang=${getLocale()}
-                    date=${`${run.finished}Z`}
+                    date=${run.finished}
                     month="2-digit"
                     day="2-digit"
                     year="2-digit"
@@ -426,7 +426,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
             )}
             <sl-format-date
               lang=${getLocale()}
-              date=${`${runToBeDeleted.started}Z`}
+              date=${runToBeDeleted.started}
               month="2-digit"
               day="2-digit"
               year="2-digit"

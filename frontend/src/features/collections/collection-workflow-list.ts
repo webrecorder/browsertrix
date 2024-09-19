@@ -279,7 +279,7 @@ export class CollectionWorkflowList extends BtrixElement {
           <div class="col-span-3 md:col-span-1">
             <sl-format-date
               lang=${getLocale()}
-              date=${`${crawl.finished}Z`}
+              date=${crawl.finished}
               month="2-digit"
               day="2-digit"
               year="2-digit"

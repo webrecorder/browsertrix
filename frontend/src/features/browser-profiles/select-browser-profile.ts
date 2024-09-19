@@ -88,7 +88,7 @@ export class SelectBrowserProfile extends LiteElement {
                 <div class="text-xs">
                   <sl-format-date
                     lang=${getLocale()}
-                    date=${`${profile.modified}Z` /** Z for UTC */}
+                    date=${profile.modified}
                     month="2-digit"
                     day="2-digit"
                     year="2-digit"
@@ -107,7 +107,7 @@ export class SelectBrowserProfile extends LiteElement {
                   ${msg("Last updated")}
                   <sl-format-date
                     lang=${getLocale()}
-                    date=${`${this.selectedProfile.modified}Z` /** Z for UTC */}
+                    date=${this.selectedProfile.modified}
                     month="2-digit"
                     day="2-digit"
                     year="2-digit"

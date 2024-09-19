@@ -489,7 +489,7 @@ export class CollectionDetail extends BtrixElement {
           (col) =>
             html`<sl-format-date
               lang=${getLocale()}
-              date=${`${col.modified}Z`}
+              date=${col.modified}
               month="2-digit"
               day="2-digit"
               year="2-digit"

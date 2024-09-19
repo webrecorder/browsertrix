@@ -28,6 +28,14 @@ def test_crawl_config_usernames(
     assert data["modifiedByName"]
     assert data["lastStartedByName"]
 
+    created = data["created"]
+    assert created
+    assert created.endswith("Z")
+
+    modified = data["modified"]
+    assert modified
+    assert modified.endswith("Z")
+
 
 def test_add_crawl_config(crawler_auth_headers, default_org_id, sample_crawl_data):
     # Create crawl config

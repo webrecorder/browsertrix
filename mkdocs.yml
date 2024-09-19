@@ -44,23 +44,7 @@ theme:
     view: bootstrap/eye
 
 nav:
-  - index.md
-  - Deploy:
-      - deploy/index.md
-      - deploy/local.md
-      - deploy/remote.md
-      - deploy/customization.md
-      - Ansible:
-        - deploy/ansible/digitalocean.md
-        - deploy/ansible/microk8s.md
-        - deploy/ansible/k3s.md
-      - Administration:
-        - deploy/admin/org-import-export.md
-  - Develop:
-      - develop/index.md
-      - develop/local-dev-setup.md
-      - develop/frontend-dev.md
-      - develop/docs.md
+  - Overview: index.md
   - User Guide:
       - Getting Started:
         - user-guide/index.md
@@ -88,6 +72,22 @@ nav:
       - Account Settings:
         - user-guide/user-settings.md
       - user-guide/contribute.md
+  - Self-Hosting:
+      - Overview: deploy/index.md
+      - deploy/local.md
+      - deploy/remote.md
+      - deploy/customization.md
+      - Ansible:
+        - deploy/ansible/digitalocean.md
+        - deploy/ansible/microk8s.md
+        - deploy/ansible/k3s.md
+      - Administration:
+        - deploy/admin/org-import-export.md
+  - Development:
+      - develop/index.md
+      - develop/local-dev-setup.md
+      - develop/frontend-dev.md
+      - develop/docs.md
 
 markdown_extensions:
   - toc:
