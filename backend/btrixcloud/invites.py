@@ -13,6 +13,7 @@ from fastapi import HTTPException
 
 from .pagination import DEFAULT_PAGE_SIZE
 from .models import (
+    EmailStr,
     UserRole,
     InvitePending,
     InviteRequest,
@@ -133,7 +134,10 @@ class InviteOps:
         )
 
     async def get_valid_invite(
-        self, invite_token: UUID, email: Optional[str], userid: Optional[UUID] = None
+        self,
+        invite_token: UUID,
+        email: Optional[EmailStr],
+        userid: Optional[UUID] = None,
     ) -> InvitePending:
         """Retrieve a valid invite data from db, or throw if invalid"""
         token_hash = get_hash(invite_token)
@@ -156,7 +160,7 @@ class InviteOps:
         await self.invites.delete_one({"_id": invite_token})
 
     async def remove_invite_by_email(
-        self, email: str, oid: Optional[UUID] = None
+        self, email: EmailStr, oid: Optional[UUID] = None
     ) -> Any:
         """remove invite from invite list by email"""
         query: dict[str, object] = {"email": email}
