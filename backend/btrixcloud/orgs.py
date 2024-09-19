@@ -8,7 +8,6 @@ import json
 import math
 import os
 import time
-import urllib.parse
 
 from uuid import UUID, uuid4
 from tempfile import NamedTemporaryFile
@@ -1614,9 +1613,7 @@ def init_orgs_api(
     async def delete_invite(
         invite: RemovePendingInvite, org: Organization = Depends(org_owner_dep)
     ):
-        # URL decode email just in case
-        email = urllib.parse.unquote(invite.email)
-        result = await user_manager.invites.remove_invite_by_email(email, org.id)
+        result = await user_manager.invites.remove_invite_by_email(invite.email, org.id)
         if result.deleted_count > 0:
             return {
                 "removed": True,

@@ -360,16 +360,18 @@ def test_get_pending_org_invites(
         ("user+comment-org@example.com", "user+comment-org@example.com"),
         # URL encoded email address with comments
         (
-            "user%2Bcomment-encoded-org%40example.com",
+            "user%2Bcomment-encoded-org@example.com",
             "user+comment-encoded-org@example.com",
         ),
         # User email with diacritic characters
         ("diacritic-tést-org@example.com", "diacritic-tést-org@example.com"),
         # User email with encoded diacritic characters
         (
-            "diacritic-t%C3%A9st-encoded-org%40example.com",
+            "diacritic-t%C3%A9st-encoded-org@example.com",
             "diacritic-tést-encoded-org@example.com",
         ),
+        # User email with upper case characters, stored as all lowercase
+        ("exampleName@EXAMple.com", "examplename@example.com"),
     ],
 )
 def test_send_and_accept_org_invite(
