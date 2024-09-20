@@ -12,7 +12,7 @@ existing_user_invite_token = None
 
 VALID_PASSWORD = "ValidPassW0rd!"
 
-invite_email = "test-user@example.com"
+invite_email = "test-User@EXample.com"
 
 
 def test_create_sub_org_invalid_auth(crawler_auth_headers):
@@ -206,6 +206,9 @@ def test_login_existing_user_for_invite():
     assert data["firstOrgAdmin"] == True
     assert data["orgName"] == data["oid"]
     assert data["orgName"] == data["orgSlug"]
+    assert data["fromSuperuser"] == True
+    assert not data["inviterEmail"]
+    assert not data["inviterName"]
 
     # Accept existing user invite
     r = requests.post(

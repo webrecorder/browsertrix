@@ -8,7 +8,6 @@ import json
 import math
 import os
 import time
-import urllib.parse
 
 from uuid import UUID, uuid4
 from tempfile import NamedTemporaryFile
@@ -258,11 +257,11 @@ class OrgOps:
         return [Organization.from_dict(data) for data in items], total
 
     async def get_org_for_user_by_id(
-        self, oid: UUID, user: User, role: UserRole = UserRole.VIEWER
+        self, oid: UUID, user: Optional[User], role: UserRole = UserRole.VIEWER
     ) -> Optional[Organization]:
         """Get an org for user by unique id"""
         query: dict[str, object]
-        if user.is_superuser:
+        if not user or user.is_superuser:
             query = {"_id": oid}
         else:
             query = {f"users.{user.id}": {"$gte": role.value}, "_id": oid}
@@ -1640,9 +1639,7 @@ def init_orgs_api(
     async def delete_invite(
         invite: RemovePendingInvite, org: Organization = Depends(org_owner_dep)
     ):
-        # URL decode email just in case
-        email = urllib.parse.unquote(invite.email)
-        result = await user_manager.invites.remove_invite_by_email(email, org.id)
+        result = await user_manager.invites.remove_invite_by_email(invite.email, org.id)
         if result.deleted_count > 0:
             return {
                 "removed": True,

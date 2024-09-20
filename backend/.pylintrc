@@ -1,3 +1,4 @@
-[MASTER]
+[MAIN]
 extension-pkg-whitelist=pydantic
 ignore-paths=btrixcloud/migrations/migration_0028_page_files_errors.py
+disable=too-many-positional-arguments,invalid-name

@@ -15,7 +15,8 @@ from pydantic import (
     Field,
     HttpUrl as HttpUrlNonStr,
     AnyHttpUrl as AnyHttpUrlNonStr,
-    EmailStr,
+    EmailStr as CasedEmailStr,
+    validate_email,
     RootModel,
     BeforeValidator,
     TypeAdapter,
@@ -47,6 +48,15 @@ HttpUrl = Annotated[
 ]
 
 
+# pylint: disable=too-few-public-methods
+class EmailStr(CasedEmailStr):
+    """EmailStr type that lowercases the full email"""
+
+    @classmethod
+    def _validate(cls, value: CasedEmailStr, /) -> CasedEmailStr:
+        return validate_email(value)[1].lower()
+
+
 # pylint: disable=invalid-name, too-many-lines
 # ============================================================================
 class UserRole(IntEnum):
@@ -70,11 +80,11 @@ class InvitePending(BaseMongoModel):
     id: UUID
     created: datetime
     tokenHash: str
-    inviterEmail: str
+    inviterEmail: EmailStr
     fromSuperuser: Optional[bool] = False
     oid: Optional[UUID] = None
     role: UserRole = UserRole.VIEWER
-    email: Optional[str] = ""
+    email: Optional[EmailStr] = None
     # set if existing user
     userid: Optional[UUID] = None
 
@@ -84,13 +94,14 @@ class InviteOut(BaseModel):
     """Single invite output model"""
 
     created: datetime
-    inviterEmail: str
-    inviterName: str
+    inviterEmail: Optional[EmailStr] = None
+    inviterName: Optional[str] = None
+    fromSuperuser: bool
     oid: Optional[UUID] = None
     orgName: Optional[str] = None
     orgSlug: Optional[str] = None
     role: UserRole = UserRole.VIEWER
-    email: Optional[str] = ""
+    email: Optional[EmailStr] = None
     firstOrgAdmin: Optional[bool] = None
 
 
@@ -98,7 +109,7 @@ class InviteOut(BaseModel):
 class InviteRequest(BaseModel):
     """Request to invite another user"""
 
-    email: str
+    email: EmailStr
 
 
 # ============================================================================
@@ -1218,7 +1229,7 @@ class SubscriptionCreate(BaseModel):
     status: str
     planId: str
 
-    firstAdminInviteEmail: str
+    firstAdminInviteEmail: EmailStr
     quotas: Optional[OrgQuotas] = None
 
 
