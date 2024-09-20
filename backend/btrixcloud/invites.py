@@ -259,14 +259,23 @@ class InviteOps:
         self, invite: InvitePending, users: UserManager, include_first_org_admin=False
     ) -> InviteOut:
         """format an InvitePending to return via api, resolve name of inviter"""
-        inviter = await users.get_by_email(invite.inviterEmail)
-        if not inviter:
-            raise HTTPException(status_code=400, detail="invalid_invite")
+        from_superuser = invite.fromSuperuser
+        inviter_name = None
+        inviter_email = None
+        inviter = None
+        if not from_superuser:
+            inviter = await users.get_by_email(invite.inviterEmail)
+            if not inviter:
+                raise HTTPException(status_code=400, detail="invalid_invite")
+
+            inviter_name = inviter.name
+            inviter_email = invite.inviterEmail
 
         invite_out = InviteOut(
             created=invite.created,
-            inviterEmail=invite.inviterEmail,
-            inviterName=inviter.name,
+            inviterEmail=inviter_email,
+            inviterName=inviter_name,
+            fromSuperuser=from_superuser,
             oid=invite.oid,
             role=invite.role,
             email=invite.email,

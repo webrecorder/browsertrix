@@ -94,8 +94,9 @@ class InviteOut(BaseModel):
     """Single invite output model"""
 
     created: datetime
-    inviterEmail: EmailStr
-    inviterName: str
+    inviterEmail: Optional[EmailStr] = None
+    inviterName: Optional[str] = None
+    fromSuperuser: bool
     oid: Optional[UUID] = None
     orgName: Optional[str] = None
     orgSlug: Optional[str] = None
