@@ -260,10 +260,7 @@ export class ConfigDetails extends LiteElement {
               )
             : nothing}
           ${crawlConfig?.proxyId
-            ? this.renderSetting(
-                msg("SSH Proxy Server"),
-                capitalize(crawlConfig.proxyId),
-              )
+            ? this.renderSetting(msg("Proxy"), capitalize(crawlConfig.proxyId))
             : nothing}
         </btrix-desc-list>
       </section>

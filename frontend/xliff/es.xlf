@@ -3802,9 +3802,6 @@
       <trans-unit id="s972f8ea379345cf8">
         <source>Your org doesn't have permission to use the proxy configured for this crawl.</source>
       </trans-unit>
-      <trans-unit id="s0a44685f7fd881dc">
-        <source>SSH Proxy Server</source>
-      </trans-unit>
       <trans-unit id="s237f0a38a4c51a36">
         <source>Crawler Proxy Server</source>
       </trans-unit>
@@ -3832,11 +3829,14 @@
       <trans-unit id="sc36b98f91a3e8631">
         <source>Edit Proxies</source>
       </trans-unit>
-      <trans-unit id="s3391a0b4f265ef4a">
-        <source>Choose a Proxy to crawl through</source>
-      </trans-unit>
       <trans-unit id="s234e4c06c8c1aada">
         <source>Enable all shared proxies</source>
+      </trans-unit>
+      <trans-unit id="sd5aac2757a442b2a">
+        <source>Choose a proxy to crawl through</source>
+      </trans-unit>
+      <trans-unit id="sb8dd788adf7b907b">
+        <source>Proxy</source>
       </trans-unit>
     </body>
   </file>
