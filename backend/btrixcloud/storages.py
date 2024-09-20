@@ -152,7 +152,7 @@ class StorageOps:
         self, storagein: S3StorageIn, org: Organization
     ) -> dict:
         """Add new custom storage"""
-        name = "!" + slug_from_name(storagein.name)
+        name = slug_from_name(storagein.name)
 
         if name in org.customStorages:
             raise HTTPException(status_code=400, detail="storage_already_exists")
@@ -292,6 +292,12 @@ class StorageOps:
         async with self.get_s3_client(storage) as (client, bucket, key):
             key += filename
             data = b""
+
+            # create bucket if it doesn't yet exist
+            # TODO: Remove this, useful for dev but in real cases we want to
+            # fail if bucket doesn't exist/has invalid credentials
+            resp = await client.create_bucket(Bucket=bucket)
+            assert resp["ResponseMetadata"]["HTTPStatusCode"] == 200
 
             resp = await client.put_object(Bucket=bucket, Key=key, Body=data)
             assert resp["ResponseMetadata"]["HTTPStatusCode"] == 200
@@ -795,6 +801,8 @@ def init_storages_api(org_ops, crawl_manager):
     # without needing to explicitly pass the secrets for what we're not changing every time
     # - Maybe make it a PATCH
     # - Maybe split out into two endpoints
+    # - Add endpoint to reset to default so we don't have to pass secrets in POST request
+    # to remove custom storage?
     @router.post("/storage", tags=["organizations"], response_model=UpdatedResponse)
     async def update_storage_refs(
         storage: OrgStorageRefs,
