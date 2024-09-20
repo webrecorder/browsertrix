@@ -72,6 +72,7 @@ export type OrgParams = {
     crawlerChannel?: string;
     profileId?: string;
     navigateUrl?: string;
+    proxyId?: string;
   };
   collections: ArchivedItemPageParams & {
     collectionTab?: string;
@@ -574,6 +575,7 @@ export class Org extends LiteElement {
           crawlerChannel: params.crawlerChannel,
           profileId: params.profileId,
           navigateUrl: params.navigateUrl,
+          proxyId: params.proxyId,
         }}
       ></btrix-browser-profiles-new>`;
     }

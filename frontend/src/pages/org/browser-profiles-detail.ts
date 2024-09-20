@@ -585,6 +585,7 @@ export class BrowserProfilesDetail extends BtrixElement {
           description: this.profile.description.slice(0, DESCRIPTION_MAXLENGTH),
           profileId: this.profile.id,
           crawlerChannel: this.profile.crawlerChannel,
+          proxyId: this.profile.proxyId,
         })}`,
       );
     } catch (e) {

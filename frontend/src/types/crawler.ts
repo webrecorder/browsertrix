@@ -124,6 +124,7 @@ export type Profile = {
     replicas: ProfileReplica[] | null;
   };
   crawlerChannel?: string;
+  proxyId?: string;
 };
 
 // TODO maybe convert this to an enum?
