@@ -406,9 +406,9 @@ def test_login_existing_user_for_invite():
     )
     assert r.status_code == 200
     data = r.json()
-    assert not data["fromSuperuser"]
-    assert data["inviterEmail"] == VALID_USER_EMAIL
-    assert data["inviterName"] == "valid"
+    assert data["fromSuperuser"]
+    assert not data["inviterEmail"]
+    assert not data["inviterName"]
 
     # Accept existing user invite
     r = requests.post(
