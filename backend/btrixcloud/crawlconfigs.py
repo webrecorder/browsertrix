@@ -1072,6 +1072,7 @@ async def stats_recompute_all(crawl_configs, crawls, cid: UUID):
 # ============================================================================
 # pylint: disable=redefined-builtin,invalid-name,too-many-locals,too-many-arguments
 def init_crawl_config_api(
+    app,
     dbclient,
     mdb,
     user_dep,
@@ -1162,7 +1163,7 @@ def init_crawl_config_api(
             ],
         )
 
-    @router.get("/crawler-proxies/all", response_model=CrawlerProxies)
+    @app.get("/orgs/all/crawlconfigs/crawler-proxies", response_model=CrawlerProxies)
     async def get_all_crawler_proxies(
         user: User = Depends(user_dep),
     ):

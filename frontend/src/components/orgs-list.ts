@@ -156,9 +156,7 @@ export class OrgsList extends BtrixElement {
         .label=${msg(str`Proxy Settings for: ${this.currOrg?.name || ""}`)}
         @sl-after-hide=${() => (this.currOrg = null)}
         @sl-show=${() => {
-          if (this.currOrg) {
-            void this.fetchAllProxies(this.currOrg);
-          }
+          void this.fetchAllProxies();
         }}
       >
         <sl-checkbox
@@ -499,10 +497,10 @@ export class OrgsList extends BtrixElement {
     }
   }
 
-  private async fetchAllProxies(org: OrgData) {
+  private async fetchAllProxies() {
     try {
       const data = await this.api.fetch<ProxiesAPIResponse>(
-        `/orgs/${org.id}/crawlconfigs/crawler-proxies/all`,
+        `/orgs/all/crawlconfigs/crawler-proxies`,
       );
       this.allProxies = data.servers;
     } catch (e) {
