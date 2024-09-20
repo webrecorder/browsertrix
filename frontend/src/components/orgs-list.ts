@@ -164,10 +164,11 @@ export class OrgsList extends BtrixElement {
           name="allowSharedProxies"
           ?checked=${this.currOrg?.allowSharedProxies}
           @sl-input="${this.onUpdateAllowSharedProxies}"
-          >${msg("Allow shared proxies")}</sl-checkbox
+          >${msg("Enable all shared proxies")}</sl-checkbox
         >
 
         <sl-menu @sl-select="${this.onUpdateAllowedProxies}">
+          <sl-menu-label>Enable selected shared proxies</sl-menu-label>
           ${this.allProxies
             ?.filter((server) => server.shared)
             .map(
@@ -181,6 +182,9 @@ export class OrgsList extends BtrixElement {
                   <code>${server.id}</code>: ${server.label}
                 </sl-menu-item>`,
             )}
+          <sl-divider></sl-divider>
+          <sl-menu-label>Enable selected private proxies</sl-menu-label>
+
           ${this.allProxies
             ?.filter((server) => !server.shared)
             .map(

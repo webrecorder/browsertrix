@@ -3823,9 +3823,6 @@
       <trans-unit id="s438a40049bb04715">
         <source>Proxy Settings for: <x equiv-text="${this.currOrg?.name || &quot;&quot;}" id="0"/></source>
       </trans-unit>
-      <trans-unit id="s4e0459e61ba1556f">
-        <source>Allow shared proxies</source>
-      </trans-unit>
       <trans-unit id="sa166018e0e9d30e9">
         <source>Update Proxy Settings</source>
       </trans-unit>
@@ -3837,6 +3834,9 @@
       </trans-unit>
       <trans-unit id="s3391a0b4f265ef4a">
         <source>Choose a Proxy to crawl through</source>
+      </trans-unit>
+      <trans-unit id="s234e4c06c8c1aada">
+        <source>Enable all shared proxies</source>
       </trans-unit>
     </body>
   </file>
