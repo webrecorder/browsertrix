@@ -248,6 +248,7 @@ class ProfileOps:
             oid=org.id,
             baseid=baseid,
             crawlerChannel=browser_commit.crawlerChannel,
+            proxyId=browser_commit.proxyId,
         )
 
         await self.profiles.find_one_and_update(
@@ -572,6 +573,7 @@ def init_profiles_api(
                     name=browser_commit.name,
                     description=browser_commit.description or profile.description,
                     crawlerChannel=profile.crawlerChannel,
+                    proxyId=profile.proxyId,
                 ),
                 org=org,
                 user=user,
