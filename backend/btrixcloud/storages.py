@@ -845,10 +845,6 @@ def init_storages_api(
 
         return {"success": True}
 
-    # pylint: disable=unreachable, fixme
-    # todo: enable when ready to support custom storage
-    return storage_ops
-
     @router.post(
         "/customStorage", tags=["organizations"], response_model=AddedResponseName
     )
