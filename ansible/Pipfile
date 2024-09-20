@@ -4,12 +4,13 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-ansible = "==6.2.0"
-molecule = {extras = ["docker"], version = "==4.0.1"}
+ansible = "*"
+molecule = {extras = ["docker"], version = "*"}
 certifi = "*"
-ansible-lint = "==6.16.0"
-yamllint = "==1.30.0"
-ansible-core = "==2.13.2"
+ansible-lint = "*"
+wcmatch = "*" # workaround ubuntu shipping a broken wcmatch package
+yamllint = "*"
+ansible-core = "*"
 docker = "*"
 boto3 = "*"
 jmespath = "*"
@@ -18,4 +19,4 @@ mkdocs-material = "*"
 [dev-packages]
 
 [requires]
-python_version = "3.10"
+python_version = "3.12"
