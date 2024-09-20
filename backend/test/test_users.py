@@ -405,6 +405,7 @@ def test_login_existing_user_for_invite():
         headers=auth_headers,
     )
     assert r.status_code == 200
+    data = r.json()
     assert not data["fromSuperuser"]
     assert data["inviterEmail"] == VALID_USER_EMAIL
     assert data["inviterName"] == "valid"
