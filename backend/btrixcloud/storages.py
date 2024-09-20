@@ -861,6 +861,10 @@ def init_storages_api(
     ):
         return await storage_ops.remove_custom_storage(name, org)
 
+    # TODO: Modify this to make it easier to change just the primary or replica locations
+    # without needing to explicitly pass the secrets for what we're not changing every time
+    # - Maybe make it a PATCH
+    # - Maybe split out into two endpoints
     @router.post("/storage", tags=["organizations"], response_model=UpdatedResponse)
     async def update_storage_refs(
         storage: OrgStorageRefs,

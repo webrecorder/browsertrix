@@ -13,6 +13,9 @@ new_oid = None
 
 invite_email = "test-user@example.com"
 
+CUSTOM_PRIMARY_STORAGE_NAME = "custom-primary"
+CUSTOM_REPLICA_STORAGE_NAME = "custom-replica"
+
 
 def test_ensure_only_one_default_org(admin_auth_headers):
     r = requests.get(f"{API_PREFIX}/orgs", headers=admin_auth_headers)
@@ -231,8 +234,7 @@ def test_create_org_duplicate_slug(admin_auth_headers, non_default_org_id, slug)
     assert data["detail"] == "duplicate_org_slug"
 
 
-# disable until storage customization is enabled
-def _test_change_org_storage(admin_auth_headers):
+def test_change_org_storage(admin_auth_headers):
     # change to invalid storage
     r = requests.post(
         f"{API_PREFIX}/orgs/{new_oid}/storage",
@@ -251,15 +253,69 @@ def _test_change_org_storage(admin_auth_headers):
 
     assert r.status_code == 400
 
-    # change to valid storage
+    # add custom storages
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{new_oid}/customStorage",
+        headers=admin_auth_headers,
+        json={
+            "name": CUSTOM_PRIMARY_STORAGE_NAME,
+            "access_key": "ADMIN",
+            "secret_key": "PASSW0RD",
+            "bucket": CUSTOM_PRIMARY_STORAGE_NAME,
+            "endpoint_url": "http://local-minio.default:9000/",
+        },
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["added"]
+    assert data["name"] == CUSTOM_PRIMARY_STORAGE_NAME
+
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{new_oid}/customStorage",
+        headers=admin_auth_headers,
+        json={
+            "name": CUSTOM_REPLICA_STORAGE_NAME,
+            "access_key": "ADMIN",
+            "secret_key": "PASSW0RD",
+            "bucket": CUSTOM_REPLICA_STORAGE_NAME,
+            "endpoint_url": "http://local-minio.default:9000/",
+        },
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["added"]
+    assert data["name"] == CUSTOM_REPLICA_STORAGE_NAME
+
+    # set org to use custom storages moving forward
     r = requests.post(
         f"{API_PREFIX}/orgs/{new_oid}/storage",
         headers=admin_auth_headers,
-        json={"storage": {"name": "alt-storage", "custom": False}},
+        json={
+            "storage": {"name": CUSTOM_PRIMARY_STORAGE_NAME, "custom": True},
+            "storageReplicas": [{"name": CUSTOM_REPLICA_STORAGE_NAME, "custom": True}],
+        },
     )
 
     assert r.status_code == 200
     assert r.json()["updated"]
+
+    # check org was updated as expected
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{new_oid}/storage",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    storage = data["storage"]
+    assert storage["name"] == CUSTOM_PRIMARY_STORAGE_NAME
+    assert storage["custom"]
+
+    replicas = data["storageReplicas"]
+    assert len(replicas) == 1
+    replica = replicas[0]
+    assert replica["name"] == CUSTOM_REPLICA_STORAGE_NAME
+    assert replica["custom"]
 
 
 def test_remove_user_from_org(admin_auth_headers, default_org_id):
