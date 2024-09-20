@@ -224,6 +224,10 @@ def test_new_user_token():
         f"{API_PREFIX}/users/invite/{new_user_invite_token}?email={VALID_USER_EMAIL}",
     )
     assert r.status_code == 200
+    data = r.json()
+    assert data["fromSuperuser"]
+    assert not data["inviterEmail"]
+    assert not data["inviterName"]
 
 
 def test_register_user_no_invite():
@@ -401,6 +405,9 @@ def test_login_existing_user_for_invite():
         headers=auth_headers,
     )
     assert r.status_code == 200
+    assert not data["fromSuperuser"]
+    assert data["inviterEmail"] == VALID_USER_EMAIL
+    assert data["inviterName"] == "valid"
 
     # Accept existing user invite
     r = requests.post(

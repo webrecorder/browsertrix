@@ -256,11 +256,11 @@ class OrgOps:
         return [Organization.from_dict(data) for data in items], total
 
     async def get_org_for_user_by_id(
-        self, oid: UUID, user: User, role: UserRole = UserRole.VIEWER
+        self, oid: UUID, user: Optional[User], role: UserRole = UserRole.VIEWER
     ) -> Optional[Organization]:
         """Get an org for user by unique id"""
         query: dict[str, object]
-        if user.is_superuser:
+        if not user or user.is_superuser:
             query = {"_id": oid}
         else:
             query = {f"users.{user.id}": {"$gte": role.value}, "_id": oid}

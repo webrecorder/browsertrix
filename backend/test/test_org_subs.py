@@ -206,6 +206,9 @@ def test_login_existing_user_for_invite():
     assert data["firstOrgAdmin"] == True
     assert data["orgName"] == data["oid"]
     assert data["orgName"] == data["orgSlug"]
+    assert data["fromSuperuser"] == True
+    assert not data["inviterEmail"]
+    assert not data["inviterName"]
 
     # Accept existing user invite
     r = requests.post(
