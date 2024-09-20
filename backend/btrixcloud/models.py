@@ -1416,7 +1416,7 @@ class OrgOut(BaseMongoModel):
 
     subscription: Optional[Subscription] = None
 
-    allowSharedProxies: bool = True
+    allowSharedProxies: bool = False
     allowedProxies: list[str] = []
     crawlingDefaults: Optional[CrawlConfigDefaults] = None
 
@@ -1471,7 +1471,7 @@ class Organization(BaseMongoModel):
 
     subscription: Optional[Subscription] = None
 
-    allowSharedProxies: bool = True
+    allowSharedProxies: bool = False
     allowedProxies: list[str] = []
     crawlingDefaults: Optional[CrawlConfigDefaults] = None
 
