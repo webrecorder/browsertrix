@@ -125,6 +125,10 @@ export class SelectCrawlerProxy extends LiteElement {
       ({ id }) => id === (e.target as SlSelect).value,
     );
 
+    if (!this.selectedProxy) {
+      this.proxyId = null;
+    }
+
     this.dispatchEvent(
       new CustomEvent<SelectCrawlerProxyChangeDetail>("on-change", {
         detail: {
