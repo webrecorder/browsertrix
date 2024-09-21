@@ -67,7 +67,7 @@ export class SelectCrawlerProxy extends LiteElement {
 
     return html`
       <sl-select
-        name="crawlerProxy-select"
+        name="proxyId"
         label=${msg("Crawler Proxy Server")}
         value=${this.selectedProxy?.id || ""}
         placeholder=${this.defaultProxy
