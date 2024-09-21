@@ -3838,6 +3838,9 @@
       <trans-unit id="sb8dd788adf7b907b">
         <source>Proxy</source>
       </trans-unit>
+      <trans-unit id="sadfb54de733655c9">
+        <source>Using proxy: </source>
+      </trans-unit>
     </body>
   </file>
 </xliff>

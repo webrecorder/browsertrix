@@ -42,6 +42,7 @@ export const crawlingDefaultsSchema = z.object({
   blockAds: z.boolean().optional(),
   profileid: z.string().optional(),
   crawlerChannel: z.string().optional(),
+  proxyId: z.string().optional(),
   lang: z.string().optional(),
   userAgent: z.string().optional(),
   exclude: z.array(z.string()),

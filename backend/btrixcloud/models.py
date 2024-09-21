@@ -527,6 +527,7 @@ class CrawlConfigDefaults(BaseModel):
 
     profileid: Optional[UUID] = None
     crawlerChannel: Optional[str] = None
+    proxyId: Optional[str] = None
 
     lang: Optional[str] = None
 
