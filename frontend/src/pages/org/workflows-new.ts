@@ -119,6 +119,7 @@ export class WorkflowsNew extends LiteElement {
               crawlTimeout: org.crawlingDefaults?.crawlTimeout,
               maxCrawlSize: org.crawlingDefaults?.maxCrawlSize,
               crawlerChannel: org.crawlingDefaults?.crawlerChannel,
+              proxyId: org.crawlingDefaults?.proxyId,
             },
             this.initialWorkflow || {},
           );

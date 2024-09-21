@@ -315,7 +315,7 @@ crawler_liveness_port: 6065
 # will set the proxy to shared
 # default_proxy: "proxy-id"
 
-# optional: configure a list of ssh servers to be used as a proxy
+# optional: enable the proxies subchart and configure a list of ssh servers to be used as crawler proxies
 btrix-proxies:
   enabled: false # enable to deploy proxies configmap and secret
   crawler_namespace: "crawlers"

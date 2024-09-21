@@ -276,7 +276,7 @@ class UserManager:
         superuser = await self.get_superuser()
         if superuser:
             if str(superuser.email) != email:
-                await self.update_email_name(superuser, EmailStr(email), name)
+                await self.update_email_name(superuser, cast(EmailStr, email), name)
                 print("Superuser email updated")
 
             if not await self.check_password(superuser, password):
