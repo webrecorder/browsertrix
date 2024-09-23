@@ -5,8 +5,6 @@
 if git diff --name-only --cached | grep --quiet 'frontend/src/';
   then
     cd frontend
-    yarn localize:extract
-    git add xliff
     npx lint-staged
   else
     echo "(no frontend/src changes - skipping pre-commit hook)"
