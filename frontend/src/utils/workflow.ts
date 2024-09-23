@@ -17,7 +17,7 @@ import {
   WorkflowScopeType,
   type NewWorkflowOnlyScopeType,
 } from "@/types/workflow";
-import { DEFAULT_MAX_SCALE } from "@/utils/crawler";
+import { DEFAULT_MAX_SCALE, isPageScopeType } from "@/utils/crawler";
 import { getNextDate, getScheduleInterval } from "@/utils/cron";
 import { regexUnescape } from "@/utils/string";
 
@@ -158,7 +158,7 @@ export function getInitialFormState(params: {
   const formState: Partial<FormState> = {};
   const seedsConfig = params.initialWorkflow.config;
   let primarySeedConfig: SeedConfig | Seed = seedsConfig;
-  if (params.initialWorkflow.config.scopeType !== ScopeType.Page) {
+  if (!isPageScopeType(params.initialWorkflow.config.scopeType)) {
     if (params.initialSeeds) {
       const firstSeed = params.initialSeeds[0];
       if (typeof firstSeed === "string") {
@@ -183,8 +183,13 @@ export function getInitialFormState(params: {
     }
     formState.useSitemap = seedsConfig.useSitemap;
   } else {
-    if (params.initialSeeds && params.initialSeeds.length > 1) {
-      formState.scopeType = WorkflowScopeType.PageList;
+    if (params.initialSeeds?.length) {
+      if (params.initialSeeds.length === 1) {
+        formState.scopeType = WorkflowScopeType.Page;
+      } else {
+        formState.scopeType = WorkflowScopeType.PageList;
+      }
+
       formState.urlList = mapSeedToUrl(params.initialSeeds).join("\n");
     }
 
