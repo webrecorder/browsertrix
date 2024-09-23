@@ -40,20 +40,10 @@ jobs:
           HUSKY: 0
         run: yarn install --frozen-lockfile
 
-      # Lint and format:
+      # Lint:
       - name: Lint
         working-directory: frontend
         run: yarn lint:check
-      - name: Format
-        working-directory: frontend
-        # TODO Reenable when https://github.com/webrecorder/browsertrix-cloud/issues/1618 is addressed
-        # run: yarn format:check
-        run: echo "yarn format:check disabled"
-
-      # Test:
-      - name: Unit tests
-        working-directory: frontend
-        run: yarn test
     
       # Localize:
       - name: Extract strings
@@ -62,11 +52,18 @@ jobs:
       - name: Commit extracted strings
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: Apply automatic changes to extracted localization strings
+          commit_message: Apply `localize:extract` changes
           file_pattern: '**/*.xlf'
+          skip_fetch: true
+          skip_checkout: true
       - name: Check localization build
         working-directory: frontend
         run: yarn localize:build
+
+      # Test:
+      - name: Unit tests
+        working-directory: frontend
+        run: yarn test
 
       # Check build:
       - name: Set up Docker Buildx
