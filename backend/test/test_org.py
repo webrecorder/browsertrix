@@ -234,8 +234,8 @@ def test_create_org_duplicate_slug(admin_auth_headers, non_default_org_id, slug)
     assert data["detail"] == "duplicate_org_slug"
 
 
-def test_change_org_storage(admin_auth_headers):
-    # change to invalid storage
+def test_change_storage_invalid(admin_auth_headers):
+    # try to change to invalid storage
     r = requests.post(
         f"{API_PREFIX}/orgs/{new_oid}/storage",
         headers=admin_auth_headers,
@@ -244,7 +244,6 @@ def test_change_org_storage(admin_auth_headers):
 
     assert r.status_code == 400
 
-    # change to invalid storage
     r = requests.post(
         f"{API_PREFIX}/orgs/{new_oid}/storage",
         headers=admin_auth_headers,
@@ -253,6 +252,8 @@ def test_change_org_storage(admin_auth_headers):
 
     assert r.status_code == 400
 
+
+def test_add_custom_storage(admin_auth_headers):
     # add custom storages
     r = requests.post(
         f"{API_PREFIX}/orgs/{new_oid}/customStorage",
@@ -316,6 +317,52 @@ def test_change_org_storage(admin_auth_headers):
     replica = replicas[0]
     assert replica["name"] == CUSTOM_REPLICA_STORAGE_NAME
     assert replica["custom"]
+
+
+def test_remove_custom_storage(admin_auth_headers):
+    # Try to remove in-use storages, verify we get expected 400 response
+    r = requests.delete(
+        f"{API_PREFIX}/orgs/{new_oid}/customStorage/{CUSTOM_PRIMARY_STORAGE_NAME}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 400
+    assert r.json()["detail"] == "storage_in_use"
+
+    r = requests.delete(
+        f"{API_PREFIX}/orgs/{new_oid}/customStorage/{CUSTOM_REPLICA_STORAGE_NAME}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 400
+    assert r.json()["detail"] == "storage_in_use"
+
+    # Unset replica storage from org
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{new_oid}/storage",
+        headers=admin_auth_headers,
+        json={"storage": {"name": CUSTOM_PRIMARY_STORAGE_NAME, "custom": True}},
+    )
+
+    # Delete no longer used replica storage location
+    r = requests.delete(
+        f"{API_PREFIX}/orgs/{new_oid}/customStorage/{CUSTOM_REPLICA_STORAGE_NAME}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["deleted"]
+
+    # Check org
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{new_oid}/storage",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    storage = data["storage"]
+    assert storage["name"] == CUSTOM_PRIMARY_STORAGE_NAME
+    assert storage["custom"]
+
+    assert data["storageReplicas"] == []
 
 
 def test_remove_user_from_org(admin_auth_headers, default_org_id):
