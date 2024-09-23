@@ -10,11 +10,17 @@ on:
 jobs:
   setup-and-build:
     runs-on: ubuntu-latest
-    steps:
+    permissions:
+      # Give the default GITHUB_TOKEN write permission to commit and push the
+      # added or changed files to the repository.
+      contents: write
 
+    steps:
       # Setup:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -58,8 +64,6 @@ jobs:
         with:
           commit_message: Apply automatic changes to extracted localization strings
           file_pattern: '**/*.xlf'
-          skip_fetch: true
-          skip_checkout: true
       - name: Check localization build
         working-directory: frontend
         run: yarn localize:build
