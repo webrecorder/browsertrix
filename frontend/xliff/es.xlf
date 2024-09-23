@@ -724,33 +724,6 @@
       <trans-unit id="sb62f4eaa41f130ab">
         <source>What would you like to crawl?</source>
       </trans-unit>
-      <trans-unit id="s7a82a346a5c00640">
-        <source>Need help deciding?</source>
-      </trans-unit>
-      <trans-unit id="sb947597b1af186d4">
-        <source>You want to archive a single page on a website</source>
-      </trans-unit>
-      <trans-unit id="sbf17262f3872712d">
-        <source>You have a list of URLs that you can copy-and-paste</source>
-      </trans-unit>
-      <trans-unit id="sf2a0e93879d8ac24">
-        <source>You want to archive an entire website</source>
-      </trans-unit>
-      <trans-unit id="h76170f4b851b8171">
-        <source>You're archiving a subset of a website, like everything
-                  under <x equiv-text="&lt;em&gt;" id="0"/>website.com/your-username<x equiv-text="&lt;/em&gt;" id="1"/></source>
-      </trans-unit>
-      <trans-unit id="h5711c8b307827832">
-        <source>You're archiving a website <x equiv-text="&lt;em&gt;" id="0"/>and<x equiv-text="&lt;/em&gt;" id="1"/> external pages
-                  linked to from the website</source>
-      </trans-unit>
-      <trans-unit id="hc76a9160bbdb615c">
-        <source>Once you choose a crawl type, you can't go back and change
-                it. Check out the
-                <x equiv-text="&lt;a class=&quot;text-blue-500 hover:text-blue-600&quot; href=&quot;https://docs.browsertrix.com/user-guide/workflow-setup/&quot; target=&quot;_blank&quot;&gt;" id="0"/>crawl workflow setup guide<x equiv-text="&lt;/a&gt;" id="1"/>
-                if you still need help deciding on a crawl type, and try our
-                <x equiv-text="&lt;a class=&quot;text-blue-500 hover:text-blue-600&quot; href=&quot;https://forum.webrecorder.net/c/help/5&quot; target=&quot;_blank&quot;&gt;" id="2"/>community help forum<x equiv-text="&lt;/a&gt;" id="3"/>.</source>
-      </trans-unit>
       <trans-unit id="s6c98d4e4eff5c8bb">
         <source>Copied to clipboard!</source>
       </trans-unit>
@@ -2171,9 +2144,6 @@
       <trans-unit id="s36fd1256980b5f58">
         <source>Sorry, couldn't submit QA review at this time.</source>
       </trans-unit>
-      <trans-unit id="sf0cab2483f66aa2e">
-        <source>Custom</source>
-      </trans-unit>
       <trans-unit id="saa63c0c9ca0eac98">
         <source>You don't have permission to create a new Workflow.</source>
       </trans-unit>
@@ -2238,18 +2208,6 @@
       <trans-unit id="saafb6030ac4b40dd">
         <source>Are you sure you want to remove yourself from <x equiv-text="${this.userOrg.name}" id="0"/>?</source>
       </trans-unit>
-      <trans-unit id="s1442d0b6e28b30d1">
-        <source>Path Begins with This URL</source>
-      </trans-unit>
-      <trans-unit id="s79f048d846fe95e0">
-        <source>Pages on This Domain</source>
-      </trans-unit>
-      <trans-unit id="s14aaedc6664de249">
-        <source>Pages on This Domain &amp; Subdomains</source>
-      </trans-unit>
-      <trans-unit id="sfdbfacb391cb6900">
-        <source>Single Page App (In-Page Links Only)</source>
-      </trans-unit>
       <trans-unit id="s1ae7988ed93b0a32">
         <source>0 seconds</source>
       </trans-unit>
@@ -2283,17 +2241,8 @@
       <trans-unit id="s063b2ed6541c9181">
         <source>Run on a Recurring Basis</source>
       </trans-unit>
-      <trans-unit id="scd8de6628aaada05">
-        <source>Include Any Linked Page</source>
-      </trans-unit>
-      <trans-unit id="sce646d8060e6c775">
-        <source>Fail Crawl On Failed URL</source>
-      </trans-unit>
       <trans-unit id="s00147a7c30a80117">
         <source>Extra URL Prefixes in Scope</source>
-      </trans-unit>
-      <trans-unit id="s2c55ec938d6cf2a4">
-        <source>Max Depth</source>
       </trans-unit>
       <trans-unit id="s00952de51c229a2e">
         <source><x equiv-text="${primarySeedConfig.depth}" id="0"/> hop(s)</source>
@@ -2306,9 +2255,6 @@
       </trans-unit>
       <trans-unit id="sa3a6465ecf8740fb">
         <source>Check For Sitemap</source>
-      </trans-unit>
-      <trans-unit id="sc5d32436e3ff3ec7">
-        <source>List of Additional URLs</source>
       </trans-unit>
       <trans-unit id="scb489a1a173ac3f0">
         <source>Yes</source>
@@ -2786,12 +2732,6 @@
       <trans-unit id="s83c70a729f1dd241">
         <source>Something unexpected went wrong, couldn't save auto-add setting.</source>
       </trans-unit>
-      <trans-unit id="sf6d20a78f131dd9e">
-        <source>Pages in the Same Directory</source>
-      </trans-unit>
-      <trans-unit id="sbf1da5e6f05a7eac">
-        <source>Hashtag Links Only</source>
-      </trans-unit>
       <trans-unit id="s0558979b981b9057">
         <source>Custom Page Prefix</source>
       </trans-unit>
@@ -2845,25 +2785,8 @@
       <trans-unit id="s0cd2df7d9d95ae68">
         <source>At least 1 URL is required.</source>
       </trans-unit>
-      <trans-unit id="s6de92df940cdee71">
-        <source>The crawler will visit and record each URL listed in the order
-        defined here. You can enter a maximum of <x equiv-text="${URL_LIST_MAX_URLS.toLocaleString()}" id="0"/> URLs, separated by a new line.</source>
-      </trans-unit>
       <trans-unit id="s7af85d601db244a7">
         <source>Tells the crawler which pages it can visit.</source>
-      </trans-unit>
-      <trans-unit id="s505e568b37d71565">
-        <source>Include any linked page</source>
-      </trans-unit>
-      <trans-unit id="s5136cba9c3481508">
-        <source>If checked, the crawler will visit pages one link away from a Crawl
-        URL.</source>
-      </trans-unit>
-      <trans-unit id="s0b1911029d6e4715">
-        <source>Fail crawl on failed URL</source>
-      </trans-unit>
-      <trans-unit id="se2d57e9b7abb6f91">
-        <source>If checked, the crawler will fail the entire crawl if any of the provided URLs are invalid or unsuccessfully crawled.</source>
       </trans-unit>
       <trans-unit id="hef8020bab2159211">
         <source>Will crawl all pages and paths in the same directory, e.g.
@@ -2879,12 +2802,6 @@
             <x equiv-text="&lt;span class=&quot;text-blue-500&quot;&gt;${exampleHost}&lt;/span&gt;" id="0"/> and
             <x equiv-text="&lt;span class=&quot;text-blue-500&quot;&gt;" id="1"/>subdomain.<x equiv-text="${exampleHost}&lt;/span&gt;" id="2"/>.</source>
       </trans-unit>
-      <trans-unit id="h45676fe694fd7de8">
-        <source>Will only visit
-            <x equiv-text="&lt;span class=&quot;break-word text-blue-500&quot;&gt;${exampleDomain}${examplePathname}&lt;/span&gt;" id="0"/>
-            hash anchor links, e.g.
-            <x equiv-text="&lt;span class=&quot;break-word text-blue-500&quot;&gt;${exampleDomain}${examplePathname}&lt;/span&gt;&lt;span class=&quot;break-word font-medium text-blue-500&quot;&gt;" id="1"/>#example-page<x equiv-text="&lt;/span&gt;" id="2"/></source>
-      </trans-unit>
       <trans-unit id="h2303b42f0dff5ee4">
         <source>Will crawl all page URLs that begin with
             <x equiv-text="&lt;span class=&quot;break-word text-blue-500&quot;&gt;${exampleDomain}${examplePathname}&lt;/span&gt;" id="0"/>
@@ -2897,25 +2814,11 @@
       <trans-unit id="s285f35c68ab11461">
         <source>The starting point of your crawl.</source>
       </trans-unit>
-      <trans-unit id="s7efc078b0771ade6">
-        <source>Start URL Scope</source>
-      </trans-unit>
       <trans-unit id="s406e05cc7ea70f01">
         <source>hops</source>
       </trans-unit>
-      <trans-unit id="s80aa4dfdf982349d">
-        <source>Limits how many hops away the crawler can visit while staying within the Start URL Scope.</source>
-      </trans-unit>
-      <trans-unit id="sc8d321269980767e">
-        <source>If the crawler finds pages outside of the Start URL Scope they
-            will only be saved if they begin with URLs listed here.</source>
-      </trans-unit>
       <trans-unit id="s150f5e42dc1aad38">
         <source>Include any linked page (“one hop out”)</source>
-      </trans-unit>
-      <trans-unit id="sa148214c2ff359cc">
-        <source>If checked, the crawler will visit pages one link away outside of
-        Start URL Scope.</source>
       </trans-unit>
       <trans-unit id="sf092ad58edfa163b">
         <source>Check for sitemap</source>
@@ -2925,13 +2828,6 @@
       </trans-unit>
       <trans-unit id="scbd664e4049d11f3">
         <source>Specify exclusion rules for what pages should not be visited.</source>
-      </trans-unit>
-      <trans-unit id="s04d558a299752f1a">
-        <source>Additional URLs</source>
-      </trans-unit>
-      <trans-unit id="sdc9e7f186428eec0">
-        <source>The crawler will visit and record each URL listed here. Other
-              links on these pages will not be crawled. You can enter up to <x equiv-text="${maxAdditionalURls.toLocaleString()}" id="0"/> URLs.</source>
       </trans-unit>
       <trans-unit id="sdd5dbd4b0fef8660">
         <source>Must be more than minimum of <x equiv-text="${(+min).toLocaleString()}" id="0"/></source>
@@ -3010,12 +2906,6 @@
       </trans-unit>
       <trans-unit id="s0e598010b73d1398">
         <source>There are issues with this Workflow. Please go through previous steps and fix all issues to continue.</source>
-      </trans-unit>
-      <trans-unit id="h2e384a6a9366b427">
-        <source>There is an issue with this Crawl Workflow:<x equiv-text="&lt;br&gt;&lt;br&gt;" id="0"/>Crawl
-              URL(s) required in
-              <x equiv-text="&lt;a href=&quot;${crawlSetupUrl}&quot; class=&quot;bold underline hover:no-underline&quot;&gt;" id="1"/>Crawl Setup<x equiv-text="&lt;/a&gt;" id="2"/>. <x equiv-text="&lt;br&gt;&lt;br&gt;" id="3"/>
-              Please fix to continue.</source>
       </trans-unit>
       <trans-unit id="s265a8f6e25a8c5f2">
         <source>Workflow created.</source>
@@ -3687,9 +3577,6 @@
       <trans-unit id="s8ad4a17ab2b75854">
         <source>Adding <x equiv-text="${formatNumber(addCount)} ${pluralOf(&quot;items&quot;, addCount)}" id="0"/></source>
       </trans-unit>
-      <trans-unit id="sbea722837f683db1">
-        <source><x equiv-text="${firstUrl}" id="0"/> + <x equiv-text="${formatNumber(remainder, { notation: &quot;compact&quot; })}" id="1"/> more <x equiv-text="${pluralOf(&quot;URLs&quot;, remainder)}" id="2"/></source>
-      </trans-unit>
       <trans-unit id="items.plural.few">
         <source>items</source>
         <note from="lit-localize">plural form of "item" for few items</note>
@@ -3717,55 +3604,20 @@
       <trans-unit id="s24a06fd949e2d65b">
         <source>Back to</source>
       </trans-unit>
-      <trans-unit id="s7ee7b202edc2481e">
-        <source>Page List</source>
-      </trans-unit>
-      <trans-unit id="s1e2e5062a253c739">
-        <source>One or more URLs</source>
-      </trans-unit>
       <trans-unit id="sc33daa5130000a11">
         <source>Choose this option if you know the URL of every page you'd like to crawl and don't need to include any additional pages beyond one hop out.</source>
       </trans-unit>
       <trans-unit id="s008f62e40844e6d5">
         <source>Site Crawl</source>
       </trans-unit>
-      <trans-unit id="s46bd7b046b0ca6d4">
-        <source>Website or directory</source>
-      </trans-unit>
       <trans-unit id="sa7264597ca290e44">
         <source>Specify a domain name, start page URL, or path on a website and let the crawler automatically find pages within that scope.</source>
-      </trans-unit>
-      <trans-unit id="hb653cf5693a98f6b">
-        <source>Choose <x equiv-text="&lt;strong&gt;" id="0"/>Page List<x equiv-text="&lt;/strong&gt;" id="1"/> if:</source>
-      </trans-unit>
-      <trans-unit id="s16addd6732b613fd">
-        <source>You want to include URLs with different domain names in the same crawl</source>
-      </trans-unit>
-      <trans-unit id="h25ccce1baa96d993">
-        <source>A Page List workflow is simpler to configure, since you don't
-              need to worry about configuring the workflow to exclude parts of
-              the website that you may not want to archive.</source>
-      </trans-unit>
-      <trans-unit id="hc5b85948ffe0eb76">
-        <source>Choose <x equiv-text="&lt;strong&gt;" id="0"/>Site Crawl<x equiv-text="&lt;/strong&gt;" id="1"/> if:</source>
-      </trans-unit>
-      <trans-unit id="hddd64e30f6ade731">
-        <source>Site Crawl workflows are great for advanced use cases where
-              you don't need to know every single URL that you want to archive.
-              You can configure reasonable crawl limits and page limits so that
-              you don't crawl more than you need to.</source>
       </trans-unit>
       <trans-unit id="s33807afa94c15a25">
         <source>Browser windows can only be edited while a crawl is starting or running</source>
       </trans-unit>
       <trans-unit id="s4cb3d6de6b76708d">
         <source>Crawl finishing...</source>
-      </trans-unit>
-      <trans-unit id="sa4808f93f7b11e58">
-        <source>New Workflow...</source>
-      </trans-unit>
-      <trans-unit id="s73fb3e7a0629951c">
-        <source>Help me decide</source>
       </trans-unit>
       <trans-unit id="ha60886587b96e32c">
         <source>Started crawl from <x equiv-text="&lt;strong&gt;${this.renderName(workflow)}&lt;/strong&gt;" id="0"/>.
@@ -3780,9 +3632,6 @@
       <trans-unit id="sd813c96a1d891cdc">
         <source>Select Analysis Run</source>
       </trans-unit>
-      <trans-unit id="sd3c4adf4cc6d1668">
-        <source>New <x equiv-text="${this.jobTypeLabels[jobType]}" id="0"/> Workflow</source>
-      </trans-unit>
       <trans-unit id="sdd3e1b91cb27a4d5">
         <source>Page URL(s)</source>
       </trans-unit>
@@ -3795,6 +3644,99 @@
       <trans-unit id="hac630f92c94217bc">
         <source>Your plan will be canceled on
                                   <x equiv-text="&lt;sl-format-date lang=&quot;${getLocale()}&quot; class=&quot;truncate&quot; date=&quot;${org.subscription.futureCancelDate}&quot; month=&quot;long&quot; day=&quot;numeric&quot; year=&quot;numeric&quot;&gt;&#10;                                  &lt;/sl-format-date&gt;" id="0"/></source>
+      </trans-unit>
+      <trans-unit id="s7d61376257220dab">
+        <source>Scope</source>
+      </trans-unit>
+      <trans-unit id="s58672d8bc12bdf2d">
+        <source>Page Crawl</source>
+      </trans-unit>
+      <trans-unit id="sc86311564d806b1a">
+        <source>One or more page URLs</source>
+      </trans-unit>
+      <trans-unit id="s58aa8e5a0a8ef1cd">
+        <source>Entire website or directory</source>
+      </trans-unit>
+      <trans-unit id="s1853eecbad6d4a0e">
+        <source>List of Pages</source>
+      </trans-unit>
+      <trans-unit id="sce375af3e1ad308f">
+        <source>Pages in Same Directory</source>
+      </trans-unit>
+      <trans-unit id="sd592eeaabdbd5a46">
+        <source>Pages on Same Domain</source>
+      </trans-unit>
+      <trans-unit id="s1547ae4dfa1265ea">
+        <source>Pages on Same Domain + Subdomains</source>
+      </trans-unit>
+      <trans-unit id="sf53b13138a2c1d0e">
+        <source>Page Hashes</source>
+      </trans-unit>
+      <trans-unit id="sba3df9981f03cb40">
+        <source>Single Page</source>
+      </trans-unit>
+      <trans-unit id="sdd8e8047128a2fdc">
+        <source>Any Page</source>
+      </trans-unit>
+      <trans-unit id="sa403185f2ed90589">
+        <source>Scope options</source>
+      </trans-unit>
+      <trans-unit id="sede6d0c607d400db">
+        <source>New Crawl Workflow</source>
+      </trans-unit>
+      <trans-unit id="s51691497846184b2">
+        <source>Setup Guide</source>
+      </trans-unit>
+      <trans-unit id="s4bd63450e427cc68">
+        <source>Page URLs</source>
+      </trans-unit>
+      <trans-unit id="s396f09e6ec318187">
+        <source>Max Depth in Scope</source>
+      </trans-unit>
+      <trans-unit id="sebf185d3ee56b47f">
+        <source>Additional Page URLs</source>
+      </trans-unit>
+      <trans-unit id="se1e6d1d7a1a133e9">
+        <source>Exclude Pages</source>
+      </trans-unit>
+      <trans-unit id="s12e1314dc1f74824">
+        <source>The URL of the page to crawl.</source>
+      </trans-unit>
+      <trans-unit id="s41d2278219615589">
+        <source>The crawler will visit and record each URL listed here. You can enter up to <x equiv-text="${MAX_ADDITIONAL_URLS.toLocaleString()}" id="0"/> URLs.</source>
+      </trans-unit>
+      <trans-unit id="sfc5e402f8b21ef5f">
+        <source>If checked, the crawler will visit pages one link away.</source>
+      </trans-unit>
+      <trans-unit id="hba1eb91e4626e056">
+        <source>Will crawl hash anchor links as pages. For example,
+            <x equiv-text="&lt;span class=&quot;break-word text-blue-500&quot;&gt;${exampleDomain}${examplePathname}&lt;/span&gt;&lt;span class=&quot;break-word font-medium text-blue-500&quot;&gt;" id="0"/>#example-page<x equiv-text="&lt;/span&gt;" id="1"/>
+            will be treated as a separate page.</source>
+      </trans-unit>
+      <trans-unit id="s09a8c053783eafa0">
+        <source>If the crawler finds pages outside of the Crawl Scope they
+            will only be saved if they begin with URLs listed here.</source>
+      </trans-unit>
+      <trans-unit id="sb43ce2ffe2a4857f">
+        <source>Limits how many hops away the crawler can visit while staying within the Crawl Scope.</source>
+      </trans-unit>
+      <trans-unit id="sba156796788dc6c2">
+        <source>If checked, the crawler will visit pages one link away outside of
+        Crawl Scope.</source>
+      </trans-unit>
+      <trans-unit id="s2279075e18f7dd74">
+        <source>Additional Pages</source>
+      </trans-unit>
+      <trans-unit id="s0a81f678a90d8133">
+        <source>There is an issue with this Crawl Workflow:</source>
+      </trans-unit>
+      <trans-unit id="h94a6d35ca79705c4">
+        <source><x equiv-text="${pageScope ? msg(&quot;Page URL(s)&quot;) : msg(&quot;Crawl Start URL&quot;)}" id="0"/>
+                required in
+                <x equiv-text="&lt;a href=&quot;${crawlSetupUrl}&quot; class=&quot;bold underline hover:no-underline&quot;&gt;" id="1"/>Scope<x equiv-text="&lt;/a&gt;" id="2"/>. </source>
+      </trans-unit>
+      <trans-unit id="s67b76d03e88b5990">
+        <source>Please fix to continue.</source>
       </trans-unit>
     </body>
   </file>
