@@ -52,7 +52,7 @@ jobs:
       # Localize:
       - name: Extract strings
         working-directory: frontend
-        run: yarn localize:extract && if ! git diff --quiet -- ; then echo "Error extracting strings, please run \`yarn localize:extract\` from the \`frontend\` directory and commit the results."; false; fi
+        run: yarn localize:extract
       - name: Commit extracted strings
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
