@@ -163,8 +163,8 @@ export class App extends LiteElement {
       );
       if (
         !(this.viewState as unknown) ||
-        (this.viewState.pathname !== nextViewState.pathname &&
-          !isEqual(this.viewState.params, nextViewState.params))
+        this.viewState.pathname !== nextViewState.pathname ||
+        !isEqual(this.viewState.params, nextViewState.params)
       ) {
         this.viewState = nextViewState;
         this.updateOrgSlugIfNeeded();
