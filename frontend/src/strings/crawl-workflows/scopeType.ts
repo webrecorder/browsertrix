@@ -10,7 +10,7 @@ const scopeType: Record<
   prefix: msg("Pages in Same Directory"),
   host: msg("Pages on Same Domain"),
   domain: msg("Pages on Same Domain + Subdomains"),
-  "page-spa": msg("Page Hashes"),
+  "page-spa": msg("In-Page Links"),
   page: msg("Single Page"),
   custom: msg("Custom Page Prefix"),
   any: msg("Any Page"),

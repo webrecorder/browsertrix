@@ -41,10 +41,12 @@ _Site Crawl_
 `List of Pages`
 :   Crawls only specified URLs and does not include any linked pages.
 
-`Page Hashes`
-:   This scope will ignore links that lead to other addresses such as `example.com/path` and will instead instruct the crawler to visit hashtag links such as `example.com/#linkedsection` and treat them as distinct pages.
+`In-Page Links`
+:   Crawls only the specified URL and treats linked sections of the page as distinct pages.
 
-    This scope can be useful for crawling certain web apps that may not use unique URLs for their pages.
+    Any link that begins with the _Crawl Start URL_ followed by a hashtag symbol (`#`) and then a string is considered an in-page link. This is commonly used to link to a section of a page. For example, because the "Scope" section of this guide is linked by its heading as `/user-guide/workflow-setup/#scope` it would be treated as a separate page under the _In-Page Links_ scope.
+
+    This scope can also be useful for crawling websites that are single-page applications where each page has its own hash, such as `example.com/#/blog` and `example.com/#/about`.
 
 #### Site Crawl
 

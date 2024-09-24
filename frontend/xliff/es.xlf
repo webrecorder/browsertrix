@@ -3669,9 +3669,6 @@
       <trans-unit id="s1547ae4dfa1265ea">
         <source>Pages on Same Domain + Subdomains</source>
       </trans-unit>
-      <trans-unit id="sf53b13138a2c1d0e">
-        <source>Page Hashes</source>
-      </trans-unit>
       <trans-unit id="sba3df9981f03cb40">
         <source>Single Page</source>
       </trans-unit>
@@ -3737,6 +3734,9 @@
       </trans-unit>
       <trans-unit id="s67b76d03e88b5990">
         <source>Please fix to continue.</source>
+      </trans-unit>
+      <trans-unit id="s083f85625c5d739f">
+        <source>In-Page Links</source>
       </trans-unit>
     </body>
   </file>

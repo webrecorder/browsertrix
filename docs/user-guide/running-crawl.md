@@ -17,7 +17,7 @@ A crawl workflow that is in progress can be in one of the following states:
 
 ## Live Exclusion Editing
 
-While [exclusions](workflow-setup.md#exclusions) can be set before running a crawl workflow, sometimes while crawling the crawler may find new parts of the site that weren't previously known about and shouldn't be crawled, or get stuck browsing parts of a website that automatically generate URLs known as ["crawler traps"](https://en.wikipedia.org/wiki/Spider_trap).
+While [exclusions](workflow-setup.md#exclude-pages) can be set before running a crawl workflow, sometimes while crawling the crawler may find new parts of the site that weren't previously known about and shouldn't be crawled, or get stuck browsing parts of a website that automatically generate URLs known as ["crawler traps"](https://en.wikipedia.org/wiki/Spider_trap).
 
 If the crawl queue is filled with URLs that should not be crawled, use the _Edit Exclusions_ button on the Watch Crawl page to instruct the crawler what pages should be excluded from the queue.
 
