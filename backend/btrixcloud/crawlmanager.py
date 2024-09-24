@@ -306,6 +306,9 @@ class CrawlManager(K8sAPI):
         storage_secret = storage.get_storage_secret_name(oid)
         storage_label = f"btrix.storage={storage_secret}"
 
+        # TODO: This is causing deletion of custom storage to fail
+        # even when it hasn't been used - why has this label been applied
+        # when no crawls or profiles have been created yet?
         if await self.has_custom_jobs_with_label("crawljobs", storage_label):
             raise HTTPException(status_code=400, detail="storage_in_use")
 
