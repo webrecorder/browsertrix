@@ -339,7 +339,10 @@ def test_remove_custom_storage(admin_auth_headers):
     r = requests.post(
         f"{API_PREFIX}/orgs/{new_oid}/storage",
         headers=admin_auth_headers,
-        json={"storage": {"name": CUSTOM_PRIMARY_STORAGE_NAME, "custom": True}},
+        json={
+            "storage": {"name": CUSTOM_PRIMARY_STORAGE_NAME, "custom": True},
+            "storageReplicas": [],
+        },
     )
 
     # Delete no longer used replica storage location
