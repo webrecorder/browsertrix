@@ -188,7 +188,8 @@ class StorageOps:
             region=storagein.region,
             endpoint_url=endpoint_url,
             endpoint_no_bucket_url=endpoint_no_bucket_url,
-            access_endpoint_url=storagein.access_endpoint_url or storagein.endpoint_url,
+            access_endpoint_url=storagein.access_endpoint_url or endpoint_url,
+            use_access_for_presign=True,
         )
 
         try:
@@ -312,14 +313,16 @@ class StorageOps:
             key += filename
             data = b""
 
-            # create bucket if it doesn't yet exist
-            # TODO: Remove this, useful for dev but in real cases we want to
-            # fail if bucket doesn't exist/has invalid credentials
-            resp = await client.create_bucket(Bucket=bucket)
-            assert resp["ResponseMetadata"]["HTTPStatusCode"] == 200
+            try:
+                resp = await client.put_object(Bucket=bucket, Key=key, Body=data)
+                assert resp["ResponseMetadata"]["HTTPStatusCode"] == 200
+            except:
+                # create bucket if it doesn't yet exist and then try again
+                resp = await client.create_bucket(Bucket=bucket)
+                assert resp["ResponseMetadata"]["HTTPStatusCode"] == 200
 
-            resp = await client.put_object(Bucket=bucket, Key=key, Body=data)
-            assert resp["ResponseMetadata"]["HTTPStatusCode"] == 200
+                resp = await client.put_object(Bucket=bucket, Key=key, Body=data)
+                assert resp["ResponseMetadata"]["HTTPStatusCode"] == 200
 
     def resolve_internal_access_path(self, path):
         """Resolve relative path for internal access to minio bucket"""
