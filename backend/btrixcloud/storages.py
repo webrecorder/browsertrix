@@ -261,6 +261,21 @@ class StorageOps:
         org.storage = storage_refs.storage
         org.storageReplicas = storage_refs.storageReplicas
 
+        # TODO: Account for replication if there's stored content,
+        # we'll need to move it to the new bucket and update paths in the
+        # database accordingly (if any updates are needed, at minimum should
+        # probably re-generate presigned URLs?)
+        # If a replica location is added, we should replicate everything in
+        # primary storage into it
+        # If a replica location is removed, should we wait for content to
+        # be deleted before removing it, or assume that happens manually as
+        # necessary?
+
+        # We'll also need to make sure any running crawl, bg, or profile jobs
+        # that use this storage are completed first
+
+        # We can set the org to read-only while handling these details
+
         await self.org_ops.update_storage_refs(org)
 
         return {"updated": True}
