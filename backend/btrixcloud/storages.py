@@ -266,7 +266,7 @@ class StorageOps:
         except:
             raise HTTPException(status_code=400, detail="invalid_storage_ref")
 
-        if await self.org_ops.is_crawl_running(org.id):
+        if await self.org_ops.is_crawl_running(org):
             raise HTTPException(status_code=400, detail="crawl_running")
 
         prev_storage = org.storage
