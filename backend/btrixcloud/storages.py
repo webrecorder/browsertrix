@@ -72,7 +72,7 @@ CHUNK_SIZE = 1024 * 256
 
 
 # ============================================================================
-# pylint: disable=broad-except,raise-missing-from
+# pylint: disable=broad-except,raise-missing-from,too-many-public-methods
 class StorageOps:
     """All storage handling, download/upload operations"""
 
@@ -106,7 +106,7 @@ class StorageOps:
         default_namespace = os.environ.get("DEFAULT_NAMESPACE", "default")
         self.frontend_origin = f"{frontend_origin}.{default_namespace}"
 
-        self.base_crawl_ops = cast(BackgroundJobOps, None)
+        self.background_job_ops = cast(BackgroundJobOps, None)
 
         with open(os.environ["STORAGES_JSON"], encoding="utf-8") as fh:
             storage_list = json.loads(fh.read())
