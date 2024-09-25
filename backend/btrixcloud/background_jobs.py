@@ -24,6 +24,7 @@ from .models import (
     RecalculateOrgStatsJob,
     ReAddOrgPagesJob,
     OptimizePagesJob,
+    CopyBucketJob,
     PaginatedBackgroundJobResponse,
     AnyJob,
     StorageRef,
@@ -429,7 +430,7 @@ class BackgroundJobOps:
             return job_id
         # pylint: disable=broad-exception-caught
         except Exception as exc:
-            # pylint: disable=raise-missing-from
+             # pylint: disable=raise-missing-from
             print(f"warning: re-add org pages job could not be started: {exc}")
             return None
 
@@ -472,6 +473,67 @@ class BackgroundJobOps:
             # pylint: disable=raise-missing-from
             print(f"warning: optimize pages job could not be started: {exc}")
             return None
+
+    async def create_copy_bucket_job(
+        self,
+        org: Organization,
+        prev_storage_ref: StorageRef,
+        new_storage_ref: StorageRef,
+        existing_job_id: Optional[str] = None,
+    ) -> str:
+        """Start background job to copy entire s3 bucket and return job id"""
+        prev_storage = self.storage_ops.get_org_storage_by_ref(org, prev_storage_ref)
+        prev_endpoint, prev_bucket = self.strip_bucket(prev_storage.endpoint_url)
+
+        new_storage = self.storage_ops.get_org_storage_by_ref(org, new_storage_ref)
+        new_endpoint, new_bucket = self.strip_bucket(new_storage.endpoint_url)
+
+        job_type = BgJobType.COPY_BUCKET.value
+
+        try:
+            job_id = await self.crawl_manager.run_copy_bucket_job(
+                oid=str(org.id),
+                job_type=job_type,
+                prev_storage=prev_storage_ref,
+                prev_endpoint=prev_endpoint,
+                prev_bucket=prev_bucket,
+                new_storage=new_storage_ref,
+                new_endpoint=new_endpoint,
+                new_bucket=new_bucket,
+                job_id_prefix=f"{job_type}-{object_id}",
+                existing_job_id=existing_job_id,
+            )
+            if existing_job_id:
+                copy_job = await self.get_background_job(existing_job_id, org.id)
+                previous_attempt = {
+                    "started": copy_job.started,
+                    "finished": copy_job.finished,
+                }
+                if copy_job.previousAttempts:
+                    copy_job.previousAttempts.append(previous_attempt)
+                else:
+                    copy_job.previousAttempts = [previous_attempt]
+                copy_job.started = dt_now()
+                copy_job.finished = None
+                copy_job.success = None
+            else:
+                copy_job = CopyBucketJob(
+                    id=job_id,
+                    oid=org.id,
+                    started=dt_now(),
+                    prev_storage=prev_storage_ref,
+                    new_storage=new_storage_ref,
+                )
+
+            await self.jobs.find_one_and_update(
+                {"_id": job_id}, {"$set": copy_job.to_dict()}, upsert=True
+            )
+
+            return job_id
+        # pylint: disable=broad-exception-caught
+        except Exception as exc:
+            print(f"warning: copy bucket job could not be started for org {org.id}")
+            return ""
 
     async def job_finished(
         self,
@@ -528,6 +590,9 @@ class BackgroundJobOps:
         DeleteReplicaJob,
         DeleteOrgJob,
         RecalculateOrgStatsJob,
+        CopyBucketJob,
+        DeleteOrgJob,
+        RecalculateOrgStatsJob,
         ReAddOrgPagesJob,
         OptimizePagesJob,
     ]:
@@ -558,6 +623,9 @@ class BackgroundJobOps:
 
         if data["type"] == BgJobType.OPTIMIZE_PAGES:
             return OptimizePagesJob.from_dict(data)
+
+        if data["type"] == BgJobType.COPY_BUCKET:
+            return CopyBucketJob.from_dict(data)
 
         return DeleteOrgJob.from_dict(data)
 
@@ -733,6 +801,15 @@ class BackgroundJobOps:
                 job.crawl_type,
                 job.crawl_id,
                 existing_job_id=job.id,
+            )
+            return {"success": True}
+
+        if job.type == BgJobType.COPY_BUCKET:
+            await self.create_copy_bucket_job(
+                org,
+                job.prev_storage,
+                job.new_storage,
+                existing_job_id=job_id,
             )
             return {"success": True}
 
