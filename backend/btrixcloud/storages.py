@@ -23,6 +23,7 @@ import heapq
 import zlib
 import json
 import os
+import time
 
 from datetime import datetime, timedelta
 from zipfile import ZipInfo
@@ -63,8 +64,9 @@ from .version import __version__
 if TYPE_CHECKING:
     from .orgs import OrgOps
     from .crawlmanager import CrawlManager
+    from .background_jobs import BackgroundJobOps
 else:
-    OrgOps = CrawlManager = object
+    OrgOps = CrawlManager = BackgroundJobOps = object
 
 CHUNK_SIZE = 1024 * 256
 
@@ -103,6 +105,8 @@ class StorageOps:
         )
         default_namespace = os.environ.get("DEFAULT_NAMESPACE", "default")
         self.frontend_origin = f"{frontend_origin}.{default_namespace}"
+
+        self.base_crawl_ops = cast(BackgroundJobOps, None)
 
         with open(os.environ["STORAGES_JSON"], encoding="utf-8") as fh:
             storage_list = json.loads(fh.read())
@@ -147,6 +151,10 @@ class StorageOps:
         await self.presigned_urls.create_index(
             "signedAt", expireAfterSeconds=self.expire_at_duration_seconds
         )
+
+    def set_ops(self, background_job_ops: BackgroundJobOps) -> None:
+        """Set background job ops"""
+        self.background_job_ops = background_job_ops
 
     def _create_s3_storage(self, storage: dict[str, str]) -> S3Storage:
         """create S3Storage object"""
@@ -281,8 +289,8 @@ class StorageOps:
 
     async def run_post_storage_update_tasks(
         self,
-        prev_storage_refs: StorageRef,
-        new_storage_refs: StorageRef,
+        prev_storage_refs: OrgStorageRefs,
+        new_storage_refs: OrgStorageRefs,
         org: Organization,
     ):
         """Handle tasks necessary after changing org storage"""
@@ -292,14 +300,28 @@ class StorageOps:
         if new_storage_refs.storage != prev_storage_refs.storage:
             await self.org_ops.update_read_only(org, True, "Updating storage")
 
-            # TODO: Copy files from from previous to new primary storage
-            # (Ideally block on this, otherwise unset read-only on completion in
-            # operator?)
+            # Create the background job to copy files
+            job_id = await self.background_job_ops.create_copy_bucket_job(
+                org, prev_storage_refs.storage, new_storage_refs.storage
+            )
+
+            # Block until copy job is complete
+            # TODO: Handle in operator instead?
+            while True:
+                bg_job = await self.background_job_ops.get_background_job(
+                    job_id, org.id
+                )
+                if bg_job.success:
+                    break
+                if bg_job.success is False:
+                    # TODO: Handle failure case
+                    pass
+
+                time.sleep(5)
 
             await self.org_ops.update_file_storage_refs(
                 org, prev_storage_refs.storage, new_storage_refs.storage
             )
-
             await self.org_ops.unset_file_presigned_urls(org)
 
             await self.org_ops.update_read_only(org, False)
