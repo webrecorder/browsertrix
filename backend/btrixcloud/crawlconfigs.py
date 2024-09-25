@@ -1265,7 +1265,7 @@ async def stats_recompute_all(crawl_configs, crawls, cid: UUID):
 
 
 # ============================================================================
-# pylint: disable=redefined-builtin,invalid-name,too-many-locals,too-many-arguments
+# pylint: disable=redefined-builtin,invalid-name,too-many-locals,too-many-arguments,too-many-positional-arguments
 def init_crawl_config_api(
     app,
     dbclient,

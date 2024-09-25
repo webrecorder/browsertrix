@@ -334,7 +334,7 @@ class SubOps:
         return SubscriptionPortalUrlResponse()
 
 
-# pylint: disable=invalid-name,too-many-arguments
+# pylint: disable=invalid-name,too-many-arguments,too-many-positional-arguments
 def init_subs_api(
     app,
     mdb,

@@ -412,7 +412,7 @@ class StorageOps:
             try:
                 resp = await client.put_object(Bucket=bucket, Key=key, Body=data)
                 assert resp["ResponseMetadata"]["HTTPStatusCode"] == 200
-            except:
+            except Exception:
                 # create bucket if it doesn't yet exist and then try again
                 resp = await client.create_bucket(Bucket=bucket)
                 assert resp["ResponseMetadata"]["HTTPStatusCode"] == 200
