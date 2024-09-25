@@ -293,7 +293,11 @@ class StorageOps:
         new_storage_refs: OrgStorageRefs,
         org: Organization,
     ):
-        """Handle tasks necessary after changing org storage"""
+        """Handle tasks necessary after changing org storage
+
+        This is a good candidate for a background job with access to ops
+        classes, which may kick off other background jobs as needed.
+        """
         if not await self.org_ops.has_files_stored(org):
             return
 
