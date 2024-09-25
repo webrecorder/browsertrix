@@ -279,7 +279,9 @@ class StorageOps:
 
         asyncio.create_task(
             self.run_post_storage_update_tasks(
-                OrgStorageRefs(storage=prev_storage, storageReplicas=prev_storage_refs),
+                OrgStorageRefs(
+                    storage=prev_storage, storageReplicas=prev_storage_replicas
+                ),
                 storage_refs,
                 org,
             )
