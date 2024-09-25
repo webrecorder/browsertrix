@@ -3,6 +3,7 @@ import type { SlDialog, SlDrawer } from "@shoelace-style/shoelace";
 import { nothing, render, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
+import isEqual from "lodash/fp/isEqual";
 
 import "broadcastchannel-polyfill";
 import "./utils/polyfills";
@@ -26,6 +27,7 @@ import type { NotifyEventDetail } from "@/controllers/notify";
 import { theme } from "@/theme";
 import { type Auth } from "@/types/auth";
 import { type AppSettings } from "@/utils/app";
+import { tw } from "@/utils/tailwind";
 import brandLockupColor from "~assets/brand/browsertrix-lockup-color.svg";
 
 import "./shoelace";
@@ -54,11 +56,18 @@ export type APIUser = {
   orgs: UserOrg[];
 };
 
+export interface UserGuideEventMap {
+  "btrix-user-guide-show": CustomEvent<{ path?: string }>;
+}
+
 @localized()
 @customElement("browsertrix-app")
 export class App extends LiteElement {
   @property({ type: String })
   version?: string;
+
+  @property({ type: String })
+  docsUrl = "https://docs.browsertrix.com/";
 
   @property({ type: Object })
   settings?: AppSettings;
@@ -100,11 +109,22 @@ export class App extends LiteElement {
     this.addEventListener("btrix-need-login", this.onNeedLogin);
     this.addEventListener("btrix-logged-in", this.onLoggedIn);
     this.addEventListener("btrix-log-out", this.onLogOut);
+    this.attachUserGuideListeners();
     window.addEventListener("popstate", () => {
       this.syncViewState();
     });
 
     this.startSyncBrowserTabs();
+  }
+
+  private attachUserGuideListeners() {
+    this.addEventListener(
+      "btrix-user-guide-show",
+      (e: UserGuideEventMap["btrix-user-guide-show"]) => {
+        e.stopPropagation();
+        this.showUserGuide(e.detail.path);
+      },
+    );
   }
 
   willUpdate(changedProperties: Map<string, unknown>) {
@@ -138,10 +158,17 @@ export class App extends LiteElement {
       this.viewState = this.router.match(this.orgBasePath);
       window.history.replaceState(this.viewState, "", this.viewState.pathname);
     } else {
-      this.viewState = this.router.match(
+      const nextViewState = this.router.match(
         `${pathname}${window.location.search}`,
       );
-      this.updateOrgSlugIfNeeded();
+      if (
+        !(this.viewState as unknown) ||
+        this.viewState.pathname !== nextViewState.pathname ||
+        !isEqual(this.viewState.params, nextViewState.params)
+      ) {
+        this.viewState = nextViewState;
+        this.updateOrgSlugIfNeeded();
+      }
     }
   }
 
@@ -235,8 +262,8 @@ export class App extends LiteElement {
           <span>${msg("User Guide")}</span>
         </span>
         <iframe
-          class="size-full"
-          src="https://docs.browsertrix.com/user-guide/"
+          class="size-full transition-opacity duration-slow"
+          src="${this.docsUrl}/user-guide/"
         ></iframe>
         <sl-button size="small" slot="footer" variant="text">
           <sl-icon slot="suffix" name="box-arrow-up-right"></sl-icon>
@@ -349,7 +376,7 @@ export class App extends LiteElement {
                     ? html`
                         <button
                           class="flex items-center gap-2 leading-none text-neutral-500 hover:text-primary"
-                          @click=${() => void this.userGuideDrawer.show()}
+                          @click=${() => this.showUserGuide()}
                         >
                           <sl-icon
                             name="book"
@@ -812,6 +839,33 @@ export class App extends LiteElement {
         </div>
       </sl-dropdown>
     `;
+  }
+
+  private showUserGuide(pathName?: string) {
+    const iframe = this.userGuideDrawer.querySelector("iframe");
+
+    if (iframe) {
+      const oneLoad = () => {
+        iframe.classList.remove(tw`opacity-0`);
+        iframe.removeEventListener("load", oneLoad);
+      };
+
+      iframe.classList.add(tw`opacity-0`);
+
+      if (pathName) {
+        if (iframe.src.slice(this.docsUrl.length) !== pathName) {
+          iframe.addEventListener("load", oneLoad);
+          iframe.src = `${this.docsUrl}${pathName}`;
+        }
+      } else {
+        iframe.addEventListener("load", oneLoad);
+        iframe.src = this.docsUrl;
+      }
+
+      void this.userGuideDrawer.show();
+    } else {
+      console.debug("user guide iframe not found");
+    }
   }
 
   onLogOut(event: CustomEvent<{ redirect?: boolean } | null>) {

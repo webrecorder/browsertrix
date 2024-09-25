@@ -10,11 +10,13 @@ import RegexColorize from "regex-colorize";
 import { RelativeDuration } from "./relative-duration";
 
 import type { CrawlConfig, Seed, SeedConfig } from "@/pages/org/types";
+import scopeTypeLabel from "@/strings/crawl-workflows/scopeType";
 import sectionStrings from "@/strings/crawl-workflows/section";
 import type { Collection } from "@/types/collection";
+import { WorkflowScopeType } from "@/types/workflow";
 import { isApiError } from "@/utils/api";
 import { getAppSettings } from "@/utils/app";
-import { DEPTH_SUPPORTED_SCOPES } from "@/utils/crawler";
+import { DEPTH_SUPPORTED_SCOPES, isPageScopeType } from "@/utils/crawler";
 import { humanizeSchedule } from "@/utils/cron";
 import LiteElement, { html } from "@/utils/LiteElement";
 import { formatNumber } from "@/utils/localization";
@@ -54,19 +56,6 @@ export class ConfigDetails extends LiteElement {
   @state()
   private collections: Collection[] = [];
 
-  private readonly scopeTypeLabels: Record<
-    NonNullable<CrawlConfig["config"]["scopeType"]>,
-    string
-  > = {
-    prefix: msg("Path Begins with This URL"),
-    host: msg("Pages on This Domain"),
-    domain: msg("Pages on This Domain & Subdomains"),
-    "page-spa": msg("Single Page App (In-Page Links Only)"),
-    page: msg("Page"),
-    custom: msg("Custom"),
-    any: msg("Any"),
-  };
-
   async connectedCallback() {
     super.connectedCallback();
     void this.fetchAPIDefaults();
@@ -76,8 +65,6 @@ export class ConfigDetails extends LiteElement {
   render() {
     const crawlConfig = this.crawlConfig;
     const seedsConfig = crawlConfig?.config;
-    const exclusions = seedsConfig?.exclude || [];
-    const maxPages = this.seeds?.[0]?.limit ?? seedsConfig?.limit;
     const renderTimeLimit = (
       valueSeconds?: number | null,
       fallbackValue?: number,
@@ -124,41 +111,44 @@ export class ConfigDetails extends LiteElement {
         </btrix-section-heading>
         <btrix-desc-list>
           ${when(
-            crawlConfig?.jobType === "seed-crawl",
-            this.renderConfirmSeededSettings,
-            this.renderConfirmUrlListSettings,
-          )}
-          ${when(
-            exclusions.length,
-            () => html`
-              <div class="mb-2">
-                <btrix-queue-exclusion-table
-                  .exclusions=${exclusions}
-                  labelClassName="text-xs text-neutral-500"
-                >
-                </btrix-queue-exclusion-table>
-              </div>
+            seedsConfig,
+            (config) => html`
+              ${this.renderSetting(
+                msg("Crawl Scope"),
+                when(this.seeds, (seeds) => {
+                  if (!config.scopeType) return;
+                  if (isPageScopeType(config.scopeType) && seeds.length > 1) {
+                    return scopeTypeLabel[WorkflowScopeType.PageList];
+                  }
+                  return scopeTypeLabel[config.scopeType];
+                }),
+              )}
+              ${isPageScopeType(config.scopeType)
+                ? this.renderConfirmUrlListSettings(config)
+                : this.renderConfirmSeededSettings(config)}
             `,
-            () => this.renderSetting(msg("Exclusions"), msg("None")),
           )}
           <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
             <h4>${sectionStrings.perCrawlLimits}</h4>
           </btrix-section-heading>
           ${this.renderSetting(
             msg("Max Pages"),
-            when(
-              maxPages,
-              (val: number | string) =>
-                `${formatNumber(+val)} ${pluralOf("pages", +val)}`,
-              () =>
-                this.orgDefaults?.maxPagesPerCrawl
-                  ? html`<span class="text-neutral-400">
-                      ${formatNumber(this.orgDefaults.maxPagesPerCrawl)}
-                      ${pluralOf("pages", this.orgDefaults.maxPagesPerCrawl)}
-                      ${msg("(default)")}</span
-                    >`
-                  : undefined,
-            ),
+            when(seedsConfig && this.seeds, (seeds) => {
+              const primarySeed = seeds[0] as Seed | undefined;
+              const maxPages = primarySeed?.limit ?? seedsConfig?.limit;
+
+              if (maxPages) {
+                return `${formatNumber(+maxPages)} ${pluralOf("pages", +maxPages)}`;
+              }
+
+              if (this.orgDefaults?.maxPagesPerCrawl) {
+                return html`<span class="text-neutral-400">
+                  ${formatNumber(this.orgDefaults.maxPagesPerCrawl)}
+                  ${pluralOf("pages", this.orgDefaults.maxPagesPerCrawl)}
+                  ${msg("(default)")}</span
+                >`;
+              }
+            }),
           )}
           ${this.renderSetting(
             msg("Crawl Time Limit"),
@@ -334,51 +324,53 @@ export class ConfigDetails extends LiteElement {
     `;
   }
 
-  private readonly renderConfirmUrlListSettings = () => {
-    const crawlConfig = this.crawlConfig;
-
+  private readonly renderConfirmUrlListSettings = (
+    config: CrawlConfig["config"],
+  ) => {
     return html`
       ${this.renderSetting(
-        msg("Page URL(s)"),
-        html`
-          <ul>
-            ${this.seeds?.map(
-              (seed: Seed) => html`
-                <li>
-                  <a
-                    class="text-blue-600 hover:text-blue-500 hover:underline"
-                    href="${seed.url}"
-                    target="_blank"
-                    rel="noreferrer"
-                    >${seed.url}</a
-                  >
-                </li>
-              `,
-            )}
-          </ul>
-        `,
+        config.scopeType === WorkflowScopeType.Page
+          ? msg("Page URL")
+          : msg("Page URLs"),
+        this.seeds?.length
+          ? html`
+              <ul>
+                ${this.seeds.map(
+                  (seed: Seed) => html`
+                    <li>
+                      <a
+                        class="text-blue-600 hover:text-blue-500 hover:underline"
+                        href="${seed.url}"
+                        target="_blank"
+                        rel="noreferrer"
+                        >${seed.url}</a
+                      >
+                    </li>
+                  `,
+                )}
+              </ul>
+            `
+          : undefined,
         true,
       )}
       ${this.renderSetting(
-        msg("Include Any Linked Page"),
-        Boolean(crawlConfig?.config.extraHops),
-      )}
-      ${this.renderSetting(
-        msg("Fail Crawl On Failed URL"),
-        Boolean(crawlConfig?.config.failOnFailedSeed),
+        msg("Include Any Linked Page (“one hop out”)"),
+        Boolean(config.extraHops),
       )}
     `;
   };
 
-  private readonly renderConfirmSeededSettings = () => {
+  private readonly renderConfirmSeededSettings = (
+    config: CrawlConfig["config"],
+  ) => {
     if (!this.seeds) return;
-    const crawlConfig = this.crawlConfig!;
-    const seedsConfig = crawlConfig.config;
     const additionalUrlList = this.seeds.slice(1);
     const primarySeedConfig = this.seeds[0] as SeedConfig | Seed | undefined;
     const primarySeedUrl = (primarySeedConfig as Seed | undefined)?.url;
-    const includeUrlList =
-      primarySeedConfig?.include || seedsConfig.include || [];
+    const includeUrlList = primarySeedConfig?.include || config.include || [];
+    const exclusions = config.exclude || [];
+    const scopeType = config.scopeType!;
+
     return html`
       ${this.renderSetting(
         msg("Crawl Start URL"),
@@ -393,50 +385,42 @@ export class ConfigDetails extends LiteElement {
           : undefined,
         true,
       )}
-      ${this.renderSetting(
-        msg("Crawl Scope"),
-        this.scopeTypeLabels[
-          primarySeedConfig!.scopeType || seedsConfig.scopeType!
-        ],
-      )}
-      ${this.renderSetting(
-        msg("Extra URL Prefixes in Scope"),
-        includeUrlList.length
-          ? html`
-              <ul>
-                ${includeUrlList.map(
-                  (url: string) =>
-                    staticHtml`<li class="regex">${unsafeStatic(
-                      new RegexColorize().colorizeText(url) as string,
-                    )}</li>`,
-                )}
-              </ul>
-            `
-          : msg("None"),
-        true,
-      )}
-      ${when(
-        DEPTH_SUPPORTED_SCOPES.includes(
-          primarySeedConfig!.scopeType || seedsConfig.scopeType!,
+      ${when(scopeType === WorkflowScopeType.Prefix, () =>
+        this.renderSetting(
+          msg("Extra URL Prefixes in Scope"),
+          includeUrlList.length
+            ? html`
+                <ul>
+                  ${includeUrlList.map(
+                    (url: string) =>
+                      staticHtml`<li class="regex">${unsafeStatic(
+                        new RegexColorize().colorizeText(url) as string,
+                      )}</li>`,
+                  )}
+                </ul>
+              `
+            : msg("None"),
+          true,
         ),
-        () =>
-          this.renderSetting(
-            msg("Max Depth"),
-            primarySeedConfig && primarySeedConfig.depth !== null
-              ? msg(str`${primarySeedConfig.depth} hop(s)`)
-              : msg("Unlimited (default)"),
-          ),
+      )}
+      ${when(DEPTH_SUPPORTED_SCOPES.includes(scopeType), () =>
+        this.renderSetting(
+          msg("Max Depth in Scope"),
+          primarySeedConfig && primarySeedConfig.depth !== null
+            ? msg(str`${primarySeedConfig.depth} hop(s)`)
+            : msg("Unlimited (default)"),
+        ),
       )}
       ${this.renderSetting(
         msg("Include Any Linked Page (“one hop out”)"),
-        Boolean(primarySeedConfig?.extraHops ?? seedsConfig.extraHops),
+        Boolean(primarySeedConfig?.extraHops ?? config.extraHops),
       )}
       ${this.renderSetting(
         msg("Check For Sitemap"),
-        Boolean(seedsConfig.useSitemap),
+        Boolean(config.useSitemap),
       )}
       ${this.renderSetting(
-        msg("List of Additional URLs"),
+        msg("Additional Page URLs"),
         additionalUrlList.length
           ? html`
               <ul>
@@ -456,6 +440,19 @@ export class ConfigDetails extends LiteElement {
             `
           : msg("None"),
         true,
+      )}
+      ${when(
+        exclusions.length,
+        () => html`
+          <div class="mb-2">
+            <btrix-queue-exclusion-table
+              .exclusions=${exclusions}
+              labelClassName="text-xs text-neutral-500"
+            >
+            </btrix-queue-exclusion-table>
+          </div>
+        `,
+        () => this.renderSetting(msg("Exclusions"), msg("None")),
       )}
     `;
   };

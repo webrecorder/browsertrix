@@ -18,7 +18,6 @@ import type { QuotaUpdateDetail } from "@/controllers/api";
 import needLogin from "@/decorators/needLogin";
 import type { CollectionSavedEvent } from "@/features/collections/collection-metadata-dialog";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
-import type { JobType } from "@/types/crawler";
 import type { UserOrg } from "@/types/user";
 import { isApiError } from "@/utils/api";
 import type { ViewState } from "@/utils/APIRouter";
@@ -26,6 +25,7 @@ import { DEFAULT_MAX_SCALE } from "@/utils/crawler";
 import LiteElement, { html } from "@/utils/LiteElement";
 import { type OrgData } from "@/utils/orgs";
 import { AppStateService } from "@/utils/state";
+import type { FormState as WorkflowFormState } from "@/utils/workflow";
 
 import "./workflow-detail";
 import "./workflows-list";
@@ -53,7 +53,7 @@ type ArchivedItemPageParams = {
 export type OrgParams = {
   home: Record<string, never>;
   workflows: ArchivedItemPageParams & {
-    jobType?: JobType;
+    scopeType?: WorkflowFormState["scopeType"];
     new?: ResourceName;
     itemPageId?: string;
     qaTab?: QATab;
@@ -433,15 +433,6 @@ export class Org extends LiteElement {
           @sl-hide=${() => (this.openDialogName = undefined)}
         >
         </btrix-new-browser-profile-dialog>
-        <btrix-new-workflow-dialog
-          ?open=${this.openDialogName === "workflow"}
-          @sl-hide=${() => (this.openDialogName = undefined)}
-          @select-job-type=${(e: SelectJobTypeEvent) => {
-            this.openDialogName = undefined;
-            this.navTo(`${this.orgBasePath}/workflows?new&jobType=${e.detail}`);
-          }}
-        >
-        </btrix-new-workflow-dialog>
         <btrix-collection-metadata-dialog
           ?open=${this.openDialogName === "collection"}
           @sl-hide=${() => (this.openDialogName = undefined)}
@@ -489,8 +480,6 @@ export class Org extends LiteElement {
   private readonly renderWorkflows = () => {
     const params = this.params as OrgParams["workflows"];
     const isEditing = Object.prototype.hasOwnProperty.call(params, "edit");
-    const isNewResourceTab =
-      Object.prototype.hasOwnProperty.call(params, "new") && params.jobType;
     const workflowId = params.workflowId;
 
     if (workflowId) {
@@ -533,15 +522,15 @@ export class Org extends LiteElement {
       `;
     }
 
-    if (isNewResourceTab) {
-      const { workflow, seeds } = this.viewStateData || {};
+    if (this.orgPath.startsWith("/workflows/new")) {
+      const { workflow, seeds, scopeType } = this.viewStateData || {};
 
       return html` <btrix-workflows-new
         class="col-span-5"
         ?isCrawler=${this.appState.isCrawler}
         .initialWorkflow=${workflow}
         .initialSeeds=${seeds}
-        jobType=${ifDefined(params.jobType)}
+        scopeType=${ifDefined(scopeType)}
         @select-new-dialog=${this.onSelectNewDialog}
       ></btrix-workflows-new>`;
     }
@@ -550,7 +539,9 @@ export class Org extends LiteElement {
       @select-new-dialog=${this.onSelectNewDialog}
       @select-job-type=${(e: SelectJobTypeEvent) => {
         this.openDialogName = undefined;
-        this.navTo(`${this.orgBasePath}/workflows?new&jobType=${e.detail}`);
+        this.navTo(`${this.orgBasePath}/workflows/new`, {
+          scopeType: e.detail,
+        });
       }}
     ></btrix-workflows-list>`;
   };

@@ -87,11 +87,17 @@ export class Dashboard extends LiteElement {
                 distance="4"
                 placement="bottom-end"
                 @sl-select=${(e: SlSelectEvent) => {
-                  this.dispatchEvent(
-                    new CustomEvent("select-new-dialog", {
-                      detail: e.detail.item.value,
-                    }) as SelectNewDialogEvent,
-                  );
+                  const { value } = e.detail.item;
+
+                  if (value === "workflow") {
+                    this.navTo(`${this.orgBasePath}/workflows/new`);
+                  } else {
+                    this.dispatchEvent(
+                      new CustomEvent("select-new-dialog", {
+                        detail: e.detail.item.value,
+                      }) as SelectNewDialogEvent,
+                    );
+                  }
                 }}
               >
                 <sl-button

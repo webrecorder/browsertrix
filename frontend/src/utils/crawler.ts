@@ -10,6 +10,7 @@ import {
   SUCCESSFUL_STATES,
 } from "@/types/crawlState";
 import type { QARun } from "@/types/qa";
+import { WorkflowScopeType } from "@/types/workflow";
 import { formatNumber } from "@/utils/localization";
 import { pluralOf } from "@/utils/pluralize";
 
@@ -43,6 +44,14 @@ export function isSuccessfullyFinished({ state }: { state: string }) {
 export function isNotFailed({ state }: { state: string }) {
   return (
     state && !(FAILED_STATES as readonly string[]).some((str) => str === state)
+  );
+}
+
+export function isPageScopeType(
+  scope?: (typeof WorkflowScopeType)[keyof typeof WorkflowScopeType],
+) {
+  return (
+    scope === WorkflowScopeType.Page || scope === WorkflowScopeType.PageList
   );
 }
 

@@ -1,15 +1,15 @@
-import { localized, msg, str } from "@lit/localize";
+import { localized, msg } from "@lit/localize";
 import { mergeDeep } from "immutable";
-import type { LitElement } from "lit";
 import { customElement, property } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 
-import type { JobType, Seed, WorkflowParams } from "./types";
+import { ScopeType, type Seed, type WorkflowParams } from "./types";
 
-import type { SelectNewDialogEvent } from ".";
-
+import type { UserGuideEventMap } from "@/index";
 import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
 import LiteElement, { html } from "@/utils/LiteElement";
+import type { FormState as WorkflowFormState } from "@/utils/workflow";
 
 const defaultValue = {
   name: "",
@@ -18,7 +18,7 @@ const defaultValue = {
   schedule: "",
   config: {
     seeds: [],
-    scopeType: "prefix",
+    scopeType: ScopeType.Page,
     exclude: [],
     behaviorTimeout: null,
     pageLoadTimeout: null,
@@ -31,7 +31,7 @@ const defaultValue = {
   tags: [],
   crawlTimeout: null,
   maxCrawlSize: null,
-  jobType: undefined,
+  jobType: "custom",
   scale: 1,
   autoAddCollections: [],
   crawlerChannel: "default",
@@ -54,16 +54,10 @@ export class WorkflowsNew extends LiteElement {
   initialSeeds?: Seed[];
 
   @property({ type: String })
-  jobType?: JobType;
+  scopeType?: WorkflowFormState["scopeType"];
 
   @property({ type: Object })
   initialWorkflow?: WorkflowParams;
-
-  private readonly jobTypeLabels: Record<JobType, string> = {
-    "url-list": msg("Page List"),
-    "seed-crawl": msg("Site Crawl"),
-    custom: msg("Custom"),
-  };
 
   private renderBreadcrumbs() {
     const breadcrumbs: Breadcrumb[] = [
@@ -72,78 +66,77 @@ export class WorkflowsNew extends LiteElement {
         content: msg("Crawl Workflows"),
       },
       {
-        href: `${this.orgBasePath}/workflows?new=workflow`,
         content: msg("New Workflow"),
       },
     ];
-
-    const jobType = this.initialWorkflow?.jobType || this.jobType;
-
-    if (jobType) {
-      breadcrumbs.push({
-        content: this.jobTypeLabels[jobType],
-      });
-    }
 
     return pageNav(breadcrumbs);
   }
 
   render() {
-    const jobType = this.initialWorkflow?.jobType || this.jobType;
-
     if (!this.isCrawler) {
       return this.renderNoAccess();
     }
 
-    if (jobType) {
-      return html`
-        <div class="mb-5">${this.renderBreadcrumbs()}</div>
-        <h2 class="mb-6 text-xl font-semibold">
-          ${msg(str`New ${this.jobTypeLabels[jobType]} Workflow`)}
-        </h2>
-        ${when(this.org, (org) => {
-          const initialWorkflow = mergeDeep(
-            defaultValue,
-            {
-              profileid: org.crawlingDefaults?.profileid,
-              config: {
-                exclude: org.crawlingDefaults?.exclude,
-                behaviorTimeout: org.crawlingDefaults?.behaviorTimeout,
-                pageLoadTimeout: org.crawlingDefaults?.pageLoadTimeout,
-                pageExtraDelay: org.crawlingDefaults?.pageExtraDelay,
-                postLoadDelay: org.crawlingDefaults?.postLoadDelay,
-                userAgent: org.crawlingDefaults?.userAgent,
-                blockAds: org.crawlingDefaults?.blockAds,
-                lang: org.crawlingDefaults?.lang,
-              },
-              crawlTimeout: org.crawlingDefaults?.crawlTimeout,
-              maxCrawlSize: org.crawlingDefaults?.maxCrawlSize,
-              crawlerChannel: org.crawlingDefaults?.crawlerChannel,
-              proxyId: org.crawlingDefaults?.proxyId,
+    return html`
+      <div class="mb-5">${this.renderBreadcrumbs()}</div>
+      <header class="flex items-center justify-between">
+        <h2 class="mb-6 text-xl font-semibold">${msg("New Crawl Workflow")}</h2>
+        <sl-button
+          size="small"
+          @click=${() => {
+            this.dispatchEvent(
+              new CustomEvent<
+                UserGuideEventMap["btrix-user-guide-show"]["detail"]
+              >("btrix-user-guide-show", {
+                detail: {
+                  path: "/user-guide/workflow-setup/#scope",
+                },
+                bubbles: true,
+              }),
+            );
+          }}
+        >
+          <sl-icon slot="prefix" name="book"></sl-icon>
+          ${msg("Setup Guide")}
+        </sl-button>
+      </header>
+      ${when(this.org, (org) => {
+        const initialWorkflow = mergeDeep(
+          defaultValue,
+          {
+            profileid: org.crawlingDefaults?.profileid,
+            config: {
+              exclude: org.crawlingDefaults?.exclude || [""],
+              behaviorTimeout: org.crawlingDefaults?.behaviorTimeout,
+              pageLoadTimeout: org.crawlingDefaults?.pageLoadTimeout,
+              pageExtraDelay: org.crawlingDefaults?.pageExtraDelay,
+              postLoadDelay: org.crawlingDefaults?.postLoadDelay,
+              userAgent: org.crawlingDefaults?.userAgent,
+              blockAds: org.crawlingDefaults?.blockAds,
+              lang: org.crawlingDefaults?.lang,
             },
-            this.initialWorkflow || {},
-          );
+            crawlTimeout: org.crawlingDefaults?.crawlTimeout,
+            maxCrawlSize: org.crawlingDefaults?.maxCrawlSize,
+            crawlerChannel: org.crawlingDefaults?.crawlerChannel,
+            proxyId: org.crawlingDefaults?.proxyId,
+          },
+          this.initialWorkflow || {},
+        );
 
-          return html`
-            <btrix-workflow-editor
-              .initialWorkflow=${initialWorkflow}
-              .initialSeeds=${this.initialSeeds}
-              jobType=${jobType}
-              @reset=${async (e: Event) => {
-                await (e.target as LitElement).updateComplete;
-                this.dispatchEvent(
-                  new CustomEvent("select-new-dialog", {
-                    detail: "workflow",
-                  }) as SelectNewDialogEvent,
-                );
-              }}
-            ></btrix-workflow-editor>
-          `;
-        })}
-      `;
-    }
+        const scopeType = this.scopeType || initialWorkflow.config.scopeType;
 
-    return html``;
+        return html`
+          <btrix-workflow-editor
+            initialScopeType=${ifDefined(
+              scopeType === ScopeType.Any ? undefined : scopeType,
+            )}
+            .initialWorkflow=${initialWorkflow}
+            .initialSeeds=${this.initialSeeds}
+          ></btrix-workflow-editor>
+        `;
+      })}
+    `;
   }
 
   private readonly renderNoAccess = () => html`
