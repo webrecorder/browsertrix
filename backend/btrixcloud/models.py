@@ -2014,6 +2014,7 @@ class BgJobType(str, Enum):
     CREATE_REPLICA = "create-replica"
     DELETE_REPLICA = "delete-replica"
     DELETE_ORG = "delete-org"
+    COPY_BUCKET = "copy-bucket"
 
 
 # ============================================================================
@@ -2032,7 +2033,7 @@ class BackgroundJob(BaseMongoModel):
 
 # ============================================================================
 class CreateReplicaJob(BackgroundJob):
-    """Model for tracking create of replica jobs"""
+    """Model for tracking creation of replica jobs"""
 
     type: Literal[BgJobType.CREATE_REPLICA] = BgJobType.CREATE_REPLICA
     file_path: str
@@ -2060,10 +2061,19 @@ class DeleteOrgJob(BackgroundJob):
 
 
 # ============================================================================
+class CopyBucketJob(BackgroundJob):
+    """Model for tracking job to copy entire s3 bucket"""
+
+    type: Literal[BgJobType.CREATE_REPLICA] = BgJobType.CREATE_REPLICA
+    prev_storage: StorageRef
+    new_storage: StorageRef
+
+
+# ============================================================================
 # Union of all job types, for response model
 
 AnyJob = RootModel[
-    Union[CreateReplicaJob, DeleteReplicaJob, BackgroundJob, DeleteOrgJob]
+    Union[CreateReplicaJob, DeleteReplicaJob, DeleteOrgJob, CopyBucketJob, BackgroundJob]
 ]
 
 
