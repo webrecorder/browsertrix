@@ -47,7 +47,7 @@ class UploadOps(BaseCrawlOps):
         return UploadedCrawl.from_dict(res)
 
     # pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-public-methods, too-many-function-args
-    # pylint: disable=too-many-arguments, too-many-locals, duplicate-code, invalid-name
+    # pylint: disable=too-many-positional-arguments, too-many-locals, duplicate-code, invalid-name
     async def upload_stream(
         self,
         stream,
