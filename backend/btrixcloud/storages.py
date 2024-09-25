@@ -261,25 +261,60 @@ class StorageOps:
         if await self.org_ops.is_crawl_running(org.id):
             raise HTTPException(status_code=400, detail="crawl_running")
 
+        prev_storage = org.storage
+        prev_storage_replicas = org.storageReplicas
+
         org.storage = storage_refs.storage
         org.storageReplicas = storage_refs.storageReplicas
 
         await self.org_ops.update_storage_refs(org)
 
-        # TODO: Handle practical consequences of changing buckets
-        # - If previous primary bucket(s) had files stored, copy or move those
-        # into new storage and make necessary updates (e.g. regenerate presigned
-        # URLs?)
-        # - If replica location is added, replicate everything in primary
-        # to new replica storage location
-        # - If replica location is removed, start jobs to delete content?
-        # (or do we want to handle that manually?)
-
-        # We can set the org to read-only while handling these details
-        # Think through timing and/or how to communicate status of jobs to
-        # user, since background jobs don't block
+        asyncio.create_task(
+            self.run_post_storage_update_tasks(
+                OrgStorageRefs(storage=prev_storage, storageReplicas=prev_storage_refs),
+                storage_refs,
+                org,
+            )
+        )
 
         return {"updated": True}
+
+    async def run_post_storage_update_tasks(
+        self,
+        prev_storage_refs: StorageRef,
+        new_storage_refs: StorageRef,
+        org: Organization,
+    ):
+        """Handle tasks necessary after changing org storage"""
+        if not await self.org_ops.has_files_stored(org):
+            return
+
+        if new_storage_refs.storage != prev_storage_refs.storage:
+            await self.org_ops.update_read_only(org, True, "Updating storage")
+
+            # TODO: Copy files from from previous to new primary storage
+            # (Ideally block on this, otherwise unset read-only on completion in
+            # operator?)
+
+            await self.org_ops.update_file_storage_refs(
+                org, prev_storage_refs.storage, new_storage_refs.storage
+            )
+
+            await self.org_ops.unset_file_presigned_urls(org)
+
+            await self.org_ops.update_read_only(org, False)
+
+        if new_storage_refs.storageReplicas != prev_storage_refs.storageReplicas:
+            # If replica location added, kick off background jobs to replicate
+            # primary storage to new replica storage location (non-blocking)
+
+            # If replica location is removed, start jobs to delete files from
+            # removed replica location (non-blocking)
+
+            # If we also changed primary storage in this update, we should make
+            # sure all files are successfully copied before doing anything to
+            # the replicas
+            pass
 
     def get_available_storages(self, org: Organization) -> List[StorageRef]:
         """return a list of available default + custom storages"""

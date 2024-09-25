@@ -503,6 +503,36 @@ class OrgOps:
         res = await self.orgs.find_one_and_update({"_id": org.id}, {"$set": set_dict})
         return res is not None
 
+    async def update_file_storage_refs(
+        self, org: Organization, previous_storage: StorageRef, new_storage: StorageRef
+    ) -> bool:
+        """Update storage refs for all crawl and profile files in given org"""
+        res = await self.crawls_db.update_many(
+            {"_id": org.id, "files.$.storage": previous_storage},
+            {"$set": {"files.$.storage": new_storage}},
+        )
+        if not res:
+            return False
+
+        res = await self.profiles_db.update_many(
+            {"_id": org.id, "resource.storage": previous_storage},
+            {"$set": {"resource.storage": new_storage}},
+        )
+        if not res:
+            return False
+
+        return True
+
+    async def unset_file_presigned_urls(self, org: Organization) -> bool:
+        """Unset all presigned URLs for files in org"""
+        res = await self.crawls_db.update_many(
+            {"_id": org.id}, {"$set": {"files.$.presignedUrl": None}}
+        )
+        if not res:
+            return False
+
+        return True
+
     async def update_subscription_data(
         self, update: SubscriptionUpdate
     ) -> Optional[Organization]:
@@ -993,13 +1023,29 @@ class OrgOps:
             "publicCollectionsCount": public_collections_count,
         }
 
-    async def is_crawl_running(self, oid: UUID) -> bool:
+    async def is_crawl_running(self, org: Organization) -> bool:
         """Return boolean indicating whether any crawls are currently running in org"""
-        workflows_running_count = await self.crawls_db.count_documents(
+        running_count = await self.crawls_db.count_documents(
             {"oid": org.id, "state": {"$in": RUNNING_STATES}}
         )
-        if workflows_running_count > 0:
+        if running_count > 0:
             return True
+        return False
+
+    async def has_files_stored(self, org: Organization) -> bool:
+        """Return boolean indicating whether any files are stored on org"""
+        crawl_count = await self.crawls_db.count_documents(
+            {"_id": org.id, "files.1": {"$exists": True}},
+        )
+        if crawl_count > 0:
+            return True
+
+        profile_count = await self.profiles_db.count_documents(
+            {"_id": org.id, "resource": {"$exists": True}},
+        )
+        if profile_count > 0:
+            return True
+
         return False
 
     async def get_all_org_slugs(self) -> dict[str, list[str]]:
