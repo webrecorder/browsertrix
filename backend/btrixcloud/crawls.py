@@ -72,7 +72,7 @@ DEFAULT_RANGE_LIMIT = 50
 
 
 # ============================================================================
-# pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-public-methods
+# pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-public-methods, too-many-positional-arguments
 class CrawlOps(BaseCrawlOps):
     """Crawl Ops"""
 
@@ -1115,7 +1115,7 @@ async def recompute_crawl_file_count_and_size(crawls, crawl_id: str):
 
 
 # ============================================================================
-# pylint: disable=too-many-arguments, too-many-locals, too-many-statements
+# pylint: disable=too-many-arguments, too-many-locals, too-many-statements, too-many-positional-arguments
 def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
     """API for crawl management, including crawl done callback"""
     # pylint: disable=invalid-name, duplicate-code

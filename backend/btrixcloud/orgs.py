@@ -111,7 +111,7 @@ DEL_ITEMS = 1000
 
 
 # ============================================================================
-# pylint: disable=too-many-public-methods, too-many-instance-attributes, too-many-locals, too-many-arguments
+# pylint: disable=too-many-public-methods, too-many-instance-attributes, too-many-locals, too-many-arguments, too-many-positional-arguments
 class OrgOps:
     """Organization API operations"""
 

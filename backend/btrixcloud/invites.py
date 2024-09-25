@@ -27,6 +27,7 @@ from .utils import is_bool, dt_now
 
 
 # ============================================================================
+# pylint: disable=too-many-positional-arguments
 class InviteOps:
     """invite users (optionally to an org), send emails and delete invites"""
 

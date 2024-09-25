@@ -72,7 +72,7 @@ CHUNK_SIZE = 1024 * 256
 
 
 # ============================================================================
-# pylint: disable=broad-except,raise-missing-from,too-many-public-methods
+# pylint: disable=broad-except,raise-missing-from,too-many-public-methods, too-many-positional-arguments
 class StorageOps:
     """All storage handling, download/upload operations"""
 

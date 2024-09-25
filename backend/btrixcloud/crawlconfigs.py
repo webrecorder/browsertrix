@@ -76,7 +76,7 @@ DEFAULT_PROXY_ID: str | None = os.environ.get("DEFAULT_PROXY_ID")
 class CrawlConfigOps:
     """Crawl Config Operations"""
 
-    # pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-public-methods
+    # pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-public-methods, too-many-positional-arguments
 
     user_manager: UserManager
     org_ops: OrgOps

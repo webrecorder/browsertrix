@@ -22,7 +22,7 @@ from .utils import get_templates_dir, dt_now
 
 
 # ============================================================================
-# pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-instance-attributes, too-many-positional-arguments
 class K8sAPI:
     """K8S API accessors"""
 
