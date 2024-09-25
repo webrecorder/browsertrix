@@ -6,16 +6,22 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
-import type { ListWorkflow, Seed, Workflow, WorkflowParams } from "./types";
-
-import type { SelectNewDialogEvent } from ".";
+import {
+  ScopeType,
+  type ListWorkflow,
+  type Seed,
+  type Workflow,
+  type WorkflowParams,
+} from "./types";
 
 import { CopyButton } from "@/components/ui/copy-button";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import { type SelectEvent } from "@/components/ui/search-combobox";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
 import { pageHeader } from "@/layouts/pageHeader";
+import scopeTypeLabels from "@/strings/crawl-workflows/scopeType";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
+import { NewWorkflowOnlyScopeType } from "@/types/workflow";
 import { isApiError } from "@/utils/api";
 import LiteElement, { html } from "@/utils/LiteElement";
 import { isArchivingDisabled } from "@/utils/orgs";
@@ -209,54 +215,74 @@ export class WorkflowsList extends LiteElement {
             ${when(
               this.appState.isCrawler,
               () => html`
-                <sl-dropdown
-                  distance="4"
-                  placement="bottom-end"
-                  @sl-select=${(e: SlSelectEvent) => {
-                    const { value } = e.detail.item;
-
-                    if (value) {
-                      this.dispatchEvent(
-                        new CustomEvent<SelectJobTypeEvent["detail"]>(
-                          "select-job-type",
-                          {
-                            detail: value as SelectJobTypeEvent["detail"],
-                          },
-                        ),
-                      );
-                    } else {
-                      this.dispatchEvent(
-                        new CustomEvent("select-new-dialog", {
-                          detail: "workflow",
-                        }) as SelectNewDialogEvent,
-                      );
-                    }
-                  }}
-                >
+                <sl-button-group>
                   <sl-button
-                    slot="trigger"
-                    size="small"
                     variant="primary"
-                    caret
+                    size="small"
+                    href="${this.orgBasePath}/workflows/new"
                     ?disabled=${this.org?.readOnly}
+                    @click=${this.navLink}
                   >
                     <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-                    ${msg("New Workflow...")}
-                  </sl-button>
-                  <sl-menu>
-                    <sl-menu-item value="url-list">
-                      ${msg("Page List")}
-                    </sl-menu-item>
-                    <sl-menu-item value="seed-crawl">
-                      ${msg("Site Crawl")}
-                    </sl-menu-item>
-                    <sl-divider> </sl-divider>
-                    <sl-menu-item>
-                      <sl-icon slot="prefix" name="question-circle"></sl-icon>
-                      ${msg("Help me decide")}
-                    </sl-menu-item>
-                  </sl-menu>
-                </sl-dropdown>
+                    ${msg("New Workflow")}</sl-button
+                  >
+                  <sl-dropdown
+                    distance="4"
+                    placement="bottom-end"
+                    @sl-select=${(e: SlSelectEvent) => {
+                      const { value } = e.detail.item;
+
+                      if (value) {
+                        this.dispatchEvent(
+                          new CustomEvent<SelectJobTypeEvent["detail"]>(
+                            "select-job-type",
+                            {
+                              detail: value as SelectJobTypeEvent["detail"],
+                            },
+                          ),
+                        );
+                      }
+                    }}
+                  >
+                    <sl-button
+                      slot="trigger"
+                      size="small"
+                      variant="primary"
+                      caret
+                      ?disabled=${this.org?.readOnly}
+                    >
+                      <sl-visually-hidden
+                        >${msg("Scope options")}</sl-visually-hidden
+                      >
+                    </sl-button>
+                    <sl-menu>
+                      <sl-menu-label> ${msg("Page Crawl")} </sl-menu-label>
+                      <sl-menu-item value=${ScopeType.Page}
+                        >${scopeTypeLabels[ScopeType.Page]}</sl-menu-item
+                      >
+                      <sl-menu-item value=${NewWorkflowOnlyScopeType.PageList}>
+                        ${scopeTypeLabels[NewWorkflowOnlyScopeType.PageList]}
+                      </sl-menu-item>
+                      <sl-menu-item value=${ScopeType.SPA}>
+                        ${scopeTypeLabels[ScopeType.SPA]}
+                      </sl-menu-item>
+                      <sl-divider></sl-divider>
+                      <sl-menu-label>${msg("Site Crawl")}</sl-menu-label>
+                      <sl-menu-item value=${ScopeType.Prefix}>
+                        ${scopeTypeLabels[ScopeType.Prefix]}
+                      </sl-menu-item>
+                      <sl-menu-item value=${ScopeType.Host}>
+                        ${scopeTypeLabels[ScopeType.Host]}
+                      </sl-menu-item>
+                      <sl-menu-item value=${ScopeType.Domain}>
+                        ${scopeTypeLabels[ScopeType.Domain]}
+                      </sl-menu-item>
+                      <sl-menu-item value=${ScopeType.Custom}>
+                        ${scopeTypeLabels[ScopeType.Custom]}
+                      </sl-menu-item>
+                    </sl-menu>
+                  </sl-dropdown>
+                </sl-button-group>
               `,
             )}
           `,
@@ -688,13 +714,10 @@ export class WorkflowsList extends LiteElement {
       name: workflow.name ? msg(str`${workflow.name} Copy`) : "",
     };
 
-    this.navTo(
-      `${this.orgBasePath}/workflows?new&jobType=${workflowParams.jobType}`,
-      {
-        workflow: workflowParams,
-        seeds: seeds.items,
-      },
-    );
+    this.navTo(`${this.orgBasePath}/workflows/new`, {
+      workflow: workflowParams,
+      seeds: seeds.items,
+    });
 
     if (seeds.total > SEEDS_MAX) {
       this.notify({

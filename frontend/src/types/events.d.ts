@@ -1,6 +1,7 @@
 import { type APIEventMap } from "@/controllers/api";
 import { type NavigateEventMap } from "@/controllers/navigate";
 import { type NotifyEventMap } from "@/controllers/notify";
+import { type UserGuideEventMap } from "@/index";
 import { type AuthEventMap } from "@/utils/AuthService";
 
 /**
@@ -12,5 +13,6 @@ declare global {
     extends NavigateEventMap,
       NotifyEventMap,
       AuthEventMap,
-      APIEventMap {}
+      APIEventMap,
+      UserGuideEventMap {}
 }
