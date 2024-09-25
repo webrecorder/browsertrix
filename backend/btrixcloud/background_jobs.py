@@ -500,7 +500,7 @@ class BackgroundJobOps:
                 new_storage=new_storage_ref,
                 new_endpoint=new_endpoint,
                 new_bucket=new_bucket,
-                job_id_prefix=f"{job_type}-{object_id}",
+                job_id_prefix=job_type,
                 existing_job_id=existing_job_id,
             )
             if existing_job_id:
