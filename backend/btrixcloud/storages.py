@@ -258,25 +258,26 @@ class StorageOps:
         except:
             raise HTTPException(status_code=400, detail="invalid_storage_ref")
 
+        if await self.org_ops.is_crawl_running(org.id):
+            raise HTTPException(status_code=400, detail="crawl_running")
+
         org.storage = storage_refs.storage
         org.storageReplicas = storage_refs.storageReplicas
 
-        # TODO: Account for replication if there's stored content,
-        # we'll need to move it to the new bucket and update paths in the
-        # database accordingly (if any updates are needed, at minimum should
-        # probably re-generate presigned URLs?)
-        # If a replica location is added, we should replicate everything in
-        # primary storage into it
-        # If a replica location is removed, should we wait for content to
-        # be deleted before removing it, or assume that happens manually as
-        # necessary?
+        await self.org_ops.update_storage_refs(org)
 
-        # We'll also need to make sure any running crawl, bg, or profile jobs
-        # that use this storage are completed first
+        # TODO: Handle practical consequences of changing buckets
+        # - If previous primary bucket(s) had files stored, copy or move those
+        # into new storage and make necessary updates (e.g. regenerate presigned
+        # URLs?)
+        # - If replica location is added, replicate everything in primary
+        # to new replica storage location
+        # - If replica location is removed, start jobs to delete content?
+        # (or do we want to handle that manually?)
 
         # We can set the org to read-only while handling these details
-
-        await self.org_ops.update_storage_refs(org)
+        # Think through timing and/or how to communicate status of jobs to
+        # user, since background jobs don't block
 
         return {"updated": True}
 

@@ -993,6 +993,15 @@ class OrgOps:
             "publicCollectionsCount": public_collections_count,
         }
 
+    async def is_crawl_running(self, oid: UUID) -> bool:
+        """Return boolean indicating whether any crawls are currently running in org"""
+        workflows_running_count = await self.crawls_db.count_documents(
+            {"oid": org.id, "state": {"$in": RUNNING_STATES}}
+        )
+        if workflows_running_count > 0:
+            return True
+        return False
+
     async def get_all_org_slugs(self) -> dict[str, list[str]]:
         """Return list of all org slugs."""
         slugs = await self.orgs.distinct("slug", {})
