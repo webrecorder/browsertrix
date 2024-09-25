@@ -3645,8 +3645,107 @@
         <source>Your plan will be canceled on
                                   <x equiv-text="&lt;sl-format-date lang=&quot;${getLocale()}&quot; class=&quot;truncate&quot; date=&quot;${org.subscription.futureCancelDate}&quot; month=&quot;long&quot; day=&quot;numeric&quot; year=&quot;numeric&quot;&gt;&#10;                                  &lt;/sl-format-date&gt;" id="0"/></source>
       </trans-unit>
+      <trans-unit id="s7d61376257220dab">
+        <source>Scope</source>
+      </trans-unit>
+      <trans-unit id="s58672d8bc12bdf2d">
+        <source>Page Crawl</source>
+      </trans-unit>
+      <trans-unit id="sc86311564d806b1a">
+        <source>One or more page URLs</source>
+      </trans-unit>
+      <trans-unit id="s58aa8e5a0a8ef1cd">
+        <source>Entire website or directory</source>
+      </trans-unit>
+      <trans-unit id="s1853eecbad6d4a0e">
+        <source>List of Pages</source>
+      </trans-unit>
+      <trans-unit id="sce375af3e1ad308f">
+        <source>Pages in Same Directory</source>
+      </trans-unit>
+      <trans-unit id="sd592eeaabdbd5a46">
+        <source>Pages on Same Domain</source>
+      </trans-unit>
+      <trans-unit id="s1547ae4dfa1265ea">
+        <source>Pages on Same Domain + Subdomains</source>
+      </trans-unit>
+      <trans-unit id="sba3df9981f03cb40">
+        <source>Single Page</source>
+      </trans-unit>
+      <trans-unit id="sdd8e8047128a2fdc">
+        <source>Any Page</source>
+      </trans-unit>
+      <trans-unit id="sa403185f2ed90589">
+        <source>Scope options</source>
+      </trans-unit>
+      <trans-unit id="sede6d0c607d400db">
+        <source>New Crawl Workflow</source>
+      </trans-unit>
+      <trans-unit id="s51691497846184b2">
+        <source>Setup Guide</source>
+      </trans-unit>
+      <trans-unit id="s4bd63450e427cc68">
+        <source>Page URLs</source>
+      </trans-unit>
+      <trans-unit id="s396f09e6ec318187">
+        <source>Max Depth in Scope</source>
+      </trans-unit>
+      <trans-unit id="sebf185d3ee56b47f">
+        <source>Additional Page URLs</source>
+      </trans-unit>
+      <trans-unit id="se1e6d1d7a1a133e9">
+        <source>Exclude Pages</source>
+      </trans-unit>
+      <trans-unit id="s12e1314dc1f74824">
+        <source>The URL of the page to crawl.</source>
+      </trans-unit>
+      <trans-unit id="s41d2278219615589">
+        <source>The crawler will visit and record each URL listed here. You can enter up to <x equiv-text="${MAX_ADDITIONAL_URLS.toLocaleString()}" id="0"/> URLs.</source>
+      </trans-unit>
+      <trans-unit id="sfc5e402f8b21ef5f">
+        <source>If checked, the crawler will visit pages one link away.</source>
+      </trans-unit>
+      <trans-unit id="hba1eb91e4626e056">
+        <source>Will crawl hash anchor links as pages. For example,
+            <x equiv-text="&lt;span class=&quot;break-word text-blue-500&quot;&gt;${exampleDomain}${examplePathname}&lt;/span&gt;&lt;span class=&quot;break-word font-medium text-blue-500&quot;&gt;" id="0"/>#example-page<x equiv-text="&lt;/span&gt;" id="1"/>
+            will be treated as a separate page.</source>
+      </trans-unit>
+      <trans-unit id="s09a8c053783eafa0">
+        <source>If the crawler finds pages outside of the Crawl Scope they
+            will only be saved if they begin with URLs listed here.</source>
+      </trans-unit>
+      <trans-unit id="sb43ce2ffe2a4857f">
+        <source>Limits how many hops away the crawler can visit while staying within the Crawl Scope.</source>
+      </trans-unit>
+      <trans-unit id="sba156796788dc6c2">
+        <source>If checked, the crawler will visit pages one link away outside of
+        Crawl Scope.</source>
+      </trans-unit>
+      <trans-unit id="s2279075e18f7dd74">
+        <source>Additional Pages</source>
+      </trans-unit>
+      <trans-unit id="s0a81f678a90d8133">
+        <source>There is an issue with this Crawl Workflow:</source>
+      </trans-unit>
+      <trans-unit id="h94a6d35ca79705c4">
+        <source><x equiv-text="${pageScope ? msg(&quot;Page URL(s)&quot;) : msg(&quot;Crawl Start URL&quot;)}" id="0"/>
+                required in
+                <x equiv-text="&lt;a href=&quot;${crawlSetupUrl}&quot; class=&quot;bold underline hover:no-underline&quot;&gt;" id="1"/>Scope<x equiv-text="&lt;/a&gt;" id="2"/>. </source>
+      </trans-unit>
+      <trans-unit id="s67b76d03e88b5990">
+        <source>Please fix to continue.</source>
+      </trans-unit>
+      <trans-unit id="s083f85625c5d739f">
+        <source>In-Page Links</source>
+      </trans-unit>
+      <trans-unit id="sd5aac2757a442b2a">
+        <source>Choose a proxy to crawl through</source>
+      </trans-unit>
       <trans-unit id="s972f8ea379345cf8">
         <source>Your org doesn't have permission to use the proxy configured for this crawl.</source>
+      </trans-unit>
+      <trans-unit id="sb8dd788adf7b907b">
+        <source>Proxy</source>
       </trans-unit>
       <trans-unit id="s237f0a38a4c51a36">
         <source>Crawler Proxy Server</source>
@@ -3666,6 +3765,9 @@
       <trans-unit id="s438a40049bb04715">
         <source>Proxy Settings for: <x equiv-text="${this.currOrg?.name || &quot;&quot;}" id="0"/></source>
       </trans-unit>
+      <trans-unit id="s234e4c06c8c1aada">
+        <source>Enable all shared proxies</source>
+      </trans-unit>
       <trans-unit id="sa166018e0e9d30e9">
         <source>Update Proxy Settings</source>
       </trans-unit>
@@ -3675,113 +3777,7 @@
       <trans-unit id="sc36b98f91a3e8631">
         <source>Edit Proxies</source>
       </trans-unit>
-      <trans-unit id="s234e4c06c8c1aada">
-        <source>Enable all shared proxies</source>
-      </trans-unit>
-      <trans-unit id="sd5aac2757a442b2a">
-        <source>Choose a proxy to crawl through</source>
-      </trans-unit>
-      <trans-unit id="sb8dd788adf7b907b">
-        <source>Proxy</source>
-      </trans-unit>
       <trans-unit id="sadfb54de733655c9">
-        <source>Using proxy: </source>
-        <trans-unit id="s7d61376257220dab">
-          <source>Scope</source>
-        </trans-unit>
-        <trans-unit id="s58672d8bc12bdf2d">
-          <source>Page Crawl</source>
-        </trans-unit>
-        <trans-unit id="sc86311564d806b1a">
-          <source>One or more page URLs</source>
-        </trans-unit>
-        <trans-unit id="s58aa8e5a0a8ef1cd">
-          <source>Entire website or directory</source>
-        </trans-unit>
-        <trans-unit id="s1853eecbad6d4a0e">
-          <source>List of Pages</source>
-        </trans-unit>
-        <trans-unit id="sce375af3e1ad308f">
-          <source>Pages in Same Directory</source>
-        </trans-unit>
-        <trans-unit id="sd592eeaabdbd5a46">
-          <source>Pages on Same Domain</source>
-        </trans-unit>
-        <trans-unit id="s1547ae4dfa1265ea">
-          <source>Pages on Same Domain + Subdomains</source>
-        </trans-unit>
-        <trans-unit id="sba3df9981f03cb40">
-          <source>Single Page</source>
-        </trans-unit>
-        <trans-unit id="sdd8e8047128a2fdc">
-          <source>Any Page</source>
-        </trans-unit>
-        <trans-unit id="sa403185f2ed90589">
-          <source>Scope options</source>
-        </trans-unit>
-        <trans-unit id="sede6d0c607d400db">
-          <source>New Crawl Workflow</source>
-        </trans-unit>
-        <trans-unit id="s51691497846184b2">
-          <source>Setup Guide</source>
-        </trans-unit>
-        <trans-unit id="s4bd63450e427cc68">
-          <source>Page URLs</source>
-        </trans-unit>
-        <trans-unit id="s396f09e6ec318187">
-          <source>Max Depth in Scope</source>
-        </trans-unit>
-        <trans-unit id="sebf185d3ee56b47f">
-          <source>Additional Page URLs</source>
-        </trans-unit>
-        <trans-unit id="se1e6d1d7a1a133e9">
-          <source>Exclude Pages</source>
-        </trans-unit>
-        <trans-unit id="s12e1314dc1f74824">
-          <source>The URL of the page to crawl.</source>
-        </trans-unit>
-        <trans-unit id="s41d2278219615589">
-          <source>The crawler will visit and record each URL listed here. You can enter up to <x equiv-text="${MAX_ADDITIONAL_URLS.toLocaleString()}" id="0"/> URLs.</source>
-        </trans-unit>
-        <trans-unit id="sfc5e402f8b21ef5f">
-          <source>If checked, the crawler will visit pages one link away.</source>
-        </trans-unit>
-        <trans-unit id="hba1eb91e4626e056">
-          <source>Will crawl hash anchor links as pages. For example,
-            <x equiv-text="&lt;span class=&quot;break-word text-blue-500&quot;&gt;${exampleDomain}${examplePathname}&lt;/span&gt;&lt;span class=&quot;break-word font-medium text-blue-500&quot;&gt;" id="0"/>#example-page<x equiv-text="&lt;/span&gt;" id="1"/>
-            will be treated as a separate page.</source>
-        </trans-unit>
-        <trans-unit id="s09a8c053783eafa0">
-          <source>If the crawler finds pages outside of the Crawl Scope they
-            will only be saved if they begin with URLs listed here.</source>
-        </trans-unit>
-        <trans-unit id="sb43ce2ffe2a4857f">
-          <source>Limits how many hops away the crawler can visit while staying within the Crawl Scope.</source>
-        </trans-unit>
-        <trans-unit id="sba156796788dc6c2">
-          <source>If checked, the crawler will visit pages one link away outside of
-        Crawl Scope.</source>
-        </trans-unit>
-        <trans-unit id="s2279075e18f7dd74">
-          <source>Additional Pages</source>
-        </trans-unit>
-        <trans-unit id="s0a81f678a90d8133">
-          <source>There is an issue with this Crawl Workflow:</source>
-        </trans-unit>
-        <trans-unit id="h94a6d35ca79705c4">
-          <source><x equiv-text="${pageScope ? msg(&quot;Page URL(s)&quot;) : msg(&quot;Crawl Start URL&quot;)}" id="0"/>
-                required in
-                <x equiv-text="&lt;a href=&quot;${crawlSetupUrl}&quot; class=&quot;bold underline hover:no-underline&quot;&gt;" id="1"/>Scope<x equiv-text="&lt;/a&gt;" id="2"/>. </source>
-        </trans-unit>
-        <trans-unit id="s67b76d03e88b5990">
-          <source>Please fix to continue.</source>
-        </trans-unit>
-        <trans-unit id="s083f85625c5d739f">
-          <source>In-Page Links</source>
-        </trans-unit>
-        <source>Using proxy: </source>
-        <source>Using proxy: </source>
-        <source>Using proxy: </source>
         <source>Using proxy: </source>
       </trans-unit>
     </body>
