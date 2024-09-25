@@ -314,7 +314,8 @@ class StorageOps:
                 if bg_job.success:
                     break
                 if bg_job.success is False:
-                    # TODO: Handle failure case
+                    # TODO: Handle failure case, including partial failure
+                    # (i.e. some files but not all copied)
                     pass
 
                 time.sleep(5)
@@ -327,16 +328,32 @@ class StorageOps:
             await self.org_ops.update_read_only(org, False)
 
         if new_storage_refs.storageReplicas != prev_storage_refs.storageReplicas:
-            # If replica location added, kick off background jobs to replicate
-            # primary storage to new replica storage location (non-blocking)
+            # TODO: If we changed primary storage in this update, make sure that
+            # are files are successfully copied to new primary before doing
+            # anything with the replicas - this may be simple or complex depending
+            # on final approach taken to handle above
 
-            # If replica location is removed, start jobs to delete files from
-            # removed replica location (non-blocking)
+            # Replicate files to any new replica locations
+            for replica_storage in new_storage_refs.storageReplicas:
+                if replica_storage not in prev_storage_refs.storageReplicas:
+                    # TODO: Kick off background jobs to replicate primary
+                    # storage to new replica location
+                    print(
+                        "Not yet implemented: Replicate files to {replica_storage.name}",
+                        flush=True,
+                    )
 
-            # If we also changed primary storage in this update, we should make
-            # sure all files are successfully copied before doing anything to
-            # the replicas
-            pass
+            # Delete files from previous replica locations that are no longer
+            # being used
+            for replica_storage in prev_storage_refs.storageReplicas:
+                if replica_storage not in new_storage_refs.storageReplicas:
+                    # TODO: Kick off background jobs to delete replicas
+                    # (may be easier to just delete all files from bucket
+                    # in one rclone command)
+                    print(
+                        "Not yet implemented: Delete files from {replica_storage.name}",
+                        flush=True,
+                    )
 
     def get_available_storages(self, org: Organization) -> List[StorageRef]:
         """return a list of available default + custom storages"""
