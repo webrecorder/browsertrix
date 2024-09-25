@@ -52,7 +52,7 @@ class BackgroundJobOps:
     base_crawl_ops: BaseCrawlOps
     profile_ops: ProfileOps
 
-    # pylint: disable=too-many-locals, too-many-arguments, invalid-name
+    # pylint: disable=too-many-locals, too-many-arguments, too-many-positional-arguments, invalid-name
 
     def __init__(self, mdb, email, user_manager, org_ops, crawl_manager, storage_ops):
         self.jobs = mdb["jobs"]
