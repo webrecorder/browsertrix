@@ -56,6 +56,8 @@ external_subs_app_api_key = os.environ.get("BTRIX_SUBS_APP_API_KEY", "")
 class SubOps:
     """API for managing subscriptions. Only enabled if billing is enabled"""
 
+    # pylint: disable=too-many-positional-arguments
+
     org_ops: OrgOps
     user_manager: UserManager
 

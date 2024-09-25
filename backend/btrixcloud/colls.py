@@ -65,6 +65,7 @@ THUMBNAIL_MAX_SIZE = 2_000_000
 
 
 # ============================================================================
+# pylint: disable=too-many-positional-arguments
 class CollectionOps:
     """ops for working with named collections of crawls"""
 

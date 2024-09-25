@@ -532,7 +532,9 @@ class BackgroundJobOps:
             return job_id
         # pylint: disable=broad-exception-caught
         except Exception as exc:
-            print(f"warning: copy bucket job could not be started for org {org.id}")
+            print(
+                f"warning: copy bucket job could not be started for org {org.id}: {exc}"
+            )
             return ""
 
     async def job_finished(
@@ -850,7 +852,7 @@ class BackgroundJobOps:
 
 
 # ============================================================================
-# pylint: disable=too-many-arguments, too-many-locals, invalid-name, fixme
+# pylint: disable=too-many-arguments, too-many-locals, invalid-name, fixme, too-many-positional-arguments
 def init_background_jobs_api(
     app, mdb, email, user_manager, org_ops, crawl_manager, storage_ops, user_dep
 ):
