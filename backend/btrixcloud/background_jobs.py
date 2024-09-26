@@ -16,7 +16,6 @@ from .crawlmanager import CrawlManager
 from .models import (
     BaseFile,
     Organization,
-    BackgroundJob,
     BgJobType,
     CreateReplicaJob,
     DeleteReplicaJob,
@@ -452,7 +451,7 @@ class BackgroundJobOps:
             if job_type == BgJobType.CREATE_REPLICA:
                 await self.handle_replica_job_finished(cast(CreateReplicaJob, job))
             if job_type == BgJobType.COPY_BUCKET:
-                org = await self.orgs_ops.get_org_by_id(oid)
+                org = await self.org_ops.get_org_by_id(oid)
                 await self.org_ops.update_read_only(org, False)
         else:
             print(

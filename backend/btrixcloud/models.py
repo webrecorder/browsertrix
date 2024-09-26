@@ -1136,6 +1136,15 @@ class RenameOrg(BaseModel):
 
 
 # ============================================================================
+class OrgStorageRefs(BaseModel):
+    """Model for org storage references"""
+
+    storage: StorageRef
+
+    storageReplicas: List[StorageRef] = []
+
+
+# ============================================================================
 class OrgStorageRef(BaseModel):
     """Input model for setting primary storage"""
 
