@@ -1478,6 +1478,7 @@ class S3StorageIn(BaseModel):
     bucket: str
     access_endpoint_url: Optional[str] = None
     region: str = ""
+    provider: str = "Other"
 
 
 # ============================================================================
@@ -1492,6 +1493,7 @@ class S3Storage(BaseModel):
     secret_key: str
     access_endpoint_url: str
     region: str = ""
+    provider: str = "Other"
 
 
 # ============================================================================
