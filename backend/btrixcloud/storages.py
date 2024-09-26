@@ -910,7 +910,6 @@ def init_storages_api(org_ops, crawl_manager):
     def get_available_storages(org: Organization = Depends(org_owner_dep)):
         return storage_ops.get_available_storages(org)
 
-    # TODO: Normalize casing with other endpoints
     @router.post(
         "/custom-storage", tags=["organizations"], response_model=AddedResponseName
     )
