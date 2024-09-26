@@ -213,6 +213,12 @@ Sets the browser's [user agent](https://developer.mozilla.org/en-US/docs/Web/HTT
 
 Sets the browser's language setting. Useful for crawling websites that detect the browser's language setting and serve content accordingly.
 
+### Proxy
+
+Sets the proxy server that [Browsertrix Crawler](https://github.com/webrecorder/browsertrix-crawler) will direct traffic through while crawling. When a proxy is selected, crawled websites will see traffic as coming from the IP address of the proxy rather than where the Browsertrix Crawler node is deployed.
+
+This setting will only be shown if proxies are available for use.
+
 ## Scheduling
 
 Automatically start crawls periodically on a daily, weekly, or monthly schedule.
