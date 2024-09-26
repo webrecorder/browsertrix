@@ -381,12 +381,10 @@ class StorageOps:
                 )
                 await self.org_ops.add_file_replica_storage_refs(org, replica_storage)
 
-        # Delete files from previous replica locations that are no longer
-        # being used
+        # Delete no-longer-used replica storage refs from files
+        # TODO: Determine if we want to delete files from the buckets as well
         for replica_storage in prev_replica_refs:
             if replica_storage not in new_replica_refs:
-                # TODO: Background job to delete files with rclone delete?
-
                 await self.org_ops.remove_file_replica_storage_refs(
                     org, replica_storage
                 )
