@@ -1,0 +1,96 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ id }}"
+  labels:
+    role: "background-job"
+    job_type: {{ job_type }}
+    btrix.org: {{ oid }}
+
+spec:
+  ttlSecondsAfterFinished: 0
+  backoffLimit: 3
+  template:
+    spec:
+      restartPolicy: Never
+      priorityClassName: bg-job
+      podFailurePolicy:
+        rules:
+        - action: FailJob
+          onExitCodes:
+            containerName: rclone
+            operator: NotIn
+            values: [0]
+      containers:
+      - name: rclone
+        image: rclone/rclone:latest
+        env:
+
+        - name: RCLONE_CONFIG_PREV_TYPE
+          value: "s3"
+
+        - name: RCLONE_CONFIG_PREV_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: "{{ prev_secret_name }}"
+              key: STORE_ACCESS_KEY
+
+        - name: RCLONE_CONFIG_PREV_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: "{{ prev_secret_name }}"
+              key: STORE_SECRET_KEY
+
+        - name: RCLONE_CONFIG_PREV_REGION
+          valueFrom:
+            secretKeyRef:
+              name: "{{ prev_secret_name }}"
+              key: STORE_REGION
+
+        - name: RCLONE_CONFIG_PREV_PROVIDER
+          valueFrom:
+            secretKeyRef:
+              name: "{{ prev_secret_name }}"
+              key: STORE_S3_PROVIDER
+
+        - name: RCLONE_CONFIG_PREV_ENDPOINT
+          value: "{{ prev_endpoint }}"
+
+        - name: RCLONE_CONFIG_NEW_TYPE
+          value: "s3"
+
+        - name: RCLONE_CONFIG_NEW_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: "{{ new_secret_name }}"
+              key: STORE_ACCESS_KEY
+
+        - name: RCLONE_CONFIG_NEW_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: "{{ new_secret_name }}"
+              key: STORE_SECRET_KEY
+
+        - name: RCLONE_CONFIG_NEW_REGION
+          valueFrom:
+            secretKeyRef:
+              name: "{{ new_secret_name }}"
+              key: STORE_REGION
+
+        - name: RCLONE_CONFIG_NEW_PROVIDER
+          valueFrom:
+            secretKeyRef:
+              name: "{{ new_secret_name }}"
+              key: STORE_S3_PROVIDER
+
+        - name: RCLONE_CONFIG_NEW_ENDPOINT
+          value: "{{ new_endpoint }}"
+
+        command: ["rclone", "-vv", "copy", "--checksum", "prev:{{ prev_bucket }}", "new:{{ new_bucket }}"]
+        resources:
+          limits:
+            memory: "200Mi"
+
+          requests:
+            memory: "200Mi"
+            cpu: "50m"

@@ -2357,7 +2357,7 @@ class EmptyResponse(BaseModel):
 class PaginatedBackgroundJobResponse(PaginatedResponse):
     """Response model for paginated background jobs"""
 
-    items: List[Union[CreateReplicaJob, DeleteReplicaJob]]
+    items: List[Union[CreateReplicaJob, DeleteReplicaJob, CopyBucketJob]]
 
 
 # ============================================================================
