@@ -253,7 +253,10 @@ class StorageOps:
             raise HTTPException(status_code=400, detail="invalid_storage_ref")
 
         if await self.org_ops.is_crawl_running(org):
-            raise HTTPException(status_code=400, detail="crawl_running")
+            raise HTTPException(status_code=403, detail="crawl_running")
+
+        if org.readOnly:
+            raise HTTPException(status_code=403, detail="org_set_to_read_only")
 
         if org.storage == storage_ref:
             raise HTTPException(status_code=400, detail="identical_storage_ref")
@@ -265,7 +268,7 @@ class StorageOps:
 
         await self.org_ops.update_storage_refs(org)
 
-        # TODO: Consider running into asyncio task
+        # TODO: Consider running into asyncio task or background job
         await self.run_post_storage_update_tasks(
             prev_storage_ref,
             storage_ref,
@@ -282,21 +285,20 @@ class StorageOps:
     ):
         """Handle tasks necessary after changing org storage"""
         if not await self.org_ops.has_files_stored(org):
-            print(f"No files stored", flush=True)
+            print(f"No files stored, no updates to do", flush=True)
             return
 
-        if new_storage_ref != prev_storage_ref:
-            await self.org_ops.update_read_only(org, True, "Updating storage")
+        await self.org_ops.update_read_only(org, True, "Updating storage")
 
-            # Create the background job to copy files
-            await self.background_job_ops.create_copy_bucket_job(
-                org, prev_storage_ref, new_storage_ref
-            )
+        # Create the background job to copy files
+        await self.background_job_ops.create_copy_bucket_job(
+            org, prev_storage_ref, new_storage_ref
+        )
 
-            await self.org_ops.update_file_storage_refs(
-                org, prev_storage_ref, new_storage_ref
-            )
-            await self.org_ops.unset_file_presigned_urls(org)
+        await self.org_ops.update_file_storage_refs(
+            org, prev_storage_ref, new_storage_ref
+        )
+        await self.org_ops.unset_file_presigned_urls(org)
 
     async def update_storage_replica_refs(
         self,
@@ -314,7 +316,10 @@ class StorageOps:
             raise HTTPException(status_code=400, detail="invalid_storage_ref")
 
         if await self.org_ops.is_crawl_running(org):
-            raise HTTPException(status_code=400, detail="crawl_running")
+            raise HTTPException(status_code=403, detail="crawl_running")
+
+        if org.readOnly:
+            raise HTTPException(status_code=403, detail="org_set_to_read_only")
 
         if org.storageReplicas == replicas:
             raise HTTPException(status_code=400, detail="identical_storage_ref")
@@ -325,6 +330,26 @@ class StorageOps:
         org.storageReplicas = replicas
 
         await self.org_ops.update_storage_refs(org, replicas=True)
+
+        # TODO: Consider running in asyncio task or background job
+        await self.run_post_storage_replica_update_tasks(
+            prev_storage_replicas, replicas, org
+        )
+
+        return {"updated": True}
+
+    async def run_post_storage_replica_update_tasks(
+        self,
+        prev_storage_refs: List[StorageRef],
+        new_storage_refs: List[StorageRef],
+        org: Organization,
+    ):
+        """Handle tasks necessary after updating org replica storages"""
+        if not await self.org_ops.has_files_stored(org):
+            print(f"No files stored, no updates to do", flush=True)
+            return
+
+        await self.org_ops.update_read_only(org, True, "Updating storage replicas")
 
         # Replicate files to any new replica locations
         for replica_storage in replicas:
@@ -349,7 +374,10 @@ class StorageOps:
                     flush=True,
                 )
 
-        return {"updated": True}
+        # TODO: Unset read only once all tasks are complete
+        # May need to handle this in the operators or a background job
+        # depending on how post-update tasks are run
+        await self.org_ops.update_read_only(org, False)
 
     def get_available_storages(self, org: Organization) -> List[StorageRef]:
         """return a list of available default + custom storages"""
