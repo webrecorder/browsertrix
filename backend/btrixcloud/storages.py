@@ -264,16 +264,20 @@ class StorageOps:
         except:
             raise HTTPException(status_code=400, detail="invalid_storage_ref")
 
+        if org.storage == storage_ref:
+            raise HTTPException(status_code=400, detail="identical_storage_ref")
+
         if await self.org_ops.is_crawl_running(org):
             raise HTTPException(status_code=403, detail="crawl_running")
 
         if org.readOnly:
             raise HTTPException(status_code=403, detail="org_set_to_read_only")
 
-        if org.storage == storage_ref:
-            raise HTTPException(status_code=400, detail="identical_storage_ref")
-
-        # TODO: Check that no CreateReplicaJobs are running
+        _, jobs_running_count = await self.background_job_ops.list_background_jobs(
+            org=org, success=None
+        )
+        if jobs_running_count > 0:
+            raise HTTPException(status_code=403, detail="background_jobs_running")
 
         prev_storage = org.storage
         org.storage = storage_ref
@@ -327,16 +331,20 @@ class StorageOps:
         except:
             raise HTTPException(status_code=400, detail="invalid_storage_ref")
 
+        if org.storageReplicas == replicas:
+            raise HTTPException(status_code=400, detail="identical_storage_ref")
+
         if await self.org_ops.is_crawl_running(org):
             raise HTTPException(status_code=403, detail="crawl_running")
 
         if org.readOnly:
             raise HTTPException(status_code=403, detail="org_set_to_read_only")
 
-        if org.storageReplicas == replicas:
-            raise HTTPException(status_code=400, detail="identical_storage_ref")
-
-        # TODO: Check that no CreateReplicaJobs are running
+        _, jobs_running_count = await self.background_job_ops.list_background_jobs(
+            org=org, success=None
+        )
+        if jobs_running_count > 0:
+            raise HTTPException(status_code=403, detail="background_jobs_running")
 
         prev_storage_replicas = org.storageReplicas
         org.storageReplicas = replicas
