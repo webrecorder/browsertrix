@@ -155,6 +155,7 @@ class StorageOps:
             endpoint_url=endpoint_url,
             endpoint_no_bucket_url=endpoint_no_bucket_url,
             access_endpoint_url=access_endpoint_url,
+            provider=storage.get("provider", "Other"),
         )
 
     async def add_custom_storage(
@@ -179,7 +180,7 @@ class StorageOps:
             endpoint_url=endpoint_url,
             endpoint_no_bucket_url=endpoint_no_bucket_url,
             access_endpoint_url=storagein.access_endpoint_url or endpoint_url,
-            use_access_for_presign=True,
+            provider=storagein.provider,
         )
 
         try:
@@ -199,6 +200,7 @@ class StorageOps:
             "STORE_ACCESS_KEY": storage.access_key,
             "STORE_SECRET_KEY": storage.secret_key,
             "STORE_REGION": storage.region,
+            "STORE_PROVIDER": storage.provider,
         }
 
         await self.crawl_manager.add_org_storage(
