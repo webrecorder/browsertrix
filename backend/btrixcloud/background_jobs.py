@@ -516,6 +516,7 @@ class BackgroundJobOps:
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         success: Optional[bool] = None,
+        running: Optional[bool] = None,
         job_type: Optional[str] = None,
         sort_by: Optional[str] = None,
         sort_direction: Optional[int] = -1,
@@ -530,6 +531,12 @@ class BackgroundJobOps:
 
         if success in (True, False):
             query["success"] = success
+
+        if running:
+            query["success"] = None
+
+        if running is False:
+            query["success"] = {"$in": [True, False]}
 
         if job_type:
             query["type"] = job_type
@@ -757,6 +764,7 @@ def init_background_jobs_api(
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         success: Optional[bool] = None,
+        running: Optional[bool] = None,
         jobType: Optional[str] = None,
         sortBy: Optional[str] = None,
         sortDirection: Optional[int] = -1,
@@ -767,6 +775,7 @@ def init_background_jobs_api(
             page_size=pageSize,
             page=page,
             success=success,
+            running=running,
             job_type=jobType,
             sort_by=sortBy,
             sort_direction=sortDirection,
