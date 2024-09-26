@@ -274,7 +274,7 @@ class StorageOps:
             raise HTTPException(status_code=403, detail="org_set_to_read_only")
 
         _, jobs_running_count = await self.background_job_ops.list_background_jobs(
-            org=org, success=None
+            org=org, success=None, finished=None
         )
         if jobs_running_count > 0:
             raise HTTPException(status_code=403, detail="background_jobs_running")
@@ -341,7 +341,7 @@ class StorageOps:
             raise HTTPException(status_code=403, detail="org_set_to_read_only")
 
         _, jobs_running_count = await self.background_job_ops.list_background_jobs(
-            org=org, success=None
+            org=org, success=None, finished=None
         )
         if jobs_running_count > 0:
             raise HTTPException(status_code=403, detail="background_jobs_running")
