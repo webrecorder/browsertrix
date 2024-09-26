@@ -281,7 +281,7 @@ class StorageOps:
         await self.org_ops.update_storage_refs(org)
 
         # TODO: Consider running into asyncio task or background job
-        await self.run_post_storage_update_tasks(
+        await self._run_post_storage_update_tasks(
             prev_storage_ref,
             storage_ref,
             org,
@@ -289,7 +289,7 @@ class StorageOps:
 
         return {"updated": True}
 
-    async def run_post_storage_update_tasks(
+    async def _run_post_storage_update_tasks(
         self,
         prev_storage_ref: StorageRef,
         new_storage_ref: StorageRef,
@@ -344,13 +344,13 @@ class StorageOps:
         await self.org_ops.update_storage_refs(org, replicas=True)
 
         # TODO: Consider running in asyncio task or background job
-        await self.run_post_storage_replica_update_tasks(
+        await self._run_post_storage_replica_update_tasks(
             prev_storage_replicas, replicas, org
         )
 
         return {"updated": True}
 
-    async def run_post_storage_replica_update_tasks(
+    async def _run_post_storage_replica_update_tasks(
         self,
         prev_storage_refs: List[StorageRef],
         new_storage_refs: List[StorageRef],
