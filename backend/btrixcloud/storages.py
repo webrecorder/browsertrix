@@ -284,7 +284,7 @@ class StorageOps:
 
         await self.org_ops.update_storage_refs(org)
 
-        # TODO: Consider running into asyncio task or background job
+        # TODO: Run in asyncio task or background job?
         await self._run_post_storage_update_tasks(
             prev_storage_ref,
             storage_ref,
@@ -306,7 +306,6 @@ class StorageOps:
 
         await self.org_ops.update_read_only(org, True, "Updating storage")
 
-        # Create the background job to copy files
         await self.background_job_ops.create_copy_bucket_job(
             org, prev_storage_ref, new_storage_ref
         )
@@ -314,6 +313,7 @@ class StorageOps:
         await self.org_ops.update_file_storage_refs(
             org, prev_storage_ref, new_storage_ref
         )
+
         await self.org_ops.unset_file_presigned_urls(org)
 
     async def update_storage_replica_refs(
@@ -351,7 +351,7 @@ class StorageOps:
 
         await self.org_ops.update_storage_refs(org, replicas=True)
 
-        # TODO: Consider running in asyncio task or background job
+        # TODO: Run in asyncio task or background job?
         await self._run_post_storage_replica_update_tasks(
             prev_storage_replicas, replicas, org
         )
@@ -369,35 +369,27 @@ class StorageOps:
             print("No files stored, no updates to do", flush=True)
             return
 
-        await self.org_ops.update_read_only(org, True, "Updating storage replicas")
+        # TODO: Determine if we need to set read-only for replica operations
+        # (likely not?)
+        # await self.org_ops.update_read_only(org, True, "Updating storage replicas")
 
         # Replicate files to any new replica locations
         for replica_storage in new_replica_refs:
             if replica_storage not in prev_replica_refs:
-                # TODO: Kick off background jobs to replicate primary
-                # storage to new replica location
-                print(
-                    "Not yet implemented: Replicate files to {replica_storage.name}",
-                    flush=True,
+                await self.background_job_ops.create_copy_bucket_job(
+                    org, org.storage, replica_storage
                 )
+                await self.org_ops.add_file_replica_storage_refs(org, replica_storage)
 
         # Delete files from previous replica locations that are no longer
         # being used
         for replica_storage in prev_replica_refs:
             if replica_storage not in new_replica_refs:
-                # TODO: Kick off background jobs to delete replicas
-                # (may be easier to just delete all files from bucket
-                # in one rclone command - if so, will need to handle
-                # updating files in db as well)
-                print(
-                    "Not yet implemented: Delete files from {replica_storage.name}",
-                    flush=True,
-                )
+                # TODO: Background job to delete files with rclone delete?
 
-        # TODO: Unset read only once all tasks are complete
-        # May need to handle this in the operators or a background job
-        # depending on how post-update tasks are run
-        await self.org_ops.update_read_only(org, False)
+                await self.org_ops.remove_file_replica_storage_refs(
+                    org, replica_storage
+                )
 
     def get_available_storages(self, org: Organization) -> List[StorageRef]:
         """return a list of available default + custom storages"""
