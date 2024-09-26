@@ -256,7 +256,7 @@ def test_change_storage_invalid(admin_auth_headers):
 def test_add_custom_storage(admin_auth_headers):
     # add custom storages
     r = requests.post(
-        f"{API_PREFIX}/orgs/{new_oid}/customStorage",
+        f"{API_PREFIX}/orgs/{new_oid}/custom-storage",
         headers=admin_auth_headers,
         json={
             "name": CUSTOM_PRIMARY_STORAGE_NAME,
@@ -272,7 +272,7 @@ def test_add_custom_storage(admin_auth_headers):
     assert data["name"] == CUSTOM_PRIMARY_STORAGE_NAME
 
     r = requests.post(
-        f"{API_PREFIX}/orgs/{new_oid}/customStorage",
+        f"{API_PREFIX}/orgs/{new_oid}/custom-storage",
         headers=admin_auth_headers,
         json={
             "name": CUSTOM_REPLICA_STORAGE_NAME,
@@ -287,18 +287,26 @@ def test_add_custom_storage(admin_auth_headers):
     assert data["added"]
     assert data["name"] == CUSTOM_REPLICA_STORAGE_NAME
 
-    # set org to use custom storages moving forward
+    # set org to use custom storage moving forward
     r = requests.post(
         f"{API_PREFIX}/orgs/{new_oid}/storage",
         headers=admin_auth_headers,
         json={
             "storage": {"name": CUSTOM_PRIMARY_STORAGE_NAME, "custom": True},
-            "storageReplicas": [{"name": CUSTOM_REPLICA_STORAGE_NAME, "custom": True}],
         },
     )
 
     assert r.status_code == 200
     assert r.json()["updated"]
+
+    # set org to use custom storage replica moving forward
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{new_oid}/storage-replicas",
+        headers=admin_auth_headers,
+        json={
+            "storageReplicas": [{"name": CUSTOM_REPLICA_STORAGE_NAME, "custom": True}],
+        },
+    )
 
     # check org was updated as expected
     r = requests.get(
@@ -322,14 +330,14 @@ def test_add_custom_storage(admin_auth_headers):
 def test_remove_custom_storage(admin_auth_headers):
     # Try to remove in-use storages, verify we get expected 400 response
     r = requests.delete(
-        f"{API_PREFIX}/orgs/{new_oid}/customStorage/{CUSTOM_PRIMARY_STORAGE_NAME}",
+        f"{API_PREFIX}/orgs/{new_oid}/custom-storage/{CUSTOM_PRIMARY_STORAGE_NAME}",
         headers=admin_auth_headers,
     )
     assert r.status_code == 400
     assert r.json()["detail"] == "storage_in_use"
 
     r = requests.delete(
-        f"{API_PREFIX}/orgs/{new_oid}/customStorage/{CUSTOM_REPLICA_STORAGE_NAME}",
+        f"{API_PREFIX}/orgs/{new_oid}/custom-storage/{CUSTOM_REPLICA_STORAGE_NAME}",
         headers=admin_auth_headers,
     )
     assert r.status_code == 400
@@ -337,17 +345,16 @@ def test_remove_custom_storage(admin_auth_headers):
 
     # Unset replica storage from org
     r = requests.post(
-        f"{API_PREFIX}/orgs/{new_oid}/storage",
+        f"{API_PREFIX}/orgs/{new_oid}/storage-replicas",
         headers=admin_auth_headers,
         json={
-            "storage": {"name": CUSTOM_PRIMARY_STORAGE_NAME, "custom": True},
             "storageReplicas": [],
         },
     )
 
     # Delete no longer used replica storage location
     r = requests.delete(
-        f"{API_PREFIX}/orgs/{new_oid}/customStorage/{CUSTOM_REPLICA_STORAGE_NAME}",
+        f"{API_PREFIX}/orgs/{new_oid}/custom-storage/{CUSTOM_REPLICA_STORAGE_NAME}",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200

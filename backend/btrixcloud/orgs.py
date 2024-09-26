@@ -496,9 +496,17 @@ class OrgOps:
         )
         return res is not None
 
-    async def update_storage_refs(self, org: Organization) -> bool:
-        """Update storage + replicas for given org"""
-        set_dict = org.dict(include={"storage": True, "storageReplicas": True})
+    async def update_storage_refs(
+        self, org: Organization, replicas: bool = False
+    ) -> bool:
+        """Update storage or replica refs for given org"""
+        include = {}
+        if replicas:
+            include["storageReplicas"] = True
+        else:
+            include["storage"] = True
+
+        set_dict = org.dict(include=include)
 
         res = await self.orgs.find_one_and_update({"_id": org.id}, {"$set": set_dict})
         return res is not None
@@ -1035,13 +1043,13 @@ class OrgOps:
     async def has_files_stored(self, org: Organization) -> bool:
         """Return boolean indicating whether any files are stored on org"""
         crawl_count = await self.crawls_db.count_documents(
-            {"_id": org.id, "files.1": {"$exists": True}},
+            {"oid": org.id, "files": {"$exists": True, "$ne": []}},
         )
         if crawl_count > 0:
             return True
 
         profile_count = await self.profiles_db.count_documents(
-            {"_id": org.id, "resource": {"$exists": True}},
+            {"oid": org.id, "resource": {"$exists": True}},
         )
         if profile_count > 0:
             return True

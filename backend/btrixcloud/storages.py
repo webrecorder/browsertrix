@@ -47,7 +47,8 @@ from .models import (
     StorageRef,
     S3Storage,
     S3StorageIn,
-    OrgStorageRefs,
+    OrgStorageRef,
+    OrgStorageReplicaRefs,
     DeletedResponse,
     UpdatedResponse,
     AddedResponseName,
@@ -250,116 +251,117 @@ class StorageOps:
 
         return {"deleted": True}
 
-    async def update_storage_refs(
+    async def update_storage_ref(
         self,
         storage_refs: OrgStorageRefs,
         org: Organization,
     ) -> dict[str, bool]:
         """update storage for org"""
+        storage_ref = storage_refs.storage
 
         try:
-            self.get_org_storage_by_ref(org, storage_refs.storage)
-
-            for replica in storage_refs.storageReplicas:
-                self.get_org_storage_by_ref(org, replica)
-
+            self.get_org_storage_by_ref(org, storage_ref)
         except:
             raise HTTPException(status_code=400, detail="invalid_storage_ref")
 
         if await self.org_ops.is_crawl_running(org):
             raise HTTPException(status_code=400, detail="crawl_running")
 
-        prev_storage = org.storage
-        prev_storage_replicas = org.storageReplicas
+        if org.storage == storage_ref:
+            raise HTTPException(status_code=400, detail="identical_storage_ref")
 
-        org.storage = storage_refs.storage
-        org.storageReplicas = storage_refs.storageReplicas
+        # TODO: Check that no CreateReplicaJobs are running
+
+        prev_storage = org.storage
+        org.storage = storage_ref
 
         await self.org_ops.update_storage_refs(org)
 
-        asyncio.create_task(
-            self.run_post_storage_update_tasks(
-                OrgStorageRefs(
-                    storage=prev_storage, storageReplicas=prev_storage_replicas
-                ),
-                storage_refs,
-                org,
-            )
+        # TODO: Consider running into asyncio task
+        await self.run_post_storage_update_tasks(
+            prev_storage_ref,
+            storage_ref,
+            org,
         )
 
         return {"updated": True}
 
     async def run_post_storage_update_tasks(
         self,
-        prev_storage_refs: OrgStorageRefs,
-        new_storage_refs: OrgStorageRefs,
+        prev_storage_ref: StorageRef,
+        new_storage_ref: StorageRef,
         org: Organization,
     ):
-        """Handle tasks necessary after changing org storage
-
-        This is a good candidate for a background job with access to ops
-        classes, which may kick off other background jobs as needed.
-        """
+        """Handle tasks necessary after changing org storage"""
         if not await self.org_ops.has_files_stored(org):
+            print(f"No files stored", flush=True)
             return
 
-        if new_storage_refs.storage != prev_storage_refs.storage:
+        if new_storage_ref != prev_storage_ref:
             await self.org_ops.update_read_only(org, True, "Updating storage")
 
             # Create the background job to copy files
-            job_id = await self.background_job_ops.create_copy_bucket_job(
-                org, prev_storage_refs.storage, new_storage_refs.storage
+            await self.background_job_ops.create_copy_bucket_job(
+                org, prev_storage_ref, new_storage_ref
             )
 
-            # Block until copy job is complete
-            # TODO: Handle in operator instead?
-            while True:
-                bg_job = await self.background_job_ops.get_background_job(
-                    job_id, org.id
-                )
-                if bg_job.success:
-                    break
-                if bg_job.success is False:
-                    # TODO: Handle failure case, including partial failure
-                    # (i.e. some files but not all copied)
-                    pass
-
-                time.sleep(5)
-
             await self.org_ops.update_file_storage_refs(
-                org, prev_storage_refs.storage, new_storage_refs.storage
+                org, prev_storage_ref, new_storage_ref
             )
             await self.org_ops.unset_file_presigned_urls(org)
 
-            await self.org_ops.update_read_only(org, False)
+    async def update_storage_replica_refs(
+        self,
+        storage_refs: OrgStorageReplicaRefs,
+        org: Organization,
+    ) -> dict[str, bool]:
+        """update storage for org"""
 
-        if new_storage_refs.storageReplicas != prev_storage_refs.storageReplicas:
-            # TODO: If we changed primary storage in this update, make sure that
-            # are files are successfully copied to new primary before doing
-            # anything with the replicas - this may be simple or complex depending
-            # on final approach taken to handle above
+        replicas = storage_refs.storageReplicas
 
-            # Replicate files to any new replica locations
-            for replica_storage in new_storage_refs.storageReplicas:
-                if replica_storage not in prev_storage_refs.storageReplicas:
-                    # TODO: Kick off background jobs to replicate primary
-                    # storage to new replica location
-                    print(
-                        "Not yet implemented: Replicate files to {replica_storage.name}",
-                        flush=True,
-                    )
+        try:
+            for replica in replicas:
+                self.get_org_storage_by_ref(org, replica)
+        except:
+            raise HTTPException(status_code=400, detail="invalid_storage_ref")
 
-            # Delete files from previous replica locations that are no longer
-            # being used
-            for replica_storage in prev_storage_refs.storageReplicas:
-                if replica_storage not in new_storage_refs.storageReplicas:
-                    # TODO: Kick off background jobs to delete replicas
-                    # (may be easier to just delete all files from bucket
-                    # in one rclone command)
-                    print(
-                        "Not yet implemented: Delete files from {replica_storage.name}",
-                        flush=True,
-                    )
+        if await self.org_ops.is_crawl_running(org):
+            raise HTTPException(status_code=400, detail="crawl_running")
+
+        if org.storageReplicas == replicas:
+            raise HTTPException(status_code=400, detail="identical_storage_ref")
+
+        # TODO: Check that no CreateReplicaJobs are running
+
+        prev_storage_replicas = org.storageReplicas
+        org.storageReplicas = replicas
+
+        await self.org_ops.update_storage_refs(org, replicas=True)
+
+        # Replicate files to any new replica locations
+        for replica_storage in replicas:
+            if replica_storage not in prev_storage_replicas:
+                # TODO: Kick off background jobs to replicate primary
+                # storage to new replica location
+                print(
+                    "Not yet implemented: Replicate files to {replica_storage.name}",
+                    flush=True,
+                )
+
+        # Delete files from previous replica locations that are no longer
+        # being used
+        for replica_storage in prev_storage_replicas:
+            if replica_storage not in replicas:
+                # TODO: Kick off background jobs to delete replicas
+                # (may be easier to just delete all files from bucket
+                # in one rclone command - if so, will need to handle
+                # updating files in db as well)
+                print(
+                    "Not yet implemented: Delete files from {replica_storage.name}",
+                    flush=True,
+                )
+
+        return {"updated": True}
 
     def get_available_storages(self, org: Organization) -> List[StorageRef]:
         """return a list of available default + custom storages"""
@@ -923,7 +925,9 @@ def init_storages_api(
         """get storage refs for an org"""
         return OrgStorageRefs(storage=org.storage, storageReplicas=org.storageReplicas)
 
-    @router.get("/allStorages", tags=["organizations"], response_model=List[StorageRef])
+    @router.get(
+        "/all-storages", tags=["organizations"], response_model=List[StorageRef]
+    )
     def get_available_storages(org: Organization = Depends(org_owner_dep)):
         return storage_ops.get_available_storages(org)
 
@@ -951,7 +955,7 @@ def init_storages_api(
         return {"success": True}
 
     @router.post(
-        "/customStorage", tags=["organizations"], response_model=AddedResponseName
+        "/custom-storage", tags=["organizations"], response_model=AddedResponseName
     )
     async def add_custom_storage(
         storage: S3StorageIn, org: Organization = Depends(org_owner_dep)
@@ -959,7 +963,7 @@ def init_storages_api(
         return await storage_ops.add_custom_storage(storage, org)
 
     @router.delete(
-        "/customStorage/{name}", tags=["organizations"], response_model=DeletedResponse
+        "/custom-storage/{name}", tags=["organizations"], response_model=DeletedResponse
     )
     async def remove_custom_storage(
         name: str, org: Organization = Depends(org_owner_dep)
@@ -967,10 +971,21 @@ def init_storages_api(
         return await storage_ops.remove_custom_storage(name, org)
 
     @router.post("/storage", tags=["organizations"], response_model=UpdatedResponse)
-    async def update_storage_refs(
+    async def update_storage_ref(
         storage: OrgStorageRefs,
         org: Organization = Depends(org_owner_dep),
     ):
-        return await storage_ops.update_storage_refs(storage, org)
+        return await storage_ops.update_storage_ref(storage, org)
+
+    return storage_ops
+
+    @router.post(
+        "/storage-replicas", tags=["organizations"], response_model=UpdatedResponse
+    )
+    async def update_storage_replica_refs(
+        storage: OrgStorageRefs,
+        org: Organization = Depends(org_owner_dep),
+    ):
+        return await storage_ops.update_storage_replica_refs(storage, org)
 
     return storage_ops
