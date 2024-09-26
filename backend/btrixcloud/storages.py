@@ -23,7 +23,6 @@ import heapq
 import zlib
 import json
 import os
-import time
 
 from datetime import datetime, timedelta
 from zipfile import ZipInfo
@@ -47,6 +46,7 @@ from .models import (
     StorageRef,
     S3Storage,
     S3StorageIn,
+    OrgStorageRefs,
     OrgStorageRef,
     OrgStorageReplicaRefs,
     DeletedResponse,
@@ -253,7 +253,7 @@ class StorageOps:
 
     async def update_storage_ref(
         self,
-        storage_refs: OrgStorageRefs,
+        storage_refs: OrgStorageRef,
         org: Organization,
     ) -> dict[str, bool]:
         """update storage for org"""
@@ -279,7 +279,7 @@ class StorageOps:
         if jobs_running_count > 0:
             raise HTTPException(status_code=403, detail="background_jobs_running")
 
-        prev_storage = org.storage
+        prev_storage_ref = org.storage
         org.storage = storage_ref
 
         await self.org_ops.update_storage_refs(org)
@@ -301,7 +301,7 @@ class StorageOps:
     ):
         """Handle tasks necessary after changing org storage"""
         if not await self.org_ops.has_files_stored(org):
-            print(f"No files stored, no updates to do", flush=True)
+            print("No files stored, no updates to do", flush=True)
             return
 
         await self.org_ops.update_read_only(org, True, "Updating storage")
@@ -360,20 +360,20 @@ class StorageOps:
 
     async def _run_post_storage_replica_update_tasks(
         self,
-        prev_storage_refs: List[StorageRef],
-        new_storage_refs: List[StorageRef],
+        prev_replica_refs: List[StorageRef],
+        new_replica_refs: List[StorageRef],
         org: Organization,
     ):
         """Handle tasks necessary after updating org replica storages"""
         if not await self.org_ops.has_files_stored(org):
-            print(f"No files stored, no updates to do", flush=True)
+            print("No files stored, no updates to do", flush=True)
             return
 
         await self.org_ops.update_read_only(org, True, "Updating storage replicas")
 
         # Replicate files to any new replica locations
-        for replica_storage in replicas:
-            if replica_storage not in prev_storage_replicas:
+        for replica_storage in new_replica_refs:
+            if replica_storage not in prev_replica_refs:
                 # TODO: Kick off background jobs to replicate primary
                 # storage to new replica location
                 print(
@@ -383,8 +383,8 @@ class StorageOps:
 
         # Delete files from previous replica locations that are no longer
         # being used
-        for replica_storage in prev_storage_replicas:
-            if replica_storage not in replicas:
+        for replica_storage in prev_replica_refs:
+            if replica_storage not in new_replica_refs:
                 # TODO: Kick off background jobs to delete replicas
                 # (may be easier to just delete all files from bucket
                 # in one rclone command - if so, will need to handle
@@ -1008,18 +1008,16 @@ def init_storages_api(
 
     @router.post("/storage", tags=["organizations"], response_model=UpdatedResponse)
     async def update_storage_ref(
-        storage: OrgStorageRefs,
+        storage: OrgStorageRef,
         org: Organization = Depends(org_owner_dep),
     ):
         return await storage_ops.update_storage_ref(storage, org)
-
-    return storage_ops
 
     @router.post(
         "/storage-replicas", tags=["organizations"], response_model=UpdatedResponse
     )
     async def update_storage_replica_refs(
-        storage: OrgStorageRefs,
+        storage: OrgStorageReplicaRefs,
         org: Organization = Depends(org_owner_dep),
     ):
         return await storage_ops.update_storage_replica_refs(storage, org)
