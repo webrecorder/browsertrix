@@ -369,10 +369,6 @@ class StorageOps:
             print("No files stored, no updates to do", flush=True)
             return
 
-        # TODO: Determine if we need to set read-only for replica operations
-        # (likely not?)
-        # await self.org_ops.update_read_only(org, True, "Updating storage replicas")
-
         # Replicate files to any new replica locations
         for replica_storage in new_replica_refs:
             if replica_storage not in prev_replica_refs:
