@@ -516,15 +516,15 @@ class OrgOps:
     ) -> bool:
         """Update storage refs for all crawl and profile files in given org"""
         res = await self.crawls_db.update_many(
-            {"oid": org.id, "files.$.storage": previous_storage},
-            {"$set": {"files.$.storage": new_storage}},
+            {"oid": org.id, "files.$.storage": dict(previous_storage)},
+            {"$set": {"files.$.storage": dict(new_storage)}},
         )
         if not res:
             return False
 
         res = await self.profiles_db.update_many(
-            {"oid": org.id, "resource.storage": previous_storage},
-            {"$set": {"resource.storage": new_storage}},
+            {"oid": org.id, "resource.storage": dict(previous_storage)},
+            {"$set": {"resource.storage": dict(new_storage)}},
         )
         if not res:
             return False
@@ -537,14 +537,14 @@ class OrgOps:
         """Add replica storage ref for all files in given org"""
         res = await self.crawls_db.update_many(
             {"oid": org.id},
-            {"$push": {"files.$.replicas": new_storage}},
+            {"$push": {"files.$.replicas": dict(new_storage)}},
         )
         if not res:
             return False
 
         res = await self.profiles_db.update_many(
             {"oid": org.id},
-            {"$push": {"resource.replicas": new_storage}},
+            {"$push": {"resource.replicas": dict(new_storage)}},
         )
         if not res:
             return False
@@ -557,14 +557,14 @@ class OrgOps:
         """Remove replica storage ref from all files in given org"""
         res = await self.crawls_db.update_many(
             {"oid": org.id},
-            {"$pull": {"files.$.replicas": new_storage}},
+            {"$pull": {"files.$.replicas": dict(new_storage)}},
         )
         if not res:
             return False
 
         res = await self.profiles_db.update_many(
             {"oid": org.id},
-            {"$pull": {"resource.replicas": new_storage}},
+            {"$pull": {"resource.replicas": dict(new_storage)}},
         )
         if not res:
             return False
@@ -574,7 +574,8 @@ class OrgOps:
     async def unset_file_presigned_urls(self, org: Organization) -> bool:
         """Unset all presigned URLs for files in org"""
         res = await self.crawls_db.update_many(
-            {"oid": org.id}, {"$set": {"files.$.presignedUrl": None}}
+            {"oid": org.id, "files.$.presignedUrl": {"$ne": None}},
+            {"$set": {"files.$.presignedUrl": None}},
         )
         if not res:
             return False
