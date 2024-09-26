@@ -1632,12 +1632,17 @@ class OrgPublicCollections(BaseModel):
 
 
 # ============================================================================
-class OrgStorageRefs(BaseModel):
-    """Input model for setting primary storage + optional replicas"""
+class OrgStorageRef(BaseModel):
+    """Input model for setting primary storage"""
 
     storage: StorageRef
 
-    storageReplicas: List[StorageRef] = []
+
+# ============================================================================
+class OrgStorageReplicaRefs(BaseModel):
+    """Input model for setting replica storages"""
+
+    storageReplicas: List[StorageRef]
 
 
 # ============================================================================
@@ -2609,7 +2614,7 @@ class OptimizePagesJob(BackgroundJob):
 class CopyBucketJob(BackgroundJob):
     """Model for tracking job to copy entire s3 bucket"""
 
-    type: Literal[BgJobType.CREATE_REPLICA] = BgJobType.CREATE_REPLICA
+    type: Literal[BgJobType.COPY_BUCKET] = BgJobType.COPY_BUCKET
     prev_storage: StorageRef
     new_storage: StorageRef
 

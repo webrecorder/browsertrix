@@ -500,7 +500,7 @@ class BackgroundJobOps:
                 new_storage=new_storage_ref,
                 new_endpoint=new_endpoint,
                 new_bucket=new_bucket,
-                job_id_prefix=job_type,
+                job_id_prefix=f"{job_type}-{org.id}",
                 existing_job_id=existing_job_id,
             )
             if existing_job_id:
@@ -562,6 +562,9 @@ class BackgroundJobOps:
                 await self.handle_delete_replica_job_finished(
                     cast(DeleteReplicaJob, job)
                 )
+            if job_type == BgJobType.COPY_BUCKET:
+                org = await self.orgs_ops.get_org_by_id(oid)
+                await self.org_ops.update_read_only(org, False)
         else:
             print(
                 f"Background job {job.id} failed, sending email to superuser",
@@ -611,22 +614,22 @@ class BackgroundJobOps:
 
     def _get_job_by_type_from_data(self, data: dict[str, object]):
         """convert dict to propert background job type"""
-        if data["type"] == BgJobType.CREATE_REPLICA:
+        if data["type"] == BgJobType.CREATE_REPLICA.value:
             return CreateReplicaJob.from_dict(data)
 
-        if data["type"] == BgJobType.DELETE_REPLICA:
+        if data["type"] == BgJobType.DELETE_REPLICA.value:
             return DeleteReplicaJob.from_dict(data)
 
-        if data["type"] == BgJobType.RECALCULATE_ORG_STATS:
+        if data["type"] == BgJobType.RECALCULATE_ORG_STATS.value:
             return RecalculateOrgStatsJob.from_dict(data)
 
-        if data["type"] == BgJobType.READD_ORG_PAGES:
+        if data["type"] == BgJobType.READD_ORG_PAGES.value:
             return ReAddOrgPagesJob.from_dict(data)
 
-        if data["type"] == BgJobType.OPTIMIZE_PAGES:
+        if data["type"] == BgJobType.OPTIMIZE_PAGES.value:
             return OptimizePagesJob.from_dict(data)
 
-        if data["type"] == BgJobType.COPY_BUCKET:
+        if data["type"] == BgJobType.COPY_BUCKET.value:
             return CopyBucketJob.from_dict(data)
 
         return DeleteOrgJob.from_dict(data)
@@ -640,7 +643,7 @@ class BackgroundJobOps:
         job_type: Optional[str] = None,
         sort_by: Optional[str] = None,
         sort_direction: Optional[int] = -1,
-    ) -> Tuple[List[BackgroundJob], int]:
+    ) -> Tuple[List[Union[CreateReplicaJob, DeleteReplicaJob, CopyBucketJob]], int]:
         """List all background jobs"""
         # pylint: disable=duplicate-code
         # Zero-index page for query
