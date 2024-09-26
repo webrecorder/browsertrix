@@ -516,15 +516,55 @@ class OrgOps:
     ) -> bool:
         """Update storage refs for all crawl and profile files in given org"""
         res = await self.crawls_db.update_many(
-            {"_id": org.id, "files.$.storage": previous_storage},
+            {"oid": org.id, "files.$.storage": previous_storage},
             {"$set": {"files.$.storage": new_storage}},
         )
         if not res:
             return False
 
         res = await self.profiles_db.update_many(
-            {"_id": org.id, "resource.storage": previous_storage},
+            {"oid": org.id, "resource.storage": previous_storage},
             {"$set": {"resource.storage": new_storage}},
+        )
+        if not res:
+            return False
+
+        return True
+
+    async def add_file_replica_storage_refs(
+        self, org: Organization, new_storage: StorageRef
+    ) -> bool:
+        """Add replica storage ref for all files in given org"""
+        res = await self.crawls_db.update_many(
+            {"oid": org.id},
+            {"$push": {"files.$.replicas": new_storage}},
+        )
+        if not res:
+            return False
+
+        res = await self.profiles_db.update_many(
+            {"oid": org.id},
+            {"$push": {"resource.replicas": new_storage}},
+        )
+        if not res:
+            return False
+
+        return True
+
+    async def remove_file_replica_storage_refs(
+        self, org: Organization, new_storage: StorageRef
+    ) -> bool:
+        """Remove replica storage ref from all files in given org"""
+        res = await self.crawls_db.update_many(
+            {"oid": org.id},
+            {"$pull": {"files.$.replicas": new_storage}},
+        )
+        if not res:
+            return False
+
+        res = await self.profiles_db.update_many(
+            {"oid": org.id},
+            {"$pull": {"resource.replicas": new_storage}},
         )
         if not res:
             return False
