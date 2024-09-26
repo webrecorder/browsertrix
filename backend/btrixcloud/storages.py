@@ -219,7 +219,7 @@ class StorageOps:
             "STORE_ACCESS_KEY": storage.access_key,
             "STORE_SECRET_KEY": storage.secret_key,
             "STORE_REGION": storage.region,
-            "STORE_PROVIDER": storage.provider,
+            "STORE_S3_PROVIDER": storage.provider,
         }
 
         await self.crawl_manager.add_org_storage(
