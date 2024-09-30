@@ -983,23 +983,37 @@ def init_storages_api(
         "/custom-storage", tags=["organizations"], response_model=AddedResponseName
     )
     async def add_custom_storage(
-        storage: S3StorageIn, org: Organization = Depends(org_owner_dep)
+        storage: S3StorageIn,
+        org: Organization = Depends(org_owner_dep),
+        user: User = Depends(user_dep),
     ):
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+
         return await storage_ops.add_custom_storage(storage, org)
 
     @router.delete(
         "/custom-storage/{name}", tags=["organizations"], response_model=DeletedResponse
     )
     async def remove_custom_storage(
-        name: str, org: Organization = Depends(org_owner_dep)
+        name: str,
+        org: Organization = Depends(org_owner_dep),
+        user: User = Depends(user_dep),
     ):
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+
         return await storage_ops.remove_custom_storage(name, org)
 
     @router.post("/storage", tags=["organizations"], response_model=UpdatedResponse)
     async def update_storage_ref(
         storage: OrgStorageRef,
         org: Organization = Depends(org_owner_dep),
+        user: User = Depends(user_dep),
     ):
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+
         return await storage_ops.update_storage_ref(storage, org)
 
     @router.post(
@@ -1008,7 +1022,11 @@ def init_storages_api(
     async def update_storage_replica_refs(
         storage: OrgStorageReplicaRefs,
         org: Organization = Depends(org_owner_dep),
+        user: User = Depends(user_dep),
     ):
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+
         return await storage_ops.update_storage_replica_refs(storage, org)
 
     return storage_ops
