@@ -1,4 +1,4 @@
-name: Frontend Build Check
+name: Frontend Prepare Build
 on:
   pull_request:
     paths:
@@ -10,9 +10,17 @@ on:
 jobs:
   setup-and-build:
     runs-on: ubuntu-latest
+    permissions:
+      # Give the default GITHUB_TOKEN write permission to commit and push the
+      # added or changed files to the repository.
+      contents: write
+
     steps:
+      # Setup:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -31,29 +39,37 @@ jobs:
         env:
           HUSKY: 0
         run: yarn install --frozen-lockfile
+
+      # Lint:
       - name: Lint
         working-directory: frontend
         run: yarn lint:check
-      - name: Format
+    
+      # Localize:
+      - name: Extract strings
         working-directory: frontend
-        # TODO Reenable when https://github.com/webrecorder/browsertrix-cloud/issues/1618 is addressed
-        # run: yarn format:check
-        run: echo "yarn format:check disabled"
-      - name: Unit tests
-        working-directory: frontend
-        run: yarn test
-      - name: Check extracted strings
-        working-directory: frontend
-        run: yarn localize:extract && if ! git diff --quiet -- ; then echo "Error extracting strings, please run \`yarn localize:extract\` from the \`frontend\` directory and commit the results."; false; fi
-      - name: Localization build
+        run: yarn localize:extract
+      - name: Commit extracted strings
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: Apply `localize:extract` changes
+          file_pattern: '**/*.xlf'
+          skip_fetch: true
+          skip_checkout: true
+      - name: Check localization build
         working-directory: frontend
         run: yarn localize:build
 
+      # Test:
+      - name: Unit tests
+        working-directory: frontend
+        run: yarn test
+
+      # Check build:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
         with:
           driver-opts: network=host
-
       - name: Build Frontend
         uses: docker/build-push-action@v3
         with:
