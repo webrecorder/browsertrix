@@ -52,6 +52,7 @@ from .models import (
     DeletedResponse,
     UpdatedResponse,
     AddedResponseName,
+    User,
 )
 
 from .utils import slug_from_name
