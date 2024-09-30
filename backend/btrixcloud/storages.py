@@ -12,6 +12,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     cast,
+    Callable,
 )
 from urllib.parse import urlsplit
 from contextlib import asynccontextmanager
@@ -931,7 +932,7 @@ def _parse_json(line) -> dict:
 
 # ============================================================================
 def init_storages_api(
-    org_ops: OrgOps, crawl_manager: CrawlManager, app: APIRouter, mdb, user_dep
+    org_ops: OrgOps, crawl_manager: CrawlManager, app: APIRouter, mdb, user_dep: Callable
 ) -> StorageOps:
     """API for updating storage for an org"""
 
