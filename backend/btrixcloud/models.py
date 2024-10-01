@@ -693,11 +693,8 @@ class StorageRef(BaseModel):
         return f"storage-cs-{self.name}-{oid[:12]}"
 
     def get_storage_extra_path(self, oid: str) -> str:
-        """return extra path added to the endpoint
-        using oid for default storages, no extra path for custom"""
-        if not self.custom:
-            return oid + "/"
-        return ""
+        """return extra oid path added to the endpoint"""
+        return oid + "/"
 
 
 # ============================================================================
