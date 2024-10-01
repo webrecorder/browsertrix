@@ -9,7 +9,6 @@ from .operator import init_operator_api
 from .ops import init_ops
 from .utils import register_exit_handler
 
-
 app_root = FastAPI()
 
 
@@ -25,6 +24,7 @@ def main():
              Kubernetes not detected (KUBERNETES_SERVICE_HOST is not set), Exiting"
         )
         sys.exit(1)
+
 
     (
         org_ops,
