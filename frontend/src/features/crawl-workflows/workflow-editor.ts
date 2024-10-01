@@ -1322,6 +1322,17 @@ https://archiveweb.page/images/${"logo.svg"}`}
       `)}
       ${this.renderHelpTextCol(infoTextStrings["browserProfile"])}
       ${inputCol(html`
+        <btrix-select-crawler-proxy
+          orgId=${this.orgId}
+          .proxyId="${this.formState.proxyId || ""}"
+          @on-change=${(e: SelectCrawlerProxyChangeEvent) =>
+            this.updateFormState({
+              proxyId: e.detail.value,
+            })}
+        ></btrix-select-crawler-proxy>
+      `)}
+      ${this.renderHelpTextCol(infoTextStrings["proxyId"])}
+      ${inputCol(html`
         <sl-radio-group
           name="scale"
           label=${msg("Browser Windows")}
@@ -1397,17 +1408,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
         </btrix-language-select>
       `)}
       ${this.renderHelpTextCol(infoTextStrings["lang"])}
-      ${inputCol(html`
-        <btrix-select-crawler-proxy
-          orgId=${this.orgId}
-          .proxyId="${this.formState.proxyId || ""}"
-          @on-change=${(e: SelectCrawlerProxyChangeEvent) =>
-            this.updateFormState({
-              proxyId: e.detail.value,
-            })}
-        ></btrix-select-crawler-proxy>
-      `)}
-      ${this.renderHelpTextCol(infoTextStrings["proxyId"])}
     `;
   }
 

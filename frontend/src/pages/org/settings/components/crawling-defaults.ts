@@ -195,6 +195,10 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
           size="small"
         ></btrix-select-browser-profile>
       `,
+      proxyId: html` <btrix-select-crawler-proxy
+        orgId=${this.orgId}
+        .proxyId="${orgDefaults.proxyId || null}"
+      ></btrix-select-crawler-proxy>`,
       crawlerChannel: html`
         <btrix-select-crawler
           crawlerChannel=${ifDefined(orgDefaults.crawlerChannel)}
@@ -232,10 +236,6 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
           <span slot="label">${msg("Language")}</span>
         </btrix-language-select>
       `,
-      proxyId: html` <btrix-select-crawler-proxy
-        orgId=${this.orgId}
-        .proxyId="${orgDefaults.proxyId || null}"
-      ></btrix-select-crawler-proxy>`,
     };
 
     return {
