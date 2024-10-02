@@ -97,7 +97,15 @@ class CronJobOperator(BaseOperator):
             )
             return self.get_finished_response(metadata)
 
-        # if no db state, crawl crawl in the db
+        if crawlconfig.proxyId and not self.crawl_config_ops.get_crawler_proxy(
+            crawlconfig.proxyId
+        ):
+            print(
+                f"proxy {crawlconfig.proxyId} missing, skipping scheduled crawl for workflow {cid} in org {org.id}"
+            )
+            return self.get_finished_response(metadata)
+
+        # if no db state, add crawl in the db
         if not state:
             await self.crawl_config_ops.add_new_crawl(
                 crawl_id,
@@ -125,6 +133,7 @@ class CronJobOperator(BaseOperator):
             warc_prefix=warc_prefix,
             storage_filename=self.crawl_config_ops.default_filename_template,
             profile_filename=profile_filename or "",
+            proxy_id=crawlconfig.proxyId or "",
         )
 
         return MCDecoratorSyncResponse(attachments=list(yaml.safe_load_all(crawljob)))
