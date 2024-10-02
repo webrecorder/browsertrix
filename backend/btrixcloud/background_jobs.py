@@ -580,7 +580,7 @@ def init_background_jobs_api(
         """Retrieve information for background job"""
         return await ops.get_background_job(job_id, org.id)
 
-    @app.post("/orgs/all/jobs/{job_id}", response_model=SuccessResponse, tags=["jobs"])
+    @app.get("/orgs/all/jobs/{job_id}", response_model=SuccessResponse, tags=["jobs"])
     async def get_background_job_all_orgs(job_id: str, user: User = Depends(user_dep)):
         """Retry failed background jobs from all orgs"""
         if not user.is_superuser:
