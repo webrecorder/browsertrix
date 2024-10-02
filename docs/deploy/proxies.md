@@ -12,7 +12,7 @@ Many commercial proxy services exist. If you are planning to use commercially-pr
 
 To set up your own proxy server to use with Browsertrix as SOCKS5 over SSH, the first thing that is needed is a physical or virtual server that you intend to use as the proxy. For security purposes, we recommend creating a new user on this remote machine solely for proxy access.
 
-Once the remote machine is ready and the new user created, add the public key of a public/private key pair (we recommend using a new ECDSA key pair) to the remote machine under the proxy user to allow. You will need to supply the corresponding private key to Browsertrix in [Browsertrix Configuration](#browsertrix-configuration) below.
+Once the remote machine is ready and the new user created, add the public key of a public/private key pair to the remote machine under the proxy user to allow. We recommend using a new ECDSA key pair. You will need to supply the corresponding private key to Browsertrix in [Browsertrix Configuration](#browsertrix-configuration) below.
 
 Finally, modify the ssh configuration for the proxy user on the remote machine to secure the server and only allow public key authentication for this user. For instance:
 
