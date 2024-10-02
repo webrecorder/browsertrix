@@ -10,18 +10,45 @@ Browsertrix supports crawling through HTTP and SOCKS5 proxies, including through
 
 Many commercial proxy services exist. If you are planning to use commercially-provided proxies, continue to [Browsertrix Configuration](#browsertrix-configuration) below.
 
-To set up your own proxy server to use with Browsertrix as SOCKS5 over SSH, the first thing that is needed is a physical or virtual server that you intend to use as the proxy. Once you have access to this remote machine, you will need to add the public key of a public/private key pair (we recommend using a new ECDSA key pair) to support ssh connections to the remote machine. You will need to supply the corresponding private key to Browsertrix in [Browsertrix Configuration](#browsertrix-configuration) below.
+To set up your own proxy server to use with Browsertrix as SOCKS5 over SSH, the first thing that is needed is a physical or virtual server that you intend to use as the proxy. For security purposes, recommend creating a new user on this remote machine solely for proxy access.
 
-(TODO: More technical setup details as needed)
+Once the remote machine is ready for use as a proxy, add the public key of a public/private key pair (we recommend using a new ECDSA key pair) to the remote machine under the proxy user to allow. You will need to supply the corresponding private key to Browsertrix in [Browsertrix Configuration](#browsertrix-configuration) below.
+
+Finally, modify the ssh configuration for the proxy user on the remote machine to secure the server and only allow public key authentication for this user. For instance:
+
+```
+Match User proxy-user
+	AllowTcpForwarding yes
+	X11Forwarding no
+	AllowAgentForwarding no
+	ForceCommand /bin/false
+	PubkeyAuthentication yes
+	PasswordAuthentication no
+```
 
 ## Browsertrix Configuration
 
 Proxies are configured in Browsertrix through a separate deployment and subchart. This enables easier updates to available proxy servers without needing to redeploy the entire Browsertrix application.
 
-To add or update proxies to your Browsertrix Deployment, modify the `btrix-proxies` section of the main Helm chart or your local override.
+Proxies can be configured in the `btrix-proxies` section of the main Helm chart or local override for the main Browsertrix deployment, or in a separate values file that only contains proxy information, for example `proxies.yaml`.
 
 First, set `enabled` to `true`, which will enable deploying proxy servers.
 
 Next, provide the details of each proxy server that you want available within Browsertrix in the `proxies` list. Minimally, an id, connection string URL, label, and two-letter country code must be set for each proxy. If you want a particular proxy to be shared and potentially available to all organizations on a Browsertrix deployment, set `shared` to `true`. For SSH proxy servers, an `ssh_private_key` is required, and the contents of a known hosts file can additionally be provided to help secure a connection.
 
-Once all proxy details are set, deploy the proxies by (TODO: add these details)
+The `default_proxy` field can optionally be set to the id for one of the proxies in the `proxies` list. If set, the default proxy will be used for all crawls that do not have an alternate proxy set in the workflow configuration.
+
+Once all proxy details are set, they are ready to be deployed.
+
+If `btrix-proxies` have been set in the main Helm chart or a local override file for your Browsertrix deployment, deploy with the regular Helm upgrade command, e.g.:
+
+```sh
+helm upgrade --wait --install -f ./chart/values.yaml -f ./chart/local.yaml btrix ./chart/
+```
+
+If `btrix-proxies` have been set in a distinct value file, deploy changes from this file directly. For instance, if the proxy configuration is located in a file named `proxies.yaml`, you can use the following Helm command:
+
+```sh
+helm upgrade --wait --install -f ./chart/proxies.yaml proxies ./chart/proxies/
+```
+
