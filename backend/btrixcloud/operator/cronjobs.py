@@ -93,7 +93,7 @@ class CronJobOperator(BaseOperator):
 
         if org.readOnly:
             print(
-                f"org {org.id} set to read-only. skipping scheduled crawl for workflow {cid}"
+                f'org "{org.slug}" set to read-only. skipping scheduled crawl for workflow {cid}'
             )
             return self.get_finished_response(metadata)
 
@@ -101,7 +101,8 @@ class CronJobOperator(BaseOperator):
             crawlconfig.proxyId
         ):
             print(
-                f"proxy {crawlconfig.proxyId} missing, skipping scheduled crawl for workflow {cid} in org {org.id}"
+                f"proxy {crawlconfig.proxyId} missing, skipping scheduled crawl for "
+                + f'workflow {cid} in "{org.slug}"'
             )
             return self.get_finished_response(metadata)
 
