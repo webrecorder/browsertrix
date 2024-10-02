@@ -76,8 +76,6 @@ async def main():
         profile_ops,
     )
 
-    user_manager.set_ops(org_ops, crawl_config_ops, None)
-
     coll_ops = CollectionOps(mdb, crawl_manager, org_ops, event_webhook_ops)
 
     base_crawl_ops = BaseCrawlOps(
@@ -105,14 +103,21 @@ async def main():
 
     page_ops = PageOps(mdb, crawl_ops, org_ops, storage_ops)
 
+    base_crawl_ops.set_page_ops(page_ops)
     crawl_ops.set_page_ops(page_ops)
 
     background_job_ops.set_ops(crawl_ops, profile_ops)
 
     org_ops.set_ops(base_crawl_ops, profile_ops, coll_ops, background_job_ops)
 
+    user_manager.set_ops(org_ops, crawl_config_ops, base_crawl_ops)
+
+    background_job_ops.set_ops(base_crawl_ops, profile_ops)
+
+    crawl_config_ops.set_coll_ops(coll_ops)
+
     # Run job
-    if job_type == BgJobType.DELETE_REPLICA:
+    if job_type == BgJobType.DELETE_ORG:
         if not oid:
             print("Org id missing, quitting")
             return 1
@@ -135,4 +140,5 @@ async def main():
 
 # # ============================================================================
 if __name__ == "__main__":
-    asyncio.run(main())
+    return_code = asyncio.run(main())
+    sys.exit(return_code)
