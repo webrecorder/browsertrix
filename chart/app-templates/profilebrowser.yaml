@@ -31,9 +31,9 @@ spec:
       secret:
         secretName: proxies
         defaultMode: 0600
-    - name: proxies-passwd-hack
+    - name: force-user-and-group-name
       secret:
-        secretName: proxies-passwd-hack
+        secretName: force-user-and-group-name
         defaultMode: 0600
     {% endif %}
 
@@ -113,11 +113,11 @@ spec:
           subPath: {{ proxy_id }}-known-hosts
           readOnly: true
       {% endif %}
-        - name: proxies-passwd-hack
+        - name: force-user-and-group-name
           mountPath: /etc/passwd
           subPath: passwd
           readOnly: true
-        - name: proxies-passwd-hack
+        - name: force-user-and-group-name
           mountPath: /etc/group
           subPath: group
           readOnly: true
