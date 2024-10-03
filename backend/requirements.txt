@@ -11,6 +11,7 @@ aiofiles
 kubernetes-asyncio==29.0.0
 kubernetes
 aiobotocore
+requests
 redis>=5.0.0
 pyyaml
 jinja2

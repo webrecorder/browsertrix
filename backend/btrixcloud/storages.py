@@ -9,9 +9,9 @@ from typing import (
     List,
     Dict,
     AsyncIterator,
-    AsyncIterable,
     TYPE_CHECKING,
     Any,
+    cast,
 )
 from urllib.parse import urlsplit
 from contextlib import asynccontextmanager
@@ -23,11 +23,13 @@ import zlib
 import json
 import os
 
+import requests
+
 from datetime import datetime
 from zipfile import ZipInfo
 
 from fastapi import Depends, HTTPException
-from stream_zip import async_stream_zip, NO_COMPRESSION_64, Method
+from stream_zip import stream_zip, NO_COMPRESSION_64, Method
 from remotezip import RemoteZip
 
 import aiobotocore.session
@@ -652,9 +654,7 @@ class StorageOps:
             with remote_zip.open(filename) as file_stream:
                 yield from file_stream
 
-    async def download_streaming_wacz(
-        self, _: Organization, all_files: List[CrawlFileOut]
-    ) -> AsyncIterable[bytes]:
+    def _sync_dl(self, all_files: List[CrawlFileOut]) -> Iterator[bytes]:
         """generate streaming zip as sync"""
         datapackage = {
             "profile": "multi-wacz-package",
@@ -670,18 +670,17 @@ class StorageOps:
         }
         datapackage_bytes = json.dumps(datapackage, indent=2).encode("utf-8")
 
-        async def get_datapackage() -> AsyncIterable[bytes]:
+        def get_datapackage() -> Iterable[bytes]:
             yield datapackage_bytes
 
-        async def get_file(path: str) -> AsyncIterable[bytes]:
+        def get_file(path: str) -> Iterable[bytes]:
             path = self.resolve_internal_access_path(path)
-            async with aiohttp.ClientSession() as session:
-                async with session.get(path) as response:
-                    async for chunk in response.content.iter_chunked(CHUNK_SIZE):
-                        yield chunk
+            r = requests.get(path, stream=True)
+            for chunk in r.iter_content(CHUNK_SIZE):
+                yield chunk
 
-        async def member_files() -> (
-            AsyncIterable[tuple[str, datetime, int, Method, AsyncIterable[bytes]]]
+        def member_files() -> (
+            Iterable[tuple[str, datetime, int, Method, Iterable[bytes]]]
         ):
             modified_at = datetime(year=1980, month=1, day=1)
             perms = 0o664
@@ -704,7 +703,19 @@ class StorageOps:
                 get_datapackage(),
             )
 
-        return async_stream_zip(member_files(), chunk_size=CHUNK_SIZE)
+        # stream_zip() is an Iterator but defined as an Iterable, can cast
+        return cast(Iterator[bytes], stream_zip(member_files(), chunk_size=CHUNK_SIZE))
+
+    async def download_streaming_wacz(
+        self, org: Organization, files: List[CrawlFileOut]
+    ) -> Iterator[bytes]:
+        """return an iter for downloading a stream nested wacz file
+        from list of files"""
+        loop = asyncio.get_event_loop()
+
+        resp = await loop.run_in_executor(None, self._sync_dl, files)
+
+        return resp
 
 
 # ============================================================================
