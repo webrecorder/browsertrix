@@ -1035,7 +1035,7 @@ class CrawlOps(BaseCrawlOps):
             raise HTTPException(status_code=400, detail="qa_run_no_resources")
 
         metadata = {
-            "type": "qa_run",
+            "type": "qaRun",
             "id": qa_run_id,
             "crawlId": crawl_id,
             "organization": org.slug,
