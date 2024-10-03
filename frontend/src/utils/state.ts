@@ -1,6 +1,7 @@
 /**
  * Store and access application-wide state
  */
+import { mergeDeep } from "immutable";
 import { locked, options, transaction, use } from "lit-shared-state";
 
 import { persist } from "./persist";
@@ -125,10 +126,21 @@ export function makeAppStateService() {
 
     @transaction()
     @unlock()
-    updateUserPreferences(userPreferences: AppState["userPreferences"]) {
+    partialUpdateUserPreferences(
+      userPreferences: Partial<AppState["userPreferences"]>,
+    ) {
       userPreferencesSchema.nullable().parse(userPreferences);
 
-      appState.userPreferences = userPreferences;
+      if (appState.userPreferences && userPreferences) {
+        appState.userPreferences = mergeDeep(
+          appState.userPreferences,
+          userPreferences,
+        );
+      } else {
+        appState.userPreferences = userPreferences;
+      }
+
+      console.log("appState.userPreferences:", appState.userPreferences);
     }
 
     @transaction()
@@ -170,6 +182,7 @@ export function makeAppStateService() {
     private _resetUser() {
       appState.auth = null;
       appState.userInfo = null;
+      appState.userPreferences = null;
       appState.orgSlug = null;
       appState.org = undefined;
     }

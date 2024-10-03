@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { accessCodeSchema } from "./org";
-import { NewWorkflowOnlyScopeType } from "./workflow";
+import { WorkflowScopeType } from "./workflow";
 
 export const userOrgSchema = z.object({
   default: z.boolean().optional(),
@@ -47,6 +47,6 @@ export const userInfoSchema = z.object({
 export type UserInfo = z.infer<typeof userInfoSchema>;
 
 export const userPreferencesSchema = z.object({
-  newWorkflowScopeType: z.nativeEnum(NewWorkflowOnlyScopeType),
+  newWorkflowScopeType: z.nativeEnum(WorkflowScopeType).optional(),
 });
 export type UserPreferences = z.infer<typeof userPreferencesSchema>;
