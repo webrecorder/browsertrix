@@ -145,6 +145,6 @@ The proxies subchart can also be deployed from the latest GitHub release via:
 helm upgrade --install proxies https://github.com/webrecorder/browsertrix/releases/download/RELEASE/btrix-proxies-VERSION.tgz
 ```
 
-where `RELEASE` is the Browsertrix release and the `VERSION` is the version of the proxies chart.
+where `RELEASE` is the Browsertrix release and `VERSION` is the version of the proxies chart.
 
 See the [Browsertrix releases page](https://github.com/webrecorder/browsertrix/releases) for the latest available versions.
