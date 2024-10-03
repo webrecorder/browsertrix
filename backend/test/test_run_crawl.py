@@ -6,6 +6,7 @@ import zipfile
 import re
 import csv
 import codecs
+import json
 from tempfile import TemporaryFile
 from zipfile import ZipFile, ZIP_STORED
 
