@@ -98,7 +98,7 @@ if Browsertrix is deployed on a private network and requires a proxy to access t
 If `btrix-proxies` have been set in the main Helm chart or a local override file for your Browsertrix deployment, proxies will be enabled on next deploy of the Browsertrix helm chart.  For instance, if the proxy configuration is located in a local override file `local.yaml`, you can use the following Helm command to redeploy Browsertrix with the proxy configuration:
 
 ```sh
-helm upgrade --wait --install -f ./chart/values.yaml -f ./chart/local.yaml btrix ./chart/
+helm upgrade --install -f ./chart/values.yaml -f ./chart/local.yaml btrix ./chart/
 ```
 
 ### Deploying with Proxies via Subchart
@@ -131,10 +131,22 @@ proxies:
 If the above YAML is placed in `proxies.yaml`, the subchart can be deployed with 
 
 ```sh
-helm upgrade --wait --install -f ./chart/proxies.yaml proxies ./chart/proxies/
+helm upgrade --install -f ./chart/proxies.yaml proxies ./chart/proxies/
 ```
 
-(This layout assumes a local copy of Browsertrix repo.)
-
 The proxies can be updated without redeploying all of Browsertrix, and Browsertrix will pick up the updated proxies.
+
+### GitHub Release for Subchart
+
+The above layout assumes a local copy of Browsertrix repo.
+
+The proxies subchart can also be deployed from the latest GitHub release via:
+
+```sh
+helm upgrade --install proxies https://github.com/webrecorder/browsertrix/releases/download/RELEASE/btrix-proxies-VERSION.tgz
+```
+
+where `RELEASE` are the Browsertrix release and the `VERSION` is the version of the proxies chart.
+
+See the [Browsertrix releases page](https://github.com/webrecorder/browsertrix/releases) for the latest available versions.
 
