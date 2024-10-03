@@ -67,6 +67,7 @@ import {
 import { maxLengthValidator } from "@/utils/form";
 import { getLocale } from "@/utils/localization";
 import { isArchivingDisabled } from "@/utils/orgs";
+import { AppStateService } from "@/utils/state";
 import { regexEscape } from "@/utils/string";
 import { tw } from "@/utils/tailwind";
 import {
@@ -1710,6 +1711,13 @@ https://archiveweb.page/images/${"logo.svg"}`}
       } else if (isPageScope) {
         formState.urlList = [this.formState.primarySeedUrl, ...urls].join("\n");
       }
+    }
+
+    if (!this.configId) {
+      // Remember scope type for new workflows
+      AppStateService.partialUpdateUserPreferences({
+        newWorkflowScopeType: value,
+      });
     }
 
     this.updateFormState(formState);

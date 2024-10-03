@@ -1,13 +1,20 @@
 /**
  * Store and access application-wide state
  */
+import { mergeDeep } from "immutable";
 import { locked, options, transaction, use } from "lit-shared-state";
 
 import { persist } from "./persist";
 
 import { authSchema, type Auth } from "@/types/auth";
 import type { OrgData } from "@/types/org";
-import { userInfoSchema, type UserInfo, type UserOrg } from "@/types/user";
+import {
+  userInfoSchema,
+  userPreferencesSchema,
+  type UserInfo,
+  type UserOrg,
+  type UserPreferences,
+} from "@/types/user";
 import type { AppSettings } from "@/utils/app";
 import { isAdmin, isCrawler } from "@/utils/orgs";
 
@@ -28,11 +35,15 @@ export function makeAppStateService() {
     @options(persist(window.sessionStorage))
     userInfo: UserInfo | null = null;
 
+    @options(persist(window.localStorage))
+    userPreferences: UserPreferences | null = null;
+
     // TODO persist here
     auth: Auth | null = null;
 
     // Store org slug in local storage in order to redirect
     // to the most recently visited org on next log in
+    // TODO move to `userPreferences`
     @options(persist(window.localStorage))
     orgSlug: string | null = null;
 
@@ -52,7 +63,7 @@ export function makeAppStateService() {
           )) ||
         null;
 
-      if (!userOrg) {
+      if (appState.userInfo && !userOrg) {
         console.debug("no user org matching slug in state");
       }
 
@@ -115,6 +126,25 @@ export function makeAppStateService() {
 
     @transaction()
     @unlock()
+    partialUpdateUserPreferences(
+      userPreferences: Partial<AppState["userPreferences"]>,
+    ) {
+      userPreferencesSchema.nullable().parse(userPreferences);
+
+      if (appState.userPreferences && userPreferences) {
+        appState.userPreferences = mergeDeep(
+          appState.userPreferences,
+          userPreferences,
+        );
+      } else {
+        appState.userPreferences = userPreferences;
+      }
+
+      console.log("appState.userPreferences:", appState.userPreferences);
+    }
+
+    @transaction()
+    @unlock()
     updateOrgSlug(orgSlug: AppState["orgSlug"]) {
       appState.orgSlug = orgSlug;
     }
@@ -152,6 +182,7 @@ export function makeAppStateService() {
     private _resetUser() {
       appState.auth = null;
       appState.userInfo = null;
+      appState.userPreferences = null;
       appState.orgSlug = null;
       appState.org = undefined;
     }

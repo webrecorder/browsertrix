@@ -539,6 +539,13 @@ export class Org extends LiteElement {
       @select-new-dialog=${this.onSelectNewDialog}
       @select-job-type=${(e: SelectJobTypeEvent) => {
         this.openDialogName = undefined;
+
+        if (e.detail !== this.appState.userPreferences?.newWorkflowScopeType) {
+          AppStateService.partialUpdateUserPreferences({
+            newWorkflowScopeType: e.detail,
+          });
+        }
+
         this.navTo(`${this.orgBasePath}/workflows/new`, {
           scopeType: e.detail,
         });

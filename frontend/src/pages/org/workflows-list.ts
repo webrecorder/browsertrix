@@ -219,9 +219,12 @@ export class WorkflowsList extends LiteElement {
                   <sl-button
                     variant="primary"
                     size="small"
-                    href="${this.orgBasePath}/workflows/new"
                     ?disabled=${this.org?.readOnly}
-                    @click=${this.navLink}
+                    @click=${() =>
+                      this.navTo(`${this.orgBasePath}/workflows/new`, {
+                        scopeType:
+                          this.appState.userPreferences?.newWorkflowScopeType,
+                      })}
                   >
                     <sl-icon slot="prefix" name="plus-lg"></sl-icon>
                     ${msg("New Workflow")}</sl-button
