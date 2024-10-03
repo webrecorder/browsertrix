@@ -36,7 +36,7 @@ Match User proxy-user
 
 ## Browsertrix Configuration
 
-Proxies are configured in Browsertrix through a separate sub-chart, and can be configured in the `btrix-proxies` section of the main Helm chart (or local override file) for the Browsertrix deployment. Alternatively, they can be [configured as a separate sub-chart](#deploying-with-proxies-via-sub-chart).
+Proxies are configured in Browsertrix through a separate subchart, and can be configured in the `btrix-proxies` section of the main Helm chart (or local override file) for the Browsertrix deployment. Alternatively, they can be [configured as a separate subchart](#deploying-with-proxies-via-subchart).
 
 The proxy configuration will look like this, containing one or more proxy declarations.
 
@@ -103,9 +103,9 @@ If `btrix-proxies` have been set in the main Helm chart or a local override file
 helm upgrade --install -f ./chart/values.yaml -f ./chart/local.yaml btrix ./chart/
 ```
 
-### Deploying with Proxies via Sub-chart
+### Deploying with Proxies via subchart
 
-Proxies can alternatively be configured with a separate proxies sub-chart.
+Proxies can alternatively be configured with a separate proxies subchart.
 
 This allows proxies to be updated without having to redeploy all of Browsertrix.
 
@@ -129,17 +129,17 @@ proxies:
 		url: socks5://username:password@proxy-host
 ```
 
-If the above YAML is placed in `proxies.yaml`, the sub-chart can be deployed with the following command and Browsertrix will pick up the updated proxies:
+If the above YAML is placed in `proxies.yaml`, the subchart can be deployed with the following command and Browsertrix will pick up the updated proxies:
 
 ```sh
 helm upgrade --install -f ./chart/proxies.yaml proxies ./chart/proxies/
 ```
 
-### GitHub Release for Sub-chart
+### GitHub Release for subchart
 
 The above layout assumes a local copy of the Browsertrix repo.
 
-The proxies sub-chart can also be deployed from the latest GitHub release via:
+The proxies subchart can also be deployed from the latest GitHub release via:
 
 ```sh
 helm upgrade --install proxies https://github.com/webrecorder/browsertrix/releases/download/RELEASE/btrix-proxies-VERSION.tgz
