@@ -8,35 +8,9 @@ import { ScopeType, type Seed, type WorkflowParams } from "./types";
 
 import type { UserGuideEventMap } from "@/index";
 import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
+import { WorkflowScopeType } from "@/types/workflow";
 import LiteElement, { html } from "@/utils/LiteElement";
 import type { FormState as WorkflowFormState } from "@/utils/workflow";
-
-const defaultValue = {
-  name: "",
-  description: null,
-  profileid: null,
-  schedule: "",
-  config: {
-    seeds: [],
-    scopeType: ScopeType.Page,
-    exclude: [],
-    behaviorTimeout: null,
-    pageLoadTimeout: null,
-    pageExtraDelay: null,
-    postLoadDelay: null,
-    useSitemap: false,
-    failOnFailedSeed: false,
-    userAgent: null,
-  },
-  tags: [],
-  crawlTimeout: null,
-  maxCrawlSize: null,
-  jobType: "custom",
-  scale: 1,
-  autoAddCollections: [],
-  crawlerChannel: "default",
-  proxyId: null,
-} as WorkflowParams;
 
 /**
  * Usage:
@@ -58,6 +32,35 @@ export class WorkflowsNew extends LiteElement {
 
   @property({ type: Object })
   initialWorkflow?: WorkflowParams;
+
+  private get defaultNewWorkflow(): WorkflowParams {
+    return {
+      name: "",
+      description: null,
+      profileid: null,
+      schedule: "",
+      config: {
+        scopeType: (this.appState.userPreferences?.newWorkflowScopeType ||
+          WorkflowScopeType.Page) as ScopeType,
+        exclude: [],
+        behaviorTimeout: null,
+        pageLoadTimeout: null,
+        pageExtraDelay: null,
+        postLoadDelay: null,
+        useSitemap: false,
+        failOnFailedSeed: false,
+        userAgent: null,
+      },
+      tags: [],
+      crawlTimeout: null,
+      maxCrawlSize: null,
+      jobType: "custom",
+      scale: 1,
+      autoAddCollections: [],
+      crawlerChannel: "default",
+      proxyId: null,
+    };
+  }
 
   private renderBreadcrumbs() {
     const breadcrumbs: Breadcrumb[] = [
@@ -103,7 +106,7 @@ export class WorkflowsNew extends LiteElement {
       </header>
       ${when(this.org, (org) => {
         const initialWorkflow = mergeDeep(
-          defaultValue,
+          this.defaultNewWorkflow,
           {
             profileid: org.crawlingDefaults?.profileid,
             config: {
