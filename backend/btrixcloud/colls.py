@@ -323,7 +323,16 @@ class CollectionOps:
         """Download all WACZs in collection as streaming nested WACZ"""
         coll = await self.get_collection(coll_id, org, resources=True)
 
-        resp = await self.storage_ops.download_streaming_wacz(org, coll.resources)
+        metadata = {
+            "type": "collection",
+            "id": str(coll_id),
+            "title": coll.name,
+            "organization": org.slug,
+        }
+        if coll.description:
+            metadata["description"] = coll.description
+
+        resp = await self.storage_ops.download_streaming_wacz(metadata, coll.resources)
 
         headers = {"Content-Disposition": f'attachment; filename="{coll.name}.wacz"'}
         return StreamingResponse(

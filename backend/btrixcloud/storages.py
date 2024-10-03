@@ -23,8 +23,6 @@ import zlib
 import json
 import os
 
-import requests
-
 from datetime import datetime
 from zipfile import ZipInfo
 
@@ -33,7 +31,7 @@ from stream_zip import stream_zip, NO_COMPRESSION_64, Method
 from remotezip import RemoteZip
 
 import aiobotocore.session
-import aiohttp
+import requests
 
 from types_aiobotocore_s3 import S3Client as AIOS3Client
 from types_aiobotocore_s3.type_defs import CompletedPartTypeDef
@@ -654,7 +652,9 @@ class StorageOps:
             with remote_zip.open(filename) as file_stream:
                 yield from file_stream
 
-    def _sync_dl(self, all_files: List[CrawlFileOut]) -> Iterator[bytes]:
+    def _sync_dl(
+        self, metadata: dict[str, str], all_files: List[CrawlFileOut]
+    ) -> Iterator[bytes]:
         """generate streaming zip as sync"""
         datapackage = {
             "profile": "multi-wacz-package",
@@ -667,6 +667,7 @@ class StorageOps:
                 }
                 for file_ in all_files
             ],
+            **metadata,
         }
         datapackage_bytes = json.dumps(datapackage, indent=2).encode("utf-8")
 
@@ -675,9 +676,8 @@ class StorageOps:
 
         def get_file(path: str) -> Iterable[bytes]:
             path = self.resolve_internal_access_path(path)
-            r = requests.get(path, stream=True)
-            for chunk in r.iter_content(CHUNK_SIZE):
-                yield chunk
+            r = requests.get(path, stream=True, timeout=None)
+            yield from r.iter_content(CHUNK_SIZE)
 
         def member_files() -> (
             Iterable[tuple[str, datetime, int, Method, Iterable[bytes]]]
@@ -707,13 +707,13 @@ class StorageOps:
         return cast(Iterator[bytes], stream_zip(member_files(), chunk_size=CHUNK_SIZE))
 
     async def download_streaming_wacz(
-        self, org: Organization, files: List[CrawlFileOut]
+        self, metadata: dict[str, str], files: List[CrawlFileOut]
     ) -> Iterator[bytes]:
         """return an iter for downloading a stream nested wacz file
         from list of files"""
         loop = asyncio.get_event_loop()
 
-        resp = await loop.run_in_executor(None, self._sync_dl, files)
+        resp = await loop.run_in_executor(None, self._sync_dl, metadata, files)
 
         return resp
 

@@ -54,7 +54,7 @@ PRESIGN_MINUTES_DEFAULT = PRESIGN_MINUTES_MAX
 
 
 # ============================================================================
-# pylint: disable=too-many-instance-attributes, too-many-public-methods
+# pylint: disable=too-many-instance-attributes, too-many-public-methods, too-many-lines
 class BaseCrawlOps:
     """operations that apply to all crawls"""
 
@@ -823,7 +823,14 @@ class BaseCrawlOps:
         if not crawl.resources:
             raise HTTPException(status_code=400, detail="no_crawl_resources")
 
-        resp = await self.storage_ops.download_streaming_wacz(org, crawl.resources)
+        metadata = {"type": crawl.type, "id": crawl_id, "organization": org.slug}
+        if crawl.name:
+            metadata["title"] = crawl.name
+
+        if crawl.description:
+            metadata["description"] = crawl.description
+
+        resp = await self.storage_ops.download_streaming_wacz(metadata, crawl.resources)
 
         headers = {"Content-Disposition": f'attachment; filename="{crawl_id}.wacz"'}
         return StreamingResponse(
