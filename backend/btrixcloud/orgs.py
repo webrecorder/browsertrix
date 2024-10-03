@@ -38,6 +38,7 @@ from .models import (
     OrgMetrics,
     OrgWebhookUrls,
     OrgCreate,
+    OrgProxies,
     Subscription,
     SubscriptionUpdate,
     SubscriptionCancel,
@@ -514,6 +515,18 @@ class OrgOps:
 
         res = await self.orgs.find_one_and_update({"_id": org.id}, {"$set": set_dict})
         return res is not None
+
+    async def update_proxies(self, org: Organization, proxies: OrgProxies) -> None:
+        """Update org proxy settings"""
+        await self.orgs.find_one_and_update(
+            {"_id": org.id},
+            {
+                "$set": {
+                    "allowSharedProxies": proxies.allowSharedProxies,
+                    "allowedProxies": proxies.allowedProxies,
+                }
+            },
+        )
 
     async def update_quotas(self, org: Organization, quotas: OrgQuotasIn) -> None:
         """update organization quotas"""
@@ -1480,6 +1493,19 @@ def init_orgs_api(
             raise HTTPException(status_code=403, detail="Not Allowed")
 
         await ops.update_quotas(org, quotas)
+
+        return {"updated": True}
+
+    @router.post("/proxies", tags=["organizations"], response_model=UpdatedResponse)
+    async def update_proxies(
+        proxies: OrgProxies,
+        org: Organization = Depends(org_owner_dep),
+        user: User = Depends(user_dep),
+    ):
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+
+        await ops.update_proxies(org, proxies)
 
         return {"updated": True}
 

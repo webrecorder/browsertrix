@@ -86,6 +86,7 @@ export type FormState = {
   autoscrollBehavior: boolean;
   userAgent: string | null;
   crawlerChannel: string;
+  proxyId: string | null;
 };
 
 export type FormStateField = keyof FormState;
@@ -139,6 +140,7 @@ export const getDefaultFormState = (): FormState => ({
   autoscrollBehavior: true,
   userAgent: null,
   crawlerChannel: "default",
+  proxyId: null,
 });
 
 export const mapSeedToUrl = (arr: Seed[]) =>
@@ -288,6 +290,7 @@ export function getInitialFormState(params: {
       params.initialWorkflow.config.userAgent ?? defaultFormState.userAgent,
     crawlerChannel:
       params.initialWorkflow.crawlerChannel || defaultFormState.crawlerChannel,
+    proxyId: params.initialWorkflow.proxyId || defaultFormState.proxyId,
     ...formState,
   };
 }

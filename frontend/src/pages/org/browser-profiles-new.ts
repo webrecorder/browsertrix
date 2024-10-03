@@ -14,7 +14,6 @@ import { isApiError } from "@/utils/api";
  * Usage:
  * ```ts
  * <btrix-browser-profiles-new
- *  authState=${authState}
  *  browserId=${browserId}
  * ></btrix-browser-profiles-new>
  * ```
@@ -33,9 +32,11 @@ export class BrowserProfilesNew extends BtrixElement {
     crawlerChannel?: string;
     profileId?: string | null;
     navigateUrl?: string;
+    proxyId: string | null;
   } = {
     name: "",
     url: "",
+    proxyId: null,
   };
 
   @state()
@@ -279,9 +280,11 @@ export class BrowserProfilesNew extends BtrixElement {
     }
 
     const crawlerChannel = this.browserParams.crawlerChannel || "default";
+    const proxyId = this.browserParams.proxyId;
     const data = await this.createBrowser({
       url,
       crawlerChannel,
+      proxyId,
     });
 
     this.navigate.to(
@@ -291,6 +294,7 @@ export class BrowserProfilesNew extends BtrixElement {
         url,
         name: this.browserParams.name || msg("My Profile"),
         crawlerChannel,
+        proxyId,
       })}`,
     );
   }
@@ -305,6 +309,7 @@ export class BrowserProfilesNew extends BtrixElement {
       name: formData.get("name"),
       description: formData.get("description"),
       crawlerChannel: this.browserParams.crawlerChannel,
+      proxyId: this.browserParams.proxyId,
     };
 
     try {
@@ -352,13 +357,16 @@ export class BrowserProfilesNew extends BtrixElement {
   private async createBrowser({
     url,
     crawlerChannel,
+    proxyId,
   }: {
     url: string;
     crawlerChannel: string;
+    proxyId: string | null;
   }) {
     const params = {
       url,
       crawlerChannel,
+      proxyId,
     };
 
     return this.api.fetch<{ browserid: string }>(

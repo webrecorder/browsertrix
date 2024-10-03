@@ -27,7 +27,6 @@ export type BrowserConnectionChange = {
  * Usage example:
  * ```ts
  * <btrix-profile-browser
- *   authState=${authState}
  *   browserId=${browserId}
  *   initialNavigateUrl=${initialNavigateUrl}
  *   origins=${origins}

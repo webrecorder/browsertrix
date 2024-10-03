@@ -42,6 +42,7 @@ export const crawlingDefaultsSchema = z.object({
   blockAds: z.boolean().optional(),
   profileid: z.string().optional(),
   crawlerChannel: z.string().optional(),
+  proxyId: z.string().optional(),
   lang: z.string().optional(),
   userAgent: z.string().optional(),
   exclude: z.array(z.string()),
@@ -90,6 +91,8 @@ export const orgDataSchema = z.object({
   readOnlyOnCancel: z.boolean(),
   subscription: subscriptionSchema.nullable(),
   crawlingDefaults: crawlingDefaultsSchema.nullable(),
+  allowSharedProxies: z.boolean(),
+  allowedProxies: z.array(z.string()),
 });
 export type OrgData = z.infer<typeof orgDataSchema>;
 

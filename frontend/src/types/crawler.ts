@@ -54,6 +54,7 @@ export type WorkflowParams = {
   description: string | null;
   autoAddCollections: string[];
   crawlerChannel: string;
+  proxyId: string | null;
 };
 
 export type CrawlConfig = WorkflowParams & {
@@ -124,6 +125,7 @@ export type Profile = {
     replicas: ProfileReplica[] | null;
   };
   crawlerChannel?: string;
+  proxyId?: string;
 };
 
 // TODO maybe convert this to an enum?
@@ -194,6 +196,19 @@ export type Upload = ArchivedItemBase & {
 export type CrawlerChannel = {
   id: string;
   image: string;
+};
+
+export type Proxy = {
+  id: string;
+  label: string;
+  country_code: string | null;
+  description: string | null;
+  shared: boolean;
+};
+
+export type ProxiesAPIResponse = {
+  default_proxy_id: string | null;
+  servers: Proxy[];
 };
 
 export type ArchivedItem = Crawl | Upload;

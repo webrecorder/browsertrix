@@ -1,0 +1,2 @@
+proxies: [] # see proxies description in main helm chart
+crawler_namespace: crawlers # namespace to deploy ssh keys to

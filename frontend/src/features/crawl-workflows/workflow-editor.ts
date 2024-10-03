@@ -39,6 +39,7 @@ import type {
   SelectCrawlerChangeEvent,
   SelectCrawlerUpdateEvent,
 } from "@/components/ui/select-crawler";
+import type { SelectCrawlerProxyChangeEvent } from "@/components/ui/select-crawler-proxy";
 import type { Tab } from "@/components/ui/tab-list";
 import type { TagInputEvent, TagsChangeEvent } from "@/components/ui/tag-input";
 import type { TimeInputChangeEvent } from "@/components/ui/time-input";
@@ -104,7 +105,6 @@ type ProgressState = {
   activeTab: StepName;
   tabs: Tabs;
 };
-
 const DEFAULT_BEHAVIORS = [
   "autoscroll",
   "autoplay",
@@ -150,6 +150,7 @@ const getDefaultProgressState = (hasConfigId = false): ProgressState => {
     },
   };
 };
+
 function getLocalizedWeekDays() {
   const now = new Date();
   // TODO accept locale from locale-picker
@@ -1321,6 +1322,17 @@ https://archiveweb.page/images/${"logo.svg"}`}
       `)}
       ${this.renderHelpTextCol(infoTextStrings["browserProfile"])}
       ${inputCol(html`
+        <btrix-select-crawler-proxy
+          orgId=${this.orgId}
+          .proxyId="${this.formState.proxyId || ""}"
+          @on-change=${(e: SelectCrawlerProxyChangeEvent) =>
+            this.updateFormState({
+              proxyId: e.detail.value,
+            })}
+        ></btrix-select-crawler-proxy>
+      `)}
+      ${this.renderHelpTextCol(infoTextStrings["proxyId"])}
+      ${inputCol(html`
         <sl-radio-group
           name="scale"
           label=${msg("Browser Windows")}
@@ -2106,6 +2118,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         ).join(","),
       },
       crawlerChannel: this.formState.crawlerChannel || "default",
+      proxyId: this.formState.proxyId,
     };
 
     return config;

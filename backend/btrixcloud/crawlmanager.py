@@ -1,7 +1,6 @@
 """ shared crawl manager implementation """
 
 import os
-import asyncio
 import secrets
 
 from typing import Optional, Dict
@@ -16,13 +15,12 @@ from .models import StorageRef, CrawlConfig, BgJobType
 
 
 # ============================================================================
+DEFAULT_PROXY_ID: str = os.environ.get("DEFAULT_PROXY_ID", "")
+
+
+# ============================================================================
 class CrawlManager(K8sAPI):
     """abstract crawl manager"""
-
-    def __init__(self):
-        super().__init__()
-
-        self.loop = asyncio.get_running_loop()
 
     # pylint: disable=too-many-arguments
     async def run_profile_browser(
@@ -34,6 +32,7 @@ class CrawlManager(K8sAPI):
         crawler_image: str,
         baseprofile: str = "",
         profile_filename: str = "",
+        proxy_id: str = "",
     ) -> str:
         """run browser for profile creation"""
 
@@ -55,6 +54,7 @@ class CrawlManager(K8sAPI):
             "vnc_password": secrets.token_hex(16),
             "expire_time": date_to_str(dt_now() + timedelta(seconds=30)),
             "crawler_image": crawler_image,
+            "proxy_id": proxy_id or DEFAULT_PROXY_ID,
         }
 
         data = self.templates.env.get_template("profile_job.yaml").render(params)
@@ -138,6 +138,7 @@ class CrawlManager(K8sAPI):
             warc_prefix=warc_prefix,
             storage_filename=storage_filename,
             profile_filename=profile_filename,
+            proxy_id=crawlconfig.proxyId or DEFAULT_PROXY_ID,
         )
 
     async def create_qa_crawl_job(
