@@ -2,7 +2,7 @@
 
 Browsertrix can be configured to direct crawling traffic through dedicated proxy servers, allowing websites to be crawled from a specific geographic location regardless of where Browsertrix itself is deployed.
 
-The Browsertrix superadmin can configure which proxy servers are available to which organizations (or if they are shared for all organizations) and users can [choose from one of the available proxies in each crawl workflow](../user-guide/workflow-setup.md#proxy). Users can also configure the default crawling proxy that will be used for the organization in organization-wide [Crawling Defaults](../user-guide/org-settings.md#crawling-defaults).
+The Browsertrix superadmin can configure which proxy servers are available to which organizations or if they are shared across all organizations, and users can [choose from one of the available proxies in each crawl workflow](../user-guide/workflow-setup.md#proxy). Users can also configure the default crawling proxy that will be used for the organization in organization-wide [Crawling Defaults](../user-guide/org-settings.md#crawling-defaults).
 
 This guide covers how to set up proxy servers for use with Browsertrix, as well as how to configure Browsertrix to make those proxies available to organizations.
 
@@ -18,9 +18,9 @@ To set up a proxy server to use with Browsertrix as SOCKS5 over SSH, you will ne
 - The SSH private key configured in Browsertrix
 - The public host key of the remote machine configured in Browsertrix (optional)
 
-We recommend creating a dedicated SSH key-pair (we recommend an ECDSA key-pair) for use with Browsertrix, as well as a dedicated user, eg. `proxy-user`, and not reusing existing keys or users.
+We recommend creating a dedicated SSH key-pair for use with Browsertrix, as well as a dedicated user, e.g. `proxy-user`, and not reusing existing keys or users.
 
-For basic information on how to create a key-pair using `ssh-keygen`, see existing guides such as [this one from DigitalOcean](https://www.digitalocean.com/community/tutorials/how-to-configure-ssh-key-based-authentication-on-a-linux-server) or [this one from ssh.com](https://www.ssh.com/academy/ssh/keygen)
+For basic information on how to create a key-pair using `ssh-keygen`, see existing guides such as [this one from DigitalOcean](https://www.digitalocean.com/community/tutorials/how-to-configure-ssh-key-based-authentication-on-a-linux-server) or [this one from ssh.com](https://www.ssh.com/academy/ssh/keygen). We recommend an ECDSA key-pair.
 
 We recommend securing the SSH connection for the proxy user to contain the following settings. This can be done by adding a file such as `/etc/ssh/sshd_config.d/99-ssh-proxy.conf` where `proxy-user` is the user connecting to the machine.
 
@@ -97,7 +97,7 @@ This is a deployment-wide setting and is not shown to users, and is designed for
 
 ## Deployment
 
-If `btrix-proxies` have been set in the main Helm chart or a local override file for your Browsertrix deployment, proxies will be enabled on next deploy of the Browsertrix helm chart.  For instance, if the proxy configuration is located in a local override file `local.yaml`, you can use the following Helm command to redeploy Browsertrix with the proxy configuration:
+If `btrix-proxies` have been set in the main Helm chart or a local override file for your Browsertrix deployment, proxies will be enabled on next deploy of the Browsertrix helm chart. For instance, if the proxy configuration is located in a local override file `local.yaml`, you can use the following Helm command to redeploy Browsertrix with the proxy configuration:
 
 ```sh
 helm upgrade --install -f ./chart/values.yaml -f ./chart/local.yaml btrix ./chart/
