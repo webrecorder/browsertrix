@@ -29,12 +29,8 @@ export const DEPTH_SUPPORTED_SCOPES = [
   "any",
 ];
 
-export function isActive({ state }: Partial<Crawl | QARun>): boolean {
-  return (
-    (state &&
-      (activeCrawlStates as readonly string[]).includes(state as string)) ||
-    false
-  );
+export function isActive({ state }: Partial<Crawl | QARun>) {
+  return (activeCrawlStates as readonly (typeof state)[]).includes(state);
 }
 
 export function isSuccessfullyFinished({ state }: { state: string }) {
