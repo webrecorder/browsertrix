@@ -29,11 +29,11 @@ export const DEPTH_SUPPORTED_SCOPES = [
   "any",
 ];
 
-export function isActive({ state, stopping }: Partial<Crawl | QARun>) {
+export function isActive({ state }: Partial<Crawl | QARun>): boolean {
   return (
     (state &&
       (activeCrawlStates as readonly string[]).includes(state as string)) ||
-    stopping === true
+    false
   );
 }
 
