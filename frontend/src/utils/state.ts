@@ -63,7 +63,7 @@ export function makeAppStateService() {
           )) ||
         null;
 
-      if (!userOrg) {
+      if (appState.userInfo && !userOrg) {
         console.debug("no user org matching slug in state");
       }
 
