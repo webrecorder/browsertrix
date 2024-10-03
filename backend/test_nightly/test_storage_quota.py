@@ -52,6 +52,7 @@ def test_crawl_stopped_when_storage_quota_reached(org_with_quotas, admin_auth_he
     while get_crawl_status(org_with_quotas, crawl_id, admin_auth_headers) in (
         "starting",
         "waiting_capacity",
+        "waiting_org_limit",
     ):
         time.sleep(2)
 
@@ -63,13 +64,15 @@ def test_crawl_stopped_when_storage_quota_reached(org_with_quotas, admin_auth_he
     ):
         time.sleep(2)
 
+    time.sleep(5)
+
     # Ensure that crawl was stopped by quota
     assert (
         get_crawl_status(org_with_quotas, crawl_id, admin_auth_headers)
         == "stopped_storage_quota_reached"
     )
 
-    time.sleep(10)
+    time.sleep(5)
 
     # Ensure crawl storage went over quota
     r = requests.get(
