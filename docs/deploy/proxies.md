@@ -54,7 +54,7 @@ btrix-proxies:
       url: ssh://proxy-user@ssh-proxy-host
       ssh_host_public_key: <host public key>
       ssh_private_key: <private key>
-		
+
 		- id: proxy-id-2
 			shared: false
 			label: My SOCKS5 proxy
@@ -103,7 +103,7 @@ If `btrix-proxies` have been set in the main Helm chart or a local override file
 helm upgrade --install -f ./chart/values.yaml -f ./chart/local.yaml btrix ./chart/
 ```
 
-### Deploying with Proxies via Subchart
+### Deploying with Proxies via Sub-chart
 
 Proxies can alternatively be configured with a separate proxies sub-chart.
 
@@ -121,7 +121,7 @@ proxies:
 		url: ssh://proxy-user@ssh-proxy-host
 		ssh_host_public_key: <host public key>
 		ssh_private_key: <private key>
-	
+
 	- id: proxy-id-2
 		shared: false
 		label: My SOCKS5 proxy
