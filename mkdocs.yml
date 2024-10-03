@@ -77,6 +77,7 @@ nav:
       - deploy/local.md
       - deploy/remote.md
       - deploy/customization.md
+      - deploy/proxies.md
       - Ansible:
         - deploy/ansible/digitalocean.md
         - deploy/ansible/microk8s.md

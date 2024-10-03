@@ -2,6 +2,8 @@
 
 Browsertrix can be configured to direct crawling traffic through dedicated proxy servers, so that websites can be crawled from a specific geographic location regardless of where Browsertrix itself is deployed.
 
+The Browsertrix superadmin can configure which proxy servers are available to which organizations (or if they are shared for all organizations) and users can choose from one of the available proxies in each crawl workflow. Users can also configure the default crawling proxy that will be used for the organization in organization-wide [Crawling Defaults](/user-guide/org-settings/#crawling-defaults).
+
 This guide covers how to set up proxy servers for use with Browsertrix, as well as how to configure Browsertrix to make those proxies available.
 
 ## Proxy Configuration
@@ -40,6 +42,8 @@ Proxies are configured in Browsertrix through a separate subchart, and can be co
 The proxy configuration will look like this, containing one or more proxy declarations.
 
 ```yaml
+#default_proxy: <set for default proxy>
+
 btrix-proxies:
   enabled: true
   proxies:
@@ -88,10 +92,11 @@ that are allowed to access shared proxy. If false, the proxy must be added direc
 
 The proxy settings can be be configured in the super-admin UI by clicking on the 'Edit Proxies...' next to each organization.
 
-### Default Proxies
+### Default Proxy
 
-The `default_proxy` field can optionally be set to the id for one of the proxies in the `proxies` list. If set, the default proxy will be used for all crawls that do not have an alternate proxy set in the workflow configuration. This can be useful
-if Browsertrix is deployed on a private network and requires a proxy to access the outside world.
+The `default_proxy` field in the root of the Helm values file can optionally be set to the id for one of the available proxies list. If set, the default proxy will be used for all crawls that do not have an alternate proxy set in the workflow configuration. This can be useful if Browsertrix is deployed on a private network and requires a proxy to access the outside world.
+
+This is a deployment-wide setting and is not shown to users, and is designed for admins to route all traffic through a designated proxy. Browsertrix will fail to start if the default proxy is not listed in the available proxies.
 
 ## Deployment
 
