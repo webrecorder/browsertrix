@@ -4,7 +4,7 @@ Browsertrix can be configured to direct crawling traffic through dedicated proxy
 
 The Browsertrix superadmin can configure which proxy servers are available to which organizations (or if they are shared for all organizations) and users can [choose from one of the available proxies in each crawl workflow](../user-guide/workflow-setup.md#proxy). Users can also configure the default crawling proxy that will be used for the organization in organization-wide [Crawling Defaults](../user-guide/org-settings.md#crawling-defaults).
 
-This guide covers how to set up proxy servers for use with Browsertrix, as well as how to configure Browsertrix to make those proxies available.
+This guide covers how to set up proxy servers for use with Browsertrix, as well as how to configure Browsertrix to make those proxies available to organizations.
 
 ## Proxy Configuration
 
