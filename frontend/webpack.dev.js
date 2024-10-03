@@ -58,8 +58,8 @@ module.exports = [
           },
         },
       },
-      // Serve replay service worker file
-      onBeforeSetupMiddleware: (server) => {
+      setupMiddlewares: (middlewares, server) => {
+        // Serve replay service worker file
         server.app?.get("/replay/sw.js", (req, res) => {
           res.set("Content-Type", "application/javascript");
           res.send(`importScripts("${RWP_BASE_URL}sw.js")`);
@@ -75,6 +75,7 @@ module.exports = [
           res.set("Content-Type", "application/javascript");
           res.status(404).send(`{"error": "placeholder_for_replay"}`);
         });
+        return middlewares;
       },
       port: 9870,
     },
