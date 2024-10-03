@@ -26,12 +26,12 @@ We recommend securing the SSH connection for the proxy user to contain the follo
 
 ```
 Match User proxy-user
-	AllowTcpForwarding yes
-	X11Forwarding no
-	AllowAgentForwarding no
-	ForceCommand /bin/false
-	PubkeyAuthentication yes
-	PasswordAuthentication no
+    AllowTcpForwarding yes
+    X11Forwarding no
+    AllowAgentForwarding no
+    ForceCommand /bin/false
+    PubkeyAuthentication yes
+    PasswordAuthentication no
 ```
 
 ## Browsertrix Configuration
@@ -55,12 +55,12 @@ btrix-proxies:
       ssh_host_public_key: <host public key>
       ssh_private_key: <private key>
 
-		- id: proxy-id-2
-			shared: false
-			label: My SOCKS5 proxy
-			country_code: DE
-			url: socks5://username:password@proxy-host
-		  ...
+    - id: proxy-id-2
+      shared: false
+      label: My SOCKS5 proxy
+      country_code: DE
+      url: socks5://username:password@proxy-host
+      ...
 ```
 
 First, set `enabled` to `true` to enable proxies.
@@ -113,20 +113,20 @@ A separate proxies YAML file should contain just the `proxies` key:
 
 ```yaml
 proxies:
-	- id: proxy-id-1
-		shared: true
-		label: My Proxy
-		description: Proxy hosted in for Browsertrix
-		country_code: US
-		url: ssh://proxy-user@ssh-proxy-host
-		ssh_host_public_key: <host public key>
-		ssh_private_key: <private key>
+    - id: proxy-id-1
+        shared: true
+        label: My Proxy
+        description: Proxy hosted in for Browsertrix
+        country_code: US
+        url: ssh://proxy-user@ssh-proxy-host
+        ssh_host_public_key: <host public key>
+        ssh_private_key: <private key>
 
-	- id: proxy-id-2
-		shared: false
-		label: My SOCKS5 proxy
-		country_code: DE
-		url: socks5://username:password@proxy-host
+    - id: proxy-id-2
+        shared: false
+        label: My SOCKS5 proxy
+        country_code: DE
+        url: socks5://username:password@proxy-host
 ```
 
 If the above YAML is placed in `proxies.yaml`, the subchart can be deployed with the following command and Browsertrix will pick up the updated proxies:
