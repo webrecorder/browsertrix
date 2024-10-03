@@ -406,6 +406,15 @@ def test_download_wacz_crawls(
                 assert filename.endswith(".wacz") or filename == "datapackage.json"
                 assert zip_file.getinfo(filename).compress_type == ZIP_STORED
 
+                if filename == "datapackage.json":
+                    data = zip_file.read(filename).decode("utf-8")
+                    datapackage = json.loads(data)
+                    assert len(datapackage["resources"]) == 1
+                    for resource in datapackage["resources"]:
+                        assert resource["name"] == resource["path"]
+                        assert resource["size"]
+                        assert resource["hash"]
+
 
 def test_update_crawl(
     admin_auth_headers,

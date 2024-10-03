@@ -33,8 +33,8 @@ from remotezip import RemoteZip
 import aiobotocore.session
 import aiohttp
 
-from mypy_boto3_s3.type_defs import CompletedPartTypeDef
 from types_aiobotocore_s3 import S3Client as AIOS3Client
+from types_aiobotocore_s3.type_defs import CompletedPartTypeDef
 
 from .models import (
     BaseFile,
@@ -658,7 +658,7 @@ class StorageOps:
         """generate streaming zip as sync"""
         datapackage = {
             "profile": "multi-wacz-package",
-            "resources": [file_.dict() for file_ in all_files],
+            "resources": [{**file_.dict(), "path": file_.name} for file_ in all_files],
         }
         datapackage_bytes = json.dumps(datapackage).encode("utf-8")
 
