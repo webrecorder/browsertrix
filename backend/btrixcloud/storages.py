@@ -658,9 +658,17 @@ class StorageOps:
         """generate streaming zip as sync"""
         datapackage = {
             "profile": "multi-wacz-package",
-            "resources": [{**file_.dict(), "path": file_.name} for file_ in all_files],
+            "resources": [
+                {
+                    "name": file_.name,
+                    "path": file_.name,
+                    "hash": "sha256:" + file_.hash,
+                    "bytes": file_.size,
+                }
+                for file_ in all_files
+            ],
         }
-        datapackage_bytes = json.dumps(datapackage).encode("utf-8")
+        datapackage_bytes = json.dumps(datapackage, indent=2).encode("utf-8")
 
         async def get_datapackage() -> AsyncIterable[bytes]:
             yield datapackage_bytes
