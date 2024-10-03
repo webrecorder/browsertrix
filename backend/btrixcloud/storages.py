@@ -51,6 +51,7 @@ from .models import (
 )
 
 from .utils import is_bool, slug_from_name
+from .version import __version__
 
 
 if TYPE_CHECKING:
@@ -667,6 +668,7 @@ class StorageOps:
                 }
                 for file_ in all_files
             ],
+            "software": f"Browsertrix v{__version__}",
             **metadata,
         }
         datapackage_bytes = json.dumps(datapackage, indent=2).encode("utf-8")
