@@ -412,8 +412,8 @@ def test_download_wacz_crawls(
                     assert len(datapackage["resources"]) == 1
                     for resource in datapackage["resources"]:
                         assert resource["name"] == resource["path"]
-                        assert resource["size"]
                         assert resource["hash"]
+                        assert resource["bytes"]
 
 
 def test_update_crawl(
