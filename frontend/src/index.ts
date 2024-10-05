@@ -850,14 +850,14 @@ export class App extends LiteElement {
         iframe.removeEventListener("load", oneLoad);
       };
 
-      iframe.classList.add(tw`opacity-0`);
-
       if (pathName) {
         if (iframe.src.slice(this.docsUrl.length) !== pathName) {
+          iframe.classList.add(tw`opacity-0`);
           iframe.addEventListener("load", oneLoad);
           iframe.src = `${this.docsUrl}${pathName}`;
         }
       } else {
+        iframe.classList.add(tw`opacity-0`);
         iframe.addEventListener("load", oneLoad);
         iframe.src = this.docsUrl;
       }
