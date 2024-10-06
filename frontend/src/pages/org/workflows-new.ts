@@ -18,7 +18,7 @@ const workflowTabToGuideHash: Record<string, string> = {
   browserSettings: "browser-settings",
   crawlScheduling: "scheduling",
   crawlMetadata: "metadata",
-  confirmSettings: "scope",
+  confirmSettings: "review-settings",
 };
 
 /**
