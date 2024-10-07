@@ -57,12 +57,13 @@ export class WorkflowsNew extends LiteElement {
     super.connectedCallback();
 
     this.userGuideHashLink =
-      workflowTabToGuideHash[
-        window.location.hash.slice(1) as unknown as GuideHash
-      ] || "scope";
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      workflowTabToGuideHash[window.location.hash.slice(1) as GuideHash] ||
+      "scope";
 
     window.addEventListener("hashchange", () => {
-      const hashValue = window.location.hash.slice(1) as unknown as GuideHash;
+      const hashValue = window.location.hash.slice(1) as GuideHash;
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       this.userGuideHashLink = workflowTabToGuideHash[hashValue] || "scope";
     });
   }
