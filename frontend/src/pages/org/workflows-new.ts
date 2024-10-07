@@ -12,7 +12,9 @@ import { WorkflowScopeType } from "@/types/workflow";
 import LiteElement, { html } from "@/utils/LiteElement";
 import type { FormState as WorkflowFormState } from "@/utils/workflow";
 
-const workflowTabToGuideHash: Record<string, string> = {
+type GuideHash = "scope" | "limits" | "browser-settings" | "scheduling" | "metadata" | "review-settings";
+
+const workflowTabToGuideHash: Record<string, GuideHash> = {
   crawlSetup: "scope",
   crawlLimits: "limits",
   browserSettings: "browser-settings",
@@ -43,16 +45,16 @@ export class WorkflowsNew extends LiteElement {
   initialWorkflow?: WorkflowParams;
 
   @state()
-  userGuideHashLink = "scope";
+  private userGuideHashLink: GuideHash = "scope";
 
   connectedCallback(): void {
     super.connectedCallback();
 
     this.userGuideHashLink =
-      workflowTabToGuideHash[window.location.hash.slice(1)] || "scope";
+      workflowTabToGuideHash[window.location.hash.slice(1) as unknown as GuideHash] || "scope";
 
     window.addEventListener("hashchange", () => {
-      const hashValue = window.location.hash.slice(1);
+      const hashValue = window.location.hash.slice(1) as unknown as GuideHash;
       this.userGuideHashLink = workflowTabToGuideHash[hashValue] || "scope";
     });
   }

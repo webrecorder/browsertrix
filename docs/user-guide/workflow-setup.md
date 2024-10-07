@@ -279,5 +279,4 @@ Search for and specify [collections](collections.md) that this crawl workflow sh
 
 ## Review Settings
 
-This paeg lists all the previously entered settings for final review. If there are any errors from the previous pages,
-they will be listed at the top. The errors need to be corrected before the crawl workflow can be created
+This section lists all the previously entered settings for final review. If there are any errors from the previous form sections, they will be listed at the top. The errors need to be corrected before the crawl workflow can be created.
