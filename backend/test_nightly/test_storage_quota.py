@@ -21,7 +21,6 @@ def run_crawl(org_id, headers):
         "config": {
             "seeds": [{"url": "https://specs.webrecorder.net/"}],
             "extraHops": 1,
-            "limit": 20,
         },
     }
     r = requests.post(
@@ -49,6 +48,21 @@ def test_crawl_stopped_when_storage_quota_reached(org_with_quotas, admin_auth_he
     global config_id
     crawl_id, config_id = run_crawl(org_with_quotas, admin_auth_headers)
     time.sleep(1)
+
+    assert config_id
+
+    if not crawl_id:
+        # Wait a little bit and try again to run workflow
+        time.sleep(30)
+
+        r = requests.post(
+            f"{API_PREFIX}/orgs/{org_with_quotas}/crawlconfigs/{config_id}/run",
+            headers=admin_auth_headers,
+        )
+        assert r.status_code == 200
+        crawl_id = r.json()["started"]
+
+    assert crawl_id
 
     while get_crawl_status(org_with_quotas, crawl_id, admin_auth_headers) in (
         "starting",
