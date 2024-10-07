@@ -195,6 +195,8 @@ export class WorkflowEditor extends BtrixElement {
   @property({ type: Object })
   initialWorkflow?: WorkflowParams;
 
+  private updatingScopeType = false;
+
   @property({ type: Array })
   initialSeeds?: Seed[];
 
@@ -293,7 +295,11 @@ export class WorkflowEditor extends BtrixElement {
     changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {
     if (changedProperties.get("initialWorkflow") && this.initialWorkflow) {
-      this.initializeEditor();
+      if (this.updatingScopeType) {
+        this.updatingScopeType = false;
+      } else {
+        this.initializeEditor();
+      }
     }
     if (changedProperties.get("progressState") && this.progressState) {
       if (
@@ -1715,6 +1721,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
     if (!this.configId) {
       // Remember scope type for new workflows
+      this.updatingScopeType = true;
       AppStateService.partialUpdateUserPreferences({
         newWorkflowScopeType: value,
       });
