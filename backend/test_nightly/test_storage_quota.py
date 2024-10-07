@@ -21,6 +21,7 @@ def run_crawl(org_id, headers):
         "config": {
             "seeds": [{"url": "https://webrecorder.net/"}],
             "extraHops": 1,
+            "limit": 20,
         },
     }
     r = requests.post(
