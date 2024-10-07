@@ -1365,7 +1365,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
             `Increase the number of open browser windows during a crawl. This will speed up your crawl by effectively running more crawlers at the same time.`,
           )}
           <a
-            href="https://docs.browsertrix.com/user-guide/workflow-setup/#browser-windows"
+            href="/docs/user-guide/workflow-setup/#browser-windows"
             class="text-blue-600 hover:text-blue-500"
             target="_blank"
             >${msg("See caveats")}</a

@@ -40,6 +40,17 @@ server {
       try_files $uri /index.html;
     }
 
+    location ~* /docs/(.*) {
+      set $docs_url "${DOCS_URL}";
+
+      if ($docs_url != "") {
+        rewrite ^ $docs_url/$1 redirect;
+      }
+
+      root   /usr/share/nginx/html;
+      index  index.html index.htm;
+    }
+
     # serve replay service worker, RWP_BASE_URL set in Dockerfile
     location /replay/sw.js {
       add_header Content-Type application/javascript;

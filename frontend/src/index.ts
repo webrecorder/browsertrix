@@ -67,7 +67,7 @@ export class App extends LiteElement {
   version?: string;
 
   @property({ type: String })
-  docsUrl = "https://docs.browsertrix.com/";
+  docsUrl = "/docs/";
 
   @property({ type: Object })
   settings?: AppSettings;
