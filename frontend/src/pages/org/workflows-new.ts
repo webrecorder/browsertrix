@@ -128,7 +128,7 @@ export class WorkflowsNew extends LiteElement {
                 UserGuideEventMap["btrix-user-guide-show"]["detail"]
               >("btrix-user-guide-show", {
                 detail: {
-                  path: `/user-guide/workflow-setup/#${this.userGuideHashLink}`,
+                  path: `user-guide/workflow-setup/#${this.userGuideHashLink}`,
                 },
                 bubbles: true,
               }),

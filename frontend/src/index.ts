@@ -27,7 +27,6 @@ import type { NotifyEventDetail } from "@/controllers/notify";
 import { theme } from "@/theme";
 import { type Auth } from "@/types/auth";
 import { type AppSettings } from "@/utils/app";
-import { tw } from "@/utils/tailwind";
 import brandLockupColor from "~assets/brand/browsertrix-lockup-color.svg";
 
 import "./shoelace";
@@ -77,6 +76,9 @@ export class App extends LiteElement {
 
   @state()
   private viewState!: ViewState;
+
+  @state()
+  private fullDocsUrl = "/docs/";
 
   @state()
   private globalDialogContent: DialogContent = {};
@@ -263,9 +265,15 @@ export class App extends LiteElement {
         </span>
         <iframe
           class="size-full transition-opacity duration-slow"
-          src="${this.docsUrl}user-guide/"
+          src="${this.docsUrl}user-guide/workflow-setup/"
         ></iframe>
-        <sl-button size="small" slot="footer" variant="text">
+        <sl-button
+          size="small"
+          slot="footer"
+          variant="text"
+          href="${this.fullDocsUrl}"
+          target="_blank"
+        >
           <sl-icon slot="suffix" name="box-arrow-up-right"></sl-icon>
           ${msg("Open in new window")}</sl-button
         >
@@ -845,21 +853,12 @@ export class App extends LiteElement {
     const iframe = this.userGuideDrawer.querySelector("iframe");
 
     if (iframe) {
-      const oneLoad = () => {
-        iframe.classList.remove(tw`opacity-0`);
-        iframe.removeEventListener("load", oneLoad);
-      };
-
       if (pathName) {
-        if (iframe.src.slice(this.docsUrl.length) !== pathName) {
-          iframe.classList.add(tw`opacity-0`);
-          iframe.addEventListener("load", oneLoad);
-          iframe.src = `${this.docsUrl}${pathName}`;
-        }
+        this.fullDocsUrl = this.docsUrl + pathName;
+        iframe.src = this.fullDocsUrl;
       } else {
-        iframe.classList.add(tw`opacity-0`);
-        iframe.addEventListener("load", oneLoad);
-        iframe.src = this.docsUrl;
+        this.fullDocsUrl = this.docsUrl;
+        iframe.src = this.fullDocsUrl;
       }
 
       void this.userGuideDrawer.show();
