@@ -36,6 +36,11 @@ Though the system and backend API is fairly stable, we are working on many addit
 
 Guides for getting started with local development are available at [docs.browsertrix.com/develop](https://docs.browsertrix.com/develop/)
 
+### Translation
+
+We use [Weblate](https://hosted.weblate.org/engage/browsertrix/) to manage translation contributions.
+
+<img src="https://hosted.weblate.org/widget/browsertrix/browsertrix-ui/multi-auto.svg" alt="Translation status" />
 
 ## License
 
