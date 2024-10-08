@@ -8,8 +8,8 @@ from .conftest import API_PREFIX
 from .utils import get_crawl_status
 
 
-STORAGE_QUOTA_KB = 5
-STORAGE_QUOTA_BYTES = STORAGE_QUOTA_KB * 1000
+STORAGE_QUOTA_MB_TO_INCREASE = 5
+STORAGE_QUOTA_BYTES_INC = STORAGE_QUOTA_MB_TO_INCREASE * 1000 * 1000
 
 config_id = None
 
@@ -34,10 +34,19 @@ def run_crawl(org_id, headers):
 
 
 def test_storage_quota(org_with_quotas, admin_auth_headers):
+    # Get current storage usage
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{org_with_quotas}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    bytes_stored = r.json()["bytesStored"]
+
+    # Set storage quota higher than bytesStored
     r = requests.post(
         f"{API_PREFIX}/orgs/{org_with_quotas}/quotas",
         headers=admin_auth_headers,
-        json={"storageQuota": STORAGE_QUOTA_BYTES},
+        json={"storageQuota": bytes_stored + STORAGE_QUOTA_BYTES_INC},
     )
     assert r.status_code == 200
     assert r.json()["updated"]
@@ -49,15 +58,7 @@ def test_crawl_stopped_when_storage_quota_reached(org_with_quotas, admin_auth_he
     crawl_id, config_id = run_crawl(org_with_quotas, admin_auth_headers)
     time.sleep(1)
 
-    assert config_id
-
-    if not crawl_id:
-        # Wait a little bit and try again to run workflow
-        r = requests.post(
-            f"{API_PREFIX}/orgs/{org_with_quotas}/crawlconfigs/{config_id}/run",
-            headers=admin_auth_headers,
-        )
-        assert r.json()["detail"] == "something_its_not"
+    assert crawl_id
 
     while get_crawl_status(org_with_quotas, crawl_id, admin_auth_headers) in (
         "starting",
