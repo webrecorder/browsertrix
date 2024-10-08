@@ -334,6 +334,7 @@ def test_get_pending_org_invites(
     assert invite["oid"] == non_default_org_id
     assert invite["created"]
     assert invite["role"]
+    assert invite["firstOrgAdmin"] == False
 
     # Delete Invites
     r = requests.post(
