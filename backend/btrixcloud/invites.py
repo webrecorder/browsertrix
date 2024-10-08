@@ -292,7 +292,7 @@ class InviteOps:
         invite_out.orgName = org.name
         invite_out.orgSlug = org.slug
 
-        if include_first_org_admin:
+        if include_first_org_admin and invite.role >= UserRole.OWNER:
             invite_out.firstOrgAdmin = True
             for role in org.users.values():
                 if role == UserRole.OWNER:

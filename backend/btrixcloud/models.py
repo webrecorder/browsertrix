@@ -102,7 +102,7 @@ class InviteOut(BaseModel):
     orgSlug: Optional[str] = None
     role: UserRole = UserRole.VIEWER
     email: Optional[EmailStr] = None
-    firstOrgAdmin: Optional[bool] = None
+    firstOrgAdmin: bool = False
 
 
 # ============================================================================
