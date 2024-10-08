@@ -108,7 +108,7 @@ class CrawlManager(K8sAPI):
 
         data = self.templates.env.get_template("replica_job.yaml").render(params)
 
-        await self.create_from_yaml(data, namespace=self.default_namespace)
+        await self.create_from_yaml(data)
 
         return job_id
 
