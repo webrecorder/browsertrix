@@ -17,7 +17,7 @@ from .models import StorageRef, CrawlConfig, BgJobType
 # ============================================================================
 DEFAULT_PROXY_ID: str = os.environ.get("DEFAULT_PROXY_ID", "")
 
-DEFAULT_NAMESPACE = os.environ.get("DEFAULT_NAMESPACE", "default")
+DEFAULT_NAMESPACE: str = os.environ.get("DEFAULT_NAMESPACE", "default")
 
 
 # ============================================================================
