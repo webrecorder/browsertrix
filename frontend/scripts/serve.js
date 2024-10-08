@@ -16,7 +16,7 @@ const app = express();
 
 const { devServer } = devConfig;
 
-devServer.onBeforeSetupMiddleware({ app });
+devServer.setupMiddlewares([], { app });
 
 app.use("/", express.static("dist"));
 Object.keys(devServer.proxy).forEach((path) => {

@@ -6,6 +6,7 @@ import zipfile
 import re
 import csv
 import codecs
+import json
 from tempfile import TemporaryFile
 from zipfile import ZipFile, ZIP_STORED
 
@@ -405,6 +406,15 @@ def test_download_wacz_crawls(
             for filename in contents:
                 assert filename.endswith(".wacz") or filename == "datapackage.json"
                 assert zip_file.getinfo(filename).compress_type == ZIP_STORED
+
+                if filename == "datapackage.json":
+                    data = zip_file.read(filename).decode("utf-8")
+                    datapackage = json.loads(data)
+                    assert len(datapackage["resources"]) == 1
+                    for resource in datapackage["resources"]:
+                        assert resource["name"] == resource["path"]
+                        assert resource["hash"]
+                        assert resource["bytes"]
 
 
 def test_update_crawl(

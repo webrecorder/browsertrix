@@ -213,6 +213,10 @@ Sets the browser's [user agent](https://developer.mozilla.org/en-US/docs/Web/HTT
 
 Sets the browser's language setting. Useful for crawling websites that detect the browser's language setting and serve content accordingly.
 
+### Proxy
+
+Sets the proxy server that [Browsertrix Crawler](https://github.com/webrecorder/browsertrix-crawler) will direct traffic through while crawling. When a proxy is selected, crawled websites will see traffic as coming from the IP address of the proxy rather than where the Browsertrix Crawler node is deployed.
+
 ## Scheduling
 
 Automatically start crawls periodically on a daily, weekly, or monthly schedule.
@@ -272,3 +276,7 @@ Apply tags to the workflow. Tags applied to the workflow will propagate to every
 ### Collection Auto-Add
 
 Search for and specify [collections](collections.md) that this crawl workflow should automatically add archived items to as soon as crawling finishes. Canceled and Failed crawls will not be added to collections.
+
+## Review Settings
+
+This section lists all the previously entered settings for final review. If there are any errors from the previous form sections, they will be listed at the top. The errors need to be corrected before the crawl workflow can be created.

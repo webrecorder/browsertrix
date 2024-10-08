@@ -1607,6 +1607,10 @@ export class WorkflowDetail extends LiteElement {
         } else {
           message = msg("You do not have permission to run crawls.");
         }
+      } else if (isApiError(e) && e.details == "proxy_not_found") {
+        message = msg(
+          "Your org doesn't have permission to use the proxy configured for this crawl.",
+        );
       }
       this.notify({
         message: message,

@@ -219,9 +219,12 @@ export class WorkflowsList extends LiteElement {
                   <sl-button
                     variant="primary"
                     size="small"
-                    href="${this.orgBasePath}/workflows/new"
                     ?disabled=${this.org?.readOnly}
-                    @click=${this.navLink}
+                    @click=${() =>
+                      this.navTo(`${this.orgBasePath}/workflows/new`, {
+                        scopeType:
+                          this.appState.userPreferences?.newWorkflowScopeType,
+                      })}
                   >
                     <sl-icon slot="prefix" name="plus-lg"></sl-icon>
                     ${msg("New Workflow")}</sl-button
@@ -842,6 +845,10 @@ export class WorkflowsList extends LiteElement {
         } else {
           message = msg("You do not have permission to run crawls.");
         }
+      } else if (isApiError(e) && e.details == "proxy_not_found") {
+        message = msg(
+          "Your org doesn't have permission to use the proxy configured for this crawl.",
+        );
       }
       this.notify({
         message: message,

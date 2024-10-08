@@ -1,8 +1,7 @@
 gunicorn
 uvicorn[standard]
 fastapi==0.103.2
-motor==3.3.1
-pymongo==4.8.0
+motor
 passlib
 PyJWT==2.8.0
 pydantic==2.8.2
@@ -12,6 +11,7 @@ aiofiles
 kubernetes-asyncio==29.0.0
 kubernetes
 aiobotocore
+requests
 redis>=5.0.0
 pyyaml
 jinja2
@@ -19,10 +19,8 @@ humanize
 python-multipart
 pathvalidate
 https://github.com/ikreymer/stream-zip/archive/refs/heads/crc32-optional.zip
-boto3
 backoff>=2.2.1
 python-slugify>=8.0.1
-mypy_boto3_s3
 types_aiobotocore_s3
 types-redis
 types-python-slugify

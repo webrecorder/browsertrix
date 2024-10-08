@@ -688,7 +688,9 @@ export class ArchivedItemQA extends BtrixElement {
         </form>
 
         <div slot="footer" class="flex justify-between">
-          <sl-button size="small">${msg("Cancel")}</sl-button>
+          <sl-button size="small" @click=${() => void this.reviewDialog?.hide()}
+            >${msg("Cancel")}</sl-button
+          >
           <sl-button
             variant="primary"
             size="small"

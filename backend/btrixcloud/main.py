@@ -205,6 +205,7 @@ def main() -> None:
     )
 
     crawl_config_ops = init_crawl_config_api(
+        app,
         dbclient,
         mdb,
         current_active_user,

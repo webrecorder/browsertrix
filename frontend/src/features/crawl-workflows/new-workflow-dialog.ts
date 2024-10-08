@@ -3,11 +3,13 @@ import { html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
-import type { FormState as WorkflowFormState } from "@/utils/workflow";
+import { WorkflowScopeType } from "@/types/workflow";
 import seededCrawlSvg from "~assets/images/new-crawl-config_Seeded-Crawl.svg";
 import urlListSvg from "~assets/images/new-crawl-config_URL-List.svg";
 
-export type SelectJobTypeEvent = CustomEvent<WorkflowFormState["scopeType"]>;
+export type SelectJobTypeEvent = CustomEvent<
+  (typeof WorkflowScopeType)[keyof typeof WorkflowScopeType]
+>;
 
 /**
  * @event select-job-type SelectJobTypeEvent
@@ -33,8 +35,8 @@ export class NewWorkflowDialog extends TailwindElement {
             @click=${() => {
               this.dispatchEvent(
                 new CustomEvent("select-job-type", {
-                  detail: "page-list",
-                }) as SelectJobTypeEvent,
+                  detail: WorkflowScopeType.PageList,
+                }),
               );
             }}
           >
@@ -63,7 +65,7 @@ export class NewWorkflowDialog extends TailwindElement {
             @click=${() => {
               this.dispatchEvent(
                 new CustomEvent("select-job-type", {
-                  detail: "prefix",
+                  detail: WorkflowScopeType.Prefix,
                 }) as SelectJobTypeEvent,
               );
             }}

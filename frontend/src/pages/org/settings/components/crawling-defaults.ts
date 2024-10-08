@@ -195,6 +195,10 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
           size="small"
         ></btrix-select-browser-profile>
       `,
+      proxyId: html` <btrix-select-crawler-proxy
+        orgId=${this.orgId}
+        .proxyId="${orgDefaults.proxyId || null}"
+      ></btrix-select-crawler-proxy>`,
       crawlerChannel: html`
         <btrix-select-crawler
           crawlerChannel=${ifDefined(orgDefaults.crawlerChannel)}
@@ -287,6 +291,7 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
       blockAds: values.blockAds === "on",
       profileid: values.profileid,
       crawlerChannel: values.crawlerChannel,
+      proxyId: values.proxyId,
       userAgent: values.userAgent,
       lang: this.languageSelect?.value || undefined,
       exclude: this.exclusionTable?.exclusions?.filter((v) => v) || [],

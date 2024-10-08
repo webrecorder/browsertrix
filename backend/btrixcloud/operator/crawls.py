@@ -130,7 +130,7 @@ class CrawlOperator(BaseOperator):
         status = CrawlStatus(**data.parent.get("status", {}))
         status.last_state = status.state
 
-        spec = data.parent.get("spec", {})
+        spec = data.parent.get("spec", {})  # spec is the data from crawl_job.yaml
         crawl_id = spec["id"]
         cid = spec["cid"]
         oid = spec["oid"]
@@ -152,6 +152,7 @@ class CrawlOperator(BaseOperator):
             oid=oid,
             storage=StorageRef(spec["storageName"]),
             crawler_channel=spec.get("crawlerChannel"),
+            proxy_id=spec.get("proxyId"),
             scale=spec.get("scale", 1),
             started=data.parent["metadata"]["creationTimestamp"],
             stopping=spec.get("stopping", False),
@@ -282,6 +283,14 @@ class CrawlOperator(BaseOperator):
             )
 
         params["crawler_image"] = status.crawlerImage
+
+        if crawl.proxy_id and not crawl.is_qa:
+            proxy = self.crawl_config_ops.get_crawler_proxy(crawl.proxy_id)
+            if proxy:
+                params["proxy_id"] = crawl.proxy_id
+                params["proxy_url"] = proxy.url
+                params["proxy_ssh_private_key"] = proxy.has_private_key
+                params["proxy_ssh_host_public_key"] = proxy.has_host_public_key
 
         params["storage_filename"] = spec["storage_filename"]
         params["restart_time"] = spec.get("restartTime")

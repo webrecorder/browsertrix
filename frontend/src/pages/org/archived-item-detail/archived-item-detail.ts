@@ -140,8 +140,8 @@ export class ArchivedItemDetail extends BtrixElement {
 
   private timerId?: number;
 
-  private get isActive(): boolean | null {
-    if (!this.item || this.item.type !== "crawl") return null;
+  private get isActive(): boolean {
+    if (!this.item || this.item.type !== "crawl") return false;
     return isActive(this.item);
   }
 

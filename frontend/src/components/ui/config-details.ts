@@ -249,6 +249,9 @@ export class ConfigDetails extends LiteElement {
                 ISO6391.getName(crawlConfig.config.lang),
               )
             : nothing}
+          ${crawlConfig?.proxyId
+            ? this.renderSetting(msg("Proxy"), capitalize(crawlConfig.proxyId))
+            : nothing}
         </btrix-desc-list>
       </section>
       <section id="crawl-scheduling" class="mb-8">

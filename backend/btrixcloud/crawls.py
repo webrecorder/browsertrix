@@ -379,6 +379,7 @@ class CrawlOps(BaseCrawlOps):
             tags=crawlconfig.tags,
             name=crawlconfig.name,
             crawlerChannel=crawlconfig.crawlerChannel,
+            proxyId=crawlconfig.proxyId,
             image=image,
         )
 
@@ -1033,7 +1034,16 @@ class CrawlOps(BaseCrawlOps):
         if not qa_run.resources:
             raise HTTPException(status_code=400, detail="qa_run_no_resources")
 
-        resp = await self.storage_ops.download_streaming_wacz(org, qa_run.resources)
+        metadata = {
+            "type": "qaRun",
+            "id": qa_run_id,
+            "crawlId": crawl_id,
+            "organization": org.slug,
+        }
+
+        resp = await self.storage_ops.download_streaming_wacz(
+            metadata, qa_run.resources
+        )
 
         finished = qa_run.finished.isoformat()
 

@@ -23,7 +23,6 @@ export type SelectBrowserProfileChangeEvent =
  * Usage example:
  * ```ts
  * <btrix-select-browser-profile
- *   authState=${authState}
  *   on-change=${({value}) => selectedProfile = value}
  * ></btrix-select-browser-profile>
  * ```
@@ -115,6 +114,12 @@ export class SelectBrowserProfile extends LiteElement {
                     minute="2-digit"
                   ></sl-format-date>
                 </span>
+                ${this.selectedProfile.proxyId
+                  ? html` <span>
+                      ${msg("Using proxy: ")}
+                      <b>${this.selectedProfile.proxyId}</b>
+                    </span>`
+                  : ``}
                 <a
                   class="flex items-center gap-1 text-blue-500 hover:text-blue-600"
                   href=${`${this.orgBasePath}/browser-profiles/profile/${this.selectedProfile.id}`}

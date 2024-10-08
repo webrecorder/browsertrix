@@ -10,6 +10,7 @@ import asyncio
 import json
 import re
 import os
+import traceback
 from datetime import datetime
 from uuid import UUID, uuid4
 import urllib.parse
@@ -39,6 +40,8 @@ from .models import (
     CrawlConfigSearchValues,
     CrawlConfigUpdateResponse,
     CrawlConfigDeletedResponse,
+    CrawlerProxy,
+    CrawlerProxies,
 )
 from .utils import dt_now, slug_from_name
 
@@ -62,6 +65,8 @@ ALLOWED_SORT_KEYS = (
     "lastRun",
     "name",
 )
+
+DEFAULT_PROXY_ID: str | None = os.environ.get("DEFAULT_PROXY_ID")
 
 
 # ============================================================================
@@ -125,6 +130,14 @@ class CrawlConfigOps:
         if "default" not in self.crawler_images_map:
             raise TypeError("The channel list must include a 'default' channel")
 
+        self._crawler_proxies_last_updated = None
+        self._crawler_proxies_map = None
+
+        if DEFAULT_PROXY_ID and DEFAULT_PROXY_ID not in self.get_crawler_proxies_map():
+            raise ValueError(
+                f"Configured proxies must include DEFAULT_PROXY_ID: {DEFAULT_PROXY_ID}"
+            )
+
     def set_crawl_ops(self, ops):
         """set crawl ops reference"""
         self.crawl_ops = ops
@@ -168,7 +181,9 @@ class CrawlConfigOps:
         if not profileid:
             return ""
 
-        profile_filename = await self.profiles.get_profile_storage_path(profileid, org)
+        profile_filename, _ = await self.profiles.get_profile_storage_path_and_proxy(
+            profileid, org
+        )
         if not profile_filename:
             raise HTTPException(status_code=400, detail="invalid_profile_id")
 
@@ -195,6 +210,11 @@ class CrawlConfigOps:
         if profileid:
             await self.profiles.get_profile(profileid, org)
 
+        # ensure proxyId is valid and available for org
+        if config_in.proxyId:
+            if not self.can_org_use_proxy(org, config_in.proxyId):
+                raise HTTPException(status_code=404, detail="proxy_not_found")
+
         now = dt_now()
         crawlconfig = CrawlConfig(
             id=uuid4(),
@@ -218,6 +238,7 @@ class CrawlConfigOps:
             profileid=profileid,
             crawlerChannel=config_in.crawlerChannel,
             crawlFilenameTemplate=config_in.crawlFilenameTemplate,
+            proxyId=config_in.proxyId,
         )
 
         if config_in.runNow:
@@ -330,6 +351,8 @@ class CrawlConfigOps:
             and update.profileid != orig_crawl_config.profileid
             and ((not update.profileid) != (not orig_crawl_config.profileid))
         )
+
+        changed = changed or (orig_crawl_config.proxyId != update.proxyId)
 
         metadata_changed = self.check_attr_changed(orig_crawl_config, update, "name")
         metadata_changed = metadata_changed or self.check_attr_changed(
@@ -829,6 +852,9 @@ class CrawlConfigOps:
         if await self.get_running_crawl(crawlconfig.id):
             raise HTTPException(status_code=400, detail="crawl_already_running")
 
+        if crawlconfig.proxyId and not self.can_org_use_proxy(org, crawlconfig.proxyId):
+            raise HTTPException(status_code=404, detail="proxy_not_found")
+
         profile_filename = await self.get_profile_filename(crawlconfig.profileid, org)
         storage_filename = (
             crawlconfig.crawlFilenameTemplate or self.default_filename_template
@@ -848,6 +874,7 @@ class CrawlConfigOps:
 
         except Exception as exc:
             # pylint: disable=raise-missing-from
+            print(traceback.format_exc())
             raise HTTPException(status_code=500, detail=f"Error starting crawl: {exc}")
 
     async def set_config_current_crawl_info(
@@ -896,6 +923,68 @@ class CrawlConfigOps:
     ) -> Optional[str]:
         """Get crawler image name by id"""
         return self.crawler_images_map.get(crawler_channel or "")
+
+    def get_crawler_proxies_map(self) -> dict[str, CrawlerProxy]:
+        """Load CrawlerProxy mapping from config"""
+        proxies_last_update_path = os.environ["CRAWLER_PROXIES_LAST_UPDATE"]
+
+        if not os.path.isfile(proxies_last_update_path):
+            return {}
+
+        # return cached data, when last_update timestamp hasn't changed
+        if self._crawler_proxies_last_updated and self._crawler_proxies_map:
+            with open(proxies_last_update_path, encoding="utf-8") as fh:
+                proxies_last_update = int(fh.read().strip())
+                if proxies_last_update == self._crawler_proxies_last_updated:
+                    return self._crawler_proxies_map
+                self._crawler_proxies_last_updated = proxies_last_update
+
+        crawler_proxies_map: dict[str, CrawlerProxy] = {}
+        with open(os.environ["CRAWLER_PROXIES_JSON"], encoding="utf-8") as fh:
+            proxy_list = json.loads(fh.read())
+            for proxy_data in proxy_list:
+                proxy = CrawlerProxy(
+                    id=proxy_data["id"],
+                    label=proxy_data["label"],
+                    description=proxy_data.get("description", ""),
+                    country_code=proxy_data.get("country_code", ""),
+                    url=proxy_data["url"],
+                    has_host_public_key=bool(proxy_data.get("ssh_host_public_key")),
+                    has_private_key=bool(proxy_data.get("ssh_private_key")),
+                    shared=proxy_data.get("shared", False)
+                    or proxy_data["id"] == DEFAULT_PROXY_ID,
+                )
+
+                crawler_proxies_map[proxy.id] = proxy
+
+        self._crawler_proxies_map = crawler_proxies_map
+        return self._crawler_proxies_map
+
+    def get_crawler_proxies(self):
+        """Get CrawlerProxy configuration"""
+        return CrawlerProxies(
+            default_proxy_id=DEFAULT_PROXY_ID,
+            servers=list(self.get_crawler_proxies_map().values()),
+        )
+
+    def get_crawler_proxy(self, proxy_id: str) -> Optional[CrawlerProxy]:
+        """Get crawlerProxy by id"""
+        return self.get_crawler_proxies_map().get(proxy_id)
+
+    def can_org_use_proxy(self, org: Organization, proxy: CrawlerProxy | str) -> bool:
+        """Checks if org is able to use proxy"""
+
+        if isinstance(proxy, str):
+            _proxy = self.get_crawler_proxy(proxy)
+        else:
+            _proxy = proxy
+
+        if _proxy is None:
+            return False
+
+        return (
+            _proxy.shared and org.allowSharedProxies
+        ) or _proxy.id in org.allowedProxies
 
     def get_warc_prefix(self, org: Organization, crawlconfig: CrawlConfig) -> str:
         """Generate WARC prefix slug from org slug, name or url
@@ -983,6 +1072,7 @@ async def stats_recompute_all(crawl_configs, crawls, cid: UUID):
 # ============================================================================
 # pylint: disable=redefined-builtin,invalid-name,too-many-locals,too-many-arguments
 def init_crawl_config_api(
+    app,
     dbclient,
     mdb,
     user_dep,
@@ -1059,6 +1149,28 @@ def init_crawl_config_api(
         org: Organization = Depends(org_crawl_dep),
     ):
         return ops.crawler_channels
+
+    @router.get("/crawler-proxies", response_model=CrawlerProxies)
+    async def get_crawler_proxies(
+        org: Organization = Depends(org_crawl_dep),
+    ):
+        return CrawlerProxies(
+            default_proxy_id=DEFAULT_PROXY_ID,
+            servers=[
+                proxy
+                for proxy in ops.get_crawler_proxies_map().values()
+                if ops.can_org_use_proxy(org, proxy)
+            ],
+        )
+
+    @app.get("/orgs/all/crawlconfigs/crawler-proxies", response_model=CrawlerProxies)
+    async def get_all_crawler_proxies(
+        user: User = Depends(user_dep),
+    ):
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+
+        return ops.get_crawler_proxies()
 
     @router.get("/{cid}/seeds", response_model=PaginatedSeedResponse)
     async def get_crawl_config_seeds(

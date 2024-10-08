@@ -24,7 +24,6 @@ const DESCRIPTION_MAXLENGTH = 500;
  * Usage:
  * ```ts
  * <btrix-browser-profiles-detail
- *  authState=${authState}
  *  profileId=${profileId}
  * ></btrix-browser-profiles-detail>
  * ```
@@ -586,6 +585,7 @@ export class BrowserProfilesDetail extends BtrixElement {
           description: this.profile.description.slice(0, DESCRIPTION_MAXLENGTH),
           profileId: this.profile.id,
           crawlerChannel: this.profile.crawlerChannel,
+          proxyId: this.profile.proxyId,
         })}`,
       );
     } catch (e) {

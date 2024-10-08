@@ -32,6 +32,7 @@ import("./relative-duration");
 import("./search-combobox");
 import("./section-heading");
 import("./select-crawler");
+import("./select-crawler-proxy");
 import("./table");
 import("./tag-input");
 import("./tag");

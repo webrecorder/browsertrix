@@ -39,6 +39,7 @@ import type {
   SelectCrawlerChangeEvent,
   SelectCrawlerUpdateEvent,
 } from "@/components/ui/select-crawler";
+import type { SelectCrawlerProxyChangeEvent } from "@/components/ui/select-crawler-proxy";
 import type { Tab } from "@/components/ui/tab-list";
 import type { TagInputEvent, TagsChangeEvent } from "@/components/ui/tag-input";
 import type { TimeInputChangeEvent } from "@/components/ui/time-input";
@@ -66,6 +67,7 @@ import {
 import { maxLengthValidator } from "@/utils/form";
 import { getLocale } from "@/utils/localization";
 import { isArchivingDisabled } from "@/utils/orgs";
+import { AppStateService } from "@/utils/state";
 import { regexEscape } from "@/utils/string";
 import { tw } from "@/utils/tailwind";
 import {
@@ -104,7 +106,6 @@ type ProgressState = {
   activeTab: StepName;
   tabs: Tabs;
 };
-
 const DEFAULT_BEHAVIORS = [
   "autoscroll",
   "autoplay",
@@ -150,6 +151,7 @@ const getDefaultProgressState = (hasConfigId = false): ProgressState => {
     },
   };
 };
+
 function getLocalizedWeekDays() {
   const now = new Date();
   // TODO accept locale from locale-picker
@@ -192,6 +194,8 @@ export class WorkflowEditor extends BtrixElement {
 
   @property({ type: Object })
   initialWorkflow?: WorkflowParams;
+
+  private updatingScopeType = false;
 
   @property({ type: Array })
   initialSeeds?: Seed[];
@@ -291,7 +295,11 @@ export class WorkflowEditor extends BtrixElement {
     changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {
     if (changedProperties.get("initialWorkflow") && this.initialWorkflow) {
-      this.initializeEditor();
+      if (this.updatingScopeType) {
+        this.updatingScopeType = false;
+      } else {
+        this.initializeEditor();
+      }
     }
     if (changedProperties.get("progressState") && this.progressState) {
       if (
@@ -1321,6 +1329,17 @@ https://archiveweb.page/images/${"logo.svg"}`}
       `)}
       ${this.renderHelpTextCol(infoTextStrings["browserProfile"])}
       ${inputCol(html`
+        <btrix-select-crawler-proxy
+          orgId=${this.orgId}
+          .proxyId="${this.formState.proxyId || ""}"
+          @on-change=${(e: SelectCrawlerProxyChangeEvent) =>
+            this.updateFormState({
+              proxyId: e.detail.value,
+            })}
+        ></btrix-select-crawler-proxy>
+      `)}
+      ${this.renderHelpTextCol(infoTextStrings["proxyId"])}
+      ${inputCol(html`
         <sl-radio-group
           name="scale"
           label=${msg("Browser Windows")}
@@ -1698,6 +1717,14 @@ https://archiveweb.page/images/${"logo.svg"}`}
       } else if (isPageScope) {
         formState.urlList = [this.formState.primarySeedUrl, ...urls].join("\n");
       }
+    }
+
+    if (!this.configId) {
+      // Remember scope type for new workflows
+      this.updatingScopeType = true;
+      AppStateService.partialUpdateUserPreferences({
+        newWorkflowScopeType: value,
+      });
     }
 
     this.updateFormState(formState);
@@ -2106,6 +2133,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         ).join(","),
       },
       crawlerChannel: this.formState.crawlerChannel || "default",
+      proxyId: this.formState.proxyId,
     };
 
     return config;
