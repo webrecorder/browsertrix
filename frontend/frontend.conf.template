@@ -40,11 +40,11 @@ server {
       try_files $uri /index.html;
     }
 
-    location ~* /docs/(.*) {
+    location ~* /docs/(.*)$ {
       set $docs_url "${DOCS_URL}";
 
       if ($docs_url != "") {
-        rewrite ^ $docs_url/$1 redirect;
+        return 307 $docs_url$1;
       }
 
       root   /usr/share/nginx/html;
