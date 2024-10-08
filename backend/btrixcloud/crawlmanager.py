@@ -22,6 +22,8 @@ class CrawlManager(K8sAPI):
     def __init__(self):
         super().__init__()
 
+        self.default_namespace = os.environ.get("DEFAULT_NAMESPACE", "default")
+
         self.loop = asyncio.get_running_loop()
 
     # pylint: disable=too-many-arguments
@@ -106,7 +108,7 @@ class CrawlManager(K8sAPI):
 
         data = self.templates.env.get_template("replica_job.yaml").render(params)
 
-        await self.create_from_yaml(data)
+        await self.create_from_yaml(data, namespace=self.default_namespace)
 
         return job_id
 
@@ -134,7 +136,7 @@ class CrawlManager(K8sAPI):
 
         data = self.templates.env.get_template("background_job.yaml").render(params)
 
-        await self.create_from_yaml(data)
+        await self.create_from_yaml(data, namespace=self.default_namespace)
 
         return job_id
 
