@@ -138,7 +138,7 @@ module.exports = {
       typescript: true,
     },
   },
-  ignorePatterns: ["__generated__", "__mocks__", "dist"],
+  ignorePatterns: ["__generated__", "__mocks__", "dist", "docs"],
   overrides: [
     {
       extends: ["plugin:@typescript-eslint/disable-type-checked"],
