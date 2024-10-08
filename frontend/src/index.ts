@@ -263,7 +263,7 @@ export class App extends LiteElement {
         </span>
         <iframe
           class="size-full transition-opacity duration-slow"
-          src="${this.docsUrl}/user-guide/"
+          src="${this.docsUrl}user-guide/"
         ></iframe>
         <sl-button size="small" slot="footer" variant="text">
           <sl-icon slot="suffix" name="box-arrow-up-right"></sl-icon>
