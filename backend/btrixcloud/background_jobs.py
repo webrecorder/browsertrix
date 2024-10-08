@@ -582,7 +582,7 @@ def init_background_jobs_api(
 
     @app.get("/orgs/all/jobs/{job_id}", response_model=SuccessResponse, tags=["jobs"])
     async def get_background_job_all_orgs(job_id: str, user: User = Depends(user_dep)):
-        """Retry failed background jobs from all orgs"""
+        """Get background job from any org"""
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
