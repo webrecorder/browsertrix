@@ -53,24 +53,11 @@ def test_crawl_stopped_when_storage_quota_reached(org_with_quotas, admin_auth_he
 
     if not crawl_id:
         # Wait a little bit and try again to run workflow
-        count = 0
-        while True:
-            time.sleep(30)
-
-            r = requests.post(
-                f"{API_PREFIX}/orgs/{org_with_quotas}/crawlconfigs/{config_id}/run",
-                headers=admin_auth_headers,
-            )
-            if r.status_code == 200:
-                crawl_id = r.json()["started"]
-                break
-
-            if count >= 12:
-                assert False
-
-            count += 1
-
-    assert crawl_id
+        r = requests.post(
+            f"{API_PREFIX}/orgs/{org_with_quotas}/crawlconfigs/{config_id}/run",
+            headers=admin_auth_headers,
+        )
+        assert r.json()["detail"] == "something_its_not"
 
     while get_crawl_status(org_with_quotas, crawl_id, admin_auth_headers) in (
         "starting",
