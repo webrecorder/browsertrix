@@ -2150,13 +2150,6 @@
       <trans-unit id="sf255d6c5d5851c6e">
         <source>Workflows that use this browser profile will behave as if they have logged into the same websites and have the same web cookies.</source>
       </trans-unit>
-      <trans-unit id="hd7ee4df8e7d76865">
-        <source>
-          It is highly recommended to create dedicated accounts to use when
-          crawling. For details, refer to
-          <x equiv-text="&lt;a class=&quot;text-primary hover:text-indigo-400&quot; href=&quot;https://docs.browsertrix.com/user-guide/browser-profiles/&quot; target=&quot;_blank&quot;&gt;&#10;            ${msg(&quot;browser profile best practices&quot;)}&lt;/a&gt;" id="0"/>.
-        </source>
-      </trans-unit>
       <trans-unit id="se058d83e4b3bad9e">
         <source>browser profile best practices</source>
       </trans-unit>
@@ -3199,11 +3192,6 @@
       <trans-unit id="s42e8653d5ae10bc1">
         <source>An org, or organization, is your workspace for web archiving. If you’re archiving collaboratively, an org workspace can be shared between team members.</source>
       </trans-unit>
-      <trans-unit id="hecef9e5e39351b37">
-        <source>Refer to our user guide on
-                <x equiv-text="&lt;a class=&quot;text-neutral-500 underline hover:text-primary&quot; href=&quot;https://docs.browsertrix.com/user-guide/org-settings/&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;&gt;" id="0"/>org settings<x equiv-text="&lt;/a&gt;" id="1"/>
-                for details.</source>
-      </trans-unit>
       <trans-unit id="s8ae1873b610b92d6">
         <source>Your org dashboard will be
         <x equiv-text="${window.location.protocol}" id="0"/>//<x equiv-text="${window.location.hostname}" id="1"/>/orgs/<x equiv-text="${slug || &quot;&quot;}" id="2"/></source>
@@ -3779,6 +3767,18 @@
       </trans-unit>
       <trans-unit id="sadfb54de733655c9">
         <source>Using proxy: </source>
+      </trans-unit>
+      <trans-unit id="habe03840abb41da5">
+        <source>
+          It is highly recommended to create dedicated accounts to use when
+          crawling. For details, refer to
+          <x equiv-text="&lt;a class=&quot;text-primary hover:text-indigo-400&quot; href=&quot;/docs/user-guide/browser-profiles/&quot; target=&quot;_blank&quot;&gt;&#10;            ${msg(&quot;browser profile best practices&quot;)}&lt;/a&gt;" id="0"/>.
+        </source>
+      </trans-unit>
+      <trans-unit id="hda7aa624404fc0ed">
+        <source>Refer to our user guide on
+                <x equiv-text="&lt;a class=&quot;text-neutral-500 underline hover:text-primary&quot; href=&quot;/docs/user-guide/org-settings/&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;&gt;" id="0"/>org settings<x equiv-text="&lt;/a&gt;" id="1"/>
+                for details.</source>
       </trans-unit>
     </body>
   </file>

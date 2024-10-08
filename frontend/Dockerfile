@@ -35,9 +35,22 @@ ENV GIT_COMMIT_HASH=${GIT_COMMIT_HASH} \
 RUN yarn build && \
   rm -rf ./node_modules
 
+FROM --platform=$BUILDPLATFORM docker.io/library/python:3.12-slim as build_docs
+
+WORKDIR /docs
+
+RUN pip install mkdocs-material
+
+COPY --link ./docs/mkdocs.yml .
+COPY --link ./docs/docs ./docs
+
+RUN mkdocs build
+
 FROM docker.io/library/nginx:1.23.2
 
 COPY --link --from=build_deps /app/dist /usr/share/nginx/html
+
+COPY --link --from=build_docs /docs/site /usr/share/nginx/html/docs
 
 #COPY ./nginx.conf /etc/nginx/nginx.conf
 COPY --link ./frontend.conf.template /etc/nginx/templates/

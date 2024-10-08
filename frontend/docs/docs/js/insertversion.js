@@ -25,9 +25,7 @@ function parseVersion(string) {
           node.nodeValue = node.nodeValue.replaceAll("VERSION", version);
         }
       });
-    } catch (e) {
-
-    }
+    } catch (e) {}
   }
 }
 

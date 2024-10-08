@@ -156,6 +156,11 @@ local_service_port: 30870
 
 frontend_alias: "http://browsertrix-cloud-frontend"
 
+# custom URL for where Browsertrix docs are hosted
+# by default, docs are served from /docs/ but can be served from a custom
+# URL specified here.
+# docs_url: "https://browsertrix-docs.example.com/"
+
 # Autoscaling
 # -----------
 # max number of backend pods to scale to

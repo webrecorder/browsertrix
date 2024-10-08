@@ -19,6 +19,6 @@ jobs:
       - run: pip install mkdocs-material requests pyyaml
 
       - name: Generate Helm Chart Index
-        run: python ./scripts/generate-helm-index.py > ./docs/helm-repo/index.yaml
+        run: python ./scripts/generate-helm-index.py > ./frontend/docs/docs/helm-repo/index.yaml
 
-      - run: mkdocs gh-deploy --force
+      - run: cd frontend/docs; mkdocs gh-deploy --force
