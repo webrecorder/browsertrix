@@ -13,6 +13,7 @@ STORAGE_QUOTA_BYTES_INC = STORAGE_QUOTA_MB_TO_INCREASE * 1000 * 1000
 
 config_id = None
 
+storage_quota = None
 
 def run_crawl(org_id, headers):
     crawl_data = {
@@ -42,11 +43,14 @@ def test_storage_quota(org_with_quotas, admin_auth_headers):
     assert r.status_code == 200
     bytes_stored = r.json()["bytesStored"]
 
+    global storage_quota
+    storage_quota = bytes_stored + STORAGE_QUOTA_BYTES_INC
+
     # Set storage quota higher than bytesStored
     r = requests.post(
         f"{API_PREFIX}/orgs/{org_with_quotas}/quotas",
         headers=admin_auth_headers,
-        json={"storageQuota": bytes_stored + STORAGE_QUOTA_BYTES_INC},
+        json={"storageQuota": storage_quota},
     )
     assert r.status_code == 200
     assert r.json()["updated"]
@@ -87,7 +91,7 @@ def test_crawl_stopped_when_storage_quota_reached(org_with_quotas, admin_auth_he
     )
     data = r.json()
     bytes_stored = data["bytesStored"]
-    assert bytes_stored >= STORAGE_QUOTA_BYTES
+    assert bytes_stored >= storage_quota
 
     time.sleep(5)
 
