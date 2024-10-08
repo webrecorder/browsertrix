@@ -1,6 +1,6 @@
 import { localized, msg } from "@lit/localize";
 import { mergeDeep } from "immutable";
-import { customElement, property, state } from "lit/decorators.js";
+import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 
@@ -50,7 +50,6 @@ export class WorkflowsNew extends LiteElement {
   @property({ type: Object })
   initialWorkflow?: WorkflowParams;
 
-  @state()
   private userGuideHashLink: GuideHash = "scope";
 
   connectedCallback(): void {
