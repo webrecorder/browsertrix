@@ -1,4 +1,5 @@
 import requests
+import time
 
 from .conftest import API_PREFIX
 
@@ -69,6 +70,8 @@ def test_crawlconfig_crawl_stats(admin_auth_headers, default_org_id, crawl_confi
     assert r.status_code == 200
     data = r.json()
     assert data["deleted"]
+
+    time.sleep(10)
 
     # Verify crawl stats from /crawlconfigs
     r = requests.get(
