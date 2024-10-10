@@ -2086,7 +2086,9 @@ class CopyBucketJob(BackgroundJob):
 # Union of all job types, for response model
 
 AnyJob = RootModel[
-    Union[CreateReplicaJob, DeleteReplicaJob, DeleteOrgJob, CopyBucketJob, BackgroundJob]
+    Union[
+        CreateReplicaJob, DeleteReplicaJob, DeleteOrgJob, CopyBucketJob, BackgroundJob
+    ]
 ]
 
 
