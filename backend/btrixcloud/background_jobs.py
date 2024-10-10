@@ -280,14 +280,18 @@ class BackgroundJobOps:
         self,
         org: Organization,
         existing_job_id: Optional[str] = None,
-    ) -> Optional[str]:
+    ) -> str:
         """Create background job to delete org and its data"""
+
+        job_type = BgJobType.DELETE_ORG.value
 
         try:
             job_id = await self.crawl_manager.run_delete_org_job(
                 oid=str(org.id),
+                job_type=job_type,
                 backend_image=os.environ.get("BACKEND_IMAGE", ""),
                 pull_policy=os.environ.get("BACKEND_IMAGE_PULL_POLICY", ""),
+                job_id_prefix=f"{job_type}-{org.id}",
                 existing_job_id=existing_job_id,
             )
             if existing_job_id:
@@ -319,7 +323,7 @@ class BackgroundJobOps:
         except Exception as exc:
             # pylint: disable=raise-missing-from
             print(f"warning: delete org job could not be started: {exc}")
-            return None
+            return ""
 
     async def create_recalculate_org_stats_job(
         self,
@@ -725,7 +729,7 @@ def init_background_jobs_api(
         """Retrieve information for background job"""
         return await ops.get_background_job(job_id, org.id)
 
-    @app.get("/orgs/all/jobs/{job_id}", response_model=SuccessResponse, tags=["jobs"])
+    @app.get("/orgs/all/jobs/{job_id}", response_model=AnyJob, tags=["jobs"])
     async def get_background_job_all_orgs(job_id: str, user: User = Depends(user_dep)):
         """Get background job from any org"""
         if not user.is_superuser:
