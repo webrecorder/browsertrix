@@ -67,7 +67,7 @@ from .models import (
     PAUSED_PAYMENT_FAILED,
     REASON_PAUSED,
     ACTIVE,
-    DeletedResponse,
+    DeletedResponseId,
     UpdatedResponse,
     AddedResponse,
     AddedResponseId,
@@ -94,8 +94,10 @@ if TYPE_CHECKING:
     from .colls import CollectionOps
     from .profiles import ProfileOps
     from .users import UserManager
+    from .background_jobs import BackgroundJobOps
 else:
-    InviteOps = BaseCrawlOps = ProfileOps = CollectionOps = UserManager = object
+    InviteOps = BaseCrawlOps = ProfileOps = CollectionOps = object
+    BackgroundJobOps = UserManager = object
 
 
 DEFAULT_ORG = os.environ.get("DEFAULT_ORG", "My Organization")
@@ -151,12 +153,14 @@ class OrgOps:
         base_crawl_ops: BaseCrawlOps,
         profile_ops: ProfileOps,
         coll_ops: CollectionOps,
+        background_job_ops: BackgroundJobOps,
     ) -> None:
         """Set base crawl ops"""
         # pylint: disable=attribute-defined-outside-init
         self.base_crawl_ops = base_crawl_ops
         self.profile_ops = profile_ops
         self.coll_ops = coll_ops
+        self.background_job_ops = background_job_ops
 
     def set_default_primary_storage(self, storage: StorageRef):
         """set default primary storage"""
@@ -1451,15 +1455,16 @@ def init_orgs_api(
         org_out.execMinutesQuotaReached = ops.exec_mins_quota_reached(org)
         return org_out
 
-    @router.delete("", tags=["organizations"], response_model=DeletedResponse)
+    @router.delete("", tags=["organizations"], response_model=DeletedResponseId)
     async def delete_org(
         org: Organization = Depends(org_dep), user: User = Depends(user_dep)
     ):
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
-        await ops.delete_org_and_data(org, user_manager)
-        return {"deleted": True}
+        job_id = await ops.background_job_ops.create_delete_org_job(org)
+
+        return {"deleted": True, "id": job_id}
 
     @router.post("/rename", tags=["organizations"], response_model=UpdatedResponse)
     async def rename_org(

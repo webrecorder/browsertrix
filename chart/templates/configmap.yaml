@@ -77,6 +77,11 @@ data:
 
   LOG_SENT_EMAILS: "{{ .Values.email.log_sent_emails }}"
 
+  BACKEND_IMAGE: "{{ .Values.backend_image }}"
+
+  BACKEND_IMAGE_PULL_POLICY: "{{ .Values.backend_pull_policy }}"
+
+
 ---
 apiVersion: v1
 kind: ConfigMap
