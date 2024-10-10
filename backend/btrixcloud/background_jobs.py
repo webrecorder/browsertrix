@@ -279,7 +279,7 @@ class BackgroundJobOps:
         self,
         org: Organization,
         existing_job_id: Optional[str] = None,
-    ) -> Optional[str]:
+    ) -> str:
         """Create background job to delete org and its data"""
 
         try:
@@ -318,7 +318,7 @@ class BackgroundJobOps:
         except Exception as exc:
             # pylint: disable=raise-missing-from
             print(f"warning: delete org job could not be started: {exc}")
-            return None
+            return ""
 
     async def create_copy_bucket_job(
         self,
