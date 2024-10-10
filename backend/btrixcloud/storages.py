@@ -288,7 +288,7 @@ class StorageOps:
 
         await self.org_ops.update_storage_refs(org)
 
-        # TODO: Run in asyncio task or background job?
+        # Run in background jobs (1 to copy files, 1 for db updates)
         await self._run_post_storage_update_tasks(
             prev_storage_ref,
             storage_ref,
@@ -355,7 +355,7 @@ class StorageOps:
 
         await self.org_ops.update_storage_refs(org, replicas=True)
 
-        # TODO: Run in asyncio task or background job?
+        # Run in background job? or just kick off background jobs?
         await self._run_post_storage_replica_update_tasks(
             prev_storage_replicas, replicas, org
         )
@@ -382,7 +382,7 @@ class StorageOps:
                 await self.org_ops.add_file_replica_storage_refs(org, replica_storage)
 
         # Delete no-longer-used replica storage refs from files
-        # TODO: Determine if we want to delete files from the buckets as well
+        # Determine if we want to delete files from the buckets as well
         for replica_storage in prev_replica_refs:
             if replica_storage not in new_replica_refs:
                 await self.org_ops.remove_file_replica_storage_refs(
@@ -437,16 +437,8 @@ class StorageOps:
             key += filename
             data = b""
 
-            try:
-                resp = await client.put_object(Bucket=bucket, Key=key, Body=data)
-                assert resp["ResponseMetadata"]["HTTPStatusCode"] == 200
-            except Exception:
-                # create bucket if it doesn't yet exist and then try again
-                resp = await client.create_bucket(Bucket=bucket)
-                assert resp["ResponseMetadata"]["HTTPStatusCode"] == 200
-
-                resp = await client.put_object(Bucket=bucket, Key=key, Body=data)
-                assert resp["ResponseMetadata"]["HTTPStatusCode"] == 200
+            resp = await client.put_object(Bucket=bucket, Key=key, Body=data)
+            assert resp["ResponseMetadata"]["HTTPStatusCode"] == 200
 
     def resolve_internal_access_path(self, path):
         """Resolve relative path for internal access to minio bucket"""

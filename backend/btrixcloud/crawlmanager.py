@@ -127,7 +127,9 @@ class CrawlManager(K8sAPI):
         if existing_job_id:
             job_id = existing_job_id
         else:
-            job_id = f"delete-org-{oid}-{secrets.token_hex(5)}"
+            job_id_prefix = f"delete-org-{oid}"
+            # ensure name is <=63 characters
+            job_id = f"{job_id_prefix[:52]}-{secrets.token_hex(5)}"
 
         return await self._run_bg_job_with_ops_classes(
             job_id, job_type=BgJobType.DELETE_ORG.value, oid=oid
@@ -209,6 +211,8 @@ class CrawlManager(K8sAPI):
 
         await self.create_from_yaml(data, namespace=DEFAULT_NAMESPACE)
 
+        return job_id
+
     async def run_copy_bucket_job(
         self,
         oid: str,
@@ -242,7 +246,6 @@ class CrawlManager(K8sAPI):
             "new_secret_name": new_storage.get_storage_secret_name(oid),
             "new_endpoint": new_endpoint,
             "new_bucket": new_bucket,
-            "BgJobType": BgJobType,
         }
 
         data = self.templates.env.get_template("copy_job.yaml").render(params)
