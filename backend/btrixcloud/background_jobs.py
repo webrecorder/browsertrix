@@ -320,7 +320,6 @@ class BackgroundJobOps:
             print(f"warning: delete org job could not be started: {exc}")
             return None
 
-
     async def create_copy_bucket_job(
         self,
         org: Organization,
