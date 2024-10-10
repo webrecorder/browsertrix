@@ -18,7 +18,7 @@ from .colls import CollectionOps
 from .crawlconfigs import CrawlConfigOps
 from .crawls import CrawlOps
 from .profiles import ProfileOps
-from .storages import init_storages_api
+from .storages import StorageOps
 from .webhooks import EventWebhookOps
 from .background_jobs import BackgroundJobOps
 from .pages import PageOps
@@ -53,7 +53,7 @@ def main():
 
     crawl_manager = CrawlManager()
 
-    storage_ops = init_storages_api(org_ops, crawl_manager)
+    storage_ops = StorageOps(org_ops, crawl_manager)
 
     background_job_ops = BackgroundJobOps(
         mdb, email, user_manager, org_ops, crawl_manager, storage_ops
@@ -93,6 +93,7 @@ def main():
     crawl_ops.set_page_ops(page_ops)
 
     background_job_ops.set_ops(crawl_ops, profile_ops)
+    storage_ops.set_ops(background_job_ops)
 
     return init_operator_api(
         app_root,

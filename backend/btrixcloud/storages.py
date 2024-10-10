@@ -12,6 +12,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     cast,
+    Callable,
 )
 from urllib.parse import urlsplit
 from contextlib import asynccontextmanager
@@ -45,9 +46,12 @@ from .models import (
     S3Storage,
     S3StorageIn,
     OrgStorageRefs,
+    OrgStorageRef,
+    OrgStorageReplicaRefs,
     DeletedResponse,
     UpdatedResponse,
     AddedResponseName,
+    User,
 )
 
 from .utils import is_bool, slug_from_name
@@ -57,14 +61,15 @@ from .version import __version__
 if TYPE_CHECKING:
     from .orgs import OrgOps
     from .crawlmanager import CrawlManager
+    from .background_jobs import BackgroundJobOps
 else:
-    OrgOps = CrawlManager = object
+    OrgOps = CrawlManager = BackgroundJobOps = object
 
 CHUNK_SIZE = 1024 * 256
 
 
 # ============================================================================
-# pylint: disable=broad-except,raise-missing-from
+# pylint: disable=broad-except,raise-missing-from,too-many-public-methods, too-many-positional-arguments
 class StorageOps:
     """All storage handling, download/upload operations"""
 
@@ -91,6 +96,8 @@ class StorageOps:
         )
         default_namespace = os.environ.get("DEFAULT_NAMESPACE", "default")
         self.frontend_origin = f"{frontend_origin}.{default_namespace}"
+
+        self.background_job_ops = cast(BackgroundJobOps, None)
 
         with open(os.environ["STORAGES_JSON"], encoding="utf-8") as fh:
             storage_list = json.loads(fh.read())
@@ -130,6 +137,10 @@ class StorageOps:
 
         self.org_ops.set_default_primary_storage(self.default_primary)
 
+    def set_ops(self, background_job_ops: BackgroundJobOps) -> None:
+        """Set background job ops"""
+        self.background_job_ops = background_job_ops
+
     def _create_s3_storage(self, storage: dict[str, str]) -> S3Storage:
         """create S3Storage object"""
         endpoint_url = storage["endpoint_url"]
@@ -153,13 +164,14 @@ class StorageOps:
             endpoint_no_bucket_url=endpoint_no_bucket_url,
             access_endpoint_url=access_endpoint_url,
             use_access_for_presign=use_access_for_presign,
+            provider=storage.get("provider", "Other"),
         )
 
     async def add_custom_storage(
         self, storagein: S3StorageIn, org: Organization
     ) -> dict:
         """Add new custom storage"""
-        name = "!" + slug_from_name(storagein.name)
+        name = slug_from_name(storagein.name)
 
         if name in org.customStorages:
             raise HTTPException(status_code=400, detail="storage_already_exists")
@@ -176,8 +188,9 @@ class StorageOps:
             region=storagein.region,
             endpoint_url=endpoint_url,
             endpoint_no_bucket_url=endpoint_no_bucket_url,
-            access_endpoint_url=storagein.access_endpoint_url or storagein.endpoint_url,
+            access_endpoint_url=storagein.access_endpoint_url or endpoint_url,
             use_access_for_presign=True,
+            provider=storagein.provider,
         )
 
         try:
@@ -196,6 +209,8 @@ class StorageOps:
             "STORE_ENDPOINT_NO_BUCKET_URL": storage.endpoint_no_bucket_url,
             "STORE_ACCESS_KEY": storage.access_key,
             "STORE_SECRET_KEY": storage.secret_key,
+            "STORE_REGION": storage.region,
+            "STORE_S3_PROVIDER": storage.provider,
         }
 
         await self.crawl_manager.add_org_storage(
@@ -230,28 +245,139 @@ class StorageOps:
 
         return {"deleted": True}
 
-    async def update_storage_refs(
+    async def update_storage_ref(
         self,
-        storage_refs: OrgStorageRefs,
+        storage_refs: OrgStorageRef,
+        org: Organization,
+    ) -> dict[str, bool]:
+        """update storage for org"""
+        storage_ref = storage_refs.storage
+
+        try:
+            self.get_org_storage_by_ref(org, storage_ref)
+        except:
+            raise HTTPException(status_code=400, detail="invalid_storage_ref")
+
+        if org.storage == storage_ref:
+            raise HTTPException(status_code=400, detail="identical_storage_ref")
+
+        if await self.org_ops.is_crawl_running(org):
+            raise HTTPException(status_code=403, detail="crawl_running")
+
+        if org.readOnly:
+            raise HTTPException(status_code=403, detail="org_set_to_read_only")
+
+        _, jobs_running_count = await self.background_job_ops.list_background_jobs(
+            org=org, running=True
+        )
+        if jobs_running_count > 0:
+            raise HTTPException(status_code=403, detail="background_jobs_running")
+
+        prev_storage_ref = org.storage
+        org.storage = storage_ref
+
+        await self.org_ops.update_storage_refs(org)
+
+        # TODO: Run in asyncio task or background job?
+        await self._run_post_storage_update_tasks(
+            prev_storage_ref,
+            storage_ref,
+            org,
+        )
+
+        return {"updated": True}
+
+    async def _run_post_storage_update_tasks(
+        self,
+        prev_storage_ref: StorageRef,
+        new_storage_ref: StorageRef,
+        org: Organization,
+    ):
+        """Handle tasks necessary after changing org storage"""
+        if not await self.org_ops.has_files_stored(org):
+            print("No files stored, no updates to do", flush=True)
+            return
+
+        await self.org_ops.update_read_only(org, True, "Updating storage")
+
+        await self.background_job_ops.create_copy_bucket_job(
+            org, prev_storage_ref, new_storage_ref
+        )
+
+        await self.org_ops.update_file_storage_refs(
+            org, prev_storage_ref, new_storage_ref
+        )
+
+        await self.org_ops.unset_file_presigned_urls(org)
+
+    async def update_storage_replica_refs(
+        self,
+        storage_refs: OrgStorageReplicaRefs,
         org: Organization,
     ) -> dict[str, bool]:
         """update storage for org"""
 
+        replicas = storage_refs.storageReplicas
+
         try:
-            self.get_org_storage_by_ref(org, storage_refs.storage)
-
-            for replica in storage_refs.storageReplicas:
+            for replica in replicas:
                 self.get_org_storage_by_ref(org, replica)
-
         except:
             raise HTTPException(status_code=400, detail="invalid_storage_ref")
 
-        org.storage = storage_refs.storage
-        org.storageReplicas = storage_refs.storageReplicas
+        if org.storageReplicas == replicas:
+            raise HTTPException(status_code=400, detail="identical_storage_ref")
 
-        await self.org_ops.update_storage_refs(org)
+        if await self.org_ops.is_crawl_running(org):
+            raise HTTPException(status_code=403, detail="crawl_running")
+
+        if org.readOnly:
+            raise HTTPException(status_code=403, detail="org_set_to_read_only")
+
+        _, jobs_running_count = await self.background_job_ops.list_background_jobs(
+            org=org, running=True
+        )
+        if jobs_running_count > 0:
+            raise HTTPException(status_code=403, detail="background_jobs_running")
+
+        prev_storage_replicas = org.storageReplicas
+        org.storageReplicas = replicas
+
+        await self.org_ops.update_storage_refs(org, replicas=True)
+
+        # TODO: Run in asyncio task or background job?
+        await self._run_post_storage_replica_update_tasks(
+            prev_storage_replicas, replicas, org
+        )
 
         return {"updated": True}
+
+    async def _run_post_storage_replica_update_tasks(
+        self,
+        prev_replica_refs: List[StorageRef],
+        new_replica_refs: List[StorageRef],
+        org: Organization,
+    ):
+        """Handle tasks necessary after updating org replica storages"""
+        if not await self.org_ops.has_files_stored(org):
+            print("No files stored, no updates to do", flush=True)
+            return
+
+        # Replicate files to any new replica locations
+        for replica_storage in new_replica_refs:
+            if replica_storage not in prev_replica_refs:
+                await self.background_job_ops.create_copy_bucket_job(
+                    org, org.storage, replica_storage
+                )
+                await self.org_ops.add_file_replica_storage_refs(org, replica_storage)
+
+        # Delete no-longer-used replica storage refs from files
+        # TODO: Determine if we want to delete files from the buckets as well
+        for replica_storage in prev_replica_refs:
+            if replica_storage not in new_replica_refs:
+                await self.org_ops.remove_file_replica_storage_refs(
+                    org, replica_storage
+                )
 
     def get_available_storages(self, org: Organization) -> List[StorageRef]:
         """return a list of available default + custom storages"""
@@ -296,8 +422,16 @@ class StorageOps:
             key += filename
             data = b""
 
-            resp = await client.put_object(Bucket=bucket, Key=key, Body=data)
-            assert resp["ResponseMetadata"]["HTTPStatusCode"] == 200
+            try:
+                resp = await client.put_object(Bucket=bucket, Key=key, Body=data)
+                assert resp["ResponseMetadata"]["HTTPStatusCode"] == 200
+            except Exception:
+                # create bucket if it doesn't yet exist and then try again
+                resp = await client.create_bucket(Bucket=bucket)
+                assert resp["ResponseMetadata"]["HTTPStatusCode"] == 200
+
+                resp = await client.put_object(Bucket=bucket, Key=key, Body=data)
+                assert resp["ResponseMetadata"]["HTTPStatusCode"] == 200
 
     def resolve_internal_access_path(self, path):
         """Resolve relative path for internal access to minio bucket"""
@@ -732,7 +866,7 @@ def _parse_json(line) -> dict:
 
 
 # ============================================================================
-def init_storages_api(org_ops, crawl_manager):
+def init_storages_api(org_ops: OrgOps, crawl_manager: CrawlManager, user_dep: Callable):
     """API for updating storage for an org"""
 
     storage_ops = StorageOps(org_ops, crawl_manager)
@@ -750,35 +884,60 @@ def init_storages_api(org_ops, crawl_manager):
         """get storage refs for an org"""
         return OrgStorageRefs(storage=org.storage, storageReplicas=org.storageReplicas)
 
-    @router.get("/allStorages", tags=["organizations"], response_model=List[StorageRef])
+    @router.get(
+        "/all-storages", tags=["organizations"], response_model=List[StorageRef]
+    )
     def get_available_storages(org: Organization = Depends(org_owner_dep)):
         return storage_ops.get_available_storages(org)
 
-    # pylint: disable=unreachable, fixme
-    # todo: enable when ready to support custom storage
-    return storage_ops
-
     @router.post(
-        "/customStorage", tags=["organizations"], response_model=AddedResponseName
+        "/custom-storage", tags=["organizations"], response_model=AddedResponseName
     )
     async def add_custom_storage(
-        storage: S3StorageIn, org: Organization = Depends(org_owner_dep)
+        storage: S3StorageIn,
+        org: Organization = Depends(org_owner_dep),
+        user: User = Depends(user_dep),
     ):
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+
         return await storage_ops.add_custom_storage(storage, org)
 
     @router.delete(
-        "/customStorage/{name}", tags=["organizations"], response_model=DeletedResponse
+        "/custom-storage/{name}", tags=["organizations"], response_model=DeletedResponse
     )
     async def remove_custom_storage(
-        name: str, org: Organization = Depends(org_owner_dep)
+        name: str,
+        org: Organization = Depends(org_owner_dep),
+        user: User = Depends(user_dep),
     ):
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+
         return await storage_ops.remove_custom_storage(name, org)
 
     @router.post("/storage", tags=["organizations"], response_model=UpdatedResponse)
-    async def update_storage_refs(
-        storage: OrgStorageRefs,
+    async def update_storage_ref(
+        storage: OrgStorageRef,
         org: Organization = Depends(org_owner_dep),
+        user: User = Depends(user_dep),
     ):
-        return await storage_ops.update_storage_refs(storage, org)
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+
+        return await storage_ops.update_storage_ref(storage, org)
+
+    @router.post(
+        "/storage-replicas", tags=["organizations"], response_model=UpdatedResponse
+    )
+    async def update_storage_replica_refs(
+        storage: OrgStorageReplicaRefs,
+        org: Organization = Depends(org_owner_dep),
+        user: User = Depends(user_dep),
+    ):
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+
+        return await storage_ops.update_storage_replica_refs(storage, org)
 
     return storage_ops

@@ -109,7 +109,7 @@ DEL_ITEMS = 1000
 
 
 # ============================================================================
-# pylint: disable=too-many-public-methods, too-many-instance-attributes, too-many-locals
+# pylint: disable=too-many-public-methods, too-many-instance-attributes, too-many-locals, too-many-positional-arguments
 class OrgOps:
     """Organization API operations"""
 
@@ -460,12 +460,91 @@ class OrgOps:
         )
         return res is not None
 
-    async def update_storage_refs(self, org: Organization) -> bool:
-        """Update storage + replicas for given org"""
-        set_dict = org.dict(include={"storage": True, "storageReplicas": True})
+    async def update_storage_refs(
+        self, org: Organization, replicas: bool = False
+    ) -> bool:
+        """Update storage or replica refs for given org"""
+        include = {}
+        if replicas:
+            include["storageReplicas"] = True
+        else:
+            include["storage"] = True
+
+        set_dict = org.dict(include=include)
 
         res = await self.orgs.find_one_and_update({"_id": org.id}, {"$set": set_dict})
         return res is not None
+
+    async def update_file_storage_refs(
+        self, org: Organization, previous_storage: StorageRef, new_storage: StorageRef
+    ) -> bool:
+        """Update storage refs for all crawl and profile files in given org"""
+        res = await self.crawls_db.update_many(
+            {"oid": org.id, "files.$.storage": dict(previous_storage)},
+            {"$set": {"files.$.storage": dict(new_storage)}},
+        )
+        if not res:
+            return False
+
+        res = await self.profiles_db.update_many(
+            {"oid": org.id, "resource.storage": dict(previous_storage)},
+            {"$set": {"resource.storage": dict(new_storage)}},
+        )
+        if not res:
+            return False
+
+        return True
+
+    async def add_file_replica_storage_refs(
+        self, org: Organization, new_storage: StorageRef
+    ) -> bool:
+        """Add replica storage ref for all files in given org"""
+        res = await self.crawls_db.update_many(
+            {"oid": org.id},
+            {"$push": {"files.$.replicas": dict(new_storage)}},
+        )
+        if not res:
+            return False
+
+        res = await self.profiles_db.update_many(
+            {"oid": org.id},
+            {"$push": {"resource.replicas": dict(new_storage)}},
+        )
+        if not res:
+            return False
+
+        return True
+
+    async def remove_file_replica_storage_refs(
+        self, org: Organization, new_storage: StorageRef
+    ) -> bool:
+        """Remove replica storage ref from all files in given org"""
+        res = await self.crawls_db.update_many(
+            {"oid": org.id},
+            {"$pull": {"files.$.replicas": dict(new_storage)}},
+        )
+        if not res:
+            return False
+
+        res = await self.profiles_db.update_many(
+            {"oid": org.id},
+            {"$pull": {"resource.replicas": dict(new_storage)}},
+        )
+        if not res:
+            return False
+
+        return True
+
+    async def unset_file_presigned_urls(self, org: Organization) -> bool:
+        """Unset all presigned URLs for files in org"""
+        res = await self.crawls_db.update_many(
+            {"oid": org.id, "files.$.presignedUrl": {"$ne": None}},
+            {"$set": {"files.$.presignedUrl": None}},
+        )
+        if not res:
+            return False
+
+        return True
 
     async def update_subscription_data(
         self, update: SubscriptionUpdate
@@ -949,6 +1028,31 @@ class OrgOps:
             "collectionsCount": collections_count,
             "publicCollectionsCount": public_collections_count,
         }
+
+    async def is_crawl_running(self, org: Organization) -> bool:
+        """Return boolean indicating whether any crawls are currently running in org"""
+        running_count = await self.crawls_db.count_documents(
+            {"oid": org.id, "state": {"$in": RUNNING_STATES}}
+        )
+        if running_count > 0:
+            return True
+        return False
+
+    async def has_files_stored(self, org: Organization) -> bool:
+        """Return boolean indicating whether any files are stored on org"""
+        crawl_count = await self.crawls_db.count_documents(
+            {"oid": org.id, "files": {"$exists": True, "$ne": []}},
+        )
+        if crawl_count > 0:
+            return True
+
+        profile_count = await self.profiles_db.count_documents(
+            {"oid": org.id, "resource": {"$exists": True}},
+        )
+        if profile_count > 0:
+            return True
+
+        return False
 
     async def get_all_org_slugs(self) -> dict[str, list[str]]:
         """Return list of all org slugs."""
