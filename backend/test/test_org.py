@@ -253,6 +253,24 @@ def test_change_storage_invalid(admin_auth_headers):
     assert r.status_code == 400
 
 
+def test_add_custom_storage_doesnt_verify(admin_auth_headers):
+    # verify that custom storage that can't be verified with
+    # a test file isn't added
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{new_oid}/custom-storage",
+        headers=admin_auth_headers,
+        json={
+            "name": "custom-bucket-doesnt-exist",
+            "access_key": "ADMIN",
+            "secret_key": "PASSW0RD",
+            "bucket": "custom-bucket-doesnt-exist",
+            "endpoint_url": "http://local-minio.default:9000/",
+        },
+    )
+    assert r.status_code == 400
+    assert r.json()["detail"] == "Could not verify custom storage. Check credentials are valid?"
+
+
 def test_add_custom_storage(admin_auth_headers):
     # add custom storages
     r = requests.post(
