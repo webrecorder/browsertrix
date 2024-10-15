@@ -911,7 +911,11 @@ def init_storages_api(org_ops: OrgOps, crawl_manager: CrawlManager, user_dep: Ca
         org: Organization = Depends(org_owner_dep),
     ):
         """get storage refs for an org"""
-        return OrgStorageRefs(storage=org.storage, storageReplicas=org.storageReplicas)
+        if org.storageReplicas:
+            replica_refs = org.storageReplicas
+        else:
+            replica_refs = storage_ops.default_replicas
+        return OrgStorageRefs(storage=org.storage, storageReplicas=replica_refs)
 
     @router.get(
         "/all-storages", tags=["organizations"], response_model=List[StorageRef]
