@@ -18,7 +18,7 @@ def get_crawl_status(org_id, crawl_id, headers):
         headers=headers,
     )
     data = r.json()
-    return data.get("state", "")
+    return data["state"]
 
 
 def read_in_chunks(fh, blocksize=1024):
