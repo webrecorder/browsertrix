@@ -2251,6 +2251,13 @@ class UpdatedResponse(BaseModel):
 
 
 # ============================================================================
+class UpdatedResponseId(UpdatedResponse):
+    """Response for API endpoints that return updated + id"""
+
+    id: Optional[str] = None
+
+
+# ============================================================================
 class SuccessResponse(BaseModel):
     """Response for API endpoints that return success"""
 
