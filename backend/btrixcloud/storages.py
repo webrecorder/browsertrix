@@ -13,6 +13,7 @@ from typing import (
     Any,
     cast,
     Callable,
+    Union,
 )
 from urllib.parse import urlsplit
 from contextlib import asynccontextmanager
@@ -28,7 +29,7 @@ import os
 from datetime import datetime, timedelta
 from zipfile import ZipInfo
 
-from fastapi import Depends, HTTPException, APIRouter
+from fastapi import Depends, HTTPException, APIRouter, BackgroundTasks
 from stream_zip import stream_zip, NO_COMPRESSION_64, Method
 from remotezip import RemoteZip
 from aiobotocore.config import AioConfig
@@ -52,6 +53,7 @@ from .models import (
     OrgStorageReplicaRefs,
     DeletedResponse,
     UpdatedResponse,
+    UpdatedResponseId,
     AddedResponseName,
     PRESIGN_DURATION_SECONDS,
     PresignedUrl,
@@ -259,7 +261,8 @@ class StorageOps:
         self,
         storage_refs: OrgStorageRef,
         org: Organization,
-    ) -> dict[str, bool]:
+        background_tasks: BackgroundTasks,
+    ) -> dict[str, Union[bool, Optional[str]]]:
         """update storage for org"""
         storage_ref = storage_refs.storage
 
@@ -288,32 +291,35 @@ class StorageOps:
 
         await self.org_ops.update_storage_refs(org)
 
-        # Run in background jobs (1 to copy files, 1 for db updates)
-        await self._run_post_storage_update_tasks(
-            prev_storage_ref,
-            storage_ref,
-            org,
-        )
-
-        return {"updated": True}
-
-    async def _run_post_storage_update_tasks(
-        self,
-        prev_storage_ref: StorageRef,
-        new_storage_ref: StorageRef,
-        org: Organization,
-    ):
-        """Handle tasks necessary after changing org storage"""
         if not await self.org_ops.has_files_stored(org):
             print("No files stored, no updates to do", flush=True)
-            return
+            return {"updated": True, "id": None}
 
         await self.org_ops.update_read_only(org, True, "Updating storage")
 
-        await self.background_job_ops.create_copy_bucket_job(
-            org, prev_storage_ref, new_storage_ref
+        job_id = await self.background_job_ops.create_copy_bucket_job(
+            org, prev_storage_ref, storage_ref
         )
 
+        # This runs only two update_many mongo commands, so should be safe to run
+        # in a FastAPI background task rather than requiring a full Browsertrix
+        # Background job
+        background_tasks.add_task(
+            self._run_post_storage_update_tasks,
+            org,
+            prev_storage_ref,
+            storage_ref,
+        )
+
+        return {"updated": True, "id": job_id}
+
+    async def _run_post_storage_update_tasks(
+        self,
+        org: Organization,
+        prev_storage_ref: StorageRef,
+        new_storage_ref: StorageRef,
+    ):
+        """Handle tasks necessary after changing org storage"""
         await self.org_ops.update_file_storage_refs(
             org, prev_storage_ref, new_storage_ref
         )
@@ -324,6 +330,7 @@ class StorageOps:
         self,
         storage_refs: OrgStorageReplicaRefs,
         org: Organization,
+        background_tasks: BackgroundTasks,
     ) -> dict[str, bool]:
         """update storage for org"""
 
@@ -355,18 +362,25 @@ class StorageOps:
 
         await self.org_ops.update_storage_refs(org, replicas=True)
 
-        # Run in background job? or just kick off background jobs?
-        await self._run_post_storage_replica_update_tasks(
-            prev_storage_replicas, replicas, org
+        # This only kicks off background jobs and runs a few update_many mongo
+        # commands, so it might be fine to keep as a FastAPI background job.
+        # Consider moving to a Browsertrix background job, but that may make
+        # retrying difficult as the job which would be retried also kicks off
+        # other background jobs which may have been successful already
+        background_tasks.add_task(
+            self._run_post_storage_replica_update_tasks,
+            org,
+            prev_storage_replicas,
+            replicas,
         )
 
         return {"updated": True}
 
     async def _run_post_storage_replica_update_tasks(
         self,
+        org: Organization,
         prev_replica_refs: List[StorageRef],
         new_replica_refs: List[StorageRef],
-        org: Organization,
     ):
         """Handle tasks necessary after updating org replica storages"""
         if not await self.org_ops.has_files_stored(org):
@@ -379,14 +393,16 @@ class StorageOps:
                 await self.background_job_ops.create_copy_bucket_job(
                     org, org.storage, replica_storage
                 )
-                await self.org_ops.add_file_replica_storage_refs(org, replica_storage)
+                await self.org_ops.add_or_remove_file_replica_storage_refs(
+                    org, replica_storage
+                )
 
         # Delete no-longer-used replica storage refs from files
         # Determine if we want to delete files from the buckets as well
         for replica_storage in prev_replica_refs:
             if replica_storage not in new_replica_refs:
-                await self.org_ops.remove_file_replica_storage_refs(
-                    org, replica_storage
+                await self.org_ops.add_or_remove_file_replica_storage_refs(
+                    org, replica_storage, remove=True
                 )
 
     def get_available_storages(self, org: Organization) -> List[StorageRef]:
@@ -998,28 +1014,32 @@ def init_storages_api(
 
         return await storage_ops.remove_custom_storage(name, org)
 
-    @router.post("/storage", tags=["organizations"], response_model=UpdatedResponse)
+    @router.post("/storage", tags=["organizations"], response_model=UpdatedResponseId)
     async def update_storage_ref(
         storage: OrgStorageRef,
+        background_tasks: BackgroundTasks,
         org: Organization = Depends(org_owner_dep),
         user: User = Depends(user_dep),
     ):
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
-        return await storage_ops.update_storage_ref(storage, org)
+        return await storage_ops.update_storage_ref(storage, org, background_tasks)
 
     @router.post(
         "/storage-replicas", tags=["organizations"], response_model=UpdatedResponse
     )
     async def update_storage_replica_refs(
         storage: OrgStorageReplicaRefs,
+        background_tasks: BackgroundTasks,
         org: Organization = Depends(org_owner_dep),
         user: User = Depends(user_dep),
     ):
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
-        return await storage_ops.update_storage_replica_refs(storage, org)
+        return await storage_ops.update_storage_replica_refs(
+            storage, org, background_tasks
+        )
 
     return storage_ops
