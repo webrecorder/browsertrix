@@ -547,8 +547,8 @@ class OrgOps:
     async def unset_file_presigned_urls(self, org: Organization) -> None:
         """Unset all presigned URLs for files in org"""
         await self.crawls_db.update_many(
-            {"oid": org.id, "files.$.presignedUrl": {"$ne": None}},
-            {"$set": {"files.$.presignedUrl": None}},
+            {"oid": org.id},
+            {"$set": {"files.$[].presignedUrl": None}},
         )
 
     async def update_subscription_data(
