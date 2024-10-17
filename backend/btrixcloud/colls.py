@@ -43,6 +43,7 @@ else:
 
 
 # ============================================================================
+# pylint: disable=too-many-positional-arguments
 class CollectionOps:
     """ops for working with named collections of crawls"""
 
