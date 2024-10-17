@@ -236,7 +236,7 @@ class StorageOps:
     async def remove_custom_storage(
         self, name: str, org: Organization
     ) -> dict[str, bool]:
-        """remove custom storage"""
+        """Remove custom storage from org"""
         if org.storage.custom and org.storage.name == name:
             raise HTTPException(status_code=400, detail="storage_in_use")
 
@@ -263,7 +263,7 @@ class StorageOps:
         org: Organization,
         background_tasks: BackgroundTasks,
     ) -> dict[str, Union[bool, Optional[str]]]:
-        """update storage for org"""
+        """Update storage for org"""
         storage_ref = storage_refs.storage
 
         try:
@@ -301,9 +301,6 @@ class StorageOps:
             org, prev_storage_ref, storage_ref
         )
 
-        # This runs only two update_many mongo commands, so should be safe to run
-        # in a FastAPI background task rather than requiring a full Browsertrix
-        # Background job
         background_tasks.add_task(
             self._run_post_storage_update_tasks,
             org,
@@ -332,7 +329,7 @@ class StorageOps:
         org: Organization,
         background_tasks: BackgroundTasks,
     ) -> dict[str, bool]:
-        """update storage for org"""
+        """Update replica storage for org"""
 
         replicas = storage_refs.storageReplicas
 
@@ -362,11 +359,6 @@ class StorageOps:
 
         await self.org_ops.update_storage_refs(org, replicas=True)
 
-        # This only kicks off background jobs and runs a few update_many mongo
-        # commands, so it might be fine to keep as a FastAPI background job.
-        # Consider moving to a Browsertrix background job, but that may make
-        # retrying difficult as the job which would be retried also kicks off
-        # other background jobs which may have been successful already
         background_tasks.add_task(
             self._run_post_storage_replica_update_tasks,
             org,
