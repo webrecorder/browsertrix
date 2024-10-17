@@ -489,6 +489,10 @@ class BackgroundJobOps:
         new_storage = self.storage_ops.get_org_storage_by_ref(org, new_storage_ref)
         new_endpoint, new_bucket = self.strip_bucket(new_storage.endpoint_url)
 
+        # Ensure buckets terminate with trailing slash
+        prev_bucket = os.path.join(prev_bucket, "")
+        new_bucket = os.path.join(new_bucket, "")
+
         job_type = BgJobType.COPY_BUCKET.value
 
         try:
