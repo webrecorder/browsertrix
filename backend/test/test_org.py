@@ -268,7 +268,10 @@ def test_add_custom_storage_doesnt_verify(admin_auth_headers):
         },
     )
     assert r.status_code == 400
-    assert r.json()["detail"] == "Could not verify custom storage. Check credentials are valid?"
+    assert (
+        r.json()["detail"]
+        == "Could not verify custom storage. Check credentials are valid?"
+    )
 
 
 def test_add_custom_storage(admin_auth_headers):
@@ -304,6 +307,16 @@ def test_add_custom_storage(admin_auth_headers):
     data = r.json()
     assert data["added"]
     assert data["name"] == CUSTOM_REPLICA_STORAGE_NAME
+
+    # verify custom storages are now available on org
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{new_oid}/all-storages",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    all_storages = r.json()["allStorages"]
+    assert {"name": CUSTOM_PRIMARY_STORAGE_NAME, "custom": True} in all_storages
+    assert {"name": CUSTOM_REPLICA_STORAGE_NAME, "custom": True} in all_storages
 
     # set org to use custom storage moving forward
     r = requests.post(
