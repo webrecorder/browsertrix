@@ -516,8 +516,8 @@ class OrgOps:
     ) -> None:
         """Update storage refs for all crawl and profile files in given org"""
         await self.crawls_db.update_many(
-            {"oid": org.id, "files.$.storage": dict(previous_storage)},
-            {"$set": {"files.$.storage": dict(new_storage)}},
+            {"oid": org.id},
+            {"$set": {"files.$[].storage": dict(new_storage)}},
         )
 
         await self.profiles_db.update_many(
