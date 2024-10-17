@@ -1156,6 +1156,13 @@ class OrgStorageReplicaRefs(BaseModel):
 
 
 # ============================================================================
+class OrgAllStorages(BaseModel):
+    """Response model for listing all available storages"""
+
+    allStorages: List[StorageRef]
+
+
+# ============================================================================
 class S3StorageIn(BaseModel):
     """Custom S3 Storage input model"""
 
