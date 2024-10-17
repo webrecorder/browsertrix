@@ -86,11 +86,11 @@ spec:
         - name: RCLONE_CONFIG_NEW_ENDPOINT
           value: "{{ new_endpoint }}"
 
-        command: ["rclone", "-vv", "--progress", "copy", "--checksum", "prev:{{ prev_bucket }}{{ oid }}", "new:{{ new_bucket }}{{ oid }}"]
+        command: ["rclone", "-vv", "--progress", "copy", "--checksum", "--use-mmap", "--transfers=2", "--checkers=2", "prev:{{ prev_bucket }}{{ oid }}", "new:{{ new_bucket }}{{ oid }}"]
         resources:
           limits:
-            memory: "500Mi"
+            memory: "350Mi"
 
           requests:
-            memory: "500Mi"
+            memory: "350Mi"
             cpu: "50m"
