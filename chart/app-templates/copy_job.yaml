@@ -89,8 +89,8 @@ spec:
         command: ["rclone", "-vv", "--progress", "copy", "--checksum", "prev:{{ prev_bucket }}{{ oid }}", "new:{{ new_bucket }}{{ oid }}"]
         resources:
           limits:
-            memory: "200Mi"
+            memory: "500Mi"
 
           requests:
-            memory: "200Mi"
+            memory: "500Mi"
             cpu: "50m"
