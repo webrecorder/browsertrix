@@ -50,6 +50,7 @@ from .models import (
     OrgStorageRefs,
     OrgStorageRef,
     OrgStorageReplicaRefs,
+    OrgAllStorages,
     DeletedResponse,
     UpdatedResponse,
     UpdatedResponseId,
@@ -378,14 +379,14 @@ class StorageOps:
                     org, replica_storage, remove=True
                 )
 
-    def get_available_storages(self, org: Organization) -> List[StorageRef]:
+    def get_available_storages(self, org: Organization) -> Dict[str, List[StorageRef]]:
         """return a list of available default + custom storages"""
         refs: List[StorageRef] = []
         for name in self.default_storages:
             refs.append(StorageRef(name=name, custom=False))
         for name in org.customStorages:
             refs.append(StorageRef(name=name, custom=True))
-        return refs
+        return {"allStorages": refs}
 
     @asynccontextmanager
     async def get_s3_client(
@@ -886,7 +887,7 @@ def init_storages_api(org_ops: OrgOps, crawl_manager: CrawlManager, user_dep: Ca
     @router.get(
         "/all-storages",
         tags=["organizations", "storage"],
-        response_model=List[StorageRef],
+        response_model=OrgAllStorages,
     )
     def get_available_storages(org: Organization = Depends(org_owner_dep)):
         return storage_ops.get_available_storages(org)
