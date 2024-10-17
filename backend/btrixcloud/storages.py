@@ -878,7 +878,9 @@ def init_storages_api(org_ops: OrgOps, crawl_manager: CrawlManager, user_dep: Ca
     router = org_ops.router
     org_owner_dep = org_ops.org_owner_dep
 
-    @router.get("/storage", tags=["organizations"], response_model=OrgStorageRefs)
+    @router.get(
+        "/storage", tags=["organizations", "storage"], response_model=OrgStorageRefs
+    )
     def get_storage_refs(
         org: Organization = Depends(org_owner_dep),
     ):
@@ -890,13 +892,17 @@ def init_storages_api(org_ops: OrgOps, crawl_manager: CrawlManager, user_dep: Ca
         return OrgStorageRefs(storage=org.storage, storageReplicas=replica_refs)
 
     @router.get(
-        "/all-storages", tags=["organizations"], response_model=List[StorageRef]
+        "/all-storages",
+        tags=["organizations", "storage"],
+        response_model=List[StorageRef],
     )
     def get_available_storages(org: Organization = Depends(org_owner_dep)):
         return storage_ops.get_available_storages(org)
 
     @router.post(
-        "/custom-storage", tags=["organizations"], response_model=AddedResponseName
+        "/custom-storage",
+        tags=["organizations", "storage"],
+        response_model=AddedResponseName,
     )
     async def add_custom_storage(
         storage: S3StorageIn,
@@ -909,7 +915,9 @@ def init_storages_api(org_ops: OrgOps, crawl_manager: CrawlManager, user_dep: Ca
         return await storage_ops.add_custom_storage(storage, org)
 
     @router.delete(
-        "/custom-storage/{name}", tags=["organizations"], response_model=DeletedResponse
+        "/custom-storage/{name}",
+        tags=["organizations", "storage"],
+        response_model=DeletedResponse,
     )
     async def remove_custom_storage(
         name: str,
@@ -921,7 +929,9 @@ def init_storages_api(org_ops: OrgOps, crawl_manager: CrawlManager, user_dep: Ca
 
         return await storage_ops.remove_custom_storage(name, org)
 
-    @router.post("/storage", tags=["organizations"], response_model=UpdatedResponseId)
+    @router.post(
+        "/storage", tags=["organizations", "storage"], response_model=UpdatedResponseId
+    )
     async def update_storage_ref(
         storage: OrgStorageRef,
         background_tasks: BackgroundTasks,
@@ -934,7 +944,9 @@ def init_storages_api(org_ops: OrgOps, crawl_manager: CrawlManager, user_dep: Ca
         return await storage_ops.update_storage_ref(storage, org, background_tasks)
 
     @router.post(
-        "/storage-replicas", tags=["organizations"], response_model=UpdatedResponse
+        "/storage-replicas",
+        tags=["organizations", "storage"],
+        response_model=UpdatedResponse,
     )
     async def update_storage_replica_refs(
         storage: OrgStorageReplicaRefs,
