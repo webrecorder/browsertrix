@@ -45,7 +45,7 @@ curl -X POST -H "Content-type: application/json" -H "Authorization: Bearer <jwt 
 
 If any crawls, uploads, or browser profiles have been created on the organization, modifying the primary storage will disable archiving on the organization while files are migrated from the previous to the new storage location. Archiving is re-enabled when the migration completes.
 
-At this time, all files are copied from the prior storage location to the new storage location, and are not automatically deleted from their source location.
+At this time, all files are copied from the previous storage location to the new storage location, and are not automatically deleted from their source location.
 
 
 ## Updating Org Replica Storage
@@ -60,7 +60,7 @@ curl -X POST -H "Content-type: application/json" -H "Authorization: Bearer <jwt 
 
 If any crawls, uploads, or browser profiles have been created on the organization, adding a new replica location will result in a background job to replicate all of the organization's files from primary storage to the new replica location. Unlike with updating primary storage, this process will not disable archiving on the organization.
 
-If any crawls, uploads, or browser profiles have been created on the organization, removing a previously used replica location will result in database updates to reflect that the prior replica location is no longer available. At this time, no files are automatically deleted from prior replica location.
+If any crawls, uploads, or browser profiles have been created on the organization, removing a previously used replica location will result in database updates to reflect that the prior replica location is no longer available. At this time, no files are automatically deleted from the removed replica location.
 
 
 ## Removing Custom Storage
