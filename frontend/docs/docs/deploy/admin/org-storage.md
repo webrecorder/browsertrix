@@ -55,7 +55,7 @@ Each organization can have any number of replica storage locations. These locati
 It is possible to configure the organization to use any of the storage options listed in the `/all-storages` API endpoint as replica storage, e.g.:
 
 ```sh
-curl -X POST -H "Content-type: application/json" -H "Authorization: Bearer <jwt token>" https://app.browsertrix.com/api/orgs/<org-id>/storage --data '{"storageReplicas": [{"name": "default-replica", "custom": false}, {"new-custom-storage": true}]}'
+curl -X POST -H "Content-type: application/json" -H "Authorization: Bearer <jwt token>" https://app.browsertrix.com/api/orgs/<org-id>/storage-replicas --data '{"storageReplicas": [{"name": "default-replica", "custom": false}, {"new-custom-storage": true}]}'
 ```
 
 If any crawls, uploads, or browser profiles have been created on the organization, adding a new replica location will result in a background job to replicate all of the organization's files from primary storage to the new replica location. Unlike with updating primary storage, this process will not disable archiving on the organization.
