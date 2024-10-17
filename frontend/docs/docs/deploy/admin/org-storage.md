@@ -14,7 +14,7 @@ The first step to configuring custom storage with an organization is to add the 
 curl -X POST -H "Content-type: application/json" -H "Authorization: Bearer <jwt token>" https://app.browsertrix.com/api/orgs/<org-id>/custom-storage --data '{"name": "new-custom-storage", "access_key": "<access-key>", "secret_key": "<secret-key>", "bucket": "new-custom-storage", "endpoint_url": "https://s3-provider.example.com/"}'
 ```
 
-If desired, the `provider` field can be set to any of the [values supported by rclone for S3 providers](https://rclone.org/s3/#s3-provider). By default, this field is set to "Other", which should work for nearly all S3 storage providers. This value is used solely for migrations from rclone when updating org storage and/or replica locations.
+If desired, the `provider` field can be set to any of the [values supported by rclone for S3 providers](https://rclone.org/s3/#s3-provider). By default, this field is set to "Other", which should work for nearly all S3 storage providers. This value is used solely for migrating existing files with rclone when updating org storage and/or replica locations.
 
 Verify that the custom storage has been added to the organization by checking the `/all-storages` API endpoint:
 
