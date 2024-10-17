@@ -536,7 +536,7 @@ class OrgOps:
 
         await self.crawls_db.update_many(
             {"oid": org.id},
-            {verb: {"files.$.replicas": dict(storage_ref)}},
+            {verb: {"files.$[].replicas": dict(storage_ref)}},
         )
 
         await self.profiles_db.update_many(
