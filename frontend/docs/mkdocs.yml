@@ -86,6 +86,7 @@ nav:
       - Administration:
           - deploy/admin/upgrade-notes.md
           - deploy/admin/org-import-export.md
+          - deploy/admin/org-storage.md
   - Development:
       - develop/index.md
       - develop/local-dev-setup.md
