@@ -673,11 +673,8 @@ class StorageRef(BaseModel):
         return f"storage-cs-{self.name}-{oid[:12]}"
 
     def get_storage_extra_path(self, oid: str) -> str:
-        """return extra path added to the endpoint
-        using oid for default storages, no extra path for custom"""
-        if not self.custom:
-            return oid + "/"
-        return ""
+        """return extra oid path added to the endpoint"""
+        return oid + "/"
 
 
 # ============================================================================
@@ -1137,11 +1134,32 @@ class RenameOrg(BaseModel):
 
 # ============================================================================
 class OrgStorageRefs(BaseModel):
-    """Input model for setting primary storage + optional replicas"""
+    """Model for org storage references"""
 
     storage: StorageRef
 
     storageReplicas: List[StorageRef] = []
+
+
+# ============================================================================
+class OrgStorageRef(BaseModel):
+    """Input model for setting primary storage"""
+
+    storage: StorageRef
+
+
+# ============================================================================
+class OrgStorageReplicaRefs(BaseModel):
+    """Input model for setting replica storages"""
+
+    storageReplicas: List[StorageRef]
+
+
+# ============================================================================
+class OrgAllStorages(BaseModel):
+    """Response model for listing all available storages"""
+
+    allStorages: List[StorageRef]
 
 
 # ============================================================================
@@ -1158,6 +1176,7 @@ class S3StorageIn(BaseModel):
     bucket: str
     access_endpoint_url: Optional[str] = None
     region: str = ""
+    provider: str = "Other"
 
 
 # ============================================================================
@@ -1173,6 +1192,7 @@ class S3Storage(BaseModel):
     access_endpoint_url: str
     region: str = ""
     use_access_for_presign: bool = True
+    provider: str = "Other"
 
 
 # ============================================================================
@@ -2014,6 +2034,7 @@ class BgJobType(str, Enum):
     CREATE_REPLICA = "create-replica"
     DELETE_REPLICA = "delete-replica"
     DELETE_ORG = "delete-org"
+    COPY_BUCKET = "copy-bucket"
 
 
 # ============================================================================
@@ -2032,7 +2053,7 @@ class BackgroundJob(BaseMongoModel):
 
 # ============================================================================
 class CreateReplicaJob(BackgroundJob):
-    """Model for tracking create of replica jobs"""
+    """Model for tracking creation of replica jobs"""
 
     type: Literal[BgJobType.CREATE_REPLICA] = BgJobType.CREATE_REPLICA
     file_path: str
@@ -2060,11 +2081,30 @@ class DeleteOrgJob(BackgroundJob):
 
 
 # ============================================================================
+class CopyBucketJob(BackgroundJob):
+    """Model for tracking job to copy entire s3 bucket"""
+
+    type: Literal[BgJobType.COPY_BUCKET] = BgJobType.COPY_BUCKET
+    prev_storage: StorageRef
+    new_storage: StorageRef
+
+
+# ============================================================================
 # Union of all job types, for response model
 
 AnyJob = RootModel[
-    Union[CreateReplicaJob, DeleteReplicaJob, BackgroundJob, DeleteOrgJob]
+    Union[
+        CreateReplicaJob, DeleteReplicaJob, DeleteOrgJob, CopyBucketJob, BackgroundJob
+    ]
 ]
+
+
+# ============================================================================
+class JobProgress(BaseModel):
+    """Model for reporting background job progress"""
+
+    percentage: float
+    eta: Optional[str] = None
 
 
 # ============================================================================
@@ -2213,6 +2253,13 @@ class UpdatedResponse(BaseModel):
 
 
 # ============================================================================
+class UpdatedResponseId(UpdatedResponse):
+    """Response for API endpoints that return updated + id"""
+
+    id: Optional[str] = None
+
+
+# ============================================================================
 class SuccessResponse(BaseModel):
     """Response for API endpoints that return success"""
 
@@ -2333,7 +2380,7 @@ class EmptyResponse(BaseModel):
 class PaginatedBackgroundJobResponse(PaginatedResponse):
     """Response model for paginated background jobs"""
 
-    items: List[Union[CreateReplicaJob, DeleteReplicaJob]]
+    items: List[Union[CreateReplicaJob, DeleteReplicaJob, CopyBucketJob]]
 
 
 # ============================================================================
