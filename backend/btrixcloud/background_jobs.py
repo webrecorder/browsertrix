@@ -30,6 +30,7 @@ from .models import (
     User,
     SuccessResponse,
     SuccessResponseId,
+    JobProgress,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import dt_now
@@ -639,6 +640,52 @@ class BackgroundJobOps:
 
         return DeleteOrgJob.from_dict(data)
 
+    async def get_job_progress(self, job_id: str) -> JobProgress:
+        """Return progress of background job for supported types"""
+        job = await self.get_background_job(job_id)
+
+        if job.type != BgJobType.COPY_BUCKET:
+            raise HTTPException(status_code=403, detail="job_type_not_supported")
+
+        if job.success is False:
+            raise HTTPException(status_code=400, detail="job_failed")
+
+        if job.finished:
+            return JobProgress(percentage=1.0)
+
+        log_tail = await self.crawl_manager.tail_background_job(job_id)
+        if not log_tail:
+            raise HTTPException(status_code=400, detail="job_log_not_available")
+
+        lines = log_tail.splitlines()
+        reversed_lines = list(reversed(lines))
+
+        progress = JobProgress(percentage=0.0)
+
+        # Parse lines in reverse order until we find one with latest stats
+        for line in reversed_lines:
+            try:
+                if "ETA" not in line:
+                    continue
+
+                stats_groups = line.split(",")
+                for group in stats_groups:
+                    group = group.strip()
+                    if "%" in group:
+                        progress.percentage = float(group.strip("%")) / 100
+                    if "ETA" in group:
+                        eta_str = group.strip("ETA ")
+                        # Split on white space to remove byte mark rclone sometimes
+                        # adds to end of stats line
+                        eta_list = eta_str.split(" ")
+                        progress.eta = eta_list[0]
+
+                break
+            except:
+                continue
+
+        return progress
+
     async def list_background_jobs(
         self,
         org: Optional[Organization] = None,
@@ -893,6 +940,17 @@ def init_background_jobs_api(
     ):
         """Retrieve information for background job"""
         return await ops.get_background_job(job_id, org.id)
+
+    @router.get(
+        "/{job_id}/progress",
+        response_model=JobProgress,
+    )
+    async def get_job_progress(
+        job_id: str,
+        org: Organization = Depends(org_crawl_dep),
+    ):
+        """Return progress information for background job"""
+        return await ops.get_job_progress(job_id)
 
     @app.get("/orgs/all/jobs/{job_id}", response_model=AnyJob, tags=["jobs"])
     async def get_background_job_all_orgs(job_id: str, user: User = Depends(user_dep)):

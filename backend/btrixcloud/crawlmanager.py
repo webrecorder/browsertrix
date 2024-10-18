@@ -436,6 +436,22 @@ class CrawlManager(K8sAPI):
         """Delete all crawl configs by id"""
         await self._delete_crawl_configs(f"btrix.crawlconfig={cid}")
 
+    async def tail_background_job(self, job_id: str) -> str:
+        """Tail running background job pod"""
+        pods = await self.core_api.list_namespaced_pod(
+            namespace=self.namespace,
+            label_selector=f"batch.kubernetes.io/job-name={job_id}",
+        )
+
+        if not pods.items:
+            return ""
+
+        pod_name = pods.items[0].metadata.name
+
+        return await self.core_api.read_namespaced_pod_log(
+            pod_name, self.namespace, tail_lines=10
+        )
+
     # ========================================================================
     # Internal Methods
     async def _delete_crawl_configs(self, label) -> None:
