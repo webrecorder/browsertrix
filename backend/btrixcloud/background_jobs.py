@@ -681,6 +681,7 @@ class BackgroundJobOps:
                         progress.eta = eta_list[0]
 
                 break
+            # pylint: disable=bare-except
             except:
                 continue
 
@@ -947,6 +948,7 @@ def init_background_jobs_api(
     )
     async def get_job_progress(
         job_id: str,
+        # pylint: disable=unused-argument
         org: Organization = Depends(org_crawl_dep),
     ):
         """Return progress information for background job"""
