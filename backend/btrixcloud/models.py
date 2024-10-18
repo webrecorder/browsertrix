@@ -2652,6 +2652,14 @@ AnyJob = RootModel[
 
 
 # ============================================================================
+class JobProgress(BaseModel):
+    """Model for reporting background job progress"""
+
+    percentage: float
+    eta: Optional[str] = None
+
+
+# ============================================================================
 
 ### GENERIC RESPONSE MODELS ###
 
