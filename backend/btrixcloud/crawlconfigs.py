@@ -569,20 +569,32 @@ class CrawlConfigOps:
         update_query: dict[str, object] = {}
 
         running_crawl = await self.get_running_crawl(cid)
-        # only look up last finished crawl if no crawls running, otherwise
-        # lastCrawl* stats are already for running crawl
-        if not running_crawl:
-            match_query = {
-                "cid": cid,
-                "finished": {"$ne": None},
-                "inactive": {"$ne": True},
-            }
-            last_crawl = await self.crawls.find_one(
-                match_query, sort=[("finished", pymongo.DESCENDING)]
-            )
-        else:
-            last_crawl = None
 
+        # If crawl is running, lastCrawl* stats are already for running crawl
+        # so only increment size and crawl counts
+        if running_crawl:
+            result = await self.crawl_configs.find_one_and_update(
+                {"_id": cid, "inactive": {"$ne": True}},
+                {
+                    "$inc": {
+                        "totalSize": size,
+                        "crawlCount": inc_crawls,
+                        "crawlSuccessfulCount": inc_crawls,
+                    },
+                },
+            )
+            return result is not None
+
+        match_query = {
+            "cid": cid,
+            "finished": {"$ne": None},
+            "inactive": {"$ne": True},
+        }
+        last_crawl = await self.crawls.find_one(
+            match_query, sort=[("finished", pymongo.DESCENDING)]
+        )
+
+        # Update to reflect last crawl
         if last_crawl:
             last_crawl_finished = last_crawl.get("finished")
 
@@ -600,6 +612,7 @@ class CrawlConfigOps:
 
             if last_crawl_finished:
                 update_query["lastRun"] = last_crawl_finished
+        # If no last crawl exists and no running crawl, reset stats
         else:
             update_query["lastCrawlId"] = None
             update_query["lastCrawlStartTime"] = None
