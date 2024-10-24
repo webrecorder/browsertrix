@@ -6,25 +6,9 @@ import sys
 import traceback
 from uuid import UUID
 
-from .crawlmanager import CrawlManager
-from .db import init_db
-from .emailsender import EmailSender
-
-# from .utils import register_exit_handler
 from .models import BgJobType
+from .ops import init_ops
 
-from .basecrawls import BaseCrawlOps
-from .invites import InviteOps
-from .users import init_user_manager
-from .orgs import OrgOps
-from .colls import CollectionOps
-from .crawlconfigs import CrawlConfigOps
-from .crawls import CrawlOps
-from .profiles import ProfileOps
-from .storages import StorageOps
-from .webhooks import EventWebhookOps
-from .background_jobs import BackgroundJobOps
-from .pages import PageOps
 
 job_type = os.environ.get("BG_JOB_TYPE")
 oid = os.environ.get("OID")
@@ -33,19 +17,7 @@ oid = os.environ.get("OID")
 # ============================================================================
 # pylint: disable=too-many-function-args, duplicate-code, too-many-locals
 async def main():
-    """main init"""
-    email = EmailSender()
-    crawl_manager = None
-
-    dbclient, mdb = init_db()
-
-    invite_ops = InviteOps(mdb, email)
-
-    user_manager = init_user_manager(mdb, email, invite_ops)
-
-    org_ops = OrgOps(mdb, invite_ops, user_manager)
-
-    event_webhook_ops = EventWebhookOps(mdb, org_ops)
+    """run background job with access to ops classes"""
 
     # pylint: disable=import-outside-toplevel
     if not os.environ.get("KUBERNETES_SERVICE_HOST"):
@@ -55,66 +27,7 @@ async def main():
         )
         sys.exit(1)
 
-    crawl_manager = CrawlManager()
-
-    storage_ops = StorageOps(org_ops, crawl_manager)
-
-    background_job_ops = BackgroundJobOps(
-        mdb, email, user_manager, org_ops, crawl_manager, storage_ops
-    )
-
-    profile_ops = ProfileOps(
-        mdb, org_ops, crawl_manager, storage_ops, background_job_ops
-    )
-
-    crawl_config_ops = CrawlConfigOps(
-        dbclient,
-        mdb,
-        user_manager,
-        org_ops,
-        crawl_manager,
-        profile_ops,
-    )
-
-    coll_ops = CollectionOps(mdb, crawl_manager, org_ops, event_webhook_ops)
-
-    base_crawl_ops = BaseCrawlOps(
-        mdb,
-        user_manager,
-        org_ops,
-        crawl_config_ops,
-        coll_ops,
-        storage_ops,
-        event_webhook_ops,
-        background_job_ops,
-    )
-
-    crawl_ops = CrawlOps(
-        crawl_manager,
-        mdb,
-        user_manager,
-        org_ops,
-        crawl_config_ops,
-        coll_ops,
-        storage_ops,
-        event_webhook_ops,
-        background_job_ops,
-    )
-
-    page_ops = PageOps(mdb, crawl_ops, org_ops, storage_ops)
-
-    base_crawl_ops.set_page_ops(page_ops)
-    crawl_ops.set_page_ops(page_ops)
-
-    background_job_ops.set_ops(crawl_ops, profile_ops)
-
-    org_ops.set_ops(base_crawl_ops, profile_ops, coll_ops, background_job_ops)
-
-    user_manager.set_ops(org_ops, crawl_config_ops, base_crawl_ops)
-
-    background_job_ops.set_ops(base_crawl_ops, profile_ops)
-
-    crawl_config_ops.set_coll_ops(coll_ops)
+    (org_ops, _, _, _, _, _, _, _, _, _, user_manager) = init_ops()
 
     # Run job
     if job_type == BgJobType.DELETE_ORG:
