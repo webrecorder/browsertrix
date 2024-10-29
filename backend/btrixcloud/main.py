@@ -81,10 +81,10 @@ See [https://docs.browsertrix.com/](https://docs.browsertrix.com/) for more info
         """,
         summary="Browsertrix Crawling System API",
         version=__version__,
-        terms_of_service="http://browsertrix.com/terms",
+        terms_of_service="https://webrecorder.net/legal/browsertrix-terms-and-conditions/",
         contact={
             "name": "Browsertrix",
-            "url": "https://browsertrix.com/",
+            "url": "https://webrecorder.net/browsertrix",
             "email": "info@webrecorder.net",
         },
         license_info={
