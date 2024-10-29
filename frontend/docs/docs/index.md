@@ -6,7 +6,7 @@ hide:
 
 # Browsertrix Docs
 
-Browsertrix is an open source web archiving system created by [Webrecorder](https://webrecorder.net/). Sign up for Browsertrix on [browsertrix.com](https://browsertrix.com/) to start archiving with zero setup, or follow our self-hosting guide to deploy Browsertrix on your own infrastructure.
+Browsertrix is an open source web archiving system created by [Webrecorder](https://webrecorder.net/). [Sign up for Browsertrix](https://webrecorder.net/browsertrix) to start archiving with zero setup, or follow our self-hosting guide to deploy Browsertrix on your own infrastructure.
 
 ## Documentation
 
@@ -22,7 +22,7 @@ If you have feedback on the docs, please feel free to [reach out to us](mailto:d
 
 For help with a specific topic, try our [community help forum](https://forum.webrecorder.net/c/help/5).
 
-Dedicated professional support is available with a custom subscription or support contract. Check out [our plans](https://browsertrix.com/) for details.
+Dedicated professional support is available with a custom subscription or support contract. Check out [our plans](https://webrecorder.net/browsertrix/pricing/) for details.
 
 ## Bugs
 
