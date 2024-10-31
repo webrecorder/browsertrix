@@ -1,7 +1,7 @@
 site_name: Browsertrix Docs
 repo_url: https://github.com/webrecorder/browsertrix-cloud/
 repo_name: Browsertrix
-edit_uri: edit/main/docs/
+edit_uri: edit/main/frontend/docs/
 extra_css:
     - stylesheets/extra.css
 extra_javascript:

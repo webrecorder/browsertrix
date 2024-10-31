@@ -91,7 +91,7 @@ default_org: "My Organization"
 
 # API Image
 # =========================================
-backend_image: "docker.io/webrecorder/browsertrix-backend:1.12.0"
+backend_image: "docker.io/webrecorder/browsertrix-backend:1.13.0-beta.0"
 backend_pull_policy: "Always"
 
 backend_password_secret: "PASSWORD!"
@@ -141,7 +141,7 @@ backend_avg_memory_threshold: 95
 
 # Nginx Image
 # =========================================
-frontend_image: "docker.io/webrecorder/browsertrix-frontend:1.12.0"
+frontend_image: "docker.io/webrecorder/browsertrix-frontend:1.13.0-beta.0"
 frontend_pull_policy: "Always"
 
 frontend_cpu: "10m"
@@ -155,6 +155,11 @@ frontend_memory: "64Mi"
 local_service_port: 30870
 
 frontend_alias: "http://browsertrix-cloud-frontend"
+
+# custom URL for where Browsertrix docs are hosted
+# by default, docs are served from /docs/ but can be served from a custom
+# URL specified here.
+# docs_url: "https://browsertrix-docs.example.com/"
 
 # Autoscaling
 # -----------

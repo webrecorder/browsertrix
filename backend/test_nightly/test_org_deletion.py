@@ -141,10 +141,38 @@ def test_delete_org_crawl_running(
         f"{API_PREFIX}/orgs/{non_default_org_id}", headers=admin_auth_headers
     )
     assert r.status_code == 200
-    assert r.json()["deleted"]
+    data = r.json()
+    assert data["deleted"]
 
-    time.sleep(5)
+    job_id = data["id"]
 
+    # Check that background job is launched and eventually succeeds
+    max_attempts = 18
+    attempts = 1
+    while True:
+        try:
+            r = requests.get(
+                f"{API_PREFIX}/orgs/all/jobs/{job_id}", headers=admin_auth_headers
+            )
+            assert r.status_code == 200
+            success = r.json()["success"]
+
+            if success:
+                break
+
+            if success is False:
+                assert False
+
+            if attempts >= max_attempts:
+                assert False
+
+            time.sleep(10)
+        except:
+            pass
+
+        attempts += 1
+
+    # Check that org was deleted
     r = requests.get(f"{API_PREFIX}/orgs", headers=admin_auth_headers)
     data = r.json()
     for org in data["items"]:
@@ -159,10 +187,38 @@ def test_delete_org_qa_running(
         f"{API_PREFIX}/orgs/{non_default_org_id}", headers=admin_auth_headers
     )
     assert r.status_code == 200
-    assert r.json()["deleted"]
+    data = r.json()
+    assert data["deleted"]
 
-    time.sleep(5)
+    job_id = data["id"]
 
+    # Check that background job is launched and eventually succeeds
+    max_attempts = 18
+    attempts = 1
+    while True:
+        try:
+            r = requests.get(
+                f"{API_PREFIX}/orgs/all/jobs/{job_id}", headers=admin_auth_headers
+            )
+            assert r.status_code == 200
+            success = r.json()["success"]
+
+            if success:
+                break
+
+            if success is False:
+                assert False
+
+            if attempts >= max_attempts:
+                assert False
+
+            time.sleep(10)
+        except:
+            pass
+
+        attempts += 1
+
+    # Check that org was deleted
     r = requests.get(f"{API_PREFIX}/orgs", headers=admin_auth_headers)
     data = r.json()
     for org in data["items"]:
@@ -177,10 +233,38 @@ def test_delete_org_profile_running(
         f"{API_PREFIX}/orgs/{non_default_org_id}", headers=admin_auth_headers
     )
     assert r.status_code == 200
-    assert r.json()["deleted"]
+    data = r.json()
+    assert data["deleted"]
 
-    time.sleep(5)
+    job_id = data["id"]
 
+    # Check that background job is launched and eventually succeeds
+    max_attempts = 18
+    attempts = 1
+    while True:
+        try:
+            r = requests.get(
+                f"{API_PREFIX}/orgs/all/jobs/{job_id}", headers=admin_auth_headers
+            )
+            assert r.status_code == 200
+            success = r.json()["success"]
+
+            if success:
+                break
+
+            if success is False:
+                assert False
+
+            if attempts >= max_attempts:
+                assert False
+
+            time.sleep(10)
+        except:
+            pass
+
+        attempts += 1
+
+    # Check that org was deleted
     r = requests.get(f"{API_PREFIX}/orgs", headers=admin_auth_headers)
     data = r.json()
     for org in data["items"]:

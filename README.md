@@ -10,7 +10,7 @@ Browsertrix is a cloud-native, high-fidelity, browser-based crawling service des
 
 The service provides an API and UI for scheduling crawls and viewing results, and managing all aspects of crawling process. This system provides the orchestration and management around crawling, while the actual crawling is performed using [Browsertrix Crawler](https://github.com/webrecorder/browsertrix-crawler) containers, which are launched for each crawl.
 
-See [browsertrix.com](https://browsertrix.com) for a feature overview and information about how to sign up for Webrecorder's hosted Browsertrix service.
+See [webrecorder.net/browsertrix](https://webrecorder.net/browsertrix) for a feature overview and information about how to sign up for Webrecorder's hosted Browsertrix service.
 
 ## Documentation
 

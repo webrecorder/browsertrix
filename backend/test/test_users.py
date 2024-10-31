@@ -216,7 +216,7 @@ def test_pending_invite_new_user(admin_auth_headers, default_org_id):
         assert invite["oid"] == default_org_id
         assert invite["created"]
         assert invite["role"]
-        assert invite["firstOrgAdmin"] == None
+        assert invite["firstOrgAdmin"] == False
 
 
 def test_new_user_token():
@@ -382,7 +382,7 @@ def test_pending_invite_existing_user(admin_auth_headers, non_default_org_id):
     assert invite["oid"] == non_default_org_id
     assert invite["created"]
     assert invite["role"]
-    assert invite["firstOrgAdmin"] == None
+    assert invite["firstOrgAdmin"] == False
 
 
 def test_pending_invites_crawler(crawler_auth_headers, default_org_id):
@@ -512,6 +512,7 @@ def test_non_superadmin_admin_can_invite(default_org_id):
     assert not data["fromSuperuser"]
     assert data["inviterEmail"] == VALID_USER_EMAIL
     assert data["inviterName"] == "valid"
+    assert data["firstOrgAdmin"] == False
 
 
 def test_forgot_password():

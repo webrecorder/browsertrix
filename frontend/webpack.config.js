@@ -31,7 +31,9 @@ const WEBSOCKET_HOST =
 
 const DOCS_URL = process.env.DOCS_URL
   ? new URL(process.env.DOCS_URL)
-  : new URL("https://docs.browsertrix.com/");
+  : isDevServer
+    ? "https://docs.browsertrix.com/"
+    : "/docs/";
 
 // Get git info for release version info
 

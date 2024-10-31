@@ -76,7 +76,7 @@ export class BrowserProfilesNew extends BtrixElement {
           crawling. For details, refer to
           <a
             class="text-primary hover:text-indigo-400"
-            href="https://docs.browsertrix.com/user-guide/browser-profiles/"
+            href="/docs/user-guide/browser-profiles/"
             target="_blank"
           >
             ${msg("browser profile best practices")}</a
