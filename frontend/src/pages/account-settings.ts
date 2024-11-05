@@ -4,6 +4,7 @@ import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import type { ZxcvbnResult } from "@zxcvbn-ts/core";
 import { type PropertyValues } from "lit";
 import { customElement, property, queryAsync, state } from "lit/decorators.js";
+import { choose } from "lit/directives/choose.js";
 import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
 
@@ -18,9 +19,8 @@ import { AppStateService } from "@/utils/state";
 import { tw } from "@/utils/tailwind";
 
 enum Tab {
-  General = "general",
+  Profile = "profile",
   Security = "security",
-  Preferences = "preferences",
 }
 
 const { PASSWORD_MINLENGTH, PASSWORD_MAXLENGTH, PASSWORD_MIN_SCORE } =
@@ -103,7 +103,7 @@ export class RequestVerify extends TailwindElement {
 @needLogin
 export class AccountSettings extends LiteElement {
   @property({ type: String })
-  tab: string | Tab = Tab.General;
+  tab: string | Tab = Tab.Profile;
 
   @state()
   sectionSubmitting: null | "name" | "email" | "password" = null;
@@ -117,14 +117,13 @@ export class AccountSettings extends LiteElement {
   private get activeTab() {
     return this.tab && Object.values(Tab).includes(this.tab as unknown as Tab)
       ? (this.tab as Tab)
-      : Tab.General;
+      : Tab.Profile;
   }
 
   private get tabLabels(): Record<Tab, string> {
     return {
-      [Tab.General]: msg("General"),
-      [Tab.Security]: msg("Password"),
-      [Tab.Preferences]: msg("Preferences"),
+      [Tab.Profile]: msg("Profile"),
+      [Tab.Security]: msg("Security"),
     };
   }
 
@@ -142,18 +141,21 @@ export class AccountSettings extends LiteElement {
 
       <btrix-tab-list activePanel=${this.activeTab} hideIndicator>
         <header slot="header" class="flex h-7 items-end justify-between">
-          <h3>${this.tabLabels[this.activeTab]}</h3>
+          ${choose(
+            this.activeTab,
+            [
+              [Tab.Profile, () => html`<h2>${msg("Display Name")}</h2>`],
+              [Tab.Security, () => html`<h2>${msg("Password")}</h2>`],
+            ],
+            () => html`<h2>${this.tabLabels[this.activeTab]}</h2>`,
+          )}
         </header>
-        ${this.renderTab(Tab.General)} ${this.renderTab(Tab.Security)}
-        ${this.renderTab(Tab.Preferences)}
-        <btrix-tab-panel name=${Tab.General}>
+        ${this.renderTab(Tab.Profile)} ${this.renderTab(Tab.Security)}
+        <btrix-tab-panel name=${Tab.Profile}>
           ${this.renderGeneral()}
         </btrix-tab-panel>
         <btrix-tab-panel name=${Tab.Security}>
           ${this.renderSecurity()}
-        </btrix-tab-panel>
-        <btrix-tab-panel name=${Tab.Preferences}>
-          ${this.renderPreferences()}
         </btrix-tab-panel>
       </btrix-tab-list>
     `;
@@ -163,11 +165,8 @@ export class AccountSettings extends LiteElement {
     if (!this.userInfo) return;
 
     return html`
-      <form class="mb-5 rounded border" @submit=${this.onSubmitName}>
+      <form class="mb-5 rounded-lg border" @submit=${this.onSubmitName}>
         <div class="p-4">
-          <h2 class="mb-4 text-lg font-semibold leading-none">
-            ${msg("Display Name")}
-          </h2>
           <p class="mb-2">
             ${msg(
               "Enter your full name, or another name to display in the orgs you belong to.",
@@ -192,11 +191,10 @@ export class AccountSettings extends LiteElement {
           >
         </footer>
       </form>
-      <form class="mb-5 rounded border" @submit=${this.onSubmitEmail}>
+
+      <h2 class="mb-2 mt-7 text-lg font-medium">${msg("Email")}</h2>
+      <form class="rounded-lg border" @submit=${this.onSubmitEmail}>
         <div class="p-4">
-          <h2 class="mb-4 text-lg font-semibold leading-none">
-            ${msg("Email")}
-          </h2>
           <p class="mb-2">${msg("Update the email you use to log in.")}</p>
           <sl-input
             name="email"
@@ -242,22 +240,21 @@ export class AccountSettings extends LiteElement {
           >
         </footer>
       </form>
+
+      ${this.renderLanguagePicker()}
     `;
   }
 
   private renderSecurity() {
     return html`
-      <form @submit=${this.onSubmitPassword}>
+      <form class="rounded-lg border" @submit=${this.onSubmitPassword}>
         <div class="p-4">
-          <h2 class="mb-4 text-lg font-semibold leading-none">
-            ${msg("Password")}
-          </h2>
           <sl-input
             class="mb-3"
             name="password"
             label=${msg("Enter your current password")}
             type="password"
-            autocomplete="current-password"
+            autocomplete="off"
             password-toggle
             required
           ></sl-input>
@@ -277,7 +274,7 @@ export class AccountSettings extends LiteElement {
           ${when(this.pwStrengthResults, this.renderPasswordStrength)}
         </div>
         <footer class="flex items-center justify-end border-t px-4 py-3">
-          <p class="mr-auto text-gray-500">
+          <p class="mr-auto text-neutral-500">
             ${msg(
               str`Choose a strong password between ${PASSWORD_MINLENGTH}-${PASSWORD_MAXLENGTH} characters.`,
             )}
@@ -296,10 +293,6 @@ export class AccountSettings extends LiteElement {
     `;
   }
 
-  private renderPreferences() {
-    return html` ${this.renderLanguagePicker()} `;
-  }
-
   private renderTab(name: Tab) {
     const isActive = name === this.activeTab;
 
@@ -311,6 +304,16 @@ export class AccountSettings extends LiteElement {
         aria-selected=${isActive}
         @click=${this.navLink}
       >
+        ${choose(name, [
+          [
+            Tab.Profile,
+            () => html`<sl-icon name="file-person-fill"></sl-icon>`,
+          ],
+          [
+            Tab.Security,
+            () => html`<sl-icon name="shield-lock-fill"></sl-icon>`,
+          ],
+        ])}
         ${this.tabLabels[name]}
       </btrix-navigation-button>
     `;
@@ -318,11 +321,12 @@ export class AccountSettings extends LiteElement {
 
   private renderLanguagePicker() {
     return html`
-      <section class="mb-5 rounded border">
+      <h2 class="mb-2 mt-7 text-lg font-medium">${msg("Preferences")}</h2>
+      <section class="mb-5 rounded-lg border">
         <div class="flex items-center justify-between px-4 py-2.5">
-          <h2 class="text-lg font-semibold leading-none">
+          <h3 class="font-medium">
             ${msg("Language")} <btrix-beta-badge></btrix-beta-badge>
-          </h2>
+          </h3>
           <btrix-locale-picker></btrix-locale-picker>
         </div>
       </section>

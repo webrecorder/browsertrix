@@ -412,7 +412,7 @@ export class App extends LiteElement {
                       <div class="px-7 py-2">${this.renderMenuUserInfo()}</div>
                       <sl-divider></sl-divider>
                       <sl-menu-item
-                        @click=${() => this.navigate(ROUTES.accountSettings)}
+                        @click=${() => this.navigate("/account/settings")}
                       >
                         <sl-icon slot="prefix" name="person-gear"></sl-icon>
                         ${msg("Account Settings")}
