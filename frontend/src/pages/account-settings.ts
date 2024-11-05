@@ -2,7 +2,7 @@ import { localized, msg, str } from "@lit/localize";
 import type { SlInput, SlSelectEvent } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import type { ZxcvbnResult } from "@zxcvbn-ts/core";
-import { type PropertyValues } from "lit";
+import { nothing, type PropertyValues } from "lit";
 import { customElement, property, queryAsync, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
 import { when } from "lit/directives/when.js";
@@ -11,7 +11,7 @@ import debounce from "lodash/fp/debounce";
 import { TailwindElement } from "@/classes/TailwindElement";
 import needLogin from "@/decorators/needLogin";
 import { pageHeader } from "@/layouts/pageHeader";
-import { type LocaleCodeEnum } from "@/types/localization";
+import { allLocales, type LocaleCodeEnum } from "@/types/localization";
 import type { UnderlyingFunction } from "@/types/utils";
 import { isApiError } from "@/utils/api";
 import LiteElement, { html } from "@/utils/LiteElement";
@@ -154,7 +154,7 @@ export class AccountSettings extends LiteElement {
         </header>
         ${this.renderTab(Tab.Profile)} ${this.renderTab(Tab.Security)}
         <btrix-tab-panel name=${Tab.Profile}>
-          ${this.renderGeneral()}
+          ${this.renderProfile()}
         </btrix-tab-panel>
         <btrix-tab-panel name=${Tab.Security}>
           ${this.renderSecurity()}
@@ -163,7 +163,7 @@ export class AccountSettings extends LiteElement {
     `;
   }
 
-  private renderGeneral() {
+  private renderProfile() {
     if (!this.userInfo) return;
 
     return html`
@@ -243,7 +243,9 @@ export class AccountSettings extends LiteElement {
         </footer>
       </form>
 
-      ${this.renderLanguagePicker()}
+      ${(allLocales as unknown as string[]).length > 1
+        ? this.renderPreferences()
+        : nothing}
     `;
   }
 
@@ -321,7 +323,7 @@ export class AccountSettings extends LiteElement {
     `;
   }
 
-  private renderLanguagePicker() {
+  private renderPreferences() {
     return html`
       <h2 class="mb-2 mt-7 text-lg font-medium">${msg("Preferences")}</h2>
       <section class="mb-5 rounded-lg border">

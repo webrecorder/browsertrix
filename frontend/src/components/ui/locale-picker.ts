@@ -1,10 +1,9 @@
 import { localized } from "@lit/localize";
-import { html, type PropertyValues } from "lit";
+import { html } from "lit";
 import { customElement, state } from "lit/decorators.js";
 
-import { allLocales } from "@/__generated__/locale-codes";
 import { BtrixElement } from "@/classes/BtrixElement";
-import { type LocaleCodeEnum } from "@/types/localization";
+import { allLocales, type LocaleCodeEnum } from "@/types/localization";
 import { getLocale, setLocale } from "@/utils/localization";
 
 type LocaleNames = {
