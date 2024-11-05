@@ -3,11 +3,11 @@ import { html, LitElement } from "lit";
 import { customElement, state } from "lit/decorators.js";
 
 import { allLocales } from "@/__generated__/locale-codes";
+import { type LocaleCodeEnum } from "@/types/localization";
 import { getLocale, setLocaleFromUrl } from "@/utils/localization";
 
-type LocaleCode = (typeof allLocales)[number];
 type LocaleNames = {
-  [L in LocaleCode]: string;
+  [L in LocaleCodeEnum]: string;
 };
 
 @localized()
@@ -16,7 +16,7 @@ export class LocalePicker extends LitElement {
   @state()
   private localeNames: LocaleNames | undefined = {} as LocaleNames;
 
-  private readonly setLocaleName = (locale: LocaleCode) => {
+  private readonly setLocaleName = (locale: LocaleCodeEnum) => {
     this.localeNames![locale] = new Intl.DisplayNames([locale], {
       type: "language",
     }).of(locale)!;
@@ -43,7 +43,7 @@ export class LocalePicker extends LitElement {
         hoist
       >
         <sl-button slot="trigger" size="small" caret
-          >${this.localeNames[selectedLocale as LocaleCode]}</sl-button
+          >${this.localeNames[selectedLocale as LocaleCodeEnum]}</sl-button
         >
         <sl-menu>
           ${allLocales.map(
@@ -62,7 +62,7 @@ export class LocalePicker extends LitElement {
   }
 
   async localeChanged(event: CustomEvent) {
-    const newLocale = event.detail.item.value as LocaleCode;
+    const newLocale = event.detail.item.value as LocaleCodeEnum;
 
     if (newLocale !== getLocale()) {
       const url = new URL(window.location.href);
