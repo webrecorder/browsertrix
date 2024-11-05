@@ -729,6 +729,7 @@ export class App extends LiteElement {
       case "accountSettings":
         return html`<btrix-account-settings
           class="mx-auto box-border w-full max-w-screen-desktop p-2 md:py-8"
+          tab=${this.viewState.params.settingsTab}
         ></btrix-account-settings>`;
 
       case "usersInvite": {
