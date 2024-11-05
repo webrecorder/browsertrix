@@ -287,7 +287,22 @@ export class AccountSettings extends LiteElement {
             `,
           )}
         </section>
+
+        ${this.renderLanguagePicker()}
       </div>
+    `;
+  }
+
+  private renderLanguagePicker() {
+    return html`
+      <section class="mb-5 rounded border">
+        <div class="flex items-center justify-between px-4 py-2.5">
+          <h2 class="text-lg font-semibold leading-none">
+            ${msg("Language")} <btrix-beta-badge></btrix-beta-badge>
+          </h2>
+          <btrix-locale-picker></btrix-locale-picker>
+        </div>
+      </section>
     `;
   }
 
