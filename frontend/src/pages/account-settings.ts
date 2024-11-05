@@ -1,5 +1,5 @@
 import { localized, msg, str } from "@lit/localize";
-import type { SlInput } from "@shoelace-style/shoelace";
+import type { SlInput, SlSelectEvent } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import type { ZxcvbnResult } from "@zxcvbn-ts/core";
 import { type PropertyValues } from "lit";
@@ -11,9 +11,11 @@ import debounce from "lodash/fp/debounce";
 import { TailwindElement } from "@/classes/TailwindElement";
 import needLogin from "@/decorators/needLogin";
 import { pageHeader } from "@/layouts/pageHeader";
+import { type LocaleCodeEnum } from "@/types/localization";
 import type { UnderlyingFunction } from "@/types/utils";
 import { isApiError } from "@/utils/api";
 import LiteElement, { html } from "@/utils/LiteElement";
+import { setLocale } from "@/utils/localization";
 import PasswordService from "@/utils/PasswordService";
 import { AppStateService } from "@/utils/state";
 import { tw } from "@/utils/tailwind";
@@ -327,7 +329,9 @@ export class AccountSettings extends LiteElement {
           <h3 class="font-medium">
             ${msg("Language")} <btrix-beta-badge></btrix-beta-badge>
           </h3>
-          <btrix-locale-picker></btrix-locale-picker>
+          <btrix-locale-picker
+            @sl-select=${this.onSelectLocale}
+          ></btrix-locale-picker>
         </div>
       </section>
     `;
@@ -493,4 +497,20 @@ export class AccountSettings extends LiteElement {
 
     this.sectionSubmitting = null;
   }
+
+  private readonly onSelectLocale = async (e: SlSelectEvent) => {
+    const locale = e.detail.item.value as LocaleCodeEnum;
+
+    AppStateService.partialUpdateUserPreferences({
+      locale,
+    });
+
+    await setLocale(locale);
+
+    this.notify({
+      message: msg("Your language preference has been updated."),
+      variant: "success",
+      icon: "check2-circle",
+    });
+  };
 }

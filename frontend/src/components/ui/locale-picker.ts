@@ -1,10 +1,11 @@
 import { localized } from "@lit/localize";
-import { html, LitElement } from "lit";
+import { html, type PropertyValues } from "lit";
 import { customElement, state } from "lit/decorators.js";
 
 import { allLocales } from "@/__generated__/locale-codes";
+import { BtrixElement } from "@/classes/BtrixElement";
 import { type LocaleCodeEnum } from "@/types/localization";
-import { getLocale, setLocaleFromUrl } from "@/utils/localization";
+import { getLocale, setLocale } from "@/utils/localization";
 
 type LocaleNames = {
   [L in LocaleCodeEnum]: string;
@@ -12,7 +13,7 @@ type LocaleNames = {
 
 @localized()
 @customElement("btrix-locale-picker")
-export class LocalePicker extends LitElement {
+export class LocalePicker extends BtrixElement {
   @state()
   private localeNames: LocaleNames | undefined = {} as LocaleNames;
 
@@ -22,7 +23,13 @@ export class LocalePicker extends LitElement {
     }).of(locale)!;
   };
 
-  async firstUpdated() {
+  firstUpdated() {
+    const locale = this.appState.userPreferences?.locale;
+
+    if (locale) {
+      void setLocale(locale);
+    }
+
     this.localeNames = {} as LocaleNames;
     allLocales.forEach(this.setLocaleName);
   }
@@ -35,13 +42,7 @@ export class LocalePicker extends LitElement {
     const selectedLocale = getLocale();
 
     return html`
-      <sl-dropdown
-        value="${selectedLocale}"
-        @sl-select=${this.localeChanged}
-        placement="top-end"
-        distance="4"
-        hoist
-      >
+      <sl-dropdown placement="top-end" distance="4" hoist>
         <sl-button slot="trigger" size="small" caret
           >${this.localeNames[selectedLocale as LocaleCodeEnum]}</sl-button
         >
@@ -59,16 +60,5 @@ export class LocalePicker extends LitElement {
         </sl-menu>
       </sl-dropdown>
     `;
-  }
-
-  async localeChanged(event: CustomEvent) {
-    const newLocale = event.detail.item.value as LocaleCodeEnum;
-
-    if (newLocale !== getLocale()) {
-      const url = new URL(window.location.href);
-      url.searchParams.set("locale", newLocale);
-      window.history.pushState(null, "", url.toString());
-      void setLocaleFromUrl();
-    }
   }
 }

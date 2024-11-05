@@ -9,12 +9,6 @@ export const { getLocale, setLocale } = configureLocalization({
     import(`/src/__generated__/locales/${locale}.ts`),
 });
 
-export const setLocaleFromUrl = async () => {
-  const url = new URL(window.location.href);
-  const locale = url.searchParams.get("locale") || sourceLocale;
-  await setLocale(locale);
-};
-
 /**
  * Get time zone short name from locales
  * @param locales List of locale codes. Omit for browser default
