@@ -145,7 +145,7 @@ Currently supported languages can be viewed on Weblate, our translation tool: <h
 
 To add a new language:
 
-1. Look up the [BCP 47 language tag](https://www.w3.org/International/articles/language-tags/index.en) and add it to the `targetLocales` field in `lit-localize.json`.
+1. Look up the [BCP 47 language tag](https://www.w3.org/International/articles/language-tags/index.en#registry) and add it to the `targetLocales` field in `lit-localize.json`.
 ```js
 {
   // ...
