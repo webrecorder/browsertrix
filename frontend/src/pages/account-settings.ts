@@ -15,7 +15,6 @@ import { allLocales, type LocaleCodeEnum } from "@/types/localization";
 import type { UnderlyingFunction } from "@/types/utils";
 import { isApiError } from "@/utils/api";
 import LiteElement, { html } from "@/utils/LiteElement";
-import { updateAppStateLocale } from "@/utils/localization";
 import PasswordService from "@/utils/PasswordService";
 import { AppStateService } from "@/utils/state";
 import { tw } from "@/utils/tailwind";
@@ -503,7 +502,9 @@ export class AccountSettings extends LiteElement {
   private readonly onSelectLocale = async (e: SlSelectEvent) => {
     const locale = e.detail.item.value as LocaleCodeEnum;
 
-    await updateAppStateLocale(locale);
+    if (locale !== this.appState.userPreferences?.locale) {
+      AppStateService.partialUpdateUserPreferences({ locale });
+    }
 
     this.notify({
       message: msg("Your language preference has been updated."),

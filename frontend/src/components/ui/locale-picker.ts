@@ -1,10 +1,13 @@
 import { localized } from "@lit/localize";
+import type { SlSelectEvent } from "@shoelace-style/shoelace";
 import { html } from "lit";
 import { customElement, state } from "lit/decorators.js";
 
+import { sourceLocale } from "@/__generated__/locale-codes";
 import { BtrixElement } from "@/classes/BtrixElement";
 import { allLocales, type LocaleCodeEnum } from "@/types/localization";
-import { getLocale } from "@/utils/localization";
+import { getLocale, setLocale } from "@/utils/localization";
+import { AppStateService } from "@/utils/state";
 
 type LocaleNames = {
   [L in LocaleCodeEnum]: string;
@@ -32,10 +35,16 @@ export class LocalePicker extends BtrixElement {
       return;
     }
 
-    const selectedLocale = this.appState.userPreferences?.locale || getLocale();
+    const selectedLocale =
+      this.appState.userPreferences?.locale || sourceLocale;
 
     return html`
-      <sl-dropdown placement="top-end" distance="4" hoist>
+      <sl-dropdown
+        @sl-select=${this.localeChanged}
+        placement="top-end"
+        distance="4"
+        hoist
+      >
         <sl-button slot="trigger" size="small" caret
           >${this.localeNames[selectedLocale as LocaleCodeEnum]}</sl-button
         >
@@ -53,5 +62,15 @@ export class LocalePicker extends BtrixElement {
         </sl-menu>
       </sl-dropdown>
     `;
+  }
+
+  async localeChanged(event: SlSelectEvent) {
+    const newLocale = event.detail.item.value as LocaleCodeEnum;
+
+    AppStateService.partialUpdateUserPreferences({ locale: newLocale });
+
+    if (newLocale !== getLocale()) {
+      void setLocale(newLocale);
+    }
   }
 }

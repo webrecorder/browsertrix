@@ -33,10 +33,10 @@ import { type Auth } from "@/types/auth";
 import { type LocaleCodeEnum } from "@/types/localization";
 import { type AppSettings } from "@/utils/app";
 import {
+  getLocale,
+  LOCALE_PARAM_NAME,
   resetLocale,
-  setLocaleFromAppState,
-  setLocaleFromUrl,
-  updateUrlLocale,
+  setLocale,
 } from "@/utils/localization";
 import brandLockupColor from "~assets/brand/browsertrix-lockup-color.svg";
 
@@ -117,8 +117,6 @@ export class App extends LiteElement {
     }
     super.connectedCallback();
 
-    void setLocaleFromUrl();
-
     this.addEventListener("btrix-navigate", this.onNavigateTo);
     this.addEventListener("btrix-notify", this.onNotify);
     this.addEventListener("btrix-need-login", this.onNeedLogin);
@@ -159,7 +157,12 @@ export class App extends LiteElement {
   }
 
   protected firstUpdated(): void {
-    void setLocaleFromAppState();
+    if (
+      this.appState.userPreferences?.locale &&
+      this.appState.userPreferences.locale !== getLocale()
+    ) {
+      void setLocale(this.appState.userPreferences.locale);
+    }
   }
 
   getLocationPathname() {
@@ -889,7 +892,9 @@ export class App extends LiteElement {
   onSelectLocale(e: SlSelectEvent) {
     const locale = e.detail.item.value as LocaleCodeEnum;
 
-    void updateUrlLocale(locale);
+    const url = new URL(window.location.href);
+    url.searchParams.set(LOCALE_PARAM_NAME, locale);
+    window.history.pushState(null, "", url.toString());
   }
 
   onLogOut(event: CustomEvent<{ redirect?: boolean } | null>) {

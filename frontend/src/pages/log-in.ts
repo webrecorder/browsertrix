@@ -8,7 +8,6 @@ import { isApiError } from "@/utils/api";
 import type { ViewState } from "@/utils/APIRouter";
 import AuthService from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
-import { getLocaleFromUrl } from "@/utils/localization";
 import { AppStateService } from "@/utils/state";
 import { formatAPIUser } from "@/utils/user";
 
@@ -370,12 +369,6 @@ export class LogInPage extends LiteElement {
       const data = await AuthService.login({ email: username, password });
 
       AppStateService.updateUser(formatAPIUser(data.user));
-
-      const locale = getLocaleFromUrl();
-
-      if (locale) {
-        AppStateService.partialUpdateUserPreferences({ locale });
-      }
 
       await this.updateComplete;
 
