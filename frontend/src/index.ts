@@ -1,5 +1,9 @@
 import { localized, msg, str } from "@lit/localize";
-import type { SlDialog, SlDrawer } from "@shoelace-style/shoelace";
+import type {
+  SlDialog,
+  SlDrawer,
+  SlSelectEvent,
+} from "@shoelace-style/shoelace";
 import { nothing, render, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
@@ -26,7 +30,14 @@ import type { NavigateEventDetail } from "@/controllers/navigate";
 import type { NotifyEventDetail } from "@/controllers/notify";
 import { theme } from "@/theme";
 import { type Auth } from "@/types/auth";
+import { type LocaleCodeEnum } from "@/types/localization";
 import { type AppSettings } from "@/utils/app";
+import {
+  resetLocale,
+  setLocaleFromAppState,
+  setLocaleFromUrl,
+  updateUrlLocale,
+} from "@/utils/localization";
 import brandLockupColor from "~assets/brand/browsertrix-lockup-color.svg";
 
 import "./shoelace";
@@ -106,6 +117,8 @@ export class App extends LiteElement {
     }
     super.connectedCallback();
 
+    void setLocaleFromUrl();
+
     this.addEventListener("btrix-navigate", this.onNavigateTo);
     this.addEventListener("btrix-notify", this.onNotify);
     this.addEventListener("btrix-need-login", this.onNeedLogin);
@@ -143,6 +156,10 @@ export class App extends LiteElement {
         this.updateOrgSlugIfNeeded();
       }
     }
+  }
+
+  protected firstUpdated(): void {
+    void setLocaleFromAppState();
   }
 
   getLocationPathname() {
@@ -432,7 +449,12 @@ export class App extends LiteElement {
                       </sl-menu-item>
                     </sl-menu>
                   </sl-dropdown>`
-              : this.renderSignUpLink()}
+              : html`
+                  ${this.renderSignUpLink()}
+                  <btrix-locale-picker
+                    @sl-select=${this.onSelectLocale}
+                  ></btrix-locale-picker>
+                `}
           </div>
           ${isSuperAdmin
             ? html`
@@ -864,6 +886,12 @@ export class App extends LiteElement {
     }
   }
 
+  onSelectLocale(e: SlSelectEvent) {
+    const locale = e.detail.item.value as LocaleCodeEnum;
+
+    void updateUrlLocale(locale);
+  }
+
   onLogOut(event: CustomEvent<{ redirect?: boolean } | null>) {
     const detail = event.detail || {};
     const redirect = detail.redirect !== false;
@@ -985,6 +1013,7 @@ export class App extends LiteElement {
     this.authService.logout();
     this.authService = new AuthService();
     AppStateService.resetAll();
+    void resetLocale();
   }
 
   private showDialog(content: DialogContent) {

@@ -4,7 +4,7 @@ import { customElement, state } from "lit/decorators.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { allLocales, type LocaleCodeEnum } from "@/types/localization";
-import { getLocale, setLocale } from "@/utils/localization";
+import { getLocale } from "@/utils/localization";
 
 type LocaleNames = {
   [L in LocaleCodeEnum]: string;
@@ -23,12 +23,6 @@ export class LocalePicker extends BtrixElement {
   };
 
   firstUpdated() {
-    const locale = this.appState.userPreferences?.locale;
-
-    if (locale) {
-      void setLocale(locale);
-    }
-
     this.localeNames = {} as LocaleNames;
     allLocales.forEach(this.setLocaleName);
   }
@@ -38,7 +32,7 @@ export class LocalePicker extends BtrixElement {
       return;
     }
 
-    const selectedLocale = getLocale();
+    const selectedLocale = this.appState.userPreferences?.locale || getLocale();
 
     return html`
       <sl-dropdown placement="top-end" distance="4" hoist>

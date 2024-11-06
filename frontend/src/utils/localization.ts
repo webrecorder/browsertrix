@@ -1,13 +1,66 @@
 import { configureLocalization } from "@lit/localize";
 
-import { sourceLocale, targetLocales } from "@/__generated__/locale-codes";
+import appState, { AppStateService } from "./state";
 
-export const { getLocale, setLocale } = configureLocalization({
+import {
+  allLocales,
+  sourceLocale,
+  targetLocales,
+} from "@/__generated__/locale-codes";
+import { type LocaleCodeEnum } from "@/types/localization";
+
+const LOCALE_PARAM_NAME = "locale" as const;
+
+const { getLocale, setLocale } = configureLocalization({
   sourceLocale,
   targetLocales,
   loadLocale: async (locale: string) =>
     import(`/src/__generated__/locales/${locale}.ts`),
 });
+export { getLocale };
+
+export const updateUrlLocale = async (locale: LocaleCodeEnum) => {
+  const url = new URL(window.location.href);
+  url.searchParams.set(LOCALE_PARAM_NAME, locale);
+  window.history.pushState(null, "", url.toString());
+
+  await setLocale(locale);
+};
+
+export const getLocaleFromUrl = () => {
+  const url = new URL(window.location.href);
+  const locale = url.searchParams.get(LOCALE_PARAM_NAME);
+
+  if (allLocales.includes(locale as unknown as LocaleCodeEnum)) {
+    return locale as LocaleCodeEnum;
+  }
+};
+
+export const setLocaleFromUrl = async () => {
+  const locale = getLocaleFromUrl();
+
+  if (!locale) return;
+
+  await setLocale(locale);
+};
+
+export const updateAppStateLocale = async (locale: LocaleCodeEnum) => {
+  AppStateService.partialUpdateUserPreferences({ locale });
+
+  await setLocale(locale);
+};
+
+export const setLocaleFromAppState = async () => {
+  const locale = appState.userPreferences?.locale;
+
+  if (!locale) return;
+
+  await setLocale(locale);
+};
+
+export const resetLocale = async () => {
+  await setLocale(sourceLocale);
+};
 
 /**
  * Get time zone short name from locales
