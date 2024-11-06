@@ -3789,6 +3789,9 @@
       <trans-unit id="s2b5047d39b9baf3d">
         <source>Preferences</source>
       </trans-unit>
+      <trans-unit id="sfa66f095b5a35ccc">
+        <source>Your language preference has been updated.</source>
+      </trans-unit>
     </body>
   </file>
 </xliff>
