@@ -4,7 +4,7 @@ The Browsertrix UI supports multiple languages. Browsertrix end users can set a 
 
 ## Adding a Language
 
-Currently supported languages can be viewed on Weblate, our translation tool: <https://hosted.weblate.org/projects/browsertrix/#languages>
+[Currently supported languages](https://hosted.weblate.org/projects/browsertrix/#languages) can be viewed on Weblate, our translation tool.
 
 To add a new language:
 
@@ -46,4 +46,4 @@ render() {
 }
 ```
 
-See Lit documentation for details: <https://lit.dev/docs/localization/overview/#message-types>
+See [Lit's message types documentation](https://lit.dev/docs/localization/overview/#message-types) page for details.
