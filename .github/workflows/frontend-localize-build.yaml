@@ -1,9 +1,10 @@
 name: Frontend Localization Build
 on:
-  pull_request:
+  push:
+    branches:
+      - main
     paths:
       - 'frontend/xliff/*.xlf'
-  workflow_dispatch:
   
 jobs:
   setup-and-build-translation:
@@ -19,6 +20,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref }}
+          sparse-checkout: |
+            frontend
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
