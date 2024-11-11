@@ -3792,6 +3792,21 @@
           <x equiv-text="&lt;a class=&quot;text-primary hover:text-primary-400&quot; href=&quot;/docs/user-guide/browser-profiles/&quot; target=&quot;_blank&quot;&gt;&#10;            ${msg(&quot;browser profile best practices&quot;)}&lt;/a&gt;" id="0"/>.
         </source>
       </trans-unit>
+      <trans-unit id="s4f0909fc2715df9d">
+        <source>Preferred App Language</source>
+      </trans-unit>
+      <trans-unit id="s5f35a66624e4d770">
+        <source>Translations are in beta</source>
+      </trans-unit>
+      <trans-unit id="s3f3f33356a6d42ff">
+        <source>Parts of the app may not be translated yet in some languages.</source>
+      </trans-unit>
+      <trans-unit id="sae935ffa510dc00f">
+        <source>Help us translate Browsertrix.</source>
+      </trans-unit>
+      <trans-unit id="s3b8e2d51d9b86e21">
+        <source>Contribute to translations</source>
+      </trans-unit>
     </body>
   </file>
 </xliff>
