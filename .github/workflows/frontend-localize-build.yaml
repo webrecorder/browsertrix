@@ -3,6 +3,8 @@ on:
   pull_request:
     paths:
       - 'frontend/xliff/*.xlf'
+  workflow_dispatch:
+  
 jobs:
   setup-and-build-translation:
     runs-on: ubuntu-latest
