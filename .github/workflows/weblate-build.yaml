@@ -1,12 +1,13 @@
 name: Weblate Translation Build
 on:
-  pull_request:
+  pull_request_review:
+    types:
+        - submitted
     paths:
       - 'frontend/xliff/*.xlf'
 jobs:
   setup-and-build:
-    # Continue only on requests from Weblate user
-    if: github.event.pull_request.user.name == 'weblate'
+    if: github.event.review.state == 'APPROVED'
 
     runs-on: ubuntu-latest
     permissions:
