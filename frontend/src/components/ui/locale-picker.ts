@@ -22,7 +22,7 @@ export class LocalePicker extends BtrixElement {
   private readonly setLocaleName = (locale: LocaleCodeEnum) => {
     this.localeNames![locale] = new Intl.DisplayNames([locale], {
       type: "language",
-    }).of(locale)!;
+    }).of(locale.toUpperCase())!;
   };
 
   firstUpdated() {
@@ -45,13 +45,14 @@ export class LocalePicker extends BtrixElement {
         distance="4"
         hoist
       >
-        <sl-button slot="trigger" size="small" caret
-          >${this.localeNames[selectedLocale as LocaleCodeEnum]}</sl-button
-        >
+        <sl-button class="capitalize" slot="trigger" size="small" caret>
+          ${this.localeNames[selectedLocale as LocaleCodeEnum]}
+        </sl-button>
         <sl-menu>
           ${allLocales.map(
             (locale) =>
               html`<sl-menu-item
+                class="capitalize"
                 type="checkbox"
                 value=${locale}
                 ?checked=${locale === selectedLocale}
