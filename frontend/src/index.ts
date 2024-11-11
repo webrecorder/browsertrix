@@ -454,9 +454,9 @@ export class App extends LiteElement {
                   </sl-dropdown>`
               : html`
                   ${this.renderSignUpLink()}
-                  <btrix-locale-picker
+                  <btrix-user-language-select
                     @sl-select=${this.onSelectLocale}
-                  ></btrix-locale-picker>
+                  ></btrix-user-language-select>
                 `}
           </div>
           ${isSuperAdmin

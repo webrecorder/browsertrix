@@ -1,4 +1,3 @@
-import { localized } from "@lit/localize";
 import type { SlSelectEvent } from "@shoelace-style/shoelace";
 import { html } from "lit";
 import { customElement, state } from "lit/decorators.js";
@@ -13,8 +12,10 @@ type LocaleNames = {
   [L in LocaleCodeEnum]: string;
 };
 
-@localized()
-@customElement("btrix-locale-picker")
+/**
+ * Select language that Browsertrix app will be shown in
+ */
+@customElement("btrix-user-language-select")
 export class LocalePicker extends BtrixElement {
   @state()
   private localeNames: LocaleNames | undefined = {} as LocaleNames;

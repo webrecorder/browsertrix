@@ -19,7 +19,7 @@ import("./file-list");
 import("./inline-input");
 import("./input");
 import("./language-select");
-import("./locale-picker");
+import("./user-language-select");
 import("./markdown-editor");
 import("./markdown-viewer");
 import("./menu-item-link");

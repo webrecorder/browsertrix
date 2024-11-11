@@ -330,9 +330,9 @@ export class AccountSettings extends LiteElement {
           <h3 class="font-medium">
             ${msg("Language")} <btrix-beta-badge></btrix-beta-badge>
           </h3>
-          <btrix-locale-picker
+          <btrix-user-language-select
             @sl-select=${this.onSelectLocale}
-          ></btrix-locale-picker>
+          ></btrix-user-language-select>
         </div>
       </section>
     `;
