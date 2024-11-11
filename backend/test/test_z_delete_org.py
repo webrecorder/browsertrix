@@ -88,6 +88,7 @@ def test_delete_org_superadmin(admin_auth_headers, default_org_id):
     assert data["deleted"]
 
     job_id = data["id"]
+    assert job_id
 
     # Check that background job is launched and eventually succeeds
     max_attempts = 18
