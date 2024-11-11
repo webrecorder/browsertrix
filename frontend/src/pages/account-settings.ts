@@ -345,10 +345,10 @@ export class AccountSettings extends LiteElement {
           ></btrix-user-language-select>
         </div>
         <footer class="flex items-center justify-start border-t px-4 py-3">
-          <p class="text-neutral-500">
+          <p class="text-neutral-600">
             ${msg("Help us translate Browsertrix.")}
             <a
-              class="hover:underline-none inline-flex items-center gap-1 underline"
+              class="inline-flex items-center gap-1 text-blue-500 hover:text-blue-600"
               href="https://docs.browsertrix.com/develop/localization/"
               target="_blank"
             >
