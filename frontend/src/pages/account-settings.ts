@@ -11,7 +11,7 @@ import debounce from "lodash/fp/debounce";
 import { TailwindElement } from "@/classes/TailwindElement";
 import needLogin from "@/decorators/needLogin";
 import { pageHeader } from "@/layouts/pageHeader";
-import { allLocales, type LocaleCodeEnum } from "@/types/localization";
+import { translatedLocales, type LocaleCodeEnum } from "@/types/localization";
 import type { UnderlyingFunction } from "@/types/utils";
 import { isApiError } from "@/utils/api";
 import LiteElement, { html } from "@/utils/LiteElement";
@@ -242,7 +242,7 @@ export class AccountSettings extends LiteElement {
         </footer>
       </form>
 
-      ${(allLocales as unknown as string[]).length > 1
+      ${(translatedLocales as unknown as string[]).length > 1
         ? this.renderPreferences()
         : nothing}
     `;
