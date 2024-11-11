@@ -35,10 +35,14 @@ export class BetaBadge extends TailwindElement {
   render() {
     return html`<sl-tooltip hoist placement=${this.placement}>
       <div slot="content">
-        <b>${msg("This part of Browsertrix is in beta!")}</b>
-        ${msg(
-          "Parts might change or be broken. Please share your thoughts with us!",
-        )}
+        <slot name="content">
+          <b>${msg("This part of Browsertrix is in beta!")}</b>
+          <p>
+            ${msg(
+              "Parts might change or be broken. Please share your thoughts with us!",
+            )}
+          </p>
+        </slot>
       </div>
       <span class="inline-block align-middle text-xs text-brand-green">
         <sl-icon

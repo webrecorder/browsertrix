@@ -4,7 +4,7 @@ import { customElement, state } from "lit/decorators.js";
 
 import { sourceLocale } from "@/__generated__/locale-codes";
 import { BtrixElement } from "@/classes/BtrixElement";
-import { translatedLocales, type LocaleCodeEnum } from "@/types/localization";
+import { allLocales, type LocaleCodeEnum } from "@/types/localization";
 import { getLocale, setLocale } from "@/utils/localization";
 import { AppStateService } from "@/utils/state";
 
@@ -28,7 +28,7 @@ export class LocalePicker extends BtrixElement {
 
   firstUpdated() {
     this.localeNames = {} as LocaleNames;
-    translatedLocales.forEach(this.setLocaleName);
+    allLocales.forEach(this.setLocaleName);
   }
 
   render() {
@@ -46,11 +46,19 @@ export class LocalePicker extends BtrixElement {
         distance="4"
         hoist
       >
-        <sl-button class="capitalize" slot="trigger" size="small" caret>
-          ${this.localeNames[selectedLocale as LocaleCodeEnum]}
+        <sl-button
+          slot="trigger"
+          size="small"
+          caret
+          ?disabled=${(allLocales as unknown as string[]).length < 2}
+        >
+          <sl-icon slot="prefix" name="translate"></sl-icon>
+          <span class="capitalize"
+            >${this.localeNames[selectedLocale as LocaleCodeEnum]}</span
+          >
         </sl-button>
         <sl-menu>
-          ${translatedLocales.map(
+          ${allLocales.map(
             (locale) =>
               html`<sl-menu-item
                 class="capitalize"

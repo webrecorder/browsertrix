@@ -11,7 +11,7 @@ import debounce from "lodash/fp/debounce";
 import { TailwindElement } from "@/classes/TailwindElement";
 import needLogin from "@/decorators/needLogin";
 import { pageHeader } from "@/layouts/pageHeader";
-import { translatedLocales, type LocaleCodeEnum } from "@/types/localization";
+import { allLocales, type LocaleCodeEnum } from "@/types/localization";
 import type { UnderlyingFunction } from "@/types/utils";
 import { isApiError } from "@/utils/api";
 import LiteElement, { html } from "@/utils/LiteElement";
@@ -242,7 +242,7 @@ export class AccountSettings extends LiteElement {
         </footer>
       </form>
 
-      ${(translatedLocales as unknown as string[]).length > 1
+      ${(allLocales as unknown as string[]).length > 1
         ? this.renderPreferences()
         : nothing}
     `;
@@ -328,12 +328,35 @@ export class AccountSettings extends LiteElement {
       <section class="mb-5 rounded-lg border">
         <div class="flex items-center justify-between px-4 py-2.5">
           <h3 class="font-medium">
-            ${msg("Language")} <btrix-beta-badge></btrix-beta-badge>
+            ${msg("Preferred App Language")}
+            <btrix-beta-badge>
+              <div slot="content">
+                <b>${msg("Translations are in beta")}</b>
+                <p>
+                  ${msg(
+                    "Parts of the app may not be translated yet in some languages.",
+                  )}
+                </p>
+              </div>
+            </btrix-beta-badge>
           </h3>
           <btrix-user-language-select
             @sl-select=${this.onSelectLocale}
           ></btrix-user-language-select>
         </div>
+        <footer class="flex items-center justify-start border-t px-4 py-3">
+          <p class="text-neutral-500">
+            ${msg("Help us translate Browsertrix.")}
+            <a
+              class="hover:underline-none inline-flex items-center gap-1 underline"
+              href="https://docs.browsertrix.com/develop/localization/"
+              target="_blank"
+            >
+              ${msg("Contribute to translations")}
+              <sl-icon slot="suffix" name="arrow-right"></sl-icon
+            ></a>
+          </p>
+        </footer>
       </section>
     `;
   }
