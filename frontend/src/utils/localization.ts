@@ -1,6 +1,11 @@
 import { configureLocalization } from "@lit/localize";
 
-import { sourceLocale, targetLocales } from "@/__generated__/locale-codes";
+import {
+  allLocales,
+  sourceLocale,
+  targetLocales,
+} from "@/__generated__/locale-codes";
+import { type LocaleCodeEnum } from "@/types/localization";
 
 export const { getLocale, setLocale } = configureLocalization({
   sourceLocale,
@@ -9,10 +14,27 @@ export const { getLocale, setLocale } = configureLocalization({
     import(`/src/__generated__/locales/${locale}.ts`),
 });
 
-export const setLocaleFromUrl = async () => {
+export const LOCALE_PARAM_NAME = "locale" as const;
+
+export const getLocaleFromUrl = () => {
   const url = new URL(window.location.href);
-  const locale = url.searchParams.get("locale") || sourceLocale;
+  const locale = url.searchParams.get(LOCALE_PARAM_NAME);
+
+  if (allLocales.includes(locale as unknown as LocaleCodeEnum)) {
+    return locale as LocaleCodeEnum;
+  }
+};
+
+export const setLocaleFromUrl = async () => {
+  const locale = getLocaleFromUrl();
+
+  if (!locale) return;
+
   await setLocale(locale);
+};
+
+export const resetLocale = async () => {
+  await setLocale(sourceLocale);
 };
 
 /**

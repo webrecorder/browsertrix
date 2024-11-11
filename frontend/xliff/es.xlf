@@ -3780,6 +3780,18 @@
                 <x equiv-text="&lt;a class=&quot;text-neutral-500 underline hover:text-primary&quot; href=&quot;/docs/user-guide/org-settings/&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;&gt;" id="0"/>org settings<x equiv-text="&lt;/a&gt;" id="1"/>
                 for details.</source>
       </trans-unit>
+      <trans-unit id="sb061ff5a347a296e">
+        <source>Profile</source>
+      </trans-unit>
+      <trans-unit id="s01a8d45397ec133b">
+        <source>Security</source>
+      </trans-unit>
+      <trans-unit id="s2b5047d39b9baf3d">
+        <source>Preferences</source>
+      </trans-unit>
+      <trans-unit id="sfa66f095b5a35ccc">
+        <source>Your language preference has been updated.</source>
+      </trans-unit>
     </body>
   </file>
 </xliff>

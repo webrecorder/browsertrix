@@ -1,5 +1,9 @@
 import { localized, msg, str } from "@lit/localize";
-import type { SlDialog, SlDrawer } from "@shoelace-style/shoelace";
+import type {
+  SlDialog,
+  SlDrawer,
+  SlSelectEvent,
+} from "@shoelace-style/shoelace";
 import { nothing, render, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
@@ -26,7 +30,14 @@ import type { NavigateEventDetail } from "@/controllers/navigate";
 import type { NotifyEventDetail } from "@/controllers/notify";
 import { theme } from "@/theme";
 import { type Auth } from "@/types/auth";
+import { type LocaleCodeEnum } from "@/types/localization";
 import { type AppSettings } from "@/utils/app";
+import {
+  getLocale,
+  LOCALE_PARAM_NAME,
+  resetLocale,
+  setLocale,
+} from "@/utils/localization";
 import brandLockupColor from "~assets/brand/browsertrix-lockup-color.svg";
 
 import "./shoelace";
@@ -142,6 +153,15 @@ export class App extends LiteElement {
       ) {
         this.updateOrgSlugIfNeeded();
       }
+    }
+  }
+
+  protected firstUpdated(): void {
+    if (
+      this.appState.userPreferences?.locale &&
+      this.appState.userPreferences.locale !== getLocale()
+    ) {
+      void setLocale(this.appState.userPreferences.locale);
     }
   }
 
@@ -412,7 +432,7 @@ export class App extends LiteElement {
                       <div class="px-7 py-2">${this.renderMenuUserInfo()}</div>
                       <sl-divider></sl-divider>
                       <sl-menu-item
-                        @click=${() => this.navigate(ROUTES.accountSettings)}
+                        @click=${() => this.navigate("/account/settings")}
                       >
                         <sl-icon slot="prefix" name="person-gear"></sl-icon>
                         ${msg("Account Settings")}
@@ -432,7 +452,12 @@ export class App extends LiteElement {
                       </sl-menu-item>
                     </sl-menu>
                   </sl-dropdown>`
-              : this.renderSignUpLink()}
+              : html`
+                  ${this.renderSignUpLink()}
+                  <btrix-locale-picker
+                    @sl-select=${this.onSelectLocale}
+                  ></btrix-locale-picker>
+                `}
           </div>
           ${isSuperAdmin
             ? html`
@@ -608,10 +633,6 @@ export class App extends LiteElement {
       <footer
         class="mx-auto box-border flex w-full max-w-screen-desktop flex-col items-center justify-between gap-4 p-3 md:flex-row"
       >
-        <!-- <div> -->
-        <!-- TODO re-enable when translations are added -->
-        <!-- <btrix-locale-picker></btrix-locale-picker> -->
-        <!-- </div> -->
         <div>
           <a
             class="flex items-center gap-2 leading-none text-neutral-400 hover:text-primary"
@@ -733,6 +754,7 @@ export class App extends LiteElement {
       case "accountSettings":
         return html`<btrix-account-settings
           class="mx-auto box-border w-full max-w-screen-desktop p-2 md:py-8"
+          tab=${this.viewState.params.settingsTab}
         ></btrix-account-settings>`;
 
       case "usersInvite": {
@@ -867,6 +889,14 @@ export class App extends LiteElement {
     }
   }
 
+  onSelectLocale(e: SlSelectEvent) {
+    const locale = e.detail.item.value as LocaleCodeEnum;
+
+    const url = new URL(window.location.href);
+    url.searchParams.set(LOCALE_PARAM_NAME, locale);
+    window.history.pushState(null, "", url.toString());
+  }
+
   onLogOut(event: CustomEvent<{ redirect?: boolean } | null>) {
     const detail = event.detail || {};
     const redirect = detail.redirect !== false;
@@ -988,6 +1018,7 @@ export class App extends LiteElement {
     this.authService.logout();
     this.authService = new AuthService();
     AppStateService.resetAll();
+    void resetLocale();
   }
 
   private showDialog(content: DialogContent) {

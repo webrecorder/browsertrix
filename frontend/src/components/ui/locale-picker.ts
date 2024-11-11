@@ -1,28 +1,31 @@
 import { localized } from "@lit/localize";
-import { html, LitElement } from "lit";
+import type { SlSelectEvent } from "@shoelace-style/shoelace";
+import { html } from "lit";
 import { customElement, state } from "lit/decorators.js";
 
-import { allLocales } from "@/__generated__/locale-codes";
-import { getLocale, setLocaleFromUrl } from "@/utils/localization";
+import { sourceLocale } from "@/__generated__/locale-codes";
+import { BtrixElement } from "@/classes/BtrixElement";
+import { allLocales, type LocaleCodeEnum } from "@/types/localization";
+import { getLocale, setLocale } from "@/utils/localization";
+import { AppStateService } from "@/utils/state";
 
-type LocaleCode = (typeof allLocales)[number];
 type LocaleNames = {
-  [L in LocaleCode]: string;
+  [L in LocaleCodeEnum]: string;
 };
 
 @localized()
 @customElement("btrix-locale-picker")
-export class LocalePicker extends LitElement {
+export class LocalePicker extends BtrixElement {
   @state()
   private localeNames: LocaleNames | undefined = {} as LocaleNames;
 
-  private readonly setLocaleName = (locale: LocaleCode) => {
+  private readonly setLocaleName = (locale: LocaleCodeEnum) => {
     this.localeNames![locale] = new Intl.DisplayNames([locale], {
       type: "language",
-    }).of(locale)!;
+    }).of(locale.toUpperCase())!;
   };
 
-  async firstUpdated() {
+  firstUpdated() {
     this.localeNames = {} as LocaleNames;
     allLocales.forEach(this.setLocaleName);
   }
@@ -32,23 +35,24 @@ export class LocalePicker extends LitElement {
       return;
     }
 
-    const selectedLocale = getLocale();
+    const selectedLocale =
+      this.appState.userPreferences?.locale || sourceLocale;
 
     return html`
       <sl-dropdown
-        value="${selectedLocale}"
         @sl-select=${this.localeChanged}
         placement="top-end"
         distance="4"
         hoist
       >
-        <sl-button slot="trigger" size="small" caret
-          >${this.localeNames[selectedLocale as LocaleCode]}</sl-button
-        >
+        <sl-button class="capitalize" slot="trigger" size="small" caret>
+          ${this.localeNames[selectedLocale as LocaleCodeEnum]}
+        </sl-button>
         <sl-menu>
           ${allLocales.map(
             (locale) =>
               html`<sl-menu-item
+                class="capitalize"
                 type="checkbox"
                 value=${locale}
                 ?checked=${locale === selectedLocale}
@@ -61,14 +65,13 @@ export class LocalePicker extends LitElement {
     `;
   }
 
-  async localeChanged(event: CustomEvent) {
-    const newLocale = event.detail.item.value as LocaleCode;
+  async localeChanged(event: SlSelectEvent) {
+    const newLocale = event.detail.item.value as LocaleCodeEnum;
+
+    AppStateService.partialUpdateUserPreferences({ locale: newLocale });
 
     if (newLocale !== getLocale()) {
-      const url = new URL(window.location.href);
-      url.searchParams.set("locale", newLocale);
-      window.history.pushState(null, "", url.toString());
-      void setLocaleFromUrl();
+      void setLocale(newLocale);
     }
   }
 }

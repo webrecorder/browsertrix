@@ -8,7 +8,7 @@ export const ROUTES = {
   loginWithRedirect: "/log-in?redirectUrl",
   forgotPassword: "/log-in/forgot-password",
   resetPassword: "/reset-password",
-  accountSettings: "/account/settings",
+  accountSettings: "/account/settings(/:settingsTab)",
   orgs: "/orgs",
   org: [
     "/orgs/:slug",
