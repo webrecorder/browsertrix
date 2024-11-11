@@ -2014,6 +2014,7 @@ class BgJobType(str, Enum):
     CREATE_REPLICA = "create-replica"
     DELETE_REPLICA = "delete-replica"
     DELETE_ORG = "delete-org"
+    RECALCULATE_ORG_STATS = "recalculate-org-stats"
 
 
 # ============================================================================
@@ -2060,10 +2061,23 @@ class DeleteOrgJob(BackgroundJob):
 
 
 # ============================================================================
+class RecalculateOrgStatsJob(BackgroundJob):
+    """Model for tracking jobs to recalculate org stats"""
+
+    type: Literal[BgJobType.RECALCULATE_ORG_STATS] = BgJobType.RECALCULATE_ORG_STATS
+
+
+# ============================================================================
 # Union of all job types, for response model
 
 AnyJob = RootModel[
-    Union[CreateReplicaJob, DeleteReplicaJob, BackgroundJob, DeleteOrgJob]
+    Union[
+        CreateReplicaJob,
+        DeleteReplicaJob,
+        BackgroundJob,
+        DeleteOrgJob,
+        RecalculateOrgStatsJob,
+    ]
 ]
 
 
@@ -2217,6 +2231,13 @@ class SuccessResponse(BaseModel):
     """Response for API endpoints that return success"""
 
     success: bool
+
+
+# ============================================================================
+class SuccessResponseId(SuccessResponse):
+    """Response for API endpoints that return success and a background job id"""
+
+    id: Optional[str] = None
 
 
 # ============================================================================
