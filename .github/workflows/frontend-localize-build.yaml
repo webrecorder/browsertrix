@@ -1,13 +1,10 @@
-name: Weblate Translation Build
+name: Frontend Localization Build
 on:
   pull_request:
     paths:
       - 'frontend/xliff/*.xlf'
 jobs:
-  setup-and-build:
-    # Continue only on requests from Weblate user
-    if: github.event.pull_request.user.name == 'weblate'
-
+  setup-and-build-translation:
     runs-on: ubuntu-latest
     permissions:
       # Give the default GITHUB_TOKEN write permission to commit and push the
