@@ -1,0 +1,51 @@
+name: Weblate Translation Build
+on:
+  pull_request:
+    paths:
+      - 'frontend/xliff/*.xlf'
+jobs:
+  setup-and-build:
+    # Continue only on requests from Weblate user
+    if: github.event.pull_request.user.name == 'weblate'
+
+    runs-on: ubuntu-latest
+    permissions:
+      # Give the default GITHUB_TOKEN write permission to commit and push the
+      # added or changed files to the repository.
+      contents: write
+
+    steps:
+      # Setup:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'yarn'
+          cache-dependency-path: frontend/yarn.lock
+      - name: Restore cache
+        uses: actions/cache@v4
+        with:
+          path: frontend/dist
+          key: ${{ runner.os }}-btrix-frontend-build-${{ hashFiles('frontend/dist') }}
+          restore-keys: |
+            ${{ runner.os }}-btrix-frontend-build-
+      - name: Install dependencies
+        working-directory: frontend
+        env:
+          HUSKY: 0
+        run: yarn install --frozen-lockfile
+    
+      - name: Build translation output
+        working-directory: frontend
+        run: yarn localize:build
+      - name: Commit translation output
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: Apply `localize:build` changes
+          file_pattern: 'frontend/src/__generated__/**'
+          skip_fetch: true
+          skip_checkout: true
