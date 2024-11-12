@@ -1,40 +1,11 @@
-import { configureLocalization } from "@lit/localize";
-
-import {
-  allLocales,
-  sourceLocale,
-  targetLocales,
-} from "@/__generated__/locale-codes";
-import { type LocaleCodeEnum } from "@/types/localization";
-
-export const { getLocale, setLocale } = configureLocalization({
-  sourceLocale,
-  targetLocales,
-  loadLocale: async (locale: string) =>
-    import(`/src/__generated__/locales/${locale}.ts`),
-});
+import { sourceLocale } from "@/__generated__/locale-codes";
+import type { LanguageCode } from "@/types/localization";
+import appState from "@/utils/state";
 
 export const LOCALE_PARAM_NAME = "locale" as const;
 
-export const getLocaleFromUrl = () => {
-  const url = new URL(window.location.href);
-  const locale = url.searchParams.get(LOCALE_PARAM_NAME);
-
-  if (allLocales.includes(locale as unknown as LocaleCodeEnum)) {
-    return locale as LocaleCodeEnum;
-  }
-};
-
-export const setLocaleFromUrl = async () => {
-  const locale = getLocaleFromUrl();
-
-  if (!locale) return;
-
-  await setLocale(locale);
-};
-
-export const resetLocale = async () => {
-  await setLocale(sourceLocale);
+export const getLocale = () => {
+  return appState.userLanguage || getLang() || sourceLocale;
 };
 
 /**
@@ -80,11 +51,15 @@ export const formatISODateString = (
     },
   );
 
+export function langShortCode(locale: string) {
+  return locale.split("-")[0] as LanguageCode;
+}
+
 export function getLang() {
   // Default to current user browser language
   const browserLanguage = window.navigator.language;
   if (browserLanguage) {
-    return browserLanguage.slice(0, browserLanguage.indexOf("-"));
+    return langShortCode(browserLanguage);
   }
   return null;
 }

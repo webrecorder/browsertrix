@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { localeCodeEnum } from "./localization";
+import { languageCodeSchema } from "./localization";
 import { accessCodeSchema } from "./org";
 import { WorkflowScopeType } from "./workflow";
 
@@ -49,6 +49,6 @@ export type UserInfo = z.infer<typeof userInfoSchema>;
 
 export const userPreferencesSchema = z.object({
   newWorkflowScopeType: z.nativeEnum(WorkflowScopeType).optional(),
-  locale: localeCodeEnum.optional(),
+  language: languageCodeSchema.optional(),
 });
 export type UserPreferences = z.infer<typeof userPreferencesSchema>;

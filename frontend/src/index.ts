@@ -30,14 +30,12 @@ import type { NavigateEventDetail } from "@/controllers/navigate";
 import type { NotifyEventDetail } from "@/controllers/notify";
 import { theme } from "@/theme";
 import { type Auth } from "@/types/auth";
-import { translatedLocales, type LocaleCodeEnum } from "@/types/localization";
-import { type AppSettings } from "@/utils/app";
 import {
-  getLocale,
-  LOCALE_PARAM_NAME,
-  resetLocale,
-  setLocale,
-} from "@/utils/localization";
+  translatedLocales,
+  type TranslatedLocaleEnum,
+} from "@/types/localization";
+import { type AppSettings } from "@/utils/app";
+import { LOCALE_PARAM_NAME } from "@/utils/localization";
 import brandLockupColor from "~assets/brand/browsertrix-lockup-color.svg";
 
 import "./shoelace";
@@ -157,12 +155,7 @@ export class App extends BtrixElement {
   }
 
   protected firstUpdated(): void {
-    if (
-      this.appState.userPreferences?.locale &&
-      this.appState.userPreferences.locale !== getLocale()
-    ) {
-      void setLocale(this.appState.userPreferences.locale);
-    }
+    this.localize.initLanguage();
   }
 
   getLocationPathname() {
@@ -894,7 +887,7 @@ export class App extends BtrixElement {
   }
 
   onSelectLocale(e: SlSelectEvent) {
-    const locale = e.detail.item.value as LocaleCodeEnum;
+    const locale = e.detail.item.value as TranslatedLocaleEnum;
 
     const url = new URL(window.location.href);
     url.searchParams.set(LOCALE_PARAM_NAME, locale);
@@ -1021,8 +1014,7 @@ export class App extends BtrixElement {
   private clearUser() {
     this.authService.logout();
     this.authService = new AuthService();
-    AppStateService.resetAll();
-    void resetLocale();
+    AppStateService.resetUser();
   }
 
   private showDialog(content: DialogContent) {
