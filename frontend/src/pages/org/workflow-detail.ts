@@ -777,6 +777,7 @@ export class WorkflowDetail extends BtrixElement {
           msg("Total Size"),
           (workflow) =>
             html` <sl-format-bytes
+              lang=${this.localize.activeLanguage}
               value=${Number(workflow.totalSize)}
               display="narrow"
             ></sl-format-bytes>`,
@@ -972,6 +973,7 @@ export class WorkflowDetail extends BtrixElement {
         ${this.renderDetailItem(msg("Crawl Size"), () =>
           this.workflow
             ? html`<sl-format-bytes
+                lang=${this.localize.activeLanguage}
                 value=${this.workflow.lastCrawlSize || 0}
                 display="narrow"
               ></sl-format-bytes>`

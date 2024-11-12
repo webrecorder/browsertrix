@@ -1,6 +1,6 @@
 import { localized, msg, str } from "@lit/localize";
 import ISO6391 from "iso-639-1";
-import { nothing } from "lit";
+import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import { html as staticHtml, unsafeStatic } from "lit/static-html.js";
@@ -9,6 +9,7 @@ import RegexColorize from "regex-colorize";
 
 import { RelativeDuration } from "./relative-duration";
 
+import { BtrixElement } from "@/classes/BtrixElement";
 import type { CrawlConfig, Seed, SeedConfig } from "@/pages/org/types";
 import scopeTypeLabel from "@/strings/crawl-workflows/scopeType";
 import sectionStrings from "@/strings/crawl-workflows/section";
@@ -18,7 +19,6 @@ import { isApiError } from "@/utils/api";
 import { getAppSettings } from "@/utils/app";
 import { DEPTH_SUPPORTED_SCOPES, isPageScopeType } from "@/utils/crawler";
 import { humanizeSchedule } from "@/utils/cron";
-import LiteElement, { html } from "@/utils/LiteElement";
 import { formatNumber } from "@/utils/localization";
 import { pluralOf } from "@/utils/pluralize";
 
@@ -32,7 +32,7 @@ import { pluralOf } from "@/utils/pluralize";
  */
 @localized()
 @customElement("btrix-config-details")
-export class ConfigDetails extends LiteElement {
+export class ConfigDetails extends BtrixElement {
   @property({ type: Object })
   crawlConfig?: CrawlConfig;
 
@@ -94,6 +94,7 @@ export class ConfigDetails extends LiteElement {
       // Eventually we will want to set this to the selected locale
       if (valueBytes) {
         return html`<sl-format-bytes
+          lang=${this.localize.activeLanguage}
           value=${valueBytes}
           display="narrow"
         ></sl-format-bytes>`;
@@ -209,7 +210,7 @@ export class ConfigDetails extends LiteElement {
                   href=${`/orgs/${crawlConfig!.oid}/browser-profiles/profile/${
                     crawlConfig!.profileid
                   }`}
-                  @click=${this.navLink}
+                  @click=${this.navigate.link}
                 >
                   ${crawlConfig?.profileName}
                 </a>`,
@@ -483,7 +484,7 @@ export class ConfigDetails extends LiteElement {
       try {
         await this.getCollections();
       } catch (e) {
-        this.notify({
+        this.notify.toast({
           message:
             isApiError(e) && e.statusCode === 404
               ? msg("Collections not found.")
@@ -503,7 +504,7 @@ export class ConfigDetails extends LiteElement {
 
     if (this.crawlConfig?.autoAddCollections && orgId) {
       for (const collectionId of this.crawlConfig.autoAddCollections) {
-        const data = await this.apiFetch<Collection | undefined>(
+        const data = await this.api.fetch<Collection | undefined>(
           `/orgs/${orgId}/collections/${collectionId}`,
         );
         if (data) {

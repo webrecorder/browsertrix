@@ -251,6 +251,7 @@ export class ArchivedItemListItem extends TailwindElement {
             @click=${this.onTooltipClick}
           >
             <sl-format-bytes
+              lang=${this.localize.activeLanguage}
               class="truncate"
               value=${this.item.fileSize || 0}
               display="narrow"

@@ -304,6 +304,7 @@ export class OrgSettingsBilling extends BtrixElement {
           ${msg(
             html`${quotas.storageQuota
               ? html`<sl-format-bytes
+                  lang=${this.localize.activeLanguage}
                   value=${quotas.storageQuota}
                 ></sl-format-bytes>`
               : msg("Unlimited")}
