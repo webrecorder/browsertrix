@@ -16,7 +16,8 @@ export class BetaIcon extends TailwindElement {
   render() {
     return html`<sl-tooltip content=${msg("Beta feature")} hoist>
       <sl-icon
-        name="stars"
+        name="flask-fill"
+        library="app"
         label="Beta"
         class="size-4 text-brand-green"
       ></sl-icon>
@@ -46,7 +47,8 @@ export class BetaBadge extends TailwindElement {
       </div>
       <span class="inline-block align-middle text-xs text-brand-green">
         <sl-icon
-          name="stars"
+          name="flask-fill"
+          library="app"
           label="Beta feature"
           class="size-4 align-middle"
         ></sl-icon
