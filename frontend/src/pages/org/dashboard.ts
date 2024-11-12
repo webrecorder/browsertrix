@@ -1,15 +1,15 @@
 import { localized, msg } from "@lit/localize";
 import type { SlSelectEvent } from "@shoelace-style/shoelace";
-import type { PropertyValues, TemplateResult } from "lit";
+import { html, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 
 import type { SelectNewDialogEvent } from ".";
 
+import { BtrixElement } from "@/classes/BtrixElement";
 import { pageHeader } from "@/layouts/pageHeader";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
-import LiteElement, { html } from "@/utils/LiteElement";
 
 type Metrics = {
   storageUsedBytes: number;
@@ -31,7 +31,7 @@ type Metrics = {
 
 @localized()
 @customElement("btrix-dashboard")
-export class Dashboard extends LiteElement {
+export class Dashboard extends BtrixElement {
   @property({ type: Boolean })
   isCrawler?: boolean;
 
@@ -73,11 +73,11 @@ export class Dashboard extends LiteElement {
             this.appState.isAdmin,
             () =>
               html` <sl-icon-button
-                href=${`${this.orgBasePath}/settings`}
+                href=${`${this.navigate.orgBasePath}/settings`}
                 class="size-8 text-base"
                 name="gear"
                 label=${msg("Edit org settings")}
-                @click=${this.navLink}
+                @click=${this.navigate.link}
               ></sl-icon-button>`,
           )}
           ${when(
@@ -90,7 +90,9 @@ export class Dashboard extends LiteElement {
                   const { value } = e.detail.item;
 
                   if (value === "workflow") {
-                    this.navTo(`${this.orgBasePath}/workflows/new`);
+                    this.navigate.to(
+                      `${this.navigate.orgBasePath}/workflows/new`,
+                    );
                   } else {
                     this.dispatchEvent(
                       new CustomEvent("select-new-dialog", {
@@ -679,13 +681,13 @@ export class Dashboard extends LiteElement {
 
   private async fetchMetrics() {
     try {
-      const data = await this.apiFetch<Metrics | undefined>(
+      const data = await this.api.fetch<Metrics | undefined>(
         `/orgs/${this.orgId}/metrics`,
       );
 
       this.metrics = data;
     } catch (e) {
-      this.notify({
+      this.notify.toast({
         message: msg("Sorry, couldn't retrieve org metrics at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
