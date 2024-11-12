@@ -62,7 +62,6 @@ export function humanizeNextDate(
 export function humanizeSchedule(
   schedule: string,
   options: { length?: "short" } = {},
-  numberFormatter = numberUtils.numberFormatter,
 ): string {
   const interval = getScheduleInterval(schedule);
   const parsed = parseCron(schedule);
@@ -92,7 +91,7 @@ export function humanizeSchedule(
         intervalMsg = msg(str`Every ${formattedWeekDay}`);
         break;
       case "monthly": {
-        const { format } = numberFormatter(getLocale());
+        const { format } = numberUtils.numberFormatter(getLocale());
         intervalMsg = msg(
           str`Monthly on the ${format(days[0], { ordinal: true })}`,
         );
