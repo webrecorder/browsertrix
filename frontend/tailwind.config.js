@@ -40,7 +40,7 @@ function makeTheme() {
       ...theme.colors,
       primary: {
         ...theme.colors.cyan,
-        DEFAULT: theme.colors.cyan[600],
+        DEFAULT: theme.colors.cyan[500],
       },
       brand: theme.colors.brand,
       success: {
