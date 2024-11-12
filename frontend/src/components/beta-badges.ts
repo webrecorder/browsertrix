@@ -14,13 +14,14 @@ const styles = unsafeCSS(stylesheet);
 export class BetaIcon extends TailwindElement {
   static styles = styles;
   render() {
-    return html`<sl-tooltip content=${msg("Beta feature")} hoist>
+    return html`<sl-tooltip hoist>
       <sl-icon
         name="flask-fill"
         library="app"
         label="Beta"
         class="size-4 text-brand-green"
       ></sl-icon>
+      <span slot="content" class="text-xs">${msg("Beta feature")}</span>
     </sl-tooltip>`;
   }
 }
@@ -35,7 +36,7 @@ export class BetaBadge extends TailwindElement {
 
   render() {
     return html`<sl-tooltip hoist placement=${this.placement}>
-      <div slot="content">
+      <div slot="content" class="text-xs">
         <slot name="content">
           <b>${msg("This part of Browsertrix is in beta!")}</b>
           <p>
