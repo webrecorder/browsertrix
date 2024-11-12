@@ -2935,7 +2935,7 @@
       </trans-unit>
       <trans-unit id="saf63d34c8601dd41">
         <source>
-          <x equiv-text="${humanizeSchedule(workflow.schedule, {&#10;    length: &quot;short&quot;,&#10;}, numberFormatter)}" id="0"/>
+          <x equiv-text="${humanizeSchedule(workflow.schedule, {&#10;    length: &quot;short&quot;,&#10;})}" id="0"/>
         </source>
       </trans-unit>
       <trans-unit id="s136b21dec9a221bd">
