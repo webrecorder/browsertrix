@@ -17,7 +17,6 @@ import("./copy-field");
 import("./details");
 import("./file-list");
 import("./inline-input");
-import("./input");
 import("./language-select");
 import("./locale-picker");
 import("./markdown-editor");

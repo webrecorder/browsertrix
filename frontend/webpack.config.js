@@ -157,7 +157,7 @@ const main = {
 
   plugins: [
     new webpack.DefinePlugin({
-      "process.env.WEBSOCKET_HOST": JSON.stringify(WEBSOCKET_HOST),
+      "window.process.env.WEBSOCKET_HOST": JSON.stringify(WEBSOCKET_HOST),
     }),
 
     new webpack.optimize.LimitChunkCountPlugin({
