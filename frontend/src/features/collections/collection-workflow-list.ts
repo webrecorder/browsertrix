@@ -292,6 +292,7 @@ export class CollectionWorkflowList extends BtrixElement {
           </div>
           <div class="col-span-3 md:col-span-1">
             <sl-format-bytes
+              lang=${this.localize.activeLanguage}
               value=${crawl.fileSize || 0}
               display="narrow"
             ></sl-format-bytes>

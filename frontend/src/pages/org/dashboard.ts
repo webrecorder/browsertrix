@@ -148,6 +148,7 @@ export class Dashboard extends BtrixElement {
                   secondaryValue: hasQuota
                     ? ""
                     : html`<sl-format-bytes
+                        lang=${this.localize.activeLanguage}
                         value=${metrics.storageUsedCrawls}
                       ></sl-format-bytes>`,
                   singleLabel: msg("Crawl"),
@@ -162,6 +163,7 @@ export class Dashboard extends BtrixElement {
                   secondaryValue: hasQuota
                     ? ""
                     : html`<sl-format-bytes
+                        lang=${this.localize.activeLanguage}
                         value=${metrics.storageUsedUploads}
                       ></sl-format-bytes>`,
                   singleLabel: msg("Upload"),
@@ -173,6 +175,7 @@ export class Dashboard extends BtrixElement {
                   secondaryValue: hasQuota
                     ? ""
                     : html`<sl-format-bytes
+                        lang=${this.localize.activeLanguage}
                         value=${metrics.storageUsedProfiles}
                       ></sl-format-bytes>`,
                   singleLabel: msg("Browser Profile"),
@@ -190,6 +193,7 @@ export class Dashboard extends BtrixElement {
                   secondaryValue: hasQuota
                     ? ""
                     : html`<sl-format-bytes
+                        lang=${this.localize.activeLanguage}
                         value=${metrics.storageUsedBytes}
                       ></sl-format-bytes>`,
                   singleLabel: msg("Archived Item"),
@@ -274,7 +278,11 @@ export class Dashboard extends BtrixElement {
         <div class="text-center">
           <div>${label}</div>
           <div class="text-xs opacity-80">
-            <sl-format-bytes value=${value} display="narrow"></sl-format-bytes>
+            <sl-format-bytes
+              lang=${this.localize.activeLanguage}
+              value=${value}
+              display="narrow"
+            ></sl-format-bytes>
             | ${this.renderPercentage(value / metrics.storageUsedBytes)}
           </div>
         </div>
@@ -297,6 +305,7 @@ export class Dashboard extends BtrixElement {
             hasQuota
               ? html`
                   <sl-format-bytes
+                    lang=${this.localize.activeLanguage}
                     value=${metrics.storageQuotaBytes -
                     metrics.storageUsedBytes}
                   ></sl-format-bytes>
@@ -351,11 +360,13 @@ export class Dashboard extends BtrixElement {
               </div>
               <sl-format-bytes
                 slot="valueLabel"
+                lang=${this.localize.activeLanguage}
                 value=${metrics.storageUsedBytes}
                 display="narrow"
               ></sl-format-bytes>
               <sl-format-bytes
                 slot="maxLabel"
+                lang=${this.localize.activeLanguage}
                 value=${metrics.storageQuotaBytes}
                 display="narrow"
               ></sl-format-bytes>

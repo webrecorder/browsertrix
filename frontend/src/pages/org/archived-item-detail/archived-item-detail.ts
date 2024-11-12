@@ -833,6 +833,7 @@ export class ArchivedItemDetail extends BtrixElement {
           ${this.item
             ? html`${this.item.fileSize
                 ? html`<sl-format-bytes
+                      lang=${this.localize.activeLanguage}
                       value=${this.item.fileSize || 0}
                       display="narrow"
                     ></sl-format-bytes
@@ -986,7 +987,10 @@ ${this.item?.description}
                             ></sl-icon>
                           </sl-tooltip>`,
                       )}
-                      <sl-format-bytes value=${file.size}></sl-format-bytes>
+                      <sl-format-bytes
+                        lang=${this.localize.activeLanguage}
+                        value=${file.size}
+                      ></sl-format-bytes>
                     </div>
                   </li>
                 `,

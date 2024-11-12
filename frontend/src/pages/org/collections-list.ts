@@ -534,6 +534,7 @@ export class CollectionsList extends BtrixElement {
       </btrix-table-cell>
       <btrix-table-cell>
         <sl-format-bytes
+          lang=${this.localize.activeLanguage}
           value=${col.totalSize || 0}
           display="narrow"
         ></sl-format-bytes>

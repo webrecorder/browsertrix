@@ -475,6 +475,7 @@ export class CollectionDetail extends BtrixElement {
           msg("Total Size"),
           (col) =>
             html`<sl-format-bytes
+              lang=${this.localize.activeLanguage}
               value=${col.totalSize || 0}
               display="narrow"
             ></sl-format-bytes>`,

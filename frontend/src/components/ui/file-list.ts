@@ -7,6 +7,7 @@ import {
 } from "lit/decorators.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
+import { LocalizeController } from "@/controllers/localize";
 import { truncate } from "@/utils/css";
 
 type FileRemoveDetail = {
@@ -74,6 +75,8 @@ export class FileListItem extends TailwindElement {
   @property({ type: Boolean })
   progressIndeterminate?: boolean;
 
+  private readonly localize = new LocalizeController(this);
+
   render() {
     if (!this.file) return;
     return html`<div class="item">
@@ -83,10 +86,14 @@ export class FileListItem extends TailwindElement {
           <div class="size">
             ${this.progressValue !== undefined
               ? html`<sl-format-bytes
+                    lang=${this.localize.activeLanguage}
                     value=${(this.progressValue / 100) * this.file.size}
                   ></sl-format-bytes>
                   / `
-              : ""}<sl-format-bytes value=${this.file.size}></sl-format-bytes>
+              : ""}<sl-format-bytes
+              lang=${this.localize.activeLanguage}
+              value=${this.file.size}
+            ></sl-format-bytes>
           </div>
         </div>
         <div class="actions">

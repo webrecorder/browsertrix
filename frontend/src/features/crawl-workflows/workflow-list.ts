@@ -315,12 +315,14 @@ export class WorkflowListItem extends LitElement {
               workflow.lastCrawlSize
             ) {
               return html`<sl-format-bytes
+                  lang=${this.localize.activeLanguage}
                   value=${+workflow.totalSize}
                   display="narrow"
                 ></sl-format-bytes>
                 <span class="currCrawlSize">
                   +
                   <sl-format-bytes
+                    lang=${this.localize.activeLanguage}
                     value=${workflow.lastCrawlSize}
                     display="narrow"
                   ></sl-format-bytes>
@@ -328,6 +330,7 @@ export class WorkflowListItem extends LitElement {
             }
             if (workflow.totalSize && workflow.lastCrawlSize) {
               return html`<sl-format-bytes
+                lang=${this.localize.activeLanguage}
                 value=${+workflow.totalSize}
                 display="narrow"
               ></sl-format-bytes>`;
@@ -335,6 +338,7 @@ export class WorkflowListItem extends LitElement {
             if (workflow.isCrawlRunning && workflow.lastCrawlSize) {
               return html`<span class="currCrawlSize">
                 <sl-format-bytes
+                  lang=${this.localize.activeLanguage}
                   value=${workflow.lastCrawlSize}
                   display="narrow"
                 ></sl-format-bytes>
@@ -342,6 +346,7 @@ export class WorkflowListItem extends LitElement {
             }
             if (workflow.totalSize) {
               return html`<sl-format-bytes
+                lang=${this.localize.activeLanguage}
                 value=${+workflow.totalSize}
                 display="narrow"
               ></sl-format-bytes>`;

@@ -198,6 +198,7 @@ export class CrawlListItem extends TailwindElement {
         </btrix-table-cell>
         <btrix-table-cell>
           <sl-format-bytes
+            lang=${this.localize.activeLanguage}
             value=${this.crawl.fileSize || 0}
             display="narrow"
           ></sl-format-bytes>
