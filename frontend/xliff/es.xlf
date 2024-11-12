@@ -3712,6 +3712,23 @@
       <trans-unit id="seb49ad0f81062f64">
         <source>Choose your preferred language for displaying Browsertrix in your browser.</source>
       </trans-unit>
+      <trans-unit id="h6e4720c785ed38bd">
+        <source>Deleting an org will delete all
+                  <x equiv-text="&lt;strong class=&quot;font-semibold&quot;&gt;&#10;                    &lt;sl-format-bytes lang=&quot;${this.localize.activeLanguage}&quot; value=&quot;${org.bytesStored}&quot;&gt;&lt;/sl-format-bytes&gt;&#10;                  &lt;/strong&gt;" id="0"/>
+                  of data associated with the org.</source>
+      </trans-unit>
+      <trans-unit id="h1e4474c72a171a09">
+        <source>Crawls:
+                    <x equiv-text="&lt;sl-format-bytes lang=&quot;${this.localize.activeLanguage}&quot; value=&quot;${org.bytesStoredCrawls}&quot;&gt;&lt;/sl-format-bytes&gt;" id="0"/></source>
+      </trans-unit>
+      <trans-unit id="h201b5a649eb65b35">
+        <source>Uploads:
+                    <x equiv-text="&lt;sl-format-bytes lang=&quot;${this.localize.activeLanguage}&quot; value=&quot;${org.bytesStoredUploads}&quot;&gt;&lt;/sl-format-bytes&gt;" id="0"/></source>
+      </trans-unit>
+      <trans-unit id="h236b94c002a4a86f">
+        <source>Profiles:
+                    <x equiv-text="&lt;sl-format-bytes lang=&quot;${this.localize.activeLanguage}&quot; value=&quot;${org.bytesStoredProfiles}&quot;&gt;&lt;/sl-format-bytes&gt;" id="0"/></source>
+      </trans-unit>
     </body>
   </file>
 </xliff>
