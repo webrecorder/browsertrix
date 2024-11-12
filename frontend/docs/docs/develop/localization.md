@@ -35,6 +35,8 @@ To add a new language directly through code change:
 3. Open a pull request with the changes.
 4. Once the pull request is merged, manually refresh the language list in the [Weblate Browsertrix project](https://hosted.weblate.org/projects/browsertrix). Translations are managed entirely through the Weblate interface.
 
+New languages will be available in user preferences only after the app is redeployed.
+
 ## Making Strings Localizable
 
 All text should be wrapped in the `msg` helper to make them localizable:

@@ -280,7 +280,7 @@ export class OrgSettingsBilling extends BtrixElement {
       quotas.maxExecMinutesPerMonth &&
       humanizeSeconds(
         quotas.maxExecMinutesPerMonth * 60,
-        undefined,
+        getLocale(),
         undefined,
         "long",
       );

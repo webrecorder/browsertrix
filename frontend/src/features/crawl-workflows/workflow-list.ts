@@ -27,7 +27,6 @@ import type { ListWorkflow } from "@/types/crawler";
 import { humanizeSchedule } from "@/utils/cron";
 import { srOnly, truncate } from "@/utils/css";
 import { formatNumber, getLocale } from "@/utils/localization";
-import { numberFormatter } from "@/utils/number";
 import { pluralOf } from "@/utils/pluralize";
 
 const formatNumberCompact = (v: number) =>
@@ -245,13 +244,9 @@ export class WorkflowListItem extends LitElement {
           ${this.safeRender((workflow) => {
             if (workflow.schedule) {
               return msg(
-                str`${humanizeSchedule(
-                  workflow.schedule,
-                  {
-                    length: "short",
-                  },
-                  numberFormatter,
-                )}`,
+                str`${humanizeSchedule(workflow.schedule, {
+                  length: "short",
+                })}`,
               );
             }
             if (workflow.lastStartedByName) {

@@ -243,7 +243,7 @@ export class AccountSettings extends LiteElement {
       </form>
 
       ${(allLocales as unknown as string[]).length > 1
-        ? this.renderPreferences()
+        ? this.renderLanguage()
         : nothing}
     `;
   }
@@ -322,18 +322,45 @@ export class AccountSettings extends LiteElement {
     `;
   }
 
-  private renderPreferences() {
+  private renderLanguage() {
     return html`
-      <h2 class="mb-2 mt-7 text-lg font-medium">${msg("Preferences")}</h2>
+      <h2 class="mb-2 mt-7 flex items-center gap-2 text-lg font-medium">
+        ${msg("Language")}
+        <btrix-beta-badge>
+          <div slot="content">
+            <b>${msg("Translations are in beta")}</b>
+            <p>
+              ${msg(
+                "Parts of the app may not be translated yet in some languages.",
+              )}
+            </p>
+          </div>
+        </btrix-beta-badge>
+      </h2>
       <section class="mb-5 rounded-lg border">
-        <div class="flex items-center justify-between px-4 py-2.5">
-          <h3 class="font-medium">
-            ${msg("Language")} <btrix-beta-badge></btrix-beta-badge>
+        <div class="flex items-center justify-between gap-2 px-4 py-2.5">
+          <h3>
+            ${msg(
+              "Choose your preferred language for displaying Browsertrix in your browser.",
+            )}
           </h3>
-          <btrix-locale-picker
+          <btrix-user-language-select
             @sl-select=${this.onSelectLocale}
-          ></btrix-locale-picker>
+          ></btrix-user-language-select>
         </div>
+        <footer class="flex items-center justify-start border-t px-4 py-3">
+          <p class="text-neutral-600">
+            ${msg("Help us translate Browsertrix.")}
+            <a
+              class="inline-flex items-center gap-1 text-blue-500 hover:text-blue-600"
+              href="https://docs.browsertrix.com/develop/localization/"
+              target="_blank"
+            >
+              ${msg("Contribute to translations")}
+              <sl-icon slot="suffix" name="arrow-right"></sl-icon
+            ></a>
+          </p>
+        </footer>
       </section>
     `;
   }

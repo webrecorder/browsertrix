@@ -30,7 +30,7 @@ import type { NavigateEventDetail } from "@/controllers/navigate";
 import type { NotifyEventDetail } from "@/controllers/notify";
 import { theme } from "@/theme";
 import { type Auth } from "@/types/auth";
-import { type LocaleCodeEnum } from "@/types/localization";
+import { translatedLocales, type LocaleCodeEnum } from "@/types/localization";
 import { type AppSettings } from "@/utils/app";
 import {
   getLocale,
@@ -454,9 +454,13 @@ export class App extends BtrixElement {
                   </sl-dropdown>`
               : html`
                   ${this.renderSignUpLink()}
-                  <btrix-locale-picker
-                    @sl-select=${this.onSelectLocale}
-                  ></btrix-locale-picker>
+                  ${(translatedLocales as unknown as string[]).length > 1
+                    ? html`
+                        <btrix-user-language-select
+                          @sl-select=${this.onSelectLocale}
+                        ></btrix-user-language-select>
+                      `
+                    : nothing}
                 `}
           </div>
           ${isSuperAdmin
