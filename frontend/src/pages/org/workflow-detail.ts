@@ -2,6 +2,7 @@ import { localized, msg, str } from "@lit/localize";
 import type { SlSelect } from "@shoelace-style/shoelace";
 import { type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import { choose } from "lit/directives/choose.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { until } from "lit/directives/until.js";
 import { when } from "lit/directives/when.js";
@@ -566,6 +567,15 @@ export class WorkflowDetail extends LiteElement {
           if (disabled) e.preventDefault();
         }}
       >
+        ${choose(tabName, [
+          [
+            "crawls",
+            () => html`<sl-icon name="gear-wide-connected"></sl-icon>`,
+          ],
+          ["watch", () => html`<sl-icon name="eye-fill"></sl-icon>`],
+          ["logs", () => html`<sl-icon name="terminal-fill"></sl-icon>`],
+          ["settings", () => html`<sl-icon name="file-code-fill"></sl-icon>`],
+        ])}
         ${this.tabLabels[tabName]}
       </btrix-navigation-button>
     `;

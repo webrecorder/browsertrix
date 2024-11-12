@@ -206,6 +206,18 @@ export class OrgSettings extends BtrixElement {
         @click=${this.navigate.link}
         aria-selected=${isActive}
       >
+        ${choose(name, [
+          [
+            "information",
+            () => html`<sl-icon name="info-circle-fill"></sl-icon>`,
+          ],
+          ["members", () => html`<sl-icon name="people-fill"></sl-icon>`],
+          ["billing", () => html`<sl-icon name="credit-card-fill"></sl-icon>`],
+          [
+            "crawling-defaults",
+            () => html`<sl-icon name="file-code-fill"></sl-icon>`,
+          ],
+        ])}
         ${this.tabLabels[name]}
       </btrix-navigation-button>
     `;
