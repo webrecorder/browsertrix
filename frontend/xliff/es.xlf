@@ -151,7 +151,7 @@
         <source>Total Pages</source>
       </trans-unit>
       <trans-unit id="s279de934d8a18e21">
-        <source><x equiv-text="${pageCount.toLocaleString()}" id="0"/> pages</source>
+        <source><x equiv-text="${this.localize.number(pageCount)}" id="0"/> pages</source>
       </trans-unit>
       <trans-unit id="s3512b3c95c7a5c3a">
         <source>Last Updated</source>
@@ -350,7 +350,7 @@
         <source>Add “<x equiv-text="${this.inputValue.toLocaleLowerCase()}" id="0"/>”</source>
       </trans-unit>
       <trans-unit id="s1eee55ca9401677a">
-        <source>+<x equiv-text="${this.total.toLocaleString()}" id="0"/> URLs</source>
+        <source>+<x equiv-text="${this.total}" id="0"/> URLs</source>
       </trans-unit>
       <trans-unit id="sfff90c46fdba31db">
         <source>(unnamed item)</source>
@@ -362,7 +362,7 @@
         <source>Every <x equiv-text="${formattedWeekDay}" id="0"/></source>
       </trans-unit>
       <trans-unit id="s37a3a294775e081a">
-        <source>Monthly on the <x equiv-text="${format(days[0], { ordinal: true })}" id="0"/></source>
+        <source>Monthly on the <x equiv-text="${localizedNumberFormat(days[0], { ordinal: true })}" id="0"/></source>
       </trans-unit>
       <trans-unit id="s2bc963c5c7bac2e1">
         <source>Every day at <x equiv-text="${formattedTime}" id="0"/></source>
@@ -378,7 +378,7 @@
         <source>Default: Unlimited</source>
       </trans-unit>
       <trans-unit id="sf21761e7f8e0550e">
-        <source>Default: <x equiv-text="${value.toLocaleString()}" id="0"/></source>
+        <source>Default: <x equiv-text="${localizedNumberFormat(value)}" id="0"/></source>
       </trans-unit>
       <trans-unit id="s5ae0226079b4d5fc">
         <source>Specify exclusion rules for what pages should not be visited.
@@ -1015,7 +1015,7 @@
         <source>Logs will show here after you run a crawl.</source>
       </trans-unit>
       <trans-unit id="sa641ef4b0f2af2b4">
-        <source>Displaying latest <x equiv-text="${LOGS_PAGE_SIZE.toLocaleString()}" id="0"/> errors of <x equiv-text="${this.logs!.total.toLocaleString()}" id="1"/>.</source>
+        <source>Displaying latest <x equiv-text="${this.localize.number(LOGS_PAGE_SIZE)}" id="0"/> errors of <x equiv-text="${this.localize.number(this.logs!.total)}" id="1"/>.</source>
       </trans-unit>
       <trans-unit id="sa7bc374e662a4beb">
         <source>Upcoming Pages</source>
@@ -1165,7 +1165,7 @@
         <source>Partially copied Workflow</source>
       </trans-unit>
       <trans-unit id="sebba8356f42b6eaa">
-        <source>Only first <x equiv-text="${SEEDS_MAX.toLocaleString()}" id="0"/> URLs were copied.</source>
+        <source>Only first <x equiv-text="${this.localize.number(SEEDS_MAX)}" id="0"/> URLs were copied.</source>
       </trans-unit>
       <trans-unit id="s8745d54f3284f080">
         <source>Are you sure you want to cancel the crawl?</source>
@@ -1968,10 +1968,10 @@
         <source>Text Match</source>
       </trans-unit>
       <trans-unit id="s2344bb018c2ade99">
-        <source>Showing all <x equiv-text="${this.totalPages.toLocaleString()}" id="0"/> pages</source>
+        <source>Showing all <x equiv-text="${this.localize.number(this.totalPages)}" id="0"/> pages</source>
       </trans-unit>
       <trans-unit id="sd2afbd920020fe6d">
-        <source>Showing <x equiv-text="${total.toLocaleString()}" id="0"/> of <x equiv-text="${this.totalPages.toLocaleString()}" id="1"/> pages</source>
+        <source>Showing <x equiv-text="${this.localize.number(total)}" id="0"/> of <x equiv-text="${this.localize.number(this.totalPages)}" id="1"/> pages</source>
       </trans-unit>
       <trans-unit id="sd7c439303c5c7045">
         <source>No matching pages found</source>
@@ -2091,7 +2091,7 @@
         <source>Submit Review</source>
       </trans-unit>
       <trans-unit id="s6d7c9c2bb994f236">
-        <source>Comments (<x equiv-text="${commentCount.toLocaleString()}" id="0"/>)</source>
+        <source>Comments (<x equiv-text="${this.localize.number(commentCount)}" id="0"/>)</source>
       </trans-unit>
       <trans-unit id="s3732b439b691ea10">
         <source><x equiv-text="${comment.userName}" id="0"/> commented on <x equiv-text="${formatISODateString(comment.created, {&#10;    hour: undefined,&#10;    minute: undefined,&#10;})}" id="1"/></source>
@@ -2368,23 +2368,6 @@
                   <x equiv-text="&lt;strong class=&quot;font-semibold&quot;&gt;${org.name}&lt;/strong&gt;" id="0"/>? This
                   cannot be undone.</source>
       </trans-unit>
-      <trans-unit id="h88cfbf4cb1b57616">
-        <source>Deleting an org will delete all
-                  <x equiv-text="&lt;strong class=&quot;font-semibold&quot;&gt;&#10;                    &lt;sl-format-bytes value=&quot;${org.bytesStored}&quot;&gt;&lt;/sl-format-bytes&gt;&#10;                  &lt;/strong&gt;" id="0"/>
-                  of data associated with the org.</source>
-      </trans-unit>
-      <trans-unit id="hc95f75343ebc2ce0">
-        <source>Crawls:
-                    <x equiv-text="&lt;sl-format-bytes value=&quot;${org.bytesStoredCrawls}&quot;&gt;&lt;/sl-format-bytes&gt;" id="0"/></source>
-      </trans-unit>
-      <trans-unit id="h9e8c0254131f987c">
-        <source>Uploads:
-                    <x equiv-text="&lt;sl-format-bytes value=&quot;${org.bytesStoredUploads}&quot;&gt;&lt;/sl-format-bytes&gt;" id="0"/></source>
-      </trans-unit>
-      <trans-unit id="hc4433ba5eba156e2">
-        <source>Profiles:
-                    <x equiv-text="&lt;sl-format-bytes value=&quot;${org.bytesStoredProfiles}&quot;&gt;&lt;/sl-format-bytes&gt;" id="0"/></source>
-      </trans-unit>
       <trans-unit id="se49bbaeabfd85d48">
         <source>Type "<x equiv-text="${confirmationStr}" id="0"/>" to confirm</source>
       </trans-unit>
@@ -2515,7 +2498,7 @@
         <source>QA Analysis Runs</source>
       </trans-unit>
       <trans-unit id="s1b210718400e7ea8">
-        <source><x equiv-text="${pageCount.toLocaleString()}" id="0"/> page</source>
+        <source><x equiv-text="${this.localize.number(pageCount)}" id="0"/> page</source>
       </trans-unit>
       <trans-unit id="s92921878e886e36d">
         <source>Duration</source>
@@ -2563,14 +2546,14 @@
         <source>Queued URLs</source>
       </trans-unit>
       <trans-unit id="se7f351ae6cbb41f0">
-        <source>Queued URLs from 1 to <x equiv-text="${this.queue.total.toLocaleString()}" id="0"/></source>
+        <source>Queued URLs from 1 to <x equiv-text="${this.localize.number(this.queue.total)}" id="0"/></source>
       </trans-unit>
       <trans-unit id="h077c8fe82a78c616">
         <source>
           Queued URLs from
           <x equiv-text="&lt;btrix-inline-input class=&quot;mx-1 inline-block&quot; style=&quot;width: ${Math.max(offsetValue.toString().length, 2) + 2}ch&quot; value=&quot;1&quot; inputmode=&quot;numeric&quot; size=&quot;small&quot; autocomplete=&quot;off&quot; @sl-input=&quot;${(e: SlInputEvent) =&gt; {&#10;    const input = e.target as SlInput;&#10;    input.style.width = getInputWidth(input.value);&#10;}}&quot; @sl-change=&quot;${async (e: SlChangeEvent) =&gt; {&#10;    const input = e.target as SlInput;&#10;    const int = +input.value.replace(/\D/g, &quot;&quot;);&#10;    await this.updateComplete;&#10;    const value = Math.max(1, Math.min(int, this.queue!.total - 1));&#10;    input.value = value.toString();&#10;    this.pageOffset = value - 1;&#10;}}&quot;&gt;&lt;/btrix-inline-input&gt;" id="0"/>
-          to <x equiv-text="${countMax.toLocaleString()}" id="1"/> of
-          <x equiv-text="${this.queue.total.toLocaleString()}&#10;        " id="2"/></source>
+          to <x equiv-text="${this.localize.number(countMax)}" id="1"/> of
+          <x equiv-text="${this.localize.number(this.queue.total)}&#10;        " id="2"/></source>
       </trans-unit>
       <trans-unit id="s4dfaf5cfc90f8493">
         <source>No pages queued.</source>
@@ -2582,7 +2565,7 @@
         <source>Load more</source>
       </trans-unit>
       <trans-unit id="s813262fab638bbfc">
-        <source>-<x equiv-text="${this.matchedTotal.toLocaleString()}" id="0"/> URLs</source>
+        <source>-<x equiv-text="${this.localize.number(this.matchedTotal)}" id="0"/> URLs</source>
       </trans-unit>
       <trans-unit id="s6c4a20fdba7af262">
         <source>-1 URL</source>
@@ -2654,10 +2637,10 @@
         <source>Create profile</source>
       </trans-unit>
       <trans-unit id="sfd20092783b9309d">
-        <source><x equiv-text="${selected.toLocaleString()}" id="0"/> / <x equiv-text="${total.toLocaleString()}" id="1"/> crawl</source>
+        <source><x equiv-text="${this.localize.number(selected)}" id="0"/> / <x equiv-text="${this.localize.number(total)}" id="1"/> crawl</source>
       </trans-unit>
       <trans-unit id="sd6a07c24d3ae246a">
-        <source><x equiv-text="${selected.toLocaleString()}" id="0"/> / <x equiv-text="${total.toLocaleString()}" id="1"/> crawls</source>
+        <source><x equiv-text="${this.localize.number(selected)}" id="0"/> / <x equiv-text="${this.localize.number(total)}" id="1"/> crawls</source>
       </trans-unit>
       <trans-unit id="sea0ac3af5d7a3071">
         <source>0 crawls</source>
@@ -2678,19 +2661,19 @@
         <source>in <x equiv-text="${this.collectionName}" id="0"/></source>
       </trans-unit>
       <trans-unit id="sf27239dda9b1416d">
-        <source>Crawls in Collection (<x equiv-text="${data!.total.toLocaleString()}" id="0"/>)</source>
+        <source>Crawls in Collection (<x equiv-text="${this.localize.number(data!.total)}" id="0"/>)</source>
       </trans-unit>
       <trans-unit id="sa3d5a7186b818303">
-        <source>All Workflows (<x equiv-text="${data!.total.toLocaleString()}" id="0"/>)</source>
+        <source>All Workflows (<x equiv-text="${this.localize.number(data!.total)}" id="0"/>)</source>
       </trans-unit>
       <trans-unit id="s49730f3d5751a433">
         <source>Loading...</source>
       </trans-unit>
       <trans-unit id="sd7d35ab49e07fe79">
-        <source>Uploads in Collection (<x equiv-text="${this.uploads!.total.toLocaleString()}" id="0"/>)</source>
+        <source>Uploads in Collection (<x equiv-text="${this.localize.number(this.uploads!.total)}" id="0"/>)</source>
       </trans-unit>
       <trans-unit id="s84c2e4081c2bf6d7">
-        <source>All Uploads (<x equiv-text="${this.uploads!.total.toLocaleString()}" id="0"/>)</source>
+        <source>All Uploads (<x equiv-text="${this.localize.number(this.uploads!.total)}" id="0"/>)</source>
       </trans-unit>
       <trans-unit id="s1e2b42118528e92f">
         <source>In Collection?</source>
@@ -2817,10 +2800,10 @@
         <source>Specify exclusion rules for what pages should not be visited.</source>
       </trans-unit>
       <trans-unit id="sdd5dbd4b0fef8660">
-        <source>Must be more than minimum of <x equiv-text="${(+min).toLocaleString()}" id="0"/></source>
+        <source>Must be more than minimum of <x equiv-text="${this.localize.number(+min)}" id="0"/></source>
       </trans-unit>
       <trans-unit id="sa4f9d4099c408ae6">
-        <source>Must be less than maximum of <x equiv-text="${(+max).toLocaleString()}" id="0"/></source>
+        <source>Must be less than maximum of <x equiv-text="${this.localize.number(+max)}" id="0"/></source>
       </trans-unit>
       <trans-unit id="s9d84cf47af31a3ba">
         <source>Auto-scroll behavior</source>
@@ -2916,13 +2899,13 @@
         <source>Couldn't save Workflow. Please fix the following Workflow issues:</source>
       </trans-unit>
       <trans-unit id="sea5eee53e296f33b">
-        <source><x equiv-text="${urlList.length.toLocaleString()}" id="0"/> URL entered</source>
+        <source><x equiv-text="${this.localize.number(urlList.length)}" id="0"/> URL entered</source>
       </trans-unit>
       <trans-unit id="sfa75e464c2da4bba">
-        <source><x equiv-text="${urlList.length.toLocaleString()}" id="0"/> URLs entered</source>
+        <source><x equiv-text="${this.localize.number(urlList.length)}" id="0"/> URLs entered</source>
       </trans-unit>
       <trans-unit id="s960e671fe5f2559b">
-        <source>Please shorten list to <x equiv-text="${max.toLocaleString()}" id="0"/> or fewer URLs.</source>
+        <source>Please shorten list to <x equiv-text="${this.localize.number(max)}" id="0"/> or fewer URLs.</source>
       </trans-unit>
       <trans-unit id="s40b5b363fefc9199">
         <source>Please remove or fix the following invalid URL: <x equiv-text="${invalidUrl}" id="0"/></source>
@@ -3544,7 +3527,7 @@
         <note from="lit-localize">Time AM/PM</note>
       </trans-unit>
       <trans-unit id="h9083eded7901e66a">
-        <source><x equiv-text="${quotas.storageQuota&#10;    ? html `&lt;sl-format-bytes&#10;                  value=${quotas.storageQuota}&#10;                &gt;&lt;/sl-format-bytes&gt;`&#10;    : msg(&quot;Unlimited&quot;)}" id="0"/>
+        <source><x equiv-text="${quotas.storageQuota&#10;    ? html `&lt;sl-format-bytes&#10;                  lang=${this.localize.activeLanguage}&#10;                  value=${quotas.storageQuota}&#10;                &gt;&lt;/sl-format-bytes&gt;`&#10;    : msg(&quot;Unlimited&quot;)}" id="0"/>
             storage</source>
       </trans-unit>
       <trans-unit id="s1d6a13ef53c51ee9">
@@ -3603,7 +3586,7 @@
       </trans-unit>
       <trans-unit id="ha60886587b96e32c">
         <source>Started crawl from <x equiv-text="&lt;strong&gt;${this.renderName(workflow)}&lt;/strong&gt;" id="0"/>.
-            <x equiv-text="&lt;br&gt;&#10;            &lt;a class=&quot;underline hover:no-underline&quot; href=&quot;${this.orgBasePath}/workflows/${workflow.id}#watch&quot; @click=&quot;${this.navLink.bind(this)}&quot;&gt;" id="1"/>Watch crawl<x equiv-text="&lt;/a&gt;" id="2"/></source>
+            <x equiv-text="&lt;br&gt;&#10;            &lt;a class=&quot;underline hover:no-underline&quot; href=&quot;${this.navigate.orgBasePath}/workflows/${workflow.id}#watch&quot; @click=&quot;${this.navigate.link.bind(this)}&quot;&gt;" id="1"/>Watch crawl<x equiv-text="&lt;/a&gt;" id="2"/></source>
       </trans-unit>
       <trans-unit id="sb32ae1652df8c7ad">
         <source>Workflow settings used to run this crawl</source>
@@ -3625,7 +3608,7 @@
       </trans-unit>
       <trans-unit id="hac630f92c94217bc">
         <source>Your plan will be canceled on
-                                  <x equiv-text="&lt;sl-format-date lang=&quot;${getLocale()}&quot; class=&quot;truncate&quot; date=&quot;${org.subscription.futureCancelDate}&quot; month=&quot;long&quot; day=&quot;numeric&quot; year=&quot;numeric&quot;&gt;&#10;                                  &lt;/sl-format-date&gt;" id="0"/></source>
+                                  <x equiv-text="&lt;sl-format-date lang=&quot;${this.localize.activeLanguage}&quot; class=&quot;truncate&quot; date=&quot;${org.subscription.futureCancelDate}&quot; month=&quot;long&quot; day=&quot;numeric&quot; year=&quot;numeric&quot;&gt;&#10;                                  &lt;/sl-format-date&gt;" id="0"/></source>
       </trans-unit>
       <trans-unit id="s7d61376257220dab">
         <source>Scope</source>
@@ -3682,7 +3665,7 @@
         <source>The URL of the page to crawl.</source>
       </trans-unit>
       <trans-unit id="s41d2278219615589">
-        <source>The crawler will visit and record each URL listed here. You can enter up to <x equiv-text="${MAX_ADDITIONAL_URLS.toLocaleString()}" id="0"/> URLs.</source>
+        <source>The crawler will visit and record each URL listed here. You can enter up to <x equiv-text="${this.localize.number(MAX_ADDITIONAL_URLS)}" id="0"/> URLs.</source>
       </trans-unit>
       <trans-unit id="sfc5e402f8b21ef5f">
         <source>If checked, the crawler will visit pages one link away.</source>
@@ -3797,6 +3780,23 @@
       </trans-unit>
       <trans-unit id="seb49ad0f81062f64">
         <source>Choose your preferred language for displaying Browsertrix in your browser.</source>
+      </trans-unit>
+      <trans-unit id="h6e4720c785ed38bd">
+        <source>Deleting an org will delete all
+                  <x equiv-text="&lt;strong class=&quot;font-semibold&quot;&gt;&#10;                    &lt;sl-format-bytes lang=&quot;${this.localize.activeLanguage}&quot; value=&quot;${org.bytesStored}&quot;&gt;&lt;/sl-format-bytes&gt;&#10;                  &lt;/strong&gt;" id="0"/>
+                  of data associated with the org.</source>
+      </trans-unit>
+      <trans-unit id="h1e4474c72a171a09">
+        <source>Crawls:
+                    <x equiv-text="&lt;sl-format-bytes lang=&quot;${this.localize.activeLanguage}&quot; value=&quot;${org.bytesStoredCrawls}&quot;&gt;&lt;/sl-format-bytes&gt;" id="0"/></source>
+      </trans-unit>
+      <trans-unit id="h201b5a649eb65b35">
+        <source>Uploads:
+                    <x equiv-text="&lt;sl-format-bytes lang=&quot;${this.localize.activeLanguage}&quot; value=&quot;${org.bytesStoredUploads}&quot;&gt;&lt;/sl-format-bytes&gt;" id="0"/></source>
+      </trans-unit>
+      <trans-unit id="h236b94c002a4a86f">
+        <source>Profiles:
+                    <x equiv-text="&lt;sl-format-bytes lang=&quot;${this.localize.activeLanguage}&quot; value=&quot;${org.bytesStoredProfiles}&quot;&gt;&lt;/sl-format-bytes&gt;" id="0"/></source>
       </trans-unit>
     </body>
   </file>
