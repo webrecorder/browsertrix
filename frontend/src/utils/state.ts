@@ -85,10 +85,6 @@ export function makeAppStateService() {
       if (userOrg) return isCrawler(userOrg.role);
       return false;
     }
-
-    get userLanguage() {
-      return this.userPreferences?.language;
-    }
   }
 
   const appState = new AppState();
