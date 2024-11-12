@@ -243,7 +243,7 @@ export class AccountSettings extends LiteElement {
       </form>
 
       ${(allLocales as unknown as string[]).length > 1
-        ? this.renderPreferences()
+        ? this.renderLanguage()
         : nothing}
     `;
   }
@@ -322,23 +322,27 @@ export class AccountSettings extends LiteElement {
     `;
   }
 
-  private renderPreferences() {
+  private renderLanguage() {
     return html`
-      <h2 class="mb-2 mt-7 text-lg font-medium">${msg("Preferences")}</h2>
+      <h2 class="mb-2 mt-7 text-lg font-medium">
+        ${msg("Language")}
+        <btrix-beta-badge>
+          <div slot="content">
+            <b>${msg("Translations are in beta")}</b>
+            <p>
+              ${msg(
+                "Parts of the app may not be translated yet in some languages.",
+              )}
+            </p>
+          </div>
+        </btrix-beta-badge>
+      </h2>
       <section class="mb-5 rounded-lg border">
-        <div class="flex items-center justify-between px-4 py-2.5">
-          <h3 class="font-medium">
-            ${msg("Preferred App Language")}
-            <btrix-beta-badge>
-              <div slot="content">
-                <b>${msg("Translations are in beta")}</b>
-                <p>
-                  ${msg(
-                    "Parts of the app may not be translated yet in some languages.",
-                  )}
-                </p>
-              </div>
-            </btrix-beta-badge>
+        <div class="flex items-center justify-between gap-2 px-4 py-2.5">
+          <h3>
+            ${msg(
+              "Choose your preferred language for displaying Browsertrix in your browser.",
+            )}
           </h3>
           <btrix-user-language-select
             @sl-select=${this.onSelectLocale}

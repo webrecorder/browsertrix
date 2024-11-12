@@ -8,34 +8,37 @@ import { allLocales, type LocaleCodeEnum } from "@/types/localization";
 import { getLocale, setLocale } from "@/utils/localization";
 import { AppStateService } from "@/utils/state";
 
-type LocaleNames = {
-  [L in LocaleCodeEnum]: string;
-};
-
 /**
  * Select language that Browsertrix app will be shown in
  */
 @customElement("btrix-user-language-select")
 export class LocalePicker extends BtrixElement {
   @state()
-  private localeNames: LocaleNames | undefined = {} as LocaleNames;
-
-  private readonly setLocaleName = (locale: LocaleCodeEnum) => {
-    this.localeNames![locale] = new Intl.DisplayNames([locale], {
-      type: "language",
-    }).of(locale.toUpperCase())!;
-  };
+  private localeNames: { [locale: string]: string } = {};
 
   firstUpdated() {
-    this.localeNames = {} as LocaleNames;
-    allLocales.forEach(this.setLocaleName);
+    this.setLocaleNames();
+  }
+
+  private setLocaleNames() {
+    const localeNames: LocalePicker["localeNames"] = {};
+
+    // TODO Add browser-preferred languages
+    // https://github.com/webrecorder/browsertrix/issues/2143
+    allLocales.forEach((locale) => {
+      const name = new Intl.DisplayNames([locale], {
+        type: "language",
+      }).of(locale);
+
+      if (!name) return;
+
+      localeNames[locale] = name;
+    });
+
+    this.localeNames = localeNames;
   }
 
   render() {
-    if (!this.localeNames) {
-      return;
-    }
-
     const selectedLocale =
       this.appState.userPreferences?.locale || sourceLocale;
 
@@ -58,17 +61,19 @@ export class LocalePicker extends BtrixElement {
           >
         </sl-button>
         <sl-menu>
-          ${allLocales.map(
-            (locale) =>
-              html`<sl-menu-item
-                class="capitalize"
-                type="checkbox"
-                value=${locale}
-                ?checked=${locale === selectedLocale}
-              >
-                ${this.localeNames![locale]}
-              </sl-menu-item>`,
-          )}
+          ${Object.keys(this.localeNames)
+            .sort()
+            .map(
+              (locale) =>
+                html`<sl-menu-item
+                  class="capitalize"
+                  type="checkbox"
+                  value=${locale}
+                  ?checked=${locale === selectedLocale}
+                >
+                  ${this.localeNames[locale]}
+                </sl-menu-item>`,
+            )}
         </sl-menu>
       </sl-dropdown>
     `;
