@@ -7,9 +7,8 @@ const contentVisibilityPlugin = require("./config/tailwind/plugins/content-visib
 const cssPartsPlugin = require("./config/tailwind/plugins/parts");
 
 /**
- * Use Shoelace CSS variables in Tailwind theme for consistency
+ * Merge Shoelace and hickory themes
  *
- * Customize Shoelace variables in `theme.ts`
  * @returns {import('tailwindcss').Config['theme']}
  */
 function makeTheme() {
@@ -20,7 +19,7 @@ function makeTheme() {
    * @param {string} color
    * @returns {Record<string, string>}
    */
-  const makeColorPalette = (color) =>
+  const shoelaceColorPalette = (color) =>
     colorGrades.reduce(
       /**
        * @param {Record<string, string>} acc
@@ -43,19 +42,30 @@ function makeTheme() {
         ...theme.colors.cyan,
         DEFAULT: theme.colors.cyan[600],
       },
-      theme: theme.colors.brand,
-      success: { ...makeColorPalette("success"), DEFAULT: `var(--success)` },
-      warning: { ...makeColorPalette("warning"), DEFAULT: `var(--warning)` },
-      danger: { ...makeColorPalette("danger"), DEFAULT: `var(--danger)` },
+      brand: theme.colors.brand,
+      success: {
+        ...shoelaceColorPalette("success"),
+        DEFAULT: `var(--success)`,
+      },
+      warning: {
+        ...shoelaceColorPalette("warning"),
+        DEFAULT: `var(--warning)`,
+      },
+      danger: {
+        ...shoelaceColorPalette("danger"),
+        DEFAULT: `var(--danger)`,
+      },
       neutral: {
-        ...makeColorPalette("neutral"),
+        ...shoelaceColorPalette("neutral"),
         // Shoelace supports additional neutral variables:
         0: `var(--sl-color-neutral-0)`,
         950: `var(--sl-color-neutral-950)`,
         1000: `var(--sl-color-neutral-1000)`,
       },
     },
-
+    borderColor: {
+      DEFAULT: `var(--sl-panel-border-color)`,
+    },
     fontFamily: {
       sans: `var(--sl-font-sans)`,
       serif: `var(--sl-font-serif)`,

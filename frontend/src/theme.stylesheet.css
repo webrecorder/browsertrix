@@ -138,6 +138,15 @@
     font-size: var(--sl-input-help-text-font-size-medium);
   }
 
+  /* Update button colors */
+  sl-button[variant="primary"]::part(base) {
+    background-color: theme(colors.primary.400);
+  }
+
+  sl-button[variant="primary"]::part(base):hover {
+    background-color: theme(colors.primary.500);
+  }
+
   /* Elevate select and buttons */
   sl-select::part(combobox),
   sl-button:not([variant="text"])::part(base) {
