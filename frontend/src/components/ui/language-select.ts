@@ -1,15 +1,16 @@
 import { localized, msg } from "@lit/localize";
 import type { SlSelect } from "@shoelace-style/shoelace";
-import ISO6391, { type LanguageCode } from "iso-639-1";
+import ISO6391 from "iso-639-1";
 import { css, html, LitElement, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import sortBy from "lodash/fp/sortBy";
 
+import { allLanguageCodes, type LanguageCode } from "@/types/localization";
 import { getLang } from "@/utils/localization";
 
 const languages = sortBy("name")(
-  ISO6391.getLanguages(ISO6391.getAllCodes()),
+  ISO6391.getLanguages(allLanguageCodes),
 ) as unknown as {
   code: LanguageCode;
   name: string;

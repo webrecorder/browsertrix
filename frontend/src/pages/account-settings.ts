@@ -11,7 +11,7 @@ import debounce from "lodash/fp/debounce";
 import { TailwindElement } from "@/classes/TailwindElement";
 import needLogin from "@/decorators/needLogin";
 import { pageHeader } from "@/layouts/pageHeader";
-import { allLocales, type LocaleCodeEnum } from "@/types/localization";
+import { LanguageCode, translatedLocales } from "@/types/localization";
 import type { UnderlyingFunction } from "@/types/utils";
 import { isApiError } from "@/utils/api";
 import LiteElement, { html } from "@/utils/LiteElement";
@@ -242,7 +242,7 @@ export class AccountSettings extends LiteElement {
         </footer>
       </form>
 
-      ${(allLocales as unknown as string[]).length > 1
+      ${(translatedLocales as unknown as string[]).length > 1
         ? this.renderLanguage()
         : nothing}
     `;
@@ -526,11 +526,14 @@ export class AccountSettings extends LiteElement {
     this.sectionSubmitting = null;
   }
 
+  /**
+   * Save language setting in local storage
+   */
   private readonly onSelectLocale = async (e: SlSelectEvent) => {
-    const locale = e.detail.item.value as LocaleCodeEnum;
+    const locale = e.detail.item.value as LanguageCode;
 
-    if (locale !== this.appState.userPreferences?.locale) {
-      AppStateService.partialUpdateUserPreferences({ locale });
+    if (locale !== this.appState.userPreferences?.language) {
+      AppStateService.partialUpdateUserPreferences({ language: locale });
     }
 
     this.notify({

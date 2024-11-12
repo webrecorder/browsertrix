@@ -4,9 +4,10 @@ import { customElement, state } from "lit/decorators.js";
 
 import { sourceLocale } from "@/__generated__/locale-codes";
 import { BtrixElement } from "@/classes/BtrixElement";
-import { allLocales, type LocaleCodeEnum } from "@/types/localization";
-import { getLocale, setLocale } from "@/utils/localization";
-import { AppStateService } from "@/utils/state";
+import {
+  translatedLocales,
+  type TranslatedLocaleEnum,
+} from "@/types/localization";
 
 /**
  * Select language that Browsertrix app will be shown in
@@ -23,9 +24,7 @@ export class LocalePicker extends BtrixElement {
   private setLocaleNames() {
     const localeNames: LocalePicker["localeNames"] = {};
 
-    // TODO Add browser-preferred languages
-    // https://github.com/webrecorder/browsertrix/issues/2143
-    allLocales.forEach((locale) => {
+    this.localize.languages.forEach((locale) => {
       const name = new Intl.DisplayNames([locale], {
         type: "language",
       }).of(locale);
@@ -39,8 +38,7 @@ export class LocalePicker extends BtrixElement {
   }
 
   render() {
-    const selectedLocale =
-      this.appState.userPreferences?.locale || sourceLocale;
+    const selectedLocale = this.appState.userLanguage || sourceLocale;
 
     return html`
       <sl-dropdown
@@ -53,11 +51,11 @@ export class LocalePicker extends BtrixElement {
           slot="trigger"
           size="small"
           caret
-          ?disabled=${(allLocales as unknown as string[]).length < 2}
+          ?disabled=${(translatedLocales as unknown as string[]).length < 2}
         >
           <sl-icon slot="prefix" name="translate"></sl-icon>
           <span class="capitalize"
-            >${this.localeNames[selectedLocale as LocaleCodeEnum]}</span
+            >${this.localeNames[selectedLocale as TranslatedLocaleEnum]}</span
           >
         </sl-button>
         <sl-menu>
@@ -80,12 +78,8 @@ export class LocalePicker extends BtrixElement {
   }
 
   async localeChanged(event: SlSelectEvent) {
-    const newLocale = event.detail.item.value as LocaleCodeEnum;
+    const newLocale = event.detail.item.value as TranslatedLocaleEnum;
 
-    AppStateService.partialUpdateUserPreferences({ locale: newLocale });
-
-    if (newLocale !== getLocale()) {
-      void setLocale(newLocale);
-    }
+    this.localize.setLanguage(newLocale);
   }
 }
