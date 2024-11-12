@@ -163,7 +163,7 @@ export class ArchivedItemDetail extends BtrixElement {
       year="2-digit"
       hour="numeric"
       minute="numeric"
-      timeZoneName="short"
+      time-zone-name="short"
     ></sl-format-date>`;
   }
 
@@ -782,7 +782,7 @@ export class ArchivedItemDetail extends BtrixElement {
                     year="2-digit"
                     hour="numeric"
                     minute="numeric"
-                    timeZoneName="short"
+                    time-zone-name="short"
                   ></sl-format-date>
                 </btrix-desc-list-item>
                 <btrix-desc-list-item label=${msg("Finish Time")}>

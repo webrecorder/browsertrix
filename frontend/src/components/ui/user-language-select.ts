@@ -2,7 +2,6 @@ import type { SlSelectEvent } from "@shoelace-style/shoelace";
 import { html } from "lit";
 import { customElement, state } from "lit/decorators.js";
 
-import { sourceLocale } from "@/__generated__/locale-codes";
 import { BtrixElement } from "@/classes/BtrixElement";
 import {
   translatedLocales,
