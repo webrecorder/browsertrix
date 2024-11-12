@@ -19,6 +19,7 @@
     "@types/sinon": "^10.0.6",
     "@typescript-eslint/eslint-plugin": "^6.20.0",
     "@typescript-eslint/parser": "^6.20.0",
+    "@webrecorder/hickory": "^0.0.10",
     "@xstate/fsm": "^1.6.2",
     "@zxcvbn-ts/core": "^3.0.4",
     "@zxcvbn-ts/language-common": "^3.0.4",

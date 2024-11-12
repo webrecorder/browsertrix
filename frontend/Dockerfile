@@ -2,7 +2,7 @@
 FROM --platform=$BUILDPLATFORM docker.io/library/node:18 as build_deps
 
 WORKDIR /app
-COPY yarn.lock package.json ./
+COPY .yarnrc yarn.lock package.json ./
 # Uses a cache mount for the Yarn cache so that it's not included in subsequent steps
 RUN --mount=type=cache,target=/root/.yarn YARN_CACHE_FOLDER=/root/.yarn yarn --production --frozen-lockfile --ignore-optional --network-timeout 1000000
 

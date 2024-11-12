@@ -90,8 +90,8 @@ export class NavigationButton extends TailwindElement {
           right: "justify-end",
         }[this.align],
         this.active
-          ? tw`bg-primary-100 text-primary-800 shadow-sm shadow-primary-900/20 hover:bg-primary-100`
-          : tw`text-neutral-600 hover:bg-primary-50`,
+          ? tw`bg-primary-100/80 text-primary-800 shadow-sm shadow-primary-900/20`
+          : tw`text-neutral-700 hover:bg-primary-50`,
       ]
         .filter(Boolean)
         .join(" ")}
