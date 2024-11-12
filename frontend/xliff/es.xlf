@@ -2267,12 +2267,6 @@
       <trans-unit id="sa1d4559f0fcc5219">
         <source>Remove file</source>
       </trans-unit>
-      <trans-unit id="s452f791e0ff6a13e">
-        <source>Hide password</source>
-      </trans-unit>
-      <trans-unit id="s2f7f35f6a5b733f5">
-        <source>Show password</source>
-      </trans-unit>
       <trans-unit id="sfe7c07c43a065520">
         <source>Very weak password</source>
       </trans-unit>
