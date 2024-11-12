@@ -1,13 +1,13 @@
 // cSpell:words xstate
 import { localized, msg } from "@lit/localize";
 import { assign, createMachine, interpret } from "@xstate/fsm";
-import { type PropertyValues } from "lit";
+import { html, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
+import { BtrixElement } from "@/classes/BtrixElement";
 import { isApiError } from "@/utils/api";
 import type { ViewState } from "@/utils/APIRouter";
 import AuthService from "@/utils/AuthService";
-import LiteElement, { html } from "@/utils/LiteElement";
 import { AppStateService } from "@/utils/state";
 import { formatAPIUser } from "@/utils/user";
 
@@ -141,7 +141,7 @@ const machine = createMachine<FormContext, FormEvent, FormTypestate>(
 
 @localized()
 @customElement("btrix-log-in")
-export class LogInPage extends LiteElement {
+export class LogInPage extends BtrixElement {
   @property({ type: Object })
   viewState!: ViewState;
 
@@ -189,7 +189,7 @@ export class LogInPage extends LiteElement {
         <a
           class="text-sm text-gray-400 hover:text-gray-500"
           href="/log-in"
-          @click=${this.navLink}
+          @click=${this.navigate.link}
           >${msg("Sign in with password")}</a
         >
       `;
@@ -199,7 +199,7 @@ export class LogInPage extends LiteElement {
         <a
           class="text-sm text-gray-400 hover:text-gray-500"
           href="/log-in/forgot-password"
-          @click=${this.navLink}
+          @click=${this.navigate.link}
           >${msg("Forgot your password?")}</a
         >
       `;
