@@ -3768,13 +3768,6 @@
       <trans-unit id="sadfb54de733655c9">
         <source>Using proxy: </source>
       </trans-unit>
-      <trans-unit id="habe03840abb41da5">
-        <source>
-          It is highly recommended to create dedicated accounts to use when
-          crawling. For details, refer to
-          <x equiv-text="&lt;a class=&quot;text-primary hover:text-indigo-400&quot; href=&quot;/docs/user-guide/browser-profiles/&quot; target=&quot;_blank&quot;&gt;&#10;            ${msg(&quot;browser profile best practices&quot;)}&lt;/a&gt;" id="0"/>.
-        </source>
-      </trans-unit>
       <trans-unit id="hda7aa624404fc0ed">
         <source>Refer to our user guide on
                 <x equiv-text="&lt;a class=&quot;text-neutral-500 underline hover:text-primary&quot; href=&quot;/docs/user-guide/org-settings/&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;&gt;" id="0"/>org settings<x equiv-text="&lt;/a&gt;" id="1"/>
@@ -3791,6 +3784,13 @@
       </trans-unit>
       <trans-unit id="sfa66f095b5a35ccc">
         <source>Your language preference has been updated.</source>
+      </trans-unit>
+      <trans-unit id="h594aac845e847983">
+        <source>
+          It is highly recommended to create dedicated accounts to use when
+          crawling. For details, refer to
+          <x equiv-text="&lt;a class=&quot;text-primary hover:text-primary-400&quot; href=&quot;/docs/user-guide/browser-profiles/&quot; target=&quot;_blank&quot;&gt;&#10;            ${msg(&quot;browser profile best practices&quot;)}&lt;/a&gt;" id="0"/>.
+        </source>
       </trans-unit>
     </body>
   </file>
