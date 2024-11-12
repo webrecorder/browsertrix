@@ -1,16 +1,15 @@
 import { localized, msg, str } from "@lit/localize";
 import type { SlInput, SlInputEvent } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
-import { type PropertyValues } from "lit";
+import { html, type PropertyValues } from "lit";
 import { customElement, state } from "lit/decorators.js";
 
-import needLogin from "@/decorators/needLogin";
+import { BtrixElement } from "@/classes/BtrixElement";
 import type { InviteSuccessDetail } from "@/features/accounts/invite-form";
 import type { APIUser } from "@/index";
 import type { APIPaginatedList } from "@/types/api";
 import { isApiError } from "@/utils/api";
 import { maxLengthValidator } from "@/utils/form";
-import LiteElement, { html } from "@/utils/LiteElement";
 import { type OrgData } from "@/utils/orgs";
 import slugifyStrict from "@/utils/slugify";
 import { AppStateService } from "@/utils/state";
@@ -27,8 +26,7 @@ import { formatAPIUser } from "@/utils/user";
  */
 @localized()
 @customElement("btrix-home")
-@needLogin
-export class Home extends LiteElement {
+export class Admin extends BtrixElement {
   @state()
   private orgList?: OrgData[];
 
@@ -56,12 +54,12 @@ export class Home extends LiteElement {
   connectedCallback() {
     if (this.authState) {
       if (this.slug) {
-        this.navTo(`/orgs/${this.slug}`);
+        this.navigate.to(`/orgs/${this.slug}`);
       } else {
         super.connectedCallback();
       }
     } else {
-      this.navTo("/log-in");
+      this.navigate.to("/log-in");
     }
   }
 
@@ -70,9 +68,9 @@ export class Home extends LiteElement {
       if (this.userInfo.isSuperAdmin) {
         this.initSuperAdmin();
       } else if (this.userInfo.orgs.length) {
-        this.navTo(`/orgs/${this.userInfo.orgs[0].slug}`);
+        this.navigate.to(`/orgs/${this.userInfo.orgs[0].slug}`);
       } else {
-        this.navTo(`/account/settings`);
+        this.navigate.to(`/account/settings`);
       }
     }
   }
@@ -136,7 +134,7 @@ export class Home extends LiteElement {
           @submit=${(e: SubmitEvent) => {
             const formData = new FormData(e.target as HTMLFormElement);
             const id = formData.get("crawlId");
-            this.navTo(`/crawls/crawl/${id?.toString()}`);
+            this.navigate.to(`/crawls/crawl/${id?.toString()}`);
           }}
         >
           <div class="flex flex-wrap items-center">
@@ -294,14 +292,14 @@ export class Home extends LiteElement {
         @btrix-invite-success=${(e: CustomEvent<InviteSuccessDetail>) => {
           const org = this.orgList?.find(({ id }) => id === e.detail.orgId);
 
-          this.notify({
+          this.notify.toast({
             message: html`
               ${msg("Invite sent!")}
               <br />
               <a
                 class="underline hover:no-underline"
                 href="/orgs/${org?.slug || e.detail.orgId}/settings/members"
-                @click=${this.navLink.bind(this)}
+                @click=${this.navigate.link.bind(this)}
               >
                 ${msg("View org members")}
               </a>
@@ -325,13 +323,13 @@ export class Home extends LiteElement {
 
   private async getOrgs() {
     const data =
-      await this.apiFetch<APIPaginatedList<OrgData>>("/orgs?sortBy=name");
+      await this.api.fetch<APIPaginatedList<OrgData>>("/orgs?sortBy=name");
 
     return data.items;
   }
 
   private async getOrgSlugs() {
-    const data = await this.apiFetch<{ slugs: string[] }>("/orgs/slugs");
+    const data = await this.api.fetch<{ slugs: string[] }>("/orgs/slugs");
 
     return data.slugs;
   }
@@ -363,14 +361,14 @@ export class Home extends LiteElement {
 
     try {
       // TODO return entire object from API
-      await this.apiFetch<{ added: true; id: string }>(`/orgs/create`, {
+      await this.api.fetch<{ added: true; id: string }>(`/orgs/create`, {
         method: "POST",
         body: JSON.stringify(params),
       });
       const userInfo = await this.getUserInfo();
       AppStateService.updateUser(formatAPIUser(userInfo));
 
-      this.notify({
+      this.notify.toast({
         message: msg(str`Created new org named "${params.name}".`),
         variant: "success",
         icon: "check2-circle",
@@ -394,7 +392,7 @@ export class Home extends LiteElement {
         }
       }
 
-      this.notify({
+      this.notify.toast({
         message,
         variant: "danger",
         icon: "exclamation-octagon",
@@ -407,7 +405,7 @@ export class Home extends LiteElement {
   async onUpdateOrgQuotas(e: CustomEvent) {
     const org = e.detail as OrgData;
 
-    await this.apiFetch(`/orgs/${org.id}/quotas`, {
+    await this.api.fetch(`/orgs/${org.id}/quotas`, {
       method: "POST",
       body: JSON.stringify(org.quotas),
     });
@@ -416,7 +414,7 @@ export class Home extends LiteElement {
   async onUpdateOrgProxies(e: CustomEvent) {
     const org = e.detail as OrgData;
 
-    await this.apiFetch(`/orgs/${org.id}/proxies`, {
+    await this.api.fetch(`/orgs/${org.id}/proxies`, {
       method: "POST",
       body: JSON.stringify({
         allowSharedProxies: org.allowSharedProxies,
@@ -431,6 +429,6 @@ export class Home extends LiteElement {
   }
 
   async getUserInfo(): Promise<APIUser> {
-    return this.apiFetch("/users/me");
+    return this.api.fetch("/users/me");
   }
 }
