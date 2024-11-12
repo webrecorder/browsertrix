@@ -324,7 +324,7 @@ export class AccountSettings extends LiteElement {
 
   private renderLanguage() {
     return html`
-      <h2 class="mb-2 mt-7 text-lg font-medium">
+      <h2 class="mb-2 mt-7 flex items-center gap-2 text-lg font-medium">
         ${msg("Language")}
         <btrix-beta-badge>
           <div slot="content">
