@@ -172,7 +172,7 @@ export class SelectBrowserProfile extends LiteElement {
         >
         <a
           href=${`${this.orgBasePath}/browser-profiles?new`}
-          class="font-medium text-primary hover:text-indigo-500"
+          class="font-medium text-primary hover:text-primary-500"
           target="_blank"
           @click=${(e: Event) => {
             const select = (e.target as HTMLElement).closest<SlSelect>(

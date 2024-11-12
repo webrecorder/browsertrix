@@ -1,26 +1,10 @@
 const { tailwindTransform } = require("postcss-lit");
+const theme = require("@webrecorder/hickory/tokens/tailwind");
 
 const attributes = require("./config/tailwind/plugins/attributes");
 const containPlugin = require("./config/tailwind/plugins/contain");
 const contentVisibilityPlugin = require("./config/tailwind/plugins/content-visibility");
 const cssPartsPlugin = require("./config/tailwind/plugins/parts");
-
-const PRIMARY_COLOR = "#0891B2";
-
-const primary = {
-  DEFAULT: PRIMARY_COLOR,
-  50: "#EBFAFE",
-  100: "#D8F6FD",
-  200: "#ACEBFB",
-  300: "#74DBF5",
-  400: "#3FC6E8",
-  500: "#0AAED7",
-  600: PRIMARY_COLOR,
-  700: "#0782A1",
-  800: "#066B84",
-  900: "#044B5D",
-  950: "#033744",
-};
 
 /**
  * Use Shoelace CSS variables in Tailwind theme for consistency
@@ -29,18 +13,6 @@ const primary = {
  * @returns {import('tailwindcss').Config['theme']}
  */
 function makeTheme() {
-  // Map color palettes:
-  const colors = [
-    "gray",
-    "red",
-    "yellow",
-    "green",
-    "blue",
-    "indigo",
-    "purple",
-    "pink",
-    "orange",
-  ];
   // Map color grading:
   const colorGrades = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900];
 
@@ -66,9 +38,12 @@ function makeTheme() {
     // https://github.com/tailwindlabs/tailwindcss/blob/52ab3154392ba3d7a05cae643694384e72dc24b2/stubs/defaultConfig.stub.js
     colors: {
       current: "currentColor",
-      ...colors.map(makeColorPalette),
-      primary,
-      theme: { blue: primary, green: "#4d7c0f" },
+      ...theme.colors,
+      primary: {
+        ...theme.colors.cyan,
+        DEFAULT: theme.colors.cyan[600],
+      },
+      theme: theme.colors.brand,
       success: { ...makeColorPalette("success"), DEFAULT: `var(--success)` },
       warning: { ...makeColorPalette("warning"), DEFAULT: `var(--warning)` },
       danger: { ...makeColorPalette("danger"), DEFAULT: `var(--danger)` },

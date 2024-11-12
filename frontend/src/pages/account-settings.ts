@@ -63,7 +63,7 @@ export class RequestVerify extends TailwindElement {
 
     return html`
       <span
-        class="text-sm text-primary hover:text-indigo-400"
+        class="text-sm text-primary hover:text-primary-400"
         role="button"
         ?disabled=${this.isRequesting}
         @click=${this.requestVerification}

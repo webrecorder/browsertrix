@@ -219,7 +219,7 @@ export class Dashboard extends LiteElement {
                   value: metrics.workflowsQueuedCount,
                   singleLabel: msg("Crawl Workflow Waiting"),
                   pluralLabel: msg("Crawl Workflows Waiting"),
-                  iconProps: { name: "hourglass-split", color: "purple" },
+                  iconProps: { name: "hourglass-split", color: "violet" },
                 })}
                 ${this.renderStat({
                   value: metrics.pageCount,

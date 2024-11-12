@@ -40,7 +40,7 @@
     --sl-color-primary-700: theme(colors.primary.700);
     --sl-color-primary-800: theme(colors.primary.800);
     --sl-color-primary-900: theme(colors.primary.900);
-    --sl-color-primary-950: theme(colors.primary.950);
+    --sl-color-primary-950: theme(colors.primary.900);
 
     /*
      * Typography

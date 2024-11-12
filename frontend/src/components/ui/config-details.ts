@@ -428,7 +428,7 @@ export class ConfigDetails extends LiteElement {
                   const seedUrl = typeof seed === "string" ? seed : seed.url;
                   return html`<li>
                     <a
-                      class="text-primary hover:text-indigo-400"
+                      class="text-primary hover:text-primary-400"
                       href="${seedUrl}"
                       target="_blank"
                       rel="noreferrer"
