@@ -1,5 +1,5 @@
-const { tailwindTransform } = require("postcss-lit");
 const theme = require("@webrecorder/hickory/tokens/tailwind");
+const { tailwindTransform } = require("postcss-lit");
 
 const attributes = require("./config/tailwind/plugins/attributes");
 const containPlugin = require("./config/tailwind/plugins/contain");
