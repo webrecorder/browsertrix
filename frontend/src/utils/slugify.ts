@@ -1,7 +1,11 @@
 import slugify from "slugify";
 
-import { getLocale } from "./localization";
+import { getActiveLanguage } from "@/controllers/localize";
 
 export default function slugifyStrict(value: string) {
-  return slugify(value, { strict: true, lower: true, locale: getLocale() });
+  return slugify(value, {
+    strict: true,
+    lower: true,
+    locale: getActiveLanguage(),
+  });
 }

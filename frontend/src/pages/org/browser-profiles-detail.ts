@@ -14,7 +14,7 @@ import type { BrowserConnectionChange } from "@/features/browser-profiles/profil
 import { pageNav } from "@/layouts/pageHeader";
 import { isApiError } from "@/utils/api";
 import { maxLengthValidator } from "@/utils/form";
-import { formatNumber, getLocale } from "@/utils/localization";
+import { formatNumber } from "@/utils/localization";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { pluralOf } from "@/utils/pluralize";
 
@@ -117,7 +117,7 @@ export class BrowserProfilesDetail extends BtrixElement {
             ${this.profile
               ? html`
                   <sl-format-date
-                    lang=${getLocale()}
+                    lang=${this.localize.activeLanguage}
                     date=${this.profile.created}
                     month="2-digit"
                     day="2-digit"
@@ -132,7 +132,7 @@ export class BrowserProfilesDetail extends BtrixElement {
           <btrix-desc-list-item label=${msg("Last Updated")}>
             ${this.profile
               ? html` <sl-format-date
-                  lang=${getLocale()}
+                  lang=${this.localize.activeLanguage}
                   date=${
                     // NOTE older profiles may not have "modified" data
                     this.profile.modified || this.profile.created

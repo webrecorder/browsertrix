@@ -10,7 +10,8 @@ import {
   type LanguageCode,
 } from "@/types/localization";
 import { getLang, langShortCode } from "@/utils/localization";
-import appState, { AppStateService } from "@/utils/state";
+import { numberFormatter } from "@/utils/number";
+import appState from "@/utils/state";
 
 const { getLocale, setLocale } = configureLocalization({
   sourceLocale,
@@ -19,13 +20,36 @@ const { getLocale, setLocale } = configureLocalization({
     import(`/src/__generated__/locales/${locale}.ts`),
 });
 
+// Shared throughout app:
+let activeLanguage = sourceLocale;
+const defaultNumberFormatter = numberFormatter(activeLanguage);
+const numberFormatters = new Map([[activeLanguage, defaultNumberFormatter]]);
+
+export const localizedNumberFormat = (
+  numberFormatters.get(activeLanguage) || defaultNumberFormatter
+).format;
+
+export function getActiveLanguage() {
+  return activeLanguage;
+}
+
 /**
  * Manage app localization
  */
 export class LocalizeController implements ReactiveController {
   private readonly host: ReactiveControllerHost & EventTarget;
 
-  private activeLocale: LanguageCode = sourceLocale;
+  get activeLanguage() {
+    return activeLanguage;
+  }
+  set activeLanguage(val) {
+    activeLanguage = val;
+  }
+
+  get number() {
+    return (numberFormatters.get(this.activeLanguage) || defaultNumberFormatter)
+      .format;
+  }
 
   get languages() {
     return uniq([
@@ -43,9 +67,7 @@ export class LocalizeController implements ReactiveController {
   hostDisconnected() {}
 
   initLanguage() {
-    this.activeLocale = appState.userLanguage || getLang() || sourceLocale;
-
-    this.setTranslation(this.activeLocale);
+    this.setLanguage(appState.userLanguage || getLang() || sourceLocale);
   }
 
   /**
@@ -59,7 +81,9 @@ export class LocalizeController implements ReactiveController {
       return;
     }
 
-    this.activeLocale = lang;
+    numberFormatters.set(lang, numberFormatter(lang));
+
+    this.activeLanguage = lang;
     this.setTranslation(lang);
   }
 

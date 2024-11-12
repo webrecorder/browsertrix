@@ -22,11 +22,12 @@ import {
 
 import type { OverflowDropdown } from "@/components/ui/overflow-dropdown";
 import { RelativeDuration } from "@/components/ui/relative-duration";
+import { LocalizeController } from "@/controllers/localize";
 import { NavigateController } from "@/controllers/navigate";
 import type { ListWorkflow } from "@/types/crawler";
 import { humanizeSchedule } from "@/utils/cron";
 import { srOnly, truncate } from "@/utils/css";
-import { formatNumber, getLocale } from "@/utils/localization";
+import { formatNumber } from "@/utils/localization";
 import { pluralOf } from "@/utils/pluralize";
 
 const formatNumberCompact = (v: number) =>
@@ -215,6 +216,7 @@ export class WorkflowListItem extends LitElement {
   dropdownMenu!: OverflowDropdown;
 
   private readonly navigate = new NavigateController(this);
+  private readonly localize = new LocalizeController(this);
 
   render() {
     const notSpecified = html`<span class="notSpecified" role="presentation"
@@ -271,7 +273,7 @@ export class WorkflowListItem extends LitElement {
           ${this.safeRender((workflow) => {
             if (workflow.lastCrawlTime && workflow.lastCrawlStartTime) {
               return html`<sl-format-date
-                  lang=${getLocale()}
+                  lang=${this.localize.activeLanguage}
                   date="${workflow.lastRun.toString()}"
                   month="2-digit"
                   day="2-digit"
@@ -365,7 +367,7 @@ export class WorkflowListItem extends LitElement {
           ${this.safeRender(
             (workflow) => html`
               <sl-format-date
-                lang=${getLocale()}
+                lang=${this.localize.activeLanguage}
                 date="${workflow.modified}"
                 month="2-digit"
                 day="2-digit"
