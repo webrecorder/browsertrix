@@ -54,6 +54,7 @@ export default {
         "node_modules/slugify/**/*",
         "node_modules/pretty-ms/**/*",
         "node_modules/parse-ms/**/*",
+        "node_modules/regex-colorize/**/*",
       ],
     }),
     importMapsPlugin({
