@@ -67,7 +67,9 @@ export class LocalizeController implements ReactiveController {
   hostDisconnected() {}
 
   initLanguage() {
-    this.setLanguage(appState.userLanguage || getLang() || sourceLocale);
+    this.setLanguage(
+      appState.userPreferences?.language || getLang() || sourceLocale,
+    );
   }
 
   /**

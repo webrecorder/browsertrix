@@ -447,7 +447,7 @@ export class App extends BtrixElement {
                   </sl-dropdown>`
               : html`
                   ${this.renderSignUpLink()}
-                  ${(translatedLocales as unknown as string[]).length > 1
+                  ${(translatedLocales as unknown as string[]).length > 2
                     ? html`
                         <btrix-user-language-select
                           @sl-select=${this.onSelectLocale}
