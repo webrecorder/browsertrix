@@ -23,7 +23,6 @@ import type {
 } from "@/types/api";
 import type { Browser } from "@/types/browser";
 import { html } from "@/utils/LiteElement";
-import { getLocale } from "@/utils/localization";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { tw } from "@/utils/tailwind";
 
@@ -228,7 +227,7 @@ export class BrowserProfilesList extends BtrixElement {
             `
           : html`
               <div class="border-b border-t py-5">
-                <p class="text-center text-0-500">
+                <p class="text-0-500 text-center">
                   ${msg("No browser profiles yet.")}
                 </p>
               </div>
@@ -280,7 +279,7 @@ export class BrowserProfilesList extends BtrixElement {
             ?disabled=${!data.createdByName}
           >
             <sl-format-date
-              lang=${getLocale()}
+              lang=${this.localize.activeLanguage}
               date=${data.created}
               month="2-digit"
               day="2-digit"
@@ -296,7 +295,7 @@ export class BrowserProfilesList extends BtrixElement {
             ?disabled=${!data.createdByName}
           >
             <sl-format-date
-              lang=${getLocale()}
+              lang=${this.localize.activeLanguage}
               date=${
                 // NOTE older profiles may not have "modified" data
                 data.modified || data.created

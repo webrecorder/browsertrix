@@ -13,14 +13,11 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { CrawlStatus } from "./crawl-status";
 
 import { TailwindElement } from "@/classes/TailwindElement";
+import { LocalizeController } from "@/controllers/localize";
 import { NavigateController } from "@/controllers/navigate";
 import { ReviewStatus, type ArchivedItem } from "@/types/crawler";
 import { renderName } from "@/utils/crawler";
-import {
-  formatISODateString,
-  formatNumber,
-  getLocale,
-} from "@/utils/localization";
+import { formatISODateString, formatNumber } from "@/utils/localization";
 
 export type CheckboxChangeEventDetail = {
   checked: boolean;
@@ -80,6 +77,7 @@ export class ArchivedItemListItem extends TailwindElement {
   private readonly rowLink?: HTMLAnchorElement;
 
   private readonly navigate = new NavigateController(this);
+  private readonly localize = new LocalizeController(this);
 
   render() {
     if (!this.item) return;
@@ -233,7 +231,7 @@ export class ArchivedItemListItem extends TailwindElement {
             hoist
           >
             <sl-format-date
-              lang=${getLocale()}
+              lang=${this.localize.activeLanguage}
               class="truncate"
               date=${this.item.finished}
               month="2-digit"

@@ -14,7 +14,7 @@ import { when } from "lit/directives/when.js";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
 import type { ProxiesAPIResponse, Proxy } from "@/types/crawler";
-import { formatNumber, getLocale } from "@/utils/localization";
+import { formatNumber } from "@/utils/localization";
 import type { OrgData } from "@/utils/orgs";
 
 /**
@@ -624,7 +624,7 @@ export class OrgsList extends BtrixElement {
 
         <btrix-table-cell class="p-2">
           <sl-format-date
-            lang=${getLocale()}
+            lang=${this.localize.activeLanguage}
             class="truncate"
             date=${org.created}
             month="2-digit"

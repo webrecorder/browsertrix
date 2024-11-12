@@ -12,7 +12,7 @@ import { columns } from "@/layouts/columns";
 import { SubscriptionStatus, type BillingPortal } from "@/types/billing";
 import type { OrgData, OrgQuotas } from "@/types/org";
 import { humanizeSeconds } from "@/utils/executionTimeFormatter";
-import { formatNumber, getLocale } from "@/utils/localization";
+import { formatNumber } from "@/utils/localization";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
 
@@ -127,7 +127,7 @@ export class OrgSettingsBilling extends BtrixElement {
                               ${msg(
                                 html`Your plan will be canceled on
                                   <sl-format-date
-                                    lang=${getLocale()}
+                                    lang=${this.localize.activeLanguage}
                                     class="truncate"
                                     date=${org.subscription.futureCancelDate}
                                     month="long"
@@ -280,7 +280,7 @@ export class OrgSettingsBilling extends BtrixElement {
       quotas.maxExecMinutesPerMonth &&
       humanizeSeconds(
         quotas.maxExecMinutesPerMonth * 60,
-        getLocale(),
+        this.localize.activeLanguage,
         undefined,
         "long",
       );

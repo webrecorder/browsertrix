@@ -1,12 +1,5 @@
-import { sourceLocale } from "@/__generated__/locale-codes";
+import { getActiveLanguage } from "@/controllers/localize";
 import type { LanguageCode } from "@/types/localization";
-import appState from "@/utils/state";
-
-export const LOCALE_PARAM_NAME = "locale" as const;
-
-export const getLocale = () => {
-  return appState.userLanguage || getLang() || sourceLocale;
-};
 
 /**
  * Get time zone short name from locales
@@ -28,19 +21,19 @@ export const pluralize = (
   number: number,
   strings: { [k in Intl.LDMLPluralRule]: string },
   options?: Intl.PluralRulesOptions,
-) => strings[new Intl.PluralRules(getLocale(), options).select(number)];
+) => strings[new Intl.PluralRules(getActiveLanguage(), options).select(number)];
 
 export const formatNumber = (
   number: number,
   options?: Intl.NumberFormatOptions,
-) => new Intl.NumberFormat(getLocale(), options).format(number);
+) => new Intl.NumberFormat(getActiveLanguage(), options).format(number);
 
 export const formatISODateString = (
   date: string, // ISO string
   options?: Intl.DateTimeFormatOptions,
 ) =>
   new Date(date.endsWith("Z") ? date : `${date}Z`).toLocaleDateString(
-    getLocale(),
+    getActiveLanguage(),
     {
       month: "2-digit",
       day: "2-digit",

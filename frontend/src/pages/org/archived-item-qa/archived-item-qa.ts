@@ -45,7 +45,7 @@ import {
   type finishedCrawlStates,
 } from "@/utils/crawler";
 import { maxLengthValidator } from "@/utils/form";
-import { formatISODateString, getLocale } from "@/utils/localization";
+import { formatISODateString } from "@/utils/localization";
 import { tw } from "@/utils/tailwind";
 
 const DEFAULT_PAGE_SIZE = 100;
@@ -768,7 +768,7 @@ export class ArchivedItemQA extends BtrixElement {
         (commentCount) => html`
           <btrix-details open>
             <span slot="title">
-              ${msg(str`Comments (${commentCount.toLocaleString()})`)}
+              ${msg(str`Comments (${this.localize.number(commentCount)})`)}
             </span>
             <ul>
               ${this.page?.notes?.map(
@@ -896,7 +896,7 @@ export class ArchivedItemQA extends BtrixElement {
             this.page,
             (page) => html`
               <sl-format-date
-                lang=${getLocale()}
+                lang=${this.localize.activeLanguage}
                 class="font-monostyle text-xs text-neutral-500"
                 date=${page.ts}
                 month="2-digit"

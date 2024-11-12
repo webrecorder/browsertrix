@@ -24,10 +24,11 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { TailwindElement } from "@/classes/TailwindElement";
 import type { OverflowDropdown } from "@/components/ui/overflow-dropdown";
 import { RelativeDuration } from "@/components/ui/relative-duration";
+import { LocalizeController } from "@/controllers/localize";
 import { NavigateController } from "@/controllers/navigate";
 import type { Crawl } from "@/types/crawler";
 import { renderName } from "@/utils/crawler";
-import { formatNumber, getLocale } from "@/utils/localization";
+import { formatNumber } from "@/utils/localization";
 import { pluralOf } from "@/utils/pluralize";
 
 const formatNumberCompact = (v: number) =>
@@ -71,6 +72,7 @@ export class CrawlListItem extends TailwindElement {
   dropdownMenu!: OverflowDropdown;
 
   private readonly navigate = new NavigateController(this);
+  private readonly localize = new LocalizeController(this);
 
   render() {
     if (!this.crawl) return;
@@ -82,7 +84,7 @@ export class CrawlListItem extends TailwindElement {
           ${this.safeRender(
             (crawl) => html`
               <sl-format-date
-                lang=${getLocale()}
+                lang=${this.localize.activeLanguage}
                 date=${crawl.started}
                 month="2-digit"
                 day="2-digit"
@@ -153,7 +155,7 @@ export class CrawlListItem extends TailwindElement {
                 ${this.safeRender(
                   (crawl) => html`
                     <sl-format-date
-                      lang=${getLocale()}
+                      lang=${this.localize.activeLanguage}
                       date=${crawl.started}
                       month="2-digit"
                       day="2-digit"
@@ -170,7 +172,7 @@ export class CrawlListItem extends TailwindElement {
             crawl.finished
               ? html`
                   <sl-format-date
-                    lang=${getLocale()}
+                    lang=${this.localize.activeLanguage}
                     date=${crawl.finished}
                     month="2-digit"
                     day="2-digit"

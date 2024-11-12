@@ -308,9 +308,11 @@ export class CollectionItemsDialog extends BtrixElement {
               () =>
                 this.showOnlyInCollection
                   ? msg(
-                      str`Crawls in Collection (${data!.total.toLocaleString()})`,
+                      str`Crawls in Collection (${this.localize.number(data!.total)})`,
                     )
-                  : msg(str`All Workflows (${data!.total.toLocaleString()})`),
+                  : msg(
+                      str`All Workflows (${this.localize.number(data!.total)})`,
+                    ),
               () => msg("Loading..."),
             )}
           </div>
@@ -357,10 +359,10 @@ export class CollectionItemsDialog extends BtrixElement {
               () =>
                 this.showOnlyInCollection
                   ? msg(
-                      str`Uploads in Collection (${this.uploads!.total.toLocaleString()})`,
+                      str`Uploads in Collection (${this.localize.number(this.uploads!.total)})`,
                     )
                   : msg(
-                      str`All Uploads (${this.uploads!.total.toLocaleString()})`,
+                      str`All Uploads (${this.localize.number(this.uploads!.total)})`,
                     ),
               () => msg("Loading..."),
             )}

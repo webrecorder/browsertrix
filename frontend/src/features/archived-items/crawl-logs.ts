@@ -2,9 +2,9 @@ import { localized, msg } from "@lit/localize";
 import { css, html, LitElement } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
+import { LocalizeController } from "@/controllers/localize";
 import type { APIPaginatedList } from "@/types/api";
 import { truncate } from "@/utils/css";
-import { getLocale } from "@/utils/localization";
 
 export type CrawlLog = {
   timestamp: string;
@@ -95,6 +95,8 @@ export class CrawlLogs extends LitElement {
       })
     | null = null;
 
+  private readonly localize = new LocalizeController(this);
+
   render() {
     if (!this.logs) return;
     return html`<btrix-numbered-list>
@@ -124,7 +126,7 @@ export class CrawlLogs extends LitElement {
               <div class="row">
                 <div>
                   <sl-format-date
-                    lang=${getLocale()}
+                    lang=${this.localize.activeLanguage}
                     date=${log.timestamp}
                     month="2-digit"
                     day="2-digit"

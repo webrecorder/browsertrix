@@ -18,7 +18,7 @@ import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { Collection, CollectionSearchValues } from "@/types/collection";
 import type { UnderlyingFunction } from "@/types/utils";
 import { isApiError } from "@/utils/api";
-import { formatNumber, getLocale } from "@/utils/localization";
+import { formatNumber } from "@/utils/localization";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
 import noCollectionsImg from "~assets/images/no-collections-found.webp";
@@ -544,7 +544,7 @@ export class CollectionsList extends BtrixElement {
       </btrix-table-cell>
       <btrix-table-cell>
         <sl-format-date
-          lang=${getLocale()}
+          lang=${this.localize.activeLanguage}
           date=${col.modified}
           month="2-digit"
           day="2-digit"

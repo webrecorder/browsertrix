@@ -1,8 +1,10 @@
 import { parseCron } from "@cheap-glitch/mi-cron";
 import { msg, str } from "@lit/localize";
 
-import { getLocale } from "./localization";
-import * as numberUtils from "./number";
+import {
+  getActiveLanguage,
+  localizedNumberFormat,
+} from "@/controllers/localize";
 
 export const getNextDate = parseCron.nextDate;
 
@@ -30,12 +32,13 @@ export function humanizeNextDate(
   schedule: string,
   options: { length?: "short" } = {},
 ): string {
+  const locale = getActiveLanguage();
   const nextDate = parseCron.nextDate(schedule);
 
   if (!nextDate) return "";
 
   if (options.length === "short") {
-    return nextDate.toLocaleString(undefined, {
+    return nextDate.toLocaleString(locale, {
       month: "numeric",
       day: "numeric",
       year: "numeric",
@@ -44,7 +47,7 @@ export function humanizeNextDate(
     });
   }
 
-  return nextDate.toLocaleString(undefined, {
+  return nextDate.toLocaleString(locale, {
     weekday: "long",
     month: "long",
     day: "numeric",
@@ -63,6 +66,7 @@ export function humanizeSchedule(
   schedule: string,
   options: { length?: "short" } = {},
 ): string {
+  const locale = getActiveLanguage();
   const interval = getScheduleInterval(schedule);
   const parsed = parseCron(schedule);
   if (!parsed) {
@@ -71,7 +75,7 @@ export function humanizeSchedule(
   }
   const { days } = parsed;
   const nextDate = parseCron.nextDate(schedule)!;
-  const formattedWeekDay = nextDate.toLocaleString(undefined, {
+  const formattedWeekDay = nextDate.toLocaleString(locale, {
     weekday: "long",
   });
 
@@ -80,7 +84,7 @@ export function humanizeSchedule(
   if (options.length === "short") {
     switch (interval) {
       case "daily": {
-        const formattedTime = nextDate.toLocaleString(undefined, {
+        const formattedTime = nextDate.toLocaleString(locale, {
           minute: "numeric",
           hour: "numeric",
         });
@@ -91,9 +95,8 @@ export function humanizeSchedule(
         intervalMsg = msg(str`Every ${formattedWeekDay}`);
         break;
       case "monthly": {
-        const { format } = numberUtils.numberFormatter(getLocale());
         intervalMsg = msg(
-          str`Monthly on the ${format(days[0], { ordinal: true })}`,
+          str`Monthly on the ${localizedNumberFormat(days[0], { ordinal: true })}`,
         );
 
         break;
@@ -103,7 +106,7 @@ export function humanizeSchedule(
         break;
     }
   } else {
-    const formattedTime = nextDate.toLocaleString(undefined, {
+    const formattedTime = nextDate.toLocaleString(locale, {
       minute: "numeric",
       hour: "numeric",
       timeZoneName: "short",

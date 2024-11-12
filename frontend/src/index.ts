@@ -35,7 +35,6 @@ import {
   type TranslatedLocaleEnum,
 } from "@/types/localization";
 import { type AppSettings } from "@/utils/app";
-import { LOCALE_PARAM_NAME } from "@/utils/localization";
 import brandLockupColor from "~assets/brand/browsertrix-lockup-color.svg";
 
 import "./shoelace";
@@ -889,9 +888,9 @@ export class App extends BtrixElement {
   onSelectLocale(e: SlSelectEvent) {
     const locale = e.detail.item.value as TranslatedLocaleEnum;
 
-    const url = new URL(window.location.href);
-    url.searchParams.set(LOCALE_PARAM_NAME, locale);
-    window.history.pushState(null, "", url.toString());
+    if (locale !== this.appState.userPreferences?.language) {
+      AppStateService.partialUpdateUserPreferences({ language: locale });
+    }
   }
 
   onLogOut(event: CustomEvent<{ redirect?: boolean } | null>) {

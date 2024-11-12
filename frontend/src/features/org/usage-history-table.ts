@@ -4,7 +4,6 @@ import { customElement } from "lit/decorators.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
-import { getLocale } from "@/utils/localization";
 
 @localized()
 @customElement("btrix-usage-history-table")
@@ -149,7 +148,7 @@ export class UsageHistoryTable extends BtrixElement {
         const tableRows = [
           html`
             <sl-format-date
-              lang=${getLocale()}
+              lang=${this.localize.activeLanguage}
               date="${mY}-15T00:00:00.000Z"
               time-zone="utc"
               month="long"

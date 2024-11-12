@@ -19,7 +19,7 @@ import type {
 import type { Collection } from "@/types/collection";
 import type { ArchivedItem, Crawl, Upload } from "@/types/crawler";
 import type { CrawlState } from "@/types/crawlState";
-import { formatNumber, getLocale } from "@/utils/localization";
+import { formatNumber } from "@/utils/localization";
 import { pluralOf } from "@/utils/pluralize";
 
 const ABORT_REASON_THROTTLE = "throttled";
@@ -488,7 +488,7 @@ export class CollectionDetail extends BtrixElement {
           msg("Last Updated"),
           (col) =>
             html`<sl-format-date
-              lang=${getLocale()}
+              lang=${this.localize.activeLanguage}
               date=${col.modified}
               month="2-digit"
               day="2-digit"

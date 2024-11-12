@@ -5,6 +5,7 @@ import { getAppSettings } from "./app";
 import { getLang } from "./localization";
 
 import type { Tags } from "@/components/ui/tag-input";
+import { localizedNumberFormat } from "@/controllers/localize";
 import {
   ScopeType,
   type Profile,
@@ -38,7 +39,7 @@ export function defaultLabel(value: unknown): string {
     return msg("Default: Unlimited");
   }
   if (typeof value === "number") {
-    return msg(str`Default: ${value.toLocaleString()}`);
+    return msg(str`Default: ${localizedNumberFormat(value)}`);
   }
   if (value) {
     return msg(str`Default: ${value}`);

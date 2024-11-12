@@ -30,7 +30,7 @@ import {
   renderName,
 } from "@/utils/crawler";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
-import { formatNumber, getLocale } from "@/utils/localization";
+import { formatNumber } from "@/utils/localization";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
@@ -156,7 +156,7 @@ export class ArchivedItemDetail extends BtrixElement {
     if (!this.item) return;
 
     return html`<sl-format-date
-      lang=${getLocale()}
+      lang=${this.localize.activeLanguage}
       date=${this.item.finished}
       month="2-digit"
       day="2-digit"
@@ -775,7 +775,7 @@ export class ArchivedItemDetail extends BtrixElement {
             : html`
                 <btrix-desc-list-item label=${msg("Start Time")}>
                   <sl-format-date
-                    lang=${getLocale()}
+                    lang=${this.localize.activeLanguage}
                     date=${this.item!.started}
                     month="2-digit"
                     day="2-digit"
