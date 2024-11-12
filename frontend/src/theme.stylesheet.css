@@ -338,6 +338,11 @@
 }
 
 @layer components {
+  /* Hide asterisk (`*`) required indicator */
+  sl-input.hide-required-content {
+    --sl-input-required-content-color: transparent;
+  }
+
   sl-input.input-font-monostyle::part(input) {
     @apply font-monostyle;
   }

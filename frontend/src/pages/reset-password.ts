@@ -1,10 +1,10 @@
 import { localized, msg, str } from "@lit/localize";
+import type { SlInput } from "@shoelace-style/shoelace";
 import type { ZxcvbnResult } from "@zxcvbn-ts/core";
 import { customElement, property, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
 
-import type { Input as BtrixInput } from "@/components/ui/input";
 import type { UnderlyingFunction } from "@/types/utils";
 import type { ViewState } from "@/utils/APIRouter";
 import LiteElement, { html } from "@/utils/LiteElement";
@@ -50,7 +50,7 @@ export class ResetPassword extends LiteElement {
         <div class="md:rounded-lg md:border md:bg-white md:p-10 md:shadow-lg">
           <form @submit=${this.onSubmit} aria-describedby="formError">
             <div class="mb-5">
-              <btrix-input
+              <sl-input
                 id="password"
                 name="password"
                 type="password"
@@ -59,12 +59,13 @@ export class ResetPassword extends LiteElement {
                 minlength="8"
                 autocomplete="new-password"
                 passwordToggle
+                class="hide-required-content"
                 required
                 @input=${this.onPasswordInput as UnderlyingFunction<
                   typeof this.onPasswordInput
                 >}
               >
-              </btrix-input>
+              </sl-input>
               <p class="mt-2 text-gray-500">
                 ${msg(
                   str`Choose a strong password between ${PASSWORD_MINLENGTH}-${PASSWORD_MAXLENGTH} characters.`,
@@ -110,7 +111,7 @@ export class ResetPassword extends LiteElement {
   `;
 
   private readonly onPasswordInput = debounce(150)(async (e: InputEvent) => {
-    const { value } = e.target as BtrixInput;
+    const { value } = e.target as SlInput;
     if (!value || value.length < 4) {
       this.pwStrengthResults = null;
       return;

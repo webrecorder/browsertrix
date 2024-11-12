@@ -1,10 +1,10 @@
 import { localized, msg, str } from "@lit/localize";
+import type { SlInput } from "@shoelace-style/shoelace";
 import type { ZxcvbnResult } from "@zxcvbn-ts/core";
 import { customElement, property, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
 
-import type { Input as BtrixInput } from "@/components/ui/input";
 import type { UserOrgInviteInfo, UserRegisterResponseData } from "@/types/user";
 import type { UnderlyingFunction } from "@/types/utils";
 import AuthService from "@/utils/AuthService";
@@ -97,20 +97,21 @@ export class SignUpForm extends LiteElement {
                 />
               `
             : html`
-                <btrix-input
+                <sl-input
                   id="email"
                   name="email"
                   type="email"
                   label=${msg("Enter your email")}
                   placeholder=${msg("you@email.com")}
                   autocomplete="email"
+                  class="hide-required-content"
                   required
                 >
-                </btrix-input>
+                </sl-input>
               `}
         </div>
         <div class="mb-5">
-          <btrix-input
+          <sl-input
             id="password"
             name="password"
             type="password"
@@ -118,12 +119,13 @@ export class SignUpForm extends LiteElement {
             minlength=${PASSWORD_MINLENGTH}
             autocomplete="new-password"
             passwordToggle
+            class="hide-required-content"
             required
             @input=${this.onPasswordInput as UnderlyingFunction<
               typeof this.onPasswordInput
             >}
           >
-          </btrix-input>
+          </sl-input>
           <p class="mt-2 text-xs text-neutral-500">
             ${msg(
               str`Choose a strong password between ${PASSWORD_MINLENGTH}–${PASSWORD_MAXLENGTH} characters.`,
@@ -132,15 +134,16 @@ export class SignUpForm extends LiteElement {
           ${when(this.pwStrengthResults, this.renderPasswordStrength)}
         </div>
         <div class="mb-5">
-          <btrix-input
+          <sl-input
             id="name"
             name="name"
             label=${msg("Your name")}
             autocomplete="nickname"
             minlength="2"
+            class="hide-required-content"
             required
           >
-          </btrix-input>
+          </sl-input>
           <p class="mt-2 text-xs text-neutral-500">
             ${msg(
               "Your full name, nickname, or another name that org collaborators can see.",
@@ -172,7 +175,7 @@ export class SignUpForm extends LiteElement {
   `;
 
   private readonly onPasswordInput = debounce(150)(async (e: InputEvent) => {
-    const { value } = e.target as BtrixInput;
+    const { value } = e.target as SlInput;
     if (!value || value.length < 4) {
       this.pwStrengthResults = null;
       return;

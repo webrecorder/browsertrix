@@ -253,27 +253,29 @@ export class LogInPage extends BtrixElement {
     return html`
       <form @submit=${this.onSubmitLogIn} aria-describedby="formError">
         <div class="mb-5">
-          <btrix-input
+          <sl-input
             id="email"
             name="username"
             label=${msg("Email")}
             type="email"
             autocomplete="username"
+            class="hide-required-content"
             required
           >
-          </btrix-input>
+          </sl-input>
         </div>
         <div class="mb-5">
-          <btrix-input
+          <sl-input
             id="password"
             name="password"
             label=${msg("Password")}
             type="password"
             autocomplete="current-password"
             passwordToggle
+            class="hide-required-content"
             required
           >
-          </btrix-input>
+          </sl-input>
         </div>
 
         ${formError}
@@ -315,15 +317,16 @@ export class LogInPage extends BtrixElement {
     return html`
       <form @submit=${this.onSubmitResetPassword} aria-describedby="formError">
         <div class="mb-5">
-          <btrix-input
+          <sl-input
             id="email"
             name="email"
             type="email"
             label="${msg("Your email address")}"
             autocomplete="username"
+            class="hide-required-content"
             required
           >
-          </btrix-input>
+          </sl-input>
         </div>
 
         ${formError}
