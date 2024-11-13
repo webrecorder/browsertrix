@@ -1,7 +1,7 @@
 import { localized, msg, str } from "@lit/localize";
 import type { SlInput } from "@shoelace-style/shoelace";
 import type { ZxcvbnResult } from "@zxcvbn-ts/core";
-import { customElement, property, state } from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
 
@@ -28,6 +28,9 @@ export class ResetPassword extends LiteElement {
   @state()
   private isSubmitting = false;
 
+  @query('sl-input[name="newPassword"]')
+  private readonly newPassword?: SlInput | null;
+
   protected firstUpdated() {
     void PasswordService.setOptions();
   }
@@ -52,16 +55,15 @@ export class ResetPassword extends LiteElement {
             <div class="mb-5">
               <sl-input
                 id="password"
-                name="password"
+                name="newPassword"
                 type="password"
                 label="${msg("Enter new password")}"
-                help-text=${msg("Must be between 8-64 characters")}
                 minlength="8"
                 autocomplete="new-password"
                 passwordToggle
                 class="hide-required-content"
                 required
-                @input=${this.onPasswordInput as UnderlyingFunction<
+                @sl-input=${this.onPasswordInput as UnderlyingFunction<
                   typeof this.onPasswordInput
                 >}
               >
@@ -110,8 +112,8 @@ export class ResetPassword extends LiteElement {
     </div>
   `;
 
-  private readonly onPasswordInput = debounce(150)(async (e: InputEvent) => {
-    const { value } = e.target as SlInput;
+  private readonly onPasswordInput = debounce(150)(async () => {
+    const value = this.newPassword?.value;
     if (!value || value.length < 4) {
       this.pwStrengthResults = null;
       return;
@@ -124,7 +126,7 @@ export class ResetPassword extends LiteElement {
     this.isSubmitting = true;
 
     const formData = new FormData(event.target as HTMLFormElement);
-    const password = formData.get("password") as string;
+    const password = formData.get("newPassword") as string;
 
     const resp = await fetch("/api/auth/reset-password", {
       method: "POST",
