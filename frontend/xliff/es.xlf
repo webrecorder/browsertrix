@@ -3235,9 +3235,6 @@
       <trans-unit id="sf151c44c3a52a448">
         <source>Enter new password</source>
       </trans-unit>
-      <trans-unit id="sf6c0a694575fb0a6">
-        <source>Must be between 8-64 characters</source>
-      </trans-unit>
       <trans-unit id="s8daf047a917f4cc4">
         <source>Choose a strong password between <x equiv-text="${PASSWORD_MINLENGTH}" id="0"/>-<x equiv-text="${PASSWORD_MAXLENGTH}" id="1"/> characters.</source>
       </trans-unit>
