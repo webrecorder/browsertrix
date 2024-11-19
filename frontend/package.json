@@ -87,7 +87,7 @@
   "scripts": {
     "prepare": "cd .. && husky install frontend/.husky",
     "postinstall": "del-cli ./node_modules/.cache/webpack",
-    "test": "web-test-runner \"src/**/*.test.{ts,js}\" --playwright --browsers chromium",
+    "test": "web-test-runner \"src/**/*.test.{ts,js}\"",
     "prebuild": "del-cli ./dist",
     "build": "webpack --config webpack.prod.js",
     "build-dev": "webpack --mode development",
@@ -122,7 +122,7 @@
     "@open-wc/testing": "^3.2.0",
     "@playwright/test": "1.32.1",
     "@web/test-runner": "^0.13.22",
-    "@web/test-runner-playwright": "^0.8.8",
+    "@web/test-runner-playwright": "^0.11.0",
     "chromium": "^3.0.3"
   },
   "lint-staged": {
