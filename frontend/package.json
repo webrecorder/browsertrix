@@ -29,6 +29,7 @@
     "broadcastchannel-polyfill": "^1.0.1",
     "clsx": "^2.1.0",
     "color": "^4.0.1",
+    "construct-style-sheets-polyfill": "^3.1.0",
     "copy-webpack-plugin": "^12.0.2",
     "css-loader": "^6.3.0",
     "date-fns": "^3.6.0",

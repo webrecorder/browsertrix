@@ -10,6 +10,7 @@ import { when } from "lit/directives/when.js";
 import isEqual from "lodash/fp/isEqual";
 
 import "broadcastchannel-polyfill";
+import "construct-style-sheets-polyfill";
 import "./utils/polyfills";
 
 import type { OrgTab } from "./pages/org";
