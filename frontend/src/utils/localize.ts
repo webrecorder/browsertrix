@@ -39,9 +39,9 @@ export class Localize {
   ]);
 
   get activeLanguage() {
-    return (document.documentElement.lang ||
-      getBrowserLang() ||
-      sourceLocale) as LanguageCode;
+    // Use html `lang` as the source of truth since that's
+    // the attribute watched by Shoelace
+    return document.documentElement.lang as LanguageCode;
   }
   private set activeLanguage(lang: LanguageCode) {
     // Setting the `lang` attribute will automatically localize
@@ -57,7 +57,7 @@ export class Localize {
   }
 
   constructor(initialLanguage: LanguageCode = sourceLocale) {
-    this.activeLanguage = initialLanguage;
+    this.setLanguage(initialLanguage);
   }
 
   initLanguage() {
@@ -73,7 +73,7 @@ export class Localize {
     const { error } = languageCodeSchema.safeParse(lang);
 
     if (error) {
-      console.debug("Error setting language:", error);
+      console.error("Error setting language:", error.issues[0]);
       return;
     }
 

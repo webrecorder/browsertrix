@@ -117,7 +117,7 @@ export class CollectionsAdd extends BtrixElement {
           : this.emptyText
             ? html`
                 <div class="mb-2">
-                  <p class="text-center text-0-500">${this.emptyText}</p>
+                  <p class="text-0-500 text-center">${this.emptyText}</p>
                 </div>
               `
             : "",
