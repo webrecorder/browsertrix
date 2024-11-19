@@ -1365,6 +1365,13 @@ class OrgReadOnlyUpdate(BaseModel):
 
 
 # ============================================================================
+class OrgListPublicCollectionsUpdate(BaseModel):
+    """Organization listPublicCollections update"""
+
+    listPublicCollections: bool
+
+
+# ============================================================================
 class OrgWebhookUrls(BaseModel):
     """Organization webhook URLs"""
 
@@ -1432,6 +1439,8 @@ class OrgOut(BaseMongoModel):
     allowedProxies: list[str] = []
     crawlingDefaults: Optional[CrawlConfigDefaults] = None
 
+    listPublicCollections: bool = False
+
 
 # ============================================================================
 class Organization(BaseMongoModel):
@@ -1486,6 +1495,8 @@ class Organization(BaseMongoModel):
     allowSharedProxies: bool = False
     allowedProxies: list[str] = []
     crawlingDefaults: Optional[CrawlConfigDefaults] = None
+
+    listPublicCollections: bool = False
 
     def is_owner(self, user):
         """Check if user is owner"""
