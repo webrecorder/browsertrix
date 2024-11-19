@@ -257,7 +257,7 @@ export class AccountSettings extends LiteElement {
             name="password"
             label=${msg("Enter your current password")}
             type="password"
-            autocomplete="off"
+            autocomplete="current-password"
             password-toggle
             required
           ></sl-input>
