@@ -350,7 +350,7 @@
         <source>Add “<x equiv-text="${this.inputValue.toLocaleLowerCase()}" id="0"/>”</source>
       </trans-unit>
       <trans-unit id="s1eee55ca9401677a">
-        <source>+<x equiv-text="${this.total}" id="0"/> URLs</source>
+        <source>+<x equiv-text="${this.localize.number(this.total)}" id="0"/> URLs</source>
       </trans-unit>
       <trans-unit id="sfff90c46fdba31db">
         <source>(unnamed item)</source>
