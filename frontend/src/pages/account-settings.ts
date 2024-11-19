@@ -3,7 +3,7 @@ import type { SlInput, SlSelectEvent } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import type { ZxcvbnResult } from "@zxcvbn-ts/core";
 import { nothing, type PropertyValues } from "lit";
-import { customElement, property, queryAsync, state } from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
 import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
@@ -112,8 +112,8 @@ export class AccountSettings extends LiteElement {
   @state()
   private pwStrengthResults: null | ZxcvbnResult = null;
 
-  @queryAsync('sl-input[name="password"]')
-  private readonly passwordInput?: Promise<SlInput | null>;
+  @query('sl-input[name="newPassword"]')
+  private readonly newPassword?: SlInput | null;
 
   private get activeTab() {
     return this.tab && Object.values(Tab).includes(this.tab as unknown as Tab)
@@ -257,7 +257,7 @@ export class AccountSettings extends LiteElement {
             name="password"
             label=${msg("Enter your current password")}
             type="password"
-            autocomplete="off"
+            autocomplete="current-password"
             password-toggle
             required
           ></sl-input>
@@ -269,7 +269,7 @@ export class AccountSettings extends LiteElement {
             password-toggle
             minlength="8"
             required
-            @input=${this.onPasswordInput as UnderlyingFunction<
+            @sl-input=${this.onPasswordInput as UnderlyingFunction<
               typeof this.onPasswordInput
             >}
           ></sl-input>
@@ -375,8 +375,8 @@ export class AccountSettings extends LiteElement {
     </div>
   `;
 
-  private readonly onPasswordInput = debounce(150)(async (e: InputEvent) => {
-    const { value } = e.target as SlInput;
+  private readonly onPasswordInput = debounce(150)(async () => {
+    const value = this.newPassword?.value;
     if (!value || value.length < 4) {
       this.pwStrengthResults = null;
       return;

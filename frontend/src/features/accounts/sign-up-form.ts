@@ -1,7 +1,7 @@
 import { localized, msg, str } from "@lit/localize";
 import type { SlInput } from "@shoelace-style/shoelace";
 import type { ZxcvbnResult } from "@zxcvbn-ts/core";
-import { customElement, property, state } from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
 
@@ -53,6 +53,9 @@ export class SignUpForm extends LiteElement {
 
   @state()
   private showLoginLink = false;
+
+  @query('sl-input[name="password"]')
+  private readonly password?: SlInput | null;
 
   protected firstUpdated() {
     void PasswordService.setOptions();
@@ -121,7 +124,7 @@ export class SignUpForm extends LiteElement {
             passwordToggle
             class="hide-required-content"
             required
-            @input=${this.onPasswordInput as UnderlyingFunction<
+            @sl-input=${this.onPasswordInput as UnderlyingFunction<
               typeof this.onPasswordInput
             >}
           >
@@ -174,8 +177,8 @@ export class SignUpForm extends LiteElement {
     </div>
   `;
 
-  private readonly onPasswordInput = debounce(150)(async (e: InputEvent) => {
-    const { value } = e.target as SlInput;
+  private readonly onPasswordInput = debounce(150)(async () => {
+    const value = this.password?.value;
     if (!value || value.length < 4) {
       this.pwStrengthResults = null;
       return;
