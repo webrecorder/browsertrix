@@ -28,7 +28,6 @@ import { type ArchivedItem, type ArchivedItemPage } from "@/types/crawler";
 import type { QARun } from "@/types/qa";
 import { isActive, isSuccessfullyFinished } from "@/utils/crawler";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
-import { formatNumber } from "@/utils/localize";
 import { pluralOf } from "@/utils/pluralize";
 
 type QAStatsThreshold = {
@@ -526,7 +525,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
           <div class="text-sm font-normal">
             ${qaRun.state === "starting"
               ? msg("Analysis starting")
-              : `${formatNumber(qaRun.stats.done)}/${formatNumber(qaRun.stats.found)}
+              : `${this.localize.number(qaRun.stats.done)}/${this.localize.number(qaRun.stats.found)}
                 ${pluralOf("pages", qaRun.stats.found)} ${msg("analyzed")}`}
           </div>
 
@@ -655,7 +654,8 @@ export class ArchivedItemDetailQA extends BtrixElement {
                           : `${threshold ? +threshold.lowerBoundary * 100 : 0}-${+qaStatsThresholds[idx + 1].lowerBoundary * 100 || 100}%`}
                       ${msg("match", { desc: "label for match percentage" })}
                       <br />
-                      ${formatNumber(bar.count)} ${pluralOf("pages", bar.count)}
+                      ${this.localize.number(bar.count)}
+                      ${pluralOf("pages", bar.count)}
                     </div>
                   </div>
                 </btrix-meter-bar>
@@ -673,7 +673,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
                 <div class="text-center">
                   ${remainderBarLabel}
                   <div class="text-xs opacity-80">
-                    ${formatNumber(remainingPageCount)}
+                    ${this.localize.number(remainingPageCount)}
                     ${pluralOf("pages", remainingPageCount)}
                   </div>
                 </div>

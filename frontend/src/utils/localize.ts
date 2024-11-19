@@ -21,18 +21,31 @@ const { getLocale, setLocale } = configureLocalization({
     import(`/src/__generated__/locales/${locale}.ts`),
 });
 
-const defaultNumberFormatter = numberFormatter(sourceLocale);
+const defaultDateOptions: Intl.DateTimeFormatOptions = {
+  year: "2-digit",
+  month: "2-digit",
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+};
 
 export class Localize {
-  private readonly numberFormatters = new Map([
-    [sourceLocale, defaultNumberFormatter],
+  // Cache default formatters
+  private readonly numberFormatter = new Map([
+    [sourceLocale, numberFormatter(sourceLocale)],
+  ]);
+  private readonly dateFormatter = new Map([
+    [sourceLocale, new Intl.DateTimeFormat(sourceLocale, defaultDateOptions)],
   ]);
 
   get activeLanguage() {
-    return (document.documentElement.lang as LanguageCode) || sourceLocale;
+    return (document.documentElement.lang ||
+      getBrowserLang() ||
+      sourceLocale) as LanguageCode;
   }
   private set activeLanguage(lang: LanguageCode) {
-    // Setting the `lang` attribute will automatically localize all Shoelace elements
+    // Setting the `lang` attribute will automatically localize
+    // all Shoelace elements and `BtrixElement`s
     document.documentElement.lang = lang;
   }
 
@@ -64,18 +77,47 @@ export class Localize {
       return;
     }
 
-    this.numberFormatters.set(lang, numberFormatter(lang));
+    if (!this.numberFormatter.get(lang)) {
+      this.numberFormatter.set(lang, numberFormatter(lang));
+    }
+    if (!this.dateFormatter.get(lang)) {
+      this.dateFormatter.set(
+        lang,
+        new Intl.DateTimeFormat(lang, defaultDateOptions),
+      );
+    }
 
     this.activeLanguage = lang;
-
     this.setTranslation(lang);
   }
 
-  number(...args: Parameters<(typeof defaultNumberFormatter)["format"]>) {
-    return (
-      this.numberFormatters.get(this.activeLanguage) || defaultNumberFormatter
-    ).format(...args);
-  }
+  readonly number = (
+    n: number,
+    opts?: Intl.NumberFormatOptions & { ordinal?: boolean },
+  ) => {
+    if (isNaN(n)) return "";
+
+    let formatter = this.numberFormatter.get(localize.activeLanguage);
+
+    if ((opts && !opts.ordinal) || !formatter) {
+      formatter = new Intl.NumberFormat(localize.activeLanguage, opts);
+    }
+
+    return formatter.format(n, opts);
+  };
+
+  // Custom date formatter that takes missing `Z` into account
+  readonly date = (d: Date | string, opts?: Intl.DateTimeFormatOptions) => {
+    const date = new Date(d instanceof Date || d.endsWith("Z") ? d : `${d}Z`);
+
+    let formatter = this.dateFormatter.get(localize.activeLanguage);
+
+    if (opts || !formatter) {
+      formatter = new Intl.DateTimeFormat(localize.activeLanguage, opts);
+    }
+
+    return formatter.format(date);
+  };
 
   private setTranslation(lang: LanguageCode) {
     if (
@@ -90,27 +132,6 @@ export class Localize {
 const localize = new Localize(sourceLocale);
 
 export default localize;
-
-export const formatNumber = (
-  number: number,
-  options?: Intl.NumberFormatOptions,
-) => new Intl.NumberFormat(localize.activeLanguage, options).format(number);
-
-export const formatISODateString = (
-  date: string, // ISO string
-  options?: Intl.DateTimeFormatOptions,
-) =>
-  new Date(date.endsWith("Z") ? date : `${date}Z`).toLocaleDateString(
-    localize.activeLanguage,
-    {
-      month: "2-digit",
-      day: "2-digit",
-      year: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      ...options,
-    },
-  );
 
 function langShortCode(locale: string) {
   return locale.split("-")[0] as LanguageCode;

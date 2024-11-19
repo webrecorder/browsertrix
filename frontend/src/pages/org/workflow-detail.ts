@@ -28,7 +28,6 @@ import {
   isActive,
 } from "@/utils/crawler";
 import { humanizeSchedule } from "@/utils/cron";
-import { formatNumber } from "@/utils/localize";
 import { isArchivingDisabled } from "@/utils/orgs";
 
 const SECTIONS = ["crawls", "watch", "settings", "logs"] as const;
@@ -105,15 +104,6 @@ export class WorkflowDetail extends BtrixElement {
 
   @state()
   private filterBy: Partial<Record<keyof Crawl, string | CrawlState[]>> = {};
-
-  private readonly dateFormatter = new Intl.DateTimeFormat(
-    this.localize.activeLanguage,
-    {
-      year: "numeric",
-      month: "numeric",
-      day: "numeric",
-    },
-  );
 
   private timerId?: number;
 
@@ -794,8 +784,13 @@ export class WorkflowDetail extends BtrixElement {
         )}
         ${this.renderDetailItem(msg("Created By"), (workflow) =>
           msg(
-            str`${workflow.createdByName} on ${this.dateFormatter.format(
+            str`${workflow.createdByName} on ${this.localize.date(
               new Date(workflow.created),
+              {
+                year: "numeric",
+                month: "numeric",
+                day: "numeric",
+              },
             )}`,
           ),
         )}
@@ -956,9 +951,9 @@ export class WorkflowDetail extends BtrixElement {
       <btrix-desc-list horizontal>
         ${this.renderDetailItem(msg("Pages Crawled"), () =>
           this.lastCrawlStats
-            ? `${formatNumber(
+            ? `${this.localize.number(
                 +(this.lastCrawlStats.done || 0),
-              )} / ${formatNumber(+(this.lastCrawlStats.found || 0))}`
+              )} / ${this.localize.number(+(this.lastCrawlStats.found || 0))}`
             : html`<sl-spinner></sl-spinner>`,
         )}
         ${this.renderDetailItem(msg("Run Duration"), () =>

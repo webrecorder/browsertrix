@@ -7,6 +7,7 @@ import {
   translatedLocales,
   type TranslatedLocaleEnum,
 } from "@/types/localization";
+import localize from "@/utils/localize";
 
 /**
  * Select language that Browsertrix app will be shown in
@@ -23,7 +24,7 @@ export class LocalePicker extends BtrixElement {
   private setLocaleNames() {
     const localeNames: LocalePicker["localeNames"] = {};
 
-    this.localize.languages.forEach((locale) => {
+    localize.languages.forEach((locale) => {
       const name = new Intl.DisplayNames([locale], {
         type: "language",
       }).of(locale);
@@ -37,7 +38,7 @@ export class LocalePicker extends BtrixElement {
   }
 
   render() {
-    const selectedLocale = this.localize.activeLanguage;
+    const selectedLocale = this.localize.lang();
 
     return html`
       <sl-dropdown
@@ -79,6 +80,6 @@ export class LocalePicker extends BtrixElement {
   async localeChanged(event: SlSelectEvent) {
     const newLocale = event.detail.item.value as TranslatedLocaleEnum;
 
-    this.localize.setLanguage(newLocale);
+    localize.setLanguage(newLocale);
   }
 }

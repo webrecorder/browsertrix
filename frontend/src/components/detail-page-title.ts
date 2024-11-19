@@ -5,7 +5,7 @@ import { customElement, property } from "lit/decorators.js";
 import { TailwindElement } from "@/classes/TailwindElement";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { type ArchivedItem, type Workflow } from "@/types/crawler";
-import { formatNumber } from "@/utils/localize";
+import localize from "@/utils/localize";
 import { pluralOf } from "@/utils/pluralize";
 
 enum TitleSource {
@@ -57,7 +57,7 @@ export class DetailPageTitle extends TailwindElement {
     return html`<span class="max-w-[30ch] truncate">${item.firstSeed}</span
       >${remainder
         ? html` <span class="whitespace-nowrap text-neutral-500"
-            >+${formatNumber(remainder)} ${pluralOf("URLs", remainder)}</span
+            >+${localize.number(remainder)} ${pluralOf("URLs", remainder)}</span
           >`
         : nothing}`;
   }

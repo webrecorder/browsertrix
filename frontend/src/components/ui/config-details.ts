@@ -19,7 +19,6 @@ import { isApiError } from "@/utils/api";
 import { getAppSettings } from "@/utils/app";
 import { DEPTH_SUPPORTED_SCOPES, isPageScopeType } from "@/utils/crawler";
 import { humanizeSchedule } from "@/utils/cron";
-import { formatNumber } from "@/utils/localize";
 import { pluralOf } from "@/utils/pluralize";
 
 /**
@@ -138,12 +137,12 @@ export class ConfigDetails extends BtrixElement {
               const maxPages = primarySeed?.limit ?? seedsConfig?.limit;
 
               if (maxPages) {
-                return `${formatNumber(+maxPages)} ${pluralOf("pages", +maxPages)}`;
+                return `${this.localize.number(+maxPages)} ${pluralOf("pages", +maxPages)}`;
               }
 
               if (this.orgDefaults?.maxPagesPerCrawl) {
                 return html`<span class="text-neutral-400">
-                  ${formatNumber(this.orgDefaults.maxPagesPerCrawl)}
+                  ${this.localize.number(this.orgDefaults.maxPagesPerCrawl)}
                   ${pluralOf("pages", this.orgDefaults.maxPagesPerCrawl)}
                   ${msg("(default)")}</span
                 >`;
@@ -311,7 +310,7 @@ export class ConfigDetails extends BtrixElement {
                           html`<sl-tag class="mr-2 mt-1" variant="neutral">
                             ${coll.name}
                             <span class="font-monostyle pl-1 text-xs">
-                              (${formatNumber(coll.crawlCount)}
+                              (${this.localize.number(coll.crawlCount)}
                               ${pluralOf("items", coll.crawlCount)})
                             </span>
                           </sl-tag>`,

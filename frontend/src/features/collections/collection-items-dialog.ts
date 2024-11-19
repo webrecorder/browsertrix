@@ -35,7 +35,6 @@ import type {
 import type { ArchivedItem, Crawl, Upload, Workflow } from "@/types/crawler";
 import { isApiError } from "@/utils/api";
 import { finishedCrawlStates } from "@/utils/crawler";
-import { formatNumber } from "@/utils/localize";
 import { pluralOf } from "@/utils/pluralize";
 
 const TABS = ["crawl", "upload"] as const;
@@ -560,13 +559,13 @@ export class CollectionItemsDialog extends BtrixElement {
       if (addCount) {
         messages.push(
           msg(
-            str`Adding ${formatNumber(addCount)} ${pluralOf("items", addCount)}`,
+            str`Adding ${this.localize.number(addCount)} ${pluralOf("items", addCount)}`,
           ),
         );
       }
       if (removeCount) {
         messages.push(
-          str`Adding ${formatNumber(removeCount)} ${pluralOf("items", removeCount)}`,
+          str`Adding ${this.localize.number(removeCount)} ${pluralOf("items", removeCount)}`,
         );
       }
 

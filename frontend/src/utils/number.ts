@@ -1,5 +1,9 @@
 /**
- * Internationalized number formatter
+ * Create internationalized number formatter
+ *
+ * You probably want to use `localize.number()` from `/utils/localize`
+ * directly instead of creating a new number formatter.
+ *
  * Usage:
  * ```ts
  * const formatter = numberFormatter()

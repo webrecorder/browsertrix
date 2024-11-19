@@ -11,7 +11,7 @@ import {
 } from "@/types/crawlState";
 import type { QARun } from "@/types/qa";
 import { WorkflowScopeType } from "@/types/workflow";
-import { formatNumber } from "@/utils/localize";
+import localize from "@/utils/localize";
 import { pluralOf } from "@/utils/pluralize";
 
 // Match backend TYPE_RUNNING_AND_WAITING_STATES in models.py
@@ -59,7 +59,7 @@ export function renderName(item: ArchivedItem | Workflow, className?: string) {
     let nameSuffix: string | TemplateResult<1> = "";
     if (remainder) {
       nameSuffix = html`<div class="ml-1">
-        +${formatNumber(remainder, { notation: "compact" })}
+        +${localize.number(remainder, { notation: "compact" })}
         ${pluralOf("URLs", remainder)}
       </div>`;
     }
