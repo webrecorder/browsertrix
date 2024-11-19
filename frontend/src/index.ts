@@ -35,6 +35,7 @@ import {
   type TranslatedLocaleEnum,
 } from "@/types/localization";
 import { type AppSettings } from "@/utils/app";
+import localize from "@/utils/localize";
 import brandLockupColor from "~assets/brand/browsertrix-lockup-color.svg";
 
 import "./shoelace";
@@ -154,7 +155,7 @@ export class App extends BtrixElement {
   }
 
   protected firstUpdated(): void {
-    this.localize.initLanguage();
+    localize.initLanguage();
   }
 
   getLocationPathname() {

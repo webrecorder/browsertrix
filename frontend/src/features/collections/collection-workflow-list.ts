@@ -15,7 +15,6 @@ import type {
 } from "@/types/api";
 import type { Crawl, Workflow } from "@/types/crawler";
 import { finishedCrawlStates } from "@/utils/crawler";
-import { formatNumber } from "@/utils/localize";
 import { pluralOf } from "@/utils/pluralize";
 
 export type SelectionChangeDetail = {
@@ -359,7 +358,7 @@ export class CollectionWorkflowList extends BtrixElement {
       let nameSuffix: string | TemplateResult<1> = "";
       if (remainder) {
         nameSuffix = html`<span class="ml-1"
-          >+${formatNumber(remainder, { notation: "compact" })}
+          >+${this.localize.number(remainder, { notation: "compact" })}
           ${pluralOf("URLs", remainder)}</span
         >`;
       }

@@ -30,7 +30,6 @@ import {
   renderName,
 } from "@/utils/crawler";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
-import { formatNumber } from "@/utils/localize";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
@@ -841,9 +840,9 @@ export class ArchivedItemDetail extends BtrixElement {
                               ? " text-violet-600"
                               : ""} font-mono"
                           >
-                            ${formatNumber(+this.item.stats.done)}
+                            ${this.localize.number(+this.item.stats.done)}
                             <span class="text-0-400">/</span>
-                            ${formatNumber(+this.item.stats.found)}
+                            ${this.localize.number(+this.item.stats.found)}
                           </span>
                           <span
                             >${pluralOf("pages", +this.item.stats.found)}</span

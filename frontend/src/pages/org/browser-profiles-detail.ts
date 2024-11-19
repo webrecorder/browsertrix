@@ -14,7 +14,6 @@ import type { BrowserConnectionChange } from "@/features/browser-profiles/profil
 import { pageNav } from "@/layouts/pageHeader";
 import { isApiError } from "@/utils/api";
 import { maxLengthValidator } from "@/utils/form";
-import { formatNumber } from "@/utils/localize";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { pluralOf } from "@/utils/pluralize";
 
@@ -265,7 +264,7 @@ export class BrowserProfilesDetail extends BtrixElement {
         <h2 class="mb-2 text-lg font-medium leading-none">
           ${msg("Crawl Workflows")}${this.profile?.crawlconfigs?.length
             ? html`<span class="font-normal text-neutral-500">
-                (${formatNumber(this.profile.crawlconfigs.length)})
+                (${this.localize.number(this.profile.crawlconfigs.length)})
               </span>`
             : nothing}
         </h2>
@@ -357,7 +356,7 @@ export class BrowserProfilesDetail extends BtrixElement {
     let nameSuffix: string | TemplateResult<1> = "";
     if (remainder) {
       nameSuffix = html`<span class="ml-2 text-neutral-500"
-        >+${formatNumber(remainder, { notation: "compact" })}
+        >+${this.localize.number(remainder, { notation: "compact" })}
         ${pluralOf("URLs", remainder)}</span
       >`;
     }

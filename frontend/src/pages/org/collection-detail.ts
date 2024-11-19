@@ -19,7 +19,6 @@ import type {
 import type { Collection } from "@/types/collection";
 import type { ArchivedItem, Crawl, Upload } from "@/types/crawler";
 import type { CrawlState } from "@/types/crawlState";
-import { formatNumber } from "@/utils/localize";
 import { pluralOf } from "@/utils/pluralize";
 
 const ABORT_REASON_THROTTLE = "throttled";
@@ -469,7 +468,7 @@ export class CollectionDetail extends BtrixElement {
         ${this.renderDetailItem(
           msg("Archived Items"),
           (col) =>
-            `${formatNumber(col.crawlCount)} ${pluralOf("items", col.crawlCount)}`,
+            `${this.localize.number(col.crawlCount)} ${pluralOf("items", col.crawlCount)}`,
         )}
         ${this.renderDetailItem(
           msg("Total Size"),
@@ -482,7 +481,7 @@ export class CollectionDetail extends BtrixElement {
         ${this.renderDetailItem(
           msg("Total Pages"),
           (col) =>
-            `${formatNumber(col.pageCount)} ${pluralOf("pages", col.pageCount)}`,
+            `${this.localize.number(col.pageCount)} ${pluralOf("pages", col.pageCount)}`,
         )}
         ${this.renderDetailItem(
           msg("Last Updated"),

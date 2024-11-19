@@ -3,9 +3,9 @@ import { html, LitElement } from "lit";
 import appState, { use } from "./state";
 
 import { APIController } from "@/controllers/api";
+import { LocalizeController } from "@/controllers/localize";
 import { NavigateController } from "@/controllers/navigate";
 import { NotifyController } from "@/controllers/notify";
-import localize from "@/utils/localize";
 
 export { html };
 
@@ -19,7 +19,7 @@ export default class LiteElement extends LitElement {
   private readonly apiController = new APIController(this);
   private readonly notifyController = new NotifyController(this);
   private readonly navigateController = new NavigateController(this);
-  readonly localize = localize;
+  readonly localize = new LocalizeController(this);
 
   protected get authState() {
     return this.appState.auth;

@@ -5,7 +5,6 @@ import { customElement } from "lit/decorators.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { OrgReadOnlyReason } from "@/types/org";
-import { formatISODateString } from "@/utils/localize";
 
 type Alert = {
   test: () => boolean;
@@ -83,7 +82,7 @@ export class OrgStatusBanner extends BtrixElement {
             detail: html`
               <p>
                 ${msg(
-                  str`Your subscription ends on ${formatISODateString(
+                  str`Your subscription ends on ${this.localize.date(
                     subscription!.futureCancelDate!,
                     {
                       month: "long",
@@ -122,7 +121,7 @@ export class OrgStatusBanner extends BtrixElement {
             detail: html`
               <p>
                 ${msg(
-                  str`Your subscription ends on ${formatISODateString(
+                  str`Your subscription ends on ${this.localize.date(
                     subscription!.futureCancelDate!,
                     {
                       month: "long",

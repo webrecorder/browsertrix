@@ -14,7 +14,6 @@ import { when } from "lit/directives/when.js";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
 import type { ProxiesAPIResponse, Proxy } from "@/types/crawler";
-import { formatNumber } from "@/utils/localize";
 import type { OrgData } from "@/utils/orgs";
 
 /**
@@ -248,7 +247,7 @@ export class OrgsList extends BtrixElement {
                   href="/orgs/${org.slug}/settings/members"
                   target="_blank"
                 >
-                  ${formatNumber(Object.keys(org.users || {}).length)}
+                  ${this.localize.number(Object.keys(org.users || {}).length)}
                 </a>
               </li>
             </ul>
@@ -312,7 +311,7 @@ export class OrgsList extends BtrixElement {
                   href="/orgs/${org.slug}/settings/members"
                   target="_blank"
                 >
-                  ${formatNumber(Object.keys(org.users || {}).length)}
+                  ${this.localize.number(Object.keys(org.users || {}).length)}
                 </a>
               </li>
             </ul>
@@ -632,7 +631,7 @@ export class OrgsList extends BtrixElement {
           ></sl-format-date>
         </btrix-table-cell>
         <btrix-table-cell class="p-2">
-          ${memberCount ? formatNumber(memberCount) : none}
+          ${memberCount ? this.localize.number(memberCount) : none}
         </btrix-table-cell>
         <btrix-table-cell class="p-2">
           ${org.bytesStored

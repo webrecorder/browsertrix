@@ -45,7 +45,6 @@ import {
   type finishedCrawlStates,
 } from "@/utils/crawler";
 import { maxLengthValidator } from "@/utils/form";
-import { formatISODateString } from "@/utils/localize";
 import { tw } from "@/utils/tailwind";
 
 const DEFAULT_PAGE_SIZE = 100;
@@ -779,11 +778,12 @@ export class ArchivedItemQA extends BtrixElement {
                     >
                       <div class="p-2">
                         ${msg(
-                          str`${comment.userName} commented on ${formatISODateString(
+                          str`${comment.userName} commented on ${this.localize.date(
                             comment.created,
                             {
-                              hour: undefined,
-                              minute: undefined,
+                              year: "numeric",
+                              month: "numeric",
+                              day: "numeric",
                             },
                           )}`,
                         )}
