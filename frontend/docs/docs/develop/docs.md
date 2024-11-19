@@ -18,7 +18,7 @@ To build the docs locally, install Material for MkDocs with pip or pipx:
     pipx install mkdocs-material --include-deps
     ```
 
-In the project `frontend/docs` run `mkdocs serve` to run a local version of the documentation site.
+In `frontend/docs` run `mkdocs serve` to run a local version of the documentation site.
 
 The docs hosted on [docs.browsertrix.com](https://docs.browsertrix.com) are created from the main branch of [https://github.com/webrecorder/browsertrix](https://github.com/webrecorder/browsertrix)
 
