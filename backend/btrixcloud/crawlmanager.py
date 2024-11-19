@@ -137,7 +137,7 @@ class CrawlManager(K8sAPI):
         pull_policy: str,
         existing_job_id: Optional[str] = None,
     ) -> str:
-        """run job to delete org and all of its data"""
+        """run job to recalculate storage stats for the org"""
 
         if existing_job_id:
             job_id = existing_job_id
