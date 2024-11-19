@@ -53,7 +53,8 @@ describe("Localize", () => {
   describe(".setLanguage()", () => {
     it("doesn't set an invalid language code", () => {
       const localize = new Localize();
-      localize.setLanguage("invalid" as unknown as LanguageCode);
+      // @ts-expect-error
+      localize.setLanguage("invalid");
       expect(localize.activeLanguage).to.equal("en");
     });
 
@@ -85,7 +86,8 @@ describe("Localize", () => {
   describe(".number()", () => {
     it("returns if not a number", () => {
       const localize = new Localize();
-      expect(localize.number("a" as unknown as number)).to.equal("");
+      // @ts-expect-error
+      expect(localize.number("a")).to.equal("");
     });
 
     it("formats with the current language", () => {
