@@ -232,6 +232,9 @@ export class OrgSettingsBilling extends BtrixElement {
     let tierLabel;
     let statusLabel;
 
+    const trialActive =
+      !!subscription?.trialEnd && subscription.trialEnd >= new Date();
+
     if (subscription) {
       tierLabel = html`
         <sl-icon class="text-neutral-500" name="nut"></sl-icon>
@@ -242,6 +245,10 @@ export class OrgSettingsBilling extends BtrixElement {
         case SubscriptionStatus.Active: {
           statusLabel = html`
             <span class="text-success-700">${msg("Active")}</span>
+            ${trialActive &&
+            html`<span class="text-cyan-600"
+              >${msg("Trial active until")} ${/* TODO */ null}</span
+            >`}
           `;
           break;
         }

@@ -12,6 +12,7 @@ export const subscriptionStatusSchema = z.nativeEnum(SubscriptionStatus);
 export const subscriptionSchema = z.object({
   status: subscriptionStatusSchema,
   planId: z.string(),
+  trialEnd: z.date().nullable(),
   futureCancelDate: apiDateSchema.nullable(),
 });
 export type Subscription = z.infer<typeof subscriptionSchema>;
