@@ -3712,22 +3712,26 @@
       <trans-unit id="seb49ad0f81062f64">
         <source>Choose your preferred language for displaying Browsertrix in your browser.</source>
       </trans-unit>
-      <trans-unit id="h6e4720c785ed38bd">
+      <trans-unit id="h746ce875ddd39a65">
+        <source>Your plan will be canceled on
+                                  <x equiv-text="&lt;sl-format-date class=&quot;truncate&quot; date=&quot;${org.subscription.futureCancelDate}&quot; month=&quot;long&quot; day=&quot;numeric&quot; year=&quot;numeric&quot;&gt;&#10;                                  &lt;/sl-format-date&gt;" id="0"/></source>
+      </trans-unit>
+      <trans-unit id="h88cfbf4cb1b57616">
         <source>Deleting an org will delete all
-                  <x equiv-text="&lt;strong class=&quot;font-semibold&quot;&gt;&#10;                    &lt;sl-format-bytes lang=&quot;${this.localize.activeLanguage}&quot; value=&quot;${org.bytesStored}&quot;&gt;&lt;/sl-format-bytes&gt;&#10;                  &lt;/strong&gt;" id="0"/>
+                  <x equiv-text="&lt;strong class=&quot;font-semibold&quot;&gt;&#10;                    &lt;sl-format-bytes value=&quot;${org.bytesStored}&quot;&gt;&lt;/sl-format-bytes&gt;&#10;                  &lt;/strong&gt;" id="0"/>
                   of data associated with the org.</source>
       </trans-unit>
-      <trans-unit id="h1e4474c72a171a09">
+      <trans-unit id="hc95f75343ebc2ce0">
         <source>Crawls:
-                    <x equiv-text="&lt;sl-format-bytes lang=&quot;${this.localize.activeLanguage}&quot; value=&quot;${org.bytesStoredCrawls}&quot;&gt;&lt;/sl-format-bytes&gt;" id="0"/></source>
+                    <x equiv-text="&lt;sl-format-bytes value=&quot;${org.bytesStoredCrawls}&quot;&gt;&lt;/sl-format-bytes&gt;" id="0"/></source>
       </trans-unit>
-      <trans-unit id="h201b5a649eb65b35">
+      <trans-unit id="h9e8c0254131f987c">
         <source>Uploads:
-                    <x equiv-text="&lt;sl-format-bytes lang=&quot;${this.localize.activeLanguage}&quot; value=&quot;${org.bytesStoredUploads}&quot;&gt;&lt;/sl-format-bytes&gt;" id="0"/></source>
+                    <x equiv-text="&lt;sl-format-bytes value=&quot;${org.bytesStoredUploads}&quot;&gt;&lt;/sl-format-bytes&gt;" id="0"/></source>
       </trans-unit>
-      <trans-unit id="h236b94c002a4a86f">
+      <trans-unit id="hc4433ba5eba156e2">
         <source>Profiles:
-                    <x equiv-text="&lt;sl-format-bytes lang=&quot;${this.localize.activeLanguage}&quot; value=&quot;${org.bytesStoredProfiles}&quot;&gt;&lt;/sl-format-bytes&gt;" id="0"/></source>
+                    <x equiv-text="&lt;sl-format-bytes value=&quot;${org.bytesStoredProfiles}&quot;&gt;&lt;/sl-format-bytes&gt;" id="0"/></source>
       </trans-unit>
     </body>
   </file>
