@@ -127,15 +127,13 @@ example markdown code block text
 ```
 ````
 
-````
-
 For in-line code blocks, syntax highlighting should be added for all code-related usage by adding `#!language` to the start of all in-line code blocks. This is not required for paths or simply highlighting important text using in-line code blocks.
 
 ##### Example
 
 ```markdown
  `#!python range()`
-````
+```
 
 Renders to: `#!python range()`
 
@@ -156,22 +154,22 @@ We use [Admonitions](https://squidfunk.github.io/mkdocs-material/reference/admon
 There are a lot of different options provided by Material for MkDocs — So many in fact that we try to pair down their usage into the following categories.
 
 ???+ Note
-The default call-out, used to highlight something if there isn't a more relevant one — should generally be expanded by default but can be collapsible by the user if the note is long.
+    The default call-out, used to highlight something if there isn't a more relevant one — should generally be expanded by default but can be collapsible by the user if the note is long.
 
 !!! Tip "Tip: May have a title stating the tip or best practice"
-Used to highlight a point that is useful for everyone to understand about the documented subject — should be expanded and kept brief.
+    Used to highlight a point that is useful for everyone to understand about the documented subject — should be expanded and kept brief.
 
 ???+ Info "Info: Must have a title describing the context under which this information is useful"
-Used to deliver context-based content such as things that are dependant on operating system or environment — should be collapsed by default.
+    Used to deliver context-based content such as things that are dependant on operating system or environment — should be collapsed by default.
 
 ???+ Example "Example: Must have a title describing the content"
-Used to deliver additional information about a feature that could be useful in a _specific circumstance_ or that might not otherwise be considered — should be collapsed by default.
+    Used to deliver additional information about a feature that could be useful in a _specific circumstance_ or that might not otherwise be considered — should be collapsed by default.
 
 ???+ Question "Question: Must have a title phrased in the form of a question"
-Used to answer frequently asked questions about the documented subject — should be collapsed by default.
+    Used to answer frequently asked questions about the documented subject — should be collapsed by default.
 
 !!! Warning "Warning: Must have a title stating the warning"
-Used to deliver important information — should always be expanded.
+    Used to deliver important information — should always be expanded.
 
 !!! Danger "Danger: Must have a title stating the warning"
-Used to deliver information about serious unrecoverable actions such as deleting large amounts of data or resetting things — should always be expanded.
+    Used to deliver information about serious unrecoverable actions such as deleting large amounts of data or resetting things — should always be expanded.
