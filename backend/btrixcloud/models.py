@@ -1048,8 +1048,8 @@ class UpdateUpload(UpdateCrawl):
 
 
 # ============================================================================
-class CollVisibilityType(str, Enum):
-    """Collection visibility types"""
+class CollAccessType(str, Enum):
+    """Collection access types"""
 
     PRIVATE = "private"
     UNLISTED = "unlisted"
@@ -1072,7 +1072,7 @@ class Collection(BaseMongoModel):
     # Sorted by count, descending
     tags: Optional[List[str]] = []
 
-    visibility: CollVisibilityType = CollVisibilityType.PRIVATE
+    access: CollAccessType = CollAccessType.PRIVATE
 
 
 # ============================================================================
@@ -1083,7 +1083,7 @@ class CollIn(BaseModel):
     description: Optional[str] = None
     crawlIds: Optional[List[str]] = []
 
-    visibility: CollVisibilityType = CollVisibilityType.PRIVATE
+    access: CollAccessType = CollAccessType.PRIVATE
 
 
 # ============================================================================
@@ -1099,7 +1099,7 @@ class UpdateColl(BaseModel):
 
     name: Optional[str] = None
     description: Optional[str] = None
-    visibility: Optional[CollVisibilityType] = None
+    access: Optional[CollAccessType] = None
 
 
 # ============================================================================

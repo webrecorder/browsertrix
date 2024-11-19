@@ -58,7 +58,7 @@ def test_create_public_collection(
         json={
             "crawlIds": [crawler_crawl_id],
             "name": PUBLIC_COLLECTION_NAME,
-            "visibility": "public",
+            "access": "public",
         },
     )
     assert r.status_code == 200
@@ -73,7 +73,7 @@ def test_create_public_collection(
         f"{API_PREFIX}/orgs/{default_org_id}/collections/{_public_coll_id}",
         headers=crawler_auth_headers,
     )
-    assert r.json()["visibility"] == "public"
+    assert r.json()["access"] == "public"
 
 
 def test_create_collection_taken_name(
@@ -316,7 +316,7 @@ def test_collection_public(crawler_auth_headers, default_org_id):
         f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}",
         headers=crawler_auth_headers,
         json={
-            "visibility": "public",
+            "access": "public",
         },
     )
     assert r.status_code == 200
@@ -335,7 +335,7 @@ def test_collection_public(crawler_auth_headers, default_org_id):
         f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}",
         headers=crawler_auth_headers,
         json={
-            "visibility": "unlisted",
+            "access": "unlisted",
         },
     )
     assert r.status_code == 200
@@ -354,7 +354,7 @@ def test_collection_public(crawler_auth_headers, default_org_id):
         f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}",
         headers=crawler_auth_headers,
         json={
-            "visibility": "private",
+            "access": "private",
         },
     )
 
@@ -448,7 +448,7 @@ def test_list_collections(
     assert first_coll["totalSize"] > 0
     assert first_coll["modified"]
     assert first_coll["tags"] == ["wr-test-2", "wr-test-1"]
-    assert first_coll["visibility"] == "private"
+    assert first_coll["access"] == "private"
 
     second_coll = [coll for coll in items if coll["name"] == SECOND_COLLECTION_NAME][0]
     assert second_coll["id"]
@@ -460,7 +460,7 @@ def test_list_collections(
     assert second_coll["totalSize"] > 0
     assert second_coll["modified"]
     assert second_coll["tags"] == ["wr-test-2"]
-    assert second_coll["visibility"] == "private"
+    assert second_coll["access"] == "private"
 
 
 def test_remove_upload_from_collection(crawler_auth_headers, default_org_id):
@@ -546,10 +546,10 @@ def test_filter_sort_collections(
     assert coll["oid"] == default_org_id
     assert coll.get("description") is None
 
-    # Test filtering by visibility
+    # Test filtering by access
     name_prefix = name_prefix.upper()
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/collections?visibility=public",
+        f"{API_PREFIX}/orgs/{default_org_id}/collections?access=public",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
@@ -564,7 +564,7 @@ def test_filter_sort_collections(
     assert coll["name"] == PUBLIC_COLLECTION_NAME
     assert coll["oid"] == default_org_id
     assert coll.get("description") is None
-    assert coll["visibility"] == "public"
+    assert coll["access"] == "public"
 
     # Test sorting by name, ascending (default)
     r = requests.get(

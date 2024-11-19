@@ -1,5 +1,5 @@
 """
-Migration 0036 -- collection visibility
+Migration 0036 -- collection access
 """
 
 from btrixcloud.migrations import BaseMigration
@@ -18,7 +18,7 @@ class Migration(BaseMigration):
     async def migrate_up(self):
         """Perform migration up.
 
-        Move from Collection.isPublic cool to Collection.visibility enum
+        Move from Collection.isPublic cool to Collection.access enum
         """
         colls_mdb = self.mdb["collections"]
 
@@ -26,7 +26,7 @@ class Migration(BaseMigration):
         try:
             await colls_mdb.update_many(
                 {"isPublic": False},
-                [{"$set": {"visibility": "private"}, "$unset": {"isPublic": 1}}],
+                [{"$set": {"access": "private"}, "$unset": {"isPublic": 1}}],
             )
         # pylint: disable=broad-exception-caught
         except Exception as err:
@@ -39,7 +39,7 @@ class Migration(BaseMigration):
         try:
             await colls_mdb.update_many(
                 {"isPublic": True},
-                [{"$set": {"visibility": "unlisted"}, "$unset": {"isPublic": 1}}],
+                [{"$set": {"access": "unlisted"}, "$unset": {"isPublic": 1}}],
             )
         # pylint: disable=broad-exception-caught
         except Exception as err:

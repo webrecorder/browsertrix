@@ -89,7 +89,7 @@ class CollectionOps:
             name=coll_in.name,
             description=coll_in.description,
             modified=modified,
-            visibility=coll_in.visibility,
+            access=coll_in.access,
         )
         try:
             await self.collections.insert_one(coll.to_dict())
@@ -189,7 +189,7 @@ class CollectionOps:
         """Get collection by id"""
         query: dict[str, object] = {"_id": coll_id}
         if public_only:
-            query["visibility"] = {"$in": ["public", "unlisted"]}
+            query["access"] = {"$in": ["public", "unlisted"]}
 
         result = await self.collections.find_one(query)
         if not result:
@@ -210,7 +210,7 @@ class CollectionOps:
         sort_direction: int = 1,
         name: Optional[str] = None,
         name_prefix: Optional[str] = None,
-        visibility: Optional[str] = None,
+        access: Optional[str] = None,
     ):
         """List all collections for org"""
         # pylint: disable=too-many-locals, duplicate-code
@@ -227,8 +227,8 @@ class CollectionOps:
             regex_pattern = f"^{name_prefix}"
             match_query["name"] = {"$regex": regex_pattern, "$options": "i"}
 
-        if visibility:
-            match_query["visibility"] = visibility
+        if access:
+            match_query["access"] = access
 
         aggregate = [{"$match": match_query}]
 
@@ -431,7 +431,7 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops):
         sortDirection: int = 1,
         name: Optional[str] = None,
         namePrefix: Optional[str] = None,
-        visibility: Optional[str] = None,
+        access: Optional[str] = None,
     ):
         collections, total = await colls.list_collections(
             org.id,
@@ -441,7 +441,7 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops):
             sort_direction=sortDirection,
             name=name,
             name_prefix=namePrefix,
-            visibility=visibility,
+            access=access,
         )
         return paginated_format(collections, total, page, pageSize)
 

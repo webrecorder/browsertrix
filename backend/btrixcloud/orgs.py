@@ -930,7 +930,7 @@ class OrgOps:
         )
         collections_count = await self.colls_db.count_documents({"oid": org.id})
         public_collections_count = await self.colls_db.count_documents(
-            {"oid": org.id, "visibility": {"$in": ["public", "unlisted"]}}
+            {"oid": org.id, "access": {"$in": ["public", "unlisted"]}}
         )
 
         return {

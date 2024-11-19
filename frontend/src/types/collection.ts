@@ -1,4 +1,4 @@
-export enum CollectionVisibility {
+export enum CollectionAccess {
   Private = "private",
   Public = "public",
   Unlisted = "unlisted",
@@ -15,7 +15,7 @@ export type Collection = {
   totalSize: number;
   tags: string[];
   resources: string[];
-  visibility: CollectionVisibility;
+  access: CollectionAccess;
 };
 
 export type CollectionSearchValues = {

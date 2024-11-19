@@ -16,7 +16,7 @@ import type {
   APIPaginationQuery,
   APISortQuery,
 } from "@/types/api";
-import { CollectionVisibility, type Collection } from "@/types/collection";
+import { CollectionAccess, type Collection } from "@/types/collection";
 import type { ArchivedItem, Crawl, Upload } from "@/types/crawler";
 import type { CrawlState } from "@/types/crawlState";
 import { formatNumber, getLocale } from "@/utils/localization";
@@ -100,7 +100,7 @@ export class CollectionDetail extends BtrixElement {
       <header class="items-center gap-2 pb-3 md:flex">
         <div class="mb-2 flex w-full items-center gap-2 md:mb-0">
           <div class="flex size-8 items-center justify-center">
-            ${this.collection?.visibility === CollectionVisibility.Unlisted
+            ${this.collection?.access === CollectionAccess.Unlisted
               ? html`
                   <sl-tooltip content=${msg("Shareable")}>
                     <sl-icon
@@ -122,7 +122,7 @@ export class CollectionDetail extends BtrixElement {
         </div>
         ${when(
           this.isCrawler ||
-            this.collection?.visibility !== CollectionVisibility.Private,
+            this.collection?.access !== CollectionAccess.Private,
           () => html`
             <sl-button
               variant=${this.collection?.crawlCount ? "primary" : "default"}
@@ -241,7 +241,7 @@ export class CollectionDetail extends BtrixElement {
         style="--width: 32rem;"
       >
         ${
-          this.collection?.visibility === CollectionVisibility.Unlisted
+          this.collection?.access === CollectionAccess.Unlisted
             ? ""
             : html`<p class="mb-3">
                 ${msg(
@@ -254,8 +254,8 @@ export class CollectionDetail extends BtrixElement {
           () => html`
             <div class="mb-5">
               <sl-switch
-                ?checked=${this.collection?.visibility ===
-                CollectionVisibility.Unlisted}
+                ?checked=${this.collection?.access ===
+                CollectionAccess.Unlisted}
                 @sl-change=${(e: CustomEvent) =>
                   void this.onTogglePublic((e.target as SlCheckbox).checked)}
                 >${msg("Collection is Shareable")}</sl-switch
@@ -264,7 +264,7 @@ export class CollectionDetail extends BtrixElement {
           `,
         )}
         </div>
-        ${when(this.collection?.visibility === CollectionVisibility.Unlisted, this.renderShareInfo)}
+        ${when(this.collection?.access === CollectionAccess.Unlisted, this.renderShareInfo)}
         <div slot="footer" class="flex justify-end">
           <sl-button size="small" @click=${() => (this.showShareInfo = false)}
             >${msg("Done")}</sl-button
@@ -416,7 +416,7 @@ export class CollectionDetail extends BtrixElement {
             ${msg("Select Archived Items")}
           </sl-menu-item>
           <sl-divider></sl-divider>
-          ${this.collection?.visibility === CollectionVisibility.Private
+          ${this.collection?.access === CollectionAccess.Private
             ? html`
                 <sl-menu-item
                   style="--sl-color-neutral-700: var(--success)"
@@ -748,19 +748,19 @@ export class CollectionDetail extends BtrixElement {
   };
 
   private async onTogglePublic(isPublic: boolean) {
-    const visibility = !isPublic
-      ? CollectionVisibility.Private
-      : CollectionVisibility.Unlisted;
+    const access = !isPublic
+      ? CollectionAccess.Private
+      : CollectionAccess.Unlisted;
     const res = await this.api.fetch<{ updated: boolean }>(
       `/orgs/${this.orgId}/collections/${this.collectionId}`,
       {
         method: "PATCH",
-        body: JSON.stringify({ visibility }),
+        body: JSON.stringify({ access }),
       },
     );
 
     if (res.updated && this.collection) {
-      this.collection = { ...this.collection, visibility };
+      this.collection = { ...this.collection, access };
     }
   }
 
