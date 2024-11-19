@@ -1,7 +1,7 @@
 name: Publish Docs
 on:
   workflow_dispatch:
-  
+
   release:
     types: [published]
 
@@ -21,4 +21,7 @@ jobs:
       - name: Generate Helm Chart Index
         run: python ./scripts/generate-helm-index.py > ./frontend/docs/docs/helm-repo/index.yaml
 
-      - run: cd frontend/docs; mkdocs gh-deploy --force
+      - name: Build Docs
+        run: cd frontend/docs; mkdocs gh-deploy --force
+        env:
+          ENABLE_ANALYTICS: true
