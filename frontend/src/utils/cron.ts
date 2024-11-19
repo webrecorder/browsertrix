@@ -1,10 +1,7 @@
 import { parseCron } from "@cheap-glitch/mi-cron";
 import { msg, str } from "@lit/localize";
 
-import {
-  getActiveLanguage,
-  localizedNumberFormat,
-} from "@/controllers/localize";
+import localize from "./localize";
 
 export const getNextDate = parseCron.nextDate;
 
@@ -32,7 +29,7 @@ export function humanizeNextDate(
   schedule: string,
   options: { length?: "short" } = {},
 ): string {
-  const locale = getActiveLanguage();
+  const locale = localize.activeLanguage;
   const nextDate = parseCron.nextDate(schedule);
 
   if (!nextDate) return "";
@@ -66,7 +63,7 @@ export function humanizeSchedule(
   schedule: string,
   options: { length?: "short" } = {},
 ): string {
-  const locale = getActiveLanguage();
+  const locale = localize.activeLanguage;
   const interval = getScheduleInterval(schedule);
   const parsed = parseCron(schedule);
   if (!parsed) {
@@ -96,7 +93,7 @@ export function humanizeSchedule(
         break;
       case "monthly": {
         intervalMsg = msg(
-          str`Monthly on the ${localizedNumberFormat(days[0], { ordinal: true })}`,
+          str`Monthly on the ${localize.number(days[0], { ordinal: true })}`,
         );
 
         break;

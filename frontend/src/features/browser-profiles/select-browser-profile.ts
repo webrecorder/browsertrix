@@ -85,7 +85,6 @@ export class SelectBrowserProfile extends BtrixElement {
               <div slot="suffix">
                 <div class="text-xs">
                   <sl-format-date
-                    lang=${this.localize.activeLanguage}
                     date=${profile.modified}
                     month="2-digit"
                     day="2-digit"
@@ -104,7 +103,6 @@ export class SelectBrowserProfile extends BtrixElement {
                 <span>
                   ${msg("Last updated")}
                   <sl-format-date
-                    lang=${this.localize.activeLanguage}
                     date=${this.selectedProfile.modified}
                     month="2-digit"
                     day="2-digit"

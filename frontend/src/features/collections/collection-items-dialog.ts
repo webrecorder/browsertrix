@@ -35,7 +35,7 @@ import type {
 import type { ArchivedItem, Crawl, Upload, Workflow } from "@/types/crawler";
 import { isApiError } from "@/utils/api";
 import { finishedCrawlStates } from "@/utils/crawler";
-import { formatNumber } from "@/utils/localization";
+import { formatNumber } from "@/utils/localize";
 import { pluralOf } from "@/utils/pluralize";
 
 const TABS = ["crawl", "upload"] as const;

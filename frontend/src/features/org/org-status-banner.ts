@@ -5,7 +5,7 @@ import { customElement } from "lit/decorators.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { OrgReadOnlyReason } from "@/types/org";
-import { formatISODateString } from "@/utils/localization";
+import { formatISODateString } from "@/utils/localize";
 
 type Alert = {
   test: () => boolean;

@@ -5,7 +5,7 @@ import { customElement, property } from "lit/decorators.js";
 import { TailwindElement } from "@/classes/TailwindElement";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { type ArchivedItem, type Workflow } from "@/types/crawler";
-import { formatNumber } from "@/utils/localization";
+import { formatNumber } from "@/utils/localize";
 import { pluralOf } from "@/utils/pluralize";
 
 enum TitleSource {

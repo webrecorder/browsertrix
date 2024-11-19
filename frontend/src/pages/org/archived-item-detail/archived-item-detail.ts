@@ -30,7 +30,7 @@ import {
   renderName,
 } from "@/utils/crawler";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
-import { formatNumber } from "@/utils/localization";
+import { formatNumber } from "@/utils/localize";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
@@ -156,7 +156,6 @@ export class ArchivedItemDetail extends BtrixElement {
     if (!this.item) return;
 
     return html`<sl-format-date
-      lang=${this.localize.activeLanguage}
       date=${this.item.finished}
       month="2-digit"
       day="2-digit"
@@ -775,7 +774,6 @@ export class ArchivedItemDetail extends BtrixElement {
             : html`
                 <btrix-desc-list-item label=${msg("Start Time")}>
                   <sl-format-date
-                    lang=${this.localize.activeLanguage}
                     date=${this.item!.started}
                     month="2-digit"
                     day="2-digit"
@@ -833,7 +831,6 @@ export class ArchivedItemDetail extends BtrixElement {
           ${this.item
             ? html`${this.item.fileSize
                 ? html`<sl-format-bytes
-                      lang=${this.localize.activeLanguage}
                       value=${this.item.fileSize || 0}
                       display="narrow"
                     ></sl-format-bytes
@@ -987,10 +984,7 @@ ${this.item?.description}
                             ></sl-icon>
                           </sl-tooltip>`,
                       )}
-                      <sl-format-bytes
-                        lang=${this.localize.activeLanguage}
-                        value=${file.size}
-                      ></sl-format-bytes>
+                      <sl-format-bytes value=${file.size}></sl-format-bytes>
                     </div>
                   </li>
                 `,

@@ -279,7 +279,6 @@ export class BrowserProfilesList extends BtrixElement {
             ?disabled=${!data.createdByName}
           >
             <sl-format-date
-              lang=${this.localize.activeLanguage}
               date=${data.created}
               month="2-digit"
               day="2-digit"
@@ -295,7 +294,6 @@ export class BrowserProfilesList extends BtrixElement {
             ?disabled=${!data.createdByName}
           >
             <sl-format-date
-              lang=${this.localize.activeLanguage}
               date=${
                 // NOTE older profiles may not have "modified" data
                 data.modified || data.created

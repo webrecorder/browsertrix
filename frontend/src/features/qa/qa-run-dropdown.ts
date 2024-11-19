@@ -5,7 +5,7 @@ import { customElement, property } from "lit/decorators.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import { type QARun } from "@/types/qa";
-import { formatISODateString } from "@/utils/localization";
+import { formatISODateString } from "@/utils/localize";
 
 export type SelectDetail = { item: { id: string } };
 

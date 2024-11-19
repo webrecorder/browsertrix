@@ -6,7 +6,7 @@ import type { ReplayData, ResourcesPayload } from "../types";
 
 import { renderSpinner } from "./spinner";
 
-import { localizedNumberFormat } from "@/controllers/localize";
+import localize from "@/utils/localize";
 import { tw } from "@/utils/tailwind";
 
 const TOTAL = "Total";
@@ -28,10 +28,10 @@ function renderDiff(
         >${msg("All Resources")}</span
       >`,
       html`<span class="font-semibold"
-        >${localizedNumberFormat(crawlResources[TOTAL].good)}</span
+        >${localize.number(crawlResources[TOTAL].good)}</span
       >`,
       html`<span class="font-semibold"
-        >${localizedNumberFormat(crawlResources[TOTAL].bad)}</span
+        >${localize.number(crawlResources[TOTAL].bad)}</span
       >`,
       html`<span
         class="${clsx(
@@ -41,7 +41,7 @@ function renderDiff(
             : "text-neutral-700",
         )}"
       >
-        ${localizedNumberFormat(qaResources[TOTAL].good)}
+        ${localize.number(qaResources[TOTAL].good)}
       </span>`,
       html`<span
         class="${clsx(
@@ -51,7 +51,7 @@ function renderDiff(
             : "text-neutral-700",
         )}"
       >
-        ${localizedNumberFormat(qaResources[TOTAL].bad)}
+        ${localize.number(qaResources[TOTAL].bad)}
       </span>`,
     ],
     ...Object.keys(qaResources)
@@ -59,10 +59,10 @@ function renderDiff(
       .map((key) => [
         html`<span class="capitalize">${key}</span>`,
         html`${Object.prototype.hasOwnProperty.call(crawlResources, key)
-          ? localizedNumberFormat(crawlResources[key].good)
+          ? localize.number(crawlResources[key].good)
           : 0}`,
         html`${Object.prototype.hasOwnProperty.call(crawlResources, key)
-          ? localizedNumberFormat(crawlResources[key].bad)
+          ? localize.number(crawlResources[key].bad)
           : 0}`,
         html`<span
           class=${Object.prototype.hasOwnProperty.call(crawlResources, key) &&
@@ -70,7 +70,7 @@ function renderDiff(
             ? tw`text-neutral-400`
             : tw`text-danger`}
         >
-          ${localizedNumberFormat(qaResources[key].good)}
+          ${localize.number(qaResources[key].good)}
         </span>`,
         html`<span
           class=${Object.prototype.hasOwnProperty.call(crawlResources, key) &&
@@ -78,7 +78,7 @@ function renderDiff(
             ? tw`text-neutral-400`
             : tw`font-semibold text-danger`}
         >
-          ${localizedNumberFormat(qaResources[key].bad)}
+          ${localize.number(qaResources[key].bad)}
         </span>`,
       ]),
   ];
