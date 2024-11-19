@@ -9,7 +9,7 @@ export type Collection = {
   totalSize: number;
   tags: string[];
   resources: string[];
-  isPublic: boolean;
+  visibility: string;
 };
 
 export type CollectionSearchValues = {

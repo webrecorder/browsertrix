@@ -500,7 +500,7 @@ export class CollectionsList extends BtrixElement {
       class="cursor-pointer select-none rounded border shadow transition-all focus-within:bg-neutral-50 hover:bg-neutral-50 hover:shadow-none"
     >
       <btrix-table-cell class="p-3">
-        ${col.isPublic
+        ${col.visibility === "unlisted"
           ? html`
               <sl-tooltip content=${msg("Shareable")}>
                 <sl-icon
@@ -572,7 +572,7 @@ export class CollectionsList extends BtrixElement {
             ${msg("Edit Metadata")}
           </sl-menu-item>
           <sl-divider></sl-divider>
-          ${!col.isPublic
+          ${col.visibility === "private"
             ? html`
                 <sl-menu-item
                   style="--sl-color-neutral-700: var(--success)"
@@ -647,9 +647,10 @@ export class CollectionsList extends BtrixElement {
   });
 
   private async onTogglePublic(coll: Collection, isPublic: boolean) {
+    const visibility = !isPublic ? "private" : "unlisted";
     await this.api.fetch(`/orgs/${this.orgId}/collections/${coll.id}`, {
       method: "PATCH",
-      body: JSON.stringify({ isPublic }),
+      body: JSON.stringify({ visibility }),
     });
 
     void this.fetchCollections();

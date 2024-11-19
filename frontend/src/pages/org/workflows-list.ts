@@ -323,7 +323,7 @@ export class WorkflowsList extends LiteElement {
         <div class="grow">${this.renderSearch()}</div>
 
         <div class="flex w-full items-center md:w-fit">
-          <div class="mr-2 whitespace-nowrap text-sm text-0-500">
+          <div class="text-0-500 mr-2 whitespace-nowrap text-sm">
             ${msg("Sort by:")}
           </div>
           <sl-select

@@ -228,7 +228,7 @@ export class BrowserProfilesList extends BtrixElement {
             `
           : html`
               <div class="border-b border-t py-5">
-                <p class="text-center text-0-500">
+                <p class="text-0-500 text-center">
                   ${msg("No browser profiles yet.")}
                 </p>
               </div>

@@ -180,7 +180,7 @@ export class CollectionMetadataDialog extends BtrixElement {
       const body = JSON.stringify({
         name,
         description,
-        isPublic: Boolean(isPublic),
+        visibility: !isPublic ? "private" : "unlisted",
       });
       let path = `/orgs/${this.orgId}/collections`;
       let method = "POST";
