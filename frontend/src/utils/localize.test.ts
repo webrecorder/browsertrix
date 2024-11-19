@@ -1,5 +1,5 @@
 import { expect } from "@open-wc/testing";
-import { match, restore, spy, stub } from "sinon";
+import { restore, stub } from "sinon";
 
 import { Localize } from "./localize";
 import { AppStateService } from "./state";
@@ -51,6 +51,7 @@ describe("Localize", () => {
   describe(".setLanguage()", () => {
     it("doesn't set an invalid language code", () => {
       const localize = new Localize();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
       localize.setLanguage("invalid" as any);
       expect(localize.activeLanguage).to.equal("en");
     });
@@ -83,6 +84,7 @@ describe("Localize", () => {
   describe(".number()", () => {
     it("returns if not a number", () => {
       const localize = new Localize();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
       expect(localize.number("a" as any)).to.equal("");
     });
 
