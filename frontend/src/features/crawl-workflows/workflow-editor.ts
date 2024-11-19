@@ -43,7 +43,6 @@ import type { SelectCrawlerProxyChangeEvent } from "@/components/ui/select-crawl
 import type { Tab } from "@/components/ui/tab-list";
 import type { TagInputEvent, TagsChangeEvent } from "@/components/ui/tag-input";
 import type { TimeInputChangeEvent } from "@/components/ui/time-input";
-import { getActiveLanguage } from "@/controllers/localize";
 import { type SelectBrowserProfileChangeEvent } from "@/features/browser-profiles/select-browser-profile";
 import type { CollectionsChangeEvent } from "@/features/collections/collections-add";
 import type { QueueExclusionTable } from "@/features/crawl-workflows/queue-exclusion-table";
@@ -66,6 +65,7 @@ import {
   humanizeSchedule,
 } from "@/utils/cron";
 import { maxLengthValidator } from "@/utils/form";
+import localize from "@/utils/localize";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { AppStateService } from "@/utils/state";
 import { regexEscape } from "@/utils/string";
@@ -154,7 +154,7 @@ const getDefaultProgressState = (hasConfigId = false): ProgressState => {
 
 function getLocalizedWeekDays() {
   const now = new Date();
-  const { format } = new Intl.DateTimeFormat(getActiveLanguage(), {
+  const { format } = new Intl.DateTimeFormat(localize.activeLanguage, {
     weekday: "short",
   });
   return Array.from({ length: 7 }).map((x, day) =>

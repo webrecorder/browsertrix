@@ -148,7 +148,6 @@ export class UsageHistoryTable extends BtrixElement {
         const tableRows = [
           html`
             <sl-format-date
-              lang=${this.localize.activeLanguage}
               date="${mY}-15T00:00:00.000Z"
               time-zone="utc"
               month="long"

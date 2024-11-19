@@ -11,7 +11,7 @@ import {
 } from "@/types/crawlState";
 import type { QARun } from "@/types/qa";
 import { WorkflowScopeType } from "@/types/workflow";
-import { formatNumber } from "@/utils/localization";
+import { formatNumber } from "@/utils/localize";
 import { pluralOf } from "@/utils/pluralize";
 
 // Match backend TYPE_RUNNING_AND_WAITING_STATES in models.py

@@ -19,7 +19,7 @@ import { isApiError } from "@/utils/api";
 import { getAppSettings } from "@/utils/app";
 import { DEPTH_SUPPORTED_SCOPES, isPageScopeType } from "@/utils/crawler";
 import { humanizeSchedule } from "@/utils/cron";
-import { formatNumber } from "@/utils/localization";
+import { formatNumber } from "@/utils/localize";
 import { pluralOf } from "@/utils/pluralize";
 
 /**
@@ -94,7 +94,6 @@ export class ConfigDetails extends BtrixElement {
       // Eventually we will want to set this to the selected locale
       if (valueBytes) {
         return html`<sl-format-bytes
-          lang=${this.localize.activeLanguage}
           value=${valueBytes}
           display="narrow"
         ></sl-format-bytes>`;

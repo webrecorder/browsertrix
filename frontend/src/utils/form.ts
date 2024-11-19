@@ -1,7 +1,7 @@
 import { msg, str } from "@lit/localize";
 import type { SlInput, SlTextarea } from "@shoelace-style/shoelace";
 
-import { formatNumber } from "./localization";
+import { formatNumber } from "./localize";
 
 export type MaxLengthValidator = {
   helpText: string;

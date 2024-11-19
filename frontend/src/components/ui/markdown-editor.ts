@@ -5,7 +5,7 @@ import { customElement, property, query } from "lit/decorators.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import { getHelpText } from "@/utils/form";
-import { formatNumber } from "@/utils/localization";
+import { formatNumber } from "@/utils/localize";
 
 type MarkdownChangeDetail = {
   value: string;

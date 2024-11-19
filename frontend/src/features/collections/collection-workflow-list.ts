@@ -15,7 +15,7 @@ import type {
 } from "@/types/api";
 import type { Crawl, Workflow } from "@/types/crawler";
 import { finishedCrawlStates } from "@/utils/crawler";
-import { formatNumber } from "@/utils/localization";
+import { formatNumber } from "@/utils/localize";
 import { pluralOf } from "@/utils/pluralize";
 
 export type SelectionChangeDetail = {
@@ -278,7 +278,6 @@ export class CollectionWorkflowList extends BtrixElement {
         <div class="grid flex-1 grid-cols-5 items-center">
           <div class="col-span-3 md:col-span-1">
             <sl-format-date
-              lang=${this.localize.activeLanguage}
               date=${crawl.finished}
               month="2-digit"
               day="2-digit"
@@ -292,7 +291,6 @@ export class CollectionWorkflowList extends BtrixElement {
           </div>
           <div class="col-span-3 md:col-span-1">
             <sl-format-bytes
-              lang=${this.localize.activeLanguage}
               value=${crawl.fileSize || 0}
               display="narrow"
             ></sl-format-bytes>

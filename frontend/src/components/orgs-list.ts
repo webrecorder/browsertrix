@@ -14,7 +14,7 @@ import { when } from "lit/directives/when.js";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
 import type { ProxiesAPIResponse, Proxy } from "@/types/crawler";
-import { formatNumber } from "@/utils/localization";
+import { formatNumber } from "@/utils/localize";
 import type { OrgData } from "@/utils/orgs";
 
 /**
@@ -320,10 +320,7 @@ export class OrgsList extends BtrixElement {
               ${msg(
                 html`Deleting an org will delete all
                   <strong class="font-semibold">
-                    <sl-format-bytes
-                      lang=${this.localize.activeLanguage}
-                      value=${org.bytesStored}
-                    ></sl-format-bytes>
+                    <sl-format-bytes value=${org.bytesStored}></sl-format-bytes>
                   </strong>
                   of data associated with the org.`,
               )}
@@ -333,7 +330,6 @@ export class OrgsList extends BtrixElement {
                 ${msg(
                   html`Crawls:
                     <sl-format-bytes
-                      lang=${this.localize.activeLanguage}
                       value=${org.bytesStoredCrawls}
                     ></sl-format-bytes>`,
                 )}
@@ -342,7 +338,6 @@ export class OrgsList extends BtrixElement {
                 ${msg(
                   html`Uploads:
                     <sl-format-bytes
-                      lang=${this.localize.activeLanguage}
                       value=${org.bytesStoredUploads}
                     ></sl-format-bytes>`,
                 )}
@@ -351,7 +346,6 @@ export class OrgsList extends BtrixElement {
                 ${msg(
                   html`Profiles:
                     <sl-format-bytes
-                      lang=${this.localize.activeLanguage}
                       value=${org.bytesStoredProfiles}
                     ></sl-format-bytes>`,
                 )}
@@ -630,7 +624,6 @@ export class OrgsList extends BtrixElement {
 
         <btrix-table-cell class="p-2">
           <sl-format-date
-            lang=${this.localize.activeLanguage}
             class="truncate"
             date=${org.created}
             month="2-digit"
@@ -644,7 +637,6 @@ export class OrgsList extends BtrixElement {
         <btrix-table-cell class="p-2">
           ${org.bytesStored
             ? html`<sl-format-bytes
-                lang=${this.localize.activeLanguage}
                 value=${org.bytesStored}
                 display="narrow"
               ></sl-format-bytes>`

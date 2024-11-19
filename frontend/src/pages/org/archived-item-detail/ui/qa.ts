@@ -28,7 +28,7 @@ import { type ArchivedItem, type ArchivedItemPage } from "@/types/crawler";
 import type { QARun } from "@/types/qa";
 import { isActive, isSuccessfullyFinished } from "@/utils/crawler";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
-import { formatNumber } from "@/utils/localization";
+import { formatNumber } from "@/utils/localize";
 import { pluralOf } from "@/utils/pluralize";
 
 type QAStatsThreshold = {
@@ -343,7 +343,6 @@ export class ArchivedItemDetailQA extends BtrixElement {
           </btrix-table-cell>
           <btrix-table-cell>
             <sl-format-date
-              lang=${this.localize.activeLanguage}
               date=${run.started}
               month="2-digit"
               day="2-digit"
@@ -356,7 +355,6 @@ export class ArchivedItemDetailQA extends BtrixElement {
             ${run.finished
               ? html`
                   <sl-format-date
-                    lang=${this.localize.activeLanguage}
                     date=${run.finished}
                     month="2-digit"
                     day="2-digit"
@@ -425,7 +423,6 @@ export class ArchivedItemDetailQA extends BtrixElement {
               str`This analysis run includes data for ${runToBeDeleted.stats.done} ${pluralOf("pages", runToBeDeleted.stats.done)} and was started on `,
             )}
             <sl-format-date
-              lang=${this.localize.activeLanguage}
               date=${runToBeDeleted.started}
               month="2-digit"
               day="2-digit"

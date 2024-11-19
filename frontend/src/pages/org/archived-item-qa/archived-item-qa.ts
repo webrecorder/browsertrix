@@ -45,7 +45,7 @@ import {
   type finishedCrawlStates,
 } from "@/utils/crawler";
 import { maxLengthValidator } from "@/utils/form";
-import { formatISODateString } from "@/utils/localization";
+import { formatISODateString } from "@/utils/localize";
 import { tw } from "@/utils/tailwind";
 
 const DEFAULT_PAGE_SIZE = 100;
@@ -896,7 +896,6 @@ export class ArchivedItemQA extends BtrixElement {
             this.page,
             (page) => html`
               <sl-format-date
-                lang=${this.localize.activeLanguage}
                 class="font-monostyle text-xs text-neutral-500"
                 date=${page.ts}
                 month="2-digit"
