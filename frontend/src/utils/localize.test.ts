@@ -4,6 +4,8 @@ import { restore, stub } from "sinon";
 import { Localize } from "./localize";
 import { AppStateService } from "./state";
 
+import { type LanguageCode } from "@/types/localization";
+
 describe("Localize", () => {
   beforeEach(() => {
     window.localStorage.clear();
@@ -51,8 +53,7 @@ describe("Localize", () => {
   describe(".setLanguage()", () => {
     it("doesn't set an invalid language code", () => {
       const localize = new Localize();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
-      localize.setLanguage("invalid" as any);
+      localize.setLanguage("invalid" as unknown as LanguageCode);
       expect(localize.activeLanguage).to.equal("en");
     });
 
@@ -84,8 +85,7 @@ describe("Localize", () => {
   describe(".number()", () => {
     it("returns if not a number", () => {
       const localize = new Localize();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
-      expect(localize.number("a" as any)).to.equal("");
+      expect(localize.number("a" as unknown as number)).to.equal("");
     });
 
     it("formats with the current language", () => {
