@@ -20,7 +20,7 @@ To build the docs locally, install Material for MkDocs with pip or pipx:
 
 In the project `frontend/docs` run `mkdocs serve` to run a local version of the documentation site.
 
-The docs hosted on [docs.browsertrix.com](https://docs.browsertrix.com) are created from the main branch of [https://github.com/webrecorder/browsertrix](https://github.com/webrecorder/browsertrix)
+The docs hosted on [docs.browsertrix.com](https://docs.browsertrix.com) may be different from what is currently in the main branch of [github.com/webrecorder/browsertrix](https://github.com/webrecorder/browsertrix). They are updated by running the [publish docs GitHub workflow](https://github.com/webrecorder/browsertrix/actions/workflows/docs-publish.yaml), typically alongside a release.
 
 ## Adding New Pages
 
