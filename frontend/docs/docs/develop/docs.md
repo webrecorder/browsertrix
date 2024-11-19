@@ -4,7 +4,7 @@ Our documentation is built with [Material for MkDocs](https://squidfunk.github.i
 
 The docs can be found in the `./docs` subdirectory.
 
-To build the docs locally, install Material for MkDocs with pip or pipx:
+To build the docs locally, install Material for MkDocs with pip, pipx, or uvx:
 
 === "pip"
 
