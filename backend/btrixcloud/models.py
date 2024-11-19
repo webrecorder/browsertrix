@@ -1230,6 +1230,8 @@ class SubscriptionCreate(BaseModel):
     status: str
     planId: str
 
+    trialEnd: Optional[datetime] = None
+
     firstAdminInviteEmail: EmailStr
     quotas: Optional[OrgQuotas] = None
 
@@ -1265,6 +1267,8 @@ class SubscriptionUpdate(BaseModel):
     subId: str
     status: str
     planId: str
+
+    trialEnd: Optional[datetime] = None
 
     futureCancelDate: Optional[datetime] = None
     quotas: Optional[OrgQuotasIn] = None
@@ -1318,6 +1322,8 @@ class Subscription(BaseModel):
     subId: str
     status: str
     planId: str
+
+    trialEnd: Optional[datetime] = None
 
     futureCancelDate: Optional[datetime] = None
     readOnlyOnCancel: bool = False

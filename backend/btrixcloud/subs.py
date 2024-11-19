@@ -67,7 +67,10 @@ class SubOps:
     ) -> dict[str, Any]:
         """create org for new subscription"""
         subscription = Subscription(
-            subId=create.subId, status=create.status, planId=create.planId
+            subId=create.subId,
+            status=create.status,
+            planId=create.planId,
+            trialEnd=create.trialEnd,
         )
 
         new_org = await self.org_ops.create_org(
@@ -163,7 +166,9 @@ class SubOps:
         data["oid"] = oid
         await self.subs.insert_one(data)
 
-    def _get_sub_by_type_from_data(self, data: dict[str, object]) -> Union[
+    def _get_sub_by_type_from_data(
+        self, data: dict[str, object]
+    ) -> Union[
         SubscriptionCreateOut,
         SubscriptionImportOut,
         SubscriptionUpdateOut,

@@ -476,6 +476,7 @@ class OrgOps:
             "subscription.status": update.status,
             "subscription.planId": update.planId,
             "subscription.futureCancelDate": update.futureCancelDate,
+            "subscription.trialEnd": update.trialEnd,
         }
 
         if update.status == PAUSED_PAYMENT_FAILED:
@@ -1317,10 +1318,12 @@ class OrgOps:
     async def recalculate_storage(self, org: Organization) -> dict[str, bool]:
         """Recalculate org storage use"""
         try:
-            total_crawl_size, crawl_size, upload_size = (
-                await self.base_crawl_ops.calculate_org_crawl_file_storage(
-                    org.id,
-                )
+            (
+                total_crawl_size,
+                crawl_size,
+                upload_size,
+            ) = await self.base_crawl_ops.calculate_org_crawl_file_storage(
+                org.id,
             )
             profile_size = await self.profile_ops.calculate_org_profile_file_storage(
                 org.id
