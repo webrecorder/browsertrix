@@ -362,7 +362,7 @@
         <source>Every <x equiv-text="${formattedWeekDay}" id="0"/></source>
       </trans-unit>
       <trans-unit id="s37a3a294775e081a">
-        <source>Monthly on the <x equiv-text="${localizedNumberFormat(days[0], { ordinal: true })}" id="0"/></source>
+        <source>Monthly on the <x equiv-text="${localize.number(days[0], { ordinal: true })}" id="0"/></source>
       </trans-unit>
       <trans-unit id="s2bc963c5c7bac2e1">
         <source>Every day at <x equiv-text="${formattedTime}" id="0"/></source>
@@ -378,7 +378,7 @@
         <source>Default: Unlimited</source>
       </trans-unit>
       <trans-unit id="sf21761e7f8e0550e">
-        <source>Default: <x equiv-text="${localizedNumberFormat(value)}" id="0"/></source>
+        <source>Default: <x equiv-text="${localize.number(value)}" id="0"/></source>
       </trans-unit>
       <trans-unit id="s5ae0226079b4d5fc">
         <source>Specify exclusion rules for what pages should not be visited.
@@ -3527,7 +3527,7 @@
         <note from="lit-localize">Time AM/PM</note>
       </trans-unit>
       <trans-unit id="h9083eded7901e66a">
-        <source><x equiv-text="${quotas.storageQuota&#10;    ? html `&lt;sl-format-bytes&#10;                  lang=${this.localize.activeLanguage}&#10;                  value=${quotas.storageQuota}&#10;                &gt;&lt;/sl-format-bytes&gt;`&#10;    : msg(&quot;Unlimited&quot;)}" id="0"/>
+        <source><x equiv-text="${quotas.storageQuota&#10;    ? html `&lt;sl-format-bytes&#10;                  value=${quotas.storageQuota}&#10;                &gt;&lt;/sl-format-bytes&gt;`&#10;    : msg(&quot;Unlimited&quot;)}" id="0"/>
             storage</source>
       </trans-unit>
       <trans-unit id="s1d6a13ef53c51ee9">
@@ -3605,10 +3605,6 @@
       </trans-unit>
       <trans-unit id="s0eb7c300368b2a58">
         <source>Upload: <x equiv-text="${crawlStatus.label}" id="0"/></source>
-      </trans-unit>
-      <trans-unit id="hac630f92c94217bc">
-        <source>Your plan will be canceled on
-                                  <x equiv-text="&lt;sl-format-date lang=&quot;${this.localize.activeLanguage}&quot; class=&quot;truncate&quot; date=&quot;${org.subscription.futureCancelDate}&quot; month=&quot;long&quot; day=&quot;numeric&quot; year=&quot;numeric&quot;&gt;&#10;                                  &lt;/sl-format-date&gt;" id="0"/></source>
       </trans-unit>
       <trans-unit id="s7d61376257220dab">
         <source>Scope</source>
@@ -3781,22 +3777,26 @@
       <trans-unit id="seb49ad0f81062f64">
         <source>Choose your preferred language for displaying Browsertrix in your browser.</source>
       </trans-unit>
-      <trans-unit id="h6e4720c785ed38bd">
+      <trans-unit id="h746ce875ddd39a65">
+        <source>Your plan will be canceled on
+                                  <x equiv-text="&lt;sl-format-date class=&quot;truncate&quot; date=&quot;${org.subscription.futureCancelDate}&quot; month=&quot;long&quot; day=&quot;numeric&quot; year=&quot;numeric&quot;&gt;&#10;                                  &lt;/sl-format-date&gt;" id="0"/></source>
+      </trans-unit>
+      <trans-unit id="h88cfbf4cb1b57616">
         <source>Deleting an org will delete all
-                  <x equiv-text="&lt;strong class=&quot;font-semibold&quot;&gt;&#10;                    &lt;sl-format-bytes lang=&quot;${this.localize.activeLanguage}&quot; value=&quot;${org.bytesStored}&quot;&gt;&lt;/sl-format-bytes&gt;&#10;                  &lt;/strong&gt;" id="0"/>
+                  <x equiv-text="&lt;strong class=&quot;font-semibold&quot;&gt;&#10;                    &lt;sl-format-bytes value=&quot;${org.bytesStored}&quot;&gt;&lt;/sl-format-bytes&gt;&#10;                  &lt;/strong&gt;" id="0"/>
                   of data associated with the org.</source>
       </trans-unit>
-      <trans-unit id="h1e4474c72a171a09">
+      <trans-unit id="hc95f75343ebc2ce0">
         <source>Crawls:
-                    <x equiv-text="&lt;sl-format-bytes lang=&quot;${this.localize.activeLanguage}&quot; value=&quot;${org.bytesStoredCrawls}&quot;&gt;&lt;/sl-format-bytes&gt;" id="0"/></source>
+                    <x equiv-text="&lt;sl-format-bytes value=&quot;${org.bytesStoredCrawls}&quot;&gt;&lt;/sl-format-bytes&gt;" id="0"/></source>
       </trans-unit>
-      <trans-unit id="h201b5a649eb65b35">
+      <trans-unit id="h9e8c0254131f987c">
         <source>Uploads:
-                    <x equiv-text="&lt;sl-format-bytes lang=&quot;${this.localize.activeLanguage}&quot; value=&quot;${org.bytesStoredUploads}&quot;&gt;&lt;/sl-format-bytes&gt;" id="0"/></source>
+                    <x equiv-text="&lt;sl-format-bytes value=&quot;${org.bytesStoredUploads}&quot;&gt;&lt;/sl-format-bytes&gt;" id="0"/></source>
       </trans-unit>
-      <trans-unit id="h236b94c002a4a86f">
+      <trans-unit id="hc4433ba5eba156e2">
         <source>Profiles:
-                    <x equiv-text="&lt;sl-format-bytes lang=&quot;${this.localize.activeLanguage}&quot; value=&quot;${org.bytesStoredProfiles}&quot;&gt;&lt;/sl-format-bytes&gt;" id="0"/></source>
+                    <x equiv-text="&lt;sl-format-bytes value=&quot;${org.bytesStoredProfiles}&quot;&gt;&lt;/sl-format-bytes&gt;" id="0"/></source>
       </trans-unit>
     </body>
   </file>
