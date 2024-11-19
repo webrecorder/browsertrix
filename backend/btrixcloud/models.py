@@ -1048,6 +1048,15 @@ class UpdateUpload(UpdateCrawl):
 
 
 # ============================================================================
+class CollVisibilityType(str, Enum):
+    """Collection visibility types"""
+
+    PRIVATE = "private"
+    UNLISTED = "unlisted"
+    PUBLIC = "public"
+
+
+# ============================================================================
 class Collection(BaseMongoModel):
     """Org collection structure"""
 
@@ -1063,7 +1072,7 @@ class Collection(BaseMongoModel):
     # Sorted by count, descending
     tags: Optional[List[str]] = []
 
-    isPublic: Optional[bool] = False
+    visibility: CollVisibilityType = CollVisibilityType.PRIVATE
 
 
 # ============================================================================
@@ -1074,7 +1083,7 @@ class CollIn(BaseModel):
     description: Optional[str] = None
     crawlIds: Optional[List[str]] = []
 
-    isPublic: bool = False
+    visibility: CollVisibilityType = CollVisibilityType.PRIVATE
 
 
 # ============================================================================
@@ -1090,7 +1099,7 @@ class UpdateColl(BaseModel):
 
     name: Optional[str] = None
     description: Optional[str] = None
-    isPublic: Optional[bool] = None
+    visibility: Optional[CollVisibilityType] = None
 
 
 # ============================================================================
