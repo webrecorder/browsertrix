@@ -107,6 +107,8 @@ markdown_extensions:
   - pymdownx.inlinehilite
   - pymdownx.details
   - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
   - pymdownx.keys
   - def_list
   - attr_list

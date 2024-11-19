@@ -4,13 +4,21 @@ Our documentation is built with [Material for MkDocs](https://squidfunk.github.i
 
 The docs can be found in the `./docs` subdirectory.
 
-To build the docs locally, install Material for MkDocs with pip:
+To build the docs locally, install Material for MkDocs with pip or pipx:
 
-```shell
-pip install mkdocs-material
-```
+=== "pip"
 
-In the project root directory run `mkdocs serve` to run a local version of the documentation site.
+    ```sh
+    pip install mkdocs-material
+    ```
+
+=== "pipx"
+
+    ```sh
+    pipx install mkdocs-material --include-deps
+    ```
+
+In the project `frontend/docs` run `mkdocs serve` to run a local version of the documentation site.
 
 The docs hosted on [docs.browsertrix.com](https://docs.browsertrix.com) are created from the main branch of [https://github.com/webrecorder/browsertrix](https://github.com/webrecorder/browsertrix)
 
@@ -42,11 +50,10 @@ In a list of three or more items, the list item proceeding the word "and" should
 
 ##### Example
 
-| Use                           | Don't use                    |
-| ----------------------------- | ---------------------------- |
-| One, two, three, and four.    | One, two, three and four.    |
-| Charles, Ada, and Alan.       | Charles, Ada and Alan.       |
-
+| Use                        | Don't use                 |
+| -------------------------- | ------------------------- |
+| One, two, three, and four. | One, two, three and four. |
+| Charles, Ada, and Alan.    | Charles, Ada and Alan.    |
 
 ### Capitalization of Concepts and Tools
 
@@ -55,15 +62,16 @@ Webrecorder has a number of common nouns that we use in our products. Examples i
 ##### Example
 
 When starting a sentence:
+
 > Archived items consist of one or more...
 
 In the middle of a sentence:
 
 > ...they are omitted from the archived items list page...
 
-Webrecorder's software packages are all proper nouns and should always be capitalized.  Examples include: Browsertrix, ReplayWeb.page, ArchiveWeb.Page, and PYWB. Specific pages such as the Archived Items page should also be capitalized as they are not referencing the concept of archived items and are instead referencing the page in question that happens to share the same name.
+Webrecorder's software packages are all proper nouns and should always be capitalized. Examples include: Browsertrix, ReplayWeb.page, ArchiveWeb.Page, and PYWB. Specific pages such as the Archived Items page should also be capitalized as they are not referencing the concept of archived items and are instead referencing the page in question that happens to share the same name.
 
-### Be Concise, Avoid "You Statements"
+### Be Concise, Avoid "You" Statements
 
 Generally, people don't want to have to read documentation. When writing, try to explain concepts simply and with clear objective language. Do not use "we" to refer to communication between the author and the reader, use "we" to refer to Webrecorder. "You can" or "you may" can be used, but preferably when giving supplemental advice and generally not when providing instructions that should be followed to achieve a successful outcome. Otherwise, avoid spending time referring to the reader, instead tell them what they should know.
 
@@ -113,11 +121,13 @@ Tag the language to be used for syntax highlighting.
 
 ##### Example
 
+````markdown
 ```markdown
- ```markdown
- example markdown code block text
- ```
+example markdown code block text
 ```
+````
+
+````
 
 For in-line code blocks, syntax highlighting should be added for all code-related usage by adding `#!language` to the start of all in-line code blocks. This is not required for paths or simply highlighting important text using in-line code blocks.
 
@@ -125,7 +135,7 @@ For in-line code blocks, syntax highlighting should be added for all code-relate
 
 ```markdown
  `#!python range()`
-```
+````
 
 Renders to: `#!python range()`
 
@@ -146,22 +156,22 @@ We use [Admonitions](https://squidfunk.github.io/mkdocs-material/reference/admon
 There are a lot of different options provided by Material for MkDocs — So many in fact that we try to pair down their usage into the following categories.
 
 ???+ Note
-    The default call-out, used to highlight something if there isn't a more relevant one — should generally be expanded by default but can be collapsible by the user if the note is long.
+The default call-out, used to highlight something if there isn't a more relevant one — should generally be expanded by default but can be collapsible by the user if the note is long.
 
 !!! Tip "Tip: May have a title stating the tip or best practice"
-    Used to highlight a point that is useful for everyone to understand about the documented subject — should be expanded and kept brief.
+Used to highlight a point that is useful for everyone to understand about the documented subject — should be expanded and kept brief.
 
 ???+ Info "Info: Must have a title describing the context under which this information is useful"
-    Used to deliver context-based content such as things that are dependant on operating system or environment — should be collapsed by default.
+Used to deliver context-based content such as things that are dependant on operating system or environment — should be collapsed by default.
 
 ???+ Example "Example: Must have a title describing the content"
-    Used to deliver additional information about a feature that could be useful in a _specific circumstance_ or that might not otherwise be considered — should be collapsed by default.
+Used to deliver additional information about a feature that could be useful in a _specific circumstance_ or that might not otherwise be considered — should be collapsed by default.
 
 ???+ Question "Question: Must have a title phrased in the form of a question"
-    Used to answer frequently asked questions about the documented subject — should be collapsed by default.
+Used to answer frequently asked questions about the documented subject — should be collapsed by default.
 
 !!! Warning "Warning: Must have a title stating the warning"
-    Used to deliver important information — should always be expanded.
+Used to deliver important information — should always be expanded.
 
 !!! Danger "Danger: Must have a title stating the warning"
-    Used to deliver information about serious unrecoverable actions such as deleting large amounts of data or resetting things — should always be expanded.
+Used to deliver information about serious unrecoverable actions such as deleting large amounts of data or resetting things — should always be expanded.
