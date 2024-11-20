@@ -1117,10 +1117,10 @@
   resolved "https://registry.yarnpkg.com/@lit-labs/ssr-dom-shim/-/ssr-dom-shim-1.2.0.tgz#353ce4a76c83fadec272ea5674ede767650762fd"
   integrity sha512-yWJKmpGE6lUURKAaIltoPIE/wrbY3TEkqQt+X0m+7fQNnAv0keydnYvbiJFP1PnMhizmIWRWOG5KLhYyc/xl+g==
 
-"@lit/localize-tools@^0.7.1":
-  version "0.7.1"
-  resolved "https://registry.yarnpkg.com/@lit/localize-tools/-/localize-tools-0.7.1.tgz#cb80af296d99c029c59cec57813ae8f11d43a777"
-  integrity sha512-qqJw501aEPF1j9QQmiVC25yU1By1DKEUIFgjszIierwr5jJzfVtGTj67D8UU0hF3vA2yAaWxcl4eooM1Yr0zKQ==
+"@lit/localize-tools@^0.8.0":
+  version "0.8.0"
+  resolved "https://registry.yarnpkg.com/@lit/localize-tools/-/localize-tools-0.8.0.tgz#8a14b3961aa63ef801c9f63274cb1d58821a3552"
+  integrity sha512-18HY8Ln8ZhSW2CYlXY9+CgDeEoxIY4dBvJ7W5fOe5262NvWEQghMgEC01WT9SQm4Non9C42aDGEYLEegw2ZBhw==
   dependencies:
     "@lit/localize" "^0.12.0"
     "@parse5/tools" "^0.3.0"
@@ -1128,11 +1128,11 @@
     fast-glob "^3.2.7"
     fs-extra "^10.0.0"
     jsonschema "^1.4.0"
-    lit "^2.0.0 || ^3.0.0"
+    lit "^3.2.0"
     minimist "^1.2.5"
     parse5 "^7.1.1"
     source-map-support "^0.5.19"
-    typescript "~5.2.0"
+    typescript "~5.5.0"
 
 "@lit/localize@^0.12.0", "@lit/localize@^0.12.1":
   version "0.12.1"
@@ -5969,7 +5969,7 @@ lit-shared-state@^0.2.1:
   resolved "https://registry.yarnpkg.com/lit-shared-state/-/lit-shared-state-0.2.1.tgz#967884e08974f96646e11fd0b4edbd4112e11c0f"
   integrity sha512-4KnwRCVTqMWxVxO5u50+Q+RZJWAbCo34w5MxRh1GwbpW8sO7rupnNVYwqtp3WTmXN5Pdp2ZuaRWpPu/shfIauA==
 
-lit@3.1.1, lit@^2.0.0, "lit@^2.0.0 || ^3.0.0", lit@^3.0.0:
+lit@3.1.1, lit@^2.0.0, "lit@^2.0.0 || ^3.0.0", lit@^3.0.0, lit@^3.2.0:
   version "3.1.1"
   resolved "https://registry.yarnpkg.com/lit/-/lit-3.1.1.tgz#49340c8875019a777cc83904f75a2bf7764617dc"
   integrity sha512-hF1y4K58+Gqrz+aAPS0DNBwPqPrg6P04DuWK52eMkt/SM9Qe9keWLcFgRcEKOLuDlRZlDsDbNL37Vr7ew1VCuw==
@@ -8440,6 +8440,11 @@ typescript@~5.2.0:
   version "5.2.2"
   resolved "https://registry.yarnpkg.com/typescript/-/typescript-5.2.2.tgz#5ebb5e5a5b75f085f22bc3f8460fba308310fa78"
   integrity sha512-mI4WrpHsbCIcwT9cF4FZvr80QUeKvsUsUvKDoR+X/7XHQH98xYD8YHZg7ANtz2GtZt/CBq2QJ0thkGJMHfqc1w==
+
+typescript@~5.5.0:
+  version "5.5.4"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-5.5.4.tgz#d9852d6c82bad2d2eda4fd74a5762a8f5909e9ba"
+  integrity sha512-Mtq29sKDAEYP7aljRgtPOpTvOfbwRWlS6dPRzwjdE+C0R4brX/GUyhHSecbHMFLNBLcJIPt9nl9yG5TZ1weH+Q==
 
 typical@^4.0.0:
   version "4.0.0"

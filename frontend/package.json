@@ -103,7 +103,7 @@
     "localize:build": "lit-localize build"
   },
   "devDependencies": {
-    "@lit/localize-tools": "^0.7.1",
+    "@lit/localize-tools": "^0.8.0",
     "@types/webpack-bundle-analyzer": "^4.7.0",
     "@web/dev-server-esbuild": "^0.3.3",
     "@web/dev-server-import-maps": "^0.2.0",
