@@ -3,9 +3,8 @@ import { wrap, type AwaitableInstance } from "ink-mde";
 import { css, html, type PropertyValues } from "lit";
 import { customElement, property, query } from "lit/decorators.js";
 
-import { TailwindElement } from "@/classes/TailwindElement";
+import { BtrixElement } from "@/classes/BtrixElement";
 import { getHelpText } from "@/utils/form";
-import { formatNumber } from "@/utils/localization";
 
 type MarkdownChangeDetail = {
   value: string;
@@ -18,7 +17,7 @@ export type MarkdownChangeEvent = CustomEvent<MarkdownChangeDetail>;
  * @fires btrix-change MarkdownChangeEvent
  */
 @customElement("btrix-markdown-editor")
-export class MarkdownEditor extends TailwindElement {
+export class MarkdownEditor extends BtrixElement {
   static styles = css`
     :host {
       --ink-border-radius: var(--sl-input-border-radius-medium);
@@ -143,7 +142,7 @@ export class MarkdownEditor extends TailwindElement {
             this.textarea?.setCustomValidity(
               doc.length > this.maxlength
                 ? msg(
-                    str`Please shorten the description to ${formatNumber(this.maxlength)} or fewer characters.`,
+                    str`Please shorten the description to ${this.localize.number(this.maxlength)} or fewer characters.`,
                   )
                 : "",
             );

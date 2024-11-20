@@ -1,6 +1,7 @@
 import { TailwindElement } from "./TailwindElement";
 
 import { APIController } from "@/controllers/api";
+import { LocalizeController } from "@/controllers/localize";
 import { NavigateController } from "@/controllers/navigate";
 import { NotifyController } from "@/controllers/notify";
 import appState, { use } from "@/utils/state";
@@ -13,6 +14,7 @@ export class BtrixElement extends TailwindElement {
   readonly api = new APIController(this);
   readonly notify = new NotifyController(this);
   readonly navigate = new NavigateController(this);
+  readonly localize = new LocalizeController(this);
 
   protected get authState() {
     return this.appState.auth;

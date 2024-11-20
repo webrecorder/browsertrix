@@ -5,10 +5,9 @@ import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import orderBy from "lodash/fp/orderBy";
 
+import { BtrixElement } from "@/classes/BtrixElement";
 import type { Profile } from "@/pages/org/types";
 import type { APIPaginatedList } from "@/types/api";
-import LiteElement from "@/utils/LiteElement";
-import { getLocale } from "@/utils/localization";
 
 type SelectBrowserProfileChangeDetail = {
   value: Profile | undefined;
@@ -31,7 +30,7 @@ export type SelectBrowserProfileChangeEvent =
  */
 @customElement("btrix-select-browser-profile")
 @localized()
-export class SelectBrowserProfile extends LiteElement {
+export class SelectBrowserProfile extends BtrixElement {
   @property({ type: String })
   size?: SlSelect["size"];
 
@@ -86,7 +85,6 @@ export class SelectBrowserProfile extends LiteElement {
               <div slot="suffix">
                 <div class="text-xs">
                   <sl-format-date
-                    lang=${getLocale()}
                     date=${profile.modified}
                     month="2-digit"
                     day="2-digit"
@@ -105,7 +103,6 @@ export class SelectBrowserProfile extends LiteElement {
                 <span>
                   ${msg("Last updated")}
                   <sl-format-date
-                    lang=${getLocale()}
                     date=${this.selectedProfile.modified}
                     month="2-digit"
                     day="2-digit"
@@ -122,7 +119,7 @@ export class SelectBrowserProfile extends LiteElement {
                   : ``}
                 <a
                   class="flex items-center gap-1 text-blue-500 hover:text-blue-600"
-                  href=${`${this.orgBasePath}/browser-profiles/profile/${this.selectedProfile.id}`}
+                  href=${`${this.navigate.orgBasePath}/browser-profiles/profile/${this.selectedProfile.id}`}
                   target="_blank"
                 >
                   ${msg("Check Profile")}
@@ -133,7 +130,7 @@ export class SelectBrowserProfile extends LiteElement {
               ? html`
                   <a
                     class="ml-auto flex items-center gap-1 text-blue-500 hover:text-blue-600"
-                    href=${`${this.orgBasePath}/browser-profiles`}
+                    href=${`${this.navigate.orgBasePath}/browser-profiles`}
                     target="_blank"
                   >
                     ${msg("View Profiles")}
@@ -171,7 +168,7 @@ export class SelectBrowserProfile extends LiteElement {
           >${msg("This org doesn't have any custom profiles yet.")}</span
         >
         <a
-          href=${`${this.orgBasePath}/browser-profiles?new`}
+          href=${`${this.navigate.orgBasePath}/browser-profiles?new`}
           class="font-medium text-primary hover:text-primary-500"
           target="_blank"
           @click=${(e: Event) => {
@@ -235,7 +232,7 @@ export class SelectBrowserProfile extends LiteElement {
         data,
       ) as Profile[];
     } catch (e) {
-      this.notify({
+      this.notify.toast({
         message: msg("Sorry, couldn't retrieve browser profiles at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
@@ -244,7 +241,7 @@ export class SelectBrowserProfile extends LiteElement {
   }
 
   private async getProfiles() {
-    const data = await this.apiFetch<APIPaginatedList<Profile>>(
+    const data = await this.api.fetch<APIPaginatedList<Profile>>(
       `/orgs/${this.orgId}/profiles`,
     );
 

@@ -11,6 +11,7 @@
     "@novnc/novnc": "^1.4.0-beta",
     "@prettier/plugin-xml": "^3.4.1",
     "@rollup/plugin-commonjs": "^18.0.0",
+    "@shoelace-style/localize": "^3.2.1",
     "@shoelace-style/shoelace": "~2.15.1",
     "@tailwindcss/container-queries": "^0.1.1",
     "@types/color": "^3.0.2",
@@ -86,7 +87,7 @@
   "scripts": {
     "prepare": "cd .. && husky install frontend/.husky",
     "postinstall": "del-cli ./node_modules/.cache/webpack",
-    "test": "web-test-runner \"src/**/*.test.{ts,js}\" --playwright --browsers chromium",
+    "test": "web-test-runner \"src/**/*.test.{ts,js}\"",
     "prebuild": "del-cli ./dist",
     "build": "webpack --config webpack.prod.js",
     "build-dev": "webpack --mode development",
@@ -102,7 +103,7 @@
     "localize:build": "lit-localize build"
   },
   "devDependencies": {
-    "@lit/localize-tools": "^0.7.1",
+    "@lit/localize-tools": "^0.8.0",
     "@types/webpack-bundle-analyzer": "^4.7.0",
     "@web/dev-server-esbuild": "^0.3.3",
     "@web/dev-server-import-maps": "^0.2.0",
@@ -121,7 +122,7 @@
     "@open-wc/testing": "^3.2.0",
     "@playwright/test": "1.32.1",
     "@web/test-runner": "^0.13.22",
-    "@web/test-runner-playwright": "^0.8.8",
+    "@web/test-runner-playwright": "^0.11.0",
     "chromium": "^3.0.3"
   },
   "lint-staged": {

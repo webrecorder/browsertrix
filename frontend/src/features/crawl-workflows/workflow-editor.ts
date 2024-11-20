@@ -65,7 +65,7 @@ import {
   humanizeSchedule,
 } from "@/utils/cron";
 import { maxLengthValidator } from "@/utils/form";
-import { getLocale } from "@/utils/localization";
+import localize from "@/utils/localize";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { AppStateService } from "@/utils/state";
 import { regexEscape } from "@/utils/string";
@@ -154,8 +154,9 @@ const getDefaultProgressState = (hasConfigId = false): ProgressState => {
 
 function getLocalizedWeekDays() {
   const now = new Date();
-  // TODO accept locale from locale-picker
-  const { format } = new Intl.DateTimeFormat(getLocale(), { weekday: "short" });
+  const { format } = new Intl.DateTimeFormat(localize.activeLanguage, {
+    weekday: "short",
+  });
   return Array.from({ length: 7 }).map((x, day) =>
     format(Date.now() - (now.getDay() - day) * 86400000),
   );
@@ -873,7 +874,7 @@ https://archiveweb.page/guide`}
             `)}
             ${this.renderHelpTextCol(
               msg(
-                str`The crawler will visit and record each URL listed here. You can enter up to ${MAX_ADDITIONAL_URLS.toLocaleString()} URLs.`,
+                str`The crawler will visit and record each URL listed here. You can enter up to ${this.localize.number(MAX_ADDITIONAL_URLS)} URLs.`,
               ),
             )}
           `}
@@ -1137,7 +1138,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
             `)}
             ${this.renderHelpTextCol(
               msg(
-                str`The crawler will visit and record each URL listed here. You can enter up to ${MAX_ADDITIONAL_URLS.toLocaleString()} URLs.`,
+                str`The crawler will visit and record each URL listed here. You can enter up to ${this.localize.number(MAX_ADDITIONAL_URLS)} URLs.`,
               ),
             )}
           </div>
@@ -1163,11 +1164,11 @@ https://archiveweb.page/images/${"logo.svg"}`}
         const max = inputEl.max;
         if (min && value < +min) {
           helpText = msg(
-            str`Must be more than minimum of ${(+min).toLocaleString()}`,
+            str`Must be more than minimum of ${this.localize.number(+min)}`,
           );
         } else if (max && value > +max) {
           helpText = msg(
-            str`Must be less than maximum of ${(+max).toLocaleString()}`,
+            str`Must be less than maximum of ${this.localize.number(+max)}`,
           );
         }
       }
@@ -2060,12 +2061,12 @@ https://archiveweb.page/images/${"logo.svg"}`}
     let isValid = true;
     let helpText =
       urlList.length === 1
-        ? msg(str`${urlList.length.toLocaleString()} URL entered`)
-        : msg(str`${urlList.length.toLocaleString()} URLs entered`);
+        ? msg(str`${this.localize.number(urlList.length)} URL entered`)
+        : msg(str`${this.localize.number(urlList.length)} URLs entered`);
     if (urlList.length > max) {
       isValid = false;
       helpText = msg(
-        str`Please shorten list to ${max.toLocaleString()} or fewer URLs.`,
+        str`Please shorten list to ${this.localize.number(max)} or fewer URLs.`,
       );
     } else {
       const invalidUrl = urlList.find((url) => !validURL(url));

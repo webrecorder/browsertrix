@@ -2,7 +2,6 @@ import { msg, str } from "@lit/localize";
 import { z } from "zod";
 
 import { getAppSettings } from "./app";
-import { getLang } from "./localization";
 
 import type { Tags } from "@/components/ui/tag-input";
 import {
@@ -19,6 +18,7 @@ import {
 } from "@/types/workflow";
 import { DEFAULT_MAX_SCALE, isPageScopeType } from "@/utils/crawler";
 import { getNextDate, getScheduleInterval } from "@/utils/cron";
+import localize, { getBrowserLang } from "@/utils/localize";
 import { regexUnescape } from "@/utils/string";
 
 export const BYTES_PER_GB = 1e9;
@@ -38,7 +38,7 @@ export function defaultLabel(value: unknown): string {
     return msg("Default: Unlimited");
   }
   if (typeof value === "number") {
-    return msg(str`Default: ${value.toLocaleString()}`);
+    return msg(str`Default: ${localize.number(value)}`);
   }
   if (value) {
     return msg(str`Default: ${value}`);
@@ -121,7 +121,7 @@ export const getDefaultFormState = (): FormState => ({
   pageLimit: null,
   scale: 1,
   blockAds: true,
-  lang: getLang(),
+  lang: getBrowserLang(),
   scheduleType: "none",
   scheduleFrequency: "weekly",
   scheduleDayOfMonth: new Date().getDate(),

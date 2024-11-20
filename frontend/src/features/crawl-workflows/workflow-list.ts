@@ -20,17 +20,13 @@ import {
   queryAssignedElements,
 } from "lit/decorators.js";
 
+import { BtrixElement } from "@/classes/BtrixElement";
 import type { OverflowDropdown } from "@/components/ui/overflow-dropdown";
 import { RelativeDuration } from "@/components/ui/relative-duration";
-import { NavigateController } from "@/controllers/navigate";
 import type { ListWorkflow } from "@/types/crawler";
 import { humanizeSchedule } from "@/utils/cron";
 import { srOnly, truncate } from "@/utils/css";
-import { formatNumber, getLocale } from "@/utils/localization";
 import { pluralOf } from "@/utils/pluralize";
-
-const formatNumberCompact = (v: number) =>
-  formatNumber(v, { notation: "compact" });
 
 // postcss-lit-disable-next-line
 const mediumBreakpointCss = css`30rem`;
@@ -77,7 +73,7 @@ const hostVars = css`
 
 @customElement("btrix-workflow-list-item")
 @localized()
-export class WorkflowListItem extends LitElement {
+export class WorkflowListItem extends BtrixElement {
   static styles = [
     truncate,
     rowCss,
@@ -202,9 +198,6 @@ export class WorkflowListItem extends LitElement {
     `,
   ];
 
-  @property({ type: String })
-  orgSlug!: string;
-
   @property({ type: Object })
   workflow?: ListWorkflow;
 
@@ -213,8 +206,6 @@ export class WorkflowListItem extends LitElement {
 
   @query("btrix-overflow-dropdown")
   dropdownMenu!: OverflowDropdown;
-
-  private readonly navigate = new NavigateController(this);
 
   render() {
     const notSpecified = html`<span class="notSpecified" role="presentation"
@@ -271,7 +262,6 @@ export class WorkflowListItem extends LitElement {
           ${this.safeRender((workflow) => {
             if (workflow.lastCrawlTime && workflow.lastCrawlStartTime) {
               return html`<sl-format-date
-                  lang=${getLocale()}
                   date="${workflow.lastRun.toString()}"
                   month="2-digit"
                   day="2-digit"
@@ -350,7 +340,7 @@ export class WorkflowListItem extends LitElement {
         <div class="desc">
           ${this.safeRender(
             (workflow) =>
-              `${formatNumberCompact(workflow.crawlCount)} ${pluralOf("crawls", workflow.crawlCount)}`,
+              `${this.localize.number(workflow.crawlCount, { notation: "compact" })} ${pluralOf("crawls", workflow.crawlCount)}`,
           )}
         </div>
       </div>
@@ -365,7 +355,6 @@ export class WorkflowListItem extends LitElement {
           ${this.safeRender(
             (workflow) => html`
               <sl-format-date
-                lang=${getLocale()}
                 date="${workflow.modified}"
                 month="2-digit"
                 day="2-digit"
@@ -402,7 +391,7 @@ export class WorkflowListItem extends LitElement {
   }
 
   // TODO consolidate collections/workflow name
-  private renderName(workflow: ListWorkflow) {
+  private readonly renderName = (workflow: ListWorkflow) => {
     if (workflow.name)
       return html`<span class="truncate">${workflow.name}</span>`;
     if (!workflow.firstSeed)
@@ -411,7 +400,7 @@ export class WorkflowListItem extends LitElement {
     let nameSuffix: string | TemplateResult<1> = "";
     if (remainder) {
       nameSuffix = html`<span class="additionalUrls"
-        >+${formatNumber(remainder, { notation: "compact" })}
+        >+${this.localize.number(remainder, { notation: "compact" })}
         ${pluralOf("URLs", remainder)}</span
       >`;
     }
@@ -419,7 +408,7 @@ export class WorkflowListItem extends LitElement {
       <span class="primaryUrl truncate">${workflow.firstSeed}</span
       >${nameSuffix}
     `;
-  }
+  };
 }
 
 @localized()

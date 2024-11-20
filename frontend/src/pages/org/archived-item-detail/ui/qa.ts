@@ -28,7 +28,6 @@ import { type ArchivedItem, type ArchivedItemPage } from "@/types/crawler";
 import type { QARun } from "@/types/qa";
 import { isActive, isSuccessfullyFinished } from "@/utils/crawler";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
-import { formatNumber, getLocale } from "@/utils/localization";
 import { pluralOf } from "@/utils/pluralize";
 
 type QAStatsThreshold = {
@@ -282,7 +281,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
             <h4 class="mb-2 mt-4 text-lg tabular-nums leading-8">
               <span class="font-semibold">${msg("Pages")}</span>
               ${this.pages != null
-                ? `(${this.pages.total.toLocaleString()})`
+                ? `(${this.localize.number(this.pages.total)})`
                 : html`<sl-skeleton
                     class="inline-block h-6 w-5 align-[-6px]"
                   ></sl-skeleton>`}
@@ -343,7 +342,6 @@ export class ArchivedItemDetailQA extends BtrixElement {
           </btrix-table-cell>
           <btrix-table-cell>
             <sl-format-date
-              lang=${getLocale()}
               date=${run.started}
               month="2-digit"
               day="2-digit"
@@ -356,7 +354,6 @@ export class ArchivedItemDetailQA extends BtrixElement {
             ${run.finished
               ? html`
                   <sl-format-date
-                    lang=${getLocale()}
                     date=${run.finished}
                     month="2-digit"
                     day="2-digit"
@@ -425,7 +422,6 @@ export class ArchivedItemDetailQA extends BtrixElement {
               str`This analysis run includes data for ${runToBeDeleted.stats.done} ${pluralOf("pages", runToBeDeleted.stats.done)} and was started on `,
             )}
             <sl-format-date
-              lang=${getLocale()}
               date=${runToBeDeleted.started}
               month="2-digit"
               day="2-digit"
@@ -529,7 +525,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
           <div class="text-sm font-normal">
             ${qaRun.state === "starting"
               ? msg("Analysis starting")
-              : `${formatNumber(qaRun.stats.done)}/${formatNumber(qaRun.stats.found)}
+              : `${this.localize.number(qaRun.stats.done)}/${this.localize.number(qaRun.stats.found)}
                 ${pluralOf("pages", qaRun.stats.found)} ${msg("analyzed")}`}
           </div>
 
@@ -658,7 +654,8 @@ export class ArchivedItemDetailQA extends BtrixElement {
                           : `${threshold ? +threshold.lowerBoundary * 100 : 0}-${+qaStatsThresholds[idx + 1].lowerBoundary * 100 || 100}%`}
                       ${msg("match", { desc: "label for match percentage" })}
                       <br />
-                      ${formatNumber(bar.count)} ${pluralOf("pages", bar.count)}
+                      ${this.localize.number(bar.count)}
+                      ${pluralOf("pages", bar.count)}
                     </div>
                   </div>
                 </btrix-meter-bar>
@@ -676,7 +673,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
                 <div class="text-center">
                   ${remainderBarLabel}
                   <div class="text-xs opacity-80">
-                    ${formatNumber(remainingPageCount)}
+                    ${this.localize.number(remainingPageCount)}
                     ${pluralOf("pages", remainingPageCount)}
                   </div>
                 </div>
@@ -795,7 +792,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
                               name="chat-square-text-fill"
                               class="text-blue-600"
                             ></sl-icon>`,
-                            `${page.notes.length.toLocaleString()} ${pluralOf("comments", page.notes.length)}`,
+                            `${this.localize.number(page.notes.length)} ${pluralOf("comments", page.notes.length)}`,
                           )}
                         </sl-tooltip>
                       `

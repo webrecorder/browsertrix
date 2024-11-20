@@ -5,7 +5,7 @@ import { customElement, property, query } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
 import { when } from "lit/directives/when.js";
 
-import { TailwindElement } from "@/classes/TailwindElement";
+import { BtrixElement } from "@/classes/BtrixElement";
 import { type PageChangeEvent } from "@/components/ui/pagination";
 import { renderSpinner } from "@/pages/org/archived-item-qa/ui/spinner";
 import type { APIPaginatedList, APISortQuery } from "@/types/api";
@@ -77,7 +77,7 @@ export type QaSortChangeDetail = APISortQuery & { sortBy: SortableFieldNames };
  */
 @localized()
 @customElement("btrix-qa-page-list")
-export class PageList extends TailwindElement {
+export class PageList extends BtrixElement {
   @property({ type: String })
   qaRunId?: string;
 
@@ -139,10 +139,10 @@ export class PageList extends TailwindElement {
                     >
                       ${total === this.totalPages
                         ? msg(
-                            str`Showing all ${this.totalPages.toLocaleString()} pages`,
+                            str`Showing all ${this.localize.number(this.totalPages)} pages`,
                           )
                         : msg(
-                            str`Showing ${total.toLocaleString()} of ${this.totalPages.toLocaleString()} pages`,
+                            str`Showing ${this.localize.number(total)} of ${this.localize.number(this.totalPages)} pages`,
                           )}
                     </div>
                   </div>

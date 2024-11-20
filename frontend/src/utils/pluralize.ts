@@ -1,6 +1,15 @@
 import { msg } from "@lit/localize";
 
-import { pluralize } from "./localization";
+import localize from "./localize";
+
+export const pluralize = (
+  number: number,
+  strings: { [k in Intl.LDMLPluralRule]: string },
+  options?: Intl.PluralRulesOptions,
+) =>
+  strings[
+    new Intl.PluralRules(localize.activeLanguage, options).select(number)
+  ];
 
 // Add to this as necessary!
 const plurals = {
