@@ -188,7 +188,7 @@ export class CollectionDetail extends BtrixElement {
           >
           <sl-button
             size="small"
-            variant="primary"
+            variant="danger"
             @click=${async () => {
               await this.deleteCollection();
               this.openDialogName = undefined;

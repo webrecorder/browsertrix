@@ -1,7 +1,7 @@
 name: Localization Request
 description: Request a new language or translation.
 title: "[L10N]: "
-labels: ["enhancement"]
+labels: ["localization"]
 body:
   - type: textarea
     attributes:

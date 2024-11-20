@@ -14,6 +14,11 @@ export class TailwindElement extends LitElement {
     // thanks to `postcss-lit`.
     //
     // [^1]: (see https://tailwindcss.com/docs/adding-custom-styles#using-css-and-layer),
-    this.shadowRoot?.adoptedStyleSheets.push(theme);
+    if (this.shadowRoot) {
+      this.shadowRoot.adoptedStyleSheets = [
+        ...this.shadowRoot.adoptedStyleSheets,
+        theme,
+      ];
+    }
   }
 }

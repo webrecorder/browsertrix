@@ -823,6 +823,11 @@
     "@babel/types" "^7.24.0"
     semver "^7.5.2"
 
+"@iconify/types@^2.0.0":
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/@iconify/types/-/types-2.0.0.tgz#ab0e9ea681d6c8a1214f30cd741fe3a20cc57f57"
+  integrity sha512-+wluvCrRhXrhyOmRDJ3q8mux9JkKy5SJ/v8ol2tu4FVjyYvtEzkc/3pK15ET6RKg4b4w4BmTk1+gsCUhf21Ykg==
+
 "@import-maps/resolve@^1.0.1":
   version "1.0.1"
   resolved "https://registry.npmjs.org/@import-maps/resolve/-/resolve-1.0.1.tgz"
@@ -2721,6 +2726,13 @@
   resolved "https://registry.yarnpkg.com/@webpack-cli/serve/-/serve-1.7.0.tgz#e1993689ac42d2b16e9194376cfb6753f6254db1"
   integrity sha512-oxnCNGj88fL+xzV+dacXs44HcDwf1ovs3AuEzvP7mqXw7fQntqIhQ1BRmynh4qEKQSSSRSWVyXRjmTbZIX9V2Q==
 
+"@webrecorder/hickory@^0.0.10":
+  version "0.0.10"
+  resolved "https://registry.yarnpkg.com/@webrecorder/hickory/-/hickory-0.0.10.tgz#fba036b981d6797196501d54bf8474758159e108"
+  integrity sha512-fubRDiQwDFBIHUUz8iRWu0/NotM9OKMwQ3MjNOZVjabicAdZT17ngRhmvQ3EW4SX78OzRJptPjOL485iE33Ruw==
+  dependencies:
+    "@iconify/types" "^2.0.0"
+
 "@xml-tools/parser@^1.0.11":
   version "1.0.11"
   resolved "https://registry.yarnpkg.com/@xml-tools/parser/-/parser-1.0.11.tgz#a118a14099ea5c3c537e4781fad2fc195b57f8ff"
@@ -3544,6 +3556,11 @@ connect-history-api-fallback@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/connect-history-api-fallback/-/connect-history-api-fallback-2.0.0.tgz#647264845251a0daf25b97ce87834cace0f5f1c8"
   integrity sha512-U73+6lQFmfiNPrYbXqr6kZ1i1wiRqXnp2nhMsINseWXO8lDau0LGEffJ8kQi4EjLZympVgRdvqjAgiZ1tgzDDA==
+
+construct-style-sheets-polyfill@^3.1.0:
+  version "3.1.0"
+  resolved "https://registry.yarnpkg.com/construct-style-sheets-polyfill/-/construct-style-sheets-polyfill-3.1.0.tgz#c490abd79efdb359fafa62ec14ea55232be0eecf"
+  integrity sha512-HBLKP0chz8BAY6rBdzda11c3wAZeCZ+kIG4weVC2NM3AXzxx09nhe8t0SQNdloAvg5GLuHwq/0SPOOSPvtCcKw==
 
 content-disposition@0.5.4, content-disposition@~0.5.2:
   version "0.5.4"

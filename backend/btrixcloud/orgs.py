@@ -71,7 +71,7 @@ from .models import (
     UpdatedResponse,
     AddedResponse,
     AddedResponseId,
-    SuccessResponse,
+    SuccessResponseId,
     OrgInviteResponse,
     OrgAcceptInviteResponse,
     OrgDeleteInviteResponse,
@@ -1588,10 +1588,13 @@ def init_orgs_api(
         return {"updated": True}
 
     @router.post(
-        "/recalculate-storage", tags=["organizations"], response_model=SuccessResponse
+        "/recalculate-storage",
+        tags=["organizations"],
+        response_model=SuccessResponseId,
     )
     async def recalculate_org_storage(org: Organization = Depends(org_owner_dep)):
-        return await ops.recalculate_storage(org)
+        job_id = await ops.background_job_ops.create_recalculate_org_stats_job(org)
+        return {"success": True, "id": job_id}
 
     @router.post("/invite", tags=["invites"], response_model=OrgInviteResponse)
     async def invite_user_to_org(

@@ -3,7 +3,7 @@ import type { SlInput, SlSelectEvent } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import type { ZxcvbnResult } from "@zxcvbn-ts/core";
 import { nothing, type PropertyValues } from "lit";
-import { customElement, property, queryAsync, state } from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
 import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
@@ -63,7 +63,7 @@ export class RequestVerify extends TailwindElement {
 
     return html`
       <span
-        class="text-sm text-primary hover:text-indigo-400"
+        class="text-sm text-primary hover:text-primary-400"
         role="button"
         ?disabled=${this.isRequesting}
         @click=${this.requestVerification}
@@ -112,8 +112,8 @@ export class AccountSettings extends LiteElement {
   @state()
   private pwStrengthResults: null | ZxcvbnResult = null;
 
-  @queryAsync('sl-input[name="password"]')
-  private readonly passwordInput?: Promise<SlInput | null>;
+  @query('sl-input[name="newPassword"]')
+  private readonly newPassword?: SlInput | null;
 
   private get activeTab() {
     return this.tab && Object.values(Tab).includes(this.tab as unknown as Tab)
@@ -243,7 +243,7 @@ export class AccountSettings extends LiteElement {
       </form>
 
       ${(allLocales as unknown as string[]).length > 1
-        ? this.renderPreferences()
+        ? this.renderLanguage()
         : nothing}
     `;
   }
@@ -257,7 +257,7 @@ export class AccountSettings extends LiteElement {
             name="password"
             label=${msg("Enter your current password")}
             type="password"
-            autocomplete="off"
+            autocomplete="current-password"
             password-toggle
             required
           ></sl-input>
@@ -269,7 +269,7 @@ export class AccountSettings extends LiteElement {
             password-toggle
             minlength="8"
             required
-            @input=${this.onPasswordInput as UnderlyingFunction<
+            @sl-input=${this.onPasswordInput as UnderlyingFunction<
               typeof this.onPasswordInput
             >}
           ></sl-input>
@@ -322,18 +322,45 @@ export class AccountSettings extends LiteElement {
     `;
   }
 
-  private renderPreferences() {
+  private renderLanguage() {
     return html`
-      <h2 class="mb-2 mt-7 text-lg font-medium">${msg("Preferences")}</h2>
+      <h2 class="mb-2 mt-7 flex items-center gap-2 text-lg font-medium">
+        ${msg("Language")}
+        <btrix-beta-badge>
+          <div slot="content">
+            <b>${msg("Translations are in beta")}</b>
+            <p>
+              ${msg(
+                "Parts of the app may not be translated yet in some languages.",
+              )}
+            </p>
+          </div>
+        </btrix-beta-badge>
+      </h2>
       <section class="mb-5 rounded-lg border">
-        <div class="flex items-center justify-between px-4 py-2.5">
-          <h3 class="font-medium">
-            ${msg("Language")} <btrix-beta-badge></btrix-beta-badge>
+        <div class="flex items-center justify-between gap-2 px-4 py-2.5">
+          <h3>
+            ${msg(
+              "Choose your preferred language for displaying Browsertrix in your browser.",
+            )}
           </h3>
-          <btrix-locale-picker
+          <btrix-user-language-select
             @sl-select=${this.onSelectLocale}
-          ></btrix-locale-picker>
+          ></btrix-user-language-select>
         </div>
+        <footer class="flex items-center justify-start border-t px-4 py-3">
+          <p class="text-neutral-600">
+            ${msg("Help us translate Browsertrix.")}
+            <a
+              class="inline-flex items-center gap-1 text-blue-500 hover:text-blue-600"
+              href="https://docs.browsertrix.com/develop/localization/"
+              target="_blank"
+            >
+              ${msg("Contribute to translations")}
+              <sl-icon slot="suffix" name="arrow-right"></sl-icon
+            ></a>
+          </p>
+        </footer>
       </section>
     `;
   }
@@ -348,8 +375,8 @@ export class AccountSettings extends LiteElement {
     </div>
   `;
 
-  private readonly onPasswordInput = debounce(150)(async (e: InputEvent) => {
-    const { value } = e.target as SlInput;
+  private readonly onPasswordInput = debounce(150)(async () => {
+    const value = this.newPassword?.value;
     if (!value || value.length < 4) {
       this.pwStrengthResults = null;
       return;

@@ -11,7 +11,37 @@ def test_recalculate_org_storage(admin_auth_headers, default_org_id):
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
-    assert r.json()["success"]
+    data = r.json()
+    assert data["success"]
+
+    job_id = data["id"]
+    assert job_id
+
+    # Check that background job is launched and eventually succeeds
+    max_attempts = 18
+    attempts = 1
+    while True:
+        try:
+            r = requests.get(
+                f"{API_PREFIX}/orgs/all/jobs/{job_id}", headers=admin_auth_headers
+            )
+            assert r.status_code == 200
+            success = r.json()["success"]
+
+            if success:
+                break
+
+            if success is False:
+                assert False
+
+            if attempts >= max_attempts:
+                assert False
+
+            time.sleep(10)
+        except:
+            pass
+
+        attempts += 1
 
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}",
@@ -58,6 +88,7 @@ def test_delete_org_superadmin(admin_auth_headers, default_org_id):
     assert data["deleted"]
 
     job_id = data["id"]
+    assert job_id
 
     # Check that background job is launched and eventually succeeds
     max_attempts = 18

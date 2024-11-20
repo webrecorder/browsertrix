@@ -1,13 +1,13 @@
 // cSpell:words xstate
 import { localized, msg } from "@lit/localize";
 import { assign, createMachine, interpret } from "@xstate/fsm";
-import { type PropertyValues } from "lit";
+import { html, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
+import { BtrixElement } from "@/classes/BtrixElement";
 import { isApiError } from "@/utils/api";
 import type { ViewState } from "@/utils/APIRouter";
 import AuthService from "@/utils/AuthService";
-import LiteElement, { html } from "@/utils/LiteElement";
 import { AppStateService } from "@/utils/state";
 import { formatAPIUser } from "@/utils/user";
 
@@ -141,7 +141,7 @@ const machine = createMachine<FormContext, FormEvent, FormTypestate>(
 
 @localized()
 @customElement("btrix-log-in")
-export class LogInPage extends LiteElement {
+export class LogInPage extends BtrixElement {
   @property({ type: Object })
   viewState!: ViewState;
 
@@ -189,7 +189,7 @@ export class LogInPage extends LiteElement {
         <a
           class="text-sm text-gray-400 hover:text-gray-500"
           href="/log-in"
-          @click=${this.navLink}
+          @click=${this.navigate.link}
           >${msg("Sign in with password")}</a
         >
       `;
@@ -199,7 +199,7 @@ export class LogInPage extends LiteElement {
         <a
           class="text-sm text-gray-400 hover:text-gray-500"
           href="/log-in/forgot-password"
-          @click=${this.navLink}
+          @click=${this.navigate.link}
           >${msg("Forgot your password?")}</a
         >
       `;
@@ -253,27 +253,29 @@ export class LogInPage extends LiteElement {
     return html`
       <form @submit=${this.onSubmitLogIn} aria-describedby="formError">
         <div class="mb-5">
-          <btrix-input
+          <sl-input
             id="email"
             name="username"
             label=${msg("Email")}
             type="email"
             autocomplete="username"
+            class="hide-required-content"
             required
           >
-          </btrix-input>
+          </sl-input>
         </div>
         <div class="mb-5">
-          <btrix-input
+          <sl-input
             id="password"
             name="password"
             label=${msg("Password")}
             type="password"
             autocomplete="current-password"
             passwordToggle
+            class="hide-required-content"
             required
           >
-          </btrix-input>
+          </sl-input>
         </div>
 
         ${formError}
@@ -315,15 +317,16 @@ export class LogInPage extends LiteElement {
     return html`
       <form @submit=${this.onSubmitResetPassword} aria-describedby="formError">
         <div class="mb-5">
-          <btrix-input
+          <sl-input
             id="email"
             name="email"
             type="email"
             label="${msg("Your email address")}"
             autocomplete="username"
+            class="hide-required-content"
             required
           >
-          </btrix-input>
+          </sl-input>
         </div>
 
         ${formError}

@@ -160,8 +160,12 @@ export class CollectionsList extends BtrixElement {
       <btrix-dialog
         .label=${msg("Delete Collection?")}
         ?open=${this.openDialogName === "delete"}
+        @sl-show=${() => (this.isDialogVisible = true)}
         @sl-hide=${() => (this.openDialogName = undefined)}
-        @sl-after-hide=${() => (this.isDialogVisible = false)}
+        @sl-after-hide=${() => {
+          this.isDialogVisible = false;
+          this.selectedCollection = undefined;
+        }}
       >
         ${when(
           this.isDialogVisible,
@@ -178,7 +182,7 @@ export class CollectionsList extends BtrixElement {
               >
               <sl-button
                 size="small"
-                variant="primary"
+                variant="danger"
                 @click=${async () => {
                   await this.deleteCollection(this.selectedCollection!);
                   this.openDialogName = undefined;
@@ -678,7 +682,6 @@ export class CollectionsList extends BtrixElement {
         },
       );
 
-      this.selectedCollection = undefined;
       void this.fetchCollections();
 
       this.notify.toast({

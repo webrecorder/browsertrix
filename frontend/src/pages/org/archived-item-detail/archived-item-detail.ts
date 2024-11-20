@@ -797,7 +797,7 @@ export class ArchivedItemDetail extends BtrixElement {
                           new Date(this.item!.started).valueOf(),
                       )}`
                     : html`
-                        <span class="text-purple-600">
+                        <span class="text-violet-600">
                           <btrix-relative-duration
                             value=${this.item!.started}
                             unitCount="3"
@@ -840,7 +840,7 @@ export class ArchivedItemDetail extends BtrixElement {
                       ? html`<span>,</span
                           ><span
                             class="tracking-tighter${this.isActive
-                              ? " text-purple-600"
+                              ? " text-violet-600"
                               : ""} font-mono"
                           >
                             ${formatNumber(+this.item.stats.done)}
@@ -932,7 +932,7 @@ ${this.item?.description}
                       ({ id, name }) =>
                         html`<li class="mt-1">
                           <a
-                            class="text-primary hover:text-indigo-400"
+                            class="text-primary hover:text-primary-400"
                             href=${`${this.navigate.orgBasePath}/collections/view/${id}`}
                             @click=${this.navigate.link}
                             >${name}</a

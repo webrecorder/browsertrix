@@ -2236,12 +2236,6 @@
       <trans-unit id="sa1d4559f0fcc5219">
         <source>Remove file</source>
       </trans-unit>
-      <trans-unit id="s452f791e0ff6a13e">
-        <source>Hide password</source>
-      </trans-unit>
-      <trans-unit id="s2f7f35f6a5b733f5">
-        <source>Show password</source>
-      </trans-unit>
       <trans-unit id="sfe7c07c43a065520">
         <source>Very weak password</source>
       </trans-unit>
@@ -2873,7 +2867,9 @@
         <source>Please remove or fix the following invalid URL: <x equiv-text="${invalidUrl}" id="0"></x></source>
       </trans-unit>
       <trans-unit id="saf63d34c8601dd41">
-        <source><x equiv-text="${humanizeSchedule(workflow.schedule, {&#10;    length: &quot;short&quot;,&#10;}, numberFormatter)}" id="0"></x> </source>
+        <source>
+          <x equiv-text="${humanizeSchedule(workflow.schedule, {&#10;    length: &quot;short&quot;,&#10;})}" id="0"/>
+        </source>
       </trans-unit>
       <trans-unit id="s136b21dec9a221bd">
         <source>Manual run by <x equiv-text="${workflow.lastStartedByName}" id="0"></x></source>
@@ -3166,9 +3162,6 @@
       </trans-unit>
       <trans-unit id="sf151c44c3a52a448">
         <source>Enter new password</source>
-      </trans-unit>
-      <trans-unit id="sf6c0a694575fb0a6">
-        <source>Must be between 8-64 characters</source>
       </trans-unit>
       <trans-unit id="s8daf047a917f4cc4">
         <source>Choose a strong password between <x equiv-text="${PASSWORD_MINLENGTH}" id="0"></x>-<x equiv-text="${PASSWORD_MAXLENGTH}" id="1"></x> characters.</source>
@@ -3685,9 +3678,6 @@
       <trans-unit id="sadfb54de733655c9">
         <source>Using proxy:</source>
       </trans-unit>
-      <trans-unit id="habe03840abb41da5">
-        <source>It is highly recommended to create dedicated accounts to use when crawling. For details, refer to <x equiv-text="&lt;a class=&quot;text-primary hover:text-indigo-400&quot; href=&quot;/docs/user-guide/browser-profiles/&quot; target=&quot;_blank&quot;&gt;&#10;            ${msg(&quot;browser profile best practices&quot;)}&lt;/a&gt;" id="0"></x>. </source>
-      </trans-unit>
       <trans-unit id="hda7aa624404fc0ed">
         <source>Refer to our user guide on <x equiv-text="&lt;a class=&quot;text-neutral-500 underline hover:text-primary&quot; href=&quot;/docs/user-guide/org-settings/&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;&gt;" id="0"></x>org settings<x equiv-text="&lt;/a&gt;" id="1"></x> for details.</source>
       </trans-unit>
@@ -3697,11 +3687,30 @@
       <trans-unit id="s01a8d45397ec133b">
         <source>Security</source>
       </trans-unit>
-      <trans-unit id="s2b5047d39b9baf3d">
-        <source>Preferences</source>
-      </trans-unit>
       <trans-unit id="sfa66f095b5a35ccc">
         <source>Your language preference has been updated.</source>
+      </trans-unit>
+      <trans-unit id="h594aac845e847983">
+        <source>
+          It is highly recommended to create dedicated accounts to use when
+          crawling. For details, refer to
+          <x equiv-text="&lt;a class=&quot;text-primary hover:text-primary-400&quot; href=&quot;/docs/user-guide/browser-profiles/&quot; target=&quot;_blank&quot;&gt;&#10;            ${msg(&quot;browser profile best practices&quot;)}&lt;/a&gt;" id="0"/>.
+        </source>
+      </trans-unit>
+      <trans-unit id="s5f35a66624e4d770">
+        <source>Translations are in beta</source>
+      </trans-unit>
+      <trans-unit id="s3f3f33356a6d42ff">
+        <source>Parts of the app may not be translated yet in some languages.</source>
+      </trans-unit>
+      <trans-unit id="sae935ffa510dc00f">
+        <source>Help us translate Browsertrix.</source>
+      </trans-unit>
+      <trans-unit id="s3b8e2d51d9b86e21">
+        <source>Contribute to translations</source>
+      </trans-unit>
+      <trans-unit id="seb49ad0f81062f64">
+        <source>Choose your preferred language for displaying Browsertrix in your browser.</source>
       </trans-unit>
     </body>
   </file>
