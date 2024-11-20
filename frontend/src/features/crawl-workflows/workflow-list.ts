@@ -391,7 +391,7 @@ export class WorkflowListItem extends BtrixElement {
   }
 
   // TODO consolidate collections/workflow name
-  private renderName(workflow: ListWorkflow) {
+  private readonly renderName = (workflow: ListWorkflow) => {
     if (workflow.name)
       return html`<span class="truncate">${workflow.name}</span>`;
     if (!workflow.firstSeed)
@@ -408,7 +408,7 @@ export class WorkflowListItem extends BtrixElement {
       <span class="primaryUrl truncate">${workflow.firstSeed}</span
       >${nameSuffix}
     `;
-  }
+  };
 }
 
 @localized()

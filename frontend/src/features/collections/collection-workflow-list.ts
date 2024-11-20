@@ -351,7 +351,7 @@ export class CollectionWorkflowList extends BtrixElement {
   }
 
   // TODO consolidate collections/workflow name
-  private renderName(workflow: Workflow) {
+  private readonly renderName = (workflow: Workflow) => {
     if (workflow.name) return html`<span>${workflow.name}</span>`;
     if (workflow.firstSeed && workflow.seedCount) {
       const remainder = workflow.seedCount - 1;
@@ -369,5 +369,5 @@ export class CollectionWorkflowList extends BtrixElement {
         </div>
       `;
     }
-  }
+  };
 }
