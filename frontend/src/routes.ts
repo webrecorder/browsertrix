@@ -12,7 +12,7 @@ export const ROUTES = {
   accountSettings: "/account/settings(/:settingsTab)",
   orgs: "/orgs",
   org: [
-    "/orgs/:slug",
+    "/orgs/:slug(/)",
     // Org sections:
     "(/dashboard)",
     "(/workflows(/new)(/:workflowId(/crawls/:itemId(/review/:qaTab))))",

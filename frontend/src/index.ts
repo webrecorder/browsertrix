@@ -555,7 +555,7 @@ export class App extends BtrixElement {
               @sl-select=${(e: CustomEvent<{ item: { value: string } }>) => {
                 const { value } = e.detail.item;
                 if (value) {
-                  this.routeTo(`/orgs/${value}`);
+                  this.routeTo(`/orgs/${value}/dashboard`);
                 } else {
                   if (this.userInfo) {
                     this.clearSelectedOrg();
@@ -750,7 +750,7 @@ export class App extends BtrixElement {
           ></btrix-org>`;
         }
 
-        return html`<btrix-org-home></btrix-org-home>`;
+        return html`<btrix-org-home class="w-full"></btrix-org-home>`;
       }
 
       case "accountSettings":
