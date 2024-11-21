@@ -126,7 +126,9 @@ export class AcceptInvite extends BtrixElement {
                           e: CustomEvent<OrgUpdatedDetail>,
                         ) => {
                           e.stopPropagation();
-                          this.navigate.to(`/orgs/${e.detail.data.slug}`);
+                          this.navigate.to(
+                            `/orgs/${e.detail.data.slug}/dashboard`,
+                          );
                         }}
                       ></btrix-org-form>
                     `
@@ -244,7 +246,7 @@ export class AcceptInvite extends BtrixElement {
           icon: "check2-circle",
         });
 
-        this.navigate.to(`/orgs/${org.slug}`);
+        this.navigate.to(`/orgs/${org.slug}/dashboard`);
       }
     } catch (err) {
       if (isApiError(err) && err.message === "Invalid Invite Code") {

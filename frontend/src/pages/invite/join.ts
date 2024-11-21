@@ -76,7 +76,7 @@ export class Join extends LiteElement {
                           e: CustomEvent<OrgUpdatedDetail>,
                         ) => {
                           e.stopPropagation();
-                          this.navTo(`/orgs/${e.detail.data.slug}`);
+                          this.navTo(`/orgs/${e.detail.data.slug}/dashboard`);
                         }}
                       ></btrix-org-form>
                     `
@@ -171,7 +171,7 @@ export class Join extends LiteElement {
 
     if (!inviteInfo?.firstOrgAdmin) {
       if (inviteInfo?.orgSlug) {
-        this.navTo(`/orgs/${inviteInfo.orgSlug}`);
+        this.navTo(`/orgs/${inviteInfo.orgSlug}/dashboard`);
       } else {
         this.navTo(this.orgBasePath);
       }

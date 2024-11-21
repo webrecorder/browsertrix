@@ -54,7 +54,7 @@ export class Admin extends BtrixElement {
   connectedCallback() {
     if (this.authState) {
       if (this.slug) {
-        this.navigate.to(`/orgs/${this.slug}`);
+        this.navigate.to(`/orgs/${this.slug}/dashboard`);
       } else {
         super.connectedCallback();
       }
@@ -68,7 +68,7 @@ export class Admin extends BtrixElement {
       if (this.userInfo.isSuperAdmin) {
         this.initSuperAdmin();
       } else if (this.userInfo.orgs.length) {
-        this.navigate.to(`/orgs/${this.userInfo.orgs[0].slug}`);
+        this.navigate.to(`/orgs/${this.userInfo.orgs[0].slug}/dashboard`);
       } else {
         this.navigate.to(`/account/settings`);
       }

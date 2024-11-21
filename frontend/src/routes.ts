@@ -1,5 +1,6 @@
 export const ROUTES = {
   home: "/",
+  dashboard: "/dashboard",
   join: "/join/:token",
   signUp: "/sign-up",
   acceptInvite: "/invite/accept/:token",
@@ -13,6 +14,7 @@ export const ROUTES = {
   org: [
     "/orgs/:slug",
     // Org sections:
+    "(/dashboard)",
     "(/workflows(/new)(/:workflowId(/crawls/:itemId(/review/:qaTab))))",
     "(/items(/:itemType(/:itemId)))",
     "(/collections(/new)(/view/:collectionId(/:collectionTab)))",
