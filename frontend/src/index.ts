@@ -330,7 +330,7 @@ export class App extends BtrixElement {
     const isSuperAdmin = this.userInfo?.isSuperAdmin;
     let homeHref = "/";
     if (!isSuperAdmin && this.appState.orgSlug) {
-      homeHref = this.navigate.orgBasePath;
+      homeHref = `${this.navigate.orgBasePath}/dashboard`;
     }
 
     const showFullLogo =
@@ -530,7 +530,7 @@ export class App extends BtrixElement {
           ? html`
               <a
                 class="font-medium text-neutral-600"
-                href=${this.navigate.orgBasePath}
+                href=${`${this.navigate.orgBasePath}/dashboard`}
                 @click=${this.navigate.link}
               >
                 ${selectedOption.name.slice(0, orgNameLength)}
@@ -734,19 +734,23 @@ export class App extends BtrixElement {
         const slug = this.viewState.params.slug;
         const orgPath = this.viewState.pathname;
         const pathname = this.getLocationPathname();
-        const orgTab =
-          pathname
-            .slice(pathname.indexOf(slug) + slug.length)
-            .replace(/(^\/|\/$)/, "")
-            .split("/")[0] || "home";
-        return html`<btrix-org
-          class="w-full"
-          .viewStateData=${this.viewState.data}
-          .params=${this.viewState.params}
-          .maxScale=${this.appState.settings?.maxScale || DEFAULT_MAX_SCALE}
-          orgPath=${orgPath.split(slug)[1]}
-          orgTab=${orgTab as OrgTab}
-        ></btrix-org>`;
+        const orgTab = pathname
+          .slice(pathname.indexOf(slug) + slug.length)
+          .replace(/(^\/|\/$)/, "")
+          .split("/")[0];
+
+        if (orgTab) {
+          return html`<btrix-org
+            class="w-full"
+            .viewStateData=${this.viewState.data}
+            .params=${this.viewState.params}
+            .maxScale=${this.appState.settings?.maxScale || DEFAULT_MAX_SCALE}
+            orgPath=${orgPath.split(slug)[1]}
+            orgTab=${orgTab as OrgTab}
+          ></btrix-org>`;
+        }
+
+        return html`<btrix-org-home></btrix-org-home>`;
       }
 
       case "accountSettings":
@@ -916,7 +920,9 @@ export class App extends BtrixElement {
     });
 
     if (!detail.api) {
-      this.routeTo(detail.redirectUrl || this.navigate.orgBasePath);
+      this.routeTo(
+        detail.redirectUrl || `${this.navigate.orgBasePath}/dashboard`,
+      );
     }
 
     if (detail.firstLogin) {

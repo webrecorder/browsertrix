@@ -37,6 +37,7 @@ import "./browser-profiles-detail";
 import "./browser-profiles-list";
 import "./settings/settings";
 import "./dashboard";
+import "./home";
 
 import(/* webpackChunkName: "org" */ "./archived-item-qa/archived-item-qa");
 import(/* webpackChunkName: "org" */ "./workflows-new");
@@ -51,7 +52,7 @@ type ArchivedItemPageParams = {
   collectionId?: string;
 };
 export type OrgParams = {
-  home: Record<string, never>;
+  dashboard: Record<string, never>;
   workflows: ArchivedItemPageParams & {
     scopeType?: WorkflowFormState["scopeType"];
     new?: ResourceName;
@@ -83,7 +84,7 @@ export type OrgParams = {
 };
 export type OrgTab = keyof OrgParams;
 
-const defaultTab = "home";
+const defaultTab = "dashboard";
 
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -150,7 +151,7 @@ export class Org extends LiteElement {
         // Couldn't find org with slug, redirect to first org
         const org = this.userInfo.orgs[0] as UserOrg | undefined;
         if (org) {
-          this.navTo(`/orgs/${org.slug}`);
+          this.navTo(`/orgs/${org.slug}/dashboard`);
         } else {
           this.navTo(`/account/settings`);
         }
@@ -262,7 +263,7 @@ export class Org extends LiteElement {
             choose(
               this.orgTab,
               [
-                ["home", this.renderDashboard],
+                ["dashboard", this.renderDashboard],
                 [
                   "items",
                   () => html`
@@ -331,9 +332,9 @@ export class Org extends LiteElement {
       >
         <nav class="-mx-3 flex items-end overflow-x-auto px-3 xl:px-6">
           ${this.renderNavTab({
-            tabName: "home",
-            label: msg("Overview"),
-            path: "",
+            tabName: "dashboard",
+            label: msg("Dashboard"),
+            path: "dashboard",
           })}
           ${this.renderNavTab({
             tabName: "workflows",
@@ -423,7 +424,7 @@ export class Org extends LiteElement {
           ?open=${this.openDialogName === "upload"}
           @request-close=${() => (this.openDialogName = undefined)}
           @uploaded=${() => {
-            if (this.orgTab === "home") {
+            if (this.orgTab === "dashboard") {
               this.navTo(`${this.orgBasePath}/items/upload`);
             }
           }}
