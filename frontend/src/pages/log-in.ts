@@ -187,7 +187,7 @@ export class LogInPage extends BtrixElement {
       form = this.renderForgotPasswordForm();
       link = html`
         <a
-          class="text-sm text-gray-400 hover:text-gray-500"
+          class="text-cyan-400 hover:text-cyan-500"
           href="/log-in"
           @click=${this.navigate.link}
           >${msg("Sign in with password")}</a
@@ -195,14 +195,28 @@ export class LogInPage extends BtrixElement {
       `;
     } else {
       form = this.renderLoginForm();
-      link = html`
-        <a
-          class="text-sm text-gray-400 hover:text-gray-500"
-          href="/log-in/forgot-password"
-          @click=${this.navigate.link}
-          >${msg("Forgot your password?")}</a
-        >
-      `;
+
+      const { registrationEnabled, signUpUrl } = this.appState.settings || {};
+
+      if (registrationEnabled || signUpUrl) {
+        link = html`
+          <div class="flex justify-between gap-4 px-3 text-gray-400">
+            <span>${msg("Need an account?")}</span>
+            <a
+              class="group inline-flex items-center gap-1 font-medium text-cyan-400 hover:text-cyan-500"
+              href=${signUpUrl || "/sign-up"}
+              @click=${signUpUrl ? () => {} : this.navigate.link}
+            >
+              ${msg("Sign Up")}
+              <sl-icon
+                slot="suffix"
+                name="arrow-right"
+                class="text-base transition-transform group-hover:translate-x-1"
+              ></sl-icon>
+            </a>
+          </div>
+        `;
+      }
     }
 
     if (this.formState.context.successMessage) {
@@ -216,7 +230,7 @@ export class LogInPage extends BtrixElement {
     }
 
     return html`
-      <article class="grid w-full max-w-md gap-5">
+      <article class="grid w-full max-w-[50ch] gap-5">
         ${successMessage}
 
         <main class="p-10 md:rounded-lg md:border md:bg-white md:shadow-lg">
@@ -276,6 +290,15 @@ export class LogInPage extends BtrixElement {
             required
           >
           </sl-input>
+        </div>
+
+        <div class="mb-5">
+          <a
+            class="text-cyan-300 hover:text-cyan-400"
+            href="/log-in/forgot-password"
+            @click=${this.navigate.link}
+            >${msg("Forgot your password?")}</a
+          >
         </div>
 
         ${formError}

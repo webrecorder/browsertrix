@@ -329,7 +329,7 @@ export class App extends BtrixElement {
   private renderNavBar() {
     const isSuperAdmin = this.userInfo?.isSuperAdmin;
     let homeHref = "/";
-    if (!isSuperAdmin && this.appState.orgSlug) {
+    if (!isSuperAdmin && this.appState.orgSlug && this.authState) {
       homeHref = `${this.navigate.orgBasePath}/dashboard`;
     }
 
@@ -392,7 +392,11 @@ export class App extends BtrixElement {
               `,
             )}
           </div>
-          <div class="order-2 flex flex-grow-0 items-center gap-4 md:order-3">
+          <div
+            class="${this.authState
+              ? "gap-4"
+              : "gap-2"} order-2 flex flex-grow-0 items-center md:order-3"
+          >
             ${this.authState
               ? html`${this.userInfo && !isSuperAdmin
                     ? html`
@@ -447,7 +451,18 @@ export class App extends BtrixElement {
                     </sl-menu>
                   </sl-dropdown>`
               : html`
-                  ${this.renderSignUpLink()}
+                  ${this.viewState.route === "org"
+                    ? html`
+                        <sl-button
+                          size="small"
+                          variant="primary"
+                          href="/log-in"
+                          @click=${this.navigate.link}
+                        >
+                          ${msg("Sign In")}
+                        </sl-button>
+                      `
+                    : nothing}
                   ${(translatedLocales as unknown as string[]).length > 2
                     ? html`
                         <btrix-user-language-select
@@ -629,9 +644,9 @@ export class App extends BtrixElement {
   private renderFooter() {
     return html`
       <footer
-        class="mx-auto box-border flex w-full max-w-screen-desktop flex-col items-center justify-between gap-4 p-3 md:flex-row"
+        class="mx-auto box-border flex w-full max-w-screen-desktop flex-col items-center  gap-4 p-3 md:flex-row"
       >
-        <div>
+        <div class="flex-1">
           <a
             class="flex items-center gap-2 leading-none text-neutral-400 hover:text-primary"
             href="https://github.com/webrecorder/browsertrix"
@@ -642,9 +657,11 @@ export class App extends BtrixElement {
             ${msg("Source Code")}
           </a>
         </div>
-        <div>
+        <div class="flex-1">
           <a
-            class="flex items-center gap-2 leading-none text-neutral-400 hover:text-primary"
+            class="${this.version
+              ? "justify-center"
+              : "justify-end"} flex items-center gap-2 leading-none text-neutral-400 hover:text-primary"
             href="https://forum.webrecorder.net/c/help/5"
             target="_blank"
             rel="noopener"
@@ -655,7 +672,9 @@ export class App extends BtrixElement {
         </div>
         ${this.version
           ? html`
-              <div class="flex items-center justify-center gap-2 leading-none">
+              <div
+                class="flex flex-1 items-center justify-end gap-2 leading-none"
+              >
                 <btrix-copy-button
                   class="size-4 text-neutral-400"
                   .getValue=${() => this.version}
