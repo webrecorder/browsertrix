@@ -24,6 +24,7 @@ import { formatAPIUser } from "@/utils/user";
 
 import "./components/billing";
 import "./components/crawling-defaults";
+import "./components/privacy";
 
 const styles = unsafeCSS(stylesheet);
 
@@ -181,6 +182,7 @@ export class OrgSettings extends BtrixElement {
 
         <btrix-tab-panel name="information">
           ${this.renderInformation()}
+          <btrix-org-settings-privacy></btrix-org-settings-privacy>
         </btrix-tab-panel>
         <btrix-tab-panel name="members">
           ${this.renderMembers()}
@@ -233,7 +235,7 @@ export class OrgSettings extends BtrixElement {
             [
               html`
                 <sl-input
-                  class="with-max-help-text mb-2"
+                  class="with-max-help-text"
                   name="orgName"
                   size="small"
                   label=${msg("Org Name")}
@@ -256,28 +258,21 @@ export class OrgSettings extends BtrixElement {
                   class="mb-2"
                   name="orgSlug"
                   size="small"
-                  label=${msg("Custom URL Identifier")}
+                  label=${msg("Org URL")}
                   placeholder="my-organization"
                   autocomplete="off"
                   value=${this.orgSlug || ""}
                   minlength="2"
                   maxlength="30"
                   required
-                  help-text=${msg(
-                    str`Org home page: ${window.location.protocol}//${
-                      window.location.hostname
-                    }/orgs/${
-                      this.slugValue
-                        ? slugifyStrict(this.slugValue)
-                        : this.orgSlug
-                    }`,
-                  )}
                   @sl-input=${this.handleSlugInput}
-                ></sl-input>
+                >
+                  <div slot="prefix" class="font-light text-neutral-400">
+                    ${window.location.hostname}/orgs/
+                  </div>
+                </sl-input>
               `,
-              msg(
-                "Customize your organization's web address for accessing Browsertrix.",
-              ),
+              msg("Customize your organization's Browsertrix URL."),
             ],
             [
               html`
