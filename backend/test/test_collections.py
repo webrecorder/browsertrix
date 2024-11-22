@@ -58,7 +58,7 @@ def test_create_public_collection(
         json={
             "crawlIds": [crawler_crawl_id],
             "name": PUBLIC_COLLECTION_NAME,
-            "isPublic": True,
+            "access": "public",
         },
     )
     assert r.status_code == 200
@@ -73,7 +73,7 @@ def test_create_public_collection(
         f"{API_PREFIX}/orgs/{default_org_id}/collections/{_public_coll_id}",
         headers=crawler_auth_headers,
     )
-    assert r.json()["isPublic"]
+    assert r.json()["access"] == "public"
 
 
 def test_create_collection_taken_name(
@@ -311,12 +311,31 @@ def test_collection_public(crawler_auth_headers, default_org_id):
     )
     assert r.status_code == 404
 
-    # make public
+    # make public and test replay headers
     r = requests.patch(
         f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}",
         headers=crawler_auth_headers,
         json={
-            "isPublic": True,
+            "access": "public",
+        },
+    )
+    assert r.status_code == 200
+    assert r.json()["updated"]
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/public/replay.json",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.headers["Access-Control-Allow-Origin"] == "*"
+    assert r.headers["Access-Control-Allow-Headers"] == "*"
+
+    # make unlisted and test replay headers
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}",
+        headers=crawler_auth_headers,
+        json={
+            "access": "unlisted",
         },
     )
     assert r.status_code == 200
@@ -335,7 +354,7 @@ def test_collection_public(crawler_auth_headers, default_org_id):
         f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}",
         headers=crawler_auth_headers,
         json={
-            "isPublic": False,
+            "access": "private",
         },
     )
 
@@ -344,6 +363,24 @@ def test_collection_public(crawler_auth_headers, default_org_id):
         headers=crawler_auth_headers,
     )
     assert r.status_code == 404
+
+
+def test_collection_access_invalid_value(crawler_auth_headers, default_org_id):
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}",
+        headers=crawler_auth_headers,
+        json={
+            "access": "invalid",
+        },
+    )
+    assert r.status_code == 422
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["access"] == "private"
 
 
 def test_add_upload_to_collection(crawler_auth_headers, default_org_id):
@@ -429,6 +466,7 @@ def test_list_collections(
     assert first_coll["totalSize"] > 0
     assert first_coll["modified"]
     assert first_coll["tags"] == ["wr-test-2", "wr-test-1"]
+    assert first_coll["access"] == "private"
 
     second_coll = [coll for coll in items if coll["name"] == SECOND_COLLECTION_NAME][0]
     assert second_coll["id"]
@@ -440,6 +478,7 @@ def test_list_collections(
     assert second_coll["totalSize"] > 0
     assert second_coll["modified"]
     assert second_coll["tags"] == ["wr-test-2"]
+    assert second_coll["access"] == "private"
 
 
 def test_remove_upload_from_collection(crawler_auth_headers, default_org_id):
@@ -524,6 +563,26 @@ def test_filter_sort_collections(
     assert coll["name"] == SECOND_COLLECTION_NAME
     assert coll["oid"] == default_org_id
     assert coll.get("description") is None
+
+    # Test filtering by access
+    name_prefix = name_prefix.upper()
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections?access=public",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == 1
+
+    items = data["items"]
+    assert len(items) == 1
+
+    coll = items[0]
+    assert coll["id"]
+    assert coll["name"] == PUBLIC_COLLECTION_NAME
+    assert coll["oid"] == default_org_id
+    assert coll.get("description") is None
+    assert coll["access"] == "public"
 
     # Test sorting by name, ascending (default)
     r = requests.get(
