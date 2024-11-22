@@ -14,7 +14,7 @@ import { when } from "lit/directives/when.js";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
 import type { MarkdownEditor } from "@/components/ui/markdown-editor";
-import type { Collection } from "@/types/collection";
+import { CollectionAccess, type Collection } from "@/types/collection";
 import { isApiError } from "@/utils/api";
 import { maxLengthValidator } from "@/utils/form";
 
@@ -180,7 +180,9 @@ export class CollectionMetadataDialog extends BtrixElement {
       const body = JSON.stringify({
         name,
         description,
-        isPublic: Boolean(isPublic),
+        access: !isPublic
+          ? CollectionAccess.Private
+          : CollectionAccess.Unlisted,
       });
       let path = `/orgs/${this.orgId}/collections`;
       let method = "POST";
