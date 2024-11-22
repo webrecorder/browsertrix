@@ -26,7 +26,7 @@ class Migration(BaseMigration):
         try:
             await colls_mdb.update_many(
                 {"isPublic": False},
-                [{"$set": {"access": "private"}, "$unset": {"isPublic": 1}}],
+                {"$set": {"access": "private"}, "$unset": {"isPublic": 1}},
             )
         # pylint: disable=broad-exception-caught
         except Exception as err:
@@ -39,7 +39,7 @@ class Migration(BaseMigration):
         try:
             await colls_mdb.update_many(
                 {"isPublic": True},
-                [{"$set": {"access": "unlisted"}, "$unset": {"isPublic": 1}}],
+                {"$set": {"access": "unlisted"}, "$unset": {"isPublic": 1}},
             )
         # pylint: disable=broad-exception-caught
         except Exception as err:
