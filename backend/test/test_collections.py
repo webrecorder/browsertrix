@@ -15,6 +15,7 @@ DESCRIPTION = "Test description"
 
 _coll_id = None
 _second_coll_id = None
+_public_coll_id = None
 upload_id = None
 modified = None
 
@@ -66,6 +67,7 @@ def test_create_public_collection(
     assert data["added"]
     assert data["name"] == PUBLIC_COLLECTION_NAME
 
+    global _public_coll_id
     _public_coll_id = data["id"]
 
     # Verify that it is public
@@ -723,6 +725,52 @@ def test_filter_sort_collections(
     )
     assert r.status_code == 400
     assert r.json()["detail"] == "invalid_sort_direction"
+
+
+def test_list_public_collections(
+    crawler_auth_headers, default_org_id, crawler_crawl_id, admin_crawl_id
+):
+    # Create new public collection
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections",
+        headers=crawler_auth_headers,
+        json={
+            "crawlIds": [crawler_crawl_id],
+            "name": "Second public collection",
+            "access": "public",
+        },
+    )
+    assert r.status_code == 200
+    second_public_coll_id = r.json()["id"]
+
+    # Get default org slug
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    org_slug = data["slug"]
+    org_name = data["name"]
+
+    # List public collections with no auth
+    r = requests.get(f"{API_PREFIX}/public-collections/{org_slug}")
+    assert r.status_code == 200
+    data = r.json()
+    assert data["orgName"] == org_name
+
+    collections = data["collections"]
+    assert len(collections) == 2
+    for collection in collections:
+        assert collection["id"] in (_public_coll_id, second_public_coll_id)
+        assert collection["access"] == "public"
+
+    # Test non-existing slug - it should return a 404 specifying that
+    # public collections weren't found but not reveal whether or not
+    # an org exists with that slug
+    r = requests.get(f"{API_PREFIX}/public-collections/nonexistentslug")
+    assert r.status_code == 404
+    assert r.json()["detail"] == "public_collections_not_found"
 
 
 def test_delete_collection(crawler_auth_headers, default_org_id, crawler_crawl_id):

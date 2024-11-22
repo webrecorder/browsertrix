@@ -1145,6 +1145,15 @@ class RenameOrg(BaseModel):
 
 
 # ============================================================================
+class OrgPublicCollections(BaseModel):
+    """Model for listing public collections in org"""
+
+    orgName: str
+
+    collections: List[CollOut]
+
+
+# ============================================================================
 class OrgStorageRefs(BaseModel):
     """Input model for setting primary storage + optional replicas"""
 

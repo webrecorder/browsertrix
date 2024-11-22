@@ -284,6 +284,14 @@ class OrgOps:
 
         return Organization.from_dict(res)
 
+    async def get_org_by_slug(self, slug: str) -> Organization:
+        """Get an org by id"""
+        res = await self.orgs.find_one({"slug": slug})
+        if not res:
+            raise HTTPException(status_code=400, detail="invalid_org_slug")
+
+        return Organization.from_dict(res)
+
     async def get_default_org(self) -> Organization:
         """Get default organization"""
         res = await self.orgs.find_one({"default": True})
