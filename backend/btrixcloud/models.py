@@ -1056,6 +1056,15 @@ class UpdateUpload(UpdateCrawl):
 
 
 # ============================================================================
+class CollAccessType(str, Enum):
+    """Collection access types"""
+
+    PRIVATE = "private"
+    UNLISTED = "unlisted"
+    PUBLIC = "public"
+
+
+# ============================================================================
 class Collection(BaseMongoModel):
     """Org collection structure"""
 
@@ -1071,7 +1080,7 @@ class Collection(BaseMongoModel):
     # Sorted by count, descending
     tags: Optional[List[str]] = []
 
-    isPublic: Optional[bool] = False
+    access: CollAccessType = CollAccessType.PRIVATE
 
 
 # ============================================================================
@@ -1082,7 +1091,7 @@ class CollIn(BaseModel):
     description: Optional[str] = None
     crawlIds: Optional[List[str]] = []
 
-    isPublic: bool = False
+    access: CollAccessType = CollAccessType.PRIVATE
 
 
 # ============================================================================
@@ -1098,7 +1107,7 @@ class UpdateColl(BaseModel):
 
     name: Optional[str] = None
     description: Optional[str] = None
-    isPublic: Optional[bool] = None
+    access: Optional[CollAccessType] = None
 
 
 # ============================================================================
@@ -1373,6 +1382,13 @@ class OrgReadOnlyUpdate(BaseModel):
 
 
 # ============================================================================
+class OrgListPublicCollectionsUpdate(BaseModel):
+    """Organization listPublicCollections update"""
+
+    listPublicCollections: bool
+
+
+# ============================================================================
 class OrgWebhookUrls(BaseModel):
     """Organization webhook URLs"""
 
@@ -1440,6 +1456,8 @@ class OrgOut(BaseMongoModel):
     allowedProxies: list[str] = []
     crawlingDefaults: Optional[CrawlConfigDefaults] = None
 
+    listPublicCollections: bool = False
+
 
 # ============================================================================
 class Organization(BaseMongoModel):
@@ -1494,6 +1512,8 @@ class Organization(BaseMongoModel):
     allowSharedProxies: bool = False
     allowedProxies: list[str] = []
     crawlingDefaults: Optional[CrawlConfigDefaults] = None
+
+    listPublicCollections: bool = False
 
     def is_owner(self, user):
         """Check if user is owner"""
