@@ -365,6 +365,24 @@ def test_collection_public(crawler_auth_headers, default_org_id):
     assert r.status_code == 404
 
 
+def test_collection_access_invalid_value(crawler_auth_headers, default_org_id):
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}",
+        headers=crawler_auth_headers,
+        json={
+            "access": "invalid",
+        },
+    )
+    assert r.status_code == 400
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["access"] == "private"
+
+
 def test_add_upload_to_collection(crawler_auth_headers, default_org_id):
     with open(os.path.join(curr_dir, "data", "example.wacz"), "rb") as fh:
         r = requests.put(
