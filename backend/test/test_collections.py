@@ -373,7 +373,7 @@ def test_collection_access_invalid_value(crawler_auth_headers, default_org_id):
             "access": "invalid",
         },
     )
-    assert r.status_code == 400
+    assert r.status_code == 422
 
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}",
