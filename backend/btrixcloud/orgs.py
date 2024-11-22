@@ -78,6 +78,7 @@ from .models import (
     RemovedResponse,
     OrgSlugsResponse,
     OrgImportResponse,
+    OrgListPublicCollectionsUpdate,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import (
@@ -929,7 +930,7 @@ class OrgOps:
         )
         collections_count = await self.colls_db.count_documents({"oid": org.id})
         public_collections_count = await self.colls_db.count_documents(
-            {"oid": org.id, "isPublic": True}
+            {"oid": org.id, "access": {"$in": ["public", "unlisted"]}}
         )
 
         return {
@@ -983,6 +984,16 @@ class OrgOps:
         res = await self.orgs.find_one_and_update(
             {"_id": org.id, "subscription.readOnlyOnCancel": False},
             {"$set": {"subscription.readOnlyOnCancel": update.readOnlyOnCancel}},
+        )
+        return res is not None
+
+    async def update_list_public_collections(
+        self, org: Organization, list_public_collections: bool
+    ):
+        """Update listPublicCollections field on organization"""
+        res = await self.orgs.find_one_and_update(
+            {"_id": org.id},
+            {"$set": {"listPublicCollections": list_public_collections}},
         )
         return res is not None
 
@@ -1539,6 +1550,19 @@ def init_orgs_api(
             raise HTTPException(status_code=403, detail="Not Allowed")
 
         await ops.update_read_only_on_cancel(org, update)
+
+        return {"updated": True}
+
+    @router.post(
+        "/list-public-collections",
+        tags=["organizations", "collections"],
+        response_model=UpdatedResponse,
+    )
+    async def update_list_public_collections(
+        update: OrgListPublicCollectionsUpdate,
+        org: Organization = Depends(org_owner_dep),
+    ):
+        await ops.update_list_public_collections(org, update.listPublicCollections)
 
         return {"updated": True}
 
