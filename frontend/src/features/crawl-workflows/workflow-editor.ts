@@ -173,7 +173,8 @@ const urlListToArray = flow(
   trimArray,
 );
 
-const URL_LIST_MAX_URLS = 1000;
+//todo: make this customizable, perhaps at deploy time
+const URL_LIST_MAX_URLS = 100;
 
 type CrawlConfigResponse = {
   run_now_job?: boolean;
