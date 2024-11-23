@@ -86,10 +86,14 @@ export class OrgStatusBanner extends BtrixElement {
             title:
               daysDiff > 1
                 ? msg(
-                    str`Your org will be deleted in
+                    isTrial
+                      ? str`You have ${daysDiff} left of your Browsertrix trial`
+                      : str`Your org will be deleted in
               ${daysDiff} days`,
                   )
-                : `Your org will be deleted within one day`,
+                : isTrial
+                  ? `Your trial ends within one day`
+                  : `Your org will be deleted within one day`,
             detail: html`
               <p>
                 ${isTrial
