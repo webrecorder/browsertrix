@@ -1181,6 +1181,7 @@ class S3Storage(BaseModel):
 
 PAUSED_PAYMENT_FAILED = "paused_payment_failed"
 ACTIVE = "active"
+TRIALING = "trialing"
 
 REASON_PAUSED = "subscriptionPaused"
 REASON_CANCELED = "subscriptionCanceled"
@@ -1231,6 +1232,8 @@ class SubscriptionCreate(BaseModel):
     planId: str
 
     firstAdminInviteEmail: EmailStr
+
+    futureCancelDate: Optional[datetime] = None
     quotas: Optional[OrgQuotas] = None
 
 
@@ -1248,6 +1251,7 @@ class SubscriptionImport(BaseModel):
     subId: str
     status: str
     planId: str
+    futureCancelDate: Optional[str]
     oid: UUID
 
 

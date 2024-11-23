@@ -67,7 +67,10 @@ class SubOps:
     ) -> dict[str, Any]:
         """create org for new subscription"""
         subscription = Subscription(
-            subId=create.subId, status=create.status, planId=create.planId
+            subId=create.subId,
+            status=create.status,
+            planId=create.planId,
+            futureCancelDate=create.futureCancelDate,
         )
 
         new_org = await self.org_ops.create_org(
@@ -95,7 +98,10 @@ class SubOps:
     ) -> dict[str, Any]:
         """import subscription to existing org"""
         subscription = Subscription(
-            subId=sub_import.subId, status=sub_import.status, planId=sub_import.planId
+            subId=sub_import.subId,
+            status=sub_import.status,
+            planId=sub_import.planId,
+            futureCancelDate=sub_import.futureCancelDate,
         )
         await self.org_ops.add_subscription_to_org(subscription, sub_import.oid)
 

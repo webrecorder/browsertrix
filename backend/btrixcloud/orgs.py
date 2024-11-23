@@ -67,6 +67,7 @@ from .models import (
     PAUSED_PAYMENT_FAILED,
     REASON_PAUSED,
     ACTIVE,
+    TRIALING,
     DeletedResponse,
     UpdatedResponse,
     AddedResponse,
@@ -478,7 +479,7 @@ class OrgOps:
         if update.status == PAUSED_PAYMENT_FAILED:
             query["readOnly"] = True
             query["readOnlyReason"] = REASON_PAUSED
-        elif update.status == ACTIVE:
+        elif update.status in (ACTIVE, TRIALING):
             query["readOnly"] = False
             query["readOnlyReason"] = ""
 

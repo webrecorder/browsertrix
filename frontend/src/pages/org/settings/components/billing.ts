@@ -124,18 +124,34 @@ export class OrgSettingsBilling extends BtrixElement {
                               class="text-base"
                             ></sl-icon>
                             <span>
-                              ${msg(
-                                html`Your plan will be canceled on
-                                  <sl-format-date
-                                    lang=${getLocale()}
-                                    class="truncate"
-                                    date=${org.subscription.futureCancelDate}
-                                    month="long"
-                                    day="numeric"
-                                    year="numeric"
-                                  >
-                                  </sl-format-date>`,
-                              )}
+                              ${org.subscription.status ===
+                              SubscriptionStatus.Trialing
+                                ? msg(
+                                    html`Your trial will end on
+                                      <sl-format-date
+                                        lang=${getLocale()}
+                                        class="truncate"
+                                        date=${org.subscription
+                                          .futureCancelDate}
+                                        month="long"
+                                        day="numeric"
+                                        year="numeric"
+                                      >
+                                      </sl-format-date>`,
+                                  )
+                                : msg(
+                                    html`Your plan will be canceled on
+                                      <sl-format-date
+                                        lang=${getLocale()}
+                                        class="truncate"
+                                        date=${org.subscription
+                                          .futureCancelDate}
+                                        month="long"
+                                        day="numeric"
+                                        year="numeric"
+                                      >
+                                      </sl-format-date>`,
+                                  )}
                             </span>
                           </div>
                         `
@@ -244,6 +260,12 @@ export class OrgSettingsBilling extends BtrixElement {
         case SubscriptionStatus.Active: {
           statusLabel = html`
             <span class="text-success-700">${msg("Active")}</span>
+          `;
+          break;
+        }
+        case SubscriptionStatus.Trialing: {
+          statusLabel = html`
+            <span class="text-success-700">${msg("Trial")}</span>
           `;
           break;
         }

@@ -4,6 +4,7 @@ import { html, type TemplateResult } from "lit";
 import { customElement } from "lit/decorators.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import { SubscriptionStatus } from "@/types/billing";
 import { OrgReadOnlyReason } from "@/types/org";
 import { formatISODateString } from "@/utils/localization";
 
@@ -62,6 +63,15 @@ export class OrgStatusBanner extends BtrixElement {
       execMinutesQuotaReached,
     } = this.org;
 
+    const isTrial = subscription?.status === SubscriptionStatus.Trialing;
+
+    const dateStr = formatISODateString(subscription!.futureCancelDate!, {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+    });
+
     return [
       {
         test: () =>
@@ -82,24 +92,26 @@ export class OrgStatusBanner extends BtrixElement {
                 : `Your org will be deleted within one day`,
             detail: html`
               <p>
-                ${msg(
-                  str`Your subscription ends on ${formatISODateString(
-                    subscription!.futureCancelDate!,
-                    {
-                      month: "long",
-                      day: "numeric",
-                      year: "numeric",
-                      hour: "numeric",
-                    },
-                  )}. Your user account, org, and all associated data will be deleted.`,
-                )}
+                ${isTrial
+                  ? msg(
+                      str`Your free trial ends on ${dateStr}. When the trial ends, your user account, org, and all associated data will be deleted.`,
+                    )
+                  : msg(
+                      str`Your subscription ends on ${dateStr}. Your user account, org, and all associated data will be deleted.`,
+                    )}
               </p>
               <p>
-                ${msg(
-                  html`We suggest downloading your archived items before they
-                  are deleted. To keep your plan and data, see
-                  ${billingTabLink}.`,
-                )}
+                ${isTrial
+                  ? msg(
+                      html`Download any archived items you'd like to keep. To
+                      choose a plan and continue using Browsertrix, see
+                      ${billingTabLink}.`,
+                    )
+                  : msg(
+                      html`We suggest downloading your archived items before
+                      they are deleted. To keep your plan and data, see
+                      ${billingTabLink}.`,
+                    )}
               </p>
             `,
           };
@@ -121,22 +133,21 @@ export class OrgStatusBanner extends BtrixElement {
                 : msg("Archiving will be disabled within one day"),
             detail: html`
               <p>
-                ${msg(
-                  str`Your subscription ends on ${formatISODateString(
-                    subscription!.futureCancelDate!,
-                    {
-                      month: "long",
-                      day: "numeric",
-                      year: "numeric",
-                      hour: "numeric",
-                    },
-                  )}. You will no longer be able to run crawls, upload files, create browser profiles, or create collections.`,
-                )}
+                ${isTrial
+                  ? msg(
+                      str`Your free trial ends on ${dateStr}. You will no longer be able to run crawls, upload files, create browser profiles, or create collections.`,
+                    )
+                  : msg(
+                      str`Your subscription ends on ${dateStr}. You will no longer be able to run crawls, upload files, create browser profiles, or create collections.`,
+                    )}
               </p>
               <p>
                 ${msg(
-                  html`To keep your plan and continue crawling, see
-                  ${billingTabLink}.`,
+                  isTrial
+                    ? html`To choose a plan and keep using Browsertrix, see
+                      ${billingTabLink}.`
+                    : html`To choose a plan and continue using Browsertrix, see
+                      ${billingTabLink}.`,
                 )}
               </p>
             `,
