@@ -438,6 +438,7 @@ def test_subscription_events_log(admin_auth_headers, non_default_org_id):
             "status": "active",
             "planId": "basic",
             "firstAdminInviteEmail": "test-user@example.com",
+            "futureCancelDate": None,
             "quotas": {
                 "maxConcurrentCrawls": 1,
                 "maxPagesPerCrawl": 100,
@@ -454,6 +455,7 @@ def test_subscription_events_log(admin_auth_headers, non_default_org_id):
             "status": "active",
             "planId": "basic",
             "firstAdminInviteEmail": "test-user@example.com",
+            "futureCancelDate": None,
             "quotas": {
                 "maxConcurrentCrawls": 1,
                 "maxPagesPerCrawl": 100,
@@ -522,6 +524,7 @@ def test_subscription_events_log_filter_sub_id(admin_auth_headers):
             "status": "active",
             "planId": "basic",
             "firstAdminInviteEmail": "test-user@example.com",
+            "futureCancelDate": None,
             "quotas": {
                 "maxConcurrentCrawls": 1,
                 "maxPagesPerCrawl": 100,
@@ -583,6 +586,7 @@ def test_subscription_events_log_filter_oid(admin_auth_headers):
             "status": "active",
             "planId": "basic",
             "firstAdminInviteEmail": "test-user@example.com",
+            "futureCancelDate": None,
             "quotas": {
                 "maxConcurrentCrawls": 1,
                 "maxPagesPerCrawl": 100,
@@ -678,6 +682,7 @@ def test_subscription_events_log_filter_status(admin_auth_headers):
             "status": "active",
             "planId": "basic",
             "firstAdminInviteEmail": "test-user@example.com",
+            "futureCancelDate": None,
             "quotas": {
                 "maxConcurrentCrawls": 1,
                 "maxPagesPerCrawl": 100,
