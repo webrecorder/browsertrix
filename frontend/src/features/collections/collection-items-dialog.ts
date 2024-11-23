@@ -554,7 +554,7 @@ export class CollectionItemsDialog extends BtrixElement {
     let selectionMessage = msg("No changes to save");
 
     if (hasChange) {
-      const messages = [];
+      const messages: string[] = [];
       if (addCount) {
         messages.push(
           msg(
@@ -564,7 +564,9 @@ export class CollectionItemsDialog extends BtrixElement {
       }
       if (removeCount) {
         messages.push(
-          str`Adding ${formatNumber(removeCount)} ${pluralOf("items", removeCount)}`,
+          msg(
+            str`Removing ${formatNumber(removeCount)} ${pluralOf("items", removeCount)}`,
+          ),
         );
       }
 
