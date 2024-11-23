@@ -259,6 +259,36 @@ def crawler_crawl_id(crawler_auth_headers, default_org_id):
 
 
 @pytest.fixture(scope="session")
+def qa_crawl_id(crawler_auth_headers, default_org_id):
+    # Start crawl.
+    crawl_data = {
+        "runNow": True,
+        "name": "Crawler User Crawl for Testing QA",
+        "description": "crawler test crawl for qa",
+        "config": {"seeds": [{"url": "https://old.webrecorder.net/"}], "limit": 1},
+        "crawlerChannel": "test",
+    }
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        headers=crawler_auth_headers,
+        json=crawl_data,
+    )
+    data = r.json()
+
+    crawl_id = data["run_now_job"]
+    # Wait for it to complete and then return crawl ID
+    while True:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawl_id}/replay.json",
+            headers=crawler_auth_headers,
+        )
+        data = r.json()
+        if data["state"] in FINISHED_STATES:
+            return crawl_id
+        time.sleep(5)
+
+
+@pytest.fixture(scope="session")
 def wr_specs_crawl_id(crawler_auth_headers, default_org_id):
     # Start crawl.
     crawl_data = {
