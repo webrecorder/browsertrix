@@ -113,6 +113,7 @@ class OrgOps:
 
     invites: InviteOps
     user_manager: UserManager
+    register_to_org_id: Optional[str]
     base_crawl_ops: BaseCrawlOps
     default_primary: Optional[StorageRef]
 
@@ -291,7 +292,7 @@ class OrgOps:
         """Get default organiation for new user registration, or default org"""
         if self.register_to_org_id:
             try:
-                await self.get_org_by_id(UUID(self.register_to_org_id))
+                return await self.get_org_by_id(UUID(self.register_to_org_id))
             except HTTPException as exc:
                 raise HTTPException(
                     status_code=500, detail="default_register_org_not_found"
