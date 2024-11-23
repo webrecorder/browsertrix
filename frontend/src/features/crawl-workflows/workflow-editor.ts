@@ -1008,7 +1008,6 @@ https://archiveweb.page/guide`}
               const text = msg("Please enter a valid URL.");
               inputEl.helpText = text;
               inputEl.setCustomValidity(text);
-              inputEl.setCustomValidity(text);
             } else if (
               inputEl.value &&
               !inputEl.value.startsWith("https://") &&
