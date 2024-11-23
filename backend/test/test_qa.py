@@ -263,7 +263,7 @@ def test_qa_page_data(
     assert page_id
 
     assert page["title"] == "Webrecorder"
-    assert page["url"] == "https://webrecorder.net/"
+    assert page["url"] == "https://old.webrecorder.net/"
     assert page["mime"] == "text/html"
     assert page["status"] == 200
     assert page["qa"]["textMatch"] == 1.0
@@ -282,7 +282,7 @@ def test_qa_page_data(
     page = r.json()
     assert page["id"]
     assert page["title"] == "Webrecorder"
-    assert page["url"] == "https://webrecorder.net/"
+    assert page["url"] == "https://old.webrecorder.net/"
     assert page["mime"] == "text/html"
     assert page["status"] == 200
     assert page["qa"]["textMatch"] == 1.0
