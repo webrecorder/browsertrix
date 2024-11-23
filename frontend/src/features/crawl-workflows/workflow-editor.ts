@@ -112,7 +112,6 @@ const DEFAULT_BEHAVIORS = [
   "autofetch",
   "siteSpecific",
 ];
-const MAX_ADDITIONAL_URLS = 100;
 
 const getDefaultProgressState = (hasConfigId = false): ProgressState => {
   let activeTab: StepName = "crawlSetup";
@@ -846,19 +845,7 @@ https://archiveweb.page/guide`}
                 required
                 @keyup=${async (e: KeyboardEvent) => {
                   if (e.key === "Enter") {
-                    const inputEl = e.target as SlInput;
-                    await inputEl.updateComplete;
-                    if (!inputEl.value) return;
-                    const { isValid, helpText } = this.validateUrlList(
-                      inputEl.value,
-                      MAX_ADDITIONAL_URLS,
-                    );
-                    inputEl.helpText = helpText;
-                    if (isValid) {
-                      inputEl.setCustomValidity("");
-                    } else {
-                      inputEl.setCustomValidity(helpText);
-                    }
+                    this.doValidateTextArea(e.target);
                   }
                 }}
                 @sl-input=${(e: CustomEvent) => {
@@ -868,24 +855,16 @@ https://archiveweb.page/guide`}
                   }
                 }}
                 @sl-change=${async (e: CustomEvent) => {
-                  const inputEl = e.target as SlInput;
-                  if (!inputEl.value) return;
-                  const { isValid, helpText } = this.validateUrlList(
-                    inputEl.value,
-                    MAX_ADDITIONAL_URLS,
-                  );
-                  inputEl.helpText = helpText;
-                  if (isValid) {
-                    inputEl.setCustomValidity("");
-                  } else {
-                    inputEl.setCustomValidity(helpText);
-                  }
+                  this.doValidateTextArea(e.target);
+                }}
+                @sl-blur=${async (e: CustomEvent) => {
+                  this.doValidateTextArea(e.target);
                 }}
               ></sl-textarea>
             `)}
             ${this.renderHelpTextCol(
               msg(
-                str`The crawler will visit and record each URL listed here. You can enter up to ${MAX_ADDITIONAL_URLS.toLocaleString()} URLs.`,
+                str`The crawler will visit and record each URL listed here. You can enter up to ${URL_LIST_MAX_URLS.toLocaleString()} URLs.`,
               ),
             )}
           `}
@@ -1121,19 +1100,7 @@ https://example.net`}
 https://archiveweb.page/images/${"logo.svg"}`}
                 @keyup=${async (e: KeyboardEvent) => {
                   if (e.key === "Enter") {
-                    const inputEl = e.target as SlInput;
-                    await inputEl.updateComplete;
-                    if (!inputEl.value) return;
-                    const { isValid, helpText } = this.validateUrlList(
-                      inputEl.value,
-                      MAX_ADDITIONAL_URLS,
-                    );
-                    inputEl.helpText = helpText;
-                    if (isValid) {
-                      inputEl.setCustomValidity("");
-                    } else {
-                      inputEl.setCustomValidity(helpText);
-                    }
+                    this.doValidateTextArea(e.target);
                   }
                 }}
                 @sl-input=${(e: CustomEvent) => {
@@ -1143,24 +1110,16 @@ https://archiveweb.page/images/${"logo.svg"}`}
                   }
                 }}
                 @sl-change=${async (e: CustomEvent) => {
-                  const inputEl = e.target as SlInput;
-                  if (!inputEl.value) return;
-                  const { isValid, helpText } = this.validateUrlList(
-                    inputEl.value,
-                    MAX_ADDITIONAL_URLS,
-                  );
-                  inputEl.helpText = helpText;
-                  if (isValid) {
-                    inputEl.setCustomValidity("");
-                  } else {
-                    inputEl.setCustomValidity(helpText);
-                  }
+                  this.doValidateTextArea(e.target);
+                }}
+                @sl-blur=${async (e: CustomEvent) => {
+                  this.doValidateTextArea(e.target);
                 }}
               ></sl-textarea>
             `)}
             ${this.renderHelpTextCol(
               msg(
-                str`The crawler will visit and record each URL listed here. You can enter up to ${MAX_ADDITIONAL_URLS.toLocaleString()} URLs.`,
+                str`The crawler will visit and record each URL listed here. You can enter up to ${URL_LIST_MAX_URLS.toLocaleString()} URLs.`,
               ),
             )}
           </div>
@@ -1168,6 +1127,21 @@ https://archiveweb.page/images/${"logo.svg"}`}
       </div>
     `;
   };
+
+  private doValidateTextArea(target: EventTarget | null) {
+    const inputEl = target as SlInput;
+    if (!inputEl.value) return;
+    const { isValid, helpText } = this.validateUrlList(
+      inputEl.value,
+      URL_LIST_MAX_URLS,
+    );
+    inputEl.helpText = helpText;
+    if (isValid) {
+      inputEl.setCustomValidity("");
+    } else {
+      inputEl.setCustomValidity(helpText);
+    }
+  }
 
   private renderCrawlLimits() {
     // Max Pages minimum value cannot be lower than seed count
@@ -2097,6 +2071,20 @@ https://archiveweb.page/images/${"logo.svg"}`}
         helpText = msg(
           str`Please remove or fix the following invalid URL: ${invalidUrl}`,
         );
+      }
+      if (isValid) {
+        // auto-add https:// prefix if otherwise a valid URL
+        let updated = false;
+        for (let i = 0; i < urlList.length; i++) {
+          const url = urlList[i];
+          if (!url.startsWith("http://") && !url.startsWith("https://")) {
+            urlList[i] = "https://" + url;
+            updated = true;
+          }
+        }
+        if (updated) {
+          this.updateFormState({ urlList: urlList.join("\n") });
+        }
       }
     }
     return { isValid, helpText };
