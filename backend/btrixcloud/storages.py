@@ -276,7 +276,8 @@ class StorageOps:
         parts = urlsplit(endpoint_url)
         bucket, key = parts.path[1:].split("/", 1)
 
-        endpoint_url = parts.scheme + "://" + parts.netloc
+        endpoint_url = parts.scheme + "://" + bucket + "." + parts.netloc
+        print("client endpoint", endpoint_url)
 
         session = aiobotocore.session.get_session()
 
