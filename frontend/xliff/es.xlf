@@ -2958,7 +2958,7 @@
               <x equiv-text="${daysDiff}" id="0"/> days</source>
       </trans-unit>
       <trans-unit id="s7fa0d24b94690373">
-        <source>Your subscription ends on <x equiv-text="${formatISODateString(subscription!.futureCancelDate!, {&#10;    month: &quot;long&quot;,&#10;    day: &quot;numeric&quot;,&#10;    year: &quot;numeric&quot;,&#10;    hour: &quot;numeric&quot;,&#10;})}" id="0"/>. Your user account, org, and all associated data will be deleted.</source>
+        <source>Your subscription ends on <x equiv-text="${dateStr}" id="0"/>. Your user account, org, and all associated data will be deleted.</source>
       </trans-unit>
       <trans-unit id="h16be212de6638b6c">
         <source>We suggest downloading your archived items before they
@@ -2972,11 +2972,7 @@
         <source>Archiving will be disabled within one day</source>
       </trans-unit>
       <trans-unit id="s618b35a93b6fd392">
-        <source>Your subscription ends on <x equiv-text="${formatISODateString(subscription!.futureCancelDate!, {&#10;    month: &quot;long&quot;,&#10;    day: &quot;numeric&quot;,&#10;    year: &quot;numeric&quot;,&#10;    hour: &quot;numeric&quot;,&#10;})}" id="0"/>. You will no longer be able to run crawls, upload files, create browser profiles, or create collections.</source>
-      </trans-unit>
-      <trans-unit id="hf17c5369da37401b">
-        <source>To keep your plan and continue crawling, see
-                  <x equiv-text="${billingTabLink}" id="0"/>.</source>
+        <source>Your subscription ends on <x equiv-text="${dateStr}" id="0"/>. You will no longer be able to run crawls, upload files, create browser profiles, or create collections.</source>
       </trans-unit>
       <trans-unit id="sfb85ab2a166e4c99">
         <source>Archiving is disabled for this org</source>
@@ -3629,10 +3625,6 @@
       <trans-unit id="s0eb7c300368b2a58">
         <source>Upload: <x equiv-text="${crawlStatus.label}" id="0"/></source>
       </trans-unit>
-      <trans-unit id="hac630f92c94217bc">
-        <source>Your plan will be canceled on
-                                  <x equiv-text="&lt;sl-format-date lang=&quot;${getLocale()}&quot; class=&quot;truncate&quot; date=&quot;${org.subscription.futureCancelDate}&quot; month=&quot;long&quot; day=&quot;numeric&quot; year=&quot;numeric&quot;&gt;&#10;                                  &lt;/sl-format-date&gt;" id="0"/></source>
-      </trans-unit>
       <trans-unit id="s7d61376257220dab">
         <source>Scope</source>
       </trans-unit>
@@ -3782,6 +3774,36 @@
       </trans-unit>
       <trans-unit id="s582e36ff4a424786">
         <source>Removing <x equiv-text="${formatNumber(removeCount)} ${pluralOf(&quot;items&quot;, removeCount)}" id="0"/></source>
+      </trans-unit>
+      <trans-unit id="h4cefca1fd30390e7">
+        <source>Your trial will end on
+                                      <x equiv-text="&lt;sl-format-date lang=&quot;${getLocale()}&quot; class=&quot;truncate&quot; date=&quot;${org.subscription&#10;    .futureCancelDate}&quot; month=&quot;long&quot; day=&quot;numeric&quot; year=&quot;numeric&quot;&gt;&#10;                                      &lt;/sl-format-date&gt;" id="0"/>
+                                      - Click <x equiv-text="&lt;b&gt;" id="1"/>Choose Plan<x equiv-text="&lt;/b&gt;" id="2"/> to subscribe</source>
+      </trans-unit>
+      <trans-unit id="h8ad0617e99ba94bc">
+        <source>Your plan will be canceled on
+                                      <x equiv-text="&lt;sl-format-date lang=&quot;${getLocale()}&quot; class=&quot;truncate&quot; date=&quot;${org.subscription&#10;    .futureCancelDate}&quot; month=&quot;long&quot; day=&quot;numeric&quot; year=&quot;numeric&quot;&gt;&#10;                                      &lt;/sl-format-date&gt;" id="0"/></source>
+      </trans-unit>
+      <trans-unit id="se3d7a30d5e45c393">
+        <source>Trial</source>
+      </trans-unit>
+      <trans-unit id="s1f1b3cea8b3a20f3">
+        <source>You have <x equiv-text="${daysDiff}" id="0"/> days left of your Browsertrix trial</source>
+      </trans-unit>
+      <trans-unit id="se4dfda71fd51327d">
+        <source>Your trial ends within one day</source>
+      </trans-unit>
+      <trans-unit id="h6e6b51421a5965a6">
+        <source>Your free trial ends on <x equiv-text="${dateStr}" id="0"/>. To continue using
+                    Browsertrix, select <x equiv-text="&lt;b&gt;" id="1"/>Choose Plan<x equiv-text="&lt;/b&gt;" id="2"/> in <x equiv-text="${billingTabLink}" id="3"/>.</source>
+      </trans-unit>
+      <trans-unit id="se1b6f796a13aee94">
+        <source>Your web archives are always yours - you can download any archived items you'd like to keep
+                  before the trial ends!</source>
+      </trans-unit>
+      <trans-unit id="hc4152410e53b56c9">
+        <source>To choose a plan and continue using Browsertrix, see
+                  <x equiv-text="${billingTabLink}" id="0"/>.</source>
       </trans-unit>
     </body>
   </file>
