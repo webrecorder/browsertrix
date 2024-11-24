@@ -19,7 +19,7 @@ import { tw } from "@/utils/tailwind";
 const linkClassList = tw`transition-color text-primary hover:text-primary-500`;
 const manageLinkClasslist = clsx(
   linkClassList,
-  tw`flex items-center gap-2 p-2 text-sm font-semibold leading-none`,
+  tw`flex cursor-pointer items-center gap-2 p-2 text-sm font-semibold leading-none`,
 );
 
 @localized()
@@ -42,6 +42,10 @@ export class OrgSettingsBilling extends BtrixElement {
     let label = msg("Manage Billing");
 
     switch (subscription.status) {
+      case SubscriptionStatus.Trialing: {
+        label = msg("Choose Plan");
+        break;
+      }
       case SubscriptionStatus.PausedPaymentFailed: {
         label = msg("Update Billing");
         break;
@@ -137,7 +141,8 @@ export class OrgSettingsBilling extends BtrixElement {
                                         day="numeric"
                                         year="numeric"
                                       >
-                                      </sl-format-date>`,
+                                      </sl-format-date>
+                                      - Click <b>Choose Plan</b> to subscribe`,
                                   )
                                 : msg(
                                     html`Your plan will be canceled on

@@ -9,6 +9,7 @@ import { OrgReadOnlyReason } from "@/types/org";
 import { formatISODateString } from "@/utils/localization";
 
 type Alert = {
+  variant: () => "primary" | "success" | "neutral" | "warning" | "danger";
   test: () => boolean;
   content: () => {
     title: string | TemplateResult;
@@ -31,7 +32,7 @@ export class OrgStatusBanner extends BtrixElement {
     return html`
       <div id="banner" class="border-b bg-slate-100 py-5">
         <div class="mx-auto box-border w-full max-w-screen-desktop px-3">
-          <sl-alert variant="danger" open>
+          <sl-alert variant="${alert.variant()}" open>
             <sl-icon slot="icon" name="exclamation-triangle-fill"></sl-icon>
             <strong class="block font-semibold">${content.title}</strong>
             ${content.detail}
@@ -74,6 +75,8 @@ export class OrgStatusBanner extends BtrixElement {
 
     return [
       {
+        variant: () => (isTrial ? "neutral" : "danger"),
+
         test: () =>
           !readOnly && !readOnlyOnCancel && !!subscription?.futureCancelDate,
 
@@ -87,7 +90,7 @@ export class OrgStatusBanner extends BtrixElement {
               daysDiff > 1
                 ? msg(
                     isTrial
-                      ? str`You have ${daysDiff} left of your Browsertrix trial`
+                      ? str`You have ${daysDiff} days left of your Browsertrix trial`
                       : str`Your org will be deleted in
               ${daysDiff} days`,
                   )
@@ -98,7 +101,7 @@ export class OrgStatusBanner extends BtrixElement {
               <p>
                 ${isTrial
                   ? msg(
-                      str`Your free trial ends on ${dateStr}. When the trial ends, your user account, org, and all associated data will be deleted.`,
+                      str`Your free trial ends on ${dateStr}. When the trial ends, if you don't choose to renew, your account and all associated data will be deleted.`,
                     )
                   : msg(
                       str`Your subscription ends on ${dateStr}. Your user account, org, and all associated data will be deleted.`,
@@ -107,9 +110,9 @@ export class OrgStatusBanner extends BtrixElement {
               <p>
                 ${isTrial
                   ? msg(
-                      html`Download any archived items you'd like to keep. To
-                      choose a plan and continue using Browsertrix, see
-                      ${billingTabLink}.`,
+                      html`You can always download any archived items you'd like
+                      to keep. To choose a plan and continue using Browsertrix,
+                      see ${billingTabLink}.`,
                     )
                   : msg(
                       html`We suggest downloading your archived items before
@@ -122,6 +125,8 @@ export class OrgStatusBanner extends BtrixElement {
         },
       },
       {
+        variant: () => (isTrial ? "neutral" : "danger"),
+
         test: () =>
           !readOnly && readOnlyOnCancel && !!subscription?.futureCancelDate,
 
@@ -159,6 +164,8 @@ export class OrgStatusBanner extends BtrixElement {
         },
       },
       {
+        variant: () => "danger",
+
         test: () =>
           !!readOnly && readOnlyReason === OrgReadOnlyReason.SubscriptionPaused,
 
@@ -171,6 +178,7 @@ export class OrgStatusBanner extends BtrixElement {
         }),
       },
       {
+        variant: () => "danger",
         test: () =>
           !!readOnly &&
           readOnlyReason === OrgReadOnlyReason.SubscriptionCancelled,
@@ -183,6 +191,7 @@ export class OrgStatusBanner extends BtrixElement {
         }),
       },
       {
+        variant: () => "danger",
         test: () => !!readOnly,
 
         content: () => ({
@@ -191,6 +200,7 @@ export class OrgStatusBanner extends BtrixElement {
         }),
       },
       {
+        variant: () => "danger",
         test: () => !readOnly && !!storageQuotaReached,
         content: () => ({
           title: msg(str`Your org has reached its storage limit`),
@@ -200,6 +210,7 @@ export class OrgStatusBanner extends BtrixElement {
         }),
       },
       {
+        variant: () => "danger",
         test: () => !readOnly && !!execMinutesQuotaReached,
         content: () => ({
           title: msg(
