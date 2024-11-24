@@ -44,7 +44,7 @@ RUN pip install mkdocs-material
 COPY --link ./docs/mkdocs.yml .
 COPY --link ./docs/docs ./docs
 
-RUN mkdocs build
+RUN API_DOCS_URL=/api/redoc mkdocs build
 
 FROM docker.io/library/nginx:1.23.2
 

@@ -21,6 +21,11 @@ jobs:
       - name: Generate Helm Chart Index
         run: python ./scripts/generate-helm-index.py > ./frontend/docs/docs/helm-repo/index.yaml
 
+      - name: Copy Docs Files
+        run: frontend/docs/copy-api-docs.sh
+        env:
+          DOCS_SOURCE_URL: https://app.browsertrix.com
+
       - name: Build Docs
         run: cd frontend/docs; mkdocs gh-deploy --force
         env:
