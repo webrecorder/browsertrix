@@ -3775,10 +3775,6 @@
       <trans-unit id="s582e36ff4a424786">
         <source>Removing <x equiv-text="${formatNumber(removeCount)} ${pluralOf(&quot;items&quot;, removeCount)}" id="0"/></source>
       </trans-unit>
-      <trans-unit id="h8ad0617e99ba94bc">
-        <source>Your plan will be canceled on
-                                      <x equiv-text="&lt;sl-format-date lang=&quot;${getLocale()}&quot; class=&quot;truncate&quot; date=&quot;${org.subscription&#10;    .futureCancelDate}&quot; month=&quot;long&quot; day=&quot;numeric&quot; year=&quot;numeric&quot;&gt;&#10;                                      &lt;/sl-format-date&gt;" id="0"/></source>
-      </trans-unit>
       <trans-unit id="se3d7a30d5e45c393">
         <source>Trial</source>
       </trans-unit>
@@ -3792,18 +3788,23 @@
         <source>To choose a plan and continue using Browsertrix, see
                   <x equiv-text="${billingTabLink}" id="0"/>.</source>
       </trans-unit>
-      <trans-unit id="h890ed6f55e5fdea5">
-        <source>Your trial will end on
-                                      <x equiv-text="&lt;sl-format-date lang=&quot;${getLocale()}&quot; class=&quot;truncate&quot; date=&quot;${org.subscription&#10;    .futureCancelDate}&quot; month=&quot;long&quot; day=&quot;numeric&quot; year=&quot;numeric&quot;&gt;&#10;                                      &lt;/sl-format-date&gt;" id="0"/>
-                                      - Click <x equiv-text="&lt;strong&gt;" id="1"/>Choose Plan<x equiv-text="&lt;/strong&gt;" id="2"/> to subscribe</source>
-      </trans-unit>
-      <trans-unit id="h53d5baf5585ee3f4">
-        <source>Your free trial ends on <x equiv-text="${dateStr}" id="0"/>. To continue using
-                    Browsertrix, select <x equiv-text="&lt;strong&gt;" id="1"/>Choose Plan<x equiv-text="&lt;/strong&gt;" id="2"/> in <x equiv-text="${billingTabLink}" id="3"/>.</source>
-      </trans-unit>
       <trans-unit id="se5578c14db3c7b2b">
         <source>Your web archives are always yours — you can download any archived items you'd like to keep
                   before the trial ends!</source>
+      </trans-unit>
+      <trans-unit id="hae309891e25bac19">
+        <source>Your trial will end on
+                                      <x equiv-text="${futureCancelDate}" id="0"/> - Click
+                                      <x equiv-text="&lt;strong&gt;" id="1"/>Choose Plan<x equiv-text="&lt;/strong&gt;" id="2"/> to subscribe</source>
+      </trans-unit>
+      <trans-unit id="h9359132712e72230">
+        <source>Your plan will be canceled on
+                                    <x equiv-text="${futureCancelDate}" id="0"/></source>
+      </trans-unit>
+      <trans-unit id="he8a019fc239da9d2">
+        <source>Your free trial ends on <x equiv-text="${dateStr}" id="0"/>. To continue using
+                    Browsertrix, select <x equiv-text="&lt;strong&gt;" id="1"/>Choose Plan<x equiv-text="&lt;/strong&gt;" id="2"/> in
+                    <x equiv-text="${billingTabLink}" id="3"/>.</source>
       </trans-unit>
     </body>
   </file>
