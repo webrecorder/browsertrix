@@ -846,6 +846,7 @@ https://archiveweb.page/guide`}
                 required
                 @keyup=${async (e: KeyboardEvent) => {
                   if (e.key === "Enter") {
+                    await (e.target as SlInput).updateComplete;
                     this.doValidateTextArea(e.target);
                   }
                 }}
@@ -1101,6 +1102,7 @@ https://example.net`}
 https://archiveweb.page/images/${"logo.svg"}`}
                 @keyup=${async (e: KeyboardEvent) => {
                   if (e.key === "Enter") {
+                    await (e.target as SlInput).updateComplete;
                     this.doValidateTextArea(e.target);
                   }
                 }}
