@@ -142,7 +142,7 @@ export class OrgSettingsBilling extends BtrixElement {
                                         year="numeric"
                                       >
                                       </sl-format-date>
-                                      - Click <b>Choose Plan</b> to subscribe`,
+                                      - Click <strong>Choose Plan</strong> to subscribe`,
                                   )
                                 : msg(
                                     html`Your plan will be canceled on
