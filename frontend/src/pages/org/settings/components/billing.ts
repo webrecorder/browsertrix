@@ -86,19 +86,16 @@ export class OrgSettingsBilling extends BtrixElement {
   });
 
   render() {
-    let futureCancelDate = null;
-
-    if (this.org?.subscription?.futureCancelDate) {
-      futureCancelDate = html`<sl-format-date
+    const futureCancelDate = () =>
+      html`<sl-format-date
         lang=${getLocale()}
         class="truncate"
-        date=${this.org.subscription.futureCancelDate}
+        date=${this.org!.subscription!.futureCancelDate!}
         month="long"
         day="numeric"
         year="numeric"
       >
       </sl-format-date>`;
-    }
 
     return html`
       <section class="-mt-5">
@@ -146,12 +143,12 @@ export class OrgSettingsBilling extends BtrixElement {
                               SubscriptionStatus.Trialing
                                 ? msg(
                                     html`Your trial will end on
-                                      ${futureCancelDate} - Click
+                                      ${futureCancelDate()} - Click
                                       <strong>Choose Plan</strong> to subscribe`,
                                   )
                                 : msg(
                                     html`Your plan will be canceled on
-                                    ${futureCancelDate}`,
+                                    ${futureCancelDate()}`,
                                   )}
                             </span>
                           </div>
