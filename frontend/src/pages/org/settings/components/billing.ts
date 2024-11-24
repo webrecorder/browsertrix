@@ -86,6 +86,20 @@ export class OrgSettingsBilling extends BtrixElement {
   });
 
   render() {
+    let futureCancelDate = null;
+
+    if (this.org?.subscription?.futureCancelDate) {
+      futureCancelDate = html`<sl-format-date
+        lang=${getLocale()}
+        class="truncate"
+        date=${this.org.subscription.futureCancelDate}
+        month="long"
+        day="numeric"
+        year="numeric"
+      >
+      </sl-format-date>`;
+    }
+
     return html`
       <section class="-mt-5">
         ${columns([
@@ -132,30 +146,12 @@ export class OrgSettingsBilling extends BtrixElement {
                               SubscriptionStatus.Trialing
                                 ? msg(
                                     html`Your trial will end on
-                                      <sl-format-date
-                                        lang=${getLocale()}
-                                        class="truncate"
-                                        date=${org.subscription
-                                          .futureCancelDate}
-                                        month="long"
-                                        day="numeric"
-                                        year="numeric"
-                                      >
-                                      </sl-format-date>
-                                      - Click <strong>Choose Plan</strong> to subscribe`,
+                                      ${futureCancelDate} - Click
+                                      <strong>Choose Plan</strong> to subscribe`,
                                   )
                                 : msg(
                                     html`Your plan will be canceled on
-                                      <sl-format-date
-                                        lang=${getLocale()}
-                                        class="truncate"
-                                        date=${org.subscription
-                                          .futureCancelDate}
-                                        month="long"
-                                        day="numeric"
-                                        year="numeric"
-                                      >
-                                      </sl-format-date>`,
+                                    ${futureCancelDate}`,
                                   )}
                             </span>
                           </div>
