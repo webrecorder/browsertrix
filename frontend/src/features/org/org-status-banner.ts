@@ -135,7 +135,7 @@ export class OrgStatusBanner extends BtrixElement {
               <p>
                 ${msg(
                   html`Your free trial ends on ${dateStr}. To continue using
-                    Browsertrix, select <b>Choose Plan</b> in ${billingTabLink}.`,
+                    Browsertrix, select <strong>Choose Plan</strong> in ${billingTabLink}.`,
                 )}
               </p>
               <p>
