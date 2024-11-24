@@ -140,7 +140,7 @@ export class OrgStatusBanner extends BtrixElement {
               </p>
               <p>
                 ${msg(
-                  str`Your web archives are always yours - you can download any archived items you'd like to keep
+                  str`Your web archives are always yours — you can download any archived items you'd like to keep
                   before the trial ends!`,
                 )}
               </p>
