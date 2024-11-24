@@ -101,7 +101,6 @@ class SubOps:
             subId=sub_import.subId,
             status=sub_import.status,
             planId=sub_import.planId,
-            futureCancelDate=sub_import.futureCancelDate,
         )
         await self.org_ops.add_subscription_to_org(subscription, sub_import.oid)
 

@@ -1251,7 +1251,6 @@ class SubscriptionImport(BaseModel):
     subId: str
     status: str
     planId: str
-    futureCancelDate: Optional[str] = None
     oid: UUID
 
 
