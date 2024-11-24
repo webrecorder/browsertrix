@@ -25,6 +25,7 @@ jobs:
         run: frontend/docs/copy-api-docs.sh
         env:
           DOCS_SOURCE_URL: https://app.browsertrix.com
+          ENABLE_ANALYTICS: true
 
       - name: Build Docs
         run: cd frontend/docs; mkdocs gh-deploy --force
