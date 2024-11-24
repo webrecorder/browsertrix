@@ -3688,7 +3688,7 @@
         <source>The URL of the page to crawl.</source>
       </trans-unit>
       <trans-unit id="s41d2278219615589">
-        <source>The crawler will visit and record each URL listed here. You can enter up to <x equiv-text="${MAX_ADDITIONAL_URLS.toLocaleString()}" id="0"/> URLs.</source>
+        <source>The crawler will visit and record each URL listed here. You can enter up to <x equiv-text="${URL_LIST_MAX_URLS.toLocaleString()}" id="0"/> URLs.</source>
       </trans-unit>
       <trans-unit id="sfc5e402f8b21ef5f">
         <source>If checked, the crawler will visit pages one link away.</source>
