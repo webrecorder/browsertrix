@@ -781,7 +781,7 @@ def test_list_public_collections(
     r = requests.get(f"{API_PREFIX}/public-collections/{org_slug}")
     assert r.status_code == 200
     data = r.json()
-    assert data["orgName"] == org_name
+    assert data["org"]["name"] == org_name
 
     collections = data["collections"]
     assert len(collections) == 2

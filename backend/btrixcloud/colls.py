@@ -31,6 +31,7 @@ from .models import (
     SuccessResponse,
     CollectionSearchValuesResponse,
     OrgPublicCollections,
+    PublicOrgDetails,
     CollAccessType,
 )
 from .utils import dt_now
@@ -416,7 +417,9 @@ class CollectionOps:
         if not collections:
             raise HTTPException(status_code=404, detail="public_collections_not_found")
 
-        return OrgPublicCollections(orgName=org.name, collections=collections)
+        public_org_details = PublicOrgDetails(name=org.name)
+
+        return OrgPublicCollections(org=public_org_details, collections=collections)
 
 
 # ============================================================================

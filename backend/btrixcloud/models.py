@@ -1145,12 +1145,19 @@ class RenameOrg(BaseModel):
 
 
 # ============================================================================
+class PublicOrgDetails(BaseModel):
+    """Model for org details that are available in public profile"""
+
+    name: str
+
+
+# ============================================================================
 class OrgPublicCollections(BaseModel):
     """Model for listing public collections in org"""
 
-    orgName: str
+    org: PublicOrgDetails
 
-    collections: List[CollOut]
+    collections: List[CollOut] = []
 
 
 # ============================================================================
