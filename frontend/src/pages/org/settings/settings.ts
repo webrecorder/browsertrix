@@ -268,7 +268,9 @@ export class OrgSettings extends BtrixElement {
                   @sl-input=${this.handleSlugInput}
                 >
                   <div slot="prefix" class="font-light text-neutral-400">
-                    ${window.location.hostname}/orgs/
+                    ${window.location.hostname}${window.location.port
+                      ? `:${window.location.port}`
+                      : ""}/orgs/
                   </div>
                 </sl-input>
               `,
