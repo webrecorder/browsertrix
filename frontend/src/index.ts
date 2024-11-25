@@ -759,8 +759,9 @@ export class App extends BtrixElement {
           .slice(pathname.indexOf(slug) + slug.length)
           .replace(/(^\/|\/$)/, "")
           .split("/")[0];
+        const isProfilePreview = orgTab === "profile-preview";
 
-        if (orgTab) {
+        if (orgTab && !isProfilePreview) {
           return html`<btrix-org
             class="w-full"
             .viewStateData=${this.viewState.data}
@@ -771,7 +772,10 @@ export class App extends BtrixElement {
           ></btrix-org>`;
         }
 
-        return html`<btrix-org-profile class="w-full"></btrix-org-profile>`;
+        return html`<btrix-org-profile
+          class="w-full"
+          ?preview=${isProfilePreview}
+        ></btrix-org-profile>`;
       }
 
       case "accountSettings":

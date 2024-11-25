@@ -13,6 +13,7 @@ export const ROUTES = {
   orgs: "/orgs",
   org: [
     "/orgs/:slug(/)",
+    "(/profile-preview)",
     // Org sections:
     "(/dashboard)",
     "(/workflows(/new)(/:workflowId(/crawls/:itemId(/review/:qaTab))))",

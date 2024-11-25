@@ -23,7 +23,7 @@ export class OrgSettingsPrivacy extends BtrixElement {
   }
 
   render() {
-    const orgHomeUrl = `${window.location.protocol}//${window.location.hostname}/orgs/${this.orgSlug}`;
+    const orgHomeUrl = `${window.location.protocol}//${window.location.hostname}${window.location.port ? `:${window.location.port}` : ""}/orgs/${this.orgSlug}`;
 
     const cols: Cols = [
       [
@@ -57,11 +57,19 @@ export class OrgSettingsPrivacy extends BtrixElement {
               ${msg(
                 "To customize this link, update your Org URL under General settings.",
               )}
+              <a
+                class="inline-flex items-center gap-1 text-blue-500 hover:text-blue-600"
+                href=${`${this.navigate.orgBasePath}/profile-preview`}
+                target="_blank"
+              >
+                ${msg("Preview Link")}
+                <sl-icon slot="suffix" name="arrow-right"></sl-icon
+              ></a>
             </p>
           </div>
         `,
         msg(
-          "Anyone on the internet with this link will be able to view your org's public collections.",
+          "Anyone on the internet with this link will be able to view your org's public collections. The link can be accessed even if your org doesn't have public collections.",
         ),
       ]);
     }
