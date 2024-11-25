@@ -519,9 +519,6 @@
       <trans-unit id="s734b679e69b9fe4e">
         <source>My Organization</source>
       </trans-unit>
-      <trans-unit id="s523d7b042c762733">
-        <source>Name of your organization that is visible to all org members.</source>
-      </trans-unit>
       <trans-unit id="sfe0fcf030a91a7d2">
         <source>Custom URL Identifier</source>
       </trans-unit>
@@ -3895,6 +3892,9 @@
       </trans-unit>
       <trans-unit id="s77419748aa9dcc7c">
         <source>Request Password Reset</source>
+      </trans-unit>
+      <trans-unit id="s67729a111e67dc39">
+        <source>Name of your organization.</source>
       </trans-unit>
     </body>
   </file>
