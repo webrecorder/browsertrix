@@ -1,8 +1,9 @@
 import { localized, msg, str } from "@lit/localize";
 import { Task } from "@lit/task";
 import { html } from "lit";
-import { customElement, state } from "lit/decorators.js";
+import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
+import { when } from "lit/directives/when.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { pageHeader } from "@/layouts/pageHeader";
@@ -20,6 +21,9 @@ type PublicCollection = {
 @localized()
 @customElement("btrix-org-profile")
 export class OrgProfile extends BtrixElement {
+  @property({ type: Boolean })
+  preview = false;
+
   @state()
   private readonly collections: PublicCollection[] = [];
 
@@ -34,7 +38,7 @@ export class OrgProfile extends BtrixElement {
   });
 
   protected firstUpdated(): void {
-    if (this.authState) {
+    if (this.authState && !this.preview) {
       // Redirect to dashboard if logged in
       this.navigate.to(`${this.navigate.orgBasePath}/dashboard`);
     } else {
@@ -63,8 +67,39 @@ export class OrgProfile extends BtrixElement {
       <div
         class="mx-auto box-border flex w-full max-w-screen-2xl flex-1 flex-col p-3 lg:px-10"
       >
-        ${pageHeader(org.name)}
-        <h2 class="mb-5 mt-7 text-lg font-medium">${msg("Collections")}</h2>
+        ${pageHeader(
+          org.name,
+          html`
+            ${when(
+              this.preview && this.appState.isAdmin,
+              () =>
+                html`<sl-tooltip content=${msg("Edit org info")}>
+                  <sl-icon-button
+                    href="${this.navigate.orgBasePath}/settings"
+                    class="size-8 text-base"
+                    name="pencil"
+                    @click=${this.navigate.link}
+                  ></sl-icon-button>
+                </sl-tooltip>`,
+            )}
+          `,
+        )}
+        <header class="mb-5 mt-7 flex items-center justify-between">
+          <h2 class="text-lg font-medium">${msg("Collections")}</h2>
+          ${when(
+            this.preview && this.appState.isAdmin,
+            () =>
+              html`<sl-tooltip content=${msg("Update collections settings")}>
+                <sl-icon-button
+                  href=${`${this.navigate.orgBasePath}/collections`}
+                  class="size-8 text-base"
+                  name="gear"
+                  @click=${this.navigate.link}
+                ></sl-icon-button>
+              </sl-tooltip>`,
+          )}
+        </header>
+
         <div class="flex flex-1 items-center justify-center pb-16">
           ${this.renderCollections(this.collections)}
         </div>
@@ -76,7 +111,7 @@ export class OrgProfile extends BtrixElement {
     if (!collections.length) {
       return html`
         <p class="text-base text-neutral-500">
-          ${msg("This org doesn't have any collections yet.")}
+          ${msg("This org doesn't have any public collections yet.")}
         </p>
       `;
     }
