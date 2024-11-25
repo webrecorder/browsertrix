@@ -131,6 +131,7 @@ export class OrgSettings extends BtrixElement {
           ${choose(
             this.activePanel,
             [
+              ["information", () => html`<h3>${msg("Profile")}</h3> `],
               [
                 "members",
                 () => html`
@@ -183,6 +184,7 @@ export class OrgSettings extends BtrixElement {
         <btrix-tab-panel name="information">
           ${this.renderInformation()}
           <btrix-org-settings-privacy></btrix-org-settings-privacy>
+          ${this.renderApi()}
         </btrix-tab-panel>
         <btrix-tab-panel name="members">
           ${this.renderMembers()}
@@ -228,7 +230,7 @@ export class OrgSettings extends BtrixElement {
   private renderInformation() {
     if (!this.userOrg) return;
 
-    return html`<div class="rounded-lg border">
+    return html`<section class="rounded-lg border">
       <form @submit=${this.onOrgInfoSubmit}>
         <div class="p-5">
           ${columns([
@@ -274,16 +276,6 @@ export class OrgSettings extends BtrixElement {
               `,
               msg("Customize your organization's Browsertrix URL."),
             ],
-            [
-              html`
-                <btrix-copy-field
-                  class="mb-2"
-                  label=${msg("Org ID")}
-                  value=${this.orgId}
-                ></btrix-copy-field>
-              `,
-              msg("Use this ID to reference this org in the Browsertrix API."),
-            ],
           ])}
         </div>
         <footer class="flex justify-end border-t px-4 py-3">
@@ -297,7 +289,32 @@ export class OrgSettings extends BtrixElement {
           >
         </footer>
       </form>
-    </div>`;
+    </section>`;
+  }
+
+  private renderApi() {
+    if (!this.userOrg) return;
+
+    return html` <h2 class="mb-2 mt-7 text-lg font-medium">
+        ${msg("Developer Tools")}
+      </h2>
+
+      <section class="rounded-lg border">
+        <div class="p-5">
+          ${columns([
+            [
+              html`
+                <btrix-copy-field
+                  class="mb-2"
+                  label=${msg("Org ID")}
+                  value=${this.orgId}
+                ></btrix-copy-field>
+              `,
+              msg("Use this ID to reference this org in the Browsertrix API."),
+            ],
+          ])}
+        </div>
+      </section>`;
   }
 
   private handleSlugInput(e: InputEvent) {

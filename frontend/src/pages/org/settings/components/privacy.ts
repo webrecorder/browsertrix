@@ -1,5 +1,5 @@
 import { localized, msg } from "@lit/localize";
-import type { SlChangeEvent, SlSwitch } from "@shoelace-style/shoelace";
+import type { SlChangeEvent, SlRadioGroup } from "@shoelace-style/shoelace";
 import { html, type PropertyValues } from "lit";
 import { customElement, state } from "lit/decorators.js";
 
@@ -28,18 +28,23 @@ export class OrgSettingsPrivacy extends BtrixElement {
     const cols: Cols = [
       [
         html`
-          <sl-switch
-            ?checked=${this.org?.listPublicCollections}
+          <sl-radio-group
+            label=${msg("Org Visibility")}
+            value=${this.org?.listPublicCollections ? "public" : "private"}
+            size="small"
             @sl-change=${async (e: SlChangeEvent) => {
-              this.listPublicCollections = (e.target as SlSwitch).checked;
+              this.listPublicCollections =
+                (e.target as SlRadioGroup).value === "public";
               await this.updateComplete;
               void this.save();
             }}
-            >${msg("Enable Public Collections Link")}</sl-switch
           >
+            <sl-radio-button value="public">${msg("Public")}</sl-radio-button>
+            <sl-radio-button value="private">${msg("Private")}</sl-radio-button>
+          </sl-radio-group>
         `,
         msg(
-          "Create a link that anyone can visit to view all public collections in the org.",
+          "If public, anyone with the link to your org's Browsertrix URL will be able to view the org profile and public collections.",
         ),
       ],
     ];
@@ -49,28 +54,25 @@ export class OrgSettingsPrivacy extends BtrixElement {
         html`
           <div class="mb-2">
             <btrix-copy-field
-              label=${msg("Shareable Link")}
+              label=${msg("Public Profile Page")}
               value=${orgHomeUrl}
               .monostyle=${false}
             ></btrix-copy-field>
-            <p class="form-help-text mt-2">
-              ${msg(
-                "To customize this link, update your Org URL under General settings.",
-              )}
-              <a
-                class="inline-flex items-center gap-1 text-blue-500 hover:text-blue-600"
-                href=${`${this.navigate.orgBasePath}/profile-preview`}
-                target="_blank"
-              >
-                ${msg("Preview Link")}
-                <sl-icon slot="suffix" name="arrow-right"></sl-icon
-              ></a>
-            </p>
           </div>
         `,
-        msg(
-          "Anyone on the internet with this link will be able to view your org's public collections. The link can be accessed even if your org doesn't have public collections.",
-        ),
+        html`
+          ${msg(
+            "To customize the URL to this page, update your Org URL in profile settings.",
+          )}
+          <a
+            class="inline-flex items-center gap-1 text-blue-500 hover:text-blue-600"
+            href=${`${this.navigate.orgBasePath}/profile-preview`}
+            target="_blank"
+          >
+            ${msg("Preview Public Profile")}
+            <sl-icon slot="suffix" name="arrow-right"></sl-icon
+          ></a>
+        `,
       ]);
     }
 
