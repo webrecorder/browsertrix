@@ -1,4 +1,4 @@
-import { localized, msg } from "@lit/localize";
+import { localized, msg, str } from "@lit/localize";
 import { Task } from "@lit/task";
 import { html } from "lit";
 import { customElement, state } from "lit/decorators.js";
@@ -18,47 +18,10 @@ type PublicCollection = {
 };
 
 @localized()
-@customElement("btrix-org-home")
-export class OrgHome extends BtrixElement {
+@customElement("btrix-org-profile")
+export class OrgProfile extends BtrixElement {
   @state()
-  private readonly collections: PublicCollection[] = [
-    {
-      name: "Fake Collection 1",
-      description: "This is my fake collection used for testing.",
-      thumbnailSrc:
-        "https://webrecorder.net/_astro/replaywebpage.Bi6fWUjY_ZQsp0m.webp",
-    },
-    {
-      name: "Fake Collection 2",
-      description: "This is my fake collection used for testing.",
-      thumbnailSrc:
-        "https://webrecorder.net/_astro/replaywebpage.Bi6fWUjY_ZQsp0m.webp",
-    },
-    {
-      name: "Fake Collection 3",
-      description: "This is my fake collection used for testing.",
-      thumbnailSrc:
-        "https://webrecorder.net/_astro/replaywebpage.Bi6fWUjY_ZQsp0m.webp",
-    },
-    {
-      name: "Fake Collection 4",
-      description: "This is my fake collection used for testing.",
-      thumbnailSrc:
-        "https://webrecorder.net/_astro/replaywebpage.Bi6fWUjY_ZQsp0m.webp",
-    },
-    {
-      name: "Fake Collection 5",
-      description: "This is my fake collection used for testing.",
-      thumbnailSrc:
-        "https://webrecorder.net/_astro/replaywebpage.Bi6fWUjY_ZQsp0m.webp",
-    },
-    {
-      name: "Fake Collection 6",
-      description: "This is my fake collection used for testing.",
-      thumbnailSrc:
-        "https://webrecorder.net/_astro/replaywebpage.Bi6fWUjY_ZQsp0m.webp",
-    },
-  ];
+  private readonly collections: PublicCollection[] = [];
 
   readonly publicOrg = new Task(this, {
     autoRun: false,
@@ -82,14 +45,13 @@ export class OrgHome extends BtrixElement {
 
   render() {
     return html`
-      <div
-        class="mx-auto box-border flex min-h-full max-w-screen-2xl flex-col p-3 lg:px-10"
-      >
+      <div class="flex min-h-full flex-col">
         ${this.publicOrg.render({
           complete: (org) =>
             org ? this.renderOrg(org) : this.renderNotFound(),
           error: this.renderNotFound,
         })}
+        ${this.renderSignUpCta()}
       </div>
     `;
   }
@@ -98,14 +60,31 @@ export class OrgHome extends BtrixElement {
     return html`
       <btrix-document-title title=${ifDefined(org.name)}></btrix-document-title>
 
-      ${pageHeader(org.name)}
-
-      <h2 class="mb-5 mt-7 text-lg font-medium">${msg("Collections")}</h2>
-
-      <ul
-        class="mb-16 grid grid-cols-1 gap-x-10 gap-y-16 md:grid-cols-2 lg:grid-cols-4"
+      <div
+        class="mx-auto box-border flex w-full max-w-screen-2xl flex-1 flex-col p-3 lg:px-10"
       >
-        ${this.collections.map(
+        ${pageHeader(org.name)}
+        <h2 class="mb-5 mt-7 text-lg font-medium">${msg("Collections")}</h2>
+        <div class="flex flex-1 items-center justify-center pb-16">
+          ${this.renderCollections(this.collections)}
+        </div>
+      </div>
+    `;
+  }
+
+  private renderCollections(collections: PublicCollection[]) {
+    if (!collections.length) {
+      return html`
+        <p class="text-base text-neutral-500">
+          ${msg("This org doesn't have any collections yet.")}
+        </p>
+      `;
+    }
+    return html`
+      <ul
+        class="grid flex-1 grid-cols-1 gap-x-10 gap-y-16 md:grid-cols-2 lg:grid-cols-4"
+      >
+        ${collections.map(
           (collection) => html`
             <li class="col-span-1">
               <a
@@ -135,6 +114,37 @@ export class OrgHome extends BtrixElement {
           `,
         )}
       </ul>
+    `;
+  }
+
+  private renderSignUpCta() {
+    const { signUpUrl } = this.appState.settings || {};
+
+    if (!signUpUrl) return;
+
+    return html`
+      <div class="w-full border-y p-6 px-3 text-center text-neutral-500">
+        <p>
+          <span>
+            ${msg(
+              str`${this.publicOrg.value?.name} is sharing collections on Browsertrix.`,
+            )}
+          </span>
+          <br />
+          <span>${msg("Do you have collections to share?")}</span>
+          <a
+            class="group inline-flex items-center gap-1 font-medium text-cyan-400 transition-colors hover:text-cyan-500"
+            href=${signUpUrl}
+          >
+            ${msg("Get started with Browsertrix")}
+            <sl-icon
+              slot="suffix"
+              name="arrow-right"
+              class="text-base transition-transform group-hover:translate-x-1"
+            ></sl-icon>
+          </a>
+        </p>
+      </div>
     `;
   }
 

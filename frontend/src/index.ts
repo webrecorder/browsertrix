@@ -771,7 +771,7 @@ export class App extends BtrixElement {
           ></btrix-org>`;
         }
 
-        return html`<btrix-org-home class="w-full"></btrix-org-home>`;
+        return html`<btrix-org-profile class="w-full"></btrix-org-profile>`;
       }
 
       case "accountSettings":
