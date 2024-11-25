@@ -135,6 +135,7 @@ class StorageOps:
         endpoint_url = storage["endpoint_url"]
         bucket_name = storage.get("bucket_name")
         endpoint_no_bucket_url = endpoint_url
+        presign_endpoint_url = endpoint_url
         if bucket_name:
             endpoint_url += bucket_name + "/"
 
@@ -144,6 +145,7 @@ class StorageOps:
         else:
             access_endpoint_url = storage.get("access_endpoint_url") or endpoint_url
             use_access_for_presign = is_bool(storage.get("use_access_for_presign"))
+            presign_endpoint_url = storage.get("presign_endpoint_url") or endpoint_url
 
         return S3Storage(
             access_key=storage["access_key"],
@@ -153,6 +155,7 @@ class StorageOps:
             endpoint_no_bucket_url=endpoint_no_bucket_url,
             access_endpoint_url=access_endpoint_url,
             use_access_for_presign=use_access_for_presign,
+            presign_endpoint_url=presign_endpoint_url,
         )
 
     async def add_custom_storage(
@@ -177,6 +180,7 @@ class StorageOps:
             endpoint_url=endpoint_url,
             endpoint_no_bucket_url=endpoint_no_bucket_url,
             access_endpoint_url=storagein.access_endpoint_url or storagein.endpoint_url,
+            presign_endpoint_url=storagein.endpoint_url,
             use_access_for_presign=True,
         )
 
@@ -264,12 +268,16 @@ class StorageOps:
 
     @asynccontextmanager
     async def get_s3_client(
-        self, storage: S3Storage, use_access=False
+        self, storage: S3Storage, use_presign_url=False
     ) -> AsyncIterator[tuple[AIOS3Client, str, str]]:
         """context manager for s3 client"""
-        endpoint_url = (
-            storage.endpoint_url if not use_access else storage.access_endpoint_url
-        )
+        if use_presign_url:
+            endpoint_url = storage.presign_endpoint_url
+        elif storage.use_access_for_presign:
+            endpoint_url = storage.access_endpoint_url
+        else:
+            endpoint_url = storage.endpoint_url
+
         if not endpoint_url.endswith("/"):
             endpoint_url += "/"
 
@@ -454,7 +462,10 @@ class StorageOps:
 
         s3storage = self.get_org_storage_by_ref(org, crawlfile.storage)
 
-        async with self.get_s3_client(s3storage, s3storage.use_access_for_presign) as (
+        async with self.get_s3_client(
+            s3storage,
+            True,
+        ) as (
             client,
             bucket,
             key,
@@ -468,10 +479,10 @@ class StorageOps:
             if (
                 not s3storage.use_access_for_presign
                 and s3storage.access_endpoint_url
-                and s3storage.access_endpoint_url != s3storage.endpoint_url
+                and s3storage.access_endpoint_url != s3storage.presign_endpoint_url
             ):
                 presigned_url = presigned_url.replace(
-                    s3storage.endpoint_url, s3storage.access_endpoint_url
+                    s3storage.presign_endpoint_url, s3storage.access_endpoint_url
                 )
 
         return presigned_url
