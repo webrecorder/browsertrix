@@ -525,12 +525,6 @@
       <trans-unit id="sfe0fcf030a91a7d2">
         <source>Custom URL Identifier</source>
       </trans-unit>
-      <trans-unit id="s736e0de127d6aba2">
-        <source>Org home page: <x equiv-text="${window.location.protocol}" id="0"/>//<x equiv-text="${window.location.hostname}" id="1"/>/orgs/<x equiv-text="${this.slugValue&#10;    ? slugifyStrict(this.slugValue)&#10;    : this.orgSlug}" id="2"/></source>
-      </trans-unit>
-      <trans-unit id="s0559157886d79c76">
-        <source>Customize your organization's web address for accessing Browsertrix.</source>
-      </trans-unit>
       <trans-unit id="s719552bdda1832f6">
         <source>Org ID</source>
       </trans-unit>
@@ -3838,6 +3832,48 @@
       </trans-unit>
       <trans-unit id="sab5061cf8c519285">
         <source><x equiv-text="${storageBytesText}" id="0"/> of disk space</source>
+      </trans-unit>
+      <trans-unit id="s1d36ac96445c1586">
+        <source>Enable Public Collections Link</source>
+      </trans-unit>
+      <trans-unit id="se28b2a4311acca81">
+        <source>Create a link that anyone can visit to view all public collections in the org.</source>
+      </trans-unit>
+      <trans-unit id="s26f0be64aa36ffa0">
+        <source>Shareable Link</source>
+      </trans-unit>
+      <trans-unit id="sa5e97932189fce75">
+        <source>To customize this link, update your Org URL under General settings.</source>
+      </trans-unit>
+      <trans-unit id="sa467cb5019adefd6">
+        <source>Anyone on the internet with this link will be able to view your org's public collections.</source>
+      </trans-unit>
+      <trans-unit id="se78c02e9a98a0f47">
+        <source>Privacy</source>
+      </trans-unit>
+      <trans-unit id="s34f72aeab7bd0b02">
+        <source>Public Collections link is enabled.</source>
+      </trans-unit>
+      <trans-unit id="s2a3ff26de6b56307">
+        <source>Public Collections link is disabled.</source>
+      </trans-unit>
+      <trans-unit id="s3a081663dfc1a779">
+        <source>Sorry, couldn't update org at this time.</source>
+      </trans-unit>
+      <trans-unit id="sf8388a998523b72c">
+        <source>Org URL</source>
+      </trans-unit>
+      <trans-unit id="sfa6c550575db626c">
+        <source>Customize your organization's Browsertrix URL.</source>
+      </trans-unit>
+      <trans-unit id="s7fee95b66225e1fb">
+        <source>Dashboard</source>
+      </trans-unit>
+      <trans-unit id="sc4eedb434536bdb4">
+        <source>Need an account?</source>
+      </trans-unit>
+      <trans-unit id="s5e94738a2eeb8943">
+        <source>Sign In</source>
       </trans-unit>
     </body>
   </file>
