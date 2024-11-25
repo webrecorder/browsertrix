@@ -5,6 +5,7 @@ import { customElement, state } from "lit/decorators.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { columns, type Cols } from "@/layouts/columns";
+import { OrgTab } from "@/routes";
 
 @localized()
 @customElement("btrix-org-settings-privacy")
@@ -66,7 +67,7 @@ export class OrgSettingsPrivacy extends BtrixElement {
           )}
           <a
             class="inline-flex items-center gap-1 text-blue-500 hover:text-blue-600"
-            href=${`${this.navigate.orgBasePath}/profile-preview`}
+            href=${`${this.navigate.orgBasePath}/${OrgTab.ProfilePreview}`}
             target="_blank"
           >
             ${msg("Preview Public Profile")}

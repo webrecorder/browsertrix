@@ -1,3 +1,13 @@
+export enum OrgTab {
+  ProfilePreview = "profile-preview",
+  Dashboard = "dashboard",
+  Workflows = "workflows",
+  Items = "items",
+  Collections = "collections",
+  BrowserProfiles = "browser-profiles",
+  Settings = "settings",
+}
+
 export const ROUTES = {
   home: "/",
   dashboard: "/dashboard",
@@ -13,14 +23,14 @@ export const ROUTES = {
   orgs: "/orgs",
   org: [
     "/orgs/:slug(/)",
-    "(/profile-preview)",
+    `(/${OrgTab.ProfilePreview})`,
     // Org sections:
-    "(/dashboard)",
-    "(/workflows(/new)(/:workflowId(/crawls/:itemId(/review/:qaTab))))",
-    "(/items(/:itemType(/:itemId)))",
-    "(/collections(/new)(/view/:collectionId(/:collectionTab)))",
-    "(/browser-profiles(/profile(/browser/:browserId)(/:browserProfileId)))",
-    "(/settings(/:settingsTab))",
+    `(/${OrgTab.Dashboard})`,
+    `(/${OrgTab.Workflows}(/new)(/:workflowId(/crawls/:itemId(/review/:qaTab))))`,
+    `(/${OrgTab.Items}(/:itemType(/:itemId)))`,
+    `(/${OrgTab.Collections}(/new)(/view/:collectionId(/:collectionTab)))`,
+    `(/${OrgTab.BrowserProfiles}(/profile(/browser/:browserId)(/:browserProfileId)))`,
+    `(/${OrgTab.Settings}(/:settingsTab))`,
   ].join(""),
   users: "/users",
   usersInvite: "/users/invite",
