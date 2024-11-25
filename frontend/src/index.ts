@@ -13,8 +13,7 @@ import "broadcastchannel-polyfill";
 import "construct-style-sheets-polyfill";
 import "./utils/polyfills";
 
-import type { OrgTab } from "./pages/org";
-import { ROUTES } from "./routes";
+import { OrgTab, ROUTES } from "./routes";
 import type { UserInfo, UserOrg } from "./types/user";
 import APIRouter, { type ViewState } from "./utils/APIRouter";
 import AuthService, {
@@ -98,6 +97,20 @@ export class App extends BtrixElement {
 
   @query("#userGuideDrawer")
   private readonly userGuideDrawer!: SlDrawer;
+
+  get orgTab(): OrgTab | null {
+    const slug = this.viewState.params.slug;
+    const pathname = this.getLocationPathname();
+    const tab = pathname
+      .slice(pathname.indexOf(slug) + slug.length)
+      .replace(/(^\/|\/$)/, "")
+      .split("/")[0];
+
+    if (Object.values(OrgTab).includes(tab as OrgTab)) {
+      return tab as OrgTab;
+    }
+    return null;
+  }
 
   async connectedCallback() {
     let authState: AuthService["authState"] = null;
@@ -754,27 +767,22 @@ export class App extends BtrixElement {
       case "org": {
         const slug = this.viewState.params.slug;
         const orgPath = this.viewState.pathname;
-        const pathname = this.getLocationPathname();
-        const orgTab = pathname
-          .slice(pathname.indexOf(slug) + slug.length)
-          .replace(/(^\/|\/$)/, "")
-          .split("/")[0];
-        const isProfilePreview = orgTab === "profile-preview";
+        const orgTab = this.orgTab;
 
-        if (orgTab && !isProfilePreview) {
+        if (orgTab && orgTab !== OrgTab.ProfilePreview) {
           return html`<btrix-org
             class="w-full"
             .viewStateData=${this.viewState.data}
             .params=${this.viewState.params}
             .maxScale=${this.appState.settings?.maxScale || DEFAULT_MAX_SCALE}
             orgPath=${orgPath.split(slug)[1]}
-            orgTab=${orgTab as OrgTab}
+            orgTab=${orgTab}
           ></btrix-org>`;
         }
 
         return html`<btrix-org-profile
           class="w-full"
-          ?preview=${isProfilePreview}
+          ?preview=${(orgTab as OrgTab) === OrgTab.ProfilePreview}
         ></btrix-org-profile>`;
       }
 
