@@ -10,14 +10,14 @@ import { columns, type Cols } from "@/layouts/columns";
 @customElement("btrix-org-settings-privacy")
 export class OrgSettingsPrivacy extends BtrixElement {
   @state()
-  listPublicCollections?: boolean;
+  enablePublicProfile?: boolean;
 
   protected willUpdate(
     changedProperties: PropertyValues<this> & Map<string, unknown>,
   ): void {
     if (changedProperties.has("appState.org") && this.org) {
-      if (this.listPublicCollections === undefined) {
-        this.listPublicCollections = this.org.listPublicCollections;
+      if (this.enablePublicProfile === undefined) {
+        this.enablePublicProfile = this.org.enablePublicProfile;
       }
     }
   }
@@ -30,10 +30,10 @@ export class OrgSettingsPrivacy extends BtrixElement {
         html`
           <sl-radio-group
             label=${msg("Org Visibility")}
-            value=${this.org?.listPublicCollections ? "public" : "private"}
+            value=${this.org?.enablePublicProfile ? "public" : "private"}
             size="small"
             @sl-change=${async (e: SlChangeEvent) => {
-              this.listPublicCollections =
+              this.enablePublicProfile =
                 (e.target as SlRadioGroup).value === "public";
               await this.updateComplete;
               void this.save();
@@ -49,7 +49,7 @@ export class OrgSettingsPrivacy extends BtrixElement {
       ],
     ];
 
-    if (this.listPublicCollections) {
+    if (this.enablePublicProfile) {
       cols.push([
         html`
           <div class="mb-2">
@@ -92,7 +92,7 @@ export class OrgSettingsPrivacy extends BtrixElement {
         {
           method: "POST",
           body: JSON.stringify({
-            listPublicCollections: Boolean(this.listPublicCollections),
+            enablePublicProfile: Boolean(this.enablePublicProfile),
           }),
         },
       );
@@ -102,7 +102,7 @@ export class OrgSettingsPrivacy extends BtrixElement {
       }
 
       this.notify.toast({
-        message: this.listPublicCollections
+        message: this.enablePublicProfile
           ? msg("Public Collections link is enabled.")
           : msg("Public Collections link is disabled."),
         variant: "success",
