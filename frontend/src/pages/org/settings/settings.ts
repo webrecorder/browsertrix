@@ -248,9 +248,7 @@ export class OrgSettings extends BtrixElement {
                   @sl-input=${this.validateOrgNameMax.validate}
                 ></sl-input>
               `,
-              msg(
-                "Name of your organization that is visible to all org members.",
-              ),
+              msg("Name of your organization."),
             ],
             [
               html`
