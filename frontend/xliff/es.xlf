@@ -3824,17 +3824,23 @@
       <trans-unit id="sab5061cf8c519285">
         <source><x equiv-text="${storageBytesText}" id="0"/> of disk space</source>
       </trans-unit>
-      <trans-unit id="s1d36ac96445c1586">
-        <source>Enable Public Collections Link</source>
+      <trans-unit id="s13c0b3e6a5f5e03f">
+        <source>Org Visibility</source>
       </trans-unit>
-      <trans-unit id="se28b2a4311acca81">
-        <source>Create a link that anyone can visit to view all public collections in the org.</source>
+      <trans-unit id="sdd1ff479d04ac140">
+        <source>Public</source>
       </trans-unit>
-      <trans-unit id="s26f0be64aa36ffa0">
-        <source>Shareable Link</source>
+      <trans-unit id="s9b7bc3a2a927898c">
+        <source>If public, anyone with the link to your org's Browsertrix URL will be able to view the org profile and public collections.</source>
       </trans-unit>
-      <trans-unit id="sa5e97932189fce75">
-        <source>To customize this link, update your Org URL under General settings.</source>
+      <trans-unit id="scb04d1f8c9911724">
+        <source>Public Profile Page</source>
+      </trans-unit>
+      <trans-unit id="sc1f8c9a8cbdb985f">
+        <source>To customize the URL to this page, update your Org URL in profile settings.</source>
+      </trans-unit>
+      <trans-unit id="s680d420bc14b4a55">
+        <source>Preview Public Profile</source>
       </trans-unit>
       <trans-unit id="se78c02e9a98a0f47">
         <source>Privacy</source>
@@ -3848,26 +3854,17 @@
       <trans-unit id="s3a081663dfc1a779">
         <source>Sorry, couldn't update org at this time.</source>
       </trans-unit>
+      <trans-unit id="s67729a111e67dc39">
+        <source>Name of your organization.</source>
+      </trans-unit>
       <trans-unit id="sf8388a998523b72c">
         <source>Org URL</source>
       </trans-unit>
       <trans-unit id="sfa6c550575db626c">
         <source>Customize your organization's Browsertrix URL.</source>
       </trans-unit>
-      <trans-unit id="s7fee95b66225e1fb">
-        <source>Dashboard</source>
-      </trans-unit>
-      <trans-unit id="sc4eedb434536bdb4">
-        <source>Need an account?</source>
-      </trans-unit>
-      <trans-unit id="s5e94738a2eeb8943">
-        <source>Sign In</source>
-      </trans-unit>
-      <trans-unit id="se5d304964d4febf9">
-        <source>Preview Link</source>
-      </trans-unit>
-      <trans-unit id="sd55388ab27036cfb">
-        <source>Anyone on the internet with this link will be able to view your org's public collections. The link can be accessed even if your org doesn't have public collections.</source>
+      <trans-unit id="sf64646b094ecba96">
+        <source>Developer Tools</source>
       </trans-unit>
       <trans-unit id="s13bd1b7fb92a6f1d">
         <source>Edit org info</source>
@@ -3887,14 +3884,20 @@
       <trans-unit id="s909144751c40f105">
         <source>Get started with Browsertrix</source>
       </trans-unit>
+      <trans-unit id="s7fee95b66225e1fb">
+        <source>Dashboard</source>
+      </trans-unit>
       <trans-unit id="s10a35688032060b4">
         <source>Return to Sign In</source>
+      </trans-unit>
+      <trans-unit id="sc4eedb434536bdb4">
+        <source>Need an account?</source>
       </trans-unit>
       <trans-unit id="s77419748aa9dcc7c">
         <source>Request Password Reset</source>
       </trans-unit>
-      <trans-unit id="s67729a111e67dc39">
-        <source>Name of your organization.</source>
+      <trans-unit id="s5e94738a2eeb8943">
+        <source>Sign In</source>
       </trans-unit>
     </body>
   </file>
