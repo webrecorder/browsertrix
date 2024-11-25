@@ -728,7 +728,7 @@ def test_filter_sort_collections(
 
 
 def test_list_public_collections(
-    crawler_auth_headers, default_org_id, crawler_crawl_id, admin_crawl_id
+    crawler_auth_headers, admin_auth_headers, default_org_id, crawler_crawl_id, admin_crawl_id
 ):
     # Create new public collection
     r = requests.post(
@@ -753,7 +753,31 @@ def test_list_public_collections(
     org_slug = data["slug"]
     org_name = data["name"]
 
-    # List public collections with no auth
+    # Verify that public profile isn't enabled
+    assert data["enablePublicProfile"] is False
+
+    # Try listing public collections without org public profile enabled
+    r = requests.get(f"{API_PREFIX}/public-collections/{org_slug}")
+    assert r.status_code == 404
+    assert r.json()["detail"] == "public_collections_not_found"
+
+    # Enable public profile on org
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/public-profile",
+        headers=admin_auth_headers,
+        json={"enablePublicProfile": True}
+    )
+    assert r.status_code == 200
+    assert r.json()["updated"]
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["enablePublicProfile"]
+
+    # List public collections with no auth (no public profile)
     r = requests.get(f"{API_PREFIX}/public-collections/{org_slug}")
     assert r.status_code == 200
     data = r.json()
