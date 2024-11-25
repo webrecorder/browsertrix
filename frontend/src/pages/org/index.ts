@@ -37,7 +37,7 @@ import "./browser-profiles-detail";
 import "./browser-profiles-list";
 import "./settings/settings";
 import "./dashboard";
-import "./home";
+import "./profile";
 
 import(/* webpackChunkName: "org" */ "./archived-item-qa/archived-item-qa");
 import(/* webpackChunkName: "org" */ "./workflows-new");
