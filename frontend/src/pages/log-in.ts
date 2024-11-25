@@ -1,7 +1,7 @@
 // cSpell:words xstate
 import { localized, msg } from "@lit/localize";
 import { assign, createMachine, interpret } from "@xstate/fsm";
-import { html, type PropertyValues } from "lit";
+import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
@@ -158,8 +158,8 @@ export class LogInPage extends BtrixElement {
     this.formStateService.subscribe((state) => {
       this.formState = state;
     });
-
     this.formStateService.start();
+    this.syncFormStateView();
     void this.checkBackendInitialized();
   }
 
@@ -187,36 +187,22 @@ export class LogInPage extends BtrixElement {
       form = this.renderForgotPasswordForm();
       link = html`
         <a
-          class="text-cyan-400 hover:text-cyan-500"
+          class="text-cyan-400 transition-colors hover:text-cyan-500"
           href="/log-in"
           @click=${this.navigate.link}
-          >${msg("Sign in with password")}</a
+          >${msg("Return to Sign In")}</a
         >
       `;
     } else {
       form = this.renderLoginForm();
-
-      const { registrationEnabled, signUpUrl } = this.appState.settings || {};
-
-      if (registrationEnabled || signUpUrl) {
-        link = html`
-          <div class="flex justify-between gap-4 px-3 text-gray-400">
-            <span>${msg("Need an account?")}</span>
-            <a
-              class="group inline-flex items-center gap-1 font-medium text-cyan-400 hover:text-cyan-500"
-              href=${signUpUrl || "/sign-up"}
-              @click=${signUpUrl ? () => {} : this.navigate.link}
-            >
-              ${msg("Sign Up")}
-              <sl-icon
-                slot="suffix"
-                name="arrow-right"
-                class="text-base transition-transform group-hover:translate-x-1"
-              ></sl-icon>
-            </a>
-          </div>
-        `;
-      }
+      link = html`
+        <a
+          class="text-cyan-400 transition-colors hover:text-cyan-500"
+          href="/log-in/forgot-password"
+          @click=${this.navigate.link}
+          >${msg("Forgot your password?")}</a
+        >
+      `;
     }
 
     if (this.formState.context.successMessage) {
@@ -229,15 +215,40 @@ export class LogInPage extends BtrixElement {
       `;
     }
 
-    return html`
-      <article class="grid w-full max-w-[50ch] gap-5">
-        ${successMessage}
+    const { registrationEnabled, signUpUrl } = this.appState.settings || {};
 
-        <main class="p-10 md:rounded-lg md:border md:bg-white md:shadow-lg">
-          <div>${form}</div>
-        </main>
-        <footer class="text-center">${link}</footer>
-      </article>
+    return html`
+      <div class="flex w-full flex-1 items-center justify-center pb-4 pt-16">
+        <article class="flex w-full max-w-md flex-col gap-5">
+          ${successMessage}
+
+          <main class="p-10 md:rounded-lg md:border md:bg-white md:shadow-lg">
+            <div>${form}</div>
+          </main>
+          <footer class="text-center">${link}</footer>
+        </article>
+      </div>
+      ${registrationEnabled || signUpUrl
+        ? html`
+            <div
+              class="w-full gap-4 border-y bg-white/30 p-6 px-3 text-center text-neutral-500"
+            >
+              <span>${msg("Need an account?")}</span>
+              <a
+                class="group inline-flex items-center gap-1 font-medium text-cyan-400 transition-colors hover:text-cyan-500"
+                href=${signUpUrl || "/sign-up"}
+                @click=${signUpUrl ? () => {} : this.navigate.link}
+              >
+                ${msg("Sign Up")}
+                <sl-icon
+                  slot="suffix"
+                  name="arrow-right"
+                  class="text-base transition-transform group-hover:translate-x-1"
+                ></sl-icon>
+              </a>
+            </div>
+          `
+        : nothing}
     `;
   }
 
@@ -290,15 +301,6 @@ export class LogInPage extends BtrixElement {
             required
           >
           </sl-input>
-        </div>
-
-        <div class="mb-5">
-          <a
-            class="text-cyan-300 hover:text-cyan-400"
-            href="/log-in/forgot-password"
-            @click=${this.navigate.link}
-            >${msg("Forgot your password?")}</a
-          >
         </div>
 
         ${formError}
@@ -359,7 +361,7 @@ export class LogInPage extends BtrixElement {
           variant="primary"
           ?loading=${this.formState.value === "submittingForgotPassword"}
           type="submit"
-          >${msg("Request password reset")}</sl-button
+          >${msg("Request Password Reset")}</sl-button
         >
       </form>
     `;

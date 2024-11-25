@@ -256,7 +256,9 @@ export class App extends BtrixElement {
     return html`
       <div class="min-w-screen flex min-h-screen flex-col">
         ${this.renderNavBar()} ${this.renderAlertBanner()}
-        <main class="relative flex flex-auto">${this.renderPage()}</main>
+        <main class="relative flex flex-auto md:min-h-[calc(100vh-3.125rem)]">
+          ${this.renderPage()}
+        </main>
         <div class="border-t border-neutral-100">${this.renderFooter()}</div>
       </div>
 
@@ -731,7 +733,7 @@ export class App extends BtrixElement {
       case "loginWithRedirect":
       case "forgotPassword":
         return html`<btrix-log-in
-          class="flex w-full items-center justify-center md:bg-neutral-50"
+          class="flex w-full flex-col items-center justify-center md:bg-neutral-50"
           .viewState=${this.viewState}
           redirectUrl=${this.viewState.params.redirectUrl ||
           this.viewState.data?.redirectUrl}
