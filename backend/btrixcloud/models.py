@@ -1383,10 +1383,10 @@ class OrgReadOnlyUpdate(BaseModel):
 
 
 # ============================================================================
-class OrgListPublicCollectionsUpdate(BaseModel):
-    """Organization listPublicCollections update"""
+class OrgEnablePublicProfileUpdate(BaseModel):
+    """Organization enablePublicProfile update"""
 
-    listPublicCollections: bool
+    enablePublicProfile: bool
 
 
 # ============================================================================
@@ -1457,7 +1457,7 @@ class OrgOut(BaseMongoModel):
     allowedProxies: list[str] = []
     crawlingDefaults: Optional[CrawlConfigDefaults] = None
 
-    listPublicCollections: bool = False
+    enablePublicProfile: bool = False
 
 
 # ============================================================================
@@ -1514,7 +1514,7 @@ class Organization(BaseMongoModel):
     allowedProxies: list[str] = []
     crawlingDefaults: Optional[CrawlConfigDefaults] = None
 
-    listPublicCollections: bool = False
+    enablePublicProfile: bool = False
 
     def is_owner(self, user):
         """Check if user is owner"""

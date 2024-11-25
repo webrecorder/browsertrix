@@ -700,19 +700,19 @@ def test_update_read_only(admin_auth_headers, default_org_id):
 def test_update_list_public_collections(admin_auth_headers, default_org_id):
     # Test that default is false
     r = requests.get(f"{API_PREFIX}/orgs/{default_org_id}", headers=admin_auth_headers)
-    assert r.json()["listPublicCollections"] is False
+    assert r.json()["enablePublicProfile"] is False
 
     # Update
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/list-public-collections",
         headers=admin_auth_headers,
-        json={"listPublicCollections": True},
+        json={"enablePublicProfile": True},
     )
     assert r.json()["updated"]
 
     # Test update is reflected in GET response
     r = requests.get(f"{API_PREFIX}/orgs/{default_org_id}", headers=admin_auth_headers)
-    assert r.json()["listPublicCollections"]
+    assert r.json()["enablePublicProfile"]
 
 
 def test_sort_orgs(admin_auth_headers):

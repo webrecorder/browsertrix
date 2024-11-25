@@ -78,7 +78,7 @@ from .models import (
     RemovedResponse,
     OrgSlugsResponse,
     OrgImportResponse,
-    OrgListPublicCollectionsUpdate,
+    OrgEnablePublicProfileUpdate,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import (
@@ -995,13 +995,13 @@ class OrgOps:
         )
         return res is not None
 
-    async def update_list_public_collections(
-        self, org: Organization, list_public_collections: bool
+    async def update_public_profile(
+        self, org: Organization, enable_public_profile: bool
     ):
-        """Update listPublicCollections field on organization"""
+        """Update enablePublicProfile field on organization"""
         res = await self.orgs.find_one_and_update(
             {"_id": org.id},
-            {"$set": {"listPublicCollections": list_public_collections}},
+            {"$set": {"enablePublicProfile": enable_public_profile}},
         )
         return res is not None
 
@@ -1562,15 +1562,15 @@ def init_orgs_api(
         return {"updated": True}
 
     @router.post(
-        "/list-public-collections",
+        "/public-profile",
         tags=["organizations", "collections"],
         response_model=UpdatedResponse,
     )
-    async def update_list_public_collections(
-        update: OrgListPublicCollectionsUpdate,
+    async def update_public_profile(
+        update: OrgEnablePublicProfileUpdate,
         org: Organization = Depends(org_owner_dep),
     ):
-        await ops.update_list_public_collections(org, update.listPublicCollections)
+        await ops.update_public_profile(org, update.enablePublicProfile)
 
         return {"updated": True}
 
