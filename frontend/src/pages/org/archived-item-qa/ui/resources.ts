@@ -6,6 +6,7 @@ import type { ReplayData, ResourcesPayload } from "../types";
 
 import { renderSpinner } from "./spinner";
 
+import localize from "@/utils/localize";
 import { tw } from "@/utils/tailwind";
 
 const TOTAL = "Total";
@@ -27,10 +28,10 @@ function renderDiff(
         >${msg("All Resources")}</span
       >`,
       html`<span class="font-semibold"
-        >${crawlResources[TOTAL].good.toLocaleString()}</span
+        >${localize.number(crawlResources[TOTAL].good)}</span
       >`,
       html`<span class="font-semibold"
-        >${crawlResources[TOTAL].bad.toLocaleString()}</span
+        >${localize.number(crawlResources[TOTAL].bad)}</span
       >`,
       html`<span
         class="${clsx(
@@ -40,7 +41,7 @@ function renderDiff(
             : "text-neutral-700",
         )}"
       >
-        ${qaResources[TOTAL].good.toLocaleString()}
+        ${localize.number(qaResources[TOTAL].good)}
       </span>`,
       html`<span
         class="${clsx(
@@ -50,7 +51,7 @@ function renderDiff(
             : "text-neutral-700",
         )}"
       >
-        ${qaResources[TOTAL].bad.toLocaleString()}
+        ${localize.number(qaResources[TOTAL].bad)}
       </span>`,
     ],
     ...Object.keys(qaResources)
@@ -58,10 +59,10 @@ function renderDiff(
       .map((key) => [
         html`<span class="capitalize">${key}</span>`,
         html`${Object.prototype.hasOwnProperty.call(crawlResources, key)
-          ? crawlResources[key].good.toLocaleString()
+          ? localize.number(crawlResources[key].good)
           : 0}`,
         html`${Object.prototype.hasOwnProperty.call(crawlResources, key)
-          ? crawlResources[key].bad.toLocaleString()
+          ? localize.number(crawlResources[key].bad)
           : 0}`,
         html`<span
           class=${Object.prototype.hasOwnProperty.call(crawlResources, key) &&
@@ -69,7 +70,7 @@ function renderDiff(
             ? tw`text-neutral-400`
             : tw`text-danger`}
         >
-          ${qaResources[key].good.toLocaleString()}
+          ${localize.number(qaResources[key].good)}
         </span>`,
         html`<span
           class=${Object.prototype.hasOwnProperty.call(crawlResources, key) &&
@@ -77,7 +78,7 @@ function renderDiff(
             ? tw`text-neutral-400`
             : tw`font-semibold text-danger`}
         >
-          ${qaResources[key].bad.toLocaleString()}
+          ${localize.number(qaResources[key].bad)}
         </span>`,
       ]),
   ];

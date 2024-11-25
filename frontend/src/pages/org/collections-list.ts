@@ -18,13 +18,9 @@ import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { Collection, CollectionSearchValues } from "@/types/collection";
 import type { UnderlyingFunction } from "@/types/utils";
 import { isApiError } from "@/utils/api";
-import { formatNumber, getLocale } from "@/utils/localization";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
 import noCollectionsImg from "~assets/images/no-collections-found.webp";
-
-const formatNumberCompact = (v: number) =>
-  formatNumber(v, { notation: "compact" });
 
 type Collections = APIPaginatedList<Collection>;
 type SearchFields = "name";
@@ -530,7 +526,8 @@ export class CollectionsList extends BtrixElement {
         </a>
       </btrix-table-cell>
       <btrix-table-cell>
-        ${formatNumber(col.crawlCount)} ${pluralOf("items", col.crawlCount)}
+        ${this.localize.number(col.crawlCount, { notation: "compact" })}
+        ${pluralOf("items", col.crawlCount)}
       </btrix-table-cell>
       <btrix-table-cell>
         <sl-format-bytes
@@ -539,12 +536,11 @@ export class CollectionsList extends BtrixElement {
         ></sl-format-bytes>
       </btrix-table-cell>
       <btrix-table-cell>
-        ${formatNumberCompact(col.pageCount)}
+        ${this.localize.number(col.pageCount, { notation: "compact" })}
         ${pluralOf("pages", col.pageCount)}
       </btrix-table-cell>
       <btrix-table-cell>
         <sl-format-date
-          lang=${getLocale()}
           date=${col.modified}
           month="2-digit"
           day="2-digit"

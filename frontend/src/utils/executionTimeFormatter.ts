@@ -1,6 +1,6 @@
 import { html, nothing } from "lit";
 
-import { getLocale } from "./localization";
+import localize from "./localize";
 
 /**
  * Returns either `nothing`, or hours-minutes-seconds wrapped in parens.
@@ -90,7 +90,7 @@ export const humanizeExecutionSeconds = (
     displaySeconds = false,
     round = "up",
   } = options || {};
-  const locale = getLocale();
+  const locale = localize.activeLanguage;
   const minutes =
     round === "down" ? Math.floor(seconds / 60) : Math.ceil(seconds / 60);
 

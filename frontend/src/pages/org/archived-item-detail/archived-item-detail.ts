@@ -30,7 +30,6 @@ import {
   renderName,
 } from "@/utils/crawler";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
-import { formatNumber, getLocale } from "@/utils/localization";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
@@ -156,14 +155,13 @@ export class ArchivedItemDetail extends BtrixElement {
     if (!this.item) return;
 
     return html`<sl-format-date
-      lang=${getLocale()}
       date=${this.item.finished}
       month="2-digit"
       day="2-digit"
       year="2-digit"
       hour="numeric"
       minute="numeric"
-      timeZoneName="short"
+      time-zone-name="short"
     ></sl-format-date>`;
   }
 
@@ -775,14 +773,13 @@ export class ArchivedItemDetail extends BtrixElement {
             : html`
                 <btrix-desc-list-item label=${msg("Start Time")}>
                   <sl-format-date
-                    lang=${getLocale()}
                     date=${this.item!.started}
                     month="2-digit"
                     day="2-digit"
                     year="2-digit"
                     hour="numeric"
                     minute="numeric"
-                    timeZoneName="short"
+                    time-zone-name="short"
                   ></sl-format-date>
                 </btrix-desc-list-item>
                 <btrix-desc-list-item label=${msg("Finish Time")}>
@@ -797,7 +794,7 @@ export class ArchivedItemDetail extends BtrixElement {
                           new Date(this.item!.started).valueOf(),
                       )}`
                     : html`
-                        <span class="text-purple-600">
+                        <span class="text-violet-600">
                           <btrix-relative-duration
                             value=${this.item!.started}
                             unitCount="3"
@@ -840,12 +837,12 @@ export class ArchivedItemDetail extends BtrixElement {
                       ? html`<span>,</span
                           ><span
                             class="tracking-tighter${this.isActive
-                              ? " text-purple-600"
+                              ? " text-violet-600"
                               : ""} font-mono"
                           >
-                            ${formatNumber(+this.item.stats.done)}
+                            ${this.localize.number(+this.item.stats.done)}
                             <span class="text-0-400">/</span>
-                            ${formatNumber(+this.item.stats.found)}
+                            ${this.localize.number(+this.item.stats.found)}
                           </span>
                           <span
                             >${pluralOf("pages", +this.item.stats.found)}</span
@@ -932,7 +929,7 @@ ${this.item?.description}
                       ({ id, name }) =>
                         html`<li class="mt-1">
                           <a
-                            class="text-primary hover:text-indigo-400"
+                            class="text-primary hover:text-primary-400"
                             href=${`${this.navigate.orgBasePath}/collections/view/${id}`}
                             @click=${this.navigate.link}
                             >${name}</a

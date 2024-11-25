@@ -35,7 +35,6 @@ import type {
 import type { ArchivedItem, Crawl, Upload, Workflow } from "@/types/crawler";
 import { isApiError } from "@/utils/api";
 import { finishedCrawlStates } from "@/utils/crawler";
-import { formatNumber } from "@/utils/localization";
 import { pluralOf } from "@/utils/pluralize";
 
 const TABS = ["crawl", "upload"] as const;
@@ -308,9 +307,11 @@ export class CollectionItemsDialog extends BtrixElement {
               () =>
                 this.showOnlyInCollection
                   ? msg(
-                      str`Crawls in Collection (${data!.total.toLocaleString()})`,
+                      str`Crawls in Collection (${this.localize.number(data!.total)})`,
                     )
-                  : msg(str`All Workflows (${data!.total.toLocaleString()})`),
+                  : msg(
+                      str`All Workflows (${this.localize.number(data!.total)})`,
+                    ),
               () => msg("Loading..."),
             )}
           </div>
@@ -357,10 +358,10 @@ export class CollectionItemsDialog extends BtrixElement {
               () =>
                 this.showOnlyInCollection
                   ? msg(
-                      str`Uploads in Collection (${this.uploads!.total.toLocaleString()})`,
+                      str`Uploads in Collection (${this.localize.number(this.uploads!.total)})`,
                     )
                   : msg(
-                      str`All Uploads (${this.uploads!.total.toLocaleString()})`,
+                      str`All Uploads (${this.localize.number(this.uploads!.total)})`,
                     ),
               () => msg("Loading..."),
             )}
@@ -558,14 +559,14 @@ export class CollectionItemsDialog extends BtrixElement {
       if (addCount) {
         messages.push(
           msg(
-            str`Adding ${formatNumber(addCount)} ${pluralOf("items", addCount)}`,
+            str`Adding ${this.localize.number(addCount)} ${pluralOf("items", addCount)}`,
           ),
         );
       }
       if (removeCount) {
         messages.push(
           msg(
-            str`Removing ${formatNumber(removeCount)} ${pluralOf("items", removeCount)}`,
+            str`Removing ${this.localize.number(removeCount)} ${pluralOf("items", removeCount)}`,
           ),
         );
       }

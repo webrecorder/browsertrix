@@ -2013,6 +2013,8 @@ class BgJobType(str, Enum):
 
     CREATE_REPLICA = "create-replica"
     DELETE_REPLICA = "delete-replica"
+    DELETE_ORG = "delete-org"
+    RECALCULATE_ORG_STATS = "recalculate-org-stats"
 
 
 # ============================================================================
@@ -2052,9 +2054,31 @@ class DeleteReplicaJob(BackgroundJob):
 
 
 # ============================================================================
+class DeleteOrgJob(BackgroundJob):
+    """Model for tracking deletion of org data jobs"""
+
+    type: Literal[BgJobType.DELETE_ORG] = BgJobType.DELETE_ORG
+
+
+# ============================================================================
+class RecalculateOrgStatsJob(BackgroundJob):
+    """Model for tracking jobs to recalculate org stats"""
+
+    type: Literal[BgJobType.RECALCULATE_ORG_STATS] = BgJobType.RECALCULATE_ORG_STATS
+
+
+# ============================================================================
 # Union of all job types, for response model
 
-AnyJob = RootModel[Union[CreateReplicaJob, DeleteReplicaJob, BackgroundJob]]
+AnyJob = RootModel[
+    Union[
+        CreateReplicaJob,
+        DeleteReplicaJob,
+        BackgroundJob,
+        DeleteOrgJob,
+        RecalculateOrgStatsJob,
+    ]
+]
 
 
 # ============================================================================
@@ -2210,6 +2234,13 @@ class SuccessResponse(BaseModel):
 
 
 # ============================================================================
+class SuccessResponseId(SuccessResponse):
+    """Response for API endpoints that return success and a background job id"""
+
+    id: Optional[str] = None
+
+
+# ============================================================================
 class SuccessResponseStorageQuota(SuccessResponse):
     """Response for API endpoints that return success and storageQuotaReached"""
 
@@ -2272,6 +2303,13 @@ class DeletedResponse(BaseModel):
     """Response for delete API endpoints"""
 
     deleted: bool
+
+
+# ============================================================================
+class DeletedResponseId(DeletedResponse):
+    """Response for delete API endpoints that return job id"""
+
+    id: str
 
 
 # ============================================================================

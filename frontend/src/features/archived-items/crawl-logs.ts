@@ -4,7 +4,6 @@ import { customElement, property, state } from "lit/decorators.js";
 
 import type { APIPaginatedList } from "@/types/api";
 import { truncate } from "@/utils/css";
-import { getLocale } from "@/utils/localization";
 
 export type CrawlLog = {
   timestamp: string;
@@ -124,7 +123,6 @@ export class CrawlLogs extends LitElement {
               <div class="row">
                 <div>
                   <sl-format-date
-                    lang=${getLocale()}
                     date=${log.timestamp}
                     month="2-digit"
                     day="2-digit"

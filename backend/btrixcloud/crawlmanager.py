@@ -17,6 +17,8 @@ from .models import StorageRef, CrawlConfig, BgJobType
 # ============================================================================
 DEFAULT_PROXY_ID: str = os.environ.get("DEFAULT_PROXY_ID", "")
 
+DEFAULT_NAMESPACE: str = os.environ.get("DEFAULT_NAMESPACE", "default")
+
 
 # ============================================================================
 class CrawlManager(K8sAPI):
@@ -107,6 +109,70 @@ class CrawlManager(K8sAPI):
         data = self.templates.env.get_template("replica_job.yaml").render(params)
 
         await self.create_from_yaml(data)
+
+        return job_id
+
+    async def run_delete_org_job(
+        self,
+        oid: str,
+        backend_image: str,
+        pull_policy: str,
+        existing_job_id: Optional[str] = None,
+    ) -> str:
+        """run job to delete org and all of its data"""
+
+        if existing_job_id:
+            job_id = existing_job_id
+        else:
+            job_id = f"delete-org-{oid}-{secrets.token_hex(5)}"
+
+        return await self._run_bg_job_with_ops_classes(
+            oid, backend_image, pull_policy, job_id, job_type=BgJobType.DELETE_ORG.value
+        )
+
+    async def run_recalculate_org_stats_job(
+        self,
+        oid: str,
+        backend_image: str,
+        pull_policy: str,
+        existing_job_id: Optional[str] = None,
+    ) -> str:
+        """run job to recalculate storage stats for the org"""
+
+        if existing_job_id:
+            job_id = existing_job_id
+        else:
+            job_id = f"org-stats-{oid}-{secrets.token_hex(5)}"
+
+        return await self._run_bg_job_with_ops_classes(
+            oid,
+            backend_image,
+            pull_policy,
+            job_id,
+            job_type=BgJobType.RECALCULATE_ORG_STATS.value,
+        )
+
+    async def _run_bg_job_with_ops_classes(
+        self,
+        oid: str,
+        backend_image: str,
+        pull_policy: str,
+        job_id: str,
+        job_type: str,
+    ) -> str:
+        """run background job with access to ops classes"""
+
+        params = {
+            "id": job_id,
+            "oid": oid,
+            "job_type": job_type,
+            "backend_image": backend_image,
+            "pull_policy": pull_policy,
+        }
+
+        data = self.templates.env.get_template("background_job.yaml").render(params)
+
+        await self.create_from_yaml(data, namespace=DEFAULT_NAMESPACE)
 
         return job_id
 

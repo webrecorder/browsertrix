@@ -40,7 +40,7 @@
     --sl-color-primary-700: theme(colors.primary.700);
     --sl-color-primary-800: theme(colors.primary.800);
     --sl-color-primary-900: theme(colors.primary.900);
-    --sl-color-primary-950: theme(colors.primary.950);
+    --sl-color-primary-950: theme(colors.primary.900);
 
     /*
      * Typography
@@ -136,6 +136,15 @@
   .form-help-text {
     color: var(--sl-input-help-text-color);
     font-size: var(--sl-input-help-text-font-size-medium);
+  }
+
+  /* Update button colors */
+  sl-button[variant="primary"]::part(base) {
+    background-color: theme(colors.primary.400);
+  }
+
+  sl-button[variant="primary"]::part(base):hover {
+    background-color: theme(colors.primary.500);
   }
 
   /* Elevate select and buttons */
@@ -329,6 +338,11 @@
 }
 
 @layer components {
+  /* Hide asterisk (`*`) required indicator */
+  sl-input.hide-required-content {
+    --sl-input-required-content-color: transparent;
+  }
+
   sl-input.input-font-monostyle::part(input) {
     @apply font-monostyle;
   }

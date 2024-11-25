@@ -6,7 +6,6 @@ import { customElement } from "lit/decorators.js";
 import { BtrixElement } from "@/classes/BtrixElement";
 import { SubscriptionStatus } from "@/types/billing";
 import { OrgReadOnlyReason } from "@/types/org";
-import { formatISODateString } from "@/utils/localization";
 
 type Alert = {
   test: () => boolean;
@@ -70,7 +69,7 @@ export class OrgStatusBanner extends BtrixElement {
     if (futureCancelDate) {
       daysDiff = differenceInDays(new Date(), new Date(futureCancelDate));
 
-      dateStr = formatISODateString(futureCancelDate, {
+      dateStr = this.localize.date(futureCancelDate, {
         month: "long",
         day: "numeric",
         year: "numeric",

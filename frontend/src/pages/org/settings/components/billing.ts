@@ -12,7 +12,6 @@ import { columns } from "@/layouts/columns";
 import { SubscriptionStatus, type BillingPortal } from "@/types/billing";
 import type { OrgData, OrgQuotas } from "@/types/org";
 import { humanizeSeconds } from "@/utils/executionTimeFormatter";
-import { formatNumber, getLocale } from "@/utils/localization";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
 
@@ -88,7 +87,6 @@ export class OrgSettingsBilling extends BtrixElement {
   render() {
     const futureCancelDate = () =>
       html`<sl-format-date
-        lang=${getLocale()}
         class="truncate"
         date=${this.org!.subscription!.futureCancelDate!}
         month="long"
@@ -300,17 +298,17 @@ export class OrgSettingsBilling extends BtrixElement {
       quotas.maxExecMinutesPerMonth &&
       humanizeSeconds(
         quotas.maxExecMinutesPerMonth * 60,
-        undefined,
+        this.localize.lang(),
         undefined,
         "long",
       );
     const maxPagesPerCrawl =
       quotas.maxPagesPerCrawl &&
-      `${formatNumber(quotas.maxPagesPerCrawl)} ${pluralOf("pages", quotas.maxPagesPerCrawl)}`;
+      `${this.localize.number(quotas.maxPagesPerCrawl)} ${pluralOf("pages", quotas.maxPagesPerCrawl)}`;
     const maxConcurrentCrawls =
       quotas.maxConcurrentCrawls &&
       msg(
-        str`${formatNumber(quotas.maxConcurrentCrawls)} concurrent ${pluralOf("crawls", quotas.maxConcurrentCrawls)}`,
+        str`${this.localize.number(quotas.maxConcurrentCrawls)} concurrent ${pluralOf("crawls", quotas.maxConcurrentCrawls)}`,
       );
 
     return html`

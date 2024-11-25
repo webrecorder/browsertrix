@@ -4,12 +4,12 @@ import type {
   SlInput,
   SlInputEvent,
 } from "@shoelace-style/shoelace";
-import type { PropertyValues } from "lit";
+import { html, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import throttle from "lodash/fp/throttle";
 
-import LiteElement, { html } from "@/utils/LiteElement";
+import { BtrixElement } from "@/classes/BtrixElement";
 
 type Pages = string[];
 type ResponseData = {
@@ -33,7 +33,7 @@ const POLL_INTERVAL_SECONDS = 5;
  */
 @localized()
 @customElement("btrix-crawl-queue")
-export class CrawlQueue extends LiteElement {
+export class CrawlQueue extends BtrixElement {
   @property({ type: String })
   crawlId?: string;
 
@@ -103,7 +103,7 @@ export class CrawlQueue extends LiteElement {
     }
     if (this.pageOffset === 0 && this.queue.total <= this.pageSize) {
       return msg(
-        str`Queued URLs from 1 to ${this.queue.total.toLocaleString()}`,
+        str`Queued URLs from 1 to ${this.localize.number(this.queue.total)}`,
       );
     }
 
@@ -143,8 +143,8 @@ export class CrawlQueue extends LiteElement {
               this.pageOffset = value - 1;
             }}
           ></btrix-inline-input>
-          to ${countMax.toLocaleString()} of
-          ${this.queue.total.toLocaleString()}
+          to ${this.localize.number(countMax)} of
+          ${this.localize.number(this.queue.total)}
         `)}
       </div>
     `;
@@ -173,7 +173,7 @@ export class CrawlQueue extends LiteElement {
           return html`
             <btrix-numbered-list-item>
               <span class="${isMatch ? "text-red-600" : ""}" slot="marker">
-                ${(idx + this.pageOffset + 1).toLocaleString()}.
+                ${this.localize.number(idx + this.pageOffset + 1)}.
               </span>
               <a
                 class="${isMatch
@@ -222,7 +222,7 @@ export class CrawlQueue extends LiteElement {
         ? html`
             <btrix-badge variant="danger" class="ml-1">
               ${this.matchedTotal > 1
-                ? msg(str`-${this.matchedTotal.toLocaleString()} URLs`)
+                ? msg(str`-${this.localize.number(this.matchedTotal)} URLs`)
                 : msg(str`-1 URL`)}
             </btrix-badge>
           `
@@ -255,7 +255,7 @@ export class CrawlQueue extends LiteElement {
       }, POLL_INTERVAL_SECONDS * 1000);
     } catch (e) {
       if ((e as Error).message !== "invalid_regex") {
-        this.notify({
+        this.notify.toast({
           message: msg("Sorry, couldn't fetch crawl queue at this time."),
           variant: "danger",
           icon: "exclamation-octagon",
@@ -282,7 +282,7 @@ export class CrawlQueue extends LiteElement {
       count,
       regex,
     });
-    const data: ResponseData = await this.apiFetch(
+    const data: ResponseData = await this.api.fetch(
       `/orgs/${this.orgId}/crawls/${this.crawlId}/queue?${params.toString()}`,
     );
 

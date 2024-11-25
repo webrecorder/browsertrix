@@ -1,8 +1,9 @@
 import { localized, msg, str } from "@lit/localize";
+import { html } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
+import { BtrixElement } from "@/classes/BtrixElement";
 import { type PageChangeEvent } from "@/components/ui/pagination";
-import LiteElement, { html } from "@/utils/LiteElement";
 
 type URLs = string[];
 
@@ -18,7 +19,7 @@ type URLs = string[];
  */
 @localized()
 @customElement("btrix-crawl-pending-exclusions")
-export class CrawlPendingExclusions extends LiteElement {
+export class CrawlPendingExclusions extends BtrixElement {
   @property({ type: Array })
   matchedURLs: URLs | null = null;
 
@@ -72,7 +73,7 @@ export class CrawlPendingExclusions extends LiteElement {
       <btrix-badge variant=${this.total ? "danger" : "neutral"} class="ml-1">
         ${this.total
           ? this.total > 1
-            ? msg(str`+${this.total.toLocaleString()} URLs`)
+            ? msg(str`+${this.localize.number(this.total)} URLs`)
             : msg(str`+1 URL`)
           : msg("No matches")}
       </btrix-badge>

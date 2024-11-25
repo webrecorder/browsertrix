@@ -139,8 +139,6 @@ export function makeAppStateService() {
       } else {
         appState.userPreferences = userPreferences;
       }
-
-      console.log("appState.userPreferences:", appState.userPreferences);
     }
 
     @transaction()

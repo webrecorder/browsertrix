@@ -2,7 +2,7 @@
 
 !!! info "Already signed up for Browsertrix?"
 
-    This guide is for developers and users who are self-hosting Browsertrix. If you've registered through [browsertrix.com](https://browsertrix.com/), you may be looking for the [user guide](../user-guide/index.md).
+    This guide is for developers and users who are self-hosting Browsertrix. If you've registered through [webrecorder.net](https://webrecorder.net/browsertrix), you may be looking for the [user guide](../user-guide/index.md).
 
 Browsertrix is designed to be a cloud-native application running in Kubernetes.
 
