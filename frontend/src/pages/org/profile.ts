@@ -55,7 +55,7 @@ export class OrgProfile extends BtrixElement {
             org ? this.renderOrg(org) : this.renderNotFound(),
           error: this.renderNotFound,
         })}
-        ${this.renderSignUpCta()}
+        ${when(!this.authState, () => this.renderSignUpCta())}
       </div>
     `;
   }
