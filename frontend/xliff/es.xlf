@@ -3902,6 +3902,9 @@
       <trans-unit id="s77419748aa9dcc7c">
         <source>Request Password Reset</source>
       </trans-unit>
+      <trans-unit id="s67729a111e67dc39">
+        <source>Name of your organization.</source>
+      </trans-unit>
     </body>
   </file>
 </xliff>
