@@ -766,7 +766,7 @@ def test_list_public_collections(
     # Try listing public collections without org public profile enabled
     r = requests.get(f"{API_PREFIX}/public-collections/{org_slug}")
     assert r.status_code == 404
-    assert r.json()["detail"] == "public_collections_not_found"
+    assert r.json()["detail"] == "public_profile_not_found"
 
     # Enable public profile on org
     public_description = "This is a test public org!"
