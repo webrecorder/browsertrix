@@ -94,6 +94,7 @@ export const orgDataSchema = z.object({
   allowSharedProxies: z.boolean(),
   allowedProxies: z.array(z.string()),
   enablePublicProfile: z.boolean(),
+  publicDescription: z.string().nullable(),
 });
 export type OrgData = z.infer<typeof orgDataSchema>;
 
