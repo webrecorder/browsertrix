@@ -3821,6 +3821,18 @@
       <trans-unit id="sab5061cf8c519285">
         <source><x equiv-text="${storageBytesText}" id="0"/> of disk space</source>
       </trans-unit>
+      <trans-unit id="sbd8ee44f2619fd58">
+        <source>Did you click a link to get here?</source>
+      </trans-unit>
+      <trans-unit id="s81ec7a6847534d5e">
+        <source>Go Back</source>
+      </trans-unit>
+      <trans-unit id="s091d5407b5b32e84">
+        <source>Or</source>
+      </trans-unit>
+      <trans-unit id="s6139a6bb752f2af3">
+        <source>Report a Broken Link</source>
+      </trans-unit>
       <trans-unit id="s1219d97b49650c05">
         <source>Visibility</source>
       </trans-unit>
@@ -3841,6 +3853,9 @@
       </trans-unit>
       <trans-unit id="s3a081663dfc1a779">
         <source>Sorry, couldn't update org at this time.</source>
+      </trans-unit>
+      <trans-unit id="s2ccab3f1e005dbc4">
+        <source>Choose a name that represents your organization, your team, or your personal web archive.</source>
       </trans-unit>
       <trans-unit id="sf8388a998523b72c">
         <source>Org URL</source>
@@ -3899,14 +3914,11 @@
       <trans-unit id="s9ab48881bcc2b9cf">
         <source>If enabled, anyone with the link to your org's Browsertrix URL will be able to view the profile page and public collections.</source>
       </trans-unit>
-      <trans-unit id="s28cbdec6d016b1a8">
-        <source>Write a short description that introduces your organization or your web archive to the world.</source>
+      <trans-unit id="sd4cac729b4cb5a6a">
+        <source>Write a short description that introduces your organization or your web archive.</source>
       </trans-unit>
       <trans-unit id="s57a500d2963282bb">
         <source>To customize this URL, update your Org URL in General settings.</source>
-      </trans-unit>
-      <trans-unit id="s5dc3211c243be8f0">
-        <source>Choose a name that represents your organization, your team, or your web archive.</source>
       </trans-unit>
       <trans-unit id="sa88bba6b28ef1bcf">
         <source>Customize your org's Browsertrix URL. This is also the URL to your org's public profile page, if you've enabled it.</source>
