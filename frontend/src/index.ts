@@ -112,6 +112,12 @@ export class App extends BtrixElement {
     return null;
   }
 
+  get isUserInCurrentOrg(): boolean {
+    const { slug } = this.viewState.params;
+    if (!this.userInfo || !slug) return false;
+    return Boolean(this.userInfo.orgs.some((org) => org.slug === slug));
+  }
+
   async connectedCallback() {
     let authState: AuthService["authState"] = null;
     try {
@@ -203,7 +209,11 @@ export class App extends BtrixElement {
 
   private updateOrgSlugIfNeeded() {
     const slug = this.viewState.params.slug || null;
-    if (this.viewState.route === "org" && slug !== this.appState.orgSlug) {
+    if (
+      this.isUserInCurrentOrg &&
+      this.viewState.route === "org" &&
+      slug !== this.appState.orgSlug
+    ) {
       AppStateService.updateOrgSlug(slug);
     }
   }
@@ -769,7 +779,11 @@ export class App extends BtrixElement {
         const orgPath = this.viewState.pathname;
         const orgTab = this.orgTab;
 
-        if (orgTab && orgTab !== OrgTab.ProfilePreview) {
+        if (
+          this.isUserInCurrentOrg &&
+          orgTab &&
+          orgTab !== OrgTab.ProfilePreview
+        ) {
           return html`<btrix-org
             class="w-full"
             .viewStateData=${this.viewState.data}
@@ -782,7 +796,8 @@ export class App extends BtrixElement {
 
         return html`<btrix-org-profile
           class="w-full"
-          ?preview=${(orgTab as OrgTab) === OrgTab.ProfilePreview}
+          ?inOrg=${this.isUserInCurrentOrg}
+          ?preview=${orgTab && orgTab === OrgTab.ProfilePreview}
         ></btrix-org-profile>`;
       }
 

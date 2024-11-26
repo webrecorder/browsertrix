@@ -54,7 +54,7 @@ export class Admin extends BtrixElement {
   connectedCallback() {
     if (this.authState) {
       if (this.slug) {
-        this.navigate.to(`/orgs/${this.slug}/dashboard`);
+        this.navigate.to(`/orgs/${this.slug}`);
       } else {
         super.connectedCallback();
       }
