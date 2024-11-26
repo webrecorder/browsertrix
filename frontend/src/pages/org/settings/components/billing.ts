@@ -18,7 +18,7 @@ import { tw } from "@/utils/tailwind";
 const linkClassList = tw`transition-color text-primary hover:text-primary-500`;
 const manageLinkClasslist = clsx(
   linkClassList,
-  tw`flex items-center gap-2 p-2 text-sm font-semibold leading-none`,
+  tw`flex cursor-pointer items-center gap-2 p-2 text-sm font-semibold leading-none`,
 );
 
 @localized()
@@ -41,6 +41,10 @@ export class OrgSettingsBilling extends BtrixElement {
     let label = msg("Manage Billing");
 
     switch (subscription.status) {
+      case SubscriptionStatus.Trialing: {
+        label = msg("Choose Plan");
+        break;
+      }
       case SubscriptionStatus.PausedPaymentFailed: {
         label = msg("Update Billing");
         break;
@@ -112,32 +116,41 @@ export class OrgSettingsBilling extends BtrixElement {
                 </div>
                 ${when(
                   this.org,
-                  (org) =>
-                    org.subscription?.futureCancelDate
-                      ? html`
-                          <div
-                            class="mb-3 flex items-center gap-2 border-b pb-3 text-neutral-500"
-                          >
-                            <sl-icon
-                              name="info-circle"
-                              class="text-base"
-                            ></sl-icon>
-                            <span>
-                              ${msg(
+                  (org) => {
+                    if (!org.subscription?.futureCancelDate) {
+                      return nothing;
+                    }
+
+                    const futureCancelDate = html`<sl-format-date
+                      class="truncate"
+                      date=${org.subscription.futureCancelDate}
+                      month="long"
+                      day="numeric"
+                      year="numeric"
+                    >
+                    </sl-format-date>`;
+
+                    return html`
+                      <div
+                        class="mb-3 flex items-center gap-2 border-b pb-3 text-neutral-500"
+                      >
+                        <sl-icon name="info-circle" class="text-base"></sl-icon>
+                        <span>
+                          ${org.subscription.status ===
+                          SubscriptionStatus.Trialing
+                            ? msg(
+                                html`Your trial will end on ${futureCancelDate}
+                                  - Click <strong>Choose Plan</strong> to
+                                  subscribe`,
+                              )
+                            : msg(
                                 html`Your plan will be canceled on
-                                  <sl-format-date
-                                    class="truncate"
-                                    date=${org.subscription.futureCancelDate}
-                                    month="long"
-                                    day="numeric"
-                                    year="numeric"
-                                  >
-                                  </sl-format-date>`,
+                                ${futureCancelDate}`,
                               )}
-                            </span>
-                          </div>
-                        `
-                      : nothing,
+                        </span>
+                      </div>
+                    `;
+                  },
                   () => html` <sl-skeleton></sl-skeleton> `,
                 )}
                 <h5 class="mb-2 mt-4 text-xs leading-none text-neutral-500">
@@ -242,6 +255,12 @@ export class OrgSettingsBilling extends BtrixElement {
         case SubscriptionStatus.Active: {
           statusLabel = html`
             <span class="text-success-700">${msg("Active")}</span>
+          `;
+          break;
+        }
+        case SubscriptionStatus.Trialing: {
+          statusLabel = html`
+            <span class="text-success-700">${msg("Trial")}</span>
           `;
           break;
         }

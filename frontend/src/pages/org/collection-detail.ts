@@ -60,6 +60,9 @@ export class CollectionDetail extends BtrixElement {
   @query(".descriptionExpandBtn")
   private readonly descriptionExpandBtn?: HTMLElement | null;
 
+  @query("replay-web-page")
+  private readonly replayEmbed?: ReplayWebPage | null;
+
   // Use to cancel requests
   private getArchivedItemsController: AbortController | null = null;
 
@@ -203,6 +206,7 @@ export class CollectionDetail extends BtrixElement {
         ?open=${this.openDialogName === "editItems"}
         @sl-hide=${() => (this.openDialogName = undefined)}
         @btrix-collection-saved=${() => {
+          this.refreshReplay();
           void this.fetchCollection();
           void this.fetchArchivedItems();
         }}
@@ -215,12 +219,25 @@ export class CollectionDetail extends BtrixElement {
             .collection=${this.collection!}
             ?open=${this.openDialogName === "editMetadata"}
             @sl-hide=${() => (this.openDialogName = undefined)}
-            @btrix-collection-saved=${() => void this.fetchCollection()}
+            @btrix-collection-saved=${() => {
+              this.refreshReplay();
+              void this.fetchCollection();
+            }}
           >
           </btrix-collection-metadata-dialog>
         `,
       )}
       ${this.renderShareDialog()}`;
+  }
+
+  private refreshReplay() {
+    if (this.replayEmbed) {
+      try {
+        this.replayEmbed.fullReload();
+      } catch (e) {
+        console.warn("Full reload not available in RWP");
+      }
+    }
   }
 
   private getPublicReplayURL() {

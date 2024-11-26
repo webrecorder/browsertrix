@@ -4,6 +4,7 @@ import { html, type TemplateResult } from "lit";
 import { customElement } from "lit/decorators.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import { SubscriptionStatus } from "@/types/billing";
 import { OrgReadOnlyReason } from "@/types/org";
 
 type Alert = {
@@ -61,16 +62,32 @@ export class OrgStatusBanner extends BtrixElement {
       execMinutesQuotaReached,
     } = this.org;
 
+    let daysDiff = 0;
+    let dateStr = "";
+    const futureCancelDate = subscription?.futureCancelDate || null;
+
+    if (futureCancelDate) {
+      daysDiff = differenceInDays(new Date(), new Date(futureCancelDate));
+
+      dateStr = this.localize.date(futureCancelDate, {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+        hour: "numeric",
+      });
+    }
+
+    const isTrial = subscription?.status === SubscriptionStatus.Trialing;
+
+    // show banner if < this many days of trial is left
+    const MAX_TRIAL_DAYS_SHOW_BANNER = 4;
+
     return [
       {
         test: () =>
-          !readOnly && !readOnlyOnCancel && !!subscription?.futureCancelDate,
+          !readOnly && !readOnlyOnCancel && !!futureCancelDate && !isTrial,
 
         content: () => {
-          const daysDiff = differenceInDays(
-            new Date(),
-            new Date(subscription!.futureCancelDate!),
-          );
           return {
             title:
               daysDiff > 1
@@ -82,15 +99,7 @@ export class OrgStatusBanner extends BtrixElement {
             detail: html`
               <p>
                 ${msg(
-                  str`Your subscription ends on ${this.localize.date(
-                    subscription!.futureCancelDate!,
-                    {
-                      month: "long",
-                      day: "numeric",
-                      year: "numeric",
-                      hour: "numeric",
-                    },
-                  )}. Your user account, org, and all associated data will be deleted.`,
+                  str`Your subscription ends on ${dateStr}. Your user account, org, and all associated data will be deleted.`,
                 )}
               </p>
               <p>
@@ -106,13 +115,43 @@ export class OrgStatusBanner extends BtrixElement {
       },
       {
         test: () =>
-          !readOnly && readOnlyOnCancel && !!subscription?.futureCancelDate,
+          !readOnly &&
+          !readOnlyOnCancel &&
+          !!futureCancelDate &&
+          isTrial &&
+          daysDiff < MAX_TRIAL_DAYS_SHOW_BANNER,
 
         content: () => {
-          const daysDiff = differenceInDays(
-            new Date(),
-            new Date(subscription!.futureCancelDate!),
-          );
+          return {
+            title:
+              daysDiff > 1
+                ? msg(
+                    str`You have ${daysDiff} days left of your Browsertrix trial`,
+                  )
+                : msg(`Your trial ends within one day`),
+
+            detail: html`
+              <p>
+                ${msg(
+                  html`Your free trial ends on ${dateStr}. To continue using
+                    Browsertrix, select <strong>Choose Plan</strong> in
+                    ${billingTabLink}.`,
+                )}
+              </p>
+              <p>
+                ${msg(
+                  str`Your web archives are always yours — you can download any archived items you'd like to keep
+                  before the trial ends!`,
+                )}
+              </p>
+            `,
+          };
+        },
+      },
+      {
+        test: () => !readOnly && readOnlyOnCancel && !!futureCancelDate,
+
+        content: () => {
           return {
             title:
               daysDiff > 1
@@ -121,20 +160,12 @@ export class OrgStatusBanner extends BtrixElement {
             detail: html`
               <p>
                 ${msg(
-                  str`Your subscription ends on ${this.localize.date(
-                    subscription!.futureCancelDate!,
-                    {
-                      month: "long",
-                      day: "numeric",
-                      year: "numeric",
-                      hour: "numeric",
-                    },
-                  )}. You will no longer be able to run crawls, upload files, create browser profiles, or create collections.`,
+                  str`Your subscription ends on ${dateStr}. You will no longer be able to run crawls, upload files, create browser profiles, or create collections.`,
                 )}
               </p>
               <p>
                 ${msg(
-                  html`To keep your plan and continue crawling, see
+                  html`To choose a plan and continue using Browsertrix, see
                   ${billingTabLink}.`,
                 )}
               </p>
