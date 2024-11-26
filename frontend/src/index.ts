@@ -796,6 +796,7 @@ export class App extends BtrixElement {
 
         return html`<btrix-org-profile
           class="w-full"
+          slug=${slug}
           ?inOrg=${this.isUserInCurrentOrg}
           ?preview=${orgTab && orgTab === OrgTab.ProfilePreview}
         ></btrix-org-profile>`;

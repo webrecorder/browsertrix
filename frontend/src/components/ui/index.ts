@@ -5,6 +5,7 @@ import "./card";
 import "./data-table";
 import "./desc-list";
 import "./dialog";
+import "./link";
 import "./navigation";
 import "./tab-group";
 import "./tab-list";

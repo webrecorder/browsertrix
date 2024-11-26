@@ -6,7 +6,7 @@ import { customElement } from "lit/decorators.js";
 import { BtrixElement } from "@/classes/BtrixElement";
 import { columns, type Cols } from "@/layouts/columns";
 import { OrgTab } from "@/routes";
-import { maxLengthValidator } from "@/utils/form";
+import { formValidator, maxLengthValidator } from "@/utils/form";
 
 @localized()
 @customElement("btrix-org-settings-profile")
@@ -58,9 +58,24 @@ export class OrgSettingsProfile extends BtrixElement {
       ],
       [
         html`
+          <sl-input
+            class="mb-2"
+            name="publicUrl"
+            size="small"
+            label=${msg("Website")}
+            value=${this.org?.publicUrl || ""}
+            minlength="2"
+            placeholder="https://"
+            type="url"
+          ></sl-input>
+        `,
+        msg("Link to your organization's (or your personal) website."),
+      ],
+      [
+        html`
           <div class="mb-2">
             <btrix-copy-field
-              label=${msg("Profile Page URL")}
+              label=${msg("Profile Page")}
               value=${orgHomeUrl}
               .monostyle=${false}
             ></btrix-copy-field>
@@ -70,14 +85,6 @@ export class OrgSettingsProfile extends BtrixElement {
           ${msg(
             "To customize this URL, update your Org URL in General settings.",
           )}
-          <a
-            class="inline-flex items-center gap-1 text-blue-500 hover:text-blue-600"
-            href=${`${this.navigate.orgBasePath}/${OrgTab.ProfilePreview}`}
-            target="_blank"
-          >
-            ${msg("Preview public profile page")}
-            <sl-icon slot="suffix" name="arrow-right"></sl-icon
-          ></a>
         `,
       ],
     ];
@@ -88,21 +95,33 @@ export class OrgSettingsProfile extends BtrixElement {
       <section class="rounded-lg border">
         <form @submit=${this.onSubmit}>
           <div class="p-5">${columns(cols)}</div>
-          <footer class="flex justify-end border-t px-4 py-3">
-            <sl-button type="submit" size="small" variant="primary"
-              >${msg("Save")}</sl-button
+          <footer class="flex items-center justify-between border-t px-4 py-3">
+            <btrix-link
+              href=${`${this.navigate.orgBasePath}/${OrgTab.ProfilePreview}`}
+              target="_blank"
             >
+              ${msg("Preview public profile page")}
+            </btrix-link>
+            <sl-button type="submit" size="small" variant="primary">
+              ${msg("Save")}
+            </sl-button>
           </footer>
         </form>
       </section>
     `;
   }
 
+  private readonly checkFormValidity = formValidator(this);
+
   private async onSubmit(e: SubmitEvent) {
     e.preventDefault();
 
     const form = e.currentTarget as HTMLFormElement;
-    const { enablePublicProfile, publicDescription } = serialize(form);
+
+    if (!(await this.checkFormValidity(form))) return;
+
+    const { enablePublicProfile, publicDescription, publicUrl } =
+      serialize(form);
 
     try {
       const data = await this.api.fetch<{ updated: boolean }>(
@@ -112,6 +131,7 @@ export class OrgSettingsProfile extends BtrixElement {
           body: JSON.stringify({
             enablePublicProfile: enablePublicProfile === "on",
             publicDescription,
+            publicUrl,
           }),
         },
       );
