@@ -22,6 +22,9 @@ type PublicCollection = {
 @customElement("btrix-org-profile")
 export class OrgProfile extends BtrixElement {
   @property({ type: Boolean })
+  inOrg = false;
+
+  @property({ type: Boolean })
   preview = false;
 
   @state()
@@ -160,13 +163,18 @@ export class OrgProfile extends BtrixElement {
     return html`
       <div class="w-full border-y p-6 px-3 text-center text-neutral-500">
         <p>
-          <span>
-            ${msg(
-              str`${this.publicOrg.value?.name} is sharing collections on Browsertrix.`,
-            )}
-          </span>
-          <br />
-          <span>${msg("Do you have collections to share?")}</span>
+          ${when(
+            this.publicOrg.value,
+            () => html`
+              <span>
+                ${msg(
+                  str`${this.publicOrg.value?.name} is web archiving with Browsertrix.`,
+                )}
+              </span>
+              <br />
+            `,
+          )}
+          <span>${msg("Do you have web archives to share?")}</span>
           <a
             class="group inline-flex items-center gap-1 font-medium text-cyan-400 transition-colors hover:text-cyan-500"
             href=${signUpUrl}

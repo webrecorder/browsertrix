@@ -624,6 +624,8 @@ export class Org extends LiteElement {
   private async onStorageQuotaUpdate(e: CustomEvent<QuotaUpdateDetail>) {
     e.stopPropagation();
 
+    if (!this.org) return;
+
     const { reached } = e.detail;
 
     AppStateService.partialUpdateOrg({
@@ -636,6 +638,8 @@ export class Org extends LiteElement {
     e: CustomEvent<QuotaUpdateDetail>,
   ) {
     e.stopPropagation();
+
+    if (!this.org) return;
 
     const { reached } = e.detail;
 
