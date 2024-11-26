@@ -731,6 +731,7 @@ def test_list_public_collections(
     crawler_auth_headers,
     admin_auth_headers,
     default_org_id,
+    non_default_org_id,
     crawler_crawl_id,
     admin_crawl_id,
 ):
@@ -809,10 +810,21 @@ def test_list_public_collections(
         assert collection["id"] in (_public_coll_id, second_public_coll_id)
         assert collection["access"] == "public"
 
-    # Test non-existing slug - it should return a 404 specifying that
-    # public collections weren't found but not reveal whether or not
-    # an org exists with that slug
+    # Test non-existing slug - it should return a 404 but not reveal
+    # whether or not an org exists with that slug
     r = requests.get(f"{API_PREFIX}/public-collections/nonexistentslug")
+    assert r.status_code == 404
+    assert r.json()["detail"] == "public_profile_not_found"
+
+    # Test existing org that's not public - should return same 404
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{non_default_org_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    non_default_slug = r.json()["slug"]
+
+    r = requests.get(f"{API_PREFIX}/public-collections/{non_default_slug}")
     assert r.status_code == 404
     assert r.json()["detail"] == "public_profile_not_found"
 
