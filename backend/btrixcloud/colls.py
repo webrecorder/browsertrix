@@ -405,17 +405,14 @@ class CollectionOps:
         # pylint: disable=broad-exception-caught
         except Exception:
             # pylint: disable=raise-missing-from
-            raise HTTPException(status_code=404, detail="public_collections_not_found")
+            raise HTTPException(status_code=404, detail="public_profile_not_found")
 
-        collections: List[CollOut] = []
+        if not org.enablePublicProfile:
+            raise HTTPException(status_code=404, detail="public_profile_not_found")
 
-        if org.enablePublicProfile:
-            collections, _ = await self.list_collections(
-                org.id, access=CollAccessType.PUBLIC
-            )
-
-        if not collections:
-            raise HTTPException(status_code=404, detail="public_collections_not_found")
+        collections, _ = await self.list_collections(
+            org.id, access=CollAccessType.PUBLIC
+        )
 
         public_org_details = PublicOrgDetails(
             name=org.name, description=org.publicDescription
