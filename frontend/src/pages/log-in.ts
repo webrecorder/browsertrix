@@ -234,18 +234,9 @@ export class LogInPage extends BtrixElement {
               class="w-full gap-4 border-y bg-white/30 p-6 px-3 text-center text-neutral-500"
             >
               <span>${msg("Need an account?")}</span>
-              <a
-                class="group inline-flex items-center gap-1 font-medium text-cyan-400 transition-colors hover:text-cyan-500"
-                href=${signUpUrl || "/sign-up"}
-                @click=${signUpUrl ? () => {} : this.navigate.link}
-              >
+              <btrix-link href=${signUpUrl || "/sign-up"} variant="primary">
                 ${msg("Sign Up")}
-                <sl-icon
-                  slot="suffix"
-                  name="arrow-right"
-                  class="text-base transition-transform group-hover:translate-x-1"
-                ></sl-icon>
-              </a>
+              </btrix-link>
             </div>
           `
         : nothing}
