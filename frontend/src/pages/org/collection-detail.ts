@@ -61,7 +61,7 @@ export class CollectionDetail extends BtrixElement {
   private readonly descriptionExpandBtn?: HTMLElement | null;
 
   @query("replay-web-page")
-  private readonly replayEmbed?: HTMLElement | null;
+  private readonly replayEmbed?: ReplayWebPage | null;
 
   // Use to cancel requests
   private getArchivedItemsController: AbortController | null = null;
@@ -233,8 +233,7 @@ export class CollectionDetail extends BtrixElement {
   private refreshReplay() {
     if (this.replayEmbed) {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (this.replayEmbed as any).fullReload();
+        this.replayEmbed.fullReload();
       } catch (e) {
         console.warn("Full reload not available in RWP");
       }
