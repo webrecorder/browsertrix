@@ -1396,6 +1396,7 @@ class OrgPublicProfileUpdate(BaseModel):
 
     enablePublicProfile: Optional[bool] = None
     publicDescription: Optional[str] = None
+    publicUrl: Optional[str] = None
 
 
 # ============================================================================
@@ -1468,6 +1469,7 @@ class OrgOut(BaseMongoModel):
 
     enablePublicProfile: bool = False
     publicDescription: str = ""
+    publicUrl: str = ""
 
 
 # ============================================================================
@@ -1526,6 +1528,7 @@ class Organization(BaseMongoModel):
 
     enablePublicProfile: bool = False
     publicDescription: Optional[str] = None
+    publicUrl: Optional[str] = None
 
     def is_owner(self, user):
         """Check if user is owner"""

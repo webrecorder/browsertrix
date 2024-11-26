@@ -760,6 +760,7 @@ def test_list_public_collections(
     # Verify that public profile isn't enabled
     assert data["enablePublicProfile"] is False
     assert data["publicDescription"] == ""
+    assert data["publicUrl"] == ""
 
     # Try listing public collections without org public profile enabled
     r = requests.get(f"{API_PREFIX}/public-collections/{org_slug}")
@@ -768,11 +769,16 @@ def test_list_public_collections(
 
     # Enable public profile on org
     public_description = "This is a test public org!"
+    public_url = "https://example.com"
 
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/public-profile",
         headers=admin_auth_headers,
-        json={"enablePublicProfile": True, "publicDescription": public_description},
+        json={
+            "enablePublicProfile": True,
+            "publicDescription": public_description,
+            "publicUrl": public_url,
+        },
     )
     assert r.status_code == 200
     assert r.json()["updated"]
@@ -785,6 +791,7 @@ def test_list_public_collections(
     data = r.json()
     assert data["enablePublicProfile"]
     assert data["publicDescription"] == public_description
+    assert data["publicUrl"] == public_url
 
     # List public collections with no auth (no public profile)
     r = requests.get(f"{API_PREFIX}/public-collections/{org_slug}")
@@ -794,6 +801,7 @@ def test_list_public_collections(
     org_data = data["org"]
     assert org_data["name"] == org_name
     assert org_data["description"] == public_description
+    assert org_data["url"] == public_url
 
     collections = data["collections"]
     assert len(collections) == 2
@@ -806,7 +814,7 @@ def test_list_public_collections(
     # an org exists with that slug
     r = requests.get(f"{API_PREFIX}/public-collections/nonexistentslug")
     assert r.status_code == 404
-    assert r.json()["detail"] == "public_collections_not_found"
+    assert r.json()["detail"] == "public_profile_not_found"
 
 
 def test_delete_collection(crawler_auth_headers, default_org_id, crawler_crawl_id):
