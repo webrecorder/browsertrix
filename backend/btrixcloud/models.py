@@ -2232,7 +2232,7 @@ class PageWithAllQA(Page):
 class PageOut(Page):
     """Model for pages output, no QA"""
 
-    status: Optional[int] = 200
+    status: int = 200
 
 
 # ============================================================================
@@ -2256,6 +2256,24 @@ class PageNoteUpdatedResponse(BaseModel):
 
     updated: bool
     data: PageNote
+
+
+# ============================================================================
+class PageIdTimestamp(BaseModel):
+    """Simplified model for page info to include in PageUrlCount"""
+
+    pageId: UUID
+    ts: Optional[datetime] = None
+    status: int = 200
+
+
+# ============================================================================
+class PageUrlCount(BaseModel):
+    """Model for counting pages by URL"""
+
+    url: AnyHttpUrl
+    count: int = 0
+    snapshots: List[PageIdTimestamp] = []
 
 
 # ============================================================================
@@ -2497,3 +2515,10 @@ class PaginatedCrawlErrorResponse(PaginatedResponse):
     """Response model for crawl errors"""
 
     items: List[CrawlError]
+
+
+# ============================================================================
+class PaginatedPageUrlCountResponse(PaginatedResponse):
+    """Response model for page count by url"""
+
+    items: List[PageUrlCount]
