@@ -33,6 +33,9 @@ from .models import (
     OrgPublicCollections,
     PublicOrgDetails,
     CollAccessType,
+    PageUrlCount,
+    PageIdTimestamp,
+    PaginatedPageUrlCountResponse,
 )
 from .utils import dt_now
 
@@ -60,6 +63,7 @@ class CollectionOps:
         self.collections = mdb["collections"]
         self.crawls = mdb["crawls"]
         self.crawl_configs = mdb["crawl_configs"]
+        self.pages = mdb["pages"]
         self.crawl_ops = cast(CrawlOps, None)
 
         self.orgs = orgs
@@ -312,6 +316,17 @@ class CollectionOps:
         names = [name for name in names if name]
         return {"names": names}
 
+    async def get_collection_crawl_ids(self, coll_id: UUID) -> List[str]:
+        """Return list of crawl ids in collection"""
+        crawl_ids = []
+        async for crawl_raw in self.crawls.find(
+            {"collectionIds": coll_id}, projection=["_id"]
+        ):
+            crawl_id = crawl_raw.get("_id")
+            if crawl_id:
+                crawl_ids.append(crawl_id)
+        return crawl_ids
+
     async def delete_collection(self, coll_id: UUID, org: Organization):
         """Delete collection and remove from associated crawls."""
         await self.crawl_ops.remove_collection_from_all_crawls(coll_id)
@@ -421,6 +436,78 @@ class CollectionOps:
         )
 
         return OrgPublicCollections(org=public_org_details, collections=collections)
+
+    async def list_urls_in_collection(
+        self,
+        coll_id: UUID,
+        oid: UUID,
+        url_prefix: Optional[str] = None,
+        page_size: int = DEFAULT_PAGE_SIZE,
+        page: int = 1,
+    ) -> Tuple[List[PageUrlCount], int]:
+        """List all URLs in collection sorted desc by snapshot count"""
+        # pylint: disable=duplicate-code, too-many-locals, too-many-branches, too-many-statements
+        # Zero-index page for query
+        page = page - 1
+        skip = page_size * page
+
+        crawl_ids = await self.get_collection_crawl_ids(coll_id)
+
+        match_query: dict[str, object] = {"oid": oid, "crawl_id": {"$in": crawl_ids}}
+
+        if url_prefix:
+            regex_pattern = f"^{url_prefix}"
+            match_query["url"] = {"$regex": regex_pattern, "$options": "i"}
+
+        aggregate = [{"$match": match_query}]
+
+        aggregate.extend(
+            [
+                {
+                    "$group": {
+                        "_id": "$url",
+                        "pages": {"$push": "$$ROOT"},
+                        "count": {"$sum": 1},
+                    },
+                },
+                {"$sort": {"count": -1}},
+                {"$set": {"url": "$_id"}},
+                {
+                    "$facet": {
+                        "items": [
+                            {"$skip": skip},
+                            {"$limit": page_size},
+                        ],
+                        "total": [{"$count": "count"}],
+                    }
+                },
+            ]
+        )
+
+        # Get total
+        cursor = self.pages.aggregate(aggregate)
+        results = await cursor.to_list(length=1)
+        result = results[0]
+        items = result["items"]
+
+        try:
+            total = int(result["total"][0]["count"])
+        except (IndexError, ValueError):
+            total = 0
+
+        return [
+            PageUrlCount(
+                url=data.get("url", ""),
+                count=data.get("count", 0),
+                snapshots=[
+                    PageIdTimestamp(
+                        pageId=p["_id"], ts=p.get("ts"), status=p.get("status", 200)
+                    )
+                    for p in data.get("pages", [])
+                ],
+            )
+            for data in items
+        ], total
 
 
 # ============================================================================
@@ -616,5 +703,27 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops):
     )
     async def get_org_public_collections(org_slug: str):
         return await colls.get_org_public_collections(org_slug)
+
+    @app.get(
+        "/orgs/{oid}/collections/{coll_id}/urls",
+        tags=["collections"],
+        response_model=PaginatedPageUrlCountResponse,
+    )
+    async def get_collection_url_list(
+        coll_id: UUID,
+        oid: UUID,
+        urlPrefix: Optional[str] = None,
+        pageSize: int = DEFAULT_PAGE_SIZE,
+        page: int = 1,
+    ):
+        """Retrieve paginated list of urls in collection sorted by snapshot count"""
+        pages, total = await ops.list_urls_in_collection(
+            coll_id=coll_id,
+            oid=oid,
+            url_prefix=urlPrefix,
+            page_size=pageSize,
+            page=page,
+        )
+        return paginated_format(pages, total, page, pageSize)
 
     return colls
