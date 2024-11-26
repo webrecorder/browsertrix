@@ -236,7 +236,7 @@ export class OrgSettings extends BtrixElement {
             [
               html`
                 <sl-input
-                  class="with-max-help-text"
+                  class="with-max-help-text hide-required-content"
                   name="orgName"
                   size="small"
                   label=${msg("Org Name")}
@@ -250,13 +250,13 @@ export class OrgSettings extends BtrixElement {
                 ></sl-input>
               `,
               msg(
-                "Choose a name that represents your organization, your team, or your web archive.",
+                "Choose a name that represents your organization, your team, or your personal web archive.",
               ),
             ],
             [
               html`
                 <sl-input
-                  class="mb-2"
+                  class="hide-required-content mb-2"
                   name="orgSlug"
                   size="small"
                   label=${msg("Org URL")}
