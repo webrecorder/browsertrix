@@ -1552,7 +1552,7 @@
         <source>All files and logs associated with this item will also be deleted, and the crawl will no longer be visible in its associated Workflow.</source>
       </trans-unit>
       <trans-unit id="s039b6434e8a75560">
-        <source>Delete <x equiv-text="${this.itemToDelete?.type === &quot;upload&quot;&#10;    ? msg(&quot;Upload&quot;)&#10;    : msg(&quot;Crawl&quot;)}" id="0"/></source>
+        <source>Delete <x equiv-text="${org.name}" id="0"/></source>
       </trans-unit>
       <trans-unit id="s96668830629e0dfc">
         <source>Upload</source>
@@ -1782,7 +1782,7 @@
         <source>+<x equiv-text="${data.origins.length - 1}" id="0"/></source>
       </trans-unit>
       <trans-unit id="s922123a81f238186">
-        <source>By <x equiv-text="${data.createdByName}" id="0"/></source>
+        <source>By <x equiv-text="${this.item.userName}" id="0"/></source>
       </trans-unit>
       <trans-unit id="s0d2b97026d57ffd0">
         <source>Starting up browser with selected profile...</source>
@@ -3875,11 +3875,11 @@
       <trans-unit id="sae2c27c8daa6a977">
         <source>This org doesn't have any public collections yet.</source>
       </trans-unit>
-      <trans-unit id="s96e31f3f95e9e322">
-        <source><x equiv-text="${this.publicOrg.value?.name}" id="0"/> is sharing collections on Browsertrix.</source>
+      <trans-unit id="se87b7534b82892ab">
+        <source><x equiv-text="${this.publicOrg.value?.name}" id="0"/> is web archiving with Browsertrix.</source>
       </trans-unit>
-      <trans-unit id="s4b4ca2374fe4c119">
-        <source>Do you have collections to share?</source>
+      <trans-unit id="s08250b6ffcc61273">
+        <source>Do you have web archives to share?</source>
       </trans-unit>
       <trans-unit id="s909144751c40f105">
         <source>Get started with Browsertrix</source>
