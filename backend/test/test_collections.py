@@ -4,7 +4,7 @@ import os
 from zipfile import ZipFile, ZIP_STORED
 from tempfile import TemporaryFile
 
-from .conftest import API_PREFIX
+from .conftest import API_PREFIX, NON_DEFAULT_ORG_NAME, NON_DEFAULT_ORG_SLUG
 from .utils import read_in_chunks
 
 COLLECTION_NAME = "Test collection"
@@ -816,17 +816,32 @@ def test_list_public_collections(
     assert r.status_code == 404
     assert r.json()["detail"] == "public_profile_not_found"
 
-    # Test existing org that's not public - should return same 404
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{non_default_org_id}",
-        headers=admin_auth_headers,
-    )
-    assert r.status_code == 200
-    non_default_slug = r.json()["slug"]
 
-    r = requests.get(f"{API_PREFIX}/public-collections/{non_default_slug}")
+def test_list_public_collections_no_colls(non_default_org_id, admin_auth_headers):
+    # Test existing org that's not public - should return same 404 as
+    # if org doesn't exist
+    r = requests.get(f"{API_PREFIX}/public-collections/{NON_DEFAULT_ORG_SLUG}")
     assert r.status_code == 404
     assert r.json()["detail"] == "public_profile_not_found"
+
+    # Enable public profile on org with zero public collections
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{non_default_org_id}/public-profile",
+        headers=admin_auth_headers,
+        json={
+            "enablePublicProfile": True,
+        },
+    )
+    assert r.status_code == 200
+    assert r.json()["updated"]
+
+    # List public collections with no auth - should still get profile even
+    # with no public collections
+    r = requests.get(f"{API_PREFIX}/public-collections/{NON_DEFAULT_ORG_SLUG}")
+    assert r.status_code == 200
+    data = r.json()
+    assert data["org"]["name"] == NON_DEFAULT_ORG_NAME
+    assert data["collections"] == []
 
 
 def test_delete_collection(crawler_auth_headers, default_org_id, crawler_crawl_id):
