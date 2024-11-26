@@ -1150,6 +1150,7 @@ class PublicOrgDetails(BaseModel):
 
     name: str
     description: str = ""
+    url: str = ""
 
 
 # ============================================================================
