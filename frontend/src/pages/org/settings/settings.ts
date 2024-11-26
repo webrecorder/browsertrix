@@ -24,7 +24,7 @@ import { formatAPIUser } from "@/utils/user";
 
 import "./components/billing";
 import "./components/crawling-defaults";
-import "./components/privacy";
+import "./components/profile";
 
 const styles = unsafeCSS(stylesheet);
 
@@ -131,7 +131,6 @@ export class OrgSettings extends BtrixElement {
           ${choose(
             this.activePanel,
             [
-              ["information", () => html`<h3>${msg("Profile")}</h3> `],
               [
                 "members",
                 () => html`
@@ -183,7 +182,7 @@ export class OrgSettings extends BtrixElement {
 
         <btrix-tab-panel name="information">
           ${this.renderInformation()}
-          <btrix-org-settings-privacy></btrix-org-settings-privacy>
+          <btrix-org-settings-profile></btrix-org-settings-profile>
           ${this.renderApi()}
         </btrix-tab-panel>
         <btrix-tab-panel name="members">
@@ -250,7 +249,9 @@ export class OrgSettings extends BtrixElement {
                   @sl-input=${this.validateOrgNameMax.validate}
                 ></sl-input>
               `,
-              msg("Name of your organization."),
+              msg(
+                "Choose a name that represents your organization, your team, or your web archive.",
+              ),
             ],
             [
               html`
@@ -274,7 +275,9 @@ export class OrgSettings extends BtrixElement {
                   </div>
                 </sl-input>
               `,
-              msg("Customize your organization's Browsertrix URL."),
+              msg(
+                "Customize your org's Browsertrix URL. This is also the URL to your org's public profile page, if you've enabled it.",
+              ),
             ],
           ])}
         </div>
@@ -285,7 +288,7 @@ export class OrgSettings extends BtrixElement {
             variant="primary"
             ?disabled=${this.isSavingOrgName}
             ?loading=${this.isSavingOrgName}
-            >${msg("Save Changes")}</sl-button
+            >${msg("Save")}</sl-button
           >
         </footer>
       </form>
