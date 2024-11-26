@@ -789,7 +789,7 @@ def test_list_public_collections(
 
     org_data = data["org"]
     assert org_data["name"] == org_name
-    assert org_data["publicDescription"] == public_description
+    assert org_data["description"] == public_description
 
     collections = data["collections"]
     assert len(collections) == 2
