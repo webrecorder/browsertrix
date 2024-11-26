@@ -15,7 +15,7 @@ import { columns } from "@/layouts/columns";
 import { pageHeader } from "@/layouts/pageHeader";
 import type { APIPaginatedList } from "@/types/api";
 import { isApiError } from "@/utils/api";
-import { maxLengthValidator } from "@/utils/form";
+import { formValidator, maxLengthValidator } from "@/utils/form";
 import { AccessCode, isAdmin, isCrawler } from "@/utils/orgs";
 import slugifyStrict from "@/utils/slugify";
 import { AppStateService } from "@/utils/state";
@@ -288,8 +288,9 @@ export class OrgSettings extends BtrixElement {
             variant="primary"
             ?disabled=${this.isSavingOrgName}
             ?loading=${this.isSavingOrgName}
-            >${msg("Save")}</sl-button
           >
+            ${msg("Save")}
+          </sl-button>
         </footer>
       </form>
     </section>`;
@@ -313,7 +314,7 @@ export class OrgSettings extends BtrixElement {
                   value=${this.orgId}
                 ></btrix-copy-field>
               `,
-              msg("Use this ID to reference this org in the Browsertrix API."),
+              msg("Use this ID to reference your org in the Browsertrix API."),
             ],
           ])}
         </div>
@@ -597,10 +598,7 @@ export class OrgSettings extends BtrixElement {
     `;
   }
 
-  private async checkFormValidity(formEl: HTMLFormElement) {
-    await this.updateComplete;
-    return !formEl.querySelector("[data-invalid]");
-  }
+  private readonly checkFormValidity = formValidator(this);
 
   private async getPendingInvites() {
     const data = await this.api.fetch<APIPaginatedList<Invite>>(

@@ -20,9 +20,6 @@ import { isAdmin, isCrawler } from "@/utils/orgs";
 
 export { use };
 
-// Keyed by org ID
-type Lookup = Record<string, string>;
-
 export function makeAppStateService() {
   // Prevent state updates from any component
   const { state, unlock } = locked();
@@ -49,8 +46,6 @@ export function makeAppStateService() {
 
     // Org details
     org: OrgData | null | undefined = undefined;
-
-    orgIdLookup: Lookup | null = null;
 
     // Since org slug is used to ID an org, use `userOrg`
     // to retrieve the basic org info like name and ID

@@ -1,15 +1,23 @@
 import { localized, msg, str } from "@lit/localize";
 import { Task } from "@lit/task";
-import { html } from "lit";
+import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import { pageHeader } from "@/layouts/pageHeader";
+import { pageTitle } from "@/layouts/pageHeader";
+import { OrgTab } from "@/routes";
+import type { OrgData } from "@/types/org";
+import AuthService from "@/utils/AuthService";
 
-type PublicOrg = {
-  name: string;
+type OrgProfileData = {
+  org: {
+    name: string;
+    description: string;
+    url: string;
+  };
+  collections: unknown[];
 };
 
 type PublicCollection = {
@@ -21,73 +29,190 @@ type PublicCollection = {
 @localized()
 @customElement("btrix-org-profile")
 export class OrgProfile extends BtrixElement {
-  @property({ type: Boolean })
-  inOrg = false;
+  @property({ type: String })
+  slug?: string;
 
   @property({ type: Boolean })
   preview = false;
 
+  @property({ type: Boolean })
+  inOrg = false;
+
   @state()
   private readonly collections: PublicCollection[] = [];
+
+  @state()
+  private isPrivatePreview = false;
 
   readonly publicOrg = new Task(this, {
     autoRun: false,
     task: async ([slug]) => {
       if (!slug) return;
-      const org = await this.getOrg(slug);
+      const org = await this.fetchOrgProfile(slug);
       return org;
     },
-    args: () => [this.orgSlug] as const,
+    args: () => [this.slug] as const,
   });
 
   protected firstUpdated(): void {
-    if (this.authState && !this.preview) {
-      // Redirect to dashboard if logged in
-      this.navigate.to(`${this.navigate.orgBasePath}/dashboard`);
+    if (this.preview && !this.authState) {
+      // Try to log in if attempting to preview while logged out
+      this.dispatchEvent(
+        AuthService.createNeedLoginEvent({
+          redirectUrl: `/orgs/${this.slug}/${OrgTab.ProfilePreview}`,
+        }),
+      );
+
+      return;
+    }
+
+    if (this.preview) {
+      // Get org profile to preview, if user info is available.
+      // Otherwise, wait until `willUpdate` event before fetching org
+      if (this.userInfo) {
+        void this.publicOrg.run();
+      }
+    } else if (this.authState) {
+      // Redirect to dashboard if logged in and not previewing
+      this.navigate.to(`/orgs/${this.slug}/dashboard`);
     } else {
-      // Check if public org data is available
+      void this.publicOrg.run();
+    }
+  }
+
+  protected willUpdate(changedProperties: Map<string, unknown>): void {
+    if (
+      changedProperties.has("appState.userInfo") &&
+      this.preview &&
+      this.userInfo
+    ) {
       void this.publicOrg.run();
     }
   }
 
   render() {
+    if (!this.slug) {
+      return this.renderError();
+    }
+
     return html`
       <div class="flex min-h-full flex-col">
         ${this.publicOrg.render({
-          complete: (org) =>
-            org ? this.renderOrg(org) : this.renderNotFound(),
-          error: this.renderNotFound,
+          complete: (profile) =>
+            profile
+              ? html`
+                  ${this.renderProfile(profile)}
+                  ${when(!this.authState, () =>
+                    this.renderSignUpCta(profile.org),
+                  )}
+                `
+              : this.renderError(),
+          error: this.renderError,
         })}
-        ${when(!this.authState, () => this.renderSignUpCta())}
       </div>
     `;
   }
 
-  private renderOrg(org: PublicOrg) {
+  private renderPreviewBanner() {
+    return html`
+      <!-- TODO consolidate with btrix-org-status-banner -->
+      <div class="border-b bg-slate-100 py-5">
+        <div class="mx-auto box-border w-full max-w-screen-desktop px-3">
+          <sl-alert variant="primary" open>
+            <sl-icon slot="icon" name="eye-fill"></sl-icon>
+            <strong class="font-semibold">
+              ${msg("This is a private preview of your org's profile page")}
+            </strong>
+            <p>
+              ${msg(
+                "Update your org's profile settings to make this page visible to anyone on the internet.",
+              )}
+              ${this.appState.isAdmin
+                ? html`
+                    <br />
+                    <a
+                      href="${this.navigate.orgBasePath}/settings"
+                      class="text-blue-500 hover:text-blue-600"
+                      @click=${this.navigate.link}
+                    >
+                      ${msg("Go to Settings")}
+                    </a>
+                  `
+                : nothing}
+            </p>
+          </sl-alert>
+        </div>
+      </div>
+    `;
+  }
+
+  private renderProfile({ org }: OrgProfileData) {
     return html`
       <btrix-document-title title=${ifDefined(org.name)}></btrix-document-title>
+
+      ${this.preview && this.isPrivatePreview
+        ? this.renderPreviewBanner()
+        : nothing}
 
       <div
         class="mx-auto box-border flex w-full max-w-screen-2xl flex-1 flex-col p-3 lg:px-10"
       >
-        ${pageHeader(
-          org.name,
-          html`
+        <!-- TODO Consolidate with pageHeader -->
+        <header class="mt-5 border-b pb-3">
+          <div class="flex flex-wrap items-end justify-between gap-2">
+            ${pageTitle(org.name)}
             ${when(
               this.preview && this.appState.isAdmin,
               () =>
-                html`<sl-tooltip content=${msg("Edit org info")}>
-                  <sl-icon-button
-                    href="${this.navigate.orgBasePath}/settings"
-                    class="size-8 text-base"
-                    name="pencil"
-                    @click=${this.navigate.link}
-                  ></sl-icon-button>
-                </sl-tooltip>`,
+                html`<div class="ml-auto flex items-center gap-2">
+                  <sl-tooltip content=${msg("Edit org profile")}>
+                    <sl-icon-button
+                      href="${this.navigate.orgBasePath}/settings"
+                      class="size-8 text-base"
+                      name="pencil"
+                      @click=${this.navigate.link}
+                    ></sl-icon-button>
+                  </sl-tooltip>
+                </div>`,
             )}
-          `,
-        )}
-        <header class="mb-5 mt-7 flex items-center justify-between">
+          </div>
+          ${when(
+            org.description,
+            (description) => html`
+              <div class="my-3 text-pretty text-stone-600">${description}</div>
+            `,
+          )}
+          ${when(org.url, (urlStr) => {
+            let url: URL;
+            try {
+              url = new URL(urlStr);
+            } catch {
+              return nothing;
+            }
+
+            return html`
+              <div
+                class="my-3 flex items-center gap-1.5 text-pretty text-neutral-700"
+              >
+                <sl-icon
+                  name="globe2"
+                  class="size-4 text-stone-400"
+                  label=${msg("Website")}
+                ></sl-icon>
+                <a
+                  class="font-medium leading-none text-stone-500 transition-colors hover:text-stone-600"
+                  href="${url.href}"
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                >
+                  ${url.href.split("//")[1].replace(/\/$/, "")}
+                </a>
+              </div>
+            `;
+          })}
+        </header>
+
+        <div class="mb-5 mt-7 flex items-center justify-between">
           <h2 class="text-lg font-medium">${msg("Collections")}</h2>
           ${when(
             this.preview && this.appState.isAdmin,
@@ -101,7 +226,7 @@ export class OrgProfile extends BtrixElement {
                 ></sl-icon-button>
               </sl-tooltip>`,
           )}
-        </header>
+        </div>
 
         <div class="flex flex-1 items-center justify-center pb-16">
           ${this.renderCollections(this.collections)}
@@ -155,7 +280,7 @@ export class OrgProfile extends BtrixElement {
     `;
   }
 
-  private renderSignUpCta() {
+  private renderSignUpCta(org: OrgProfileData["org"]) {
     const { signUpUrl } = this.appState.settings || {};
 
     if (!signUpUrl) return;
@@ -167,31 +292,21 @@ export class OrgProfile extends BtrixElement {
             this.publicOrg.value,
             () => html`
               <span>
-                ${msg(
-                  str`${this.publicOrg.value?.name} is web archiving with Browsertrix.`,
-                )}
+                ${msg(str`${org.name} is web archiving with Browsertrix.`)}
               </span>
               <br />
             `,
           )}
           <span>${msg("Do you have web archives to share?")}</span>
-          <a
-            class="group inline-flex items-center gap-1 font-medium text-cyan-400 transition-colors hover:text-cyan-500"
-            href=${signUpUrl}
-          >
+          <btrix-link href=${signUpUrl} variant="primary">
             ${msg("Get started with Browsertrix")}
-            <sl-icon
-              slot="suffix"
-              name="arrow-right"
-              class="text-base transition-transform group-hover:translate-x-1"
-            ></sl-icon>
-          </a>
+          </btrix-link>
         </p>
       </div>
     `;
   }
 
-  private renderNotFound() {
+  private renderError() {
     return html`
       <div class="flex flex-1 items-center justify-center p-12">
         <btrix-not-found></btrix-not-found>
@@ -199,11 +314,52 @@ export class OrgProfile extends BtrixElement {
     `;
   }
 
-  private async getOrg(slug: BtrixElement["orgSlug"]): Promise<PublicOrg> {
-    console.log(slug);
-    // return Promise.reject();
-    return Promise.resolve({
-      name: "Fake Org Name",
+  private async fetchOrgProfile(slug: string): Promise<OrgProfileData | void> {
+    const resp = await fetch(`/api/public-collections/${slug}`, {
+      headers: { "Content-Type": "application/json" },
     });
+
+    switch (resp.status) {
+      case 200:
+        return (await resp.json()) as OrgProfileData;
+      case 404: {
+        if (this.preview && this.inOrg) {
+          // Use authenticated org data to render preview
+          const orgProfile = await this.getUserOrg();
+
+          if (orgProfile) {
+            this.isPrivatePreview = true;
+
+            return orgProfile;
+          }
+        }
+        throw resp.status;
+      }
+      default:
+        throw resp.status;
+    }
+  }
+
+  private async getUserOrg(): Promise<OrgProfileData | null> {
+    try {
+      const userOrg = this.userInfo?.orgs.find((org) => org.slug === this.slug);
+
+      if (!userOrg) {
+        return null;
+      }
+
+      const org = await this.api.fetch<OrgData>(`/orgs/${userOrg.id}`);
+
+      return {
+        org: {
+          name: org.name,
+          description: org.publicDescription || "",
+          url: org.publicUrl || "",
+        },
+        collections: [],
+      };
+    } catch {
+      return null;
+    }
   }
 }
