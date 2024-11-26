@@ -3821,6 +3821,24 @@
       <trans-unit id="sab5061cf8c519285">
         <source><x equiv-text="${storageBytesText}" id="0"/> of disk space</source>
       </trans-unit>
+      <trans-unit id="s1219d97b49650c05">
+        <source>Visibility</source>
+      </trans-unit>
+      <trans-unit id="s82665b2ffabc9c0a">
+        <source>Website</source>
+      </trans-unit>
+      <trans-unit id="sc75a8ddcb729c2a6">
+        <source>Link to your organization's (or your personal) website.</source>
+      </trans-unit>
+      <trans-unit id="s11e6aadfd3000971">
+        <source>Profile Page</source>
+      </trans-unit>
+      <trans-unit id="s5a10c7fdb12b5dd4">
+        <source>Preview public profile page</source>
+      </trans-unit>
+      <trans-unit id="sd19e4d886017cde5">
+        <source>Org profile has been updated.</source>
+      </trans-unit>
       <trans-unit id="s3a081663dfc1a779">
         <source>Sorry, couldn't update org at this time.</source>
       </trans-unit>
@@ -3830,6 +3848,21 @@
       <trans-unit id="sf64646b094ecba96">
         <source>Developer Tools</source>
       </trans-unit>
+      <trans-unit id="s30ed673daca7e44b">
+        <source>Use this ID to reference your org in the Browsertrix API.</source>
+      </trans-unit>
+      <trans-unit id="s9fe218c5322a4331">
+        <source>This is a private preview of your org's profile page</source>
+      </trans-unit>
+      <trans-unit id="sf7d5d1911b9dd6b1">
+        <source>Update your org's profile settings to make this page visible to anyone on the internet.</source>
+      </trans-unit>
+      <trans-unit id="s0d5c241bca67f37d">
+        <source>Go to Settings</source>
+      </trans-unit>
+      <trans-unit id="s0f8659a3eea42cd6">
+        <source>Edit org profile</source>
+      </trans-unit>
       <trans-unit id="s6bca104f8b9a4c96">
         <source>Update collections settings</source>
       </trans-unit>
@@ -3837,7 +3870,7 @@
         <source>This org doesn't have any public collections yet.</source>
       </trans-unit>
       <trans-unit id="se87b7534b82892ab">
-        <source><x equiv-text="${this.publicOrg.value?.name}" id="0"/> is web archiving with Browsertrix.</source>
+        <source><x equiv-text="${org.name}" id="0"/> is web archiving with Browsertrix.</source>
       </trans-unit>
       <trans-unit id="s08250b6ffcc61273">
         <source>Do you have web archives to share?</source>
@@ -3860,44 +3893,23 @@
       <trans-unit id="s5e94738a2eeb8943">
         <source>Sign In</source>
       </trans-unit>
-      <trans-unit id="s13c0b3e6a5f5e03f">
-        <source>Org Visibility</source>
+      <trans-unit id="s53d076eae3c7b55c">
+        <source>Allow anyone to see org</source>
       </trans-unit>
-      <trans-unit id="sdd1ff479d04ac140">
-        <source>Public</source>
+      <trans-unit id="s9ab48881bcc2b9cf">
+        <source>If enabled, anyone with the link to your org's Browsertrix URL will be able to view the profile page and public collections.</source>
       </trans-unit>
-      <trans-unit id="s9b7bc3a2a927898c">
-        <source>If public, anyone with the link to your org's Browsertrix URL will be able to view the org profile and public collections.</source>
+      <trans-unit id="s28cbdec6d016b1a8">
+        <source>Write a short description that introduces your organization or your web archive to the world.</source>
       </trans-unit>
-      <trans-unit id="scb04d1f8c9911724">
-        <source>Public Profile Page</source>
+      <trans-unit id="s57a500d2963282bb">
+        <source>To customize this URL, update your Org URL in General settings.</source>
       </trans-unit>
-      <trans-unit id="sc1f8c9a8cbdb985f">
-        <source>To customize the URL to this page, update your Org URL in profile settings.</source>
+      <trans-unit id="s5dc3211c243be8f0">
+        <source>Choose a name that represents your organization, your team, or your web archive.</source>
       </trans-unit>
-      <trans-unit id="s680d420bc14b4a55">
-        <source>Preview Public Profile</source>
-      </trans-unit>
-      <trans-unit id="se78c02e9a98a0f47">
-        <source>Privacy</source>
-      </trans-unit>
-      <trans-unit id="s34f72aeab7bd0b02">
-        <source>Public Collections link is enabled.</source>
-      </trans-unit>
-      <trans-unit id="s2a3ff26de6b56307">
-        <source>Public Collections link is disabled.</source>
-      </trans-unit>
-      <trans-unit id="s67729a111e67dc39">
-        <source>Name of your organization.</source>
-      </trans-unit>
-      <trans-unit id="sfa6c550575db626c">
-        <source>Customize your organization's Browsertrix URL.</source>
-      </trans-unit>
-      <trans-unit id="s0d005b5de55948e4">
-        <source>Use this ID to reference this org in the Browsertrix API.</source>
-      </trans-unit>
-      <trans-unit id="s13bd1b7fb92a6f1d">
-        <source>Edit org info</source>
+      <trans-unit id="sa88bba6b28ef1bcf">
+        <source>Customize your org's Browsertrix URL. This is also the URL to your org's public profile page, if you've enabled it.</source>
       </trans-unit>
     </body>
   </file>
