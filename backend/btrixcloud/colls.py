@@ -415,7 +415,7 @@ class CollectionOps:
         )
 
         public_org_details = PublicOrgDetails(
-            name=org.name, description=org.publicDescription
+            name=org.name, description=org.publicDescription, url=org.publicUrl
         )
 
         return OrgPublicCollections(org=public_org_details, collections=collections)
