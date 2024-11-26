@@ -78,7 +78,7 @@ from .models import (
     RemovedResponse,
     OrgSlugsResponse,
     OrgImportResponse,
-    OrgEnablePublicProfileUpdate,
+    OrgPublicProfileUpdate,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import (
@@ -996,12 +996,17 @@ class OrgOps:
         return res is not None
 
     async def update_public_profile(
-        self, org: Organization, enable_public_profile: bool
+        self, org: Organization, update: OrgPublicProfileUpdate
     ):
-        """Update enablePublicProfile field on organization"""
+        """Update or enable/disable organization's public profile"""
+        query = update.dict(exclude_unset=True)
+
+        if len(query) == 0:
+            raise HTTPException(status_code=400, detail="no_update_data")
+
         res = await self.orgs.find_one_and_update(
             {"_id": org.id},
-            {"$set": {"enablePublicProfile": enable_public_profile}},
+            {"$set": query},
         )
         return res is not None
 
@@ -1567,10 +1572,10 @@ def init_orgs_api(
         response_model=UpdatedResponse,
     )
     async def update_public_profile(
-        update: OrgEnablePublicProfileUpdate,
+        update: OrgPublicProfileUpdate,
         org: Organization = Depends(org_owner_dep),
     ):
-        await ops.update_public_profile(org, update.enablePublicProfile)
+        await ops.update_public_profile(org, update)
 
         return {"updated": True}
 

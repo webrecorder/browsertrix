@@ -755,6 +755,7 @@ def test_list_public_collections(
 
     # Verify that public profile isn't enabled
     assert data["enablePublicProfile"] is False
+    assert data["publicDescription"] == ""
 
     # Try listing public collections without org public profile enabled
     r = requests.get(f"{API_PREFIX}/public-collections/{org_slug}")
@@ -762,10 +763,12 @@ def test_list_public_collections(
     assert r.json()["detail"] == "public_collections_not_found"
 
     # Enable public profile on org
+    public_description = "This is a test public org!"
+
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/public-profile",
         headers=admin_auth_headers,
-        json={"enablePublicProfile": True}
+        json={"enablePublicProfile": True, "publicDescription": public_description}
     )
     assert r.status_code == 200
     assert r.json()["updated"]
@@ -775,13 +778,18 @@ def test_list_public_collections(
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
-    assert r.json()["enablePublicProfile"]
+    data = r.json()
+    assert data["enablePublicProfile"]
+    assert data["publicDesciprtion"] == public_description
 
     # List public collections with no auth (no public profile)
     r = requests.get(f"{API_PREFIX}/public-collections/{org_slug}")
     assert r.status_code == 200
     data = r.json()
-    assert data["org"]["name"] == org_name
+
+    org_data = data["org"]
+    assert org_data["name"] == org_name
+    assert org_data["publicDescription"] == public_description
 
     collections = data["collections"]
     assert len(collections) == 2

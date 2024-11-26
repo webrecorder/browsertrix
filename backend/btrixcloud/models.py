@@ -1149,6 +1149,7 @@ class PublicOrgDetails(BaseModel):
     """Model for org details that are available in public profile"""
 
     name: str
+    description: str = ""
 
 
 # ============================================================================
@@ -1390,10 +1391,11 @@ class OrgReadOnlyUpdate(BaseModel):
 
 
 # ============================================================================
-class OrgEnablePublicProfileUpdate(BaseModel):
+class OrgPublicProfileUpdate(BaseModel):
     """Organization enablePublicProfile update"""
 
-    enablePublicProfile: bool
+    enablePublicProfile: Optional[bool] = None
+    publicDescription: Optional[str] = None
 
 
 # ============================================================================
@@ -1465,6 +1467,7 @@ class OrgOut(BaseMongoModel):
     crawlingDefaults: Optional[CrawlConfigDefaults] = None
 
     enablePublicProfile: bool = False
+    publicDescription: str = ""
 
 
 # ============================================================================
@@ -1522,6 +1525,7 @@ class Organization(BaseMongoModel):
     crawlingDefaults: Optional[CrawlConfigDefaults] = None
 
     enablePublicProfile: bool = False
+    publicDescription: Optional[str] = None
 
     def is_owner(self, user):
         """Check if user is owner"""
