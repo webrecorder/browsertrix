@@ -703,12 +703,12 @@ export class App extends BtrixElement {
               <div
                 class="flex flex-1 items-center justify-end gap-2 leading-none"
               >
-                <btrix-copy-button
+                <btrix-copy-icon-button
                   class="size-4 text-neutral-400"
                   .getValue=${() => this.version}
                   content=${msg("Copy Browsertrix Version")}
                   size="x-small"
-                ></btrix-copy-button>
+                ></btrix-copy-icon-button>
                 <span class="font-monostyle text-xs text-neutral-400">
                   ${this.version}
                 </span>

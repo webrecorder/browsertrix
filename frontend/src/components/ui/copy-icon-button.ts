@@ -1,30 +1,32 @@
 import { localized, msg } from "@lit/localize";
-import type { SlButton, SlIcon } from "@shoelace-style/shoelace";
 import { html } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import { ifDefined } from "lit/directives/if-defined.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
+import type { Button } from "@/components/ui/button";
 
 /**
  * Copy text to clipboard on click
  *
  * Usage example:
  * ```ts
- * <btrix-copy-button .value=${value}></btrix-copy-button>
+ * <btrix-copy-icon-button .value=${value}></btrix-copy-icon-button>
  * ```
  * Or:
  * ```ts
- * <btrix-copy-button .getValue=${() => value}></btrix-copy-button>
+ * <btrix-copy-icon-button .getValue=${() => value}></btrix-copy-icon-button>
  * ```
  *
  * @fires btrix-copied
  */
 @localized()
-@customElement("btrix-copy-button")
-export class CopyButton extends TailwindElement {
+@customElement("btrix-copy-icon-button")
+export class CopyIconButton extends TailwindElement {
   @property({ type: String })
   value?: string;
+
+  @property({ type: String })
+  name?: string;
 
   @property({ type: String })
   content?: string;
@@ -35,14 +37,11 @@ export class CopyButton extends TailwindElement {
   @property({ type: Boolean })
   hoist = false;
 
-  @property({ type: String })
-  icon?: SlIcon["name"];
+  @property({ type: Boolean })
+  raised = false;
 
   @property({ type: String })
-  size?: SlButton["size"];
-
-  @property({ type: String })
-  variant?: SlButton["variant"];
+  size: "x-small" | "small" | "medium" = "small";
 
   @state()
   private isCopied = false;
@@ -70,26 +69,26 @@ export class CopyButton extends TailwindElement {
         @sl-hide=${this.stopProp}
         @sl-after-hide=${this.stopProp}
       >
-        <sl-button
-          size=${ifDefined(this.size)}
-          variant=${ifDefined(this.variant)}
+        <btrix-button
+          size=${this.size}
           @click=${this.onClick}
           ?disabled=${!this.value && !this.getValue}
+          class="inline"
+          ?raised=${this.raised}
         >
           <sl-icon
-            slot="prefix"
-            name=${this.isCopied ? "check-lg" : this.icon ? this.icon : "copy"}
+            name=${this.isCopied ? "check-lg" : this.name ? this.name : "copy"}
             label=${msg("Copy to clipboard")}
+            class="size-3.5"
           ></sl-icon>
-          <slot></slot>
-        </sl-button>
+        </btrix-button>
       </sl-tooltip>
     `;
   }
 
   private onClick() {
     const value = (this.getValue ? this.getValue() : this.value) || "";
-    CopyButton.copyToClipboard(value);
+    CopyIconButton.copyToClipboard(value);
 
     this.isCopied = true;
 
@@ -97,7 +96,7 @@ export class CopyButton extends TailwindElement {
 
     this.timeoutId = window.setTimeout(() => {
       this.isCopied = false;
-      const button = this.shadowRoot?.querySelector<SlButton>("sl-button");
+      const button = this.shadowRoot?.querySelector<Button>("btrix-button");
       button?.blur(); // Remove focus from the button to set it back to its default state
     }, 3000);
   }
