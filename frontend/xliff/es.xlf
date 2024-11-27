@@ -3800,9 +3800,6 @@
         <source>Profiles:
                     <x equiv-text="&lt;sl-format-bytes value=&quot;${org.bytesStoredProfiles}&quot;&gt;&lt;/sl-format-bytes&gt;" id="0"/></source>
       </trans-unit>
-      <trans-unit id="se3d7a30d5e45c393">
-        <source>Trial</source>
-      </trans-unit>
       <trans-unit id="s582e36ff4a424786">
         <source>Removing <x equiv-text="${this.localize.number(removeCount)} ${pluralOf(&quot;items&quot;, removeCount)}" id="0"/></source>
       </trans-unit>
@@ -3828,12 +3825,20 @@
       <trans-unit id="s17658c5f9a5e8a52">
         <source>Your trial will end on <x equiv-text="${futureCancelDate}" id="0"/></source>
       </trans-unit>
-      <trans-unit id="h6da053cf4f5d35c5">
-        <source>Click <x equiv-text="&lt;strong&gt;" id="0"/>Choose Plan<x equiv-text="&lt;/strong&gt;" id="1"/> to
-                                    subscribe</source>
-      </trans-unit>
       <trans-unit id="s5f5b3049f319a00a">
         <source>Your plan will be canceled on <x equiv-text="${futureCancelDate}" id="0"/></source>
+      </trans-unit>
+      <trans-unit id="s02e734a81b23d11b">
+        <source>Subscribe Now</source>
+      </trans-unit>
+      <trans-unit id="s0fd618c2a8596617">
+        <source>subscribe to keep your account</source>
+      </trans-unit>
+      <trans-unit id="s2ab646dc4c6667ec">
+        <source>To continue using Browsertrix at the end of your trial, click “<x equiv-text="${this.portalUrlLabel}" id="0"/>”.</source>
+      </trans-unit>
+      <trans-unit id="sd95c2c71d3eaada7">
+        <source>Free Trial</source>
       </trans-unit>
     </body>
   </file>
