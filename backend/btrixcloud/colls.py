@@ -36,6 +36,7 @@ from .models import (
     PageUrlCount,
     PageIdTimestamp,
     PaginatedPageUrlCountResponse,
+    UpdateCollHomeUrl,
 )
 from .utils import dt_now
 
@@ -73,6 +74,10 @@ class CollectionOps:
     def set_crawl_ops(self, ops):
         """set crawl ops"""
         self.crawl_ops = ops
+
+    def set_page_ops(self, ops):
+        """set page ops"""
+        self.page_ops = ops
 
     async def init_index(self):
         """init lookup index"""
@@ -509,6 +514,26 @@ class CollectionOps:
             for data in items
         ], total
 
+    async def set_home_url(
+        self, coll_id: UUID, update: UpdateCollHomeUrl, org: Organization
+    ) -> Dict[str, bool]:
+        """Set home URL for collection and save thumbnail to database"""
+        page = await self.page_ops.get_page(update.pageId, org.id)
+
+        update_query = {
+            "homeUrl": page.url,
+            "homeUrlTs": page.ts,
+            "homeUrlPageId": page.id,
+        }
+
+        await self.collections.find_one_and_update(
+            {"_id": coll_id, "oid": org.id},
+            {"$set": query},
+            return_document=pymongo.ReturnDocument.AFTER,
+        )
+
+        return {"success": True}
+
 
 # ============================================================================
 # pylint: disable=too-many-locals
@@ -725,5 +750,17 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops):
             page=page,
         )
         return paginated_format(pages, total, page, pageSize)
+
+    @app.post(
+        "/orgs/{oid}/collections/{coll_id}/home-url",
+        tags=["collections"],
+        response_model=SuccessResponse,
+    )
+    async def set_collection_home_url(
+        update: UpdateCollHomeUrl,
+        coll_id: UUID,
+        org: Organization = Depends(org_crawl_dep),
+    ):
+        return await colls.set_home_url(coll_id, update, org)
 
     return colls
