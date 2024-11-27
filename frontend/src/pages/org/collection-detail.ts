@@ -10,6 +10,7 @@ import queryString from "query-string";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { PageChangeEvent } from "@/components/ui/pagination";
+import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
 import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
 import type {
   APIPaginatedList,
@@ -102,20 +103,59 @@ export class CollectionDetail extends BtrixElement {
       <header class="items-center gap-2 pb-3 md:flex">
         <div class="mb-2 flex w-full items-center gap-2 md:mb-0">
           <div class="flex size-8 items-center justify-center">
-            ${this.collection?.access === CollectionAccess.Unlisted
-              ? html`
-                  <sl-tooltip content=${msg("Shareable")}>
+            ${choose(this.collection?.access, [
+              [
+                CollectionAccess.Private,
+                () => html`
+                  <sl-tooltip
+                    content=${SelectCollectionAccess.Options[
+                      CollectionAccess.Private
+                    ].label}
+                  >
                     <sl-icon
-                      class="text-lg text-success-600"
-                      name="people-fill"
+                      class="text-lg text-neutral-600"
+                      name=${SelectCollectionAccess.Options[
+                        CollectionAccess.Private
+                      ].icon}
                     ></sl-icon>
                   </sl-tooltip>
-                `
-              : html`
-                  <sl-tooltip content=${msg("Private")}>
-                    <sl-icon class="text-lg" name="eye-slash-fill"></sl-icon>
+                `,
+              ],
+              [
+                CollectionAccess.Unlisted,
+                () => html`
+                  <sl-tooltip
+                    content=${SelectCollectionAccess.Options[
+                      CollectionAccess.Unlisted
+                    ].label}
+                  >
+                    <sl-icon
+                      class="text-lg text-neutral-600"
+                      name=${SelectCollectionAccess.Options[
+                        CollectionAccess.Unlisted
+                      ].icon}
+                    ></sl-icon>
                   </sl-tooltip>
-                `}
+                `,
+              ],
+              [
+                CollectionAccess.Public,
+                () => html`
+                  <sl-tooltip
+                    content=${SelectCollectionAccess.Options[
+                      CollectionAccess.Public
+                    ].label}
+                  >
+                    <sl-icon
+                      class="text-lg text-success-600"
+                      name=${SelectCollectionAccess.Options[
+                        CollectionAccess.Public
+                      ].icon}
+                    ></sl-icon>
+                  </sl-tooltip>
+                `,
+              ],
+            ])}
           </div>
           <h1 class="min-w-0 flex-1 truncate text-xl font-semibold leading-7">
             ${this.collection?.name ||

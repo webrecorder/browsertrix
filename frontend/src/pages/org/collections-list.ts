@@ -3,6 +3,7 @@ import type { SlInput, SlMenuItem } from "@shoelace-style/shoelace";
 import Fuse from "fuse.js";
 import { html, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
+import { choose } from "lit/directives/choose.js";
 import { guard } from "lit/directives/guard.js";
 import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
@@ -13,6 +14,7 @@ import type { SelectNewDialogEvent } from ".";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import type { CollectionSavedEvent } from "@/features/collections/collection-metadata-dialog";
+import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
 import { pageHeader } from "@/layouts/pageHeader";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import {
@@ -502,25 +504,58 @@ export class CollectionsList extends BtrixElement {
       class="cursor-pointer select-none rounded border shadow transition-all focus-within:bg-neutral-50 hover:bg-neutral-50 hover:shadow-none"
     >
       <btrix-table-cell class="p-3">
-        ${col.access === CollectionAccess.Unlisted
-          ? html`
-              <sl-tooltip content=${msg("Shareable")}>
+        ${choose(col.access, [
+          [
+            CollectionAccess.Private,
+            () => html`
+              <sl-tooltip
+                content=${SelectCollectionAccess.Options[
+                  CollectionAccess.Private
+                ].label}
+              >
+                <sl-icon
+                  class="inline-block align-middle text-neutral-600"
+                  name=${SelectCollectionAccess.Options[
+                    CollectionAccess.Private
+                  ].icon}
+                ></sl-icon>
+              </sl-tooltip>
+            `,
+          ],
+          [
+            CollectionAccess.Unlisted,
+            () => html`
+              <sl-tooltip
+                content=${SelectCollectionAccess.Options[
+                  CollectionAccess.Unlisted
+                ].label}
+              >
+                <sl-icon
+                  class="inline-block align-middle text-neutral-600"
+                  name=${SelectCollectionAccess.Options[
+                    CollectionAccess.Unlisted
+                  ].icon}
+                ></sl-icon>
+              </sl-tooltip>
+            `,
+          ],
+          [
+            CollectionAccess.Public,
+            () => html`
+              <sl-tooltip
+                content=${SelectCollectionAccess.Options[
+                  CollectionAccess.Public
+                ].label}
+              >
                 <sl-icon
                   class="inline-block align-middle text-success-600"
-                  name="people-fill"
-                  label=${msg("Shareable Collection")}
+                  name=${SelectCollectionAccess.Options[CollectionAccess.Public]
+                    .icon}
                 ></sl-icon>
               </sl-tooltip>
-            `
-          : html`
-              <sl-tooltip content=${msg("Private")}>
-                <sl-icon
-                  class="inline-block align-middle"
-                  name="eye-slash-fill"
-                  label=${msg("Private Collection")}
-                ></sl-icon>
-              </sl-tooltip>
-            `}
+            `,
+          ],
+        ])}
       </btrix-table-cell>
       <btrix-table-cell rowClickTarget="a">
         <a
