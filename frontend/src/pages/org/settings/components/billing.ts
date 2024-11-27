@@ -320,24 +320,18 @@ export class OrgSettingsBilling extends BtrixElement {
       msg(
         str`${this.localize.number(quotas.maxConcurrentCrawls)} concurrent ${pluralOf("crawls", quotas.maxConcurrentCrawls)}`,
       );
+    const storageBytesText = quotas.storageQuota
+      ? this.localize.bytes(quotas.storageQuota)
+      : msg("Unlimited");
 
     return html`
       <ul class="leading-relaxed text-neutral-700">
         <li>
           ${msg(
-            str`${maxExecMinutesPerMonth || msg("Unlimited minutes")} of crawl and QA analysis execution time`,
+            str`${maxExecMinutesPerMonth || msg("Unlimited minutes")} of crawling time`,
           )}
         </li>
-        <li>
-          ${msg(
-            html`${quotas.storageQuota
-              ? html`<sl-format-bytes
-                  value=${quotas.storageQuota}
-                ></sl-format-bytes>`
-              : msg("Unlimited")}
-            storage`,
-          )}
-        </li>
+        <li>${msg(str`${storageBytesText} of disk space`)}</li>
         <li>
           ${msg(str`${maxPagesPerCrawl || msg("Unlimited pages")} per crawl`)}
         </li>
