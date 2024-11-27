@@ -78,7 +78,7 @@ from .models import (
     RemovedResponse,
     OrgSlugsResponse,
     OrgImportResponse,
-    OrgListPublicCollectionsUpdate,
+    OrgPublicProfileUpdate,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import (
@@ -292,6 +292,14 @@ class OrgOps:
         res = await self.orgs.find_one({"_id": oid})
         if not res:
             raise HTTPException(status_code=400, detail="invalid_org_id")
+
+        return Organization.from_dict(res)
+
+    async def get_org_by_slug(self, slug: str) -> Organization:
+        """Get an org by id"""
+        res = await self.orgs.find_one({"slug": slug})
+        if not res:
+            raise HTTPException(status_code=400, detail="invalid_org_slug")
 
         return Organization.from_dict(res)
 
@@ -998,13 +1006,18 @@ class OrgOps:
         )
         return res is not None
 
-    async def update_list_public_collections(
-        self, org: Organization, list_public_collections: bool
+    async def update_public_profile(
+        self, org: Organization, update: OrgPublicProfileUpdate
     ):
-        """Update listPublicCollections field on organization"""
+        """Update or enable/disable organization's public profile"""
+        query = update.dict(exclude_unset=True)
+
+        if len(query) == 0:
+            raise HTTPException(status_code=400, detail="no_update_data")
+
         res = await self.orgs.find_one_and_update(
             {"_id": org.id},
-            {"$set": {"listPublicCollections": list_public_collections}},
+            {"$set": query},
         )
         return res is not None
 
@@ -1565,15 +1578,15 @@ def init_orgs_api(
         return {"updated": True}
 
     @router.post(
-        "/list-public-collections",
+        "/public-profile",
         tags=["organizations", "collections"],
         response_model=UpdatedResponse,
     )
-    async def update_list_public_collections(
-        update: OrgListPublicCollectionsUpdate,
+    async def update_public_profile(
+        update: OrgPublicProfileUpdate,
         org: Organization = Depends(org_owner_dep),
     ):
-        await ops.update_list_public_collections(org, update.listPublicCollections)
+        await ops.update_public_profile(org, update)
 
         return {"updated": True}
 
