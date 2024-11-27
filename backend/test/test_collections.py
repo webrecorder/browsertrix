@@ -4,7 +4,7 @@ import os
 from zipfile import ZipFile, ZIP_STORED
 from tempfile import TemporaryFile
 
-from .conftest import API_PREFIX
+from .conftest import API_PREFIX, NON_DEFAULT_ORG_NAME, NON_DEFAULT_ORG_SLUG
 from .utils import read_in_chunks
 
 COLLECTION_NAME = "Test collection"
@@ -15,6 +15,7 @@ DESCRIPTION = "Test description"
 
 _coll_id = None
 _second_coll_id = None
+_public_coll_id = None
 upload_id = None
 modified = None
 
@@ -66,6 +67,7 @@ def test_create_public_collection(
     assert data["added"]
     assert data["name"] == PUBLIC_COLLECTION_NAME
 
+    global _public_coll_id
     _public_coll_id = data["id"]
 
     # Verify that it is public
@@ -723,6 +725,123 @@ def test_filter_sort_collections(
     )
     assert r.status_code == 400
     assert r.json()["detail"] == "invalid_sort_direction"
+
+
+def test_list_public_collections(
+    crawler_auth_headers,
+    admin_auth_headers,
+    default_org_id,
+    non_default_org_id,
+    crawler_crawl_id,
+    admin_crawl_id,
+):
+    # Create new public collection
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections",
+        headers=crawler_auth_headers,
+        json={
+            "crawlIds": [crawler_crawl_id],
+            "name": "Second public collection",
+            "access": "public",
+        },
+    )
+    assert r.status_code == 200
+    second_public_coll_id = r.json()["id"]
+
+    # Get default org slug
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    org_slug = data["slug"]
+    org_name = data["name"]
+
+    # Verify that public profile isn't enabled
+    assert data["enablePublicProfile"] is False
+    assert data["publicDescription"] == ""
+    assert data["publicUrl"] == ""
+
+    # Try listing public collections without org public profile enabled
+    r = requests.get(f"{API_PREFIX}/public-collections/{org_slug}")
+    assert r.status_code == 404
+    assert r.json()["detail"] == "public_profile_not_found"
+
+    # Enable public profile on org
+    public_description = "This is a test public org!"
+    public_url = "https://example.com"
+
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/public-profile",
+        headers=admin_auth_headers,
+        json={
+            "enablePublicProfile": True,
+            "publicDescription": public_description,
+            "publicUrl": public_url,
+        },
+    )
+    assert r.status_code == 200
+    assert r.json()["updated"]
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["enablePublicProfile"]
+    assert data["publicDescription"] == public_description
+    assert data["publicUrl"] == public_url
+
+    # List public collections with no auth (no public profile)
+    r = requests.get(f"{API_PREFIX}/public-collections/{org_slug}")
+    assert r.status_code == 200
+    data = r.json()
+
+    org_data = data["org"]
+    assert org_data["name"] == org_name
+    assert org_data["description"] == public_description
+    assert org_data["url"] == public_url
+
+    collections = data["collections"]
+    assert len(collections) == 2
+    for collection in collections:
+        assert collection["id"] in (_public_coll_id, second_public_coll_id)
+        assert collection["access"] == "public"
+
+    # Test non-existing slug - it should return a 404 but not reveal
+    # whether or not an org exists with that slug
+    r = requests.get(f"{API_PREFIX}/public-collections/nonexistentslug")
+    assert r.status_code == 404
+    assert r.json()["detail"] == "public_profile_not_found"
+
+
+def test_list_public_collections_no_colls(non_default_org_id, admin_auth_headers):
+    # Test existing org that's not public - should return same 404 as
+    # if org doesn't exist
+    r = requests.get(f"{API_PREFIX}/public-collections/{NON_DEFAULT_ORG_SLUG}")
+    assert r.status_code == 404
+    assert r.json()["detail"] == "public_profile_not_found"
+
+    # Enable public profile on org with zero public collections
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{non_default_org_id}/public-profile",
+        headers=admin_auth_headers,
+        json={
+            "enablePublicProfile": True,
+        },
+    )
+    assert r.status_code == 200
+    assert r.json()["updated"]
+
+    # List public collections with no auth - should still get profile even
+    # with no public collections
+    r = requests.get(f"{API_PREFIX}/public-collections/{NON_DEFAULT_ORG_SLUG}")
+    assert r.status_code == 200
+    data = r.json()
+    assert data["org"]["name"] == NON_DEFAULT_ORG_NAME
+    assert data["collections"] == []
 
 
 def test_delete_collection(crawler_auth_headers, default_org_id, crawler_crawl_id):
