@@ -271,9 +271,6 @@
       <trans-unit id="s8e067719f45b0458">
         <source>Pro</source>
       </trans-unit>
-      <trans-unit id="sd069593586fce913">
-        <source><x equiv-text="${maxExecMinutesPerMonth || msg(&quot;Unlimited minutes&quot;)}" id="0"/> of crawl and QA analysis execution time</source>
-      </trans-unit>
       <trans-unit id="s1228a18c03355491">
         <source>Unlimited minutes</source>
       </trans-unit>
@@ -3532,10 +3529,6 @@
         <source>PM</source>
         <note from="lit-localize">Time AM/PM</note>
       </trans-unit>
-      <trans-unit id="h9083eded7901e66a">
-        <source><x equiv-text="${quotas.storageQuota&#10;    ? html `&lt;sl-format-bytes&#10;                  value=${quotas.storageQuota}&#10;                &gt;&lt;/sl-format-bytes&gt;`&#10;    : msg(&quot;Unlimited&quot;)}" id="0"/>
-            storage</source>
-      </trans-unit>
       <trans-unit id="s1d6a13ef53c51ee9">
         <source><x equiv-text="${maxPagesPerCrawl || msg(&quot;Unlimited pages&quot;)}" id="0"/> per crawl</source>
       </trans-unit>
@@ -3839,6 +3832,12 @@
       </trans-unit>
       <trans-unit id="sd95c2c71d3eaada7">
         <source>Free Trial</source>
+      </trans-unit>
+      <trans-unit id="sdf3aa31f524a7300">
+        <source><x equiv-text="${maxExecMinutesPerMonth || msg(&quot;Unlimited minutes&quot;)}" id="0"/> of crawling time</source>
+      </trans-unit>
+      <trans-unit id="sab5061cf8c519285">
+        <source><x equiv-text="${storageBytesText}" id="0"/> of disk space</source>
       </trans-unit>
     </body>
   </file>
