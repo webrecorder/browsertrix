@@ -260,6 +260,8 @@ def main() -> None:
 
     crawl_config_ops.set_coll_ops(coll_ops)
 
+    coll_ops.set_page_ops(page_ops)
+
     # run only in first worker
     if run_once_lock("btrix-init-db"):
         asyncio.create_task(

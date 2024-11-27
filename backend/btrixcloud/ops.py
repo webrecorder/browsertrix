@@ -109,6 +109,8 @@ def init_ops() -> Tuple[
 
     crawl_config_ops.set_coll_ops(coll_ops)
 
+    coll_ops.set_page_ops(page_ops)
+
     return (
         org_ops,
         crawl_config_ops,
