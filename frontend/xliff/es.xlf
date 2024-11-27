@@ -3825,14 +3825,15 @@
         <source>To choose a plan and continue using Browsertrix, see
                   <x equiv-text="${billingTabLink}" id="0"/>.</source>
       </trans-unit>
-      <trans-unit id="h003bd6a4e60ee0a5">
-        <source>Your trial will end on <x equiv-text="${futureCancelDate}" id="0"/>
-                                  - Click <x equiv-text="&lt;strong&gt;" id="1"/>Choose Plan<x equiv-text="&lt;/strong&gt;" id="2"/> to
-                                  subscribe</source>
+      <trans-unit id="s17658c5f9a5e8a52">
+        <source>Your trial will end on <x equiv-text="${futureCancelDate}" id="0"/></source>
       </trans-unit>
-      <trans-unit id="h244d3ee006a72650">
-        <source>Your plan will be canceled on
-                                <x equiv-text="${futureCancelDate}" id="0"/></source>
+      <trans-unit id="h6da053cf4f5d35c5">
+        <source>Click <x equiv-text="&lt;strong&gt;" id="0"/>Choose Plan<x equiv-text="&lt;/strong&gt;" id="1"/> to
+                                    subscribe</source>
+      </trans-unit>
+      <trans-unit id="s5f5b3049f319a00a">
+        <source>Your plan will be canceled on <x equiv-text="${futureCancelDate}" id="0"/></source>
       </trans-unit>
     </body>
   </file>
