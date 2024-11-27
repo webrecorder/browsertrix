@@ -7,7 +7,7 @@ import { when } from "lit/directives/when.js";
 import capitalize from "lodash/fp/capitalize";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import { CopyButton } from "@/components/ui/copy-button";
+import { CopyIconButton } from "@/components/ui/copy-icon-button";
 import { type Dialog } from "@/components/ui/dialog";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import type { CrawlLog } from "@/features/archived-items/crawl-logs";
@@ -638,7 +638,8 @@ export class ArchivedItemDetail extends BtrixElement {
                 ${msg("Go to Workflow")}
               </sl-menu-item>
               <sl-menu-item
-                @click=${() => CopyButton.copyToClipboard(this.item?.cid || "")}
+                @click=${() =>
+                  CopyIconButton.copyToClipboard(this.item?.cid || "")}
               >
                 <sl-icon name="copy" slot="prefix"></sl-icon>
                 ${msg("Copy Workflow ID")}
@@ -647,7 +648,7 @@ export class ArchivedItemDetail extends BtrixElement {
           )}
           <sl-menu-item
             @click=${() =>
-              CopyButton.copyToClipboard(this.item!.tags.join(", "))}
+              CopyIconButton.copyToClipboard(this.item!.tags.join(", "))}
             ?disabled=${!this.item.tags.length}
           >
             <sl-icon name="tags" slot="prefix"></sl-icon>

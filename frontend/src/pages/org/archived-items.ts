@@ -11,7 +11,7 @@ import queryString from "query-string";
 import type { ArchivedItem, Crawl, Workflow } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import { CopyButton } from "@/components/ui/copy-button";
+import { CopyIconButton } from "@/components/ui/copy-icon-button";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { pageHeader } from "@/layouts/pageHeader";
@@ -609,18 +609,22 @@ export class CrawlsList extends BtrixElement {
               <sl-icon name="arrow-return-right" slot="prefix"></sl-icon>
               ${msg("Go to Workflow")}
             </sl-menu-item>
-            <sl-menu-item @click=${() => CopyButton.copyToClipboard(item.cid)}>
+            <sl-menu-item
+              @click=${() => CopyIconButton.copyToClipboard(item.cid)}
+            >
               <sl-icon name="copy" slot="prefix"></sl-icon>
               ${msg("Copy Workflow ID")}
             </sl-menu-item>
-            <sl-menu-item @click=${() => CopyButton.copyToClipboard(item.id)}>
+            <sl-menu-item
+              @click=${() => CopyIconButton.copyToClipboard(item.id)}
+            >
               <sl-icon name="copy" slot="prefix"></sl-icon>
               ${msg("Copy Crawl ID")}
             </sl-menu-item>
           `
         : nothing}
       <sl-menu-item
-        @click=${() => CopyButton.copyToClipboard(item.tags.join(", "))}
+        @click=${() => CopyIconButton.copyToClipboard(item.tags.join(", "))}
         ?disabled=${!item.tags.length}
       >
         <sl-icon name="tags" slot="prefix"></sl-icon>

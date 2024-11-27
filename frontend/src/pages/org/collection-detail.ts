@@ -1,9 +1,9 @@
 import { localized, msg, str } from "@lit/localize";
-import type { SlCheckbox } from "@shoelace-style/shoelace";
 import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
 import { guard } from "lit/directives/guard.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { repeat } from "lit/directives/repeat.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
@@ -163,17 +163,31 @@ export class CollectionDetail extends BtrixElement {
           </h1>
         </div>
         ${when(
-          this.isCrawler ||
-            this.collection?.access !== CollectionAccess.Private,
-          () => html`
-            <sl-button
-              variant=${this.collection?.crawlCount ? "primary" : "default"}
-              size="small"
-              @click=${() => (this.showShareInfo = true)}
-            >
-              <sl-icon name="box-arrow-up" slot="prefix"></sl-icon>
-              ${msg("Share")}
-            </sl-button>
+          this.collection,
+          (collection) => html`
+            <sl-button-group>
+              <sl-button
+                variant=${collection.crawlCount ? "primary" : "default"}
+                size="small"
+                @click=${() => (this.showShareInfo = true)}
+              >
+                <sl-icon name="box-arrow-up" slot="prefix"></sl-icon>
+                ${msg("Share")}
+              </sl-button>
+              <sl-dropdown distance="4" placement="bottom-end">
+                <sl-button
+                  slot="trigger"
+                  size="small"
+                  variant=${collection.crawlCount ? "primary" : "default"}
+                  caret
+                >
+                </sl-button>
+                <sl-menu>
+                  <sl-menu-item> ${msg("Copy Link")} </sl-menu-item>
+                  <sl-menu-item> ${msg("Copy Embed Code")} </sl-menu-item>
+                </sl-menu>
+              </sl-dropdown>
+            </sl-button-group>
           `,
         )}
         ${when(this.isCrawler, this.renderActions)}
@@ -291,41 +305,27 @@ export class CollectionDetail extends BtrixElement {
   private renderShareDialog() {
     return html`
       <btrix-dialog
-        .label=${msg("Share Collection")}
+        .label=${msg(str`Share “${this.collection?.name}”`)}
         .open=${this.showShareInfo}
         @sl-hide=${() => (this.showShareInfo = false)}
         style="--width: 32rem;"
       >
-        ${
-          this.collection?.access === CollectionAccess.Unlisted
-            ? ""
-            : html`<p class="mb-3">
-                ${msg(
-                  "Make this collection shareable to enable a public viewing link.",
-                )}
-              </p>`
-        }
-        ${when(
-          this.isCrawler,
-          () => html`
-            <div class="mb-5">
-              <sl-switch
-                ?checked=${this.collection?.access ===
-                CollectionAccess.Unlisted}
+        <div class="mb-5">
+          ${when(
+            this.collection,
+            (collection) => html`
+              <btrix-select-collection-access
+                value=${ifDefined(collection.access)}
+                readOnly=${!this.isCrawler}
                 @sl-change=${(e: CustomEvent) =>
-                  void this.onTogglePublic((e.target as SlCheckbox).checked)}
-                >${msg("Collection is Shareable")}</sl-switch
-              >
-            </div>
-          `,
-        )}
+                  void this.updateVisibility(
+                    (e.target as SelectCollectionAccess).value,
+                  )}
+              ></btrix-select-collection-access>
+            `,
+          )}
         </div>
-        ${when(this.collection?.access === CollectionAccess.Unlisted, this.renderShareInfo)}
-        <div slot="footer" class="flex justify-end">
-          <sl-button size="small" @click=${() => (this.showShareInfo = false)}
-            >${msg("Done")}</sl-button
-          >
-        </div>
+        ${this.renderShareInfo()}
       </btrix-dialog>
     `;
   }
@@ -337,36 +337,13 @@ export class CollectionDetail extends BtrixElement {
     const embedCode = `<replay-web-page source="${replaySrc}"></replay-web-page>`;
     const importCode = `importScripts("https://replayweb.page/sw.js");`;
 
-    return html` <btrix-section-heading
-        >${msg("Link to Share")}</btrix-section-heading
-      >
-      <section class="mb-5 mt-3">
-        <p class="mb-3">
-          ${msg("This collection can be viewed by anyone with the link.")}
-        </p>
-
-        <btrix-copy-field
-          class="mb-2"
-          .value="${publicReplayUrl}"
-          hideContentFromScreenReaders
-          hoist
-        >
-          <sl-tooltip slot="prefix" content=${msg("Open in New Tab")} hoist>
-            <sl-icon-button
-              href=${publicReplayUrl}
-              name="box-arrow-up-right"
-              target="_blank"
-              class="m-px"
-            >
-            </sl-icon-button>
-          </sl-tooltip>
-        </btrix-copy-field>
-      </section>
-      <btrix-section-heading>${msg("Embed Collection")}</btrix-section-heading>
-      <section class="mt-3">
-        <p class="mb-3">
+    return html`
+      <btrix-details>
+        <span slot="title">${msg("Embed Code")}</span>
+        <p class="my-3">
           ${msg(
-            html`Share this collection by embedding it into an existing webpage.`,
+            html`Unlisted and public collections can be embedded into an
+            existing webpage.`,
           )}
         </p>
         <p class="mb-3">
@@ -375,12 +352,12 @@ export class CollectionDetail extends BtrixElement {
         <div class="relative mb-5 rounded border bg-slate-50 p-3 pr-9">
           <btrix-code value=${embedCode}></btrix-code>
           <div class="absolute right-1 top-1">
-            <btrix-copy-button
+            <btrix-copy-icon-button
               .getValue=${() => embedCode}
               content=${msg("Copy Embed Code")}
               hoist
               raised
-            ></btrix-copy-button>
+            ></btrix-copy-icon-button>
           </div>
         </div>
         <p class="mb-3">
@@ -392,12 +369,12 @@ export class CollectionDetail extends BtrixElement {
         <div class="relative mb-5 rounded border bg-slate-50 p-3 pr-9">
           <btrix-code language="javascript" value=${importCode}></btrix-code>
           <div class="absolute right-1 top-1">
-            <btrix-copy-button
+            <btrix-copy-icon-button
               .getValue=${() => importCode}
               content=${msg("Copy JS")}
               hoist
               raised
-            ></btrix-copy-button>
+            ></btrix-copy-icon-button>
           </div>
         </div>
         <p>
@@ -413,7 +390,24 @@ export class CollectionDetail extends BtrixElement {
               for more details.`,
           )}
         </p>
-      </section>`;
+      </btrix-details>
+
+      <div slot="footer" class="flex justify-end gap-2">
+        <sl-button size="small" @click=${() => (this.showShareInfo = false)}>
+          ${msg("Done")}
+        </sl-button>
+        <btrix-copy-button
+          value=${publicReplayUrl}
+          icon="link-45deg"
+          size="small"
+          variant=${this.collection?.access === CollectionAccess.Private
+            ? "neutral"
+            : "success"}
+        >
+          ${msg("Copy Link")}
+        </btrix-copy-button>
+      </div>
+    `;
   };
 
   private readonly renderBreadcrumbs = () => {
@@ -467,40 +461,15 @@ export class CollectionDetail extends BtrixElement {
             <sl-icon name="pencil" slot="prefix"></sl-icon>
             ${msg("Edit Metadata")}
           </sl-menu-item>
+          <sl-menu-item @click=${() => (this.showShareInfo = true)}>
+            <sl-icon name="eye-fill" slot="prefix"></sl-icon>
+            ${msg("Edit Visibility")}
+          </sl-menu-item>
           <sl-menu-item @click=${() => (this.openDialogName = "editItems")}>
             <sl-icon name="ui-checks" slot="prefix"></sl-icon>
             ${msg("Select Archived Items")}
           </sl-menu-item>
           <sl-divider></sl-divider>
-          ${this.collection?.access === CollectionAccess.Private
-            ? html`
-                <sl-menu-item
-                  style="--sl-color-neutral-700: var(--success)"
-                  @click=${() => void this.onTogglePublic(true)}
-                >
-                  <sl-icon name="people-fill" slot="prefix"></sl-icon>
-                  ${msg("Make Shareable")}
-                </sl-menu-item>
-              `
-            : html`
-                <sl-menu-item style="--sl-color-neutral-700: var(--success)">
-                  <sl-icon name="box-arrow-up-right" slot="prefix"></sl-icon>
-                  <a
-                    target="_blank"
-                    slot="prefix"
-                    href="https://replayweb.page?source=${this.getPublicReplayURL()}"
-                  >
-                    Visit Shareable URL
-                  </a>
-                </sl-menu-item>
-                <sl-menu-item
-                  style="--sl-color-neutral-700: var(--warning)"
-                  @click=${() => void this.onTogglePublic(false)}
-                >
-                  <sl-icon name="eye-slash" slot="prefix"></sl-icon>
-                  ${msg("Make Private")}
-                </sl-menu-item>
-              `}
           <btrix-menu-item-link
             href=${`/api/orgs/${this.orgId}/collections/${this.collectionId}/download?auth_bearer=${authToken}`}
             download
@@ -802,10 +771,7 @@ export class CollectionDetail extends BtrixElement {
     }
   };
 
-  private async onTogglePublic(isPublic: boolean) {
-    const access = !isPublic
-      ? CollectionAccess.Private
-      : CollectionAccess.Unlisted;
+  private async updateVisibility(access: CollectionAccess) {
     const res = await this.api.fetch<{ updated: boolean }>(
       `/orgs/${this.orgId}/collections/${this.collectionId}`,
       {
@@ -815,6 +781,12 @@ export class CollectionDetail extends BtrixElement {
     );
 
     if (res.updated && this.collection) {
+      this.notify.toast({
+        message: msg("Updated collection visibility."),
+        variant: "success",
+        icon: "check2-circle",
+      });
+
       this.collection = { ...this.collection, access };
     }
   }
