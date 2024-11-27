@@ -121,14 +121,14 @@ export class OrgSettingsBilling extends BtrixElement {
                       return nothing;
                     }
 
-                    const futureCancelDate = html`<sl-format-date
-                      class="truncate"
-                      date=${org.subscription.futureCancelDate}
-                      month="long"
-                      day="numeric"
-                      year="numeric"
-                    >
-                    </sl-format-date>`;
+                    const futureCancelDate = this.localize.date(
+                      org.subscription.futureCancelDate,
+                      {
+                        month: "long",
+                        day: "numeric",
+                        year: "numeric",
+                      },
+                    );
 
                     return html`
                       <div
@@ -138,14 +138,18 @@ export class OrgSettingsBilling extends BtrixElement {
                         <span>
                           ${org.subscription.status ===
                           SubscriptionStatus.Trialing
-                            ? msg(
-                                html`Your trial will end on ${futureCancelDate}
-                                  - Click <strong>Choose Plan</strong> to
-                                  subscribe`,
-                              )
+                            ? html`
+                                ${msg(
+                                  str`Your trial will end on ${futureCancelDate}`,
+                                )}
+                                &mdash;
+                                ${msg(
+                                  html`Click <strong>Choose Plan</strong> to
+                                    subscribe`,
+                                )}
+                              `
                             : msg(
-                                html`Your plan will be canceled on
-                                ${futureCancelDate}`,
+                                str`Your plan will be canceled on ${futureCancelDate}`,
                               )}
                         </span>
                       </div>
