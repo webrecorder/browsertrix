@@ -44,10 +44,6 @@
         <source>Archived Items</source>
         <target state="translated">Archivado</target>
       </trans-unit>
-      <trans-unit xml:space="preserve" id="sfa480f50d480c290">
-        <source>Shareable</source>
-        <target state="translated">Compartible</target>
-      </trans-unit>
       <trans-unit xml:space="preserve" id="se7bee6e9a9b5394c">
         <source>Private</source>
         <target state="translated">Privado</target>
@@ -74,32 +70,8 @@
       <trans-unit id="s317006269d0d1476">
         <source>Delete Collection</source>
       </trans-unit>
-      <trans-unit id="s41203abb9f802a84">
-        <source>Share Collection</source>
-      </trans-unit>
-      <trans-unit id="s54bbf34e3e18b439">
-        <source>Make this collection shareable to enable a public viewing link.</source>
-      </trans-unit>
-      <trans-unit id="seeb6295e19bc1400">
-        <source>Collection is Shareable</source>
-      </trans-unit>
       <trans-unit id="s0379fc73608ab971">
         <source>Done</source>
-      </trans-unit>
-      <trans-unit id="s11161fdebb62dcc9">
-        <source>Link to Share</source>
-      </trans-unit>
-      <trans-unit id="s4708cb91cd6afef0">
-        <source>This collection can be viewed by anyone with the link.</source>
-      </trans-unit>
-      <trans-unit id="s0921b07ddda1f1b1">
-        <source>Open in New Tab</source>
-      </trans-unit>
-      <trans-unit id="sb8096046172ad45a">
-        <source>Embed Collection</source>
-      </trans-unit>
-      <trans-unit id="h7066b35dd7e4517e">
-        <source>Share this collection by embedding it into an existing webpage.</source>
       </trans-unit>
       <trans-unit id="h54da0b63b416aa90">
         <source>Add the following embed code to your HTML page:</source>
@@ -690,12 +662,6 @@
       </trans-unit>
       <trans-unit id="sf9e77dd881f8333d">
         <source>My Collection</source>
-      </trans-unit>
-      <trans-unit id="s75a2e5409f11285f">
-        <source>Publicly Accessible</source>
-      </trans-unit>
-      <trans-unit id="s529880061faf7209">
-        <source>Enable public access to make Collections shareable. Only people with the shared link can view your Collection.</source>
       </trans-unit>
       <trans-unit id="s77001a56d74ac617">
         <source>Successfully saved "<x equiv-text="${data.name || name}" id="0"/>" Collection.</source>
@@ -1623,9 +1589,6 @@
       </trans-unit>
       <trans-unit id="s5ac7d4f485d82e8c">
         <source>Shareable Collection</source>
-      </trans-unit>
-      <trans-unit id="sc052d225a3066b68">
-        <source>Private Collection</source>
       </trans-unit>
       <trans-unit id="sa9c9e33629402ea8">
         <source>Something unexpected went wrong while retrieving Collections.</source>
@@ -3929,6 +3892,40 @@
       </trans-unit>
       <trans-unit id="s117475fa47155b08">
         <source>update your Org URL in General settings</source>
+      </trans-unit>
+      <trans-unit id="s406d1cc8b34de381">
+        <source>Only org members can view</source>
+      </trans-unit>
+      <trans-unit id="sf9ca5cc93c622eb7">
+        <source>Unlisted</source>
+      </trans-unit>
+      <trans-unit id="se0ca0ce6d58bdb0a">
+        <source>Only people with the link can view</source>
+      </trans-unit>
+      <trans-unit id="sdd1ff479d04ac140">
+        <source>Public</source>
+      </trans-unit>
+      <trans-unit id="s1bbb1dfa96413a00">
+        <source>Anyone can view on the org's public profile</source>
+      </trans-unit>
+      <trans-unit id="s9a2a2fda9cfa1ddc">
+        <source>Copy Link</source>
+      </trans-unit>
+      <trans-unit id="s8f80709597e4b1a1">
+        <source>Share “<x equiv-text="${this.collection?.name}" id="0"/>”</source>
+      </trans-unit>
+      <trans-unit id="s1f9ea985eb0d9b87">
+        <source>Embed Code</source>
+      </trans-unit>
+      <trans-unit id="h9fea52f5753d5168">
+        <source>Unlisted and public collections can be embedded into an
+            existing webpage.</source>
+      </trans-unit>
+      <trans-unit id="s52222cb83efbccc7">
+        <source>Edit Visibility</source>
+      </trans-unit>
+      <trans-unit id="s152fb86993502262">
+        <source>Updated collection visibility.</source>
       </trans-unit>
     </body>
   </file>
