@@ -17,7 +17,7 @@ invite_email = "test-user@example.com"
 def test_ensure_only_one_default_org(admin_auth_headers):
     r = requests.get(f"{API_PREFIX}/orgs", headers=admin_auth_headers)
     data = r.json()
-    assert data["total"] == 1
+    assert data["total"] == 2
 
     orgs = data["items"]
     default_orgs = [org for org in orgs if org["default"]]
@@ -695,24 +695,6 @@ def test_update_read_only(admin_auth_headers, default_org_id):
     assert data["readOnly"] is False
     # Test that reason is unset when readOnly is set to false, even implicitly
     assert data["readOnlyReason"] == ""
-
-
-def test_update_list_public_collections(admin_auth_headers, default_org_id):
-    # Test that default is false
-    r = requests.get(f"{API_PREFIX}/orgs/{default_org_id}", headers=admin_auth_headers)
-    assert r.json()["listPublicCollections"] is False
-
-    # Update
-    r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/list-public-collections",
-        headers=admin_auth_headers,
-        json={"listPublicCollections": True},
-    )
-    assert r.json()["updated"]
-
-    # Test update is reflected in GET response
-    r = requests.get(f"{API_PREFIX}/orgs/{default_org_id}", headers=admin_auth_headers)
-    assert r.json()["listPublicCollections"]
 
 
 def test_sort_orgs(admin_auth_headers):

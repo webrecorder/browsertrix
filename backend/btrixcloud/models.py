@@ -1145,6 +1145,24 @@ class RenameOrg(BaseModel):
 
 
 # ============================================================================
+class PublicOrgDetails(BaseModel):
+    """Model for org details that are available in public profile"""
+
+    name: str
+    description: str = ""
+    url: str = ""
+
+
+# ============================================================================
+class OrgPublicCollections(BaseModel):
+    """Model for listing public collections in org"""
+
+    org: PublicOrgDetails
+
+    collections: List[CollOut] = []
+
+
+# ============================================================================
 class OrgStorageRefs(BaseModel):
     """Input model for setting primary storage + optional replicas"""
 
@@ -1374,10 +1392,12 @@ class OrgReadOnlyUpdate(BaseModel):
 
 
 # ============================================================================
-class OrgListPublicCollectionsUpdate(BaseModel):
-    """Organization listPublicCollections update"""
+class OrgPublicProfileUpdate(BaseModel):
+    """Organization enablePublicProfile update"""
 
-    listPublicCollections: bool
+    enablePublicProfile: Optional[bool] = None
+    publicDescription: Optional[str] = None
+    publicUrl: Optional[str] = None
 
 
 # ============================================================================
@@ -1448,7 +1468,9 @@ class OrgOut(BaseMongoModel):
     allowedProxies: list[str] = []
     crawlingDefaults: Optional[CrawlConfigDefaults] = None
 
-    listPublicCollections: bool = False
+    enablePublicProfile: bool = False
+    publicDescription: str = ""
+    publicUrl: str = ""
 
 
 # ============================================================================
@@ -1505,7 +1527,9 @@ class Organization(BaseMongoModel):
     allowedProxies: list[str] = []
     crawlingDefaults: Optional[CrawlConfigDefaults] = None
 
-    listPublicCollections: bool = False
+    enablePublicProfile: bool = False
+    publicDescription: Optional[str] = None
+    publicUrl: Optional[str] = None
 
     def is_owner(self, user):
         """Check if user is owner"""
