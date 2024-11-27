@@ -4,7 +4,7 @@ Collections API
 
 from collections import Counter
 from uuid import UUID, uuid4
-from typing import Optional, List, TYPE_CHECKING, cast, Dict
+from typing import Optional, List, TYPE_CHECKING, cast, Dict, Tuple
 
 import asyncio
 import pymongo
@@ -53,7 +53,7 @@ else:
 class CollectionOps:
     """ops for working with named collections of crawls"""
 
-    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-public-methods
 
     orgs: OrgOps
     storage_ops: StorageOps
@@ -77,6 +77,7 @@ class CollectionOps:
 
     def set_page_ops(self, ops):
         """set page ops"""
+        # pylint: disable=attribute-defined-outside-init
         self.page_ops = ops
 
     async def init_index(self):
@@ -528,8 +529,7 @@ class CollectionOps:
 
         await self.collections.find_one_and_update(
             {"_id": coll_id, "oid": org.id},
-            {"$set": query},
-            return_document=pymongo.ReturnDocument.AFTER,
+            {"$set": update_query},
         )
 
         return {"success": True}
@@ -742,7 +742,7 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops):
         page: int = 1,
     ):
         """Retrieve paginated list of urls in collection sorted by snapshot count"""
-        pages, total = await ops.list_urls_in_collection(
+        pages, total = await colls.list_urls_in_collection(
             coll_id=coll_id,
             oid=oid,
             url_prefix=urlPrefix,
