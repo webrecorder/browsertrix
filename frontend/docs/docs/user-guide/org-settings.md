@@ -6,7 +6,7 @@ Settings that apply to the entire organization are found in the **Settings** pag
 
 ### Name and URL
 
-Choose a display name for your org that's unique and memorable, like the name of your company or organization, or your personal project. This name will be visible in the org's [public profile](#profile), if that page is enabled.
+Choose a display name for your org that's unique and memorable, like the name of your company, organization, or personal project. This name will be visible in the org's [public profile](#profile), if that page is enabled.
 
 The org URL is where you and other org members will go to view the dashboard, configure org settings, and manage all other org-related activities. This is also the URL of your org's public profile, if enabled.
 
