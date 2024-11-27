@@ -387,7 +387,13 @@ export class LogInPage extends BtrixElement {
     try {
       const data = await AuthService.login({ email: username, password });
 
-      AppStateService.updateUser(formatAPIUser(data.user));
+      // Check if org slug in app state matches newly logged in user
+      const slug =
+        this.orgSlug && data.user.orgs.some((org) => org.slug === this.orgSlug)
+          ? this.orgSlug
+          : data.user.orgs[0].slug;
+
+      AppStateService.updateUser(formatAPIUser(data.user), slug);
 
       await this.updateComplete;
 
