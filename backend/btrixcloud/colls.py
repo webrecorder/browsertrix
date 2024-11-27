@@ -532,7 +532,7 @@ class CollectionOps:
             {"$set": update_query},
         )
 
-        return {"success": True}
+        return {"updated": True}
 
 
 # ============================================================================
@@ -754,7 +754,7 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops):
     @app.post(
         "/orgs/{oid}/collections/{coll_id}/home-url",
         tags=["collections"],
-        response_model=SuccessResponse,
+        response_model=UpdatedResponse,
     )
     async def set_collection_home_url(
         update: UpdateCollHomeUrl,
