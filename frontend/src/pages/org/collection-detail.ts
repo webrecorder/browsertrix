@@ -37,9 +37,6 @@ export class CollectionDetail extends BtrixElement {
   @property({ type: String })
   collectionTab?: Tab = TABS[0];
 
-  @property({ type: Boolean })
-  isCrawler?: boolean;
-
   @state()
   private collection?: Collection;
 
@@ -80,6 +77,10 @@ export class CollectionDetail extends BtrixElement {
       text: msg("Archived Items"),
     },
   };
+
+  private get isCrawler() {
+    return this.appState.isCrawler;
+  }
 
   protected async willUpdate(
     changedProperties: PropertyValues<this> & Map<string, unknown>,
@@ -162,34 +163,31 @@ export class CollectionDetail extends BtrixElement {
             html`<sl-skeleton class="w-96"></sl-skeleton>`}
           </h1>
         </div>
-        ${when(
-          this.collection,
-          (collection) => html`
-            <sl-button-group>
-              <sl-button
-                variant=${collection.crawlCount ? "primary" : "default"}
-                size="small"
-                @click=${() => (this.showShareInfo = true)}
-              >
-                <sl-icon name="box-arrow-up" slot="prefix"></sl-icon>
-                ${msg("Share")}
-              </sl-button>
-              <sl-dropdown distance="4" placement="bottom-end">
-                <sl-button
-                  slot="trigger"
-                  size="small"
-                  variant=${collection.crawlCount ? "primary" : "default"}
-                  caret
-                >
-                </sl-button>
-                <sl-menu>
-                  <sl-menu-item> ${msg("Copy Link")} </sl-menu-item>
-                  <sl-menu-item> ${msg("Copy Embed Code")} </sl-menu-item>
-                </sl-menu>
-              </sl-dropdown>
-            </sl-button-group>
-          `,
-        )}
+        <sl-button-group>
+          <sl-button
+            variant=${this.collection?.crawlCount ? "primary" : "default"}
+            size="small"
+            ?disabled=${!this.collection}
+            @click=${() => (this.showShareInfo = true)}
+          >
+            <sl-icon name="box-arrow-up" slot="prefix"></sl-icon>
+            ${msg("Share")}
+          </sl-button>
+          <sl-dropdown distance="4" placement="bottom-end">
+            <sl-button
+              slot="trigger"
+              size="small"
+              ?disabled=${!this.collection}
+              variant=${this.collection?.crawlCount ? "primary" : "default"}
+              caret
+            >
+            </sl-button>
+            <sl-menu>
+              <sl-menu-item> ${msg("Copy Link")} </sl-menu-item>
+              <sl-menu-item> ${msg("Copy Embed Code")} </sl-menu-item>
+            </sl-menu>
+          </sl-dropdown>
+        </sl-button-group>
         ${when(this.isCrawler, this.renderActions)}
       </header>
       <div class="mb-3 rounded-lg border px-4 py-2">
@@ -316,7 +314,7 @@ export class CollectionDetail extends BtrixElement {
             (collection) => html`
               <btrix-select-collection-access
                 value=${ifDefined(collection.access)}
-                readOnly=${!this.isCrawler}
+                ?readOnly=${!this.isCrawler}
                 @sl-change=${(e: CustomEvent) =>
                   void this.updateVisibility(
                     (e.target as SelectCollectionAccess).value,
