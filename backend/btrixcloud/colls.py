@@ -30,6 +30,9 @@ from .models import (
     UpdatedResponse,
     SuccessResponse,
     CollectionSearchValuesResponse,
+    OrgPublicCollections,
+    PublicOrgDetails,
+    CollAccessType,
 )
 from .utils import dt_now
 
@@ -395,6 +398,30 @@ class CollectionOps:
             )
             await self.update_crawl_collections(crawl_id)
 
+    async def get_org_public_collections(self, org_slug: str):
+        """List public collections for org"""
+        try:
+            org = await self.orgs.get_org_by_slug(org_slug)
+        # pylint: disable=broad-exception-caught
+        except Exception:
+            # pylint: disable=raise-missing-from
+            raise HTTPException(status_code=404, detail="public_profile_not_found")
+
+        if not org.enablePublicProfile:
+            raise HTTPException(status_code=404, detail="public_profile_not_found")
+
+        collections, _ = await self.list_collections(
+            org.id, access=CollAccessType.PUBLIC
+        )
+
+        public_org_details = PublicOrgDetails(
+            name=org.name,
+            description=org.publicDescription or "",
+            url=org.publicUrl or "",
+        )
+
+        return OrgPublicCollections(org=public_org_details, collections=collections)
+
 
 # ============================================================================
 # pylint: disable=too-many-locals
@@ -581,5 +608,13 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops):
         coll_id: UUID, org: Organization = Depends(org_viewer_dep)
     ):
         return await colls.download_collection(coll_id, org)
+
+    @app.get(
+        "/public-collections/{org_slug}",
+        tags=["collections"],
+        response_model=OrgPublicCollections,
+    )
+    async def get_org_public_collections(org_slug: str):
+        return await colls.get_org_public_collections(org_slug)
 
     return colls
