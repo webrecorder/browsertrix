@@ -238,9 +238,7 @@ export class ArchivedItemListItem extends BtrixElement {
         <btrix-table-cell class="tabular-nums">
           <sl-tooltip
             hoist
-            content=${this.localize.number(this.item.fileSize || 0, {
-              style: "unit",
-              unit: "byte",
+            content=${this.localize.bytes(this.item.fileSize || 0, {
               unitDisplay: "long",
             })}
             @click=${this.onTooltipClick}

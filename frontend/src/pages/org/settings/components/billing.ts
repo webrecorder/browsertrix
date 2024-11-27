@@ -42,7 +42,7 @@ export class OrgSettingsBilling extends BtrixElement {
 
     switch (subscription.status) {
       case SubscriptionStatus.Trialing: {
-        label = msg("Choose Plan");
+        label = msg("Subscribe Now");
         break;
       }
       case SubscriptionStatus.PausedPaymentFailed: {
@@ -121,33 +121,39 @@ export class OrgSettingsBilling extends BtrixElement {
                       return nothing;
                     }
 
-                    const futureCancelDate = html`<sl-format-date
-                      class="truncate"
-                      date=${org.subscription.futureCancelDate}
-                      month="long"
-                      day="numeric"
-                      year="numeric"
-                    >
-                    </sl-format-date>`;
+                    const futureCancelDate = this.localize.date(
+                      org.subscription.futureCancelDate,
+                      {
+                        month: "long",
+                        day: "numeric",
+                        year: "numeric",
+                      },
+                    );
 
                     return html`
                       <div
                         class="mb-3 flex items-center gap-2 border-b pb-3 text-neutral-500"
                       >
-                        <sl-icon name="info-circle" class="text-base"></sl-icon>
-                        <span>
+                        <sl-icon
+                          name="info-circle"
+                          class="size-4 flex-shrink-0"
+                        ></sl-icon>
+                        <div>
                           ${org.subscription.status ===
                           SubscriptionStatus.Trialing
-                            ? msg(
-                                html`Your trial will end on ${futureCancelDate}
-                                  - Click <strong>Choose Plan</strong> to
-                                  subscribe`,
-                              )
+                            ? html`
+                                <span class="font-medium text-neutral-700">
+                                  ${msg(
+                                    str`Your trial will end on ${futureCancelDate}`,
+                                  )}
+                                </span>
+                                &mdash;
+                                ${msg(str`subscribe to keep your account`)}
+                              `
                             : msg(
-                                html`Your plan will be canceled on
-                                ${futureCancelDate}`,
+                                str`Your plan will be canceled on ${futureCancelDate}`,
                               )}
-                        </span>
+                        </div>
                       </div>
                     `;
                   },
@@ -175,10 +181,15 @@ export class OrgSettingsBilling extends BtrixElement {
               </p>
               ${when(this.org, (org) =>
                 org.subscription
-                  ? html`<p class="mb-3 leading-normal">
-                        ${msg(
-                          str`You can view plan details, update payment methods, and update billing information by clicking “${this.portalUrlLabel}”.`,
-                        )}
+                  ? html` <p class="mb-3 leading-normal">
+                        ${org.subscription.status ===
+                        SubscriptionStatus.Trialing
+                          ? msg(
+                              str`To continue using Browsertrix at the end of your trial, click “${this.portalUrlLabel}”.`,
+                            )
+                          : msg(
+                              str`You can view plan details, update payment methods, and update billing information by clicking “${this.portalUrlLabel}”.`,
+                            )}
                       </p>
                       ${this.salesEmail
                         ? html`<p class="leading-normal">
@@ -260,7 +271,7 @@ export class OrgSettingsBilling extends BtrixElement {
         }
         case SubscriptionStatus.Trialing: {
           statusLabel = html`
-            <span class="text-success-700">${msg("Trial")}</span>
+            <span class="text-success-700">${msg("Free Trial")}</span>
           `;
           break;
         }
@@ -309,24 +320,18 @@ export class OrgSettingsBilling extends BtrixElement {
       msg(
         str`${this.localize.number(quotas.maxConcurrentCrawls)} concurrent ${pluralOf("crawls", quotas.maxConcurrentCrawls)}`,
       );
+    const storageBytesText = quotas.storageQuota
+      ? this.localize.bytes(quotas.storageQuota)
+      : msg("Unlimited");
 
     return html`
       <ul class="leading-relaxed text-neutral-700">
         <li>
           ${msg(
-            str`${maxExecMinutesPerMonth || msg("Unlimited minutes")} of crawl and QA analysis execution time`,
+            str`${maxExecMinutesPerMonth || msg("Unlimited minutes")} of crawling time`,
           )}
         </li>
-        <li>
-          ${msg(
-            html`${quotas.storageQuota
-              ? html`<sl-format-bytes
-                  value=${quotas.storageQuota}
-                ></sl-format-bytes>`
-              : msg("Unlimited")}
-            storage`,
-          )}
-        </li>
+        <li>${msg(str`${storageBytesText} of disk space`)}</li>
         <li>
           ${msg(str`${maxPagesPerCrawl || msg("Unlimited pages")} per crawl`)}
         </li>

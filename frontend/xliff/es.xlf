@@ -271,9 +271,6 @@
       <trans-unit id="s8e067719f45b0458">
         <source>Pro</source>
       </trans-unit>
-      <trans-unit id="sd069593586fce913">
-        <source><x equiv-text="${maxExecMinutesPerMonth || msg(&quot;Unlimited minutes&quot;)}" id="0"/> of crawl and QA analysis execution time</source>
-      </trans-unit>
       <trans-unit id="s1228a18c03355491">
         <source>Unlimited minutes</source>
       </trans-unit>
@@ -3532,10 +3529,6 @@
         <source>PM</source>
         <note from="lit-localize">Time AM/PM</note>
       </trans-unit>
-      <trans-unit id="h9083eded7901e66a">
-        <source><x equiv-text="${quotas.storageQuota&#10;    ? html `&lt;sl-format-bytes&#10;                  value=${quotas.storageQuota}&#10;                &gt;&lt;/sl-format-bytes&gt;`&#10;    : msg(&quot;Unlimited&quot;)}" id="0"/>
-            storage</source>
-      </trans-unit>
       <trans-unit id="s1d6a13ef53c51ee9">
         <source><x equiv-text="${maxPagesPerCrawl || msg(&quot;Unlimited pages&quot;)}" id="0"/> per crawl</source>
       </trans-unit>
@@ -3800,9 +3793,6 @@
         <source>Profiles:
                     <x equiv-text="&lt;sl-format-bytes value=&quot;${org.bytesStoredProfiles}&quot;&gt;&lt;/sl-format-bytes&gt;" id="0"/></source>
       </trans-unit>
-      <trans-unit id="se3d7a30d5e45c393">
-        <source>Trial</source>
-      </trans-unit>
       <trans-unit id="s582e36ff4a424786">
         <source>Removing <x equiv-text="${this.localize.number(removeCount)} ${pluralOf(&quot;items&quot;, removeCount)}" id="0"/></source>
       </trans-unit>
@@ -3825,14 +3815,29 @@
         <source>To choose a plan and continue using Browsertrix, see
                   <x equiv-text="${billingTabLink}" id="0"/>.</source>
       </trans-unit>
-      <trans-unit id="h003bd6a4e60ee0a5">
-        <source>Your trial will end on <x equiv-text="${futureCancelDate}" id="0"/>
-                                  - Click <x equiv-text="&lt;strong&gt;" id="1"/>Choose Plan<x equiv-text="&lt;/strong&gt;" id="2"/> to
-                                  subscribe</source>
+      <trans-unit id="s17658c5f9a5e8a52">
+        <source>Your trial will end on <x equiv-text="${futureCancelDate}" id="0"/></source>
       </trans-unit>
-      <trans-unit id="h244d3ee006a72650">
-        <source>Your plan will be canceled on
-                                <x equiv-text="${futureCancelDate}" id="0"/></source>
+      <trans-unit id="s5f5b3049f319a00a">
+        <source>Your plan will be canceled on <x equiv-text="${futureCancelDate}" id="0"/></source>
+      </trans-unit>
+      <trans-unit id="s02e734a81b23d11b">
+        <source>Subscribe Now</source>
+      </trans-unit>
+      <trans-unit id="s0fd618c2a8596617">
+        <source>subscribe to keep your account</source>
+      </trans-unit>
+      <trans-unit id="s2ab646dc4c6667ec">
+        <source>To continue using Browsertrix at the end of your trial, click “<x equiv-text="${this.portalUrlLabel}" id="0"/>”.</source>
+      </trans-unit>
+      <trans-unit id="sd95c2c71d3eaada7">
+        <source>Free Trial</source>
+      </trans-unit>
+      <trans-unit id="sdf3aa31f524a7300">
+        <source><x equiv-text="${maxExecMinutesPerMonth || msg(&quot;Unlimited minutes&quot;)}" id="0"/> of crawling time</source>
+      </trans-unit>
+      <trans-unit id="sab5061cf8c519285">
+        <source><x equiv-text="${storageBytesText}" id="0"/> of disk space</source>
       </trans-unit>
     </body>
   </file>
