@@ -20,7 +20,8 @@ export class SelectCollectionAccess extends BtrixElement {
     },
     [CollectionAccess.Unlisted]: {
       label: msg("Unlisted"),
-      icon: "link-45deg",
+      // icon: "link-45deg",
+      icon: "people-fill",
       detail: msg("Only people with the link can view"),
     },
 
