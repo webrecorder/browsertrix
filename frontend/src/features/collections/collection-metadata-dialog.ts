@@ -14,6 +14,7 @@ import { when } from "lit/directives/when.js";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
 import type { MarkdownEditor } from "@/components/ui/markdown-editor";
+import type { SelectCollectionAccess } from "@/features/collections/select-collection-access";
 import { CollectionAccess, type Collection } from "@/types/collection";
 import { isApiError } from "@/utils/api";
 import { maxLengthValidator } from "@/utils/form";
@@ -43,10 +44,20 @@ export class CollectionMetadataDialog extends BtrixElement {
   @query("btrix-markdown-editor")
   private readonly descriptionEditor?: MarkdownEditor | null;
 
+  @query("btrix-select-collection-access")
+  private readonly selectCollectionAccess?: SelectCollectionAccess | null;
+
   @queryAsync("#collectionForm")
   private readonly form!: Promise<HTMLFormElement>;
 
   private readonly validateNameMax = maxLengthValidator(50);
+
+  protected firstUpdated(): void {
+    if (this.open) {
+      this.isDialogVisible = true;
+    }
+  }
+
   render() {
     return html` <btrix-dialog
       label=${this.collection
@@ -126,23 +137,7 @@ export class CollectionMetadataDialog extends BtrixElement {
           !this.collection,
           () => html`
             <sl-divider></sl-divider>
-            <label>
-              <sl-switch name="isPublic"
-                >${msg("Publicly Accessible")}</sl-switch
-              >
-              <sl-tooltip
-                content=${msg(
-                  "Enable public access to make Collections shareable. Only people with the shared link can view your Collection.",
-                )}
-                hoist
-                @sl-hide=${this.stopProp}
-                @sl-after-hide=${this.stopProp}
-                ><sl-icon
-                  class="ml-1 inline-block align-middle text-slate-500"
-                  name="info-circle"
-                ></sl-icon
-              ></sl-tooltip>
-            </label>
+            <btrix-select-collection-access></btrix-select-collection-access>
           `,
         )}
 
@@ -172,7 +167,7 @@ export class CollectionMetadataDialog extends BtrixElement {
       return;
     }
 
-    const { name, isPublic } = serialize(form);
+    const { name } = serialize(form);
     const description = this.descriptionEditor.value;
 
     this.isSubmitting = true;
@@ -180,9 +175,7 @@ export class CollectionMetadataDialog extends BtrixElement {
       const body = JSON.stringify({
         name,
         description,
-        access: !isPublic
-          ? CollectionAccess.Private
-          : CollectionAccess.Unlisted,
+        access: this.selectCollectionAccess?.value || CollectionAccess.Private,
       });
       let path = `/orgs/${this.orgId}/collections`;
       let method = "POST";
