@@ -55,7 +55,6 @@ export class SelectCollectionAccess extends BtrixElement {
         label=${msg("Visibility")}
         value=${this.value}
         hoist
-        @sl-hide=${this.stopProp}
         @sl-change=${(e: SlChangeEvent) => {
           const { value } = e.currentTarget as SlSelect;
           this.value = value as CollectionAccess;
@@ -74,9 +73,5 @@ export class SelectCollectionAccess extends BtrixElement {
         )}
       </sl-select>
     `;
-  }
-
-  private stopProp(e: Event) {
-    e.stopPropagation();
   }
 }
