@@ -844,6 +844,73 @@ def test_list_public_collections_no_colls(non_default_org_id, admin_auth_headers
     assert data["collections"] == []
 
 
+def test_set_collection_home_url(
+    crawler_auth_headers, default_org_id, crawler_crawl_id
+):
+    # Get a page id from crawler_crawl_id
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] >= 1
+
+    page = data["items"][0]
+    assert page
+
+    page_id = page["id"]
+    assert page_id
+
+    page_url = page["url"]
+    page_ts = page["ts"]
+
+    # Set page as home url
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_public_coll_id}/home-url",
+        headers=crawler_auth_headers,
+        json={"pageId": page_id},
+    )
+    assert r.status_code == 200
+    assert r.json()["updated"]
+
+    # Check that fields were set in collection as expected
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_public_coll_id}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["homeUrl"] == page_url
+    assert data["homeUrlTs"] == page_ts
+    assert data["homeUrlPageId"] == page_id
+
+
+def test_collection_url_list(crawler_auth_headers, default_org_id):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_public_coll_id}/urls",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data["total"] >= 1
+    urls = data["items"]
+    assert urls
+
+    for url in urls:
+        assert url["url"]
+        assert url["count"] >= 1
+
+        snapshots = url["snapshots"]
+        assert snapshots
+
+        for snapshot in snapshots:
+            assert snapshot["pageId"]
+            assert snapshot["ts"]
+            assert snapshot["status"]
+
+
 def test_delete_collection(crawler_auth_headers, default_org_id, crawler_crawl_id):
     # Delete second collection
     r = requests.delete(
