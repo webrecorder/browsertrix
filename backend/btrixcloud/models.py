@@ -1074,6 +1074,10 @@ class Collection(BaseMongoModel):
 
     access: CollAccessType = CollAccessType.PRIVATE
 
+    homeUrl: Optional[AnyHttpUrl] = None
+    homeUrlTs: Optional[datetime] = None
+    homeUrlPageId: Optional[UUID] = None
+
 
 # ============================================================================
 class CollIn(BaseModel):
@@ -1100,6 +1104,13 @@ class UpdateColl(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
     access: Optional[CollAccessType] = None
+
+
+# ============================================================================
+class UpdateCollHomeUrl(BaseModel):
+    """Update home url for collection"""
+
+    pageId: UUID
 
 
 # ============================================================================
