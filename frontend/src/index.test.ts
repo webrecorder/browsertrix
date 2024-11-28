@@ -30,6 +30,7 @@ describe("browsertrix-app", () => {
     AppStateService.resetAll();
     AuthService.broadcastChannel = new BroadcastChannel(AuthService.storageKey);
     window.sessionStorage.clear();
+    window.localStorage.clear();
     stub(window.history, "pushState");
   });
 
@@ -119,7 +120,7 @@ describe("browsertrix-app", () => {
     expect(el.appState.orgSlug).to.equal("test-org");
   });
 
-  it("sets org slug from path", async () => {
+  it("sets org slug from path if user is in org", async () => {
     const id = self.crypto.randomUUID();
     const mockOrg = {
       id: id,
@@ -127,13 +128,13 @@ describe("browsertrix-app", () => {
       slug: id,
       role: 10,
     };
-    stub(App.prototype, "getLocationPathname").callsFake(() => `/orgs/${id}`);
-    stub(App.prototype, "getUserInfo").callsFake(async () =>
-      Promise.resolve({
+    AppStateService.updateUser(
+      formatAPIUser({
         ...mockAPIUser,
         orgs: [...mockAPIUser.orgs, mockOrg],
       }),
     );
+    stub(App.prototype, "getLocationPathname").callsFake(() => `/orgs/${id}`);
     stub(AuthService.prototype, "startFreshnessCheck").callsFake(() => {});
     stub(AuthService, "initSessionStorage").callsFake(async () =>
       Promise.resolve({

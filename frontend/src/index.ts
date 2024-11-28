@@ -115,7 +115,6 @@ export class App extends BtrixElement {
     if (authState) {
       this.authService.saveLogin(authState);
     }
-    this.syncViewState();
     if (authState && !this.userInfo) {
       void this.fetchAndUpdateUserInfo();
     }
