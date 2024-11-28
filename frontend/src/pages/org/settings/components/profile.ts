@@ -58,16 +58,13 @@ export class OrgSettingsProfile extends BtrixElement {
       ],
       [
         html`
-          <sl-input
+          <btrix-url-input
             class="mb-2"
             name="publicUrl"
             size="small"
             label=${msg("Website")}
             value=${this.org?.publicUrl || ""}
-            minlength="2"
-            placeholder="https://"
-            type="url"
-          ></sl-input>
+          ></btrix-url-input>
         `,
         msg("Link to your organization's (or your personal) website."),
       ],
