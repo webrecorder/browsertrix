@@ -3921,11 +3921,23 @@
         <source>Unlisted and public collections can be embedded into an
             existing webpage.</source>
       </trans-unit>
-      <trans-unit id="s52222cb83efbccc7">
-        <source>Edit Visibility</source>
-      </trans-unit>
       <trans-unit id="s152fb86993502262">
         <source>Updated collection visibility.</source>
+      </trans-unit>
+      <trans-unit id="sd67c9cfba5d100a9">
+        <source>Change Link Visibility</source>
+      </trans-unit>
+      <trans-unit id="sfa31fe37b0f5159e">
+        <source>View Embed Code</source>
+      </trans-unit>
+      <trans-unit id="saca3f4d144d8dc90">
+        <source>View Public Page</source>
+      </trans-unit>
+      <trans-unit id="s4708cb91cd6afef0">
+        <source>This collection can be viewed by anyone with the link.</source>
+      </trans-unit>
+      <trans-unit id="s0921b07ddda1f1b1">
+        <source>Open in New Tab</source>
       </trans-unit>
     </body>
   </file>
