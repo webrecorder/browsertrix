@@ -3908,20 +3908,20 @@
       <trans-unit id="s5e94738a2eeb8943">
         <source>Sign In</source>
       </trans-unit>
+      <trans-unit id="s3e4aa3f8d6f45a57">
+        <source>Write a short description to introduce your organization.</source>
+      </trans-unit>
+      <trans-unit id="s624704a0ec11e0b8">
+        <source>Customize your org's Browsertrix URL. This will also apply to the URL to your org's public profile page, if you've enabled it.</source>
+      </trans-unit>
       <trans-unit id="s53d076eae3c7b55c">
         <source>Allow anyone to see org</source>
       </trans-unit>
       <trans-unit id="s9ab48881bcc2b9cf">
         <source>If enabled, anyone with the link to your org's Browsertrix URL will be able to view the profile page and public collections.</source>
       </trans-unit>
-      <trans-unit id="sd4cac729b4cb5a6a">
-        <source>Write a short description that introduces your organization or your web archive.</source>
-      </trans-unit>
       <trans-unit id="s57a500d2963282bb">
         <source>To customize this URL, update your Org URL in General settings.</source>
-      </trans-unit>
-      <trans-unit id="sa88bba6b28ef1bcf">
-        <source>Customize your org's Browsertrix URL. This is also the URL to your org's public profile page, if you've enabled it.</source>
       </trans-unit>
     </body>
   </file>
