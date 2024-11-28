@@ -608,9 +608,13 @@ class CollectionOps:
                     f"Unable to delete previous collection thumbnail: {coll.thumbnail.filename}"
                 )
 
+        coll.thumbnail = thumbnail_file
+
+        # Update entire document to avoid bson.errors.InvalidDocument error
+        # with thumbnail
         await self.collections.find_one_and_update(
             {"_id": coll_id, "oid": org.id},
-            {"$set": {"thumbnail": dict(thumbnail_file)}},
+            {"$set": coll.to_dict()},
         )
 
         return {"added": True}
@@ -845,7 +849,7 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops, user_de
         return await colls.set_home_url(coll_id, update, org)
 
     @app.put(
-        "/orgs/{oid}/collections/{coll_id}/upload/thumbnail",
+        "/orgs/{oid}/collections/{coll_id}/stream/thumbnail",
         tags=["collections"],
         response_model=AddedResponse,
     )
