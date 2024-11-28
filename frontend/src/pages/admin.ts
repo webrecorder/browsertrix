@@ -7,6 +7,7 @@ import { customElement, state } from "lit/decorators.js";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { InviteSuccessDetail } from "@/features/accounts/invite-form";
 import type { APIUser } from "@/index";
+import { OrgTab, RouteNamespace } from "@/routes";
 import type { APIPaginatedList } from "@/types/api";
 import { isApiError } from "@/utils/api";
 import { maxLengthValidator } from "@/utils/form";
@@ -68,7 +69,9 @@ export class Admin extends BtrixElement {
       if (this.userInfo.isSuperAdmin) {
         this.initSuperAdmin();
       } else if (this.userInfo.orgs.length) {
-        this.navigate.to(`/orgs/${this.userInfo.orgs[0].slug}/dashboard`);
+        this.navigate.to(
+          `/${RouteNamespace.PrivateOrgs}/${this.userInfo.orgs[0].slug}/${OrgTab.Dashboard}`,
+        );
       } else {
         this.navigate.to(`/account/settings`);
       }

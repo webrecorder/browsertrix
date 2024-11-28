@@ -8,6 +8,7 @@ import { renderInviteMessage } from "./ui/inviteMessage";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { APIUser } from "@/index";
 import type { OrgUpdatedDetail } from "@/pages/invite/ui/org-form";
+import { OrgTab, RouteNamespace } from "@/routes";
 import type { UserOrg, UserOrgInviteInfo } from "@/types/user";
 import { isApiError } from "@/utils/api";
 import { AppStateService } from "@/utils/state";
@@ -127,7 +128,7 @@ export class AcceptInvite extends BtrixElement {
                         ) => {
                           e.stopPropagation();
                           this.navigate.to(
-                            `/orgs/${e.detail.data.slug}/dashboard`,
+                            `/${RouteNamespace.PrivateOrgs}/${e.detail.data.slug}/${OrgTab.Dashboard}`,
                           );
                         }}
                       ></btrix-org-form>
@@ -246,7 +247,9 @@ export class AcceptInvite extends BtrixElement {
           icon: "check2-circle",
         });
 
-        this.navigate.to(`/orgs/${org.slug}/dashboard`);
+        this.navigate.to(
+          `/${RouteNamespace.PrivateOrgs}/${org.slug}/${OrgTab.Dashboard}`,
+        );
       }
     } catch (err) {
       if (isApiError(err) && err.message === "Invalid Invite Code") {

@@ -38,7 +38,7 @@ export function makeAppStateService() {
     // TODO persist here
     auth: Auth | null = null;
 
-    // Store org slug in local storage in order to redirect
+    // Store user's org slug preference in local storage in order to redirect
     // to the most recently visited org on next log in
     // TODO move to `userPreferences`
     @options(persist(window.localStorage))

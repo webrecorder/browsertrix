@@ -7,9 +7,7 @@ import { when } from "lit/directives/when.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { pageTitle } from "@/layouts/pageHeader";
-import { OrgTab } from "@/routes";
 import type { OrgData } from "@/types/org";
-import AuthService from "@/utils/AuthService";
 
 type OrgProfileData = {
   org: {
@@ -32,12 +30,6 @@ export class OrgProfile extends BtrixElement {
   @property({ type: String })
   slug?: string;
 
-  @property({ type: Boolean })
-  preview = false;
-
-  @property({ type: Boolean })
-  inOrg = false;
-
   @state()
   private readonly collections: PublicCollection[] = [];
 
@@ -55,39 +47,7 @@ export class OrgProfile extends BtrixElement {
   });
 
   protected firstUpdated(): void {
-    if (this.preview && !this.authState) {
-      // Try to log in if attempting to preview while logged out
-      this.dispatchEvent(
-        AuthService.createNeedLoginEvent({
-          redirectUrl: `/orgs/${this.slug}/${OrgTab.ProfilePreview}`,
-        }),
-      );
-
-      return;
-    }
-
-    if (this.preview) {
-      // Get org profile to preview, if user info is available.
-      // Otherwise, wait until `willUpdate` event before fetching org
-      if (this.userInfo) {
-        void this.publicOrg.run();
-      }
-    } else if (this.authState) {
-      // Redirect to dashboard if logged in and not previewing
-      this.navigate.to(`/orgs/${this.slug}/dashboard`);
-    } else {
-      void this.publicOrg.run();
-    }
-  }
-
-  protected willUpdate(changedProperties: Map<string, unknown>): void {
-    if (
-      changedProperties.has("appState.userInfo") &&
-      this.preview &&
-      this.userInfo
-    ) {
-      void this.publicOrg.run();
-    }
+    void this.publicOrg.run();
   }
 
   render() {
@@ -150,9 +110,7 @@ export class OrgProfile extends BtrixElement {
     return html`
       <btrix-document-title title=${ifDefined(org.name)}></btrix-document-title>
 
-      ${this.preview && this.isPrivatePreview
-        ? this.renderPreviewBanner()
-        : nothing}
+      ${this.isPrivatePreview ? this.renderPreviewBanner() : nothing}
 
       <div
         class="mx-auto box-border flex w-full max-w-screen-2xl flex-1 flex-col p-3 lg:px-10"
@@ -162,7 +120,7 @@ export class OrgProfile extends BtrixElement {
           <div class="flex flex-wrap items-end justify-between gap-2">
             ${pageTitle(org.name)}
             ${when(
-              this.preview && this.appState.isAdmin,
+              this.appState.isAdmin,
               () =>
                 html`<div class="ml-auto flex items-center gap-2">
                   <sl-tooltip content=${msg("Edit org profile")}>
@@ -215,7 +173,7 @@ export class OrgProfile extends BtrixElement {
         <div class="mb-5 mt-7 flex items-center justify-between">
           <h2 class="text-lg font-medium">${msg("Collections")}</h2>
           ${when(
-            this.preview && this.appState.isAdmin,
+            this.appState.isAdmin,
             () =>
               html`<sl-tooltip content=${msg("Update collections settings")}>
                 <sl-icon-button
@@ -323,7 +281,7 @@ export class OrgProfile extends BtrixElement {
       case 200:
         return (await resp.json()) as OrgProfileData;
       case 404: {
-        if (this.preview && this.inOrg) {
+        if (this.authState) {
           // Use authenticated org data to render preview
           const orgProfile = await this.getUserOrg();
 
@@ -342,7 +300,8 @@ export class OrgProfile extends BtrixElement {
 
   private async getUserOrg(): Promise<OrgProfileData | null> {
     try {
-      const userOrg = this.userInfo?.orgs.find((org) => org.slug === this.slug);
+      const userInfo = this.userInfo || (await this.api.fetch("/users/me"));
+      const userOrg = userInfo?.orgs.find((org) => org.slug === this.slug);
 
       if (!userOrg) {
         return null;
