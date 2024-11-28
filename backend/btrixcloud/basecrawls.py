@@ -1,6 +1,5 @@
 """ base crawl type """
 
-import os
 from datetime import timedelta
 from typing import Optional, List, Union, Dict, Any, Type, TYPE_CHECKING, cast, Tuple
 from uuid import UUID
@@ -29,6 +28,7 @@ from .models import (
     UpdatedResponse,
     DeletedResponseQuota,
     CrawlSearchValuesResponse,
+    PRESIGN_DURATION_SECONDS,
 )
 from .pagination import paginated_format, DEFAULT_PAGE_SIZE
 from .utils import dt_now, date_to_str
@@ -46,11 +46,6 @@ if TYPE_CHECKING:
 else:
     CrawlConfigOps = UserManager = OrgOps = CollectionOps = PageOps = object
     StorageOps = EventWebhookOps = BackgroundJobOps = object
-
-# Presign duration must be less than 604800 seconds (one week),
-# so set this one minute short of a week.
-PRESIGN_MINUTES_MAX = 10079
-PRESIGN_MINUTES_DEFAULT = PRESIGN_MINUTES_MAX
 
 
 # ============================================================================
@@ -93,16 +88,8 @@ class BaseCrawlOps:
         self.background_job_ops = background_job_ops
         self.page_ops = cast(PageOps, None)
 
-        presign_duration_minutes = int(
-            os.environ.get("PRESIGN_DURATION_MINUTES") or PRESIGN_MINUTES_DEFAULT
-        )
-
-        self.presign_duration_seconds = (
-            min(presign_duration_minutes, PRESIGN_MINUTES_MAX) * 60
-        )
-
         # renew when <25% of time remaining
-        self.expire_at_duration_seconds = int(self.presign_duration_seconds * 0.75)
+        self.expire_at_duration_seconds = int(PRESIGN_DURATION_SECONDS * 0.75)
 
     def set_page_ops(self, page_ops):
         """set page ops reference"""
@@ -474,7 +461,7 @@ class BaseCrawlOps:
             ):
                 exp = now + delta
                 presigned_url = await self.storage_ops.get_presigned_url(
-                    org, file_, self.presign_duration_seconds
+                    org, file_, PRESIGN_DURATION_SECONDS
                 )
 
                 prefix = "files"

@@ -1,9 +1,6 @@
 """ handle user uploads into browsertrix """
 
 import uuid
-import hashlib
-import os
-import base64
 from urllib.parse import unquote
 from uuid import UUID
 
@@ -13,7 +10,6 @@ from typing import Optional, List, Any
 from fastapi import Depends, UploadFile, File
 from fastapi import HTTPException
 from starlette.requests import Request
-from pathvalidate import sanitize_filename
 
 from .basecrawls import BaseCrawlOps
 from .storages import CHUNK_SIZE
@@ -27,16 +23,14 @@ from .models import (
     Organization,
     PaginatedCrawlOutResponse,
     User,
-    StorageRef,
     UpdatedResponse,
     DeletedResponseQuota,
     AddedResponseIdQuota,
+    FilePreparer,
+    MIN_UPLOAD_PART_SIZE,
 )
 from .pagination import paginated_format, DEFAULT_PAGE_SIZE
 from .utils import dt_now
-
-
-MIN_UPLOAD_PART_SIZE = 10000000
 
 
 # ============================================================================
@@ -222,39 +216,6 @@ class UploadOps(BaseCrawlOps):
             raise HTTPException(status_code=404, detail="uploaded_crawl_not_found")
 
         return {"deleted": True, "storageQuotaReached": quota_reached}
-
-
-# ============================================================================
-class FilePreparer:
-    """wrapper to compute digest / name for streaming upload"""
-
-    def __init__(self, prefix, filename):
-        self.upload_size = 0
-        self.upload_hasher = hashlib.sha256()
-        self.upload_name = prefix + self.prepare_filename(filename)
-
-    def add_chunk(self, chunk):
-        """add chunk for file"""
-        self.upload_size += len(chunk)
-        self.upload_hasher.update(chunk)
-
-    def get_crawl_file(self, storage: StorageRef):
-        """get crawl file"""
-        return CrawlFile(
-            filename=self.upload_name,
-            hash=self.upload_hasher.hexdigest(),
-            size=self.upload_size,
-            storage=storage,
-        )
-
-    def prepare_filename(self, filename):
-        """prepare filename by sanitizing and adding extra string
-        to avoid duplicates"""
-        name = sanitize_filename(filename.rsplit("/", 1)[-1])
-        parts = name.split(".")
-        randstr = base64.b32encode(os.urandom(5)).lower()
-        parts[0] += "-" + randstr.decode("utf-8")
-        return ".".join(parts)
 
 
 # ============================================================================
