@@ -980,8 +980,6 @@ def test_list_public_colls_home_url_thumbnail():
             assert coll["homeUrl"]
             assert coll["homeUrlTs"]
 
-        if coll["id"] == _second_public_coll_id:
-            assert coll["description"]
             thumbnail = coll["thumbnail"]
             assert thumbnail
 
@@ -993,6 +991,9 @@ def test_list_public_colls_home_url_thumbnail():
 
             for field in non_public_image_fields:
                 assert field not in thumbnail
+
+        if coll["id"] == _second_public_coll_id:
+            assert coll["description"]
 
 
 def test_delete_collection(crawler_auth_headers, default_org_id, crawler_crawl_id):
