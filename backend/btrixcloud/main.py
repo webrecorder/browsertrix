@@ -223,7 +223,9 @@ def main() -> None:
         profiles,
     )
 
-    coll_ops = init_collections_api(app, mdb, org_ops, storage_ops, event_webhook_ops)
+    coll_ops = init_collections_api(
+        app, mdb, org_ops, storage_ops, event_webhook_ops, current_active_user
+    )
 
     base_crawl_init = (
         app,

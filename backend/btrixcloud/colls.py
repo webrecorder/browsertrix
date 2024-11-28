@@ -4,12 +4,14 @@ Collections API
 
 from collections import Counter
 from uuid import UUID, uuid4
-from typing import Optional, List, TYPE_CHECKING, cast, Dict, Tuple
+from typing import Optional, List, TYPE_CHECKING, cast, Dict, Tuple, Any
+import os
 
 import asyncio
 import pymongo
 from fastapi import Depends, HTTPException, Response
 from fastapi.responses import StreamingResponse
+from starlette.requests import Request
 
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .models import (
@@ -29,6 +31,7 @@ from .models import (
     EmptyResponse,
     UpdatedResponse,
     SuccessResponse,
+    AddedResponse,
     CollectionSearchValuesResponse,
     OrgPublicCollections,
     PublicOrgDetails,
@@ -37,6 +40,10 @@ from .models import (
     PageIdTimestamp,
     PaginatedPageUrlCountResponse,
     UpdateCollHomeUrl,
+    User,
+    ImageFile,
+    ImageFilePreparer,
+    MIN_UPLOAD_PART_SIZE,
 )
 from .utils import dt_now
 
@@ -170,7 +177,7 @@ class CollectionOps:
             )
         )
 
-        return await self.get_collection(coll_id, org)
+        return await self.get_collection_out(coll_id, org)
 
     async def remove_crawls_from_collection(
         self, coll_id: UUID, crawl_ids: List[str], org: Organization
@@ -194,12 +201,12 @@ class CollectionOps:
             )
         )
 
-        return await self.get_collection(coll_id, org)
+        return await self.get_collection_out(coll_id, org)
 
-    async def get_collection(
-        self, coll_id: UUID, org: Organization, resources=False, public_only=False
-    ) -> CollOut:
-        """Get collection by id"""
+    async def get_collection_raw(
+        self, coll_id: UUID, public_only: bool = False
+    ) -> Dict[str, Any]:
+        """Get collection by id as dict from database"""
         query: dict[str, object] = {"_id": coll_id}
         if public_only:
             query["access"] = {"$in": ["public", "unlisted"]}
@@ -208,10 +215,31 @@ class CollectionOps:
         if not result:
             raise HTTPException(status_code=404, detail="collection_not_found")
 
+        return result
+
+    async def get_collection(
+        self, coll_id: UUID, public_only: bool = False
+    ) -> Collection:
+        """Get collection by id"""
+        result = await self.get_collection_raw(coll_id, public_only)
+        return Collection.from_dict(result)
+
+    async def get_collection_out(
+        self, coll_id: UUID, org: Organization, resources=False, public_only=False
+    ) -> CollOut:
+        """Get CollOut by id"""
+        result = await self.get_collection_raw(coll_id, public_only)
+
         if resources:
-            result["resources"] = await self.get_collection_crawl_resources(
-                coll_id, org
+            result["resources"] = await self.get_collection_crawl_resources(coll_id)
+
+        thumbnail = result.get("thumbnail")
+        if thumbnail:
+            image_file = ImageFile(**thumbnail)
+            result["thumbnail"] = await image_file.get_image_file_out(
+                org, self.storage_ops
             )
+
         return CollOut.from_dict(result)
 
     async def list_collections(
@@ -283,11 +311,10 @@ class CollectionOps:
 
         return collections, total
 
-    async def get_collection_crawl_resources(self, coll_id: UUID, org: Organization):
+    async def get_collection_crawl_resources(self, coll_id: UUID):
         """Return pre-signed resources for all collection crawl files."""
-        coll = await self.get_collection(coll_id, org)
-        if not coll:
-            raise HTTPException(status_code=404, detail="collection_not_found")
+        # Ensure collection exists
+        _ = await self.get_collection_raw(coll_id)
 
         all_files = []
 
@@ -349,7 +376,7 @@ class CollectionOps:
 
     async def download_collection(self, coll_id: UUID, org: Organization):
         """Download all WACZs in collection as streaming nested WACZ"""
-        coll = await self.get_collection(coll_id, org, resources=True)
+        coll = await self.get_collection_out(coll_id, org, resources=True)
 
         metadata = {
             "type": "collection",
@@ -534,10 +561,64 @@ class CollectionOps:
 
         return {"updated": True}
 
+    async def upload_thumbnail_stream(
+        self, stream, filename: str, coll_id: UUID, org: Organization, user: User
+    ) -> Dict[str, bool]:
+        """Upload file as stream to use as collection thumbnail"""
+        coll = await self.get_collection(coll_id)
+
+        _, extension = os.path.splitext(filename)
+
+        image_filename = f"thumbnail-{str(coll_id)}{extension}"
+
+        prefix = org.storage.get_storage_extra_path(str(org.id)) + "images/"
+
+        file_prep = ImageFilePreparer(
+            prefix,
+            image_filename,
+            original_filename=filename,
+            user=user,
+            created=dt_now(),
+        )
+
+        async def stream_iter():
+            """iterate over each chunk and compute and digest + total size"""
+            async for chunk in stream:
+                file_prep.add_chunk(chunk)
+                yield chunk
+
+        print("Collection Thumbnail Stream Upload Start", flush=True)
+
+        if not await self.storage_ops.do_upload_multipart(
+            org,
+            file_prep.upload_name,
+            stream_iter(),
+            MIN_UPLOAD_PART_SIZE,
+        ):
+            print("Collection Thumbnail Stream Upload Failed", flush=True)
+            raise HTTPException(status_code=400, detail="upload_failed")
+
+        print("Collection Thumbnail Stream Upload Complete", flush=True)
+
+        thumbnail_file = file_prep.get_image_file(org.storage)
+
+        if coll.thumbnail:
+            if not await self.storage_ops.delete_crawl_file_object(org, coll.thumbnail):
+                print(
+                    f"Unable to delete previous collection thumbnail: {coll.thumbnail.filename}"
+                )
+
+        await self.collections.find_one_and_update(
+            {"_id": coll_id, "oid": org.id},
+            {"$set": {"thumbnail": dict(thumbnail_file)}},
+        )
+
+        return {"added": True}
+
 
 # ============================================================================
 # pylint: disable=too-many-locals
-def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops):
+def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops, user_dep):
     """init collections api"""
     # pylint: disable=invalid-name, unused-argument, too-many-arguments
 
@@ -595,7 +676,7 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops):
             all_collections, _ = await colls.list_collections(org.id, page_size=10_000)
             for collection in all_collections:
                 results[collection.name] = await colls.get_collection_crawl_resources(
-                    collection.id, org
+                    collection.id
                 )
         except Exception as exc:
             # pylint: disable=raise-missing-from
@@ -623,7 +704,7 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops):
     async def get_collection(
         coll_id: UUID, org: Organization = Depends(org_viewer_dep)
     ):
-        return await colls.get_collection(coll_id, org)
+        return await colls.get_collection_out(coll_id, org)
 
     @app.get(
         "/orgs/{oid}/collections/{coll_id}/replay.json",
@@ -633,7 +714,7 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops):
     async def get_collection_replay(
         coll_id: UUID, org: Organization = Depends(org_viewer_dep)
     ):
-        return await colls.get_collection(coll_id, org, resources=True)
+        return await colls.get_collection_out(coll_id, org, resources=True)
 
     @app.get(
         "/orgs/{oid}/collections/{coll_id}/public/replay.json",
@@ -645,7 +726,7 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops):
         coll_id: UUID,
         org: Organization = Depends(org_public),
     ):
-        coll = await colls.get_collection(
+        coll = await colls.get_collection_out(
             coll_id, org, resources=True, public_only=True
         )
         response.headers["Access-Control-Allow-Origin"] = "*"
@@ -762,5 +843,21 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops):
         org: Organization = Depends(org_crawl_dep),
     ):
         return await colls.set_home_url(coll_id, update, org)
+
+    @app.put(
+        "/orgs/{oid}/collections/{coll_id}/upload/thumbnail",
+        tags=["collections"],
+        response_model=AddedResponse,
+    )
+    async def upload_stream(
+        request: Request,
+        filename: str,
+        coll_id: UUID,
+        org: Organization = Depends(org_crawl_dep),
+        user: User = Depends(user_dep),
+    ):
+        return await colls.upload_thumbnail_stream(
+            request.stream(), filename, coll_id, org, user
+        )
 
     return colls
