@@ -4,7 +4,7 @@ Collections API
 
 from collections import Counter
 from uuid import UUID, uuid4
-from typing import Optional, List, TYPE_CHECKING, cast, Dict, Tuple, Any
+from typing import Optional, List, TYPE_CHECKING, cast, Dict, Tuple, Any, Union
 import os
 
 import asyncio
@@ -44,6 +44,7 @@ from .models import (
     ImageFile,
     ImageFilePreparer,
     MIN_UPLOAD_PART_SIZE,
+    PublicCollOut,
 )
 from .utils import dt_now
 
@@ -244,7 +245,8 @@ class CollectionOps:
 
     async def list_collections(
         self,
-        oid: UUID,
+        org: Organization,
+        public_colls_out: bool = False,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         sort_by: Optional[str] = None,
@@ -259,16 +261,17 @@ class CollectionOps:
         page = page - 1
         skip = page * page_size
 
-        match_query: dict[str, object] = {"oid": oid}
+        match_query: dict[str, object] = {"oid": org.id}
 
         if name:
             match_query["name"] = name
-
         elif name_prefix:
             regex_pattern = f"^{name_prefix}"
             match_query["name"] = {"$regex": regex_pattern, "$options": "i"}
 
-        if access:
+        if public_colls_out:
+            match_query["access"] = CollAccessType.PUBLIC
+        elif access:
             match_query["access"] = access
 
         aggregate = [{"$match": match_query}]
@@ -307,7 +310,22 @@ class CollectionOps:
         except (IndexError, ValueError):
             total = 0
 
-        collections = [CollOut.from_dict(res) for res in items]
+        collections: List[Union[CollOut, PublicCollOut]] = []
+
+        for res in items:
+            if public_colls_out:
+                res["resources"] = await self.get_collection_crawl_resources(res["_id"])
+
+                thumbnail = res.get("thumbnail")
+                if thumbnail:
+                    image_file = ImageFile(**thumbnail)
+                    res["thumbnail"] = await image_file.get_public_image_file_out(
+                        org, self.storage_ops
+                    )
+
+                collections.append(PublicCollOut.from_dict(res))
+            else:
+                collections.append(CollOut.from_dict(res))
 
         return collections, total
 
@@ -446,7 +464,14 @@ class CollectionOps:
             )
             await self.update_crawl_collections(crawl_id)
 
-    async def get_org_public_collections(self, org_slug: str):
+    async def get_org_public_collections(
+        self,
+        org_slug: str,
+        page_size: int = DEFAULT_PAGE_SIZE,
+        page: int = 1,
+        sort_by: Optional[str] = None,
+        sort_direction: int = 1,
+    ):
         """List public collections for org"""
         try:
             org = await self.orgs.get_org_by_slug(org_slug)
@@ -459,7 +484,12 @@ class CollectionOps:
             raise HTTPException(status_code=404, detail="public_profile_not_found")
 
         collections, _ = await self.list_collections(
-            org.id, access=CollAccessType.PUBLIC
+            org,
+            page_size=page_size,
+            page=page,
+            sort_by=sort_by,
+            sort_direction=sort_direction,
+            public_colls_out=True,
         )
 
         public_org_details = PublicOrgDetails(
@@ -658,7 +688,7 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops, user_de
         access: Optional[str] = None,
     ):
         collections, total = await colls.list_collections(
-            org.id,
+            org,
             page_size=pageSize,
             page=page,
             sort_by=sortBy,
@@ -677,7 +707,7 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops, user_de
     async def get_collection_all(org: Organization = Depends(org_viewer_dep)):
         results = {}
         try:
-            all_collections, _ = await colls.list_collections(org.id, page_size=10_000)
+            all_collections, _ = await colls.list_collections(org, page_size=10_000)
             for collection in all_collections:
                 results[collection.name] = await colls.get_collection_crawl_resources(
                     collection.id
@@ -811,8 +841,20 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops, user_de
         tags=["collections"],
         response_model=OrgPublicCollections,
     )
-    async def get_org_public_collections(org_slug: str):
-        return await colls.get_org_public_collections(org_slug)
+    async def get_org_public_collections(
+        org_slug: str,
+        pageSize: int = DEFAULT_PAGE_SIZE,
+        page: int = 1,
+        sortBy: Optional[str] = None,
+        sortDirection: int = 1,
+    ):
+        return await colls.get_org_public_collections(
+            org_slug,
+            page_size=pageSize,
+            page=page,
+            sort_by=sortBy,
+            sort_direction=sortDirection,
+        )
 
     @app.get(
         "/orgs/{oid}/collections/{coll_id}/urls",
