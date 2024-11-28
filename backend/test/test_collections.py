@@ -911,6 +911,35 @@ def test_collection_url_list(crawler_auth_headers, default_org_id):
             assert snapshot["status"]
 
 
+def test_upload_collection_thumbnail(crawler_auth_headers, default_org_id):
+    with open(os.path.join(curr_dir, "data", "thumbnail.jpg"), "rb") as fh:
+        r = requests.put(
+            f"{API_PREFIX}/orgs/{default_org_id}/collections/{_public_coll_id}/stream/thumbnail?filename=thumbnail.jpg",
+            headers=crawler_auth_headers,
+            data=read_in_chunks(fh),
+        )
+        assert r.status_code == 200
+        assert r.json()["added"]
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_public_coll_id}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    thumbnail = r.json()["thumbnail"]
+
+    assert thumbnail["name"]
+    assert thumbnail["path"]
+    assert thumbnail["hash"]
+    assert thumbnail["size"] > 0
+
+    assert thumbnail["originalFilename"] == "thumbnail.jpg"
+    assert thumbnail["mime"] == "image/jpeg"
+    assert thumbnail["userid"]
+    assert thumbnail["userName"]
+    assert thumbnail["created"]
+
+
 def test_delete_collection(crawler_auth_headers, default_org_id, crawler_crawl_id):
     # Delete second collection
     r = requests.delete(
