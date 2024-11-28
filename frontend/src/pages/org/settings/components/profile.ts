@@ -53,7 +53,7 @@ export class OrgSettingsProfile extends BtrixElement {
           ></sl-textarea>
         `,
         msg(
-          "Write a short description that introduces your organization or your web archive.",
+          "Write a short description to introduce your organization.",
         ),
       ],
       [
