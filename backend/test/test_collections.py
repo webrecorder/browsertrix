@@ -16,8 +16,10 @@ DESCRIPTION = "Test description"
 _coll_id = None
 _second_coll_id = None
 _public_coll_id = None
+_second_public_coll_id = None
 upload_id = None
 modified = None
+default_org_slug = None
 
 curr_dir = os.path.dirname(os.path.realpath(__file__))
 
@@ -742,11 +744,14 @@ def test_list_public_collections(
         json={
             "crawlIds": [crawler_crawl_id],
             "name": "Second public collection",
+            "description": "Lorem ipsum",
             "access": "public",
         },
     )
     assert r.status_code == 200
-    second_public_coll_id = r.json()["id"]
+
+    global _second_public_coll_id
+    _second_public_coll_id = r.json()["id"]
 
     # Get default org slug
     r = requests.get(
@@ -755,7 +760,10 @@ def test_list_public_collections(
     )
     assert r.status_code == 200
     data = r.json()
-    org_slug = data["slug"]
+
+    global default_org_slug
+    default_org_slug = data["slug"]
+
     org_name = data["name"]
 
     # Verify that public profile isn't enabled
@@ -764,7 +772,7 @@ def test_list_public_collections(
     assert data["publicUrl"] == ""
 
     # Try listing public collections without org public profile enabled
-    r = requests.get(f"{API_PREFIX}/public-collections/{org_slug}")
+    r = requests.get(f"{API_PREFIX}/public-collections/{default_org_slug}")
     assert r.status_code == 404
     assert r.json()["detail"] == "public_profile_not_found"
 
@@ -795,7 +803,7 @@ def test_list_public_collections(
     assert data["publicUrl"] == public_url
 
     # List public collections with no auth (no public profile)
-    r = requests.get(f"{API_PREFIX}/public-collections/{org_slug}")
+    r = requests.get(f"{API_PREFIX}/public-collections/{default_org_slug}")
     assert r.status_code == 200
     data = r.json()
 
@@ -807,8 +815,8 @@ def test_list_public_collections(
     collections = data["collections"]
     assert len(collections) == 2
     for collection in collections:
-        assert collection["id"] in (_public_coll_id, second_public_coll_id)
-        assert collection["access"] == "public"
+        assert collection["id"] in (_public_coll_id, _second_public_coll_id)
+        assert collection["name"]
 
     # Test non-existing slug - it should return a 404 but not reveal
     # whether or not an org exists with that slug
@@ -938,6 +946,53 @@ def test_upload_collection_thumbnail(crawler_auth_headers, default_org_id):
     assert thumbnail["userid"]
     assert thumbnail["userName"]
     assert thumbnail["created"]
+
+
+def test_list_public_colls_home_url_thumbnail():
+    # Check we get expected data for each public collection
+    # and nothing we don't expect
+    non_public_fields = (
+        "oid",
+        "modified",
+        "crawlCount",
+        "pageCount",
+        "totalSize",
+        "tags",
+        "access",
+        "homeUrlPageId",
+    )
+    non_public_image_fields = ("originalFilename", "userid", "userName", "created")
+
+    r = requests.get(f"{API_PREFIX}/public-collections/{default_org_slug}")
+    assert r.status_code == 200
+    collections = r.json()["collections"]
+    assert len(collections) == 2
+
+    for coll in collections:
+        assert coll["id"] in (_public_coll_id, _second_public_coll_id)
+        assert coll["name"]
+        assert coll["resources"]
+
+        for field in non_public_fields:
+            assert field not in coll
+
+        if coll["id"] == _public_coll_id:
+            assert coll["homeUrl"]
+            assert coll["homeUrlTs"]
+
+        if coll["id"] == _second_public_coll_id:
+            assert coll["description"]
+            thumbnail = coll["thumbnail"]
+            assert thumbnail
+
+            assert thumbnail["name"]
+            assert thumbnail["path"]
+            assert thumbnail["hash"]
+            assert thumbnail["size"]
+            assert thumbnail["mime"]
+
+            for field in non_public_image_fields:
+                assert field not in thumbnail
 
 
 def test_delete_collection(crawler_auth_headers, default_org_id, crawler_crawl_id):
