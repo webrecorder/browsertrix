@@ -12,6 +12,7 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
 import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
+import { RouteNamespace } from "@/routes";
 import type {
   APIPaginatedList,
   APIPaginationQuery,
@@ -50,7 +51,10 @@ export class CollectionDetail extends BtrixElement {
   private isDescriptionExpanded = false;
 
   @state()
-  private showShareInfo = false;
+  private showShareSettings = false;
+
+  @state()
+  private showEmbedCode = false;
 
   @query(".description")
   private readonly description?: HTMLElement | null;
@@ -163,31 +167,63 @@ export class CollectionDetail extends BtrixElement {
             html`<sl-skeleton class="w-96"></sl-skeleton>`}
           </h1>
         </div>
-        <sl-button-group>
-          <sl-button
-            variant=${this.collection?.crawlCount ? "primary" : "default"}
-            size="small"
-            ?disabled=${!this.collection}
-            @click=${() => (this.showShareInfo = true)}
-          >
-            <sl-icon name="box-arrow-up" slot="prefix"></sl-icon>
-            ${msg("Share")}
-          </sl-button>
-          <sl-dropdown distance="4" placement="bottom-end">
-            <sl-button
-              slot="trigger"
-              size="small"
-              ?disabled=${!this.collection}
-              variant=${this.collection?.crawlCount ? "primary" : "default"}
-              caret
-            >
-            </sl-button>
-            <sl-menu>
-              <sl-menu-item> ${msg("Copy Link")} </sl-menu-item>
-              <sl-menu-item> ${msg("Copy Embed Code")} </sl-menu-item>
-            </sl-menu>
-          </sl-dropdown>
-        </sl-button-group>
+        ${when(this.collection, (collection) =>
+          collection.access === CollectionAccess.Private
+            ? html`
+                <sl-button
+                  variant=${collection.crawlCount ? "primary" : "default"}
+                  size="small"
+                  @click=${() => (this.showShareSettings = true)}
+                >
+                  <sl-icon name="box-arrow-up" slot="prefix"></sl-icon>
+                  ${msg("Share")}
+                </sl-button>
+              `
+            : html`
+                <sl-button-group>
+                  <btrix-copy-button
+                    value=${`/${RouteNamespace.PublicOrgs}/${this.orgSlug}/collections/${this.collectionId}`}
+                    icon="link-45deg"
+                    variant=${collection.crawlCount ? "primary" : "default"}
+                    size="small"
+                  >
+                    ${msg("Copy Link")}
+                  </btrix-copy-button>
+                  <sl-dropdown distance="4" placement="bottom-end">
+                    <sl-button
+                      slot="trigger"
+                      size="small"
+                      variant=${collection.crawlCount ? "primary" : "default"}
+                      caret
+                    >
+                    </sl-button>
+                    <sl-menu>
+                      <sl-menu-item
+                        @click=${() => {
+                          this.showShareSettings = true;
+                        }}
+                      >
+                        <sl-icon slot="prefix" name="eye-fill"></sl-icon>
+                        ${msg("Change Link Visibility")}
+                      </sl-menu-item>
+                      <sl-menu-item
+                        @click=${() => {
+                          this.showEmbedCode = true;
+                          this.showShareSettings = true;
+                        }}
+                      >
+                        <sl-icon slot="prefix" name="code-slash"></sl-icon>
+                        ${msg("View Embed Code")}
+                      </sl-menu-item>
+                      <sl-menu-item>
+                        <sl-icon slot="prefix" name="globe2"></sl-icon>
+                        ${msg("View Public Page")}
+                      </sl-menu-item>
+                    </sl-menu>
+                  </sl-dropdown>
+                </sl-button-group>
+              `,
+        )}
         ${when(this.isCrawler, this.renderActions)}
       </header>
       <div class="mb-3 rounded-lg border px-4 py-2">
@@ -293,7 +329,7 @@ export class CollectionDetail extends BtrixElement {
     }
   }
 
-  private getPublicReplayURL() {
+  private getPublicReplaySrc() {
     return new URL(
       `/api/orgs/${this.orgId}/collections/${this.collectionId}/public/replay.json`,
       window.location.href,
@@ -301,11 +337,16 @@ export class CollectionDetail extends BtrixElement {
   }
 
   private renderShareDialog() {
+    const shareLink = `${window.location.protocol}//${window.location.hostname}${window.location.port ? `:${window.location.port}` : ""}/${RouteNamespace.PublicOrgs}/${this.orgSlug}/collections/${this.collectionId}`;
+
     return html`
       <btrix-dialog
         .label=${msg(str`Share “${this.collection?.name}”`)}
-        .open=${this.showShareInfo}
-        @sl-hide=${() => (this.showShareInfo = false)}
+        .open=${this.showShareSettings}
+        @sl-hide=${() => {
+          this.showShareSettings = false;
+          this.showEmbedCode = false;
+        }}
         style="--width: 32rem;"
       >
         <div class="mb-5">
@@ -323,20 +364,50 @@ export class CollectionDetail extends BtrixElement {
             `,
           )}
         </div>
-        ${this.renderShareInfo()}
+        <section class="mb-5 mt-3">
+          <p class="mb-3">
+            ${msg("This collection can be viewed by anyone with the link.")}
+          </p>
+
+          <btrix-copy-field
+            class="mb-2"
+            .value="${shareLink}"
+            hideContentFromScreenReaders
+            hoist
+          >
+            <sl-tooltip slot="prefix" content=${msg("Open in New Tab")} hoist>
+              <sl-icon-button
+                href=${shareLink}
+                name="box-arrow-up-right"
+                target="_blank"
+                class="m-px"
+              >
+              </sl-icon-button>
+            </sl-tooltip>
+          </btrix-copy-field>
+        </section>
+        ${this.renderEmbedCode()}
+        <div slot="footer" class="flex justify-end gap-2">
+          <sl-button
+            size="small"
+            @click=${() => (this.showShareSettings = false)}
+          >
+            ${msg("Done")}
+          </sl-button>
+        </div>
       </btrix-dialog>
     `;
   }
 
-  private readonly renderShareInfo = () => {
-    const replaySrc = this.getPublicReplayURL();
-    const encodedReplaySrc = encodeURIComponent(replaySrc);
-    const publicReplayUrl = `https://replayweb.page?source=${encodedReplaySrc}`;
+  private readonly renderEmbedCode = () => {
+    const replaySrc = this.getPublicReplaySrc();
+    // const encodedReplaySrc = encodeURIComponent(replaySrc);
+    // const publicReplayUrl = `https://replayweb.page?source=${encodedReplaySrc}`;
     const embedCode = `<replay-web-page source="${replaySrc}"></replay-web-page>`;
     const importCode = `importScripts("https://replayweb.page/sw.js");`;
 
     return html`
-      <btrix-details>
+      <btrix-details ?open=${this.showEmbedCode}>
         <span slot="title">${msg("Embed Code")}</span>
         <p class="my-3">
           ${msg(
@@ -389,22 +460,6 @@ export class CollectionDetail extends BtrixElement {
           )}
         </p>
       </btrix-details>
-
-      <div slot="footer" class="flex justify-end gap-2">
-        <sl-button size="small" @click=${() => (this.showShareInfo = false)}>
-          ${msg("Done")}
-        </sl-button>
-        <btrix-copy-button
-          value=${publicReplayUrl}
-          icon="link-45deg"
-          size="small"
-          variant=${this.collection?.access === CollectionAccess.Private
-            ? "neutral"
-            : "success"}
-        >
-          ${msg("Copy Link")}
-        </btrix-copy-button>
-      </div>
     `;
   };
 
@@ -458,10 +513,6 @@ export class CollectionDetail extends BtrixElement {
           <sl-menu-item @click=${() => (this.openDialogName = "editMetadata")}>
             <sl-icon name="pencil" slot="prefix"></sl-icon>
             ${msg("Edit Metadata")}
-          </sl-menu-item>
-          <sl-menu-item @click=${() => (this.showShareInfo = true)}>
-            <sl-icon name="eye-fill" slot="prefix"></sl-icon>
-            ${msg("Edit Visibility")}
           </sl-menu-item>
           <sl-menu-item @click=${() => (this.openDialogName = "editItems")}>
             <sl-icon name="ui-checks" slot="prefix"></sl-icon>
