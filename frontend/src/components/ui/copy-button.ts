@@ -44,6 +44,9 @@ export class CopyButton extends TailwindElement {
   @property({ type: String })
   variant?: SlButton["variant"];
 
+  @property({ type: Boolean })
+  loading = false;
+
   @state()
   private isCopied = false;
 
@@ -75,6 +78,7 @@ export class CopyButton extends TailwindElement {
           variant=${ifDefined(this.variant)}
           @click=${this.onClick}
           ?disabled=${!this.value && !this.getValue}
+          ?loading=${this.loading}
         >
           <sl-icon
             slot="prefix"

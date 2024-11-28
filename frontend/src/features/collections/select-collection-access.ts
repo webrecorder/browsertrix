@@ -15,13 +15,12 @@ export class SelectCollectionAccess extends BtrixElement {
   > = {
     [CollectionAccess.Private]: {
       label: msg("Private"),
-      icon: "eye-slash-fill",
+      icon: "lock-fill",
       detail: msg("Only org members can view"),
     },
     [CollectionAccess.Unlisted]: {
       label: msg("Unlisted"),
-      // icon: "link-45deg",
-      icon: "people-fill",
+      icon: "link-45deg",
       detail: msg("Only people with the link can view"),
     },
 
