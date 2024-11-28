@@ -1123,15 +1123,15 @@ class ImageFileOut(BaseModel):
 
 
 # ============================================================================
-# class PublicImageFileOut(BaseModel):
-#     """public output for user-upload imaged file (conformance to Data Resource Spec)"""
+class PublicImageFileOut(BaseModel):
+    """public output for user-upload imaged file (conformance to Data Resource Spec)"""
 
-#     name: str
-#     path: str
-#     hash: str
-#     size: int
+    name: str
+    path: str
+    hash: str
+    size: int
 
-#     mime: str
+    mime: str
 
 
 # ============================================================================
@@ -1162,19 +1162,19 @@ class ImageFile(BaseFile):
             created=self.created,
         )
 
-    # async def get_public_image_file_out(self, org, storage_ops) -> PublicImageFileOut:
-    #     """Get PublicImageFileOut with new presigned url"""
-    #     presigned_url = await storage_ops.get_presigned_url(
-    #         org, self, PRESIGN_DURATION_SECONDS
-    #     )
+    async def get_public_image_file_out(self, org, storage_ops) -> PublicImageFileOut:
+        """Get PublicImageFileOut with new presigned url"""
+        presigned_url = await storage_ops.get_presigned_url(
+            org, self, PRESIGN_DURATION_SECONDS
+        )
 
-    #     return PublicImageFileOut(
-    #         name=self.filename,
-    #         path=presigned_url or "",
-    #         hash=self.hash,
-    #         size=self.size,
-    #         mime=self.mime,
-    #     )
+        return PublicImageFileOut(
+            name=self.filename,
+            path=presigned_url or "",
+            hash=self.hash,
+            size=self.size,
+            mime=self.mime,
+        )
 
 
 # ============================================================================
@@ -1294,6 +1294,24 @@ class CollOut(BaseMongoModel):
 
 
 # ============================================================================
+class PublicCollOut(BaseMongoModel):
+    """Collection output model with annotations."""
+
+    name: str
+    description: Optional[str] = None
+    # caption: Optional[str] = None
+
+    # earliestDate: Optional[datetime] = None
+    # latestDate: Optional[datetime] = None
+
+    homeUrl: Optional[AnyHttpUrl] = None
+    homeUrlTs: Optional[datetime] = None
+
+    resources: List[CrawlFileOut] = []
+    thumbnail: Optional[PublicImageFileOut] = None
+
+
+# ============================================================================
 class UpdateColl(BaseModel):
     """Update collection"""
 
@@ -1366,7 +1384,7 @@ class OrgPublicCollections(BaseModel):
 
     org: PublicOrgDetails
 
-    collections: List[CollOut] = []
+    collections: List[PublicCollOut] = []
 
 
 # ============================================================================
