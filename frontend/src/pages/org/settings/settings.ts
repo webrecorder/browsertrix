@@ -13,6 +13,7 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import type { APIUser } from "@/index";
 import { columns } from "@/layouts/columns";
 import { pageHeader } from "@/layouts/pageHeader";
+import { RouteNamespace } from "@/routes";
 import type { APIPaginatedList } from "@/types/api";
 import { isApiError } from "@/utils/api";
 import { formValidator, maxLengthValidator } from "@/utils/form";
@@ -271,12 +272,12 @@ export class OrgSettings extends BtrixElement {
                   <div slot="prefix" class="font-light text-neutral-400">
                     ${window.location.hostname}${window.location.port
                       ? `:${window.location.port}`
-                      : ""}/orgs/
+                      : ""}/${RouteNamespace.PrivateOrgs}/
                   </div>
                 </sl-input>
               `,
               msg(
-                "Customize your org's Browsertrix URL. This is also the URL to your org's public profile page, if you've enabled it.",
+                "Customize your org's Browsertrix URL. This will also apply to the URL to your org's public profile page, if you've enabled it.",
               ),
             ],
           ])}

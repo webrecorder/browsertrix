@@ -14,7 +14,7 @@ export class OrgSettingsProfile extends BtrixElement {
   private readonly validateDescriptionMax = maxLengthValidator(150);
 
   render() {
-    const orgHomeUrl = `${window.location.protocol}//${window.location.hostname}${window.location.port ? `:${window.location.port}` : ""}/orgs/${this.orgSlug}`;
+    const orgBaseUrl = `${window.location.protocol}//${window.location.hostname}${window.location.port ? `:${window.location.port}` : ""}`;
 
     const cols: Cols = [
       [
@@ -76,7 +76,7 @@ export class OrgSettingsProfile extends BtrixElement {
           <div class="mb-2">
             <btrix-copy-field
               label=${msg("Profile Page")}
-              value=${orgHomeUrl}
+              value=${`${orgBaseUrl}/${RouteNamespace.PublicOrgs}/${this.orgSlug}`}
               .monostyle=${false}
             ></btrix-copy-field>
           </div>
