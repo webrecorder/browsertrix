@@ -30,7 +30,7 @@ import {
 } from "@/features/qa/page-list/page-list";
 import { type UpdatePageApprovalDetail } from "@/features/qa/page-qa-approval";
 import type { SelectDetail } from "@/features/qa/qa-run-dropdown";
-import { pageBreadcrumbs } from "@/layouts/pageHeader";
+import { pageBack } from "@/layouts/pageHeader";
 import type {
   APIPaginatedList,
   APIPaginationQuery,
@@ -38,9 +38,13 @@ import type {
 } from "@/types/api";
 import type { ArchivedItem, ArchivedItemPageComment } from "@/types/crawler";
 import type { ArchivedItemQAPage, QARun } from "@/types/qa";
-import { finishedCrawlStates, isActive, renderName } from "@/utils/crawler";
+import {
+  isActive,
+  isSuccessfullyFinished,
+  renderName,
+  type finishedCrawlStates,
+} from "@/utils/crawler";
 import { maxLengthValidator } from "@/utils/form";
-import { formatISODateString, getLocale } from "@/utils/localization";
 import { tw } from "@/utils/tailwind";
 
 const DEFAULT_PAGE_SIZE = 100;
@@ -84,6 +88,9 @@ const tabToPrefix: Record<QATypes.QATab, string> = {
 @customElement("btrix-archived-item-qa")
 export class ArchivedItemQA extends BtrixElement {
   static styles = styles;
+
+  @property({ type: String })
+  workflowId?: string;
 
   @property({ type: String })
   itemId?: string;
@@ -353,40 +360,80 @@ export class ArchivedItemQA extends BtrixElement {
   }
 
   render() {
-    const crawlBaseUrl = `${this.navigate.orgBasePath}/items/crawl/${this.itemId}`;
+    const crawlBaseUrl = `${this.navigate.orgBasePath}/workflows/${this.workflowId}/crawls/${this.itemId}`;
     const searchParams = new URLSearchParams(window.location.search);
+    const itemName = this.item ? renderName(this.item) : nothing;
     const [prevPage, currentPage, nextPage] = this.getPageListSliceByCurrent();
     const currentQARun = this.finishedQARuns?.find(
       ({ id }) => id === this.qaRunId,
     );
-    const disableReview = !currentQARun || isActive(currentQARun.state);
+    const disableReview = !currentQARun || isActive(currentQARun);
 
     return html`
       ${this.renderHidden()}
 
-      <div class="grid--header pb-3 h-8 border-b flex items-center">
-        ${this.renderBreadcrumbs()} ${when(
-          this.finishedQARuns,
-          (qaRuns) => html`
-            <btrix-qa-run-dropdown
-              slot="suffix"
-              .items=${qaRuns}
-              selectedId=${this.qaRunId || ""}
-              @btrix-select=${(e: CustomEvent<SelectDetail>) => {
-                const params = new URLSearchParams(searchParams);
-                params.set("qaRunId", e.detail.item.id);
-                this.navigate.to(
-                  `${window.location.pathname}?${params.toString()}`,
-                );
-              }}
-            ></btrix-qa-run-dropdown>
-          `,
-        )}
+      <div class="flex items-center">
+        ${this.renderBackLink()}
       </div>
 
       <article class="qa-grid min-h-screen grid gap-x-6 gap-y-0 lg:snap-start">
+        <header
+          class="grid--header flex flex-wrap items-center justify-between gap-1 border-b py-2"
+        >
+          <div class="flex items-center gap-2 overflow-hidden">
+            <h1
+              class="flex gap-1 flex-1 flex-shrink-0 min-w-32 truncate text-base font-semibold leading-tight"
+            >
+              ${msg("Review")} ${itemName}
+            </h1>
+            ${when(
+              this.finishedQARuns,
+              (qaRuns) => html`
+                <sl-tooltip content=${msg("Select Analysis Run")}>
+                  <btrix-qa-run-dropdown
+                    .items=${qaRuns}
+                    selectedId=${this.qaRunId || ""}
+                    @btrix-select=${(e: CustomEvent<SelectDetail>) => {
+                      const params = new URLSearchParams(searchParams);
+                      params.set("qaRunId", e.detail.item.id);
+                      this.navigate.to(
+                        `${window.location.pathname}?${params.toString()}`,
+                      );
+                    }}
+                  ></btrix-qa-run-dropdown>
+                </sl-tooltip>
+              `,
+            )}
+          </div>
+          <div class="ml-auto flex">
+            <sl-button
+              size="small"
+              variant="text"
+              href=${`${crawlBaseUrl}#qa`}
+              @click=${this.navigate.link}
+              >${msg("Exit Review")}</sl-button
+            >
+            <sl-tooltip
+              content=${msg(
+                "Reviews are temporarily disabled during analysis runs.",
+              )}
+              ?disabled=${!disableReview}
+            >
+              <sl-button
+                variant="success"
+                size="small"
+                @click=${() => void this.reviewDialog?.show()}
+                ?disabled=${disableReview}
+              >
+                <sl-icon slot="prefix" name="patch-check"> </sl-icon>
+                ${msg("Finish Review")}
+              </sl-button>
+            </sl-tooltip>
+          </div>
+        </header>
+
         <div
-          class="grid--pageToolbar flex flex-wrap items-center justify-stretch gap-2 overflow-hidden border-b py-3 @container"
+          class="grid--pageToolbar flex flex-wrap items-center justify-stretch gap-2 overflow-hidden border-b py-2 @container"
         >
           <h3
             class="flex-auto flex-shrink-0 flex-grow basis-32 truncate text-base font-semibold text-neutral-700"
@@ -493,38 +540,11 @@ export class ArchivedItemQA extends BtrixElement {
         <section
           class="grid--pageList grid grid-rows-[auto_1fr] *:min-h-0 *:min-w-0"
         >
-          <div class="flex justify-between items-center py-3">
-            <h3
-              class="text-base font-semibold leading-none text-neutral-800"
-            >
-              ${msg("Pages")}
-            </h3>
-            <div class="ml-auto flex">
-              <sl-button
-                size="small"
-                variant="text"
-                href=${`${crawlBaseUrl}#qa`}
-                @click=${this.navigate.link}
-                >${msg("Exit Review")}</sl-button
-              >
-              <sl-tooltip
-                content=${msg(
-                  "Reviews are temporarily disabled during analysis runs.",
-                )}
-                ?disabled=${!disableReview}
-              >
-                <sl-button
-                  variant="success"
-                  size="small"
-                  @click=${() => void this.reviewDialog?.show()}
-                  ?disabled=${disableReview}
-                >
-                  <sl-icon slot="prefix" name="patch-check"> </sl-icon>
-                  ${msg("Finish Review")}
-                </sl-button>
-              </sl-tooltip>
-            </div>
-          </div>
+          <h2
+            class="my-4 text-base font-semibold leading-none text-neutral-800"
+          >
+            ${msg("Pages")}
+          </h2>
           <btrix-qa-page-list
             class="flex flex-col lg:contain-size"
             .qaRunId=${this.qaRunId}
@@ -585,26 +605,11 @@ export class ArchivedItemQA extends BtrixElement {
     `;
   }
 
-  private renderBreadcrumbs() {
-    const breadcrumbs = [
-      {
-        href: `${this.navigate.orgBasePath}/items`,
-        content: msg("Archived Items"),
-      },
-      {
-        href: `${this.navigate.orgBasePath}/items/crawl/${this.itemId}`,
-        content: this.item ? renderName(this.item) : undefined,
-      },
-      {
-        href: `${this.navigate.orgBasePath}/items/crawl/${this.itemId}#qa`,
-        content: msg("Quality Assurance"),
-      },
-      {
-        content: msg("Review"),
-      },
-    ];
-
-    return pageBreadcrumbs(breadcrumbs);
+  private renderBackLink() {
+    return pageBack({
+      href: `${this.navigate.orgBasePath}/workflows/${this.workflowId}/crawls/${this.itemId}?workflowId=${this.item?.cid}#qa`,
+      content: this.item ? renderName(this.item) : undefined,
+    });
   }
 
   private renderReviewDialog() {
@@ -682,7 +687,9 @@ export class ArchivedItemQA extends BtrixElement {
         </form>
 
         <div slot="footer" class="flex justify-between">
-          <sl-button size="small">${msg("Cancel")}</sl-button>
+          <sl-button size="small" @click=${() => void this.reviewDialog?.hide()}
+            >${msg("Cancel")}</sl-button
+          >
           <sl-button
             variant="primary"
             size="small"
@@ -760,7 +767,7 @@ export class ArchivedItemQA extends BtrixElement {
         (commentCount) => html`
           <btrix-details open>
             <span slot="title">
-              ${msg(str`Comments (${commentCount.toLocaleString()})`)}
+              ${msg(str`Comments (${this.localize.number(commentCount)})`)}
             </span>
             <ul>
               ${this.page?.notes?.map(
@@ -771,11 +778,12 @@ export class ArchivedItemQA extends BtrixElement {
                     >
                       <div class="p-2">
                         ${msg(
-                          str`${comment.userName} commented on ${formatISODateString(
+                          str`${comment.userName} commented on ${this.localize.date(
                             comment.created,
                             {
-                              hour: undefined,
-                              minute: undefined,
+                              year: "numeric",
+                              month: "numeric",
+                              day: "numeric",
                             },
                           )}`,
                         )}
@@ -888,9 +896,8 @@ export class ArchivedItemQA extends BtrixElement {
             this.page,
             (page) => html`
               <sl-format-date
-                lang=${getLocale()}
                 class="font-monostyle text-xs text-neutral-500"
-                date=${`${page.ts}Z`}
+                date=${page.ts}
                 month="2-digit"
                 day="2-digit"
                 year="2-digit"
@@ -1177,9 +1184,9 @@ export class ArchivedItemQA extends BtrixElement {
 
   private async fetchQARuns(): Promise<void> {
     try {
-      this.finishedQARuns = (await this.getQARuns()).filter(({ state }) =>
-        finishedCrawlStates.includes(state),
-      );
+      this.finishedQARuns = (await this.getQARuns()).filter((qaRun) =>
+        isSuccessfullyFinished(qaRun),
+      ) as ArchivedItemQA["finishedQARuns"];
     } catch {
       this.notify.toast({
         message: msg("Sorry, couldn't retrieve analysis runs at this time."),
@@ -1492,7 +1499,7 @@ export class ArchivedItemQA extends BtrixElement {
       void this.reviewDialog?.hide();
 
       this.navigate.to(
-        `${this.navigate.orgBasePath}/items/crawl/${this.itemId}#qa`,
+        `${this.navigate.orgBasePath}/workflows/${this.workflowId}/crawls/${this.itemId}#qa`,
       );
       this.notify.toast({
         message: msg("Saved QA review."),

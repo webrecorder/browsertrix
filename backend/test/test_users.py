@@ -18,12 +18,19 @@ VALID_USER_PW = "validpassw0rd!"
 VALID_USER_PW_RESET = "new!password"
 VALID_USER_PW_RESET_AGAIN = "new!password1"
 
+ADMIN_ROLE = 40
+CRAWLER_ROLE = 20
+
 my_id = None
 valid_user_headers = None
 
 new_user_invite_token = None
 existing_user_invite_token = None
 wrong_token = None
+
+
+new_user_auth_headers = None
+another_user_email = "another-user@example.com"
 
 
 def test_create_super_user(admin_auth_headers):
@@ -50,7 +57,7 @@ def test_me_with_orgs(crawler_auth_headers, default_org_id):
     assert r.status_code == 200
 
     data = r.json()
-    assert data["email"] == CRAWLER_USERNAME
+    assert data["email"] == CRAWLER_USERNAME_LOWERCASE
     assert data["id"]
     # assert data["is_active"]
     assert data["is_superuser"] is False
@@ -67,7 +74,7 @@ def test_me_with_orgs(crawler_auth_headers, default_org_id):
     assert default_org["id"] == default_org_id
     assert default_org["name"]
     assert default_org["default"]
-    assert default_org["role"] == 20
+    assert default_org["role"] == CRAWLER_ROLE
 
 
 def test_me_id(admin_auth_headers, default_org_id):
@@ -102,7 +109,7 @@ def test_login_user_info(admin_auth_headers, crawler_userid, default_org_id):
 
     assert user_info["id"] == crawler_userid
     assert user_info["name"] == "new-crawler"
-    assert user_info["email"] == CRAWLER_USERNAME
+    assert user_info["email"] == CRAWLER_USERNAME_LOWERCASE
     assert user_info["is_superuser"] is False
     assert user_info["is_verified"]
 
@@ -114,7 +121,7 @@ def test_login_user_info(admin_auth_headers, crawler_userid, default_org_id):
     assert org["name"] == default_org["name"]
     assert org["slug"] == default_org["slug"]
     assert org["default"]
-    assert org["role"] == 20
+    assert org["role"] == CRAWLER_ROLE
 
 
 def test_login_case_insensitive_email():
@@ -139,7 +146,7 @@ def test_add_user_to_org_invalid_password(admin_auth_headers, default_org_id):
             "password": "pw",
             "name": "invalid pw user",
             "description": "test invalid password",
-            "role": 20,
+            "role": CRAWLER_ROLE,
         },
         headers=admin_auth_headers,
     )
@@ -153,7 +160,7 @@ def test_register_user_invalid_password(admin_auth_headers, default_org_id):
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/invite",
         headers=admin_auth_headers,
-        json={"email": email, "role": 20},
+        json={"email": email, "role": CRAWLER_ROLE},
     )
     assert r.status_code == 200
     data = r.json()
@@ -184,7 +191,7 @@ def test_new_user_send_invite(admin_auth_headers, default_org_id):
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/invite",
         headers=admin_auth_headers,
-        json={"email": VALID_USER_EMAIL, "role": 20},
+        json={"email": VALID_USER_EMAIL, "role": CRAWLER_ROLE},
     )
     assert r.status_code == 200
     data = r.json()
@@ -209,7 +216,7 @@ def test_pending_invite_new_user(admin_auth_headers, default_org_id):
         assert invite["oid"] == default_org_id
         assert invite["created"]
         assert invite["role"]
-        assert invite["firstOrgAdmin"] == None
+        assert invite["firstOrgAdmin"] == False
 
 
 def test_new_user_token():
@@ -224,6 +231,10 @@ def test_new_user_token():
         f"{API_PREFIX}/users/invite/{new_user_invite_token}?email={VALID_USER_EMAIL}",
     )
     assert r.status_code == 200
+    data = r.json()
+    assert data["fromSuperuser"]
+    assert not data["inviterEmail"]
+    assert not data["inviterName"]
 
 
 def test_register_user_no_invite():
@@ -346,7 +357,7 @@ def test_existing_user_send_invite(admin_auth_headers, non_default_org_id):
     r = requests.post(
         f"{API_PREFIX}/orgs/{non_default_org_id}/invite",
         headers=admin_auth_headers,
-        json={"email": VALID_USER_EMAIL, "role": 20},
+        json={"email": VALID_USER_EMAIL, "role": CRAWLER_ROLE},
     )
     assert r.status_code == 200
     data = r.json()
@@ -371,7 +382,7 @@ def test_pending_invite_existing_user(admin_auth_headers, non_default_org_id):
     assert invite["oid"] == non_default_org_id
     assert invite["created"]
     assert invite["role"]
-    assert invite["firstOrgAdmin"] == None
+    assert invite["firstOrgAdmin"] == False
 
 
 def test_pending_invites_crawler(crawler_auth_headers, default_org_id):
@@ -401,12 +412,19 @@ def test_login_existing_user_for_invite():
         headers=auth_headers,
     )
     assert r.status_code == 200
+    data = r.json()
+    assert data["fromSuperuser"]
+    assert not data["inviterEmail"]
+    assert not data["inviterName"]
 
     # Accept existing user invite
     r = requests.post(
         f"{API_PREFIX}/orgs/invite-accept/{existing_user_invite_token}",
         headers=auth_headers,
     )
+
+    global new_user_auth_headers
+    new_user_auth_headers = auth_headers
 
 
 def test_pending_invites_clear(admin_auth_headers, non_default_org_id):
@@ -450,15 +468,51 @@ def test_user_part_of_two_orgs(default_org_id, non_default_org_id):
     assert non_default_org_id in org_ids
 
 
+def test_non_crawler_user_cant_invite(default_org_id):
+    # Send invite
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/invite",
+        headers=new_user_auth_headers,
+        json={"email": another_user_email, "role": CRAWLER_ROLE},
+    )
+    assert r.status_code == 403
+
+
 def test_user_change_role(admin_auth_headers, default_org_id):
     r = requests.patch(
         f"{API_PREFIX}/orgs/{default_org_id}/user-role",
         headers=admin_auth_headers,
-        json={"email": VALID_USER_EMAIL, "role": 40},
+        json={"email": VALID_USER_EMAIL, "role": ADMIN_ROLE},
     )
 
     assert r.status_code == 200
     assert r.json()["updated"] == True
+
+
+def test_non_superadmin_admin_can_invite(default_org_id):
+    # Send invite
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/invite",
+        headers=new_user_auth_headers,
+        json={"email": another_user_email, "role": CRAWLER_ROLE},
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data["invited"] == "new_user"
+
+    another_token = data["token"]
+
+    # Confirm token is valid (no auth needed)
+    r = requests.get(
+        f"{API_PREFIX}/users/invite/{another_token}?email={another_user_email}",
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert not data["fromSuperuser"]
+    assert data["inviterEmail"] == VALID_USER_EMAIL
+    assert data["inviterName"] == "valid"
+    assert data["firstOrgAdmin"] == False
 
 
 def test_forgot_password():

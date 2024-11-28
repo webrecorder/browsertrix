@@ -8,8 +8,6 @@ import asyncio
 
 from typing import Optional, List, TYPE_CHECKING, cast, Callable
 
-from pydantic import EmailStr
-
 from fastapi import (
     Request,
     HTTPException,
@@ -22,6 +20,7 @@ from pymongo.errors import DuplicateKeyError
 from pymongo.collation import Collation
 
 from .models import (
+    EmailStr,
     UserCreate,
     UserUpdateEmailName,
     UserUpdatePassword,
@@ -277,7 +276,7 @@ class UserManager:
         superuser = await self.get_superuser()
         if superuser:
             if str(superuser.email) != email:
-                await self.update_email_name(superuser, EmailStr(email), name)
+                await self.update_email_name(superuser, cast(EmailStr, email), name)
                 print("Superuser email updated")
 
             if not await self.check_password(superuser, password):
@@ -685,7 +684,7 @@ def init_users_router(
         return await user_manager.invites.get_invite_out(invite, user_manager, True)
 
     @users_router.get("/invite/{token}", tags=["invites"], response_model=InviteOut)
-    async def get_invite_info(token: UUID, email: str):
+    async def get_invite_info(token: UUID, email: EmailStr):
         invite = await user_manager.invites.get_valid_invite(token, email)
 
         return await user_manager.invites.get_invite_out(invite, user_manager, True)

@@ -12,15 +12,11 @@ import { ifDefined } from "lit/directives/if-defined.js";
 
 import { CrawlStatus } from "./crawl-status";
 
+import { BtrixElement } from "@/classes/BtrixElement";
 import { TailwindElement } from "@/classes/TailwindElement";
-import { NavigateController } from "@/controllers/navigate";
 import { ReviewStatus, type ArchivedItem } from "@/types/crawler";
 import { renderName } from "@/utils/crawler";
-import {
-  formatISODateString,
-  formatNumber,
-  getLocale,
-} from "@/utils/localization";
+import localize from "@/utils/localize";
 
 export type CheckboxChangeEventDetail = {
   checked: boolean;
@@ -32,7 +28,7 @@ export type CheckboxChangeEventDetail = {
  */
 @localized()
 @customElement("btrix-archived-item-list-item")
-export class ArchivedItemListItem extends TailwindElement {
+export class ArchivedItemListItem extends BtrixElement {
   static styles = css`
     :host {
       display: contents;
@@ -78,8 +74,6 @@ export class ArchivedItemListItem extends TailwindElement {
 
   @query(".rowLink")
   private readonly rowLink?: HTMLAnchorElement;
-
-  private readonly navigate = new NavigateController(this);
 
   render() {
     if (!this.item) return;
@@ -233,9 +227,8 @@ export class ArchivedItemListItem extends TailwindElement {
             hoist
           >
             <sl-format-date
-              lang=${getLocale()}
               class="truncate"
-              date=${`${this.item.finished}Z`}
+              date=${this.item.finished}
               month="2-digit"
               day="2-digit"
               year="2-digit"
@@ -245,7 +238,7 @@ export class ArchivedItemListItem extends TailwindElement {
         <btrix-table-cell class="tabular-nums">
           <sl-tooltip
             hoist
-            content=${formatNumber(this.item.fileSize || 0, {
+            content=${this.localize.number(this.item.fileSize || 0, {
               style: "unit",
               unit: "byte",
               unitDisplay: "long",
@@ -266,13 +259,13 @@ export class ArchivedItemListItem extends TailwindElement {
                 hoist
                 @click=${this.onTooltipClick}
                 content=${msg(
-                  str`${formatNumber(
+                  str`${this.localize.number(
                     this.item.stats?.done ? +this.item.stats.done : 0,
-                  )} crawled, ${formatNumber(this.item.stats?.found ? +this.item.stats.found : 0)} found`,
+                  )} crawled, ${this.localize.number(this.item.stats?.found ? +this.item.stats.found : 0)} found`,
                 )}
               >
                 <div class="min-w-4">
-                  ${formatNumber(
+                  ${this.localize.number(
                     this.item.stats?.done ? +this.item.stats.done : 0,
                     {
                       notation: "compact",
@@ -289,11 +282,11 @@ export class ArchivedItemListItem extends TailwindElement {
                   <sl-tooltip
                     hoist
                     content=${msg(
-                      str`Last run started on ${formatISODateString(lastQAStarted)}`,
+                      str`Last run started on ${localize.date(lastQAStarted)}`,
                     )}
                   >
                     <div class="min-w-4">
-                      ${formatNumber(qaRunCount, {
+                      ${this.localize.number(qaRunCount, {
                         notation: "compact",
                       })}
                     </div>

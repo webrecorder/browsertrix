@@ -1,11 +1,14 @@
-type ScopeType =
-  | "prefix"
-  | "host"
-  | "domain"
-  | "page"
-  | "page-spa"
-  | "any"
-  | "custom";
+import type { CrawlState } from "./crawlState";
+
+export enum ScopeType {
+  Prefix = "prefix",
+  Host = "host",
+  Domain = "domain",
+  Page = "page",
+  SPA = "page-spa",
+  Custom = "custom",
+  Any = "any",
+}
 
 export type Seed = {
   url: string;
@@ -51,6 +54,7 @@ export type WorkflowParams = {
   description: string | null;
   autoAddCollections: string[];
   crawlerChannel: string;
+  proxyId: string | null;
 };
 
 export type CrawlConfig = WorkflowParams & {
@@ -121,26 +125,8 @@ export type Profile = {
     replicas: ProfileReplica[] | null;
   };
   crawlerChannel?: string;
+  proxyId?: string;
 };
-
-export type CrawlState =
-  | "starting"
-  | "waiting_capacity"
-  | "waiting_org_limit"
-  | "running"
-  | "generate-wacz"
-  | "uploading-wacz"
-  | "pending-wait"
-  | "stopping"
-  | "complete"
-  | "failed"
-  | "skipped_storage_quota_reached"
-  | "skipped_time_quota_reached"
-  | "canceled"
-  | "stopped_by_user"
-  | "stopped_storage_quota_reached"
-  | "stopped_time_quota_reached"
-  | "stopped_org_readonly";
 
 // TODO maybe convert this to an enum?
 export enum ReviewStatus {
@@ -210,6 +196,19 @@ export type Upload = ArchivedItemBase & {
 export type CrawlerChannel = {
   id: string;
   image: string;
+};
+
+export type Proxy = {
+  id: string;
+  label: string;
+  country_code: string | null;
+  description: string | null;
+  shared: boolean;
+};
+
+export type ProxiesAPIResponse = {
+  default_proxy_id: string | null;
+  servers: Proxy[];
 };
 
 export type ArchivedItem = Crawl | Upload;

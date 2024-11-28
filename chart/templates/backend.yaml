@@ -43,6 +43,11 @@ spec:
           secret:
             secretName: ops-configs
 
+        - name: ops-proxy-configs
+          secret:
+            secretName: ops-proxy-configs
+            optional: true
+
         - name: app-templates
           configMap:
             name: app-templates
@@ -96,6 +101,9 @@ spec:
           volumeMounts:
             - name: ops-configs
               mountPath: /ops-configs/
+
+            - name: ops-proxy-configs
+              mountPath: /ops-proxy-configs/
 
             - name: app-templates
               mountPath: /app/btrixcloud/templates/
@@ -170,6 +178,9 @@ spec:
 
             - name: ops-configs
               mountPath: /ops-configs/
+
+            - name: ops-proxy-configs
+              mountPath: /ops-proxy-configs/
 
             - name: app-templates
               mountPath: /app/btrixcloud/templates/

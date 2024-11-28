@@ -2,7 +2,7 @@
 FROM --platform=$BUILDPLATFORM docker.io/library/node:18 as build_deps
 
 WORKDIR /app
-COPY yarn.lock package.json ./
+COPY .yarnrc yarn.lock package.json ./
 # Uses a cache mount for the Yarn cache so that it's not included in subsequent steps
 RUN --mount=type=cache,target=/root/.yarn YARN_CACHE_FOLDER=/root/.yarn yarn --production --frozen-lockfile --ignore-optional --network-timeout 1000000
 
@@ -35,9 +35,22 @@ ENV GIT_COMMIT_HASH=${GIT_COMMIT_HASH} \
 RUN yarn build && \
   rm -rf ./node_modules
 
+FROM --platform=$BUILDPLATFORM docker.io/library/python:3.12-slim as build_docs
+
+WORKDIR /docs
+
+RUN pip install mkdocs-material
+
+COPY --link ./docs/mkdocs.yml .
+COPY --link ./docs/docs ./docs
+
+RUN mkdocs build
+
 FROM docker.io/library/nginx:1.23.2
 
 COPY --link --from=build_deps /app/dist /usr/share/nginx/html
+
+COPY --link --from=build_docs /docs/site /usr/share/nginx/html/docs
 
 #COPY ./nginx.conf /etc/nginx/nginx.conf
 COPY --link ./frontend.conf.template /etc/nginx/templates/

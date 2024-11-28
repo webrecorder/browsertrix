@@ -11,9 +11,9 @@ MAX_ATTEMPTS = 24
 
 
 @pytest.fixture(scope="module")
-def qa_run_id(crawler_crawl_id, crawler_auth_headers, default_org_id):
+def qa_run_id(qa_crawl_id, crawler_auth_headers, default_org_id):
     r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/start",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{qa_crawl_id}/qa/start",
         headers=crawler_auth_headers,
     )
 
@@ -26,14 +26,12 @@ def qa_run_id(crawler_crawl_id, crawler_auth_headers, default_org_id):
 
 
 @pytest.fixture(scope="module")
-def qa_run_pages_ready(
-    crawler_crawl_id, crawler_auth_headers, default_org_id, qa_run_id
-):
+def qa_run_pages_ready(qa_crawl_id, crawler_auth_headers, default_org_id, qa_run_id):
     # Wait until activeQA is finished
     count = 0
     while count < MAX_ATTEMPTS:
         r = requests.get(
-            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/activeQA",
+            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{qa_crawl_id}/qa/activeQA",
             headers=crawler_auth_headers,
         )
 
@@ -51,7 +49,7 @@ def qa_run_pages_ready(
     count = 0
     while count < MAX_ATTEMPTS:
         r = requests.get(
-            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/{qa_run_id}/pages",
+            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{qa_crawl_id}/qa/{qa_run_id}/pages",
             headers=crawler_auth_headers,
         )
         if len(r.json()["items"]) > 0:
@@ -65,9 +63,9 @@ def qa_run_pages_ready(
 
 
 @pytest.fixture(scope="module")
-def failed_qa_run_id(crawler_crawl_id, crawler_auth_headers, default_org_id):
+def failed_qa_run_id(qa_crawl_id, crawler_auth_headers, default_org_id):
     r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/start",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{qa_crawl_id}/qa/start",
         headers=crawler_auth_headers,
     )
 
@@ -81,7 +79,7 @@ def failed_qa_run_id(crawler_crawl_id, crawler_auth_headers, default_org_id):
     count = 0
     while count < MAX_ATTEMPTS:
         r = requests.get(
-            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/activeQA",
+            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{qa_crawl_id}/qa/activeQA",
             headers=crawler_auth_headers,
         )
 
@@ -97,7 +95,7 @@ def failed_qa_run_id(crawler_crawl_id, crawler_auth_headers, default_org_id):
 
     # Ensure can't start another QA job while this one's running
     r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/start",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{qa_crawl_id}/qa/start",
         headers=crawler_auth_headers,
     )
 
@@ -106,7 +104,7 @@ def failed_qa_run_id(crawler_crawl_id, crawler_auth_headers, default_org_id):
 
     # Ensure activeQA responds as expected
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/activeQA",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{qa_crawl_id}/qa/activeQA",
         headers=crawler_auth_headers,
     )
 
@@ -125,7 +123,7 @@ def failed_qa_run_id(crawler_crawl_id, crawler_auth_headers, default_org_id):
     )
     assert r.status_code == 200
     crawls = r.json()["items"]
-    assert crawls[0]["id"] == crawler_crawl_id
+    assert crawls[0]["id"] == qa_crawl_id
     assert crawls[0]["activeQAStats"]
     assert crawls[0]["lastQAState"]
     assert crawls[0]["lastQAStarted"]
@@ -137,7 +135,7 @@ def failed_qa_run_id(crawler_crawl_id, crawler_auth_headers, default_org_id):
     )
     assert r.status_code == 200
     crawls = r.json()["items"]
-    assert crawls[0]["id"] == crawler_crawl_id
+    assert crawls[0]["id"] == qa_crawl_id
     assert crawls[0]["activeQAStats"]
     assert crawls[0]["lastQAState"]
     assert crawls[0]["lastQAStarted"]
@@ -149,7 +147,7 @@ def failed_qa_run_id(crawler_crawl_id, crawler_auth_headers, default_org_id):
     )
     assert r.status_code == 200
     crawls = r.json()["items"]
-    assert crawls[0]["id"] == crawler_crawl_id
+    assert crawls[0]["id"] == qa_crawl_id
     assert crawls[0]["activeQAStats"]
     assert crawls[0]["lastQAState"]
     assert crawls[0]["lastQAStarted"]
@@ -161,14 +159,14 @@ def failed_qa_run_id(crawler_crawl_id, crawler_auth_headers, default_org_id):
     )
     assert r.status_code == 200
     crawls = r.json()["items"]
-    assert crawls[0]["id"] == crawler_crawl_id
+    assert crawls[0]["id"] == qa_crawl_id
     assert crawls[0]["activeQAStats"]
     assert crawls[0]["lastQAState"]
     assert crawls[0]["lastQAStarted"]
 
     # Cancel crawl
     r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/cancel",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{qa_crawl_id}/qa/cancel",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
@@ -178,7 +176,7 @@ def failed_qa_run_id(crawler_crawl_id, crawler_auth_headers, default_org_id):
     count = 0
     while count < MAX_ATTEMPTS:
         r = requests.get(
-            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa",
+            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{qa_crawl_id}/qa",
             headers=crawler_auth_headers,
         )
         assert r.status_code == 200
@@ -202,10 +200,10 @@ def failed_qa_run_id(crawler_crawl_id, crawler_auth_headers, default_org_id):
 
 
 def test_qa_completed(
-    crawler_crawl_id, crawler_auth_headers, default_org_id, qa_run_pages_ready
+    qa_crawl_id, crawler_auth_headers, default_org_id, qa_run_pages_ready
 ):
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{qa_crawl_id}/qa",
         headers=crawler_auth_headers,
     )
 
@@ -224,10 +222,10 @@ def test_qa_completed(
 
 
 def test_qa_org_stats(
-    crawler_crawl_id, crawler_auth_headers, default_org_id, qa_run_pages_ready
+    qa_crawl_id, crawler_auth_headers, default_org_id, qa_run_pages_ready
 ):
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{qa_crawl_id}",
         headers=crawler_auth_headers,
     )
     crawl_stats = r.json()
@@ -245,14 +243,14 @@ def test_qa_org_stats(
 
 
 def test_qa_page_data(
-    crawler_crawl_id,
+    qa_crawl_id,
     crawler_auth_headers,
     default_org_id,
     qa_run_id,
     qa_run_pages_ready,
 ):
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/{qa_run_id}/pages",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{qa_crawl_id}/qa/{qa_run_id}/pages",
         headers=crawler_auth_headers,
     )
     data = r.json()
@@ -263,47 +261,47 @@ def test_qa_page_data(
     assert page_id
 
     assert page["title"] == "Webrecorder"
-    assert page["url"] == "https://webrecorder.net/"
+    assert page["url"] == "https://old.webrecorder.net/"
     assert page["mime"] == "text/html"
     assert page["status"] == 200
     assert page["qa"]["textMatch"] == 1.0
     assert page["qa"]["screenshotMatch"] == 1.0
     assert page["qa"]["resourceCounts"] == {
-        "crawlGood": 16,
+        "crawlGood": 14,
         "crawlBad": 0,
-        "replayGood": 15,
+        "replayGood": 13,
         "replayBad": 1,
     }
 
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/{qa_run_id}/pages/{page_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{qa_crawl_id}/qa/{qa_run_id}/pages/{page_id}",
         headers=crawler_auth_headers,
     )
     page = r.json()
     assert page["id"]
     assert page["title"] == "Webrecorder"
-    assert page["url"] == "https://webrecorder.net/"
+    assert page["url"] == "https://old.webrecorder.net/"
     assert page["mime"] == "text/html"
     assert page["status"] == 200
     assert page["qa"]["textMatch"] == 1.0
     assert page["qa"]["screenshotMatch"] == 1.0
     assert page["qa"]["resourceCounts"] == {
-        "crawlGood": 16,
+        "crawlGood": 14,
         "crawlBad": 0,
-        "replayGood": 15,
+        "replayGood": 13,
         "replayBad": 1,
     }
 
 
 def test_qa_replay(
-    crawler_crawl_id,
+    qa_crawl_id,
     crawler_auth_headers,
     default_org_id,
     qa_run_id,
     qa_run_pages_ready,
 ):
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/{qa_run_id}/replay.json",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{qa_crawl_id}/qa/{qa_run_id}/replay.json",
         headers=crawler_auth_headers,
     )
     data = r.json()
@@ -312,7 +310,7 @@ def test_qa_replay(
 
 
 def test_qa_stats(
-    crawler_crawl_id,
+    qa_crawl_id,
     crawler_auth_headers,
     default_org_id,
     qa_run_id,
@@ -321,7 +319,7 @@ def test_qa_stats(
     # We'll want to improve this test by having more pages to test
     # if we can figure out stable page scores to test against
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/{qa_run_id}/stats?screenshotThresholds=0.7,0.9&textThresholds=0.7,0.9",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{qa_crawl_id}/qa/{qa_run_id}/stats?screenshotThresholds=0.7,0.9&textThresholds=0.7,0.9",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
@@ -340,7 +338,7 @@ def test_qa_stats(
 
     # Test we get expected results with explicit 0 boundary
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/{qa_run_id}/stats?screenshotThresholds=0,0.7,0.9&textThresholds=0,0.7,0.9",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{qa_crawl_id}/qa/{qa_run_id}/stats?screenshotThresholds=0,0.7,0.9&textThresholds=0,0.7,0.9",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
@@ -359,7 +357,7 @@ def test_qa_stats(
 
     # Test that missing threshold values result in 422 HTTPException
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/{qa_run_id}/stats?screenshotThresholds=0.7",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{qa_crawl_id}/qa/{qa_run_id}/stats?screenshotThresholds=0.7",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 422
@@ -367,7 +365,7 @@ def test_qa_stats(
 
     # Test that invalid threshold values result in 400 HTTPException
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/{qa_run_id}/stats?screenshotThresholds=0.7&textThresholds=null",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{qa_crawl_id}/qa/{qa_run_id}/stats?screenshotThresholds=0.7&textThresholds=null",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 400
@@ -375,7 +373,7 @@ def test_qa_stats(
 
 
 def test_run_qa_not_running(
-    crawler_crawl_id,
+    qa_crawl_id,
     crawler_auth_headers,
     default_org_id,
     failed_qa_run_id,
@@ -385,7 +383,7 @@ def test_run_qa_not_running(
     count = 0
     while count < MAX_ATTEMPTS:
         r = requests.get(
-            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/activeQA",
+            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{qa_crawl_id}/qa/activeQA",
             headers=crawler_auth_headers,
         )
         data = r.json()
@@ -400,7 +398,7 @@ def test_run_qa_not_running(
 
     # Try to stop when there's no running QA run
     r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/stop",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{qa_crawl_id}/qa/stop",
         headers=crawler_auth_headers,
     )
 
@@ -409,7 +407,7 @@ def test_run_qa_not_running(
 
 
 def test_failed_qa_run(
-    crawler_crawl_id,
+    qa_crawl_id,
     crawler_auth_headers,
     default_org_id,
     failed_qa_run_id,
@@ -417,7 +415,7 @@ def test_failed_qa_run(
 ):
     # Ensure failed QA run is included in list endpoint
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{qa_crawl_id}/qa",
         headers=crawler_auth_headers,
     )
 
@@ -435,7 +433,7 @@ def test_failed_qa_run(
 
     # Ensure failed QA run not included in list endpoint with skipFailed param
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa?skipFailed=true",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{qa_crawl_id}/qa?skipFailed=true",
         headers=crawler_auth_headers,
     )
 
@@ -454,7 +452,7 @@ def test_failed_qa_run(
 
 
 def test_sort_crawls_by_qa_runs(
-    crawler_crawl_id,
+    qa_crawl_id,
     crawler_auth_headers,
     default_org_id,
     failed_qa_run_id,
@@ -468,13 +466,13 @@ def test_sort_crawls_by_qa_runs(
     assert r.status_code == 200
     crawls = r.json()["items"]
 
-    assert crawls[0]["id"] == crawler_crawl_id
+    assert crawls[0]["id"] == qa_crawl_id
     qa_run_count = crawls[0]["qaRunCount"]
     assert qa_run_count > 0
 
     last_count = qa_run_count
     for crawl in crawls:
-        if crawl["id"] == crawler_crawl_id:
+        if crawl["id"] == qa_crawl_id:
             continue
         crawl_qa_count = crawl["qaRunCount"]
         assert isinstance(crawl_qa_count, int)
@@ -489,12 +487,12 @@ def test_sort_crawls_by_qa_runs(
     assert r.status_code == 200
     crawls = r.json()["items"]
 
-    assert crawls[-1]["id"] == crawler_crawl_id
+    assert crawls[-1]["id"] == qa_crawl_id
     assert crawls[-1]["qaRunCount"] > 0
 
     last_count = 0
     for crawl in crawls:
-        if crawl["id"] == crawler_crawl_id:
+        if crawl["id"] == qa_crawl_id:
             continue
         crawl_qa_count = crawl["qaRunCount"]
         assert isinstance(crawl_qa_count, int)
@@ -509,13 +507,13 @@ def test_sort_crawls_by_qa_runs(
     assert r.status_code == 200
     crawls = r.json()["items"]
 
-    assert crawls[0]["id"] == crawler_crawl_id
+    assert crawls[0]["id"] == qa_crawl_id
     qa_run_count = crawls[0]["qaRunCount"]
     assert qa_run_count > 0
 
     last_count = qa_run_count
     for crawl in crawls:
-        if crawl["id"] == crawler_crawl_id:
+        if crawl["id"] == qa_crawl_id:
             continue
         crawl_qa_count = crawl["qaRunCount"]
         assert isinstance(crawl_qa_count, int)
@@ -530,12 +528,12 @@ def test_sort_crawls_by_qa_runs(
     assert r.status_code == 200
     crawls = r.json()["items"]
 
-    assert crawls[-1]["id"] == crawler_crawl_id
+    assert crawls[-1]["id"] == qa_crawl_id
     assert crawls[-1]["qaRunCount"] > 0
 
     last_count = 0
     for crawl in crawls:
-        if crawl["id"] == crawler_crawl_id:
+        if crawl["id"] == qa_crawl_id:
             continue
         crawl_qa_count = crawl["qaRunCount"]
         assert isinstance(crawl_qa_count, int)
@@ -544,7 +542,7 @@ def test_sort_crawls_by_qa_runs(
 
 
 def test_download_wacz_crawls(
-    crawler_crawl_id,
+    qa_crawl_id,
     crawler_auth_headers,
     default_org_id,
     qa_run_id,
@@ -552,7 +550,7 @@ def test_download_wacz_crawls(
 ):
     with TemporaryFile() as fh:
         with requests.get(
-            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/{qa_run_id}/download",
+            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{qa_crawl_id}/qa/{qa_run_id}/download",
             headers=crawler_auth_headers,
             stream=True,
         ) as r:
@@ -571,7 +569,7 @@ def test_download_wacz_crawls(
 
 
 def test_delete_qa_runs(
-    crawler_crawl_id,
+    qa_crawl_id,
     crawler_auth_headers,
     default_org_id,
     qa_run_id,
@@ -580,7 +578,7 @@ def test_delete_qa_runs(
 ):
     # Get download links for QA WACZs
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/{qa_run_id}/replay.json",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{qa_crawl_id}/qa/{qa_run_id}/replay.json",
         headers=crawler_auth_headers,
     )
     data = r.json()
@@ -589,7 +587,7 @@ def test_delete_qa_runs(
 
     # Delete QA runs
     r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/delete",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{qa_crawl_id}/qa/delete",
         json={"qa_run_ids": [qa_run_id, failed_qa_run_id]},
         headers=crawler_auth_headers,
     )
@@ -601,7 +599,7 @@ def test_delete_qa_runs(
     count = 0
     while count < MAX_ATTEMPTS:
         r = requests.get(
-            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa",
+            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{qa_crawl_id}/qa",
             headers=crawler_auth_headers,
         )
 
@@ -623,7 +621,7 @@ def test_delete_qa_runs(
         count = 0
         while count < MAX_ATTEMPTS:
             r = requests.get(
-                f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/{qa_run}/pages",
+                f"{API_PREFIX}/orgs/{default_org_id}/crawls/{qa_crawl_id}/qa/{qa_run}/pages",
                 headers=crawler_auth_headers,
             )
             data = r.json()

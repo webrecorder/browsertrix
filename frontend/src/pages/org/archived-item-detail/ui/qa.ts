@@ -13,8 +13,6 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
-import { QA_RUNNING_STATES } from "../archived-item-detail";
-
 import { BtrixElement } from "@/classes/BtrixElement";
 import { type Dialog } from "@/components/ui/dialog";
 import type { PageChangeEvent } from "@/components/ui/pagination";
@@ -28,9 +26,8 @@ import type {
 } from "@/types/api";
 import { type ArchivedItem, type ArchivedItemPage } from "@/types/crawler";
 import type { QARun } from "@/types/qa";
-import { finishedCrawlStates } from "@/utils/crawler";
+import { isActive, isSuccessfullyFinished } from "@/utils/crawler";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
-import { formatNumber, getLocale } from "@/utils/localization";
 import { pluralOf } from "@/utils/pluralize";
 
 type QAStatsThreshold = {
@@ -87,10 +84,10 @@ export class ArchivedItemDetailQA extends BtrixElement {
   `;
 
   @property({ type: String, attribute: false })
-  crawlId?: string;
+  workflowId?: string;
 
   @property({ type: String, attribute: false })
-  itemType: ArchivedItem["type"] = "crawl";
+  crawlId?: string;
 
   @property({ type: Object, attribute: false })
   crawl?: ArchivedItem;
@@ -284,7 +281,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
             <h4 class="mb-2 mt-4 text-lg tabular-nums leading-8">
               <span class="font-semibold">${msg("Pages")}</span>
               ${this.pages != null
-                ? `(${this.pages.total.toLocaleString()})`
+                ? `(${this.localize.number(this.pages.total)})`
                 : html`<sl-skeleton
                     class="inline-block h-6 w-5 align-[-6px]"
                   ></sl-skeleton>`}
@@ -345,8 +342,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
           </btrix-table-cell>
           <btrix-table-cell>
             <sl-format-date
-              lang=${getLocale()}
-              date=${`${run.started}Z`}
+              date=${run.started}
               month="2-digit"
               day="2-digit"
               year="2-digit"
@@ -358,8 +354,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
             ${run.finished
               ? html`
                   <sl-format-date
-                    lang=${getLocale()}
-                    date=${`${run.finished}Z`}
+                    date=${run.finished}
                     month="2-digit"
                     day="2-digit"
                     year="2-digit"
@@ -427,8 +422,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
               str`This analysis run includes data for ${runToBeDeleted.stats.done} ${pluralOf("pages", runToBeDeleted.stats.done)} and was started on `,
             )}
             <sl-format-date
-              lang=${getLocale()}
-              date=${`${runToBeDeleted.started}Z`}
+              date=${runToBeDeleted.started}
               month="2-digit"
               day="2-digit"
               year="2-digit"
@@ -464,12 +458,11 @@ export class ArchivedItemDetailQA extends BtrixElement {
     html`<div class="min-w-32"><sl-spinner class="size-4"></sl-spinner></div>`;
 
   private renderAnalysis(qaRuns: QARun[]) {
-    const isRunning =
-      this.mostRecentNonFailedQARun &&
-      QA_RUNNING_STATES.includes(this.mostRecentNonFailedQARun.state);
+    const isRunningOrStarting =
+      this.mostRecentNonFailedQARun && isActive(this.mostRecentNonFailedQARun);
     const qaRun = qaRuns.find(({ id }) => id === this.qaRunId);
 
-    if (!qaRun && isRunning) {
+    if (!qaRun && isRunningOrStarting) {
       return html`<btrix-alert class="mb-3" variant="success">
         ${msg("Running QA analysis on pages...")}
       </btrix-alert>`;
@@ -488,16 +481,14 @@ export class ArchivedItemDetailQA extends BtrixElement {
         <div class="flex flex-wrap items-center gap-x-3">
           ${msg("HTML Page Match Analysis")}
           ${when(this.qaRuns, (qaRuns) => {
-            const finishedQARuns = qaRuns.filter(({ state }) =>
-              finishedCrawlStates.includes(state),
+            const finishedQARuns = qaRuns.filter((qaRun) =>
+              isSuccessfullyFinished(qaRun),
             );
             const latestFinishedSelected =
               this.qaRunId === finishedQARuns[0]?.id;
 
             const finishedAndRunningQARuns = qaRuns.filter(
-              ({ state }) =>
-                finishedCrawlStates.includes(state) ||
-                QA_RUNNING_STATES.includes(state),
+              (qaRun) => isSuccessfullyFinished(qaRun) || isActive(qaRun),
             );
             const mostRecentSelected =
               this.qaRunId === finishedAndRunningQARuns[0]?.id;
@@ -534,7 +525,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
           <div class="text-sm font-normal">
             ${qaRun.state === "starting"
               ? msg("Analysis starting")
-              : `${formatNumber(qaRun.stats.done)}/${formatNumber(qaRun.stats.found)}
+              : `${this.localize.number(qaRun.stats.done)}/${this.localize.number(qaRun.stats.found)}
                 ${pluralOf("pages", qaRun.stats.found)} ${msg("analyzed")}`}
           </div>
 
@@ -565,7 +556,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
                   ? this.renderMeter(
                       qaRun.stats.found,
                       this.qaStats.value.screenshotMatch,
-                      isRunning,
+                      isRunningOrStarting,
                     )
                   : this.renderMeter()}
               </btrix-table-cell>
@@ -579,7 +570,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
                   ? this.renderMeter(
                       qaRun.stats.found,
                       this.qaStats.value.textMatch,
-                      isRunning,
+                      isRunningOrStarting,
                     )
                   : this.renderMeter()}
               </btrix-table-cell>
@@ -663,7 +654,8 @@ export class ArchivedItemDetailQA extends BtrixElement {
                           : `${threshold ? +threshold.lowerBoundary * 100 : 0}-${+qaStatsThresholds[idx + 1].lowerBoundary * 100 || 100}%`}
                       ${msg("match", { desc: "label for match percentage" })}
                       <br />
-                      ${formatNumber(bar.count)} ${pluralOf("pages", bar.count)}
+                      ${this.localize.number(bar.count)}
+                      ${pluralOf("pages", bar.count)}
                     </div>
                   </div>
                 </btrix-meter-bar>
@@ -681,7 +673,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
                 <div class="text-center">
                   ${remainderBarLabel}
                   <div class="text-xs opacity-80">
-                    ${formatNumber(remainingPageCount)}
+                    ${this.localize.number(remainingPageCount)}
                     ${pluralOf("pages", remainingPageCount)}
                   </div>
                 </div>
@@ -771,7 +763,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
                   ${this.qaRunId
                     ? html`
                         <a
-                          href=${`${this.navigate.orgBasePath}/items/${this.itemType}/${this.crawlId}/review/screenshots?qaRunId=${this.qaRunId}&itemPageId=${page.id}`}
+                          href=${`${this.navigate.orgBasePath}/workflows/${this.workflowId}/crawls/${this.crawlId}/review/screenshots?qaRunId=${this.qaRunId}&itemPageId=${page.id}`}
                           title=${msg(str`Review "${page.title ?? page.url}"`)}
                           @click=${this.navigate.link}
                         >
@@ -800,7 +792,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
                               name="chat-square-text-fill"
                               class="text-blue-600"
                             ></sl-icon>`,
-                            `${page.notes.length.toLocaleString()} ${pluralOf("comments", page.notes.length)}`,
+                            `${this.localize.number(page.notes.length)} ${pluralOf("comments", page.notes.length)}`,
                           )}
                         </sl-tooltip>
                       `

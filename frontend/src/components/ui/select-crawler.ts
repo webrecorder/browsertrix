@@ -30,7 +30,6 @@ type CrawlerChannelsAPIResponse = {
  * Usage example:
  * ```ts
  * <btrix-select-crawler
- *   authState=${authState}
  *   on-change=${({value}) => selectedCrawler = value}
  * ></btrix-select-crawler>
  * ```

@@ -12,7 +12,6 @@ import { columns } from "@/layouts/columns";
 import { SubscriptionStatus, type BillingPortal } from "@/types/billing";
 import type { OrgData, OrgQuotas } from "@/types/org";
 import { humanizeSeconds } from "@/utils/executionTimeFormatter";
-import { formatNumber, getLocale } from "@/utils/localization";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
 
@@ -127,9 +126,8 @@ export class OrgSettingsBilling extends BtrixElement {
                               ${msg(
                                 html`Your plan will be canceled on
                                   <sl-format-date
-                                    lang=${getLocale()}
                                     class="truncate"
-                                    date="${org.subscription.futureCancelDate}Z"
+                                    date=${org.subscription.futureCancelDate}
                                     month="long"
                                     day="numeric"
                                     year="numeric"
@@ -275,35 +273,48 @@ export class OrgSettingsBilling extends BtrixElement {
       : nothing}`;
   };
 
-  private readonly renderQuotas = (quotas: OrgQuotas) => html`
-    <ul class="leading-relaxed text-neutral-700">
-      <li>
-        ${msg(
-          str`${quotas.maxExecMinutesPerMonth ? humanizeSeconds(quotas.maxExecMinutesPerMonth * 60, undefined, undefined, "long") : msg("Unlimited minutes")} of crawl and QA analysis execution time`,
-        )}
-      </li>
-      <li>
-        ${msg(
-          html`${quotas.storageQuota
-            ? html`<sl-format-bytes
-                value=${quotas.storageQuota}
-              ></sl-format-bytes>`
-            : msg("Unlimited")}
-          storage`,
-        )}
-      </li>
-      <li>
-        ${msg(
-          str`${quotas.maxPagesPerCrawl ? formatNumber(quotas.maxPagesPerCrawl) : msg("Unlimited")} ${pluralOf("pages", quotas.maxPagesPerCrawl)} per crawl`,
-        )}
-      </li>
-      <li>
-        ${msg(
-          str`${quotas.maxConcurrentCrawls ? formatNumber(quotas.maxConcurrentCrawls) : msg("Unlimited")} concurrent ${pluralOf("crawls", quotas.maxConcurrentCrawls)}`,
-        )}
-      </li>
-    </ul>
-  `;
+  private readonly renderQuotas = (quotas: OrgQuotas) => {
+    const maxExecMinutesPerMonth =
+      quotas.maxExecMinutesPerMonth &&
+      humanizeSeconds(
+        quotas.maxExecMinutesPerMonth * 60,
+        this.localize.lang(),
+        undefined,
+        "long",
+      );
+    const maxPagesPerCrawl =
+      quotas.maxPagesPerCrawl &&
+      `${this.localize.number(quotas.maxPagesPerCrawl)} ${pluralOf("pages", quotas.maxPagesPerCrawl)}`;
+    const maxConcurrentCrawls =
+      quotas.maxConcurrentCrawls &&
+      msg(
+        str`${this.localize.number(quotas.maxConcurrentCrawls)} concurrent ${pluralOf("crawls", quotas.maxConcurrentCrawls)}`,
+      );
+
+    return html`
+      <ul class="leading-relaxed text-neutral-700">
+        <li>
+          ${msg(
+            str`${maxExecMinutesPerMonth || msg("Unlimited minutes")} of crawl and QA analysis execution time`,
+          )}
+        </li>
+        <li>
+          ${msg(
+            html`${quotas.storageQuota
+              ? html`<sl-format-bytes
+                  value=${quotas.storageQuota}
+                ></sl-format-bytes>`
+              : msg("Unlimited")}
+            storage`,
+          )}
+        </li>
+        <li>
+          ${msg(str`${maxPagesPerCrawl || msg("Unlimited pages")} per crawl`)}
+        </li>
+        <li>${maxConcurrentCrawls || msg("Unlimited concurrent crawls")}</li>
+      </ul>
+    `;
+  };
 
   private renderPortalLink() {
     return html`

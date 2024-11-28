@@ -26,6 +26,17 @@ spec:
       emptyDir:
         sizeLimit: {{ profile_browser_workdir_size }}
 
+    {% if proxy_id %}
+    - name: proxies
+      secret:
+        secretName: proxies
+        defaultMode: 0600
+    - name: force-user-and-group-name
+      secret:
+        secretName: force-user-and-group-name
+        defaultMode: 0600
+    {% endif %}
+
   {% if priorityClassName %}
   priorityClassName: {{ priorityClassName }}
   {% endif %}
@@ -73,10 +84,44 @@ spec:
         - --profile
         - "@{{ profile_filename }}"
       {%- endif %}
+      {% if proxy_id %}
+        - --proxyServer
+        - "{{ proxy_url }}"
+      {% if proxy_ssh_private_key %}
+        - --sshProxyPrivateKeyFile
+        - /tmp/ssh-proxy/private-key
+      {% endif %}
+      {% if proxy_ssh_host_public_key %}
+        - --sshProxyKnownHostsFile
+        - /tmp/ssh-proxy/known-hosts
+      {% endif %}
+      {% endif %}
 
       volumeMounts:
         - name: crawler-workdir
           mountPath: /tmp/home
+      {% if proxy_id %}
+      {% if proxy_ssh_private_key %}
+        - name: proxies
+          mountPath: /tmp/ssh-proxy/private-key
+          subPath: {{ proxy_id }}-private-key
+          readOnly: true
+      {% endif %}
+      {% if proxy_ssh_host_public_key %}
+        - name: proxies
+          mountPath: /tmp/ssh-proxy/known-hosts
+          subPath: {{ proxy_id }}-known-hosts
+          readOnly: true
+      {% endif %}
+        - name: force-user-and-group-name
+          mountPath: /etc/passwd
+          subPath: passwd
+          readOnly: true
+        - name: force-user-and-group-name
+          mountPath: /etc/group
+          subPath: group
+          readOnly: true
+       {% endif %}
 
       envFrom:
         - secretRef:

@@ -11,7 +11,7 @@
  * </btrix-crawl-list>
  * ```
  */
-import { localized, msg, str } from "@lit/localize";
+import { localized, msg } from "@lit/localize";
 import { css, html, nothing, type TemplateResult } from "lit";
 import {
   customElement,
@@ -21,20 +21,20 @@ import {
 } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 
+import { BtrixElement } from "@/classes/BtrixElement";
 import { TailwindElement } from "@/classes/TailwindElement";
 import type { OverflowDropdown } from "@/components/ui/overflow-dropdown";
 import { RelativeDuration } from "@/components/ui/relative-duration";
-import { NavigateController } from "@/controllers/navigate";
 import type { Crawl } from "@/types/crawler";
 import { renderName } from "@/utils/crawler";
-import { getLocale } from "@/utils/localization";
+import { pluralOf } from "@/utils/pluralize";
 
 /**
  * @slot menu
  */
 @localized()
 @customElement("btrix-crawl-list-item")
-export class CrawlListItem extends TailwindElement {
+export class CrawlListItem extends BtrixElement {
   static styles = css`
     :host {
       display: contents;
@@ -66,12 +66,6 @@ export class CrawlListItem extends TailwindElement {
   @query("btrix-overflow-dropdown")
   dropdownMenu!: OverflowDropdown;
 
-  private readonly numberFormatter = new Intl.NumberFormat(getLocale(), {
-    notation: "compact",
-  });
-
-  private readonly navigate = new NavigateController(this);
-
   render() {
     if (!this.crawl) return;
     let idCell: TemplateResult;
@@ -82,8 +76,7 @@ export class CrawlListItem extends TailwindElement {
           ${this.safeRender(
             (crawl) => html`
               <sl-format-date
-                lang=${getLocale()}
-                date=${`${crawl.started}Z`}
+                date=${crawl.started}
                 month="2-digit"
                 day="2-digit"
                 year="2-digit"
@@ -121,6 +114,7 @@ export class CrawlListItem extends TailwindElement {
         </btrix-table-cell>
       `;
     }
+
     return html`
       <btrix-table-row
         class=${this.href
@@ -152,8 +146,7 @@ export class CrawlListItem extends TailwindElement {
                 ${this.safeRender(
                   (crawl) => html`
                     <sl-format-date
-                      lang=${getLocale()}
-                      date=${`${crawl.started}Z`}
+                      date=${crawl.started}
                       month="2-digit"
                       day="2-digit"
                       year="2-digit"
@@ -169,8 +162,7 @@ export class CrawlListItem extends TailwindElement {
             crawl.finished
               ? html`
                   <sl-format-date
-                    lang=${getLocale()}
-                    date=${`${crawl.finished}Z`}
+                    date=${crawl.finished}
                     month="2-digit"
                     day="2-digit"
                     year="2-digit"
@@ -187,9 +179,9 @@ export class CrawlListItem extends TailwindElement {
           ${this.safeRender((crawl) =>
             RelativeDuration.humanize(
               (crawl.finished
-                ? new Date(`${crawl.finished}Z`)
+                ? new Date(crawl.finished)
                 : new Date()
-              ).valueOf() - new Date(`${crawl.started}Z`).valueOf(),
+              ).valueOf() - new Date(crawl.started).valueOf(),
             ),
           )}
         </btrix-table-cell>
@@ -204,21 +196,10 @@ export class CrawlListItem extends TailwindElement {
             const pagesComplete = +(crawl.stats?.done || 0);
             const pagesFound = +(crawl.stats?.found || 0);
             if (crawl.finished) {
-              return pagesComplete === 1
-                ? msg(str`${this.numberFormatter.format(pagesComplete)} page`)
-                : msg(str`${this.numberFormatter.format(pagesComplete)} pages`);
+              return `${this.localize.number(pagesComplete, { notation: "compact" })} ${pluralOf("pages", pagesComplete)}`;
             }
-            return pagesFound === 1
-              ? msg(
-                  str`${this.numberFormatter.format(
-                    pagesComplete,
-                  )} / ${this.numberFormatter.format(pagesFound)} page`,
-                )
-              : msg(
-                  str`${this.numberFormatter.format(
-                    pagesComplete,
-                  )} / ${this.numberFormatter.format(pagesFound)} pages`,
-                );
+
+            return `${this.localize.number(pagesComplete, { notation: "compact" })} / ${this.localize.number(pagesFound, { notation: "compact" })} ${pluralOf("pages", pagesFound)}`;
           })}
         </btrix-table-cell>
         <btrix-table-cell>

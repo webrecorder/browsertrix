@@ -1,7 +1,6 @@
 """ shared crawl manager implementation """
 
 import os
-import asyncio
 import secrets
 
 from typing import Optional, Dict
@@ -9,20 +8,21 @@ from datetime import timedelta
 
 from fastapi import HTTPException
 
-from .utils import dt_now, to_k8s_date
+from .utils import dt_now, date_to_str
 from .k8sapi import K8sAPI
 
 from .models import StorageRef, CrawlConfig, BgJobType
 
 
 # ============================================================================
+DEFAULT_PROXY_ID: str = os.environ.get("DEFAULT_PROXY_ID", "")
+
+DEFAULT_NAMESPACE: str = os.environ.get("DEFAULT_NAMESPACE", "default")
+
+
+# ============================================================================
 class CrawlManager(K8sAPI):
     """abstract crawl manager"""
-
-    def __init__(self):
-        super().__init__()
-
-        self.loop = asyncio.get_running_loop()
 
     # pylint: disable=too-many-arguments
     async def run_profile_browser(
@@ -34,6 +34,7 @@ class CrawlManager(K8sAPI):
         crawler_image: str,
         baseprofile: str = "",
         profile_filename: str = "",
+        proxy_id: str = "",
     ) -> str:
         """run browser for profile creation"""
 
@@ -53,8 +54,9 @@ class CrawlManager(K8sAPI):
             "idle_timeout": os.environ.get("IDLE_TIMEOUT", "60"),
             "url": url,
             "vnc_password": secrets.token_hex(16),
-            "expire_time": to_k8s_date(dt_now() + timedelta(seconds=30)),
+            "expire_time": date_to_str(dt_now() + timedelta(seconds=30)),
             "crawler_image": crawler_image,
+            "proxy_id": proxy_id or DEFAULT_PROXY_ID,
         }
 
         data = self.templates.env.get_template("profile_job.yaml").render(params)
@@ -110,6 +112,70 @@ class CrawlManager(K8sAPI):
 
         return job_id
 
+    async def run_delete_org_job(
+        self,
+        oid: str,
+        backend_image: str,
+        pull_policy: str,
+        existing_job_id: Optional[str] = None,
+    ) -> str:
+        """run job to delete org and all of its data"""
+
+        if existing_job_id:
+            job_id = existing_job_id
+        else:
+            job_id = f"delete-org-{oid}-{secrets.token_hex(5)}"
+
+        return await self._run_bg_job_with_ops_classes(
+            oid, backend_image, pull_policy, job_id, job_type=BgJobType.DELETE_ORG.value
+        )
+
+    async def run_recalculate_org_stats_job(
+        self,
+        oid: str,
+        backend_image: str,
+        pull_policy: str,
+        existing_job_id: Optional[str] = None,
+    ) -> str:
+        """run job to recalculate storage stats for the org"""
+
+        if existing_job_id:
+            job_id = existing_job_id
+        else:
+            job_id = f"org-stats-{oid}-{secrets.token_hex(5)}"
+
+        return await self._run_bg_job_with_ops_classes(
+            oid,
+            backend_image,
+            pull_policy,
+            job_id,
+            job_type=BgJobType.RECALCULATE_ORG_STATS.value,
+        )
+
+    async def _run_bg_job_with_ops_classes(
+        self,
+        oid: str,
+        backend_image: str,
+        pull_policy: str,
+        job_id: str,
+        job_type: str,
+    ) -> str:
+        """run background job with access to ops classes"""
+
+        params = {
+            "id": job_id,
+            "oid": oid,
+            "job_type": job_type,
+            "backend_image": backend_image,
+            "pull_policy": pull_policy,
+        }
+
+        data = self.templates.env.get_template("background_job.yaml").render(params)
+
+        await self.create_from_yaml(data, namespace=DEFAULT_NAMESPACE)
+
+        return job_id
+
     async def create_crawl_job(
         self,
         crawlconfig: CrawlConfig,
@@ -138,6 +204,7 @@ class CrawlManager(K8sAPI):
             warc_prefix=warc_prefix,
             storage_filename=storage_filename,
             profile_filename=profile_filename,
+            proxy_id=crawlconfig.proxyId or DEFAULT_PROXY_ID,
         )
 
     async def create_qa_crawl_job(
@@ -237,12 +304,12 @@ class CrawlManager(K8sAPI):
         """return ping profile browser"""
         expire_at = dt_now() + timedelta(seconds=30)
         await self._patch_job(
-            browserid, {"expireTime": to_k8s_date(expire_at)}, "profilejobs"
+            browserid, {"expireTime": date_to_str(expire_at)}, "profilejobs"
         )
 
     async def rollover_restart_crawl(self, crawl_id: str) -> dict:
         """Rolling restart of crawl by updating restartTime field"""
-        update = to_k8s_date(dt_now())
+        update = date_to_str(dt_now())
         return await self._patch_job(crawl_id, {"restartTime": update})
 
     async def scale_crawl(self, crawl_id: str, scale: int = 1) -> dict:

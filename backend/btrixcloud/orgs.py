@@ -8,7 +8,6 @@ import json
 import math
 import os
 import time
-import urllib.parse
 
 from uuid import UUID, uuid4
 from tempfile import NamedTemporaryFile
@@ -39,6 +38,7 @@ from .models import (
     OrgMetrics,
     OrgWebhookUrls,
     OrgCreate,
+    OrgProxies,
     Subscription,
     SubscriptionUpdate,
     SubscriptionCancel,
@@ -67,11 +67,11 @@ from .models import (
     PAUSED_PAYMENT_FAILED,
     REASON_PAUSED,
     ACTIVE,
-    DeletedResponse,
+    DeletedResponseId,
     UpdatedResponse,
     AddedResponse,
     AddedResponseId,
-    SuccessResponse,
+    SuccessResponseId,
     OrgInviteResponse,
     OrgAcceptInviteResponse,
     OrgDeleteInviteResponse,
@@ -94,8 +94,10 @@ if TYPE_CHECKING:
     from .colls import CollectionOps
     from .profiles import ProfileOps
     from .users import UserManager
+    from .background_jobs import BackgroundJobOps
 else:
-    InviteOps = BaseCrawlOps = ProfileOps = CollectionOps = UserManager = object
+    InviteOps = BaseCrawlOps = ProfileOps = CollectionOps = object
+    BackgroundJobOps = UserManager = object
 
 
 DEFAULT_ORG = os.environ.get("DEFAULT_ORG", "My Organization")
@@ -151,12 +153,14 @@ class OrgOps:
         base_crawl_ops: BaseCrawlOps,
         profile_ops: ProfileOps,
         coll_ops: CollectionOps,
+        background_job_ops: BackgroundJobOps,
     ) -> None:
         """Set base crawl ops"""
         # pylint: disable=attribute-defined-outside-init
         self.base_crawl_ops = base_crawl_ops
         self.profile_ops = profile_ops
         self.coll_ops = coll_ops
+        self.background_job_ops = background_job_ops
 
     def set_default_primary_storage(self, storage: StorageRef):
         """set default primary storage"""
@@ -257,11 +261,11 @@ class OrgOps:
         return [Organization.from_dict(data) for data in items], total
 
     async def get_org_for_user_by_id(
-        self, oid: UUID, user: User, role: UserRole = UserRole.VIEWER
+        self, oid: UUID, user: Optional[User], role: UserRole = UserRole.VIEWER
     ) -> Optional[Organization]:
         """Get an org for user by unique id"""
         query: dict[str, object]
-        if user.is_superuser:
+        if not user or user.is_superuser:
             query = {"_id": oid}
         else:
             query = {f"users.{user.id}": {"$gte": role.value}, "_id": oid}
@@ -515,6 +519,18 @@ class OrgOps:
 
         res = await self.orgs.find_one_and_update({"_id": org.id}, {"$set": set_dict})
         return res is not None
+
+    async def update_proxies(self, org: Organization, proxies: OrgProxies) -> None:
+        """Update org proxy settings"""
+        await self.orgs.find_one_and_update(
+            {"_id": org.id},
+            {
+                "$set": {
+                    "allowSharedProxies": proxies.allowSharedProxies,
+                    "allowedProxies": proxies.allowedProxies,
+                }
+            },
+        )
 
     async def update_quotas(self, org: Organization, quotas: OrgQuotasIn) -> None:
         """update organization quotas"""
@@ -1439,15 +1455,16 @@ def init_orgs_api(
         org_out.execMinutesQuotaReached = ops.exec_mins_quota_reached(org)
         return org_out
 
-    @router.delete("", tags=["organizations"], response_model=DeletedResponse)
+    @router.delete("", tags=["organizations"], response_model=DeletedResponseId)
     async def delete_org(
         org: Organization = Depends(org_dep), user: User = Depends(user_dep)
     ):
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
-        await ops.delete_org_and_data(org, user_manager)
-        return {"deleted": True}
+        job_id = await ops.background_job_ops.create_delete_org_job(org)
+
+        return {"deleted": True, "id": job_id}
 
     @router.post("/rename", tags=["organizations"], response_model=UpdatedResponse)
     async def rename_org(
@@ -1481,6 +1498,19 @@ def init_orgs_api(
             raise HTTPException(status_code=403, detail="Not Allowed")
 
         await ops.update_quotas(org, quotas)
+
+        return {"updated": True}
+
+    @router.post("/proxies", tags=["organizations"], response_model=UpdatedResponse)
+    async def update_proxies(
+        proxies: OrgProxies,
+        org: Organization = Depends(org_owner_dep),
+        user: User = Depends(user_dep),
+    ):
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+
+        await ops.update_proxies(org, proxies)
 
         return {"updated": True}
 
@@ -1558,10 +1588,13 @@ def init_orgs_api(
         return {"updated": True}
 
     @router.post(
-        "/recalculate-storage", tags=["organizations"], response_model=SuccessResponse
+        "/recalculate-storage",
+        tags=["organizations"],
+        response_model=SuccessResponseId,
     )
     async def recalculate_org_storage(org: Organization = Depends(org_owner_dep)):
-        return await ops.recalculate_storage(org)
+        job_id = await ops.background_job_ops.create_recalculate_org_stats_job(org)
+        return {"success": True, "id": job_id}
 
     @router.post("/invite", tags=["invites"], response_model=OrgInviteResponse)
     async def invite_user_to_org(
@@ -1614,9 +1647,7 @@ def init_orgs_api(
     async def delete_invite(
         invite: RemovePendingInvite, org: Organization = Depends(org_owner_dep)
     ):
-        # URL decode email just in case
-        email = urllib.parse.unquote(invite.email)
-        result = await user_manager.invites.remove_invite_by_email(email, org.id)
+        result = await user_manager.invites.remove_invite_by_email(invite.email, org.id)
         if result.deleted_count > 0:
             return {
                 "removed": True,

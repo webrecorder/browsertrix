@@ -1,10 +1,7 @@
 import { msg, str } from "@lit/localize";
 import type { SlInput, SlTextarea } from "@shoelace-style/shoelace";
 
-import { getLocale } from "./localization";
-
-// TODO listen for localize changes and update
-const numberFormatter = new Intl.NumberFormat(getLocale());
+import localize from "./localize";
 
 export type MaxLengthValidator = {
   helpText: string;
@@ -12,15 +9,13 @@ export type MaxLengthValidator = {
 };
 
 export function getHelpText(maxLength: number, currentLength: number) {
-  const helpText = msg(
-    str`Maximum ${numberFormatter.format(maxLength)} characters`,
-  );
+  const helpText = msg(str`Maximum ${localize.number(maxLength)} characters`);
 
   if (currentLength > maxLength) {
     const overMax = currentLength - maxLength;
     return overMax === 1
-      ? msg(str`${numberFormatter.format(overMax)} character over limit`)
-      : msg(str`${numberFormatter.format(overMax)} characters over limit`);
+      ? msg(str`${localize.number(overMax)} character over limit`)
+      : msg(str`${localize.number(overMax)} characters over limit`);
   }
 
   return helpText;

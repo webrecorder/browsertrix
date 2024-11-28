@@ -13,6 +13,7 @@ from fastapi import HTTPException
 
 from .pagination import DEFAULT_PAGE_SIZE
 from .models import (
+    EmailStr,
     UserRole,
     InvitePending,
     InviteRequest,
@@ -133,7 +134,10 @@ class InviteOps:
         )
 
     async def get_valid_invite(
-        self, invite_token: UUID, email: Optional[str], userid: Optional[UUID] = None
+        self,
+        invite_token: UUID,
+        email: Optional[EmailStr],
+        userid: Optional[UUID] = None,
     ) -> InvitePending:
         """Retrieve a valid invite data from db, or throw if invalid"""
         token_hash = get_hash(invite_token)
@@ -156,7 +160,7 @@ class InviteOps:
         await self.invites.delete_one({"_id": invite_token})
 
     async def remove_invite_by_email(
-        self, email: str, oid: Optional[UUID] = None
+        self, email: EmailStr, oid: Optional[UUID] = None
     ) -> Any:
         """remove invite from invite list by email"""
         query: dict[str, object] = {"email": email}
@@ -255,14 +259,23 @@ class InviteOps:
         self, invite: InvitePending, users: UserManager, include_first_org_admin=False
     ) -> InviteOut:
         """format an InvitePending to return via api, resolve name of inviter"""
-        inviter = await users.get_by_email(invite.inviterEmail)
-        if not inviter:
-            raise HTTPException(status_code=400, detail="invalid_invite")
+        from_superuser = invite.fromSuperuser
+        inviter_name = None
+        inviter_email = None
+        inviter = None
+        if not from_superuser:
+            inviter = await users.get_by_email(invite.inviterEmail)
+            if not inviter:
+                raise HTTPException(status_code=400, detail="invalid_invite")
+
+            inviter_name = inviter.name
+            inviter_email = invite.inviterEmail
 
         invite_out = InviteOut(
             created=invite.created,
-            inviterEmail=invite.inviterEmail,
-            inviterName=inviter.name,
+            inviterEmail=inviter_email,
+            inviterName=inviter_name,
+            fromSuperuser=from_superuser,
             oid=invite.oid,
             role=invite.role,
             email=invite.email,
@@ -279,7 +292,7 @@ class InviteOps:
         invite_out.orgName = org.name
         invite_out.orgSlug = org.slug
 
-        if include_first_org_admin:
+        if include_first_org_admin and invite.role >= UserRole.OWNER:
             invite_out.firstOrgAdmin = True
             for role in org.users.values():
                 if role == UserRole.OWNER:

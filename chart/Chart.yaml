@@ -5,7 +5,7 @@ type: application
 icon: https://webrecorder.net/assets/icon.png
 
 # Browsertrix and Chart Version
-version: v1.11.6
+version: v1.13.0-beta.0
 
 dependencies:
   - name: btrix-admin-logging
@@ -18,3 +18,7 @@ dependencies:
   - name: metacontroller-helm
     version: 4.11.17
     repository: "oci://ghcr.io/metacontroller"
+  - name: btrix-proxies
+    version: 0.1.0
+    condition: btrix-proxies.enabled
+    repository: file://./proxies/

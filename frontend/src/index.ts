@@ -1,10 +1,16 @@
 import { localized, msg, str } from "@lit/localize";
-import type { SlDialog, SlDrawer } from "@shoelace-style/shoelace";
-import { nothing, render, type TemplateResult } from "lit";
+import type {
+  SlDialog,
+  SlDrawer,
+  SlSelectEvent,
+} from "@shoelace-style/shoelace";
+import { html, nothing, render, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
+import isEqual from "lodash/fp/isEqual";
 
 import "broadcastchannel-polyfill";
+import "construct-style-sheets-polyfill";
 import "./utils/polyfills";
 
 import type { OrgTab } from "./pages/org";
@@ -17,15 +23,20 @@ import AuthService, {
   type NeedLoginEventDetail,
 } from "./utils/AuthService";
 import { DEFAULT_MAX_SCALE } from "./utils/crawler";
-import LiteElement, { html } from "./utils/LiteElement";
 import { AppStateService } from "./utils/state";
 import { formatAPIUser } from "./utils/user";
 
+import { BtrixElement } from "@/classes/BtrixElement";
 import type { NavigateEventDetail } from "@/controllers/navigate";
 import type { NotifyEventDetail } from "@/controllers/notify";
 import { theme } from "@/theme";
 import { type Auth } from "@/types/auth";
+import {
+  translatedLocales,
+  type TranslatedLocaleEnum,
+} from "@/types/localization";
 import { type AppSettings } from "@/utils/app";
+import localize from "@/utils/localize";
 import brandLockupColor from "~assets/brand/browsertrix-lockup-color.svg";
 
 import "./shoelace";
@@ -54,11 +65,18 @@ export type APIUser = {
   orgs: UserOrg[];
 };
 
+export interface UserGuideEventMap {
+  "btrix-user-guide-show": CustomEvent<{ path?: string }>;
+}
+
 @localized()
 @customElement("browsertrix-app")
-export class App extends LiteElement {
+export class App extends BtrixElement {
   @property({ type: String })
   version?: string;
+
+  @property({ type: String })
+  docsUrl = "/docs/";
 
   @property({ type: Object })
   settings?: AppSettings;
@@ -68,6 +86,9 @@ export class App extends LiteElement {
 
   @state()
   private viewState!: ViewState;
+
+  @state()
+  private fullDocsUrl = "/docs/";
 
   @state()
   private globalDialogContent: DialogContent = {};
@@ -100,11 +121,22 @@ export class App extends LiteElement {
     this.addEventListener("btrix-need-login", this.onNeedLogin);
     this.addEventListener("btrix-logged-in", this.onLoggedIn);
     this.addEventListener("btrix-log-out", this.onLogOut);
+    this.attachUserGuideListeners();
     window.addEventListener("popstate", () => {
       this.syncViewState();
     });
 
     this.startSyncBrowserTabs();
+  }
+
+  private attachUserGuideListeners() {
+    this.addEventListener(
+      "btrix-user-guide-show",
+      (e: UserGuideEventMap["btrix-user-guide-show"]) => {
+        e.stopPropagation();
+        this.showUserGuide(e.detail.path);
+      },
+    );
   }
 
   willUpdate(changedProperties: Map<string, unknown>) {
@@ -113,7 +145,7 @@ export class App extends LiteElement {
     }
     if (changedProperties.has("viewState")) {
       if (this.viewState.route === "orgs") {
-        this.navigate(this.orgBasePath);
+        this.routeTo(this.navigate.orgBasePath);
       } else if (
         changedProperties.get("viewState") &&
         this.viewState.route === "org"
@@ -121,6 +153,10 @@ export class App extends LiteElement {
         this.updateOrgSlugIfNeeded();
       }
     }
+  }
+
+  protected firstUpdated(): void {
+    localize.initLanguage();
   }
 
   getLocationPathname() {
@@ -135,13 +171,20 @@ export class App extends LiteElement {
       (pathname === "/log-in" || pathname === "/reset-password")
     ) {
       // Redirect to logged in home page
-      this.viewState = this.router.match(this.orgBasePath);
+      this.viewState = this.router.match(this.navigate.orgBasePath);
       window.history.replaceState(this.viewState, "", this.viewState.pathname);
     } else {
-      this.viewState = this.router.match(
+      const nextViewState = this.router.match(
         `${pathname}${window.location.search}`,
       );
-      this.updateOrgSlugIfNeeded();
+      if (
+        !(this.viewState as unknown) ||
+        this.viewState.pathname !== nextViewState.pathname ||
+        !isEqual(this.viewState.params, nextViewState.params)
+      ) {
+        this.viewState = nextViewState;
+        this.updateOrgSlugIfNeeded();
+      }
     }
   }
 
@@ -167,12 +210,12 @@ export class App extends LiteElement {
           this.authService.authState,
         );
         this.clearUser();
-        this.navigate(ROUTES.login);
+        this.routeTo(ROUTES.login);
       }
     }
   }
 
-  navigate(
+  routeTo(
     newViewPath: string,
     state?: { [key: string]: unknown },
     replace?: boolean,
@@ -192,7 +235,7 @@ export class App extends LiteElement {
 
     if (newViewPath === "/log-in" && this.authService.authState) {
       // Redirect to logged in home page
-      this.viewState = this.router.match(this.orgBasePath);
+      this.viewState = this.router.match(this.navigate.orgBasePath);
     } else {
       this.viewState = this.router.match(newViewPath);
     }
@@ -235,10 +278,16 @@ export class App extends LiteElement {
           <span>${msg("User Guide")}</span>
         </span>
         <iframe
-          class="size-full"
-          src="https://docs.browsertrix.com/user-guide/"
+          class="size-full transition-opacity duration-slow"
+          src="${this.docsUrl}user-guide/workflow-setup/"
         ></iframe>
-        <sl-button size="small" slot="footer" variant="text">
+        <sl-button
+          size="small"
+          slot="footer"
+          variant="text"
+          href="${this.fullDocsUrl}"
+          target="_blank"
+        >
           <sl-icon slot="suffix" name="box-arrow-up-right"></sl-icon>
           ${msg("Open in new window")}</sl-button
         >
@@ -281,7 +330,7 @@ export class App extends LiteElement {
     const isSuperAdmin = this.userInfo?.isSuperAdmin;
     let homeHref = "/";
     if (!isSuperAdmin && this.appState.orgSlug) {
-      homeHref = this.orgBasePath;
+      homeHref = this.navigate.orgBasePath;
     }
 
     const showFullLogo =
@@ -301,7 +350,7 @@ export class App extends LiteElement {
                 if (isSuperAdmin) {
                   this.clearSelectedOrg();
                 }
-                this.navLink(e);
+                this.navigate.link(e);
               }}
             >
               <div
@@ -327,7 +376,7 @@ export class App extends LiteElement {
                         href="/"
                         @click=${(e: MouseEvent) => {
                           this.clearSelectedOrg();
-                          this.navLink(e);
+                          this.navigate.link(e);
                         }}
                       >
                         <sl-icon
@@ -349,7 +398,7 @@ export class App extends LiteElement {
                     ? html`
                         <button
                           class="flex items-center gap-2 leading-none text-neutral-500 hover:text-primary"
-                          @click=${() => void this.userGuideDrawer.show()}
+                          @click=${() => this.showUserGuide()}
                         >
                           <sl-icon
                             name="book"
@@ -377,14 +426,14 @@ export class App extends LiteElement {
                       <div class="px-7 py-2">${this.renderMenuUserInfo()}</div>
                       <sl-divider></sl-divider>
                       <sl-menu-item
-                        @click=${() => this.navigate(ROUTES.accountSettings)}
+                        @click=${() => this.routeTo("/account/settings")}
                       >
                         <sl-icon slot="prefix" name="person-gear"></sl-icon>
                         ${msg("Account Settings")}
                       </sl-menu-item>
                       ${this.userInfo?.isSuperAdmin
                         ? html` <sl-menu-item
-                            @click=${() => this.navigate(ROUTES.usersInvite)}
+                            @click=${() => this.routeTo(ROUTES.usersInvite)}
                           >
                             <sl-icon slot="prefix" name="person-plus"></sl-icon>
                             ${msg("Invite Users")}
@@ -397,7 +446,16 @@ export class App extends LiteElement {
                       </sl-menu-item>
                     </sl-menu>
                   </sl-dropdown>`
-              : this.renderSignUpLink()}
+              : html`
+                  ${this.renderSignUpLink()}
+                  ${(translatedLocales as unknown as string[]).length > 2
+                    ? html`
+                        <btrix-user-language-select
+                          @sl-select=${this.onSelectLocale}
+                        ></btrix-user-language-select>
+                      `
+                    : nothing}
+                `}
           </div>
           ${isSuperAdmin
             ? html`
@@ -407,7 +465,7 @@ export class App extends LiteElement {
                   <a
                     class="font-medium text-neutral-500 hover:text-primary"
                     href="/crawls"
-                    @click=${this.navLink}
+                    @click=${this.navigate.link}
                     >${msg("Running Crawls")}</a
                   >
                   <div class="hidden md:block">${this.renderFindCrawl()}</div>
@@ -428,10 +486,10 @@ export class App extends LiteElement {
           href="/sign-up"
           size="small"
           @click="${(e: MouseEvent) => {
-            if (!this.navHandleAnchorClick(e)) {
+            if (!this.navigate.handleAnchorClick(e)) {
               return;
             }
-            this.navigate("/sign-up");
+            this.routeTo("/sign-up");
           }}"
         >
           ${msg("Sign Up")}
@@ -472,8 +530,8 @@ export class App extends LiteElement {
           ? html`
               <a
                 class="font-medium text-neutral-600"
-                href=${this.orgBasePath}
-                @click=${this.navLink}
+                href=${this.navigate.orgBasePath}
+                @click=${this.navigate.link}
               >
                 ${selectedOption.name.slice(0, orgNameLength)}
               </a>
@@ -497,12 +555,12 @@ export class App extends LiteElement {
               @sl-select=${(e: CustomEvent<{ item: { value: string } }>) => {
                 const { value } = e.detail.item;
                 if (value) {
-                  this.navigate(`/orgs/${value}`);
+                  this.routeTo(`/orgs/${value}`);
                 } else {
                   if (this.userInfo) {
                     this.clearSelectedOrg();
                   }
-                  this.navigate(`/`);
+                  this.routeTo(`/`);
                 }
               }}
             >
@@ -573,10 +631,6 @@ export class App extends LiteElement {
       <footer
         class="mx-auto box-border flex w-full max-w-screen-desktop flex-col items-center justify-between gap-4 p-3 md:flex-row"
       >
-        <!-- <div> -->
-        <!-- TODO re-enable when translations are added -->
-        <!-- <btrix-locale-picker></btrix-locale-picker> -->
-        <!-- </div> -->
         <div>
           <a
             class="flex items-center gap-2 leading-none text-neutral-400 hover:text-primary"
@@ -698,6 +752,7 @@ export class App extends LiteElement {
       case "accountSettings":
         return html`<btrix-account-settings
           class="mx-auto box-border w-full max-w-screen-desktop p-2 md:py-8"
+          tab=${this.viewState.params.settingsTab}
         ></btrix-account-settings>`;
 
       case "usersInvite": {
@@ -735,7 +790,7 @@ export class App extends LiteElement {
         const { orgId, uploadId } = this.viewState.params;
         const slug = this.userInfo?.orgs.find((org) => org.id === orgId)?.slug;
         if (slug) {
-          this.navigate(`/orgs/${slug}/items/upload/${uploadId}`);
+          this.routeTo(`/orgs/${slug}/items/upload/${uploadId}`);
           return;
         }
         // falls through
@@ -788,7 +843,7 @@ export class App extends LiteElement {
               const id = new FormData(e.target as HTMLFormElement).get(
                 "crawlId",
               ) as string;
-              this.navigate(`/crawls/crawl/${id}#watch`);
+              this.routeTo(`/crawls/crawl/${id}#watch`);
               void (e.target as HTMLFormElement).closest("sl-dropdown")?.hide();
             }}
           >
@@ -814,6 +869,32 @@ export class App extends LiteElement {
     `;
   }
 
+  private showUserGuide(pathName?: string) {
+    const iframe = this.userGuideDrawer.querySelector("iframe");
+
+    if (iframe) {
+      if (pathName) {
+        this.fullDocsUrl = this.docsUrl + pathName;
+        iframe.src = this.fullDocsUrl;
+      } else {
+        this.fullDocsUrl = this.docsUrl;
+        iframe.src = this.fullDocsUrl;
+      }
+
+      void this.userGuideDrawer.show();
+    } else {
+      console.debug("user guide iframe not found");
+    }
+  }
+
+  onSelectLocale(e: SlSelectEvent) {
+    const locale = e.detail.item.value as TranslatedLocaleEnum;
+
+    if (locale !== this.appState.userPreferences?.language) {
+      AppStateService.partialUpdateUserPreferences({ language: locale });
+    }
+  }
+
   onLogOut(event: CustomEvent<{ redirect?: boolean } | null>) {
     const detail = event.detail || {};
     const redirect = detail.redirect !== false;
@@ -821,7 +902,7 @@ export class App extends LiteElement {
     this.clearUser();
 
     if (redirect) {
-      this.navigate(ROUTES.login);
+      this.routeTo(ROUTES.login);
     }
   }
 
@@ -835,7 +916,7 @@ export class App extends LiteElement {
     });
 
     if (!detail.api) {
-      this.navigate(detail.redirectUrl || this.orgBasePath);
+      this.routeTo(detail.redirectUrl || this.navigate.orgBasePath);
     }
 
     if (detail.firstLogin) {
@@ -856,11 +937,11 @@ export class App extends LiteElement {
 
     this.clearUser();
     const redirectUrl = e.detail.redirectUrl;
-    this.navigate(ROUTES.login, {
+    this.routeTo(ROUTES.login, {
       redirectUrl,
     });
     if (redirectUrl && redirectUrl !== "/") {
-      this.notify({
+      this.notify.toast({
         message: msg("Please log in to continue."),
         variant: "warning",
         icon: "exclamation-triangle",
@@ -873,7 +954,7 @@ export class App extends LiteElement {
 
     const { url, state, resetScroll, replace } = event.detail;
 
-    this.navigate(url, state, replace);
+    this.routeTo(url, state, replace);
 
     if (resetScroll) {
       // Scroll to top of page
@@ -928,13 +1009,13 @@ export class App extends LiteElement {
   };
 
   async getUserInfo(): Promise<APIUser> {
-    return this.apiFetch("/users/me");
+    return this.api.fetch("/users/me");
   }
 
   private clearUser() {
     this.authService.logout();
     this.authService = new AuthService();
-    AppStateService.resetAll();
+    AppStateService.resetUser();
   }
 
   private showDialog(content: DialogContent) {
@@ -990,7 +1071,7 @@ export class App extends LiteElement {
               this.syncViewState();
             } else {
               this.clearUser();
-              this.navigate(ROUTES.login);
+              this.routeTo(ROUTES.login);
             }
           }
         }

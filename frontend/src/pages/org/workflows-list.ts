@@ -1,22 +1,29 @@
 import { localized, msg, str } from "@lit/localize";
-import type { SlCheckbox } from "@shoelace-style/shoelace";
-import { type PropertyValues } from "lit";
+import type { SlCheckbox, SlSelectEvent } from "@shoelace-style/shoelace";
+import { html, type PropertyValues } from "lit";
 import { customElement, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
-import type { ListWorkflow, Seed, Workflow, WorkflowParams } from "./types";
+import {
+  ScopeType,
+  type ListWorkflow,
+  type Seed,
+  type Workflow,
+  type WorkflowParams,
+} from "./types";
 
-import type { SelectNewDialogEvent } from ".";
-
+import { BtrixElement } from "@/classes/BtrixElement";
 import { CopyButton } from "@/components/ui/copy-button";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import { type SelectEvent } from "@/components/ui/search-combobox";
+import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
 import { pageHeader } from "@/layouts/pageHeader";
+import scopeTypeLabels from "@/strings/crawl-workflows/scopeType";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
+import { NewWorkflowOnlyScopeType } from "@/types/workflow";
 import { isApiError } from "@/utils/api";
-import LiteElement, { html } from "@/utils/LiteElement";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { tw } from "@/utils/tailwind";
 
@@ -66,7 +73,7 @@ const sortableFields: Record<
  */
 @localized()
 @customElement("btrix-workflows-list")
-export class WorkflowsList extends LiteElement {
+export class WorkflowsList extends BtrixElement {
   static FieldLabels: Record<SearchFields, string> = {
     name: msg("Name"),
     firstSeed: msg("Crawl Start URL"),
@@ -163,7 +170,7 @@ export class WorkflowsList extends LiteElement {
       } else if ((e as Error).name === "AbortError") {
         console.debug("Fetch archived items aborted to throttle");
       } else {
-        this.notify({
+        this.notify.toast({
           message: msg("Sorry, couldn't retrieve Workflows at this time."),
           variant: "danger",
           icon: "exclamation-octagon",
@@ -197,32 +204,91 @@ export class WorkflowsList extends LiteElement {
               () =>
                 html`<sl-tooltip content=${msg("Configure crawling defaults")}>
                   <sl-icon-button
-                    href=${`${this.orgBasePath}/settings/crawling-defaults`}
+                    href=${`${this.navigate.orgBasePath}/settings/crawling-defaults`}
                     class="size-8 text-lg"
                     name="gear"
                     label=${msg("Edit org crawling settings")}
-                    @click=${this.navLink}
+                    @click=${this.navigate.link}
                   ></sl-icon-button>
                 </sl-tooltip>`,
             )}
             ${when(
               this.appState.isCrawler,
               () => html`
-                <sl-button
-                  variant="primary"
-                  size="small"
-                  ?disabled=${this.org?.readOnly}
-                  @click=${() => {
-                    this.dispatchEvent(
-                      new CustomEvent("select-new-dialog", {
-                        detail: "workflow",
-                      }) as SelectNewDialogEvent,
-                    );
-                  }}
-                >
-                  <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-                  ${msg("New Workflow")}
-                </sl-button>
+                <sl-button-group>
+                  <sl-button
+                    variant="primary"
+                    size="small"
+                    ?disabled=${this.org?.readOnly}
+                    @click=${() =>
+                      this.navigate.to(
+                        `${this.navigate.orgBasePath}/workflows/new`,
+                        {
+                          scopeType:
+                            this.appState.userPreferences?.newWorkflowScopeType,
+                        },
+                      )}
+                  >
+                    <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+                    ${msg("New Workflow")}</sl-button
+                  >
+                  <sl-dropdown
+                    distance="4"
+                    placement="bottom-end"
+                    @sl-select=${(e: SlSelectEvent) => {
+                      const { value } = e.detail.item;
+
+                      if (value) {
+                        this.dispatchEvent(
+                          new CustomEvent<SelectJobTypeEvent["detail"]>(
+                            "select-job-type",
+                            {
+                              detail: value as SelectJobTypeEvent["detail"],
+                            },
+                          ),
+                        );
+                      }
+                    }}
+                  >
+                    <sl-button
+                      slot="trigger"
+                      size="small"
+                      variant="primary"
+                      caret
+                      ?disabled=${this.org?.readOnly}
+                    >
+                      <sl-visually-hidden
+                        >${msg("Scope options")}</sl-visually-hidden
+                      >
+                    </sl-button>
+                    <sl-menu>
+                      <sl-menu-label> ${msg("Page Crawl")} </sl-menu-label>
+                      <sl-menu-item value=${ScopeType.Page}
+                        >${scopeTypeLabels[ScopeType.Page]}</sl-menu-item
+                      >
+                      <sl-menu-item value=${NewWorkflowOnlyScopeType.PageList}>
+                        ${scopeTypeLabels[NewWorkflowOnlyScopeType.PageList]}
+                      </sl-menu-item>
+                      <sl-menu-item value=${ScopeType.SPA}>
+                        ${scopeTypeLabels[ScopeType.SPA]}
+                      </sl-menu-item>
+                      <sl-divider></sl-divider>
+                      <sl-menu-label>${msg("Site Crawl")}</sl-menu-label>
+                      <sl-menu-item value=${ScopeType.Prefix}>
+                        ${scopeTypeLabels[ScopeType.Prefix]}
+                      </sl-menu-item>
+                      <sl-menu-item value=${ScopeType.Host}>
+                        ${scopeTypeLabels[ScopeType.Host]}
+                      </sl-menu-item>
+                      <sl-menu-item value=${ScopeType.Domain}>
+                        ${scopeTypeLabels[ScopeType.Domain]}
+                      </sl-menu-item>
+                      <sl-menu-item value=${ScopeType.Custom}>
+                        ${scopeTypeLabels[ScopeType.Custom]}
+                      </sl-menu-item>
+                    </sl-menu>
+                  </sl-dropdown>
+                </sl-button-group>
               `,
             )}
           `,
@@ -260,7 +326,7 @@ export class WorkflowsList extends LiteElement {
         <div class="grow">${this.renderSearch()}</div>
 
         <div class="flex w-full items-center md:w-fit">
-          <div class="mr-2 whitespace-nowrap text-sm text-0-500">
+          <div class="text-0-500 mr-2 whitespace-nowrap text-sm">
             ${msg("Sort by:")}
           </div>
           <sl-select
@@ -460,15 +526,17 @@ export class WorkflowsList extends LiteElement {
         `,
       )}
       ${when(
-        workflow.isCrawlRunning && this.appState.isCrawler,
+        this.appState.isCrawler &&
+          workflow.isCrawlRunning &&
+          !workflow.lastCrawlStopping,
         // HACK shoelace doesn't current have a way to override non-hover
         // color without resetting the --sl-color-neutral-700 variable
         () => html`
           <sl-divider></sl-divider>
           <sl-menu-item
             @click=${() =>
-              this.navTo(
-                `${this.orgBasePath}/workflows/crawl/${workflow.id}#watch`,
+              this.navigate.to(
+                `${this.navigate.orgBasePath}/workflows/${workflow.id}#watch`,
                 {
                   dialog: "scale",
                 },
@@ -478,9 +546,10 @@ export class WorkflowsList extends LiteElement {
             ${msg("Edit Browser Windows")}
           </sl-menu-item>
           <sl-menu-item
+            ?disabled=${workflow.lastCrawlState !== "running"}
             @click=${() =>
-              this.navTo(
-                `${this.orgBasePath}/workflows/crawl/${workflow.id}#watch`,
+              this.navigate.to(
+                `${this.navigate.orgBasePath}/workflows/${workflow.id}#watch`,
                 {
                   dialog: "exclusions",
                 },
@@ -498,8 +567,8 @@ export class WorkflowsList extends LiteElement {
           html` <sl-divider></sl-divider>
             <sl-menu-item
               @click=${() =>
-                this.navTo(
-                  `${this.orgBasePath}/workflows/crawl/${workflow.id}?edit`,
+                this.navigate.to(
+                  `${this.navigate.orgBasePath}/workflows/${workflow.id}?edit`,
                 )}
             >
               <sl-icon name="gear" slot="prefix"></sl-icon>
@@ -634,7 +703,7 @@ export class WorkflowsList extends LiteElement {
     );
 
     this.getWorkflowsController = new AbortController();
-    const data = await this.apiFetch<APIPaginatedList<Workflow>>(
+    const data = await this.api.fetch<APIPaginatedList<Workflow>>(
       `/orgs/${this.orgId}/crawlconfigs?${query}`,
       {
         signal: this.getWorkflowsController.signal,
@@ -659,25 +728,22 @@ export class WorkflowsList extends LiteElement {
       name: workflow.name ? msg(str`${workflow.name} Copy`) : "",
     };
 
-    this.navTo(
-      `${this.orgBasePath}/workflows?new&jobType=${workflowParams.jobType}`,
-      {
-        workflow: workflowParams,
-        seeds: seeds.items,
-      },
-    );
+    this.navigate.to(`${this.navigate.orgBasePath}/workflows/new`, {
+      workflow: workflowParams,
+      seeds: seeds.items,
+    });
 
     if (seeds.total > SEEDS_MAX) {
-      this.notify({
+      this.notify.toast({
         title: msg(str`Partially copied Workflow`),
         message: msg(
-          str`Only first ${SEEDS_MAX.toLocaleString()} URLs were copied.`,
+          str`Only first ${this.localize.number(SEEDS_MAX)} URLs were copied.`,
         ),
         variant: "warning",
         icon: "exclamation-triangle",
       });
     } else {
-      this.notify({
+      this.notify.toast({
         message: msg(str`Copied Workflow to new template.`),
         variant: "success",
         icon: "check2-circle",
@@ -687,12 +753,12 @@ export class WorkflowsList extends LiteElement {
 
   private async delete(workflow: ListWorkflow): Promise<void> {
     try {
-      await this.apiFetch(`/orgs/${this.orgId}/crawlconfigs/${workflow.id}`, {
+      await this.api.fetch(`/orgs/${this.orgId}/crawlconfigs/${workflow.id}`, {
         method: "DELETE",
       });
 
       void this.fetchWorkflows();
-      this.notify({
+      this.notify.toast({
         message: msg(
           html`Deleted <strong>${this.renderName(workflow)}</strong> Workflow.`,
         ),
@@ -700,7 +766,7 @@ export class WorkflowsList extends LiteElement {
         icon: "check2-circle",
       });
     } catch {
-      this.notify({
+      this.notify.toast({
         message: msg("Sorry, couldn't delete Workflow at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
@@ -711,7 +777,7 @@ export class WorkflowsList extends LiteElement {
   private async cancel(crawlId: ListWorkflow["lastCrawlId"]) {
     if (!crawlId) return;
     if (window.confirm(msg("Are you sure you want to cancel the crawl?"))) {
-      const data = await this.apiFetch<{ success: boolean }>(
+      const data = await this.api.fetch<{ success: boolean }>(
         `/orgs/${this.orgId}/crawls/${crawlId}/cancel`,
         {
           method: "POST",
@@ -720,7 +786,7 @@ export class WorkflowsList extends LiteElement {
       if (data.success) {
         void this.fetchWorkflows();
       } else {
-        this.notify({
+        this.notify.toast({
           message: msg("Something went wrong, couldn't cancel crawl."),
           variant: "danger",
           icon: "exclamation-octagon",
@@ -732,7 +798,7 @@ export class WorkflowsList extends LiteElement {
   private async stop(crawlId: ListWorkflow["lastCrawlId"]) {
     if (!crawlId) return;
     if (window.confirm(msg("Are you sure you want to stop the crawl?"))) {
-      const data = await this.apiFetch<{ success: boolean }>(
+      const data = await this.api.fetch<{ success: boolean }>(
         `/orgs/${this.orgId}/crawls/${crawlId}/stop`,
         {
           method: "POST",
@@ -741,7 +807,7 @@ export class WorkflowsList extends LiteElement {
       if (data.success) {
         void this.fetchWorkflows();
       } else {
-        this.notify({
+        this.notify.toast({
           message: msg("Something went wrong, couldn't stop crawl."),
           variant: "danger",
           icon: "exclamation-octagon",
@@ -752,21 +818,21 @@ export class WorkflowsList extends LiteElement {
 
   private async runNow(workflow: ListWorkflow): Promise<void> {
     try {
-      await this.apiFetch(
+      await this.api.fetch(
         `/orgs/${this.orgId}/crawlconfigs/${workflow.id}/run`,
         {
           method: "POST",
         },
       );
 
-      this.notify({
+      this.notify.toast({
         message: msg(
           html`Started crawl from <strong>${this.renderName(workflow)}</strong>.
             <br />
             <a
               class="underline hover:no-underline"
-              href="${this.orgBasePath}/workflows/crawl/${workflow.id}#watch"
-              @click=${this.navLink.bind(this)}
+              href="${this.navigate.orgBasePath}/workflows/${workflow.id}#watch"
+              @click=${this.navigate.link.bind(this)}
               >Watch crawl</a
             >`,
         ),
@@ -790,8 +856,12 @@ export class WorkflowsList extends LiteElement {
         } else {
           message = msg("You do not have permission to run crawls.");
         }
+      } else if (isApiError(e) && e.details == "proxy_not_found") {
+        message = msg(
+          "Your org doesn't have permission to use the proxy configured for this crawl.",
+        );
       }
-      this.notify({
+      this.notify.toast({
         message: message,
         variant: "danger",
         icon: "exclamation-octagon",
@@ -806,7 +876,9 @@ export class WorkflowsList extends LiteElement {
         names: string[];
         descriptions: string[];
         firstSeeds: string[];
-      } = await this.apiFetch(`/orgs/${this.orgId}/crawlconfigs/search-values`);
+      } = await this.api.fetch(
+        `/orgs/${this.orgId}/crawlconfigs/search-values`,
+      );
 
       // Update search/filter collection
       const toSearchItem = (key: SearchFields) => (value: string) => ({
@@ -822,7 +894,7 @@ export class WorkflowsList extends LiteElement {
   }
 
   private async getWorkflow(workflow: ListWorkflow): Promise<Workflow> {
-    const data: Workflow = await this.apiFetch(
+    const data: Workflow = await this.api.fetch(
       `/orgs/${this.orgId}/crawlconfigs/${workflow.id}`,
     );
     return data;
@@ -830,7 +902,7 @@ export class WorkflowsList extends LiteElement {
 
   private async getSeeds(workflow: ListWorkflow) {
     // NOTE Returns first 1000 seeds (backend pagination max)
-    const data = await this.apiFetch<APIPaginatedList<Seed>>(
+    const data = await this.api.fetch<APIPaginatedList<Seed>>(
       `/orgs/${this.orgId}/crawlconfigs/${workflow.id}/seeds`,
     );
     return data;

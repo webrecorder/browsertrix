@@ -1,5 +1,5 @@
 name: ansible-lint
-on: 
+on:
   push:
     paths:
       - 'ansible/**'
@@ -20,14 +20,14 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: '3.12'
 
       - name: Install dependencies
         run: |
           cd ansible/
           python -m pip install --upgrade pip
           pip install pipenv
-          pipenv install --skip-lock
+          pipenv sync
 
       - name: Lint
         run: |

@@ -19,7 +19,12 @@ from redis.asyncio.client import Redis
 import pymongo
 
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
-from .utils import dt_now, parse_jsonl_error_messages, stream_dict_list_as_csv
+from .utils import (
+    dt_now,
+    date_to_str,
+    parse_jsonl_error_messages,
+    stream_dict_list_as_csv,
+)
 from .basecrawls import BaseCrawlOps
 from .crawlmanager import CrawlManager
 from .models import (
@@ -374,6 +379,7 @@ class CrawlOps(BaseCrawlOps):
             tags=crawlconfig.tags,
             name=crawlconfig.name,
             crawlerChannel=crawlconfig.crawlerChannel,
+            proxyId=crawlconfig.proxyId,
             image=image,
         )
 
@@ -714,8 +720,8 @@ class CrawlOps(BaseCrawlOps):
             data["userid"] = str(crawl.userid)
             data["user"] = user_emails.get(crawl.userid)
 
-            data["started"] = str(crawl.started)
-            data["finished"] = str(crawl.finished)
+            data["started"] = date_to_str(crawl.started) if crawl.started else ""
+            data["finished"] = date_to_str(crawl.finished) if crawl.finished else ""
 
             data["duration"] = 0
             duration_seconds = 0
@@ -1028,7 +1034,16 @@ class CrawlOps(BaseCrawlOps):
         if not qa_run.resources:
             raise HTTPException(status_code=400, detail="qa_run_no_resources")
 
-        resp = await self.storage_ops.download_streaming_wacz(org, qa_run.resources)
+        metadata = {
+            "type": "qaRun",
+            "id": qa_run_id,
+            "crawlId": crawl_id,
+            "organization": org.slug,
+        }
+
+        resp = await self.storage_ops.download_streaming_wacz(
+            metadata, qa_run.resources
+        )
 
         finished = qa_run.finished.isoformat()
 

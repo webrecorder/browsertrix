@@ -20,14 +20,13 @@ import {
   queryAssignedElements,
 } from "lit/decorators.js";
 
+import { BtrixElement } from "@/classes/BtrixElement";
 import type { OverflowDropdown } from "@/components/ui/overflow-dropdown";
 import { RelativeDuration } from "@/components/ui/relative-duration";
-import { NavigateController } from "@/controllers/navigate";
 import type { ListWorkflow } from "@/types/crawler";
 import { humanizeSchedule } from "@/utils/cron";
 import { srOnly, truncate } from "@/utils/css";
-import { getLocale } from "@/utils/localization";
-import { numberFormatter } from "@/utils/number";
+import { pluralOf } from "@/utils/pluralize";
 
 // postcss-lit-disable-next-line
 const mediumBreakpointCss = css`30rem`;
@@ -74,7 +73,7 @@ const hostVars = css`
 
 @customElement("btrix-workflow-list-item")
 @localized()
-export class WorkflowListItem extends LitElement {
+export class WorkflowListItem extends BtrixElement {
   static styles = [
     truncate,
     rowCss,
@@ -199,9 +198,6 @@ export class WorkflowListItem extends LitElement {
     `,
   ];
 
-  @property({ type: String })
-  orgSlug!: string;
-
   @property({ type: Object })
   workflow?: ListWorkflow;
 
@@ -210,12 +206,6 @@ export class WorkflowListItem extends LitElement {
 
   @query("btrix-overflow-dropdown")
   dropdownMenu!: OverflowDropdown;
-
-  private readonly navigate = new NavigateController(this);
-
-  private readonly numberFormatter = numberFormatter(getLocale(), {
-    notation: "compact",
-  });
 
   render() {
     const notSpecified = html`<span class="notSpecified" role="presentation"
@@ -231,7 +221,7 @@ export class WorkflowListItem extends LitElement {
         }
         e.preventDefault();
         await this.updateComplete;
-        const href = `/orgs/${this.orgSlug}/workflows/crawl/${
+        const href = `/orgs/${this.orgSlug}/workflows/${
           this.workflow?.id
         }#${this.workflow?.isCrawlRunning ? "watch" : "crawls"}`;
         this.navigate.to(href);
@@ -245,13 +235,9 @@ export class WorkflowListItem extends LitElement {
           ${this.safeRender((workflow) => {
             if (workflow.schedule) {
               return msg(
-                str`${humanizeSchedule(
-                  workflow.schedule,
-                  {
-                    length: "short",
-                  },
-                  numberFormatter,
-                )}`,
+                str`${humanizeSchedule(workflow.schedule, {
+                  length: "short",
+                })}`,
               );
             }
             if (workflow.lastStartedByName) {
@@ -276,8 +262,7 @@ export class WorkflowListItem extends LitElement {
           ${this.safeRender((workflow) => {
             if (workflow.lastCrawlTime && workflow.lastCrawlStartTime) {
               return html`<sl-format-date
-                  lang=${getLocale()}
-                  date="${workflow.lastRun.toString()}Z"
+                  date="${workflow.lastRun.toString()}"
                   month="2-digit"
                   day="2-digit"
                   year="2-digit"
@@ -286,8 +271,8 @@ export class WorkflowListItem extends LitElement {
                 ></sl-format-date>
                 ${msg(
                   str`in ${RelativeDuration.humanize(
-                    new Date(`${workflow.lastCrawlTime}Z`).valueOf() -
-                      new Date(`${workflow.lastCrawlStartTime}Z`).valueOf(),
+                    new Date(workflow.lastCrawlTime).valueOf() -
+                      new Date(workflow.lastCrawlStartTime).valueOf(),
                     { compact: true },
                   )}`,
                 )}`;
@@ -295,7 +280,7 @@ export class WorkflowListItem extends LitElement {
             if (workflow.lastCrawlStartTime) {
               const diff =
                 new Date().valueOf() -
-                new Date(`${workflow.lastCrawlStartTime}Z`).valueOf();
+                new Date(workflow.lastCrawlStartTime).valueOf();
               if (diff < 1000) {
                 return "";
               }
@@ -353,14 +338,9 @@ export class WorkflowListItem extends LitElement {
           })}
         </div>
         <div class="desc">
-          ${this.safeRender((workflow) =>
-            workflow.crawlCount === 1
-              ? msg(str`${workflow.crawlCount} crawl`)
-              : msg(
-                  str`${this.numberFormatter.format(
-                    workflow.crawlCount || 0,
-                  )} crawls`,
-                ),
+          ${this.safeRender(
+            (workflow) =>
+              `${this.localize.number(workflow.crawlCount, { notation: "compact" })} ${pluralOf("crawls", workflow.crawlCount)}`,
           )}
         </div>
       </div>
@@ -375,8 +355,7 @@ export class WorkflowListItem extends LitElement {
           ${this.safeRender(
             (workflow) => html`
               <sl-format-date
-                lang=${getLocale()}
-                date="${workflow.modified.toString()}Z"
+                date="${workflow.modified}"
                 month="2-digit"
                 day="2-digit"
                 year="2-digit"
@@ -412,7 +391,7 @@ export class WorkflowListItem extends LitElement {
   }
 
   // TODO consolidate collections/workflow name
-  private renderName(workflow: ListWorkflow) {
+  private readonly renderName = (workflow: ListWorkflow) => {
     if (workflow.name)
       return html`<span class="truncate">${workflow.name}</span>`;
     if (!workflow.firstSeed)
@@ -420,21 +399,16 @@ export class WorkflowListItem extends LitElement {
     const remainder = workflow.seedCount - 1;
     let nameSuffix: string | TemplateResult<1> = "";
     if (remainder) {
-      if (remainder === 1) {
-        nameSuffix = html`<span class="additionalUrls"
-          >${msg(str`+${remainder} URL`)}</span
-        >`;
-      } else {
-        nameSuffix = html`<span class="additionalUrls"
-          >${msg(str`+${remainder} URLs`)}</span
-        >`;
-      }
+      nameSuffix = html`<span class="additionalUrls"
+        >+${this.localize.number(remainder, { notation: "compact" })}
+        ${pluralOf("URLs", remainder)}</span
+      >`;
     }
     return html`
       <span class="primaryUrl truncate">${workflow.firstSeed}</span
       >${nameSuffix}
     `;
-  }
+  };
 }
 
 @localized()

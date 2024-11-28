@@ -4,7 +4,7 @@ from uuid import UUID
 from typing import Optional
 import yaml
 
-from btrixcloud.utils import to_k8s_date, dt_now
+from btrixcloud.utils import date_to_str, dt_now
 from .models import MCDecoratorSyncData, CJS, MCDecoratorSyncResponse
 from .baseoperator import BaseOperator
 
@@ -31,7 +31,7 @@ class CronJobOperator(BaseOperator):
         """get final response to indicate cronjob created job is finished"""
 
         if not finished:
-            finished = to_k8s_date(dt_now())
+            finished = date_to_str(dt_now())
 
         status = None
         # set status on decorated job to indicate that its finished
@@ -93,11 +93,20 @@ class CronJobOperator(BaseOperator):
 
         if org.readOnly:
             print(
-                f"org {org.id} set to read-only. skipping scheduled crawl for workflow {cid}"
+                f'org "{org.slug}" set to read-only. skipping scheduled crawl for workflow {cid}'
             )
             return self.get_finished_response(metadata)
 
-        # if no db state, crawl crawl in the db
+        if crawlconfig.proxyId and not self.crawl_config_ops.get_crawler_proxy(
+            crawlconfig.proxyId
+        ):
+            print(
+                f"proxy {crawlconfig.proxyId} missing, skipping scheduled crawl for "
+                + f'workflow {cid} in "{org.slug}"'
+            )
+            return self.get_finished_response(metadata)
+
+        # if no db state, add crawl in the db
         if not state:
             await self.crawl_config_ops.add_new_crawl(
                 crawl_id,
@@ -125,6 +134,7 @@ class CronJobOperator(BaseOperator):
             warc_prefix=warc_prefix,
             storage_filename=self.crawl_config_ops.default_filename_template,
             profile_filename=profile_filename or "",
+            proxy_id=crawlconfig.proxyId or "",
         )
 
         return MCDecoratorSyncResponse(attachments=list(yaml.safe_load_all(crawljob)))
@@ -151,7 +161,7 @@ class CronJobOperator(BaseOperator):
             crawl_id, is_qa=False
         )
         if finished:
-            finished_str = to_k8s_date(finished)
+            finished_str = date_to_str(finished)
             set_status = False
             # mark job as completed
             if not data.object["status"].get("succeeded"):

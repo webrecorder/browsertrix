@@ -29,6 +29,12 @@ const WEBSOCKET_HOST =
     ? new URL(process.env.API_BASE_URL).host
     : process.env.WEBSOCKET_HOST || "";
 
+const DOCS_URL = process.env.DOCS_URL
+  ? new URL(process.env.DOCS_URL)
+  : isDevServer
+    ? "https://docs.browsertrix.com/"
+    : "/docs/";
+
 // Get git info for release version info
 
 /**
@@ -151,7 +157,7 @@ const main = {
 
   plugins: [
     new webpack.DefinePlugin({
-      "process.env.WEBSOCKET_HOST": JSON.stringify(WEBSOCKET_HOST),
+      "window.process.env.WEBSOCKET_HOST": JSON.stringify(WEBSOCKET_HOST),
     }),
 
     new webpack.optimize.LimitChunkCountPlugin({
@@ -171,6 +177,7 @@ const main = {
       templateParameters: {
         glitchtip_dsn: process.env.GLITCHTIP_DSN || "",
         environment: isDevServer ? "development" : "production",
+        docsUrl: DOCS_URL,
         version,
         gitBranch,
         commitHash,

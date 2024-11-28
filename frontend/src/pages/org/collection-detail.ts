@@ -10,15 +10,16 @@ import queryString from "query-string";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { PageChangeEvent } from "@/components/ui/pagination";
-import { pageBreadcrumbs, type Breadcrumb } from "@/layouts/pageHeader";
+import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
 import type {
   APIPaginatedList,
   APIPaginationQuery,
   APISortQuery,
 } from "@/types/api";
 import type { Collection } from "@/types/collection";
-import type { ArchivedItem, Crawl, CrawlState, Upload } from "@/types/crawler";
-import { getLocale } from "@/utils/localization";
+import type { ArchivedItem, Crawl, Upload } from "@/types/crawler";
+import type { CrawlState } from "@/types/crawlState";
+import { pluralOf } from "@/utils/pluralize";
 
 const ABORT_REASON_THROTTLE = "throttled";
 const DESCRIPTION_MAX_HEIGHT_PX = 200;
@@ -62,10 +63,6 @@ export class CollectionDetail extends BtrixElement {
   // Use to cancel requests
   private getArchivedItemsController: AbortController | null = null;
 
-  private readonly numberFormatter = new Intl.NumberFormat(getLocale(), {
-    notation: "compact",
-  });
-
   private readonly tabLabels: Record<
     Tab,
     { icon: { name: string; library: string }; text: string }
@@ -101,20 +98,22 @@ export class CollectionDetail extends BtrixElement {
     return html` <div class="mb-7">${this.renderBreadcrumbs()}</div>
       <header class="items-center gap-2 pb-3 md:flex">
         <div class="mb-2 flex w-full items-center gap-2 md:mb-0">
-          ${this.collection?.isPublic
-            ? html`
-                <sl-tooltip content=${msg("Shareable")}>
-                  <sl-icon
-                    class="text-lg text-success-600"
-                    name="people-fill"
-                  ></sl-icon>
-                </sl-tooltip>
-              `
-            : html`
-                <sl-tooltip content=${msg("Private")}>
-                  <sl-icon class="text-lg" name="eye-slash-fill"></sl-icon>
-                </sl-tooltip>
-              `}
+          <div class="flex size-8 items-center justify-center">
+            ${this.collection?.isPublic
+              ? html`
+                  <sl-tooltip content=${msg("Shareable")}>
+                    <sl-icon
+                      class="text-lg text-success-600"
+                      name="people-fill"
+                    ></sl-icon>
+                  </sl-tooltip>
+                `
+              : html`
+                  <sl-tooltip content=${msg("Private")}>
+                    <sl-icon class="text-lg" name="eye-slash-fill"></sl-icon>
+                  </sl-tooltip>
+                `}
+          </div>
           <h1 class="min-w-0 flex-1 truncate text-xl font-semibold leading-7">
             ${this.collection?.name ||
             html`<sl-skeleton class="w-96"></sl-skeleton>`}
@@ -188,7 +187,7 @@ export class CollectionDetail extends BtrixElement {
           >
           <sl-button
             size="small"
-            variant="primary"
+            variant="danger"
             @click=${async () => {
               await this.deleteCollection();
               this.openDialogName = undefined;
@@ -364,27 +363,12 @@ export class CollectionDetail extends BtrixElement {
         href: `${this.navigate.orgBasePath}/collections`,
         content: msg("Collections"),
       },
+      {
+        content: this.collection?.name,
+      },
     ];
 
-    if (this.collection) {
-      if (this.collectionTab) {
-        breadcrumbs.push(
-          {
-            href: `${this.navigate.orgBasePath}/collections/view/${this.collectionId}`,
-            content: this.collection.name,
-          },
-          {
-            content: this.tabLabels[this.collectionTab].text,
-          },
-        );
-      } else {
-        breadcrumbs.push({
-          content: this.collection.name,
-        });
-      }
-    }
-
-    return pageBreadcrumbs(breadcrumbs);
+    return pageNav(breadcrumbs);
   };
 
   private readonly renderTabs = () => {
@@ -481,10 +465,10 @@ export class CollectionDetail extends BtrixElement {
   private renderInfoBar() {
     return html`
       <btrix-desc-list horizontal>
-        ${this.renderDetailItem(msg("Archived Items"), (col) =>
-          col.crawlCount === 1
-            ? msg("1 item")
-            : msg(str`${this.numberFormatter.format(col.crawlCount)} items`),
+        ${this.renderDetailItem(
+          msg("Archived Items"),
+          (col) =>
+            `${this.localize.number(col.crawlCount)} ${pluralOf("items", col.crawlCount)}`,
         )}
         ${this.renderDetailItem(
           msg("Total Size"),
@@ -494,17 +478,16 @@ export class CollectionDetail extends BtrixElement {
               display="narrow"
             ></sl-format-bytes>`,
         )}
-        ${this.renderDetailItem(msg("Total Pages"), (col) =>
-          col.pageCount === 1
-            ? msg("1 page")
-            : msg(str`${this.numberFormatter.format(col.pageCount)} pages`),
+        ${this.renderDetailItem(
+          msg("Total Pages"),
+          (col) =>
+            `${this.localize.number(col.pageCount)} ${pluralOf("pages", col.pageCount)}`,
         )}
         ${this.renderDetailItem(
           msg("Last Updated"),
           (col) =>
             html`<sl-format-date
-              lang=${getLocale()}
-              date=${`${col.modified}Z`}
+              date=${col.modified}
               month="2-digit"
               day="2-digit"
               year="2-digit"
@@ -677,7 +660,7 @@ export class CollectionDetail extends BtrixElement {
     idx: number,
   ) => html`
     <btrix-archived-item-list-item
-      href=${`${this.navigate.orgBasePath}/collections/view/${this.collectionId}/items/${item.type}/${item.id}`}
+      href=${`${this.navigate.orgBasePath}/${item.type === "crawl" ? `workflows/${item.cid}/crawls` : `items/${item.type}`}/${item.id}?collectionId=${this.collectionId}`}
       .item=${item}
     >
       ${this.isCrawler

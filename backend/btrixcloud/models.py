@@ -15,7 +15,8 @@ from pydantic import (
     Field,
     HttpUrl as HttpUrlNonStr,
     AnyHttpUrl as AnyHttpUrlNonStr,
-    EmailStr,
+    EmailStr as CasedEmailStr,
+    validate_email,
     RootModel,
     BeforeValidator,
     TypeAdapter,
@@ -47,6 +48,15 @@ HttpUrl = Annotated[
 ]
 
 
+# pylint: disable=too-few-public-methods
+class EmailStr(CasedEmailStr):
+    """EmailStr type that lowercases the full email"""
+
+    @classmethod
+    def _validate(cls, value: CasedEmailStr, /) -> CasedEmailStr:
+        return validate_email(value)[1].lower()
+
+
 # pylint: disable=invalid-name, too-many-lines
 # ============================================================================
 class UserRole(IntEnum):
@@ -70,11 +80,11 @@ class InvitePending(BaseMongoModel):
     id: UUID
     created: datetime
     tokenHash: str
-    inviterEmail: str
+    inviterEmail: EmailStr
     fromSuperuser: Optional[bool] = False
     oid: Optional[UUID] = None
     role: UserRole = UserRole.VIEWER
-    email: Optional[str] = ""
+    email: Optional[EmailStr] = None
     # set if existing user
     userid: Optional[UUID] = None
 
@@ -84,21 +94,22 @@ class InviteOut(BaseModel):
     """Single invite output model"""
 
     created: datetime
-    inviterEmail: str
-    inviterName: str
+    inviterEmail: Optional[EmailStr] = None
+    inviterName: Optional[str] = None
+    fromSuperuser: bool
     oid: Optional[UUID] = None
     orgName: Optional[str] = None
     orgSlug: Optional[str] = None
     role: UserRole = UserRole.VIEWER
-    email: Optional[str] = ""
-    firstOrgAdmin: Optional[bool] = None
+    email: Optional[EmailStr] = None
+    firstOrgAdmin: bool = False
 
 
 # ============================================================================
 class InviteRequest(BaseModel):
     """Request to invite another user"""
 
-    email: str
+    email: EmailStr
 
 
 # ============================================================================
@@ -339,6 +350,7 @@ class CrawlConfigIn(BaseModel):
 
     profileid: Union[UUID, EmptyStr, None] = None
     crawlerChannel: str = "default"
+    proxyId: Optional[str] = None
 
     autoAddCollections: Optional[List[UUID]] = []
     tags: Optional[List[str]] = []
@@ -362,6 +374,7 @@ class ConfigRevision(BaseMongoModel):
 
     profileid: Optional[UUID] = None
     crawlerChannel: Optional[str] = None
+    proxyId: Optional[str] = None
 
     crawlTimeout: Optional[int] = 0
     maxCrawlSize: Optional[int] = 0
@@ -392,6 +405,7 @@ class CrawlConfigCore(BaseMongoModel):
 
     profileid: Optional[UUID] = None
     crawlerChannel: Optional[str] = None
+    proxyId: Optional[str] = None
 
 
 # ============================================================================
@@ -489,6 +503,7 @@ class UpdateCrawlConfig(BaseModel):
     schedule: Optional[str] = None
     profileid: Union[UUID, EmptyStr, None] = None
     crawlerChannel: Optional[str] = None
+    proxyId: Optional[str] = None
     crawlTimeout: Optional[int] = None
     maxCrawlSize: Optional[int] = None
     scale: Scale = 1
@@ -512,6 +527,7 @@ class CrawlConfigDefaults(BaseModel):
 
     profileid: Optional[UUID] = None
     crawlerChannel: Optional[str] = None
+    proxyId: Optional[str] = None
 
     lang: Optional[str] = None
 
@@ -588,6 +604,40 @@ class CrawlerChannels(BaseModel):
     """List of CrawlerChannel instances for API"""
 
     channels: List[CrawlerChannel] = []
+
+
+# ============================================================================
+
+### PROXIES ###
+
+
+class CrawlerProxy(BaseModel):
+    """proxy definition"""
+
+    id: str
+    url: str
+    label: str
+    description: str = ""
+    country_code: str = ""
+    has_host_public_key: bool = False
+    has_private_key: bool = False
+    shared: bool = False
+
+
+# ============================================================================
+class CrawlerProxies(BaseModel):
+    """List of CrawlerProxy instances for API"""
+
+    default_proxy_id: Optional[str] = None
+    servers: List[CrawlerProxy] = []
+
+
+# ============================================================================
+class OrgProxies(BaseModel):
+    """Org proxy settings for API"""
+
+    allowSharedProxies: bool
+    allowedProxies: list[str]
 
 
 # ============================================================================
@@ -783,6 +833,7 @@ class CrawlOut(BaseMongoModel):
     execMinutesQuotaReached: Optional[bool] = False
 
     crawlerChannel: str = "default"
+    proxyId: Optional[str] = None
     image: Optional[str] = None
 
     reviewStatus: ReviewStatus = None
@@ -1179,7 +1230,7 @@ class SubscriptionCreate(BaseModel):
     status: str
     planId: str
 
-    firstAdminInviteEmail: str
+    firstAdminInviteEmail: EmailStr
     quotas: Optional[OrgQuotas] = None
 
 
@@ -1377,6 +1428,8 @@ class OrgOut(BaseMongoModel):
 
     subscription: Optional[Subscription] = None
 
+    allowSharedProxies: bool = False
+    allowedProxies: list[str] = []
     crawlingDefaults: Optional[CrawlConfigDefaults] = None
 
 
@@ -1430,6 +1483,8 @@ class Organization(BaseMongoModel):
 
     subscription: Optional[Subscription] = None
 
+    allowSharedProxies: bool = False
+    allowedProxies: list[str] = []
     crawlingDefaults: Optional[CrawlConfigDefaults] = None
 
     def is_owner(self, user):
@@ -1654,6 +1709,7 @@ class Profile(BaseMongoModel):
 
     baseid: Optional[UUID] = None
     crawlerChannel: Optional[str] = None
+    proxyId: Optional[str] = None
 
 
 # ============================================================================
@@ -1676,6 +1732,7 @@ class ProfileLaunchBrowserIn(UrlIn):
 
     profileId: Optional[UUID] = None
     crawlerChannel: str = "default"
+    proxyId: Optional[str] = None
 
 
 # ============================================================================
@@ -1693,6 +1750,7 @@ class ProfileCreate(BaseModel):
     name: str
     description: Optional[str] = ""
     crawlerChannel: str = "default"
+    proxyId: Optional[str] = None
 
 
 # ============================================================================
@@ -1955,6 +2013,8 @@ class BgJobType(str, Enum):
 
     CREATE_REPLICA = "create-replica"
     DELETE_REPLICA = "delete-replica"
+    DELETE_ORG = "delete-org"
+    RECALCULATE_ORG_STATS = "recalculate-org-stats"
 
 
 # ============================================================================
@@ -1994,9 +2054,31 @@ class DeleteReplicaJob(BackgroundJob):
 
 
 # ============================================================================
+class DeleteOrgJob(BackgroundJob):
+    """Model for tracking deletion of org data jobs"""
+
+    type: Literal[BgJobType.DELETE_ORG] = BgJobType.DELETE_ORG
+
+
+# ============================================================================
+class RecalculateOrgStatsJob(BackgroundJob):
+    """Model for tracking jobs to recalculate org stats"""
+
+    type: Literal[BgJobType.RECALCULATE_ORG_STATS] = BgJobType.RECALCULATE_ORG_STATS
+
+
+# ============================================================================
 # Union of all job types, for response model
 
-AnyJob = RootModel[Union[CreateReplicaJob, DeleteReplicaJob, BackgroundJob]]
+AnyJob = RootModel[
+    Union[
+        CreateReplicaJob,
+        DeleteReplicaJob,
+        BackgroundJob,
+        DeleteOrgJob,
+        RecalculateOrgStatsJob,
+    ]
+]
 
 
 # ============================================================================
@@ -2152,6 +2234,13 @@ class SuccessResponse(BaseModel):
 
 
 # ============================================================================
+class SuccessResponseId(SuccessResponse):
+    """Response for API endpoints that return success and a background job id"""
+
+    id: Optional[str] = None
+
+
+# ============================================================================
 class SuccessResponseStorageQuota(SuccessResponse):
     """Response for API endpoints that return success and storageQuotaReached"""
 
@@ -2214,6 +2303,13 @@ class DeletedResponse(BaseModel):
     """Response for delete API endpoints"""
 
     deleted: bool
+
+
+# ============================================================================
+class DeletedResponseId(DeletedResponse):
+    """Response for delete API endpoints that return job id"""
+
+    id: str
 
 
 # ============================================================================

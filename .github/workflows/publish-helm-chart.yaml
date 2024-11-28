@@ -23,6 +23,7 @@ jobs:
         run: |
           mkdir .chart-out
           helm package chart/ --destination .chart-out
+          helm package chart/proxies/ --destination .chart-out
 
       - name: Get Version
         run: |
@@ -49,7 +50,9 @@ jobs:
 
             See [the development guide](https://docs.browsertrix.com/deploy/) for more info how to deploy Browsertrix.
 
-          files: .chart-out/browsertrix-v${{ env.version }}.tgz
+          files: |
+            .chart-out/browsertrix-v${{ env.version }}.tgz
+            .chart-out/btrix-proxies-0.1.0.tgz
           tag_name: v${{ env.version }}
           draft: true
           fail_on_unmatched_files: true

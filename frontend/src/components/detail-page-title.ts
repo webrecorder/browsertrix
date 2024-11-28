@@ -1,10 +1,11 @@
-import { localized } from "@lit/localize";
+import { localized, msg, str } from "@lit/localize";
 import { css, html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
+import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { type ArchivedItem, type Workflow } from "@/types/crawler";
-import { formatNumber } from "@/utils/localization";
+import localize from "@/utils/localize";
 import { pluralOf } from "@/utils/pluralize";
 
 enum TitleSource {
@@ -15,7 +16,7 @@ enum TitleSource {
 
 type Item = Pick<
   ArchivedItem & Workflow,
-  "name" | "firstSeed" | "seedCount" | "id"
+  "name" | "firstSeed" | "seedCount" | "id" | "type" | "state" | "finished"
 >;
 
 @localized()
@@ -53,24 +54,54 @@ export class DetailPageTitle extends TailwindElement {
 
     const remainder = item.seedCount - 1;
 
-    return html`<span class="truncate">${item.firstSeed}</span>${remainder
+    return html`<span class="max-w-[30ch] truncate">${item.firstSeed}</span
+      >${remainder
         ? html` <span class="whitespace-nowrap text-neutral-500"
-            >+${formatNumber(remainder)} ${pluralOf("URLs", remainder)}</span
+            >+${localize.number(remainder)} ${pluralOf("URLs", remainder)}</span
           >`
         : nothing}`;
+  }
+
+  private renderIcon() {
+    if (!this.item?.state) return;
+
+    const crawlStatus = CrawlStatus.getContent(this.item.state, this.item.type);
+
+    let icon = html`<sl-tooltip
+      content=${msg(str`Crawl: ${crawlStatus.label}`)}
+    >
+      <sl-icon
+        name="gear-wide-connected"
+        style="color: ${crawlStatus.cssColor}"
+      ></sl-icon>
+    </sl-tooltip>`;
+
+    if (this.item.type === "upload") {
+      icon = html`<sl-tooltip content=${msg(str`Upload: ${crawlStatus.label}`)}>
+        <sl-icon name="upload" style="color: ${crawlStatus.cssColor}"></sl-icon>
+      </sl-tooltip>`;
+    }
+
+    return html`
+      <div class="flex size-8 items-center justify-center text-neutral-500">
+        ${icon}
+      </div>
+    `;
   }
 
   render() {
     if (!this.item)
       return html`<sl-skeleton class="inline-block h-8 w-60"></sl-skeleton>`;
 
-    return html`<sl-tooltip
-      content="${this.primaryTitle(this.item).title}"
-      hoist
-    >
-      <h1 class="flex min-w-32 text-xl font-semibold leading-8">
-        ${this.renderTitle(this.item)}
+    return html`
+      <h1
+        class="flex min-w-32 items-center gap-2 text-xl font-semibold leading-8"
+      >
+        ${this.renderIcon()}
+        <sl-tooltip content="${this.primaryTitle(this.item).title}" hoist>
+          ${this.renderTitle(this.item)}
+        </sl-tooltip>
       </h1>
-    </sl-tooltip>`;
+    `;
   }
 }

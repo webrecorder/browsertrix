@@ -1,6 +1,6 @@
 import { localized, msg, str } from "@lit/localize";
 import ISO6391 from "iso-639-1";
-import { nothing } from "lit";
+import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import { html as staticHtml, unsafeStatic } from "lit/static-html.js";
@@ -9,14 +9,17 @@ import RegexColorize from "regex-colorize";
 
 import { RelativeDuration } from "./relative-duration";
 
+import { BtrixElement } from "@/classes/BtrixElement";
 import type { CrawlConfig, Seed, SeedConfig } from "@/pages/org/types";
+import scopeTypeLabel from "@/strings/crawl-workflows/scopeType";
 import sectionStrings from "@/strings/crawl-workflows/section";
 import type { Collection } from "@/types/collection";
+import { WorkflowScopeType } from "@/types/workflow";
 import { isApiError } from "@/utils/api";
 import { getAppSettings } from "@/utils/app";
-import { DEPTH_SUPPORTED_SCOPES } from "@/utils/crawler";
+import { DEPTH_SUPPORTED_SCOPES, isPageScopeType } from "@/utils/crawler";
 import { humanizeSchedule } from "@/utils/cron";
-import LiteElement, { html } from "@/utils/LiteElement";
+import { pluralOf } from "@/utils/pluralize";
 
 /**
  * Usage:
@@ -28,7 +31,7 @@ import LiteElement, { html } from "@/utils/LiteElement";
  */
 @localized()
 @customElement("btrix-config-details")
-export class ConfigDetails extends LiteElement {
+export class ConfigDetails extends BtrixElement {
   @property({ type: Object })
   crawlConfig?: CrawlConfig;
 
@@ -52,19 +55,6 @@ export class ConfigDetails extends LiteElement {
   @state()
   private collections: Collection[] = [];
 
-  private readonly scopeTypeLabels: Record<
-    NonNullable<CrawlConfig["config"]["scopeType"]>,
-    string
-  > = {
-    prefix: msg("Path Begins with This URL"),
-    host: msg("Pages on This Domain"),
-    domain: msg("Pages on This Domain & Subdomains"),
-    "page-spa": msg("Single Page App (In-Page Links Only)"),
-    page: msg("Page"),
-    custom: msg("Custom"),
-    any: msg("Any"),
-  };
-
   async connectedCallback() {
     super.connectedCallback();
     void this.fetchAPIDefaults();
@@ -74,8 +64,6 @@ export class ConfigDetails extends LiteElement {
   render() {
     const crawlConfig = this.crawlConfig;
     const seedsConfig = crawlConfig?.config;
-    const exclusions = seedsConfig?.exclude || [];
-    const maxPages = this.seeds?.[0]?.limit ?? seedsConfig?.limit;
     const renderTimeLimit = (
       valueSeconds?: number | null,
       fallbackValue?: number,
@@ -122,41 +110,44 @@ export class ConfigDetails extends LiteElement {
         </btrix-section-heading>
         <btrix-desc-list>
           ${when(
-            crawlConfig?.jobType === "seed-crawl",
-            this.renderConfirmSeededSettings,
-            this.renderConfirmUrlListSettings,
-          )}
-          ${when(
-            exclusions.length,
-            () => html`
-              <div class="mb-2">
-                <btrix-queue-exclusion-table
-                  .exclusions=${exclusions}
-                  labelClassName="text-xs text-neutral-500"
-                >
-                </btrix-queue-exclusion-table>
-              </div>
+            seedsConfig,
+            (config) => html`
+              ${this.renderSetting(
+                msg("Crawl Scope"),
+                when(this.seeds, (seeds) => {
+                  if (!config.scopeType) return;
+                  if (isPageScopeType(config.scopeType) && seeds.length > 1) {
+                    return scopeTypeLabel[WorkflowScopeType.PageList];
+                  }
+                  return scopeTypeLabel[config.scopeType];
+                }),
+              )}
+              ${isPageScopeType(config.scopeType)
+                ? this.renderConfirmUrlListSettings(config)
+                : this.renderConfirmSeededSettings(config)}
             `,
-            () => this.renderSetting(msg("Exclusions"), msg("None")),
           )}
           <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
             <h4>${sectionStrings.perCrawlLimits}</h4>
           </btrix-section-heading>
           ${this.renderSetting(
             msg("Max Pages"),
-            when(
-              maxPages,
-              () => msg(str`${maxPages!.toLocaleString()} pages`),
-              () =>
-                this.orgDefaults?.maxPagesPerCrawl
-                  ? html`<span class="text-neutral-400"
-                      >${msg(
-                        str`${this.orgDefaults.maxPagesPerCrawl.toLocaleString()} pages`,
-                      )}
-                      ${msg("(default)")}</span
-                    >`
-                  : undefined,
-            ),
+            when(seedsConfig && this.seeds, (seeds) => {
+              const primarySeed = seeds[0] as Seed | undefined;
+              const maxPages = primarySeed?.limit ?? seedsConfig?.limit;
+
+              if (maxPages) {
+                return `${this.localize.number(+maxPages)} ${pluralOf("pages", +maxPages)}`;
+              }
+
+              if (this.orgDefaults?.maxPagesPerCrawl) {
+                return html`<span class="text-neutral-400">
+                  ${this.localize.number(this.orgDefaults.maxPagesPerCrawl)}
+                  ${pluralOf("pages", this.orgDefaults.maxPagesPerCrawl)}
+                  ${msg("(default)")}</span
+                >`;
+              }
+            }),
           )}
           ${this.renderSetting(
             msg("Crawl Time Limit"),
@@ -217,7 +208,7 @@ export class ConfigDetails extends LiteElement {
                   href=${`/orgs/${crawlConfig!.oid}/browser-profiles/profile/${
                     crawlConfig!.profileid
                   }`}
-                  @click=${this.navLink}
+                  @click=${this.navigate.link}
                 >
                   ${crawlConfig?.profileName}
                 </a>`,
@@ -256,6 +247,9 @@ export class ConfigDetails extends LiteElement {
                 msg("Language"),
                 ISO6391.getName(crawlConfig.config.lang),
               )
+            : nothing}
+          ${crawlConfig?.proxyId
+            ? this.renderSetting(msg("Proxy"), capitalize(crawlConfig.proxyId))
             : nothing}
         </btrix-desc-list>
       </section>
@@ -316,7 +310,8 @@ export class ConfigDetails extends LiteElement {
                           html`<sl-tag class="mr-2 mt-1" variant="neutral">
                             ${coll.name}
                             <span class="font-monostyle pl-1 text-xs">
-                              (${msg(str`${coll.crawlCount} items`)})
+                              (${this.localize.number(coll.crawlCount)}
+                              ${pluralOf("items", coll.crawlCount)})
                             </span>
                           </sl-tag>`,
                       )
@@ -328,107 +323,103 @@ export class ConfigDetails extends LiteElement {
     `;
   }
 
-  private readonly renderConfirmUrlListSettings = () => {
-    const crawlConfig = this.crawlConfig;
-
+  private readonly renderConfirmUrlListSettings = (
+    config: CrawlConfig["config"],
+  ) => {
     return html`
       ${this.renderSetting(
-        msg("Crawl URL(s)"),
-        html`
-          <ul>
-            ${this.seeds?.map(
-              (seed: Seed) => html`
-                <li>
-                  <a
-                    class="text-blue-600 hover:text-blue-500 hover:underline"
-                    href="${seed.url}"
-                    target="_blank"
-                    rel="noreferrer"
-                    >${seed.url}</a
-                  >
-                </li>
-              `,
-            )}
-          </ul>
-        `,
+        config.scopeType === WorkflowScopeType.Page
+          ? msg("Page URL")
+          : msg("Page URLs"),
+        this.seeds?.length
+          ? html`
+              <ul>
+                ${this.seeds.map(
+                  (seed: Seed) => html`
+                    <li>
+                      <a
+                        class="text-blue-600 hover:text-blue-500 hover:underline"
+                        href="${seed.url}"
+                        target="_blank"
+                        rel="noreferrer"
+                        >${seed.url}</a
+                      >
+                    </li>
+                  `,
+                )}
+              </ul>
+            `
+          : undefined,
         true,
       )}
       ${this.renderSetting(
-        msg("Include Any Linked Page"),
-        Boolean(crawlConfig?.config.extraHops),
-      )}
-      ${this.renderSetting(
-        msg("Fail Crawl On Failed URL"),
-        Boolean(crawlConfig?.config.failOnFailedSeed),
+        msg("Include Any Linked Page (“one hop out”)"),
+        Boolean(config.extraHops),
       )}
     `;
   };
 
-  private readonly renderConfirmSeededSettings = () => {
+  private readonly renderConfirmSeededSettings = (
+    config: CrawlConfig["config"],
+  ) => {
     if (!this.seeds) return;
-    const crawlConfig = this.crawlConfig!;
-    const seedsConfig = crawlConfig.config;
     const additionalUrlList = this.seeds.slice(1);
     const primarySeedConfig = this.seeds[0] as SeedConfig | Seed | undefined;
     const primarySeedUrl = (primarySeedConfig as Seed | undefined)?.url;
-    const includeUrlList =
-      primarySeedConfig?.include || seedsConfig.include || [];
+    const includeUrlList = primarySeedConfig?.include || config.include || [];
+    const exclusions = config.exclude || [];
+    const scopeType = config.scopeType!;
+
     return html`
       ${this.renderSetting(
-        msg("Primary Seed URL"),
-        html`<a
-          class="text-blue-600 hover:text-blue-500 hover:underline"
-          href="${primarySeedUrl!}"
-          target="_blank"
-          rel="noreferrer"
-          >${primarySeedUrl}</a
-        >`,
+        msg("Crawl Start URL"),
+        primarySeedUrl
+          ? html`<a
+              class="text-blue-600 hover:text-blue-500 hover:underline"
+              href="${primarySeedUrl}"
+              target="_blank"
+              rel="noreferrer"
+              >${primarySeedUrl}</a
+            >`
+          : undefined,
         true,
       )}
-      ${this.renderSetting(
-        msg("Crawl Scope"),
-        this.scopeTypeLabels[
-          primarySeedConfig!.scopeType || seedsConfig.scopeType!
-        ],
-      )}
-      ${this.renderSetting(
-        msg("Extra URL Prefixes in Scope"),
-        includeUrlList.length
-          ? html`
-              <ul>
-                ${includeUrlList.map(
-                  (url: string) =>
-                    staticHtml`<li class="regex">${unsafeStatic(
-                      new RegexColorize().colorizeText(url) as string,
-                    )}</li>`,
-                )}
-              </ul>
-            `
-          : msg("None"),
-        true,
-      )}
-      ${when(
-        DEPTH_SUPPORTED_SCOPES.includes(
-          primarySeedConfig!.scopeType || seedsConfig.scopeType!,
+      ${when(scopeType === WorkflowScopeType.Prefix, () =>
+        this.renderSetting(
+          msg("Extra URL Prefixes in Scope"),
+          includeUrlList.length
+            ? html`
+                <ul>
+                  ${includeUrlList.map(
+                    (url: string) =>
+                      staticHtml`<li class="regex">${unsafeStatic(
+                        new RegexColorize().colorizeText(url) as string,
+                      )}</li>`,
+                  )}
+                </ul>
+              `
+            : msg("None"),
+          true,
         ),
-        () =>
-          this.renderSetting(
-            msg("Max Depth"),
-            primarySeedConfig && primarySeedConfig.depth !== null
-              ? msg(str`${primarySeedConfig.depth} hop(s)`)
-              : msg("Unlimited (default)"),
-          ),
+      )}
+      ${when(DEPTH_SUPPORTED_SCOPES.includes(scopeType), () =>
+        this.renderSetting(
+          msg("Max Depth in Scope"),
+          primarySeedConfig && primarySeedConfig.depth !== null
+            ? msg(str`${primarySeedConfig.depth} hop(s)`)
+            : msg("Unlimited (default)"),
+        ),
       )}
       ${this.renderSetting(
         msg("Include Any Linked Page (“one hop out”)"),
-        Boolean(primarySeedConfig?.extraHops ?? seedsConfig.extraHops),
+        Boolean(primarySeedConfig?.extraHops ?? config.extraHops),
       )}
       ${this.renderSetting(
         msg("Check For Sitemap"),
-        Boolean(seedsConfig.useSitemap),
+        Boolean(config.useSitemap),
       )}
       ${this.renderSetting(
-        msg("List of Additional URLs"),
+        msg("Additional Page URLs"),
         additionalUrlList.length
           ? html`
               <ul>
@@ -436,7 +427,7 @@ export class ConfigDetails extends LiteElement {
                   const seedUrl = typeof seed === "string" ? seed : seed.url;
                   return html`<li>
                     <a
-                      class="text-primary hover:text-indigo-400"
+                      class="text-primary hover:text-primary-400"
                       href="${seedUrl}"
                       target="_blank"
                       rel="noreferrer"
@@ -448,6 +439,19 @@ export class ConfigDetails extends LiteElement {
             `
           : msg("None"),
         true,
+      )}
+      ${when(
+        exclusions.length,
+        () => html`
+          <div class="mb-2">
+            <btrix-queue-exclusion-table
+              .exclusions=${exclusions}
+              labelClassName="text-xs text-neutral-500"
+            >
+            </btrix-queue-exclusion-table>
+          </div>
+        `,
+        () => this.renderSetting(msg("Exclusions"), msg("None")),
       )}
     `;
   };
@@ -478,7 +482,7 @@ export class ConfigDetails extends LiteElement {
       try {
         await this.getCollections();
       } catch (e) {
-        this.notify({
+        this.notify.toast({
           message:
             isApiError(e) && e.statusCode === 404
               ? msg("Collections not found.")
@@ -498,7 +502,7 @@ export class ConfigDetails extends LiteElement {
 
     if (this.crawlConfig?.autoAddCollections && orgId) {
       for (const collectionId of this.crawlConfig.autoAddCollections) {
-        const data = await this.apiFetch<Collection | undefined>(
+        const data = await this.api.fetch<Collection | undefined>(
           `/orgs/${orgId}/collections/${collectionId}`,
         );
         if (data) {

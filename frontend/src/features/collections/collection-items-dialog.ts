@@ -35,6 +35,7 @@ import type {
 import type { ArchivedItem, Crawl, Upload, Workflow } from "@/types/crawler";
 import { isApiError } from "@/utils/api";
 import { finishedCrawlStates } from "@/utils/crawler";
+import { pluralOf } from "@/utils/pluralize";
 
 const TABS = ["crawl", "upload"] as const;
 type Tab = (typeof TABS)[number];
@@ -306,9 +307,11 @@ export class CollectionItemsDialog extends BtrixElement {
               () =>
                 this.showOnlyInCollection
                   ? msg(
-                      str`Crawls in Collection (${data!.total.toLocaleString()})`,
+                      str`Crawls in Collection (${this.localize.number(data!.total)})`,
                     )
-                  : msg(str`All Workflows (${data!.total.toLocaleString()})`),
+                  : msg(
+                      str`All Workflows (${this.localize.number(data!.total)})`,
+                    ),
               () => msg("Loading..."),
             )}
           </div>
@@ -355,10 +358,10 @@ export class CollectionItemsDialog extends BtrixElement {
               () =>
                 this.showOnlyInCollection
                   ? msg(
-                      str`Uploads in Collection (${this.uploads!.total.toLocaleString()})`,
+                      str`Uploads in Collection (${this.localize.number(this.uploads!.total)})`,
                     )
                   : msg(
-                      str`All Uploads (${this.uploads!.total.toLocaleString()})`,
+                      str`All Uploads (${this.localize.number(this.uploads!.total)})`,
                     ),
               () => msg("Loading..."),
             )}
@@ -555,16 +558,14 @@ export class CollectionItemsDialog extends BtrixElement {
       const messages = [];
       if (addCount) {
         messages.push(
-          addCount === 1
-            ? msg(str`Adding 1 item`)
-            : msg(str`Adding ${addCount.toLocaleString()} items`),
+          msg(
+            str`Adding ${this.localize.number(addCount)} ${pluralOf("items", addCount)}`,
+          ),
         );
       }
       if (removeCount) {
         messages.push(
-          removeCount === 1
-            ? msg(str`Removing 1 item`)
-            : msg(str`Removing ${removeCount.toLocaleString()} items`),
+          str`Adding ${this.localize.number(removeCount)} ${pluralOf("items", removeCount)}`,
         );
       }
 

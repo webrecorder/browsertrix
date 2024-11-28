@@ -8,14 +8,14 @@ export const ROUTES = {
   loginWithRedirect: "/log-in?redirectUrl",
   forgotPassword: "/log-in/forgot-password",
   resetPassword: "/reset-password",
-  accountSettings: "/account/settings",
+  accountSettings: "/account/settings(/:settingsTab)",
   orgs: "/orgs",
   org: [
     "/orgs/:slug",
     // Org sections:
-    "(/workflows(/crawls)(/crawl/:workflowId)(/items/:itemId))",
-    "(/items(/:itemType(/:itemId(/review/:qaTab))))",
-    "(/collections(/new)(/view/:collectionId(/:collectionTab(/:itemType/:itemId))))",
+    "(/workflows(/new)(/:workflowId(/crawls/:itemId(/review/:qaTab))))",
+    "(/items(/:itemType(/:itemId)))",
+    "(/collections(/new)(/view/:collectionId(/:collectionTab)))",
     "(/browser-profiles(/profile(/browser/:browserId)(/:browserProfileId)))",
     "(/settings(/:settingsTab))",
   ].join(""),

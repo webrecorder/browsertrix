@@ -86,7 +86,7 @@ export const renderInviteMessage = (
               html`Refer to our user guide on
                 <a
                   class="text-neutral-500 underline hover:text-primary"
-                  href="https://docs.browsertrix.com/user-guide/org-settings/"
+                  href="/docs/user-guide/org-settings/"
                   target="_blank"
                   rel="noopener"
                   >org settings</a

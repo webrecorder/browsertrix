@@ -39,7 +39,8 @@ type CloseMessage = Message & {
 @localized()
 export class Screencast extends BtrixElement {
   static baseUrl = `${window.location.protocol === "https:" ? "wss" : "ws"}:${
-    process.env.WEBSOCKET_HOST || window.location.host
+    // Defined in webpack:
+    window.process.env.WEBSOCKET_HOST || window.location.host
   }/watch`;
   static maxRetries = 10;
 

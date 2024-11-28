@@ -11,7 +11,7 @@
   }
   sl-tooltip::part(body),
   sl-tooltip::part(base__arrow) {
-    @apply bg-theme-green;
+    @apply bg-brand-green;
   }
 
   sl-tooltip::part(body) {

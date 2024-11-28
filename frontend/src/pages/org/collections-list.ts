@@ -1,4 +1,4 @@
-import { localized, msg, str } from "@lit/localize";
+import { localized, msg } from "@lit/localize";
 import type { SlInput, SlMenuItem } from "@shoelace-style/shoelace";
 import Fuse from "fuse.js";
 import { html, type PropertyValues } from "lit";
@@ -18,7 +18,7 @@ import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { Collection, CollectionSearchValues } from "@/types/collection";
 import type { UnderlyingFunction } from "@/types/utils";
 import { isApiError } from "@/utils/api";
-import { getLocale } from "@/utils/localization";
+import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
 import noCollectionsImg from "~assets/images/no-collections-found.webp";
 
@@ -102,10 +102,6 @@ export class CollectionsList extends BtrixElement {
     return this.searchByValue.length >= MIN_SEARCH_LENGTH;
   }
 
-  private readonly numberFormatter = new Intl.NumberFormat(getLocale(), {
-    notation: "compact",
-  });
-
   protected async willUpdate(
     changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {
@@ -160,8 +156,12 @@ export class CollectionsList extends BtrixElement {
       <btrix-dialog
         .label=${msg("Delete Collection?")}
         ?open=${this.openDialogName === "delete"}
+        @sl-show=${() => (this.isDialogVisible = true)}
         @sl-hide=${() => (this.openDialogName = undefined)}
-        @sl-after-hide=${() => (this.isDialogVisible = false)}
+        @sl-after-hide=${() => {
+          this.isDialogVisible = false;
+          this.selectedCollection = undefined;
+        }}
       >
         ${when(
           this.isDialogVisible,
@@ -178,7 +178,7 @@ export class CollectionsList extends BtrixElement {
               >
               <sl-button
                 size="small"
-                variant="primary"
+                variant="danger"
                 @click=${async () => {
                   await this.deleteCollection(this.selectedCollection!);
                   this.openDialogName = undefined;
@@ -526,9 +526,8 @@ export class CollectionsList extends BtrixElement {
         </a>
       </btrix-table-cell>
       <btrix-table-cell>
-        ${col.crawlCount === 1
-          ? msg("1 item")
-          : msg(str`${this.numberFormatter.format(col.crawlCount)} items`)}
+        ${this.localize.number(col.crawlCount, { notation: "compact" })}
+        ${pluralOf("items", col.crawlCount)}
       </btrix-table-cell>
       <btrix-table-cell>
         <sl-format-bytes
@@ -537,14 +536,12 @@ export class CollectionsList extends BtrixElement {
         ></sl-format-bytes>
       </btrix-table-cell>
       <btrix-table-cell>
-        ${col.pageCount === 1
-          ? msg("1 page")
-          : msg(str`${this.numberFormatter.format(col.pageCount)} pages`)}
+        ${this.localize.number(col.pageCount, { notation: "compact" })}
+        ${pluralOf("pages", col.pageCount)}
       </btrix-table-cell>
       <btrix-table-cell>
         <sl-format-date
-          lang=${getLocale()}
-          date=${`${col.modified}Z`}
+          date=${col.modified}
           month="2-digit"
           day="2-digit"
           year="2-digit"
@@ -681,7 +678,6 @@ export class CollectionsList extends BtrixElement {
         },
       );
 
-      this.selectedCollection = undefined;
       void this.fetchCollections();
 
       this.notify.toast({

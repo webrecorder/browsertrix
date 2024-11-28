@@ -6,6 +6,7 @@ import zipfile
 import re
 import csv
 import codecs
+import json
 from tempfile import TemporaryFile
 from zipfile import ZipFile, ZIP_STORED
 
@@ -45,7 +46,7 @@ def test_create_new_config(admin_auth_headers, default_org_id):
     crawl_data = {
         "runNow": False,
         "name": "Test Crawl",
-        "config": {"seeds": [{"url": "https://webrecorder.net/"}]},
+        "config": {"seeds": [{"url": "https://old.webrecorder.net/"}]},
     }
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
@@ -69,7 +70,7 @@ def test_start_crawl(admin_auth_headers, default_org_id):
         "description": "Admin Test Crawl description",
         "tags": ["wr-test-1", "wr-test-2"],
         "config": {
-            "seeds": [{"url": "https://webrecorder.net/", "depth": 1}],
+            "seeds": [{"url": "https://old.webrecorder.net/", "depth": 1}],
             "exclude": "community",
             # limit now set via 'max_pages_per_crawl' global limit
             # "limit": 1,
@@ -230,7 +231,7 @@ def test_crawls_include_seed_info(admin_auth_headers, default_org_id):
         headers=admin_auth_headers,
     )
     data = r.json()
-    assert data["firstSeed"] == "https://webrecorder.net/"
+    assert data["firstSeed"] == "https://old.webrecorder.net/"
     assert data["seedCount"] == 1
 
     r = requests.get(
@@ -265,7 +266,7 @@ def test_crawl_seeds_endpoint(admin_auth_headers, default_org_id):
 
     data = r.json()
     assert data["total"] == 1
-    assert data["items"][0]["url"] == "https://webrecorder.net/"
+    assert data["items"][0]["url"] == "https://old.webrecorder.net/"
     assert data["items"][0]["depth"] == 1
 
 
@@ -362,14 +363,14 @@ def test_verify_wacz():
 
     # 1 seed page
     pages = z.open("pages/pages.jsonl").read().decode("utf-8")
-    assert '"https://webrecorder.net/"' in pages
+    assert '"https://old.webrecorder.net/"' in pages
 
     # 1 seed page + header line
     assert len(pages.strip().split("\n")) == 2
 
     # 1 other page
     pages = z.open("pages/extraPages.jsonl").read().decode("utf-8")
-    assert '"https://webrecorder.net/blog"' in pages
+    assert '"https://old.webrecorder.net/blog"' in pages
 
     # 3 other page + header line
     assert len(pages.strip().split("\n")) == 4
@@ -405,6 +406,15 @@ def test_download_wacz_crawls(
             for filename in contents:
                 assert filename.endswith(".wacz") or filename == "datapackage.json"
                 assert zip_file.getinfo(filename).compress_type == ZIP_STORED
+
+                if filename == "datapackage.json":
+                    data = zip_file.read(filename).decode("utf-8")
+                    datapackage = json.loads(data)
+                    assert len(datapackage["resources"]) == 1
+                    for resource in datapackage["resources"]:
+                        assert resource["name"] == resource["path"]
+                        assert resource["hash"]
+                        assert resource["bytes"]
 
 
 def test_update_crawl(
@@ -620,12 +630,15 @@ def test_crawl_stats(crawler_auth_headers, default_org_id):
             assert row["state"]
             assert row["userid"]
             assert row["user"]
-            assert row["started"]
             assert row["finished"] or row["finished"] is None
             assert row["duration"] or row["duration"] == 0
             assert row["pages"] or row["pages"] == 0
             assert row["filesize"] or row["filesize"] == 0
             assert row["avg_page_time"] or row["avg_page_time"] == 0
+
+            started = row["started"]
+            assert started
+            assert started.endswith("Z")
 
 
 def test_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
@@ -777,8 +790,11 @@ def test_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
 
     assert page["notes"] == []
     assert page["userid"]
-    assert page["modified"]
     assert page["approved"]
+
+    modified = page["modified"]
+    assert modified
+    assert modified.endswith("Z")
 
     # Set approved to False and test filter again
     r = requests.patch(

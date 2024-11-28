@@ -1,6 +1,6 @@
 """ Operator handler for ProfileJobs """
 
-from btrixcloud.utils import from_k8s_date, dt_now
+from btrixcloud.utils import str_to_date, dt_now
 
 from btrixcloud.models import StorageRef
 
@@ -23,7 +23,7 @@ class ProfileOperator(BaseOperator):
         """sync profile browsers"""
         spec = data.parent.get("spec", {})
 
-        expire_time = from_k8s_date(spec.get("expireTime"))
+        expire_time = str_to_date(spec.get("expireTime"))
         browserid = spec.get("id")
 
         if expire_time and dt_now() >= expire_time:
@@ -45,6 +45,15 @@ class ProfileOperator(BaseOperator):
         params["storage_secret"] = storage_secret
         params["profile_filename"] = spec.get("profileFilename", "")
         params["crawler_image"] = spec["crawlerImage"]
+
+        proxy_id = spec.get("proxyId")
+        if proxy_id:
+            proxy = self.crawl_config_ops.get_crawler_proxy(proxy_id)
+            if proxy:
+                params["proxy_id"] = proxy_id
+                params["proxy_url"] = proxy.url
+                params["proxy_ssh_private_key"] = proxy.has_private_key
+                params["proxy_ssh_host_public_key"] = proxy.has_host_public_key
 
         params["url"] = spec.get("startUrl", "about:blank")
         params["vnc_password"] = spec.get("vncPassword")

@@ -1,0 +1,34 @@
+{{- if .Values.proxies }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: proxies
+  namespace: {{ .Values.crawler_namespace | default "crawlers" }}
+type: Opaque
+stringData:
+{{- range .Values.proxies }}
+
+{{- if .ssh_private_key }}
+  {{ .id }}-private-key: |
+{{ .ssh_private_key | indent 4 }}
+{{- end }}
+
+{{- if .ssh_host_public_key }}
+  {{ .id }}-known-hosts: |
+{{ .ssh_host_public_key | indent 4 }}
+{{- end }}
+
+{{- end }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ops-proxy-configs
+  namespace: {{ .Release.Namespace }}
+
+type: Opaque
+data:
+  crawler_proxies_last_update: {{ now | unixEpoch | toString | b64enc | quote }}
+  crawler_proxies.json: {{ .Values.proxies | toJson | b64enc | quote }}
+{{- end }}

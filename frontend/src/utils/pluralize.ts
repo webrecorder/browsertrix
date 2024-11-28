@@ -1,6 +1,15 @@
 import { msg } from "@lit/localize";
 
-import { pluralize } from "./localization";
+import localize from "./localize";
+
+export const pluralize = (
+  number: number,
+  strings: { [k in Intl.LDMLPluralRule]: string },
+  options?: Intl.PluralRulesOptions,
+) =>
+  strings[
+    new Intl.PluralRules(localize.activeLanguage, options).select(number)
+  ];
 
 // Add to this as necessary!
 const plurals = {
@@ -28,6 +37,32 @@ const plurals = {
     other: msg("crawls", {
       desc: 'plural form of "crawl" for multiple/other crawls',
       id: "crawls.plural.other",
+    }),
+  },
+  items: {
+    zero: msg("items", {
+      desc: 'plural form of "item" for zero items',
+      id: "items.plural.zero",
+    }),
+    one: msg("item", {
+      desc: 'singular form for "item"',
+      id: "items.plural.one",
+    }),
+    two: msg("items", {
+      desc: 'plural form of "item" for two items',
+      id: "items.plural.two",
+    }),
+    few: msg("items", {
+      desc: 'plural form of "item" for few items',
+      id: "items.plural.few",
+    }),
+    many: msg("items", {
+      desc: 'plural form of "item" for many items',
+      id: "items.plural.many",
+    }),
+    other: msg("items", {
+      desc: 'plural form of "item" for multiple/other items',
+      id: "items.plural.other",
     }),
   },
   pages: {

@@ -2,18 +2,23 @@ import { msg, str } from "@lit/localize";
 import { z } from "zod";
 
 import { getAppSettings } from "./app";
-import { getLang } from "./localization";
 
 import type { Tags } from "@/components/ui/tag-input";
-import type {
-  Profile,
-  Seed,
-  SeedConfig,
-  WorkflowParams,
+import {
+  ScopeType,
+  type Profile,
+  type Seed,
+  type SeedConfig,
+  type WorkflowParams,
 } from "@/types/crawler";
 import type { OrgData } from "@/types/org";
-import { DEFAULT_MAX_SCALE } from "@/utils/crawler";
+import {
+  WorkflowScopeType,
+  type NewWorkflowOnlyScopeType,
+} from "@/types/workflow";
+import { DEFAULT_MAX_SCALE, isPageScopeType } from "@/utils/crawler";
 import { getNextDate, getScheduleInterval } from "@/utils/cron";
+import localize, { getBrowserLang } from "@/utils/localize";
 import { regexUnescape } from "@/utils/string";
 
 export const BYTES_PER_GB = 1e9;
@@ -33,7 +38,7 @@ export function defaultLabel(value: unknown): string {
     return msg("Default: Unlimited");
   }
   if (typeof value === "number") {
-    return msg(str`Default: ${value.toLocaleString()}`);
+    return msg(str`Default: ${localize.number(value)}`);
   }
   if (value) {
     return msg(str`Default: ${value}`);
@@ -55,7 +60,9 @@ export type FormState = {
   postLoadDelaySeconds: number | null;
   maxCrawlSizeGB: number;
   maxScopeDepth: number | null;
-  scopeType: WorkflowParams["config"]["scopeType"];
+  scopeType:
+    | Exclude<ScopeType, ScopeType.Any>
+    | (typeof NewWorkflowOnlyScopeType)[keyof typeof NewWorkflowOnlyScopeType];
   exclusions: WorkflowParams["config"]["exclude"];
   pageLimit: WorkflowParams["config"]["limit"];
   scale: WorkflowParams["scale"];
@@ -79,6 +86,7 @@ export type FormState = {
   autoscrollBehavior: boolean;
   userAgent: string | null;
   crawlerChannel: string;
+  proxyId: string | null;
 };
 
 export type FormStateField = keyof FormState;
@@ -108,12 +116,12 @@ export const getDefaultFormState = (): FormState => ({
   pageExtraDelaySeconds: null,
   postLoadDelaySeconds: null,
   maxScopeDepth: null,
-  scopeType: "host",
+  scopeType: ScopeType.Page,
   exclusions: [],
   pageLimit: null,
   scale: 1,
   blockAds: true,
-  lang: getLang(),
+  lang: getBrowserLang(),
   scheduleType: "none",
   scheduleFrequency: "weekly",
   scheduleDayOfMonth: new Date().getDate(),
@@ -132,6 +140,7 @@ export const getDefaultFormState = (): FormState => ({
   autoscrollBehavior: true,
   userAgent: null,
   crawlerChannel: "default",
+  proxyId: null,
 });
 
 export const mapSeedToUrl = (arr: Seed[]) =>
@@ -151,7 +160,7 @@ export function getInitialFormState(params: {
   const formState: Partial<FormState> = {};
   const seedsConfig = params.initialWorkflow.config;
   let primarySeedConfig: SeedConfig | Seed = seedsConfig;
-  if (params.initialWorkflow.jobType === "seed-crawl") {
+  if (!isPageScopeType(params.initialWorkflow.config.scopeType)) {
     if (params.initialSeeds) {
       const firstSeed = params.initialSeeds[0];
       if (typeof firstSeed === "string") {
@@ -168,7 +177,7 @@ export function getInitialFormState(params: {
         .join("\n");
       // if we have additional include URLs, set to "custom" scope here
       // to indicate 'Custom Page Prefix' option
-      formState.scopeType = "custom";
+      formState.scopeType = ScopeType.Custom;
     }
     const additionalSeeds = params.initialSeeds?.slice(1);
     if (additionalSeeds?.length) {
@@ -176,13 +185,14 @@ export function getInitialFormState(params: {
     }
     formState.useSitemap = seedsConfig.useSitemap;
   } else {
-    // Treat "custom" like URL list
-    if (params.initialSeeds) {
-      formState.urlList = mapSeedToUrl(params.initialSeeds).join("\n");
-    }
+    if (params.initialSeeds?.length) {
+      if (params.initialSeeds.length === 1) {
+        formState.scopeType = WorkflowScopeType.Page;
+      } else {
+        formState.scopeType = WorkflowScopeType.PageList;
+      }
 
-    if (params.initialWorkflow.jobType === "custom") {
-      formState.scopeType = seedsConfig.scopeType || "page";
+      formState.urlList = mapSeedToUrl(params.initialSeeds).join("\n");
     }
 
     formState.failOnFailedSeed = seedsConfig.failOnFailedSeed;
@@ -280,6 +290,7 @@ export function getInitialFormState(params: {
       params.initialWorkflow.config.userAgent ?? defaultFormState.userAgent,
     crawlerChannel:
       params.initialWorkflow.crawlerChannel || defaultFormState.crawlerChannel,
+    proxyId: params.initialWorkflow.proxyId || defaultFormState.proxyId,
     ...formState,
   };
 }

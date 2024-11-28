@@ -11,11 +11,11 @@ import type { Profile, ProfileWorkflow } from "./types";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
 import type { BrowserConnectionChange } from "@/features/browser-profiles/profile-browser";
-import { pageBreadcrumbs } from "@/layouts/pageHeader";
+import { pageNav } from "@/layouts/pageHeader";
 import { isApiError } from "@/utils/api";
 import { maxLengthValidator } from "@/utils/form";
-import { formatNumber, getLocale } from "@/utils/localization";
 import { isArchivingDisabled } from "@/utils/orgs";
+import { pluralOf } from "@/utils/pluralize";
 
 const DESCRIPTION_MAXLENGTH = 500;
 
@@ -23,7 +23,6 @@ const DESCRIPTION_MAXLENGTH = 500;
  * Usage:
  * ```ts
  * <btrix-browser-profiles-detail
- *  authState=${authState}
  *  profileId=${profileId}
  * ></btrix-browser-profiles-detail>
  * ```
@@ -117,8 +116,7 @@ export class BrowserProfilesDetail extends BtrixElement {
             ${this.profile
               ? html`
                   <sl-format-date
-                    lang=${getLocale()}
-                    date=${`${this.profile.created}Z` /** Z for UTC */}
+                    date=${this.profile.created}
                     month="2-digit"
                     day="2-digit"
                     year="2-digit"
@@ -132,12 +130,9 @@ export class BrowserProfilesDetail extends BtrixElement {
           <btrix-desc-list-item label=${msg("Last Updated")}>
             ${this.profile
               ? html` <sl-format-date
-                  lang=${getLocale()}
                   date=${
-                    `${
-                      // NOTE older profiles may not have "modified" data
-                      this.profile.modified || this.profile.created
-                    }Z` /** Z for UTC */
+                    // NOTE older profiles may not have "modified" data
+                    this.profile.modified || this.profile.created
                   }
                   month="2-digit"
                   day="2-digit"
@@ -269,7 +264,7 @@ export class BrowserProfilesDetail extends BtrixElement {
         <h2 class="mb-2 text-lg font-medium leading-none">
           ${msg("Crawl Workflows")}${this.profile?.crawlconfigs?.length
             ? html`<span class="font-normal text-neutral-500">
-                (${formatNumber(this.profile.crawlconfigs.length)})
+                (${this.localize.number(this.profile.crawlconfigs.length)})
               </span>`
             : nothing}
         </h2>
@@ -322,7 +317,7 @@ export class BrowserProfilesDetail extends BtrixElement {
       },
     ];
 
-    return pageBreadcrumbs(breadcrumbs);
+    return pageNav(breadcrumbs);
   }
 
   private renderCrawlWorkflows() {
@@ -335,7 +330,7 @@ export class BrowserProfilesDetail extends BtrixElement {
             >
               <a
                 class="block p-2 transition-colors focus-within:bg-neutral-50 hover:bg-neutral-50"
-                href=${`${this.navigate.orgBasePath}/workflows/crawl/${workflow.id}`}
+                href=${`${this.navigate.orgBasePath}/workflows/${workflow.id}`}
                 @click=${this.navigate.link}
               >
                 ${this.renderWorkflowName(workflow)}
@@ -360,15 +355,10 @@ export class BrowserProfilesDetail extends BtrixElement {
     const remainder = workflow.seedCount - 1;
     let nameSuffix: string | TemplateResult<1> = "";
     if (remainder) {
-      if (remainder === 1) {
-        nameSuffix = html`<span class="ml-2 text-neutral-500"
-          >${msg(str`+${remainder} URL`)}</span
-        >`;
-      } else {
-        nameSuffix = html`<span class="ml-2 text-neutral-500"
-          >${msg(str`+${remainder} URLs`)}</span
-        >`;
-      }
+      nameSuffix = html`<span class="ml-2 text-neutral-500"
+        >+${this.localize.number(remainder, { notation: "compact" })}
+        ${pluralOf("URLs", remainder)}</span
+      >`;
     }
     return html`
       <span class="primaryUrl truncate">${workflow.firstSeed}</span
@@ -592,6 +582,7 @@ export class BrowserProfilesDetail extends BtrixElement {
           description: this.profile.description.slice(0, DESCRIPTION_MAXLENGTH),
           profileId: this.profile.id,
           crawlerChannel: this.profile.crawlerChannel,
+          proxyId: this.profile.proxyId,
         })}`,
       );
     } catch (e) {

@@ -54,12 +54,19 @@ data:
 
   CRAWLER_CHANNELS_JSON: "/ops-configs/crawler_channels.json"
 
+  CRAWLER_PROXIES_LAST_UPDATE: "/ops-proxy-configs/crawler_proxies_last_update"
+  CRAWLER_PROXIES_JSON: "/ops-proxy-configs/crawler_proxies.json"
+
+  DEFAULT_PROXY_ID: "{{ .Values.default_proxy }}"
+
   MIN_QA_CRAWLER_IMAGE: "{{ .Values.min_qa_crawler_image }}"
 
   NUM_BROWSERS: "{{ .Values.crawler_browser_instances }}"
 
   MAX_CRAWLER_MEMORY: "{{ .Values.max_crawler_memory }}"
   MAX_CRAWLER_CPU: "{{ .Values.max_crawler_cpu }}"
+
+  CRAWLER_MIN_AVAIL_STORAGE_RATIO: "{{ .Values.crawler_min_avail_storage_ratio }}"
 
   ENABLE_AUTO_RESIZE_CRAWLERS: "{{ .Values.enable_auto_resize_crawlers }}"
 
@@ -70,6 +77,11 @@ data:
   SALES_EMAIL: "{{ .Values.sales_email }}"
 
   LOG_SENT_EMAILS: "{{ .Values.email.log_sent_emails }}"
+
+  BACKEND_IMAGE: "{{ .Values.backend_image }}"
+
+  BACKEND_IMAGE_PULL_POLICY: "{{ .Values.backend_pull_policy }}"
+
 
 ---
 apiVersion: v1
@@ -139,9 +151,9 @@ data:
     crawler_socks_proxy_host: "{{ .Values.crawler_socks_proxy_host }}"
     crawler_socks_proxy_port: "{{ .Values.crawler_socks_proxy_port }}"
 
-    crawler_uid: "{{ .Values.crawler_uid | default 201400007 }}"
-    crawler_gid: "{{ .Values.crawler_gid | default 201400007 }}"
-    crawler_fsgroup: "{{ .Values.crawler_fsgroup | default 201400007 }}"
+    crawler_uid: "{{ .Values.crawler_uid | default 201407 }}"
+    crawler_gid: "{{ .Values.crawler_gid | default 201407 }}"
+    crawler_fsgroup: "{{ .Values.crawler_fsgroup | default 201407 }}"
 
     profile_browser_workdir_size: "{{ .Values.profile_browser_workdir_size | default "4Gi" }}"
 

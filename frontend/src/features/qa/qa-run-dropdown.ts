@@ -3,9 +3,8 @@ import type { SlSelectEvent } from "@shoelace-style/shoelace";
 import { html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
-import { TailwindElement } from "@/classes/TailwindElement";
+import { BtrixElement } from "@/classes/BtrixElement";
 import { type QARun } from "@/types/qa";
-import { formatISODateString } from "@/utils/localization";
 
 export type SelectDetail = { item: { id: string } };
 
@@ -14,7 +13,7 @@ export type SelectDetail = { item: { id: string } };
  */
 @localized()
 @customElement("btrix-qa-run-dropdown")
-export class QaRunDropdown extends TailwindElement {
+export class QaRunDropdown extends BtrixElement {
   @property({ type: Array })
   items: QARun[] = [];
 
@@ -40,7 +39,7 @@ export class QaRunDropdown extends TailwindElement {
                   hoist
                 ></btrix-crawl-status>
                 ${selectedRun.finished
-                  ? formatISODateString(selectedRun.finished)
+                  ? this.localize.date(selectedRun.finished)
                   : msg("In progress")}`
             : msg("Select a QA run")}
         </sl-button>
@@ -55,7 +54,7 @@ export class QaRunDropdown extends TailwindElement {
                 ?checked=${isSelected}
               >
                 ${run.finished
-                  ? formatISODateString(run.finished)
+                  ? this.localize.date(run.finished)
                   : msg("In progress")}
                 <btrix-crawl-status
                   type="qa"

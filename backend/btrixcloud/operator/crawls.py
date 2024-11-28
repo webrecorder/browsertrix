@@ -32,7 +32,7 @@ from btrixcloud.models import (
     Organization,
 )
 
-from btrixcloud.utils import from_k8s_date, to_k8s_date, dt_now
+from btrixcloud.utils import str_to_date, date_to_str, dt_now
 
 from .baseoperator import BaseOperator, Redis
 from .models import (
@@ -61,10 +61,6 @@ STARTING_TIME_SECS = 150
 EXEC_TIME_UPDATE_SECS = 60
 
 
-# ensure available storage is at least this much times used storage
-AVAIL_STORAGE_RATIO = 2.5
-
-
 # pylint: disable=too-many-public-methods, too-many-locals, too-many-branches, too-many-statements
 # pylint: disable=invalid-name, too-many-lines, too-many-return-statements
 # ============================================================================
@@ -78,6 +74,8 @@ class CrawlOperator(BaseOperator):
     fast_retry_secs: int
     log_failed_crawl_lines: int
 
+    min_avail_storage_ratio: float
+
     def __init__(self, *args):
         super().__init__(*args)
 
@@ -88,6 +86,11 @@ class CrawlOperator(BaseOperator):
         self.fast_retry_secs = int(os.environ.get("FAST_RETRY_SECS") or 0)
 
         self.log_failed_crawl_lines = int(os.environ.get("LOG_FAILED_CRAWL_LINES") or 0)
+
+        # ensure available storage is at least this much times used storage
+        self.min_avail_storage_ratio = float(
+            os.environ.get("CRAWLER_MIN_AVAIL_STORAGE_RATIO") or 0
+        )
 
     def init_routes(self, app):
         """init routes for this operator"""
@@ -111,7 +114,7 @@ class CrawlOperator(BaseOperator):
         status = CrawlStatus(**data.parent.get("status", {}))
         status.last_state = status.state
 
-        spec = data.parent.get("spec", {})
+        spec = data.parent.get("spec", {})  # spec is the data from crawl_job.yaml
         crawl_id = spec["id"]
         cid = spec["cid"]
         oid = spec["oid"]
@@ -133,6 +136,7 @@ class CrawlOperator(BaseOperator):
             oid=oid,
             storage=StorageRef(spec["storageName"]),
             crawler_channel=spec.get("crawlerChannel"),
+            proxy_id=spec.get("proxyId"),
             scale=spec.get("scale", 1),
             started=data.parent["metadata"]["creationTimestamp"],
             stopping=spec.get("stopping", False),
@@ -256,6 +260,14 @@ class CrawlOperator(BaseOperator):
             )
 
         params["crawler_image"] = status.crawlerImage
+
+        if crawl.proxy_id and not crawl.is_qa:
+            proxy = self.crawl_config_ops.get_crawler_proxy(crawl.proxy_id)
+            if proxy:
+                params["proxy_id"] = crawl.proxy_id
+                params["proxy_url"] = proxy.url
+                params["proxy_ssh_private_key"] = proxy.has_private_key
+                params["proxy_ssh_host_public_key"] = proxy.has_host_public_key
 
         params["storage_filename"] = spec["storage_filename"]
         params["restart_time"] = spec.get("restartTime")
@@ -403,8 +415,8 @@ class CrawlOperator(BaseOperator):
             now = dt_now()
             resources = json.loads(configmap["data"]["qa-config.json"])["resources"]
             for resource in resources:
-                expire_at = datetime.fromisoformat(resource["expireAt"])
-                if expire_at <= now:
+                expire_at = str_to_date(resource["expireAt"])
+                if expire_at and expire_at <= now:
                     print(f"Refreshing QA configmap for QA run: {name}")
                     return True
 
@@ -525,7 +537,7 @@ class CrawlOperator(BaseOperator):
             if actual_state:
                 status.state = actual_state
             if finished:
-                status.finished = to_k8s_date(finished)
+                status.finished = date_to_str(finished)
 
             if actual_state != state:
                 print(
@@ -689,7 +701,7 @@ class CrawlOperator(BaseOperator):
             # keep parent until ttl expired, if any
             if status.finished:
                 ttl = spec.get("ttlSecondsAfterFinished", DEFAULT_TTL)
-                finished = from_k8s_date(status.finished)
+                finished = str_to_date(status.finished)
                 if finished and (dt_now() - finished).total_seconds() > ttl >= 0:
                     print("CrawlJob expired, deleting: " + crawl.id)
                     finalized = True
@@ -762,7 +774,7 @@ class CrawlOperator(BaseOperator):
                     # but not right away in case crawler pod is just restarting.
                     # avoids keeping redis pods around while no crawler pods are up
                     # (eg. due to resource constraints)
-                    last_active_time = from_k8s_date(status.lastActiveTime)
+                    last_active_time = str_to_date(status.lastActiveTime)
                     if last_active_time and (
                         (dt_now() - last_active_time).total_seconds() > REDIS_TTL
                     ):
@@ -780,7 +792,7 @@ class CrawlOperator(BaseOperator):
 
             # update lastActiveTime if crawler is running
             if crawler_running:
-                status.lastActiveTime = to_k8s_date(dt_now())
+                status.lastActiveTime = date_to_str(dt_now())
 
             file_done = await redis.lpop(self.done_key)
             while file_done:
@@ -929,7 +941,7 @@ class CrawlOperator(BaseOperator):
         if status.state in WAITING_STATES:
             # reset lastUpdatedTime if at least 2 consecutive updates of non-running state
             if status.last_state in WAITING_STATES:
-                status.lastUpdatedTime = to_k8s_date(now)
+                status.lastUpdatedTime = date_to_str(now)
             return
 
         update_start_time = await self.crawl_ops.get_crawl_exec_last_update_time(
@@ -955,7 +967,7 @@ class CrawlOperator(BaseOperator):
             await self.crawl_ops.inc_crawl_exec_time(
                 crawl.db_crawl_id, crawl.is_qa, 0, now
             )
-            status.lastUpdatedTime = to_k8s_date(now)
+            status.lastUpdatedTime = date_to_str(now)
             return
 
         reason = None
@@ -1001,7 +1013,7 @@ class CrawlOperator(BaseOperator):
             if "running" in cstate:
                 pod_state = "running"
                 state = cstate["running"]
-                start_time = from_k8s_date(state.get("startedAt"))
+                start_time = str_to_date(state.get("startedAt"))
                 if update_start_time and start_time and update_start_time > start_time:
                     start_time = update_start_time
 
@@ -1009,8 +1021,8 @@ class CrawlOperator(BaseOperator):
             elif "terminated" in cstate:
                 pod_state = "terminated"
                 state = cstate["terminated"]
-                start_time = from_k8s_date(state.get("startedAt"))
-                end_time = from_k8s_date(state.get("finishedAt"))
+                start_time = str_to_date(state.get("startedAt"))
+                end_time = str_to_date(state.get("finishedAt"))
                 if update_start_time and start_time and update_start_time > start_time:
                     start_time = update_start_time
 
@@ -1045,16 +1057,17 @@ class CrawlOperator(BaseOperator):
         await self.crawl_ops.inc_crawl_exec_time(
             crawl.db_crawl_id, crawl.is_qa, exec_time, now
         )
-        status.lastUpdatedTime = to_k8s_date(now)
+        status.lastUpdatedTime = date_to_str(now)
 
-    def should_mark_waiting(self, state, started):
+    def should_mark_waiting(self, state: TYPE_ALL_CRAWL_STATES, started: str) -> bool:
         """Should the crawl be marked as waiting for capacity?"""
         if state in RUNNING_STATES:
             return True
 
         if state == "starting":
-            started = from_k8s_date(started)
-            return (dt_now() - started).total_seconds() > STARTING_TIME_SECS
+            started_dt = str_to_date(started)
+            if started_dt:
+                return (dt_now() - started_dt).total_seconds() > STARTING_TIME_SECS
 
         return False
 
@@ -1079,7 +1092,7 @@ class CrawlOperator(BaseOperator):
     def get_log_line(self, message, details):
         """get crawler error line for logging"""
         err = {
-            "timestamp": dt_now().isoformat(),
+            "timestamp": date_to_str(dt_now()),
             "logLevel": "error",
             "context": "k8s",
             "message": message,
@@ -1136,7 +1149,7 @@ class CrawlOperator(BaseOperator):
         # check timeout if timeout time exceeds elapsed time
         if crawl.timeout:
             elapsed = status.elapsedCrawlTime
-            last_updated_time = from_k8s_date(status.lastUpdatedTime)
+            last_updated_time = str_to_date(status.lastUpdatedTime)
             if last_updated_time:
                 elapsed += int((dt_now() - last_updated_time).total_seconds())
 
@@ -1260,6 +1273,29 @@ class CrawlOperator(BaseOperator):
             crawl.db_crawl_id, crawl.is_qa, stats
         )
 
+        for key, value in sizes.items():
+            value = int(value)
+            if value > 0 and status.podStatus:
+                pod_info = status.podStatus[key]
+                pod_info.used.storage = value
+
+                if (
+                    status.state == "running"
+                    and self.min_avail_storage_ratio
+                    and pod_info.allocated.storage
+                    and pod_info.used.storage * self.min_avail_storage_ratio
+                    > pod_info.allocated.storage
+                ):
+                    new_storage = math.ceil(
+                        pod_info.used.storage
+                        * self.min_avail_storage_ratio
+                        / 1_000_000_000
+                    )
+                    pod_info.newStorage = f"{new_storage}Gi"
+                    print(
+                        f"Attempting to adjust storage to {pod_info.newStorage} for {key}"
+                    )
+
         if not status.stopReason:
             status.stopReason = await self.is_crawl_stopping(crawl, status, data)
             status.stopping = status.stopReason is not None
@@ -1364,11 +1400,11 @@ class CrawlOperator(BaseOperator):
         ):
             print("already finished, ignoring mark_finished")
             if not status.finished:
-                status.finished = to_k8s_date(finished)
+                status.finished = date_to_str(finished)
 
             return False
 
-        status.finished = to_k8s_date(finished)
+        status.finished = date_to_str(finished)
 
         if state in SUCCESSFUL_STATES:
             await self.inc_crawl_complete_stats(crawl, finished)
@@ -1429,7 +1465,7 @@ class CrawlOperator(BaseOperator):
     async def inc_crawl_complete_stats(self, crawl: CrawlSpec, finished: datetime):
         """Increment Crawl Stats"""
 
-        started = from_k8s_date(crawl.started)
+        started = str_to_date(crawl.started)
         if not started:
             print("Missing crawl start time, unable to increment crawl stats")
             return

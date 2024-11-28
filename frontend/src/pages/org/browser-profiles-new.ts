@@ -7,14 +7,13 @@ import queryString from "query-string";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
 import type { BrowserConnectionChange } from "@/features/browser-profiles/profile-browser";
-import { pageBreadcrumbs, type Breadcrumb } from "@/layouts/pageHeader";
+import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
 import { isApiError } from "@/utils/api";
 
 /**
  * Usage:
  * ```ts
  * <btrix-browser-profiles-new
- *  authState=${authState}
  *  browserId=${browserId}
  * ></btrix-browser-profiles-new>
  * ```
@@ -33,9 +32,11 @@ export class BrowserProfilesNew extends BtrixElement {
     crawlerChannel?: string;
     profileId?: string | null;
     navigateUrl?: string;
+    proxyId: string | null;
   } = {
     name: "",
     url: "",
+    proxyId: null,
   };
 
   @state()
@@ -74,8 +75,8 @@ export class BrowserProfilesNew extends BtrixElement {
           It is highly recommended to create dedicated accounts to use when
           crawling. For details, refer to
           <a
-            class="text-primary hover:text-indigo-400"
-            href="https://docs.browsertrix.com/user-guide/browser-profiles/"
+            class="text-primary hover:text-primary-400"
+            href="/docs/user-guide/browser-profiles/"
             target="_blank"
           >
             ${msg("browser profile best practices")}</a
@@ -168,13 +169,9 @@ export class BrowserProfilesNew extends BtrixElement {
           content: msg("Duplicate Profile"),
         },
       );
-    } else {
-      breadcrumbs.push({
-        content: msg("New Browser Profile"),
-      });
     }
 
-    return pageBreadcrumbs(breadcrumbs);
+    return pageNav(breadcrumbs);
   }
 
   private async onBrowserError() {
@@ -283,9 +280,11 @@ export class BrowserProfilesNew extends BtrixElement {
     }
 
     const crawlerChannel = this.browserParams.crawlerChannel || "default";
+    const proxyId = this.browserParams.proxyId;
     const data = await this.createBrowser({
       url,
       crawlerChannel,
+      proxyId,
     });
 
     this.navigate.to(
@@ -295,6 +294,7 @@ export class BrowserProfilesNew extends BtrixElement {
         url,
         name: this.browserParams.name || msg("My Profile"),
         crawlerChannel,
+        proxyId,
       })}`,
     );
   }
@@ -309,6 +309,7 @@ export class BrowserProfilesNew extends BtrixElement {
       name: formData.get("name"),
       description: formData.get("description"),
       crawlerChannel: this.browserParams.crawlerChannel,
+      proxyId: this.browserParams.proxyId,
     };
 
     try {
@@ -356,13 +357,16 @@ export class BrowserProfilesNew extends BtrixElement {
   private async createBrowser({
     url,
     crawlerChannel,
+    proxyId,
   }: {
     url: string;
     crawlerChannel: string;
+    proxyId: string | null;
   }) {
     const params = {
       url,
       crawlerChannel,
+      proxyId,
     };
 
     return this.api.fetch<{ browserid: string }>(

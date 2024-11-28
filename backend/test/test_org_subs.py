@@ -12,7 +12,7 @@ existing_user_invite_token = None
 
 VALID_PASSWORD = "ValidPassW0rd!"
 
-invite_email = "test-user@example.com"
+invite_email = "test-User@EXample.com"
 
 
 def test_create_sub_org_invalid_auth(crawler_auth_headers):
@@ -206,6 +206,9 @@ def test_login_existing_user_for_invite():
     assert data["firstOrgAdmin"] == True
     assert data["orgName"] == data["oid"]
     assert data["orgName"] == data["orgSlug"]
+    assert data["fromSuperuser"] == True
+    assert not data["inviterEmail"]
+    assert not data["inviterName"]
 
     # Accept existing user invite
     r = requests.post(
@@ -257,7 +260,7 @@ def test_update_sub(admin_auth_headers):
         "subId": "123",
         "status": "paused_payment_failed",
         "planId": "basic",
-        "futureCancelDate": "2028-12-26T01:02:03",
+        "futureCancelDate": "2028-12-26T01:02:03Z",
         "readOnlyOnCancel": False,
     }
 
@@ -466,7 +469,7 @@ def test_subscription_events_log(admin_auth_headers, non_default_org_id):
             "oid": new_subs_oid,
             "status": "paused_payment_failed",
             "planId": "basic",
-            "futureCancelDate": "2028-12-26T01:02:03",
+            "futureCancelDate": "2028-12-26T01:02:03Z",
             "quotas": None,
         },
         {
@@ -534,7 +537,7 @@ def test_subscription_events_log_filter_sub_id(admin_auth_headers):
             "oid": new_subs_oid,
             "status": "paused_payment_failed",
             "planId": "basic",
-            "futureCancelDate": "2028-12-26T01:02:03",
+            "futureCancelDate": "2028-12-26T01:02:03Z",
             "quotas": None,
         },
         {
@@ -595,7 +598,7 @@ def test_subscription_events_log_filter_oid(admin_auth_headers):
             "oid": new_subs_oid,
             "status": "paused_payment_failed",
             "planId": "basic",
-            "futureCancelDate": "2028-12-26T01:02:03",
+            "futureCancelDate": "2028-12-26T01:02:03Z",
             "quotas": None,
         },
         {

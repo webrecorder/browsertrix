@@ -31,7 +31,7 @@ from .models import (
     CrawlSearchValuesResponse,
 )
 from .pagination import paginated_format, DEFAULT_PAGE_SIZE
-from .utils import dt_now
+from .utils import dt_now, date_to_str
 
 if TYPE_CHECKING:
     from .crawlconfigs import CrawlConfigOps
@@ -54,7 +54,7 @@ PRESIGN_MINUTES_DEFAULT = PRESIGN_MINUTES_MAX
 
 
 # ============================================================================
-# pylint: disable=too-many-instance-attributes, too-many-public-methods
+# pylint: disable=too-many-instance-attributes, too-many-public-methods, too-many-lines
 class BaseCrawlOps:
     """operations that apply to all crawls"""
 
@@ -494,7 +494,7 @@ class BaseCrawlOps:
 
             expire_at_str = ""
             if file_.expireAt:
-                expire_at_str = file_.expireAt.isoformat()
+                expire_at_str = date_to_str(file_.expireAt)
 
             out_files.append(
                 CrawlFileOut(
@@ -823,7 +823,14 @@ class BaseCrawlOps:
         if not crawl.resources:
             raise HTTPException(status_code=400, detail="no_crawl_resources")
 
-        resp = await self.storage_ops.download_streaming_wacz(org, crawl.resources)
+        metadata = {"type": crawl.type, "id": crawl_id, "organization": org.slug}
+        if crawl.name:
+            metadata["title"] = crawl.name
+
+        if crawl.description:
+            metadata["description"] = crawl.description
+
+        resp = await self.storage_ops.download_streaming_wacz(metadata, crawl.resources)
 
         headers = {"Content-Disposition": f'attachment; filename="{crawl_id}.wacz"'}
         return StreamingResponse(

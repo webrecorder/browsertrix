@@ -512,7 +512,7 @@ def test_get_all_crawls_by_first_seed(
     )
     assert r.status_code == 200
     data = r.json()
-    assert data["total"] == 4
+    assert data["total"] == 3
     for item in data["items"]:
         assert item["firstSeed"] == first_seed
 
@@ -527,7 +527,7 @@ def test_get_all_crawls_by_type(
     )
     assert r.status_code == 200
     data = r.json()
-    assert data["total"] == 4
+    assert data["total"] == 5
     for item in data["items"]:
         assert item["type"] == "crawl"
 
@@ -559,7 +559,7 @@ def test_get_all_crawls_by_user(
     )
     assert r.status_code == 200
     data = r.json()
-    assert data["total"] == 4
+    assert data["total"] == 5
     for item in data["items"]:
         assert item["userid"] == crawler_userid
 
@@ -631,9 +631,9 @@ def test_sort_all_crawls(
         headers=admin_auth_headers,
     )
     data = r.json()
-    assert data["total"] == 8
+    assert data["total"] >= 9
     items = data["items"]
-    assert len(items) == 8
+    assert len(items) >= 9
 
     last_created = None
     for crawl in items:
@@ -743,18 +743,22 @@ def test_all_crawls_search_values(
     assert r.status_code == 200
     data = r.json()
 
-    assert len(data["names"]) == 6
+    assert len(data["names"]) == 7
     expected_names = [
         "Crawler User Test Crawl",
         "My Upload Updated",
         "test2.wacz",
         "All Crawls Test Crawl",
+        "Crawler User Crawl for Testing QA",
     ]
     for expected_name in expected_names:
         assert expected_name in data["names"]
 
     assert sorted(data["descriptions"]) == ["Lorem ipsum"]
-    assert sorted(data["firstSeeds"]) == ["https://webrecorder.net/"]
+    assert sorted(data["firstSeeds"]) == [
+        "https://old.webrecorder.net/",
+        "https://webrecorder.net/",
+    ]
 
     # Test filtering by crawls
     r = requests.get(
@@ -764,16 +768,21 @@ def test_all_crawls_search_values(
     assert r.status_code == 200
     data = r.json()
 
-    assert len(data["names"]) == 3
+    assert len(data["names"]) == 4
     expected_names = [
-        "Crawler User Test Crawl",
+        "Admin Test Crawl",
         "All Crawls Test Crawl",
+        "Crawler User Crawl for Testing QA",
+        "Crawler User Test Crawl",
     ]
     for expected_name in expected_names:
         assert expected_name in data["names"]
 
     assert sorted(data["descriptions"]) == ["Lorem ipsum"]
-    assert sorted(data["firstSeeds"]) == ["https://webrecorder.net/"]
+    assert sorted(data["firstSeeds"]) == [
+        "https://old.webrecorder.net/",
+        "https://webrecorder.net/",
+    ]
 
     # Test filtering by uploads
     r = requests.get(

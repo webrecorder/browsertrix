@@ -23,7 +23,6 @@ import type {
 } from "@/types/api";
 import type { Browser } from "@/types/browser";
 import { html } from "@/utils/LiteElement";
-import { getLocale } from "@/utils/localization";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { tw } from "@/utils/tailwind";
 
@@ -33,7 +32,6 @@ const INITIAL_PAGE_SIZE = 20;
  * Usage:
  * ```ts
  * <btrix-browser-profiles-list
- *  authState=${authState}
  * ></btrix-browser-profiles-list>
  * ```
  */
@@ -229,7 +227,7 @@ export class BrowserProfilesList extends BtrixElement {
             `
           : html`
               <div class="border-b border-t py-5">
-                <p class="text-center text-0-500">
+                <p class="text-0-500 text-center">
                   ${msg("No browser profiles yet.")}
                 </p>
               </div>
@@ -281,8 +279,7 @@ export class BrowserProfilesList extends BtrixElement {
             ?disabled=${!data.createdByName}
           >
             <sl-format-date
-              lang=${getLocale()}
-              date=${`${data.created}Z` /** Z for UTC */}
+              date=${data.created}
               month="2-digit"
               day="2-digit"
               year="2-digit"
@@ -297,12 +294,9 @@ export class BrowserProfilesList extends BtrixElement {
             ?disabled=${!data.createdByName}
           >
             <sl-format-date
-              lang=${getLocale()}
               date=${
-                `${
-                  // NOTE older profiles may not have "modified" data
-                  data.modified || data.created
-                }Z` /** Z for UTC */
+                // NOTE older profiles may not have "modified" data
+                data.modified || data.created
               }
               month="2-digit"
               day="2-digit"

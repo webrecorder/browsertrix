@@ -36,3 +36,4 @@ spec:
 
   storageName: "{{ storage_name }}"
 
+  proxyId: "{{ proxy_id }}"
