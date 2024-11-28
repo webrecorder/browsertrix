@@ -1,5 +1,6 @@
 import type { ReactiveController, ReactiveControllerHost } from "lit";
 
+import { RouteNamespace } from "@/routes";
 import appState from "@/utils/state";
 
 export type NavigateEventDetail = {
@@ -31,7 +32,7 @@ export class NavigateController implements ReactiveController {
   get orgBasePath() {
     const slug = appState.orgSlug;
     if (slug) {
-      return `/orgs/${slug}`;
+      return `/${RouteNamespace.PrivateOrgs}/${slug}`;
     }
     return "/";
   }

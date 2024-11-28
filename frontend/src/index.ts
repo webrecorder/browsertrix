@@ -13,7 +13,7 @@ import "broadcastchannel-polyfill";
 import "construct-style-sheets-polyfill";
 import "./utils/polyfills";
 
-import { OrgTab, ROUTES } from "./routes";
+import { OrgTab, RouteNamespace, ROUTES } from "./routes";
 import type { UserInfo, UserOrg } from "./types/user";
 import APIRouter, { type ViewState } from "./utils/APIRouter";
 import AuthService, {
@@ -98,20 +98,6 @@ export class App extends BtrixElement {
   @query("#userGuideDrawer")
   private readonly userGuideDrawer!: SlDrawer;
 
-  get orgTab(): OrgTab | null {
-    const slug = this.viewState.params.slug;
-    const pathname = this.getLocationPathname();
-    const tab = pathname
-      .slice(pathname.indexOf(slug) + slug.length)
-      .replace(/(^\/|\/$)/, "")
-      .split("/")[0];
-
-    if (Object.values(OrgTab).includes(tab as OrgTab)) {
-      return tab as OrgTab;
-    }
-    return null;
-  }
-
   get isUserInCurrentOrg(): boolean {
     const { slug } = this.viewState.params;
     if (!this.userInfo || !slug) return false;
@@ -163,14 +149,30 @@ export class App extends BtrixElement {
       AppStateService.updateSettings(this.settings || null);
     }
     if (changedProperties.has("viewState")) {
-      if (this.viewState.route === "orgs") {
+      this.handleViewStateChange(
+        changedProperties.get("viewState") as undefined | ViewState,
+      );
+    }
+  }
+
+  private handleViewStateChange(prevValue?: ViewState) {
+    switch (this.viewState.route) {
+      case "orgs":
+        // Orgs index page don't exist right now
         this.routeTo(this.navigate.orgBasePath);
-      } else if (
-        changedProperties.get("viewState") &&
-        this.viewState.route === "org"
-      ) {
-        this.updateOrgSlugIfNeeded();
+        break;
+      case "publicOrgs":
+        // Public index page don't exist right now
+        this.routeTo("/");
+        break;
+      case "org": {
+        if (prevValue) {
+          this.updateOrgSlugIfNeeded();
+        }
+        break;
       }
+      default:
+        break;
     }
   }
 
@@ -355,7 +357,7 @@ export class App extends BtrixElement {
     const isSuperAdmin = this.userInfo?.isSuperAdmin;
     let homeHref = "/";
     if (!isSuperAdmin && this.appState.orgSlug && this.authState) {
-      homeHref = `${this.navigate.orgBasePath}/dashboard`;
+      homeHref = `${this.navigate.orgBasePath}/${OrgTab.Dashboard}`;
     }
 
     const showFullLogo =
@@ -476,7 +478,7 @@ export class App extends BtrixElement {
                     </sl-menu>
                   </sl-dropdown>`
               : html`
-                  ${this.viewState.route === "org"
+                  ${this.viewState.route === "publicOrgProfile"
                     ? html`
                         <sl-button
                           size="small"
@@ -570,7 +572,7 @@ export class App extends BtrixElement {
           ? html`
               <a
                 class="font-medium text-neutral-600"
-                href=${`${this.navigate.orgBasePath}/dashboard`}
+                href=${`${this.navigate.orgBasePath}/${OrgTab.Dashboard}`}
                 @click=${this.navigate.link}
               >
                 ${selectedOption.name.slice(0, orgNameLength)}
@@ -595,7 +597,9 @@ export class App extends BtrixElement {
               @sl-select=${(e: CustomEvent<{ item: { value: string } }>) => {
                 const { value } = e.detail.item;
                 if (value) {
-                  this.routeTo(`/orgs/${value}/dashboard`);
+                  this.routeTo(
+                    `/${RouteNamespace.PrivateOrgs}/${value}/${OrgTab.Dashboard}`,
+                  );
                 } else {
                   if (this.userInfo) {
                     this.clearSelectedOrg();
@@ -777,30 +781,27 @@ export class App extends BtrixElement {
       case "org": {
         const slug = this.viewState.params.slug;
         const orgPath = this.viewState.pathname;
-        const orgTab = this.orgTab;
+        const pathname = this.getLocationPathname();
+        const orgTab = pathname
+          .slice(pathname.indexOf(slug) + slug.length)
+          .replace(/(^\/|\/$)/, "")
+          .split("/")[0];
 
-        if (
-          this.isUserInCurrentOrg &&
-          orgTab &&
-          orgTab !== OrgTab.ProfilePreview
-        ) {
-          return html`<btrix-org
-            class="w-full"
-            .viewStateData=${this.viewState.data}
-            .params=${this.viewState.params}
-            .maxScale=${this.appState.settings?.maxScale || DEFAULT_MAX_SCALE}
-            orgPath=${orgPath.split(slug)[1]}
-            orgTab=${orgTab}
-          ></btrix-org>`;
-        }
+        return html`<btrix-org
+          class="w-full"
+          .viewStateData=${this.viewState.data}
+          .params=${this.viewState.params}
+          .maxScale=${this.appState.settings?.maxScale || DEFAULT_MAX_SCALE}
+          orgPath=${orgPath.split(slug)[1]}
+          orgTab=${orgTab}
+        ></btrix-org>`;
+      }
 
+      case "publicOrgProfile":
         return html`<btrix-org-profile
           class="w-full"
-          slug=${slug}
-          ?inOrg=${this.isUserInCurrentOrg}
-          ?preview=${orgTab && orgTab === OrgTab.ProfilePreview}
+          slug=${this.viewState.params.slug}
         ></btrix-org-profile>`;
-      }
 
       case "accountSettings":
         return html`<btrix-account-settings
@@ -848,9 +849,6 @@ export class App extends BtrixElement {
         }
         // falls through
       }
-
-      case "components":
-        return html`<btrix-components></btrix-components>`;
 
       default:
         return this.renderNotFoundPage();
@@ -970,7 +968,8 @@ export class App extends BtrixElement {
 
     if (!detail.api) {
       this.routeTo(
-        detail.redirectUrl || `${this.navigate.orgBasePath}/dashboard`,
+        detail.redirectUrl ||
+          `${this.navigate.orgBasePath}/${OrgTab.Dashboard}`,
       );
     }
 

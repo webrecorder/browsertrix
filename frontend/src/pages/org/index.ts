@@ -18,7 +18,7 @@ import type { QuotaUpdateDetail } from "@/controllers/api";
 import needLogin from "@/decorators/needLogin";
 import type { CollectionSavedEvent } from "@/features/collections/collection-metadata-dialog";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
-import { OrgTab } from "@/routes";
+import { OrgTab, RouteNamespace } from "@/routes";
 import type { UserOrg } from "@/types/user";
 import { isApiError } from "@/utils/api";
 import type { ViewState } from "@/utils/APIRouter";
@@ -82,7 +82,6 @@ export type OrgParams = {
   [OrgTab.Settings]: {
     settingsTab?: "information" | "members";
   };
-  [OrgTab.ProfilePreview]: {};
 };
 
 const UUID_REGEX =
@@ -103,7 +102,7 @@ export class Org extends LiteElement {
   params: OrgParams[OrgTab] = {};
 
   @property({ type: String })
-  orgTab: OrgTab = OrgTab.Dashboard;
+  orgTab?: OrgTab | string;
 
   @property({ type: Number })
   maxScale: number = DEFAULT_MAX_SCALE;
@@ -115,6 +114,12 @@ export class Org extends LiteElement {
   private isCreateDialogVisible = false;
 
   connectedCallback() {
+    if (
+      !this.orgTab ||
+      !Object.values(OrgTab).includes(this.orgTab as OrgTab)
+    ) {
+      this.navTo(`${this.orgBasePath}/${OrgTab.Dashboard}`);
+    }
     super.connectedCallback();
     this.addEventListener(
       "btrix-execution-minutes-quota-update",
@@ -150,7 +155,9 @@ export class Org extends LiteElement {
         // Couldn't find org with slug, redirect to first org
         const org = this.userInfo.orgs[0] as UserOrg | undefined;
         if (org) {
-          this.navTo(`/orgs/${org.slug}/dashboard`);
+          this.navTo(
+            `/${RouteNamespace.PrivateOrgs}/${org.slug}/${OrgTab.Dashboard}`,
+          );
         } else {
           this.navTo(`/account/settings`);
         }

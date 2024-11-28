@@ -1,5 +1,4 @@
 export enum OrgTab {
-  ProfilePreview = "profile-preview",
   Dashboard = "dashboard",
   Workflows = "workflows",
   Items = "items",
@@ -8,9 +7,13 @@ export enum OrgTab {
   Settings = "settings",
 }
 
+export enum RouteNamespace {
+  PrivateOrgs = "orgs",
+  PublicOrgs = "hub",
+}
+
 export const ROUTES = {
   home: "/",
-  dashboard: "/dashboard",
   join: "/join/:token",
   signUp: "/sign-up",
   acceptInvite: "/invite/accept/:token",
@@ -20,10 +23,9 @@ export const ROUTES = {
   forgotPassword: "/log-in/forgot-password",
   resetPassword: "/reset-password",
   accountSettings: "/account/settings(/:settingsTab)",
-  orgs: "/orgs",
+  orgs: `/${RouteNamespace.PrivateOrgs}(/)`,
   org: [
-    "/orgs/:slug(/)",
-    `(/${OrgTab.ProfilePreview})`,
+    `/${RouteNamespace.PrivateOrgs}/:slug(/)`,
     // Org sections:
     `(/${OrgTab.Dashboard})`,
     `(/${OrgTab.Workflows}(/new)(/:workflowId(/crawls/:itemId(/review/:qaTab))))`,
@@ -32,10 +34,12 @@ export const ROUTES = {
     `(/${OrgTab.BrowserProfiles}(/profile(/browser/:browserId)(/:browserProfileId)))`,
     `(/${OrgTab.Settings}(/:settingsTab))`,
   ].join(""),
+  publicOrgs: `/${RouteNamespace.PublicOrgs}(/)`,
+  publicOrgProfile: `/${RouteNamespace.PublicOrgs}/:slug(/)`,
   users: "/users",
   usersInvite: "/users/invite",
   crawls: "/crawls",
   crawl: "/crawls/crawl/:crawlId",
   // Redirect for https://github.com/webrecorder/browsertrix-cloud/issues/935
-  awpUploadRedirect: "/orgs/:orgId/artifacts/upload/:uploadId",
+  awpUploadRedirect: `/${RouteNamespace.PrivateOrgs}/:orgId/artifacts/upload/:uploadId`,
 } as const;

@@ -5,7 +5,7 @@ import { customElement } from "lit/decorators.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { columns, type Cols } from "@/layouts/columns";
-import { OrgTab } from "@/routes";
+import { RouteNamespace } from "@/routes";
 import { formValidator, maxLengthValidator } from "@/utils/form";
 
 @localized()
@@ -97,7 +97,7 @@ export class OrgSettingsProfile extends BtrixElement {
           <div class="p-5">${columns(cols)}</div>
           <footer class="flex items-center justify-between border-t px-4 py-3">
             <btrix-link
-              href=${`${this.navigate.orgBasePath}/${OrgTab.ProfilePreview}`}
+              href=${`/${RouteNamespace.PublicOrgs}/${this.orgSlug}`}
               target="_blank"
             >
               ${msg("Preview public profile page")}
