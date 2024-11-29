@@ -384,12 +384,6 @@
       <trans-unit id="sa663117885b91a78">
         <source>Adds a hard limit on the number of pages that will be crawled.</source>
       </trans-unit>
-      <trans-unit id="s4ad6912b1925acb3">
-        <source>Gracefully stop the crawler after a specified time limit.</source>
-      </trans-unit>
-      <trans-unit id="s4d0d8767ec20220b">
-        <source>Gracefully stop the crawler after a specified size limit.</source>
-      </trans-unit>
       <trans-unit id="scd0d4a13a709c62f">
         <source>Limits amount of time to wait for a page to load. Behaviors will run after this timeout only if the page is partially or fully loaded.</source>
       </trans-unit>
@@ -405,9 +399,6 @@
       <trans-unit id="s750a2fea733037cb">
         <source>Choose a custom profile to make use of saved cookies and logged-in
   accounts. Note that websites may log profiles out after a period of time.</source>
-      </trans-unit>
-      <trans-unit id="scd15181280405de6">
-        <source>Choose a Browsertrix Crawler Release Channel. If available, other versions may provide new/experimental crawling features.</source>
       </trans-unit>
       <trans-unit id="h1a88ca035802fcd0">
         <source>Blocks advertising content from being loaded. Uses
@@ -3838,6 +3829,15 @@
       </trans-unit>
       <trans-unit id="sab5061cf8c519285">
         <source><x equiv-text="${storageBytesText}" id="0"/> of disk space</source>
+      </trans-unit>
+      <trans-unit id="sb17815e41e816be1">
+        <source>Gracefully stop archiving after a specified amount of time has elapsed.</source>
+      </trans-unit>
+      <trans-unit id="s3699d88be79c8172">
+        <source>Gracefully stop archiving after a specified amount of data has been captured.</source>
+      </trans-unit>
+      <trans-unit id="saecba9c0445090e6">
+        <source>Choose a Browsertrix Crawler release channel. If available, other versions may provide new/experimental crawling features.</source>
       </trans-unit>
     </body>
   </file>
