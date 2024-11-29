@@ -11,10 +11,10 @@ import queryString from "query-string";
 import type { Crawl, Seed, Workflow, WorkflowParams } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import { CopyIconButton } from "@/components/ui/copy-icon-button";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import { RelativeDuration } from "@/components/ui/relative-duration";
 import { type IntersectEvent } from "@/components/utils/observable";
+import { ClipboardController } from "@/controllers/clipboard";
 import type { CrawlLog } from "@/features/archived-items/crawl-logs";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { ExclusionEditor } from "@/features/crawl-workflows/exclusion-editor";
@@ -721,7 +721,7 @@ export class WorkflowDetail extends BtrixElement {
           </sl-menu-item>
           <sl-menu-item
             @click=${() =>
-              CopyIconButton.copyToClipboard(workflow.tags.join(", "))}
+              ClipboardController.copyToClipboard(workflow.tags.join(", "))}
             ?disabled=${!workflow.tags.length}
           >
             <sl-icon name="tags" slot="prefix"></sl-icon>

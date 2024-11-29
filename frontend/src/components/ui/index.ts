@@ -15,7 +15,6 @@ import("./code");
 import("./combobox");
 import("./config-details");
 import("./copy-button");
-import("./copy-icon-button");
 import("./copy-field");
 import("./details");
 import("./file-list");
