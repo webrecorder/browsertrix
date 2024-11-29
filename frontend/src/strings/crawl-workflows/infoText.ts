@@ -12,10 +12,10 @@ const infoText: Partial<Record<Field, string | TemplateResult>> = {
     "Adds a hard limit on the number of pages that will be crawled.",
   ),
   crawlTimeoutMinutes: msg(
-    `Gracefully stop the crawler after a specified time limit.`,
+    `Gracefully stop archiving after a specified amount of time has elapsed.`,
   ),
   maxCrawlSizeGB: msg(
-    `Gracefully stop the crawler after a specified size limit.`,
+    `Gracefully stop archiving after a specified amount of data has been captured.`,
   ),
   pageLoadTimeoutSeconds: msg(
     `Limits amount of time to wait for a page to load. Behaviors will run after this timeout only if the page is partially or fully loaded.`,
@@ -33,7 +33,7 @@ const infoText: Partial<Record<Field, string | TemplateResult>> = {
     msg(`Choose a custom profile to make use of saved cookies and logged-in
   accounts. Note that websites may log profiles out after a period of time.`),
   crawlerChannel: msg(
-    `Choose a Browsertrix Crawler Release Channel. If available, other versions may provide new/experimental crawling features.`,
+    `Choose a Browsertrix Crawler release channel. If available, other versions may provide new/experimental crawling features.`,
   ),
   blockAds: msg(
     html`Blocks advertising content from being loaded. Uses
