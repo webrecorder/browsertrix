@@ -221,7 +221,7 @@ spec:
           value: "{{ warc_prefix }}"
 
       resources:
-{% if memory_limit %}
+{% if memory_limit and not enable_auto_resize %}
         limits:
           memory: "{{ memory_limit }}"
 {% endif %}
