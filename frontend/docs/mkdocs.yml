@@ -91,6 +91,9 @@ nav:
       - develop/localization.md
       - develop/docs.md
 
+  - API Reference: !ENV [ API_DOCS_URL, "/api/" ]
+
+
 markdown_extensions:
   - toc:
       toc_depth: 3

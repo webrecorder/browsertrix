@@ -143,7 +143,7 @@ class StorageOps:
             use_access_for_presign = False
         else:
             access_endpoint_url = storage.get("access_endpoint_url") or endpoint_url
-            use_access_for_presign = True
+            use_access_for_presign = is_bool(storage.get("use_access_for_presign"))
 
         return S3Storage(
             access_key=storage["access_key"],
