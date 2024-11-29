@@ -1234,10 +1234,10 @@ class CrawlOperator(BaseOperator):
                 if (
                     status.state == "running"
                     and allocated_storage
-                    and used_storage * AVAIL_STORAGE_RATIO > allocated_storage
+                    and used_storage * self.min_avail_storage_ratio > allocated_storage
                 ):
                     new_storage = math.ceil(
-                        used_storage * AVAIL_STORAGE_RATIO / 1_000_000_000
+                        used_storage * self.min_avail_storage_ratio / 1_000_000_000
                     )
                     pod_info.newStorage = f"{new_storage}Gi"
                     print(
@@ -1272,29 +1272,6 @@ class CrawlOperator(BaseOperator):
         await self.crawl_ops.update_running_crawl_stats(
             crawl.db_crawl_id, crawl.is_qa, stats
         )
-
-        for key, value in sizes.items():
-            value = int(value)
-            if value > 0 and status.podStatus:
-                pod_info = status.podStatus[key]
-                pod_info.used.storage = value
-
-                if (
-                    status.state == "running"
-                    and self.min_avail_storage_ratio
-                    and pod_info.allocated.storage
-                    and pod_info.used.storage * self.min_avail_storage_ratio
-                    > pod_info.allocated.storage
-                ):
-                    new_storage = math.ceil(
-                        pod_info.used.storage
-                        * self.min_avail_storage_ratio
-                        / 1_000_000_000
-                    )
-                    pod_info.newStorage = f"{new_storage}Gi"
-                    print(
-                        f"Attempting to adjust storage to {pod_info.newStorage} for {key}"
-                    )
 
         if not status.stopReason:
             status.stopReason = await self.is_crawl_stopping(crawl, status, data)
