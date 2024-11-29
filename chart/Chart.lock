@@ -8,8 +8,6 @@ dependencies:
 - name: metacontroller-helm
   repository: oci://ghcr.io/metacontroller
   version: 4.11.17
-digest: sha256:4ce76283d7d18b364abc9a903e89da48e2a4c14de5a5c05554c5bea46a169506
-generated: "2024-07-20T12:21:38.783488-07:00"
 - name: btrix-proxies
   repository: file://./proxies/
   version: 0.1.0
