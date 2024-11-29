@@ -3830,14 +3830,14 @@
       <trans-unit id="sab5061cf8c519285">
         <source><x equiv-text="${storageBytesText}" id="0"/> of disk space</source>
       </trans-unit>
-      <trans-unit id="sb17815e41e816be1">
-        <source>Gracefully stop archiving after a specified amount of time has elapsed.</source>
-      </trans-unit>
-      <trans-unit id="s3699d88be79c8172">
-        <source>Gracefully stop archiving after a specified amount of data has been captured.</source>
-      </trans-unit>
       <trans-unit id="saecba9c0445090e6">
         <source>Choose a Browsertrix Crawler release channel. If available, other versions may provide new/experimental crawling features.</source>
+      </trans-unit>
+      <trans-unit id="s22cec6a3e464a4e9">
+        <source>Gracefully stop archiving after the specified amount of time has elapsed.</source>
+      </trans-unit>
+      <trans-unit id="s2823887bf8a836da">
+        <source>Gracefully stop archiving after the specified amount of data has been captured.</source>
       </trans-unit>
     </body>
   </file>
