@@ -73,9 +73,6 @@
       <trans-unit id="s0379fc73608ab971">
         <source>Done</source>
       </trans-unit>
-      <trans-unit id="h54da0b63b416aa90">
-        <source>Add the following embed code to your HTML page:</source>
-      </trans-unit>
       <trans-unit id="sdbf249ab40dc18fa">
         <source>Copy Embed Code</source>
       </trans-unit>
@@ -674,9 +671,6 @@
       </trans-unit>
       <trans-unit id="sb62f4eaa41f130ab">
         <source>What would you like to crawl?</source>
-      </trans-unit>
-      <trans-unit id="s6c98d4e4eff5c8bb">
-        <source>Copied to clipboard!</source>
       </trans-unit>
       <trans-unit id="s3687049d1af562c4">
         <source>Copy</source>
@@ -3917,10 +3911,6 @@
       <trans-unit id="s1f9ea985eb0d9b87">
         <source>Embed Code</source>
       </trans-unit>
-      <trans-unit id="h9fea52f5753d5168">
-        <source>Unlisted and public collections can be embedded into an
-            existing webpage.</source>
-      </trans-unit>
       <trans-unit id="s152fb86993502262">
         <source>Updated collection visibility.</source>
       </trans-unit>
@@ -3933,11 +3923,33 @@
       <trans-unit id="saca3f4d144d8dc90">
         <source>View Public Page</source>
       </trans-unit>
-      <trans-unit id="s4708cb91cd6afef0">
-        <source>This collection can be viewed by anyone with the link.</source>
-      </trans-unit>
       <trans-unit id="s0921b07ddda1f1b1">
         <source>Open in New Tab</source>
+      </trans-unit>
+      <trans-unit id="sf4de3bfbfaca12e5">
+        <source>Copied</source>
+      </trans-unit>
+      <trans-unit id="s4dc2210af1af91fa">
+        <source>Copy unlisted link</source>
+      </trans-unit>
+      <trans-unit id="s5dc7f4038318506b">
+        <source>Copy public link</source>
+      </trans-unit>
+      <trans-unit id="s676af215b605d99d">
+        <source>View Unlisted Page</source>
+      </trans-unit>
+      <trans-unit id="s11161fdebb62dcc9">
+        <source>Link to Share</source>
+      </trans-unit>
+      <trans-unit id="sf37f3c3d85619290">
+        <source>Change the visibility setting to embed this collection.</source>
+      </trans-unit>
+      <trans-unit id="hc46a9b7caaed70a1">
+        <source>To embed this collection into an existing webpage, add the
+            following embed code:</source>
+      </trans-unit>
+      <trans-unit id="s41203abb9f802a84">
+        <source>Share Collection</source>
       </trans-unit>
     </body>
   </file>
