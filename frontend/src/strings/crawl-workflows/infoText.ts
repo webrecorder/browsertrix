@@ -12,10 +12,10 @@ const infoText: Partial<Record<Field, string | TemplateResult>> = {
     "Adds a hard limit on the number of pages that will be crawled.",
   ),
   crawlTimeoutMinutes: msg(
-    `Gracefully stop archiving after a specified amount of time has elapsed.`,
+    `Gracefully stop archiving after the specified amount of time has elapsed.`,
   ),
   maxCrawlSizeGB: msg(
-    `Gracefully stop archiving after a specified amount of data has been captured.`,
+    `Gracefully stop archiving after the specified amount of data has been captured.`,
   ),
   pageLoadTimeoutSeconds: msg(
     `Limits amount of time to wait for a page to load. Behaviors will run after this timeout only if the page is partially or fully loaded.`,
