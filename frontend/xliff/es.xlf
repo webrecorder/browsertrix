@@ -1233,11 +1233,6 @@
                       <x equiv-text="&lt;span class=&quot;text-neutral-600&quot;&gt;${fileCount}&lt;/span&gt;" id="0"/>
                       Non-HTML files captured as <x equiv-text="${pluralOf(&quot;pages&quot;, fileCount)}&#10;                    " id="1"/></source>
       </trans-unit>
-      <trans-unit id="ha312818a16d5146b">
-        <source>
-                      <x equiv-text="&lt;span class=&quot;text-danger&quot;&gt;${errorCount}&lt;/span&gt;" id="0"/>
-                      Failed <x equiv-text="${pluralOf(&quot;pages&quot;, errorCount)}&#10;                    " id="1"/></source>
-      </trans-unit>
       <trans-unit id="s3fd6bd99e3f6a5be">
         <source>Started</source>
       </trans-unit>
@@ -3838,6 +3833,11 @@
       </trans-unit>
       <trans-unit id="s2823887bf8a836da">
         <source>Gracefully stop archiving after the specified amount of data has been captured.</source>
+      </trans-unit>
+      <trans-unit id="h6c757f41a33628e7">
+        <source>
+                      <x equiv-text="&lt;span class=&quot;text-danger&quot;&gt;${errorCount}&lt;/span&gt;" id="0"/>
+                      Failed <x equiv-text="${pluralOf(&quot;pages&quot;, errorCount)}&#10;                      ${errorCount &gt; 0&#10;    ? html `—&#10;                            &lt;a&#10;                              class=&quot;text-primary&quot;&#10;                              href=${`/orgs/${this.orgSlug}/workflows/${this.workflowId}/crawls/${this.crawlId}#logs`}&#10;                              &gt;View error logs&lt;/a&#10;                            &gt;`&#10;    : &quot;&quot;}&#10;                    " id="1"/></source>
       </trans-unit>
     </body>
   </file>
