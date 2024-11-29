@@ -36,6 +36,7 @@ export const ROUTES = {
   ].join(""),
   publicOrgs: `/${RouteNamespace.PublicOrgs}(/)`,
   publicOrgProfile: `/${RouteNamespace.PublicOrgs}/:slug(/)`,
+  publicCollection: `/${RouteNamespace.PublicOrgs}/:slug/collections/:collectionId`,
   users: "/users",
   usersInvite: "/users/invite",
   crawls: "/crawls",

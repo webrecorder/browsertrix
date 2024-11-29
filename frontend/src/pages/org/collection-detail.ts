@@ -87,7 +87,11 @@ export class CollectionDetail extends BtrixElement {
   };
 
   private get shareLink() {
-    return `${window.location.protocol}//${window.location.hostname}${window.location.port ? `:${window.location.port}` : ""}/${RouteNamespace.PublicOrgs}/${this.orgSlug}/collections/${this.collectionId}`;
+    const baseUrl = `${window.location.protocol}//${window.location.hostname}${window.location.port ? `:${window.location.port}` : ""}`;
+    if (this.collection) {
+      return `${baseUrl}/${this.collection.access === CollectionAccess.Private ? `${RouteNamespace.PrivateOrgs}/collections/view` : `${RouteNamespace.PublicOrgs}/collections`}/${this.collectionId}`;
+    }
+    return "";
   }
 
   private get isCrawler() {
@@ -199,6 +203,7 @@ export class CollectionDetail extends BtrixElement {
                     <sl-button
                       variant=${collection.crawlCount ? "primary" : "default"}
                       size="small"
+                      ?disabled=${!this.shareLink}
                       @click=${() => {
                         void this.clipboardController.copy(this.shareLink);
                       }}
@@ -230,7 +235,10 @@ export class CollectionDetail extends BtrixElement {
                         <sl-icon slot="prefix" name="code-slash"></sl-icon>
                         ${msg("View Embed Code")}
                       </sl-menu-item>
-                      <btrix-menu-item-link href=${this.shareLink}>
+                      <btrix-menu-item-link
+                        href=${this.shareLink}
+                        ?disabled=${!this.shareLink}
+                      >
                         ${collection.access === CollectionAccess.Unlisted
                           ? html`
                               <sl-icon
