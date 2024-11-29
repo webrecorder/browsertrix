@@ -518,35 +518,6 @@ export class App extends BtrixElement {
     `;
   }
 
-  private renderSignUpLink() {
-    const { registrationEnabled, signUpUrl } = this.appState.settings || {};
-
-    if (registrationEnabled) {
-      return html`
-        <sl-button
-          href="/sign-up"
-          size="small"
-          @click="${(e: MouseEvent) => {
-            if (!this.navigate.handleAnchorClick(e)) {
-              return;
-            }
-            this.routeTo("/sign-up");
-          }}"
-        >
-          ${msg("Sign Up")}
-        </sl-button>
-      `;
-    }
-
-    if (signUpUrl) {
-      return html`
-        <sl-button href=${signUpUrl} size="small">
-          ${msg("Sign Up")}
-        </sl-button>
-      `;
-    }
-  }
-
   private renderOrgs() {
     const orgs = this.userInfo?.orgs;
     if (!orgs) return;
@@ -719,6 +690,7 @@ export class App extends BtrixElement {
     `;
   }
 
+  // TODO move into separate component
   private renderPage() {
     switch (this.viewState.route) {
       case "signUp": {
@@ -801,6 +773,12 @@ export class App extends BtrixElement {
           class="w-full"
           slug=${this.viewState.params.slug}
         ></btrix-org-profile>`;
+
+      case "publicCollection":
+        return html`<btrix-collection
+          class="w-full"
+          slug=${this.viewState.params.slug}
+        ></btrix-collection>`;
 
       case "accountSettings":
         return html`<btrix-account-settings
