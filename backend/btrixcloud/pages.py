@@ -94,9 +94,19 @@ class PageOps:
         self, page_dict: Dict[str, Any], crawl_id: str, oid: UUID
     ) -> Page:
         """Return Page object from dict"""
-        page_id = page_dict.get("id")
+        page_id = page_dict.get("id", "")
         if not page_id:
             print(f'Page {page_dict.get("url")} has no id - assigning UUID', flush=True)
+            page_id = uuid4()
+
+        try:
+            UUID(page_id)
+        except ValueError:
+            print(
+                f'Page {page_dict.get("url")} is not a valid UUID - assigning UUID',
+                flush=True,
+            )
+            page_id = uuid4()
 
         status = page_dict.get("status")
         if not status and page_dict.get("loadState"):
