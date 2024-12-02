@@ -99,9 +99,10 @@ class UploadOps(BaseCrawlOps):
         if prev_upload:
             try:
                 await self._delete_crawl_files(prev_upload, org)
+                await self.page_ops.delete_crawl_pages(prev_upload.id, org.id)
             # pylint: disable=broad-exception-caught
             except Exception as exc:
-                print("replace file deletion failed", exc)
+                print(f"Error handling previous upload: {exc}", flush=True)
 
         return await self._create_upload(
             files, name, description, collections, tags, id_, org, user
