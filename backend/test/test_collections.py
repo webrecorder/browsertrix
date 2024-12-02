@@ -996,6 +996,29 @@ def test_list_public_colls_home_url_thumbnail():
             assert coll["description"]
 
 
+def test_delete_thumbnail(crawler_auth_headers, default_org_id):
+    r = requests.delete(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_public_coll_id}/thumbnail",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["deleted"]
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_public_coll_id}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json().get("thumbnail") is None
+
+    r = requests.delete(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_second_public_coll_id}/thumbnail",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 404
+    assert r.json()["detail"] == "thumbnail_not_found"
+
+
 def test_delete_collection(crawler_auth_headers, default_org_id, crawler_crawl_id):
     # Delete second collection
     r = requests.delete(

@@ -369,7 +369,7 @@ class BaseCrawlOps:
         size = 0
         for file_ in crawl.files:
             size += file_.size
-            if not await self.storage_ops.delete_crawl_file_object(org, file_):
+            if not await self.storage_ops.delete_file_object(org, file_):
                 raise HTTPException(status_code=400, detail="file_deletion_error")
             # Not replicating QA run WACZs yet
             if not isinstance(crawl, QARun):
