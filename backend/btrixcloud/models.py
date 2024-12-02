@@ -797,6 +797,9 @@ class BaseCrawl(CoreCrawlable, BaseMongoModel):
 
     reviewStatus: ReviewStatus = None
 
+    filePageCount: Optional[int] = 0
+    errorPageCount: Optional[int] = 0
+
 
 # ============================================================================
 class CollIdName(BaseModel):
@@ -1012,9 +1015,6 @@ class Crawl(BaseCrawl, CrawlConfigCore):
 
     qa: Optional[QARun] = None
     qaFinished: Optional[Dict[str, QARun]] = {}
-
-    filePageCount: Optional[int] = 0
-    errorPageCount: Optional[int] = 0
 
 
 # ============================================================================
