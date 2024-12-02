@@ -31,13 +31,13 @@ const MIN_LENGTH = 2;
  * Usage example:
  * ```ts
  * <btrix-queue-exclusion-form
- *  @on-change=${this.handleExclusionChange}
- *  @on-add=${this.handleExclusionAdd}
+ *  @btrix-change=${this.handleExclusionChange}
+ *  @btrix-add=${this.handleExclusionAdd}
  * ></btrix-queue-exclusion-form>
  * ```
  *
- * @fires on-change ExclusionChangeEvent
- * @fires on-add ExclusionAddEvent
+ * @fires btrix-change ExclusionChangeEvent
+ * @fires btrix-add ExclusionAddEvent
  */
 @localized()
 @customElement("btrix-queue-exclusion-form")
@@ -204,7 +204,7 @@ export class QueueExclusionForm extends LiteElement {
   private async dispatchChangeEvent() {
     await this.updateComplete;
     this.dispatchEvent(
-      new CustomEvent("on-change", {
+      new CustomEvent("btrix-change", {
         detail: {
           value:
             this.selectValue === "text" ? regexEscape(this.regex) : this.regex,
@@ -225,7 +225,7 @@ export class QueueExclusionForm extends LiteElement {
     }
 
     this.dispatchEvent(
-      new CustomEvent("on-add", {
+      new CustomEvent("btrix-add", {
         detail: {
           regex,
           onSuccess: () => {

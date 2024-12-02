@@ -102,8 +102,8 @@ export class ExclusionEditor extends LiteElement {
             <btrix-queue-exclusion-form
               ?isSubmitting=${this.isSubmitting}
               fieldErrorMessage=${this.exclusionFieldErrorMessage}
-              @on-change=${this.handleRegexChange}
-              @on-add=${this.handleAddRegex}
+              @btrix-change=${this.handleRegexChange}
+              @btrix-add=${this.handleAddRegex}
             >
             </btrix-queue-exclusion-form>
           </div>`
