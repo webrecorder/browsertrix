@@ -891,11 +891,11 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops, user_de
         return await colls.set_home_url(coll_id, update, org)
 
     @app.put(
-        "/orgs/{oid}/collections/{coll_id}/stream/thumbnail",
+        "/orgs/{oid}/collections/{coll_id}/thumbnail",
         tags=["collections"],
         response_model=AddedResponse,
     )
-    async def upload_stream(
+    async def upload_thumbnail_stream(
         request: Request,
         filename: str,
         coll_id: UUID,
