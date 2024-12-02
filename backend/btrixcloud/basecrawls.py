@@ -323,8 +323,9 @@ class BaseCrawlOps:
                         status_code=400, detail=f"Error Stopping Crawl: {exc}"
                     )
 
+            await self.page_ops.delete_crawl_pages(crawl_id, org.id)
+
             if type_ == "crawl":
-                await self.page_ops.delete_crawl_pages(crawl_id, org.id)
                 await self.delete_all_crawl_qa_files(crawl_id, org)
 
             crawl_size = await self._delete_crawl_files(crawl, org)
