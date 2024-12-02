@@ -199,10 +199,7 @@ class PageOps:
             inc_query["errorPageCount"] = error_count
 
         await self.crawls.find_one_and_update(
-            {
-                "_id": crawl_id,
-                "type": "crawl",
-            },
+            {"_id": crawl_id},
             {"$inc": inc_query},
         )
 
@@ -555,10 +552,8 @@ class PageOps:
         await self.add_crawl_pages_to_db_from_wacz(crawl_id)
 
     async def re_add_all_crawl_pages(self, oid: UUID):
-        """Re-add pages for all crawls in org"""
-        crawl_ids = await self.crawls.distinct(
-            "_id", {"type": "crawl", "finished": {"$ne": None}}
-        )
+        """Re-add pages for all crawls and uploads in org"""
+        crawl_ids = await self.crawls.distinct("_id", {"finished": {"$ne": None}})
         for crawl_id in crawl_ids:
             await self.re_add_crawl_pages(crawl_id, oid)
 

@@ -16,6 +16,7 @@ from .orgs import OrgOps
 from .pages import PageOps
 from .profiles import ProfileOps
 from .storages import StorageOps
+from .uploads import UploadOps
 from .users import UserManager
 from .webhooks import EventWebhookOps
 
@@ -26,6 +27,7 @@ def init_ops() -> Tuple[
     CrawlConfigOps,
     BaseCrawlOps,
     CrawlOps,
+    UploadOps,
     PageOps,
     CollectionOps,
     ProfileOps,
@@ -70,7 +72,7 @@ def init_ops() -> Tuple[
 
     coll_ops = CollectionOps(mdb, crawl_manager, org_ops, event_webhook_ops)
 
-    base_crawl_ops = BaseCrawlOps(
+    base_crawl_init = (
         mdb,
         user_manager,
         org_ops,
@@ -81,23 +83,17 @@ def init_ops() -> Tuple[
         background_job_ops,
     )
 
-    crawl_ops = CrawlOps(
-        crawl_manager,
-        mdb,
-        user_manager,
-        org_ops,
-        crawl_config_ops,
-        coll_ops,
-        storage_ops,
-        event_webhook_ops,
-        background_job_ops,
-    )
+    base_crawl_ops = BaseCrawlOps(*base_crawl_init)
+
+    crawl_ops = CrawlOps(crawl_manager, *base_crawl_init)
+
+    upload_ops = UploadOps(*base_crawl_init)
 
     page_ops = PageOps(mdb, crawl_ops, org_ops, storage_ops)
 
     base_crawl_ops.set_page_ops(page_ops)
-
     crawl_ops.set_page_ops(page_ops)
+    upload_ops.set_page_ops(page_ops)
 
     background_job_ops.set_ops(crawl_ops, profile_ops)
 
@@ -116,6 +112,7 @@ def init_ops() -> Tuple[
         crawl_config_ops,
         base_crawl_ops,
         crawl_ops,
+        upload_ops,
         page_ops,
         coll_ops,
         profile_ops,
