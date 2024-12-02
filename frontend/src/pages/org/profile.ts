@@ -14,6 +14,7 @@ type OrgProfileData = {
     name: string;
     description: string;
     url: string;
+    verified: boolean;
   };
   collections: unknown[];
 };
@@ -119,6 +120,8 @@ export class OrgProfile extends BtrixElement {
         <header class="mt-5 border-b pb-3">
           <div class="flex flex-wrap items-end justify-between gap-2">
             ${pageTitle(org.name)}
+            ${org.verified &&
+            html`<btrix-verified-badge class="mb-0.5"></btrix-verified-badge>`}
             ${when(
               this.appState.isAdmin,
               () =>
@@ -314,6 +317,7 @@ export class OrgProfile extends BtrixElement {
           name: org.name,
           description: org.publicDescription || "",
           url: org.publicUrl || "",
+          verified: true, // TODO
         },
         collections: [],
       };
