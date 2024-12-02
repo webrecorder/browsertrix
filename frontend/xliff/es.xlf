@@ -2939,10 +2939,6 @@
       <trans-unit id="sc154fb69dffcdef9">
         <source>billing settings</source>
       </trans-unit>
-      <trans-unit id="s71c5c2d34bb2c4c2">
-        <source>Your org will be deleted in
-              <x equiv-text="${daysDiff}" id="0"/> days</source>
-      </trans-unit>
       <trans-unit id="s7fa0d24b94690373">
         <source>Your subscription ends on <x equiv-text="${dateStr}" id="0"/>. Your user account, org, and all associated data will be deleted.</source>
       </trans-unit>
@@ -3838,6 +3834,18 @@
       </trans-unit>
       <trans-unit id="sab5061cf8c519285">
         <source><x equiv-text="${storageBytesText}" id="0"/> of disk space</source>
+      </trans-unit>
+      <trans-unit id="s8be75efeafa7ffe1">
+        <source>Your org will be deleted within one day</source>
+      </trans-unit>
+      <trans-unit id="sfa1778ba000b56f5">
+        <source>Your org will be deleted in one day.</source>
+      </trans-unit>
+      <trans-unit id="se392e1f811076a30">
+        <source>Your org will be deleted in <x equiv-text="${daysDiff}" id="0"/> days</source>
+      </trans-unit>
+      <trans-unit id="se1037ae4d9adb08a">
+        <source>You have one day left of your Browsertrix trial</source>
       </trans-unit>
     </body>
   </file>
