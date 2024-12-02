@@ -465,6 +465,7 @@ class CollectionOps:
             "ts": {"$ne": None},
         }
 
+        # Note: Pages for uploads are not currently in the db
         cursor = self.pages.find(match_query).sort("ts", 1).limit(1)
         pages = await cursor.to_list(length=1)
         try:
