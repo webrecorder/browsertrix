@@ -257,7 +257,7 @@ export class OrgSettings extends BtrixElement {
             [
               html`
                 <sl-input
-                  class="hide-required-content mb-2"
+                  class="hide-required-content mb-2 part-[input]:pl-0"
                   name="orgSlug"
                   size="small"
                   label=${msg("Org URL")}
