@@ -476,9 +476,7 @@ class StorageOps:
 
         return presigned_url
 
-    async def delete_crawl_file_object(
-        self, org: Organization, crawlfile: BaseFile
-    ) -> bool:
+    async def delete_file_object(self, org: Organization, crawlfile: BaseFile) -> bool:
         """delete crawl file from storage."""
         return await self._delete_file(org, crawlfile.filename, crawlfile.storage)
 

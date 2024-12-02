@@ -32,6 +32,7 @@ from .models import (
     UpdatedResponse,
     SuccessResponse,
     AddedResponse,
+    DeletedResponse,
     CollectionSearchValuesResponse,
     OrgPublicCollections,
     PublicOrgDetails,
@@ -633,7 +634,7 @@ class CollectionOps:
         thumbnail_file = file_prep.get_image_file(org.storage)
 
         if coll.thumbnail:
-            if not await self.storage_ops.delete_crawl_file_object(org, coll.thumbnail):
+            if not await self.storage_ops.delete_file_object(org, coll.thumbnail):
                 print(
                     f"Unable to delete previous collection thumbnail: {coll.thumbnail.filename}"
                 )
@@ -648,6 +649,25 @@ class CollectionOps:
         )
 
         return {"added": True}
+
+    async def delete_thumbnail(self, coll_id: UUID, org: Organization):
+        """Delete collection thumbnail"""
+        coll = await self.get_collection(coll_id)
+
+        if not coll.thumbnail:
+            raise HTTPException(status_code=404, detail="thumbnail_not_found")
+
+        if not await self.storage_ops.delete_file_object(org, coll.thumbnail):
+            print(f"Unable to delete collection thumbnail: {coll.thumbnail.filename}")
+            raise HTTPException(status_code=400, detail="file_deletion_error")
+
+        # Delete from database
+        await self.collections.find_one_and_update(
+            {"_id": coll_id, "oid": org.id},
+            {"$set": {"thumbnail": None}},
+        )
+
+        return {"deleted": True}
 
 
 # ============================================================================
@@ -905,5 +925,16 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops, user_de
         return await colls.upload_thumbnail_stream(
             request.stream(), filename, coll_id, org, user
         )
+
+    @app.delete(
+        "/orgs/{oid}/collections/{coll_id}/thumbnail",
+        tags=["collections"],
+        response_model=DeletedResponse,
+    )
+    async def delete_thumbnail_stream(
+        coll_id: UUID,
+        org: Organization = Depends(org_crawl_dep),
+    ):
+        return await colls.delete_thumbnail(coll_id, org)
 
     return colls
