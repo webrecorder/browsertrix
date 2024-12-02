@@ -265,8 +265,8 @@ def test_add_remove_crawl_from_collection(
     assert data["totalSize"] == 0
     assert data["modified"] >= modified
     assert data.get("tags", []) == []
-    assert data["dateEarliest"]
-    assert data["dateLatest"]
+    assert data.get("dateEarliest") is None
+    assert data.get("dateLatest") is None
 
     # Verify they were removed
     r = requests.get(
