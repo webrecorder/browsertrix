@@ -110,6 +110,7 @@ class CollectionOps:
             oid=oid,
             name=coll_in.name,
             description=coll_in.description,
+            caption=coll_in.caption,
             modified=modified,
             access=coll_in.access,
         )
