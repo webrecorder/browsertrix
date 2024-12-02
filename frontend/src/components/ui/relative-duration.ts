@@ -1,7 +1,9 @@
 import { localized } from "@lit/localize";
 import { LitElement } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import humanizeDuration from "pretty-ms";
+
+import { LocalizeController } from "@/controllers/localize";
+import humanizeDuration from "@/utils/humanize-duration";
 
 export type HumanizeOptions = {
   compact?: boolean;
@@ -20,6 +22,8 @@ export type HumanizeOptions = {
 @localized()
 @customElement("btrix-relative-duration")
 export class RelativeDuration extends LitElement {
+  readonly localize = new LocalizeController(this);
+
   @property({ type: String })
   value?: string; // `new Date` compatible date format
 
@@ -41,12 +45,12 @@ export class RelativeDuration extends LitElement {
   @state()
   private timerId?: number;
 
-  static humanize(duration: number, options: HumanizeOptions = {}) {
-    return humanizeDuration(duration, {
-      secondsDecimalDigits: 0,
-      ...options,
-    });
-  }
+  // static humanize(duration: number, options: HumanizeOptions = {}) {
+  //   return humanizeDuration(duration, {
+  //     secondsDecimalDigits: 0,
+  //     ...options,
+  //   });
+  // }
 
   connectedCallback(): void {
     super.connectedCallback();
@@ -78,13 +82,15 @@ export class RelativeDuration extends LitElement {
   render() {
     if (!this.value) return "";
 
-    return RelativeDuration.humanize(
-      (this.endTime || Date.now()) - new Date(this.value).valueOf(),
-      {
-        compact: this.compact,
-        verbose: this.verbose,
-        unitCount: this.unitCount,
-      },
-    );
+    const durationMs =
+      (this.endTime || Date.now()) - new Date(this.value).valueOf();
+
+    const duration = humanizeDuration(durationMs, {
+      compact: this.compact,
+      verbose: this.verbose,
+      unitCount: this.unitCount,
+    });
+
+    return this.localize.duration(duration);
   }
 }

@@ -29,6 +29,10 @@ const defaultDateOptions: Intl.DateTimeFormatOptions = {
   minute: "2-digit",
 };
 
+const defaultDurationOptions: Intl.DurationFormatOptions = {
+  style: "digital",
+};
+
 export class Localize {
   // Cache default formatters
   private readonly numberFormatter = new Map([
@@ -36,6 +40,12 @@ export class Localize {
   ]);
   private readonly dateFormatter = new Map([
     [sourceLocale, new Intl.DateTimeFormat(sourceLocale, defaultDateOptions)],
+  ]);
+  private readonly durationFormatter = new Map([
+    [
+      sourceLocale,
+      new Intl.DurationFormat(sourceLocale, defaultDurationOptions),
+    ],
   ]);
 
   get activeLanguage() {
@@ -117,6 +127,19 @@ export class Localize {
     }
 
     return formatter.format(date);
+  };
+
+  readonly duration = (
+    d: Intl.DurationType,
+    opts?: Intl.DurationFormatOptions,
+  ) => {
+    let formatter = this.durationFormatter.get(localize.activeLanguage);
+
+    if (opts || !formatter) {
+      formatter = new Intl.DurationFormat(localize.activeLanguage, opts);
+    }
+
+    return formatter.format(d);
   };
 
   private setTranslation(lang: LanguageCode) {

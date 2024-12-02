@@ -1,5 +1,8 @@
 import { LocalizeController as SlLocalizeController } from "@shoelace-style/localize";
 
+import humanizeDuration, {
+  type HumanizeOptions,
+} from "@/utils/humanize-duration";
 import localize from "@/utils/localize";
 
 export class LocalizeController extends SlLocalizeController {
@@ -12,6 +15,20 @@ export class LocalizeController extends SlLocalizeController {
    * Custom date formatter that takes missing `Z` into account
    */
   readonly date = localize.date;
+
+  /**
+   * Custom duration formatter
+   */
+  readonly duration = localize.duration;
+
+  readonly humanizeDuration = (value: number, options?: HumanizeOptions) => {
+    const duration = humanizeDuration(value, options);
+
+    if (options?.verbose) {
+      return localize.duration(duration, { style: "long" });
+    }
+    return localize.duration(duration);
+  };
 
   /**
    * From https://github.com/shoelace-style/shoelace/blob/v2.18.0/src/components/format-bytes/format-bytes.component.ts

@@ -5,6 +5,7 @@
   "license": "AGPL-3.0-or-later",
   "dependencies": {
     "@cheap-glitch/mi-cron": "^1.0.1",
+    "@formatjs/intl-durationformat": "^0.6.4",
     "@ianvs/prettier-plugin-sort-imports": "^4.2.1",
     "@lit/localize": "^0.12.1",
     "@lit/task": "^1.0.0",
@@ -60,6 +61,7 @@
     "micromark": "^4.0.0",
     "micromark-extension-gfm-strikethrough": "^2.0.0",
     "node-fetch": "^3.1.0",
+    "parse-ms": "^4.0.0",
     "patch-package": "^8.0.0",
     "postcss": "^8.4.5",
     "postcss-lit": "^1.1.1",
