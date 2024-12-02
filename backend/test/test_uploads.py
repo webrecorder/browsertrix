@@ -136,7 +136,7 @@ def test_get_upload_pages(admin_auth_headers, default_org_id, upload_id):
     time.sleep(10)
 
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{upload_id}/pages",
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads/{upload_id}/pages",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
@@ -160,7 +160,7 @@ def test_get_upload_pages(admin_auth_headers, default_org_id, upload_id):
 
     page_id = pages[0]["id"]
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{upload_id}/pages/{page_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads/{upload_id}/pages/{page_id}",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
