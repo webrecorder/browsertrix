@@ -12,6 +12,8 @@ PUBLIC_COLLECTION_NAME = "Public Test collection"
 UPDATED_NAME = "Updated tést cöllection"
 SECOND_COLLECTION_NAME = "second-collection"
 DESCRIPTION = "Test description"
+CAPTION = "Short caption"
+UPDATED_CAPTION = "Updated caption"
 
 _coll_id = None
 _second_coll_id = None
@@ -33,6 +35,7 @@ def test_create_collection(
         json={
             "crawlIds": [crawler_crawl_id],
             "name": COLLECTION_NAME,
+            "caption": CAPTION,
         },
     )
     assert r.status_code == 200
@@ -51,6 +54,23 @@ def test_create_collection(
     assert _coll_id in r.json()["collectionIds"]
     assert r.json()["collections"] == [{"name": COLLECTION_NAME, "id": _coll_id}]
 
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data["id"] == _coll_id
+    assert data["name"] == COLLECTION_NAME
+    assert data["caption"] == CAPTION
+    assert data["crawlCount"] == 1
+    assert data["pageCount"] > 0
+    assert data["totalSize"] > 0
+    modified = data["modified"]
+    assert modified
+    assert modified.endswith("Z")
+
 
 def test_create_public_collection(
     crawler_auth_headers, default_org_id, crawler_crawl_id, admin_crawl_id
@@ -61,6 +81,7 @@ def test_create_public_collection(
         json={
             "crawlIds": [crawler_crawl_id],
             "name": PUBLIC_COLLECTION_NAME,
+            "caption": CAPTION,
             "access": "public",
         },
     )
@@ -117,6 +138,7 @@ def test_update_collection(
         headers=crawler_auth_headers,
         json={
             "description": DESCRIPTION,
+            "caption": UPDATED_CAPTION,
         },
     )
     assert r.status_code == 200
@@ -132,6 +154,7 @@ def test_update_collection(
     assert data["id"] == _coll_id
     assert data["name"] == COLLECTION_NAME
     assert data["description"] == DESCRIPTION
+    assert data["caption"] == UPDATED_CAPTION
     assert data["crawlCount"] == 1
     assert data["pageCount"] > 0
     assert data["totalSize"] > 0
@@ -276,6 +299,7 @@ def test_get_collection(crawler_auth_headers, default_org_id):
     assert data["name"] == UPDATED_NAME
     assert data["oid"] == default_org_id
     assert data["description"] == DESCRIPTION
+    assert data["caption"] == UPDATED_CAPTION
     assert data["crawlCount"] == 2
     assert data["pageCount"] > 0
     assert data["totalSize"] > 0
@@ -294,6 +318,7 @@ def test_get_collection_replay(crawler_auth_headers, default_org_id):
     assert data["name"] == UPDATED_NAME
     assert data["oid"] == default_org_id
     assert data["description"] == DESCRIPTION
+    assert data["caption"] == UPDATED_CAPTION
     assert data["crawlCount"] == 2
     assert data["pageCount"] > 0
     assert data["totalSize"] > 0
@@ -461,10 +486,11 @@ def test_list_collections(
     assert len(items) == 3
 
     first_coll = [coll for coll in items if coll["name"] == UPDATED_NAME][0]
-    assert first_coll["id"]
+    assert first_coll["id"] == _coll_id
     assert first_coll["name"] == UPDATED_NAME
     assert first_coll["oid"] == default_org_id
     assert first_coll["description"] == DESCRIPTION
+    assert first_coll["caption"] == UPDATED_CAPTION
     assert first_coll["crawlCount"] == 3
     assert first_coll["pageCount"] > 0
     assert first_coll["totalSize"] > 0
@@ -977,6 +1003,8 @@ def test_list_public_colls_home_url_thumbnail():
             assert field not in coll
 
         if coll["id"] == _public_coll_id:
+            assert coll["caption"] == CAPTION
+
             assert coll["homeUrl"]
             assert coll["homeUrlTs"]
 

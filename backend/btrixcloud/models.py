@@ -1238,6 +1238,7 @@ class Collection(BaseMongoModel):
     name: str = Field(..., min_length=1)
     oid: UUID
     description: Optional[str] = None
+    caption: Optional[str] = None
     modified: Optional[datetime] = None
 
     crawlCount: Optional[int] = 0
@@ -1262,6 +1263,7 @@ class CollIn(BaseModel):
 
     name: str = Field(..., min_length=1)
     description: Optional[str] = None
+    caption: Optional[str] = None
     crawlIds: Optional[List[str]] = []
 
     access: CollAccessType = CollAccessType.PRIVATE
@@ -1274,6 +1276,7 @@ class CollOut(BaseMongoModel):
     name: str
     oid: UUID
     description: Optional[str] = None
+    caption: Optional[str] = None
     modified: Optional[datetime] = None
 
     crawlCount: Optional[int] = 0
@@ -1299,7 +1302,7 @@ class PublicCollOut(BaseMongoModel):
 
     name: str
     description: Optional[str] = None
-    # caption: Optional[str] = None
+    caption: Optional[str] = None
 
     # earliestDate: Optional[datetime] = None
     # latestDate: Optional[datetime] = None
@@ -1317,6 +1320,7 @@ class UpdateColl(BaseModel):
 
     name: Optional[str] = None
     description: Optional[str] = None
+    caption: Optional[str] = None
     access: Optional[CollAccessType] = None
 
 
