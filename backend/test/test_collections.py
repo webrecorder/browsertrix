@@ -71,6 +71,9 @@ def test_create_collection(
     assert modified
     assert modified.endswith("Z")
 
+    assert data["dateEarliest"]
+    assert data["dateLatest"]
+
 
 def test_create_public_collection(
     crawler_auth_headers, default_org_id, crawler_crawl_id, admin_crawl_id
@@ -162,6 +165,8 @@ def test_update_collection(
     modified = data["modified"]
     assert modified
     assert modified.endswith("Z")
+    assert data["dateEarliest"]
+    assert data["dateLatest"]
 
 
 def test_rename_collection(
@@ -236,6 +241,8 @@ def test_add_remove_crawl_from_collection(
     assert data["totalSize"] > 0
     assert data["modified"] >= modified
     assert data["tags"] == ["wr-test-2", "wr-test-1"]
+    assert data["dateEarliest"]
+    assert data["dateLatest"]
 
     # Verify it was added
     r = requests.get(
@@ -258,6 +265,8 @@ def test_add_remove_crawl_from_collection(
     assert data["totalSize"] == 0
     assert data["modified"] >= modified
     assert data.get("tags", []) == []
+    assert data["dateEarliest"]
+    assert data["dateLatest"]
 
     # Verify they were removed
     r = requests.get(
@@ -286,6 +295,8 @@ def test_add_remove_crawl_from_collection(
     assert data["totalSize"] > 0
     assert data["modified"] >= modified
     assert data["tags"] == ["wr-test-2", "wr-test-1"]
+    assert data["dateEarliest"]
+    assert data["dateLatest"]
 
 
 def test_get_collection(crawler_auth_headers, default_org_id):
@@ -305,6 +316,8 @@ def test_get_collection(crawler_auth_headers, default_org_id):
     assert data["totalSize"] > 0
     assert data["modified"] >= modified
     assert data["tags"] == ["wr-test-2", "wr-test-1"]
+    assert data["dateEarliest"]
+    assert data["dateLatest"]
 
 
 def test_get_collection_replay(crawler_auth_headers, default_org_id):
@@ -324,6 +337,8 @@ def test_get_collection_replay(crawler_auth_headers, default_org_id):
     assert data["totalSize"] > 0
     assert data["modified"] >= modified
     assert data["tags"] == ["wr-test-2", "wr-test-1"]
+    assert data["dateEarliest"]
+    assert data["dateLatest"]
 
     resources = data["resources"]
     assert resources
@@ -440,6 +455,8 @@ def test_add_upload_to_collection(crawler_auth_headers, default_org_id):
     assert data["totalSize"] > 0
     assert data["modified"]
     assert data["tags"] == ["wr-test-2", "wr-test-1"]
+    assert data["dateEarliest"]
+    assert data["dateLatest"]
 
     # Verify it was added
     r = requests.get(
@@ -497,6 +514,8 @@ def test_list_collections(
     assert first_coll["modified"]
     assert first_coll["tags"] == ["wr-test-2", "wr-test-1"]
     assert first_coll["access"] == "private"
+    assert first_coll["dateEarliest"]
+    assert first_coll["dateLatest"]
 
     second_coll = [coll for coll in items if coll["name"] == SECOND_COLLECTION_NAME][0]
     assert second_coll["id"]
@@ -509,6 +528,8 @@ def test_list_collections(
     assert second_coll["modified"]
     assert second_coll["tags"] == ["wr-test-2"]
     assert second_coll["access"] == "private"
+    assert second_coll["dateEarliest"]
+    assert second_coll["dateLatest"]
 
 
 def test_remove_upload_from_collection(crawler_auth_headers, default_org_id):
@@ -843,6 +864,8 @@ def test_list_public_collections(
     for collection in collections:
         assert collection["id"] in (_public_coll_id, _second_public_coll_id)
         assert collection["name"]
+        assert collection["dateEarliest"]
+        assert collection["dateLatest"]
 
     # Test non-existing slug - it should return a 404 but not reveal
     # whether or not an org exists with that slug
@@ -998,6 +1021,8 @@ def test_list_public_colls_home_url_thumbnail():
         assert coll["id"] in (_public_coll_id, _second_public_coll_id)
         assert coll["name"]
         assert coll["resources"]
+        assert coll["dateEarliest"]
+        assert coll["dateLatest"]
 
         for field in non_public_fields:
             assert field not in coll

@@ -120,6 +120,7 @@ class CollectionOps:
             if crawl_ids:
                 await self.crawl_ops.add_to_collection(crawl_ids, coll_id, org)
                 await self.update_collection_counts_and_tags(coll_id)
+                await self.update_collection_dates(coll_id)
                 asyncio.create_task(
                     self.event_webhook_ops.create_added_to_collection_notification(
                         crawl_ids, coll_id, org
@@ -173,6 +174,7 @@ class CollectionOps:
             raise HTTPException(status_code=404, detail="collection_not_found")
 
         await self.update_collection_counts_and_tags(coll_id)
+        await self.update_collection_dates(coll_id)
 
         asyncio.create_task(
             self.event_webhook_ops.create_added_to_collection_notification(
@@ -197,6 +199,7 @@ class CollectionOps:
             raise HTTPException(status_code=404, detail="collection_not_found")
 
         await self.update_collection_counts_and_tags(coll_id)
+        await self.update_collection_dates(coll_id)
 
         asyncio.create_task(
             self.event_webhook_ops.create_removed_from_collection_notification(
@@ -444,6 +447,46 @@ class CollectionOps:
                     "pageCount": page_count,
                     "totalSize": total_size,
                     "tags": sorted_tags,
+                }
+            },
+        )
+
+    async def update_collection_dates(self, coll_id: UUID):
+        """Update collection earliest and latest dates from page timestamps"""
+        coll = await self.get_collection(coll_id)
+        crawl_ids = await self.get_collection_crawl_ids(coll_id)
+
+        earliest_ts = None
+        latest_ts = None
+
+        match_query = {
+            "oid": coll.oid,
+            "crawl_id": {"$in": crawl_ids},
+            "ts": {"$ne": None},
+        }
+
+        cursor = self.pages.find(match_query).sort("ts", 1).limit(1)
+        pages = await cursor.to_list(length=1)
+        try:
+            earliest_page = pages[0]
+            earliest_ts = earliest_page.get("ts")
+        except IndexError:
+            pass
+
+        cursor = self.pages.find(match_query).sort("ts", -1).limit(1)
+        pages = await cursor.to_list(length=1)
+        try:
+            latest_page = pages[0]
+            latest_ts = latest_page.get("ts")
+        except IndexError:
+            pass
+
+        await self.collections.find_one_and_update(
+            {"_id": coll_id},
+            {
+                "$set": {
+                    "dateEarliest": earliest_ts,
+                    "dateLatest": latest_ts,
                 }
             },
         )

@@ -1237,6 +1237,9 @@ class Collection(BaseMongoModel):
     pageCount: Optional[int] = 0
     totalSize: Optional[int] = 0
 
+    dateEarliest: Optional[datetime] = None
+    dateLatest: Optional[datetime] = None
+
     # Sorted by count, descending
     tags: Optional[List[str]] = []
 
@@ -1275,6 +1278,9 @@ class CollOut(BaseMongoModel):
     pageCount: Optional[int] = 0
     totalSize: Optional[int] = 0
 
+    dateEarliest: Optional[datetime] = None
+    dateLatest: Optional[datetime] = None
+
     # Sorted by count, descending
     tags: Optional[List[str]] = []
 
@@ -1296,8 +1302,8 @@ class PublicCollOut(BaseMongoModel):
     description: Optional[str] = None
     caption: Optional[str] = None
 
-    # earliestDate: Optional[datetime] = None
-    # latestDate: Optional[datetime] = None
+    dateEarliest: Optional[datetime] = None
+    dateLatest: Optional[datetime] = None
 
     homeUrl: Optional[AnyHttpUrl] = None
     homeUrlTs: Optional[datetime] = None
