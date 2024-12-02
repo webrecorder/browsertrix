@@ -89,7 +89,17 @@ export class ExclusionEditor extends LiteElement {
         ? html`<btrix-queue-exclusion-table
             ?removable=${this.isActiveCrawl}
             .exclusions=${this.config.exclude || []}
-            @btrix-remove=${this.deleteExclusion}
+            @btrix-change=${async (e: ExclusionRemoveEvent) => {
+              await this.updateComplete;
+              const { index, regex } = e.detail;
+              if (this.config?.exclude && index === 0 && !regex) {
+                void this.deleteExclusion({
+                  regex: this.config.exclude[index],
+                });
+              }
+            }}
+            @btrix-remove=${(e: ExclusionRemoveEvent) =>
+              void this.deleteExclusion({ regex: e.detail.regex })}
           >
           </btrix-queue-exclusion-table>`
         : html`
@@ -138,9 +148,7 @@ export class ExclusionEditor extends LiteElement {
     }
   }
 
-  private async deleteExclusion(e: ExclusionRemoveEvent) {
-    const { regex } = e.detail;
-
+  private async deleteExclusion({ regex }: { regex: string }) {
     try {
       const params = new URLSearchParams({ regex });
       const data = await this.apiFetch<{ success: boolean }>(

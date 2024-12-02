@@ -219,6 +219,10 @@ export class QueueExclusionForm extends LiteElement {
     await this.updateComplete;
     if (!this.regex) return;
 
+    if (this.input) {
+      this.input.value = "";
+    }
+
     let regex = this.regex;
     if (this.selectValue === "text") {
       regex = regexEscape(this.regex);
