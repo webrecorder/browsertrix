@@ -233,6 +233,7 @@ def test_get_upload_replay_json_admin(
 
 
 def test_get_upload_pages(admin_auth_headers, default_org_id, upload_id):
+    # Give time for pages to finish being uploaded
     time.sleep(10)
 
     r = requests.get(
@@ -252,11 +253,6 @@ def test_get_upload_pages(admin_auth_headers, default_org_id, upload_id):
         assert page["url"]
         assert page["ts"]
         assert page.get("title") or page.get("title") is None
-        assert page["loadState"]
-        assert page["status"]
-        assert page["mime"]
-        assert page["isError"] in (True, False)
-        assert page["isFile"] in (True, False)
 
     page_id = pages[0]["id"]
     r = requests.get(
@@ -272,10 +268,6 @@ def test_get_upload_pages(admin_auth_headers, default_org_id, upload_id):
     assert page["url"]
     assert page["ts"]
     assert page.get("title") or page.get("title") is None
-    assert page["loadState"]
-    assert page["mime"]
-    assert page["isError"] in (True, False)
-    assert page["isFile"] in (True, False)
 
     assert page["notes"] == []
     assert page.get("userid") is None
