@@ -3836,12 +3836,6 @@
       <trans-unit id="s1219d97b49650c05">
         <source>Visibility</source>
       </trans-unit>
-      <trans-unit id="s53d076eae3c7b55c">
-        <source>Allow anyone to see org</source>
-      </trans-unit>
-      <trans-unit id="s9ab48881bcc2b9cf">
-        <source>If enabled, anyone with the link to your org's Browsertrix URL will be able to view the profile page and public collections.</source>
-      </trans-unit>
       <trans-unit id="s82665b2ffabc9c0a">
         <source>Website</source>
       </trans-unit>
@@ -3922,6 +3916,12 @@
       </trans-unit>
       <trans-unit id="s624704a0ec11e0b8">
         <source>Customize your org's Browsertrix URL. This will also apply to the URL to your org's public profile page, if you've enabled it.</source>
+      </trans-unit>
+      <trans-unit id="s11f08e9ad26dbe94">
+        <source>Allow anyone to view org</source>
+      </trans-unit>
+      <trans-unit id="s213ea1039161ce68">
+        <source>If enabled, anyone will be able to view your org's profile page and public collections.</source>
       </trans-unit>
     </body>
   </file>
