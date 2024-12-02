@@ -52,9 +52,7 @@ export class OrgSettingsProfile extends BtrixElement {
             @sl-input=${this.validateDescriptionMax.validate}
           ></sl-textarea>
         `,
-        msg(
-          "Write a short description to introduce your organization.",
-        ),
+        msg("Write a short description to introduce your organization."),
       ],
       [
         html`
@@ -80,6 +78,12 @@ export class OrgSettingsProfile extends BtrixElement {
         `,
         html`
           ${msg(
+            // TODO (emma) link "update your Org URL..." to scroll to the relevant setting
+            // Unfortunately this isn't as simple as just using an id and an anchor link,
+            // as anchor links don't penetrate the shadow dom. Instead we'd most likely
+            // need to set up a global shared re-implementation of the id system, with
+            // a globally-shared map with `@lit/context` or `lit-shared-state`. Another
+            // small frustration about web components!
             "To customize this URL, update your Org URL in General settings.",
           )}
         `,
