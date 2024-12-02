@@ -29,12 +29,12 @@ export class OrgSettingsProfile extends BtrixElement {
               size="small"
               ?checked=${this.org?.enablePublicProfile}
             >
-              ${msg("Allow anyone to see org")}
+              ${msg("Allow anyone to view org")}
             </sl-switch>
           </div>
         `,
         msg(
-          "If enabled, anyone with the link to your org's Browsertrix URL will be able to view the profile page and public collections.",
+          "If enabled, anyone will be able to view your org's profile page and public collections.",
         ),
       ],
       [
