@@ -132,6 +132,57 @@ def test_get_stream_upload(
     assert r.status_code == 200
 
 
+def test_get_upload_pages(admin_auth_headers, default_org_id, upload_id):
+    time.sleep(10)
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{upload_id}/pages",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data["total"] > 0
+
+    pages = data["items"]
+    for page in pages:
+        assert page["id"]
+        assert page["oid"]
+        assert page["crawl_id"] == upload_id
+        assert page["url"]
+        assert page["ts"]
+        assert page.get("title") or page.get("title") is None
+        assert page["loadState"]
+        assert page["status"]
+        assert page["mime"]
+        assert page["isError"] in (True, False)
+        assert page["isFile"] in (True, False)
+
+    page_id = pages[0]["id"]
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{upload_id}/pages/{page_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    page = r.json()
+
+    assert page["id"] == page_id
+    assert page["oid"]
+    assert page["crawl_id"]
+    assert page["url"]
+    assert page["ts"]
+    assert page.get("title") or page.get("title") is None
+    assert page["loadState"]
+    assert page["mime"]
+    assert page["isError"] in (True, False)
+    assert page["isFile"] in (True, False)
+
+    assert page["notes"] == []
+    assert page.get("userid") is None
+    assert page.get("modified") is None
+    assert page.get("approved") is None
+
+
 def test_list_uploads(
     admin_auth_headers, default_org_id, uploads_collection_id, upload_id_2
 ):
