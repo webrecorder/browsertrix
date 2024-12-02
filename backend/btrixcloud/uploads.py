@@ -189,6 +189,8 @@ class UploadOps(BaseCrawlOps):
             self.event_webhook_ops.create_upload_finished_notification(crawl_id, org.id)
         )
 
+        asyncio.create_task(self.page_ops.add_crawl_pages_to_db_from_wacz(crawl_id))
+
         await self.orgs.inc_org_bytes_stored(org.id, file_size, "upload")
 
         quota_reached = self.orgs.storage_quota_reached(org)
@@ -407,3 +409,5 @@ def init_uploads_api(app, user_dep, *args):
         org: Organization = Depends(org_crawl_dep),
     ):
         return await ops.delete_uploads(delete_list, org, user)
+
+    return ops

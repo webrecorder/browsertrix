@@ -27,7 +27,7 @@ async def main():
         )
         return 1
 
-    (org_ops, _, _, _, _, _, _, _, _, _, user_manager) = init_ops()
+    (org_ops, _, _, _, _, _, _, _, _, _, _, user_manager) = init_ops()
 
     if not oid:
         print("Org id missing, quitting")

@@ -245,14 +245,15 @@ def main() -> None:
 
     crawls = init_crawls_api(crawl_manager, *base_crawl_init)
 
+    upload_ops = init_uploads_api(*base_crawl_init)
+
     page_ops = init_pages_api(
         app, mdb, crawls, org_ops, storage_ops, current_active_user
     )
 
     base_crawl_ops.set_page_ops(page_ops)
     crawls.set_page_ops(page_ops)
-
-    init_uploads_api(*base_crawl_init)
+    upload_ops.set_page_ops(page_ops)
 
     org_ops.set_ops(base_crawl_ops, profiles, coll_ops, background_job_ops)
 
