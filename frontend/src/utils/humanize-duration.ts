@@ -19,12 +19,19 @@ const format = (
     throw new TypeError("Expected a finite number");
   }
 
+  // if (options.colonNotation) {
+  //   options.compact = false;
+  //   options.formatSubMilliseconds = false;
+  //   options.separateMilliseconds = false;
+  //   options.verbose = false;
+  // }
+
   if (options.compact) {
     options.secondsDecimalDigits = 0;
     options.millisecondsDecimalDigits = 0;
   }
 
-  const result: Intl.DurationType = { seconds: 0 };
+  const result = {} as Intl.DurationType;
 
   const floorDecimals = (value: number, decimalDigits: number) => {
     const flooredInterimValue = Math.floor(
@@ -35,6 +42,28 @@ const format = (
   };
 
   const add = (value: number, long: Intl.DurationTimeFormatUnit) => {
+    if (Object.keys(result).length === 0 && value === 0) {
+      return;
+    }
+
+    // valueString = (valueString || value || "0").toString();
+    // let prefix;
+    // let suffix;
+    // if (options.colonNotation) {
+    //   prefix = result.length > 0 ? ":" : "";
+    //   suffix = "";
+    //   const wholeDigits = valueString.includes(".")
+    //     ? valueString.split(".")[0].length
+    //     : valueString.length;
+    //   const minLength = result.length > 0 ? 2 : 1;
+    //   valueString =
+    //     "0".repeat(Math.max(0, minLength - wholeDigits)) + valueString;
+    // } else {
+    //   prefix = "";
+    //   suffix = options.verbose ? " " + pluralize(long, value) : short;
+    // }
+
+    // result.push(prefix + valueString + suffix);
     result[long] = value;
   };
 
@@ -45,7 +74,11 @@ const format = (
   add(parsed.hours, "hours");
   add(parsed.minutes, "minutes");
 
-  if (options.separateMilliseconds || options.formatSubMilliseconds) {
+  if (
+    options.separateMilliseconds ||
+    options.formatSubMilliseconds
+    // || (!options.colonNotation && milliseconds < 1000)
+  ) {
     add(parsed.seconds, "seconds");
     if (options.formatSubMilliseconds) {
       add(parsed.milliseconds, "milliseconds");
@@ -62,14 +95,14 @@ const format = (
           ? options.millisecondsDecimalDigits
           : 0;
 
-      const roundedMilliseconds =
+      const roundedMiliseconds =
         millisecondsAndBelow >= 1
           ? Math.round(millisecondsAndBelow)
           : Math.ceil(millisecondsAndBelow);
 
       const millisecondsString = millisecondsDecimalDigits
         ? millisecondsAndBelow.toFixed(millisecondsDecimalDigits)
-        : roundedMilliseconds;
+        : roundedMiliseconds;
 
       add(Number.parseFloat(millisecondsString.toString()), "milliseconds");
     }
@@ -90,9 +123,15 @@ const format = (
   //   return "0" + (options.verbose ? " milliseconds" : "ms");
   // }
 
-  // if (options.compact) {
-  //   return result[0];
-  // }
+  if (Object.keys(result).length === 0) {
+    return { milliseconds: 0 };
+  }
+
+  if (options.compact) {
+    return Object.fromEntries(
+      Object.entries(result).slice(0, 1),
+    ) as Intl.DurationType;
+  }
 
   if (typeof options.unitCount === "number") {
     return Object.fromEntries(
