@@ -317,7 +317,7 @@ export class OrgProfile extends BtrixElement {
           name: org.name,
           description: org.publicDescription || "",
           url: org.publicUrl || "",
-          verified: true, // TODO
+          verified: false, // TODO
         },
         collections: [],
       };
