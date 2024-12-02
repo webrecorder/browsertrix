@@ -922,7 +922,7 @@ def test_collection_url_list(crawler_auth_headers, default_org_id):
 def test_upload_collection_thumbnail(crawler_auth_headers, default_org_id):
     with open(os.path.join(curr_dir, "data", "thumbnail.jpg"), "rb") as fh:
         r = requests.put(
-            f"{API_PREFIX}/orgs/{default_org_id}/collections/{_public_coll_id}/stream/thumbnail?filename=thumbnail.jpg",
+            f"{API_PREFIX}/orgs/{default_org_id}/collections/{_public_coll_id}/thumbnail?filename=thumbnail.jpg",
             headers=crawler_auth_headers,
             data=read_in_chunks(fh),
         )
