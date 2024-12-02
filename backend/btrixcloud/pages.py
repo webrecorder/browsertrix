@@ -638,7 +638,17 @@ def init_pages_api(app, mdb, crawl_ops, org_ops, storage_ops, user_dep):
 
     @app.post(
         "/orgs/{oid}/crawls/all/pages/reAdd",
-        tags=["pages"],
+        tags=["pages", "crawls"],
+        response_model=StartedResponseBool,
+    )
+    @app.post(
+        "/orgs/{oid}/uploads/all/pages/reAdd",
+        tags=["pages", "uploads"],
+        response_model=StartedResponseBool,
+    )
+    @app.post(
+        "/orgs/{oid}/all-crawls/all/pages/reAdd",
+        tags=["pages", "all-crawls"],
         response_model=StartedResponseBool,
     )
     async def re_add_all_crawl_pages(
@@ -653,7 +663,17 @@ def init_pages_api(app, mdb, crawl_ops, org_ops, storage_ops, user_dep):
 
     @app.post(
         "/orgs/{oid}/crawls/{crawl_id}/pages/reAdd",
-        tags=["pages"],
+        tags=["pages", "crawls"],
+        response_model=StartedResponseBool,
+    )
+    @app.post(
+        "/orgs/{oid}/uploads/{crawl_id}/pages/reAdd",
+        tags=["pages", "uploads"],
+        response_model=StartedResponseBool,
+    )
+    @app.post(
+        "/orgs/{oid}/all-crawls/{crawl_id}/pages/reAdd",
+        tags=["pages", "all-crawls"],
         response_model=StartedResponseBool,
     )
     async def re_add_crawl_pages(
@@ -665,7 +685,17 @@ def init_pages_api(app, mdb, crawl_ops, org_ops, storage_ops, user_dep):
 
     @app.get(
         "/orgs/{oid}/crawls/{crawl_id}/pages/{page_id}",
-        tags=["pages"],
+        tags=["pages", "crawls"],
+        response_model=PageOut,
+    )
+    @app.get(
+        "/orgs/{oid}/uploads/{crawl_id}/pages/{page_id}",
+        tags=["pages", "uploads"],
+        response_model=PageOut,
+    )
+    @app.get(
+        "/orgs/{oid}/all-crawls/{crawl_id}/pages/{page_id}",
+        tags=["pages", "all-crawls"],
         response_model=PageOut,
     )
     async def get_page(
@@ -753,7 +783,17 @@ def init_pages_api(app, mdb, crawl_ops, org_ops, storage_ops, user_dep):
 
     @app.get(
         "/orgs/{oid}/crawls/{crawl_id}/pages",
-        tags=["pages"],
+        tags=["pages", "crawls"],
+        response_model=PaginatedPageOutResponse,
+    )
+    @app.get(
+        "/orgs/{oid}/uploads/{crawl_id}/pages",
+        tags=["pages", "uploads"],
+        response_model=PaginatedPageOutResponse,
+    )
+    @app.get(
+        "/orgs/{oid}/all-crawls/{crawl_id}/pages",
+        tags=["pages", "all-crawls"],
         response_model=PaginatedPageOutResponse,
     )
     async def get_pages_list(
