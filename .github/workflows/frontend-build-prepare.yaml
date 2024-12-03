@@ -39,6 +39,11 @@ jobs:
         env:
           HUSKY: 0
         run: yarn install --frozen-lockfile
+      - name: Install Playwright Browsers
+        working-directory: frontend
+        env:
+          HUSKY: 0
+        run: yarn playwright install --with-deps
 
       # Lint:
       - name: Lint
