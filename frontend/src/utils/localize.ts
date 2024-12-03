@@ -1,5 +1,9 @@
 /**
  * Manage translations and language-specific formatting throughout app
+ *
+ * @FIXME The Intl.DurationFormat polyfill is currently shimmed with webpack.ProvidePlugin
+ * to avoid encoding issues when importing the polyfill asynchronously in the test server.
+ * See https://github.com/web-dev-server/web-dev-server/issues/1
  */
 import { configureLocalization } from "@lit/localize";
 import uniq from "lodash/fp/uniq";

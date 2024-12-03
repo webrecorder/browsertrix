@@ -156,6 +156,7 @@ const main = {
   },
 
   plugins: [
+    // Shim polyfill
     new webpack.ProvidePlugin({
       "Intl.DurationFormat": path.resolve(
         __dirname,
