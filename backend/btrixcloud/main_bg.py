@@ -12,7 +12,7 @@ from .ops import init_ops
 
 job_type = os.environ.get("BG_JOB_TYPE")
 oid = os.environ.get("OID")
-type_filter = os.environ.get("TYPE_FILTER")
+crawl_type = os.environ.get("CRAWL_TYPE")
 
 
 # ============================================================================
@@ -60,7 +60,7 @@ async def main():
 
     if job_type == BgJobType.READD_ORG_PAGES:
         try:
-            await page_ops.re_add_all_crawl_pages(org, type_filter=type_filter)
+            await page_ops.re_add_all_crawl_pages(org, crawl_type=crawl_type)
             await coll_ops.recalculate_org_collection_dates(org)
             return 0
         # pylint: disable=broad-exception-caught

@@ -2352,7 +2352,7 @@ class ReAddOrgPagesJob(BackgroundJob):
     """Model for tracking jobs to readd an org's pages"""
 
     type: Literal[BgJobType.READD_ORG_PAGES] = BgJobType.READD_ORG_PAGES
-    type_filter: Optional[str] = None
+    crawl_type: Optional[str] = None
 
 
 # ============================================================================

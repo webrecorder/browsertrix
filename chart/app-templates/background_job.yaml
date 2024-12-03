@@ -38,8 +38,8 @@ spec:
           - name: OID
             value: {{ oid }}
 
-          - name: TYPE_FILTER
-            value: {{ type_filter }}
+          - name: CRAWL_TYPE
+            value: {{ crawl_type }}
 
           envFrom:
             - configMapRef:
