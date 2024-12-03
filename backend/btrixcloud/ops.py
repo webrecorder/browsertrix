@@ -89,7 +89,7 @@ def init_ops() -> Tuple[
 
     upload_ops = UploadOps(*base_crawl_init)
 
-    page_ops = PageOps(mdb, crawl_ops, org_ops, storage_ops)
+    page_ops = PageOps(mdb, crawl_ops, org_ops, storage_ops, background_job_ops)
 
     base_crawl_ops.set_page_ops(page_ops)
     crawl_ops.set_page_ops(page_ops)

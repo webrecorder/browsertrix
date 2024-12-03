@@ -12,6 +12,7 @@ from .ops import init_ops
 
 job_type = os.environ.get("BG_JOB_TYPE")
 oid = os.environ.get("OID")
+type_filter = os.environ.get("TYPE_FILTER")
 
 
 # ============================================================================
@@ -27,7 +28,7 @@ async def main():
         )
         return 1
 
-    (org_ops, _, _, _, _, _, _, _, _, _, _, user_manager) = init_ops()
+    (org_ops, _, _, _, _, page_ops, _, _, _, _, _, user_manager) = init_ops()
 
     if not oid:
         print("Org id missing, quitting")
@@ -51,6 +52,15 @@ async def main():
     if job_type == BgJobType.RECALCULATE_ORG_STATS:
         try:
             await org_ops.recalculate_storage(org)
+            return 0
+        # pylint: disable=broad-exception-caught
+        except Exception:
+            traceback.print_exc()
+            return 1
+
+    if job_type == BgJobType.READD_ORG_PAGES:
+        try:
+            await page_ops.re_add_all_crawl_pages(org, type_filter=type_filter)
             return 0
         # pylint: disable=broad-exception-caught
         except Exception:
