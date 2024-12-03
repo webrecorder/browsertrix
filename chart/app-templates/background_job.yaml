@@ -8,7 +8,7 @@ metadata:
     btrix.org: {{ oid }}
 
 spec:
-  ttlSecondsAfterFinished: 0
+  ttlSecondsAfterFinished: 90
   backoffLimit: 3
   template:
     spec:
@@ -37,6 +37,9 @@ spec:
 
           - name: OID
             value: {{ oid }}
+
+          - name: TYPE_FILTER
+            value: {{ type_filter }}
 
           envFrom:
             - configMapRef:
