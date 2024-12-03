@@ -2,6 +2,8 @@
 Collections API
 """
 
+# pylint: disable=too-many-lines
+
 from collections import Counter
 from uuid import UUID, uuid4
 from typing import Optional, List, TYPE_CHECKING, cast, Dict, Tuple, Any, Union
@@ -210,11 +212,11 @@ class CollectionOps:
         return await self.get_collection_out(coll_id, org)
 
     async def get_collection_raw(
-        self, coll_id: UUID, public_only: bool = False
+        self, coll_id: UUID, public_or_unlisted_only: bool = False
     ) -> Dict[str, Any]:
         """Get collection by id as dict from database"""
         query: dict[str, object] = {"_id": coll_id}
-        if public_only:
+        if public_or_unlisted_only:
             query["access"] = {"$in": ["public", "unlisted"]}
 
         result = await self.collections.find_one(query)
@@ -224,17 +226,21 @@ class CollectionOps:
         return result
 
     async def get_collection(
-        self, coll_id: UUID, public_only: bool = False
+        self, coll_id: UUID, public_or_unlisted_only: bool = False
     ) -> Collection:
         """Get collection by id"""
-        result = await self.get_collection_raw(coll_id, public_only)
+        result = await self.get_collection_raw(coll_id, public_or_unlisted_only)
         return Collection.from_dict(result)
 
     async def get_collection_out(
-        self, coll_id: UUID, org: Organization, resources=False, public_only=False
+        self,
+        coll_id: UUID,
+        org: Organization,
+        resources=False,
+        public_or_unlisted_only=False,
     ) -> CollOut:
         """Get CollOut by id"""
-        result = await self.get_collection_raw(coll_id, public_only)
+        result = await self.get_collection_raw(coll_id, public_or_unlisted_only)
 
         if resources:
             result["resources"] = await self.get_collection_crawl_resources(coll_id)
@@ -247,6 +253,26 @@ class CollectionOps:
             )
 
         return CollOut.from_dict(result)
+
+    async def get_public_collection_out(
+        self, coll_id: UUID, org: Organization
+    ) -> PublicCollOut:
+        """Get PublicCollOut by id"""
+        result = await self.get_collection_raw(coll_id)
+
+        if result.get("access") != "public":
+            raise HTTPException(status_code=404, detail="collection_not_found")
+
+        result["resources"] = await self.get_collection_crawl_resources(coll_id)
+
+        thumbnail = result.get("thumbnail")
+        if thumbnail:
+            image_file = ImageFile(**thumbnail)
+            result["thumbnail"] = await image_file.get_public_image_file_out(
+                org, self.storage_ops
+            )
+
+        return PublicCollOut.from_dict(result)
 
     async def list_collections(
         self,
@@ -825,7 +851,7 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops, user_de
         org: Organization = Depends(org_public),
     ):
         coll = await colls.get_collection_out(
-            coll_id, org, resources=True, public_only=True
+            coll_id, org, resources=True, public_or_unlisted_only=True
         )
         response.headers["Access-Control-Allow-Origin"] = "*"
         response.headers["Access-Control-Allow-Headers"] = "*"
@@ -919,6 +945,24 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops, user_de
             sort_by=sortBy,
             sort_direction=sortDirection,
         )
+
+    @app.get(
+        "/public-collections/{org_slug}/collections/{coll_id}",
+        tags=["collections"],
+        response_model=PublicCollOut,
+    )
+    async def get_public_collection(
+        org_slug: str,
+        coll_id: UUID,
+    ):
+        try:
+            org = await colls.orgs.get_org_by_slug(org_slug)
+        # pylint: disable=broad-exception-caught
+        except Exception:
+            # pylint: disable=raise-missing-from
+            raise HTTPException(status_code=404, detail="collection_not_found")
+
+        return await colls.get_public_collection_out(coll_id, org)
 
     @app.get(
         "/orgs/{oid}/collections/{coll_id}/urls",

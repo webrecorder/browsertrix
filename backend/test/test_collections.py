@@ -1,5 +1,6 @@
 import requests
 import os
+from uuid import uuid4
 
 from zipfile import ZipFile, ZIP_STORED
 from tempfile import TemporaryFile
@@ -14,6 +15,19 @@ SECOND_COLLECTION_NAME = "second-collection"
 DESCRIPTION = "Test description"
 CAPTION = "Short caption"
 UPDATED_CAPTION = "Updated caption"
+
+NON_PUBLIC_COLL_FIELDS = (
+    "oid",
+    "modified",
+    "crawlCount",
+    "pageCount",
+    "totalSize",
+    "tags",
+    "access",
+    "homeUrlPageId",
+)
+NON_PUBLIC_IMAGE_FIELDS = ("originalFilename", "userid", "userName", "created")
+
 
 _coll_id = None
 _second_coll_id = None
@@ -1024,7 +1038,7 @@ def test_list_public_colls_home_url_thumbnail():
         assert coll["dateEarliest"]
         assert coll["dateLatest"]
 
-        for field in non_public_fields:
+        for field in NON_PUBLIC_COLL_FIELDS:
             assert field not in coll
 
         if coll["id"] == _public_coll_id:
@@ -1042,11 +1056,68 @@ def test_list_public_colls_home_url_thumbnail():
             assert thumbnail["size"]
             assert thumbnail["mime"]
 
-            for field in non_public_image_fields:
+            for field in NON_PUBLIC_IMAGE_FIELDS:
                 assert field not in thumbnail
 
         if coll["id"] == _second_public_coll_id:
             assert coll["description"]
+
+
+def test_get_public_collection():
+    r = requests.get(
+        f"{API_PREFIX}/public-collections/{default_org_slug}/collections/{_public_coll_id}"
+    )
+    assert r.status_code == 200
+    coll = r.json()
+
+    assert coll["id"] == _public_coll_id
+    assert coll["name"]
+    assert coll["resources"]
+    assert coll["dateEarliest"]
+    assert coll["dateLatest"]
+
+    for field in NON_PUBLIC_COLL_FIELDS:
+        assert field not in coll
+
+    assert coll["caption"] == CAPTION
+
+    assert coll["homeUrl"]
+    assert coll["homeUrlTs"]
+
+    thumbnail = coll["thumbnail"]
+    assert thumbnail
+
+    assert thumbnail["name"]
+    assert thumbnail["path"]
+    assert thumbnail["hash"]
+    assert thumbnail["size"]
+    assert thumbnail["mime"]
+
+    for field in NON_PUBLIC_IMAGE_FIELDS:
+        assert field not in thumbnail
+
+    # Invalid org slug - don't reveal whether org exists or not, use
+    # same exception as if collection doesn't exist
+    r = requests.get(
+        f"{API_PREFIX}/public-collections/doesntexist/collections/{_public_coll_id}"
+    )
+    assert r.status_code == 404
+    assert r.json()["detail"] == "collection_not_found"
+
+    # Invalid collection id
+    random_uuid = uuid4()
+    r = requests.get(
+        f"{API_PREFIX}/public-collections/{default_org_slug}/collections/{random_uuid}"
+    )
+    assert r.status_code == 404
+    assert r.json()["detail"] == "collection_not_found"
+
+    # Collection isn't public
+    r = requests.get(
+        f"{API_PREFIX}/public-collections/{default_org_slug}/collections/{ _coll_id}"
+    )
+    assert r.status_code == 404
+    assert r.json()["detail"] == "collection_not_found"
 
 
 def test_delete_thumbnail(crawler_auth_headers, default_org_id):
