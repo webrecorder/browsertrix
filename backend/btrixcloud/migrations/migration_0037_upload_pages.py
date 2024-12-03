@@ -22,6 +22,12 @@ class Migration(BaseMigration):
 
         Start background jobs to parse uploads and add their pages to db
         """
+        if self.background_job_ops is None:
+            print(
+                "Unable to start background job, missing background_job_ops", flush=True
+            )
+            return
+
         mdb_orgs = self.mdb["organizations"]
         async for org in mdb_orgs.find():
             oid = org["_id"]
