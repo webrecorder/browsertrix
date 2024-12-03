@@ -13,9 +13,11 @@ import type { SelectNewDialogEvent } from ".";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { PageChangeEvent } from "@/components/ui/pagination";
+import { ClipboardController } from "@/controllers/clipboard";
 import type { CollectionSavedEvent } from "@/features/collections/collection-metadata-dialog";
 import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
 import { pageHeader } from "@/layouts/pageHeader";
+import { RouteNamespace } from "@/routes";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import {
   CollectionAccess,
@@ -103,6 +105,10 @@ export class CollectionsList extends BtrixElement {
     shouldSort: false,
     threshold: 0.2, // stricter; default is 0.6
   });
+
+  private getShareLink(collection: Collection) {
+    return `${window.location.protocol}//${window.location.hostname}${window.location.port ? `:${window.location.port}` : ""}/${collection.access === CollectionAccess.Private ? `${RouteNamespace.PrivateOrgs}/${this.orgSlug}/collections/view` : `${RouteNamespace.PublicOrgs}/${this.orgSlug}/collections`}/${collection.id}`;
+  }
 
   private get hasSearchStr() {
     return this.searchByValue.length >= MIN_SEARCH_LENGTH;
@@ -613,28 +619,34 @@ export class CollectionsList extends BtrixElement {
                   style="--sl-color-neutral-700: var(--success)"
                   @click=${() => void this.onTogglePublic(col, true)}
                 >
-                  <sl-icon name="people-fill" slot="prefix"></sl-icon>
-                  ${msg("Make Shareable")}
+                  <sl-icon
+                    name=${SelectCollectionAccess.Options.unlisted.icon}
+                    slot="prefix"
+                  ></sl-icon>
+                  ${msg("Enable Share Link")}
                 </sl-menu-item>
               `
             : html`
-                <sl-menu-item style="--sl-color-neutral-700: var(--success)">
-                  <sl-icon name="box-arrow-up-right" slot="prefix"></sl-icon>
-                  <a
-                    target="_blank"
-                    slot="prefix"
-                    href="https://replayweb.page?source=${this.getPublicReplayURL(
-                      col,
-                    )}"
-                  >
-                    Visit Shareable URL
-                  </a>
+                <sl-menu-item
+                  style="--sl-color-neutral-700: var(--success)"
+                  @click=${() => {
+                    ClipboardController.copyToClipboard(this.getShareLink(col));
+                    this.notify.toast({
+                      message: msg("Link copied"),
+                    });
+                  }}
+                >
+                  <sl-icon name="copy" slot="prefix"></sl-icon>
+                  ${msg("Copy Share Link")}
                 </sl-menu-item>
                 <sl-menu-item
                   style="--sl-color-neutral-700: var(--warning)"
                   @click=${() => void this.onTogglePublic(col, false)}
                 >
-                  <sl-icon name="eye-slash" slot="prefix"></sl-icon>
+                  <sl-icon
+                    name=${SelectCollectionAccess.Options.private.icon}
+                    slot="prefix"
+                  ></sl-icon>
                   ${msg("Make Private")}
                 </sl-menu-item>
               `}
