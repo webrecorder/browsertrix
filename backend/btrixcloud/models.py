@@ -1307,6 +1307,7 @@ class PublicCollOut(BaseMongoModel):
     """Collection output model with annotations."""
 
     name: str
+    oid: UUID
     description: Optional[str] = None
     caption: Optional[str] = None
 
