@@ -23,9 +23,11 @@ export class LocalizeController extends SlLocalizeController {
   readonly humanizeDuration = (value: number, options?: PrettyMsOptions) => {
     const duration = roundDuration(value, options);
 
-    if (options?.verbose) {
-      return localize.duration(duration, { style: "long" });
-    }
+    if (options?.colonNotation)
+      return localize.duration(duration, { style: "digital" });
+
+    if (options?.verbose) return localize.duration(duration, { style: "long" });
+
     return localize.duration(duration);
   };
 

@@ -34,7 +34,7 @@ const defaultDateOptions: Intl.DateTimeFormatOptions = {
 };
 
 const defaultDurationOptions: Intl.DurationFormatOptions = {
-  style: "digital",
+  style: "narrow",
 };
 
 export class Localize {
