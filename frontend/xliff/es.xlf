@@ -3954,6 +3954,15 @@
       <trans-unit id="s0487f33d9ddaabde">
         <source>About</source>
       </trans-unit>
+      <trans-unit id="sea658ceebc8160be">
+        <source>Collection by</source>
+      </trans-unit>
+      <trans-unit id="sea699ebe143fe2b9">
+        <source>A description has not been provided for this collection.</source>
+      </trans-unit>
+      <trans-unit id="s2dab6da5c3c253f0">
+        <source>Date Range</source>
+      </trans-unit>
     </body>
   </file>
 </xliff>
