@@ -1,7 +1,8 @@
-import "@formatjs/intl-durationformat/polyfill";
-
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unnecessary-condition */
 // cSpell:disable
+
+import "@formatjs/intl-durationformat/lib/polyfill";
+
 /**
  * Object.entriesFrom() polyfill
  * @author Chris Ferdinandi

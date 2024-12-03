@@ -3,7 +3,7 @@ import { LitElement } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
 import { LocalizeController } from "@/controllers/localize";
-import humanizeDuration from "@/utils/humanize-duration";
+import humanizeDuration from "@/utils/round-duration";
 
 export type HumanizeOptions = {
   compact?: boolean;

@@ -1,9 +1,8 @@
 import { LocalizeController as SlLocalizeController } from "@shoelace-style/localize";
+import type { Options as PrettyMsOptions } from "pretty-ms";
 
-import humanizeDuration, {
-  type HumanizeOptions,
-} from "@/utils/humanize-duration";
 import localize from "@/utils/localize";
+import roundDuration from "@/utils/round-duration";
 
 export class LocalizeController extends SlLocalizeController {
   /**
@@ -21,8 +20,8 @@ export class LocalizeController extends SlLocalizeController {
    */
   readonly duration = localize.duration;
 
-  readonly humanizeDuration = (value: number, options?: HumanizeOptions) => {
-    const duration = humanizeDuration(value, options);
+  readonly humanizeDuration = (value: number, options?: PrettyMsOptions) => {
+    const duration = roundDuration(value, options);
 
     if (options?.verbose) {
       return localize.duration(duration, { style: "long" });
