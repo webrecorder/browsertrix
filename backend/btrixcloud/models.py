@@ -2294,6 +2294,7 @@ class BgJobType(str, Enum):
     DELETE_REPLICA = "delete-replica"
     DELETE_ORG = "delete-org"
     RECALCULATE_ORG_STATS = "recalculate-org-stats"
+    READD_ORG_PAGES = "readd-org-pages"
 
 
 # ============================================================================
@@ -2347,6 +2348,14 @@ class RecalculateOrgStatsJob(BackgroundJob):
 
 
 # ============================================================================
+class ReAddOrgPagesJob(BackgroundJob):
+    """Model for tracking jobs to readd an org's pages"""
+
+    type: Literal[BgJobType.READD_ORG_PAGES] = BgJobType.READD_ORG_PAGES
+    type_filter: Optional[str] = None
+
+
+# ============================================================================
 # Union of all job types, for response model
 
 AnyJob = RootModel[
@@ -2356,6 +2365,7 @@ AnyJob = RootModel[
         BackgroundJob,
         DeleteOrgJob,
         RecalculateOrgStatsJob,
+        ReAddOrgPagesJob,
     ]
 ]
 
