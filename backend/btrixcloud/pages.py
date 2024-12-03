@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Optional, Tuple, List, Dict, Any, Union
 from uuid import UUID, uuid4
 
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, Request
 import pymongo
 
 from .models import (
@@ -561,9 +561,15 @@ class PageOps:
         print(f"Deleted pages for crawl {crawl_id}", flush=True)
         await self.add_crawl_pages_to_db_from_wacz(crawl_id)
 
-    async def re_add_all_crawl_pages(self, oid: UUID):
+    async def re_add_all_crawl_pages(
+        self, oid: UUID, type_filter: Optional[str] = None
+    ):
         """Re-add pages for all crawls and uploads in org"""
-        crawl_ids = await self.crawls.distinct("_id", {"finished": {"$ne": None}})
+        match_query: Dict[str, object] = {"finished": {"$ne": None}}
+        if type_filter:
+            match_query["type"] = type_filter
+
+        crawl_ids = await self.crawls.distinct("_id", match_query)
         for crawl_id in crawl_ids:
             await self.re_add_crawl_pages(crawl_id, oid)
 
@@ -662,13 +668,28 @@ def init_pages_api(app, mdb, crawl_ops, org_ops, storage_ops, user_dep):
         response_model=StartedResponseBool,
     )
     async def re_add_all_crawl_pages(
-        org: Organization = Depends(org_crawl_dep), user: User = Depends(user_dep)
+        request: Request,
+        org: Organization = Depends(org_crawl_dep),
+        user: User = Depends(user_dep),
     ):
         """Re-add pages for all crawls in org (superuser only)"""
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
-        asyncio.create_task(ops.re_add_all_crawl_pages(org.id))
+        type_filter = None
+
+        try:
+            route_path = request.scope["route"].path
+            type_path = route_path.split("/")[4]
+
+            if type_path == "uploads":
+                type_filter = "upload"
+            if type_path == "crawls":
+                type_filter = "crawl"
+        except (IndexError, AttributeError):
+            pass
+
+        asyncio.create_task(ops.re_add_all_crawl_pages(org.id, type_filter=type_filter))
         return {"started": True}
 
     @app.post(
@@ -687,7 +708,8 @@ def init_pages_api(app, mdb, crawl_ops, org_ops, storage_ops, user_dep):
         response_model=StartedResponseBool,
     )
     async def re_add_crawl_pages(
-        crawl_id: str, org: Organization = Depends(org_crawl_dep)
+        crawl_id: str,
+        org: Organization = Depends(org_crawl_dep),
     ):
         """Re-add pages for crawl"""
         asyncio.create_task(ops.re_add_crawl_pages(crawl_id, org.id))
@@ -727,7 +749,7 @@ def init_pages_api(app, mdb, crawl_ops, org_ops, storage_ops, user_dep):
         page_id: UUID,
         org: Organization = Depends(org_crawl_dep),
     ):
-        """GET single page"""
+        """GET single page with QA details"""
         return await ops.get_page_out(page_id, org.id, crawl_id, qa_run_id=qa_run_id)
 
     @app.patch(
@@ -788,7 +810,7 @@ def init_pages_api(app, mdb, crawl_ops, org_ops, storage_ops, user_dep):
         delete: PageNoteDelete,
         org: Organization = Depends(org_crawl_dep),
     ):
-        """Edit page note"""
+        """Delete page note"""
         return await ops.delete_page_notes(page_id, org.id, delete, crawl_id)
 
     @app.get(
