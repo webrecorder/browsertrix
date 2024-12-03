@@ -62,6 +62,7 @@ async def main():
         try:
             await page_ops.re_add_all_crawl_pages(org, crawl_type=crawl_type)
             await coll_ops.recalculate_org_collection_dates(org)
+            await coll_ops.recalculate_org_collection_counts_tags(org)
             return 0
         # pylint: disable=broad-exception-caught
         except Exception:

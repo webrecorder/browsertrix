@@ -443,6 +443,15 @@ class CollectionOps:
             resp, headers=headers, media_type="application/wacz+zip"
         )
 
+    async def recalculate_org_collection_counts_tags(self, org: Organization):
+        """Recalculate counts and tags for collections in org"""
+        collections, _ = await self.list_collections(
+            org,
+            page_size=100_000,
+        )
+        for coll in collections:
+            await self.update_collection_counts_and_tags(coll.id)
+
     async def update_collection_counts_and_tags(self, collection_id: UUID):
         """Set current crawl info in config when crawl begins"""
         crawl_count = 0
