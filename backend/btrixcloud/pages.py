@@ -111,7 +111,7 @@ class PageOps:
             UUID(page_id)
         except ValueError:
             print(
-                f'Page {page_dict.get("url")} is not a valid UUID - assigning UUID',
+                f'Page {page_dict.get("url")} id "{page_id}" is not a valid UUID - assigning UUID',
                 flush=True,
             )
             page_id = uuid4()
