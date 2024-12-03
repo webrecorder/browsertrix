@@ -570,12 +570,12 @@ class PageOps:
         await self.add_crawl_pages_to_db_from_wacz(crawl_id)
 
     async def re_add_all_crawl_pages(
-        self, org: Organization, type_filter: Optional[str] = None
+        self, org: Organization, crawl_type: Optional[str] = None
     ):
         """Re-add pages for all crawls and uploads in org"""
         match_query: Dict[str, object] = {"finished": {"$ne": None}}
-        if type_filter in ("crawl", "upload"):
-            match_query["type"] = type_filter
+        if crawl_type in ("crawl", "upload"):
+            match_query["type"] = crawl_type
 
         crawl_ids = await self.crawls.distinct("_id", match_query)
         for crawl_id in crawl_ids:
@@ -649,6 +649,23 @@ class PageOps:
 
         return sorted(return_data, key=lambda bucket: bucket.lowerBoundary)
 
+    def get_crawl_type_from_pages_route(self, request: Request):
+        """Get crawl type to filter on from request route"""
+        crawl_type = None
+
+        try:
+            route_path = request.scope["route"].path
+            type_path = route_path.split("/")[4]
+
+            if type_path == "uploads":
+                crawl_type = "upload"
+            if type_path == "crawls":
+                crawl_type = "crawl"
+        except (IndexError, AttributeError):
+            pass
+
+        return crawl_type
+
 
 # ============================================================================
 # pylint: disable=too-many-arguments, too-many-locals, invalid-name, fixme
@@ -686,21 +703,9 @@ def init_pages_api(
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
-        type_filter = None
-
-        try:
-            route_path = request.scope["route"].path
-            type_path = route_path.split("/")[4]
-
-            if type_path == "uploads":
-                type_filter = "upload"
-            if type_path == "crawls":
-                type_filter = "crawl"
-        except (IndexError, AttributeError):
-            pass
-
+        crawl_type = ops.get_crawl_type_from_pages_route(request)
         job_id = await ops.background_job_ops.create_re_add_org_pages_job(
-            org.id, type_filter=type_filter
+            org.id, crawl_type=crawl_type
         )
         return {"started": job_id or ""}
 

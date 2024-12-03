@@ -33,7 +33,7 @@ class Migration(BaseMigration):
             oid = org["_id"]
             try:
                 await self.background_job_ops.create_re_add_org_pages_job(
-                    oid, type_filter="upload"
+                    oid, crawl_type="upload"
                 )
             # pylint: disable=broad-exception-caught
             except Exception as err:

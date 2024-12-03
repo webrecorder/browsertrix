@@ -365,7 +365,7 @@ class BackgroundJobOps:
     async def create_re_add_org_pages_job(
         self,
         oid: UUID,
-        type_filter: Optional[str] = None,
+        crawl_type: Optional[str] = None,
         existing_job_id: Optional[str] = None,
     ):
         """Create job to (re)add all pages in an org, optionally filtered by crawl type"""
@@ -373,7 +373,7 @@ class BackgroundJobOps:
         try:
             job_id = await self.crawl_manager.run_re_add_org_pages_job(
                 oid=str(oid),
-                type_filter=type_filter,
+                crawl_type=crawl_type,
                 existing_job_id=existing_job_id,
             )
             if existing_job_id:
@@ -393,7 +393,7 @@ class BackgroundJobOps:
                 readd_pages_job = ReAddOrgPagesJob(
                     id=job_id,
                     oid=oid,
-                    type_filter=type_filter,
+                    crawl_type=crawl_type,
                     started=dt_now(),
                 )
 
@@ -627,7 +627,7 @@ class BackgroundJobOps:
         if job.type == BgJobType.READD_ORG_PAGES:
             await self.create_re_add_org_pages_job(
                 org.id,
-                job.type_filter,
+                job.crawl_type,
                 existing_job_id=job_id,
             )
 
