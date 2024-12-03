@@ -7,17 +7,7 @@ import { when } from "lit/directives/when.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { pageTitle } from "@/layouts/pageHeader";
-import type { OrgData } from "@/types/org";
-
-type OrgProfileData = {
-  org: {
-    name: string;
-    description: string;
-    url: string;
-    verified: boolean;
-  };
-  collections: unknown[];
-};
+import type { OrgData, OrgProfileData } from "@/types/org";
 
 type PublicCollection = {
   name: string;
@@ -38,7 +28,6 @@ export class OrgProfile extends BtrixElement {
   private isPrivatePreview = false;
 
   readonly publicOrg = new Task(this, {
-    autoRun: false,
     task: async ([slug]) => {
       if (!slug) return;
       const org = await this.fetchOrgProfile(slug);
@@ -46,10 +35,6 @@ export class OrgProfile extends BtrixElement {
     },
     args: () => [this.slug] as const,
   });
-
-  protected firstUpdated(): void {
-    void this.publicOrg.run();
-  }
 
   render() {
     if (!this.slug) {

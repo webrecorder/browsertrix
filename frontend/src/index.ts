@@ -6,6 +6,7 @@ import type {
 } from "@shoelace-style/shoelace";
 import { html, nothing, render, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import isEqual from "lodash/fp/isEqual";
 
@@ -774,11 +775,20 @@ export class App extends BtrixElement {
           slug=${this.viewState.params.slug}
         ></btrix-org-profile>`;
 
-      case "publicCollection":
+      case "publicCollection": {
+        const { collectionId, collectionTab } = this.viewState.params;
+
+        if (!collectionId) {
+          break;
+        }
+
         return html`<btrix-collection
           class="w-full"
           slug=${this.viewState.params.slug}
+          collectionId=${collectionId}
+          tab=${ifDefined(collectionTab || undefined)}
         ></btrix-collection>`;
+      }
 
       case "accountSettings":
         return html`<btrix-account-settings
