@@ -149,7 +149,7 @@ class CrawlManager(K8sAPI):
     async def run_re_add_org_pages_job(
         self,
         oid: str,
-        type_filter: Optional[str] = None,
+        crawl_type: Optional[str] = None,
         existing_job_id: Optional[str] = None,
     ) -> str:
         """run job to recalculate storage stats for the org"""
@@ -163,7 +163,7 @@ class CrawlManager(K8sAPI):
             oid,
             job_id,
             job_type=BgJobType.READD_ORG_PAGES.value,
-            type_filter=type_filter,
+            crawl_type=crawl_type,
         )
 
     async def _run_bg_job_with_ops_classes(
