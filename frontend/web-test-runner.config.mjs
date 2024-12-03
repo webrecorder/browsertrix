@@ -34,7 +34,7 @@ export default {
   browsers: [
     playwrightLauncher({
       product: "chromium",
-      createBrowserContext({ browser }) {
+      async createBrowserContext({ browser }) {
         return browser.newContext({ timezoneId: "Pacific/Easter" });
       },
     }),
@@ -61,9 +61,9 @@ export default {
         "node_modules/lodash/**/*",
         "node_modules/color/**/*",
         "node_modules/slugify/**/*",
-        "node_modules/pretty-ms/**/*",
         "node_modules/parse-ms/**/*",
         "node_modules/regex-colorize/**/*",
+        "node_modules/@formatjs/intl-durationformat/**/*",
       ],
     }),
     importMapsPlugin({
