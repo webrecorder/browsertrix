@@ -115,8 +115,6 @@ class CrawlManager(K8sAPI):
     async def run_delete_org_job(
         self,
         oid: str,
-        backend_image: str,
-        pull_policy: str,
         existing_job_id: Optional[str] = None,
     ) -> str:
         """run job to delete org and all of its data"""
@@ -127,14 +125,12 @@ class CrawlManager(K8sAPI):
             job_id = f"delete-org-{oid}-{secrets.token_hex(5)}"
 
         return await self._run_bg_job_with_ops_classes(
-            oid, backend_image, pull_policy, job_id, job_type=BgJobType.DELETE_ORG.value
+            oid, job_id, job_type=BgJobType.DELETE_ORG.value
         )
 
     async def run_recalculate_org_stats_job(
         self,
         oid: str,
-        backend_image: str,
-        pull_policy: str,
         existing_job_id: Optional[str] = None,
     ) -> str:
         """run job to recalculate storage stats for the org"""
@@ -146,19 +142,32 @@ class CrawlManager(K8sAPI):
 
         return await self._run_bg_job_with_ops_classes(
             oid,
-            backend_image,
-            pull_policy,
             job_id,
             job_type=BgJobType.RECALCULATE_ORG_STATS.value,
         )
 
-    async def _run_bg_job_with_ops_classes(
+    async def run_re_add_org_pages_job(
         self,
         oid: str,
-        backend_image: str,
-        pull_policy: str,
-        job_id: str,
-        job_type: str,
+        type_filter: Optional[str] = None,
+        existing_job_id: Optional[str] = None,
+    ) -> str:
+        """run job to recalculate storage stats for the org"""
+
+        if existing_job_id:
+            job_id = existing_job_id
+        else:
+            job_id = f"org-pages-{oid}-{secrets.token_hex(5)}"
+
+        return await self._run_bg_job_with_ops_classes(
+            oid,
+            job_id,
+            job_type=BgJobType.READD_ORG_PAGES.value,
+            type_filter=type_filter,
+        )
+
+    async def _run_bg_job_with_ops_classes(
+        self, oid: str, job_id: str, job_type: str, **kwargs
     ) -> str:
         """run background job with access to ops classes"""
 
@@ -166,8 +175,9 @@ class CrawlManager(K8sAPI):
             "id": job_id,
             "oid": oid,
             "job_type": job_type,
-            "backend_image": backend_image,
-            "pull_policy": pull_policy,
+            "backend_image": os.environ.get("BACKEND_IMAGE", ""),
+            "pull_policy": os.environ.get("BACKEND_IMAGE_PULL_POLICY", ""),
+            **kwargs,
         }
 
         data = self.templates.env.get_template("background_job.yaml").render(params)
