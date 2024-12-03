@@ -5,7 +5,7 @@ import { customElement, property } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import { pageHeader } from "@/layouts/pageHeader";
+import { page } from "@/layouts/page";
 import { RouteNamespace } from "@/routes";
 import type { OrgProfileData, PublicCollection } from "@/types/org";
 
@@ -35,7 +35,7 @@ export class Collection extends BtrixElement {
       text: msg("Replay"),
     },
     [Tab.About]: {
-      icon: { name: "info-circle", library: "default" },
+      icon: { name: "info-square-fill", library: "default" },
       text: msg("About"),
     },
   };
@@ -72,24 +72,25 @@ export class Collection extends BtrixElement {
         title="${collection.name} - ${org.name}"
       ></btrix-document-title>
 
-      <div
-        class="mx-auto box-border flex w-full max-w-screen-2xl flex-1 flex-col p-3 lg:px-10"
-      >
-        ${pageHeader(collection.name)}
+      ${page(
+        {
+          title: collection.name,
+        },
+        () => html`
+          <nav class="mb-3 flex gap-2">
+            ${Object.values(Tab).map(this.renderTab)}
+          </nav>
 
-        <nav class="my-3 flex gap-2">
-          ${Object.values(Tab).map(this.renderTab)}
-        </nav>
-
-        ${choose(
-          this.tab,
-          [
-            [Tab.Replay, () => this.renderReplay(collection)],
-            [Tab.About, () => this.renderAbout(collection)],
-          ],
-          () => html`<btrix-not-found></btrix-not-found>`,
-        )}
-      </div>
+          ${choose(
+            this.tab,
+            [
+              [Tab.Replay, () => this.renderReplay(collection)],
+              [Tab.About, () => this.renderAbout(collection)],
+            ],
+            () => html`<btrix-not-found></btrix-not-found>`,
+          )}
+        `,
+      )}
     `;
   }
 
@@ -136,13 +137,20 @@ export class Collection extends BtrixElement {
     return html`
       <div class="flex gap-6">
         <section class="flex-1">
-          <h3 class="mb-3 font-medium leading-none">${msg("Description")}</h3>
+          <h3 class="mb-3 text-base font-medium leading-none">
+            ${msg("Description")}
+          </h3>
           <div class="rounded-lg border p-5">
-            ${collection.description || html`TODO`}
+            ${collection.description ||
+            html`<p class="text-center text-neutral-400">
+              ${msg("A description has not been provided for this collection.")}
+            </p>`}
           </div>
         </section>
         <section class="w-96 flex-shrink-0">
-          <h3 class="mb-3 font-medium leading-none">${msg("Metadata")}</h3>
+          <h3 class="mb-3 text-base font-medium leading-none">
+            ${msg("Metadata")}
+          </h3>
         </section>
       </div>
     `;
