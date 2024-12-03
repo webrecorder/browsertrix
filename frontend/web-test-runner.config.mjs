@@ -34,6 +34,9 @@ export default {
   browsers: [
     playwrightLauncher({
       product: "chromium",
+      launchOptions: {
+        channel: "chromium",
+      },
       async createBrowserContext({ browser }) {
         return browser.newContext({ timezoneId: "Pacific/Easter" });
       },
