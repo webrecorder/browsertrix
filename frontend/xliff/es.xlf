@@ -3951,6 +3951,9 @@
       <trans-unit id="s41203abb9f802a84">
         <source>Share Collection</source>
       </trans-unit>
+      <trans-unit id="s0487f33d9ddaabde">
+        <source>About</source>
+      </trans-unit>
     </body>
   </file>
 </xliff>
