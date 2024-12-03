@@ -3,7 +3,6 @@ import { LitElement } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
 import { LocalizeController } from "@/controllers/localize";
-import humanizeDuration from "@/utils/round-duration";
 
 export type HumanizeOptions = {
   compact?: boolean;
@@ -45,13 +44,6 @@ export class RelativeDuration extends LitElement {
   @state()
   private timerId?: number;
 
-  // static humanize(duration: number, options: HumanizeOptions = {}) {
-  //   return humanizeDuration(duration, {
-  //     secondsDecimalDigits: 0,
-  //     ...options,
-  //   });
-  // }
-
   connectedCallback(): void {
     super.connectedCallback();
   }
@@ -85,12 +77,10 @@ export class RelativeDuration extends LitElement {
     const durationMs =
       (this.endTime || Date.now()) - new Date(this.value).valueOf();
 
-    const duration = humanizeDuration(durationMs, {
+    return this.localize.humanizeDuration(durationMs, {
       compact: this.compact,
-      // verbose: this.verbose,
+      verbose: this.verbose,
       unitCount: this.unitCount,
     });
-
-    return this.localize.duration(duration);
   }
 }
