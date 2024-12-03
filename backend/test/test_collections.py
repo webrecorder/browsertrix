@@ -17,7 +17,6 @@ CAPTION = "Short caption"
 UPDATED_CAPTION = "Updated caption"
 
 NON_PUBLIC_COLL_FIELDS = (
-    "oid",
     "modified",
     "crawlCount",
     "pageCount",
@@ -877,6 +876,7 @@ def test_list_public_collections(
     assert len(collections) == 2
     for collection in collections:
         assert collection["id"] in (_public_coll_id, _second_public_coll_id)
+        assert collection["oid"]
         assert collection["name"]
         assert collection["dateEarliest"]
         assert collection["dateLatest"]
@@ -1033,6 +1033,7 @@ def test_list_public_colls_home_url_thumbnail():
 
     for coll in collections:
         assert coll["id"] in (_public_coll_id, _second_public_coll_id)
+        assert coll["oid"]
         assert coll["name"]
         assert coll["resources"]
         assert coll["dateEarliest"]
@@ -1063,7 +1064,7 @@ def test_list_public_colls_home_url_thumbnail():
             assert coll["description"]
 
 
-def test_get_public_collection():
+def test_get_public_collection(default_org_id):
     r = requests.get(
         f"{API_PREFIX}/public-collections/{default_org_slug}/collections/{_public_coll_id}"
     )
@@ -1071,6 +1072,7 @@ def test_get_public_collection():
     coll = r.json()
 
     assert coll["id"] == _public_coll_id
+    assert coll["oid"] == default_org_id
     assert coll["name"]
     assert coll["resources"]
     assert coll["dateEarliest"]
