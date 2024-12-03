@@ -152,7 +152,7 @@ export class Collection extends BtrixElement {
 
   private renderAbout(collection: PublicCollection) {
     return html`
-      <div class="flex gap-6">
+      <div class="mt-6 flex gap-7">
         <section class="flex-1">
           <h3 class="mb-3 text-lg font-semibold leading-none">
             ${msg("Description")}
@@ -172,7 +172,7 @@ export class Collection extends BtrixElement {
           </div>
         </section>
         <section class="w-96 flex-shrink-0">
-          <h3 class="mb-3 text-lg font-semibold leading-none">
+          <h3 class="mb-5 text-lg font-semibold leading-none">
             ${msg("Metadata")}
           </h3>
           <btrix-desc-list>

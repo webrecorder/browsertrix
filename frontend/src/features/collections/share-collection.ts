@@ -127,7 +127,14 @@ export class ShareCollection extends BtrixElement {
               ${msg("View Embed Code")}
             </sl-menu-item>
             ${when(
-              this.authState,
+              this.authState &&
+                this.collectionId &&
+                this.shareLink !==
+                  window.location.href.slice(
+                    0,
+                    window.location.href.indexOf(this.collectionId) +
+                      this.collectionId.length,
+                  ),
               () => html`
                 <btrix-menu-item-link
                   href=${this.shareLink}
