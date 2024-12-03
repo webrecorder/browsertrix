@@ -989,6 +989,9 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops, user_de
             # pylint: disable=raise-missing-from
             raise HTTPException(status_code=404, detail="collection_not_found")
 
+        if not org.enablePublicProfile:
+            raise HTTPException(status_code=404, detail="collection_not_found")
+
         return await colls.get_public_collection_out(coll_id, org)
 
     @app.get(
