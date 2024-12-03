@@ -89,7 +89,7 @@ export class CollectionDetail extends BtrixElement {
   private get shareLink() {
     const baseUrl = `${window.location.protocol}//${window.location.hostname}${window.location.port ? `:${window.location.port}` : ""}`;
     if (this.collection) {
-      return `${baseUrl}/${this.collection.access === CollectionAccess.Private ? `${RouteNamespace.PrivateOrgs}/collections/view` : `${RouteNamespace.PublicOrgs}/collections`}/${this.collectionId}`;
+      return `${baseUrl}/${this.collection.access === CollectionAccess.Private ? `${RouteNamespace.PrivateOrgs}/${this.orgSlug}/collections/view` : `${RouteNamespace.PublicOrgs}/${this.orgSlug}/collections`}/${this.collectionId}`;
     }
     return "";
   }
