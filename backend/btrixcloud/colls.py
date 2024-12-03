@@ -467,8 +467,17 @@ class CollectionOps:
             files = crawl.files or []
             for file in files:
                 total_size += file.size
-            if crawl.stats:
-                page_count += crawl.stats.done
+
+            try:
+                org = await self.orgs.get_org_by_id(crawl.oid)
+                _, crawl_pages = await self.page_ops.list_pages(
+                    crawl.id, org, page_size=1_000_000
+                )
+                page_count += crawl_pages
+            # pylint: disable=broad-exception-caught
+            except Exception:
+                pass
+
             if crawl.tags:
                 tags.extend(crawl.tags)
 
