@@ -1,6 +1,8 @@
 /**
  * Manage translations and language-specific formatting throughout app
  */
+import "@formatjs/intl-durationformat/lib/polyfill";
+
 import { configureLocalization } from "@lit/localize";
 import uniq from "lodash/fp/uniq";
 
