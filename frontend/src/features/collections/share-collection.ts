@@ -61,7 +61,12 @@ export class ShareCollection extends BtrixElement {
 
   private renderButton() {
     if (!this.collection) {
-      return;
+      return html`
+        <sl-skeleton
+          effect="pulse"
+          class="h-[var(--sl-input-height-small)] w-20 [--border-radius:var(--sl-input-border-radius-small)]"
+        ></sl-skeleton>
+      `;
     }
 
     if (this.collection.access === CollectionAccess.Private) {
@@ -134,14 +139,14 @@ export class ShareCollection extends BtrixElement {
                           slot="prefix"
                           name=${SelectCollectionAccess.Options.unlisted.icon}
                         ></sl-icon>
-                        ${msg("View Unlisted Page")}
+                        ${msg("Visit Unlisted Page")}
                       `
                     : html`
                         <sl-icon
                           slot="prefix"
                           name=${SelectCollectionAccess.Options.public.icon}
                         ></sl-icon>
-                        ${msg("View Public Page")}
+                        ${msg("Visit Public Page")}
                       `}
                 </btrix-menu-item-link>
                 <sl-divider></sl-divider>
