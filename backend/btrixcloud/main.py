@@ -270,6 +270,7 @@ def main() -> None:
                 invites,
                 storage_ops,
                 page_ops,
+                background_job_ops,
                 db_inited,
             )
         )
