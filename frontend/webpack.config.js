@@ -156,6 +156,14 @@ const main = {
   },
 
   plugins: [
+    // Shim polyfill
+    new webpack.ProvidePlugin({
+      "Intl.DurationFormat": path.resolve(
+        __dirname,
+        "lib/intl-durationformat.js",
+      ),
+    }),
+
     new webpack.DefinePlugin({
       "window.process.env.WEBSOCKET_HOST": JSON.stringify(WEBSOCKET_HOST),
     }),

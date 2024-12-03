@@ -10,7 +10,6 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import { CopyButton } from "@/components/ui/copy-button";
 import { type Dialog } from "@/components/ui/dialog";
 import type { PageChangeEvent } from "@/components/ui/pagination";
-import { RelativeDuration } from "@/components/ui/relative-duration";
 import type { CrawlLog } from "@/features/archived-items/crawl-logs";
 import { pageBack, pageNav, type Breadcrumb } from "@/layouts/pageHeader";
 import type { APIPaginatedList } from "@/types/api";
@@ -789,7 +788,7 @@ export class ArchivedItemDetail extends BtrixElement {
                 </btrix-desc-list-item>
                 <btrix-desc-list-item label=${msg("Elapsed Time")}>
                   ${this.item!.finished
-                    ? html`${RelativeDuration.humanize(
+                    ? html`${this.localize.humanizeDuration(
                         new Date(this.item!.finished).valueOf() -
                           new Date(this.item!.started).valueOf(),
                       )}`

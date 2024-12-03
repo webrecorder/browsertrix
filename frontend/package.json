@@ -5,6 +5,7 @@
   "license": "AGPL-3.0-or-later",
   "dependencies": {
     "@cheap-glitch/mi-cron": "^1.0.1",
+    "@formatjs/intl-durationformat": "^0.6.4",
     "@ianvs/prettier-plugin-sort-imports": "^4.2.1",
     "@lit/localize": "^0.12.1",
     "@lit/task": "^1.0.0",
@@ -60,6 +61,7 @@
     "micromark": "^4.0.0",
     "micromark-extension-gfm-strikethrough": "^2.0.0",
     "node-fetch": "^3.1.0",
+    "parse-ms": "^4.0.0",
     "patch-package": "^8.0.0",
     "postcss": "^8.4.5",
     "postcss-lit": "^1.1.1",
@@ -120,10 +122,9 @@
   "optionalDependencies": {
     "@esm-bundle/chai": "^4.3.4-fix.0",
     "@open-wc/testing": "^3.2.0",
-    "@playwright/test": "1.32.1",
+    "@playwright/test": "1.49.0",
     "@web/test-runner": "^0.13.22",
-    "@web/test-runner-playwright": "^0.11.0",
-    "chromium": "^3.0.3"
+    "@web/test-runner-playwright": "^0.11.0"
   },
   "lint-staged": {
     "*.{ts,js,html,css,json,webmanifest}": "prettier --write"
@@ -137,7 +138,7 @@
     "node": ">=18"
   },
   "resolutions": {
-    "**/playwright": "1.32.1",
+    "**/playwright": "1.49.0",
     "**/lit": "3.1.1",
     "@web/dev-server-esbuild/esbuild": "^0.19.5"
   },

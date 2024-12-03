@@ -7,8 +7,6 @@ import { html as staticHtml, unsafeStatic } from "lit/static-html.js";
 import capitalize from "lodash/fp/capitalize";
 import RegexColorize from "regex-colorize";
 
-import { RelativeDuration } from "./relative-duration";
-
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { CrawlConfig, Seed, SeedConfig } from "@/pages/org/types";
 import scopeTypeLabel from "@/strings/crawl-workflows/scopeType";
@@ -69,7 +67,7 @@ export class ConfigDetails extends BtrixElement {
       fallbackValue?: number,
     ) => {
       if (valueSeconds) {
-        return RelativeDuration.humanize(valueSeconds * 1000, {
+        return this.localize.humanizeDuration(valueSeconds * 1000, {
           verbose: true,
         });
       }
@@ -80,7 +78,7 @@ export class ConfigDetails extends BtrixElement {
         } else if (fallbackValue === 0) {
           value = msg("0 seconds");
         } else {
-          value = RelativeDuration.humanize(fallbackValue * 1000, {
+          value = this.localize.humanizeDuration(fallbackValue * 1000, {
             verbose: true,
           });
         }

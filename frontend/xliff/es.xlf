@@ -2931,7 +2931,7 @@
         <source>---</source>
       </trans-unit>
       <trans-unit id="sa84bc532c73403ed">
-        <source>Running for <x equiv-text="${RelativeDuration.humanize(diff, {&#10;    compact: true,&#10;})}" id="0"/></source>
+        <source>Running for <x equiv-text="${this.localize.humanizeDuration(diff, {&#10;    compact: true,&#10;})}" id="0"/></source>
       </trans-unit>
       <trans-unit id="s8eb4021572d41d99">
         <source>Name &amp; Schedule</source>
