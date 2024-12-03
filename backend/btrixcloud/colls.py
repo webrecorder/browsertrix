@@ -477,6 +477,15 @@ class CollectionOps:
             },
         )
 
+    async def recalculate_org_collection_dates(self, org: Organization):
+        """Recalculate earliest and latest dates for collections in org"""
+        collections, _ = await self.list_collections(
+            org,
+            page_size=100_000,
+        )
+        for coll in collections:
+            await self.update_collection_dates(coll.id)
+
     async def update_collection_dates(self, coll_id: UUID):
         """Update collection earliest and latest dates from page timestamps"""
         coll = await self.get_collection(coll_id)
