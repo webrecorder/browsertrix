@@ -3,8 +3,10 @@ import { Task } from "@lit/task";
 import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import type { SelectVisibilityDetail } from "@/features/collections/share-collection";
 import { page } from "@/layouts/page";
 import { RouteNamespace } from "@/routes";
 import type { OrgProfileData, PublicCollection } from "@/types/org";
@@ -82,7 +84,16 @@ export class Collection extends BtrixElement {
               >
             </div>
           `,
-          actions: html``,
+          actions: html`
+            <btrix-share-collection
+              collectionId=${ifDefined(this.collectionId)}
+              .collection=${collection}
+              @btrix-select=${(e: CustomEvent<SelectVisibilityDetail>) => {
+                e.stopPropagation();
+                console.log("TODO");
+              }}
+            ></btrix-share-collection>
+          `,
         },
         () => html`
           <nav class="mb-3 flex gap-2">
