@@ -954,8 +954,8 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops, user_de
         return await colls.download_collection(coll_id, org)
 
     @app.get(
-        "/public-collections/{org_slug}",
-        tags=["collections"],
+        "/public/orgs/{org_slug}/collections",
+        tags=["collections", "public"],
         response_model=OrgPublicCollections,
     )
     async def get_org_public_collections(
@@ -974,8 +974,8 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops, user_de
         )
 
     @app.get(
-        "/public-collections/{org_slug}/collections/{coll_id}",
-        tags=["collections"],
+        "/public/orgs/{org_slug}/collections/{coll_id}",
+        tags=["collections", "public"],
         response_model=PublicCollOut,
     )
     async def get_public_collection(

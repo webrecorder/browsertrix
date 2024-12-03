@@ -832,7 +832,7 @@ def test_list_public_collections(
     assert data["publicUrl"] == ""
 
     # Try listing public collections without org public profile enabled
-    r = requests.get(f"{API_PREFIX}/public-collections/{default_org_slug}")
+    r = requests.get(f"{API_PREFIX}/public/org/{default_org_slug}/collections")
     assert r.status_code == 404
     assert r.json()["detail"] == "public_profile_not_found"
 
@@ -863,7 +863,7 @@ def test_list_public_collections(
     assert data["publicUrl"] == public_url
 
     # List public collections with no auth (no public profile)
-    r = requests.get(f"{API_PREFIX}/public-collections/{default_org_slug}")
+    r = requests.get(f"{API_PREFIX}/public/orgs/{default_org_slug}/collections")
     assert r.status_code == 200
     data = r.json()
 
@@ -883,7 +883,7 @@ def test_list_public_collections(
 
     # Test non-existing slug - it should return a 404 but not reveal
     # whether or not an org exists with that slug
-    r = requests.get(f"{API_PREFIX}/public-collections/nonexistentslug")
+    r = requests.get(f"{API_PREFIX}/public/orgs/nonexistentslug/collections")
     assert r.status_code == 404
     assert r.json()["detail"] == "public_profile_not_found"
 
@@ -891,7 +891,7 @@ def test_list_public_collections(
 def test_list_public_collections_no_colls(non_default_org_id, admin_auth_headers):
     # Test existing org that's not public - should return same 404 as
     # if org doesn't exist
-    r = requests.get(f"{API_PREFIX}/public-collections/{NON_DEFAULT_ORG_SLUG}")
+    r = requests.get(f"{API_PREFIX}/public/orgs/{NON_DEFAULT_ORG_SLUG}/collections")
     assert r.status_code == 404
     assert r.json()["detail"] == "public_profile_not_found"
 
@@ -908,7 +908,7 @@ def test_list_public_collections_no_colls(non_default_org_id, admin_auth_headers
 
     # List public collections with no auth - should still get profile even
     # with no public collections
-    r = requests.get(f"{API_PREFIX}/public-collections/{NON_DEFAULT_ORG_SLUG}")
+    r = requests.get(f"{API_PREFIX}/public/orgs/{NON_DEFAULT_ORG_SLUG}/collections")
     assert r.status_code == 200
     data = r.json()
     assert data["org"]["name"] == NON_DEFAULT_ORG_NAME
@@ -1026,7 +1026,7 @@ def test_list_public_colls_home_url_thumbnail():
     )
     non_public_image_fields = ("originalFilename", "userid", "userName", "created")
 
-    r = requests.get(f"{API_PREFIX}/public-collections/{default_org_slug}")
+    r = requests.get(f"{API_PREFIX}/public/orgs/{default_org_slug}/collections")
     assert r.status_code == 200
     collections = r.json()["collections"]
     assert len(collections) == 2
@@ -1066,7 +1066,7 @@ def test_list_public_colls_home_url_thumbnail():
 
 def test_get_public_collection(default_org_id):
     r = requests.get(
-        f"{API_PREFIX}/public-collections/{default_org_slug}/collections/{_public_coll_id}"
+        f"{API_PREFIX}/public/orgs/{default_org_slug}/collections/{_public_coll_id}"
     )
     assert r.status_code == 200
     coll = r.json()
@@ -1101,7 +1101,7 @@ def test_get_public_collection(default_org_id):
     # Invalid org slug - don't reveal whether org exists or not, use
     # same exception as if collection doesn't exist
     r = requests.get(
-        f"{API_PREFIX}/public-collections/doesntexist/collections/{_public_coll_id}"
+        f"{API_PREFIX}/public/orgs/doesntexist/collections/{_public_coll_id}"
     )
     assert r.status_code == 404
     assert r.json()["detail"] == "collection_not_found"
@@ -1109,14 +1109,14 @@ def test_get_public_collection(default_org_id):
     # Invalid collection id
     random_uuid = uuid4()
     r = requests.get(
-        f"{API_PREFIX}/public-collections/{default_org_slug}/collections/{random_uuid}"
+        f"{API_PREFIX}/public/orgs/{default_org_slug}/collections/{random_uuid}"
     )
     assert r.status_code == 404
     assert r.json()["detail"] == "collection_not_found"
 
     # Collection isn't public
     r = requests.get(
-        f"{API_PREFIX}/public-collections/{default_org_slug}/collections/{ _coll_id}"
+        f"{API_PREFIX}/public/orgs/{default_org_slug}/collections/{ _coll_id}"
     )
     assert r.status_code == 404
     assert r.json()["detail"] == "collection_not_found"
