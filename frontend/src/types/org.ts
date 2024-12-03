@@ -107,6 +107,9 @@ export const publicCollectionSchema = z.object({
   oid: z.string(),
   name: z.string(),
   description: z.string(),
+  crawlCount: z.number(),
+  pageCount: z.number(),
+  totalSize: z.number(),
 });
 export type PublicCollection = z.infer<typeof publicCollectionSchema>;
 
@@ -115,7 +118,7 @@ export const orgProfileDataSchema = z.object({
     name: z.string(),
     description: z.string(),
     url: z.string(),
-    verified: z.boolean()
+    verified: z.boolean(),
   }),
   collections: z.array(publicCollectionSchema),
 });
