@@ -28,7 +28,7 @@ async def main():
         )
         return 1
 
-    (org_ops, _, _, _, _, page_ops, _, _, _, _, _, user_manager) = init_ops()
+    (org_ops, _, _, _, _, page_ops, coll_ops, _, _, _, _, user_manager) = init_ops()
 
     if not oid:
         print("Org id missing, quitting")
@@ -61,6 +61,7 @@ async def main():
     if job_type == BgJobType.READD_ORG_PAGES:
         try:
             await page_ops.re_add_all_crawl_pages(org, type_filter=type_filter)
+            await coll_ops.recalculate_org_collection_dates(org)
             return 0
         # pylint: disable=broad-exception-caught
         except Exception:
