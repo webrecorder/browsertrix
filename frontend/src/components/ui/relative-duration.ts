@@ -87,7 +87,7 @@ export class RelativeDuration extends LitElement {
 
     const duration = humanizeDuration(durationMs, {
       compact: this.compact,
-      verbose: this.verbose,
+      // verbose: this.verbose,
       unitCount: this.unitCount,
     });
 
