@@ -175,7 +175,10 @@ export class CollectionMetadataDialog extends BtrixElement {
       const body = JSON.stringify({
         name,
         description,
-        access: this.selectCollectionAccess?.value || CollectionAccess.Private,
+        access:
+          this.selectCollectionAccess?.value ||
+          this.collection?.access ||
+          CollectionAccess.Private,
       });
       let path = `/orgs/${this.orgId}/collections`;
       let method = "POST";

@@ -68,13 +68,21 @@ export class Collection extends BtrixElement {
     }
 
     return html`
-      <btrix-document-title
-        title="${collection.name} - ${org.name}"
-      ></btrix-document-title>
-
       ${page(
         {
           title: collection.name,
+          secondary: html`
+            <div class="text-pretty text-stone-600">
+              ${msg("Collection by")}
+              <a
+                href="/${RouteNamespace.PublicOrgs}/${this.slug}"
+                class="font-medium leading-none text-stone-500 transition-colors hover:text-stone-600"
+                @click=${this.navigate.link}
+                >${org.name}</a
+              >
+            </div>
+          `,
+          actions: html``,
         },
         () => html`
           <nav class="mb-3 flex gap-2">
@@ -132,25 +140,44 @@ export class Collection extends BtrixElement {
   }
 
   private renderAbout(collection: PublicCollection) {
-    console.log(collection);
-
     return html`
       <div class="flex gap-6">
         <section class="flex-1">
-          <h3 class="mb-3 text-base font-medium leading-none">
+          <h3 class="mb-3 text-lg font-semibold leading-none">
             ${msg("Description")}
           </h3>
           <div class="rounded-lg border p-5">
-            ${collection.description ||
-            html`<p class="text-center text-neutral-400">
-              ${msg("A description has not been provided for this collection.")}
-            </p>`}
+            ${collection.description
+              ? html`
+                  <btrix-markdown-viewer
+                    value=${collection.description}
+                  ></btrix-markdown-viewer>
+                `
+              : html`<p class="text-center text-neutral-400">
+                  ${msg(
+                    "A description has not been provided for this collection.",
+                  )}
+                </p>`}
           </div>
         </section>
         <section class="w-96 flex-shrink-0">
-          <h3 class="mb-3 text-base font-medium leading-none">
+          <h3 class="mb-3 text-lg font-semibold leading-none">
             ${msg("Metadata")}
           </h3>
+          <btrix-desc-list>
+            <btrix-desc-list-item label=${msg("Archived Items")}>
+              ${this.localize.number(collection.crawlCount)}
+            </btrix-desc-list-item>
+            <btrix-desc-list-item label=${msg("Total Pages")}>
+              ${this.localize.number(collection.pageCount)}
+            </btrix-desc-list-item>
+            <btrix-desc-list-item label=${msg("Total Size")}>
+              ${this.localize.bytes(collection.totalSize)}
+            </btrix-desc-list-item>
+            <btrix-desc-list-item label=${msg("Date Range")}>
+              TODO
+            </btrix-desc-list-item>
+          </btrix-desc-list>
         </section>
       </div>
     `;
