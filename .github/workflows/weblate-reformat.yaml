@@ -37,7 +37,7 @@ jobs:
         run: yarn install --frozen-lockfile
    
       # Localize:
-      - name: Extract strings
+      - name: Reformat XLIFF files
         working-directory: frontend
         run: yarn localize:extract
 
