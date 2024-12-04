@@ -1,0 +1,52 @@
+name: Weblate Reformat
+on:
+  pull_request_target:
+    paths:
+      - 'frontend/xliff/**"
+      - '.github/workflows/weblate-reformat.yaml'
+
+    branches:
+      - 'weblate'
+
+jobs:
+  setup-and-build:
+    runs-on: ubuntu-latest
+    permissions:
+      # Give the default GITHUB_TOKEN write permission to commit and push the
+      # added or changed files to the repository.
+      contents: write
+
+    steps:
+      # Setup:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'yarn'
+          cache-dependency-path: frontend/yarn.lock
+      - name: Install dependencies
+        working-directory: frontend
+        env:
+          HUSKY: 0
+        run: yarn install --frozen-lockfile
+   
+      # Localize:
+      - name: Extract strings
+        working-directory: frontend
+        run: yarn localize:extract
+
+      - name: Check localization build
+        working-directory: frontend
+        run: yarn localize:build
+
+      - name: Reformat localized strings
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: Apply `localize:extract` changes
+          file_pattern: '**/*.xlf'
+          skip_fetch: true
+          skip_checkout: true
