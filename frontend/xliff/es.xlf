@@ -101,9 +101,6 @@
       <trans-unit id="s8975026acabb194d">
         <source>Select Archived Items</source>
       </trans-unit>
-      <trans-unit id="s1a24424753185138">
-        <source>Make Shareable</source>
-      </trans-unit>
       <trans-unit id="s7e5bf5d1b7f08ba4">
         <source>Make Private</source>
       </trans-unit>
@@ -3920,9 +3917,6 @@
       <trans-unit id="sfa31fe37b0f5159e">
         <source>View Embed Code</source>
       </trans-unit>
-      <trans-unit id="saca3f4d144d8dc90">
-        <source>View Public Page</source>
-      </trans-unit>
       <trans-unit id="s0921b07ddda1f1b1">
         <source>Open in New Tab</source>
       </trans-unit>
@@ -3934,9 +3928,6 @@
       </trans-unit>
       <trans-unit id="s5dc7f4038318506b">
         <source>Copy public link</source>
-      </trans-unit>
-      <trans-unit id="s676af215b605d99d">
-        <source>View Unlisted Page</source>
       </trans-unit>
       <trans-unit id="s11161fdebb62dcc9">
         <source>Link to Share</source>
@@ -3962,6 +3953,21 @@
       </trans-unit>
       <trans-unit id="s2dab6da5c3c253f0">
         <source>Date Range</source>
+      </trans-unit>
+      <trans-unit id="s4b51add4ad998a51">
+        <source>Visit Unlisted Page</source>
+      </trans-unit>
+      <trans-unit id="s198f9d12552a9134">
+        <source>Visit Public Page</source>
+      </trans-unit>
+      <trans-unit id="s2bad581c2ce4d1d7">
+        <source>Enable Share Link</source>
+      </trans-unit>
+      <trans-unit id="s1f224cf8b88cb893">
+        <source>Link copied</source>
+      </trans-unit>
+      <trans-unit id="s0337805916bf0549">
+        <source>Copy Share Link</source>
       </trans-unit>
     </body>
   </file>
