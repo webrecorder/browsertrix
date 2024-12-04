@@ -147,6 +147,10 @@
     background-color: theme(colors.primary.500);
   }
 
+  sl-radio-button[checked]::part(button) {
+    background-color: theme(colors.primary.500);
+  }
+
   /* Elevate select and buttons */
   sl-select::part(combobox),
   sl-button:not([variant="text"])::part(base) {
@@ -212,8 +216,8 @@
   }
 
   /* Have button group take up whole width */
-  sl-radio-group::part(button-group),
-  sl-radio-group sl-radio-button {
+  sl-radio-group:not([size="small"])::part(button-group),
+  sl-radio-group:not([size="small"]) sl-radio-button {
     width: 100%;
     min-width: min-content;
   }

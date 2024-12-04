@@ -196,7 +196,9 @@ describe("btrix-accept-invite", () => {
 
       await oneEvent(orgFormEl, "btrix-org-updated");
 
-      expect(el.navigate.to).to.have.been.calledWith("/orgs/fake-org-slug-2");
+      expect(el.navigate.to).to.have.been.calledWith(
+        "/orgs/fake-org-slug-2/dashboard",
+      );
     });
   });
 
@@ -294,7 +296,9 @@ describe("btrix-accept-invite", () => {
 
       await el._onAccept();
 
-      expect(el.navigate.to).to.have.calledWith("/orgs/fake-org-name");
+      expect(el.navigate.to).to.have.calledWith(
+        "/orgs/fake-org-name/dashboard",
+      );
     });
 
     it("redirects to home on decline", async () => {

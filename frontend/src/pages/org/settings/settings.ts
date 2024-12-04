@@ -13,9 +13,10 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import type { APIUser } from "@/index";
 import { columns } from "@/layouts/columns";
 import { pageHeader } from "@/layouts/pageHeader";
+import { RouteNamespace } from "@/routes";
 import type { APIPaginatedList } from "@/types/api";
 import { isApiError } from "@/utils/api";
-import { maxLengthValidator } from "@/utils/form";
+import { formValidator, maxLengthValidator } from "@/utils/form";
 import { AccessCode, isAdmin, isCrawler } from "@/utils/orgs";
 import slugifyStrict from "@/utils/slugify";
 import { AppStateService } from "@/utils/state";
@@ -24,6 +25,7 @@ import { formatAPIUser } from "@/utils/user";
 
 import "./components/billing";
 import "./components/crawling-defaults";
+import "./components/profile";
 
 const styles = unsafeCSS(stylesheet);
 
@@ -108,6 +110,31 @@ export class OrgSettings extends BtrixElement {
     }
   }
 
+  // TODO (emma) maybe upstream this into BtrixElement?
+  handleHashChange = (e: HashChangeEvent) => {
+    const { hash } = new URL(e.newURL);
+    if (!hash) return;
+
+    const el = this.shadowRoot?.querySelector<HTMLElement>(hash);
+
+    el?.focus();
+    el?.scrollIntoView({
+      behavior: window.matchMedia("prefers-reduced-motion: reduce").matches
+        ? "instant"
+        : "smooth",
+    });
+  };
+
+  connectedCallback() {
+    super.connectedCallback();
+    window.addEventListener("hashchange", this.handleHashChange);
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    window.removeEventListener("hashchange", this.handleHashChange);
+  }
+
   render() {
     return html` ${pageHeader(
         msg("Org Settings"),
@@ -181,6 +208,8 @@ export class OrgSettings extends BtrixElement {
 
         <btrix-tab-panel name="information">
           ${this.renderInformation()}
+          <btrix-org-settings-profile></btrix-org-settings-profile>
+          ${this.renderApi()}
         </btrix-tab-panel>
         <btrix-tab-panel name="members">
           ${this.renderMembers()}
@@ -226,14 +255,14 @@ export class OrgSettings extends BtrixElement {
   private renderInformation() {
     if (!this.userOrg) return;
 
-    return html`<div class="rounded-lg border">
+    return html`<section class="rounded-lg border">
       <form @submit=${this.onOrgInfoSubmit}>
         <div class="p-5">
           ${columns([
             [
               html`
                 <sl-input
-                  class="with-max-help-text mb-2"
+                  class="with-max-help-text hide-required-content"
                   name="orgName"
                   size="small"
                   label=${msg("Org Name")}
@@ -247,47 +276,35 @@ export class OrgSettings extends BtrixElement {
                 ></sl-input>
               `,
               msg(
-                "Name of your organization that is visible to all org members.",
+                "Choose a name that represents your organization, your team, or your personal web archive.",
               ),
             ],
             [
               html`
                 <sl-input
-                  class="mb-2"
+                  id="org-url"
+                  class="hide-required-content mb-2 part-[input]:pl-0"
                   name="orgSlug"
                   size="small"
-                  label=${msg("Custom URL Identifier")}
+                  label=${msg("Org URL")}
                   placeholder="my-organization"
                   autocomplete="off"
                   value=${this.orgSlug || ""}
                   minlength="2"
                   maxlength="30"
                   required
-                  help-text=${msg(
-                    str`Org home page: ${window.location.protocol}//${
-                      window.location.hostname
-                    }/orgs/${
-                      this.slugValue
-                        ? slugifyStrict(this.slugValue)
-                        : this.orgSlug
-                    }`,
-                  )}
                   @sl-input=${this.handleSlugInput}
-                ></sl-input>
+                >
+                  <div slot="prefix" class="font-light text-neutral-400">
+                    ${window.location.hostname}${window.location.port
+                      ? `:${window.location.port}`
+                      : ""}/${RouteNamespace.PrivateOrgs}/
+                  </div>
+                </sl-input>
               `,
               msg(
-                "Customize your organization's web address for accessing Browsertrix.",
+                "Customize your org's Browsertrix URL. This will also apply to the URL to your org's public profile page, if you've enabled it.",
               ),
-            ],
-            [
-              html`
-                <btrix-copy-field
-                  class="mb-2"
-                  label=${msg("Org ID")}
-                  value=${this.orgId}
-                ></btrix-copy-field>
-              `,
-              msg("Use this ID to reference this org in the Browsertrix API."),
             ],
           ])}
         </div>
@@ -298,11 +315,37 @@ export class OrgSettings extends BtrixElement {
             variant="primary"
             ?disabled=${this.isSavingOrgName}
             ?loading=${this.isSavingOrgName}
-            >${msg("Save Changes")}</sl-button
           >
+            ${msg("Save")}
+          </sl-button>
         </footer>
       </form>
-    </div>`;
+    </section>`;
+  }
+
+  private renderApi() {
+    if (!this.userOrg) return;
+
+    return html` <h2 class="mb-2 mt-7 text-lg font-medium">
+        ${msg("Developer Tools")}
+      </h2>
+
+      <section class="rounded-lg border">
+        <div class="p-5">
+          ${columns([
+            [
+              html`
+                <btrix-copy-field
+                  class="mb-2"
+                  label=${msg("Org ID")}
+                  value=${this.orgId}
+                ></btrix-copy-field>
+              `,
+              msg("Use this ID to reference your org in the Browsertrix API."),
+            ],
+          ])}
+        </div>
+      </section>`;
   }
 
   private handleSlugInput(e: InputEvent) {
@@ -322,12 +365,15 @@ export class OrgSettings extends BtrixElement {
     if (!this.org?.users) return;
 
     const columnWidths = ["1fr", "2fr", "auto", "min-content"];
-    const rows = Object.entries(this.org.users).map(([_id, user]) => [
-      user.name,
-      user.email,
-      this.renderUserRoleSelect(user),
-      this.renderRemoveMemberButton(user),
-    ]);
+    const rows = Object.entries(this.org.users).map(
+      ([_id, user]) =>
+        [
+          user.name,
+          user.email,
+          this.renderUserRoleSelect(user),
+          this.renderRemoveMemberButton(user),
+        ] as const,
+    );
     return html`
       <section>
         <btrix-data-table
@@ -582,10 +628,7 @@ export class OrgSettings extends BtrixElement {
     `;
   }
 
-  private async checkFormValidity(formEl: HTMLFormElement) {
-    await this.updateComplete;
-    return !formEl.querySelector("[data-invalid]");
-  }
+  private readonly checkFormValidity = formValidator(this);
 
   private async getPendingInvites() {
     const data = await this.api.fetch<APIPaginatedList<Invite>>(
