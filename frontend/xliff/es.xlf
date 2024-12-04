@@ -16,7 +16,7 @@
       </trans-unit>
       <trans-unit xml:space="preserve" id="s07018373ca29dfcb">
         <source>Monthly execution minutes quota reached</source>
-        <target state="translated">Cuota de minutos mensual alcanzó su capacidad</target>
+        <target state="translated">Cuota mensual de minutos alcanzó su capacidad</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s0a11c2ffb8309d1a">
         <source>Not found</source>
