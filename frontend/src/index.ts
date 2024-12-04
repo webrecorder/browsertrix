@@ -478,7 +478,7 @@ export class App extends BtrixElement {
                     </sl-menu>
                   </sl-dropdown>`
               : html`
-                  ${this.viewState.route !== "login"
+                  ${this.viewState.route === "publicOrgProfile"
                     ? html`
                         <sl-button
                           size="small"
