@@ -9,7 +9,8 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import type { SelectVisibilityDetail } from "@/features/collections/share-collection";
 import { page } from "@/layouts/page";
 import { RouteNamespace } from "@/routes";
-import type { OrgProfileData, PublicCollection } from "@/types/org";
+import { PublicCollection } from "@/types/collection";
+import type { OrgProfileData } from "@/types/org";
 
 enum Tab {
   Replay = "replay",
@@ -61,9 +62,8 @@ export class Collection extends BtrixElement {
   }
 
   private renderCollection({ org, collections }: OrgProfileData) {
-    const collection =
-      this.collectionId &&
-      collections.find(({ id }) => id === this.collectionId);
+    // TODO
+    const collection = collections[0];
 
     if (!collection) {
       return "TODO";
