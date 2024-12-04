@@ -145,7 +145,9 @@ describe("btrix-join", () => {
 
       await oneEvent(orgFormEl, "btrix-org-updated");
 
-      expect(el.navTo).to.have.been.calledWith("/orgs/fake-org-slug-2");
+      expect(el.navTo).to.have.been.calledWith(
+        "/orgs/fake-org-slug-2/dashboard",
+      );
     });
   });
 
@@ -190,7 +192,7 @@ describe("btrix-join", () => {
 
       await el.updateComplete;
 
-      expect(el.navTo).to.have.been.calledWith("/orgs/fake-org-name");
+      expect(el.navTo).to.have.been.calledWith("/orgs/fake-org-name/dashboard");
     });
   });
 });
