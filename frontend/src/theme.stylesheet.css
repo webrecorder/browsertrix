@@ -151,6 +151,10 @@
     background-color: theme(colors.primary.500);
   }
 
+  sl-radio-button[checked]::part(button) {
+    background-color: theme(colors.primary.500);
+  }
+
   /* Elevate select and buttons */
   sl-select::part(combobox),
   sl-button:not([variant="text"])::part(base) {
