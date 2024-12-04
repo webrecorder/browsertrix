@@ -8,6 +8,7 @@ import type {
 } from "@shoelace-style/shoelace";
 import { html, nothing, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import isEqual from "lodash/fp/isEqual";
 
@@ -500,7 +501,7 @@ export class App extends BtrixElement {
                     </sl-menu>
                   </sl-dropdown>`
               : html`
-                  ${this.viewState.route === "publicOrgProfile"
+                  ${this.viewState.route !== "login"
                     ? html`
                         <sl-button
                           size="small"
@@ -539,35 +540,6 @@ export class App extends BtrixElement {
         </nav>
       </div>
     `;
-  }
-
-  private renderSignUpLink() {
-    const { registrationEnabled, signUpUrl } = this.appState.settings || {};
-
-    if (registrationEnabled) {
-      return html`
-        <sl-button
-          href="/sign-up"
-          size="small"
-          @click="${(e: MouseEvent) => {
-            if (!this.navigate.handleAnchorClick(e)) {
-              return;
-            }
-            this.routeTo("/sign-up");
-          }}"
-        >
-          ${msg("Sign Up")}
-        </sl-button>
-      `;
-    }
-
-    if (signUpUrl) {
-      return html`
-        <sl-button href=${signUpUrl} size="small">
-          ${msg("Sign Up")}
-        </sl-button>
-      `;
-    }
   }
 
   private renderOrgs() {
@@ -742,6 +714,7 @@ export class App extends BtrixElement {
     `;
   }
 
+  // TODO move into separate component
   private renderPage() {
     switch (this.viewState.route) {
       case "signUp": {
@@ -824,6 +797,21 @@ export class App extends BtrixElement {
           class="w-full"
           slug=${this.viewState.params.slug}
         ></btrix-org-profile>`;
+
+      case "publicCollection": {
+        const { collectionId, collectionTab } = this.viewState.params;
+
+        if (!collectionId) {
+          break;
+        }
+
+        return html`<btrix-collection
+          class="w-full"
+          slug=${this.viewState.params.slug}
+          collectionId=${collectionId}
+          tab=${ifDefined(collectionTab || undefined)}
+        ></btrix-collection>`;
+      }
 
       case "accountSettings":
         return html`<btrix-account-settings
