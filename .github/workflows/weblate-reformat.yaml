@@ -2,7 +2,7 @@ name: Weblate Reformat
 on:
   pull_request_target:
     paths:
-      - 'frontend/xliff/**"
+      - 'frontend/xliff/**'
       - '.github/workflows/weblate-reformat.yaml'
 
     branches:
