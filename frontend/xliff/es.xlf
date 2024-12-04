@@ -434,8 +434,9 @@
       <trans-unit id="sf3146e744d4ea35e">
         <source>Crawl Size Limit</source>
       </trans-unit>
-      <trans-unit id="s09021407b59bfa0c">
+      <trans-unit id="s09021407b59bfa0c" xml:space="preserve">
         <source>GB</source>
+        <target state="translated">GB</target>
       </trans-unit>
       <trans-unit id="s82ec5790418d27f9">
         <source>Page Load Timeout</source>
