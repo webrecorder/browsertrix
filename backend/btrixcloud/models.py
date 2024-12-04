@@ -1311,6 +1311,10 @@ class PublicCollOut(BaseMongoModel):
     description: Optional[str] = None
     caption: Optional[str] = None
 
+    crawlCount: Optional[int] = 0
+    pageCount: Optional[int] = 0
+    totalSize: Optional[int] = 0
+
     dateEarliest: Optional[datetime] = None
     dateLatest: Optional[datetime] = None
 

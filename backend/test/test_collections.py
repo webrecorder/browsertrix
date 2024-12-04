@@ -18,9 +18,6 @@ UPDATED_CAPTION = "Updated caption"
 
 NON_PUBLIC_COLL_FIELDS = (
     "modified",
-    "crawlCount",
-    "pageCount",
-    "totalSize",
     "tags",
     "access",
     "homeUrlPageId",
@@ -880,6 +877,9 @@ def test_list_public_collections(
         assert collection["name"]
         assert collection["dateEarliest"]
         assert collection["dateLatest"]
+        assert collection["crawlCount"] > 0
+        assert collection["pageCount"] > 0
+        assert collection["totalSize"] > 0
 
     # Test non-existing slug - it should return a 404 but not reveal
     # whether or not an org exists with that slug
@@ -1038,6 +1038,9 @@ def test_list_public_colls_home_url_thumbnail():
         assert coll["resources"]
         assert coll["dateEarliest"]
         assert coll["dateLatest"]
+        assert coll["crawlCount"] > 0
+        assert coll["pageCount"] > 0
+        assert coll["totalSize"] > 0
 
         for field in NON_PUBLIC_COLL_FIELDS:
             assert field not in coll
@@ -1077,6 +1080,9 @@ def test_get_public_collection(default_org_id):
     assert coll["resources"]
     assert coll["dateEarliest"]
     assert coll["dateLatest"]
+    assert coll["crawlCount"] > 0
+    assert coll["pageCount"] > 0
+    assert coll["totalSize"] > 0
 
     for field in NON_PUBLIC_COLL_FIELDS:
         assert field not in coll
