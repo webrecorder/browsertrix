@@ -9,22 +9,26 @@
     /* eslint-disable @typescript-eslint/no-explicit-any */
 
     export const templates = {
-      's07018373ca29dfcb': `Cuota de minutos mensual alcanzó su capacidad`,
+      'h05165b87bf66fe02': html`¿Estás seguro de que deseas eliminar <strong>${0}</strong>?`,
+'h7ee8a6e551e702ba': html`${0} de ${1} `,
+'s0379fc73608ab971': `hecho`,
+'s07018373ca29dfcb': `Cuota de minutos mensual alcanzó su capacidad`,
 's0a11c2ffb8309d1a': `Error 404`,
 's0e6ebc9cdd39780b': `¿Eliminar colección?`,
 's0fbf6dc6a1966408': `Siguiente página`,
 's2099d599ac75e503': `Archivado`,
 's2df075aface0dab8': `Compartir archivos`,
+'s5697808ce744d508': str`Página actual, página ${0}`,
 's598446c4063cc093': `Error desconocido de API`,
+'s5e6b698a2ec87331': `Registrar`,
 's81a19821f3e4a3d2': `Reproducir`,
 's833f0d71eaa06739': `Elija ítems`,
+'sa17899510bcc6527': `gigabyte`,
 'sa3ce85ea4e96897c': `Cuota de almacenamiento alcanzó su capacidad`,
 'scbeafb2ef469257c': `Inicio de sesión requerido`,
 'se7bee6e9a9b5394c': `Privado`,
 'sf3ff78cc329d3528': `Página anterior`,
 'sfa480f50d480c290': `Compartible`,
-'h7ee8a6e551e702ba': html` ${0} of ${1} `,
-'s5697808ce744d508': str`Current page, page ${0}`,
 's24a06fd949e2d65b': `Back to`,
 'sc16e00a7a8b2fde2': `Back`,
 'crawls.plural.zero': `crawls`,
@@ -57,14 +61,11 @@
 'URLs.plural.few': `URLs`,
 'URLs.plural.many': `URLs`,
 'URLs.plural.other': `URLs`,
-'h05165b87bf66fe02': html`Are you sure you want to delete
-            <strong>${0}</strong>?`,
 's2ceb11be2290bb1b': `Cancel`,
 's317006269d0d1476': `Delete Collection`,
 's41203abb9f802a84': `Share Collection`,
 's54bbf34e3e18b439': `Make this collection shareable to enable a public viewing link.`,
 'seeb6295e19bc1400': `Collection is Shareable`,
-'s0379fc73608ab971': `Done`,
 's11161fdebb62dcc9': `Link to Share`,
 's4708cb91cd6afef0': `This collection can be viewed by anyone with the link.`,
 's0921b07ddda1f1b1': `Open in New Tab`,
@@ -109,14 +110,16 @@
 's8b6894f4bfec27c0': str`${0} characters over limit`,
 'se1f5b61904654dba': str`Please shorten this text to ${0} or fewer characters.`,
 's9f8c17b4d595bb2d': `Manage Billing`,
+'s02e734a81b23d11b': `Subscribe Now`,
 's5a38b8a21f9d9ab7': `Update Billing`,
 's0e65fdd42d12acb3': `Choose Plan`,
 'sbf7e4b6a4db03e2a': `Sorry, couldn't retrieve current plan at this time.`,
-'hac630f92c94217bc': html`Your plan will be canceled on
-                                  <sl-format-date lang="${0}" class="truncate" date="${1}" month="long" day="numeric" year="numeric">
-                                  </sl-format-date>`,
+'s17658c5f9a5e8a52': str`Your trial will end on ${0}`,
+'s0fd618c2a8596617': str`subscribe to keep your account`,
+'s5f5b3049f319a00a': str`Your plan will be canceled on ${0}`,
 'sc8fa6bd4dc311b6a': `Monthly quota`,
 's87d8a89eee6ca824': `Subscription status, features, and add-ons, if applicable.`,
+'s2ab646dc4c6667ec': str`To continue using Browsertrix at the end of your trial, click “${0}”.`,
 'sc93b55ebdda10016': str`You can view plan details, update payment methods, and update billing information by clicking “${0}”.`,
 'h1abcffb9335ebc6d': html`To upgrade to Pro, contact us at
                                 <a class="${0}" href="${1}" rel="noopener noreferrer nofollow">${2}</a>.`,
@@ -128,15 +131,15 @@
 's53a526d5c80c3e28': `Standard`,
 'scce75a19b57e0095': `Plus`,
 'sa45a194b58837e4f': `Active`,
+'sd95c2c71d3eaada7': `Free Trial`,
 's88297f67c4182ba0': `Paused, payment failed`,
 'sa30c4d3b566b6b1a': `Canceled`,
 's8e067719f45b0458': `Pro`,
 's8e49ef99717ff3d4': str`${0} concurrent ${1}`,
-'sd069593586fce913': str`${0} of crawl and QA analysis execution time`,
-'s1228a18c03355491': `Unlimited minutes`,
-'h9083eded7901e66a': html`${0}
-            storage`,
 'se9ef1815463f8000': `Unlimited`,
+'sdf3aa31f524a7300': str`${0} of crawling time`,
+'s1228a18c03355491': `Unlimited minutes`,
+'sab5061cf8c519285': str`${0} of disk space`,
 's1d6a13ef53c51ee9': str`${0} per crawl`,
 's41de0883966c23c8': `Unlimited pages`,
 's35ccaf9d67c65607': `Unlimited concurrent crawls`,
@@ -707,7 +710,6 @@
 's19bdda7f6e57db4d': `Shareable Collections`,
 's2d32831106560c5b': `Storage is Full`,
 'sd158a5fc0f062f18': `Available`,
-'sa17899510bcc6527': `gigabyte`,
 's30ae03472b93dc47': `Profiles`,
 'sd65ca9dddbbb3e26': `Execution Minutes Quota Reached`,
 's343f0419454a4243': `remaining`,
@@ -811,10 +813,10 @@
 's51691497846184b2': `Setup Guide`,
 'saa63c0c9ca0eac98': `You don't have permission to create a new Workflow.`,
 'sf255d6c5d5851c6e': `Workflows that use this browser profile will behave as if they have logged into the same websites and have the same web cookies.`,
-'habe03840abb41da5': html`
+'h594aac845e847983': html`
           It is highly recommended to create dedicated accounts to use when
           crawling. For details, refer to
-          <a class="text-primary hover:text-indigo-400" href="/docs/user-guide/browser-profiles/" target="_blank">
+          <a class="text-primary hover:text-primary-400" href="/docs/user-guide/browser-profiles/" target="_blank">
             ${0}</a>.
         `,
 'se058d83e4b3bad9e': `browser profile best practices`,
@@ -862,8 +864,6 @@
 'sd4973818277def8b': `Collections not found.`,
 's60a67fa21821066c': `Sorry, couldn't retrieve Collection details at this time.`,
 'sa1d4559f0fcc5219': `Remove file`,
-'s452f791e0ff6a13e': `Hide password`,
-'s2f7f35f6a5b733f5': `Show password`,
 'sfe7c07c43a065520': `Very weak password`,
 'sfe4bd9efa5b792aa': `Weak password`,
 'sddb80d4918810289': `Acceptably strong password`,
@@ -1044,6 +1044,7 @@
 's8a6f4e542c686466': `Only mine`,
 's13e37d380ccd180d': `No changes to save`,
 's8ad4a17ab2b75854': str`Adding ${0} ${1}`,
+'s582e36ff4a424786': str`Removing ${0} ${1}`,
 's4a0cbea3f0b22976': `Save Selection`,
 's18471d24ae3141ba': str`Successfully saved archived item selection.`,
 'sc9e34cb12aab0e3a': str`Updated.`,
@@ -1159,10 +1160,17 @@
 'h16be212de6638b6c': html`We suggest downloading your archived items before they
                   are deleted. To keep your plan and data, see
                   ${0}.`,
+'s1f1b3cea8b3a20f3': str`You have ${0} days left of your Browsertrix trial`,
+'se4dfda71fd51327d': `Your trial ends within one day`,
+'he8a019fc239da9d2': html`Your free trial ends on ${0}. To continue using
+                    Browsertrix, select <strong>Choose Plan</strong> in
+                    ${1}.`,
+'se5578c14db3c7b2b': str`Your web archives are always yours — you can download any archived items you'd like to keep
+                  before the trial ends!`,
 'sc3e0d8cbe688ccd5': str`Archiving will be disabled in ${0} days`,
 'sda57befc109a45f6': `Archiving will be disabled within one day`,
 's618b35a93b6fd392': str`Your subscription ends on ${0}. You will no longer be able to run crawls, upload files, create browser profiles, or create collections.`,
-'hf17c5369da37401b': html`To keep your plan and continue crawling, see
+'hc4152410e53b56c9': html`To choose a plan and continue using Browsertrix, see
                   ${0}.`,
 'sfb85ab2a166e4c99': str`Archiving is disabled for this org`,
 'habd962339c5b3e55': html`Your subscription has been paused due to payment failure.
@@ -1204,7 +1212,6 @@
 'sf1c2a4776e202435': `Sorry, couldn't create organization at this time.`,
 's8f392679ac01fa81': `Successfully signed up`,
 's694b98572e690336': `Click the link in the verification email we sent you to log in.`,
-'s5e6b698a2ec87331': `Sign up`,
 's67c74844cd95f5fe': `Sign in with password`,
 's7d44a141de0e2c9b': `Forgot your password?`,
 'sca974356724f8230': `Log In`,
@@ -1260,7 +1267,6 @@
 's95689a99051fa841': `Email address verified`,
 's8759f1186d757714': `Log in to continue.`,
 'sf151c44c3a52a448': `Enter new password`,
-'sf6c0a694575fb0a6': `Must be between 8-64 characters`,
 's8daf047a917f4cc4': str`Choose a strong password between ${0}-${1} characters.`,
 's16ba889483d4940e': `Change Password`,
 's3f35c026ab278525': `Resend password reset email?`,
@@ -1282,6 +1288,8 @@
 's57ade424d57c6edf': `Sent`,
 's686306cdb839fb8d': `Sending...`,
 's97ee1bd2cffede65': `Resend verification email`,
+'sb061ff5a347a296e': `Profile`,
+'s01a8d45397ec133b': `Security`,
 's523f5d97bb322419': `Account Settings`,
 's11b2e9ecce28690c': `Display Name`,
 's5fe9a19519c8d882': `Enter your full name, or another name to display in the orgs you belong to.`,
@@ -1291,6 +1299,11 @@
 'sfeb3a6ed33712701': `Needs verification`,
 'sde97d4363265e9aa': `Enter your current password`,
 's3490e2c8b9ec6ad2': `New password`,
+'s5f35a66624e4d770': `Translations are in beta`,
+'s3f3f33356a6d42ff': `Parts of the app may not be translated yet in some languages.`,
+'seb49ad0f81062f64': `Choose your preferred language for displaying Browsertrix in your browser.`,
+'sae935ffa510dc00f': `Help us translate Browsertrix.`,
+'s3b8e2d51d9b86e21': `Contribute to translations`,
 's9acc53189826a820': `Your name has been updated.`,
 's1354a4083fa2c43e': `Sorry, couldn't update name at this time.`,
 's44793ea339a0944b': `Your email has been updated.`,
@@ -1298,6 +1311,7 @@
 's903070bc971b67b6': `Your password has been updated.`,
 'se89dc7be93ca7754': `Please correct your current password and try again.`,
 's1cc6234f5ae1d6c8': `Sorry, couldn't update password at this time.`,
+'sfa66f095b5a35ccc': `Your language preference has been updated.`,
 's79e8cc71a5975b04': `Message`,
 's95aec54f13a08d1e': `User Guide`,
 'se20cc4e6ad4e27be': `Open in new window`,
