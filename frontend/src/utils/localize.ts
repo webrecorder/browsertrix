@@ -1,5 +1,9 @@
 /**
  * Manage translations and language-specific formatting throughout app
+ *
+ * @FIXME The Intl.DurationFormat polyfill is currently shimmed with webpack.ProvidePlugin
+ * to avoid encoding issues when importing the polyfill asynchronously in the test server.
+ * See https://github.com/web-dev-server/web-dev-server/issues/1
  */
 import { configureLocalization } from "@lit/localize";
 import uniq from "lodash/fp/uniq";
@@ -29,6 +33,10 @@ const defaultDateOptions: Intl.DateTimeFormatOptions = {
   minute: "2-digit",
 };
 
+const defaultDurationOptions: Intl.DurationFormatOptions = {
+  style: "narrow",
+};
+
 export class Localize {
   // Cache default formatters
   private readonly numberFormatter = new Map([
@@ -36,6 +44,12 @@ export class Localize {
   ]);
   private readonly dateFormatter = new Map([
     [sourceLocale, new Intl.DateTimeFormat(sourceLocale, defaultDateOptions)],
+  ]);
+  private readonly durationFormatter = new Map([
+    [
+      sourceLocale,
+      new Intl.DurationFormat(sourceLocale, defaultDurationOptions),
+    ],
   ]);
 
   get activeLanguage() {
@@ -117,6 +131,19 @@ export class Localize {
     }
 
     return formatter.format(date);
+  };
+
+  readonly duration = (
+    d: Intl.DurationType,
+    opts?: Intl.DurationFormatOptions,
+  ) => {
+    let formatter = this.durationFormatter.get(localize.activeLanguage);
+
+    if (opts || !formatter) {
+      formatter = new Intl.DurationFormat(localize.activeLanguage, opts);
+    }
+
+    return formatter.format(d);
   };
 
   private setTranslation(lang: LanguageCode) {
