@@ -41,14 +41,14 @@ jobs:
         working-directory: frontend
         run: yarn localize:extract
 
-      - name: Check localization build
+      - name: Rebuild frontend templates
         working-directory: frontend
         run: yarn localize:build
 
-      - name: Reformat localized strings
+      - name: Commit changes to upstream branch
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: Apply `localize:extract` changes
+          commit_message: Format Weblate Changes
           file_pattern: '**/*.xlf'
           skip_fetch: true
           skip_checkout: true
