@@ -10,3 +10,4 @@ import(/* webpackChunkName: "reset-password" */ "./reset-password");
 import(/* webpackChunkName: "users-invite" */ "./users-invite");
 import(/* webpackChunkName: "accept-invite" */ "./invite/accept");
 import(/* webpackChunkName: "account-settings" */ "./account-settings");
+import(/* webpackChunkName: "collections" */ "./collections");

@@ -376,6 +376,18 @@
   sl-drawer::part(footer) {
     border-top: 1px solid var(--sl-panel-border-color);
   }
+
+  sl-button.button-card {
+    @apply w-full;
+  }
+
+  sl-button.button-card::part(base) {
+    @apply min-h-20 justify-between leading-none;
+  }
+
+  sl-button.button-card::part(label) {
+    @apply flex flex-1 flex-col justify-center gap-2 text-left;
+  }
 }
 
 /* Following styles won't work with layers */

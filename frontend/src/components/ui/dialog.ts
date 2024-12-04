@@ -69,16 +69,19 @@ export class Dialog extends SlDialog {
   // optionally re-emitting them as "sl-inner-hide" events
   protected createRenderRoot() {
     const root = super.createRenderRoot();
-    root.addEventListener("sl-hide", (event: Event) => {
-      if (!(event.target instanceof Dialog)) {
-        event.stopPropagation();
-        if (this.reEmitInnerSlHideEvents) {
-          this.dispatchEvent(new CustomEvent("sl-inner-hide", { ...event }));
-        }
-      }
-    });
+    root.addEventListener("sl-hide", this.handleSlEvent);
+    root.addEventListener("sl-after-hide", this.handleSlEvent);
     return root;
   }
+
+  private readonly handleSlEvent = (event: Event) => {
+    if (!(event.target instanceof Dialog)) {
+      event.stopPropagation();
+      if (this.reEmitInnerSlHideEvents) {
+        this.dispatchEvent(new CustomEvent("sl-inner-hide", { ...event }));
+      }
+    }
+  };
 
   /**
    * Submit form using external buttons to bypass
