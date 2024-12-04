@@ -6,13 +6,8 @@ import { when } from "lit/directives/when.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { page } from "@/layouts/page";
+import type { PublicCollection } from "@/types/collection";
 import type { OrgData, OrgProfileData } from "@/types/org";
-
-type PublicCollection = {
-  name: string;
-  description: string;
-  thumbnailSrc: string;
-};
 
 @localized()
 @customElement("btrix-org-profile")
@@ -202,7 +197,7 @@ export class OrgProfile extends BtrixElement {
                 <div class="mb-4">
                   <img
                     class="aspect-video rounded-lg border border-cyan-100 bg-slate-50 object-cover shadow-md shadow-cyan-900/20 transition-shadow group-hover:shadow-sm"
-                    src=${collection.thumbnailSrc}
+                    src=""
                   />
                 </div>
                 <div class="text-pretty leading-relaxed">
