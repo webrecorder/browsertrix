@@ -49,6 +49,6 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: Format Weblate Changes
-          file_pattern: '**/*.xlf'
+          file_pattern: '**/*.xlf **/__generated__/locales/*.ts'
           skip_fetch: true
           skip_checkout: true
