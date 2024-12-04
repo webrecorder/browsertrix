@@ -60,6 +60,9 @@ else:
     OrgOps = StorageOps = EventWebhookOps = CrawlOps = object
 
 
+THUMBNAIL_MAX_SIZE = 2_000_000
+
+
 # ============================================================================
 class CollectionOps:
     """ops for working with named collections of crawls"""
@@ -717,7 +720,7 @@ class CollectionOps:
                 file_prep.add_chunk(chunk)
                 yield chunk
 
-        print("Collection Thumbnail Stream Upload Start", flush=True)
+        print("Collection thumbnail stream upload starting", flush=True)
 
         if not await self.storage_ops.do_upload_multipart(
             org,
@@ -725,12 +728,20 @@ class CollectionOps:
             stream_iter(),
             MIN_UPLOAD_PART_SIZE,
         ):
-            print("Collection Thumbnail Stream Upload Failed", flush=True)
+            print("Collection thumbnail stream upload failed", flush=True)
             raise HTTPException(status_code=400, detail="upload_failed")
 
-        print("Collection Thumbnail Stream Upload Complete", flush=True)
+        print("Collection thumbnail stream upload complete", flush=True)
 
         thumbnail_file = file_prep.get_image_file(org.storage)
+
+        if thumbnail_file.size > THUMBNAIL_MAX_SIZE:
+            print(
+                "Collection thumbnail stream upload failed: max size (2 MB) exceeded",
+                flush=True,
+            )
+            await self.storage_ops.delete_file_object(org, thumbnail_file)
+            raise HTTPException(status_code=400, detail="upload_failed")
 
         if coll.thumbnail:
             if not await self.storage_ops.delete_file_object(org, coll.thumbnail):
@@ -740,8 +751,7 @@ class CollectionOps:
 
         coll.thumbnail = thumbnail_file
 
-        # Update entire document to avoid bson.errors.InvalidDocument error
-        # with thumbnail
+        # Update entire document to avoid bson.errors.InvalidDocument exception
         await self.collections.find_one_and_update(
             {"_id": coll_id, "oid": org.id},
             {"$set": coll.to_dict()},
