@@ -19,9 +19,9 @@ import {
 } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import { CopyButton } from "@/components/ui/copy-button";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import { type SelectEvent } from "@/components/ui/search-combobox";
+import { ClipboardController } from "@/controllers/clipboard";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
 import { pageHeader } from "@/layouts/pageHeader";
 import scopeTypeLabels from "@/strings/crawl-workflows/scopeType";
@@ -625,9 +625,8 @@ export class WorkflowsList extends BtrixElement {
             </sl-menu-item>`,
       )}
       <sl-menu-item
-        @click=${() => {
-          CopyButton.copyToClipboard(workflow.tags.join(", "));
-        }}
+        @click=${() =>
+          ClipboardController.copyToClipboard(workflow.tags.join(", "))}
         ?disabled=${!workflow.tags.length}
       >
         <sl-icon name="tags" slot="prefix"></sl-icon>

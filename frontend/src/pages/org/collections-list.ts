@@ -3,6 +3,7 @@ import type { SlInput, SlMenuItem } from "@shoelace-style/shoelace";
 import Fuse from "fuse.js";
 import { html, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
+import { choose } from "lit/directives/choose.js";
 import { guard } from "lit/directives/guard.js";
 import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
@@ -12,8 +13,11 @@ import type { SelectNewDialogEvent } from ".";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { PageChangeEvent } from "@/components/ui/pagination";
+import { ClipboardController } from "@/controllers/clipboard";
 import type { CollectionSavedEvent } from "@/features/collections/collection-metadata-dialog";
+import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
 import { pageHeader } from "@/layouts/pageHeader";
+import { RouteNamespace } from "@/routes";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import {
   CollectionAccess,
@@ -104,6 +108,10 @@ export class CollectionsList extends BtrixElement {
     shouldSort: false,
     threshold: 0.2, // stricter; default is 0.6
   });
+
+  private getShareLink(collection: Collection) {
+    return `${window.location.protocol}//${window.location.hostname}${window.location.port ? `:${window.location.port}` : ""}/${collection.access === CollectionAccess.Private ? `${RouteNamespace.PrivateOrgs}/${this.orgSlug}/collections/view` : `${RouteNamespace.PublicOrgs}/${this.orgSlug}/collections`}/${collection.id}`;
+  }
 
   private get hasSearchStr() {
     return this.searchByValue.length >= MIN_SEARCH_LENGTH;
@@ -502,25 +510,58 @@ export class CollectionsList extends BtrixElement {
       class="cursor-pointer select-none rounded border shadow transition-all focus-within:bg-neutral-50 hover:bg-neutral-50 hover:shadow-none"
     >
       <btrix-table-cell class="p-3">
-        ${col.access === CollectionAccess.Unlisted
-          ? html`
-              <sl-tooltip content=${msg("Shareable")}>
+        ${choose(col.access, [
+          [
+            CollectionAccess.Private,
+            () => html`
+              <sl-tooltip
+                content=${SelectCollectionAccess.Options[
+                  CollectionAccess.Private
+                ].label}
+              >
+                <sl-icon
+                  class="inline-block align-middle text-neutral-600"
+                  name=${SelectCollectionAccess.Options[
+                    CollectionAccess.Private
+                  ].icon}
+                ></sl-icon>
+              </sl-tooltip>
+            `,
+          ],
+          [
+            CollectionAccess.Unlisted,
+            () => html`
+              <sl-tooltip
+                content=${SelectCollectionAccess.Options[
+                  CollectionAccess.Unlisted
+                ].label}
+              >
+                <sl-icon
+                  class="inline-block align-middle text-neutral-600"
+                  name=${SelectCollectionAccess.Options[
+                    CollectionAccess.Unlisted
+                  ].icon}
+                ></sl-icon>
+              </sl-tooltip>
+            `,
+          ],
+          [
+            CollectionAccess.Public,
+            () => html`
+              <sl-tooltip
+                content=${SelectCollectionAccess.Options[
+                  CollectionAccess.Public
+                ].label}
+              >
                 <sl-icon
                   class="inline-block align-middle text-success-600"
-                  name="people-fill"
-                  label=${msg("Shareable Collection")}
+                  name=${SelectCollectionAccess.Options[CollectionAccess.Public]
+                    .icon}
                 ></sl-icon>
               </sl-tooltip>
-            `
-          : html`
-              <sl-tooltip content=${msg("Private")}>
-                <sl-icon
-                  class="inline-block align-middle"
-                  name="eye-slash-fill"
-                  label=${msg("Private Collection")}
-                ></sl-icon>
-              </sl-tooltip>
-            `}
+            `,
+          ],
+        ])}
       </btrix-table-cell>
       <btrix-table-cell rowClickTarget="a">
         <a
@@ -579,28 +620,34 @@ export class CollectionsList extends BtrixElement {
                   style="--sl-color-neutral-700: var(--success)"
                   @click=${() => void this.onTogglePublic(col, true)}
                 >
-                  <sl-icon name="people-fill" slot="prefix"></sl-icon>
-                  ${msg("Make Shareable")}
+                  <sl-icon
+                    name=${SelectCollectionAccess.Options.unlisted.icon}
+                    slot="prefix"
+                  ></sl-icon>
+                  ${msg("Enable Share Link")}
                 </sl-menu-item>
               `
             : html`
-                <sl-menu-item style="--sl-color-neutral-700: var(--success)">
-                  <sl-icon name="box-arrow-up-right" slot="prefix"></sl-icon>
-                  <a
-                    target="_blank"
-                    slot="prefix"
-                    href="https://replayweb.page?source=${this.getPublicReplayURL(
-                      col,
-                    )}"
-                  >
-                    Visit Shareable URL
-                  </a>
+                <sl-menu-item
+                  style="--sl-color-neutral-700: var(--success)"
+                  @click=${() => {
+                    ClipboardController.copyToClipboard(this.getShareLink(col));
+                    this.notify.toast({
+                      message: msg("Link copied"),
+                    });
+                  }}
+                >
+                  <sl-icon name="copy" slot="prefix"></sl-icon>
+                  ${msg("Copy Share Link")}
                 </sl-menu-item>
                 <sl-menu-item
                   style="--sl-color-neutral-700: var(--warning)"
                   @click=${() => void this.onTogglePublic(col, false)}
                 >
-                  <sl-icon name="eye-slash" slot="prefix"></sl-icon>
+                  <sl-icon
+                    name=${SelectCollectionAccess.Options.private.icon}
+                    slot="prefix"
+                  ></sl-icon>
                   ${msg("Make Private")}
                 </sl-menu-item>
               `}
