@@ -27,7 +27,8 @@ jobs:
           DOCS_SOURCE_URL: https://app.browsertrix.com
           ENABLE_ANALYTICS: true
 
-      - name: Build Docs
+      - name: Build & Deploy Docs
         run: cd frontend/docs; mkdocs gh-deploy --force
         env:
+          SITE_URL: https://docs.browsertrix.com
           ENABLE_ANALYTICS: true
