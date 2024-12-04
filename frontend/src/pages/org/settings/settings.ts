@@ -110,6 +110,31 @@ export class OrgSettings extends BtrixElement {
     }
   }
 
+  // TODO (emma) maybe upstream this into BtrixElement?
+  handleHashChange = (e: HashChangeEvent) => {
+    const { hash } = new URL(e.newURL);
+    if (!hash) return;
+
+    const el = this.shadowRoot?.querySelector<HTMLElement>(hash);
+
+    el?.focus();
+    el?.scrollIntoView({
+      behavior: window.matchMedia("prefers-reduced-motion: reduce").matches
+        ? "instant"
+        : "smooth",
+    });
+  };
+
+  connectedCallback() {
+    super.connectedCallback();
+    window.addEventListener("hashchange", this.handleHashChange);
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    window.removeEventListener("hashchange", this.handleHashChange);
+  }
+
   render() {
     return html` ${pageHeader(
         msg("Org Settings"),
@@ -257,6 +282,7 @@ export class OrgSettings extends BtrixElement {
             [
               html`
                 <sl-input
+                  id="org-url"
                   class="hide-required-content mb-2 part-[input]:pl-0"
                   name="orgSlug"
                   size="small"
@@ -339,12 +365,15 @@ export class OrgSettings extends BtrixElement {
     if (!this.org?.users) return;
 
     const columnWidths = ["1fr", "2fr", "auto", "min-content"];
-    const rows = Object.entries(this.org.users).map(([_id, user]) => [
-      user.name,
-      user.email,
-      this.renderUserRoleSelect(user),
-      this.renderRemoveMemberButton(user),
-    ]);
+    const rows = Object.entries(this.org.users).map(
+      ([_id, user]) =>
+        [
+          user.name,
+          user.email,
+          this.renderUserRoleSelect(user),
+          this.renderRemoveMemberButton(user),
+        ] as const,
+    );
     return html`
       <section>
         <btrix-data-table
