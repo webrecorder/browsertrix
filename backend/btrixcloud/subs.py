@@ -54,6 +54,8 @@ external_subs_app_api_key = os.environ.get("BTRIX_SUBS_APP_API_KEY", "")
 class SubOps:
     """API for managing subscriptions. Only enabled if billing is enabled"""
 
+    # pylint: disable=too-many-positional-arguments
+
     org_ops: OrgOps
     user_manager: UserManager
 
@@ -300,7 +302,7 @@ class SubOps:
         return SubscriptionPortalUrlResponse()
 
 
-# pylint: disable=invalid-name,too-many-arguments
+# pylint: disable=invalid-name,too-many-arguments,too-many-positional-arguments
 def init_subs_api(
     app,
     mdb,

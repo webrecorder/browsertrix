@@ -17,7 +17,7 @@ from .models import CreateReplicaJob, DeleteReplicaJob, Organization, InvitePend
 from .utils import is_bool, get_origin
 
 
-# pylint: disable=too-few-public-methods, too-many-instance-attributes
+# pylint: disable=too-few-public-methods, too-many-instance-attributes, too-many-positional-arguments
 class EmailSender:
     """SMTP Email Sender"""
 
