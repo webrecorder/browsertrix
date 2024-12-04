@@ -12,7 +12,7 @@
       </trans-unit>
       <trans-unit xml:space="preserve" id="sa3ce85ea4e96897c">
         <source>Storage quota reached</source>
-        <target state="translated">Cuota de almacenamiento alcanzó su capacidad</target>
+        <target state="translated">Cuota de almacenamiento alcanzada</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s07018373ca29dfcb">
         <source>Monthly execution minutes quota reached</source>
@@ -20,15 +20,15 @@
       </trans-unit>
       <trans-unit xml:space="preserve" id="s0a11c2ffb8309d1a">
         <source>Not found</source>
-        <target state="translated">Extraviado</target>
+        <target state="translated">No encontrado</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="sf3ff78cc329d3528">
         <source>Previous</source>
-        <target state="translated">Página anterior</target>
+        <target state="translated">Anterior</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s0fbf6dc6a1966408">
         <source>Next</source>
-        <target state="translated">Siguiente página</target>
+        <target state="translated">Siguiente</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="h7ee8a6e551e702ba">
         <source> <x equiv-text="${this.renderInput()}" id="0"/> of <x equiv-text="${this.pages} " id="1"/></source>
@@ -536,11 +536,13 @@
         <source>Block ads by domain</source>
         <target state="translated">Bloquear anuncios por dominio</target>
       </trans-unit>
-      <trans-unit id="s67a7f67e5f3794a3">
+      <trans-unit id="s67a7f67e5f3794a3" xml:space="preserve">
         <source>User Agent</source>
+        <target state="translated">Agente de usuario</target>
       </trans-unit>
-      <trans-unit id="s79bcc15b91f1d3e6">
+      <trans-unit id="s79bcc15b91f1d3e6" xml:space="preserve">
         <source>Default: Browser User Agent</source>
+        <target state="translated">Predeterminado: Agente de usuario del navegador</target>
       </trans-unit>
       <trans-unit id="s031945e67717bf79" xml:space="preserve">
         <source>Save Changes</source>
@@ -567,8 +569,9 @@
       <trans-unit id="sbbd1f0c4c2032472">
         <source>Crawling Defaults</source>
       </trans-unit>
-      <trans-unit id="s121cd82dcf118d06">
+      <trans-unit id="s121cd82dcf118d06" xml:space="preserve">
         <source>Org Settings</source>
+        <target state="translated">Ajustes de la organización</target>
       </trans-unit>
       <trans-unit id="h9c83f117a7e3a93f">
         <source>Viewing <x equiv-text="&lt;strong class=&quot;font-medium&quot;&gt;${userOrg.name}&lt;/strong&gt;" id="0"/></source>
@@ -588,8 +591,9 @@
       <trans-unit id="se2b0d9785502bf55">
         <source>Default settings for all new crawl workflows. Existing workflows will not be affected.</source>
       </trans-unit>
-      <trans-unit id="sde7ccf17ea362380">
+      <trans-unit id="sde7ccf17ea362380" xml:space="preserve">
         <source>Org Name</source>
+        <target state="translated">Nombre de la organización</target>
       </trans-unit>
       <trans-unit id="s734b679e69b9fe4e">
         <source>My Organization</source>
@@ -733,8 +737,9 @@
       <trans-unit id="sdf3cd4c01143a4c5">
         <source>View and edit org defaults</source>
       </trans-unit>
-      <trans-unit id="s2afc9a717c161490">
+      <trans-unit id="s2afc9a717c161490" xml:space="preserve">
         <source>Invite</source>
+        <target state="translated">Invitar</target>
       </trans-unit>
       <trans-unit id="s2017def625ae7fbb" xml:space="preserve">
         <source>Sorry, couldn't retrieve pending invites at this time.</source>
@@ -1290,8 +1295,9 @@
         <source>No schedule</source>
         <target state="translated">Sin programar</target>
       </trans-unit>
-      <trans-unit id="s1ea30180f8c26a81">
+      <trans-unit id="s1ea30180f8c26a81" xml:space="preserve">
         <source>Show Only Mine</source>
+        <target state="translated">Mostrar solo los míos</target>
       </trans-unit>
       <trans-unit id="sd1a36c09d6bd4f5f">
         <source>Search all Workflows by name or Crawl Start URL</source>
@@ -1803,8 +1809,9 @@
       <trans-unit id="s3cc68dd968072be8">
         <source>Copy Crawl ID</source>
       </trans-unit>
-      <trans-unit id="s4a0475dbb07f0f0d">
+      <trans-unit id="s4a0475dbb07f0f0d" xml:space="preserve">
         <source>No matching items found.</source>
+        <target state="translated">No se han encontrado elementos que coincidan.</target>
       </trans-unit>
       <trans-unit id="s2b93a67511243888">
         <source>No archived items yet.</source>
@@ -1890,8 +1897,9 @@
         <source>Interactive browser session timed out due to inactivity.</source>
         <target state="translated">La sesión interactiva del navegador ha expirado debido a la inactividad.</target>
       </trans-unit>
-      <trans-unit id="sa59811ddaf1545bb">
+      <trans-unit id="sa59811ddaf1545bb" xml:space="preserve">
         <source>Load New Browser</source>
+        <target state="translated">Cargar un nuevo navegador</target>
       </trans-unit>
       <trans-unit id="scc36ba8b82872b7f" xml:space="preserve">
         <source>Connection to interactive browser lost. Waiting to reconnect...</source>
@@ -2160,8 +2168,9 @@
       <trans-unit id="s4baded305e206aa6">
         <source>Good:</source>
       </trans-unit>
-      <trans-unit id="sf6f647260bc3214a">
+      <trans-unit id="sf6f647260bc3214a" xml:space="preserve">
         <source>Success (2xx) and Redirection (3xx) status codes</source>
+        <target state="translated">Códigos de estado Satisfactorio (2xx) y Redirecciones (3xx)</target>
       </trans-unit>
       <trans-unit id="sc156a7a7a89f87c6">
         <source>Bad:</source>
@@ -2238,8 +2247,9 @@
         <source>Text Match</source>
         <target state="translated">Coincidencia de texto</target>
       </trans-unit>
-      <trans-unit id="s2344bb018c2ade99">
+      <trans-unit id="s2344bb018c2ade99" xml:space="preserve">
         <source>Showing all <x equiv-text="${this.localize.number(this.totalPages)}" id="0"/> pages</source>
+        <target state="translated">Mostrando las <x id="0" equiv-text="${this.localize.number(this.totalPages)}"/> páginas</target>
       </trans-unit>
       <trans-unit id="sd2afbd920020fe6d" xml:space="preserve">
         <source>Showing <x equiv-text="${this.localize.number(total)}" id="0"/> of <x equiv-text="${this.localize.number(this.totalPages)}" id="1"/> pages</source>
@@ -2273,8 +2283,9 @@
         <source>Commented</source>
         <target state="translated">Comentado</target>
       </trans-unit>
-      <trans-unit id="s94116b0928ce71f0">
+      <trans-unit id="s94116b0928ce71f0" xml:space="preserve">
         <source>QA rating</source>
+        <target state="translated">Valoración de control de calidad</target>
       </trans-unit>
       <trans-unit id="se5d01bef737e2e3a" xml:space="preserve">
         <source>Approve</source>
@@ -2407,8 +2418,9 @@
       <trans-unit id="s388e286f3911e3cf">
         <source>Toggle screenshot wipe view</source>
       </trans-unit>
-      <trans-unit id="s7381233b8fceb3a6">
+      <trans-unit id="s7381233b8fceb3a6" xml:space="preserve">
         <source>Loading page</source>
+        <target state="translated">Página de carga</target>
       </trans-unit>
       <trans-unit id="s4f5aff57a099f200">
         <source>Navigation prevented</source>
@@ -2537,8 +2549,9 @@
         <source>Block Ads by Domain</source>
         <target state="translated">Bloquear anuncios por dominio</target>
       </trans-unit>
-      <trans-unit id="sf9b685a4616f291f">
+      <trans-unit id="sf9b685a4616f291f" xml:space="preserve">
         <source>Browser User Agent (default)</source>
+        <target state="translated">Agente de usuario de navegador (predeterminado)</target>
       </trans-unit>
       <trans-unit id="s78a3454dadf068cf">
         <source>Crawl Schedule Type</source>
@@ -2775,14 +2788,17 @@
         <source>Page not found</source>
         <target state="translated">Página no encontrada</target>
       </trans-unit>
-      <trans-unit id="s492e6fe0b20b7ebd">
+      <trans-unit id="s492e6fe0b20b7ebd" xml:space="preserve">
         <source>Beta feature</source>
+        <target state="translated">Función en fase beta</target>
       </trans-unit>
-      <trans-unit id="s2f4b78e72a3aa936">
+      <trans-unit id="s2f4b78e72a3aa936" xml:space="preserve">
         <source>This part of Browsertrix is in beta!</source>
+        <target state="translated">¡Esta parte de Browsertrix se encuentra en beta!</target>
       </trans-unit>
-      <trans-unit id="sd5498363c7a9c870">
+      <trans-unit id="sd5498363c7a9c870" xml:space="preserve">
         <source>Parts might change or be broken. Please share your thoughts with us!</source>
+        <target state="translated">Algunas partes podrían cambiar o no funcionar. Por favor, ¡comparta su opinión con nosotros!</target>
       </trans-unit>
       <trans-unit id="sa0b562a796b69487" xml:space="preserve">
         <source>Beta</source>
@@ -2837,8 +2853,9 @@
         <source>User is already registered, but with a different password.</source>
         <target state="translated">El usuario ya está registrado, pero con una contraseña diferente.</target>
       </trans-unit>
-      <trans-unit id="s0e9aa8d89165481b">
+      <trans-unit id="s0e9aa8d89165481b" xml:space="preserve">
         <source>Not applicable</source>
+        <target state="translated">No procede</target>
       </trans-unit>
       <trans-unit id="s0382d73823585617" xml:space="preserve">
         <source><x equiv-text="${typeLabel}" id="0"/>: <x equiv-text="${crawlStatus.label}" id="1"/></source>
@@ -2857,8 +2874,9 @@
         <source>Last run started on <x equiv-text="${localize.date(lastQAStarted)}" id="0"/></source>
         <target state="translated">La última ejecución se inició el <x id="0" equiv-text="${localize.date(lastQAStarted)}"/></target>
       </trans-unit>
-      <trans-unit id="sa0ffc3feac61fcc4">
+      <trans-unit id="sa0ffc3feac61fcc4" xml:space="preserve">
         <source>Rated <x equiv-text="${this.item.reviewStatus}" id="0"/> / <x equiv-text="${ReviewStatus.Excellent}" id="1"/></source>
+        <target state="translated">Valorado <x id="0" equiv-text="${this.item.reviewStatus}"/> / <x id="1" equiv-text="${ReviewStatus.Excellent}"/></target>
       </trans-unit>
       <trans-unit id="s4e31ba44d4056425">
         <source>No QA review submitted</source>
@@ -2998,8 +3016,9 @@
         <source>https://example.com</source>
         <target state="translated">https://example.com</target>
       </trans-unit>
-      <trans-unit id="s4efd5471466a0988">
+      <trans-unit id="s4efd5471466a0988" xml:space="preserve">
         <source>Start Browsing</source>
+        <target state="translated">Comenzar a navegar</target>
       </trans-unit>
       <trans-unit id="s726c436f1051f770">
         <source>Starting up browser for new profile...</source>
@@ -3411,8 +3430,9 @@
         <source>Execution time used that is billable to the current month of the plan</source>
         <target state="translated">Tiempo de ejecución usado que se factura al mes actual del plan</target>
       </trans-unit>
-      <trans-unit id="s599754097e848667">
+      <trans-unit id="s599754097e848667" xml:space="preserve">
         <source>Rollover Execution Time</source>
+        <target state="translated">Prorrogar tiempo de ejecución</target>
       </trans-unit>
       <trans-unit id="s9ca038237c7e3f8a" xml:space="preserve">
         <source>Additional execution time used, of which any extra minutes will roll over to next month as billable time</source>
@@ -3422,8 +3442,9 @@
         <source>Gifted Execution Time</source>
         <target state="translated">Tiempo de ejecución regalado</target>
       </trans-unit>
-      <trans-unit id="s39a11e7a4beab91d">
+      <trans-unit id="s39a11e7a4beab91d" xml:space="preserve">
         <source>Execution time used that is free of charge</source>
+        <target state="translated">Tiempo de ejecución gratuito usado</target>
       </trans-unit>
       <trans-unit id="s43b124b5dcec3779" xml:space="preserve">
         <source>Excellent</source>
@@ -3571,8 +3592,9 @@
       <trans-unit id="h406ea2eff53edcfb">
         <source>You’ve been invited to join the organization <x equiv-text="&lt;span class=&quot;font-medium text-primary&quot;&gt;${orgName}&lt;/span&gt;" id="0"/> on Browsertrix.</source>
       </trans-unit>
-      <trans-unit id="s07cee0cdf942df03">
+      <trans-unit id="s07cee0cdf942df03" xml:space="preserve">
         <source>Step 1 complete</source>
+        <target state="translated">Completar paso 1</target>
       </trans-unit>
       <trans-unit id="s4b321ea46428acc4" xml:space="preserve">
         <source>Step 1</source>
@@ -4269,8 +4291,9 @@
       <trans-unit id="h594aac845e847983">
         <source>It is highly recommended to create dedicated accounts to use when crawling. For details, refer to <x equiv-text="&lt;a class=&quot;text-primary hover:text-primary-400&quot; href=&quot;/docs/user-guide/browser-profiles/&quot; target=&quot;_blank&quot;&gt;&#10;            ${msg(&quot;browser profile best practices&quot;)}&lt;/a&gt;" id="0"/>. </source>
       </trans-unit>
-      <trans-unit id="s5f35a66624e4d770">
+      <trans-unit id="s5f35a66624e4d770" xml:space="preserve">
         <source>Translations are in beta</source>
+        <target state="translated">Las traducciones están en fase beta</target>
       </trans-unit>
       <trans-unit id="s3f3f33356a6d42ff" xml:space="preserve">
         <source>Parts of the app may not be translated yet in some languages.</source>
