@@ -1,6 +1,6 @@
 # View Usage Stats and Quotas
 
-The **Overview** dashboard delivers key statistics about the org's resource usage. You can also create crawl workflows, upload archived items, create collections, and create browser profiles through the _Create New ..._ shortcut.
+Your **Dashboard** delivers key statistics about the org's resource usage. You can also create crawl workflows, upload archived items, create collections, and create browser profiles through the _Create New ..._ shortcut.
 
 ## Storage
 
