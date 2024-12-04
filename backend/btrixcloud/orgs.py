@@ -71,7 +71,7 @@ from .models import (
     UpdatedResponse,
     AddedResponse,
     AddedResponseId,
-    SuccessResponse,
+    SuccessResponseId,
     OrgInviteResponse,
     OrgAcceptInviteResponse,
     OrgDeleteInviteResponse,
@@ -115,6 +115,7 @@ class OrgOps:
 
     invites: InviteOps
     user_manager: UserManager
+    register_to_org_id: Optional[str]
     base_crawl_ops: BaseCrawlOps
     default_primary: Optional[StorageRef]
 
@@ -295,7 +296,7 @@ class OrgOps:
         """Get default organiation for new user registration, or default org"""
         if self.register_to_org_id:
             try:
-                await self.get_org_by_id(UUID(self.register_to_org_id))
+                return await self.get_org_by_id(UUID(self.register_to_org_id))
             except HTTPException as exc:
                 raise HTTPException(
                     status_code=500, detail="default_register_org_not_found"
@@ -1588,10 +1589,13 @@ def init_orgs_api(
         return {"updated": True}
 
     @router.post(
-        "/recalculate-storage", tags=["organizations"], response_model=SuccessResponse
+        "/recalculate-storage",
+        tags=["organizations"],
+        response_model=SuccessResponseId,
     )
     async def recalculate_org_storage(org: Organization = Depends(org_owner_dep)):
-        return await ops.recalculate_storage(org)
+        job_id = await ops.background_job_ops.create_recalculate_org_stats_job(org)
+        return {"success": True, "id": job_id}
 
     @router.post("/invite", tags=["invites"], response_model=OrgInviteResponse)
     async def invite_user_to_org(

@@ -68,7 +68,7 @@ export class CrawlStatus extends TailwindElement {
 
     switch (state) {
       case "starting":
-        color = "var(--sl-color-purple-600)";
+        color = "var(--sl-color-violet-600)";
         icon = html`<sl-icon
           name="dot"
           library="app"
@@ -81,7 +81,7 @@ export class CrawlStatus extends TailwindElement {
 
       case "waiting_capacity":
       case "waiting_org_limit":
-        color = "var(--sl-color-purple-600)";
+        color = "var(--sl-color-violet-600)";
         icon = html`<sl-icon
           name="hourglass-split"
           class="animatePulse"
@@ -107,7 +107,7 @@ export class CrawlStatus extends TailwindElement {
         break;
 
       case "stopping":
-        color = "var(--sl-color-purple-600)";
+        color = "var(--sl-color-violet-600)";
         icon = html`<sl-icon
           name="dot"
           library="app"
@@ -119,7 +119,7 @@ export class CrawlStatus extends TailwindElement {
         break;
 
       case "pending-wait":
-        color = "var(--sl-color-purple-600)";
+        color = "var(--sl-color-violet-600)";
         icon = html`<sl-icon
           name="dot"
           library="app"
@@ -131,7 +131,7 @@ export class CrawlStatus extends TailwindElement {
         break;
 
       case "generate-wacz":
-        color = "var(--sl-color-purple-600)";
+        color = "var(--sl-color-violet-600)";
         icon = html`<sl-icon
           name="dot"
           library="app"
@@ -143,7 +143,7 @@ export class CrawlStatus extends TailwindElement {
         break;
 
       case "uploading-wacz":
-        color = "var(--sl-color-purple-600)";
+        color = "var(--sl-color-violet-600)";
         icon = html`<sl-icon
           name="dot"
           library="app"

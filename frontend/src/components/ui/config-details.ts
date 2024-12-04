@@ -1,14 +1,13 @@
 import { localized, msg, str } from "@lit/localize";
 import ISO6391 from "iso-639-1";
-import { nothing } from "lit";
+import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import { html as staticHtml, unsafeStatic } from "lit/static-html.js";
 import capitalize from "lodash/fp/capitalize";
 import RegexColorize from "regex-colorize";
 
-import { RelativeDuration } from "./relative-duration";
-
+import { BtrixElement } from "@/classes/BtrixElement";
 import type { CrawlConfig, Seed, SeedConfig } from "@/pages/org/types";
 import scopeTypeLabel from "@/strings/crawl-workflows/scopeType";
 import sectionStrings from "@/strings/crawl-workflows/section";
@@ -18,8 +17,6 @@ import { isApiError } from "@/utils/api";
 import { getAppSettings } from "@/utils/app";
 import { DEPTH_SUPPORTED_SCOPES, isPageScopeType } from "@/utils/crawler";
 import { humanizeSchedule } from "@/utils/cron";
-import LiteElement, { html } from "@/utils/LiteElement";
-import { formatNumber } from "@/utils/localization";
 import { pluralOf } from "@/utils/pluralize";
 
 /**
@@ -32,7 +29,7 @@ import { pluralOf } from "@/utils/pluralize";
  */
 @localized()
 @customElement("btrix-config-details")
-export class ConfigDetails extends LiteElement {
+export class ConfigDetails extends BtrixElement {
   @property({ type: Object })
   crawlConfig?: CrawlConfig;
 
@@ -70,7 +67,7 @@ export class ConfigDetails extends LiteElement {
       fallbackValue?: number,
     ) => {
       if (valueSeconds) {
-        return RelativeDuration.humanize(valueSeconds * 1000, {
+        return this.localize.humanizeDuration(valueSeconds * 1000, {
           verbose: true,
         });
       }
@@ -81,7 +78,7 @@ export class ConfigDetails extends LiteElement {
         } else if (fallbackValue === 0) {
           value = msg("0 seconds");
         } else {
-          value = RelativeDuration.humanize(fallbackValue * 1000, {
+          value = this.localize.humanizeDuration(fallbackValue * 1000, {
             verbose: true,
           });
         }
@@ -138,12 +135,12 @@ export class ConfigDetails extends LiteElement {
               const maxPages = primarySeed?.limit ?? seedsConfig?.limit;
 
               if (maxPages) {
-                return `${formatNumber(+maxPages)} ${pluralOf("pages", +maxPages)}`;
+                return `${this.localize.number(+maxPages)} ${pluralOf("pages", +maxPages)}`;
               }
 
               if (this.orgDefaults?.maxPagesPerCrawl) {
                 return html`<span class="text-neutral-400">
-                  ${formatNumber(this.orgDefaults.maxPagesPerCrawl)}
+                  ${this.localize.number(this.orgDefaults.maxPagesPerCrawl)}
                   ${pluralOf("pages", this.orgDefaults.maxPagesPerCrawl)}
                   ${msg("(default)")}</span
                 >`;
@@ -209,7 +206,7 @@ export class ConfigDetails extends LiteElement {
                   href=${`/orgs/${crawlConfig!.oid}/browser-profiles/profile/${
                     crawlConfig!.profileid
                   }`}
-                  @click=${this.navLink}
+                  @click=${this.navigate.link}
                 >
                   ${crawlConfig?.profileName}
                 </a>`,
@@ -311,7 +308,7 @@ export class ConfigDetails extends LiteElement {
                           html`<sl-tag class="mr-2 mt-1" variant="neutral">
                             ${coll.name}
                             <span class="font-monostyle pl-1 text-xs">
-                              (${formatNumber(coll.crawlCount)}
+                              (${this.localize.number(coll.crawlCount)}
                               ${pluralOf("items", coll.crawlCount)})
                             </span>
                           </sl-tag>`,
@@ -428,7 +425,7 @@ export class ConfigDetails extends LiteElement {
                   const seedUrl = typeof seed === "string" ? seed : seed.url;
                   return html`<li>
                     <a
-                      class="text-primary hover:text-indigo-400"
+                      class="text-primary hover:text-primary-400"
                       href="${seedUrl}"
                       target="_blank"
                       rel="noreferrer"
@@ -483,7 +480,7 @@ export class ConfigDetails extends LiteElement {
       try {
         await this.getCollections();
       } catch (e) {
-        this.notify({
+        this.notify.toast({
           message:
             isApiError(e) && e.statusCode === 404
               ? msg("Collections not found.")
@@ -503,7 +500,7 @@ export class ConfigDetails extends LiteElement {
 
     if (this.crawlConfig?.autoAddCollections && orgId) {
       for (const collectionId of this.crawlConfig.autoAddCollections) {
-        const data = await this.apiFetch<Collection | undefined>(
+        const data = await this.api.fetch<Collection | undefined>(
           `/orgs/${orgId}/collections/${collectionId}`,
         );
         if (data) {

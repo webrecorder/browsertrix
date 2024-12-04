@@ -1,6 +1,7 @@
 import { html, nothing } from "lit";
+import { ifDefined } from "lit/directives/if-defined.js";
 
-import { getLocale } from "./localization";
+import localize from "./localize";
 
 /**
  * Returns either `nothing`, or hours-minutes-seconds wrapped in parens.
@@ -90,7 +91,7 @@ export const humanizeExecutionSeconds = (
     displaySeconds = false,
     round = "up",
   } = options || {};
-  const locale = getLocale();
+  const locale = localize.activeLanguage;
   const minutes =
     round === "down" ? Math.floor(seconds / 60) : Math.ceil(seconds / 60);
 
@@ -109,6 +110,8 @@ export const humanizeExecutionSeconds = (
   });
 
   const details = humanizeSeconds(seconds, locale, displaySeconds);
+  const compactMinutes = compactMinuteFormatter.format(minutes);
+  const fullMinutes = longMinuteFormatter.format(minutes);
 
   // if the time is less than an hour and lines up exactly on the minute, don't render the details.
   const detailsRelevant = displaySeconds
@@ -119,13 +122,17 @@ export const humanizeExecutionSeconds = (
 
   switch (style) {
     case "long":
-      return html`<span title="${longMinuteFormatter.format(minutes)}">
-          ${compactMinuteFormatter.format(minutes)}</span
-        >${formattedDetails}`;
+      return html`<span
+        title="${ifDefined(
+          fullMinutes !== compactMinutes ? fullMinutes : undefined,
+        )}"
+      >
+        ${compactMinutes}${formattedDetails}</span
+      >`;
     case "short":
       return html`<span
         title="${longMinuteFormatter.format(minutes)}${formattedDetails}"
-        >${compactMinuteFormatter.format(minutes)}</span
+        >${compactMinutes}</span
       >`;
   }
 };

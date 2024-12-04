@@ -12,14 +12,13 @@ import { columns } from "@/layouts/columns";
 import { SubscriptionStatus, type BillingPortal } from "@/types/billing";
 import type { OrgData, OrgQuotas } from "@/types/org";
 import { humanizeSeconds } from "@/utils/executionTimeFormatter";
-import { formatNumber, getLocale } from "@/utils/localization";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
 
 const linkClassList = tw`transition-color text-primary hover:text-primary-500`;
 const manageLinkClasslist = clsx(
   linkClassList,
-  tw`flex items-center gap-2 p-2 text-sm font-semibold leading-none`,
+  tw`flex cursor-pointer items-center gap-2 p-2 text-sm font-semibold leading-none`,
 );
 
 @localized()
@@ -42,6 +41,10 @@ export class OrgSettingsBilling extends BtrixElement {
     let label = msg("Manage Billing");
 
     switch (subscription.status) {
+      case SubscriptionStatus.Trialing: {
+        label = msg("Subscribe Now");
+        break;
+      }
       case SubscriptionStatus.PausedPaymentFailed: {
         label = msg("Update Billing");
         break;
@@ -113,33 +116,47 @@ export class OrgSettingsBilling extends BtrixElement {
                 </div>
                 ${when(
                   this.org,
-                  (org) =>
-                    org.subscription?.futureCancelDate
-                      ? html`
-                          <div
-                            class="mb-3 flex items-center gap-2 border-b pb-3 text-neutral-500"
-                          >
-                            <sl-icon
-                              name="info-circle"
-                              class="text-base"
-                            ></sl-icon>
-                            <span>
-                              ${msg(
-                                html`Your plan will be canceled on
-                                  <sl-format-date
-                                    lang=${getLocale()}
-                                    class="truncate"
-                                    date=${org.subscription.futureCancelDate}
-                                    month="long"
-                                    day="numeric"
-                                    year="numeric"
-                                  >
-                                  </sl-format-date>`,
+                  (org) => {
+                    if (!org.subscription?.futureCancelDate) {
+                      return nothing;
+                    }
+
+                    const futureCancelDate = this.localize.date(
+                      org.subscription.futureCancelDate,
+                      {
+                        month: "long",
+                        day: "numeric",
+                        year: "numeric",
+                      },
+                    );
+
+                    return html`
+                      <div
+                        class="mb-3 flex items-center gap-2 border-b pb-3 text-neutral-500"
+                      >
+                        <sl-icon
+                          name="info-circle"
+                          class="size-4 flex-shrink-0"
+                        ></sl-icon>
+                        <div>
+                          ${org.subscription.status ===
+                          SubscriptionStatus.Trialing
+                            ? html`
+                                <span class="font-medium text-neutral-700">
+                                  ${msg(
+                                    str`Your trial will end on ${futureCancelDate}`,
+                                  )}
+                                </span>
+                                &mdash;
+                                ${msg(str`subscribe to keep your account`)}
+                              `
+                            : msg(
+                                str`Your plan will be canceled on ${futureCancelDate}`,
                               )}
-                            </span>
-                          </div>
-                        `
-                      : nothing,
+                        </div>
+                      </div>
+                    `;
+                  },
                   () => html` <sl-skeleton></sl-skeleton> `,
                 )}
                 <h5 class="mb-2 mt-4 text-xs leading-none text-neutral-500">
@@ -164,10 +181,15 @@ export class OrgSettingsBilling extends BtrixElement {
               </p>
               ${when(this.org, (org) =>
                 org.subscription
-                  ? html`<p class="mb-3 leading-normal">
-                        ${msg(
-                          str`You can view plan details, update payment methods, and update billing information by clicking “${this.portalUrlLabel}”.`,
-                        )}
+                  ? html` <p class="mb-3 leading-normal">
+                        ${org.subscription.status ===
+                        SubscriptionStatus.Trialing
+                          ? msg(
+                              str`To continue using Browsertrix at the end of your trial, click “${this.portalUrlLabel}”.`,
+                            )
+                          : msg(
+                              str`You can view plan details, update payment methods, and update billing information by clicking “${this.portalUrlLabel}”.`,
+                            )}
                       </p>
                       ${this.salesEmail
                         ? html`<p class="leading-normal">
@@ -247,6 +269,12 @@ export class OrgSettingsBilling extends BtrixElement {
           `;
           break;
         }
+        case SubscriptionStatus.Trialing: {
+          statusLabel = html`
+            <span class="text-success-700">${msg("Free Trial")}</span>
+          `;
+          break;
+        }
         case SubscriptionStatus.PausedPaymentFailed: {
           statusLabel = html`
             <span class="text-danger">${msg("Paused, payment failed")}</span>
@@ -280,36 +308,30 @@ export class OrgSettingsBilling extends BtrixElement {
       quotas.maxExecMinutesPerMonth &&
       humanizeSeconds(
         quotas.maxExecMinutesPerMonth * 60,
-        undefined,
+        this.localize.lang(),
         undefined,
         "long",
       );
     const maxPagesPerCrawl =
       quotas.maxPagesPerCrawl &&
-      `${formatNumber(quotas.maxPagesPerCrawl)} ${pluralOf("pages", quotas.maxPagesPerCrawl)}`;
+      `${this.localize.number(quotas.maxPagesPerCrawl)} ${pluralOf("pages", quotas.maxPagesPerCrawl)}`;
     const maxConcurrentCrawls =
       quotas.maxConcurrentCrawls &&
       msg(
-        str`${formatNumber(quotas.maxConcurrentCrawls)} concurrent ${pluralOf("crawls", quotas.maxConcurrentCrawls)}`,
+        str`${this.localize.number(quotas.maxConcurrentCrawls)} concurrent ${pluralOf("crawls", quotas.maxConcurrentCrawls)}`,
       );
+    const storageBytesText = quotas.storageQuota
+      ? this.localize.bytes(quotas.storageQuota)
+      : msg("Unlimited");
 
     return html`
       <ul class="leading-relaxed text-neutral-700">
         <li>
           ${msg(
-            str`${maxExecMinutesPerMonth || msg("Unlimited minutes")} of crawl and QA analysis execution time`,
+            str`${maxExecMinutesPerMonth || msg("Unlimited minutes")} of crawling time`,
           )}
         </li>
-        <li>
-          ${msg(
-            html`${quotas.storageQuota
-              ? html`<sl-format-bytes
-                  value=${quotas.storageQuota}
-                ></sl-format-bytes>`
-              : msg("Unlimited")}
-            storage`,
-          )}
-        </li>
+        <li>${msg(str`${storageBytesText} of disk space`)}</li>
         <li>
           ${msg(str`${maxPagesPerCrawl || msg("Unlimited pages")} per crawl`)}
         </li>

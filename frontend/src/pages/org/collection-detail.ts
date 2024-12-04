@@ -19,7 +19,6 @@ import type {
 import type { Collection } from "@/types/collection";
 import type { ArchivedItem, Crawl, Upload } from "@/types/crawler";
 import type { CrawlState } from "@/types/crawlState";
-import { formatNumber, getLocale } from "@/utils/localization";
 import { pluralOf } from "@/utils/pluralize";
 
 const ABORT_REASON_THROTTLE = "throttled";
@@ -60,6 +59,9 @@ export class CollectionDetail extends BtrixElement {
 
   @query(".descriptionExpandBtn")
   private readonly descriptionExpandBtn?: HTMLElement | null;
+
+  @query("replay-web-page")
+  private readonly replayEmbed?: ReplayWebPage | null;
 
   // Use to cancel requests
   private getArchivedItemsController: AbortController | null = null;
@@ -188,7 +190,7 @@ export class CollectionDetail extends BtrixElement {
           >
           <sl-button
             size="small"
-            variant="primary"
+            variant="danger"
             @click=${async () => {
               await this.deleteCollection();
               this.openDialogName = undefined;
@@ -204,6 +206,7 @@ export class CollectionDetail extends BtrixElement {
         ?open=${this.openDialogName === "editItems"}
         @sl-hide=${() => (this.openDialogName = undefined)}
         @btrix-collection-saved=${() => {
+          this.refreshReplay();
           void this.fetchCollection();
           void this.fetchArchivedItems();
         }}
@@ -216,12 +219,25 @@ export class CollectionDetail extends BtrixElement {
             .collection=${this.collection!}
             ?open=${this.openDialogName === "editMetadata"}
             @sl-hide=${() => (this.openDialogName = undefined)}
-            @btrix-collection-saved=${() => void this.fetchCollection()}
+            @btrix-collection-saved=${() => {
+              this.refreshReplay();
+              void this.fetchCollection();
+            }}
           >
           </btrix-collection-metadata-dialog>
         `,
       )}
       ${this.renderShareDialog()}`;
+  }
+
+  private refreshReplay() {
+    if (this.replayEmbed) {
+      try {
+        this.replayEmbed.fullReload();
+      } catch (e) {
+        console.warn("Full reload not available in RWP");
+      }
+    }
   }
 
   private getPublicReplayURL() {
@@ -469,7 +485,7 @@ export class CollectionDetail extends BtrixElement {
         ${this.renderDetailItem(
           msg("Archived Items"),
           (col) =>
-            `${formatNumber(col.crawlCount)} ${pluralOf("items", col.crawlCount)}`,
+            `${this.localize.number(col.crawlCount)} ${pluralOf("items", col.crawlCount)}`,
         )}
         ${this.renderDetailItem(
           msg("Total Size"),
@@ -482,13 +498,12 @@ export class CollectionDetail extends BtrixElement {
         ${this.renderDetailItem(
           msg("Total Pages"),
           (col) =>
-            `${formatNumber(col.pageCount)} ${pluralOf("pages", col.pageCount)}`,
+            `${this.localize.number(col.pageCount)} ${pluralOf("pages", col.pageCount)}`,
         )}
         ${this.renderDetailItem(
           msg("Last Updated"),
           (col) =>
             html`<sl-format-date
-              lang=${getLocale()}
               date=${col.modified}
               month="2-digit"
               day="2-digit"

@@ -1,17 +1,17 @@
 Resolves #issue_number
 
-<!-- Fixes #issue_number -->
+## Changes
 
-### Changes
 
-### Manual testing
+
+## Manual testing
 
 1.
 
-### Screenshots
+## Screenshots
 
 | Page | Image/video |
 | ---- | ----------- |
 |      |             |
 
-<!-- ### Follow-ups -->
+<!-- ## Follow-ups -->

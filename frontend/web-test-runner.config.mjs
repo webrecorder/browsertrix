@@ -5,6 +5,7 @@ import commonjsPlugin from "@rollup/plugin-commonjs";
 import { esbuildPlugin } from "@web/dev-server-esbuild";
 import { importMapsPlugin } from "@web/dev-server-import-maps";
 import { fromRollup } from "@web/dev-server-rollup";
+import { playwrightLauncher } from "@web/test-runner-playwright";
 import glob from "glob";
 import { typescriptPaths as typescriptPathsPlugin } from "rollup-plugin-typescript-paths";
 
@@ -30,6 +31,17 @@ glob.sync("./src/assets/**/*").forEach((filepath) => {
 export default {
   nodeResolve: true,
   rootDir: process.cwd(),
+  browsers: [
+    playwrightLauncher({
+      product: "chromium",
+      launchOptions: {
+        channel: "chromium",
+      },
+      async createBrowserContext({ browser }) {
+        return browser.newContext({ timezoneId: "Pacific/Easter" });
+      },
+    }),
+  ],
   plugins: [
     typescriptPaths({
       preserveExtensions: true,
@@ -52,8 +64,9 @@ export default {
         "node_modules/lodash/**/*",
         "node_modules/color/**/*",
         "node_modules/slugify/**/*",
-        "node_modules/pretty-ms/**/*",
         "node_modules/parse-ms/**/*",
+        "node_modules/regex-colorize/**/*",
+        "node_modules/@formatjs/intl-durationformat/**/*",
       ],
     }),
     importMapsPlugin({

@@ -21,6 +21,7 @@ from .models import (
     CreateReplicaJob,
     DeleteReplicaJob,
     DeleteOrgJob,
+    RecalculateOrgStatsJob,
     PaginatedBackgroundJobResponse,
     AnyJob,
     StorageRef,
@@ -320,6 +321,51 @@ class BackgroundJobOps:
             print(f"warning: delete org job could not be started: {exc}")
             return None
 
+    async def create_recalculate_org_stats_job(
+        self,
+        org: Organization,
+        existing_job_id: Optional[str] = None,
+    ) -> Optional[str]:
+        """Create background job to recalculate org stats"""
+
+        try:
+            job_id = await self.crawl_manager.run_recalculate_org_stats_job(
+                oid=str(org.id),
+                backend_image=os.environ.get("BACKEND_IMAGE", ""),
+                pull_policy=os.environ.get("BACKEND_IMAGE_PULL_POLICY", ""),
+                existing_job_id=existing_job_id,
+            )
+            if existing_job_id:
+                recalculate_job = await self.get_background_job(existing_job_id, org.id)
+                previous_attempt = {
+                    "started": recalculate_job.started,
+                    "finished": recalculate_job.finished,
+                }
+                if recalculate_job.previousAttempts:
+                    recalculate_job.previousAttempts.append(previous_attempt)
+                else:
+                    recalculate_job.previousAttempts = [previous_attempt]
+                recalculate_job.started = dt_now()
+                recalculate_job.finished = None
+                recalculate_job.success = None
+            else:
+                recalculate_job = RecalculateOrgStatsJob(
+                    id=job_id,
+                    oid=org.id,
+                    started=dt_now(),
+                )
+
+            await self.jobs.find_one_and_update(
+                {"_id": job_id}, {"$set": recalculate_job.to_dict()}, upsert=True
+            )
+
+            return job_id
+        # pylint: disable=broad-exception-caught
+        except Exception as exc:
+            # pylint: disable=raise-missing-from
+            print(f"warning: recalculate org stats job could not be started: {exc}")
+            return None
+
     async def job_finished(
         self,
         job_id: str,
@@ -364,7 +410,9 @@ class BackgroundJobOps:
 
     async def get_background_job(
         self, job_id: str, oid: Optional[UUID] = None
-    ) -> Union[CreateReplicaJob, DeleteReplicaJob, DeleteOrgJob]:
+    ) -> Union[
+        CreateReplicaJob, DeleteReplicaJob, DeleteOrgJob, RecalculateOrgStatsJob
+    ]:
         """Get background job"""
         query: dict[str, object] = {"_id": job_id}
         if oid:
@@ -383,6 +431,9 @@ class BackgroundJobOps:
 
         if data["type"] == BgJobType.DELETE_REPLICA:
             return DeleteReplicaJob.from_dict(data)
+
+        if data["type"] == BgJobType.RECALCULATE_ORG_STATS:
+            return RecalculateOrgStatsJob.from_dict(data)
 
         return DeleteOrgJob.from_dict(data)
 
@@ -514,6 +565,12 @@ class BackgroundJobOps:
 
         if job.type == BgJobType.DELETE_ORG:
             await self.create_delete_org_job(
+                org,
+                existing_job_id=job_id,
+            )
+
+        if job.type == BgJobType.RECALCULATE_ORG_STATS:
+            await self.create_recalculate_org_stats_job(
                 org,
                 existing_job_id=job_id,
             )

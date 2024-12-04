@@ -21,24 +21,19 @@ import {
 } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 
+import { BtrixElement } from "@/classes/BtrixElement";
 import { TailwindElement } from "@/classes/TailwindElement";
 import type { OverflowDropdown } from "@/components/ui/overflow-dropdown";
-import { RelativeDuration } from "@/components/ui/relative-duration";
-import { NavigateController } from "@/controllers/navigate";
 import type { Crawl } from "@/types/crawler";
 import { renderName } from "@/utils/crawler";
-import { formatNumber, getLocale } from "@/utils/localization";
 import { pluralOf } from "@/utils/pluralize";
-
-const formatNumberCompact = (v: number) =>
-  formatNumber(v, { notation: "compact" });
 
 /**
  * @slot menu
  */
 @localized()
 @customElement("btrix-crawl-list-item")
-export class CrawlListItem extends TailwindElement {
+export class CrawlListItem extends BtrixElement {
   static styles = css`
     :host {
       display: contents;
@@ -70,8 +65,6 @@ export class CrawlListItem extends TailwindElement {
   @query("btrix-overflow-dropdown")
   dropdownMenu!: OverflowDropdown;
 
-  private readonly navigate = new NavigateController(this);
-
   render() {
     if (!this.crawl) return;
     let idCell: TemplateResult;
@@ -82,7 +75,6 @@ export class CrawlListItem extends TailwindElement {
           ${this.safeRender(
             (crawl) => html`
               <sl-format-date
-                lang=${getLocale()}
                 date=${crawl.started}
                 month="2-digit"
                 day="2-digit"
@@ -153,7 +145,6 @@ export class CrawlListItem extends TailwindElement {
                 ${this.safeRender(
                   (crawl) => html`
                     <sl-format-date
-                      lang=${getLocale()}
                       date=${crawl.started}
                       month="2-digit"
                       day="2-digit"
@@ -170,7 +161,6 @@ export class CrawlListItem extends TailwindElement {
             crawl.finished
               ? html`
                   <sl-format-date
-                    lang=${getLocale()}
                     date=${crawl.finished}
                     month="2-digit"
                     day="2-digit"
@@ -186,7 +176,7 @@ export class CrawlListItem extends TailwindElement {
         </btrix-table-cell>
         <btrix-table-cell>
           ${this.safeRender((crawl) =>
-            RelativeDuration.humanize(
+            this.localize.humanizeDuration(
               (crawl.finished
                 ? new Date(crawl.finished)
                 : new Date()
@@ -205,10 +195,10 @@ export class CrawlListItem extends TailwindElement {
             const pagesComplete = +(crawl.stats?.done || 0);
             const pagesFound = +(crawl.stats?.found || 0);
             if (crawl.finished) {
-              return `${formatNumberCompact(pagesComplete)} ${pluralOf("pages", pagesComplete)}`;
+              return `${this.localize.number(pagesComplete, { notation: "compact" })} ${pluralOf("pages", pagesComplete)}`;
             }
 
-            return `${formatNumberCompact(pagesComplete)} / ${formatNumberCompact(pagesFound)} ${pluralOf("pages", pagesFound)}`;
+            return `${this.localize.number(pagesComplete, { notation: "compact" })} / ${this.localize.number(pagesFound, { notation: "compact" })} ${pluralOf("pages", pagesFound)}`;
           })}
         </btrix-table-cell>
         <btrix-table-cell>

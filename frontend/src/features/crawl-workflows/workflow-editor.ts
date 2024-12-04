@@ -65,7 +65,7 @@ import {
   humanizeSchedule,
 } from "@/utils/cron";
 import { maxLengthValidator } from "@/utils/form";
-import { getLocale } from "@/utils/localization";
+import localize from "@/utils/localize";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { AppStateService } from "@/utils/state";
 import { regexEscape } from "@/utils/string";
@@ -112,7 +112,6 @@ const DEFAULT_BEHAVIORS = [
   "autofetch",
   "siteSpecific",
 ];
-const MAX_ADDITIONAL_URLS = 100;
 
 const getDefaultProgressState = (hasConfigId = false): ProgressState => {
   let activeTab: StepName = "crawlSetup";
@@ -154,15 +153,17 @@ const getDefaultProgressState = (hasConfigId = false): ProgressState => {
 
 function getLocalizedWeekDays() {
   const now = new Date();
-  // TODO accept locale from locale-picker
-  const { format } = new Intl.DateTimeFormat(getLocale(), { weekday: "short" });
+  const { format } = new Intl.DateTimeFormat(localize.activeLanguage, {
+    weekday: "short",
+  });
   return Array.from({ length: 7 }).map((x, day) =>
     format(Date.now() - (now.getDay() - day) * 86400000),
   );
 }
 
 function validURL(url: string) {
-  return /((((https?):(?:\/\/)?)(?:[-;:&=+$,\w]+@)?[A-Za-z0-9.-]+|(?:www\.|[-;:&=+$,\w]+@)[A-Za-z0-9.-]+)((?:\/[+~%/.\w\-_]*)?\??(?:[-+=&;%@.\w_]*)#?(?:[.!/\\\w]*))?)/.test(
+  // adapted from: https://gist.github.com/dperini/729294
+  return /^(?:https?:\/\/)?(?:\S+(?::\S*)?@)?(?:(?!(?:10|127)(?:\.\d{1,3}){3})(?!(?:169\.254|192\.168)(?:\.\d{1,3}){2})(?!172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z0-9\u00a1-\uffff][a-z0-9\u00a1-\uffff_-]{0,62})?[a-z0-9\u00a1-\uffff]\.)+(?:[a-z\u00a1-\uffff]{2,}\.?))(?::\d{2,5})?(?:[/?#]\S*)?$/i.test(
     url,
   );
 }
@@ -173,7 +174,8 @@ const urlListToArray = flow(
   trimArray,
 );
 
-const URL_LIST_MAX_URLS = 1000;
+//todo: make this customizable, perhaps at deploy time
+const URL_LIST_MAX_URLS = 100;
 
 type CrawlConfigResponse = {
   run_now_job?: boolean;
@@ -813,6 +815,17 @@ export class WorkflowEditor extends BtrixElement {
                     const text = msg("Please enter a valid URL.");
                     inputEl.helpText = text;
                     inputEl.setCustomValidity(text);
+                  } else if (
+                    inputEl.value &&
+                    !inputEl.value.startsWith("https://") &&
+                    !inputEl.value.startsWith("http://")
+                  ) {
+                    this.updateFormState(
+                      {
+                        urlList: "https://" + inputEl.value,
+                      },
+                      true,
+                    );
                   }
                 }}
               >
@@ -834,19 +847,8 @@ https://archiveweb.page/guide`}
                 required
                 @keyup=${async (e: KeyboardEvent) => {
                   if (e.key === "Enter") {
-                    const inputEl = e.target as SlInput;
-                    await inputEl.updateComplete;
-                    if (!inputEl.value) return;
-                    const { isValid, helpText } = this.validateUrlList(
-                      inputEl.value,
-                      MAX_ADDITIONAL_URLS,
-                    );
-                    inputEl.helpText = helpText;
-                    if (isValid) {
-                      inputEl.setCustomValidity("");
-                    } else {
-                      inputEl.setCustomValidity(helpText);
-                    }
+                    await (e.target as SlInput).updateComplete;
+                    this.doValidateTextArea(e.target);
                   }
                 }}
                 @sl-input=${(e: CustomEvent) => {
@@ -856,24 +858,16 @@ https://archiveweb.page/guide`}
                   }
                 }}
                 @sl-change=${async (e: CustomEvent) => {
-                  const inputEl = e.target as SlInput;
-                  if (!inputEl.value) return;
-                  const { isValid, helpText } = this.validateUrlList(
-                    inputEl.value,
-                    MAX_ADDITIONAL_URLS,
-                  );
-                  inputEl.helpText = helpText;
-                  if (isValid) {
-                    inputEl.setCustomValidity("");
-                  } else {
-                    inputEl.setCustomValidity(helpText);
-                  }
+                  this.doValidateTextArea(e.target);
+                }}
+                @sl-blur=${async (e: CustomEvent) => {
+                  this.doValidateTextArea(e.target);
                 }}
               ></sl-textarea>
             `)}
             ${this.renderHelpTextCol(
               msg(
-                str`The crawler will visit and record each URL listed here. You can enter up to ${MAX_ADDITIONAL_URLS.toLocaleString()} URLs.`,
+                str`The crawler will visit and record each URL listed here. You can enter up to ${this.localize.number(URL_LIST_MAX_URLS)} URLs.`,
               ),
             )}
           `}
@@ -996,6 +990,17 @@ https://archiveweb.page/guide`}
               const text = msg("Please enter a valid URL.");
               inputEl.helpText = text;
               inputEl.setCustomValidity(text);
+            } else if (
+              inputEl.value &&
+              !inputEl.value.startsWith("https://") &&
+              !inputEl.value.startsWith("http://")
+            ) {
+              this.updateFormState(
+                {
+                  primarySeedUrl: "https://" + inputEl.value,
+                },
+                true,
+              );
             }
           }}
         >
@@ -1098,19 +1103,8 @@ https://example.net`}
 https://archiveweb.page/images/${"logo.svg"}`}
                 @keyup=${async (e: KeyboardEvent) => {
                   if (e.key === "Enter") {
-                    const inputEl = e.target as SlInput;
-                    await inputEl.updateComplete;
-                    if (!inputEl.value) return;
-                    const { isValid, helpText } = this.validateUrlList(
-                      inputEl.value,
-                      MAX_ADDITIONAL_URLS,
-                    );
-                    inputEl.helpText = helpText;
-                    if (isValid) {
-                      inputEl.setCustomValidity("");
-                    } else {
-                      inputEl.setCustomValidity(helpText);
-                    }
+                    await (e.target as SlInput).updateComplete;
+                    this.doValidateTextArea(e.target);
                   }
                 }}
                 @sl-input=${(e: CustomEvent) => {
@@ -1120,24 +1114,16 @@ https://archiveweb.page/images/${"logo.svg"}`}
                   }
                 }}
                 @sl-change=${async (e: CustomEvent) => {
-                  const inputEl = e.target as SlInput;
-                  if (!inputEl.value) return;
-                  const { isValid, helpText } = this.validateUrlList(
-                    inputEl.value,
-                    MAX_ADDITIONAL_URLS,
-                  );
-                  inputEl.helpText = helpText;
-                  if (isValid) {
-                    inputEl.setCustomValidity("");
-                  } else {
-                    inputEl.setCustomValidity(helpText);
-                  }
+                  this.doValidateTextArea(e.target);
+                }}
+                @sl-blur=${async (e: CustomEvent) => {
+                  this.doValidateTextArea(e.target);
                 }}
               ></sl-textarea>
             `)}
             ${this.renderHelpTextCol(
               msg(
-                str`The crawler will visit and record each URL listed here. You can enter up to ${MAX_ADDITIONAL_URLS.toLocaleString()} URLs.`,
+                str`The crawler will visit and record each URL listed here. You can enter up to ${this.localize.number(URL_LIST_MAX_URLS)} URLs.`,
               ),
             )}
           </div>
@@ -1145,6 +1131,21 @@ https://archiveweb.page/images/${"logo.svg"}`}
       </div>
     `;
   };
+
+  private doValidateTextArea(target: EventTarget | null) {
+    const inputEl = target as SlInput;
+    if (!inputEl.value) return;
+    const { isValid, helpText } = this.validateUrlList(
+      inputEl.value,
+      URL_LIST_MAX_URLS,
+    );
+    inputEl.helpText = helpText;
+    if (isValid) {
+      inputEl.setCustomValidity("");
+    } else {
+      inputEl.setCustomValidity(helpText);
+    }
+  }
 
   private renderCrawlLimits() {
     // Max Pages minimum value cannot be lower than seed count
@@ -1163,11 +1164,11 @@ https://archiveweb.page/images/${"logo.svg"}`}
         const max = inputEl.max;
         if (min && value < +min) {
           helpText = msg(
-            str`Must be more than minimum of ${(+min).toLocaleString()}`,
+            str`Must be more than minimum of ${this.localize.number(+min)}`,
           );
         } else if (max && value > +max) {
           helpText = msg(
-            str`Must be less than maximum of ${(+max).toLocaleString()}`,
+            str`Must be less than maximum of ${this.localize.number(+max)}`,
           );
         }
       }
@@ -2060,12 +2061,12 @@ https://archiveweb.page/images/${"logo.svg"}`}
     let isValid = true;
     let helpText =
       urlList.length === 1
-        ? msg(str`${urlList.length.toLocaleString()} URL entered`)
-        : msg(str`${urlList.length.toLocaleString()} URLs entered`);
+        ? msg(str`${this.localize.number(urlList.length)} URL entered`)
+        : msg(str`${this.localize.number(urlList.length)} URLs entered`);
     if (urlList.length > max) {
       isValid = false;
       helpText = msg(
-        str`Please shorten list to ${max.toLocaleString()} or fewer URLs.`,
+        str`Please shorten list to ${this.localize.number(max)} or fewer URLs.`,
       );
     } else {
       const invalidUrl = urlList.find((url) => !validURL(url));
@@ -2074,6 +2075,20 @@ https://archiveweb.page/images/${"logo.svg"}`}
         helpText = msg(
           str`Please remove or fix the following invalid URL: ${invalidUrl}`,
         );
+      }
+      if (isValid) {
+        // auto-add https:// prefix if otherwise a valid URL
+        let updated = false;
+        for (let i = 0; i < urlList.length; i++) {
+          const url = urlList[i];
+          if (!url.startsWith("http://") && !url.startsWith("https://")) {
+            urlList[i] = "https://" + url;
+            updated = true;
+          }
+        }
+        if (updated) {
+          this.updateFormState({ urlList: urlList.join("\n") });
+        }
       }
     }
     return { isValid, helpText };

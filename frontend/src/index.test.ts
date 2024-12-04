@@ -1,4 +1,5 @@
 import { expect, fixture } from "@open-wc/testing";
+import { html } from "lit";
 import { restore, stub } from "sinon";
 
 import AuthService from "./utils/AuthService";
@@ -50,8 +51,14 @@ describe("browsertrix-app", () => {
         username: "test-auth@example.com",
       }),
     );
-    const el = await fixture("<browsertrix-app></browsertrix-app>");
-    expect(el).lightDom.descendants("btrix-home");
+    const el = await fixture<App>(html` <browsertrix-app></browsertrix-app>`);
+    expect(el.shadowRoot?.querySelector("btrix-home")).to.exist;
+  });
+
+  it("renders home when not authenticated", async () => {
+    stub(AuthService, "initSessionStorage").returns(Promise.resolve(null));
+    const el = await fixture<App>(html` <browsertrix-app></browsertrix-app>`);
+    expect(el.shadowRoot?.querySelector("btrix-home")).to.exist;
   });
 
   // TODO move tests to AuthService

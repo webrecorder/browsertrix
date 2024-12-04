@@ -75,7 +75,7 @@ export class BrowserProfilesNew extends BtrixElement {
           It is highly recommended to create dedicated accounts to use when
           crawling. For details, refer to
           <a
-            class="text-primary hover:text-indigo-400"
+            class="text-primary hover:text-primary-400"
             href="/docs/user-guide/browser-profiles/"
             target="_blank"
           >

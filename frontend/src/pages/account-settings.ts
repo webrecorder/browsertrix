@@ -1,19 +1,28 @@
 import { localized, msg, str } from "@lit/localize";
-import type { SlInput } from "@shoelace-style/shoelace";
+import type { SlInput, SlSelectEvent } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import type { ZxcvbnResult } from "@zxcvbn-ts/core";
-import { type PropertyValues } from "lit";
-import { customElement, property, queryAsync, state } from "lit/decorators.js";
+import { nothing, type PropertyValues } from "lit";
+import { customElement, property, query, state } from "lit/decorators.js";
+import { choose } from "lit/directives/choose.js";
 import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import needLogin from "@/decorators/needLogin";
+import { pageHeader } from "@/layouts/pageHeader";
+import { translatedLocales, type LanguageCode } from "@/types/localization";
 import type { UnderlyingFunction } from "@/types/utils";
 import { isApiError } from "@/utils/api";
 import LiteElement, { html } from "@/utils/LiteElement";
 import PasswordService from "@/utils/PasswordService";
 import { AppStateService } from "@/utils/state";
+import { tw } from "@/utils/tailwind";
+
+enum Tab {
+  Profile = "profile",
+  Security = "security",
+}
 
 const { PASSWORD_MINLENGTH, PASSWORD_MAXLENGTH, PASSWORD_MIN_SCORE } =
   PasswordService;
@@ -54,7 +63,7 @@ export class RequestVerify extends TailwindElement {
 
     return html`
       <span
-        class="text-sm text-primary hover:text-indigo-400"
+        class="text-sm text-primary hover:text-primary-400"
         role="button"
         ?disabled=${this.isRequesting}
         @click=${this.requestVerification}
@@ -94,27 +103,29 @@ export class RequestVerify extends TailwindElement {
 @customElement("btrix-account-settings")
 @needLogin
 export class AccountSettings extends LiteElement {
+  @property({ type: String })
+  tab: string | Tab = Tab.Profile;
+
   @state()
   sectionSubmitting: null | "name" | "email" | "password" = null;
 
   @state()
-  private isChangingPassword = false;
-
-  @state()
   private pwStrengthResults: null | ZxcvbnResult = null;
 
-  @queryAsync('sl-input[name="password"]')
-  private readonly passwordInput?: Promise<SlInput | null>;
+  @query('sl-input[name="newPassword"]')
+  private readonly newPassword?: SlInput | null;
 
-  async updated(
-    changedProperties: PropertyValues<this> & Map<string, unknown>,
-  ) {
-    if (
-      changedProperties.has("isChangingPassword") &&
-      this.isChangingPassword
-    ) {
-      (await this.passwordInput)?.focus();
-    }
+  private get activeTab() {
+    return this.tab && Object.values(Tab).includes(this.tab as unknown as Tab)
+      ? (this.tab as Tab)
+      : Tab.Profile;
+  }
+
+  private get tabLabels(): Record<Tab, string> {
+    return {
+      [Tab.Profile]: msg("Profile"),
+      [Tab.Security]: msg("Security"),
+    };
   }
 
   protected firstUpdated() {
@@ -122,172 +133,235 @@ export class AccountSettings extends LiteElement {
   }
 
   render() {
-    if (!this.userInfo) return;
     return html`
       <btrix-document-title
         title=${msg("Account Settings")}
       ></btrix-document-title>
 
-      <div class="mx-auto max-w-screen-sm">
-        <h1 class="mb-7 text-xl font-semibold leading-8">
-          ${msg("Account Settings")}
-        </h1>
-        <form class="mb-5 rounded border" @submit=${this.onSubmitName}>
-          <div class="p-4">
-            <h2 class="mb-4 text-lg font-semibold leading-none">
-              ${msg("Display Name")}
-            </h2>
-            <p class="mb-2">
+      ${pageHeader(msg("Account Settings"), undefined, tw`mb-3 lg:mb-5`)}
+
+      <btrix-tab-list activePanel=${this.activeTab} hideIndicator>
+        <header slot="header" class="flex h-7 items-end justify-between">
+          ${choose(
+            this.activeTab,
+            [
+              [Tab.Profile, () => html`<h2>${msg("Display Name")}</h2>`],
+              [Tab.Security, () => html`<h2>${msg("Password")}</h2>`],
+            ],
+            () => html`<h2>${this.tabLabels[this.activeTab]}</h2>`,
+          )}
+        </header>
+        ${this.renderTab(Tab.Profile)} ${this.renderTab(Tab.Security)}
+        <btrix-tab-panel name=${Tab.Profile}>
+          ${this.renderProfile()}
+        </btrix-tab-panel>
+        <btrix-tab-panel name=${Tab.Security}>
+          ${this.renderSecurity()}
+        </btrix-tab-panel>
+      </btrix-tab-list>
+    `;
+  }
+
+  private renderProfile() {
+    if (!this.userInfo) return;
+
+    return html`
+      <form class="mb-5 rounded-lg border" @submit=${this.onSubmitName}>
+        <div class="p-4">
+          <p class="mb-2">
+            ${msg(
+              "Enter your full name, or another name to display in the orgs you belong to.",
+            )}
+          </p>
+          <sl-input
+            name="displayName"
+            value=${this.userInfo.name}
+            maxlength="40"
+            minlength="2"
+            required
+            aria-label=${msg("Display name")}
+          ></sl-input>
+        </div>
+        <footer class="flex items-center justify-end border-t px-4 py-3">
+          <sl-button
+            type="submit"
+            size="small"
+            variant="primary"
+            ?loading=${this.sectionSubmitting === "name"}
+            >${msg("Save")}</sl-button
+          >
+        </footer>
+      </form>
+
+      <h2 class="mb-2 mt-7 text-lg font-medium">${msg("Email")}</h2>
+      <form class="rounded-lg border" @submit=${this.onSubmitEmail}>
+        <div class="p-4">
+          <p class="mb-2">${msg("Update the email you use to log in.")}</p>
+          <sl-input
+            name="email"
+            value=${this.userInfo.email}
+            type="email"
+            aria-label=${msg("Email")}
+          >
+            <div slot="suffix">
+              <sl-tooltip
+                content=${this.userInfo.isVerified
+                  ? msg("Verified")
+                  : msg("Needs verification")}
+                hoist
+              >
+                ${this.userInfo.isVerified
+                  ? html`<sl-icon
+                      class="text-success"
+                      name="check-lg"
+                    ></sl-icon>`
+                  : html`<sl-icon
+                      class="text-warning"
+                      name="exclamation-circle"
+                    ></sl-icon>`}
+              </sl-tooltip>
+            </div>
+          </sl-input>
+        </div>
+        <footer class="flex items-center justify-end border-t px-4 py-3">
+          ${!this.userInfo.isVerified
+            ? html`
+                <btrix-request-verify
+                  class="mr-auto"
+                  email=${this.userInfo.email}
+                ></btrix-request-verify>
+              `
+            : ""}
+          <sl-button
+            type="submit"
+            size="small"
+            variant="primary"
+            ?loading=${this.sectionSubmitting === "email"}
+            >${msg("Save")}</sl-button
+          >
+        </footer>
+      </form>
+
+      ${(translatedLocales as unknown as string[]).length > 1
+        ? this.renderLanguage()
+        : nothing}
+    `;
+  }
+
+  private renderSecurity() {
+    return html`
+      <form class="rounded-lg border" @submit=${this.onSubmitPassword}>
+        <div class="p-4">
+          <sl-input
+            class="mb-3"
+            name="password"
+            label=${msg("Enter your current password")}
+            type="password"
+            autocomplete="current-password"
+            password-toggle
+            required
+          ></sl-input>
+          <sl-input
+            name="newPassword"
+            label=${msg("New password")}
+            type="password"
+            autocomplete="new-password"
+            password-toggle
+            minlength="8"
+            required
+            @sl-input=${this.onPasswordInput as UnderlyingFunction<
+              typeof this.onPasswordInput
+            >}
+          ></sl-input>
+
+          ${when(this.pwStrengthResults, this.renderPasswordStrength)}
+        </div>
+        <footer class="flex items-center justify-end border-t px-4 py-3">
+          <p class="mr-auto text-neutral-500">
+            ${msg(
+              str`Choose a strong password between ${PASSWORD_MINLENGTH}-${PASSWORD_MAXLENGTH} characters.`,
+            )}
+          </p>
+          <sl-button
+            type="submit"
+            size="small"
+            variant="primary"
+            ?loading=${this.sectionSubmitting === "password"}
+            ?disabled=${!this.pwStrengthResults ||
+            this.pwStrengthResults.score < PASSWORD_MIN_SCORE}
+            >${msg("Save")}</sl-button
+          >
+        </footer>
+      </form>
+    `;
+  }
+
+  private renderTab(name: Tab) {
+    const isActive = name === this.activeTab;
+
+    return html`
+      <btrix-navigation-button
+        slot="nav"
+        href=${`/account/settings/${name}`}
+        .active=${isActive}
+        aria-selected=${isActive}
+        @click=${this.navLink}
+      >
+        ${choose(name, [
+          [
+            Tab.Profile,
+            () => html`<sl-icon name="file-person-fill"></sl-icon>`,
+          ],
+          [
+            Tab.Security,
+            () => html`<sl-icon name="shield-lock-fill"></sl-icon>`,
+          ],
+        ])}
+        ${this.tabLabels[name]}
+      </btrix-navigation-button>
+    `;
+  }
+
+  private renderLanguage() {
+    return html`
+      <h2 class="mb-2 mt-7 flex items-center gap-2 text-lg font-medium">
+        ${msg("Language")}
+        <btrix-beta-badge>
+          <div slot="content">
+            <b>${msg("Translations are in beta")}</b>
+            <p>
               ${msg(
-                "Enter your full name, or another name to display in the orgs you belong to.",
+                "Parts of the app may not be translated yet in some languages.",
               )}
             </p>
-            <sl-input
-              name="displayName"
-              value=${this.userInfo.name}
-              maxlength="40"
-              minlength="2"
-              required
-              aria-label=${msg("Display name")}
-            ></sl-input>
           </div>
-          <footer class="flex items-center justify-end border-t px-4 py-3">
-            <sl-button
-              type="submit"
-              size="small"
-              variant="primary"
-              ?loading=${this.sectionSubmitting === "name"}
-              >${msg("Save")}</sl-button
+        </btrix-beta-badge>
+      </h2>
+      <section class="mb-5 rounded-lg border">
+        <div class="flex items-center justify-between gap-2 px-4 py-2.5">
+          <h3>
+            ${msg(
+              "Choose your preferred language for displaying Browsertrix in your browser.",
+            )}
+          </h3>
+          <btrix-user-language-select
+            @sl-select=${this.onSelectLocale}
+          ></btrix-user-language-select>
+        </div>
+        <footer class="flex items-center justify-start border-t px-4 py-3">
+          <p class="text-neutral-600">
+            ${msg("Help us translate Browsertrix.")}
+            <a
+              class="inline-flex items-center gap-1 text-blue-500 hover:text-blue-600"
+              href="https://docs.browsertrix.com/develop/localization/"
+              target="_blank"
             >
-          </footer>
-        </form>
-        <form class="mb-5 rounded border" @submit=${this.onSubmitEmail}>
-          <div class="p-4">
-            <h2 class="mb-4 text-lg font-semibold leading-none">
-              ${msg("Email")}
-            </h2>
-            <p class="mb-2">${msg("Update the email you use to log in.")}</p>
-            <sl-input
-              name="email"
-              value=${this.userInfo.email}
-              type="email"
-              aria-label=${msg("Email")}
-            >
-              <div slot="suffix">
-                <sl-tooltip
-                  content=${this.userInfo.isVerified
-                    ? msg("Verified")
-                    : msg("Needs verification")}
-                  hoist
-                >
-                  ${this.userInfo.isVerified
-                    ? html`<sl-icon
-                        class="text-success"
-                        name="check-lg"
-                      ></sl-icon>`
-                    : html`<sl-icon
-                        class="text-warning"
-                        name="exclamation-circle"
-                      ></sl-icon>`}
-                </sl-tooltip>
-              </div>
-            </sl-input>
-          </div>
-          <footer class="flex items-center justify-end border-t px-4 py-3">
-            ${!this.userInfo.isVerified
-              ? html`
-                  <btrix-request-verify
-                    class="mr-auto"
-                    email=${this.userInfo.email}
-                  ></btrix-request-verify>
-                `
-              : ""}
-            <sl-button
-              type="submit"
-              size="small"
-              variant="primary"
-              ?loading=${this.sectionSubmitting === "email"}
-              >${msg("Save")}</sl-button
-            >
-          </footer>
-        </form>
-        <section class="mb-5 rounded border">
-          ${when(
-            this.isChangingPassword,
-            () => html`
-              <form @submit=${this.onSubmitPassword}>
-                <div class="p-4">
-                  <h2 class="mb-4 text-lg font-semibold leading-none">
-                    ${msg("Password")}
-                  </h2>
-                  <sl-input
-                    class="mb-3"
-                    name="password"
-                    label=${msg("Enter your current password")}
-                    type="password"
-                    autocomplete="current-password"
-                    password-toggle
-                    required
-                  ></sl-input>
-                  <sl-input
-                    name="newPassword"
-                    label=${msg("New password")}
-                    type="password"
-                    autocomplete="new-password"
-                    password-toggle
-                    minlength="8"
-                    required
-                    @input=${this.onPasswordInput as UnderlyingFunction<
-                      typeof this.onPasswordInput
-                    >}
-                  ></sl-input>
-
-                  ${when(this.pwStrengthResults, this.renderPasswordStrength)}
-                </div>
-                <footer
-                  class="flex items-center justify-end border-t px-4 py-3"
-                >
-                  <p class="mr-auto text-gray-500">
-                    ${msg(
-                      str`Choose a strong password between ${PASSWORD_MINLENGTH}-${PASSWORD_MAXLENGTH} characters.`,
-                    )}
-                  </p>
-                  <sl-button
-                    type="reset"
-                    size="small"
-                    variant="text"
-                    class="mx-2"
-                    @click=${() => (this.isChangingPassword = false)}
-                  >
-                    ${msg("Cancel")}
-                  </sl-button>
-                  <sl-button
-                    type="submit"
-                    size="small"
-                    variant="primary"
-                    ?loading=${this.sectionSubmitting === "password"}
-                    ?disabled=${!this.pwStrengthResults ||
-                    this.pwStrengthResults.score < PASSWORD_MIN_SCORE}
-                    >${msg("Save")}</sl-button
-                  >
-                </footer>
-              </form>
-            `,
-            () => html`
-              <div class="flex items-center justify-between px-4 py-2.5">
-                <h2 class="text-lg font-semibold leading-none">
-                  ${msg("Password")}
-                </h2>
-                <sl-button
-                  size="small"
-                  @click=${() => (this.isChangingPassword = true)}
-                  >${msg("Change Password")}</sl-button
-                >
-              </div>
-            `,
-          )}
-        </section>
-      </div>
+              ${msg("Contribute to translations")}
+              <sl-icon slot="suffix" name="arrow-right"></sl-icon
+            ></a>
+          </p>
+        </footer>
+      </section>
     `;
   }
 
@@ -301,8 +375,8 @@ export class AccountSettings extends LiteElement {
     </div>
   `;
 
-  private readonly onPasswordInput = debounce(150)(async (e: InputEvent) => {
-    const { value } = e.target as SlInput;
+  private readonly onPasswordInput = debounce(150)(async () => {
+    const value = this.newPassword?.value;
     if (!value || value.length < 4) {
       this.pwStrengthResults = null;
       return;
@@ -428,8 +502,6 @@ export class AccountSettings extends LiteElement {
         }),
       });
 
-      this.isChangingPassword = false;
-
       this.notify({
         message: msg("Your password has been updated."),
         variant: "success",
@@ -453,4 +525,21 @@ export class AccountSettings extends LiteElement {
 
     this.sectionSubmitting = null;
   }
+
+  /**
+   * Save language setting in local storage
+   */
+  private readonly onSelectLocale = async (e: SlSelectEvent) => {
+    const locale = e.detail.item.value as LanguageCode;
+
+    if (locale !== this.appState.userPreferences?.language) {
+      AppStateService.partialUpdateUserPreferences({ language: locale });
+    }
+
+    this.notify({
+      message: msg("Your language preference has been updated."),
+      variant: "success",
+      icon: "check2-circle",
+    });
+  };
 }
