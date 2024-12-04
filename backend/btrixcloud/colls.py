@@ -459,6 +459,9 @@ class CollectionOps:
         total_size = 0
         tags = []
 
+        coll = await self.get_collection(collection_id)
+        org = await self.orgs.get_org_by_id(coll.oid)
+
         async for crawl_raw in self.crawls.find({"collectionIds": collection_id}):
             crawl = BaseCrawl.from_dict(crawl_raw)
             if crawl.state not in SUCCESSFUL_STATES:
@@ -469,7 +472,6 @@ class CollectionOps:
                 total_size += file.size
 
             try:
-                org = await self.orgs.get_org_by_id(crawl.oid)
                 _, crawl_pages = await self.page_ops.list_pages(
                     crawl.id, org, page_size=1_000_000
                 )
