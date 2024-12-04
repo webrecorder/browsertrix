@@ -2,22 +2,11 @@ import { localized, msg, str } from "@lit/localize";
 import { Task } from "@lit/task";
 import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import { pageTitle } from "@/layouts/pageHeader";
-import type { OrgData } from "@/types/org";
-
-type OrgProfileData = {
-  org: {
-    name: string;
-    description: string;
-    url: string;
-    verified: boolean;
-  };
-  collections: unknown[];
-};
+import { page } from "@/layouts/page";
+import type { OrgData, OrgProfileData } from "@/types/org";
 
 type PublicCollection = {
   name: string;
@@ -38,7 +27,6 @@ export class OrgProfile extends BtrixElement {
   private isPrivatePreview = false;
 
   readonly publicOrg = new Task(this, {
-    autoRun: false,
     task: async ([slug]) => {
       if (!slug) return;
       const org = await this.fetchOrgProfile(slug);
@@ -46,10 +34,6 @@ export class OrgProfile extends BtrixElement {
     },
     args: () => [this.slug] as const,
   });
-
-  protected firstUpdated(): void {
-    void this.publicOrg.run();
-  }
 
   render() {
     if (!this.slug) {
@@ -109,94 +93,94 @@ export class OrgProfile extends BtrixElement {
 
   private renderProfile({ org }: OrgProfileData) {
     return html`
-      <btrix-document-title title=${ifDefined(org.name)}></btrix-document-title>
-
       ${this.isPrivatePreview ? this.renderPreviewBanner() : nothing}
-
-      <div
-        class="mx-auto box-border flex w-full max-w-screen-2xl flex-1 flex-col p-3 lg:px-10"
-      >
-        <!-- TODO Consolidate with pageHeader -->
-        <header class="mt-5 border-b pb-3">
-          <div class="flex flex-wrap items-end justify-between gap-2">
-            ${pageTitle(org.name)}
-            ${org.verified &&
-            html`<btrix-verified-badge class="mb-0.5"></btrix-verified-badge>`}
-            ${when(
-              this.appState.isAdmin,
-              () =>
-                html`<div class="ml-auto flex items-center gap-2">
-                  <sl-tooltip content=${msg("Edit org profile")}>
-                    <sl-icon-button
-                      href="${this.navigate.orgBasePath}/settings"
-                      class="size-8 text-base"
-                      name="pencil"
-                      @click=${this.navigate.link}
-                    ></sl-icon-button>
-                  </sl-tooltip>
-                </div>`,
-            )}
-          </div>
-          ${when(
-            org.description,
-            (description) => html`
-              <div class="my-3 text-pretty text-stone-600">${description}</div>
-            `,
-          )}
-          ${when(org.url, (urlStr) => {
-            let url: URL;
-            try {
-              url = new URL(urlStr);
-            } catch {
-              return nothing;
-            }
-
-            return html`
-              <div
-                class="my-3 flex items-center gap-1.5 text-pretty text-neutral-700"
-              >
-                <sl-icon
-                  name="globe2"
-                  class="size-4 text-stone-400"
-                  label=${msg("Website")}
-                ></sl-icon>
-                <a
-                  class="font-medium leading-none text-stone-500 transition-colors hover:text-stone-600"
-                  href="${url.href}"
-                  target="_blank"
-                  rel="noopener noreferrer nofollow"
-                >
-                  ${url.href.split("//")[1].replace(/\/$/, "")}
-                </a>
-              </div>
-            `;
-          })}
-        </header>
-
-        <div class="mb-5 mt-7 flex items-center justify-between">
-          <h2 class="text-lg font-medium">${msg("Collections")}</h2>
-          ${when(
+      ${page(
+        {
+          title: org.name,
+          suffix: org.verified
+            ? html`<btrix-verified-badge class="mb-0.5"></btrix-verified-badge>`
+            : nothing,
+          actions: when(
             this.appState.isAdmin,
             () =>
-              html`<sl-tooltip content=${msg("Update collections settings")}>
-                <sl-icon-button
-                  href=${`${this.navigate.orgBasePath}/collections`}
-                  class="size-8 text-base"
-                  name="gear"
-                  @click=${this.navigate.link}
-                ></sl-icon-button>
-              </sl-tooltip>`,
-          )}
-        </div>
+              html`<div class="ml-auto flex items-center gap-2">
+                <sl-tooltip content=${msg("Edit org profile")}>
+                  <sl-icon-button
+                    href="${this.navigate.orgBasePath}/settings"
+                    class="size-8 text-base"
+                    name="pencil"
+                    @click=${this.navigate.link}
+                  ></sl-icon-button>
+                </sl-tooltip>
+              </div>`,
+          ),
+          secondary: html`
+            ${when(
+              org.description,
+              (description) => html`
+                <div class="text-pretty text-stone-600">${description}</div>
+              `,
+            )}
+            ${when(org.url, (urlStr) => {
+              let url: URL;
+              try {
+                url = new URL(urlStr);
+              } catch {
+                return nothing;
+              }
 
-        <div class="flex flex-1 items-center justify-center pb-16">
-          ${this.renderCollections(this.collections)}
-        </div>
+              return html`
+                <div
+                  class="flex items-center gap-1.5 text-pretty text-neutral-700"
+                >
+                  <sl-icon
+                    name="globe2"
+                    class="size-4 text-stone-400"
+                    label=${msg("Website")}
+                  ></sl-icon>
+                  <a
+                    class="font-medium leading-none text-stone-500 transition-colors hover:text-stone-600"
+                    href="${url.href}"
+                    target="_blank"
+                    rel="noopener noreferrer nofollow"
+                  >
+                    ${url.href.split("//")[1].replace(/\/$/, "")}
+                  </a>
+                </div>
+              `;
+            })}
+          `,
+        },
+        () => this.renderCollections(),
+      )}
+    `;
+  }
+
+  private renderCollections() {
+    return html`
+      <div class="mb-5 mt-7 flex items-center justify-between">
+        <h2 class="text-lg font-medium">${msg("Collections")}</h2>
+        ${when(
+          this.appState.isAdmin,
+          () =>
+            html`<sl-tooltip content=${msg("Update collections settings")}>
+              <sl-icon-button
+                href=${`${this.navigate.orgBasePath}/collections`}
+                class="size-8 text-base"
+                name="gear"
+                @click=${this.navigate.link}
+              ></sl-icon-button>
+            </sl-tooltip>`,
+        )}
+      </div>
+
+      <div class="flex flex-1 items-center justify-center pb-16">
+        ${this.renderCollectionsList(this.collections)}
       </div>
     `;
   }
 
-  private renderCollections(collections: PublicCollection[]) {
+  private renderCollectionsList(collections: PublicCollection[]) {
     if (!collections.length) {
       return html`
         <p class="text-base text-neutral-500">

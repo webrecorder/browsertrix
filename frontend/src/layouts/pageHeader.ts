@@ -84,7 +84,7 @@ export function pageBack({ href, content }: Breadcrumb) {
   });
 }
 
-export function pageTitle(title?: string | TemplateResult) {
+export function pageTitle(title?: string | TemplateResult | typeof nothing) {
   return html`
     <h1 class="min-w-0 text-xl font-semibold leading-8">
       ${title || html`<sl-skeleton class="my-.5 h-5 w-60"></sl-skeleton>`}
@@ -100,6 +100,7 @@ export function pageNav(breadcrumbs: Breadcrumb[]) {
   return pageBreadcrumbs(breadcrumbs);
 }
 
+// TODO consolidate with page.ts https://github.com/webrecorder/browsertrix/issues/2197
 export function pageHeader(
   title?: string | TemplateResult,
   suffix?: TemplateResult<1>,
