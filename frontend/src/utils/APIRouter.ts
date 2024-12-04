@@ -1,12 +1,15 @@
 import queryString from "query-string";
 import UrlPattern from "url-pattern";
 
-type Paths = { [key: string]: string };
-type Routes<T extends Paths> = { [key in keyof T]: UrlPattern };
+import type { ROUTES } from "@/routes";
 
-export type ViewState<T extends Paths = {}> = {
+type RouteName = keyof typeof ROUTES;
+type Routes = Record<RouteName, UrlPattern>;
+type Paths = Record<RouteName, string>;
+
+export type ViewState = {
   // route name, e.g. "admin"
-  route: keyof T | null;
+  route: RouteName | null;
   // path name
   // e.g. "/dashboard"
   // e.g. "/users/abc123"
@@ -20,18 +23,20 @@ export type ViewState<T extends Paths = {}> = {
   data?: { [key: string]: any };
 };
 
-export default class APIRouter<const T extends Paths> {
-  private readonly routes: Routes<T>;
+export default class APIRouter {
+  private readonly routes: Routes;
 
-  constructor(paths: T) {
-    this.routes = {} as Routes<T>;
+  constructor(paths: Paths) {
+    const routes: { [key: string]: UrlPattern } = {};
 
-    for (const [name, route] of Object.entries(paths) as [keyof T, string][]) {
-      this.routes[name] = new UrlPattern(route);
+    for (const [name, route] of Object.entries(paths)) {
+      routes[name] = new UrlPattern(route);
     }
+
+    this.routes = routes as Routes;
   }
 
-  match(relativePath: string): ViewState<T> {
+  match(relativePath: string): ViewState {
     for (const [name, pattern] of Object.entries(this.routes)) {
       const [path, qs = ""] = relativePath.split("?");
       const match = pattern.match(path);
@@ -46,7 +51,7 @@ export default class APIRouter<const T extends Paths> {
           ...match,
           ...queryParams,
         };
-        return { route: name, pathname: relativePath, params };
+        return { route: name as RouteName, pathname: relativePath, params };
       }
     }
 

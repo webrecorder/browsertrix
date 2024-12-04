@@ -93,6 +93,9 @@ export const orgDataSchema = z.object({
   crawlingDefaults: crawlingDefaultsSchema.nullable(),
   allowSharedProxies: z.boolean(),
   allowedProxies: z.array(z.string()),
+  enablePublicProfile: z.boolean(),
+  publicDescription: z.string().nullable(),
+  publicUrl: z.string().nullable(),
 });
 export type OrgData = z.infer<typeof orgDataSchema>;
 
