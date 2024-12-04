@@ -70,8 +70,9 @@
         <source>Are you sure you want to delete <x equiv-text="&lt;strong&gt;${this.collection?.name}&lt;/strong&gt;" id="0"></x>?</source>
         <target state="translated">¿Estás seguro de que deseas eliminar <x equiv-text="&lt;strong&gt;${this.collection?.name}&lt;/strong&gt;" id="0"></x>?</target>
       </trans-unit>
-      <trans-unit id="s2ceb11be2290bb1b">
+      <trans-unit id="s2ceb11be2290bb1b" xml:space="preserve">
         <source>Cancel</source>
+        <target state="translated">Cancelar</target>
       </trans-unit>
       <trans-unit id="s317006269d0d1476">
         <source>Delete Collection</source>
@@ -434,8 +435,9 @@
       <trans-unit id="sf3146e744d4ea35e">
         <source>Crawl Size Limit</source>
       </trans-unit>
-      <trans-unit id="s09021407b59bfa0c">
+      <trans-unit id="s09021407b59bfa0c" xml:space="preserve">
         <source>GB</source>
+        <target state="translated">GB</target>
       </trans-unit>
       <trans-unit id="s82ec5790418d27f9">
         <source>Page Load Timeout</source>
