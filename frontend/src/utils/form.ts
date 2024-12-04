@@ -1,5 +1,7 @@
 import { msg, str } from "@lit/localize";
 import type { SlInput, SlTextarea } from "@shoelace-style/shoelace";
+import { getFormControls } from "@shoelace-style/shoelace/dist/utilities/form.js";
+import type { LitElement } from "lit";
 
 import localize from "./localize";
 
@@ -59,4 +61,22 @@ export function maxLengthValidator(maxLength: number): MaxLengthValidator {
   };
 
   return { helpText: validityHelpText, validate };
+}
+
+/**
+ * Validate form based on whether it contains an invalid Shoelace element
+ *
+ * @TODO Refactor forms to use utility
+ */
+export function formValidator(el: LitElement) {
+  return async function checkFormValidity(form: HTMLFormElement) {
+    await el.updateComplete;
+
+    const formControls = getFormControls(form);
+
+    return (
+      !form.querySelector("[data-invalid]") &&
+      !formControls.some((el) => el.getAttribute("data-invalid") !== null)
+    );
+  };
 }
