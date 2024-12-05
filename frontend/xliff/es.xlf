@@ -404,9 +404,6 @@
         <source>Choose a custom profile to make use of saved cookies and logged-in
   accounts. Note that websites may log profiles out after a period of time.</source>
       </trans-unit>
-      <trans-unit id="scd15181280405de6">
-        <source>Choose a Browsertrix Crawler Release Channel. If available, other versions may provide new/experimental crawling features.</source>
-      </trans-unit>
       <trans-unit id="h1a88ca035802fcd0">
         <source>Blocks advertising content from being loaded. Uses
       <x equiv-text="&lt;a href=&quot;https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts&quot; class=&quot;text-blue-600 hover:text-blue-500&quot; target=&quot;_blank&quot; rel=&quot;noopener noreferrer nofollow&quot;&gt;" id="0"/>Steven Black’s Hosts file<x equiv-text="&lt;/a&gt;" id="1"/>.</source>
@@ -2938,10 +2935,6 @@
       <trans-unit id="sc154fb69dffcdef9">
         <source>billing settings</source>
       </trans-unit>
-      <trans-unit id="s71c5c2d34bb2c4c2">
-        <source>Your org will be deleted in
-              <x equiv-text="${daysDiff}" id="0"/> days</source>
-      </trans-unit>
       <trans-unit id="s7fa0d24b94690373">
         <source>Your subscription ends on <x equiv-text="${dateStr}" id="0"/>. Your user account, org, and all associated data will be deleted.</source>
       </trans-unit>
@@ -3849,17 +3842,19 @@
       </trans-unit>
       <trans-unit id="se1037ae4d9adb08a">
         <source>You have one day left of your Browsertrix trial</source>
-      <trans-unit id="saecba9c0445090e6">
-        <source>Choose a Browsertrix Crawler release channel. If available, other versions may provide new/experimental crawling features.</source>
-      </trans-unit>
-      <trans-unit id="s22cec6a3e464a4e9">
-        <source>Gracefully stop archiving after the specified amount of time has elapsed.</source>
-      </trans-unit>
-      <trans-unit id="s2823887bf8a836da">
-        <source>Gracefully stop archiving after the specified amount of data has been captured.</source>
-      </trans-unit>
-      <trans-unit id="s9aa0dfb832cb7f69">
-        <source>View error logs</source>
+        <trans-unit id="saecba9c0445090e6">
+          <source>Choose a Browsertrix Crawler release channel. If available, other versions may provide new/experimental crawling features.</source>
+        </trans-unit>
+        <trans-unit id="s22cec6a3e464a4e9">
+          <source>Gracefully stop archiving after the specified amount of time has elapsed.</source>
+        </trans-unit>
+        <trans-unit id="s2823887bf8a836da">
+          <source>Gracefully stop archiving after the specified amount of data has been captured.</source>
+        </trans-unit>
+        <trans-unit id="s9aa0dfb832cb7f69">
+          <source>View error logs</source>
+        </trans-unit>
+        <source>You have one day left of your Browsertrix trial</source>
       </trans-unit>
     </body>
   </file>
