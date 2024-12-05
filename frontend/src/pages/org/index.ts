@@ -467,6 +467,7 @@ export class Org extends LiteElement {
         workflowId=${params.workflowId || ""}
         itemType=${params.itemType || "crawl"}
         ?isCrawler=${this.appState.isCrawler}
+        .qaTab=${params.qaTab}
       ></btrix-archived-item-detail>`;
     }
 
