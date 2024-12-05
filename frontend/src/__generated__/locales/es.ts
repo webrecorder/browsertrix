@@ -361,6 +361,7 @@
 's88297f67c4182ba0': `En pausa, pago fallido`,
 's882dbbc2c22c08f5': `analizado`,
 's88f9e7f4ecc07ede': `Tamaño total`,
+'s8975026acabb194d': `Seleccionar archivados`,
 's8a803831f3ac3903': `Minutos máximos de ejecución por mes`,
 's8af61807443f32a4': `Acciones`,
 's8b6894f4bfec27c0': str`${0} caracteres superan el límite`,
@@ -682,7 +683,6 @@
               <a class="text-primary" href="https://replayweb.page/docs/embedding" target="_blank">
                 our embedding guide</a>
               for more details.`,
-'s8975026acabb194d': `Select Archived Items`,
 's21c76a0f6cae7920': `Row actions`,
 's6f6715b26a9dd225': `This Collection doesn’t have any archived items, yet.`,
 'saccd6920c9253eaf': `Sorry, couldn't retrieve web captures at this time.`,

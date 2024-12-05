@@ -148,8 +148,9 @@
         <source>Edit Metadata</source>
         <target state="translated">Editar metadatos</target>
       </trans-unit>
-      <trans-unit id="s8975026acabb194d">
+      <trans-unit id="s8975026acabb194d" xml:space="preserve">
         <source>Select Archived Items</source>
+        <target state="translated">Seleccionar archivados</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s1a24424753185138">
         <source>Make Shareable</source>
