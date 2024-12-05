@@ -257,7 +257,7 @@ export class WorkflowEditor extends BtrixElement {
     FormState["scheduleType"],
     string
   > = {
-    date: msg(html`Run on a specific date & time`),
+    date: msg("Run on a specific date & time"),
     cron: msg("Run on a recurring basis"),
     none: msg("No schedule"),
   };
