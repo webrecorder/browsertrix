@@ -4,7 +4,7 @@ import UrlPattern from "url-pattern";
 type Paths = { [key: string]: string };
 type Routes<T extends Paths> = { [key in keyof T]: UrlPattern };
 
-export type ViewState<T extends Paths> = {
+export type ViewState<T extends Paths = {}> = {
   // route name, e.g. "admin"
   route: keyof T | null;
   // path name
