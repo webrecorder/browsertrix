@@ -108,8 +108,9 @@
         <source>Open in New Tab</source>
         <target state="translated">Abrir en una nueva pestaña</target>
       </trans-unit>
-      <trans-unit id="sb8096046172ad45a">
+      <trans-unit xml:space="preserve" id="sb8096046172ad45a">
         <source>Embed Collection</source>
+        <target state="translated">Incrustar colección</target>
       </trans-unit>
       <trans-unit id="h7066b35dd7e4517e">
         <source>Share this collection by embedding it into an existing webpage.</source>
