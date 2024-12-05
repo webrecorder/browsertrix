@@ -27,7 +27,6 @@
 'h648aaa4b436a5970': html`Añade el siguiente JavaScript a tu <code class="text-[0.9em]">/replay/sw.js</code>:`,
 'h702a7337c08bf73f': html`Se ha enviado un correo electrónico de confirmación a: <br>
                 <strong>${0}</strong>.`,
-'h771d6468b1e5ae7f': html`Ejecutar en una fecha &amp; hora específicos`,
 'h7ee8a6e551e702ba': html` ${0} de ${1} `,
 'h8309b5706a9a85ba': html`<span class="text-primary">${0}</span> HTML ${1}
                     `,
@@ -329,6 +328,7 @@
 's75a2e5409f11285f': `Accesible al público`,
 's768e849d9e12a0bc': `Total de colecciones`,
 's77001a56d74ac617': str`Colección ${0} guardada correctamente.`,
+'s771d6468b1e5ae7f': `Ejecutar en una fecha &amp; hora específicos`,
 's77c5956de0c7b221': `Tiempo de ejecución regalado`,
 's78636b92c1a3909c': `Pendiente`,
 's78789724e789221c': `Tamaño`,
