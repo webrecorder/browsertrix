@@ -69,7 +69,7 @@ jobs:
         working-directory: frontend
         env:
           HUSKY: 0
-        run: yarn playwright install-deps --with-deps
+        run: yarn playwright install-deps
         if: steps.playwright-cache.outputs.cache-hit != 'true'
 
       # Lint:
