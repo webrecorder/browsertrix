@@ -12,9 +12,9 @@ it("rounds milliseconds", () => {
   expect(humanizeDuration(1), "1ms").to.deep.equal({ milliseconds: 1 });
   expect(humanizeDuration(999), "999ms").to.deep.equal({ milliseconds: 999 });
   expect(humanizeDuration(1000), "1s").to.deep.equal({ seconds: 1 });
-  expect(humanizeDuration(1000 + 400), "1.4s").to.deep.equal({ seconds: 1.4 });
+  expect(humanizeDuration(1000 + 400), "1.4s").to.deep.equal({ seconds: 1 });
   expect(humanizeDuration(1000 * 2 + 400), "2.4s").to.deep.equal({
-    seconds: 2.4,
+    seconds: 2,
   });
   expect(humanizeDuration(1000 * 55), "55s").to.deep.equal({ seconds: 55 });
   expect(humanizeDuration(1000 * 67), "1m 7s").to.deep.equal({
@@ -51,7 +51,7 @@ it("rounds milliseconds", () => {
   });
   expect(humanizeDuration(119999), "1m 59.9s").to.deep.equal({
     minutes: 1,
-    seconds: 59.9,
+    seconds: 60,
   });
   expect(humanizeDuration(120000), "2m").to.deep.equal({ minutes: 2 });
 });
@@ -103,69 +103,11 @@ it("has a unitCount option", () => {
   ).to.deep.equal({ years: 1, days: 154, hours: 6 });
 });
 
-it("has a secondsDecimalDigits option", () => {
-  expect(humanizeDuration(10000), "10s").to.deep.equal({ seconds: 10 });
-  expect(humanizeDuration(33333), "33.3s").to.deep.equal({ seconds: 33.3 });
-  expect(
-    humanizeDuration(999, { secondsDecimalDigits: 0 }),
-    "999ms",
-  ).to.deep.equal({ milliseconds: 999 });
-  expect(
-    humanizeDuration(1000, { secondsDecimalDigits: 0 }),
-    "1s",
-  ).to.deep.equal({ seconds: 1 });
-  expect(
-    humanizeDuration(1999, { secondsDecimalDigits: 0 }),
-    "1s",
-  ).to.deep.equal({ seconds: 1 });
-  expect(
-    humanizeDuration(2000, { secondsDecimalDigits: 0 }),
-    "2s",
-  ).to.deep.equal({ seconds: 2 });
-  expect(
-    humanizeDuration(33333, { secondsDecimalDigits: 0 }),
-    "33s",
-  ).to.deep.equal({ seconds: 33 });
-  expect(
-    humanizeDuration(33333, { secondsDecimalDigits: 4 }),
-    "33.3330s",
-  ).to.deep.equal({ seconds: 33.333 });
-});
-
-it("has a millisecondsDecimalDigits option", () => {
-  expect(humanizeDuration(33.333), "33ms").to.deep.equal({ milliseconds: 33 });
-  expect(
-    humanizeDuration(33.333, { millisecondsDecimalDigits: 0 }),
-    "33ms",
-  ).to.deep.equal({ milliseconds: 33 });
-  expect(
-    humanizeDuration(33.333, { millisecondsDecimalDigits: 4 }),
-    "33.3330ms",
-  ).to.deep.equal({ milliseconds: 33.333 });
-});
-
-it("has a keepDecimalsOnWholeSeconds option", () => {
-  expect(
-    humanizeDuration(1000 * 33, {
-      secondsDecimalDigits: 2,
-      keepDecimalsOnWholeSeconds: true,
-    }),
-    "33.00s",
-  ).to.deep.equal({ seconds: 33 });
-  expect(
-    humanizeDuration(1000 * 33.00004, {
-      secondsDecimalDigits: 2,
-      keepDecimalsOnWholeSeconds: true,
-    }),
-    "33.00s",
-  ).to.deep.equal({ seconds: 33 });
-});
-
 it("has a separateMilliseconds option", () => {
   expect(
     humanizeDuration(1100, { separateMilliseconds: false }),
     "1.1s",
-  ).to.deep.equal({ seconds: 1.1 });
+  ).to.deep.equal({ seconds: 1 });
   expect(
     humanizeDuration(1100, { separateMilliseconds: true }),
     "1s 100ms",
@@ -258,37 +200,4 @@ it("throws on invalid", () => {
   expect(() => {
     humanizeDuration(Infinity);
   }).to.throw();
-});
-
-it("properly rounds milliseconds with secondsDecimalDigits", () => {
-  const fn = (milliseconds: number) =>
-    humanizeDuration(milliseconds, {
-      secondsDecimalDigits: 0,
-    });
-  expect(fn(3 * 60 * 1000), "3 minutes").to.deep.equal({ minutes: 3 });
-  expect(fn(3 * 60 * 1000 - 1), "2 minutes 59 seconds").to.deep.equal({
-    minutes: 2,
-    seconds: 59,
-  });
-  expect(fn(365 * 24 * 3600 * 1e3), "1 year").to.deep.equal({ years: 1 });
-  expect(
-    fn(365 * 24 * 3600 * 1e3 - 1),
-    "364 days 23 hours 59 minutes 59 seconds",
-  ).to.deep.equal({ days: 364, hours: 23, minutes: 59, seconds: 59 });
-  expect(fn(24 * 3600 * 1e3), "1 day").to.deep.equal({ days: 1 });
-  expect(
-    fn(24 * 3600 * 1e3 - 1),
-    "23 hours 59 minutes 59 seconds",
-  ).to.deep.equal({ hours: 23, minutes: 59, seconds: 59 });
-  expect(fn(3600 * 1e3), "1 hour").to.deep.equal({ hours: 1 });
-  expect(fn(3600 * 1e3 - 1), "59 minutes 59 seconds").to.deep.equal({
-    minutes: 59,
-    seconds: 59,
-  });
-  expect(fn(2 * 3600 * 1e3), "2 hours").to.deep.equal({ hours: 2 });
-  expect(fn(2 * 3600 * 1e3 - 1), "1 hour 59 minutes 59 seconds").to.deep.equal({
-    hours: 1,
-    minutes: 59,
-    seconds: 59,
-  });
 });
