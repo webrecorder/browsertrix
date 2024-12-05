@@ -328,7 +328,6 @@
 's75a2e5409f11285f': `Accesible al público`,
 's768e849d9e12a0bc': `Total de colecciones`,
 's77001a56d74ac617': str`Colección ${0} guardada correctamente.`,
-'s771d6468b1e5ae7f': `Ejecutar en una fecha &amp; hora específicos`,
 's77c5956de0c7b221': `Tiempo de ejecución regalado`,
 's78636b92c1a3909c': `Pendiente`,
 's78789724e789221c': `Tamaño`,
@@ -452,6 +451,7 @@
 'sac8252732f2edb19': `Fecha`,
 'sad3e3c8146fc920f': `Estado`,
 'sadfb54de733655c9': `Usar proxy:`,
+'sae69bd370363cb62': `Ejecutar en una fecha y hora específicos`,
 'sae935ffa510dc00f': `Ayúdenos a traducir Browsertrix.`,
 'saf63d34c8601dd41': str`
           ${0}
