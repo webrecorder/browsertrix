@@ -2,7 +2,7 @@ import { localized, msg } from "@lit/localize";
 import type { SlInput, SlMenuItem } from "@shoelace-style/shoelace";
 import Fuse from "fuse.js";
 import { html, type PropertyValues } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
 import { guard } from "lit/directives/guard.js";
 import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
@@ -90,6 +90,9 @@ export class CollectionsList extends BtrixElement {
 
   @state()
   private fetchErrorStatusCode?: number;
+
+  @query("sl-input")
+  private readonly input?: SlInput | null;
 
   // For fuzzy search:
   private readonly fuse = new Fuse<{ key: "name"; value: string }>([], {
@@ -339,7 +342,6 @@ export class CollectionsList extends BtrixElement {
           size="small"
           placeholder=${msg("Search by Name")}
           clearable
-          value=${this.searchByValue}
           @sl-clear=${() => {
             this.searchResultsOpen = false;
             this.onSearchInput.cancel();
@@ -627,8 +629,8 @@ export class CollectionsList extends BtrixElement {
     </div>
   `;
 
-  private readonly onSearchInput = debounce(150)((e: Event) => {
-    this.searchByValue = (e.target as SlInput).value.trim();
+  private readonly onSearchInput = debounce(150)(() => {
+    this.searchByValue = this.input?.value.trim() || "";
 
     if (!this.searchResultsOpen && this.hasSearchStr) {
       this.searchResultsOpen = true;

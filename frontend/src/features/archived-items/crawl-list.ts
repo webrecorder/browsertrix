@@ -24,7 +24,6 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { BtrixElement } from "@/classes/BtrixElement";
 import { TailwindElement } from "@/classes/TailwindElement";
 import type { OverflowDropdown } from "@/components/ui/overflow-dropdown";
-import { RelativeDuration } from "@/components/ui/relative-duration";
 import type { Crawl } from "@/types/crawler";
 import { renderName } from "@/utils/crawler";
 import { pluralOf } from "@/utils/pluralize";
@@ -177,7 +176,7 @@ export class CrawlListItem extends BtrixElement {
         </btrix-table-cell>
         <btrix-table-cell>
           ${this.safeRender((crawl) =>
-            RelativeDuration.humanize(
+            this.localize.humanizeDuration(
               (crawl.finished
                 ? new Date(crawl.finished)
                 : new Date()

@@ -18,6 +18,7 @@ COPY --link lit-localize.json \
   index.d.ts \
   ./
 
+COPY --link lib ./lib/
 COPY --link src ./src/
 
 # Build variables used to show current app version

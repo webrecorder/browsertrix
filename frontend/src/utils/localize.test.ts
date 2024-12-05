@@ -70,6 +70,14 @@ describe("Localize", () => {
       );
     });
 
+    it("updates the duration formatter", () => {
+      const localize = new Localize();
+      localize.setLanguage("es");
+      expect(localize.duration({ days: 1, hours: 2, minutes: 3 })).to.equal(
+        "1 d, 2 h, 3 min",
+      );
+    });
+
     it("sets the active language", () => {
       const localize = new Localize();
       localize.setLanguage("es");
@@ -114,6 +122,32 @@ describe("Localize", () => {
           timeZone: "UTC",
         }),
       ).to.equal("2024. 1. 1.");
+    });
+  });
+
+  describe(".duration()", () => {
+    it("formats a duration", () => {
+      const localize = new Localize("am");
+      expect(
+        localize.duration({
+          days: 1,
+          hours: 2,
+          minutes: 3,
+          seconds: 4,
+          milliseconds: 5,
+        }),
+      ).to.equal("1 ቀናት፣ 2 ሰዓ፣ 3 ደቂቃ፣ 4 ሰከ፣ 5 ሚሴ");
+    });
+
+    it("formats an empty duration", () => {
+      const localize = new Localize("am");
+      expect(localize.duration({ seconds: 0 })).to.equal("");
+    });
+
+    it("errors with an invalid duration", () => {
+      const localize = new Localize("am");
+      // @ts-expect-error empty object shouldn't be allowed
+      expect(() => localize.duration({})).to.throw();
     });
   });
 });

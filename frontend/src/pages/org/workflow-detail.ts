@@ -13,7 +13,6 @@ import type { Crawl, Seed, Workflow, WorkflowParams } from "./types";
 import { BtrixElement } from "@/classes/BtrixElement";
 import { CopyButton } from "@/components/ui/copy-button";
 import type { PageChangeEvent } from "@/components/ui/pagination";
-import { RelativeDuration } from "@/components/ui/relative-duration";
 import { type IntersectEvent } from "@/components/utils/observable";
 import type { CrawlLog } from "@/features/archived-items/crawl-logs";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
@@ -958,7 +957,7 @@ export class WorkflowDetail extends BtrixElement {
         )}
         ${this.renderDetailItem(msg("Run Duration"), () =>
           this.lastCrawlStartTime
-            ? RelativeDuration.humanize(
+            ? this.localize.humanizeDuration(
                 new Date().valueOf() -
                   new Date(this.lastCrawlStartTime).valueOf(),
               )

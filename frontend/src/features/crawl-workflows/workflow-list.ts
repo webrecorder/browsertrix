@@ -22,7 +22,6 @@ import {
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { OverflowDropdown } from "@/components/ui/overflow-dropdown";
-import { RelativeDuration } from "@/components/ui/relative-duration";
 import type { ListWorkflow } from "@/types/crawler";
 import { humanizeSchedule } from "@/utils/cron";
 import { srOnly, truncate } from "@/utils/css";
@@ -270,7 +269,7 @@ export class WorkflowListItem extends BtrixElement {
                   minute="2-digit"
                 ></sl-format-date>
                 ${msg(
-                  str`in ${RelativeDuration.humanize(
+                  str`in ${this.localize.humanizeDuration(
                     new Date(workflow.lastCrawlTime).valueOf() -
                       new Date(workflow.lastCrawlStartTime).valueOf(),
                     { compact: true },
@@ -285,7 +284,7 @@ export class WorkflowListItem extends BtrixElement {
                 return "";
               }
               return msg(
-                str`Running for ${RelativeDuration.humanize(diff, {
+                str`Running for ${this.localize.humanizeDuration(diff, {
                   compact: true,
                 })}`,
               );
