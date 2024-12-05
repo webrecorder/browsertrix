@@ -388,12 +388,6 @@
       <trans-unit id="sa663117885b91a78">
         <source>Adds a hard limit on the number of pages that will be crawled.</source>
       </trans-unit>
-      <trans-unit id="s4ad6912b1925acb3">
-        <source>Gracefully stop the crawler after a specified time limit.</source>
-      </trans-unit>
-      <trans-unit id="s4d0d8767ec20220b">
-        <source>Gracefully stop the crawler after a specified size limit.</source>
-      </trans-unit>
       <trans-unit id="scd0d4a13a709c62f">
         <source>Limits amount of time to wait for a page to load. Behaviors will run after this timeout only if the page is partially or fully loaded.</source>
       </trans-unit>
@@ -2944,6 +2938,10 @@
       <trans-unit id="sc154fb69dffcdef9">
         <source>billing settings</source>
       </trans-unit>
+      <trans-unit id="s71c5c2d34bb2c4c2">
+        <source>Your org will be deleted in
+              <x equiv-text="${daysDiff}" id="0"/> days</source>
+      </trans-unit>
       <trans-unit id="s7fa0d24b94690373">
         <source>Your subscription ends on <x equiv-text="${dateStr}" id="0"/>. Your user account, org, and all associated data will be deleted.</source>
       </trans-unit>
@@ -3851,6 +3849,17 @@
       </trans-unit>
       <trans-unit id="se1037ae4d9adb08a">
         <source>You have one day left of your Browsertrix trial</source>
+      <trans-unit id="saecba9c0445090e6">
+        <source>Choose a Browsertrix Crawler release channel. If available, other versions may provide new/experimental crawling features.</source>
+      </trans-unit>
+      <trans-unit id="s22cec6a3e464a4e9">
+        <source>Gracefully stop archiving after the specified amount of time has elapsed.</source>
+      </trans-unit>
+      <trans-unit id="s2823887bf8a836da">
+        <source>Gracefully stop archiving after the specified amount of data has been captured.</source>
+      </trans-unit>
+      <trans-unit id="s9aa0dfb832cb7f69">
+        <source>View error logs</source>
       </trans-unit>
     </body>
   </file>

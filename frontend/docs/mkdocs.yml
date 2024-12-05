@@ -1,4 +1,5 @@
 site_name: Browsertrix Docs
+site_url: !ENV SITE_URL
 repo_url: https://github.com/webrecorder/browsertrix-cloud/
 repo_name: Browsertrix
 edit_uri: edit/main/frontend/docs/docs/
