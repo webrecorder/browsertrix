@@ -54,5 +54,36 @@ describe("APIRouter", () => {
         email: "fake+comment@email.com",
       });
     });
+    describe("archived items", () => {
+      it("matches item", () => {
+        const apiRouter = new APIRouter(ROUTES);
+        const viewState = apiRouter.match(
+          "/orgs/fake-org-id/items/crawl/manual-22061402406423-79beb9d3-1df",
+        );
+
+        expect(viewState.route).to.equal("org");
+        expect(viewState.params).to.deep.equal({
+          itemId: "manual-22061402406423-79beb9d3-1df",
+          itemType: "crawl",
+          slug: "fake-org-id",
+        });
+      });
+
+      it("matches item QA", () => {
+        const apiRouter = new APIRouter(ROUTES);
+        const viewState = apiRouter.match(
+          "/orgs/fake-org-id/items/crawl/manual-22061402406423-79beb9d3-1df/review/screenshots?qaRunId=qa-20241126175717-75f211dc-a5b",
+        );
+
+        expect(viewState.route).to.equal("org");
+        expect(viewState.params).to.deep.equal({
+          itemId: "manual-22061402406423-79beb9d3-1df",
+          itemType: "crawl",
+          qaRunId: "qa-20241126175717-75f211dc-a5b",
+          reviewType: "screenshots",
+          slug: "fake-org-id",
+        });
+      });
+    });
   });
 });
