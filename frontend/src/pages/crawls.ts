@@ -75,7 +75,9 @@ export class Crawls extends LiteElement {
       // Redirect to org crawl page
       await this.fetchWorkflowId();
       const slug = this.slugLookup[this.crawl!.oid];
-      this.navTo(`/orgs/${slug}/items/crawl/${this.crawlId}`);
+      this.navTo(
+        `/orgs/${slug}/workflows/${this.crawl?.cid}/crawls/${this.crawlId}`,
+      );
     } else {
       if (
         changedProperties.has("filterBy") ||

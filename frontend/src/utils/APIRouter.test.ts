@@ -80,7 +80,7 @@ describe("APIRouter", () => {
           itemId: "manual-22061402406423-79beb9d3-1df",
           itemType: "crawl",
           qaRunId: "qa-20241126175717-75f211dc-a5b",
-          reviewType: "screenshots",
+          qaTab: "screenshots",
           slug: "fake-org-id",
         });
       });

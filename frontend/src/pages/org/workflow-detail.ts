@@ -1060,7 +1060,7 @@ export class WorkflowDetail extends BtrixElement {
             this.workflow?.lastCrawlId && this.workflow,
             (workflow) => html`
               <sl-button
-                href=${`${this.navigate.orgBasePath}/items/crawl/${workflow.lastCrawlId}#replay`}
+                href=${`${this.navigate.orgBasePath}/workflows/${workflow.id}/crawls/${workflow.lastCrawlId}#replay`}
                 variant="primary"
                 size="small"
                 @click=${this.navigate.link}
@@ -1078,7 +1078,7 @@ export class WorkflowDetail extends BtrixElement {
             this.isCrawler && this.workflow,
             (workflow) =>
               html` <sl-button
-                href=${`${this.navigate.orgBasePath}/items/crawl/${workflow.lastCrawlId}#qa`}
+                href=${`${this.navigate.orgBasePath}/workflows/${workflow.id}/crawls/${workflow.lastCrawlId}#qa`}
                 size="small"
                 @click=${this.navigate.link}
               >
