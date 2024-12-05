@@ -19,18 +19,45 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'yarn'
           cache-dependency-path: frontend/yarn.lock
+
+      - name: Get installed Playwright version
+        working-directory: frontend
+        id: playwright-version
+        run: echo "PLAYWRIGHT_VERSION=$(node -e "console.log(require('./package-lock.json').dependencies['@playwright/test'].version)")" >> $GITHUB_ENV
+
+      - name: Cache playwright binaries
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: |
+            ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ env.PLAYWRIGHT_VERSION }}
+
       - name: Install dependencies
         working-directory: frontend
         run: yarn install --frozen-lockfile
+
       - name: Install Playwright Browsers
-        run: yarn add playwright@1.49.0 && yarn playwright install --with-deps
-        working-directory: ./frontend
+        working-directory: frontend
+        env:
+          HUSKY: 0
+        run: yarn playwright install --with-deps
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+
+      - name: Install Playwright Deps
+        working-directory: frontend
+        env:
+          HUSKY: 0
+        run: yarn playwright install-deps --with-deps
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+
       - name: Create env file
         run: |
           cd frontend
@@ -38,11 +65,14 @@ jobs:
           echo DEV_PASSWORD="${{ secrets.DEV_PASSWORD }}" >> .env
           echo API_BASE_URL=${{ secrets.API_BASE_URL }} >> .env
           cat .env
+
       - name: Build frontend
         run: cd frontend && yarn build
         id: build-frontend
+
       - name: Run Playwright tests
         run: cd frontend && yarn playwright test
+
       - uses: actions/upload-artifact@v4
         if: always()
         with:
