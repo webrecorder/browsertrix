@@ -656,7 +656,7 @@ export class WorkflowEditor extends BtrixElement {
         }}
       >
         <sl-icon slot="suffix" name="chevron-double-right"></sl-icon>
-        ${msg("Review & Save")}
+        ${msg(html`Review & Save`)}
       </sl-button>
     `;
   }
