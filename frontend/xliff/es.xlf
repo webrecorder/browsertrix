@@ -3214,10 +3214,6 @@
         <source>Next Step</source>
         <target state="translated">Siguiente paso</target>
       </trans-unit>
-      <trans-unit xml:space="preserve" id="sf4626f0918c0d6a0">
-        <source>Review &amp; Save</source>
-        <target state="translated">Revisar &amp; guardar</target>
-      </trans-unit>
       <trans-unit xml:space="preserve" id="s9645fd859ac5dbd8">
         <source>Run on Save</source>
         <target state="translated">Ejecutar al guardar</target>
@@ -4472,6 +4468,10 @@
       <trans-unit xml:space="preserve" id="sab5061cf8c519285">
         <source><x equiv-text="${storageBytesText}" id="0"/> of disk space</source>
         <target state="translated"><x equiv-text="${storageBytesText}" id="0"/> de espacio en disco</target>
+      </trans-unit>
+      <trans-unit xml:space="preserve" id="hf4626f0918c0d6a0">
+        <source>Review &amp; Save</source>
+        <target state="translated">Revisar &amp; guardar</target>
       </trans-unit>
     </body>
   </file>
