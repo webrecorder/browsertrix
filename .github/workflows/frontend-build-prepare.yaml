@@ -40,7 +40,9 @@ jobs:
       - name: Get installed Playwright version
         working-directory: frontend
         id: playwright-version
-        run: echo "PLAYWRIGHT_VERSION=$(node scripts/get-resolved-playwright-version.js)" >> $GITHUB_ENV
+        run: |
+          yarn add @yarnpkg/lockfile
+          echo "PLAYWRIGHT_VERSION=$(node scripts/get-resolved-playwright-version.js)" >> $GITHUB_ENV
 
       - name: Cache playwright binaries
         uses: actions/cache@v4
