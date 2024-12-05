@@ -1014,9 +1014,6 @@
       <trans-unit id="s78f373341662ad89">
         <source>Canceling will discard all pages crawled. Are you sure you want to discard them?</source>
       </trans-unit>
-      <trans-unit id="s7047060377c6217c">
-        <source>Cancel &amp; Discard Crawl</source>
-      </trans-unit>
       <trans-unit id="se6cd38c76bc4114a">
         <source>Delete Crawl?</source>
       </trans-unit>
@@ -3162,10 +3159,6 @@
         <source>Custom Page Prefix</source>
         <target state="translated">Prefijo de página personalizado</target>
       </trans-unit>
-      <trans-unit xml:space="preserve" id="s771d6468b1e5ae7f">
-        <source>Run on a specific date &amp; time</source>
-        <target state="translated">Ejecutar en una fecha &amp; hora específicos</target>
-      </trans-unit>
       <trans-unit xml:space="preserve" id="sb407b40e2e7a98c1">
         <source>Run on a recurring basis</source>
         <target state="translated">Ejecutar de forma periódica</target>
@@ -4472,6 +4465,13 @@
       <trans-unit xml:space="preserve" id="hf4626f0918c0d6a0">
         <source>Review &amp; Save</source>
         <target state="translated">Revisar &amp; guardar</target>
+      </trans-unit>
+      <trans-unit id="h7047060377c6217c">
+        <source>Cancel &amp; Discard Crawl</source>
+      </trans-unit>
+      <trans-unit xml:space="preserve" id="h771d6468b1e5ae7f">
+        <source>Run on a specific date &amp; time</source>
+        <target state="translated">Ejecutar en una fecha &amp; hora específicos</target>
       </trans-unit>
     </body>
   </file>
