@@ -4403,8 +4403,9 @@
         <source><x equiv-text="${storageBytesText}" id="0"/> of disk space</source>
         <target state="translated"><x equiv-text="${storageBytesText}" id="0"/> de espacio en disco</target>
       </trans-unit>
-      <trans-unit id="hf4626f0918c0d6a0">
+      <trans-unit xml:space="preserve" id="hf4626f0918c0d6a0">
         <source>Review &amp; Save</source>
+        <target state="translated">Revisar &amp; guardar</target>
       </trans-unit>
     </body>
   </file>
