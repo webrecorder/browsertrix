@@ -1,5 +1,5 @@
 import { localized, msg, str } from "@lit/localize";
-import { nothing } from "lit";
+import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -14,6 +14,7 @@ import type {
   UserRoleChangeEvent,
 } from "./settings/settings";
 
+import { BtrixElement } from "@/classes/BtrixElement";
 import type { QuotaUpdateDetail } from "@/controllers/api";
 import needLogin from "@/decorators/needLogin";
 import type { CollectionSavedEvent } from "@/features/collections/collection-metadata-dialog";
@@ -22,7 +23,6 @@ import type { UserOrg } from "@/types/user";
 import { isApiError } from "@/utils/api";
 import type { ViewState } from "@/utils/APIRouter";
 import { DEFAULT_MAX_SCALE } from "@/utils/crawler";
-import LiteElement, { html } from "@/utils/LiteElement";
 import { type OrgData } from "@/utils/orgs";
 import { AppStateService } from "@/utils/state";
 import type { FormState as WorkflowFormState } from "@/utils/workflow";
@@ -61,6 +61,7 @@ export type OrgParams = {
   };
   items: ArchivedItemPageParams & {
     itemType?: string;
+    qaTab?: QATab;
   };
   "browser-profiles": {
     browserProfileId?: string;
@@ -91,7 +92,7 @@ const UUID_REGEX =
 @localized()
 @customElement("btrix-org")
 @needLogin
-export class Org extends LiteElement {
+export class Org extends BtrixElement {
   @property({ type: Object })
   viewStateData?: ViewState["data"];
 
@@ -150,9 +151,9 @@ export class Org extends LiteElement {
         // Couldn't find org with slug, redirect to first org
         const org = this.userInfo.orgs[0] as UserOrg | undefined;
         if (org) {
-          this.navTo(`/orgs/${org.slug}`);
+          this.navigate.to(`/orgs/${org.slug}`);
         } else {
-          this.navTo(`/account/settings`);
+          this.navigate.to(`/account/settings`);
         }
 
         return;
@@ -167,7 +168,7 @@ export class Org extends LiteElement {
       if (this.openDialogName) {
         if (url.searchParams.get("new") !== this.openDialogName) {
           url.searchParams.set("new", this.openDialogName);
-          this.navTo(`${url.pathname}${url.search}`);
+          this.navigate.to(`${url.pathname}${url.search}`);
         }
       } else {
         const prevOpenDialogName = changedProperties.get("openDialogName");
@@ -176,7 +177,7 @@ export class Org extends LiteElement {
           prevOpenDialogName === url.searchParams.get("new")
         ) {
           url.searchParams.delete("new");
-          this.navTo(`${url.pathname}${url.search}`);
+          this.navigate.to(`${url.pathname}${url.search}`);
         }
       }
     } else if (changedProperties.has("params")) {
@@ -201,7 +202,7 @@ export class Org extends LiteElement {
       }
     } catch (e) {
       console.debug(e);
-      this.notify({
+      this.notify.toast({
         message: msg("Sorry, couldn't retrieve organization at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
@@ -216,7 +217,7 @@ export class Org extends LiteElement {
       const org = await this.getOrg(this.orgSlug);
       const actualSlug = org?.slug;
       if (actualSlug) {
-        this.navTo(
+        this.navigate.to(
           window.location.href
             .slice(window.location.origin.length)
             .replace(this.orgSlug, actualSlug),
@@ -386,9 +387,9 @@ export class Org extends LiteElement {
       <a
         id="${tabName}-tab"
         class="block flex-shrink-0 rounded-t px-3 transition-colors hover:bg-neutral-50"
-        href=${`${this.orgBasePath}${path ? `/${path}` : ""}`}
+        href=${`${this.navigate.orgBasePath}${path ? `/${path}` : ""}`}
         aria-selected=${isActive}
-        @click=${this.navLink}
+        @click=${this.navigate.link}
       >
         <div
           class="${isActive
@@ -424,7 +425,7 @@ export class Org extends LiteElement {
           @request-close=${() => (this.openDialogName = undefined)}
           @uploaded=${() => {
             if (this.orgTab === "home") {
-              this.navTo(`${this.orgBasePath}/items/upload`);
+              this.navigate.to(`${this.navigate.orgBasePath}/items/upload`);
             }
           }}
         ></btrix-file-uploader>
@@ -437,8 +438,8 @@ export class Org extends LiteElement {
           ?open=${this.openDialogName === "collection"}
           @sl-hide=${() => (this.openDialogName = undefined)}
           @btrix-collection-saved=${(e: CollectionSavedEvent) => {
-            this.navTo(
-              `${this.orgBasePath}/collections/view/${e.detail.id}/items`,
+            this.navigate.to(
+              `${this.navigate.orgBasePath}/collections/view/${e.detail.id}/items`,
             );
           }}
         >
@@ -547,7 +548,7 @@ export class Org extends LiteElement {
           });
         }
 
-        this.navTo(`${this.orgBasePath}/workflows/new`, {
+        this.navigate.to(`${this.navigate.orgBasePath}/workflows/new`, {
           scopeType: e.detail,
         });
       }}
@@ -574,7 +575,7 @@ export class Org extends LiteElement {
           crawlerChannel: params.crawlerChannel,
           profileId: params.profileId,
           navigateUrl: params.navigateUrl,
-          proxyId: params.proxyId,
+          proxyId: params.proxyId ?? null,
         }}
       ></btrix-browser-profiles-new>`;
     }
@@ -627,7 +628,7 @@ export class Org extends LiteElement {
   }
 
   private async getOrg(orgId: string): Promise<OrgData | undefined> {
-    const data = await this.apiFetch<OrgData>(`/orgs/${orgId}`);
+    const data = await this.api.fetch<OrgData>(`/orgs/${orgId}`);
 
     return data;
   }
@@ -664,7 +665,7 @@ export class Org extends LiteElement {
     const { user, newRole } = e.detail;
 
     try {
-      await this.apiFetch(`/orgs/${this.orgId}/user-role`, {
+      await this.api.fetch(`/orgs/${this.orgId}/user-role`, {
         method: "PATCH",
         body: JSON.stringify({
           email: user.email,
@@ -672,7 +673,7 @@ export class Org extends LiteElement {
         }),
       });
 
-      this.notify({
+      this.notify.toast({
         message: msg(
           str`Successfully updated role for ${user.name || user.email}.`,
         ),
@@ -685,7 +686,7 @@ export class Org extends LiteElement {
     } catch (e) {
       console.debug(e);
 
-      this.notify({
+      this.notify.toast({
         message: isApiError(e)
           ? e.message
           : msg(
@@ -715,14 +716,14 @@ export class Org extends LiteElement {
     }
 
     try {
-      await this.apiFetch(`/orgs/${this.orgId}/remove`, {
+      await this.api.fetch(`/orgs/${this.orgId}/remove`, {
         method: "POST",
         body: JSON.stringify({
           email: member.email,
         }),
       });
 
-      this.notify({
+      this.notify.toast({
         message: msg(
           str`Successfully removed ${member.name || member.email} from ${
             this.userOrg.name
@@ -733,7 +734,7 @@ export class Org extends LiteElement {
       });
       if (isSelf) {
         // FIXME better UX, this is the only page currently that doesn't require org...
-        this.navTo("/account/settings");
+        this.navigate.to("/account/settings");
       } else {
         const org = await this.getOrg(this.orgId);
 
@@ -742,7 +743,7 @@ export class Org extends LiteElement {
     } catch (e) {
       console.debug(e);
 
-      this.notify({
+      this.notify.toast({
         message: isApiError(e)
           ? e.message
           : msg(
