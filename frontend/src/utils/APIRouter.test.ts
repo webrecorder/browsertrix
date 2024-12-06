@@ -55,16 +55,16 @@ describe("APIRouter", () => {
       });
     });
     describe("archived items", () => {
-      it("matches item", () => {
+      it("matches uploaded item", () => {
         const apiRouter = new APIRouter(ROUTES);
         const viewState = apiRouter.match(
-          "/orgs/fake-org-id/items/crawl/manual-22061402406423-79beb9d3-1df",
+          "/orgs/fake-org-id/items/upload/manual-22061402406423-79beb9d3-1df",
         );
 
         expect(viewState.route).to.equal("org");
         expect(viewState.params).to.deep.equal({
           itemId: "manual-22061402406423-79beb9d3-1df",
-          itemType: "crawl",
+          itemType: "upload",
           slug: "fake-org-id",
         });
       });
@@ -72,16 +72,16 @@ describe("APIRouter", () => {
       it("matches item QA", () => {
         const apiRouter = new APIRouter(ROUTES);
         const viewState = apiRouter.match(
-          "/orgs/fake-org-id/items/crawl/manual-22061402406423-79beb9d3-1df/review/screenshots?qaRunId=qa-20241126175717-75f211dc-a5b",
+          "/orgs/fake-org-id/workflows/db3eb979-3fd1-4b8e-1c6b-dda2ca1b8c02/crawls/manual-22061402406423-79beb9d3-1df/review/screenshots?qaRunId=qa-20241126175717-75f211dc-a5b",
         );
 
         expect(viewState.route).to.equal("org");
         expect(viewState.params).to.deep.equal({
           itemId: "manual-22061402406423-79beb9d3-1df",
-          itemType: "crawl",
           qaRunId: "qa-20241126175717-75f211dc-a5b",
           qaTab: "screenshots",
           slug: "fake-org-id",
+          workflowId: "db3eb979-3fd1-4b8e-1c6b-dda2ca1b8c02",
         });
       });
     });
