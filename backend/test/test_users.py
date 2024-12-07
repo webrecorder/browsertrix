@@ -774,3 +774,42 @@ def test_patch_me_invalid_email_in_use(admin_auth_headers, default_org_id):
     )
     assert r.status_code == 400
     assert r.json()["detail"] == "user_already_exists"
+
+
+def test_user_emails_endpoint_non_superuser(crawler_auth_headers, default_org_id):
+    r = requests.get(
+        f"{API_PREFIX}/users/emails",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 403
+    assert r.json()["detail"] == "not_allowed"
+
+
+def test_user_emails_endpoint_superuser(admin_auth_headers, default_org_id):
+    r = requests.get(
+        f"{API_PREFIX}/users/emails",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    total = data["total"]
+    user_emails = data["items"]
+
+    assert total > 0
+    assert total == len(user_emails)
+
+    for user in user_emails:
+        assert user["email"]
+        orgs = user.get("orgs")
+        if orgs == []:
+            continue
+
+        for org in orgs:
+            assert org["id"]
+            assert org["name"]
+            assert org["slug"]
+            assert org["default"] in (True, False)
+            role = org["role"]
+            assert role
+            assert isinstance(role, int)
