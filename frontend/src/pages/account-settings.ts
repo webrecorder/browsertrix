@@ -2,19 +2,19 @@ import { localized, msg, str } from "@lit/localize";
 import type { SlInput, SlSelectEvent } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import type { ZxcvbnResult } from "@zxcvbn-ts/core";
-import { nothing, type PropertyValues } from "lit";
+import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
 import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
 
+import { BtrixElement } from "@/classes/BtrixElement";
 import { TailwindElement } from "@/classes/TailwindElement";
 import needLogin from "@/decorators/needLogin";
 import { pageHeader } from "@/layouts/pageHeader";
 import { translatedLocales, type LanguageCode } from "@/types/localization";
 import type { UnderlyingFunction } from "@/types/utils";
 import { isApiError } from "@/utils/api";
-import LiteElement, { html } from "@/utils/LiteElement";
 import PasswordService from "@/utils/PasswordService";
 import { AppStateService } from "@/utils/state";
 import { tw } from "@/utils/tailwind";
@@ -102,7 +102,7 @@ export class RequestVerify extends TailwindElement {
 @localized()
 @customElement("btrix-account-settings")
 @needLogin
-export class AccountSettings extends LiteElement {
+export class AccountSettings extends BtrixElement {
   @property({ type: String })
   tab: string | Tab = Tab.Profile;
 
@@ -305,7 +305,7 @@ export class AccountSettings extends LiteElement {
         href=${`/account/settings/${name}`}
         .active=${isActive}
         aria-selected=${isActive}
-        @click=${this.navLink}
+        @click=${this.navigate.link}
       >
         ${choose(name, [
           [
@@ -407,7 +407,7 @@ export class AccountSettings extends LiteElement {
     this.sectionSubmitting = "name";
 
     try {
-      await this.apiFetch(`/users/me`, {
+      await this.api.fetch(`/users/me`, {
         method: "PATCH",
         body: JSON.stringify({
           email: this.userInfo.email,
@@ -420,13 +420,13 @@ export class AccountSettings extends LiteElement {
         name: newName,
       });
 
-      this.notify({
+      this.notify.toast({
         message: msg("Your name has been updated."),
         variant: "success",
         icon: "check2-circle",
       });
     } catch (e) {
-      this.notify({
+      this.notify.toast({
         message: msg("Sorry, couldn't update name at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
@@ -452,7 +452,7 @@ export class AccountSettings extends LiteElement {
     this.sectionSubmitting = "email";
 
     try {
-      await this.apiFetch(`/users/me`, {
+      await this.api.fetch(`/users/me`, {
         method: "PATCH",
         body: JSON.stringify({
           email: newEmail,
@@ -464,13 +464,13 @@ export class AccountSettings extends LiteElement {
         email: newEmail,
       });
 
-      this.notify({
+      this.notify.toast({
         message: msg("Your email has been updated."),
         variant: "success",
         icon: "check2-circle",
       });
     } catch (e) {
-      this.notify({
+      this.notify.toast({
         message: msg("Sorry, couldn't update email at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
@@ -493,7 +493,7 @@ export class AccountSettings extends LiteElement {
     this.sectionSubmitting = "password";
 
     try {
-      await this.apiFetch("/users/me/password-change", {
+      await this.api.fetch("/users/me/password-change", {
         method: "PUT",
         body: JSON.stringify({
           email: this.userInfo.email,
@@ -502,20 +502,20 @@ export class AccountSettings extends LiteElement {
         }),
       });
 
-      this.notify({
+      this.notify.toast({
         message: msg("Your password has been updated."),
         variant: "success",
         icon: "check2-circle",
       });
     } catch (e) {
       if (isApiError(e) && e.details === "invalid_current_password") {
-        this.notify({
+        this.notify.toast({
           message: msg("Please correct your current password and try again."),
           variant: "danger",
           icon: "exclamation-octagon",
         });
       } else {
-        this.notify({
+        this.notify.toast({
           message: msg("Sorry, couldn't update password at this time."),
           variant: "danger",
           icon: "exclamation-octagon",
@@ -536,7 +536,7 @@ export class AccountSettings extends LiteElement {
       AppStateService.partialUpdateUserPreferences({ language: locale });
     }
 
-    this.notify({
+    this.notify.toast({
       message: msg("Your language preference has been updated."),
       variant: "success",
       icon: "check2-circle",

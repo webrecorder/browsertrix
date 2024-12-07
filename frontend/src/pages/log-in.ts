@@ -5,6 +5,7 @@ import { html, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import { type Routes } from "@/routes";
 import { isApiError } from "@/utils/api";
 import type { ViewState } from "@/utils/APIRouter";
 import AuthService from "@/utils/AuthService";
@@ -143,7 +144,7 @@ const machine = createMachine<FormContext, FormEvent, FormTypestate>(
 @customElement("btrix-log-in")
 export class LogInPage extends BtrixElement {
   @property({ type: Object })
-  viewState!: ViewState;
+  viewState!: ViewState<Routes>;
 
   @property({ type: String })
   redirectUrl?: string;

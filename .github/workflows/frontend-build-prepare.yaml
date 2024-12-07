@@ -21,12 +21,14 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref }}
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'yarn'
           cache-dependency-path: frontend/yarn.lock
+
       - name: Restore cache
         uses: actions/cache@v4
         with:
@@ -34,22 +36,47 @@ jobs:
           key: ${{ runner.os }}-btrix-frontend-build-${{ hashFiles('frontend/dist') }}
           restore-keys: |
             ${{ runner.os }}-btrix-frontend-build-
+
+      - name: Get installed Playwright version
+        working-directory: frontend
+        id: playwright-version
+        run: |
+          yarn add @yarnpkg/lockfile
+          echo "PLAYWRIGHT_VERSION=$(node scripts/get-resolved-playwright-version.js)" >> $GITHUB_ENV
+
+      - name: Cache playwright binaries
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: |
+            ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ env.PLAYWRIGHT_VERSION }}
+
       - name: Install dependencies
         working-directory: frontend
         env:
           HUSKY: 0
         run: yarn install --frozen-lockfile
+
       - name: Install Playwright Browsers
         working-directory: frontend
         env:
           HUSKY: 0
         run: yarn playwright install --with-deps
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+
+      - name: Install Playwright Deps
+        working-directory: frontend
+        env:
+          HUSKY: 0
+        run: yarn playwright install-deps
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
 
       # Lint:
       - name: Lint
         working-directory: frontend
         run: yarn lint:check
-    
+
       # Localize:
       - name: Extract strings
         working-directory: frontend

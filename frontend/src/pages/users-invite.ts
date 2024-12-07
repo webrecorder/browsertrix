@@ -1,13 +1,14 @@
 import { localized, msg, str } from "@lit/localize";
+import { html } from "lit";
 import { customElement, state } from "lit/decorators.js";
 
+import { BtrixElement } from "@/classes/BtrixElement";
 import needLogin from "@/decorators/needLogin";
-import LiteElement, { html } from "@/utils/LiteElement";
 
 @localized()
 @customElement("btrix-users-invite")
 @needLogin
-export class UsersInvite extends LiteElement {
+export class UsersInvite extends BtrixElement {
   @state()
   private invitedEmail?: string;
 

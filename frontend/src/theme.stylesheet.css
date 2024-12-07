@@ -139,11 +139,11 @@
   }
 
   /* Update button colors */
-  sl-button[variant="primary"]::part(base) {
+  sl-button[variant="primary"]:not([outline])::part(base) {
     background-color: theme(colors.primary.400);
   }
 
-  sl-button[variant="primary"]::part(base):hover {
+  sl-button[variant="primary"]:not([outline])::part(base):hover {
     background-color: theme(colors.primary.500);
   }
 

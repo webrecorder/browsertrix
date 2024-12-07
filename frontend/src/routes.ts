@@ -14,7 +14,7 @@ export const ROUTES = {
     "/orgs/:slug",
     // Org sections:
     "(/workflows(/new)(/:workflowId(/crawls/:itemId(/review/:qaTab))))",
-    "(/items(/:itemType(/:itemId)))",
+    "(/items(/:itemType(/:itemId(/review/:qaTab))))",
     "(/collections(/new)(/view/:collectionId(/:collectionTab)))",
     "(/browser-profiles(/profile(/browser/:browserId)(/:browserProfileId)))",
     "(/settings(/:settingsTab))",
@@ -26,3 +26,5 @@ export const ROUTES = {
   // Redirect for https://github.com/webrecorder/browsertrix-cloud/issues/935
   awpUploadRedirect: "/orgs/:orgId/artifacts/upload/:uploadId",
 } as const;
+
+export type Routes = typeof ROUTES;
