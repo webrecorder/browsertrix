@@ -3820,8 +3820,8 @@
         <source>PM</source>
         <note from="lit-localize">Time AM/PM</note>
       </trans-unit>
-      <trans-unit id="sf88bb98d3de9d54d">
-        <source>The crawler will complete crawling the pages that have already been started and stop. All finished pages will be kept, and all pages still in the queue will be discarded. Are you sure you want to stop crawling?</source>
+      <trans-unit id="s2b933576a3ca5f07">
+        <source>Pages currently being crawled will be completed and saved, and finished pages will be kept, but all remaining pages in the queue will be discarded. Are you sure you want to stop crawling?</source>
       </trans-unit>
     </body>
   </file>
