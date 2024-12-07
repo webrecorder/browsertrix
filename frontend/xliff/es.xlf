@@ -884,9 +884,6 @@
       <trans-unit id="sa84be0d8d11ebe27">
         <source>Stop Crawl?</source>
       </trans-unit>
-      <trans-unit id="s466e8c1ec1a81a75">
-        <source>Pages crawled so far will be saved and marked as incomplete. Are you sure you want to stop crawling?</source>
-      </trans-unit>
       <trans-unit id="s9f90886fea6a9515">
         <source>Keep Crawling</source>
       </trans-unit>
@@ -3822,6 +3819,9 @@
       <trans-unit id="s09421b07b5d1e9e6">
         <source>PM</source>
         <note from="lit-localize">Time AM/PM</note>
+      </trans-unit>
+      <trans-unit id="sf88bb98d3de9d54d">
+        <source>The crawler will complete crawling the pages that have already been started and stop. All finished pages will be kept, and all pages still in the queue will be discarded. Are you sure you want to stop crawling?</source>
       </trans-unit>
     </body>
   </file>

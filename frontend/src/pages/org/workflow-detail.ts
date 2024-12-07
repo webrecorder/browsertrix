@@ -302,7 +302,7 @@ export class WorkflowDetail extends BtrixElement {
         @sl-after-hide=${() => (this.isDialogVisible = false)}
       >
         ${msg(
-          "Pages crawled so far will be saved and marked as incomplete. Are you sure you want to stop crawling?",
+          "The crawler will complete crawling the pages that have already been started and stop. All finished pages will be kept, and all pages still in the queue will be discarded. Are you sure you want to stop crawling?",
         )}
         <div slot="footer" class="flex justify-between">
           <sl-button
