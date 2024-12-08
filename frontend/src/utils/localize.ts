@@ -64,10 +64,7 @@ export class Localize {
   }
 
   get languages() {
-    return uniq([
-      ...translatedLocales,
-      ...window.navigator.languages.map(langShortCode),
-    ]);
+    return uniq([...translatedLocales]);
   }
 
   constructor(initialLanguage: LanguageCode = sourceLocale) {
