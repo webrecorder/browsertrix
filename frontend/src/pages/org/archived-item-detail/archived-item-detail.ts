@@ -74,6 +74,9 @@ export class ArchivedItemDetail extends BtrixElement {
   @property({ type: Boolean })
   isCrawler = false;
 
+  @property({ type: String })
+  qaTab?: string;
+
   @state()
   private qaRunId?: string;
 
@@ -154,7 +157,7 @@ export class ArchivedItemDetail extends BtrixElement {
     if (!this.item) return;
 
     return html`<sl-format-date
-      date=${this.item.finished}
+      date=${this.item.finished!}
       month="2-digit"
       day="2-digit"
       year="2-digit"
@@ -197,6 +200,31 @@ export class ArchivedItemDetail extends BtrixElement {
     ) {
       if (!this.qaRunId) {
         this.qaRunId = this.mostRecentNonFailedQARun.id;
+      }
+    }
+
+    // If item is a crawl and workflow id isn't set, redirect to item page with workflow prefix
+    if (
+      this.workflowId === "" &&
+      this.itemType === "crawl" &&
+      changedProperties.has("item") &&
+      this.item
+    ) {
+      if (this.qaTab) {
+        // QA review open
+        this.navigate.to(
+          `${this.navigate.orgBasePath}/workflows/${this.item.cid}/crawls/${this.item.id}/review/${this.qaTab}${location.search}`,
+          undefined,
+          undefined,
+          true,
+        );
+      } else {
+        this.navigate.to(
+          `${this.navigate.orgBasePath}/workflows/${this.item.cid}/crawls/${this.item.id}#${this.activeTab}`,
+          undefined,
+          undefined,
+          true,
+        );
       }
     }
   }

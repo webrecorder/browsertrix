@@ -1,12 +1,12 @@
 import queryString from "query-string";
 import UrlPattern from "url-pattern";
 
-type Routes = { [key: string]: UrlPattern };
 type Paths = { [key: string]: string };
+type Routes<T extends Paths> = { [key in keyof T]: UrlPattern };
 
-export type ViewState = {
+export type ViewState<T extends Paths = {}> = {
   // route name, e.g. "admin"
-  route: string | null;
+  route: keyof T | null;
   // path name
   // e.g. "/dashboard"
   // e.g. "/users/abc123"
@@ -20,18 +20,18 @@ export type ViewState = {
   data?: { [key: string]: any };
 };
 
-export default class APIRouter {
-  private readonly routes: Routes;
+export default class APIRouter<const T extends Paths> {
+  private readonly routes: Routes<T>;
 
-  constructor(paths: Paths) {
-    this.routes = {};
+  constructor(paths: T) {
+    this.routes = {} as Routes<T>;
 
-    for (const [name, route] of Object.entries(paths)) {
+    for (const [name, route] of Object.entries(paths) as [keyof T, string][]) {
       this.routes[name] = new UrlPattern(route);
     }
   }
 
-  match(relativePath: string): ViewState {
+  match(relativePath: string): ViewState<T> {
     for (const [name, pattern] of Object.entries(this.routes)) {
       const [path, qs = ""] = relativePath.split("?");
       const match = pattern.match(path);

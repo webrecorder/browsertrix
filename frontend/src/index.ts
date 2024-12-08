@@ -85,7 +85,7 @@ export class App extends BtrixElement {
   authService = new AuthService();
 
   @state()
-  private viewState!: ViewState;
+  private viewState!: ViewState<typeof ROUTES>;
 
   @state()
   private fullDocsUrl = "/docs/";
@@ -796,8 +796,8 @@ export class App extends BtrixElement {
         // falls through
       }
 
-      case "components":
-        return html`<btrix-components></btrix-components>`;
+      // case "components":
+      //   return html`<btrix-components></btrix-components>`;
 
       default:
         return this.renderNotFoundPage();

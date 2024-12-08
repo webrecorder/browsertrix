@@ -1,10 +1,11 @@
 import { localized, msg } from "@lit/localize";
 import type { SlSelect } from "@shoelace-style/shoelace";
-import { type PropertyValues } from "lit";
+import { html, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
+import { BtrixElement } from "@/classes/BtrixElement";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import needLogin from "@/decorators/needLogin";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
@@ -12,7 +13,6 @@ import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { Crawl } from "@/types/crawler";
 import type { CrawlState } from "@/types/crawlState";
 import { activeCrawlStates } from "@/utils/crawler";
-import LiteElement, { html } from "@/utils/LiteElement";
 
 type SortField = "started" | "firstSeed" | "fileSize";
 type SortDirection = "asc" | "desc";
@@ -38,7 +38,7 @@ const ABORT_REASON_THROTTLE = "throttled";
 @localized()
 @customElement("btrix-crawls")
 @needLogin
-export class Crawls extends LiteElement {
+export class Crawls extends BtrixElement {
   @property({ type: String })
   crawlId?: string;
 
@@ -75,7 +75,9 @@ export class Crawls extends LiteElement {
       // Redirect to org crawl page
       await this.fetchWorkflowId();
       const slug = this.slugLookup[this.crawl!.oid];
-      this.navTo(`/orgs/${slug}/items/crawl/${this.crawlId}`);
+      this.navigate.to(
+        `/orgs/${slug}/workflows/${this.crawl?.cid}/crawls/${this.crawlId}`,
+      );
     } else {
       if (
         changedProperties.has("filterBy") ||
@@ -287,7 +289,7 @@ export class Crawls extends LiteElement {
     return html`
       <btrix-crawl-list-item href=${crawlPath} .crawl=${crawl}>
         <sl-menu slot="menu">
-          <sl-menu-item @click=${() => this.navTo(`${crawlPath}#config`)}>
+          <sl-menu-item @click=${() => this.navigate.to(`${crawlPath}#config`)}>
             ${msg("View Crawl Settings")}
           </sl-menu-item>
         </sl-menu>
@@ -322,7 +324,7 @@ export class Crawls extends LiteElement {
       if ((e as Error).name === "AbortError") {
         console.debug("Fetch crawls aborted to throttle");
       } else {
-        this.notify({
+        this.notify.toast({
           message: msg("Sorry, couldn't retrieve crawls at this time."),
           variant: "danger",
           icon: "exclamation-octagon",
@@ -356,7 +358,7 @@ export class Crawls extends LiteElement {
     );
 
     this.getCrawlsController = new AbortController();
-    const data = await this.apiFetch<APIPaginatedList<Crawl>>(
+    const data = await this.api.fetch<APIPaginatedList<Crawl>>(
       `/orgs/all/crawls?${query}`,
       {
         signal: this.getCrawlsController.signal,
@@ -368,7 +370,7 @@ export class Crawls extends LiteElement {
   }
 
   private async getCrawl() {
-    const data: Crawl = await this.apiFetch<Crawl>(
+    const data: Crawl = await this.api.fetch<Crawl>(
       `/orgs/all/crawls/${this.crawlId}/replay.json`,
     );
 
@@ -377,7 +379,7 @@ export class Crawls extends LiteElement {
 
   private async getSlugLookup() {
     const data =
-      await this.apiFetch<Record<string, string>>(`/orgs/slug-lookup`);
+      await this.api.fetch<Record<string, string>>(`/orgs/slug-lookup`);
 
     return data;
   }

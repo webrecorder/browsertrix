@@ -302,7 +302,7 @@ export class WorkflowDetail extends BtrixElement {
         @sl-after-hide=${() => (this.isDialogVisible = false)}
       >
         ${msg(
-          "Pages crawled so far will be saved and marked as incomplete. Are you sure you want to stop crawling?",
+          "Pages currently being crawled will be completed and saved, and finished pages will be kept, but all remaining pages in the queue will be discarded. Are you sure you want to stop crawling?",
         )}
         <div slot="footer" class="flex justify-between">
           <sl-button
@@ -1060,7 +1060,7 @@ export class WorkflowDetail extends BtrixElement {
             this.workflow?.lastCrawlId && this.workflow,
             (workflow) => html`
               <sl-button
-                href=${`${this.navigate.orgBasePath}/items/crawl/${workflow.lastCrawlId}#replay`}
+                href=${`${this.navigate.orgBasePath}/workflows/${workflow.id}/crawls/${workflow.lastCrawlId}#replay`}
                 variant="primary"
                 size="small"
                 @click=${this.navigate.link}
@@ -1078,7 +1078,7 @@ export class WorkflowDetail extends BtrixElement {
             this.isCrawler && this.workflow,
             (workflow) =>
               html` <sl-button
-                href=${`${this.navigate.orgBasePath}/items/crawl/${workflow.lastCrawlId}#qa`}
+                href=${`${this.navigate.orgBasePath}/workflows/${workflow.id}/crawls/${workflow.lastCrawlId}#qa`}
                 size="small"
                 @click=${this.navigate.link}
               >

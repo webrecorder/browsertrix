@@ -6,10 +6,17 @@ type Mutable<Type> = {
 };
 
 export type HumanizeOptions = Mutable<
-  Omit<Options, "colonNotation" | "verbose">
+  Omit<
+    Options,
+    | "colonNotation"
+    | "verbose"
+    | "millisecondsDecimalDigits"
+    | "secondsDecimalDigits"
+    | "keepDecimalsOnWholeSeconds"
+  >
 >;
 
-const SECOND_ROUNDING_EPSILON = 0.0000001;
+// const SECOND_ROUNDING_EPSILON = 0.0000001;
 
 /**
  * Convert a duration in milliseconds into a rounded {@linkcode Intl.DurationType} object.
@@ -24,20 +31,20 @@ const roundDuration = (
     throw new TypeError("Expected a finite number");
   }
 
-  if (options.compact) {
+  /* if (options.compact) {
     options.secondsDecimalDigits = 0;
     options.millisecondsDecimalDigits = 0;
-  }
+  } */
 
   const result = {} as Intl.DurationType;
 
-  const floorDecimals = (value: number, decimalDigits: number) => {
+  /* const floorDecimals = (value: number, decimalDigits: number) => {
     const flooredInterimValue = Math.floor(
       value * 10 ** decimalDigits + SECOND_ROUNDING_EPSILON,
     );
     const flooredValue = Math.round(flooredInterimValue) / 10 ** decimalDigits;
     return flooredValue.toFixed(decimalDigits);
-  };
+  }; */
 
   const add = (value: number, long: Intl.DurationTimeFormatUnit) => {
     if (value === 0) return;
@@ -68,7 +75,8 @@ const roundDuration = (
         parsed.microseconds / 1000 +
         parsed.nanoseconds / 1e6;
 
-      const millisecondsDecimalDigits =
+      // Intl.DurationFormat doesn't support non-integer values
+      /* const millisecondsDecimalDigits =
         typeof options.millisecondsDecimalDigits === "number"
           ? options.millisecondsDecimalDigits
           : 0;
@@ -82,11 +90,17 @@ const roundDuration = (
         ? millisecondsAndBelow.toFixed(millisecondsDecimalDigits)
         : roundedMilliseconds;
 
-      add(Number.parseFloat(millisecondsString.toString()), "milliseconds");
+      add(Number.parseFloat(millisecondsString.toString()), "milliseconds"); */
+      const roundedMilliseconds =
+        millisecondsAndBelow >= 1
+          ? Math.round(millisecondsAndBelow)
+          : Math.ceil(millisecondsAndBelow);
+      add(roundedMilliseconds, "milliseconds");
     }
   } else {
     const seconds = (milliseconds / 1000) % 60;
-    const secondsDecimalDigits =
+    // Intl.DurationFormat doesn't support non-integer values
+    /* const secondsDecimalDigits =
       typeof options.secondsDecimalDigits === "number"
         ? options.secondsDecimalDigits
         : 1;
@@ -94,7 +108,10 @@ const roundDuration = (
     const secondsString = options.keepDecimalsOnWholeSeconds
       ? secondsFixed
       : secondsFixed.replace(/\.0+$/, "");
-    add(Number.parseFloat(secondsString), "seconds");
+    add(Number.parseFloat(secondsString), "seconds"); */
+    const roundedSeconds =
+      seconds >= 1 ? Math.round(seconds) : Math.ceil(seconds);
+    add(roundedSeconds, "seconds");
   }
 
   if (Object.keys(result).length === 0) {
