@@ -265,14 +265,6 @@ export class ArchivedItemDetailQA extends BtrixElement {
                       <span class="text-danger">${errorCount}</span>
                       Failed ${pluralOf("pages", errorCount)}
                     `)}
-                    ${errorCount > 0
-                      ? html`—
-                          <a
-                            class="text-primary"
-                            href=${`/orgs/${this.orgSlug}/workflows/${this.workflowId}/crawls/${this.crawlId}#logs`}
-                            >${msg("View error logs")}</a
-                          >`
-                      : ""}
                   </p>
                 </div> `
               : html`

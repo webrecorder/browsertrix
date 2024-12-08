@@ -257,7 +257,7 @@ export class WorkflowEditor extends BtrixElement {
     FormState["scheduleType"],
     string
   > = {
-    date: msg("Run on a specific date & time"),
+    date: msg("Run on a specific date and time"),
     cron: msg("Run on a recurring basis"),
     none: msg("No schedule"),
   };
@@ -656,7 +656,7 @@ export class WorkflowEditor extends BtrixElement {
         }}
       >
         <sl-icon slot="suffix" name="chevron-double-right"></sl-icon>
-        ${msg("Review & Save")}
+        ${msg(html`Review & Save`)}
       </sl-button>
     `;
   }
