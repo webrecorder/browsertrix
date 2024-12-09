@@ -9,8 +9,8 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import type { SelectVisibilityDetail } from "@/features/collections/share-collection";
 import { page } from "@/layouts/page";
 import { RouteNamespace } from "@/routes";
-import { PublicCollection } from "@/types/collection";
-import type { OrgProfileData } from "@/types/org";
+import type { PublicCollection } from "@/types/collection";
+import type { PublicOrgCollections } from "@/types/org";
 
 enum Tab {
   Replay = "replay",
@@ -43,10 +43,19 @@ export class Collection extends BtrixElement {
     },
   };
 
-  readonly publicOrg = new Task(this, {
+  readonly orgCollections = new Task(this, {
     task: async ([slug]) => {
       if (!slug) return;
-      const org = await this.fetchOrgProfile(slug);
+      const org = await this.fetchCollections({ slug });
+      return org;
+    },
+    args: () => [this.slug] as const,
+  });
+
+  readonly collection = new Task(this, {
+    task: async ([slug, collectionId]) => {
+      if (!slug || !collectionId) return;
+      const org = await this.fetchCollection({ slug, collectionId });
       return org;
     },
     args: () => [this.slug, this.collectionId] as const,
@@ -54,21 +63,14 @@ export class Collection extends BtrixElement {
 
   render() {
     return html`
-      ${this.publicOrg.render({
-        complete: (profile) =>
-          profile ? this.renderCollection(profile) : nothing,
+      ${this.collection.render({
+        complete: (collection) =>
+          collection ? this.renderCollection(collection) : nothing,
       })}
     `;
   }
 
-  private renderCollection({ org, collections }: OrgProfileData) {
-    // TODO
-    const collection = collections[0];
-
-    if (!collection) {
-      return "TODO";
-    }
-
+  private renderCollection(collection: PublicCollection) {
     return html`
       ${page(
         {
@@ -76,12 +78,18 @@ export class Collection extends BtrixElement {
           secondary: html`
             <div class="text-pretty text-stone-600">
               ${msg("Collection by")}
+
               <a
                 href="/${RouteNamespace.PublicOrgs}/${this.slug}"
                 class="font-medium leading-none text-stone-500 transition-colors hover:text-stone-600"
                 @click=${this.navigate.link}
-                >${org.name}</a
               >
+                ${this.orgCollections.render({
+                  complete: (profile) =>
+                    profile ? profile.org.name : msg("Org"),
+                  loading: () => html` <sl-skeleton></sl-skeleton> `,
+                })}
+              </a>
             </div>
           `,
           actions: html`
@@ -194,14 +202,43 @@ export class Collection extends BtrixElement {
     `;
   }
 
-  private async fetchOrgProfile(slug: string): Promise<OrgProfileData | void> {
-    const resp = await fetch(`/api/public-collections/${slug}`, {
+  private async fetchCollections({
+    slug,
+  }: {
+    slug: string;
+  }): Promise<PublicOrgCollections | void> {
+    const resp = await fetch(`/api/public/orgs/${slug}/collections`, {
       headers: { "Content-Type": "application/json" },
     });
 
     switch (resp.status) {
       case 200:
-        return (await resp.json()) as OrgProfileData;
+        return (await resp.json()) as PublicOrgCollections;
+      case 404: {
+        throw resp.status;
+      }
+      default:
+        throw resp.status;
+    }
+  }
+
+  private async fetchCollection({
+    slug,
+    collectionId,
+  }: {
+    slug: string;
+    collectionId: string;
+  }): Promise<PublicCollection | void> {
+    const resp = await fetch(
+      `/api/public/orgs/${slug}/collections/${collectionId}`,
+      {
+        headers: { "Content-Type": "application/json" },
+      },
+    );
+
+    switch (resp.status) {
+      case 200:
+        return (await resp.json()) as PublicCollection;
       case 404: {
         throw resp.status;
       }

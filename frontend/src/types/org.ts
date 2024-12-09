@@ -103,7 +103,7 @@ export type OrgData = z.infer<typeof orgDataSchema>;
 export const orgConfigSchema = z.unknown();
 export type OrgConfig = z.infer<typeof orgConfigSchema>;
 
-export const orgProfileDataSchema = z.object({
+export const publicOrgCollectionsSchema = z.object({
   org: z.object({
     name: z.string(),
     description: z.string(),
@@ -112,4 +112,4 @@ export const orgProfileDataSchema = z.object({
   }),
   collections: z.array(publicCollectionSchema),
 });
-export type OrgProfileData = z.infer<typeof orgProfileDataSchema>;
+export type PublicOrgCollections = z.infer<typeof publicOrgCollectionsSchema>;
