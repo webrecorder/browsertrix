@@ -35,6 +35,13 @@ const DOCS_URL = process.env.DOCS_URL
     ? "https://docs.browsertrix.com/"
     : "/docs/";
 
+const ANALYTICS =
+  process.env.ANALYTICS === "true"
+    ? "https://p.webrecorder.net"
+    : process.env.ANALYTICS == null
+      ? false
+      : process.env.ANALYTICS;
+
 // Get git info for release version info
 
 /**
@@ -189,6 +196,7 @@ const main = {
         version,
         gitBranch,
         commitHash,
+        analytics: ANALYTICS,
       },
       // TODO this breaks shoelace forms, but seems HMR is broken anyway?
       // // Need to block during local development for HMR:
