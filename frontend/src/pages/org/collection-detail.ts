@@ -435,18 +435,13 @@ export class CollectionDetail extends BtrixElement {
                   ></btrix-markdown-editor>
                 `
               : html`
-                  <div class="rounded border p-6 leading-relaxed">
+                  <div class="rounded-lg border p-6 leading-relaxed">
                     <btrix-markdown-viewer
                       value=${collection.description || ""}
                     ></btrix-markdown-viewer>
                   </div>
                 `,
-          () =>
-            html`<div
-              class="flex items-center justify-center rounded border py-10 text-3xl"
-            >
-              <sl-spinner></sl-spinner>
-            </div>`,
+          this.renderSpinner,
         )}
       </section>
     `;
@@ -488,11 +483,7 @@ export class CollectionDetail extends BtrixElement {
             )}
           `;
         },
-        () => html`
-          <div class="my-12 flex w-full items-center justify-center text-2xl">
-            <sl-spinner></sl-spinner>
-          </div>
-        `,
+        this.renderSpinner,
       )}
     </section>`;
 
@@ -574,7 +565,10 @@ export class CollectionDetail extends BtrixElement {
   `;
 
   private readonly renderReplay = () => {
-    if (!this.collection?.crawlCount) {
+    if (!this.collection) {
+      return this.renderSpinner();
+    }
+    if (!this.collection.crawlCount) {
       return this.renderEmptyState();
     }
 
@@ -583,19 +577,25 @@ export class CollectionDetail extends BtrixElement {
     const config = JSON.stringify({ headers });
 
     return html`<section>
-      <main>
-        <div class="aspect-4/3 overflow-hidden rounded-lg border">
-          <replay-web-page
-            source=${replaySource}
-            replayBase="/replay/"
-            config="${config}"
-            noSandbox="true"
-            noCache="true"
-          ></replay-web-page>
-        </div>
-      </main>
+      <div class="aspect-4/3 overflow-hidden rounded-lg border">
+        <replay-web-page
+          source=${replaySource}
+          replayBase="/replay/"
+          config="${config}"
+          noSandbox="true"
+          noCache="true"
+        ></replay-web-page>
+      </div>
     </section>`;
   };
+
+  private readonly renderSpinner = () => html`
+    <div
+      class="flex items-center justify-center rounded-lg border py-24 text-3xl"
+    >
+      <sl-spinner></sl-spinner>
+    </div>
+  `;
 
   private async updateVisibility(access: CollectionAccess) {
     const res = await this.api.fetch<{ updated: boolean }>(
