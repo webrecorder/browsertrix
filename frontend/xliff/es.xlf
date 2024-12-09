@@ -3401,9 +3401,6 @@
       <trans-unit id="sa84bc532c73403ed">
         <source>Running for <x id="0" equiv-text="${this.localize.humanizeDuration(diff, {&#10;    compact: true,&#10;})}"/></source>
       </trans-unit>
-      <trans-unit id="s8eb4021572d41d99">
-        <source>Name &amp; Schedule</source>
-      </trans-unit>
       <trans-unit xml:space="preserve" id="sc154fb69dffcdef9">
         <source>billing settings</source>
         <target state="translated">ajustes de facturación</target>
@@ -4485,6 +4482,9 @@
       </trans-unit>
       <trans-unit id="se1037ae4d9adb08a">
         <source>You have one day left of your Browsertrix trial</source>
+      </trans-unit>
+      <trans-unit id="h8eb4021572d41d99">
+        <source>Name &amp; Schedule</source>
       </trans-unit>
     </body>
   </file>
