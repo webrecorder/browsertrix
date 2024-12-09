@@ -1,5 +1,5 @@
 import { localized, msg, str } from "@lit/localize";
-import { differenceInDays } from "date-fns/fp";
+import { differenceInHours } from "date-fns/fp";
 import { html, type TemplateResult } from "lit";
 import { customElement } from "lit/decorators.js";
 
@@ -62,18 +62,21 @@ export class OrgStatusBanner extends BtrixElement {
       execMinutesQuotaReached,
     } = this.org;
 
+    let hoursDiff = 0;
     let daysDiff = 0;
     let dateStr = "";
     const futureCancelDate = subscription?.futureCancelDate || null;
 
     if (futureCancelDate) {
-      daysDiff = differenceInDays(new Date(), new Date(futureCancelDate));
+      hoursDiff = differenceInHours(new Date(), new Date(futureCancelDate));
+      daysDiff = Math.trunc(hoursDiff / 24);
 
       dateStr = this.localize.date(futureCancelDate, {
         month: "long",
         day: "numeric",
         year: "numeric",
         hour: "numeric",
+        timeZoneName: "short",
       });
     }
 
@@ -90,12 +93,11 @@ export class OrgStatusBanner extends BtrixElement {
         content: () => {
           return {
             title:
-              daysDiff > 1
-                ? msg(
-                    str`Your org will be deleted in
-              ${daysDiff} days`,
-                  )
-                : `Your org will be deleted within one day`,
+              hoursDiff < 24
+                ? msg("Your org will be deleted within one day")
+                : daysDiff === 1
+                  ? msg("Your org will be deleted in one day.")
+                  : msg(str`Your org will be deleted in ${daysDiff} days`),
             detail: html`
               <p>
                 ${msg(
@@ -124,11 +126,13 @@ export class OrgStatusBanner extends BtrixElement {
         content: () => {
           return {
             title:
-              daysDiff > 1
-                ? msg(
-                    str`You have ${daysDiff} days left of your Browsertrix trial`,
-                  )
-                : msg(`Your trial ends within one day`),
+              hoursDiff < 24
+                ? msg("Your trial ends within one day")
+                : daysDiff === 1
+                  ? msg("You have one day left of your Browsertrix trial")
+                  : msg(
+                      str`You have ${daysDiff} days left of your Browsertrix trial`,
+                    ),
 
             detail: html`
               <p>
