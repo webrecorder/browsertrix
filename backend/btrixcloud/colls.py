@@ -258,12 +258,16 @@ class CollectionOps:
         return CollOut.from_dict(result)
 
     async def get_public_collection_out(
-        self, coll_id: UUID, org: Organization
+        self, coll_id: UUID, org: Organization, allow_unlisted: bool = False
     ) -> PublicCollOut:
         """Get PublicCollOut by id"""
         result = await self.get_collection_raw(coll_id)
 
-        if result.get("access") != "public":
+        allowed_access = [CollAccessType.PUBLIC]
+        if allow_unlisted:
+            allowed_access.append(CollAccessType.UNLISTED)
+
+        if result.get("access") not in allowed_access:
             raise HTTPException(status_code=404, detail="collection_not_found")
 
         result["resources"] = await self.get_collection_crawl_resources(coll_id)
@@ -1004,7 +1008,7 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops, user_de
         if not org.enablePublicProfile:
             raise HTTPException(status_code=404, detail="collection_not_found")
 
-        return await colls.get_public_collection_out(coll_id, org)
+        return await colls.get_public_collection_out(coll_id, org, allow_unlisted=True)
 
     @app.get(
         "/orgs/{oid}/collections/{coll_id}/urls",
