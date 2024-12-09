@@ -1128,6 +1128,56 @@ def test_get_public_collection(default_org_id):
     assert r.json()["detail"] == "collection_not_found"
 
 
+def test_get_public_collection_unlisted(crawler_auth_headers, default_org_id):
+    # Make second public coll unlisted
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_second_public_coll_id}",
+        headers=crawler_auth_headers,
+        json={
+            "access": "unlisted",
+        },
+    )
+    assert r.status_code == 200
+    assert r.json()["updated"]
+
+    # Verify single public collection GET endpoint works for unlisted collection
+    r = requests.get(
+        f"{API_PREFIX}/public/orgs/{default_org_slug}/collections/{_second_public_coll_id}"
+    )
+    assert r.status_code == 200
+    coll = r.json()
+
+    assert coll["id"] == _public_coll_id
+    assert coll["oid"] == default_org_id
+    assert coll["name"]
+    assert coll["resources"]
+    assert coll["dateEarliest"]
+    assert coll["dateLatest"]
+    assert coll["crawlCount"] > 0
+    assert coll["pageCount"] > 0
+    assert coll["totalSize"] > 0
+
+    for field in NON_PUBLIC_COLL_FIELDS:
+        assert field not in coll
+
+    assert coll["caption"] == CAPTION
+
+    assert coll["homeUrl"]
+    assert coll["homeUrlTs"]
+
+    thumbnail = coll["thumbnail"]
+    assert thumbnail
+
+    assert thumbnail["name"]
+    assert thumbnail["path"]
+    assert thumbnail["hash"]
+    assert thumbnail["size"]
+    assert thumbnail["mime"]
+
+    for field in NON_PUBLIC_IMAGE_FIELDS:
+        assert field not in thumbnail
+
+
 def test_delete_thumbnail(crawler_auth_headers, default_org_id):
     r = requests.delete(
         f"{API_PREFIX}/orgs/{default_org_id}/collections/{_public_coll_id}/thumbnail",
