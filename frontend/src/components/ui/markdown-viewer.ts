@@ -29,6 +29,10 @@ export class MarkdownViewer extends LitElement {
       img {
         max-width: 100%;
       }
+
+      p {
+        line-height: inherit;
+      }
     `,
   ];
 
