@@ -126,12 +126,14 @@ export class CollectionMetadataDialog extends BtrixElement {
           help-text=${this.validateNameMax.helpText}
           @sl-input=${this.validateNameMax.validate}
         ></sl-input>
-        <div class="mb-7">
-          <btrix-select-collection-access></btrix-select-collection-access>
-        </div>
         ${when(
           !this.collection,
           () => html`
+            <div class="mb-7">
+              <btrix-select-collection-access
+                publicDisabled
+              ></btrix-select-collection-access>
+            </div>
             <btrix-markdown-editor
               label=${msg("Description")}
               initialValue=${this.collection?.description || ""}
