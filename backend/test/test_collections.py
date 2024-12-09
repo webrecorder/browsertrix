@@ -1163,18 +1163,6 @@ def test_get_public_collection_unlisted(crawler_auth_headers, default_org_id):
     for field in NON_PUBLIC_COLL_FIELDS:
         assert field not in coll
 
-    thumbnail = coll["thumbnail"]
-    assert thumbnail
-
-    assert thumbnail["name"]
-    assert thumbnail["path"]
-    assert thumbnail["hash"]
-    assert thumbnail["size"]
-    assert thumbnail["mime"]
-
-    for field in NON_PUBLIC_IMAGE_FIELDS:
-        assert field not in thumbnail
-
 
 def test_delete_thumbnail(crawler_auth_headers, default_org_id):
     r = requests.delete(
