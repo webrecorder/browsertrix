@@ -3408,10 +3408,6 @@
         <source>billing settings</source>
         <target state="translated">ajustes de facturación</target>
       </trans-unit>
-      <trans-unit id="s71c5c2d34bb2c4c2">
-        <source>Your org will be deleted in
-              <x id="0" equiv-text="${daysDiff}"/> days</source>
-      </trans-unit>
       <trans-unit id="s7fa0d24b94690373">
         <source>Your subscription ends on <x id="0" equiv-text="${dateStr}"/>. Your user account, org, and all associated data will be deleted.</source>
       </trans-unit>
@@ -4474,6 +4470,21 @@
       </trans-unit>
       <trans-unit id="s2b933576a3ca5f07">
         <source>Pages currently being crawled will be completed and saved, and finished pages will be kept, but all remaining pages in the queue will be discarded. Are you sure you want to stop crawling?</source>
+      </trans-unit>
+      <trans-unit id="s9aa0dfb832cb7f69">
+        <source>View error logs</source>
+      </trans-unit>
+      <trans-unit id="s8be75efeafa7ffe1">
+        <source>Your org will be deleted within one day</source>
+      </trans-unit>
+      <trans-unit id="sfa1778ba000b56f5">
+        <source>Your org will be deleted in one day.</source>
+      </trans-unit>
+      <trans-unit id="se392e1f811076a30">
+        <source>Your org will be deleted in <x id="0" equiv-text="${daysDiff}"/> days</source>
+      </trans-unit>
+      <trans-unit id="se1037ae4d9adb08a">
+        <source>You have one day left of your Browsertrix trial</source>
       </trans-unit>
     </body>
   </file>
