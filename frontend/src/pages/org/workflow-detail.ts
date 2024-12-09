@@ -348,7 +348,7 @@ export class WorkflowDetail extends BtrixElement {
               await this.cancel();
               this.openDialogName = undefined;
             }}
-            >${msg("Cancel & Discard Crawl")}</sl-button
+            >${msg(html`Cancel & Discard Crawl`)}</sl-button
           >
         </div>
       </btrix-dialog>
@@ -677,7 +677,7 @@ export class WorkflowDetail extends BtrixElement {
                 @click=${() => (this.openDialogName = "cancel")}
               >
                 <sl-icon name="x-octagon" slot="prefix"></sl-icon>
-                ${msg("Cancel & Discard Crawl")}
+                ${msg(html`Cancel & Discard Crawl`)}
               </sl-menu-item>
             `,
             () => html`
