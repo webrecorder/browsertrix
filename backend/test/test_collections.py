@@ -19,7 +19,6 @@ UPDATED_CAPTION = "Updated caption"
 NON_PUBLIC_COLL_FIELDS = (
     "modified",
     "tags",
-    "access",
     "homeUrlPageId",
 )
 NON_PUBLIC_IMAGE_FIELDS = ("originalFilename", "userid", "userName", "created")
@@ -874,6 +873,7 @@ def test_list_public_collections(
     for collection in collections:
         assert collection["id"] in (_public_coll_id, _second_public_coll_id)
         assert collection["oid"]
+        assert collection["access"] == "public"
         assert collection["name"]
         assert collection["dateEarliest"]
         assert collection["dateLatest"]
@@ -1034,6 +1034,7 @@ def test_list_public_colls_home_url_thumbnail():
     for coll in collections:
         assert coll["id"] in (_public_coll_id, _second_public_coll_id)
         assert coll["oid"]
+        assert coll["access"] == "public"
         assert coll["name"]
         assert coll["resources"]
         assert coll["dateEarliest"]
@@ -1076,6 +1077,7 @@ def test_get_public_collection(default_org_id):
 
     assert coll["id"] == _public_coll_id
     assert coll["oid"] == default_org_id
+    assert coll["access"] == "public"
     assert coll["name"]
     assert coll["resources"]
     assert coll["dateEarliest"]
@@ -1147,8 +1149,9 @@ def test_get_public_collection_unlisted(crawler_auth_headers, default_org_id):
     assert r.status_code == 200
     coll = r.json()
 
-    assert coll["id"] == _public_coll_id
+    assert coll["id"] == _second_public_coll_id
     assert coll["oid"] == default_org_id
+    assert coll["access"] == "unlisted"
     assert coll["name"]
     assert coll["resources"]
     assert coll["dateEarliest"]
@@ -1159,11 +1162,6 @@ def test_get_public_collection_unlisted(crawler_auth_headers, default_org_id):
 
     for field in NON_PUBLIC_COLL_FIELDS:
         assert field not in coll
-
-    assert coll["caption"] == CAPTION
-
-    assert coll["homeUrl"]
-    assert coll["homeUrlTs"]
 
     thumbnail = coll["thumbnail"]
     assert thumbnail
