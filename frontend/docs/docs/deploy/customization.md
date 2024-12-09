@@ -68,7 +68,7 @@ storages:
 
     endpoint_url: "http://local-minio.default:9000/"
     is_default_replica: True
-  
+
   - name: "replica-1"
     type: "s3"
     access_key: "accesskey"
@@ -150,3 +150,9 @@ Browsertrix has the ability to cryptographically sign WACZ files with [Authsign]
 ## Enable Open Registration
 
 You can enable sign-ups by setting `registration_enabled` to `"1"`. Once enabled, your users can register by visiting `/sign-up`.
+
+## Analytics
+
+Sending privacy-preserving analytics to us with [Plausible Analytics](https://plausible.io/) can optionally be enabled by setting `analytics` to `"true"`. You can also set this to the base URL of your own Plausible instance (e.g. `"https:plausible.io"` for the default hosted Plausible service) to have analytics sent to your own instance and not ours.
+
+If you’re self-hosting Browsertrix, analytics are off by default.
