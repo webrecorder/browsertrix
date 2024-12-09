@@ -2,7 +2,6 @@ import { localized, msg } from "@lit/localize";
 import { Task } from "@lit/task";
 import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
-import { choose } from "lit/directives/choose.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
@@ -108,14 +107,12 @@ export class Collection extends BtrixElement {
             ${Object.values(Tab).map(this.renderTab)}
           </nav>
 
-          ${choose(
-            this.tab,
-            [
-              [Tab.Replay, () => this.renderReplay(collection)],
-              [Tab.About, () => this.renderAbout(collection)],
-            ],
-            () => html`<btrix-not-found></btrix-not-found>`,
-          )}
+          <section class=${(this.tab as Tab) !== Tab.Replay ? "offscreen" : ""}>
+            ${this.renderReplay(collection)}
+          </section>
+          <section class=${(this.tab as Tab) !== Tab.About ? "offscreen" : ""}>
+            ${this.renderAbout(collection)}
+          </section>
         `,
       )}
     `;
