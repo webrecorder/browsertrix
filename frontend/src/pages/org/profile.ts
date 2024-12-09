@@ -7,7 +7,7 @@ import { when } from "lit/directives/when.js";
 import { BtrixElement } from "@/classes/BtrixElement";
 import { page } from "@/layouts/page";
 import type { PublicCollection } from "@/types/collection";
-import type { OrgData, OrgProfileData } from "@/types/org";
+import type { OrgData, PublicOrgCollections } from "@/types/org";
 
 @localized()
 @customElement("btrix-org-profile")
@@ -21,10 +21,10 @@ export class OrgProfile extends BtrixElement {
   @state()
   private isPrivatePreview = false;
 
-  readonly publicOrg = new Task(this, {
+  readonly orgCollections = new Task(this, {
     task: async ([slug]) => {
       if (!slug) return;
-      const org = await this.fetchOrgProfile(slug);
+      const org = await this.fetchCollections({ slug });
       return org;
     },
     args: () => [this.slug] as const,
@@ -37,7 +37,7 @@ export class OrgProfile extends BtrixElement {
 
     return html`
       <div class="flex min-h-full flex-col">
-        ${this.publicOrg.render({
+        ${this.orgCollections.render({
           complete: (profile) =>
             profile
               ? html`
@@ -86,7 +86,7 @@ export class OrgProfile extends BtrixElement {
     `;
   }
 
-  private renderProfile({ org }: OrgProfileData) {
+  private renderProfile({ org }: PublicOrgCollections) {
     return html`
       ${this.isPrivatePreview ? this.renderPreviewBanner() : nothing}
       ${page(
@@ -220,7 +220,7 @@ export class OrgProfile extends BtrixElement {
     `;
   }
 
-  private renderSignUpCta(org: OrgProfileData["org"]) {
+  private renderSignUpCta(org: PublicOrgCollections["org"]) {
     const { signUpUrl } = this.appState.settings || {};
 
     if (!signUpUrl) return;
@@ -229,7 +229,7 @@ export class OrgProfile extends BtrixElement {
       <div class="w-full border-y p-6 px-3 text-center text-neutral-500">
         <p>
           ${when(
-            this.publicOrg.value,
+            this.orgCollections.value,
             () => html`
               <span>
                 ${msg(str`${org.name} is web archiving with Browsertrix.`)}
@@ -254,14 +254,18 @@ export class OrgProfile extends BtrixElement {
     `;
   }
 
-  private async fetchOrgProfile(slug: string): Promise<OrgProfileData | void> {
-    const resp = await fetch(`/api/public-collections/${slug}`, {
+  private async fetchCollections({
+    slug,
+  }: {
+    slug: string;
+  }): Promise<PublicOrgCollections | void> {
+    const resp = await fetch(`/api/public/orgs/${slug}/collections`, {
       headers: { "Content-Type": "application/json" },
     });
 
     switch (resp.status) {
       case 200:
-        return (await resp.json()) as OrgProfileData;
+        return (await resp.json()) as PublicOrgCollections;
       case 404: {
         if (this.authState) {
           // Use authenticated org data to render preview
@@ -280,7 +284,7 @@ export class OrgProfile extends BtrixElement {
     }
   }
 
-  private async getUserOrg(): Promise<OrgProfileData | null> {
+  private async getUserOrg(): Promise<PublicOrgCollections | null> {
     try {
       const userInfo = this.userInfo || (await this.api.fetch("/users/me"));
       const userOrg = userInfo?.orgs.find((org) => org.slug === this.slug);
@@ -298,7 +302,7 @@ export class OrgProfile extends BtrixElement {
           url: org.publicUrl || "",
           verified: false, // TODO
         },
-        collections: [],
+        collections: [], // TODO
       };
     } catch {
       return null;
