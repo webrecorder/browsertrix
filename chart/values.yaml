@@ -1,3 +1,9 @@
+# Global Settings
+# =========================================
+
+# locales available to choose from in the front end
+locales_enabled: "en,es"
+
 
 # Crawler Settings
 # =========================================

@@ -83,6 +83,8 @@ data:
 
   BACKEND_IMAGE_PULL_POLICY: "{{ .Values.backend_pull_policy }}"
 
+  LOCALES_ENABLED: "{{ .Values.locales_enabled }}"
+
 
 ---
 apiVersion: v1
