@@ -1,4 +1,5 @@
 import { localized, msg } from "@lit/localize";
+import { Task } from "@lit/task";
 import type { SlSelectEvent } from "@shoelace-style/shoelace";
 import { html, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
@@ -9,6 +10,7 @@ import type { SelectNewDialogEvent } from ".";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { pageHeader } from "@/layouts/pageHeader";
+import type { PublicOrgCollections } from "@/types/org";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 
 type Metrics = {
@@ -45,6 +47,15 @@ export class Dashboard extends BtrixElement {
     browserProfiles: "indigo",
     runningTime: "blue",
   };
+
+  private readonly publicCollections = new Task(this, {
+    task: async ([slug]) => {
+      if (!slug) return;
+      const org = await this.fetchCollections({ slug });
+      return org;
+    },
+    args: () => [this.orgSlug] as const,
+  });
 
   willUpdate(changedProperties: PropertyValues<this> & Map<string, unknown>) {
     if (changedProperties.has("appState.orgSlug") && this.orgId) {
@@ -244,12 +255,28 @@ export class Dashboard extends BtrixElement {
             `,
           )}
         </div>
-        <section class="mb-10">
-          <btrix-details>
-            <span slot="title">${msg("Usage History")}</span>
-            <btrix-usage-history-table></btrix-usage-history-table>
-          </btrix-details>
-        </section>
+
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg font-medium">${msg("Public Collections")}</h2>
+          ${when(
+            this.appState.isAdmin,
+            () =>
+              html`<sl-tooltip content=${msg("Update collections settings")}>
+                <sl-icon-button
+                  href=${`${this.navigate.orgBasePath}/collections`}
+                  class="size-8 text-base"
+                  name="gear"
+                  @click=${this.navigate.link}
+                ></sl-icon-button>
+              </sl-tooltip>`,
+          )}
+        </div>
+        <div class="pb-16">
+          <btrix-collections-grid
+            slug=${this.orgSlug || ""}
+            .collections=${this.publicCollections.value?.collections}
+          ></btrix-collections-grid>
+        </div>
       </main>
     `;
   }
@@ -686,6 +713,26 @@ export class Dashboard extends BtrixElement {
         icon: "exclamation-octagon",
         id: "metrics-retrieve-error",
       });
+    }
+  }
+
+  private async fetchCollections({
+    slug,
+  }: {
+    slug: string;
+  }): Promise<PublicOrgCollections | void> {
+    const resp = await fetch(`/api/public/orgs/${slug}/collections`, {
+      headers: { "Content-Type": "application/json" },
+    });
+
+    switch (resp.status) {
+      case 200:
+        return (await resp.json()) as PublicOrgCollections;
+      case 404: {
+        throw resp.status;
+      }
+      default:
+        throw resp.status;
     }
   }
 }
