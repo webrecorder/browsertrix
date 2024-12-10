@@ -560,8 +560,10 @@ class UserManager:
 
         emails: List[UserEmailWithOrgInfo] = []
 
-        total = await self.users.count_documents({})
-        async for res in self.users.find({}, skip=skip, limit=page_size):
+        total = await self.users.count_documents({"is_superuser": False})
+        async for res in self.users.find(
+            {"is_superuser": False}, skip=skip, limit=page_size
+        ):
             user = User(**res)
             user_out = await self.get_user_info_with_orgs(user)
             emails.append(
