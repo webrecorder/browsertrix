@@ -1,6 +1,7 @@
 // Inject analytics script into the page
 // Only used if env var ANALYTICS is enabled
 // Hand-minified version of this is used in 00-browsertrix-nginx-init.sh
+// Changing this file won't update that — you'll have to update it yourself
 const plausible = document.createElement("script");
 plausible.src =
   "$SRC/js/script.file-downloads.hash.pageview-props.tagged-events.js";
