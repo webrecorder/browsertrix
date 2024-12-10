@@ -69,14 +69,14 @@ export class CollectionsGrid extends BtrixElement {
                 </div>
                 <div class="${showActions ? "mr-9" : ""} min-h-9 leading-tight">
                   <strong
-                    class="text-base font-medium text-stone-700 transition-colors group-hover:text-cyan-600"
+                    class="text-base font-medium leading-tight text-stone-700 transition-colors group-hover:text-cyan-600"
                   >
                     ${collection.name}
                   </strong>
                   ${collection.caption &&
                   html`
                     <p
-                      class="text-pretty leading-relaxed text-stone-400 transition-colors group-hover:text-cyan-600"
+                      class="mt-1.5 text-pretty text-xs leading-relaxed text-stone-500 transition-colors group-hover:text-cyan-600"
                     >
                       ${collection.caption}
                     </p>
