@@ -216,7 +216,7 @@ export class ShareCollection extends BtrixElement {
         style="--width: 40rem;"
       >
         ${when(
-          this.isPrivateView && this.authState && this.collection,
+          this.authState && this.collection,
           (collection) => html`
             <div class="mb-5">
               <btrix-select-collection-access
