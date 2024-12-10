@@ -1258,6 +1258,7 @@ class Collection(BaseMongoModel):
     homeUrlPageId: Optional[UUID] = None
 
     thumbnail: Optional[ImageFile] = None
+    defaultThumbnailName: Optional[str] = None
 
 
 # ============================================================================
@@ -1270,6 +1271,8 @@ class CollIn(BaseModel):
     crawlIds: Optional[List[str]] = []
 
     access: CollAccessType = CollAccessType.PRIVATE
+
+    defaultThumbnailName: Optional[str] = None
 
 
 # ============================================================================
@@ -1300,6 +1303,7 @@ class CollOut(BaseMongoModel):
 
     resources: List[CrawlFileOut] = []
     thumbnail: Optional[ImageFileOut] = None
+    defaultThumbnailName: Optional[str] = None
 
 
 # ============================================================================
@@ -1325,6 +1329,7 @@ class PublicCollOut(BaseMongoModel):
 
     resources: List[CrawlFileOut] = []
     thumbnail: Optional[PublicImageFileOut] = None
+    defaultThumbnailName: Optional[str] = None
 
 
 # ============================================================================
@@ -1335,6 +1340,7 @@ class UpdateColl(BaseModel):
     description: Optional[str] = None
     caption: Optional[str] = None
     access: Optional[CollAccessType] = None
+    defaultThumbnailName: Optional[str] = None
 
 
 # ============================================================================
