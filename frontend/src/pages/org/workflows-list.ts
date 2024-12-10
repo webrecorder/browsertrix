@@ -508,7 +508,7 @@ export class WorkflowsList extends BtrixElement {
             @click=${() => void this.cancel(workflow.lastCrawlId)}
           >
             <sl-icon name="x-octagon" slot="prefix"></sl-icon>
-            ${msg("Cancel & Discard Crawl")}
+            ${msg(html`Cancel & Discard Crawl`)}
           </sl-menu-item>
         `,
       )}
