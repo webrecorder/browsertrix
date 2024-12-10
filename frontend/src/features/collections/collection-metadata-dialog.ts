@@ -66,7 +66,7 @@ export class CollectionMetadataDialog extends BtrixElement {
       ?open=${this.open}
       @sl-show=${() => (this.isDialogVisible = true)}
       @sl-after-hide=${() => (this.isDialogVisible = false)}
-      style="--width: 40rem"
+      class="[--width:40rem]"
     >
       ${when(this.isDialogVisible, () => this.renderForm())}
       <div slot="footer" class="flex items-center justify-end gap-3">

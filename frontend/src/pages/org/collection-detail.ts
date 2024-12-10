@@ -53,7 +53,11 @@ export class CollectionDetail extends BtrixElement {
   private archivedItems?: APIPaginatedList<ArchivedItem>;
 
   @state()
-  private openDialogName?: "delete" | "editMetadata" | "editItems";
+  private openDialogName?:
+    | "delete"
+    | "editMetadata"
+    | "editItems"
+    | "editStartPage";
 
   @state()
   private isEditingDescription = false;
@@ -149,11 +153,11 @@ export class CollectionDetail extends BtrixElement {
               () => html`
                 <sl-button
                   size="small"
-                  @click=${() => (this.openDialogName = "editItems")}
+                  @click=${() => (this.openDialogName = "editStartPage")}
                   ?disabled=${!this.collection}
                 >
                   <sl-icon name="house-gear" slot="prefix"></sl-icon>
-                  ${msg("Set Home Page")}
+                  ${msg("Select Start Page")}
                 </sl-button>
               `,
             ],
@@ -255,6 +259,13 @@ export class CollectionDetail extends BtrixElement {
         }}
       >
       </btrix-collection-items-dialog>
+
+      <btrix-collection-start-page-dialog
+        ?open=${this.openDialogName === "editStartPage"}
+        @sl-hide=${() => (this.openDialogName = undefined)}
+        collectionId=${this.collectionId}
+      ></btrix-collection-start-page-dialog>
+
       ${when(
         this.collection,
         () => html`

@@ -180,7 +180,7 @@ export class ShareCollection extends BtrixElement {
                   }}
                 >
                   <sl-icon slot="prefix" name="box-arrow-up"></sl-icon>
-                  ${msg("Share Settings")}
+                  ${msg("Link Settings")}
                 </sl-menu-item>
               `,
               () => html`
@@ -210,7 +210,7 @@ export class ShareCollection extends BtrixElement {
         @sl-after-hide=${() => {
           this.showEmbedCode = false;
         }}
-        style="--width: 40rem;"
+        class="[--width:40rem]"
       >
         ${when(
           this.authState && this.collection,
