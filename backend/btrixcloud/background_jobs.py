@@ -146,7 +146,7 @@ class BackgroundJobOps:
         job_type = BgJobType.CREATE_REPLICA.value
 
         try:
-            job_id = await self.crawl_manager.run_replica_job(
+            job_id, _ = await self.crawl_manager.run_replica_job(
                 oid=str(org.id),
                 job_type=job_type,
                 primary_storage=file.storage,
@@ -155,7 +155,7 @@ class BackgroundJobOps:
                 replica_storage=replica_ref,
                 replica_file_path=replica_file_path,
                 replica_endpoint=replica_endpoint,
-                job_id_prefix=f"{job_type}-{object_id}",
+                delay_days=0,
                 existing_job_id=existing_job_id,
             )
             if existing_job_id:
@@ -188,9 +188,13 @@ class BackgroundJobOps:
             )
 
             return job_id
+        # pylint: disable=broad-exception-caught
         except Exception as exc:
-            # pylint: disable=raise-missing-from
-            raise HTTPException(status_code=500, detail=f"Error starting crawl: {exc}")
+            print(
+                "warning: replica job could not be started "
+                + f"for {object_type} {file}: {exc}"
+            )
+            return ""
 
     async def create_delete_replica_jobs(
         self, org: Organization, file: BaseFile, object_id: str, object_type: str
@@ -214,8 +218,9 @@ class BackgroundJobOps:
         object_id: str,
         object_type: str,
         replica_ref: StorageRef,
+        force_start_immediately: bool = False,
         existing_job_id: Optional[str] = None,
-    ) -> Optional[str]:
+    ) -> str:
         """Create a job to delete one replica of a given file"""
         try:
             replica_storage = self.storage_ops.get_org_storage_by_ref(org, replica_ref)
@@ -226,13 +231,17 @@ class BackgroundJobOps:
 
             job_type = BgJobType.DELETE_REPLICA.value
 
-            job_id = await self.crawl_manager.run_replica_job(
+            delay_days = int(os.environ.get("REPLICA_DELETION_DELAY_DAYS", 0))
+            if force_start_immediately:
+                delay_days = 0
+
+            job_id, schedule = await self.crawl_manager.run_replica_job(
                 oid=str(org.id),
                 job_type=job_type,
                 replica_storage=replica_ref,
                 replica_file_path=replica_file_path,
                 replica_endpoint=replica_endpoint,
-                job_id_prefix=f"{job_type}-{object_id}",
+                delay_days=delay_days,
                 existing_job_id=existing_job_id,
             )
 
@@ -251,6 +260,7 @@ class BackgroundJobOps:
                 delete_replica_job.started = dt_now()
                 delete_replica_job.finished = None
                 delete_replica_job.success = None
+                delete_replica_job.schedule = None
             else:
                 delete_replica_job = DeleteReplicaJob(
                     id=job_id,
@@ -260,6 +270,7 @@ class BackgroundJobOps:
                     object_id=object_id,
                     object_type=object_type,
                     replica_storage=replica_ref,
+                    schedule=schedule,
                 )
 
             await self.jobs.find_one_and_update(
@@ -274,7 +285,7 @@ class BackgroundJobOps:
                 "warning: replica deletion job could not be started "
                 + f"for {object_type} {file}: {exc}"
             )
-            return None
+            return ""
 
     async def create_delete_org_job(
         self,
@@ -560,6 +571,7 @@ class BackgroundJobOps:
                 job.object_id,
                 job.object_type,
                 job.replica_storage,
+                force_start_immediately=True,
                 existing_job_id=job_id,
             )
 
