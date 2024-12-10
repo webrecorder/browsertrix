@@ -416,3 +416,14 @@ class CrawlManager(K8sAPI):
         await self.create_from_yaml(data, self.namespace)
 
         return job_id, schedule
+
+    async def delete_replica_deletion_scheduled_job(self, job_id: str):
+        """delete scheduled job to delay replica file in x days"""
+        cron_job = await self.batch_api.read_namespaced_cron_job(
+            name=job_id,
+            namespace=self.namespace,
+        )
+        if cron_job:
+            await self.batch_api.delete_namespaced_cron_job(
+                name=cron_job.metadata.name, namespace=self.namespace
+            )
