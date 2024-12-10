@@ -16,6 +16,7 @@ import type {
   SelectVisibilityDetail,
   ShareCollection,
 } from "@/features/collections/share-collection";
+import { pageHeader } from "@/layouts/page";
 import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
 import type {
   APIPaginatedList,
@@ -83,7 +84,7 @@ export class CollectionDetail extends BtrixElement {
     },
     [Tab.About]: {
       icon: { name: "info-square-fill", library: "default" },
-      text: msg("Description"),
+      text: msg("About"),
     },
   };
 
@@ -98,126 +99,101 @@ export class CollectionDetail extends BtrixElement {
       void this.fetchCollection();
       void this.fetchArchivedItems({ page: 1 });
     }
+    if (changedProperties.has("collection") && this.collection) {
+      if (!this.collection.description) {
+        this.isEditingDescription = true;
+      }
+    }
   }
 
   render() {
     return html` <div class="mb-7">${this.renderBreadcrumbs()}</div>
-      <header class="items-center gap-2 pb-3 md:flex">
-        <div class="mb-2 flex w-full items-center gap-2 md:mb-0">
-          <div class="flex size-8 items-center justify-center">
-            ${choose(this.collection?.access, [
-              [
-                CollectionAccess.Private,
-                () => html`
-                  <sl-tooltip
-                    content=${SelectCollectionAccess.Options[
-                      CollectionAccess.Private
-                    ].label}
-                  >
-                    <sl-icon
-                      class="text-lg text-neutral-600"
-                      name=${SelectCollectionAccess.Options[
-                        CollectionAccess.Private
-                      ].icon}
-                    ></sl-icon>
-                  </sl-tooltip>
-                `,
-              ],
-              [
-                CollectionAccess.Unlisted,
-                () => html`
-                  <sl-tooltip
-                    content=${SelectCollectionAccess.Options[
-                      CollectionAccess.Unlisted
-                    ].label}
-                  >
-                    <sl-icon
-                      class="text-lg text-neutral-600"
-                      name=${SelectCollectionAccess.Options[
-                        CollectionAccess.Unlisted
-                      ].icon}
-                    ></sl-icon>
-                  </sl-tooltip>
-                `,
-              ],
-              [
-                CollectionAccess.Public,
-                () => html`
-                  <sl-tooltip
-                    content=${SelectCollectionAccess.Options[
-                      CollectionAccess.Public
-                    ].label}
-                  >
-                    <sl-icon
-                      class="text-lg text-success-600"
-                      name=${SelectCollectionAccess.Options[
-                        CollectionAccess.Public
-                      ].icon}
-                    ></sl-icon>
-                  </sl-tooltip>
-                `,
-              ],
-            ])}
-          </div>
-          <h1 class="min-w-0 flex-1 truncate text-xl font-semibold leading-7">
-            ${this.collection?.name ||
-            html`<sl-skeleton class="w-96"></sl-skeleton>`}
-          </h1>
-        </div>
-        <btrix-share-collection
-          collectionId=${this.collectionId}
-          .collection=${this.collection}
-          @btrix-select-visibility=${(
-            e: CustomEvent<SelectVisibilityDetail>,
-          ) => {
-            e.stopPropagation();
-            void this.updateVisibility(e.detail.item.value);
-          }}
-          @btrix-select-thumbnail=${(e: CustomEvent<SelectThumbnailDetail>) => {
-            e.stopPropagation();
-            void this.uploadThumbnail(e.detail);
-          }}
-        ></btrix-share-collection>
-        ${when(this.isCrawler, this.renderActions)}
-      </header>
-      <div class="rounded-lg border px-4 py-2">${this.renderInfoBar()}</div>
+      ${pageHeader({
+        title: this.collection?.name,
+        prefix: this.renderAccessIcon(),
+        secondary: html`<div class="text-pretty text-neutral-600">
+          ${this.collection?.caption}
+        </div>`,
+        actions: html`
+          <btrix-share-collection
+            collectionId=${this.collectionId}
+            .collection=${this.collection}
+            @btrix-select-visibility=${(
+              e: CustomEvent<SelectVisibilityDetail>,
+            ) => {
+              e.stopPropagation();
+              void this.updateVisibility(e.detail.item.value);
+            }}
+            @btrix-select-thumbnail=${(
+              e: CustomEvent<SelectThumbnailDetail>,
+            ) => {
+              e.stopPropagation();
+              void this.uploadThumbnail(e.detail);
+            }}
+          ></btrix-share-collection>
+          ${when(this.isCrawler, this.renderActions)}
+        `,
+      })}
+
+      <div class="mt-3 rounded-lg border px-4 py-2">
+        ${this.renderInfoBar()}
+      </div>
       <div
         class="sticky top-0 -mx-3 mb-3 flex items-center justify-between bg-white px-3 pt-3 shadow-lg shadow-white"
       >
         ${this.renderTabs()}
         ${when(this.isCrawler, () =>
-          this.collectionTab === Tab.About
-            ? this.isEditingDescription
-              ? html`
-                  <div>
-                    <sl-button
-                      variant="primary"
-                      size="small"
-                      @click=${() => void this.saveDescription()}
-                      ?disabled=${!this.collection}
-                    >
-                      <sl-icon name="check-lg" slot="prefix"></sl-icon>
-                      ${msg("Save")}
-                    </sl-button>
-                    <sl-button
-                      size="small"
-                      @click=${() => (this.isEditingDescription = false)}
-                    >
-                      ${msg("Cancel")}
-                    </sl-button>
-                  </div>
-                `
-              : html`
-                  <sl-button
-                    size="small"
-                    @click=${() => (this.isEditingDescription = true)}
-                    ?disabled=${!this.collection}
-                  >
-                    <sl-icon name="pencil" slot="prefix"></sl-icon>
-                    ${msg("Edit")}
-                  </sl-button>
-                `
-            : html`
+          choose(this.collectionTab, [
+            [
+              Tab.Replay,
+              () => html`
+                <sl-button
+                  size="small"
+                  @click=${() => (this.openDialogName = "editItems")}
+                  ?disabled=${!this.collection}
+                >
+                  <sl-icon name="house-gear" slot="prefix"></sl-icon>
+                  ${msg("Set Home Page")}
+                </sl-button>
+              `,
+            ],
+            [
+              Tab.About,
+              () =>
+                this.isEditingDescription
+                  ? html`
+                      <div>
+                        <sl-button
+                          variant="primary"
+                          size="small"
+                          @click=${() => void this.saveDescription()}
+                          ?disabled=${!this.collection}
+                        >
+                          <sl-icon name="check-lg" slot="prefix"></sl-icon>
+                          ${msg("Save")}
+                        </sl-button>
+                        <sl-button
+                          size="small"
+                          @click=${() => (this.isEditingDescription = false)}
+                        >
+                          ${msg("Cancel")}
+                        </sl-button>
+                      </div>
+                    `
+                  : html`
+                      <sl-button
+                        size="small"
+                        @click=${() => (this.isEditingDescription = true)}
+                        ?disabled=${!this.collection}
+                      >
+                        <sl-icon name="pencil" slot="prefix"></sl-icon>
+                        ${msg("Edit")}
+                      </sl-button>
+                    `,
+            ],
+            [
+              Tab.Items,
+              () => html`
                 <sl-button
                   size="small"
                   @click=${() => (this.openDialogName = "editItems")}
@@ -227,6 +203,8 @@ export class CollectionDetail extends BtrixElement {
                   ${msg("Select Items")}
                 </sl-button>
               `,
+            ],
+          ]),
         )}
       </div>
       ${choose(this.collectionTab, [
@@ -294,6 +272,56 @@ export class CollectionDetail extends BtrixElement {
       )}`;
   }
 
+  private renderAccessIcon() {
+    return choose(this.collection?.access, [
+      [
+        CollectionAccess.Private,
+        () => html`
+          <sl-tooltip
+            content=${SelectCollectionAccess.Options[CollectionAccess.Private]
+              .label}
+          >
+            <sl-icon
+              class="text-lg text-neutral-600"
+              name=${SelectCollectionAccess.Options[CollectionAccess.Private]
+                .icon}
+            ></sl-icon>
+          </sl-tooltip>
+        `,
+      ],
+      [
+        CollectionAccess.Unlisted,
+        () => html`
+          <sl-tooltip
+            content=${SelectCollectionAccess.Options[CollectionAccess.Unlisted]
+              .label}
+          >
+            <sl-icon
+              class="text-lg text-neutral-600"
+              name=${SelectCollectionAccess.Options[CollectionAccess.Unlisted]
+                .icon}
+            ></sl-icon>
+          </sl-tooltip>
+        `,
+      ],
+      [
+        CollectionAccess.Public,
+        () => html`
+          <sl-tooltip
+            content=${SelectCollectionAccess.Options[CollectionAccess.Public]
+              .label}
+          >
+            <sl-icon
+              class="text-lg text-success-600"
+              name=${SelectCollectionAccess.Options[CollectionAccess.Public]
+                .icon}
+            ></sl-icon>
+          </sl-tooltip>
+        `,
+      ],
+    ]);
+  }
+
   private refreshReplay() {
     if (this.replayEmbed) {
       try {
@@ -354,8 +382,8 @@ export class CollectionDetail extends BtrixElement {
         >
         <sl-menu>
           <sl-menu-item @click=${() => (this.openDialogName = "editMetadata")}>
-            <sl-icon name="gear" slot="prefix"></sl-icon>
-            ${msg("Collection Settings")}
+            <sl-icon name="pencil" slot="prefix"></sl-icon>
+            ${msg("Edit Metadata")}
           </sl-menu-item>
           <sl-menu-item @click=${() => (this.openDialogName = "editItems")}>
             <sl-icon name="ui-checks" slot="prefix"></sl-icon>
@@ -445,15 +473,23 @@ export class CollectionDetail extends BtrixElement {
               ? html`
                   <btrix-markdown-editor
                     initialValue=${collection.description || ""}
-                    placeholder=${msg("Add a description...")}
+                    placeholder=${msg("Tell viewers about this collection")}
                     maxlength=${4000}
                   ></btrix-markdown-editor>
                 `
               : html`
                   <div class="rounded-lg border p-6 leading-relaxed">
-                    <btrix-markdown-viewer
-                      value=${collection.description || ""}
-                    ></btrix-markdown-viewer>
+                    ${collection.description
+                      ? html`
+                          <btrix-markdown-viewer
+                            value=${collection.description}
+                          ></btrix-markdown-viewer>
+                        `
+                      : html`
+                          <p class="py-6 text-center text-neutral-500">
+                            ${msg("No description provided.")}
+                          </p>
+                        `}
                   </div>
                 `,
           this.renderSpinner,

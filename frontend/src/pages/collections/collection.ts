@@ -90,7 +90,7 @@ export class Collection extends BtrixElement {
 
     if (collection.caption) {
       header.secondary = html`
-        <div class="text-pretty text-stone-600">${collection.caption}</div>
+        <div class="text-pretty text-stone-500">${collection.caption}</div>
       `;
     }
 
@@ -163,17 +163,15 @@ export class Collection extends BtrixElement {
           <h3 class="mb-3 text-lg font-semibold leading-none">
             ${msg("Description")}
           </h3>
-          <div class="rounded-lg border p-5">
+          <div class="rounded-lg border p-6">
             ${collection.description
               ? html`
                   <btrix-markdown-viewer
                     value=${collection.description}
                   ></btrix-markdown-viewer>
                 `
-              : html`<p class="text-center text-neutral-400">
-                  ${msg(
-                    "A description has not been provided for this collection.",
-                  )}
+              : html`<p class="text-center text-neutral-500">
+                  ${msg("No description provided.")}
                 </p>`}
           </div>
         </section>
