@@ -153,11 +153,11 @@ def main() -> None:
         signUpUrl=os.environ.get("SIGN_UP_URL", ""),
         salesEmail=os.environ.get("SALES_EMAIL", ""),
         supportEmail=os.environ.get("EMAIL_SUPPORT", ""),
-        localesEnabled=[
-            lang.strip() for lang in os.environ.get("LOCALES_ENABLED", "").split(",")
-        ]
-        if os.environ.get("LOCALES_ENABLED")
-        else None,
+        localesEnabled=(
+            [lang.strip() for lang in os.environ.get("LOCALES_ENABLED", "").split(",")]
+            if os.environ.get("LOCALES_ENABLED")
+            else None
+        ),
     )
 
     invites = init_invites(mdb, email)
