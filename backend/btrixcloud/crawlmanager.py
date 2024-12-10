@@ -86,7 +86,7 @@ class CrawlManager(K8sAPI):
             # Keep name shorter than in past to avoid k8s issues with length
             job_id = f"{job_type}-{secrets.token_hex(5)}"
 
-        params = {
+        params: Dict[str, object] = {
             "id": job_id,
             "oid": oid,
             "job_type": job_type,
@@ -398,8 +398,11 @@ class CrawlManager(K8sAPI):
         return cron_job_id
 
     async def create_replica_deletion_scheduled_job(
-        self, job_id: str, params: Dict[str, object], delay_days: int
-    ) -> Optional[str]:
+        self,
+        job_id: str,
+        params: Dict[str, object],
+        delay_days: int,
+    ) -> Tuple[str, Optional[str]]:
         """create scheduled job to delay replica file in x days"""
         now = dt_now()
         run_at = now + timedelta(days=delay_days)

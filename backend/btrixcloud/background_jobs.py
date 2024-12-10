@@ -251,9 +251,8 @@ class BackgroundJobOps:
             )
 
             if existing_job_id:
-                delete_replica_job = await self.get_background_job(
-                    existing_job_id, org.id
-                )
+                job = await self.get_background_job(existing_job_id, org.id)
+                delete_replica_job = cast(DeleteReplicaJob, job)
                 previous_attempt = {
                     "started": delete_replica_job.started,
                     "finished": delete_replica_job.finished,
