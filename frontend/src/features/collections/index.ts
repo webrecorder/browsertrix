@@ -1,4 +1,5 @@
 import("./collections-add");
+import("./collections-grid");
 import("./collection-items-dialog");
 import("./collection-metadata-dialog");
 import("./collection-workflow-list");

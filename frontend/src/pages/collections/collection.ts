@@ -2,14 +2,14 @@ import { localized, msg } from "@lit/localize";
 import { Task } from "@lit/task";
 import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
-import { choose } from "lit/directives/choose.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { SelectVisibilityDetail } from "@/features/collections/share-collection";
 import { page } from "@/layouts/page";
 import { RouteNamespace } from "@/routes";
-import type { OrgProfileData, PublicCollection } from "@/types/org";
+import type { PublicCollection } from "@/types/collection";
+import type { PublicOrgCollections } from "@/types/org";
 
 enum Tab {
   Replay = "replay",
@@ -42,72 +42,96 @@ export class Collection extends BtrixElement {
     },
   };
 
-  readonly publicOrg = new Task(this, {
+  readonly orgCollections = new Task(this, {
     task: async ([slug]) => {
       if (!slug) return;
-      const org = await this.fetchOrgProfile(slug);
+      const org = await this.fetchCollections({ slug });
+      return org;
+    },
+    args: () => [this.slug] as const,
+  });
+
+  readonly collection = new Task(this, {
+    task: async ([slug, collectionId]) => {
+      if (!slug || !collectionId) return;
+      const org = await this.fetchCollection({ slug, collectionId });
       return org;
     },
     args: () => [this.slug, this.collectionId] as const,
   });
 
   render() {
-    return html`
-      ${this.publicOrg.render({
-        complete: (profile) =>
-          profile ? this.renderCollection(profile) : nothing,
-      })}
-    `;
-  }
+    const collection = this.collection.value || undefined;
 
-  private renderCollection({ org, collections }: OrgProfileData) {
-    const collection =
-      this.collectionId &&
-      collections.find(({ id }) => id === this.collectionId);
+    const header: Parameters<typeof page>[0] = {
+      title: collection?.name || "",
+      actions: html`
+        <btrix-share-collection
+          collectionId=${ifDefined(this.collectionId)}
+          .collection=${collection}
+          @btrix-select-visibility=${(
+            e: CustomEvent<SelectVisibilityDetail>,
+          ) => {
+            e.stopPropagation();
+            console.log("TODO");
+          }}
+        ></btrix-share-collection>
+      `,
+    };
 
-    if (!collection) {
-      return "TODO";
+    if (collection?.caption) {
+      header.secondary = html`
+        <div class="text-pretty text-stone-600">${collection.caption}</div>
+      `;
     }
 
     return html`
+      <div class="text-pretty text-stone-600">
+        ${msg("Collection by")}
+
+        <a
+          href="/${RouteNamespace.PublicOrgs}/${this.slug}"
+          class="font-medium leading-none text-stone-500 transition-colors hover:text-stone-600"
+          @click=${this.navigate.link}
+        >
+          ${this.orgCollections.render({
+            complete: (profile) => (profile ? profile.org.name : msg("Org")),
+            loading: () => html` <sl-skeleton></sl-skeleton> `,
+          })}
+        </a>
+      </div>
+
       ${page(
-        {
-          title: collection.name,
-          secondary: html`
-            <div class="text-pretty text-stone-600">
-              ${msg("Collection by")}
-              <a
-                href="/${RouteNamespace.PublicOrgs}/${this.slug}"
-                class="font-medium leading-none text-stone-500 transition-colors hover:text-stone-600"
-                @click=${this.navigate.link}
-                >${org.name}</a
-              >
-            </div>
-          `,
-          actions: html`
-            <btrix-share-collection
-              collectionId=${ifDefined(this.collectionId)}
-              .collection=${collection}
-              @btrix-select=${(e: CustomEvent<SelectVisibilityDetail>) => {
-                e.stopPropagation();
-                console.log("TODO");
-              }}
-            ></btrix-share-collection>
-          `,
-        },
+        header,
         () => html`
           <nav class="mb-3 flex gap-2">
             ${Object.values(Tab).map(this.renderTab)}
           </nav>
 
-          ${choose(
-            this.tab,
-            [
-              [Tab.Replay, () => this.renderReplay(collection)],
-              [Tab.About, () => this.renderAbout(collection)],
-            ],
-            () => html`<btrix-not-found></btrix-not-found>`,
-          )}
+          ${this.collection.render({
+            complete: (collection) =>
+              collection
+                ? html`
+                    <section
+                      class=${(this.tab as Tab) !== Tab.Replay
+                        ? "offscreen"
+                        : ""}
+                    >
+                      ${this.renderReplay(collection)}
+                    </section>
+                    <section
+                      class=${(this.tab as Tab) !== Tab.About
+                        ? "offscreen"
+                        : ""}
+                    >
+                      ${this.renderAbout(collection)}
+                    </section>
+                  `
+                : nothing,
+            pending: () => html`
+              <div class="aspect-video rounded-lg border p-3"></div>
+            `,
+          })}
         `,
       )}
     `;
@@ -194,14 +218,43 @@ export class Collection extends BtrixElement {
     `;
   }
 
-  private async fetchOrgProfile(slug: string): Promise<OrgProfileData | void> {
-    const resp = await fetch(`/api/public-collections/${slug}`, {
+  private async fetchCollections({
+    slug,
+  }: {
+    slug: string;
+  }): Promise<PublicOrgCollections | void> {
+    const resp = await fetch(`/api/public/orgs/${slug}/collections`, {
       headers: { "Content-Type": "application/json" },
     });
 
     switch (resp.status) {
       case 200:
-        return (await resp.json()) as OrgProfileData;
+        return (await resp.json()) as PublicOrgCollections;
+      case 404: {
+        throw resp.status;
+      }
+      default:
+        throw resp.status;
+    }
+  }
+
+  private async fetchCollection({
+    slug,
+    collectionId,
+  }: {
+    slug: string;
+    collectionId: string;
+  }): Promise<PublicCollection | void> {
+    const resp = await fetch(
+      `/api/public/orgs/${slug}/collections/${collectionId}`,
+      {
+        headers: { "Content-Type": "application/json" },
+      },
+    );
+
+    switch (resp.status) {
+      case 200:
+        return (await resp.json()) as PublicCollection;
       case 404: {
         throw resp.status;
       }

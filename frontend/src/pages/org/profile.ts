@@ -6,13 +6,7 @@ import { when } from "lit/directives/when.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { page } from "@/layouts/page";
-import type { OrgData, OrgProfileData } from "@/types/org";
-
-type PublicCollection = {
-  name: string;
-  description: string;
-  thumbnailSrc: string;
-};
+import type { OrgData, PublicOrgCollections } from "@/types/org";
 
 @localized()
 @customElement("btrix-org-profile")
@@ -21,15 +15,12 @@ export class OrgProfile extends BtrixElement {
   slug?: string;
 
   @state()
-  private readonly collections: PublicCollection[] = [];
-
-  @state()
   private isPrivatePreview = false;
 
-  readonly publicOrg = new Task(this, {
+  private readonly orgCollections = new Task(this, {
     task: async ([slug]) => {
       if (!slug) return;
-      const org = await this.fetchOrgProfile(slug);
+      const org = await this.fetchCollections({ slug });
       return org;
     },
     args: () => [this.slug] as const,
@@ -42,7 +33,7 @@ export class OrgProfile extends BtrixElement {
 
     return html`
       <div class="flex min-h-full flex-col">
-        ${this.publicOrg.render({
+        ${this.orgCollections.render({
           complete: (profile) =>
             profile
               ? html`
@@ -53,10 +44,36 @@ export class OrgProfile extends BtrixElement {
                 `
               : this.renderError(),
           error: this.renderError,
+          pending: this.renderSkeleton,
         })}
       </div>
     `;
   }
+
+  private readonly renderSkeleton = () => html`
+    ${page(
+      {
+        title: "",
+        secondary: html`<sl-skeleton
+            class="block max-w-[50ch]"
+            effect="sheen"
+          ></sl-skeleton>
+          <sl-skeleton
+            class="block max-w-[30ch]"
+            effect="sheen"
+          ></sl-skeleton>`,
+      },
+      () => html`
+        <div class="mb-5 mt-10">
+          <sl-skeleton
+            class="block h-6 max-w-[16ch] py-4"
+            effect="sheen"
+          ></sl-skeleton>
+        </div>
+        <btrix-collections-grid></btrix-collections-grid>
+      `,
+    )}
+  `;
 
   private renderPreviewBanner() {
     return html`
@@ -91,7 +108,7 @@ export class OrgProfile extends BtrixElement {
     `;
   }
 
-  private renderProfile({ org }: OrgProfileData) {
+  private renderProfile({ org, collections }: PublicOrgCollections) {
     return html`
       ${this.isPrivatePreview ? this.renderPreviewBanner() : nothing}
       ${page(
@@ -151,14 +168,14 @@ export class OrgProfile extends BtrixElement {
             })}
           `,
         },
-        () => this.renderCollections(),
+        () => this.renderCollections(collections),
       )}
     `;
   }
 
-  private renderCollections() {
+  private renderCollections(collections: PublicOrgCollections["collections"]) {
     return html`
-      <div class="mb-5 mt-7 flex items-center justify-between">
+      <div class="mt-7 flex items-center justify-between">
         <h2 class="text-lg font-medium">${msg("Collections")}</h2>
         ${when(
           this.appState.isAdmin,
@@ -173,59 +190,16 @@ export class OrgProfile extends BtrixElement {
             </sl-tooltip>`,
         )}
       </div>
-
-      <div class="flex flex-1 items-center justify-center pb-16">
-        ${this.renderCollectionsList(this.collections)}
+      <div class="flex-1 pb-16">
+        <btrix-collections-grid
+          slug=${this.slug || ""}
+          .collections=${collections}
+        ></btrix-collections-grid>
       </div>
     `;
   }
 
-  private renderCollectionsList(collections: PublicCollection[]) {
-    if (!collections.length) {
-      return html`
-        <p class="text-base text-neutral-500">
-          ${msg("This org doesn't have any public collections yet.")}
-        </p>
-      `;
-    }
-    return html`
-      <ul
-        class="grid flex-1 grid-cols-1 gap-x-10 gap-y-16 md:grid-cols-2 lg:grid-cols-4"
-      >
-        ${collections.map(
-          (collection) => html`
-            <li class="col-span-1">
-              <a
-                href="#"
-                class="group block rounded ring-[1rem] ring-white transition-all hover:scale-[102%] hover:bg-cyan-50 hover:ring-cyan-50"
-              >
-                <div class="mb-4">
-                  <img
-                    class="aspect-video rounded-lg border border-cyan-100 bg-slate-50 object-cover shadow-md shadow-cyan-900/20 transition-shadow group-hover:shadow-sm"
-                    src=${collection.thumbnailSrc}
-                  />
-                </div>
-                <div class="text-pretty leading-relaxed">
-                  <strong
-                    class="text-base font-medium text-stone-700 transition-colors group-hover:text-cyan-600"
-                  >
-                    ${collection.name}
-                  </strong>
-                  <p
-                    class="text-stone-400 transition-colors group-hover:text-cyan-600"
-                  >
-                    ${collection.description}
-                  </p>
-                </div>
-              </a>
-            </li>
-          `,
-        )}
-      </ul>
-    `;
-  }
-
-  private renderSignUpCta(org: OrgProfileData["org"]) {
+  private renderSignUpCta(org: PublicOrgCollections["org"]) {
     const { signUpUrl } = this.appState.settings || {};
 
     if (!signUpUrl) return;
@@ -234,7 +208,7 @@ export class OrgProfile extends BtrixElement {
       <div class="w-full border-y p-6 px-3 text-center text-neutral-500">
         <p>
           ${when(
-            this.publicOrg.value,
+            this.orgCollections.value,
             () => html`
               <span>
                 ${msg(str`${org.name} is web archiving with Browsertrix.`)}
@@ -259,14 +233,18 @@ export class OrgProfile extends BtrixElement {
     `;
   }
 
-  private async fetchOrgProfile(slug: string): Promise<OrgProfileData | void> {
-    const resp = await fetch(`/api/public-collections/${slug}`, {
+  private async fetchCollections({
+    slug,
+  }: {
+    slug: string;
+  }): Promise<PublicOrgCollections | void> {
+    const resp = await fetch(`/api/public/orgs/${slug}/collections`, {
       headers: { "Content-Type": "application/json" },
     });
 
     switch (resp.status) {
       case 200:
-        return (await resp.json()) as OrgProfileData;
+        return (await resp.json()) as PublicOrgCollections;
       case 404: {
         if (this.authState) {
           // Use authenticated org data to render preview
@@ -285,7 +263,7 @@ export class OrgProfile extends BtrixElement {
     }
   }
 
-  private async getUserOrg(): Promise<OrgProfileData | null> {
+  private async getUserOrg(): Promise<PublicOrgCollections | null> {
     try {
       const userInfo = this.userInfo || (await this.api.fetch("/users/me"));
       const userOrg = userInfo?.orgs.find((org) => org.slug === this.slug);
@@ -303,7 +281,7 @@ export class OrgProfile extends BtrixElement {
           url: org.publicUrl || "",
           verified: false, // TODO
         },
-        collections: [],
+        collections: [], // TODO
       };
     } catch {
       return null;

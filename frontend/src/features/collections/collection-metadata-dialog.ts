@@ -61,7 +61,7 @@ export class CollectionMetadataDialog extends BtrixElement {
   render() {
     return html` <btrix-dialog
       label=${this.collection
-        ? msg("Edit Collection Metadata")
+        ? msg("Collection Settings")
         : msg("Create a New Collection")}
       ?open=${this.open}
       @sl-show=${() => (this.isDialogVisible = true)}
@@ -115,10 +115,10 @@ export class CollectionMetadataDialog extends BtrixElement {
     return html`
       <form id="collectionForm" @reset=${this.onReset} @submit=${this.onSubmit}>
         <sl-input
-          class="with-max-help-text mb-2"
+          class="with-max-help-text"
           id="collectionForm-name-input"
           name="name"
-          label=${msg("Collection Name")}
+          label=${msg("Name")}
           value=${this.collection?.name || ""}
           placeholder=${msg("My Collection")}
           autocomplete="off"
@@ -126,18 +126,23 @@ export class CollectionMetadataDialog extends BtrixElement {
           help-text=${this.validateNameMax.helpText}
           @sl-input=${this.validateNameMax.validate}
         ></sl-input>
-        <sl-divider></sl-divider>
-        <btrix-markdown-editor
-          label=${msg("Description")}
-          name="description"
-          initialValue=${this.collection?.description || ""}
-          maxlength=${4000}
-        ></btrix-markdown-editor>
         ${when(
-          !this.collection,
+          this.collection,
           () => html`
+            <section>
+              <div class="form-label">${msg("Thumbnail")}</div>
+            </section>
+          `,
+          () => html`
+            <btrix-markdown-editor
+              label=${msg("Description")}
+              initialValue=${this.collection?.description || ""}
+              maxlength=${4000}
+            ></btrix-markdown-editor>
             <sl-divider></sl-divider>
-            <btrix-select-collection-access></btrix-select-collection-access>
+            <btrix-select-collection-access
+              publicDisabled
+            ></btrix-select-collection-access>
           `,
         )}
 
@@ -160,15 +165,15 @@ export class CollectionMetadataDialog extends BtrixElement {
 
     const form = event.target as HTMLFormElement;
     const nameInput = form.querySelector<SlInput>('sl-input[name="name"]');
+    const description = this.descriptionEditor?.value;
     if (
       !nameInput?.checkValidity() ||
-      !this.descriptionEditor?.checkValidity()
+      (description && !this.descriptionEditor.checkValidity())
     ) {
       return;
     }
 
     const { name } = serialize(form);
-    const description = this.descriptionEditor.value;
 
     this.isSubmitting = true;
     try {
@@ -219,12 +224,5 @@ export class CollectionMetadataDialog extends BtrixElement {
     }
 
     this.isSubmitting = false;
-  }
-
-  /**
-   * https://github.com/shoelace-style/shoelace/issues/170
-   */
-  private stopProp(e: CustomEvent) {
-    e.stopPropagation();
   }
 }
