@@ -96,6 +96,11 @@ class BackgroundJobOps:
         if not res:
             print("File deleted before replication job started, ignoring", flush=True)
 
+    async def handle_delete_replica_job_finished(self, job: DeleteReplicaJob) -> None:
+        """After successful replica deletion, delete cronjob if scheduled"""
+        if job.schedule:
+            await self.crawl_manager.delete_replica_deletion_scheduled_job(job.id)
+
     async def create_replica_jobs(
         self, oid: UUID, file: BaseFile, object_id: str, object_type: str
     ) -> Dict[str, Union[bool, List[str]]]:
@@ -398,6 +403,10 @@ class BackgroundJobOps:
         if success:
             if job_type == BgJobType.CREATE_REPLICA:
                 await self.handle_replica_job_finished(cast(CreateReplicaJob, job))
+            if job_type == BgJobType.DELETE_REPLICA:
+                await self.handle_delete_replica_job_finished(
+                    cast(DeleteReplicaJob, job)
+                )
         else:
             print(
                 f"Background job {job.id} failed, sending email to superuser",
