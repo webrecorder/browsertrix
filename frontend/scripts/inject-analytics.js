@@ -1,10 +1,8 @@
-// Inject analytics script into the page
-// Only used if env var ANALYTICS is enabled
-// Hand-minified version of this is used in 00-browsertrix-nginx-init.sh
-// Changing this file won't update that — you'll have to update it yourself
+// Inject analytics scripts into the page
+// This is not used by default; see https://docs.browsertrix.com/deploy/customization/#analytics for more information.
 const plausible = document.createElement("script");
 plausible.src =
-  "$SRC/js/script.file-downloads.hash.pageview-props.tagged-events.js";
+  "https://p.webrecorder.net/js/script.file-downloads.hash.pageview-props.tagged-events.js";
 plausible.defer = true;
 plausible.dataset.domain = "browsertrix.com";
 document.head.appendChild(plausible);

@@ -153,6 +153,4 @@ You can enable sign-ups by setting `registration_enabled` to `"1"`. Once enabled
 
 ## Analytics
 
-Sending privacy-preserving analytics to us with [Plausible Analytics](https://plausible.io/) can optionally be enabled by setting `analytics` to `"true"`. You can also set this to the base URL of your own Plausible instance (e.g. `"https:plausible.io"` for the default hosted Plausible service) to have analytics sent to your own instance and not ours.
-
-If you’re self-hosting Browsertrix, analytics are off by default.
+You can add a script to inject any sort of analytics into the frontend by setting `inject_analytics` to the script. If present, it will be injected as a blocking script tag into every page — so we recommend you create the script tags from within this script. You can use `frontend/scripts/inject-analytics.js` as an example using Plausible Analytics.
