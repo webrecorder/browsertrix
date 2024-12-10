@@ -6,10 +6,7 @@ import { when } from "lit/directives/when.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { page } from "@/layouts/page";
-import { RouteNamespace } from "@/routes";
-import type { PublicCollection } from "@/types/collection";
 import type { OrgData, PublicOrgCollections } from "@/types/org";
-import thumbnailCyanSrc from "~assets/images/collections/thumbnail-cyan.avif";
 
 @localized()
 @customElement("btrix-org-profile")
@@ -20,7 +17,7 @@ export class OrgProfile extends BtrixElement {
   @state()
   private isPrivatePreview = false;
 
-  readonly orgCollections = new Task(this, {
+  private readonly orgCollections = new Task(this, {
     task: async ([slug]) => {
       if (!slug) return;
       const org = await this.fetchCollections({ slug });
@@ -66,28 +63,15 @@ export class OrgProfile extends BtrixElement {
             effect="sheen"
           ></sl-skeleton>`,
       },
-      () => {
-        const thumb = html`
+      () => html`
+        <div class="mb-5 mt-10">
           <sl-skeleton
-            class="block aspect-video [--border-radius:var(--sl-border-radius-large)]"
+            class="block h-6 max-w-[16ch] py-4"
             effect="sheen"
           ></sl-skeleton>
-        `;
-
-        return html`
-          <div class="mb-5 mt-10">
-            <sl-skeleton
-              class="block h-6 max-w-[16ch] py-4"
-              effect="sheen"
-            ></sl-skeleton>
-          </div>
-          <div
-            class="grid flex-1 grid-cols-1 gap-x-10 gap-y-16 md:grid-cols-2 lg:grid-cols-4"
-          >
-            ${thumb}${thumb}${thumb}${thumb}
-          </div>
-        `;
-      },
+        </div>
+        <btrix-collections-grid></btrix-collections-grid>
+      `,
     )}
   `;
 
@@ -191,7 +175,7 @@ export class OrgProfile extends BtrixElement {
 
   private renderCollections(collections: PublicOrgCollections["collections"]) {
     return html`
-      <div class="mb-5 mt-7 flex items-center justify-between">
+      <div class="mt-7 flex items-center justify-between">
         <h2 class="text-lg font-medium">${msg("Collections")}</h2>
         ${when(
           this.appState.isAdmin,
@@ -206,59 +190,12 @@ export class OrgProfile extends BtrixElement {
             </sl-tooltip>`,
         )}
       </div>
-
-      <div class="flex flex-1 items-center justify-center pb-16">
-        ${this.renderCollectionsList(collections)}
+      <div class="flex-1 pb-16">
+        <btrix-collections-grid
+          slug=${this.slug || ""}
+          .collections=${collections}
+        ></btrix-collections-grid>
       </div>
-    `;
-  }
-
-  private renderCollectionsList(collections: PublicCollection[]) {
-    if (!collections.length) {
-      return html`
-        <p class="text-base text-neutral-500">
-          ${msg("This org doesn't have any public collections yet.")}
-        </p>
-      `;
-    }
-    return html`
-      <ul
-        class="grid flex-1 grid-cols-1 gap-x-10 gap-y-16 md:grid-cols-2 lg:grid-cols-4"
-      >
-        ${collections.map(
-          (collection) => html`
-            <li class="col-span-1">
-              <a
-                href="/${RouteNamespace.PublicOrgs}/${this
-                  .slug}/collections/${collection.id}"
-                class="group block rounded-lg ring-[1rem] ring-white transition-all hover:scale-[102%] hover:bg-cyan-50 hover:ring-cyan-50"
-              >
-                <div class="mb-4">
-                  <img
-                    class="aspect-video rounded-lg border border-cyan-100 bg-slate-50 object-cover shadow-md shadow-cyan-900/20 transition-shadow group-hover:shadow-sm"
-                    src=${thumbnailCyanSrc}
-                  />
-                </div>
-                <div class="text-pretty leading-relaxed">
-                  <strong
-                    class="text-base font-medium text-stone-700 transition-colors group-hover:text-cyan-600"
-                  >
-                    ${collection.name}
-                  </strong>
-                  ${collection.caption &&
-                  html`
-                    <p
-                      class="text-stone-400 transition-colors group-hover:text-cyan-600"
-                    >
-                      ${collection.caption}
-                    </p>
-                  `}
-                </div>
-              </a>
-            </li>
-          `,
-        )}
-      </ul>
     `;
   }
 
