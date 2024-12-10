@@ -178,7 +178,7 @@ export class QueueExclusionForm extends LiteElement {
 
   private readonly onKeyDown = (e: KeyboardEvent) => {
     e.stopPropagation();
-    if (e.key === "Enter") {
+    if (e.key === "Enter" && !this.isRegexInvalid) {
       void this.handleAdd();
     }
   };
@@ -217,7 +217,7 @@ export class QueueExclusionForm extends LiteElement {
   private async handleAdd() {
     this.onInput.flush();
     await this.updateComplete;
-    if (!this.regex) return;
+    if (!this.regex || this.isRegexInvalid) return;
 
     if (this.input) {
       this.input.value = "";
