@@ -11,16 +11,13 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 
 import { SelectCollectionAccess } from "./select-collection-access";
+import { CollectionThumbnail, Thumbnail } from "./thumbnail";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { ClipboardController } from "@/controllers/clipboard";
 import { RouteNamespace } from "@/routes";
 import { CollectionAccess, type Collection } from "@/types/collection";
 import { tw } from "@/utils/tailwind";
-import thumbnailCyanSrc from "~assets/images/collections/thumbnail-cyan.avif";
-import thumbnailGreenSrc from "~assets/images/collections/thumbnail-green.avif";
-import thumbnailOrangeSrc from "~assets/images/collections/thumbnail-orange.avif";
-import thumbnailYellowSrc from "~assets/images/collections/thumbnail-yellow.avif";
 
 export type SelectVisibilityDetail = {
   item: { value: CollectionAccess };
@@ -255,88 +252,84 @@ export class ShareCollection extends BtrixElement {
   }
 
   private renderThumbnails() {
+    let selectedImgSrc = CollectionThumbnail.Variants[Thumbnail.Cyan].src;
+
+    if (this.collection?.thumbnail?.originalFilename) {
+      const { originalFilename } = this.collection.thumbnail;
+      const thumbnail = Object.values(CollectionThumbnail.Variants).find(
+        ({ fileName }) => fileName === originalFilename,
+      );
+
+      if (thumbnail) {
+        selectedImgSrc = thumbnail.src;
+      }
+    }
+
+    const thumbnail = (thumbnail: Thumbnail) => {
+      const { fileName, src } = CollectionThumbnail.Variants[thumbnail];
+
+      let content = html``;
+      let tooltipContent = msg("Use thumbnail");
+      let classNames = "";
+
+      if (src) {
+        content = html`
+          <div
+            class="flex size-full flex-col items-center justify-center bg-cover"
+            style="background-image:url('${src}')"
+          >
+            ${src === selectedImgSrc
+              ? html`<sl-icon
+                  class="size-10 text-white drop-shadow"
+                  name="check-lg"
+                ></sl-icon>`
+              : nothing}
+          </div>
+        `;
+      } else {
+        content = html`<sl-icon class="size-10" name="plus"></sl-icon>`;
+        tooltipContent = msg("Choose page thumbnail");
+        // Render as select button
+        classNames = tw`flex flex-col items-center justify-center bg-neutral-50 text-blue-400 hover:text-blue-500`;
+      }
+
+      return html`
+        <sl-tooltip content=${tooltipContent || msg("Use thumbnail")}>
+          <button
+            class=${clsx(
+              "flex-1 aspect-video overflow-hidden rounded ring-1 ring-neutral-300 transition-all hover:ring-2 hover:ring-blue-300",
+              classNames,
+            )}
+            @click=${() => {
+              if (src) {
+                this.dispatchEvent(
+                  new CustomEvent<SelectThumbnailDetail>(
+                    "btrix-select-thumbnail",
+                    {
+                      detail: {
+                        fileName,
+                        src,
+                      },
+                    },
+                  ),
+                );
+              } else {
+                console.log("TODO choose");
+              }
+            }}
+          >
+            ${content}
+          </button>
+        </sl-tooltip>
+      `;
+    };
+
     return html`
       <div class="flex gap-3">
-        ${this.renderThumbnail("thumbnail-cyan", thumbnailCyanSrc as string)}
-        ${this.renderThumbnail("thumbnail-green", thumbnailGreenSrc as string)}
-        ${this.renderThumbnail(
-          "thumbnail-orange",
-          thumbnailOrangeSrc as string,
-        )}
-        ${this.renderThumbnail(
-          "thumbnail-yellow",
-          thumbnailYellowSrc as string,
-        )}
-        ${this.renderThumbnail("thumbnail-custom")}
+        ${thumbnail(Thumbnail.Cyan)} ${thumbnail(Thumbnail.Green)}
+        ${thumbnail(Thumbnail.Orange)} ${thumbnail(Thumbnail.Yellow)}
+        ${thumbnail(Thumbnail.Custom)}
       </div>
-    `;
-  }
-
-  private renderThumbnail(id: string, src?: string) {
-    let selectedImgSrc = "";
-
-    if (
-      src &&
-      this.collection?.thumbnail?.originalFilename?.split(".")[0] === id
-    ) {
-      selectedImgSrc = src;
-    }
-
-    let content = html``;
-    let tooltipContent = msg("Use thumbnail");
-    let classNames = "";
-
-    if (src) {
-      content = html`
-        <div
-          class="flex size-full flex-col items-center justify-center bg-cover"
-          style="background-image:url('${src}')"
-        >
-          ${src === selectedImgSrc
-            ? html`<sl-icon
-                class="size-10 text-white drop-shadow"
-                name="check-lg"
-              ></sl-icon>`
-            : nothing}
-        </div>
-      `;
-    } else {
-      content = html`<sl-icon class="size-10" name="plus"></sl-icon>`;
-      tooltipContent = msg("Choose page thumbnail");
-      // Render as select button
-      classNames = tw`flex flex-col items-center justify-center bg-neutral-50 text-blue-400 hover:text-blue-500`;
-    }
-
-    return html`
-      <sl-tooltip content=${tooltipContent || msg("Use thumbnail")}>
-        <button
-          class=${clsx(
-            "flex-1 aspect-video overflow-hidden rounded ring-1 ring-neutral-300 transition-all hover:ring-2 hover:ring-blue-300",
-            classNames,
-          )}
-          @click=${() => {
-            if (src) {
-              const fileName = `${id}${src.slice(src.lastIndexOf(".", src.length))}`;
-
-              this.dispatchEvent(
-                new CustomEvent<SelectThumbnailDetail>(
-                  "btrix-select-thumbnail",
-                  {
-                    detail: {
-                      fileName,
-                      src,
-                    },
-                  },
-                ),
-              );
-            } else {
-              console.log("TODO choose");
-            }
-          }}
-        >
-          ${content}
-        </button>
-      </sl-tooltip>
     `;
   }
 

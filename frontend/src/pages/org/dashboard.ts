@@ -9,7 +9,9 @@ import { when } from "lit/directives/when.js";
 import type { SelectNewDialogEvent } from ".";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import { pageHeading } from "@/layouts/page";
 import { pageHeader } from "@/layouts/pageHeader";
+import { RouteNamespace } from "@/routes";
 import type { PublicOrgCollections } from "@/types/org";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 
@@ -83,13 +85,14 @@ export class Dashboard extends BtrixElement {
           ${when(
             this.appState.isAdmin,
             () =>
-              html` <sl-icon-button
-                href=${`${this.navigate.orgBasePath}/settings`}
-                class="size-8 text-base"
-                name="gear"
-                label=${msg("Edit org settings")}
-                @click=${this.navigate.link}
-              ></sl-icon-button>`,
+              html`<sl-tooltip content=${msg("Manage org settings")}>
+                <sl-icon-button
+                  href=${`${this.navigate.orgBasePath}/settings`}
+                  class="size-8 text-base"
+                  name="gear"
+                  @click=${this.navigate.link}
+                ></sl-icon-button>
+              </sl-tooltip>`,
           )}
           ${when(
             this.isCrawler,
@@ -256,27 +259,40 @@ export class Dashboard extends BtrixElement {
           )}
         </div>
 
-        <div class="flex items-center justify-between">
-          <h2 class="text-lg font-medium">${msg("Public Collections")}</h2>
-          ${when(
-            this.appState.isAdmin,
-            () =>
-              html`<sl-tooltip content=${msg("Update collections settings")}>
-                <sl-icon-button
-                  href=${`${this.navigate.orgBasePath}/collections`}
-                  class="size-8 text-base"
-                  name="gear"
-                  @click=${this.navigate.link}
-                ></sl-icon-button>
-              </sl-tooltip>`,
-          )}
-        </div>
-        <div class="pb-16">
-          <btrix-collections-grid
-            slug=${this.orgSlug || ""}
-            .collections=${this.publicCollections.value?.collections}
-          ></btrix-collections-grid>
-        </div>
+        <section class="mb-16">
+          <header class="mb-1.5 flex items-center justify-between">
+            ${pageHeading({
+              content: msg("Public Collections"),
+            })}
+            ${when(
+              this.appState.isCrawler,
+              () => html`
+                <btrix-overflow-dropdown>
+                  <sl-menu>
+                    <btrix-menu-item-link
+                      href=${`${this.navigate.orgBasePath}/collections`}
+                    >
+                      <sl-icon slot="prefix" name="gear"></sl-icon>
+                      ${msg("Manage Collections")}
+                    </btrix-menu-item-link>
+                    <btrix-menu-item-link
+                      href=${`/${RouteNamespace.PublicOrgs}/${this.orgSlug}`}
+                    >
+                      <sl-icon slot="prefix" name="globe2"></sl-icon>
+                      ${msg("Visit Public Profile")}
+                    </btrix-menu-item-link>
+                  </sl-menu>
+                </btrix-overflow-dropdown>
+              `,
+            )}
+          </header>
+          <div class="rounded-lg border p-5">
+            <btrix-collections-grid
+              slug=${this.orgSlug || ""}
+              .collections=${this.publicCollections.value?.collections}
+            ></btrix-collections-grid>
+          </div>
+        </section>
       </main>
     `;
   }
