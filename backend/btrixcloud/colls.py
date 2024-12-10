@@ -294,7 +294,7 @@ class CollectionOps:
         access: Optional[str] = None,
     ):
         """List all collections for org"""
-        # pylint: disable=too-many-locals, duplicate-code
+        # pylint: disable=too-many-locals, duplicate-code, too-many-branches
         # Zero-index page for query
         page = page - 1
         skip = page * page_size
@@ -351,16 +351,22 @@ class CollectionOps:
         collections: List[Union[CollOut, PublicCollOut]] = []
 
         for res in items:
-            if public_colls_out:
-                res["resources"] = await self.get_collection_crawl_resources(res["_id"])
+            res["resources"] = await self.get_collection_crawl_resources(res["_id"])
 
-                thumbnail = res.get("thumbnail")
-                if thumbnail:
-                    image_file = ImageFile(**thumbnail)
+            thumbnail = res.get("thumbnail")
+            if thumbnail:
+                image_file = ImageFile(**thumbnail)
+
+                if public_colls_out:
                     res["thumbnail"] = await image_file.get_public_image_file_out(
                         org, self.storage_ops
                     )
+                else:
+                    res["thumbnail"] = await image_file.get_image_file_out(
+                        org, self.storage_ops
+                    )
 
+            if public_colls_out:
                 collections.append(PublicCollOut.from_dict(res))
             else:
                 collections.append(CollOut.from_dict(res))
