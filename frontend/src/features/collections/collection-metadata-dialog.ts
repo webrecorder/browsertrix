@@ -118,7 +118,7 @@ export class CollectionMetadataDialog extends BtrixElement {
           class="with-max-help-text"
           id="collectionForm-name-input"
           name="name"
-          label=${msg("Collection Name")}
+          label=${msg("Name")}
           value=${this.collection?.name || ""}
           placeholder=${msg("My Collection")}
           autocomplete="off"
@@ -127,18 +127,22 @@ export class CollectionMetadataDialog extends BtrixElement {
           @sl-input=${this.validateNameMax.validate}
         ></sl-input>
         ${when(
-          !this.collection,
+          this.collection,
           () => html`
-            <div class="mb-7">
-              <btrix-select-collection-access
-                publicDisabled
-              ></btrix-select-collection-access>
-            </div>
+            <section>
+              <div class="form-label">${msg("Thumbnail")}</div>
+            </section>
+          `,
+          () => html`
             <btrix-markdown-editor
               label=${msg("Description")}
               initialValue=${this.collection?.description || ""}
               maxlength=${4000}
             ></btrix-markdown-editor>
+            <sl-divider></sl-divider>
+            <btrix-select-collection-access
+              publicDisabled
+            ></btrix-select-collection-access>
           `,
         )}
 
@@ -161,15 +165,15 @@ export class CollectionMetadataDialog extends BtrixElement {
 
     const form = event.target as HTMLFormElement;
     const nameInput = form.querySelector<SlInput>('sl-input[name="name"]');
+    const description = this.descriptionEditor?.value;
     if (
       !nameInput?.checkValidity() ||
-      !this.descriptionEditor?.checkValidity()
+      (description && !this.descriptionEditor.checkValidity())
     ) {
       return;
     }
 
     const { name } = serialize(form);
-    const description = this.descriptionEditor.value;
 
     this.isSubmitting = true;
     try {
@@ -222,12 +226,5 @@ export class CollectionMetadataDialog extends BtrixElement {
     }
 
     this.isSubmitting = false;
-  }
-
-  /**
-   * https://github.com/shoelace-style/shoelace/issues/170
-   */
-  private stopProp(e: CustomEvent) {
-    e.stopPropagation();
   }
 }

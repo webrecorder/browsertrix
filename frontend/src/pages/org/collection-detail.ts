@@ -12,6 +12,7 @@ import type { MarkdownEditor } from "@/components/ui/markdown-editor";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
 import type {
+  SelectThumbnailDetail,
   SelectVisibilityDetail,
   ShareCollection,
 } from "@/features/collections/share-collection";
@@ -166,9 +167,15 @@ export class CollectionDetail extends BtrixElement {
         <btrix-share-collection
           collectionId=${this.collectionId}
           .collection=${this.collection}
-          @btrix-select=${(e: CustomEvent<SelectVisibilityDetail>) => {
+          @btrix-select-visibility=${(
+            e: CustomEvent<SelectVisibilityDetail>,
+          ) => {
             e.stopPropagation();
             void this.updateVisibility(e.detail.item.value);
+          }}
+          @btrix-select-thumbnail=${(e: CustomEvent<SelectThumbnailDetail>) => {
+            e.stopPropagation();
+            void this.uploadThumbnail(e.detail);
           }}
         ></btrix-share-collection>
         ${when(this.isCrawler, this.renderActions)}
@@ -182,15 +189,23 @@ export class CollectionDetail extends BtrixElement {
           this.collectionTab === Tab.About
             ? this.isEditingDescription
               ? html`
-                  <sl-button
-                    variant="primary"
-                    size="small"
-                    @click=${() => void this.saveDescription()}
-                    ?disabled=${!this.collection}
-                  >
-                    <sl-icon name="check-lg" slot="prefix"></sl-icon>
-                    ${msg("Save")}
-                  </sl-button>
+                  <div>
+                    <sl-button
+                      variant="primary"
+                      size="small"
+                      @click=${() => void this.saveDescription()}
+                      ?disabled=${!this.collection}
+                    >
+                      <sl-icon name="check-lg" slot="prefix"></sl-icon>
+                      ${msg("Save")}
+                    </sl-button>
+                    <sl-button
+                      size="small"
+                      @click=${() => (this.isEditingDescription = false)}
+                    >
+                      ${msg("Cancel")}
+                    </sl-button>
+                  </div>
                 `
               : html`
                   <sl-button
@@ -616,6 +631,50 @@ export class CollectionDetail extends BtrixElement {
       if (this.collection) {
         this.collection = { ...this.collection, access };
       }
+    }
+  }
+
+  async uploadThumbnail({ fileName, src }: { fileName: string; src: string }) {
+    try {
+      const resp = await fetch(src);
+      const blob = await resp.blob();
+
+      const file = new File([blob], fileName, {
+        type: blob.type,
+      });
+
+      // TODO Show loading progress
+      if (this.collection) {
+        this.collection = {
+          ...this.collection,
+          thumbnail: {
+            name: fileName,
+            originalFilename: fileName,
+            path: src,
+          },
+        };
+      }
+
+      await this.api.upload(
+        `/orgs/${this.orgId}/collections/${this.collectionId}/thumbnail?filename=${window.encodeURIComponent(fileName)}`,
+        file,
+      );
+
+      void this.fetchCollection();
+
+      this.notify.toast({
+        message: msg("Thumbnail updated."),
+        variant: "success",
+        icon: "check2-circle",
+      });
+    } catch (err) {
+      console.debug(err);
+
+      this.notify.toast({
+        message: msg("Sorry, couldn't update thumbnail at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
     }
   }
 

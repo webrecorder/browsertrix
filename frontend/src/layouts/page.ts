@@ -40,11 +40,13 @@ export function page(
   render: () => TemplateResult,
 ) {
   return html`<btrix-document-title
-      title=${ifDefined(typeof header.title === "string" && header.title)}
+      title=${ifDefined(
+        (typeof header.title === "string" && header.title) || undefined,
+      )}
     ></btrix-document-title>
 
     <div
-      class="mx-auto box-border flex min-h-full w-full max-w-screen-2xl flex-1 flex-col gap-3 p-3 lg:px-10"
+      class="mx-auto box-border flex min-h-full w-full max-w-screen-desktop flex-1 flex-col gap-3 p-3 lg:px-10"
     >
       ${pageHeader(header)}
       <main class="flex-1">${render()}</main>

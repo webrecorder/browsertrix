@@ -61,58 +61,77 @@ export class Collection extends BtrixElement {
   });
 
   render() {
-    return html`
-      ${this.collection.render({
-        complete: (collection) =>
-          collection ? this.renderCollection(collection) : nothing,
-      })}
-    `;
-  }
+    const collection = this.collection.value || undefined;
 
-  private renderCollection(collection: PublicCollection) {
+    const header: Parameters<typeof page>[0] = {
+      title: collection?.name || "",
+      actions: html`
+        <btrix-share-collection
+          collectionId=${ifDefined(this.collectionId)}
+          .collection=${collection}
+          @btrix-select-visibility=${(
+            e: CustomEvent<SelectVisibilityDetail>,
+          ) => {
+            e.stopPropagation();
+            console.log("TODO");
+          }}
+        ></btrix-share-collection>
+      `,
+    };
+
+    if (collection?.caption) {
+      header.secondary = html`
+        <div class="text-pretty text-stone-600">${collection.caption}</div>
+      `;
+    }
+
     return html`
+      <div class="text-pretty text-stone-600">
+        ${msg("Collection by")}
+
+        <a
+          href="/${RouteNamespace.PublicOrgs}/${this.slug}"
+          class="font-medium leading-none text-stone-500 transition-colors hover:text-stone-600"
+          @click=${this.navigate.link}
+        >
+          ${this.orgCollections.render({
+            complete: (profile) => (profile ? profile.org.name : msg("Org")),
+            loading: () => html` <sl-skeleton></sl-skeleton> `,
+          })}
+        </a>
+      </div>
+
       ${page(
-        {
-          title: collection.name,
-          secondary: html`
-            <div class="text-pretty text-stone-600">
-              ${msg("Collection by")}
-
-              <a
-                href="/${RouteNamespace.PublicOrgs}/${this.slug}"
-                class="font-medium leading-none text-stone-500 transition-colors hover:text-stone-600"
-                @click=${this.navigate.link}
-              >
-                ${this.orgCollections.render({
-                  complete: (profile) =>
-                    profile ? profile.org.name : msg("Org"),
-                  loading: () => html` <sl-skeleton></sl-skeleton> `,
-                })}
-              </a>
-            </div>
-          `,
-          actions: html`
-            <btrix-share-collection
-              collectionId=${ifDefined(this.collectionId)}
-              .collection=${collection}
-              @btrix-select=${(e: CustomEvent<SelectVisibilityDetail>) => {
-                e.stopPropagation();
-                console.log("TODO");
-              }}
-            ></btrix-share-collection>
-          `,
-        },
+        header,
         () => html`
           <nav class="mb-3 flex gap-2">
             ${Object.values(Tab).map(this.renderTab)}
           </nav>
 
-          <section class=${(this.tab as Tab) !== Tab.Replay ? "offscreen" : ""}>
-            ${this.renderReplay(collection)}
-          </section>
-          <section class=${(this.tab as Tab) !== Tab.About ? "offscreen" : ""}>
-            ${this.renderAbout(collection)}
-          </section>
+          ${this.collection.render({
+            complete: (collection) =>
+              collection
+                ? html`
+                    <section
+                      class=${(this.tab as Tab) !== Tab.Replay
+                        ? "offscreen"
+                        : ""}
+                    >
+                      ${this.renderReplay(collection)}
+                    </section>
+                    <section
+                      class=${(this.tab as Tab) !== Tab.About
+                        ? "offscreen"
+                        : ""}
+                    >
+                      ${this.renderAbout(collection)}
+                    </section>
+                  `
+                : nothing,
+            pending: () => html`
+              <div class="aspect-video rounded-lg border p-3"></div>
+            `,
+          })}
         `,
       )}
     `;

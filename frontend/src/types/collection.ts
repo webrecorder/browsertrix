@@ -7,6 +7,7 @@ export enum CollectionAccess {
 }
 
 export const publicCollectionSchema = z.object({
+  id: z.string(),
   oid: z.string(),
   name: z.string(),
   caption: z.string().nullable(),
@@ -16,7 +17,13 @@ export const publicCollectionSchema = z.object({
   dateLatest: z.string().datetime().nullable(),
   homeUrl: z.string().url().nullable(),
   homeUrlTs: z.string().datetime().nullable(),
-  thumbnail: z.unknown().nullable(),
+  thumbnail: z
+    .object({
+      name: z.string(),
+      path: z.string().url(),
+      originalFilename: z.string().nullable().optional(),
+    })
+    .nullable(),
   crawlCount: z.number(),
   pageCount: z.number(),
   totalSize: z.number(),
