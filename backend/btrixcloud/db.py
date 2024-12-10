@@ -17,7 +17,7 @@ from pymongo.errors import InvalidName
 from .migrations import BaseMigration
 
 
-CURR_DB_VERSION = "0036"
+CURR_DB_VERSION = "0037"
 
 
 # ============================================================================
@@ -82,6 +82,7 @@ async def update_and_prepare_db(
     invite_ops,
     storage_ops,
     page_ops,
+    background_job_ops,
     db_inited,
 ):
     """Prepare database for application.
@@ -94,7 +95,7 @@ async def update_and_prepare_db(
     """
     await ping_db(mdb)
     print("Database setup started", flush=True)
-    if await run_db_migrations(mdb, user_manager, page_ops):
+    if await run_db_migrations(mdb, user_manager, background_job_ops):
         await drop_indexes(mdb)
     await create_indexes(
         org_ops,
@@ -113,7 +114,7 @@ async def update_and_prepare_db(
 
 
 # ============================================================================
-async def run_db_migrations(mdb, user_manager, page_ops):
+async def run_db_migrations(mdb, user_manager, background_job_ops):
     """Run database migrations."""
 
     # if first run, just set version and exit
@@ -145,7 +146,9 @@ async def run_db_migrations(mdb, user_manager, page_ops):
             assert spec.loader
             migration_module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(migration_module)
-            migration = migration_module.Migration(mdb, page_ops=page_ops)
+            migration = migration_module.Migration(
+                mdb, background_job_ops=background_job_ops
+            )
             if await migration.run():
                 migrations_run = True
         except ImportError as err:
