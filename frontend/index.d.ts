@@ -1,3 +1,4 @@
+declare module "*.avif";
 declare module "*.svg";
 declare module "*.webp";
 declare module "*.css";

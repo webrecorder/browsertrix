@@ -6,17 +6,16 @@ import { when } from "lit/directives/when.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { page } from "@/layouts/page";
+import { RouteNamespace } from "@/routes";
 import type { PublicCollection } from "@/types/collection";
 import type { OrgData, PublicOrgCollections } from "@/types/org";
+import thumbnailCyanSrc from "~assets/images/collections/thumbnail-cyan.avif";
 
 @localized()
 @customElement("btrix-org-profile")
 export class OrgProfile extends BtrixElement {
   @property({ type: String })
   slug?: string;
-
-  @state()
-  private readonly collections: PublicCollection[] = [];
 
   @state()
   private isPrivatePreview = false;
@@ -48,10 +47,49 @@ export class OrgProfile extends BtrixElement {
                 `
               : this.renderError(),
           error: this.renderError,
+          pending: this.renderSkeleton,
         })}
       </div>
     `;
   }
+
+  private readonly renderSkeleton = () => html`
+    ${page(
+      {
+        title: "",
+        secondary: html`<sl-skeleton
+            class="block max-w-[50ch]"
+            effect="sheen"
+          ></sl-skeleton>
+          <sl-skeleton
+            class="block max-w-[30ch]"
+            effect="sheen"
+          ></sl-skeleton>`,
+      },
+      () => {
+        const thumb = html`
+          <sl-skeleton
+            class="block aspect-video [--border-radius:var(--sl-border-radius-large)]"
+            effect="sheen"
+          ></sl-skeleton>
+        `;
+
+        return html`
+          <div class="mb-5 mt-10">
+            <sl-skeleton
+              class="block h-6 max-w-[16ch] py-4"
+              effect="sheen"
+            ></sl-skeleton>
+          </div>
+          <div
+            class="grid flex-1 grid-cols-1 gap-x-10 gap-y-16 md:grid-cols-2 lg:grid-cols-4"
+          >
+            ${thumb}${thumb}${thumb}${thumb}
+          </div>
+        `;
+      },
+    )}
+  `;
 
   private renderPreviewBanner() {
     return html`
@@ -86,7 +124,7 @@ export class OrgProfile extends BtrixElement {
     `;
   }
 
-  private renderProfile({ org }: PublicOrgCollections) {
+  private renderProfile({ org, collections }: PublicOrgCollections) {
     return html`
       ${this.isPrivatePreview ? this.renderPreviewBanner() : nothing}
       ${page(
@@ -146,12 +184,12 @@ export class OrgProfile extends BtrixElement {
             })}
           `,
         },
-        () => this.renderCollections(),
+        () => this.renderCollections(collections),
       )}
     `;
   }
 
-  private renderCollections() {
+  private renderCollections(collections: PublicOrgCollections["collections"]) {
     return html`
       <div class="mb-5 mt-7 flex items-center justify-between">
         <h2 class="text-lg font-medium">${msg("Collections")}</h2>
@@ -170,7 +208,7 @@ export class OrgProfile extends BtrixElement {
       </div>
 
       <div class="flex flex-1 items-center justify-center pb-16">
-        ${this.renderCollectionsList(this.collections)}
+        ${this.renderCollectionsList(collections)}
       </div>
     `;
   }
@@ -191,13 +229,14 @@ export class OrgProfile extends BtrixElement {
           (collection) => html`
             <li class="col-span-1">
               <a
-                href="#"
-                class="group block rounded ring-[1rem] ring-white transition-all hover:scale-[102%] hover:bg-cyan-50 hover:ring-cyan-50"
+                href="/${RouteNamespace.PublicOrgs}/${this
+                  .slug}/collections/${collection.id}"
+                class="group block rounded-lg ring-[1rem] ring-white transition-all hover:scale-[102%] hover:bg-cyan-50 hover:ring-cyan-50"
               >
                 <div class="mb-4">
                   <img
                     class="aspect-video rounded-lg border border-cyan-100 bg-slate-50 object-cover shadow-md shadow-cyan-900/20 transition-shadow group-hover:shadow-sm"
-                    src=""
+                    src=${thumbnailCyanSrc}
                   />
                 </div>
                 <div class="text-pretty leading-relaxed">
@@ -206,11 +245,14 @@ export class OrgProfile extends BtrixElement {
                   >
                     ${collection.name}
                   </strong>
-                  <p
-                    class="text-stone-400 transition-colors group-hover:text-cyan-600"
-                  >
-                    ${collection.description}
-                  </p>
+                  ${collection.caption &&
+                  html`
+                    <p
+                      class="text-stone-400 transition-colors group-hover:text-cyan-600"
+                    >
+                      ${collection.caption}
+                    </p>
+                  `}
                 </div>
               </a>
             </li>
