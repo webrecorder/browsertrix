@@ -62,6 +62,11 @@ spec:
               value: "{{ .Values.minio_local_bucket_name }}"
             {{- end }}
 
+            {{- if .Values.inject_analytics }}
+            - name: INJECT_ANALYTICS
+              value: {{ .Values.inject_analytics }}
+            {{- end }}
+
           resources:
             limits:
               memory: {{ .Values.frontend_memory }}
