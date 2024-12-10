@@ -1,6 +1,6 @@
 import { localized, msg } from "@lit/localize";
 import type { SlIcon, SlSelectEvent } from "@shoelace-style/shoelace";
-import { html, nothing } from "lit";
+import { html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
@@ -36,9 +36,6 @@ export class SelectCollectionAccess extends BtrixElement {
 
   @property({ type: Boolean })
   readOnly = false;
-
-  @property({ type: Boolean })
-  publicDisabled = false;
 
   render() {
     const selected = SelectCollectionAccess.Options[this.value];
@@ -78,29 +75,19 @@ export class SelectCollectionAccess extends BtrixElement {
           </sl-button>
           <sl-menu>
             ${Object.entries(SelectCollectionAccess.Options).map(
-              ([value, { label, icon, detail }]) => {
-                const publicDisabled =
-                  (value as CollectionAccess) === CollectionAccess.Public &&
-                  this.publicDisabled;
-
-                if (publicDisabled) {
-                  return nothing;
-                }
-
-                return html`
-                  <sl-menu-item
-                    value=${value}
-                    type="checkbox"
-                    ?checked=${label === selected.label}
-                  >
-                    <sl-icon slot="prefix" name=${icon}></sl-icon>
-                    <span class="font-medium">${label}</span>
-                    <span slot="suffix" class="text-neutral-500">
-                      ${detail}
-                    </span>
-                  </sl-menu-item>
-                `;
-              },
+              ([value, { label, icon, detail }]) => html`
+                <sl-menu-item
+                  value=${value}
+                  type="checkbox"
+                  ?checked=${label === selected.label}
+                >
+                  <sl-icon slot="prefix" name=${icon}></sl-icon>
+                  <span class="font-medium">${label}</span>
+                  <span slot="suffix" class="text-neutral-500">
+                    ${detail}
+                  </span>
+                </sl-menu-item>
+              `,
             )}
           </sl-menu>
         </sl-dropdown>

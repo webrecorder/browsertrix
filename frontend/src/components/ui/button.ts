@@ -74,7 +74,7 @@ export class Button extends TailwindElement {
           small: tw`min-h-6 min-w-6 rounded-md text-base`,
           medium: tw`min-h-8 min-w-8 rounded-sm text-lg`,
         }[this.size],
-        this.raised && tw`border shadow-sm`,
+        this.raised && tw`shadow ring-1 ring-neutral-200`,
         this.filled
           ? [
               tw`text-white`,

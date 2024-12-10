@@ -1,6 +1,6 @@
 import { localized, msg } from "@lit/localize";
 import { Task } from "@lit/task";
-import { html, nothing } from "lit";
+import { html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 
@@ -42,7 +42,7 @@ export class Collection extends BtrixElement {
     },
   };
 
-  readonly orgCollections = new Task(this, {
+  private readonly orgCollections = new Task(this, {
     task: async ([slug]) => {
       if (!slug) return;
       const org = await this.fetchCollections({ slug });
@@ -51,7 +51,7 @@ export class Collection extends BtrixElement {
     args: () => [this.slug] as const,
   });
 
-  readonly collection = new Task(this, {
+  private readonly collection = new Task(this, {
     task: async ([slug, collectionId]) => {
       if (!slug || !collectionId) return;
       const org = await this.fetchCollection({ slug, collectionId });
@@ -61,10 +61,19 @@ export class Collection extends BtrixElement {
   });
 
   render() {
-    const collection = this.collection.value || undefined;
+    return this.collection.render({
+      complete: this.renderComplete,
+      error: this.renderError,
+    });
+  }
+
+  private readonly renderComplete = (collection: PublicCollection | void) => {
+    if (!collection) {
+      return this.renderError();
+    }
 
     const header: Parameters<typeof page>[0] = {
-      title: collection?.name || "",
+      title: collection.name || "",
       actions: html`
         <btrix-share-collection
           collectionId=${ifDefined(this.collectionId)}
@@ -79,63 +88,36 @@ export class Collection extends BtrixElement {
       `,
     };
 
-    if (collection?.caption) {
+    if (collection.caption) {
       header.secondary = html`
         <div class="text-pretty text-stone-600">${collection.caption}</div>
       `;
     }
 
-    return html`
-      <div class="text-pretty text-stone-600">
-        ${msg("Collection by")}
+    return page(
+      header,
+      () => html`
+        <nav class="mb-3 flex gap-2">
+          ${Object.values(Tab).map(this.renderTab)}
+        </nav>
 
-        <a
-          href="/${RouteNamespace.PublicOrgs}/${this.slug}"
-          class="font-medium leading-none text-stone-500 transition-colors hover:text-stone-600"
-          @click=${this.navigate.link}
-        >
-          ${this.orgCollections.render({
-            complete: (profile) => (profile ? profile.org.name : msg("Org")),
-            loading: () => html` <sl-skeleton></sl-skeleton> `,
-          })}
-        </a>
-      </div>
+        <section class=${(this.tab as Tab) !== Tab.Replay ? "offscreen" : ""}>
+          ${this.renderReplay(collection)}
+        </section>
+        <section class=${(this.tab as Tab) !== Tab.About ? "offscreen" : ""}>
+          ${this.renderAbout(collection)}
+        </section>
+      `,
+    );
+  };
 
-      ${page(
-        header,
-        () => html`
-          <nav class="mb-3 flex gap-2">
-            ${Object.values(Tab).map(this.renderTab)}
-          </nav>
+  private readonly renderError = (error?: unknown) => {
+    console.log("error", error);
 
-          ${this.collection.render({
-            complete: (collection) =>
-              collection
-                ? html`
-                    <section
-                      class=${(this.tab as Tab) !== Tab.Replay
-                        ? "offscreen"
-                        : ""}
-                    >
-                      ${this.renderReplay(collection)}
-                    </section>
-                    <section
-                      class=${(this.tab as Tab) !== Tab.About
-                        ? "offscreen"
-                        : ""}
-                    >
-                      ${this.renderAbout(collection)}
-                    </section>
-                  `
-                : nothing,
-            pending: () => html`
-              <div class="aspect-video rounded-lg border p-3"></div>
-            `,
-          })}
-        `,
-      )}
-    `;
-  }
+    return html` <div class="flex size-full items-center justify-center">
+      <btrix-not-found></btrix-not-found>
+    </div>`;
+  };
 
   private readonly renderTab = (tab: Tab) => {
     const isSelected = tab === (this.tab as Tab);
@@ -230,9 +212,6 @@ export class Collection extends BtrixElement {
     switch (resp.status) {
       case 200:
         return (await resp.json()) as PublicOrgCollections;
-      case 404: {
-        throw resp.status;
-      }
       default:
         throw resp.status;
     }
@@ -255,9 +234,6 @@ export class Collection extends BtrixElement {
     switch (resp.status) {
       case 200:
         return (await resp.json()) as PublicCollection;
-      case 404: {
-        throw resp.status;
-      }
       default:
         throw resp.status;
     }

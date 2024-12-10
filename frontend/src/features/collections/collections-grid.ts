@@ -1,12 +1,12 @@
 import { localized, msg } from "@lit/localize";
 import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
+import { when } from "lit/directives/when.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { RouteNamespace } from "@/routes";
 import type { PublicCollection } from "@/types/collection";
 import { tw } from "@/utils/tailwind";
-import thumbnailCyanSrc from "~assets/images/collections/thumbnail-cyan.avif";
 
 /**
  * Grid view of collections list
@@ -23,7 +23,7 @@ export class CollectionsGrid extends BtrixElement {
   collections?: PublicCollection[];
 
   render() {
-    const gridClassNames = tw`my-4 grid flex-1 grid-cols-1 gap-x-10 gap-y-16 md:grid-cols-2 lg:grid-cols-4`;
+    const gridClassNames = tw`grid flex-1 grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-4`;
 
     if (!this.collections || !this.slug) {
       const thumb = html`
@@ -40,30 +40,34 @@ export class CollectionsGrid extends BtrixElement {
 
     if (!this.collections.length) {
       return html`
-        <p class="text-base text-neutral-500">
-          ${msg("No public collections yet.")}
-        </p>
+        <div class="px-3 py-10 text-center">
+          <p class="text-base text-neutral-500">
+            ${msg("No public collections yet.")}
+          </p>
+        </div>
       `;
     }
+
+    const showActions = !this.navigate.isPublicPage && this.appState.isCrawler;
 
     return html`
       <ul class=${gridClassNames}>
         ${this.collections.map(
           (collection) => html`
-            <li class="col-span-1">
+            <li class="relative col-span-1">
               <a
-                href="/${RouteNamespace.PublicOrgs}/${this
-                  .slug}/collections/${collection.id}"
-                class="group block rounded-lg ring-[1rem] ring-white transition-all hover:scale-[102%] hover:bg-cyan-50 hover:ring-cyan-50"
+                href=${this.navigate.isPublicPage
+                  ? `/${RouteNamespace.PublicOrgs}/${this.slug}/collections/${collection.id}`
+                  : `/${RouteNamespace.PrivateOrgs}/${this.slug}/collections/view/${collection.id}`}
+                class="group block h-full rounded-lg transition-all hover:scale-[102%]"
               >
                 <div class="relative mb-4">
-                  <img
-                    class="aspect-video rounded-lg border border-cyan-100 bg-slate-50 object-cover shadow-md shadow-cyan-900/20 transition-shadow group-hover:shadow-sm"
-                    src=${thumbnailCyanSrc}
-                  />
+                  <btrix-collection-thumbnail
+                    .thumbnail=${collection.thumbnail}
+                  ></btrix-collection-thumbnail>
                   ${this.renderDateBadge(collection)}
                 </div>
-                <div class="text-pretty leading-relaxed">
+                <div class="${showActions ? "mr-9" : ""} min-h-9 leading-tight">
                   <strong
                     class="text-base font-medium text-stone-700 transition-colors group-hover:text-cyan-600"
                   >
@@ -72,13 +76,14 @@ export class CollectionsGrid extends BtrixElement {
                   ${collection.caption &&
                   html`
                     <p
-                      class="text-stone-400 transition-colors group-hover:text-cyan-600"
+                      class="text-pretty leading-relaxed text-stone-400 transition-colors group-hover:text-cyan-600"
                     >
                       ${collection.caption}
                     </p>
                   `}
                 </div>
               </a>
+              ${when(showActions, () => this.renderActions(collection))}
             </li>
           `,
         )}
@@ -86,7 +91,24 @@ export class CollectionsGrid extends BtrixElement {
     `;
   }
 
-  renderDateBadge(collection: PublicCollection) {
+  private readonly renderActions = (collection: PublicCollection) => html`
+    <div class="pointer-events-none absolute left-0 right-0 top-0 aspect-video">
+      <div class="pointer-events-auto absolute bottom-2 right-2">
+        <btrix-overflow-dropdown raised>
+          <sl-menu>
+            <btrix-menu-item-link
+              href=${`/${RouteNamespace.PublicOrgs}/${this.orgSlug}/collections/${collection.id}`}
+            >
+              <sl-icon slot="prefix" name="globe2"></sl-icon>
+              ${msg("Visit Public Page")}
+            </btrix-menu-item-link>
+          </sl-menu>
+        </btrix-overflow-dropdown>
+      </div>
+    </div>
+  `;
+
+  private renderDateBadge(collection: PublicCollection) {
     if (!collection.dateEarliest || !collection.dateLatest) return;
 
     const earliestYear = this.localize.date(collection.dateEarliest, {

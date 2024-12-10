@@ -5,7 +5,7 @@ import { customElement, property, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import { page } from "@/layouts/page";
+import { page, pageHeading } from "@/layouts/page";
 import type { OrgData, PublicOrgCollections } from "@/types/org";
 
 @localized()
@@ -175,12 +175,14 @@ export class OrgProfile extends BtrixElement {
 
   private renderCollections(collections: PublicOrgCollections["collections"]) {
     return html`
-      <div class="mt-7 flex items-center justify-between">
-        <h2 class="text-lg font-medium">${msg("Collections")}</h2>
+      <header class="mb-3 mt-7 flex items-center justify-between">
+        ${pageHeading({
+          content: msg("Collections"),
+        })}
         ${when(
           this.appState.isAdmin,
           () =>
-            html`<sl-tooltip content=${msg("Update collections settings")}>
+            html`<sl-tooltip content=${msg("Manage collections")}>
               <sl-icon-button
                 href=${`${this.navigate.orgBasePath}/collections`}
                 class="size-8 text-base"
@@ -189,7 +191,7 @@ export class OrgProfile extends BtrixElement {
               ></sl-icon-button>
             </sl-tooltip>`,
         )}
-      </div>
+      </header>
       <div class="flex-1 pb-16">
         <btrix-collections-grid
           slug=${this.slug || ""}

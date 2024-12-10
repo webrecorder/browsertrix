@@ -1,12 +1,33 @@
 import clsx from "clsx";
 import { html, nothing, type TemplateResult } from "lit";
 import { ifDefined } from "lit/directives/if-defined.js";
+import { html as staticHtml, unsafeStatic } from "lit/static-html.js";
 
 import { pageTitle } from "./pageHeader";
 
-import type { tw } from "@/utils/tailwind";
+import { tw } from "@/utils/tailwind";
 
 type Content = string | TemplateResult | typeof nothing;
+
+export function pageHeading({
+  content,
+  level = 2,
+}: {
+  content?: string | TemplateResult | typeof nothing;
+  level?: 2 | 3 | 4;
+}) {
+  const tag = unsafeStatic(`h${level}`);
+  const classNames = tw`min-w-0 text-lg font-medium leading-8`;
+
+  return staticHtml`
+    <${tag} class=${classNames}>
+      ${
+        content ||
+        html`<sl-skeleton class="my-.5 h-5 w-60" effect="sheen"></sl-skeleton>`
+      }
+    </${tag}>
+  `;
+}
 
 // TODO consolidate with pageHeader.ts https://github.com/webrecorder/browsertrix/issues/2197
 function pageHeader({

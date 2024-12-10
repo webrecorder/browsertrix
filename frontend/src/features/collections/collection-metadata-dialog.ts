@@ -140,9 +140,7 @@ export class CollectionMetadataDialog extends BtrixElement {
               maxlength=${4000}
             ></btrix-markdown-editor>
             <sl-divider></sl-divider>
-            <btrix-select-collection-access
-              publicDisabled
-            ></btrix-select-collection-access>
+            <btrix-select-collection-access></btrix-select-collection-access>
           `,
         )}
 
