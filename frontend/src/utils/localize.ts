@@ -65,7 +65,7 @@ export class Localize {
 
   get languages() {
     return uniq([
-      ...translatedLocales,
+      ...(appState.settings?.localesEnabled ?? translatedLocales),
       ...window.navigator.languages.map(langShortCode),
     ]);
   }

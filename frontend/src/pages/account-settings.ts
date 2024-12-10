@@ -12,7 +12,7 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import { TailwindElement } from "@/classes/TailwindElement";
 import needLogin from "@/decorators/needLogin";
 import { pageHeader } from "@/layouts/pageHeader";
-import { translatedLocales, type LanguageCode } from "@/types/localization";
+import { type LanguageCode } from "@/types/localization";
 import type { UnderlyingFunction } from "@/types/utils";
 import { isApiError } from "@/utils/api";
 import PasswordService from "@/utils/PasswordService";
@@ -242,7 +242,7 @@ export class AccountSettings extends BtrixElement {
         </footer>
       </form>
 
-      ${(translatedLocales as unknown as string[]).length > 1
+      ${(this.appState.settings?.localesEnabled?.length ?? 0) > 1
         ? this.renderLanguage()
         : nothing}
     `;
