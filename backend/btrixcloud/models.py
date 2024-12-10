@@ -209,6 +209,14 @@ class UserOut(BaseModel):
 
 
 # ============================================================================
+class UserEmailWithOrgInfo(BaseModel):
+    """Output model for getting user email list with org info for each"""
+
+    email: EmailStr
+    orgs: List[UserOrgInfoOut]
+
+
+# ============================================================================
 
 ### CRAWL STATES
 
@@ -2453,3 +2461,10 @@ class PaginatedCrawlErrorResponse(PaginatedResponse):
     """Response model for crawl errors"""
 
     items: List[CrawlError]
+
+
+# ============================================================================
+class PaginatedUserEmailsResponse(PaginatedResponse):
+    """Response model for user emails with org info"""
+
+    items: List[UserEmailWithOrgInfo]

@@ -6,7 +6,7 @@ import os
 from uuid import UUID, uuid4
 import asyncio
 
-from typing import Optional, List, TYPE_CHECKING, cast, Callable
+from typing import Optional, List, TYPE_CHECKING, cast, Callable, Tuple
 
 from fastapi import (
     Request,
@@ -34,6 +34,8 @@ from .models import (
     FailedLogin,
     UpdatedResponse,
     SuccessResponse,
+    UserEmailWithOrgInfo,
+    PaginatedUserEmailsResponse,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import is_bool, dt_now
@@ -546,6 +548,30 @@ class UserManager:
             return 0
         return failed_login.get("count", 0)
 
+    async def get_user_emails(
+        self,
+        page_size: int = DEFAULT_PAGE_SIZE,
+        page: int = 1,
+    ) -> Tuple[List[UserEmailWithOrgInfo], int]:
+        """Get user emails with org info for each for paginated endpoint"""
+        # Zero-index page for query
+        page = page - 1
+        skip = page_size * page
+
+        emails: List[UserEmailWithOrgInfo] = []
+
+        total = await self.users.count_documents({"is_superuser": False})
+        async for res in self.users.find(
+            {"is_superuser": False}, skip=skip, limit=page_size
+        ):
+            user = User(**res)
+            user_out = await self.get_user_info_with_orgs(user)
+            emails.append(
+                UserEmailWithOrgInfo(email=user_out.email, orgs=user_out.orgs)
+            )
+
+        return emails, total
+
 
 # ============================================================================
 def init_user_manager(mdb, emailsender, invites):
@@ -705,5 +731,22 @@ def init_users_router(
             user_manager, page_size=pageSize, page=page
         )
         return paginated_format(pending_invites, total, page, pageSize)
+
+    @users_router.get(
+        "/emails", tags=["users"], response_model=PaginatedUserEmailsResponse
+    )
+    async def get_user_emails(
+        user: User = Depends(current_active_user),
+        pageSize: int = DEFAULT_PAGE_SIZE,
+        page: int = 1,
+    ):
+        """Get emails of registered users with org information (superuser only)"""
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="not_allowed")
+
+        emails, total = await user_manager.get_user_emails(
+            page_size=pageSize, page=page
+        )
+        return paginated_format(emails, total, page, pageSize)
 
     return users_router
