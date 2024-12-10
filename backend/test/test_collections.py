@@ -38,6 +38,8 @@ curr_dir = os.path.dirname(os.path.realpath(__file__))
 def test_create_collection(
     crawler_auth_headers, default_org_id, crawler_crawl_id, admin_crawl_id
 ):
+    default_thumbnail_name = "default-thumbnail.jpg"
+
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/collections",
         headers=crawler_auth_headers,
@@ -45,6 +47,7 @@ def test_create_collection(
             "crawlIds": [crawler_crawl_id],
             "name": COLLECTION_NAME,
             "caption": CAPTION,
+            "defaultThumbnailName": default_thumbnail_name,
         },
     )
     assert r.status_code == 200
@@ -82,6 +85,8 @@ def test_create_collection(
 
     assert data["dateEarliest"]
     assert data["dateLatest"]
+
+    assert data["defaultThumbnailName"] == default_thumbnail_name
 
 
 def test_create_public_collection(
@@ -176,6 +181,7 @@ def test_update_collection(
     assert modified.endswith("Z")
     assert data["dateEarliest"]
     assert data["dateLatest"]
+    assert data["defaultThumbnailName"]
 
 
 def test_rename_collection(
@@ -327,6 +333,7 @@ def test_get_collection(crawler_auth_headers, default_org_id):
     assert data["tags"] == ["wr-test-2", "wr-test-1"]
     assert data["dateEarliest"]
     assert data["dateLatest"]
+    assert data["defaultThumbnailName"]
 
 
 def test_get_collection_replay(crawler_auth_headers, default_org_id):
@@ -348,6 +355,7 @@ def test_get_collection_replay(crawler_auth_headers, default_org_id):
     assert data["tags"] == ["wr-test-2", "wr-test-1"]
     assert data["dateEarliest"]
     assert data["dateLatest"]
+    assert data["defaultThumbnailName"]
 
     resources = data["resources"]
     assert resources
@@ -466,6 +474,7 @@ def test_add_upload_to_collection(crawler_auth_headers, default_org_id):
     assert data["tags"] == ["wr-test-2", "wr-test-1"]
     assert data["dateEarliest"]
     assert data["dateLatest"]
+    assert data["defaultThumbnailName"]
 
     # Verify it was added
     r = requests.get(
@@ -525,6 +534,7 @@ def test_list_collections(
     assert first_coll["access"] == "private"
     assert first_coll["dateEarliest"]
     assert first_coll["dateLatest"]
+    assert first_coll["defaultThumbnailName"]
 
     second_coll = [coll for coll in items if coll["name"] == SECOND_COLLECTION_NAME][0]
     assert second_coll["id"]
@@ -1011,6 +1021,28 @@ def test_upload_collection_thumbnail(crawler_auth_headers, default_org_id):
     assert thumbnail["created"]
 
 
+def test_set_collection_default_thumbnail(crawler_auth_headers, default_org_id):
+    default_thumbnail_name = "orange-default.avif"
+
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_second_public_coll_id}",
+        headers=crawler_auth_headers,
+        json={"defaultThumbnailName": default_thumbnail_name},
+    )
+    assert r.status_code == 200
+    assert r.json()["updated"]
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_second_public_coll_id}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data["id"] == _second_public_coll_id
+    assert data["defaultThumbnailName"] == default_thumbnail_name
+
+
 def test_list_public_colls_home_url_thumbnail():
     # Check we get expected data for each public collection
     # and nothing we don't expect
@@ -1066,6 +1098,7 @@ def test_list_public_colls_home_url_thumbnail():
 
         if coll["id"] == _second_public_coll_id:
             assert coll["description"]
+            assert coll["defaultThumbnailName"] == "orange-default.avif"
 
 
 def test_get_public_collection(default_org_id):
@@ -1159,6 +1192,7 @@ def test_get_public_collection_unlisted(crawler_auth_headers, default_org_id):
     assert coll["crawlCount"] > 0
     assert coll["pageCount"] > 0
     assert coll["totalSize"] > 0
+    assert coll["defaultThumbnailName"] == "orange-default.avif"
 
     for field in NON_PUBLIC_COLL_FIELDS:
         assert field not in coll

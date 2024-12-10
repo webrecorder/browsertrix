@@ -118,6 +118,7 @@ class CollectionOps:
             caption=coll_in.caption,
             modified=modified,
             access=coll_in.access,
+            defaultThumbnailName=coll_in.defaultThumbnailName,
         )
         try:
             await self.collections.insert_one(coll.to_dict())
