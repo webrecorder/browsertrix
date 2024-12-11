@@ -11,7 +11,7 @@ import {
 } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 
-import { DEFAULT_THUMBNAIL } from "./thumbnail";
+import { DEFAULT_THUMBNAIL } from "./collection-thumbnail";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";

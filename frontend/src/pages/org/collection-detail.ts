@@ -151,14 +151,19 @@ export class CollectionDetail extends BtrixElement {
             [
               Tab.Replay,
               () => html`
-                <sl-button
-                  size="small"
-                  @click=${() => (this.openDialogName = "editStartPage")}
-                  ?disabled=${!this.collection}
+                <sl-tooltip
+                  content=${msg("Add items to select a start page")}
+                  ?disabled=${Boolean(this.collection?.crawlCount)}
                 >
-                  <sl-icon name="house-gear" slot="prefix"></sl-icon>
-                  ${msg("Select Start Page")}
-                </sl-button>
+                  <sl-button
+                    size="small"
+                    @click=${() => (this.openDialogName = "editStartPage")}
+                    ?disabled=${!this.collection?.crawlCount}
+                  >
+                    <sl-icon name="house-gear" slot="prefix"></sl-icon>
+                    ${msg("Select Start Page")}
+                  </sl-button>
+                </sl-tooltip>
               `,
             ],
             [
