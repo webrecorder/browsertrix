@@ -6,6 +6,7 @@ supports docker and kubernetes based deployments of multiple browsertrix-crawler
 import os
 import asyncio
 import sys
+from typing import List, Optional
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
@@ -121,6 +122,8 @@ class SettingsResponse(BaseModel):
     salesEmail: str = ""
     supportEmail: str = ""
 
+    localesEnabled: Optional[List[str]]
+
 
 # ============================================================================
 # pylint: disable=too-many-locals, duplicate-code
@@ -150,6 +153,11 @@ def main() -> None:
         signUpUrl=os.environ.get("SIGN_UP_URL", ""),
         salesEmail=os.environ.get("SALES_EMAIL", ""),
         supportEmail=os.environ.get("EMAIL_SUPPORT", ""),
+        localesEnabled=(
+            [lang.strip() for lang in os.environ.get("LOCALES_ENABLED", "").split(",")]
+            if os.environ.get("LOCALES_ENABLED")
+            else None
+        ),
     )
 
     invites = init_invites(mdb, email)

@@ -1,7 +1,7 @@
 import { expect } from "@open-wc/testing";
 import { restore, stub } from "sinon";
 
-import { Localize } from "./localize";
+import { Localize, withUserLocales } from "./localize";
 import { AppStateService } from "./state";
 
 describe("Localize", () => {
@@ -35,7 +35,7 @@ describe("Localize", () => {
     it("returns the correct languages", () => {
       stub(window.navigator, "languages").get(() => ["en-US", "ar", "ko"]);
       const localize = new Localize();
-      expect(localize.languages).to.eql(["en", "es", "ar", "ko"]);
+      expect(localize.languages).to.eql(["en", "es"]);
     });
   });
 
@@ -72,9 +72,9 @@ describe("Localize", () => {
 
     it("updates the duration formatter", () => {
       const localize = new Localize();
-      localize.setLanguage("es");
+      localize.setLanguage("ar");
       expect(localize.duration({ days: 1, hours: 2, minutes: 3 })).to.equal(
-        "1 d, 2 h, 3 min",
+        "1 ي و2 س و3 د",
       );
     });
 
@@ -136,7 +136,7 @@ describe("Localize", () => {
           seconds: 4,
           milliseconds: 5,
         }),
-      ).to.equal("1 ቀናት፣ 2 ሰዓ፣ 3 ደቂቃ፣ 4 ሰከ፣ 5 ሚሴ");
+      ).to.equal("1 ቀ፣ 2 ሰ፣ 3 ደ፣ 4 ሰ 5 ሚሴ");
     });
 
     it("formats an empty duration", () => {
@@ -149,5 +149,52 @@ describe("Localize", () => {
       // @ts-expect-error empty object shouldn't be allowed
       expect(() => localize.duration({})).to.throw();
     });
+  });
+});
+
+describe("withUserLocales", () => {
+  it("returns the target lang when navigator locales don't overlap", () => {
+    stub(window.navigator, "languages").get(() => ["en-US", "ar", "ko"]);
+    expect(withUserLocales("fr")).to.deep.equal(["fr"]);
+  });
+
+  it("returns the target lang last when navigator locales do overlap", () => {
+    stub(window.navigator, "languages").get(() => ["fr-FR", "fr-CA", "fr-CH"]);
+    expect(withUserLocales("fr")).to.deep.equal([
+      "fr-FR",
+      "fr-CA",
+      "fr-CH",
+      "fr",
+    ]);
+  });
+
+  it("returns the target lang in place last when navigator locales does overlap and contains target lang exactly", () => {
+    stub(window.navigator, "languages").get(() => [
+      "fr-FR",
+      "fr",
+      "fr-CA",
+      "fr-CH",
+    ]);
+    expect(withUserLocales("fr")).to.deep.equal([
+      "fr-FR",
+      "fr",
+      "fr-CA",
+      "fr-CH",
+    ]);
+  });
+
+  it("handles more complicated locale strings", () => {
+    stub(window.navigator, "languages").get(() => [
+      "fr-u-CA-gregory-hc-h12",
+      "ja-Jpan-JP-u-ca-japanese-hc-h12",
+      "fr-Latn-FR-u-ca-gregory-hc-h12",
+      "fr-CA",
+    ]);
+    expect(withUserLocales("fr")).to.deep.equal([
+      "fr-u-CA-gregory-hc-h12",
+      "fr-Latn-FR-u-ca-gregory-hc-h12",
+      "fr-CA",
+      "fr",
+    ]);
   });
 });

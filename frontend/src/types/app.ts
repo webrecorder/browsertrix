@@ -9,4 +9,5 @@ export type AppSettings = {
   signUpUrl: string;
   salesEmail: string;
   supportEmail: string;
+  localesEnabled?: string[];
 };

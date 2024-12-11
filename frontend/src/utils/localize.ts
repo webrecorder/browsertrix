@@ -5,8 +5,9 @@
  * to avoid encoding issues when importing the polyfill asynchronously in the test server.
  * See https://github.com/web-dev-server/web-dev-server/issues/1
  */
+import { match } from "@formatjs/intl-localematcher";
 import { configureLocalization } from "@lit/localize";
-import uniq from "lodash/fp/uniq";
+import uniq from "lodash/uniq";
 
 import { sourceLocale, targetLocales } from "@/__generated__/locale-codes";
 import {
@@ -40,34 +41,41 @@ const defaultDurationOptions: Intl.DurationFormatOptions = {
 export class Localize {
   // Cache default formatters
   private readonly numberFormatter = new Map([
-    [sourceLocale, numberFormatter(sourceLocale)],
+    [sourceLocale, numberFormatter(withUserLocales(sourceLocale))],
   ]);
   private readonly dateFormatter = new Map([
-    [sourceLocale, new Intl.DateTimeFormat(sourceLocale, defaultDateOptions)],
+    [
+      sourceLocale,
+      new Intl.DateTimeFormat(
+        withUserLocales(sourceLocale),
+        defaultDateOptions,
+      ),
+    ],
   ]);
   private readonly durationFormatter = new Map([
     [
       sourceLocale,
-      new Intl.DurationFormat(sourceLocale, defaultDurationOptions),
+      new Intl.DurationFormat(
+        withUserLocales(sourceLocale),
+        defaultDurationOptions,
+      ),
     ],
   ]);
 
   get activeLanguage() {
     // Use html `lang` as the source of truth since that's
     // the attribute watched by Shoelace
-    return document.documentElement.lang as LanguageCode;
+    return new Intl.Locale(document.documentElement.lang)
+      .language as LanguageCode;
   }
   private set activeLanguage(lang: LanguageCode) {
     // Setting the `lang` attribute will automatically localize
     // all Shoelace elements and `BtrixElement`s
-    document.documentElement.lang = lang;
+    document.documentElement.lang = withUserLocales(lang)[0];
   }
 
   get languages() {
-    return uniq([
-      ...translatedLocales,
-      ...window.navigator.languages.map(langShortCode),
-    ]);
+    return appState.settings?.localesEnabled ?? translatedLocales;
   }
 
   constructor(initialLanguage: LanguageCode = sourceLocale) {
@@ -75,9 +83,7 @@ export class Localize {
   }
 
   initLanguage() {
-    this.setLanguage(
-      appState.userPreferences?.language || getBrowserLang() || sourceLocale,
-    );
+    this.setLanguage(getDefaultLang());
   }
 
   /**
@@ -92,12 +98,18 @@ export class Localize {
     }
 
     if (!this.numberFormatter.get(lang)) {
-      this.numberFormatter.set(lang, numberFormatter(lang));
+      this.numberFormatter.set(lang, numberFormatter(withUserLocales(lang)));
     }
     if (!this.dateFormatter.get(lang)) {
       this.dateFormatter.set(
         lang,
-        new Intl.DateTimeFormat(lang, defaultDateOptions),
+        new Intl.DateTimeFormat(withUserLocales(lang), defaultDateOptions),
+      );
+    }
+    if (!this.durationFormatter.get(lang)) {
+      this.durationFormatter.set(
+        lang,
+        new Intl.DurationFormat(withUserLocales(lang), defaultDurationOptions),
       );
     }
 
@@ -114,7 +126,10 @@ export class Localize {
     let formatter = this.numberFormatter.get(localize.activeLanguage);
 
     if ((opts && !opts.ordinal) || !formatter) {
-      formatter = new Intl.NumberFormat(localize.activeLanguage, opts);
+      formatter = new Intl.NumberFormat(
+        withUserLocales(localize.activeLanguage),
+        opts,
+      );
     }
 
     return formatter.format(n, opts);
@@ -127,7 +142,10 @@ export class Localize {
     let formatter = this.dateFormatter.get(localize.activeLanguage);
 
     if (opts || !formatter) {
-      formatter = new Intl.DateTimeFormat(localize.activeLanguage, opts);
+      formatter = new Intl.DateTimeFormat(
+        withUserLocales(localize.activeLanguage),
+        opts,
+      );
     }
 
     return formatter.format(date);
@@ -140,7 +158,10 @@ export class Localize {
     let formatter = this.durationFormatter.get(localize.activeLanguage);
 
     if (opts || !formatter) {
-      formatter = new Intl.DurationFormat(localize.activeLanguage, opts);
+      formatter = new Intl.DurationFormat(
+        withUserLocales(localize.activeLanguage),
+        opts,
+      );
     }
 
     return formatter.format(d);
@@ -160,15 +181,22 @@ const localize = new Localize(sourceLocale);
 
 export default localize;
 
-function langShortCode(locale: string) {
-  return locale.split("-")[0] as LanguageCode;
+export function withUserLocales(targetLang: LanguageCode) {
+  return uniq([
+    ...window.navigator.languages.filter(
+      (lang) => new Intl.Locale(lang).language === targetLang,
+    ),
+    targetLang,
+  ]);
 }
 
-export function getBrowserLang() {
+export function getDefaultLang() {
   // Default to current user browser language
-  const browserLanguage = window.navigator.language;
-  if (browserLanguage) {
-    return langShortCode(browserLanguage);
-  }
-  return null;
+  return match(
+    appState.userPreferences?.language
+      ? [appState.userPreferences.language]
+      : navigator.languages,
+    appState.settings?.localesEnabled ?? translatedLocales,
+    sourceLocale,
+  ) as LanguageCode;
 }

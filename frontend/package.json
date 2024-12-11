@@ -6,6 +6,7 @@
   "dependencies": {
     "@cheap-glitch/mi-cron": "^1.0.1",
     "@formatjs/intl-durationformat": "^0.6.4",
+    "@formatjs/intl-localematcher": "^0.5.9",
     "@ianvs/prettier-plugin-sort-imports": "^4.2.1",
     "@lit/localize": "^0.12.1",
     "@lit/task": "^1.0.0",
