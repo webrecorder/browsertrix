@@ -1,5 +1,10 @@
 import { localized, msg, str } from "@lit/localize";
-import type { SlInput, SlSelectEvent } from "@shoelace-style/shoelace";
+import type {
+  SlChangeEvent,
+  SlInput,
+  SlSelectEvent,
+  SlSwitch,
+} from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import type { ZxcvbnResult } from "@zxcvbn-ts/core";
 import { html, nothing, type PropertyValues } from "lit";
@@ -347,6 +352,18 @@ export class AccountSettings extends BtrixElement {
             @sl-select=${this.onSelectLocale}
           ></btrix-user-language-select>
         </div>
+        <sl-switch
+          .helpText=${msg(
+            "Your browser’s language settings will take precedence over the language chosen above when formatting numbers, dates, and durations.",
+          )}
+          @sl-change=${this.onSelectFormattingPreference}
+          ?checked=${this.appState.userPreferences
+            ?.useBrowserLanguageForFormatting ?? true}
+          class="mt-4 block px-4 pb-4 part-[label]:-order-1 part-[label]:me-2 part-[label]:ms-0 part-[base]:flex part-[form-control-help-text]:max-w-prose part-[label]:flex-grow"
+          >${msg(
+            "Use browser language settings for formatting numbers and dates.",
+          )}</sl-switch
+        >
         <footer class="flex items-center justify-start border-t px-4 py-3">
           <p class="text-neutral-600">
             ${msg("Help us translate Browsertrix.")}
@@ -537,6 +554,26 @@ export class AccountSettings extends BtrixElement {
 
     this.notify.toast({
       message: msg("Your language preference has been updated."),
+      variant: "success",
+      icon: "check2-circle",
+    });
+  };
+
+  /**
+   * Save formatting setting in local storage
+   */
+  private readonly onSelectFormattingPreference = async (e: SlChangeEvent) => {
+    const checked = (e.target as SlSwitch).checked;
+    if (
+      checked !== this.appState.userPreferences?.useBrowserLanguageForFormatting
+    ) {
+      AppStateService.partialUpdateUserPreferences({
+        useBrowserLanguageForFormatting: checked,
+      });
+    }
+
+    this.notify.toast({
+      message: msg("Your formatting preference has been updated."),
       variant: "success",
       icon: "check2-circle",
     });

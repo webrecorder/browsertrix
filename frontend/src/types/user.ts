@@ -50,5 +50,6 @@ export type UserInfo = z.infer<typeof userInfoSchema>;
 export const userPreferencesSchema = z.object({
   newWorkflowScopeType: z.nativeEnum(WorkflowScopeType).optional(),
   language: languageCodeSchema.optional(),
+  useBrowserLanguageForFormatting: z.boolean().default(true).optional(),
 });
 export type UserPreferences = z.infer<typeof userPreferencesSchema>;
