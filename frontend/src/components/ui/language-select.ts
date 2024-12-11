@@ -7,7 +7,7 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import sortBy from "lodash/fp/sortBy";
 
 import { allLanguageCodes, type LanguageCode } from "@/types/localization";
-import { getBrowserLang } from "@/utils/localize";
+import { getDefaultLang } from "@/utils/localize";
 
 const languages = sortBy("name")(
   ISO6391.getLanguages(allLanguageCodes),
@@ -53,7 +53,7 @@ export class LanguageSelect extends LitElement {
     return html`
       <sl-select
         placeholder=${msg("Browser Default")}
-        value=${ifDefined(this.value || getBrowserLang() || undefined)}
+        value=${ifDefined(this.value || getDefaultLang())}
         size=${ifDefined(this.size)}
         ?hoist=${this.hoist}
         @sl-change=${async (e: Event) => {

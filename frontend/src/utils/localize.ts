@@ -83,7 +83,7 @@ export class Localize {
   }
 
   initLanguage() {
-    this.setLanguage(getBrowserLang());
+    this.setLanguage(getDefaultLang());
   }
 
   /**
@@ -190,7 +190,7 @@ export function withUserLocales(targetLang: LanguageCode) {
   ]);
 }
 
-export function getBrowserLang() {
+export function getDefaultLang() {
   // Default to current user browser language
   return match(
     appState.userPreferences?.language
