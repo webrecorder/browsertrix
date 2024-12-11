@@ -186,7 +186,7 @@ function langShortCode(locale: string) {
   return locale.split("-")[0] as LanguageCode;
 }
 
-function withUserLocales(targetLang: LanguageCode) {
+export function withUserLocales(targetLang: LanguageCode) {
   return uniq([
     ...window.navigator.languages.filter(
       (lang) => new Intl.Locale(lang).language === targetLang,
