@@ -96,6 +96,12 @@ export class Localize {
         new Intl.DateTimeFormat(lang, defaultDateOptions),
       );
     }
+    if (!this.durationFormatter.get(lang)) {
+      this.durationFormatter.set(
+        lang,
+        new Intl.DurationFormat(lang, defaultDurationOptions),
+      );
+    }
 
     this.activeLanguage = lang;
     this.setTranslation(lang);
