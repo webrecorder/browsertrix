@@ -84,6 +84,11 @@ export class MarkdownEditor extends BtrixElement {
     return this.textarea?.checkValidity();
   }
 
+  public async focus() {
+    await this.updateComplete;
+    (await this.editor)?.focus();
+  }
+
   protected willUpdate(changedProperties: PropertyValues<this>): void {
     if (
       changedProperties.has("initialValue") &&

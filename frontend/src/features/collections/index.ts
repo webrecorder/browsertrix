@@ -2,7 +2,7 @@ import("./collections-add");
 import("./collections-grid");
 import("./collection-items-dialog");
 import("./collection-metadata-dialog");
-import("./collection-start-page-dialog");
+import("./collection-replay-dialog");
 import("./collection-workflow-list");
 import("./select-collection-access");
 import("./select-collection-start-page");

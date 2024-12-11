@@ -103,9 +103,20 @@ export class CollectionDetail extends BtrixElement {
       void this.fetchCollection();
       void this.fetchArchivedItems({ page: 1 });
     }
-    if (changedProperties.has("collection") && this.collection) {
-      if (!this.collection.description) {
-        this.isEditingDescription = true;
+  }
+
+  protected async updated(
+    changedProperties: PropertyValues<this> & Map<string, unknown>,
+  ) {
+    if (
+      changedProperties.has("isEditingDescription") &&
+      this.isEditingDescription
+    ) {
+      if (this.descriptionEditor) {
+        // FIXME Focus on editor ready instead of timeout
+        window.setTimeout(() => {
+          void this.descriptionEditor?.focus();
+        }, 200);
       }
     }
   }
@@ -114,10 +125,13 @@ export class CollectionDetail extends BtrixElement {
     return html` <div class="mb-7">${this.renderBreadcrumbs()}</div>
       ${pageHeader({
         title: this.collection?.name,
+        border: false,
         prefix: this.renderAccessIcon(),
-        secondary: html`<div class="text-pretty text-neutral-600">
-          ${this.collection?.caption}
-        </div>`,
+        secondary: this.collection?.caption
+          ? html`<div class="text-pretty text-neutral-600">
+              ${this.collection.caption}
+            </div>`
+          : nothing,
         actions: html`
           <btrix-share-collection
             collectionId=${this.collectionId}
@@ -152,7 +166,9 @@ export class CollectionDetail extends BtrixElement {
               Tab.Replay,
               () => html`
                 <sl-tooltip
-                  content=${msg("Add items to select a start page")}
+                  content=${this.collection?.crawlCount
+                    ? msg("Choose what page viewers see first in replay")
+                    : msg("Add items to select a home page")}
                   ?disabled=${Boolean(this.collection?.crawlCount)}
                 >
                   <sl-button
@@ -161,7 +177,7 @@ export class CollectionDetail extends BtrixElement {
                     ?disabled=${!this.collection?.crawlCount}
                   >
                     <sl-icon name="house-gear" slot="prefix"></sl-icon>
-                    ${msg("Select Start Page")}
+                    ${msg("Configure Home")}
                   </sl-button>
                 </sl-tooltip>
               `,
@@ -265,11 +281,11 @@ export class CollectionDetail extends BtrixElement {
       >
       </btrix-collection-items-dialog>
 
-      <btrix-collection-start-page-dialog
+      <btrix-collection-replay-dialog
         ?open=${this.openDialogName === "editStartPage"}
         @sl-hide=${() => (this.openDialogName = undefined)}
         collectionId=${this.collectionId}
-      ></btrix-collection-start-page-dialog>
+      ></btrix-collection-replay-dialog>
 
       ${when(
         this.collection,
@@ -401,6 +417,28 @@ export class CollectionDetail extends BtrixElement {
             <sl-icon name="pencil" slot="prefix"></sl-icon>
             ${msg("Edit Metadata")}
           </sl-menu-item>
+          <sl-menu-item
+            @click=${() => (this.openDialogName = "editStartPage")}
+            ?disabled=${!this.collection?.crawlCount}
+          >
+            <sl-icon name="house-gear" slot="prefix"></sl-icon>
+            ${msg("Configure Replay Home")}
+          </sl-menu-item>
+          <sl-menu-item
+            @click=${async () => {
+              if (this.collectionTab !== Tab.About) {
+                this.navigate.to(
+                  `${this.navigate.orgBasePath}/collections/view/${this.collectionId}/${Tab.About}`,
+                );
+                await this.updateComplete;
+              }
+
+              this.isEditingDescription = true;
+            }}
+          >
+            <sl-icon name="pencil-square" slot="prefix"></sl-icon>
+            ${msg("Edit About Section")}
+          </sl-menu-item>
           <sl-menu-item @click=${() => (this.openDialogName = "editItems")}>
             <sl-icon name="ui-checks" slot="prefix"></sl-icon>
             ${msg("Select Archived Items")}
@@ -502,7 +540,7 @@ export class CollectionDetail extends BtrixElement {
                           ></btrix-markdown-viewer>
                         `
                       : html`
-                          <p class="py-6 text-center text-neutral-500">
+                          <p class="py-6 text-center text-neutral-400">
                             ${msg("No description provided.")}
                           </p>
                         `}

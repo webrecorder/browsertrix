@@ -36,6 +36,7 @@ export function pageHeader({
   suffix,
   secondary,
   actions,
+  border = true,
   classNames,
 }: {
   title?: Content;
@@ -43,12 +44,14 @@ export function pageHeader({
   suffix?: Content;
   secondary?: Content;
   actions?: Content;
+  border?: boolean;
   classNames?: typeof tw;
 }) {
   return html`
     <header
       class=${clsx(
-        "mt-5 items-end lg:items-start flex-col lg:flex-row flex gap-3 border-b pb-3",
+        tw`mt-5 flex flex-col items-end gap-3 lg:flex-row lg:items-start`,
+        border && tw`border-b pb-3`,
         classNames,
       )}
     >

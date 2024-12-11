@@ -38,11 +38,11 @@ export class Collection extends BtrixElement {
   > = {
     [Tab.Replay]: {
       icon: { name: "replaywebpage", library: "app" },
-      text: msg("Replay"),
+      text: msg("Browse Collection"),
     },
     [Tab.About]: {
       icon: { name: "info-square-fill", library: "default" },
-      text: msg("About"),
+      text: msg("About This Collection"),
     },
   };
 
@@ -97,7 +97,8 @@ export class Collection extends BtrixElement {
           () => html`
             <sl-tooltip content=${msg("Edit collection")}>
               <sl-icon-button
-                href="${this.navigate.orgBasePath}/settings"
+                href="${this.navigate.orgBasePath}/collections/view/${this
+                  .collectionId}"
                 class="size-8 text-base"
                 name="pencil"
                 @click=${this.navigate.link}

@@ -25,10 +25,17 @@ type Page = {
   snapshots: Snapshot[];
 };
 
+export type SelectSnapshotDetail = {
+  item: Snapshot & { url: string };
+};
+
 const DEFAULT_PROTOCOL = "http";
 
 const sortByTs = sortBy<Snapshot>("ts");
 
+/**
+ * @fires btrix-select
+ */
 @localized()
 @customElement("btrix-select-collection-start-page")
 export class SelectCollectionStartPage extends BtrixElement {
@@ -66,7 +73,42 @@ export class SelectCollectionStartPage extends BtrixElement {
   });
 
   render() {
-    return html` ${this.renderPageSearch()} ${this.renderSelectedItem()} `;
+    return html`
+      <div class="flex flex-1 flex-col justify-between gap-3">
+        ${this.renderPageSearch()}
+        <sl-select
+          label=${msg("Snapshot")}
+          placeholder="--"
+          value=${this.selectedSnapshot?.pageId || ""}
+          ?disabled=${!this.selectedPage}
+        >
+          ${when(
+            this.selectedSnapshot,
+            (snapshot) => html`
+              <btrix-badge
+                slot="suffix"
+                variant=${snapshot.status < 300 ? "success" : "danger"}
+                >${snapshot.status}</btrix-badge
+              >
+            `,
+          )}
+          ${when(this.selectedPage, (item) =>
+            item.snapshots.map(
+              ({ pageId, ts, status }) => html`
+                <sl-option value=${pageId}>
+                  ${this.localize.date(ts)}
+                  <btrix-badge
+                    slot="suffix"
+                    variant=${status < 300 ? "success" : "danger"}
+                    >${status}</btrix-badge
+                  >
+                </sl-option>
+              `,
+            ),
+          )}
+        </sl-select>
+      </div>
+    `;
   }
 
   private renderPageSearch() {
@@ -78,7 +120,7 @@ export class SelectCollectionStartPage extends BtrixElement {
       >
         <sl-input
           label=${msg("Page URL")}
-          placeholder=${msg("https://example.com")}
+          placeholder=${msg("Start typing a URL...")}
           clearable
           @sl-clear=${() => {
             this.combobox?.hide();
@@ -116,7 +158,7 @@ export class SelectCollectionStartPage extends BtrixElement {
             return html`
               <sl-menu-item
                 slot="menu-item"
-                @click=${() => {
+                @click=${async () => {
                   if (this.input) {
                     this.input.value = item.url;
                   }
@@ -126,13 +168,22 @@ export class SelectCollectionStartPage extends BtrixElement {
                     // TODO check if backend can sort
                     snapshots: sortByTs(item.snapshots).reverse(),
                   };
-                  this.selectedSnapshot = this.selectedPage.snapshots[0];
-
-                  console.log(
-                    `/replay/w/${this.selectedSnapshot.pageId}/${this.selectedSnapshot.ts.split(".")[0].replace(/\D/g, "")}id_/urn:thumbnail:${item.url}`,
-                  );
 
                   this.combobox?.hide();
+
+                  this.selectedSnapshot = this.selectedPage.snapshots[0];
+
+                  await this.updateComplete;
+                  this.dispatchEvent(
+                    new CustomEvent<SelectSnapshotDetail>("btrix-select", {
+                      detail: {
+                        item: {
+                          url: this.selectedPage.url,
+                          ...this.selectedSnapshot,
+                        },
+                      },
+                    }),
+                  );
                 }}
                 >${item.url}
               </sl-menu-item>
@@ -141,48 +192,6 @@ export class SelectCollectionStartPage extends BtrixElement {
         `;
       },
     });
-  }
-
-  private renderSelectedItem() {
-    return html`
-      <div class="mt-5 flex gap-3">
-        <sl-select
-          class="flex-1"
-          label=${msg("Snapshot")}
-          value=${this.selectedSnapshot?.pageId || ""}
-          ?disabled=${!this.selectedPage}
-        >
-          ${when(
-            this.selectedSnapshot,
-            (snapshot) => html`
-              <btrix-badge
-                slot="suffix"
-                variant=${snapshot.status < 300 ? "success" : "danger"}
-                >${snapshot.status}</btrix-badge
-              >
-            `,
-          )}
-          ${when(this.selectedPage, (item) =>
-            item.snapshots.map(
-              ({ pageId, ts, status }) => html`
-                <sl-option value=${pageId}>
-                  ${this.localize.date(ts)}
-                  <btrix-badge
-                    slot="suffix"
-                    variant=${status < 300 ? "success" : "danger"}
-                    >${status}</btrix-badge
-                  >
-                </sl-option>
-              `,
-            ),
-          )}
-        </sl-select>
-        <div>
-          <div class="form-label">${msg("Thumbnail")}</div>
-          <div class="aspect-video w-64 rounded border bg-slate-50"></div>
-        </div>
-      </div>
-    `;
   }
 
   private readonly onSearchInput = debounce(400)(() => {
@@ -210,7 +219,7 @@ export class SelectCollectionStartPage extends BtrixElement {
       id,
       urlPrefix,
       page = 1,
-      pageSize = 10,
+      pageSize = 5,
     }: {
       id: string;
       urlPrefix?: string;

@@ -23,7 +23,6 @@ export class SelectCollectionAccess extends BtrixElement {
       icon: "link-45deg",
       detail: msg("Only people with the link can view"),
     },
-
     [CollectionAccess.Public]: {
       label: msg("Public"),
       icon: "globe2",
