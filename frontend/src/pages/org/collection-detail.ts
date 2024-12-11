@@ -773,29 +773,6 @@ export class CollectionDetail extends BtrixElement {
         },
       );
 
-      // const resp = await fetch(src);
-      // const blob = await resp.blob();
-
-      // const file = new File([blob], fileName, {
-      //   type: blob.type,
-      // });
-
-      // // TODO Show loading progress
-      // if (this.collection) {
-      //   this.collection = {
-      //     ...this.collection,
-      //     thumbnail: {
-      //       name: fileName,
-      //       path: src,
-      //     },
-      //   };
-      // }
-
-      // await this.api.upload(
-      //   `/orgs/${this.orgId}/collections/${this.collectionId}/thumbnail?filename=${window.encodeURIComponent(fileName)}`,
-      //   file,
-      // );
-
       void this.fetchCollection();
 
       this.notify.toast({

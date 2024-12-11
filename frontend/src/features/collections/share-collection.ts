@@ -260,7 +260,11 @@ export class ShareCollection extends BtrixElement {
   private renderThumbnails() {
     let selectedImgSrc = DEFAULT_THUMBNAIL.src;
 
-    if (this.collection?.thumbnail) {
+    if (
+      this.collection?.defaultThumbnailName ===
+        CollectionThumbnail.Variants[Thumbnail.Custom].fileName &&
+      this.collection.thumbnail
+    ) {
       selectedImgSrc = this.collection.thumbnail.path;
     } else if (this.collection?.defaultThumbnailName) {
       const { defaultThumbnailName } = this.collection;
@@ -274,7 +278,13 @@ export class ShareCollection extends BtrixElement {
     }
 
     const thumbnail = (thumbnail: Thumbnail) => {
-      const { fileName, src } = CollectionThumbnail.Variants[thumbnail];
+      const variant = CollectionThumbnail.Variants[thumbnail];
+      const { fileName } = variant;
+      let { src } = variant;
+
+      if (thumbnail === Thumbnail.Custom) {
+        src = this.collection?.thumbnail?.path;
+      }
 
       let content = html``;
       let tooltipContent = msg("Use thumbnail");
@@ -330,7 +340,11 @@ export class ShareCollection extends BtrixElement {
     };
 
     return html`
-      <div class="flex gap-3">${Object.values(Thumbnail).map(thumbnail)}</div>
+      <div class="flex gap-3">
+        ${when(this.collection?.thumbnail, () => thumbnail(Thumbnail.Custom))}
+        ${thumbnail(Thumbnail.Cyan)} ${thumbnail(Thumbnail.Green)}
+        ${thumbnail(Thumbnail.Yellow)} ${thumbnail(Thumbnail.Orange)}
+      </div>
     `;
   }
 

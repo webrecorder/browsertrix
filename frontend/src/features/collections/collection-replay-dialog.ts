@@ -5,6 +5,7 @@ import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 
+import { CollectionThumbnail, Thumbnail } from "./collection-thumbnail";
 import type {
   SelectCollectionStartPage,
   SelectSnapshotDetail,
@@ -127,11 +128,11 @@ export class CollectionStartPageDialog extends BtrixElement {
 
   private renderPreview() {
     let urlPreview = html`
-      <p class="m-3 text-pretty text-neutral-400">
-        ${msg("Enter a URL to preview it")}
+      <p class="m-3 text-pretty text-neutral-500">
+        ${msg("Enter a Page URL to preview it")}
       </p>
     `;
-    if (this.home) {
+    if (this.home?.url) {
       urlPreview = html`
         <iframe
           class="inline-block size-full"
@@ -215,7 +216,9 @@ export class CollectionStartPageDialog extends BtrixElement {
                 .collectionId=${this.collectionId}
                 .homeUrl=${this.home?.url}
                 .homeTs=${this.home?.ts}
-                @btrix-select=${(e: CustomEvent<SelectSnapshotDetail>) => {
+                @btrix-select=${async (
+                  e: CustomEvent<SelectSnapshotDetail>,
+                ) => {
                   const { ts, url } = e.detail.item;
 
                   this.thumbnailPreview?.setAttribute(
@@ -285,15 +288,51 @@ export class CollectionStartPageDialog extends BtrixElement {
       });
 
       if (homeView === HomeView.URL) {
-        console.log(useThumbnail);
-        // TODO upload thumbnail
-      }
+        if (useThumbnail === "on" && this.thumbnailPreview?.src) {
+          const { fileName } = CollectionThumbnail.Variants[Thumbnail.Custom];
 
-      this.notify.toast({
-        message: msg("Replay home view updated."),
-        variant: "success",
-        icon: "check2-circle",
-      });
+          const resp = await this.thumbnailPreview.contentWindow!.fetch(
+            this.thumbnailPreview.src,
+          );
+          const blob = await resp.blob();
+
+          const file = new File([blob], fileName, {
+            type: blob.type,
+          });
+
+          // TODO Show loading progress
+          // if (this.collection) {
+          //   this.collection = {
+          //     ...this.collection,
+          //     thumbnail: {
+          //       name: fileName,
+          //       path: src,
+          //     },
+          //   };
+          // }
+          await this.api.upload(
+            `/orgs/${this.orgId}/collections/${this.collectionId}/thumbnail?filename=${window.encodeURIComponent(fileName)}`,
+            file,
+          );
+          await this.api.fetch<{ updated: boolean }>(
+            `/orgs/${this.orgId}/collections/${this.collectionId}`,
+            {
+              method: "PATCH",
+              body: JSON.stringify({ defaultThumbnailName: fileName }),
+            },
+          );
+
+          // TODO handle failure
+        }
+
+        this.notify.toast({
+          message: msg("Replay home view updated."),
+          variant: "success",
+          icon: "check2-circle",
+        });
+
+        this.open = false;
+      }
     } catch (err) {
       console.debug(err);
 
