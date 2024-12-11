@@ -319,7 +319,7 @@ export class OrgsList extends BtrixElement {
               ${msg(
                 html`Deleting an org will delete all
                   <strong class="font-semibold">
-                    <sl-format-bytes value=${org.bytesStored}></sl-format-bytes>
+                    ${this.localize.bytes(org.bytesStored)}
                   </strong>
                   of data associated with the org.`,
               )}
@@ -327,26 +327,20 @@ export class OrgsList extends BtrixElement {
             <ul class="mb-3 text-neutral-600">
               <li>
                 ${msg(
-                  html`Crawls:
-                    <sl-format-bytes
-                      value=${org.bytesStoredCrawls}
-                    ></sl-format-bytes>`,
+                  html`${msg("Crawls")}:
+                  ${this.localize.bytes(org.bytesStoredCrawls)}`,
                 )}
               </li>
               <li>
                 ${msg(
-                  html`Uploads:
-                    <sl-format-bytes
-                      value=${org.bytesStoredUploads}
-                    ></sl-format-bytes>`,
+                  html`${msg("Uploads")}:
+                  ${this.localize.bytes(org.bytesStoredUploads)}`,
                 )}
               </li>
               <li>
                 ${msg(
-                  html`Profiles:
-                    <sl-format-bytes
-                      value=${org.bytesStoredProfiles}
-                    ></sl-format-bytes>`,
+                  html`${msg("Profiles")}:
+                  ${this.localize.bytes(org.bytesStoredProfiles)}`,
                 )}
               </li>
             </ul>
@@ -622,23 +616,14 @@ export class OrgsList extends BtrixElement {
         </btrix-table-cell>
 
         <btrix-table-cell class="p-2">
-          <sl-format-date
-            class="truncate"
-            date=${org.created}
-            month="2-digit"
-            day="2-digit"
-            year="2-digit"
-          ></sl-format-date>
+          ${this.localize.date(org.created, { dateStyle: "short" })}
         </btrix-table-cell>
         <btrix-table-cell class="p-2">
           ${memberCount ? this.localize.number(memberCount) : none}
         </btrix-table-cell>
         <btrix-table-cell class="p-2">
           ${org.bytesStored
-            ? html`<sl-format-bytes
-                value=${org.bytesStored}
-                display="narrow"
-              ></sl-format-bytes>`
+            ? this.localize.bytes(org.bytesStored, { unitDisplay: "narrow" })
             : none}
         </btrix-table-cell>
         <btrix-table-cell class="p-1">

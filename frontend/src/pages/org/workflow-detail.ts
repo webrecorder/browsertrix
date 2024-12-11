@@ -765,10 +765,9 @@ export class WorkflowDetail extends BtrixElement {
         ${this.renderDetailItem(
           msg("Total Size"),
           (workflow) =>
-            html` <sl-format-bytes
-              value=${Number(workflow.totalSize)}
-              display="narrow"
-            ></sl-format-bytes>`,
+            html` ${this.localize.bytes(Number(workflow.totalSize), {
+              unitDisplay: "narrow",
+            })}`,
         )}
         ${this.renderDetailItem(msg("Schedule"), (workflow) =>
           workflow.schedule
@@ -965,10 +964,9 @@ export class WorkflowDetail extends BtrixElement {
         )}
         ${this.renderDetailItem(msg("Crawl Size"), () =>
           this.workflow
-            ? html`<sl-format-bytes
-                value=${this.workflow.lastCrawlSize || 0}
-                display="narrow"
-              ></sl-format-bytes>`
+            ? this.localize.bytes(this.workflow.lastCrawlSize || 0, {
+                unitDisplay: "narrow",
+              })
             : skeleton,
         )}
         ${this.renderDetailItem(msg("Browser Windows"), () =>

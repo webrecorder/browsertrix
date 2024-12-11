@@ -532,10 +532,9 @@ export class CollectionsList extends BtrixElement {
         ${pluralOf("items", col.crawlCount)}
       </btrix-table-cell>
       <btrix-table-cell>
-        <sl-format-bytes
-          value=${col.totalSize || 0}
-          display="narrow"
-        ></sl-format-bytes>
+        ${this.localize.bytes(col.totalSize || 0, {
+          unitDisplay: "narrow",
+        })}
       </btrix-table-cell>
       <btrix-table-cell>
         ${this.localize.number(col.pageCount, { notation: "compact" })}

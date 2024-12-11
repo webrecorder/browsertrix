@@ -147,9 +147,7 @@ export class Dashboard extends BtrixElement {
                   value: metrics.crawlCount,
                   secondaryValue: hasQuota
                     ? ""
-                    : html`<sl-format-bytes
-                        value=${metrics.storageUsedCrawls}
-                      ></sl-format-bytes>`,
+                    : this.localize.bytes(metrics.storageUsedCrawls),
                   singleLabel: msg("Crawl"),
                   pluralLabel: msg("Crawls"),
                   iconProps: {
@@ -161,9 +159,7 @@ export class Dashboard extends BtrixElement {
                   value: metrics.uploadCount,
                   secondaryValue: hasQuota
                     ? ""
-                    : html`<sl-format-bytes
-                        value=${metrics.storageUsedUploads}
-                      ></sl-format-bytes>`,
+                    : this.localize.bytes(metrics.storageUsedUploads),
                   singleLabel: msg("Upload"),
                   pluralLabel: msg("Uploads"),
                   iconProps: { name: "upload", color: this.colors.uploads },
@@ -172,9 +168,7 @@ export class Dashboard extends BtrixElement {
                   value: metrics.profileCount,
                   secondaryValue: hasQuota
                     ? ""
-                    : html`<sl-format-bytes
-                        value=${metrics.storageUsedProfiles}
-                      ></sl-format-bytes>`,
+                    : this.localize.bytes(metrics.storageUsedProfiles),
                   singleLabel: msg("Browser Profile"),
                   pluralLabel: msg("Browser Profiles"),
                   iconProps: {
@@ -189,9 +183,7 @@ export class Dashboard extends BtrixElement {
                   value: metrics.archivedItemCount,
                   secondaryValue: hasQuota
                     ? ""
-                    : html`<sl-format-bytes
-                        value=${metrics.storageUsedBytes}
-                      ></sl-format-bytes>`,
+                    : this.localize.bytes(metrics.storageUsedBytes),
                   singleLabel: msg("Archived Item"),
                   pluralLabel: msg("Archived Items"),
                   iconProps: { name: "file-zip-fill" },
@@ -274,7 +266,9 @@ export class Dashboard extends BtrixElement {
         <div class="text-center">
           <div>${label}</div>
           <div class="text-xs opacity-80">
-            <sl-format-bytes value=${value} display="narrow"></sl-format-bytes>
+            ${this.localize.bytes(value, {
+              unitDisplay: "narrow",
+            })}
             | ${this.renderPercentage(value / metrics.storageUsedBytes)}
           </div>
         </div>
@@ -296,10 +290,9 @@ export class Dashboard extends BtrixElement {
           () =>
             hasQuota
               ? html`
-                  <sl-format-bytes
-                    value=${metrics.storageQuotaBytes -
-                    metrics.storageUsedBytes}
-                  ></sl-format-bytes>
+                  ${this.localize.bytes(
+                    metrics.storageQuotaBytes - metrics.storageUsedBytes,
+                  )}
                   ${msg("Available")}
                 `
               : "",
@@ -349,16 +342,16 @@ export class Dashboard extends BtrixElement {
                   <div class="h-full w-full"></div>
                 </sl-tooltip>
               </div>
-              <sl-format-bytes
-                slot="valueLabel"
-                value=${metrics.storageUsedBytes}
-                display="narrow"
-              ></sl-format-bytes>
-              <sl-format-bytes
-                slot="maxLabel"
-                value=${metrics.storageQuotaBytes}
-                display="narrow"
-              ></sl-format-bytes>
+              <span slot="valueLabel"
+                >${this.localize.bytes(metrics.storageUsedBytes, {
+                  unitDisplay: "narrow",
+                })}</span
+              >
+              <span slot="maxLabel"
+                >${this.localize.bytes(metrics.storageQuotaBytes, {
+                  unitDisplay: "narrow",
+                })}</span
+              >
             </btrix-meter>
           </div>
         `,

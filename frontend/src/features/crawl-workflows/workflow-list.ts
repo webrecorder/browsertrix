@@ -301,37 +301,32 @@ export class WorkflowListItem extends BtrixElement {
               workflow.totalSize &&
               workflow.lastCrawlSize
             ) {
-              return html`<sl-format-bytes
-                  value=${+workflow.totalSize}
-                  display="narrow"
-                ></sl-format-bytes>
+              return html`${this.localize.bytes(+workflow.totalSize, {
+                  unitDisplay: "narrow",
+                })}
                 <span class="currCrawlSize">
                   +
-                  <sl-format-bytes
-                    value=${workflow.lastCrawlSize}
-                    display="narrow"
-                  ></sl-format-bytes>
+                  ${this.localize.bytes(workflow.lastCrawlSize, {
+                    unitDisplay: "narrow",
+                  })}
                 </span>`;
             }
             if (workflow.totalSize && workflow.lastCrawlSize) {
-              return html`<sl-format-bytes
-                value=${+workflow.totalSize}
-                display="narrow"
-              ></sl-format-bytes>`;
+              return this.localize.bytes(+workflow.totalSize, {
+                unitDisplay: "narrow",
+              });
             }
             if (workflow.isCrawlRunning && workflow.lastCrawlSize) {
               return html`<span class="currCrawlSize">
-                <sl-format-bytes
-                  value=${workflow.lastCrawlSize}
-                  display="narrow"
-                ></sl-format-bytes>
+                ${this.localize.bytes(workflow.lastCrawlSize, {
+                  unitDisplay: "narrow",
+                })}
               </span>`;
             }
             if (workflow.totalSize) {
-              return html`<sl-format-bytes
-                value=${+workflow.totalSize}
-                display="narrow"
-              ></sl-format-bytes>`;
+              return this.localize.bytes(+workflow.totalSize, {
+                unitDisplay: "narrow",
+              });
             }
             return notSpecified;
           })}

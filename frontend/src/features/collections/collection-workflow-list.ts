@@ -289,10 +289,9 @@ export class CollectionWorkflowList extends BtrixElement {
             <btrix-crawl-status state=${crawl.state}></btrix-crawl-status>
           </div>
           <div class="col-span-3 md:col-span-1">
-            <sl-format-bytes
-              value=${crawl.fileSize || 0}
-              display="narrow"
-            ></sl-format-bytes>
+            ${this.localize.bytes(crawl.fileSize || 0, {
+              unitDisplay: "narrow",
+            })}
           </div>
           <div class="col-span-2 md:col-span-1">
             ${pageCount === 1

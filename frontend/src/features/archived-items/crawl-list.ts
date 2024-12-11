@@ -185,10 +185,9 @@ export class CrawlListItem extends BtrixElement {
           )}
         </btrix-table-cell>
         <btrix-table-cell>
-          <sl-format-bytes
-            value=${this.crawl.fileSize || 0}
-            display="narrow"
-          ></sl-format-bytes>
+          ${this.localize.bytes(this.crawl.fileSize || 0, {
+            unitDisplay: "narrow",
+          })}
         </btrix-table-cell>
         <btrix-table-cell>
           ${this.safeRender((crawl) => {

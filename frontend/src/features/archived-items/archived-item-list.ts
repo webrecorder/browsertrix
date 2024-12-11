@@ -243,11 +243,11 @@ export class ArchivedItemListItem extends BtrixElement {
             })}
             @click=${this.onTooltipClick}
           >
-            <sl-format-bytes
-              class="truncate"
-              value=${this.item.fileSize || 0}
-              display="narrow"
-            ></sl-format-bytes>
+            <span class="truncate">
+              ${this.localize.bytes(this.item.fileSize || 0, {
+                unitDisplay: "narrow",
+              })}
+            </span>
           </sl-tooltip>
         </btrix-table-cell>
         <btrix-table-cell class="tabular-nums">

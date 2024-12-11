@@ -90,10 +90,7 @@ export class ConfigDetails extends BtrixElement {
     const renderSize = (valueBytes?: number | null) => {
       // Eventually we will want to set this to the selected locale
       if (valueBytes) {
-        return html`<sl-format-bytes
-          value=${valueBytes}
-          display="narrow"
-        ></sl-format-bytes>`;
+        return this.localize.bytes(valueBytes, { unitDisplay: "narrow" });
       }
 
       return html`<span class="text-neutral-400"
