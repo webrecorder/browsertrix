@@ -1347,7 +1347,7 @@ class UpdateColl(BaseModel):
 class UpdateCollHomeUrl(BaseModel):
     """Update home url for collection"""
 
-    pageId: UUID
+    pageId: Optional[UUID] = None
 
 
 # ============================================================================

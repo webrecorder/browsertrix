@@ -1221,6 +1221,30 @@ def test_delete_thumbnail(crawler_auth_headers, default_org_id):
     assert r.json()["detail"] == "thumbnail_not_found"
 
 
+def test_unset_collection_home_url(
+    crawler_auth_headers, default_org_id, crawler_crawl_id
+):
+    # Unset home url
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_public_coll_id}/home-url",
+        headers=crawler_auth_headers,
+        json={"pageId": None},
+    )
+    assert r.status_code == 200
+    assert r.json()["updated"]
+
+    # Check that fields were set in collection as expected
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_public_coll_id}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data.get("homeUrl") is None
+    assert data.get("homeUrlTs") is None
+    assert data.get("homeUrlPageId") is None
+
+
 def test_delete_collection(crawler_auth_headers, default_org_id, crawler_crawl_id):
     # Delete second collection
     r = requests.delete(

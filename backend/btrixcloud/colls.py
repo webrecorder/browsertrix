@@ -690,13 +690,19 @@ class CollectionOps:
         self, coll_id: UUID, update: UpdateCollHomeUrl, org: Organization
     ) -> Dict[str, bool]:
         """Set home URL for collection and save thumbnail to database"""
-        page = await self.page_ops.get_page(update.pageId, org.id)
-
-        update_query = {
-            "homeUrl": page.url,
-            "homeUrlTs": page.ts,
-            "homeUrlPageId": page.id,
-        }
+        if update.pageId:
+            page = await self.page_ops.get_page(update.pageId, org.id)
+            update_query = {
+                "homeUrl": page.url,
+                "homeUrlTs": page.ts,
+                "homeUrlPageId": page.id,
+            }
+        else:
+            update_query = {
+                "homeUrl": None,
+                "homeUrlTs": None,
+                "homeUrlPageId": None,
+            }
 
         await self.collections.find_one_and_update(
             {"_id": coll_id, "oid": org.id},
