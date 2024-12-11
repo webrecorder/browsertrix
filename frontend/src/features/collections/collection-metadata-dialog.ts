@@ -11,6 +11,8 @@ import {
 } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 
+import { DEFAULT_THUMBNAIL } from "./thumbnail";
+
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
 import type { SelectCollectionAccess } from "@/features/collections/select-collection-access";
@@ -206,6 +208,7 @@ export class CollectionMetadataDialog extends BtrixElement {
           this.selectCollectionAccess?.value ||
           this.collection?.access ||
           CollectionAccess.Private,
+        defaultThumbnailName: DEFAULT_THUMBNAIL.fileName,
       });
       let path = `/orgs/${this.orgId}/collections`;
       let method = "POST";

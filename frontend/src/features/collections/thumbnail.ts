@@ -59,3 +59,5 @@ export class CollectionThumbnail extends BtrixElement {
     `;
   }
 }
+
+export const DEFAULT_THUMBNAIL = CollectionThumbnail.Variants[Thumbnail.Cyan];

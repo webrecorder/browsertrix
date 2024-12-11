@@ -11,7 +11,7 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 
 import { SelectCollectionAccess } from "./select-collection-access";
-import { CollectionThumbnail, Thumbnail } from "./thumbnail";
+import { CollectionThumbnail, DEFAULT_THUMBNAIL, Thumbnail } from "./thumbnail";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { ClipboardController } from "@/controllers/clipboard";
@@ -25,7 +25,6 @@ export type SelectVisibilityDetail = {
 
 export type SelectThumbnailDetail = {
   fileName: string;
-  src: string;
 };
 
 /**
@@ -252,12 +251,14 @@ export class ShareCollection extends BtrixElement {
   }
 
   private renderThumbnails() {
-    let selectedImgSrc = CollectionThumbnail.Variants[Thumbnail.Cyan].src;
+    let selectedImgSrc = DEFAULT_THUMBNAIL.src;
 
-    if (this.collection?.thumbnail?.originalFilename) {
-      const { originalFilename } = this.collection.thumbnail;
+    if (this.collection?.thumbnail) {
+      selectedImgSrc = this.collection.thumbnail.path;
+    } else if (this.collection?.defaultThumbnailName) {
+      const { defaultThumbnailName } = this.collection;
       const thumbnail = Object.values(CollectionThumbnail.Variants).find(
-        ({ fileName }) => fileName === originalFilename,
+        ({ fileName }) => fileName === defaultThumbnailName,
       );
 
       if (thumbnail) {
@@ -306,10 +307,7 @@ export class ShareCollection extends BtrixElement {
                   new CustomEvent<SelectThumbnailDetail>(
                     "btrix-select-thumbnail",
                     {
-                      detail: {
-                        fileName,
-                        src,
-                      },
+                      detail: { fileName },
                     },
                   ),
                 );
@@ -325,11 +323,7 @@ export class ShareCollection extends BtrixElement {
     };
 
     return html`
-      <div class="flex gap-3">
-        ${thumbnail(Thumbnail.Cyan)} ${thumbnail(Thumbnail.Green)}
-        ${thumbnail(Thumbnail.Orange)} ${thumbnail(Thumbnail.Yellow)}
-        ${thumbnail(Thumbnail.Custom)}
-      </div>
+      <div class="flex gap-3">${Object.values(Thumbnail).map(thumbnail)}</div>
     `;
   }
 
