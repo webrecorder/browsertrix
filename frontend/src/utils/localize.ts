@@ -71,7 +71,7 @@ export class Localize {
   private set activeLanguage(lang: LanguageCode) {
     // Setting the `lang` attribute will automatically localize
     // all Shoelace elements and `BtrixElement`s
-    document.documentElement.lang = withUserLocales(lang)[0];
+    document.documentElement.lang = withUserLocales(lang, true)[0];
   }
 
   get languages() {
@@ -181,7 +181,15 @@ const localize = new Localize(sourceLocale);
 
 export default localize;
 
-export function withUserLocales(targetLang: LanguageCode) {
+export function withUserLocales(
+  targetLang: LanguageCode,
+  onlySupported = false,
+) {
+  const useBrowserLanguageForFormatting =
+    appState.userPreferences?.useBrowserLanguageForFormatting ?? true;
+  if (useBrowserLanguageForFormatting && !onlySupported) {
+    return uniq([...window.navigator.languages, targetLang]);
+  }
   return uniq([
     ...window.navigator.languages.filter(
       (lang) => new Intl.Locale(lang).language === targetLang,
