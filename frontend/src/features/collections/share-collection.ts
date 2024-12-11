@@ -60,17 +60,6 @@ export class ShareCollection extends BtrixElement {
     return "";
   }
 
-  private get isPrivateView() {
-    return (
-      this.shareLink !==
-      window.location.href.slice(
-        0,
-        window.location.href.indexOf(this.collectionId) +
-          this.collectionId.length,
-      )
-    );
-  }
-
   private get publicReplaySrc() {
     return new URL(
       `/api/orgs/${this.collection?.oid}/collections/${this.collectionId}/public/replay.json`,
@@ -154,7 +143,7 @@ export class ShareCollection extends BtrixElement {
               ${msg("View Embed Code")}
             </sl-menu-item>
             ${when(
-              this.authState && this.collectionId && this.isPrivateView,
+              this.authState && !this.navigate.isPublicPage,
               () => html`
                 <btrix-menu-item-link
                   href=${this.shareLink}
@@ -176,15 +165,19 @@ export class ShareCollection extends BtrixElement {
                         ${msg("Visit Public Page")}
                       `}
                 </btrix-menu-item-link>
-                <sl-divider></sl-divider>
-                <sl-menu-item
-                  @click=${() => {
-                    this.showDialog = true;
-                  }}
-                >
-                  <sl-icon slot="prefix" name="box-arrow-up"></sl-icon>
-                  ${msg("Link Settings")}
-                </sl-menu-item>
+                ${this.appState.isCrawler
+                  ? html`
+                      <sl-divider></sl-divider>
+                      <sl-menu-item
+                        @click=${() => {
+                          this.showDialog = true;
+                        }}
+                      >
+                        <sl-icon slot="prefix" name="box-arrow-up"></sl-icon>
+                        ${msg("Link Settings")}
+                      </sl-menu-item>
+                    `
+                  : nothing}
               `,
               () => html`
                 <btrix-menu-item-link
@@ -193,6 +186,16 @@ export class ShareCollection extends BtrixElement {
                 >
                   <sl-icon name="cloud-download" slot="prefix"></sl-icon>
                   ${msg("Download Collection")}
+                  ${when(
+                    this.collection?.totalSize,
+                    (size) => html`
+                      <span
+                        slot="suffix"
+                        class="font-monostyle text-xs text-neutral-500"
+                        >${this.localize.bytes(size)}</span
+                      >
+                    `,
+                  )}
                 </btrix-menu-item-link>
               `,
             )}
@@ -216,7 +219,7 @@ export class ShareCollection extends BtrixElement {
         class="[--width:40rem]"
       >
         ${when(
-          this.authState && this.collection,
+          !this.navigate.isPublicPage && this.authState && this.collection,
           (collection) => html`
             <div class="mb-5">
               <btrix-select-collection-access

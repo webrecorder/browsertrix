@@ -12,6 +12,7 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import { pageHeading } from "@/layouts/page";
 import { pageHeader } from "@/layouts/pageHeader";
 import { RouteNamespace } from "@/routes";
+import type { PublicCollection } from "@/types/collection";
 import type { PublicOrgCollections } from "@/types/org";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 
@@ -52,9 +53,9 @@ export class Dashboard extends BtrixElement {
 
   private readonly publicCollections = new Task(this, {
     task: async ([slug]) => {
-      if (!slug) return;
-      const org = await this.fetchCollections({ slug });
-      return org;
+      if (!slug) throw new Error("slug required");
+      const collections = await this.fetchCollections({ slug });
+      return collections;
     },
     args: () => [this.orgSlug] as const,
   });
@@ -289,7 +290,7 @@ export class Dashboard extends BtrixElement {
           <div class="rounded-lg border p-5">
             <btrix-collections-grid
               slug=${this.orgSlug || ""}
-              .collections=${this.publicCollections.value?.collections}
+              .collections=${this.publicCollections.value}
             ></btrix-collections-grid>
           </div>
         </section>
@@ -736,17 +737,16 @@ export class Dashboard extends BtrixElement {
     slug,
   }: {
     slug: string;
-  }): Promise<PublicOrgCollections | void> {
+  }): Promise<PublicCollection[]> {
     const resp = await fetch(`/api/public/orgs/${slug}/collections`, {
       headers: { "Content-Type": "application/json" },
     });
 
     switch (resp.status) {
       case 200:
-        return (await resp.json()) as PublicOrgCollections;
-      case 404: {
-        throw resp.status;
-      }
+        return ((await resp.json()) as PublicOrgCollections).collections;
+      case 404:
+        return [];
       default:
         throw resp.status;
     }

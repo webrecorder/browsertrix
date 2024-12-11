@@ -1,11 +1,11 @@
-import { localized, msg } from "@lit/localize";
+import { localized, msg, str } from "@lit/localize";
 import { Task } from "@lit/task";
-import { html } from "lit";
+import { html, type TemplateResult } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
+import { when } from "lit/directives/when.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import type { SelectVisibilityDetail } from "@/features/collections/share-collection";
 import { page } from "@/layouts/page";
 import { RouteNamespace } from "@/routes";
 import type { PublicCollection } from "@/types/collection";
@@ -28,6 +28,10 @@ export class Collection extends BtrixElement {
   @property({ type: String })
   tab: Tab | string = Tab.Replay;
 
+  get canEditCollection() {
+    return this.slug === this.orgSlug && this.appState.isCrawler;
+  }
+
   private readonly tabLabels: Record<
     Tab,
     { icon: { name: string; library: string }; text: string }
@@ -44,7 +48,7 @@ export class Collection extends BtrixElement {
 
   private readonly orgCollections = new Task(this, {
     task: async ([slug]) => {
-      if (!slug) return;
+      if (!slug) throw new Error("slug required");
       const org = await this.fetchCollections({ slug });
       return org;
     },
@@ -53,7 +57,8 @@ export class Collection extends BtrixElement {
 
   private readonly collection = new Task(this, {
     task: async ([slug, collectionId]) => {
-      if (!slug || !collectionId) return;
+      if (!slug || !collectionId)
+        throw new Error("slug and collection required");
       const org = await this.fetchCollection({ slug, collectionId });
       return org;
     },
@@ -67,23 +72,43 @@ export class Collection extends BtrixElement {
     });
   }
 
-  private readonly renderComplete = (collection: PublicCollection | void) => {
-    if (!collection) {
-      return this.renderError();
-    }
-
+  private readonly renderComplete = (collection: PublicCollection) => {
+    const org = this.orgCollections.value?.org;
     const header: Parameters<typeof page>[0] = {
+      breadcrumbs: org
+        ? [
+            {
+              href: `/${RouteNamespace.PublicOrgs}/${this.slug}`,
+              content: org.name,
+            },
+            {
+              href: `/${RouteNamespace.PublicOrgs}/${this.slug}`,
+              content: msg("Collections"),
+            },
+            {
+              content: collection.name,
+            },
+          ]
+        : [],
       title: collection.name || "",
       actions: html`
+        ${when(
+          this.canEditCollection,
+          () => html`
+            <sl-tooltip content=${msg("Edit collection")}>
+              <sl-icon-button
+                href="${this.navigate.orgBasePath}/settings"
+                class="size-8 text-base"
+                name="pencil"
+                @click=${this.navigate.link}
+              ></sl-icon-button>
+            </sl-tooltip>
+          `,
+        )}
+
         <btrix-share-collection
           collectionId=${ifDefined(this.collectionId)}
           .collection=${collection}
-          @btrix-select-visibility=${(
-            e: CustomEvent<SelectVisibilityDetail>,
-          ) => {
-            e.stopPropagation();
-            console.log("TODO");
-          }}
         ></btrix-share-collection>
       `,
     };
@@ -94,21 +119,29 @@ export class Collection extends BtrixElement {
       `;
     }
 
-    return page(
-      header,
-      () => html`
-        <nav class="mb-3 flex gap-2">
-          ${Object.values(Tab).map(this.renderTab)}
-        </nav>
+    const panel = (tab: Tab, content: TemplateResult) => html`
+      <div
+        class=${(this.tab as Tab) !== tab
+          ? "offscreen"
+          : "flex-1 flex flex-col"}
+      >
+        ${content}
+      </div>
+    `;
 
-        <section class=${(this.tab as Tab) !== Tab.Replay ? "offscreen" : ""}>
-          ${this.renderReplay(collection)}
-        </section>
-        <section class=${(this.tab as Tab) !== Tab.About ? "offscreen" : ""}>
-          ${this.renderAbout(collection)}
-        </section>
-      `,
-    );
+    return html`
+      ${page(
+        header,
+        () => html`
+          <nav class="mb-3 flex gap-2">
+            ${Object.values(Tab).map(this.renderTab)}
+          </nav>
+
+          ${panel(Tab.Replay, this.renderReplay(collection))}
+          ${panel(Tab.About, this.renderAbout(collection))}
+        `,
+      )}
+    `;
   };
 
   private readonly renderError = (error?: unknown) => {
@@ -145,7 +178,7 @@ export class Collection extends BtrixElement {
     ).href;
 
     return html`
-      <section class="aspect-4/3 overflow-hidden rounded-lg border">
+      <section class="h-[calc(100vh-4rem)] overflow-hidden rounded-lg border">
         <replay-web-page
           source=${replaySource}
           replayBase="/replay/"
@@ -157,52 +190,66 @@ export class Collection extends BtrixElement {
   }
 
   private renderAbout(collection: PublicCollection) {
-    return html`
-      <div class="mt-6 flex gap-7">
-        <section class="flex-1">
-          <h3 class="mb-3 text-lg font-semibold leading-none">
-            ${msg("Description")}
-          </h3>
-          <div class="rounded-lg border p-6">
-            ${collection.description
-              ? html`
-                  <btrix-markdown-viewer
-                    value=${collection.description}
-                  ></btrix-markdown-viewer>
-                `
-              : html`<p class="text-center text-neutral-500">
-                  ${msg("No description provided.")}
-                </p>`}
-          </div>
-        </section>
-        <section class="w-96 flex-shrink-0">
-          <h3 class="mb-5 text-lg font-semibold leading-none">
-            ${msg("Metadata")}
-          </h3>
-          <btrix-desc-list>
-            <btrix-desc-list-item label=${msg("Archived Items")}>
-              ${this.localize.number(collection.crawlCount)}
-            </btrix-desc-list-item>
-            <btrix-desc-list-item label=${msg("Total Pages")}>
-              ${this.localize.number(collection.pageCount)}
-            </btrix-desc-list-item>
-            <btrix-desc-list-item label=${msg("Total Size")}>
-              ${this.localize.bytes(collection.totalSize)}
-            </btrix-desc-list-item>
-            <btrix-desc-list-item label=${msg("Date Range")}>
-              TODO
-            </btrix-desc-list-item>
-          </btrix-desc-list>
-        </section>
-      </div>
+    const dateRange = () => {
+      if (!collection.dateEarliest || !collection.dateLatest) {
+        return msg("n/a");
+      }
+      const format: Intl.DateTimeFormatOptions = {
+        month: "long",
+        year: "numeric",
+      };
+      const dateEarliest = this.localize.date(collection.dateEarliest, format);
+      const dateLatest = this.localize.date(collection.dateLatest, format);
+
+      if (dateEarliest === dateLatest) return dateLatest;
+
+      return msg(str`${dateEarliest} to ${dateLatest}`, {
+        desc: "Date range formatted to show full month name and year",
+      });
+    };
+
+    const metadata = html`
+      <btrix-desc-list>
+        <btrix-desc-list-item label=${msg("Collection Period")}>
+          <span class="font-sans">${dateRange()}</span>
+        </btrix-desc-list-item>
+        <btrix-desc-list-item label=${msg("Total Pages")}>
+          ${this.localize.number(collection.pageCount)}
+        </btrix-desc-list-item>
+        <btrix-desc-list-item label=${msg("Collection Size")}>
+          ${this.localize.bytes(collection.totalSize)}
+        </btrix-desc-list-item>
+      </btrix-desc-list>
     `;
+
+    if (collection.description) {
+      return html`
+        <div class="flex flex-1 flex-col gap-7 lg:flex-row">
+          <section
+            class="flex-1 py-3 leading-relaxed lg:rounded-lg lg:border lg:p-6"
+          >
+            <btrix-markdown-viewer
+              value=${collection.description}
+            ></btrix-markdown-viewer>
+          </section>
+          <section class="min-w-60 lg:-mt-8">
+            <btrix-section-heading>
+              <h3>${msg("Metadata")}</h3>
+            </btrix-section-heading>
+            <div class="mt-5">${metadata}</div>
+          </section>
+        </div>
+      `;
+    }
+
+    return html`<div class="rounded-lg border p-6">${metadata}</div>`;
   }
 
   private async fetchCollections({
     slug,
   }: {
     slug: string;
-  }): Promise<PublicOrgCollections | void> {
+  }): Promise<PublicOrgCollections> {
     const resp = await fetch(`/api/public/orgs/${slug}/collections`, {
       headers: { "Content-Type": "application/json" },
     });
@@ -221,7 +268,7 @@ export class Collection extends BtrixElement {
   }: {
     slug: string;
     collectionId: string;
-  }): Promise<PublicCollection | void> {
+  }): Promise<PublicCollection> {
     const resp = await fetch(
       `/api/public/orgs/${slug}/collections/${collectionId}`,
       {
