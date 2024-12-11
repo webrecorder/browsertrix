@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Optional, Tuple, List, Dict, Any, Union
 from uuid import UUID, uuid4
 
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, Request
 import pymongo
 
 from .models import (
@@ -24,6 +24,7 @@ from .models import (
     PageNoteEdit,
     PageNoteDelete,
     QARunBucketStats,
+    StartedResponse,
     StartedResponseBool,
     UpdatedResponse,
     DeletedResponse,
@@ -34,11 +35,12 @@ from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import str_to_date, str_list_to_bools, dt_now
 
 if TYPE_CHECKING:
+    from .background_jobs import BackgroundJobOps
     from .crawls import CrawlOps
     from .orgs import OrgOps
     from .storages import StorageOps
 else:
-    CrawlOps = StorageOps = OrgOps = object
+    CrawlOps = StorageOps = OrgOps = BackgroundJobOps = object
 
 
 # ============================================================================
@@ -49,17 +51,23 @@ class PageOps:
     crawl_ops: CrawlOps
     org_ops: OrgOps
     storage_ops: StorageOps
+    background_job_ops: BackgroundJobOps
 
-    def __init__(self, mdb, crawl_ops, org_ops, storage_ops):
+    def __init__(self, mdb, crawl_ops, org_ops, storage_ops, background_job_ops):
         self.pages = mdb["pages"]
         self.crawls = mdb["crawls"]
         self.crawl_ops = crawl_ops
         self.org_ops = org_ops
         self.storage_ops = storage_ops
+        self.background_job_ops = background_job_ops
 
     async def init_index(self):
         """init index for pages db collection"""
         await self.pages.create_index([("crawl_id", pymongo.HASHED)])
+
+    async def set_ops(self, background_job_ops: BackgroundJobOps):
+        """Set ops classes as needed"""
+        self.background_job_ops = background_job_ops
 
     async def add_crawl_pages_to_db_from_wacz(self, crawl_id: str, batch_size=100):
         """Add pages to database from WACZ files"""
@@ -94,9 +102,14 @@ class PageOps:
         self, page_dict: Dict[str, Any], crawl_id: str, oid: UUID
     ) -> Page:
         """Return Page object from dict"""
-        page_id = page_dict.get("id")
+        page_id = page_dict.get("id", "")
         if not page_id:
-            print(f'Page {page_dict.get("url")} has no id - assigning UUID', flush=True)
+            page_id = uuid4()
+
+        try:
+            UUID(page_id)
+        except ValueError:
+            page_id = uuid4()
 
         status = page_dict.get("status")
         if not status and page_dict.get("loadState"):
@@ -199,10 +212,7 @@ class PageOps:
             inc_query["errorPageCount"] = error_count
 
         await self.crawls.find_one_and_update(
-            {
-                "_id": crawl_id,
-                "type": "crawl",
-            },
+            {"_id": crawl_id},
             {"$inc": inc_query},
         )
 
@@ -554,13 +564,17 @@ class PageOps:
         print(f"Deleted pages for crawl {crawl_id}", flush=True)
         await self.add_crawl_pages_to_db_from_wacz(crawl_id)
 
-    async def re_add_all_crawl_pages(self, oid: UUID):
-        """Re-add pages for all crawls in org"""
-        crawl_ids = await self.crawls.distinct(
-            "_id", {"type": "crawl", "finished": {"$ne": None}}
-        )
+    async def re_add_all_crawl_pages(
+        self, org: Organization, crawl_type: Optional[str] = None
+    ):
+        """Re-add pages for all crawls and uploads in org"""
+        match_query: Dict[str, object] = {"finished": {"$ne": None}}
+        if crawl_type in ("crawl", "upload"):
+            match_query["type"] = crawl_type
+
+        crawl_ids = await self.crawls.distinct("_id", match_query)
         for crawl_id in crawl_ids:
-            await self.re_add_crawl_pages(crawl_id, oid)
+            await self.re_add_crawl_pages(crawl_id, org.id)
 
     async def get_qa_run_aggregate_counts(
         self,
@@ -630,47 +644,102 @@ class PageOps:
 
         return sorted(return_data, key=lambda bucket: bucket.lowerBoundary)
 
+    def get_crawl_type_from_pages_route(self, request: Request):
+        """Get crawl type to filter on from request route"""
+        crawl_type = None
+
+        try:
+            route_path = request.scope["route"].path
+            type_path = route_path.split("/")[4]
+
+            if type_path == "uploads":
+                crawl_type = "upload"
+            if type_path == "crawls":
+                crawl_type = "crawl"
+        except (IndexError, AttributeError):
+            pass
+
+        return crawl_type
+
 
 # ============================================================================
 # pylint: disable=too-many-arguments, too-many-locals, invalid-name, fixme
-def init_pages_api(app, mdb, crawl_ops, org_ops, storage_ops, user_dep):
+def init_pages_api(
+    app, mdb, crawl_ops, org_ops, storage_ops, background_job_ops, user_dep
+):
     """init pages API"""
     # pylint: disable=invalid-name
 
-    ops = PageOps(mdb, crawl_ops, org_ops, storage_ops)
+    ops = PageOps(mdb, crawl_ops, org_ops, storage_ops, background_job_ops)
 
     org_crawl_dep = org_ops.org_crawl_dep
 
     @app.post(
         "/orgs/{oid}/crawls/all/pages/reAdd",
-        tags=["pages"],
-        response_model=StartedResponseBool,
+        tags=["pages", "crawls"],
+        response_model=StartedResponse,
+    )
+    @app.post(
+        "/orgs/{oid}/uploads/all/pages/reAdd",
+        tags=["pages", "uploads"],
+        response_model=StartedResponse,
+    )
+    @app.post(
+        "/orgs/{oid}/all-crawls/all/pages/reAdd",
+        tags=["pages", "all-crawls"],
+        response_model=StartedResponse,
     )
     async def re_add_all_crawl_pages(
-        org: Organization = Depends(org_crawl_dep), user: User = Depends(user_dep)
+        request: Request,
+        org: Organization = Depends(org_crawl_dep),
+        user: User = Depends(user_dep),
     ):
-        """Re-add pages for all crawls in org (superuser only)"""
+        """Re-add pages for all crawls in org (superuser only, may delete page QA data!)"""
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
-        asyncio.create_task(ops.re_add_all_crawl_pages(org.id))
-        return {"started": True}
+        crawl_type = ops.get_crawl_type_from_pages_route(request)
+        job_id = await ops.background_job_ops.create_re_add_org_pages_job(
+            org.id, crawl_type=crawl_type
+        )
+        return {"started": job_id or ""}
 
     @app.post(
         "/orgs/{oid}/crawls/{crawl_id}/pages/reAdd",
-        tags=["pages"],
+        tags=["pages", "crawls"],
+        response_model=StartedResponseBool,
+    )
+    @app.post(
+        "/orgs/{oid}/uploads/{crawl_id}/pages/reAdd",
+        tags=["pages", "uploads"],
+        response_model=StartedResponseBool,
+    )
+    @app.post(
+        "/orgs/{oid}/all-crawls/{crawl_id}/pages/reAdd",
+        tags=["pages", "all-crawls"],
         response_model=StartedResponseBool,
     )
     async def re_add_crawl_pages(
-        crawl_id: str, org: Organization = Depends(org_crawl_dep)
+        crawl_id: str,
+        org: Organization = Depends(org_crawl_dep),
     ):
-        """Re-add pages for crawl"""
+        """Re-add pages for crawl (may delete page QA data!)"""
         asyncio.create_task(ops.re_add_crawl_pages(crawl_id, org.id))
         return {"started": True}
 
     @app.get(
         "/orgs/{oid}/crawls/{crawl_id}/pages/{page_id}",
-        tags=["pages"],
+        tags=["pages", "crawls"],
+        response_model=PageOut,
+    )
+    @app.get(
+        "/orgs/{oid}/uploads/{crawl_id}/pages/{page_id}",
+        tags=["pages", "uploads"],
+        response_model=PageOut,
+    )
+    @app.get(
+        "/orgs/{oid}/all-crawls/{crawl_id}/pages/{page_id}",
+        tags=["pages", "all-crawls"],
         response_model=PageOut,
     )
     async def get_page(
@@ -692,7 +761,7 @@ def init_pages_api(app, mdb, crawl_ops, org_ops, storage_ops, user_dep):
         page_id: UUID,
         org: Organization = Depends(org_crawl_dep),
     ):
-        """GET single page"""
+        """GET single page with QA details"""
         return await ops.get_page_out(page_id, org.id, crawl_id, qa_run_id=qa_run_id)
 
     @app.patch(
@@ -753,12 +822,22 @@ def init_pages_api(app, mdb, crawl_ops, org_ops, storage_ops, user_dep):
         delete: PageNoteDelete,
         org: Organization = Depends(org_crawl_dep),
     ):
-        """Edit page note"""
+        """Delete page note"""
         return await ops.delete_page_notes(page_id, org.id, delete, crawl_id)
 
     @app.get(
         "/orgs/{oid}/crawls/{crawl_id}/pages",
-        tags=["pages"],
+        tags=["pages", "crawls"],
+        response_model=PaginatedPageOutResponse,
+    )
+    @app.get(
+        "/orgs/{oid}/uploads/{crawl_id}/pages",
+        tags=["pages", "uploads"],
+        response_model=PaginatedPageOutResponse,
+    )
+    @app.get(
+        "/orgs/{oid}/all-crawls/{crawl_id}/pages",
+        tags=["pages", "all-crawls"],
         response_model=PaginatedPageOutResponse,
     )
     async def get_pages_list(
