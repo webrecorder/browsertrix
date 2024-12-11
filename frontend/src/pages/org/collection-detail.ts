@@ -132,7 +132,7 @@ export class CollectionDetail extends BtrixElement {
               e: CustomEvent<SelectThumbnailDetail>,
             ) => {
               e.stopPropagation();
-              void this.uploadThumbnail(e.detail);
+              void this.updateThumbnail(e.detail.fileName);
             }}
           ></btrix-share-collection>
           ${when(this.isCrawler, this.renderActions)}
@@ -660,15 +660,15 @@ export class CollectionDetail extends BtrixElement {
   `;
 
   private async updateVisibility(access: CollectionAccess) {
-    const res = await this.api.fetch<{ updated: boolean }>(
-      `/orgs/${this.orgId}/collections/${this.collectionId}`,
-      {
-        method: "PATCH",
-        body: JSON.stringify({ access }),
-      },
-    );
+    try {
+      await this.api.fetch<{ updated: boolean }>(
+        `/orgs/${this.orgId}/collections/${this.collectionId}`,
+        {
+          method: "PATCH",
+          body: JSON.stringify({ access }),
+        },
+      );
 
-    if (res.updated) {
       this.notify.toast({
         message: msg("Collection visibility updated."),
         variant: "success",
@@ -678,34 +678,53 @@ export class CollectionDetail extends BtrixElement {
       if (this.collection) {
         this.collection = { ...this.collection, access };
       }
+    } catch (err) {
+      console.debug(err);
+
+      this.notify.toast({
+        message: msg("Sorry, couldn't update visibility at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
     }
   }
 
-  async uploadThumbnail({ fileName, src }: { fileName: string; src: string }) {
+  async updateThumbnail(defaultThumbnailName: string) {
     try {
-      const resp = await fetch(src);
-      const blob = await resp.blob();
+      await this.api.fetch<{ updated: boolean }>(
+        `/orgs/${this.orgId}/collections/${this.collectionId}`,
+        {
+          method: "PATCH",
+          body: JSON.stringify({ defaultThumbnailName }),
+        },
+      );
 
-      const file = new File([blob], fileName, {
-        type: blob.type,
-      });
-
-      // TODO Show loading progress
       if (this.collection) {
-        this.collection = {
-          ...this.collection,
-          thumbnail: {
-            name: fileName,
-            originalFilename: fileName,
-            path: src,
-          },
-        };
+        this.collection = { ...this.collection, defaultThumbnailName };
       }
 
-      await this.api.upload(
-        `/orgs/${this.orgId}/collections/${this.collectionId}/thumbnail?filename=${window.encodeURIComponent(fileName)}`,
-        file,
-      );
+      // const resp = await fetch(src);
+      // const blob = await resp.blob();
+
+      // const file = new File([blob], fileName, {
+      //   type: blob.type,
+      // });
+
+      // // TODO Show loading progress
+      // if (this.collection) {
+      //   this.collection = {
+      //     ...this.collection,
+      //     thumbnail: {
+      //       name: fileName,
+      //       path: src,
+      //     },
+      //   };
+      // }
+
+      // await this.api.upload(
+      //   `/orgs/${this.orgId}/collections/${this.collectionId}/thumbnail?filename=${window.encodeURIComponent(fileName)}`,
+      //   file,
+      // );
 
       void this.fetchCollection();
 
