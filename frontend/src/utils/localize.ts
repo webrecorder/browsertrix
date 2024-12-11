@@ -183,7 +183,7 @@ const localize = new Localize(sourceLocale);
 export default localize;
 
 function langShortCode(locale: string) {
-  return locale.split("-")[0] as LanguageCode;
+  return new Intl.Locale(locale).language as LanguageCode;
 }
 
 export function withUserLocales(targetLang: LanguageCode) {
