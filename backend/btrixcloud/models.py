@@ -1295,7 +1295,7 @@ class CollOut(BaseMongoModel):
     # Sorted by count, descending
     tags: Optional[List[str]] = []
 
-    access: CollAccessType
+    access: CollAccessType = CollAccessType.PRIVATE
 
     homeUrl: Optional[AnyHttpUrl] = None
     homeUrlTs: Optional[datetime] = None
@@ -1322,7 +1322,7 @@ class PublicCollOut(BaseMongoModel):
     dateEarliest: Optional[datetime] = None
     dateLatest: Optional[datetime] = None
 
-    access: CollAccessType
+    access: CollAccessType = CollAccessType.PUBLIC
 
     homeUrl: Optional[AnyHttpUrl] = None
     homeUrlTs: Optional[datetime] = None
