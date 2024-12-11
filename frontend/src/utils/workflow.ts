@@ -18,7 +18,7 @@ import {
 } from "@/types/workflow";
 import { DEFAULT_MAX_SCALE, isPageScopeType } from "@/utils/crawler";
 import { getNextDate, getScheduleInterval } from "@/utils/cron";
-import localize, { getBrowserLang } from "@/utils/localize";
+import localize, { getDefaultLang } from "@/utils/localize";
 import { regexUnescape } from "@/utils/string";
 
 export const BYTES_PER_GB = 1e9;
@@ -121,7 +121,7 @@ export const getDefaultFormState = (): FormState => ({
   pageLimit: null,
   scale: 1,
   blockAds: true,
-  lang: getBrowserLang(),
+  lang: getDefaultLang(),
   scheduleType: "none",
   scheduleFrequency: "weekly",
   scheduleDayOfMonth: new Date().getDate(),
