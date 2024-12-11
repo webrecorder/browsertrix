@@ -1049,7 +1049,7 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops, user_de
         if coll.allowPublicDownload is False:
             raise HTTPException(status_code=403, detail="not_allowed")
 
-        return await colls.download_collection(coll.id, org)
+        return await colls.download_collection(coll_id, org)
 
     @app.get(
         "/orgs/{oid}/collections/{coll_id}/urls",
