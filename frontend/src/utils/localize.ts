@@ -64,12 +64,13 @@ export class Localize {
   get activeLanguage() {
     // Use html `lang` as the source of truth since that's
     // the attribute watched by Shoelace
-    return document.documentElement.lang as LanguageCode;
+    return new Intl.Locale(document.documentElement.lang)
+      .language as LanguageCode;
   }
   private set activeLanguage(lang: LanguageCode) {
     // Setting the `lang` attribute will automatically localize
     // all Shoelace elements and `BtrixElement`s
-    document.documentElement.lang = lang;
+    document.documentElement.lang = withUserLocales(lang)[0];
   }
 
   get languages() {
