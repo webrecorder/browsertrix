@@ -14,7 +14,8 @@ export class LocalePicker extends BtrixElement {
   @state()
   private localeNames: { [locale: string]: string } = {};
 
-  firstUpdated() {
+  connectedCallback() {
+    super.connectedCallback();
     this.setLocaleNames();
   }
 
@@ -35,7 +36,7 @@ export class LocalePicker extends BtrixElement {
   }
 
   render() {
-    const selectedLocale = this.localize.lang();
+    const selectedLocale = new Intl.Locale(this.localize.lang()).language;
 
     return html`
       <sl-dropdown
