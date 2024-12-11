@@ -63,6 +63,7 @@ export class CollectionsGrid extends BtrixElement {
                   ? `/${RouteNamespace.PublicOrgs}/${this.slug}/collections/${collection.id}`
                   : `/${RouteNamespace.PrivateOrgs}/${this.slug}/collections/view/${collection.id}`}
                 class="group block h-full rounded-lg transition-all hover:scale-[102%]"
+                @click=${this.navigate.link}
               >
                 <div
                   class="relative mb-4 rounded-lg shadow-md shadow-cyan-700/20 transition-shadow group-hover:shadow-sm"

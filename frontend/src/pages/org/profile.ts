@@ -17,6 +17,10 @@ export class OrgProfile extends BtrixElement {
   @state()
   private isPrivatePreview = false;
 
+  get canEditOrg() {
+    return this.slug === this.orgSlug && this.appState.isAdmin;
+  }
+
   private readonly orgCollections = new Task(this, {
     task: async ([slug]) => {
       if (!slug) return;
@@ -118,18 +122,16 @@ export class OrgProfile extends BtrixElement {
             ? html`<btrix-verified-badge class="mb-0.5"></btrix-verified-badge>`
             : nothing,
           actions: when(
-            this.appState.isAdmin,
+            this.canEditOrg,
             () =>
-              html`<div class="ml-auto flex items-center gap-2">
-                <sl-tooltip content=${msg("Edit org profile")}>
-                  <sl-icon-button
-                    href="${this.navigate.orgBasePath}/settings"
-                    class="size-8 text-base"
-                    name="pencil"
-                    @click=${this.navigate.link}
-                  ></sl-icon-button>
-                </sl-tooltip>
-              </div>`,
+              html`<sl-tooltip content=${msg("Edit org profile")}>
+                <sl-icon-button
+                  href="${this.navigate.orgBasePath}/settings"
+                  class="size-8 text-base"
+                  name="pencil"
+                  @click=${this.navigate.link}
+                ></sl-icon-button>
+              </sl-tooltip>`,
           ),
           secondary: html`
             ${when(
@@ -180,7 +182,7 @@ export class OrgProfile extends BtrixElement {
           content: msg("Collections"),
         })}
         ${when(
-          this.appState.isAdmin,
+          this.canEditOrg,
           () =>
             html`<sl-tooltip content=${msg("Manage collections")}>
               <sl-icon-button
