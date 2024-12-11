@@ -287,7 +287,7 @@ export class Dashboard extends BtrixElement {
               `,
             )}
           </header>
-          <div class="rounded-lg border p-5">
+          <div class="rounded-lg border p-10">
             <btrix-collections-grid
               slug=${this.orgSlug || ""}
               .collections=${this.publicCollections.value}

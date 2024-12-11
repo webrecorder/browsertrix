@@ -173,6 +173,10 @@ export class Collection extends BtrixElement {
   };
 
   private renderReplay(collection: PublicCollection) {
+    if (!collection.crawlCount) {
+      return html` TODO `;
+    }
+
     const replaySource = new URL(
       `/api/orgs/${collection.oid}/collections/${this.collectionId}/public/replay.json`,
       window.location.href,

@@ -3,6 +3,7 @@ import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
 import { guard } from "lit/directives/guard.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { repeat } from "lit/directives/repeat.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
@@ -27,6 +28,7 @@ import { CollectionAccess, type Collection } from "@/types/collection";
 import type { ArchivedItem, Crawl, Upload } from "@/types/crawler";
 import type { CrawlState } from "@/types/crawlState";
 import { pluralOf } from "@/utils/pluralize";
+import { formatRwpTimestamp } from "@/utils/replay";
 
 const ABORT_REASON_THROTTLE = "throttled";
 const INITIAL_ITEMS_PAGE_SIZE = 20;
@@ -283,8 +285,20 @@ export class CollectionDetail extends BtrixElement {
 
       <btrix-collection-replay-dialog
         ?open=${this.openDialogName === "editStartPage"}
-        @sl-hide=${() => (this.openDialogName = undefined)}
+        @sl-hide=${async () => {
+          this.openDialogName = undefined;
+          await this.fetchCollection();
+          await this.updateComplete;
+          this.refreshReplay();
+        }}
         collectionId=${this.collectionId}
+        .home=${this.collection
+          ? {
+              url: this.collection.homeUrl,
+              pageId: this.collection.homeUrlPageId,
+              ts: this.collection.homeUrlTs,
+            }
+          : undefined}
       ></btrix-collection-replay-dialog>
 
       ${when(
@@ -532,7 +546,7 @@ export class CollectionDetail extends BtrixElement {
                   ></btrix-markdown-editor>
                 `
               : html`
-                  <div class="rounded-lg border p-6 leading-relaxed">
+                  <div class="rounded-lg border px-4 py-2 leading-relaxed">
                     ${collection.description
                       ? html`
                           <btrix-markdown-viewer
@@ -540,7 +554,7 @@ export class CollectionDetail extends BtrixElement {
                           ></btrix-markdown-viewer>
                         `
                       : html`
-                          <p class="py-6 text-center text-neutral-400">
+                          <p class="py-10 text-center text-neutral-500">
                             ${msg("No description provided.")}
                           </p>
                         `}
@@ -687,6 +701,8 @@ export class CollectionDetail extends BtrixElement {
           source=${replaySource}
           replayBase="/replay/"
           config="${config}"
+          url=${ifDefined(this.collection.homeUrl || undefined)}
+          ts=${ifDefined(formatRwpTimestamp(this.collection.homeUrlTs))}
           noSandbox="true"
           noCache="true"
         ></replay-web-page>

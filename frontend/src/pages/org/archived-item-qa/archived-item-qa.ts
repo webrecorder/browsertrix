@@ -45,6 +45,7 @@ import {
   type finishedCrawlStates,
 } from "@/utils/crawler";
 import { maxLengthValidator } from "@/utils/form";
+import { formatRwpTimestamp } from "@/utils/replay";
 import { tw } from "@/utils/tailwind";
 
 const DEFAULT_PAGE_SIZE = 100;
@@ -1314,7 +1315,7 @@ export class ArchivedItemQA extends BtrixElement {
       return;
     }
 
-    const timestamp = page.ts?.split(".")[0].replace(/\D/g, "");
+    const timestamp = formatRwpTimestamp(page.ts) || "";
     const pageUrl = page.url;
 
     const doLoad = async (isQA: boolean) => {

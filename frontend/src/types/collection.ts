@@ -15,8 +15,6 @@ export const publicCollectionSchema = z.object({
   resources: z.array(z.string()),
   dateEarliest: z.string().datetime().nullable(),
   dateLatest: z.string().datetime().nullable(),
-  homeUrl: z.string().url().nullable(),
-  homeUrlTs: z.string().datetime().nullable(),
   thumbnail: z
     .object({
       name: z.string(),
@@ -35,6 +33,9 @@ export const collectionSchema = publicCollectionSchema.extend({
   modified: z.string().datetime(),
   tags: z.array(z.string()),
   access: z.nativeEnum(CollectionAccess),
+  homeUrl: z.string().url().nullable(),
+  homeUrlPageId: z.string().url().nullable(),
+  homeUrlTs: z.string().datetime().nullable(),
 });
 export type Collection = z.infer<typeof collectionSchema>;
 

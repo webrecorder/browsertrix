@@ -1,7 +1,11 @@
 import { localized, msg } from "@lit/localize";
 import { Task } from "@lit/task";
-import type { SlInput } from "@shoelace-style/shoelace";
-import { html } from "lit";
+import type {
+  SlChangeEvent,
+  SlInput,
+  SlSelect,
+} from "@shoelace-style/shoelace";
+import { html, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
@@ -42,6 +46,12 @@ export class SelectCollectionStartPage extends BtrixElement {
   @property({ type: String })
   collectionId?: string;
 
+  @property({ type: String })
+  homeUrl?: string | null = null;
+
+  @property({ type: String })
+  homeTs?: string | null = null;
+
   @state()
   private searchQuery = "";
 
@@ -56,6 +66,41 @@ export class SelectCollectionStartPage extends BtrixElement {
 
   @query("sl-input")
   private readonly input?: SlInput | null;
+
+  public get page() {
+    return this.selectedPage;
+  }
+
+  public get snapshot() {
+    return this.selectedSnapshot;
+  }
+
+  updated(changedProperties: PropertyValues<this>) {
+    if (changedProperties.has("homeUrl") && this.homeUrl) {
+      if (this.input) {
+        this.input.value = this.homeUrl;
+      }
+      this.searchQuery = this.homeUrl;
+      void this.initSelection();
+    }
+  }
+
+  private async initSelection() {
+    await this.updateComplete;
+    await this.searchResults.taskComplete;
+
+    if (this.homeUrl && this.searchResults.value) {
+      this.selectedPage = this.searchResults.value.items.find(
+        ({ url }) => url === this.homeUrl,
+      );
+
+      if (this.selectedPage && this.homeTs) {
+        this.selectedSnapshot = this.selectedPage.snapshots.find(
+          ({ ts }) => ts === this.homeTs,
+        );
+      }
+    }
+  }
 
   private readonly searchResults = new Task(this, {
     task: async ([searchValue], { signal }) => {
@@ -81,6 +126,28 @@ export class SelectCollectionStartPage extends BtrixElement {
           placeholder="--"
           value=${this.selectedSnapshot?.pageId || ""}
           ?disabled=${!this.selectedPage}
+          @sl-change=${async (e: SlChangeEvent) => {
+            const { value } = e.currentTarget as SlSelect;
+
+            await this.updateComplete;
+
+            this.selectedSnapshot = this.selectedPage?.snapshots.find(
+              ({ pageId }) => pageId === value,
+            );
+
+            if (this.selectedSnapshot) {
+              this.dispatchEvent(
+                new CustomEvent<SelectSnapshotDetail>("btrix-select", {
+                  detail: {
+                    item: {
+                      url: this.selectedPage!.url,
+                      ...this.selectedSnapshot,
+                    },
+                  },
+                }),
+              );
+            }
+          }}
         >
           ${when(
             this.selectedSnapshot,
