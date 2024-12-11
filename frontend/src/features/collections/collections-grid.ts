@@ -4,7 +4,7 @@ import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 
-import { CollectionThumbnail } from "./thumbnail";
+import { CollectionThumbnail } from "./collection-thumbnail";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { RouteNamespace } from "@/routes";

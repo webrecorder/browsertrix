@@ -10,8 +10,12 @@ import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 
+import {
+  CollectionThumbnail,
+  DEFAULT_THUMBNAIL,
+  Thumbnail,
+} from "./collection-thumbnail";
 import { SelectCollectionAccess } from "./select-collection-access";
-import { CollectionThumbnail, DEFAULT_THUMBNAIL, Thumbnail } from "./thumbnail";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { ClipboardController } from "@/controllers/clipboard";
