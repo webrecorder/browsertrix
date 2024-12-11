@@ -5,6 +5,7 @@
  * to avoid encoding issues when importing the polyfill asynchronously in the test server.
  * See https://github.com/web-dev-server/web-dev-server/issues/1
  */
+import { match } from "@formatjs/intl-localematcher";
 import { configureLocalization } from "@lit/localize";
 import uniq from "lodash/uniq";
 
@@ -82,9 +83,7 @@ export class Localize {
   }
 
   initLanguage() {
-    this.setLanguage(
-      appState.userPreferences?.language || getBrowserLang() || sourceLocale,
-    );
+    this.setLanguage(getBrowserLang());
   }
 
   /**
@@ -182,10 +181,6 @@ const localize = new Localize(sourceLocale);
 
 export default localize;
 
-function langShortCode(locale: string) {
-  return new Intl.Locale(locale).language as LanguageCode;
-}
-
 export function withUserLocales(targetLang: LanguageCode) {
   return uniq([
     ...window.navigator.languages.filter(
@@ -197,9 +192,11 @@ export function withUserLocales(targetLang: LanguageCode) {
 
 export function getBrowserLang() {
   // Default to current user browser language
-  const browserLanguage = window.navigator.language;
-  if (browserLanguage) {
-    return langShortCode(browserLanguage);
-  }
-  return null;
+  return match(
+    appState.userPreferences?.language
+      ? [appState.userPreferences.language]
+      : navigator.languages,
+    appState.settings?.localesEnabled ?? translatedLocales,
+    sourceLocale,
+  ) as LanguageCode;
 }

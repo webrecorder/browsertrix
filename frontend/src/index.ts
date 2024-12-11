@@ -35,7 +35,7 @@ import {
   translatedLocales,
   type TranslatedLocaleEnum,
 } from "@/types/localization";
-import { type AppSettings } from "@/utils/app";
+import { getAppSettings, type AppSettings } from "@/utils/app";
 import localize from "@/utils/localize";
 import brandLockupColor from "~assets/brand/browsertrix-lockup-color.svg";
 
@@ -114,6 +114,9 @@ export class App extends BtrixElement {
     if (authState && !this.userInfo) {
       void this.fetchAndUpdateUserInfo();
     }
+
+    this.settings = await getAppSettings();
+    localize.initLanguage();
     super.connectedCallback();
 
     this.addEventListener("btrix-navigate", this.onNavigateTo);
@@ -153,10 +156,6 @@ export class App extends BtrixElement {
         this.updateOrgSlugIfNeeded();
       }
     }
-  }
-
-  protected firstUpdated(): void {
-    localize.initLanguage();
   }
 
   getLocationPathname() {
