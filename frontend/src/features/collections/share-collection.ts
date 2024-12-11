@@ -1,23 +1,39 @@
 import { localized, msg, str } from "@lit/localize";
-import type { SlSelectEvent } from "@shoelace-style/shoelace";
-import { html } from "lit";
+import type {
+  SlAfterShowEvent,
+  SlDetails,
+  SlSelectEvent,
+} from "@shoelace-style/shoelace";
+import clsx from "clsx";
+import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 
+import {
+  CollectionThumbnail,
+  DEFAULT_THUMBNAIL,
+  Thumbnail,
+} from "./collection-thumbnail";
 import { SelectCollectionAccess } from "./select-collection-access";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { ClipboardController } from "@/controllers/clipboard";
 import { RouteNamespace } from "@/routes";
 import { CollectionAccess, type Collection } from "@/types/collection";
+import { tw } from "@/utils/tailwind";
 
 export type SelectVisibilityDetail = {
   item: { value: CollectionAccess };
 };
 
+export type SelectThumbnailDetail = {
+  fileName: string;
+};
+
 /**
- * @fires btrix-select
+ * @fires btrix-select-visibility
+ * @fires btrix-select-thumbnail
  */
 @localized()
 @customElement("btrix-share-collection")
@@ -127,14 +143,7 @@ export class ShareCollection extends BtrixElement {
               ${msg("View Embed Code")}
             </sl-menu-item>
             ${when(
-              this.authState &&
-                this.collectionId &&
-                this.shareLink !==
-                  window.location.href.slice(
-                    0,
-                    window.location.href.indexOf(this.collectionId) +
-                      this.collectionId.length,
-                  ),
+              this.authState && !this.navigate.isPublicPage,
               () => html`
                 <btrix-menu-item-link
                   href=${this.shareLink}
@@ -156,15 +165,19 @@ export class ShareCollection extends BtrixElement {
                         ${msg("Visit Public Page")}
                       `}
                 </btrix-menu-item-link>
-                <sl-divider></sl-divider>
-                <sl-menu-item
-                  @click=${() => {
-                    this.showDialog = true;
-                  }}
-                >
-                  <sl-icon slot="prefix" name="eye-fill"></sl-icon>
-                  ${msg("Change Link Visibility")}
-                </sl-menu-item>
+                ${this.appState.isCrawler
+                  ? html`
+                      <sl-divider></sl-divider>
+                      <sl-menu-item
+                        @click=${() => {
+                          this.showDialog = true;
+                        }}
+                      >
+                        <sl-icon slot="prefix" name="box-arrow-up"></sl-icon>
+                        ${msg("Link Settings")}
+                      </sl-menu-item>
+                    `
+                  : nothing}
               `,
               () => html`
                 <btrix-menu-item-link
@@ -173,6 +186,16 @@ export class ShareCollection extends BtrixElement {
                 >
                   <sl-icon name="cloud-download" slot="prefix"></sl-icon>
                   ${msg("Download Collection")}
+                  ${when(
+                    this.collection?.totalSize,
+                    (size) => html`
+                      <span
+                        slot="suffix"
+                        class="font-monostyle text-xs text-neutral-500"
+                        >${this.localize.bytes(size)}</span
+                      >
+                    `,
+                  )}
                 </btrix-menu-item-link>
               `,
             )}
@@ -193,10 +216,10 @@ export class ShareCollection extends BtrixElement {
         @sl-after-hide=${() => {
           this.showEmbedCode = false;
         }}
-        style="--width: 32rem;"
+        class="[--width:40rem]"
       >
         ${when(
-          this.authState && this.collection,
+          !this.navigate.isPublicPage && this.authState && this.collection,
           (collection) => html`
             <div class="mb-5">
               <btrix-select-collection-access
@@ -204,16 +227,23 @@ export class ShareCollection extends BtrixElement {
                 ?readOnly=${!this.appState.isCrawler}
                 @sl-select=${(e: SlSelectEvent) => {
                   this.dispatchEvent(
-                    new CustomEvent<SelectVisibilityDetail>("btrix-select", {
-                      detail: {
-                        item: {
-                          value: (e.target as SelectCollectionAccess).value,
+                    new CustomEvent<SelectVisibilityDetail>(
+                      "btrix-select-visibility",
+                      {
+                        detail: {
+                          item: {
+                            value: (e.target as SelectCollectionAccess).value,
+                          },
                         },
                       },
-                    }),
+                    ),
                   );
                 }}
               ></btrix-select-collection-access>
+            </div>
+            <div class="mb-7">
+              <div class="form-label">${msg("Thumbnail")}</div>
+              ${this.renderThumbnails()}
             </div>
           `,
         )}
@@ -227,16 +257,94 @@ export class ShareCollection extends BtrixElement {
     `;
   }
 
+  private renderThumbnails() {
+    let selectedImgSrc = DEFAULT_THUMBNAIL.src;
+
+    if (this.collection?.thumbnail) {
+      selectedImgSrc = this.collection.thumbnail.path;
+    } else if (this.collection?.defaultThumbnailName) {
+      const { defaultThumbnailName } = this.collection;
+      const thumbnail = Object.values(CollectionThumbnail.Variants).find(
+        ({ fileName }) => fileName === defaultThumbnailName,
+      );
+
+      if (thumbnail) {
+        selectedImgSrc = thumbnail.src;
+      }
+    }
+
+    const thumbnail = (thumbnail: Thumbnail) => {
+      const { fileName, src } = CollectionThumbnail.Variants[thumbnail];
+
+      let content = html``;
+      let tooltipContent = msg("Use thumbnail");
+      let classNames = "";
+
+      if (src) {
+        content = html`
+          <div
+            class="flex size-full flex-col items-center justify-center bg-cover"
+            style="background-image:url('${src}')"
+          >
+            ${src === selectedImgSrc
+              ? html`<sl-icon
+                  class="size-10 text-white drop-shadow"
+                  name="check-lg"
+                ></sl-icon>`
+              : nothing}
+          </div>
+        `;
+      } else {
+        content = html`<sl-icon class="size-10" name="plus"></sl-icon>`;
+        tooltipContent = msg("Choose page thumbnail");
+        // Render as select button
+        classNames = tw`flex flex-col items-center justify-center bg-neutral-50 text-blue-400 hover:text-blue-500`;
+      }
+
+      return html`
+        <sl-tooltip content=${tooltipContent || msg("Use thumbnail")}>
+          <button
+            class=${clsx(
+              "flex-1 aspect-video overflow-hidden rounded ring-1 ring-neutral-300 transition-all hover:ring-2 hover:ring-blue-300",
+              classNames,
+            )}
+            @click=${() => {
+              if (src) {
+                this.dispatchEvent(
+                  new CustomEvent<SelectThumbnailDetail>(
+                    "btrix-select-thumbnail",
+                    {
+                      detail: { fileName },
+                    },
+                  ),
+                );
+              } else {
+                console.log("TODO choose");
+              }
+            }}
+          >
+            ${content}
+          </button>
+        </sl-tooltip>
+      `;
+    };
+
+    return html`
+      <div class="flex gap-3">${Object.values(Thumbnail).map(thumbnail)}</div>
+    `;
+  }
+
   private readonly renderShareLink = () => {
     return html`
-      <btrix-details
+      <sl-details
+        class="mb-3 part-[header]:p-3"
         ?open=${!this.showEmbedCode &&
         this.collection &&
         this.collection.access !== CollectionAccess.Private}
       >
-        <span slot="title">${msg("Link to Share")}</span>
+        <span slot="summary">${msg("Link to Share")}</span>
         <btrix-copy-field
-          class="my-3"
+          class="mb-3"
           .value="${this.shareLink}"
           hideContentFromScreenReaders
           hoist
@@ -251,7 +359,7 @@ export class ShareCollection extends BtrixElement {
             </sl-icon-button>
           </sl-tooltip>
         </btrix-copy-field>
-      </btrix-details>
+      </sl-details>
     `;
   };
 
@@ -261,12 +369,23 @@ export class ShareCollection extends BtrixElement {
     const importCode = `importScripts("https://replayweb.page/sw.js");`;
 
     return html`
-      <btrix-details ?open=${this.showEmbedCode}>
-        <span slot="title">${msg("Embed Code")}</span>
+      <sl-details
+        class="part-[header]:p-3"
+        ?open=${this.showEmbedCode}
+        @sl-after-show=${async (e: SlAfterShowEvent) => {
+          if (this.showEmbedCode) {
+            const el = e.currentTarget as SlDetails;
+
+            await this.updateComplete;
+            el.scrollIntoView({ behavior: "smooth" });
+          }
+        }}
+      >
+        <span slot="summary">${msg("Embed Code")}</span>
         ${when(
           this.collection?.access === CollectionAccess.Private,
           () => html`
-            <btrix-alert variant="warning" class="my-3">
+            <btrix-alert variant="warning" class="mb-3">
               ${msg("Change the visibility setting to embed this collection.")}
             </btrix-alert>
           `,
@@ -318,7 +437,7 @@ export class ShareCollection extends BtrixElement {
               for more details.`,
           )}
         </p>
-      </btrix-details>
+      </sl-details>
     `;
   };
 }

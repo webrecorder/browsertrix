@@ -1,4 +1,5 @@
 import { localized, msg } from "@lit/localize";
+import { Task } from "@lit/task";
 import type { SlSelectEvent } from "@shoelace-style/shoelace";
 import { html, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
@@ -8,7 +9,11 @@ import { when } from "lit/directives/when.js";
 import type { SelectNewDialogEvent } from ".";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import { pageHeading } from "@/layouts/page";
 import { pageHeader } from "@/layouts/pageHeader";
+import { RouteNamespace } from "@/routes";
+import type { PublicCollection } from "@/types/collection";
+import type { PublicOrgCollections } from "@/types/org";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 
 type Metrics = {
@@ -46,6 +51,15 @@ export class Dashboard extends BtrixElement {
     runningTime: "blue",
   };
 
+  private readonly publicCollections = new Task(this, {
+    task: async ([slug]) => {
+      if (!slug) throw new Error("slug required");
+      const collections = await this.fetchCollections({ slug });
+      return collections;
+    },
+    args: () => [this.orgSlug] as const,
+  });
+
   willUpdate(changedProperties: PropertyValues<this> & Map<string, unknown>) {
     if (changedProperties.has("appState.orgSlug") && this.orgId) {
       void this.fetchMetrics();
@@ -72,13 +86,14 @@ export class Dashboard extends BtrixElement {
           ${when(
             this.appState.isAdmin,
             () =>
-              html` <sl-icon-button
-                href=${`${this.navigate.orgBasePath}/settings`}
-                class="size-8 text-base"
-                name="gear"
-                label=${msg("Edit org settings")}
-                @click=${this.navigate.link}
-              ></sl-icon-button>`,
+              html`<sl-tooltip content=${msg("Manage org settings")}>
+                <sl-icon-button
+                  href=${`${this.navigate.orgBasePath}/settings`}
+                  class="size-8 text-base"
+                  name="gear"
+                  @click=${this.navigate.link}
+                ></sl-icon-button>
+              </sl-tooltip>`,
           )}
           ${when(
             this.isCrawler,
@@ -252,11 +267,40 @@ export class Dashboard extends BtrixElement {
             `,
           )}
         </div>
-        <section class="mb-10">
-          <btrix-details>
-            <span slot="title">${msg("Usage History")}</span>
-            <btrix-usage-history-table></btrix-usage-history-table>
-          </btrix-details>
+
+        <section class="mb-16">
+          <header class="mb-1.5 flex items-center justify-between">
+            ${pageHeading({
+              content: msg("Public Collections"),
+            })}
+            ${when(
+              this.appState.isCrawler,
+              () => html`
+                <btrix-overflow-dropdown>
+                  <sl-menu>
+                    <btrix-menu-item-link
+                      href=${`${this.navigate.orgBasePath}/collections`}
+                    >
+                      <sl-icon slot="prefix" name="gear"></sl-icon>
+                      ${msg("Manage Collections")}
+                    </btrix-menu-item-link>
+                    <btrix-menu-item-link
+                      href=${`/${RouteNamespace.PublicOrgs}/${this.orgSlug}`}
+                    >
+                      <sl-icon slot="prefix" name="globe2"></sl-icon>
+                      ${msg("Visit Public Profile")}
+                    </btrix-menu-item-link>
+                  </sl-menu>
+                </btrix-overflow-dropdown>
+              `,
+            )}
+          </header>
+          <div class="rounded-lg border p-5">
+            <btrix-collections-grid
+              slug=${this.orgSlug || ""}
+              .collections=${this.publicCollections.value}
+            ></btrix-collections-grid>
+          </div>
         </section>
       </main>
     `;
@@ -692,6 +736,25 @@ export class Dashboard extends BtrixElement {
         variant: "danger",
         icon: "exclamation-octagon",
       });
+    }
+  }
+
+  private async fetchCollections({
+    slug,
+  }: {
+    slug: string;
+  }): Promise<PublicCollection[]> {
+    const resp = await fetch(`/api/public/orgs/${slug}/collections`, {
+      headers: { "Content-Type": "application/json" },
+    });
+
+    switch (resp.status) {
+      case 200:
+        return ((await resp.json()) as PublicOrgCollections).collections;
+      case 404:
+        return [];
+      default:
+        throw resp.status;
     }
   }
 }

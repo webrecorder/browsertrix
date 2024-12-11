@@ -83,7 +83,9 @@ export class SelectCollectionAccess extends BtrixElement {
                 >
                   <sl-icon slot="prefix" name=${icon}></sl-icon>
                   <span class="font-medium">${label}</span>
-                  <span slot="suffix" class="text-neutral-500">${detail}</span>
+                  <span slot="suffix" class="text-neutral-500">
+                    ${detail}
+                  </span>
                 </sl-menu-item>
               `,
             )}
