@@ -1,7 +1,10 @@
 import { localized, msg } from "@lit/localize";
 import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
+
+import { CollectionThumbnail } from "./thumbnail";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { RouteNamespace } from "@/routes";
@@ -61,9 +64,17 @@ export class CollectionsGrid extends BtrixElement {
                   : `/${RouteNamespace.PrivateOrgs}/${this.slug}/collections/view/${collection.id}`}
                 class="group block h-full rounded-lg transition-all hover:scale-[102%]"
               >
-                <div class="relative mb-4">
+                <div
+                  class="relative mb-4 rounded-lg shadow-md shadow-cyan-700/20 transition-shadow group-hover:shadow-sm"
+                >
                   <btrix-collection-thumbnail
-                    .thumbnail=${collection.thumbnail}
+                    src=${ifDefined(
+                      collection.thumbnail?.path ||
+                        Object.values(CollectionThumbnail.Variants).find(
+                          ({ fileName }) =>
+                            fileName === collection.defaultThumbnailName,
+                        )?.src,
+                    )}
                   ></btrix-collection-thumbnail>
                   ${this.renderDateBadge(collection)}
                 </div>

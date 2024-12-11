@@ -3,7 +3,6 @@ import { html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import type { PublicCollection } from "@/types/collection";
 import thumbnailCyanSrc from "~assets/images/thumbnails/thumbnail-cyan.avif";
 import thumbnailGreenSrc from "~assets/images/thumbnails/thumbnail-green.avif";
 import thumbnailOrangeSrc from "~assets/images/thumbnails/thumbnail-orange.avif";
@@ -45,16 +44,14 @@ export class CollectionThumbnail extends BtrixElement {
     },
   };
 
-  @property({ type: Object })
-  thumbnail?: PublicCollection["thumbnail"];
+  @property({ type: String })
+  src?: string;
 
   render() {
-    console.log(this.thumbnail);
-
     return html`
       <img
-        class="aspect-video rounded-lg border border-cyan-100 bg-slate-50 object-cover shadow-md shadow-cyan-900/20 transition-shadow group-hover:shadow-sm"
-        src=${thumbnailCyanSrc}
+        class="aspect-video rounded-lg border border-cyan-100 bg-slate-50 object-cover"
+        src=${this.src || DEFAULT_THUMBNAIL.src!}
       />
     `;
   }

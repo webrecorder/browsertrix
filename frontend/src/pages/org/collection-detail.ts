@@ -663,6 +663,13 @@ export class CollectionDetail extends BtrixElement {
   `;
 
   private async updateVisibility(access: CollectionAccess) {
+    const prevValue = this.collection?.access;
+
+    // Optimistic update
+    if (this.collection) {
+      this.collection = { ...this.collection, access };
+    }
+
     try {
       await this.api.fetch<{ updated: boolean }>(
         `/orgs/${this.orgId}/collections/${this.collectionId}`,
@@ -677,12 +684,13 @@ export class CollectionDetail extends BtrixElement {
         variant: "success",
         icon: "check2-circle",
       });
-
-      if (this.collection) {
-        this.collection = { ...this.collection, access };
-      }
     } catch (err) {
       console.debug(err);
+
+      // Revert optimistic update
+      if (this.collection && prevValue !== undefined) {
+        this.collection = { ...this.collection, access: prevValue };
+      }
 
       this.notify.toast({
         message: msg("Sorry, couldn't update visibility at this time."),
@@ -693,6 +701,13 @@ export class CollectionDetail extends BtrixElement {
   }
 
   async updateThumbnail(defaultThumbnailName: string) {
+    const prevValue = this.collection?.defaultThumbnailName;
+
+    // Optimistic update
+    if (this.collection) {
+      this.collection = { ...this.collection, defaultThumbnailName };
+    }
+
     try {
       await this.api.fetch<{ updated: boolean }>(
         `/orgs/${this.orgId}/collections/${this.collectionId}`,
@@ -701,10 +716,6 @@ export class CollectionDetail extends BtrixElement {
           body: JSON.stringify({ defaultThumbnailName }),
         },
       );
-
-      if (this.collection) {
-        this.collection = { ...this.collection, defaultThumbnailName };
-      }
 
       // const resp = await fetch(src);
       // const blob = await resp.blob();
@@ -738,6 +749,14 @@ export class CollectionDetail extends BtrixElement {
       });
     } catch (err) {
       console.debug(err);
+
+      // Revert optimistic update
+      if (this.collection && prevValue !== undefined) {
+        this.collection = {
+          ...this.collection,
+          defaultThumbnailName: prevValue,
+        };
+      }
 
       this.notify.toast({
         message: msg("Sorry, couldn't update thumbnail at this time."),
