@@ -87,6 +87,7 @@ def test_create_collection(
     assert data["dateLatest"]
 
     assert data["defaultThumbnailName"] == default_thumbnail_name
+    assert data["allowPublicDownload"]
 
 
 def test_create_public_collection(
@@ -100,6 +101,7 @@ def test_create_public_collection(
             "name": PUBLIC_COLLECTION_NAME,
             "caption": CAPTION,
             "access": "public",
+            "allowPublicDownload": False,
         },
     )
     assert r.status_code == 200
@@ -1079,6 +1081,8 @@ def test_list_public_colls_home_url_thumbnail():
             assert field not in coll
 
         if coll["id"] == _public_coll_id:
+            assert coll["allowPublicDownload"] is False
+
             assert coll["caption"] == CAPTION
 
             assert coll["homeUrl"]
@@ -1099,6 +1103,7 @@ def test_list_public_colls_home_url_thumbnail():
         if coll["id"] == _second_public_coll_id:
             assert coll["description"]
             assert coll["defaultThumbnailName"] == "orange-default.avif"
+            assert coll["allowPublicDownload"]
 
 
 def test_get_public_collection(default_org_id):
@@ -1126,6 +1131,8 @@ def test_get_public_collection(default_org_id):
 
     assert coll["homeUrl"]
     assert coll["homeUrlTs"]
+
+    assert coll["allowPublicDownload"] is False
 
     thumbnail = coll["thumbnail"]
     assert thumbnail
@@ -1193,6 +1200,7 @@ def test_get_public_collection_unlisted(crawler_auth_headers, default_org_id):
     assert coll["pageCount"] > 0
     assert coll["totalSize"] > 0
     assert coll["defaultThumbnailName"] == "orange-default.avif"
+    assert coll["allowPublicDownload"]
 
     for field in NON_PUBLIC_COLL_FIELDS:
         assert field not in coll
@@ -1245,7 +1253,25 @@ def test_unset_collection_home_url(
     assert data.get("homeUrlPageId") is None
 
 
-def test_download_streaming_public_collection():
+def test_download_streaming_public_collection(crawler_auth_headers, default_org_id):
+    # Check that download is blocked if allowPublicDownload is False
+    with requests.get(
+        f"{API_PREFIX}/public/orgs/{default_org_slug}/collections/{_public_coll_id}/download",
+        stream=True,
+    ) as r:
+        assert r.status_code == 403
+
+    # Set allowPublicDownload to True and then check downloading works
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_public_coll_id}",
+        headers=crawler_auth_headers,
+        json={
+            "allowPublicDownload": True,
+        },
+    )
+    assert r.status_code == 200
+    assert r.json()["updated"]
+
     with TemporaryFile() as fh:
         with requests.get(
             f"{API_PREFIX}/public/orgs/{default_org_slug}/collections/{_public_coll_id}/download",

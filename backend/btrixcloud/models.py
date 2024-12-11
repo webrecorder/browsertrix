@@ -1260,6 +1260,8 @@ class Collection(BaseMongoModel):
     thumbnail: Optional[ImageFile] = None
     defaultThumbnailName: Optional[str] = None
 
+    allowPublicDownload: Optional[bool] = True
+
 
 # ============================================================================
 class CollIn(BaseModel):
@@ -1273,6 +1275,7 @@ class CollIn(BaseModel):
     access: CollAccessType = CollAccessType.PRIVATE
 
     defaultThumbnailName: Optional[str] = None
+    allowPublicDownload: bool = True
 
 
 # ============================================================================
@@ -1305,6 +1308,8 @@ class CollOut(BaseMongoModel):
     thumbnail: Optional[ImageFileOut] = None
     defaultThumbnailName: Optional[str] = None
 
+    allowPublicDownload: Optional[bool] = True
+
 
 # ============================================================================
 class PublicCollOut(BaseMongoModel):
@@ -1331,6 +1336,8 @@ class PublicCollOut(BaseMongoModel):
     thumbnail: Optional[PublicImageFileOut] = None
     defaultThumbnailName: Optional[str] = None
 
+    allowPublicDownload: Optional[bool] = True
+
 
 # ============================================================================
 class UpdateColl(BaseModel):
@@ -1341,6 +1348,7 @@ class UpdateColl(BaseModel):
     caption: Optional[str] = None
     access: Optional[CollAccessType] = None
     defaultThumbnailName: Optional[str] = None
+    allowPublicDownload: Optional[bool] = None
 
 
 # ============================================================================

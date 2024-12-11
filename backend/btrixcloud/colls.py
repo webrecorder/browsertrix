@@ -119,6 +119,7 @@ class CollectionOps:
             modified=modified,
             access=coll_in.access,
             defaultThumbnailName=coll_in.defaultThumbnailName,
+            allowPublicDownload=coll_in.allowPublicDownload,
         )
         try:
             await self.collections.insert_one(coll.to_dict())
@@ -1044,6 +1045,9 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops, user_de
 
         # Make sure collection exists and is public/unlisted
         coll = await colls.get_collection(coll_id, public_or_unlisted_only=True)
+
+        if coll.allowPublicDownload is False:
+            raise HTTPException(status_code=403, detail="not_allowed")
 
         return await colls.download_collection(coll.id, org)
 
