@@ -15,6 +15,7 @@ import { pageHeader } from "@/layouts/pageHeader";
 import { type LanguageCode } from "@/types/localization";
 import type { UnderlyingFunction } from "@/types/utils";
 import { isApiError } from "@/utils/api";
+import localize from "@/utils/localize";
 import PasswordService from "@/utils/PasswordService";
 import { AppStateService } from "@/utils/state";
 import { tw } from "@/utils/tailwind";
@@ -242,9 +243,7 @@ export class AccountSettings extends BtrixElement {
         </footer>
       </form>
 
-      ${(this.appState.settings?.localesEnabled?.length ?? 0) > 1
-        ? this.renderLanguage()
-        : nothing}
+      ${localize.languages.length > 1 ? this.renderLanguage() : nothing}
     `;
   }
 
