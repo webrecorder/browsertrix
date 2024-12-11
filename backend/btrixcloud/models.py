@@ -1308,7 +1308,7 @@ class CollOut(BaseMongoModel):
     thumbnail: Optional[ImageFileOut] = None
     defaultThumbnailName: Optional[str] = None
 
-    allowPublicDownload: Optional[bool] = True
+    allowPublicDownload: bool = True
 
 
 # ============================================================================
@@ -1336,7 +1336,7 @@ class PublicCollOut(BaseMongoModel):
     thumbnail: Optional[PublicImageFileOut] = None
     defaultThumbnailName: Optional[str] = None
 
-    allowPublicDownload: Optional[bool] = True
+    allowPublicDownload: bool = True
 
 
 # ============================================================================
