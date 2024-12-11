@@ -15,10 +15,10 @@ fi
 # Plausible analytics
 if [ -z "$INJECT_ANALYTICS" ]; then
   echo "analytics disabled, injecting blank script"
-  echo "" > /usr/share/nginx/html/_plausible.js
+  echo "" > /usr/share/nginx/html/analytics.js
 else
   echo "analytics enabled, injecting script"
-  echo "$INJECT_ANALYTICS" > /usr/share/nginx/html/_plausible.js
+  echo "$INJECT_ANALYTICS" > /usr/share/nginx/html/analytics.js
 fi
 
 mkdir -p /etc/nginx/resolvers/
