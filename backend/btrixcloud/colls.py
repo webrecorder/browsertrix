@@ -1024,6 +1024,30 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops, user_de
         return await colls.get_public_collection_out(coll_id, org, allow_unlisted=True)
 
     @app.get(
+        "/public/orgs/{org_slug}/collections/{coll_id}/download",
+        tags=["collections", "public"],
+        response_model=bytes,
+    )
+    async def download_public_collection(
+        org_slug: str,
+        coll_id: UUID,
+    ):
+        try:
+            org = await colls.orgs.get_org_by_slug(org_slug)
+        # pylint: disable=broad-exception-caught
+        except Exception:
+            # pylint: disable=raise-missing-from
+            raise HTTPException(status_code=404, detail="collection_not_found")
+
+        if not org.enablePublicProfile:
+            raise HTTPException(status_code=404, detail="collection_not_found")
+
+        # Make sure collection exists and is public/unlisted
+        coll = await colls.get_collection(coll_id, public_or_unlisted_only=True)
+
+        return await colls.download_collection(coll.id, org)
+
+    @app.get(
         "/orgs/{oid}/collections/{coll_id}/urls",
         tags=["collections"],
         response_model=PaginatedPageUrlCountResponse,

@@ -1245,6 +1245,26 @@ def test_unset_collection_home_url(
     assert data.get("homeUrlPageId") is None
 
 
+def test_download_streaming_public_collection():
+    with TemporaryFile() as fh:
+        with requests.get(
+            f"{API_PREFIX}/public/orgs/{default_org_slug}/collections/{_public_coll_id}/download",
+            stream=True,
+        ) as r:
+            assert r.status_code == 200
+            for chunk in r.iter_content():
+                fh.write(chunk)
+
+        fh.seek(0)
+        with ZipFile(fh, "r") as zip_file:
+            contents = zip_file.namelist()
+
+            assert len(contents) == 2
+            for filename in contents:
+                assert filename.endswith(".wacz") or filename == "datapackage.json"
+                assert zip_file.getinfo(filename).compress_type == ZIP_STORED
+
+
 def test_delete_collection(crawler_auth_headers, default_org_id, crawler_crawl_id):
     # Delete second collection
     r = requests.delete(
