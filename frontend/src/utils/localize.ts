@@ -6,7 +6,7 @@
  * See https://github.com/web-dev-server/web-dev-server/issues/1
  */
 import { configureLocalization } from "@lit/localize";
-import uniq from "lodash/fp/uniq";
+import uniq from "lodash/uniq";
 
 import { sourceLocale, targetLocales } from "@/__generated__/locale-codes";
 import {
