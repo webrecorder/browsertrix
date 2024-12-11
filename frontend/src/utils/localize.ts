@@ -6,7 +6,6 @@
  * See https://github.com/web-dev-server/web-dev-server/issues/1
  */
 import { configureLocalization } from "@lit/localize";
-import uniq from "lodash/fp/uniq";
 
 import { sourceLocale, targetLocales } from "@/__generated__/locale-codes";
 import {
@@ -64,10 +63,7 @@ export class Localize {
   }
 
   get languages() {
-    return uniq([
-      ...(appState.settings?.localesEnabled ?? translatedLocales),
-      ...window.navigator.languages.map(langShortCode),
-    ]);
+    return appState.settings?.localesEnabled ?? translatedLocales;
   }
 
   constructor(initialLanguage: LanguageCode = sourceLocale) {
