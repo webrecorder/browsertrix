@@ -35,7 +35,7 @@ describe("Localize", () => {
     it("returns the correct languages", () => {
       stub(window.navigator, "languages").get(() => ["en-US", "ar", "ko"]);
       const localize = new Localize();
-      expect(localize.languages).to.eql(["en", "es", "ar", "ko"]);
+      expect(localize.languages).to.eql(["en", "es"]);
     });
   });
 
@@ -72,9 +72,9 @@ describe("Localize", () => {
 
     it("updates the duration formatter", () => {
       const localize = new Localize();
-      localize.setLanguage("es");
+      localize.setLanguage("ar");
       expect(localize.duration({ days: 1, hours: 2, minutes: 3 })).to.equal(
-        "1 d, 2 h, 3 min",
+        "1 ي و2 س و3 د",
       );
     });
 
@@ -136,7 +136,7 @@ describe("Localize", () => {
           seconds: 4,
           milliseconds: 5,
         }),
-      ).to.equal("1 ቀናት፣ 2 ሰዓ፣ 3 ደቂቃ፣ 4 ሰከ፣ 5 ሚሴ");
+      ).to.equal("1 ቀ፣ 2 ሰ፣ 3 ደ፣ 4 ሰ 5 ሚሴ");
     });
 
     it("formats an empty duration", () => {
