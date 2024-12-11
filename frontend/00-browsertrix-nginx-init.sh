@@ -12,6 +12,15 @@ else
   sed -i "s/\$LOCAL_BUCKET/$LOCAL_BUCKET/g" /etc/nginx/includes/minio.conf
 fi
 
+# Plausible analytics
+if [ -z "$INJECT_ANALYTICS" ]; then
+  echo "analytics disabled, injecting blank script"
+  echo "" > /usr/share/nginx/html/_plausible.js
+else
+  echo "analytics enabled, injecting script"
+  echo "$INJECT_ANALYTICS" > /usr/share/nginx/html/_plausible.js
+fi
+
 mkdir -p /etc/nginx/resolvers/
 echo resolver $(grep -oP '(?<=nameserver\s)[^\s]+' /etc/resolv.conf | awk '{ if ($1 ~ /:/) { printf "[" $1 "] "; } else { printf $1 " "; } }') valid=10s ipv6=off";" > /etc/nginx/resolvers/resolvers.conf
 

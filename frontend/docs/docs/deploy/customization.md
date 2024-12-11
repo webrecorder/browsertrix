@@ -68,7 +68,7 @@ storages:
 
     endpoint_url: "http://local-minio.default:9000/"
     is_default_replica: True
-  
+
   - name: "replica-1"
     type: "s3"
     access_key: "accesskey"
@@ -150,3 +150,17 @@ Browsertrix has the ability to cryptographically sign WACZ files with [Authsign]
 ## Enable Open Registration
 
 You can enable sign-ups by setting `registration_enabled` to `"1"`. Once enabled, your users can register by visiting `/sign-up`.
+
+## Analytics
+
+You can add a script to inject any sort of analytics into the frontend by setting `inject_analytics` to the script. If present, it will be injected as a blocking script tag into every page — so we recommend you create the script tags that handle your analytics from within this script.
+
+For example, here's a script that adds Plausible Analytics tracking:
+
+```ts
+const plausible = document.createElement("script");
+plausible.src = "https://plausible.io/js/script.js";
+plausible.defer = true;
+plausible.dataset.domain = "app.browsertrix.com";
+document.head.appendChild(plausible);
+```

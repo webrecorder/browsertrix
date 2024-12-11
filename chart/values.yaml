@@ -433,6 +433,9 @@ ingress:
 
 ingress_class: nginx
 
+# Optional: Analytics injection script
+# This runs as a blocking script on the frontend, so usually you'll want to have it just add a single script tag to the page with the `defer` attribute.
+# inject_analytics: // your analytics injection script here
 
 
 # Signing Options
