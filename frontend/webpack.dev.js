@@ -75,6 +75,13 @@ module.exports = [
           res.set("Content-Type", "application/javascript");
           res.status(404).send(`{"error": "placeholder_for_replay"}`);
         });
+
+        // serve empty analytics script
+        server.app?.get("/extra.js", (req, res) => {
+          res.set("Content-Type", "application/javascript");
+          res.status(200).send("");
+        });
+
         return middlewares;
       },
       port: 9870,
