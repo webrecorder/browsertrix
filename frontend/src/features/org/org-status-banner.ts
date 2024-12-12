@@ -80,7 +80,11 @@ export class OrgStatusBanner extends BtrixElement {
       });
     }
 
-    const isTrial = subscription?.status === SubscriptionStatus.Trialing;
+    const isTrialingCanceled =
+      subscription?.status == SubscriptionStatus.TrialingCanceled;
+    const isTrial =
+      subscription?.status === SubscriptionStatus.Trialing ||
+      isTrialingCanceled;
 
     // show banner if < this many days of trial is left
     const MAX_TRIAL_DAYS_SHOW_BANNER = 4;
@@ -120,8 +124,8 @@ export class OrgStatusBanner extends BtrixElement {
           !readOnly &&
           !readOnlyOnCancel &&
           !!futureCancelDate &&
-          isTrial &&
-          daysDiff < MAX_TRIAL_DAYS_SHOW_BANNER,
+          ((isTrial && daysDiff < MAX_TRIAL_DAYS_SHOW_BANNER) ||
+            isTrialingCanceled),
 
         content: () => {
           return {

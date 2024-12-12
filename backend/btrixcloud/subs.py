@@ -134,8 +134,8 @@ class SubOps:
         if update.futureCancelDate != org.subscription.futureCancelDate:
             return True
 
-        # if 'trialing', always send
-        if org.subscription.status == "trialing":
+        # if 'trialing_canceled', send
+        if org.subscription.status == "trialing_canceled":
             return True
 
         return False
