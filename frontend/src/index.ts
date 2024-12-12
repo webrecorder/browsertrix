@@ -116,7 +116,7 @@ export class App extends BtrixElement {
     }
 
     this.settings = await getAppSettings();
-    localize.initLanguage();
+    await localize.initLanguage();
     super.connectedCallback();
 
     this.addEventListener("btrix-navigate", this.onNavigateTo);

@@ -2,8 +2,11 @@ import { expect, fixture } from "@open-wc/testing";
 import { html } from "lit";
 import { restore, stub } from "sinon";
 
+import { NavigateController } from "./controllers/navigate";
+import { NotifyController } from "./controllers/notify";
+import { type AppSettings } from "./utils/app";
 import AuthService from "./utils/AuthService";
-import { AppStateService } from "./utils/state";
+import appState, { AppStateService } from "./utils/state";
 import { formatAPIUser } from "./utils/user";
 
 import { App, type APIUser } from ".";
@@ -25,12 +28,28 @@ const mockAPIUser: APIUser = {
 };
 const mockUserInfo = formatAPIUser(mockAPIUser);
 
+const mockAppSettings: AppSettings = {
+  registrationEnabled: false,
+  jwtTokenLifetime: 86400,
+  defaultBehaviorTimeSeconds: 300,
+  defaultPageLoadTimeSeconds: 120,
+  maxPagesPerCrawl: 50000,
+  numBrowsers: 2,
+  maxScale: 3,
+  billingEnabled: false,
+  signUpUrl: "",
+  salesEmail: "",
+  supportEmail: "",
+  localesEnabled: ["en", "es"],
+};
+
 describe("browsertrix-app", () => {
   beforeEach(() => {
     AppStateService.resetAll();
     AuthService.broadcastChannel = new BroadcastChannel(AuthService.storageKey);
     window.sessionStorage.clear();
     stub(window.history, "pushState");
+    stub(NotifyController.prototype, "toast");
   });
 
   afterEach(() => {
@@ -51,12 +70,26 @@ describe("browsertrix-app", () => {
         username: "test-auth@example.com",
       }),
     );
+    // @ts-expect-error checkFreshness is private
+    stub(AuthService.prototype, "checkFreshness");
+    stub(appState, "settings").returns(mockAppSettings);
     const el = await fixture<App>(html` <browsertrix-app></browsertrix-app>`);
+    await el.updateComplete;
     expect(el.shadowRoot?.querySelector("btrix-home")).to.exist;
   });
 
   it("renders home when not authenticated", async () => {
     stub(AuthService, "initSessionStorage").returns(Promise.resolve(null));
+    // @ts-expect-error checkFreshness is private
+    stub(AuthService.prototype, "checkFreshness");
+    stub(appState, "settings").returns(mockAppSettings);
+    stub(NavigateController, "createNavigateEvent").callsFake(
+      () =>
+        new CustomEvent("x-ignored", {
+          detail: { url: "", resetScroll: false },
+        }),
+    );
+
     const el = await fixture<App>(html` <browsertrix-app></browsertrix-app>`);
     expect(el.shadowRoot?.querySelector("btrix-home")).to.exist;
   });
@@ -112,6 +145,9 @@ describe("browsertrix-app", () => {
         tokenExpiresAt: 0,
         username: "test-auth@example.com",
       }),
+    );
+    stub(AuthService, "createNeedLoginEvent").callsFake(
+      () => new CustomEvent("x-ignored", { detail: {} }),
     );
 
     const el = await fixture<App>("<browsertrix-app></browsertrix-app>");

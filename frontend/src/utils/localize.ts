@@ -79,17 +79,17 @@ export class Localize {
   }
 
   constructor(initialLanguage: LanguageCode = sourceLocale) {
-    this.setLanguage(initialLanguage);
+    void this.setLanguage(initialLanguage);
   }
 
-  initLanguage() {
-    this.setLanguage(getDefaultLang());
+  async initLanguage() {
+    await this.setLanguage(getDefaultLang());
   }
 
   /**
    * User-initiated language setting
    */
-  setLanguage(lang: LanguageCode) {
+  async setLanguage(lang: LanguageCode) {
     const { error } = languageCodeSchema.safeParse(lang);
 
     if (error) {
@@ -114,7 +114,7 @@ export class Localize {
     }
 
     this.activeLanguage = lang;
-    this.setTranslation(lang);
+    await this.setTranslation(lang);
   }
 
   readonly number = (
@@ -167,12 +167,12 @@ export class Localize {
     return formatter.format(d);
   };
 
-  private setTranslation(lang: LanguageCode) {
+  private async setTranslation(lang: LanguageCode) {
     if (
       lang !== getLocale() &&
       (translatedLocales as AllLanguageCodes).includes(lang)
     ) {
-      void setLocale(lang);
+      await setLocale(lang);
     }
   }
 }
