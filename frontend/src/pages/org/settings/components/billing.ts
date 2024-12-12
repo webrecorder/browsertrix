@@ -41,6 +41,7 @@ export class OrgSettingsBilling extends BtrixElement {
     let label = msg("Manage Billing");
 
     switch (subscription.status) {
+      case SubscriptionStatus.TrialingCanceled:
       case SubscriptionStatus.Trialing: {
         label = msg("Subscribe Now");
         break;
@@ -140,7 +141,9 @@ export class OrgSettingsBilling extends BtrixElement {
                         ></sl-icon>
                         <div>
                           ${org.subscription.status ===
-                          SubscriptionStatus.Trialing
+                            SubscriptionStatus.Trialing ||
+                          org.subscription.status ===
+                            SubscriptionStatus.TrialingCanceled
                             ? html`
                                 <span class="font-medium text-neutral-700">
                                   ${msg(
@@ -183,7 +186,9 @@ export class OrgSettingsBilling extends BtrixElement {
                 org.subscription
                   ? html` <p class="mb-3 leading-normal">
                         ${org.subscription.status ===
-                        SubscriptionStatus.Trialing
+                          SubscriptionStatus.Trialing ||
+                        org.subscription.status ===
+                          SubscriptionStatus.TrialingCanceled
                           ? msg(
                               str`To continue using Browsertrix at the end of your trial, click “${this.portalUrlLabel}”.`,
                             )
@@ -269,6 +274,7 @@ export class OrgSettingsBilling extends BtrixElement {
           `;
           break;
         }
+        case SubscriptionStatus.TrialingCanceled:
         case SubscriptionStatus.Trialing: {
           statusLabel = html`
             <span class="text-success-700">${msg("Free Trial")}</span>

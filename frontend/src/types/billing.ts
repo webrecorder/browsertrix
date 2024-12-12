@@ -5,6 +5,7 @@ import { apiDateSchema } from "./api";
 export enum SubscriptionStatus {
   Active = "active",
   Trialing = "trialing",
+  TrialingCanceled = "trialing_canceled",
   PausedPaymentFailed = "paused_payment_failed",
   Cancelled = "cancelled",
 }

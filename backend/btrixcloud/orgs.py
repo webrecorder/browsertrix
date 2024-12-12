@@ -276,6 +276,16 @@ class OrgOps:
 
         return Organization.from_dict(res)
 
+    async def get_users_for_org(
+        self, org: Organization, min_role=UserRole.VIEWER
+    ) -> List[User]:
+        """get users for org"""
+        uuid_ids = [UUID(id_) for id_, role in org.users.items() if role >= min_role]
+        users: List[User] = []
+        async for user_dict in self.users_db.find({"id": {"$in": uuid_ids}}):
+            users.append(User(**user_dict))
+        return users
+
     async def get_org_by_id(self, oid: UUID) -> Organization:
         """Get an org by id"""
         res = await self.orgs.find_one({"_id": oid})
@@ -489,7 +499,7 @@ class OrgOps:
         org_data = await self.orgs.find_one_and_update(
             {"subscription.subId": update.subId},
             {"$set": query},
-            return_document=ReturnDocument.AFTER,
+            return_document=ReturnDocument.BEFORE,
         )
         if not org_data:
             return None
