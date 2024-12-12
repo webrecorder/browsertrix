@@ -166,7 +166,7 @@ class EmailSender:
     def send_subscription_will_be_canceled(
         self,
         cancel_date: datetime,
-        name: str,
+        user_name: str,
         receiver_email: str,
         org: Organization,
         headers=None,
@@ -180,7 +180,8 @@ class EmailSender:
             receiver_email,
             "sub_cancel",
             org_url=org_url,
-            user_name=name,
+            user_name=user_name,
+            org_name=org.name,
             cancel_date=cancel_date,
             support_email=self.support_email,
             survey_url=self.survey_url,
