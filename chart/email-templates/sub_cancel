@@ -15,7 +15,7 @@ by going to <i>Settings -> Billing</i> tab after logging in.</p>
 {% if survey_url %}
 <p>We hope you enjoyed using Browsertrix!</p>
 
-<p>To help us make Browsertrix better, we would be very grateful if you could complete <a href="{{ survey_url }}">a quick survey</a> about your experience using Browsertrix</p>
+<p>To help us make Browsertrix better, we would be very grateful if you could complete <a href="{{ survey_url }}">a quick survey</a> about your experience using Browsertrix.</p>
 {% endif %}
 
 {% if support_email %}

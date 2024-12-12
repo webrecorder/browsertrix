@@ -276,7 +276,9 @@ class OrgOps:
 
         return Organization.from_dict(res)
 
-    async def get_users_for_org(self, org: Organization, min_role=UserRole.VIEWER):
+    async def get_users_for_org(
+        self, org: Organization, min_role=UserRole.VIEWER
+    ) -> List[User]:
         """get users for org"""
         uuid_ids = [UUID(id_) for id_, role in org.users.items() if role >= min_role]
         users: List[User] = []
