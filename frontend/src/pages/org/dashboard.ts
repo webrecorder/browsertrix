@@ -52,12 +52,16 @@ export class Dashboard extends BtrixElement {
   };
 
   private readonly publicCollections = new Task(this, {
-    task: async ([slug]) => {
+    task: async ([slug, metrics]) => {
       if (!slug) throw new Error("slug required");
+
+      if (!metrics) return undefined;
+      if (!metrics.publicCollectionsCount) return [];
+
       const collections = await this.fetchCollections({ slug });
       return collections;
     },
-    args: () => [this.orgSlug] as const,
+    args: () => [this.orgSlug, this.metrics] as const,
   });
 
   willUpdate(changedProperties: PropertyValues<this> & Map<string, unknown>) {

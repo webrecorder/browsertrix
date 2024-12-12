@@ -59,10 +59,10 @@ export class CollectionStartPageDialog extends BtrixElement {
   private showContent = false;
 
   @state()
-  private selectedSnapshot?: SelectSnapshotDetail["item"];
+  private isSubmitting = false;
 
-  @query("replay-web-page")
-  private readonly replayEmbed?: ReplayWebPage | null;
+  @state()
+  private selectedSnapshot?: SelectSnapshotDetail["item"];
 
   @query("btrix-dialog")
   private readonly dialog?: Dialog | null;
@@ -100,6 +100,7 @@ export class CollectionStartPageDialog extends BtrixElement {
             variant="primary"
             size="small"
             ?disabled=${!this.replayLoaded}
+            ?loading=${this.isSubmitting}
             @click=${() => {
               this.form?.requestSubmit();
             }}
@@ -261,65 +262,109 @@ export class CollectionStartPageDialog extends BtrixElement {
     const form = e.currentTarget as HTMLFormElement;
     const { homeView, useThumbnail } = serialize(form);
 
+    this.isSubmitting = true;
+
     try {
       await this.updateUrl({
         pageId:
           (homeView === HomeView.URL && this.selectedSnapshot?.pageId) || null,
       });
 
-      if (homeView === HomeView.URL) {
-        if (useThumbnail === "on" && this.thumbnailPreview?.src) {
-          const { fileName } = CollectionThumbnail.Variants[Thumbnail.Custom];
+      const shouldUpload = homeView === HomeView.URL && useThumbnail === "on";
+      const { fileName } = CollectionThumbnail.Variants[Thumbnail.Custom];
+      let file: File | undefined;
 
+      if (shouldUpload && this.thumbnailPreview?.src) {
+        this.notify.toast({
+          message: msg("Updating collection thumbnail..."),
+          variant: "info",
+          icon: "hourglass-split",
+        });
+
+        // Wait to get the thumbnail image before closing the dialog
+        try {
           const resp = await this.thumbnailPreview.contentWindow!.fetch(
             this.thumbnailPreview.src,
           );
           const blob = await resp.blob();
 
-          const file = new File([blob], fileName, {
+          file = new File([blob], fileName, {
             type: blob.type,
           });
-
-          // TODO Show loading progress
-          // if (this.collection) {
-          //   this.collection = {
-          //     ...this.collection,
-          //     thumbnail: {
-          //       name: fileName,
-          //       path: src,
-          //     },
-          //   };
-          // }
-          await this.api.upload(
-            `/orgs/${this.orgId}/collections/${this.collectionId}/thumbnail?filename=${window.encodeURIComponent(fileName)}`,
-            file,
-          );
-          await this.api.fetch<{ updated: boolean }>(
-            `/orgs/${this.orgId}/collections/${this.collectionId}`,
-            {
-              method: "PATCH",
-              body: JSON.stringify({ defaultThumbnailName: fileName }),
-            },
-          );
-
-          // TODO handle failure
+        } catch (err) {
+          console.debug(err);
         }
-
+      } else {
         this.notify.toast({
-          message: msg("Replay home view updated."),
+          message: msg("Home view updated."),
           variant: "success",
           icon: "check2-circle",
         });
+      }
 
-        this.open = false;
+      this.isSubmitting = false;
+      this.open = false;
+
+      if (shouldUpload) {
+        if (file) {
+          void this.uploadThumbnail({ file, fileName });
+        } else {
+          this.notify.toast({
+            message: msg(
+              "Home view updated, but couldn't update collection thumbnail at this time.",
+            ),
+            variant: "warning",
+            icon: "exclamation-triangle",
+          });
+        }
       }
     } catch (err) {
       console.debug(err);
+
+      this.isSubmitting = false;
 
       this.notify.toast({
         message: msg("Sorry, couldn't update home view at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+      });
+    }
+  }
+
+  private async uploadThumbnail({
+    file,
+    fileName,
+  }: {
+    file: File;
+    fileName: string;
+  }) {
+    try {
+      await this.api.upload(
+        `/orgs/${this.orgId}/collections/${this.collectionId}/thumbnail?filename=${window.encodeURIComponent(fileName)}`,
+        file,
+      );
+      await this.api.fetch<{ updated: boolean }>(
+        `/orgs/${this.orgId}/collections/${this.collectionId}`,
+        {
+          method: "PATCH",
+          body: JSON.stringify({ defaultThumbnailName: fileName }),
+        },
+      );
+
+      this.notify.toast({
+        message: msg("Home view and collection thumbnail updated."),
+        variant: "success",
+        icon: "check2-circle",
+      });
+    } catch (err) {
+      console.debug(err);
+
+      this.notify.toast({
+        message: msg(
+          "Home view updated, but couldn't update collection thumbnail at this time.",
+        ),
+        variant: "warning",
+        icon: "exclamation-triangle",
       });
     }
   }
