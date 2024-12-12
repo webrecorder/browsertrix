@@ -279,9 +279,10 @@ class OrgOps:
     async def get_users_for_org(self, org: Organization, min_role=UserRole.VIEWER):
         """get users for org"""
         uuid_ids = [UUID(id_) for id_, role in org.users.items() if role >= min_role]
-        cursor = self.users_db.find({"id": {"$in": uuid_ids}})
-        user_datas = await cursor.to_list(length=1000)
-        return [User(**user_data) for user_data in user_datas]
+        users: List[User] = []
+        async for user_dict in self.users_db.find({"id": {"$in": uuid_ids}}):
+            users.append(User(**user_dict))
+        return users
 
     async def get_org_by_id(self, oid: UUID) -> Organization:
         """Get an org by id"""
