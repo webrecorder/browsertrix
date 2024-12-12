@@ -77,7 +77,7 @@ module.exports = [
         });
 
         // serve empty analytics script
-        server.app?.get("/analytics.js", (req, res) => {
+        server.app?.get("/extra.js", (req, res) => {
           res.set("Content-Type", "application/javascript");
           res.status(200).send("");
         });

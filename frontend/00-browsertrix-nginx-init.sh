@@ -15,10 +15,10 @@ fi
 # Add analytics script, if provided
 if [ -z "$INJECT_ANALYTICS" ]; then
   echo "analytics disabled, injecting blank script"
-  echo "" > /usr/share/nginx/html/analytics.js
+  echo "" > /usr/share/nginx/html/extra.js
 else
   echo "analytics enabled, injecting script"
-  echo "$INJECT_ANALYTICS" > /usr/share/nginx/html/analytics.js
+  echo "$INJECT_ANALYTICS" > /usr/share/nginx/html/extra.js
 fi
 
 mkdir -p /etc/nginx/resolvers/
