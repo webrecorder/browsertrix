@@ -135,7 +135,7 @@ class SubOps:
             return True
 
         # if 'trialing_canceled', send
-        if org.subscription.status == "trialing_canceled":
+        if update.status == "trialing_canceled":
             return True
 
         return False
