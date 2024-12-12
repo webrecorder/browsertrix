@@ -541,14 +541,14 @@ export class CollectionsList extends BtrixElement {
         ${pluralOf("pages", col.pageCount)}
       </btrix-table-cell>
       <btrix-table-cell>
-        <sl-format-date
+        <btrix-format-date
           date=${col.modified}
           month="2-digit"
           day="2-digit"
           year="2-digit"
           hour="2-digit"
           minute="2-digit"
-        ></sl-format-date>
+        ></btrix-format-date>
       </btrix-table-cell>
       <btrix-table-cell class="p-0">
         ${this.isCrawler ? this.renderActions(col) : ""}

@@ -260,14 +260,14 @@ export class WorkflowListItem extends BtrixElement {
         <div class="desc duration">
           ${this.safeRender((workflow) => {
             if (workflow.lastCrawlTime && workflow.lastCrawlStartTime) {
-              return html`<sl-format-date
+              return html`<btrix-format-date
                   date="${workflow.lastRun.toString()}"
                   month="2-digit"
                   day="2-digit"
                   year="2-digit"
                   hour="2-digit"
                   minute="2-digit"
-                ></sl-format-date>
+                ></btrix-format-date>
                 ${msg(
                   str`in ${this.localize.humanizeDuration(
                     new Date(workflow.lastCrawlTime).valueOf() -
@@ -348,14 +348,14 @@ export class WorkflowListItem extends BtrixElement {
         <div class="desc">
           ${this.safeRender(
             (workflow) => html`
-              <sl-format-date
+              <btrix-format-date
                 date="${workflow.modified}"
                 month="2-digit"
                 day="2-digit"
                 year="2-digit"
                 hour="2-digit"
                 minute="2-digit"
-              ></sl-format-date>
+              ></btrix-format-date>
             `,
           )}
         </div>

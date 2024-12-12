@@ -278,14 +278,14 @@ export class BrowserProfilesList extends BtrixElement {
             content=${msg(str`By ${data.createdByName}`)}
             ?disabled=${!data.createdByName}
           >
-            <sl-format-date
+            <btrix-format-date
               date=${data.created}
               month="2-digit"
               day="2-digit"
               year="2-digit"
               hour="2-digit"
               minute="2-digit"
-            ></sl-format-date>
+            ></btrix-format-date>
           </sl-tooltip>
         </btrix-table-cell>
         <btrix-table-cell class="whitespace-nowrap tabular-nums">
@@ -293,7 +293,7 @@ export class BrowserProfilesList extends BtrixElement {
             content=${msg(str`By ${data.modifiedByName || data.createdByName}`)}
             ?disabled=${!data.createdByName}
           >
-            <sl-format-date
+            <btrix-format-date
               date=${
                 // NOTE older profiles may not have "modified" data
                 data.modified || data.created
@@ -303,7 +303,7 @@ export class BrowserProfilesList extends BtrixElement {
               year="2-digit"
               hour="2-digit"
               minute="2-digit"
-            ></sl-format-date>
+            ></btrix-format-date>
           </sl-tooltip>
         </btrix-table-cell>
         <btrix-table-cell class="p-0">

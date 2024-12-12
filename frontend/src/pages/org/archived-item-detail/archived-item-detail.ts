@@ -156,7 +156,7 @@ export class ArchivedItemDetail extends BtrixElement {
   private get formattedFinishedDate() {
     if (!this.item) return;
 
-    return html`<sl-format-date
+    return html`<btrix-format-date
       date=${this.item.finished!}
       month="2-digit"
       day="2-digit"
@@ -164,7 +164,7 @@ export class ArchivedItemDetail extends BtrixElement {
       hour="numeric"
       minute="numeric"
       time-zone-name="short"
-    ></sl-format-date>`;
+    ></btrix-format-date>`;
   }
 
   willUpdate(changedProperties: PropertyValues<this>) {
@@ -799,7 +799,7 @@ export class ArchivedItemDetail extends BtrixElement {
               `
             : html`
                 <btrix-desc-list-item label=${msg("Start Time")}>
-                  <sl-format-date
+                  <btrix-format-date
                     date=${this.item!.started}
                     month="2-digit"
                     day="2-digit"
@@ -807,7 +807,7 @@ export class ArchivedItemDetail extends BtrixElement {
                     hour="numeric"
                     minute="numeric"
                     time-zone-name="short"
-                  ></sl-format-date>
+                  ></btrix-format-date>
                 </btrix-desc-list-item>
                 <btrix-desc-list-item label=${msg("Finish Time")}>
                   ${this.item!.finished

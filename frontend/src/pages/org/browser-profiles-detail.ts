@@ -115,7 +115,7 @@ export class BrowserProfilesDetail extends BtrixElement {
           <btrix-desc-list-item label=${msg("Created On")}>
             ${this.profile
               ? html`
-                  <sl-format-date
+                  <btrix-format-date
                     date=${this.profile.created}
                     month="2-digit"
                     day="2-digit"
@@ -123,13 +123,13 @@ export class BrowserProfilesDetail extends BtrixElement {
                     hour="numeric"
                     minute="numeric"
                     time-zone-name="short"
-                  ></sl-format-date>
+                  ></btrix-format-date>
                 `
               : nothing}
           </btrix-desc-list-item>
           <btrix-desc-list-item label=${msg("Last Updated")}>
             ${this.profile
-              ? html` <sl-format-date
+              ? html` <btrix-format-date
                   date=${
                     // NOTE older profiles may not have "modified" data
                     this.profile.modified || this.profile.created
@@ -140,7 +140,7 @@ export class BrowserProfilesDetail extends BtrixElement {
                   hour="numeric"
                   minute="numeric"
                   time-zone-name="short"
-                ></sl-format-date>`
+                ></btrix-format-date>`
               : nothing}
           </btrix-desc-list-item>
           ${

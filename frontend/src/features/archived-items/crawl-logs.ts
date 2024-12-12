@@ -122,7 +122,7 @@ export class CrawlLogs extends LitElement {
               <div slot="marker">${idx + 1}.</div>
               <div class="row">
                 <div>
-                  <sl-format-date
+                  <btrix-format-date
                     date=${log.timestamp}
                     month="2-digit"
                     day="2-digit"
@@ -132,7 +132,7 @@ export class CrawlLogs extends LitElement {
                     second="2-digit"
                     hour-format="24"
                   >
-                  </sl-format-date>
+                  </btrix-format-date>
                 </div>
                 <div>
                   <span class="tag">${log.logLevel}</span>
