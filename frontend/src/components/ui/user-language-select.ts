@@ -78,6 +78,6 @@ export class LocalePicker extends BtrixElement {
   async localeChanged(event: SlSelectEvent) {
     const newLocale = event.detail.item.value as TranslatedLocaleEnum;
 
-    localize.setLanguage(newLocale);
+    await localize.setLanguage(newLocale);
   }
 }
