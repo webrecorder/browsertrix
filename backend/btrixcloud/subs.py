@@ -4,7 +4,9 @@ Subscription API handling
 
 from typing import Callable, Union, Any, Optional, Tuple, List
 import os
+import asyncio
 from uuid import UUID
+from datetime import datetime
 
 from fastapi import Depends, HTTPException, Request
 import aiohttp
@@ -115,14 +117,18 @@ class SubOps:
 
         await self.add_sub_event("update", update, org.id)
 
-        if update.futureCancelDate:
-            users = await self.org_ops.get_users_for_org(org, UserRole.OWNER)
-            for user in users:
-                await self.user_manager.email.send_subscription_will_be_canceled(
-                    update.futureCancelDate, user.name, user.email, org
-                )
+        if update.futureCancelDate and self.user_manager.email:
+            asyncio.create_task(self.send_cancel_emails(update.futureCancelDate, org))
 
         return {"updated": True}
+
+    async def send_cancel_emails(self, cancel_date: datetime, org: Organization):
+        """Asynchronously send cancellation emails to all org admins"""
+        users = await self.org_ops.get_users_for_org(org, UserRole.OWNER)
+        for user in users:
+            self.user_manager.email.send_subscription_will_be_canceled(
+                cancel_date, user.name, user.email, org
+            )
 
     async def cancel_subscription(self, cancel: SubscriptionCancel) -> dict[str, bool]:
         """delete subscription data, and unless if readOnlyOnCancel is true, the entire org"""
