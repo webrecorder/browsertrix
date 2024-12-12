@@ -3,7 +3,6 @@ import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
 import { guard } from "lit/directives/guard.js";
-import { ifDefined } from "lit/directives/if-defined.js";
 import { repeat } from "lit/directives/repeat.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
@@ -11,6 +10,7 @@ import queryString from "query-string";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { MarkdownEditor } from "@/components/ui/markdown-editor";
 import type { PageChangeEvent } from "@/components/ui/pagination";
+import type { Thumbnail } from "@/features/collections/collection-thumbnail";
 import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
 import type {
   SelectThumbnailDetail,
@@ -290,18 +290,17 @@ export class CollectionDetail extends BtrixElement {
         ?open=${this.openDialogName === "editStartPage"}
         @sl-hide=${async () => {
           this.openDialogName = undefined;
+
+          // Don't do full refresh of rwp so that rwp-url-change fires
+          this.isRwpLoaded = false;
+
           await this.fetchCollection();
           await this.updateComplete;
-          this.refreshReplay();
         }}
         collectionId=${this.collectionId}
-        .home=${this.collection
-          ? {
-              url: this.collection.homeUrl,
-              pageId: this.collection.homeUrlPageId,
-              ts: this.collection.homeUrlTs,
-            }
-          : undefined}
+        .homeUrl=${this.collection?.homeUrl}
+        .homePageId=${this.collection?.homeUrlPageId}
+        .homeTs=${this.collection?.homeUrlTs}
         ?replayLoaded=${this.isRwpLoaded}
       ></btrix-collection-replay-dialog>
 
@@ -716,13 +715,14 @@ export class CollectionDetail extends BtrixElement {
           replayBase="/replay/"
           config="${config}"
           coll=${this.collectionId}
-          url=${ifDefined(this.collection.homeUrl || undefined)}
-          ts=${ifDefined(formatRwpTimestamp(this.collection.homeUrlTs))}
+          url=${this.collection.homeUrl ||
+          /* must be empty string to reset the attribute: */ ""}
+          ts=${formatRwpTimestamp(this.collection.homeUrlTs) ||
+          /* must be empty string to reset the attribute: */ ""}
           noSandbox="true"
           noCache="true"
           @rwp-url-change=${() => {
             if (!this.isRwpLoaded) {
-              // First load
               this.isRwpLoaded = true;
             }
           }}
@@ -780,7 +780,7 @@ export class CollectionDetail extends BtrixElement {
   async updateThumbnail({
     defaultThumbnailName,
   }: {
-    defaultThumbnailName: string;
+    defaultThumbnailName: Thumbnail | null;
   }) {
     const prevValue = this.collection?.defaultThumbnailName;
 

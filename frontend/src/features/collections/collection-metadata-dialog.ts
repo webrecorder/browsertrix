@@ -208,7 +208,7 @@ export class CollectionMetadataDialog extends BtrixElement {
           this.selectCollectionAccess?.value ||
           this.collection?.access ||
           CollectionAccess.Private,
-        defaultThumbnailName: DEFAULT_THUMBNAIL.name,
+        defaultThumbnailName: DEFAULT_THUMBNAIL,
       });
       let path = `/orgs/${this.orgId}/collections`;
       let method = "POST";

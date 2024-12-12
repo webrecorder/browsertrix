@@ -13,34 +13,27 @@ export enum Thumbnail {
   Green = "thumbnail-green",
   Orange = "thumbnail-orange",
   Yellow = "thumbnail-yellow",
-  // Custom = "thumbnail-custom",
 }
+
+export const DEFAULT_THUMBNAIL = Thumbnail.Cyan;
 
 @localized()
 @customElement("btrix-collection-thumbnail")
 export class CollectionThumbnail extends BtrixElement {
-  static readonly Variants: Record<Thumbnail, { name: string; path: string }> =
-    {
-      [Thumbnail.Cyan]: {
-        name: `${Thumbnail.Cyan}.avif`,
-        path: thumbnailCyanSrc,
-      },
-      [Thumbnail.Green]: {
-        name: `${Thumbnail.Green}.avif`,
-        path: thumbnailGreenSrc,
-      },
-      [Thumbnail.Orange]: {
-        name: `${Thumbnail.Orange}.avif`,
-        path: thumbnailOrangeSrc,
-      },
-      [Thumbnail.Yellow]: {
-        name: `${Thumbnail.Yellow}.avif`,
-        path: thumbnailYellowSrc,
-      },
-      // [Thumbnail.Custom]: {
-      //   name: `${Thumbnail.Custom}.jpeg`,
-      // },
-    };
+  static readonly Variants: Record<Thumbnail, { path: string }> = {
+    [Thumbnail.Cyan]: {
+      path: thumbnailCyanSrc,
+    },
+    [Thumbnail.Green]: {
+      path: thumbnailGreenSrc,
+    },
+    [Thumbnail.Orange]: {
+      path: thumbnailOrangeSrc,
+    },
+    [Thumbnail.Yellow]: {
+      path: thumbnailYellowSrc,
+    },
+  };
 
   @property({ type: String })
   src?: string;
@@ -49,10 +42,11 @@ export class CollectionThumbnail extends BtrixElement {
     return html`
       <img
         class="aspect-video rounded-lg border border-cyan-100 bg-slate-50 object-cover"
-        src=${this.src || DEFAULT_THUMBNAIL.path!}
+        src=${this.src || DEFAULT_THUMBNAIL_VARIANT.path}
       />
     `;
   }
 }
 
-export const DEFAULT_THUMBNAIL = CollectionThumbnail.Variants[Thumbnail.Cyan];
+export const DEFAULT_THUMBNAIL_VARIANT =
+  CollectionThumbnail.Variants[DEFAULT_THUMBNAIL];

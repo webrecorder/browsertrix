@@ -4,7 +4,6 @@ import type {
   SlDetails,
   SlSelectEvent,
 } from "@shoelace-style/shoelace";
-import clsx from "clsx";
 import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -12,7 +11,7 @@ import { when } from "lit/directives/when.js";
 
 import {
   CollectionThumbnail,
-  DEFAULT_THUMBNAIL,
+  DEFAULT_THUMBNAIL_VARIANT,
   Thumbnail,
 } from "./collection-thumbnail";
 import { SelectCollectionAccess } from "./select-collection-access";
@@ -22,10 +21,9 @@ import { ClipboardController } from "@/controllers/clipboard";
 import { RouteNamespace } from "@/routes";
 import {
   CollectionAccess,
-  PublicCollection,
   type Collection,
+  type PublicCollection,
 } from "@/types/collection";
-import { tw } from "@/utils/tailwind";
 
 export type SelectVisibilityDetail = {
   item: { value: CollectionAccess };
@@ -262,16 +260,16 @@ export class ShareCollection extends BtrixElement {
   }
 
   private renderThumbnails() {
-    let selectedImgSrc = DEFAULT_THUMBNAIL.path;
+    let selectedImgSrc = DEFAULT_THUMBNAIL_VARIANT.path;
 
     if (this.collection?.defaultThumbnailName) {
       const { defaultThumbnailName } = this.collection;
-      const thumbnail = Object.values(CollectionThumbnail.Variants).find(
-        ({ name }) => name === defaultThumbnailName,
+      const variant = Object.entries(CollectionThumbnail.Variants).find(
+        ([name]) => name === defaultThumbnailName,
       );
 
-      if (thumbnail) {
-        selectedImgSrc = thumbnail.path;
+      if (variant) {
+        selectedImgSrc = variant[1].path;
       }
     } else if (this.collection?.thumbnail) {
       selectedImgSrc = this.collection.thumbnail.path;
@@ -290,54 +288,37 @@ export class ShareCollection extends BtrixElement {
         path = (thumbnail as NonNullable<PublicCollection["thumbnail"]>).path;
       }
 
-      let content = html``;
-      let tooltipContent = msg("Use thumbnail");
-      let classNames = "";
-
-      if (path) {
-        content = html`
-          <div
-            class="flex size-full flex-col items-center justify-center bg-cover"
-            style="background-image:url('${path}')"
-          >
-            ${path === selectedImgSrc
-              ? html`<sl-icon
-                  class="size-10 text-white drop-shadow-md"
-                  name="check-lg"
-                ></sl-icon>`
-              : nothing}
-          </div>
-        `;
-      } else {
-        content = html`<sl-icon class="size-10" name="plus"></sl-icon>`;
-        tooltipContent = msg("Choose page thumbnail");
-        // Render as select button
-        classNames = tw`flex flex-col items-center justify-center bg-neutral-50 text-blue-400 hover:text-blue-500`;
+      if (!path) {
+        console.debug("no path for thumbnail:", thumbnail);
+        return;
       }
 
       return html`
-        <sl-tooltip content=${tooltipContent || msg("Use thumbnail")}>
+        <sl-tooltip content=${msg("Use thumbnail")}>
           <button
-            class=${clsx(
-              "flex-1 aspect-video overflow-hidden rounded ring-1 ring-neutral-300 transition-all hover:ring-2 hover:ring-blue-300",
-              classNames,
-            )}
+            class="aspect-video flex-1 overflow-hidden rounded ring-1 ring-neutral-300 transition-all hover:ring-2 hover:ring-blue-300"
             @click=${() => {
-              if (path) {
-                this.dispatchEvent(
-                  new CustomEvent<SelectThumbnailDetail>(
-                    "btrix-select-thumbnail",
-                    {
-                      detail: { defaultThumbnailName: name },
-                    },
-                  ),
-                );
-              } else {
-                console.log("TODO choose");
-              }
+              this.dispatchEvent(
+                new CustomEvent<SelectThumbnailDetail>(
+                  "btrix-select-thumbnail",
+                  {
+                    detail: { defaultThumbnailName: name },
+                  },
+                ),
+              );
             }}
           >
-            ${content}
+            <div
+              class="flex size-full flex-col items-center justify-center bg-cover"
+              style="background-image:url('${path}')"
+            >
+              ${path === selectedImgSrc
+                ? html`<sl-icon
+                    class="size-10 text-white drop-shadow-md"
+                    name="check-lg"
+                  ></sl-icon>`
+                : nothing}
+            </div>
           </button>
         </sl-tooltip>
       `;

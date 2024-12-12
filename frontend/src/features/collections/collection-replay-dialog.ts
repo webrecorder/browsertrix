@@ -6,7 +6,6 @@ import { customElement, property, query, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
-import { CollectionThumbnail, Thumbnail } from "./collection-thumbnail";
 import type { SelectSnapshotDetail } from "./select-collection-start-page";
 
 import { BtrixElement } from "@/classes/BtrixElement";
@@ -40,12 +39,14 @@ export class CollectionStartPageDialog extends BtrixElement {
   @property({ type: String })
   collectionId?: string;
 
-  @property({ type: Object })
-  home?: {
-    url: string | null;
-    pageId: string | null;
-    ts: string | null;
-  };
+  @property({ type: String })
+  homeUrl?: string | null = null;
+
+  @property({ type: String })
+  homePageId?: string | null = null;
+
+  @property({ type: String })
+  homeTs?: string | null = null;
 
   @property({ type: Boolean })
   open = false;
@@ -75,7 +76,7 @@ export class CollectionStartPageDialog extends BtrixElement {
   private readonly thumbnailPreview?: HTMLIFrameElement | null;
 
   willUpdate(changedProperties: PropertyValues<this>) {
-    if (changedProperties.has("home") && this.home?.url) {
+    if (changedProperties.has("homeUrl") && this.homeUrl) {
       this.homeView = HomeView.URL;
     }
   }
@@ -131,7 +132,13 @@ export class CollectionStartPageDialog extends BtrixElement {
         ${msg("Enter a Page URL to preview it")}
       </p>
     `;
-    const snapshot = this.home?.url ? this.home : this.selectedSnapshot;
+    const snapshot = this.homeUrl
+      ? {
+          url: this.homeUrl,
+          ts: this.homeTs,
+          pageId: this.homePageId,
+        }
+      : this.selectedSnapshot;
 
     if (snapshot) {
       urlPreview = html`
@@ -215,8 +222,8 @@ export class CollectionStartPageDialog extends BtrixElement {
             <section>
               <btrix-select-collection-start-page
                 .collectionId=${this.collectionId}
-                .homeUrl=${this.home?.url}
-                .homeTs=${this.home?.ts}
+                .homeUrl=${this.homeUrl}
+                .homeTs=${this.homeTs}
                 @btrix-select=${async (
                   e: CustomEvent<SelectSnapshotDetail>,
                 ) => {
@@ -252,6 +259,7 @@ export class CollectionStartPageDialog extends BtrixElement {
       customColl: this.collectionId,
       embed: "default",
       noCache: 1,
+      noSandbox: 1,
     });
 
     return html`<div class="aspect-video w-[200%]">
@@ -278,16 +286,21 @@ export class CollectionStartPageDialog extends BtrixElement {
           (homeView === HomeView.URL && this.selectedSnapshot?.pageId) || null,
       });
 
-      const shouldUpload = homeView === HomeView.URL && useThumbnail === "on";
-      const { name: fileName } = CollectionThumbnail.Variants[Thumbnail.Custom];
+      const shouldUpload =
+        homeView === HomeView.URL &&
+        useThumbnail === "on" &&
+        this.selectedSnapshot &&
+        this.homePageId !== this.selectedSnapshot.pageId;
+      // TODO get filename from rwp?
+      const fileName = `page-thumbnail_${this.selectedSnapshot?.pageId}.jpeg`;
       let file: File | undefined;
 
       if (shouldUpload && this.thumbnailPreview?.src) {
+        const { src } = this.thumbnailPreview;
+
         // Wait to get the thumbnail image before closing the dialog
         try {
-          const resp = await this.thumbnailPreview.contentWindow!.fetch(
-            this.thumbnailPreview.src,
-          );
+          const resp = await this.thumbnailPreview.contentWindow!.fetch(src);
           const blob = await resp.blob();
 
           file = new File([blob], fileName, {
@@ -308,9 +321,22 @@ export class CollectionStartPageDialog extends BtrixElement {
       this.open = false;
 
       if (shouldUpload) {
-        if (file) {
-          void this.uploadThumbnail({ file, fileName });
-        } else {
+        try {
+          if (!file || !fileName) throw new Error("file or fileName missing");
+          await this.api.upload(
+            `/orgs/${this.orgId}/collections/${this.collectionId}/thumbnail?filename=${fileName}`,
+            file,
+          );
+          await this.updateThumbnail({ defaultThumbnailName: null });
+
+          this.notify.toast({
+            message: msg("Home view and collection thumbnail updated."),
+            variant: "success",
+            icon: "check2-circle",
+          });
+        } catch (err) {
+          console.debug(err);
+
           this.notify.toast({
             message: msg(
               "Home view updated, but couldn't update collection thumbnail at this time.",
@@ -333,42 +359,18 @@ export class CollectionStartPageDialog extends BtrixElement {
     }
   }
 
-  private async uploadThumbnail({
-    file,
-    fileName,
+  private async updateThumbnail({
+    defaultThumbnailName,
   }: {
-    file: File;
-    fileName: string;
+    defaultThumbnailName: string | null;
   }) {
-    try {
-      await this.api.upload(
-        `/orgs/${this.orgId}/collections/${this.collectionId}/thumbnail?filename=${window.encodeURIComponent(fileName)}`,
-        file,
-      );
-      await this.api.fetch<{ updated: boolean }>(
-        `/orgs/${this.orgId}/collections/${this.collectionId}`,
-        {
-          method: "PATCH",
-          body: JSON.stringify({ defaultThumbnailName: null }),
-        },
-      );
-
-      this.notify.toast({
-        message: msg("Home view and collection thumbnail updated."),
-        variant: "success",
-        icon: "check2-circle",
-      });
-    } catch (err) {
-      console.debug(err);
-
-      this.notify.toast({
-        message: msg(
-          "Home view updated, but couldn't update collection thumbnail at this time.",
-        ),
-        variant: "warning",
-        icon: "exclamation-triangle",
-      });
-    }
+    return this.api.fetch<{ updated: boolean }>(
+      `/orgs/${this.orgId}/collections/${this.collectionId}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ defaultThumbnailName }),
+      },
+    );
   }
 
   private async updateUrl({ pageId }: { pageId: string | null }) {

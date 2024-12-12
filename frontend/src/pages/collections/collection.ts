@@ -59,8 +59,13 @@ export class Collection extends BtrixElement {
     task: async ([slug, collectionId]) => {
       if (!slug || !collectionId)
         throw new Error("slug and collection required");
-      const org = await this.fetchCollection({ slug, collectionId });
-      return org;
+      const collection = await this.fetchCollection({ slug, collectionId });
+
+      if (!collection.crawlCount && (this.tab as unknown) === Tab.Replay) {
+        this.tab = Tab.About;
+      }
+
+      return collection;
     },
     args: () => [this.slug, this.collectionId] as const,
   });
@@ -135,10 +140,13 @@ export class Collection extends BtrixElement {
         header,
         () => html`
           <nav class="mb-3 flex gap-2">
-            ${Object.values(Tab).map(this.renderTab)}
+            ${when(collection.crawlCount, () => this.renderTab(Tab.Replay))}
+            ${this.renderTab(Tab.About)}
           </nav>
 
-          ${panel(Tab.Replay, this.renderReplay(collection))}
+          ${when(collection.crawlCount, () =>
+            panel(Tab.Replay, this.renderReplay(collection)),
+          )}
           ${panel(Tab.About, this.renderAbout(collection))}
         `,
       )}
@@ -173,10 +181,6 @@ export class Collection extends BtrixElement {
   };
 
   private renderReplay(collection: PublicCollection) {
-    if (!collection.crawlCount) {
-      return html` TODO `;
-    }
-
     const replaySource = new URL(
       `/api/orgs/${collection.oid}/collections/${this.collectionId}/public/replay.json`,
       window.location.href,

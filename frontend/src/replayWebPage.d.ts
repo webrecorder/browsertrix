@@ -13,7 +13,7 @@
  * @fires rwp-url-change
  * @fires rwp-page-loading
  */
-class ReplayWebPage {
+class ReplayWebPage extends HTMLElement {
   fullReload(): void {}
 }
 
