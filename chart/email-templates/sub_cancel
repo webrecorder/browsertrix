@@ -4,12 +4,11 @@ Your Subscription Has Been Canceled
 <body>
 <p>Hello {{ name }},</p>
 
-<p>Your Browsertrix subscription has been cancelled at the end of this
+<p>The Browsertrix subscription for "{{ org_name }}" has been cancelled at the end of this
 subscription period.</p>
 
-<p>On <strong>{{ cancel_date }}, we will delete your account and all data hosted on Browsertrix under:</p>
 
-<a href="{{ org_url}}">{{ org_url }}</a>
+<p style="font-weight: bold">{{ cancel_date }} GMT, this organization will be deleted along with all data hosted on Browsertrix under: <a href="{{ org_url}}">{{ org_url }}</a></p>
 
 <p>You can continue to use Browsertrix and download your data before this date. If you change your mind, you can still resubscribe
 by going to <i>Settings -> Billing</i> tab after logging in.</p>
