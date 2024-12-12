@@ -75,6 +75,8 @@ data:
 
   SALES_EMAIL: "{{ .Values.sales_email }}"
 
+  USER_SURVEY_URL: "{{ .Values.user_survey_url }}"
+
   LOG_SENT_EMAILS: "{{ .Values.email.log_sent_emails }}"
 
   BACKEND_IMAGE: "{{ .Values.backend_image }}"
@@ -194,7 +196,7 @@ metadata:
 
 data:
 {{- $email_templates := .Values.email.templates | default dict }}
-{{- range tuple "failed_bg_job" "invite" "password_reset" "validate" }}
+{{- range tuple "failed_bg_job" "invite" "password_reset" "validate" "sub_cancel" }}
   {{ . }}: |
 {{ ((get $email_templates . ) | default ($.Files.Get (printf "%s/%s" "email-templates" . ))) | indent 4 }}
   {{- end }}

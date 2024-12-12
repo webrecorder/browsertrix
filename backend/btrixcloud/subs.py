@@ -114,6 +114,14 @@ class SubOps:
             )
 
         await self.add_sub_event("update", update, org.id)
+
+        if update.futureCancelDate:
+            users = await self.org_ops.get_users_for_org(org, UserRole.OWNER)
+            for user in users:
+                await self.user_manager.email.send_subscription_will_be_canceled(
+                    update.futureCancelDate, user.name, user.email, org
+                )
+
         return {"updated": True}
 
     async def cancel_subscription(self, cancel: SubscriptionCancel) -> dict[str, bool]:
