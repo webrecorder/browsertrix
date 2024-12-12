@@ -151,7 +151,7 @@ export class CollectionDetail extends BtrixElement {
               e: CustomEvent<SelectThumbnailDetail>,
             ) => {
               e.stopPropagation();
-              void this.updateThumbnail(e.detail.fileName);
+              void this.updateThumbnail(e.detail);
             }}
           ></btrix-share-collection>
           ${when(this.isCrawler, this.renderActions)}
@@ -777,7 +777,11 @@ export class CollectionDetail extends BtrixElement {
     }
   }
 
-  async updateThumbnail(defaultThumbnailName: string) {
+  async updateThumbnail({
+    defaultThumbnailName,
+  }: {
+    defaultThumbnailName: string;
+  }) {
     const prevValue = this.collection?.defaultThumbnailName;
 
     // Optimistic update

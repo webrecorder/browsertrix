@@ -4,6 +4,7 @@ import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
+import queryString from "query-string";
 
 import { CollectionThumbnail, Thumbnail } from "./collection-thumbnail";
 import type { SelectSnapshotDetail } from "./select-collection-start-page";
@@ -245,12 +246,19 @@ export class CollectionStartPageDialog extends BtrixElement {
 
   private renderReplay() {
     const replaySource = `/api/orgs/${this.orgId}/collections/${this.collectionId}/replay.json`;
+    // TODO Get query from replay-web-page embed
+    const query = queryString.stringify({
+      source: replaySource,
+      customColl: this.collectionId,
+      embed: "default",
+      noCache: 1,
+    });
 
     return html`<div class="aspect-video w-[200%]">
       <div class="pointer-events-none aspect-video origin-top-left scale-50">
         <iframe
           class="inline-block size-full"
-          src=${`/replay/?source=${window.encodeURIComponent(replaySource)}&embed=default&noCache=1#view=pages`}
+          src=${`/replay/?${query}#view=pages`}
         ></iframe>
       </div>
     </div>`;
@@ -271,16 +279,10 @@ export class CollectionStartPageDialog extends BtrixElement {
       });
 
       const shouldUpload = homeView === HomeView.URL && useThumbnail === "on";
-      const { fileName } = CollectionThumbnail.Variants[Thumbnail.Custom];
+      const { name: fileName } = CollectionThumbnail.Variants[Thumbnail.Custom];
       let file: File | undefined;
 
       if (shouldUpload && this.thumbnailPreview?.src) {
-        this.notify.toast({
-          message: msg("Updating collection thumbnail..."),
-          variant: "info",
-          icon: "hourglass-split",
-        });
-
         // Wait to get the thumbnail image before closing the dialog
         try {
           const resp = await this.thumbnailPreview.contentWindow!.fetch(
@@ -347,7 +349,7 @@ export class CollectionStartPageDialog extends BtrixElement {
         `/orgs/${this.orgId}/collections/${this.collectionId}`,
         {
           method: "PATCH",
-          body: JSON.stringify({ defaultThumbnailName: fileName }),
+          body: JSON.stringify({ defaultThumbnailName: null }),
         },
       );
 

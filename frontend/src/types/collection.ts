@@ -19,6 +19,7 @@ export const publicCollectionSchema = z.object({
     .object({
       name: z.string(),
       path: z.string().url(),
+      originalFilename: z.string().nullable().optional(),
     })
     .nullable(),
   defaultThumbnailName: z.string().nullable(),

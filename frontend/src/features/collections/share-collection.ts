@@ -20,7 +20,11 @@ import { SelectCollectionAccess } from "./select-collection-access";
 import { BtrixElement } from "@/classes/BtrixElement";
 import { ClipboardController } from "@/controllers/clipboard";
 import { RouteNamespace } from "@/routes";
-import { CollectionAccess, type Collection } from "@/types/collection";
+import {
+  CollectionAccess,
+  PublicCollection,
+  type Collection,
+} from "@/types/collection";
 import { tw } from "@/utils/tailwind";
 
 export type SelectVisibilityDetail = {
@@ -28,7 +32,7 @@ export type SelectVisibilityDetail = {
 };
 
 export type SelectThumbnailDetail = {
-  fileName: string;
+  defaultThumbnailName: Thumbnail | null;
 };
 
 /**
@@ -258,47 +262,47 @@ export class ShareCollection extends BtrixElement {
   }
 
   private renderThumbnails() {
-    let selectedImgSrc = DEFAULT_THUMBNAIL.src;
+    let selectedImgSrc = DEFAULT_THUMBNAIL.path;
 
-    if (
-      this.collection?.defaultThumbnailName ===
-        CollectionThumbnail.Variants[Thumbnail.Custom].fileName &&
-      this.collection.thumbnail
-    ) {
-      selectedImgSrc = this.collection.thumbnail.path;
-    } else if (this.collection?.defaultThumbnailName) {
+    if (this.collection?.defaultThumbnailName) {
       const { defaultThumbnailName } = this.collection;
       const thumbnail = Object.values(CollectionThumbnail.Variants).find(
-        ({ fileName }) => fileName === defaultThumbnailName,
+        ({ name }) => name === defaultThumbnailName,
       );
 
       if (thumbnail) {
-        selectedImgSrc = thumbnail.src;
+        selectedImgSrc = thumbnail.path;
       }
+    } else if (this.collection?.thumbnail) {
+      selectedImgSrc = this.collection.thumbnail.path;
     }
 
-    const thumbnail = (thumbnail: Thumbnail) => {
-      const variant = CollectionThumbnail.Variants[thumbnail];
-      const { fileName } = variant;
-      let { src } = variant;
+    const thumbnail = (
+      thumbnail: Thumbnail | NonNullable<PublicCollection["thumbnail"]>,
+    ) => {
+      let name: Thumbnail | null = null;
+      let path = "";
 
-      if (thumbnail === Thumbnail.Custom) {
-        src = this.collection?.thumbnail?.path;
+      if (Object.values(Thumbnail).some((t) => t === thumbnail)) {
+        name = thumbnail as Thumbnail;
+        path = CollectionThumbnail.Variants[name].path;
+      } else {
+        path = (thumbnail as NonNullable<PublicCollection["thumbnail"]>).path;
       }
 
       let content = html``;
       let tooltipContent = msg("Use thumbnail");
       let classNames = "";
 
-      if (src) {
+      if (path) {
         content = html`
           <div
             class="flex size-full flex-col items-center justify-center bg-cover"
-            style="background-image:url('${src}')"
+            style="background-image:url('${path}')"
           >
-            ${src === selectedImgSrc
+            ${path === selectedImgSrc
               ? html`<sl-icon
-                  class="size-10 text-white drop-shadow"
+                  class="size-10 text-white drop-shadow-md"
                   name="check-lg"
                 ></sl-icon>`
               : nothing}
@@ -319,12 +323,12 @@ export class ShareCollection extends BtrixElement {
               classNames,
             )}
             @click=${() => {
-              if (src) {
+              if (path) {
                 this.dispatchEvent(
                   new CustomEvent<SelectThumbnailDetail>(
                     "btrix-select-thumbnail",
                     {
-                      detail: { fileName },
+                      detail: { defaultThumbnailName: name },
                     },
                   ),
                 );
@@ -341,7 +345,7 @@ export class ShareCollection extends BtrixElement {
 
     return html`
       <div class="flex gap-3">
-        ${when(this.collection?.thumbnail, () => thumbnail(Thumbnail.Custom))}
+        ${when(this.collection?.thumbnail, (t) => thumbnail(t))}
         ${thumbnail(Thumbnail.Cyan)} ${thumbnail(Thumbnail.Green)}
         ${thumbnail(Thumbnail.Yellow)} ${thumbnail(Thumbnail.Orange)}
       </div>

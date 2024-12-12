@@ -208,7 +208,7 @@ export class CollectionMetadataDialog extends BtrixElement {
           this.selectCollectionAccess?.value ||
           this.collection?.access ||
           CollectionAccess.Private,
-        defaultThumbnailName: DEFAULT_THUMBNAIL.fileName,
+        defaultThumbnailName: DEFAULT_THUMBNAIL.name,
       });
       let path = `/orgs/${this.orgId}/collections`;
       let method = "POST";
@@ -229,7 +229,9 @@ export class CollectionMetadataDialog extends BtrixElement {
         }) as CollectionSavedEvent,
       );
       this.notify.toast({
-        message: msg(str`"${data.name || name}" metadata updated`),
+        message: this.collection
+          ? msg(str`"${data.name || name}" metadata updated`)
+          : msg(str`Created "${data.name || name}" collection`),
         variant: "success",
         icon: "check2-circle",
         id: "collection-metadata-status",

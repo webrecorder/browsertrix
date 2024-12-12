@@ -72,9 +72,9 @@ export class CollectionsGrid extends BtrixElement {
                     src=${ifDefined(
                       collection.thumbnail?.path ||
                         Object.values(CollectionThumbnail.Variants).find(
-                          ({ fileName }) =>
+                          ({ name: fileName }) =>
                             fileName === collection.defaultThumbnailName,
-                        )?.src,
+                        )?.path,
                     )}
                   ></btrix-collection-thumbnail>
                   ${this.renderDateBadge(collection)}
