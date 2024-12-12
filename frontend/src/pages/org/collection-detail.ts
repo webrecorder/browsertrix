@@ -64,6 +64,9 @@ export class CollectionDetail extends BtrixElement {
   @state()
   private isEditingDescription = false;
 
+  @state()
+  private isRwpLoaded = false;
+
   @query("replay-web-page")
   private readonly replayEmbed?: ReplayWebPage | null;
 
@@ -299,6 +302,7 @@ export class CollectionDetail extends BtrixElement {
               ts: this.collection.homeUrlTs,
             }
           : undefined}
+        ?replayLoaded=${this.isRwpLoaded}
       ></btrix-collection-replay-dialog>
 
       ${when(
@@ -432,7 +436,17 @@ export class CollectionDetail extends BtrixElement {
             ${msg("Edit Metadata")}
           </sl-menu-item>
           <sl-menu-item
-            @click=${() => (this.openDialogName = "editStartPage")}
+            @click=${async () => {
+              // replay-web-page needs to be available in order to configure start page
+              if (this.collectionTab !== Tab.Replay) {
+                this.navigate.to(
+                  `${this.navigate.orgBasePath}/collections/view/${this.collectionId}/${Tab.Replay}`,
+                );
+                await this.updateComplete;
+              }
+
+              this.openDialogName = "editStartPage";
+            }}
             ?disabled=${!this.collection?.crawlCount}
           >
             <sl-icon name="house-gear" slot="prefix"></sl-icon>
@@ -701,10 +715,17 @@ export class CollectionDetail extends BtrixElement {
           source=${replaySource}
           replayBase="/replay/"
           config="${config}"
+          coll=${this.collectionId}
           url=${ifDefined(this.collection.homeUrl || undefined)}
           ts=${ifDefined(formatRwpTimestamp(this.collection.homeUrlTs))}
           noSandbox="true"
           noCache="true"
+          @rwp-url-change=${() => {
+            if (!this.isRwpLoaded) {
+              // First load
+              this.isRwpLoaded = true;
+            }
+          }}
         ></replay-web-page>
       </div>
     </section>`;

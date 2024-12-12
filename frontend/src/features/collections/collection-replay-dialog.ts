@@ -6,10 +6,7 @@ import { customElement, property, query, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 
 import { CollectionThumbnail, Thumbnail } from "./collection-thumbnail";
-import type {
-  SelectCollectionStartPage,
-  SelectSnapshotDetail,
-} from "./select-collection-start-page";
+import type { SelectSnapshotDetail } from "./select-collection-start-page";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
@@ -52,6 +49,9 @@ export class CollectionStartPageDialog extends BtrixElement {
   @property({ type: Boolean })
   open = false;
 
+  @property({ type: Boolean })
+  replayLoaded = false;
+
   @state()
   homeView = HomeView.Pages;
 
@@ -59,10 +59,7 @@ export class CollectionStartPageDialog extends BtrixElement {
   private showContent = false;
 
   @state()
-  private isRwpLoaded = false;
-
-  @query("btrix-select-collection-start-page")
-  private readonly selectCollectionStartPage?: SelectCollectionStartPage | null;
+  private selectedSnapshot?: SelectSnapshotDetail["item"];
 
   @query("replay-web-page")
   private readonly replayEmbed?: ReplayWebPage | null;
@@ -102,7 +99,7 @@ export class CollectionStartPageDialog extends BtrixElement {
           <sl-button
             variant="primary"
             size="small"
-            ?disabled=${!this.isRwpLoaded}
+            ?disabled=${!this.replayLoaded}
             @click=${() => {
               this.form?.requestSubmit();
             }}
@@ -132,12 +129,14 @@ export class CollectionStartPageDialog extends BtrixElement {
         ${msg("Enter a Page URL to preview it")}
       </p>
     `;
-    if (this.home?.url) {
+    const snapshot = this.home?.url ? this.home : this.selectedSnapshot;
+
+    if (snapshot) {
       urlPreview = html`
         <iframe
           class="inline-block size-full"
           id="thumbnailPreview"
-          src=${`/replay/w/${this.collectionId}/${formatRwpTimestamp(this.home.ts)}id_/urn:thumbnail:${this.home.url}`}
+          src=${`/replay/w/${this.collectionId}/${formatRwpTimestamp(snapshot.ts)}id_/urn:thumbnail:${snapshot.url}`}
         >
         </iframe>
       `;
@@ -150,7 +149,7 @@ export class CollectionStartPageDialog extends BtrixElement {
           : ""} relative aspect-video overflow-hidden rounded-lg border bg-slate-50"
       >
         ${when(
-          this.homeView === HomeView.URL && this.isRwpLoaded,
+          this.homeView === HomeView.URL && this.replayLoaded,
           () => urlPreview,
         )}
         <div class="${this.homeView === HomeView.URL ? "offscreen" : ""}">
@@ -158,7 +157,7 @@ export class CollectionStartPageDialog extends BtrixElement {
         </div>
 
         ${when(
-          !this.isRwpLoaded,
+          !this.replayLoaded,
           () => html`
             <div
               class="absolute inset-0 flex items-center justify-center text-2xl"
@@ -181,12 +180,12 @@ export class CollectionStartPageDialog extends BtrixElement {
           label=${msg("Select View")}
           value=${this.homeView}
           hoist
-          ?disabled=${!this.isRwpLoaded}
+          ?disabled=${!this.replayLoaded}
           @sl-change=${(e: SlChangeEvent) => {
             this.homeView = (e.currentTarget as SlSelect).value as HomeView;
           }}
         >
-          ${this.isRwpLoaded
+          ${this.replayLoaded
             ? html`<sl-icon slot="prefix" name=${icon}></sl-icon>`
             : html`<sl-spinner slot="prefix"></sl-spinner>`}
 
@@ -219,12 +218,7 @@ export class CollectionStartPageDialog extends BtrixElement {
                 @btrix-select=${async (
                   e: CustomEvent<SelectSnapshotDetail>,
                 ) => {
-                  const { ts, url } = e.detail.item;
-
-                  this.thumbnailPreview?.setAttribute(
-                    "src",
-                    `/replay/w/${this.collectionId}/${formatRwpTimestamp(ts)}id_/urn:thumbnail:${url}`,
-                  );
+                  this.selectedSnapshot = e.detail.item;
                 }}
               ></btrix-select-collection-start-page>
 
@@ -250,25 +244,13 @@ export class CollectionStartPageDialog extends BtrixElement {
 
   private renderReplay() {
     const replaySource = `/api/orgs/${this.orgId}/collections/${this.collectionId}/replay.json`;
-    const headers = this.authState?.headers;
-    const config = JSON.stringify({ headers });
 
     return html`<div class="aspect-video w-[200%]">
       <div class="pointer-events-none aspect-video origin-top-left scale-50">
-        <replay-web-page
-          source=${replaySource}
-          replayBase="/replay/"
-          config="${config}"
-          coll=${this.collectionId!}
-          noSandbox="true"
-          noCache="true"
-          @rwp-url-change=${() => {
-            if (!this.isRwpLoaded) {
-              // First load
-              this.isRwpLoaded = true;
-            }
-          }}
-        ></replay-web-page>
+        <iframe
+          class="inline-block size-full"
+          src=${`/replay/?source=${window.encodeURIComponent(replaySource)}&embed=default&noCache=1#view=pages`}
+        ></iframe>
       </div>
     </div>`;
   }
@@ -282,9 +264,7 @@ export class CollectionStartPageDialog extends BtrixElement {
     try {
       await this.updateUrl({
         pageId:
-          (homeView === HomeView.URL &&
-            this.selectCollectionStartPage?.snapshot?.pageId) ||
-          null,
+          (homeView === HomeView.URL && this.selectedSnapshot?.pageId) || null,
       });
 
       if (homeView === HomeView.URL) {
