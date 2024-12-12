@@ -117,15 +117,28 @@ class SubOps:
 
         await self.add_sub_event("update", update, org.id)
 
-        if (
-            update.futureCancelDate
-            and org.subscription
-            and org.subscription.futureCancelDate != update.futureCancelDate
-            and self.user_manager.email
-        ):
+        if update.futureCancelDate and self.should_send_cancel_email(org, update):
             asyncio.create_task(self.send_cancel_emails(update.futureCancelDate, org))
 
         return {"updated": True}
+
+    def should_send_cancel_email(self, org: Organization, update: SubscriptionUpdate):
+        """Should we sent a cancellation email"""
+        if not update.futureCancelDate:
+            return False
+
+        if not org.subscription:
+            return False
+
+        # new cancel date, send
+        if update.futureCancelDate != org.subscription.futureCancelDate:
+            return True
+
+        # if 'trialing', always send
+        if org.subscription.status == "trialing":
+            return True
+
+        return False
 
     async def send_cancel_emails(self, cancel_date: datetime, org: Organization):
         """Asynchronously send cancellation emails to all org admins"""
