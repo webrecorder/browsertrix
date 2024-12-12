@@ -122,6 +122,11 @@ sign_up_url: ""
 # set e-mail to show for subscriptions related info
 sales_email: ""
 
+
+# survey e-mail
+# if set, subscription cancellation e-mails will include a link to this survey
+user_survey_url: ""
+
 # if set, print last 'log_failed_crawl_lines' of each failed
 # crawl pod to backend operator stdout
 # mostly intended for debugging / testing
