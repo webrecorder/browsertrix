@@ -10,6 +10,10 @@ describe("Localize", () => {
     window.sessionStorage.clear();
     AppStateService.resetAll();
     document.documentElement.lang = "";
+    AppStateService.partialUpdateUserPreferences({
+      useBrowserLanguageForFormatting: false,
+    });
+    // TODO write tests with for `useBrowserLanguageForFormatting`
   });
 
   afterEach(() => {
