@@ -496,7 +496,7 @@ class OrgOps:
         org_data = await self.orgs.find_one_and_update(
             {"subscription.subId": update.subId},
             {"$set": query},
-            return_document=ReturnDocument.AFTER,
+            return_document=ReturnDocument.BEFORE,
         )
         if not org_data:
             return None

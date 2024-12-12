@@ -117,7 +117,12 @@ class SubOps:
 
         await self.add_sub_event("update", update, org.id)
 
-        if update.futureCancelDate and self.user_manager.email:
+        if (
+            update.futureCancelDate
+            and org.subscription
+            and org.subscription.futureCancelDate != update.futureCancelDate
+            and self.user_manager.email
+        ):
             asyncio.create_task(self.send_cancel_emails(update.futureCancelDate, org))
 
         return {"updated": True}
