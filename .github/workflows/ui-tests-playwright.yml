@@ -52,14 +52,14 @@ jobs:
         env:
           HUSKY: 0
         run: yarn playwright install --with-deps
-        #if: steps.playwright-cache.outputs.cache-hit != 'true'
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
 
       - name: Install Playwright Deps
         working-directory: frontend
         env:
           HUSKY: 0
         run: yarn playwright install-deps
-        #if: steps.playwright-cache.outputs.cache-hit != 'true'
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
 
       - name: Create env file
         run: |
