@@ -21,6 +21,7 @@ jobs:
           matches:
             - 'backend/**'
             - 'chart/**'
+            - '.github/workflows/k3d-ci.yaml'
 
   btrix-k3d-test:
     timeout-minutes: 45

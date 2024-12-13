@@ -17,6 +17,7 @@ jobs:
         filters: |
           matches:
             - 'backend/**'
+            - '.github/workflows/backend-lint.yaml'
 
   unit-tests:
     needs: paths-filter
