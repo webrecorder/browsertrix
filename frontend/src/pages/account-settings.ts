@@ -424,12 +424,14 @@ export class AccountSettings extends BtrixElement {
         message: msg("Your name has been updated."),
         variant: "success",
         icon: "check2-circle",
+        id: "name-update-status",
       });
     } catch (e) {
       this.notify.toast({
         message: msg("Sorry, couldn't update name at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "name-update-status",
       });
     }
 
@@ -468,12 +470,14 @@ export class AccountSettings extends BtrixElement {
         message: msg("Your email has been updated."),
         variant: "success",
         icon: "check2-circle",
+        id: "email-update-status",
       });
     } catch (e) {
       this.notify.toast({
         message: msg("Sorry, couldn't update email at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "email-update-status",
       });
     }
 
@@ -506,6 +510,7 @@ export class AccountSettings extends BtrixElement {
         message: msg("Your password has been updated."),
         variant: "success",
         icon: "check2-circle",
+        id: "password-update-status",
       });
     } catch (e) {
       if (isApiError(e) && e.details === "invalid_current_password") {
@@ -513,12 +518,14 @@ export class AccountSettings extends BtrixElement {
           message: msg("Please correct your current password and try again."),
           variant: "danger",
           icon: "exclamation-octagon",
+          id: "password-update-status",
         });
       } else {
         this.notify.toast({
           message: msg("Sorry, couldn't update password at this time."),
           variant: "danger",
           icon: "exclamation-octagon",
+          id: "password-update-status",
         });
       }
     }
@@ -540,6 +547,7 @@ export class AccountSettings extends BtrixElement {
       message: msg("Your language preference has been updated."),
       variant: "success",
       icon: "check2-circle",
+      id: "language-update-status",
     });
   };
 }

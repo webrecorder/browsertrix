@@ -1983,6 +1983,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         message,
         variant: "success",
         icon: "check2-circle",
+        id: "workflow-created-status",
       });
 
       this.navigate.to(
@@ -2003,6 +2004,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
             variant: "warning",
             icon: "exclamation-circle",
             duration: 12000,
+            id: "workflow-created-status",
           });
         } else {
           const isConfigError = ({ loc }: Detail) =>

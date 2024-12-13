@@ -165,6 +165,7 @@ export class ExclusionEditor extends LiteElement {
           message: msg(html`Removed exclusion: <code>${regex}</code>`),
           variant: "success",
           icon: "check2-circle",
+          id: "exclusion-edit-status",
         });
 
         this.dispatchEvent(new CustomEvent("on-success"));
@@ -179,6 +180,7 @@ export class ExclusionEditor extends LiteElement {
             : msg("Sorry, couldn't remove exclusion at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "exclusion-edit-status",
       });
     }
   }
@@ -204,6 +206,7 @@ export class ExclusionEditor extends LiteElement {
           ),
           variant: "danger",
           icon: "exclamation-octagon",
+          id: "exclusion-edit-status",
         });
       }
     }
@@ -255,6 +258,7 @@ export class ExclusionEditor extends LiteElement {
           message: msg("Exclusion added."),
           variant: "success",
           icon: "check2-circle",
+          id: "exclusion-edit-status",
         });
 
         this.regex = "";
@@ -280,6 +284,7 @@ export class ExclusionEditor extends LiteElement {
           message: msg("Sorry, couldn't add exclusion at this time."),
           variant: "danger",
           icon: "exclamation-octagon",
+          id: "exclusion-edit-status",
         });
       }
     }

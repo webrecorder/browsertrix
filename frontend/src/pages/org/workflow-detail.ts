@@ -238,6 +238,7 @@ export class WorkflowDetail extends BtrixElement {
             : msg("Sorry, couldn't retrieve Workflow at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "workflow-retrieve-error",
       });
     }
 
@@ -1365,6 +1366,7 @@ export class WorkflowDetail extends BtrixElement {
           message: msg("Updated number of browser windows."),
           variant: "success",
           icon: "check2-circle",
+          id: "browser-windows-update-status",
         });
       } else {
         throw new Error("unhandled API response");
@@ -1376,6 +1378,7 @@ export class WorkflowDetail extends BtrixElement {
         ),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "browser-windows-update-status",
       });
     }
 
@@ -1408,6 +1411,7 @@ export class WorkflowDetail extends BtrixElement {
         ),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "archived-item-retrieve-error",
       });
     }
   }
@@ -1427,6 +1431,7 @@ export class WorkflowDetail extends BtrixElement {
         message: msg("Sorry, couldn't get crawls at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "archived-item-retrieve-error",
       });
     }
   }
@@ -1497,6 +1502,7 @@ export class WorkflowDetail extends BtrixElement {
       message: msg(str`Copied Workflow to new template.`),
       variant: "success",
       icon: "check2-circle",
+      id: "workflow-copied-success",
     });
   }
 
@@ -1519,12 +1525,14 @@ export class WorkflowDetail extends BtrixElement {
         ),
         variant: "success",
         icon: "check2-circle",
+        id: "workflow-delete-status",
       });
     } catch {
       this.notify.toast({
         message: msg("Sorry, couldn't delete Workflow at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "workflow-delete-status",
       });
     }
   }
@@ -1551,6 +1559,7 @@ export class WorkflowDetail extends BtrixElement {
         message: msg("Something went wrong, couldn't cancel crawl."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "crawl-stop-error",
       });
     }
 
@@ -1579,6 +1588,7 @@ export class WorkflowDetail extends BtrixElement {
         message: msg("Something went wrong, couldn't stop crawl."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "crawl-stop-error",
       });
     }
 
@@ -1603,6 +1613,7 @@ export class WorkflowDetail extends BtrixElement {
         message: msg("Starting crawl."),
         variant: "success",
         icon: "check2-circle",
+        id: "crawl-start-status",
       });
     } catch (e) {
       let message = msg("Sorry, couldn't run crawl at this time.");
@@ -1625,6 +1636,7 @@ export class WorkflowDetail extends BtrixElement {
         message: message,
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "crawl-start-status",
       });
     }
   }
@@ -1651,6 +1663,7 @@ export class WorkflowDetail extends BtrixElement {
         message: msg(`Successfully deleted crawl`),
         variant: "success",
         icon: "check2-circle",
+        id: "archived-item-delete-status",
       });
       void this.fetchCrawls();
     } catch (e) {
@@ -1674,6 +1687,7 @@ export class WorkflowDetail extends BtrixElement {
         message: message,
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "archived-item-delete-status",
       });
     }
   }
@@ -1693,6 +1707,7 @@ export class WorkflowDetail extends BtrixElement {
           ),
           variant: "danger",
           icon: "exclamation-octagon",
+          id: "archived-item-retrieve-error",
         });
       }
     }

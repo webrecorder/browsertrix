@@ -946,6 +946,7 @@ export class App extends BtrixElement {
         message: msg("Please log in to continue."),
         variant: "warning",
         icon: "exclamation-triangle",
+        id: "log-in",
       });
     }
   };

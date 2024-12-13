@@ -325,6 +325,7 @@ export class BrowserProfilesNew extends BtrixElement {
         message: msg("Successfully created browser profile."),
         variant: "success",
         icon: "check2-circle",
+        id: "browser-profile-save-status",
       });
 
       this.navigate.to(
@@ -351,6 +352,7 @@ export class BrowserProfilesNew extends BtrixElement {
         message: message,
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "browser-profile-save-status",
       });
     }
   }

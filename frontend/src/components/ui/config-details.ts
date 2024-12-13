@@ -489,6 +489,7 @@ export class ConfigDetails extends BtrixElement {
                 ),
           variant: "danger",
           icon: "exclamation-octagon",
+          id: "collection-fetch-status",
         });
       }
     }

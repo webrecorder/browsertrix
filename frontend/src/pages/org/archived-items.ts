@@ -165,6 +165,7 @@ export class CrawlsList extends BtrixElement {
             ),
             variant: "danger",
             icon: "exclamation-octagon",
+            id: "archived-item-fetch-error",
           });
         }
         throw e;

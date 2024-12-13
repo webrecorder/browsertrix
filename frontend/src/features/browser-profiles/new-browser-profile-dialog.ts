@@ -145,6 +145,7 @@ export class NewBrowserProfileDialog extends LiteElement {
         message: msg("Starting up browser for new profile..."),
         variant: "success",
         icon: "check2-circle",
+        id: "browser-profile-update-status",
       });
       await this.hideDialog();
       this.navTo(
@@ -162,6 +163,7 @@ export class NewBrowserProfileDialog extends LiteElement {
         message: msg("Sorry, couldn't create browser profile at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "browser-profile-update-status",
       });
     }
     this.isSubmitting = false;

@@ -874,6 +874,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
         message: msg("Sorry, couldn't retrieve archived item at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "qa-error",
       });
     }
   }

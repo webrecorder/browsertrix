@@ -236,6 +236,7 @@ export class SelectBrowserProfile extends BtrixElement {
         message: msg("Sorry, couldn't retrieve browser profiles at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "browser-profile-status",
       });
     }
   }
