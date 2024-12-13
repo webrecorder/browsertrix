@@ -9,13 +9,13 @@ jobs:
     name: "Filter Paths"
     runs-on: ubuntu-latest
     outputs:
-      src: ${{ steps.filter.outputs.src }}
+      matches: ${{ steps.filter.outputs.matches }}
     steps:
     - uses: dorny/paths-filter@v3
       id: filter
       with:
         filters: |
-          src:
+          matches:
             - 'frontend/src/**'
             - 'frontend/*.json'
             - 'frontend/*.js'
@@ -26,7 +26,7 @@ jobs:
     name: Unit Tests
     runs-on: ubuntu-latest
     needs: paths-filter
-    if: needs.paths-filter.outputs.src == 'true'
+    if: needs.paths-filter.outputs.matches == 'true'
     steps:
       # Setup:
       - name: Checkout

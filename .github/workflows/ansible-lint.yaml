@@ -1,14 +1,25 @@
 name: ansible-lint
-on:
-  push:
-    paths:
-      - 'ansible/**'
-  pull_request:
-    paths:
-      - 'ansible/**'
+on: [push, pull_request]
 
 jobs:
+  # In order to be able to have required checks, a workflow can't be entirely
+  # skipped: see https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/collaborating-on-repositories-with-code-quality-features/troubleshooting-required-status-checks#handling-skipped-but-required-checks
+  paths-filter:
+    name: "Filter Paths"
+    runs-on: ubuntu-latest
+    outputs:
+      matches: ${{ steps.filter.outputs.matches }}
+    steps:
+    - uses: dorny/paths-filter@v3
+      id: filter
+      with:
+        filters: |
+          matches:
+            - 'ansible/**'
+
   build:
+    needs: paths-filter
+    if: needs.paths-filter.outputs.matches == 'true'
     name: Ansible Lint
     runs-on: ubuntu-latest
 
