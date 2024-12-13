@@ -1,12 +1,13 @@
 import { test } from "@playwright/test";
 import { chromium } from "playwright";
 
-test("test", async ({baseURL}) => {
+test("test", async ({ baseURL }) => {
   const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext();
   const page = await context.newPage();
 
   try {
+    console.log({ baseURL });
     await page.goto(baseURL!);
     await page.waitForLoadState("load");
     await page.waitForSelector('input[name="username"]');
