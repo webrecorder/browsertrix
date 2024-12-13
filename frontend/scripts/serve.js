@@ -1,5 +1,5 @@
 // Serve app locally without building with webpack, e.g. for e2e
-const fs  = require("fs");
+const fs = require("fs");
 const path = require("path");
 
 const express = require("express");
@@ -7,7 +7,7 @@ const { createProxyMiddleware } = require("http-proxy-middleware");
 
 const distPath = path.join(process.cwd(), "dist");
 if (!fs.existsSync(path.join(distPath, "index.html"))) {
-  throw new Error("dist folder is missing")
+  throw new Error("dist folder is missing");
 }
 
 const dotEnvPath = path.resolve(process.cwd(), ".env.local");
@@ -24,13 +24,19 @@ const { devServer } = devConfig;
 devServer.setupMiddlewares([], { app });
 
 Object.keys(devServer.proxy).forEach((path) => {
-  app.use(path, createProxyMiddleware(devServer.proxy[path]));
+  app.use(
+    path,
+    createProxyMiddleware({
+      target: devServer.proxy[path],
+      changeOrigin: true,
+    }),
+  );
 });
 app.use("/", express.static(distPath));
-app.get('/*', (req, res) => {
-  res.sendFile(path.join(distPath, 'index.html'));
-})
+app.get("/*", (req, res) => {
+  res.sendFile(path.join(distPath, "index.html"));
+});
 
 app.listen(9871, () => {
-  console.log("Server listening on port 9871")
+  console.log("Server listening on port 9871");
 });
