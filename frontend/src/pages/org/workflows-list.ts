@@ -742,14 +742,14 @@ export class WorkflowsList extends BtrixElement {
         ),
         variant: "warning",
         icon: "exclamation-triangle",
-        id: "workflow-coped-status",
+        id: "workflow-copied-status",
       });
     } else {
       this.notify.toast({
         message: msg(str`Copied Workflow to new template.`),
         variant: "success",
         icon: "check2-circle",
-        id: "workflow-coped-status",
+        id: "workflow-copied-status",
       });
     }
   }
