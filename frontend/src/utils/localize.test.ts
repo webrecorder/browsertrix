@@ -1,7 +1,7 @@
 import { expect } from "@open-wc/testing";
 import { restore, stub } from "sinon";
 
-import { Localize, withUserLocales } from "./localize";
+import { Localize, mergeLocales } from "./localize";
 import { AppStateService } from "./state";
 
 describe("Localize", () => {
@@ -156,49 +156,40 @@ describe("Localize", () => {
   });
 });
 
-describe("withUserLocales", () => {
+describe("mergeLocales", () => {
   it("returns the target lang when navigator locales don't overlap", () => {
-    stub(window.navigator, "languages").get(() => ["en-US", "ar", "ko"]);
-    expect(withUserLocales("fr")).to.deep.equal(["fr"]);
+    expect(mergeLocales("fr", false, ["en-US", "ar", "ko"])).to.deep.equal([
+      "fr",
+    ]);
   });
 
   it("returns the target lang last when navigator locales do overlap", () => {
-    stub(window.navigator, "languages").get(() => ["fr-FR", "fr-CA", "fr-CH"]);
-    expect(withUserLocales("fr")).to.deep.equal([
-      "fr-FR",
-      "fr-CA",
-      "fr-CH",
-      "fr",
-    ]);
+    expect(
+      mergeLocales("fr", false, ["fr-FR", "fr-CA", "fr-CH"]),
+    ).to.deep.equal(["fr-FR", "fr-CA", "fr-CH", "fr"]);
   });
 
   it("returns the target lang in place last when navigator locales does overlap and contains target lang exactly", () => {
-    stub(window.navigator, "languages").get(() => [
-      "fr-FR",
-      "fr",
-      "fr-CA",
-      "fr-CH",
-    ]);
-    expect(withUserLocales("fr")).to.deep.equal([
-      "fr-FR",
-      "fr",
-      "fr-CA",
-      "fr-CH",
-    ]);
+    expect(
+      mergeLocales("fr", false, ["fr-FR", "fr", "fr-CA", "fr-CH"]),
+    ).to.deep.equal(["fr-FR", "fr", "fr-CA", "fr-CH"]);
   });
 
   it("handles more complicated locale strings", () => {
-    stub(window.navigator, "languages").get(() => [
-      "fr-u-CA-gregory-hc-h12",
-      "ja-Jpan-JP-u-ca-japanese-hc-h12",
-      "fr-Latn-FR-u-ca-gregory-hc-h12",
-      "fr-CA",
-    ]);
-    expect(withUserLocales("fr")).to.deep.equal([
+    expect(
+      mergeLocales("fr", false, [
+        "fr-u-CA-gregory-hc-h12",
+        "ja-Jpan-JP-u-ca-japanese-hc-h12",
+        "fr-Latn-FR-u-ca-gregory-hc-h12",
+        "fr-CA",
+      ]),
+    ).to.deep.equal([
       "fr-u-CA-gregory-hc-h12",
       "fr-Latn-FR-u-ca-gregory-hc-h12",
       "fr-CA",
       "fr",
     ]);
   });
+
+  // TODO test with `useNavigatorLocales = true`
 });
