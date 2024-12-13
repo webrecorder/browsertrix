@@ -118,7 +118,6 @@ export class App extends BtrixElement {
 
     try {
       this.settings = await getAppSettings();
-      await localize.initLanguage();
     } catch (e) {
       console.error(e);
       this.notify.toast({
@@ -127,6 +126,8 @@ export class App extends BtrixElement {
         icon: "exclamation-octagon",
         id: "get-app-settings-error",
       });
+    } finally {
+      await localize.initLanguage();
     }
     super.connectedCallback();
 

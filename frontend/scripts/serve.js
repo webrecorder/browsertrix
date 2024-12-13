@@ -38,5 +38,5 @@ app.get("/*", (req, res) => {
 });
 
 app.listen(9871, () => {
-  console.log("Server listening on port 9871");
+  console.log("Server listening on http://localhost:9871");
 });

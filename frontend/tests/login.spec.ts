@@ -7,7 +7,6 @@ test("test", async ({ baseURL }) => {
   const page = await context.newPage();
 
   try {
-    console.log({ baseURL });
     await page.goto(baseURL!);
     await page.waitForLoadState("load");
     await page.waitForSelector('input[name="username"]');
