@@ -18,7 +18,7 @@ const { devServer } = devConfig;
 
 devServer.setupMiddlewares([], { app });
 
-app.use("/", express.static("dist"));
+app.use("/", express.static(path.join(process.cwd(), "dist")));
 Object.keys(devServer.proxy).forEach((path) => {
   app.use(path, createProxyMiddleware(devServer.proxy[path]));
 });
