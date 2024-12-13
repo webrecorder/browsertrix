@@ -33,8 +33,8 @@ enum Tab {
 const { PASSWORD_MINLENGTH, PASSWORD_MAXLENGTH, PASSWORD_MIN_SCORE } =
   PasswordService;
 
-@localized()
 @customElement("btrix-request-verify")
+@localized()
 export class RequestVerify extends TailwindElement {
   @property({ type: String })
   email!: string;
@@ -105,8 +105,8 @@ export class RequestVerify extends TailwindElement {
   }
 }
 
-@localized()
 @customElement("btrix-account-settings")
+@localized()
 @needLogin
 export class AccountSettings extends BtrixElement {
   @property({ type: String })
@@ -364,6 +364,25 @@ export class AccountSettings extends BtrixElement {
             "Use browser language settings for formatting numbers and dates.",
           )}</sl-switch
         >
+        <div class="m-4 mt-0 text-xs">
+          ${msg("For example:")}
+          <btrix-badge
+            >${this.localize.date(new Date(), {
+              dateStyle: "short",
+            })}</btrix-badge
+          >
+          <btrix-badge
+            >${this.localize.date(new Date(), {
+              timeStyle: "short",
+            })}</btrix-badge
+          >
+          <btrix-badge
+            >${this.localize.humanizeDuration(9283849, {
+              unitCount: 2,
+            })}</btrix-badge
+          >
+          <btrix-badge>${this.localize.bytes(3943298234)}</btrix-badge>
+        </div>
         <footer class="flex items-center justify-start border-t px-4 py-3">
           <p class="text-neutral-600">
             ${msg("Help us translate Browsertrix.")}
