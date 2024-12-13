@@ -143,19 +143,21 @@ jobs:
         if: steps.playwright-cache.outputs.cache-hit != 'true'
 
       - name: Create env file
+        working-directory: frontend
         run: |
-          cd frontend
           touch .env
           echo E2E_USER_EMAIL="${{ secrets.E2E_USER_EMAIL }}" >> .env
           echo E2E_USER_PASSWORD="${{ secrets.E2E_USER_PASSWORD }}" >> .env
           cat .env
 
       - name: Build frontend
-        run: cd frontend && yarn build
+        working-directory: frontend
+        run: yarn build
         id: build-frontend
 
       - name: Run Playwright tests
-        run: cd frontend && yarn playwright test
+        working-directory: frontend
+        run: yarn playwright test
 
       - uses: actions/upload-artifact@v4
         if: always()
