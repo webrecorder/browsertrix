@@ -74,16 +74,16 @@ jobs:
         run: yarn build
         id: build-frontend
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: playwright-built-app
-          path: frontend/dist
-          retention-days: 1
-          overwrite: true
+      # - uses: actions/upload-artifact@v4
+      #   with:
+      #     name: playwright-built-app
+      #     path: frontend/dist
+      #     retention-days: 1
+      #     overwrite: true
 
       - name: Run Playwright tests
         working-directory: frontend
-        run: yarn playwright test
+        run: DEBUG=pw:webserver yarn playwright test
 
       - uses: actions/upload-artifact@v4
         if: always()
