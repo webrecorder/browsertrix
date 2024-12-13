@@ -11,7 +11,7 @@ test("test", async ({ baseURL }) => {
     await page.waitForLoadState("load");
     await page.waitForSelector('input[name="username"]');
     await page.click('input[name="username"]');
-    await page.fill('input[name="username"]', "admin@example.com");
+    await page.fill('input[name="username"]', "dev@webrecorder.net");
     await page.click('input[name="password"]');
     const devPassword = process.env.DEV_PASSWORD;
     if (!devPassword) {
