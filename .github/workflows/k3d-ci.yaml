@@ -1,23 +1,32 @@
 name: Cluster Run (K3d)
 
-on:
-  push:
-    paths:
-      - 'backend/**'
-      - 'chart/**'
-
-  pull_request:
-    paths:
-      - 'backend/**'
-      - 'chart/**'
+on: [push, pull_request]
 
 env:
   ECHO_SERVER_HOST_URL: http://host.k3d.internal:18080
 
 jobs:
+  # In order to be able to have required checks, a workflow can't be entirely
+  # skipped: see https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/collaborating-on-repositories-with-code-quality-features/troubleshooting-required-status-checks#handling-skipped-but-required-checks
+  paths-filter:
+    name: "Filter Paths"
+    runs-on: ubuntu-latest
+    outputs:
+      matches: ${{ steps.filter.outputs.matches }}
+    steps:
+    - uses: dorny/paths-filter@v3
+      id: filter
+      with:
+        filters: |
+          matches:
+            - 'backend/**'
+            - 'chart/**'
+
   btrix-k3d-test:
     timeout-minutes: 45
     runs-on: ubuntu-latest
+    needs: paths-filter
+    if: needs.paths-filter.outputs.matches == 'true'
     steps:
       - name: Create k3d Cluster
         uses: AbsaOSS/k3d-action@v2

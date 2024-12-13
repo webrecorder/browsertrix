@@ -11,19 +11,19 @@ jobs:
     # Only run on PRs with a target branch set of 'weblate'
     if: github.base_ref == 'weblate'
     outputs:
-      src: ${{ steps.filter.outputs.src }}
+      matches: ${{ steps.filter.outputs.matches }}
     steps:
     - uses: dorny/paths-filter@v3
       id: filter
       with:
         filters: |
-          src:
+          matches:
             - 'frontend/xliff/**'
             - '.github/workflows/weblate-reformat.yaml'
 
   reformat:
     needs: paths-filter
-    if: needs.paths-filter.outputs.src == 'true'
+    if: needs.paths-filter.outputs.matches == 'true'
     runs-on: ubuntu-latest
     permissions:
       # Give the default GITHUB_TOKEN write permission to commit and push the

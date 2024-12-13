@@ -9,13 +9,13 @@ jobs:
     name: "Filter Paths"
     runs-on: ubuntu-latest
     outputs:
-      src: ${{ steps.filter.outputs.src }}
+      matches: ${{ steps.filter.outputs.matches }}
     steps:
     - uses: dorny/paths-filter@v3
       id: filter
       with:
         filters: |
-          src:
+          matches:
             - 'frontend/src/**'
             - 'frontend/*.json'
             - 'frontend/*.js'
