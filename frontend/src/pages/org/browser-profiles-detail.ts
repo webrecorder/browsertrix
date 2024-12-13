@@ -537,6 +537,7 @@ export class BrowserProfilesDetail extends BtrixElement {
         message: msg("Sorry, couldn't preview browser profile at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "browser-profile-error",
       });
     }
   }
@@ -592,6 +593,7 @@ export class BrowserProfilesDetail extends BtrixElement {
         message: msg("Sorry, couldn't create browser profile at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "browser-profile-error",
       });
     }
   }
@@ -633,6 +635,7 @@ export class BrowserProfilesDetail extends BtrixElement {
         message: msg("Sorry, couldn't delete browser profile at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "browser-profile-error",
       });
     }
   }
@@ -671,6 +674,7 @@ export class BrowserProfilesDetail extends BtrixElement {
         message: msg("Sorry, couldn't retrieve browser profiles at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "browser-profile-error",
       });
     }
   }
@@ -707,6 +711,7 @@ export class BrowserProfilesDetail extends BtrixElement {
           message: msg("Successfully saved browser profile."),
           variant: "success",
           icon: "check2-circle",
+          id: "browser-profile-save-status",
         });
 
         this.browserId = undefined;
@@ -718,6 +723,7 @@ export class BrowserProfilesDetail extends BtrixElement {
         message: msg("Sorry, couldn't save browser profile at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "browser-profile-save-status",
       });
     }
 
@@ -755,6 +761,7 @@ export class BrowserProfilesDetail extends BtrixElement {
           message: msg("Successfully saved browser profile."),
           variant: "success",
           icon: "check2-circle",
+          id: "browser-profile-save-status",
         });
 
         this.profile = {
@@ -782,6 +789,7 @@ export class BrowserProfilesDetail extends BtrixElement {
         message: message,
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "browser-profile-save-status",
       });
     }
 

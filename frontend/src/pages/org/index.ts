@@ -206,6 +206,7 @@ export class Org extends BtrixElement {
         message: msg("Sorry, couldn't retrieve organization at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "org-retrieve-error",
       });
     }
   }
@@ -679,6 +680,7 @@ export class Org extends BtrixElement {
         ),
         variant: "success",
         icon: "check2-circle",
+        id: "user-updated-status",
       });
       const org = await this.getOrg(this.orgId);
 
@@ -696,6 +698,7 @@ export class Org extends BtrixElement {
             ),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "user-updated-status",
       });
     }
   }
@@ -731,6 +734,7 @@ export class Org extends BtrixElement {
         ),
         variant: "success",
         icon: "check2-circle",
+        id: "user-updated-status",
       });
       if (isSelf) {
         // FIXME better UX, this is the only page currently that doesn't require org...
@@ -753,6 +757,7 @@ export class Org extends BtrixElement {
             ),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "user-updated-status",
       });
     }
   }

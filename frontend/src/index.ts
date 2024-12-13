@@ -1,17 +1,25 @@
+import "./utils/polyfills";
+
 import { localized, msg, str } from "@lit/localize";
 import type {
   SlDialog,
   SlDrawer,
   SlSelectEvent,
 } from "@shoelace-style/shoelace";
-import { html, nothing, render, type TemplateResult } from "lit";
+import { html, nothing, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import isEqual from "lodash/fp/isEqual";
 
 import "broadcastchannel-polyfill";
 import "construct-style-sheets-polyfill";
-import "./utils/polyfills";
+import "./shoelace";
+import "./components";
+import "./features";
+import "./pages";
+import "./assets/fonts/Inter/inter.css";
+import "./assets/fonts/Recursive/recursive.css";
+import "./styles.css";
 
 import type { OrgTab } from "./pages/org";
 import { ROUTES } from "./routes";
@@ -22,9 +30,6 @@ import AuthService, {
   type LoggedInEventDetail,
   type NeedLoginEventDetail,
 } from "./utils/AuthService";
-import { DEFAULT_MAX_SCALE } from "./utils/crawler";
-import { AppStateService } from "./utils/state";
-import { formatAPIUser } from "./utils/user";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { NavigateEventDetail } from "@/controllers/navigate";
@@ -36,16 +41,12 @@ import {
   type TranslatedLocaleEnum,
 } from "@/types/localization";
 import { type AppSettings } from "@/utils/app";
+import { DEFAULT_MAX_SCALE } from "@/utils/crawler";
 import localize from "@/utils/localize";
+import { toast } from "@/utils/notify";
+import { AppStateService } from "@/utils/state";
+import { formatAPIUser } from "@/utils/user";
 import brandLockupColor from "~assets/brand/browsertrix-lockup-color.svg";
-
-import "./shoelace";
-import "./components";
-import "./features";
-import "./pages";
-import "./assets/fonts/Inter/inter.css";
-import "./assets/fonts/Recursive/recursive.css";
-import "./styles.css";
 
 // Make theme CSS available in document
 document.adoptedStyleSheets = [theme];
@@ -945,6 +946,7 @@ export class App extends BtrixElement {
         message: msg("Please log in to continue."),
         variant: "warning",
         icon: "exclamation-triangle",
+        id: "log-in",
       });
     }
   };
@@ -975,37 +977,7 @@ export class App extends BtrixElement {
   onNotify = (event: CustomEvent<NotifyEventDetail>) => {
     event.stopPropagation();
 
-    const {
-      title,
-      message,
-      variant = "primary",
-      icon = "info-circle",
-      duration = 5000,
-    } = event.detail;
-
-    const container = document.createElement("sl-alert");
-    const alert = Object.assign(container, {
-      variant,
-      closable: true,
-      duration: duration,
-      style: [
-        "--sl-panel-background-color: var(--sl-color-neutral-1000)",
-        "--sl-color-neutral-700: var(--sl-color-neutral-0)",
-        // "--sl-panel-border-width: 0px",
-        "--sl-spacing-large: var(--sl-spacing-medium)",
-      ].join(";"),
-    });
-
-    render(
-      html`
-        <sl-icon name="${icon}" slot="icon"></sl-icon>
-        ${title ? html`<strong>${title}</strong>` : ""}
-        ${message ? html`<div>${message}</div>` : ""}
-      `,
-      container,
-    );
-    document.body.append(alert);
-    void alert.toast();
+    void toast(event.detail);
   };
 
   async getUserInfo(): Promise<APIUser> {

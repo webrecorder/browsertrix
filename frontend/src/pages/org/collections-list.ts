@@ -686,12 +686,14 @@ export class CollectionsList extends BtrixElement {
         message: msg(html`Deleted <strong>${name}</strong> Collection.`),
         variant: "success",
         icon: "check2-circle",
+        id: "collection-delete-status",
       });
     } catch {
       this.notify.toast({
         message: msg("Sorry, couldn't delete Collection at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "collection-delete-status",
       });
     }
   }
@@ -729,6 +731,7 @@ export class CollectionsList extends BtrixElement {
           message: msg("Sorry, couldn't retrieve Collections at this time."),
           variant: "danger",
           icon: "exclamation-octagon",
+          id: "collection-retrieve-status",
         });
       }
     }

@@ -796,12 +796,14 @@ export class CollectionDetail extends BtrixElement {
         message: msg(html`Deleted <strong>${name}</strong> Collection.`),
         variant: "success",
         icon: "check2-circle",
+        id: "collection-delete-status",
       });
     } catch {
       this.notify.toast({
         message: msg("Sorry, couldn't delete Collection at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "collection-delete-status",
       });
     }
   }
@@ -814,6 +816,7 @@ export class CollectionDetail extends BtrixElement {
         message: msg("Sorry, couldn't retrieve Collection at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "collection-retrieve-status",
       });
     }
   }
@@ -841,6 +844,7 @@ export class CollectionDetail extends BtrixElement {
           message: msg("Sorry, couldn't retrieve web captures at this time."),
           variant: "danger",
           icon: "exclamation-octagon",
+          id: "collection-retrieve-status",
         });
       }
     }
@@ -896,6 +900,7 @@ export class CollectionDetail extends BtrixElement {
         message: msg(str`Successfully removed item from Collection.`),
         variant: "success",
         icon: "check2-circle",
+        id: "collection-item-remove-status",
       });
       void this.fetchCollection();
       void this.fetchArchivedItems({
@@ -910,6 +915,7 @@ export class CollectionDetail extends BtrixElement {
         ),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "collection-item-remove-status",
       });
     }
   }
