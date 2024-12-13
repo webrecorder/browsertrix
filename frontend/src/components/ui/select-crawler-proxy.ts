@@ -186,6 +186,7 @@ export class SelectCrawlerProxy extends LiteElement {
         message: msg("Sorry, couldn't retrieve proxies at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "proxy-retrieve-status",
       });
     }
   }

@@ -139,6 +139,7 @@ export class OrgForm extends BtrixElement {
         message: msg("Org successfully updated."),
         variant: "success",
         icon: "check2-circle",
+        id: "org-update-status",
       });
 
       await this.onRenameSuccess(payload);
@@ -183,6 +184,7 @@ export class OrgForm extends BtrixElement {
         ),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "org-update-status",
       });
     }
   }

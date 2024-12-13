@@ -480,6 +480,7 @@ export class OrgsList extends BtrixElement {
           : msg(str`Archiving in "${org.name}" is re-enabled.`),
         variant: "success",
         icon: "check2-circle",
+        id: "archiving-enabled-status",
       });
     } catch (e) {
       console.debug(e);
@@ -490,6 +491,7 @@ export class OrgsList extends BtrixElement {
         ),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "archiving-ability-status",
       });
     }
   }
@@ -507,6 +509,7 @@ export class OrgsList extends BtrixElement {
         message: msg("Sorry, couldn't get all proxies at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "proxy-retrieve-status",
       });
     }
   }
@@ -522,6 +525,7 @@ export class OrgsList extends BtrixElement {
         message: msg(str`Org "${org.name}" has been deleted.`),
         variant: "success",
         icon: "check2-circle",
+        id: "org-delete-status",
       });
     } catch (e) {
       console.debug(e);
@@ -530,6 +534,7 @@ export class OrgsList extends BtrixElement {
         message: msg("Sorry, couldn't delete org at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "org-delete-status",
       });
     }
   }

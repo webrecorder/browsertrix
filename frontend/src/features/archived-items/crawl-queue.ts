@@ -259,6 +259,7 @@ export class CrawlQueue extends BtrixElement {
           message: msg("Sorry, couldn't fetch crawl queue at this time."),
           variant: "danger",
           icon: "exclamation-octagon",
+          id: "crawl-queue-status",
         });
       }
     }

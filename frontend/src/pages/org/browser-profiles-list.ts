@@ -398,6 +398,7 @@ export class BrowserProfilesList extends BtrixElement {
           message: msg(html`Deleted <strong>${profile.name}</strong>.`),
           variant: "success",
           icon: "check2-circle",
+          id: "browser-profile-deleted-status",
         });
 
         void this.fetchBrowserProfiles();
@@ -407,6 +408,7 @@ export class BrowserProfilesList extends BtrixElement {
         message: msg("Sorry, couldn't delete browser profile at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "browser-profile-deleted-status",
       });
     }
   }
@@ -444,6 +446,7 @@ export class BrowserProfilesList extends BtrixElement {
         message: msg("Sorry, couldn't retrieve browser profiles at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "browser-profile-status",
       });
     } finally {
       this.isLoading = false;

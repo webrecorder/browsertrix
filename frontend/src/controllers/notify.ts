@@ -30,6 +30,7 @@ export type NotifyEventDetail = {
   icon?: string;
   variant?: "success" | "warning" | "danger" | "primary" | "info";
   duration?: number;
+  id?: string | number | symbol;
 };
 
 export interface NotifyEventMap {

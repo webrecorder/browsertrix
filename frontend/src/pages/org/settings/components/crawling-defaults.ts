@@ -321,6 +321,7 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
         message: msg("Crawl defaults have been updated."),
         variant: "success",
         icon: "check2-circle",
+        id: "crawl-defaults-update-status",
       });
     } catch (e) {
       console.debug(e);
@@ -329,6 +330,7 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
         message: msg("Sorry, couldn't update crawl defaults at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "crawl-defaults-update-status",
       });
     }
 

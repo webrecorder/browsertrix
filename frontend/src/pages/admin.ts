@@ -306,6 +306,7 @@ export class Admin extends BtrixElement {
             `,
             variant: "success",
             icon: "check2-circle",
+            id: "user-updated-status",
           });
         }}
       ></btrix-invite-form>
@@ -396,6 +397,7 @@ export class Admin extends BtrixElement {
         message,
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "org-invalid",
       });
     }
 

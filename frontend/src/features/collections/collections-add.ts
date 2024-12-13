@@ -299,6 +299,7 @@ export class CollectionsAdd extends BtrixElement {
           message: msg("Sorry, couldn't retrieve Collections at this time."),
           variant: "danger",
           icon: "exclamation-octagon",
+          id: "collection-fetch-throttled",
         });
       }
     }

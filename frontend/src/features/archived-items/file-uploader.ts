@@ -457,6 +457,7 @@ export class FileUploader extends BtrixElement {
           ),
           variant: "success",
           icon: "check2-circle",
+          id: "file-upload-status",
         });
       } else {
         throw data;
@@ -482,6 +483,7 @@ export class FileUploader extends BtrixElement {
           message: message,
           variant: "danger",
           icon: "exclamation-octagon",
+          id: "file-upload-status",
         });
       }
     }

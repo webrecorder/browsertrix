@@ -167,6 +167,7 @@ export class SelectCrawler extends LiteElement {
         message: msg("Sorry, couldn't retrieve crawler channels at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "crawler-channel-retrieve-error",
       });
     }
   }

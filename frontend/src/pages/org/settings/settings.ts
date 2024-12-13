@@ -605,6 +605,7 @@ export class OrgSettings extends BtrixElement {
         message: msg("Sorry, couldn't retrieve pending invites at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "pending-invites-retrieve-error",
       });
     }
   }
@@ -667,6 +668,7 @@ export class OrgSettings extends BtrixElement {
         message: msg(str`Successfully invited ${inviteEmail}.`),
         variant: "success",
         icon: "check2-circle",
+        id: "user-updated-status",
       });
 
       void this.fetchPendingInvites();
@@ -678,6 +680,7 @@ export class OrgSettings extends BtrixElement {
           : msg("Sorry, couldn't invite user at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "user-updated-status",
       });
     }
 
@@ -699,6 +702,7 @@ export class OrgSettings extends BtrixElement {
         ),
         variant: "success",
         icon: "check2-circle",
+        id: "user-updated-status",
       });
 
       this.pendingInvites = this.pendingInvites.filter(
@@ -713,6 +717,7 @@ export class OrgSettings extends BtrixElement {
           : msg(str`Sorry, couldn't remove ${invite.email} at this time.`),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "user-updated-status",
       });
     }
   }
@@ -734,6 +739,7 @@ export class OrgSettings extends BtrixElement {
         message: msg("Org successfully updated."),
         variant: "success",
         icon: "check2-circle",
+        id: "org-update-status",
       });
     } catch (e) {
       console.debug(e);
@@ -760,6 +766,7 @@ export class OrgSettings extends BtrixElement {
         message: message,
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "org-update-status",
       });
     }
   }

@@ -677,6 +677,7 @@ export class CollectionItemsDialog extends BtrixElement {
         message: msg(str`Successfully saved archived item selection.`),
         variant: "success",
         icon: "check2-circle",
+        id: "archived-item-selection-status",
       });
     } catch (e) {
       this.notify.toast({
@@ -685,6 +686,7 @@ export class CollectionItemsDialog extends BtrixElement {
           : msg("Something unexpected went wrong"),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "archived-item-selection-status",
       });
     }
 
@@ -871,6 +873,7 @@ export class CollectionItemsDialog extends BtrixElement {
         variant: "success",
         icon: "check2-circle",
         duration: 1000,
+        id: "auto-add-status",
       });
     } catch (e: unknown) {
       console.debug(e);
@@ -880,6 +883,7 @@ export class CollectionItemsDialog extends BtrixElement {
         ),
         variant: "warning",
         icon: "exclamation-circle",
+        id: "auto-add-status",
       });
     }
   }

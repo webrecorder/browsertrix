@@ -1086,6 +1086,7 @@ export class ArchivedItemQA extends BtrixElement {
         message: msg("Sorry, couldn't retrieve archived item at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "qa-error",
       });
     }
   }
@@ -1150,6 +1151,7 @@ export class ArchivedItemQA extends BtrixElement {
         message: msg("Sorry, couldn't add comment at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "qa-error",
       });
     }
   }
@@ -1178,6 +1180,7 @@ export class ArchivedItemQA extends BtrixElement {
         message: msg("Sorry, couldn't delete comment at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "qa-error",
       });
     }
   }
@@ -1192,6 +1195,7 @@ export class ArchivedItemQA extends BtrixElement {
         message: msg("Sorry, couldn't retrieve analysis runs at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "qa-error",
       });
     }
   }
@@ -1218,6 +1222,7 @@ export class ArchivedItemQA extends BtrixElement {
         message: msg("Sorry, couldn't retrieve page at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "qa-error",
       });
     }
   }
@@ -1449,6 +1454,7 @@ export class ArchivedItemQA extends BtrixElement {
         message: msg("Sorry, couldn't retrieve pages at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "qa-error",
       });
     }
   }
@@ -1505,12 +1511,14 @@ export class ArchivedItemQA extends BtrixElement {
         message: msg("Saved QA review."),
         variant: "success",
         icon: "check2-circle",
+        id: "qa-review-status",
       });
     } catch (e) {
       this.notify.toast({
         message: msg("Sorry, couldn't submit QA review at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "qa-review-status",
       });
     }
   }

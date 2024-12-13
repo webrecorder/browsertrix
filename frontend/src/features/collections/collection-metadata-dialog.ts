@@ -206,6 +206,7 @@ export class CollectionMetadataDialog extends BtrixElement {
         ),
         variant: "success",
         icon: "check2-circle",
+        id: "collection-metadata-status",
       });
       void this.hideDialog();
     } catch (e) {
@@ -217,6 +218,7 @@ export class CollectionMetadataDialog extends BtrixElement {
         message: message || msg("Something unexpected went wrong"),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "collection-metadata-status",
       });
     }
 

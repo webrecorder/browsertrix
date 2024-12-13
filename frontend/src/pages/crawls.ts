@@ -328,6 +328,7 @@ export class Crawls extends BtrixElement {
           message: msg("Sorry, couldn't retrieve crawls at this time."),
           variant: "danger",
           icon: "exclamation-octagon",
+          id: "fetch-crawls-throttled",
         });
       }
     }

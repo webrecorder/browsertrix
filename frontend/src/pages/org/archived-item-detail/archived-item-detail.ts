@@ -1211,6 +1211,7 @@ ${this.item?.description}
         message: msg("Sorry, couldn't retrieve crawl at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "archived-item-retrieve-error",
       });
     }
   }
@@ -1225,6 +1226,7 @@ ${this.item?.description}
         ),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "archived-item-retrieve-error",
       });
     }
   }
@@ -1242,6 +1244,7 @@ ${this.item?.description}
         message: msg("Sorry, couldn't load all crawl settings."),
         variant: "warning",
         icon: "exclamation-circle",
+        id: "archived-item-retrieve-error",
       });
     }
   }
@@ -1280,6 +1283,7 @@ ${this.item?.description}
         message: msg("Sorry, couldn't retrieve crawl logs at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "archived-item-retrieve-error",
       });
     }
   }
@@ -1311,6 +1315,7 @@ ${this.item?.description}
           message: msg("Sorry, couldn't cancel crawl at this time."),
           variant: "danger",
           icon: "exclamation-octagon",
+          id: "crawl-stop-error",
         });
       }
     }
@@ -1332,6 +1337,7 @@ ${this.item?.description}
           message: msg("Sorry, couldn't stop crawl at this time."),
           variant: "danger",
           icon: "exclamation-octagon",
+          id: "crawl-stop-error",
         });
       }
     }
@@ -1371,6 +1377,7 @@ ${this.item?.description}
         message: msg(`Successfully deleted crawl`),
         variant: "success",
         icon: "check2-circle",
+        id: "crawl-stop-error",
       });
     } catch (e) {
       let message = msg(
@@ -1389,6 +1396,7 @@ ${this.item?.description}
         message: message,
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "archived-item-delete-status",
       });
     }
   }
@@ -1409,6 +1417,7 @@ ${this.item?.description}
         message: msg("Starting QA analysis..."),
         variant: "success",
         icon: "check2-circle",
+        id: "qa-start-status",
       });
     } catch (e: unknown) {
       let message = msg("Sorry, couldn't start QA run at this time.");
@@ -1423,6 +1432,7 @@ ${this.item?.description}
         message,
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "qa-start-status",
       });
     }
   }
@@ -1445,6 +1455,7 @@ ${this.item?.description}
         message: msg(`Stopping QA analysis...`),
         variant: "success",
         icon: "check2-circle",
+        id: "qa-stop-status",
       });
     } catch (e: unknown) {
       this.notify.toast({
@@ -1454,6 +1465,7 @@ ${this.item?.description}
             : msg("Sorry, couldn't stop crawl at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "qa-stop-status",
       });
     }
   }
@@ -1476,6 +1488,7 @@ ${this.item?.description}
         message: msg(`Canceling QA analysis...`),
         variant: "success",
         icon: "check2-circle",
+        id: "qa-stop-status",
       });
     } catch (e: unknown) {
       this.notify.toast({
@@ -1485,6 +1498,7 @@ ${this.item?.description}
             : msg("Sorry, couldn't cancel crawl at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "qa-stop-status",
       });
     }
   }
@@ -1497,6 +1511,7 @@ ${this.item?.description}
         message: msg("Sorry, couldn't retrieve archived item at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "archived-item-retrieve-error",
       });
     }
 

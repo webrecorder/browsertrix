@@ -263,6 +263,7 @@ export class PageQAToolbar extends BtrixElement {
         message: msg("Sorry, couldn't submit page approval at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "qa-page-approval-status",
       });
     }
   }

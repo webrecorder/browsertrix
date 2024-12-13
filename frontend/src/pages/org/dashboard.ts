@@ -684,6 +684,7 @@ export class Dashboard extends BtrixElement {
         message: msg("Sorry, couldn't retrieve org metrics at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "metrics-retrieve-error",
       });
     }
   }
