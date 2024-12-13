@@ -1,11 +1,12 @@
-name: Frontend Lint/Test/Build
+name: Frontend
 on:
-  pull_request:
+  pull_request
 
 jobs:
   # In order to be able to have required checks, a workflow can't be entirely
   # skipped: see https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/collaborating-on-repositories-with-code-quality-features/troubleshooting-required-status-checks#handling-skipped-but-required-checks
   paths-filter:
+    name: "Filter Paths"
     runs-on: ubuntu-latest
     outputs:
       src: ${{ steps.filter.outputs.src }}
@@ -19,9 +20,10 @@ jobs:
             - 'frontend/*.json'
             - 'frontend/*.js'
             - 'frontend/*.ts'
-            - '.github/workflows/frontend-build-check.yaml'
+            - '.github/workflows/frontend-lint-test-build.yaml'
 
   unit-tests:
+    name: Unit Tests
     runs-on: ubuntu-latest
     needs: paths-filter
     if: needs.paths-filter.outputs.src == 'true'
@@ -83,6 +85,7 @@ jobs:
         run: yarn test
 
   integration-tests:
+    name: Integration Tests
     needs: paths-filter
     if: needs.paths-filter.outputs.src == 'true'
     timeout-minutes: 60
@@ -162,6 +165,7 @@ jobs:
           retention-days: 30
 
   lint:
+    name: Lint
     runs-on: ubuntu-latest
     needs: paths-filter
     if: needs.paths-filter.outputs.src == 'true'
@@ -194,6 +198,7 @@ jobs:
         run: yarn lint:check
 
   localize:
+    name: Localize
     runs-on: ubuntu-latest
     needs: paths-filter
     if: needs.paths-filter.outputs.src == 'true'
@@ -226,6 +231,7 @@ jobs:
         run: yarn localize:build
 
   build:
+    name: Build
     runs-on: ubuntu-latest
     needs: paths-filter
     if: needs.paths-filter.outputs.src == 'true'
