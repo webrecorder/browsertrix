@@ -89,7 +89,6 @@ export default defineConfig({
   webServer: {
     command: "yarn serve",
     port: 9871,
-    timeout: 120 * 1000,
     reuseExistingServer: !process.env.CI,
     stdout: "pipe",
   },
