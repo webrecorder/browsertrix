@@ -16,6 +16,7 @@ jobs:
         filters: |
           matches:
             - 'ansible/**'
+            - '.github/workflows/ansible-lint.yaml'
 
   build:
     needs: paths-filter
