@@ -69,14 +69,14 @@ jobs:
           echo API_BASE_URL=${{ secrets.API_BASE_URL }} >> .env
           cat .env
 
-      # - name: Build frontend
-      #   working-directory: frontend
-      #   run: yarn build
-      #   id: build-frontend
+      - name: Build frontend
+        working-directory: frontend
+        run: yarn build
+        id: build-frontend
 
       - name: Run Playwright tests
         working-directory: frontend
-        run: yarn build && yarn playwright test
+        run: yarn playwright test
 
       - uses: actions/upload-artifact@v4
         if: always()
