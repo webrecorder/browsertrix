@@ -116,8 +116,18 @@ export class App extends BtrixElement {
       void this.fetchAndUpdateUserInfo();
     }
 
-    this.settings = await getAppSettings();
-    await localize.initLanguage();
+    try {
+      this.settings = await getAppSettings();
+      await localize.initLanguage();
+    } catch (e) {
+      console.error(e);
+      this.notify.toast({
+        message: msg("Couldn’t initialize Browsertrix correctly."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+        id: "get-app-settings-error",
+      });
+    }
     super.connectedCallback();
 
     this.addEventListener("btrix-navigate", this.onNavigateTo);
