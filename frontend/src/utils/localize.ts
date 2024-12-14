@@ -52,14 +52,8 @@ export function mergeLocales(
   navigatorLocales: readonly string[],
 ) {
   if (useNavigatorLocales) {
-    console.log("merging nav locales", navigatorLocales);
     return uniq([...navigatorLocales, targetLang]);
   }
-  console.log(
-    "merging nav locales matching lang",
-    targetLang,
-    navigatorLocales,
-  );
   return uniq([
     ...navigatorLocales.filter(
       (lang) => new Intl.Locale(lang).language === targetLang,
