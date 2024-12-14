@@ -532,24 +532,23 @@ export class CollectionsList extends BtrixElement {
         ${pluralOf("items", col.crawlCount)}
       </btrix-table-cell>
       <btrix-table-cell>
-        <sl-format-bytes
-          value=${col.totalSize || 0}
-          display="narrow"
-        ></sl-format-bytes>
+        ${this.localize.bytes(col.totalSize || 0, {
+          unitDisplay: "narrow",
+        })}
       </btrix-table-cell>
       <btrix-table-cell>
         ${this.localize.number(col.pageCount, { notation: "compact" })}
         ${pluralOf("pages", col.pageCount)}
       </btrix-table-cell>
       <btrix-table-cell>
-        <sl-format-date
+        <btrix-format-date
           date=${col.modified}
           month="2-digit"
           day="2-digit"
           year="2-digit"
           hour="2-digit"
           minute="2-digit"
-        ></sl-format-date>
+        ></btrix-format-date>
       </btrix-table-cell>
       <btrix-table-cell class="p-0">
         ${this.isCrawler ? this.renderActions(col) : ""}

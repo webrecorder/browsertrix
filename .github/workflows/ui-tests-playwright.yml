@@ -7,6 +7,7 @@ on:
       - 'frontend/*.json'
       - 'frontend/*.js'
       - 'frontend/*.ts'
+      - '.github/workflows/ui-tests-playwright.yml'
 
 jobs:
   test:
@@ -69,11 +70,13 @@ jobs:
           cat .env
 
       - name: Build frontend
-        run: cd frontend && yarn build
+        working-directory: frontend
+        run: yarn build
         id: build-frontend
 
       - name: Run Playwright tests
-        run: cd frontend && yarn playwright test
+        working-directory: frontend
+        run: yarn playwright test
 
       - uses: actions/upload-artifact@v4
         if: always()

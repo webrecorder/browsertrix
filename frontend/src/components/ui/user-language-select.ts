@@ -3,10 +3,7 @@ import { html } from "lit";
 import { customElement, state } from "lit/decorators.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import {
-  translatedLocales,
-  type TranslatedLocaleEnum,
-} from "@/types/localization";
+import { type TranslatedLocaleEnum } from "@/types/localization";
 import localize from "@/utils/localize";
 
 /**
@@ -17,7 +14,8 @@ export class LocalePicker extends BtrixElement {
   @state()
   private localeNames: { [locale: string]: string } = {};
 
-  firstUpdated() {
+  connectedCallback() {
+    super.connectedCallback();
     this.setLocaleNames();
   }
 
@@ -38,7 +36,7 @@ export class LocalePicker extends BtrixElement {
   }
 
   render() {
-    const selectedLocale = this.localize.lang();
+    const selectedLocale = new Intl.Locale(this.localize.lang()).language;
 
     return html`
       <sl-dropdown
@@ -51,7 +49,7 @@ export class LocalePicker extends BtrixElement {
           slot="trigger"
           size="small"
           caret
-          ?disabled=${(translatedLocales as unknown as string[]).length < 2}
+          ?disabled=${localize.languages.length < 2}
         >
           <sl-icon slot="prefix" name="translate"></sl-icon>
           <span class="capitalize"
@@ -80,6 +78,6 @@ export class LocalePicker extends BtrixElement {
   async localeChanged(event: SlSelectEvent) {
     const newLocale = event.detail.item.value as TranslatedLocaleEnum;
 
-    localize.setLanguage(newLocale);
+    await localize.setLanguage(newLocale);
   }
 }

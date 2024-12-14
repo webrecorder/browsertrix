@@ -1,5 +1,10 @@
 import { localized, msg, str } from "@lit/localize";
-import type { SlInput, SlSelectEvent } from "@shoelace-style/shoelace";
+import type {
+  SlChangeEvent,
+  SlInput,
+  SlSelectEvent,
+  SlSwitch,
+} from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import type { ZxcvbnResult } from "@zxcvbn-ts/core";
 import { html, nothing, type PropertyValues } from "lit";
@@ -12,9 +17,10 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import { TailwindElement } from "@/classes/TailwindElement";
 import needLogin from "@/decorators/needLogin";
 import { pageHeader } from "@/layouts/pageHeader";
-import { translatedLocales, type LanguageCode } from "@/types/localization";
+import { type LanguageCode } from "@/types/localization";
 import type { UnderlyingFunction } from "@/types/utils";
 import { isApiError } from "@/utils/api";
+import localize from "@/utils/localize";
 import PasswordService from "@/utils/PasswordService";
 import { AppStateService } from "@/utils/state";
 import { tw } from "@/utils/tailwind";
@@ -27,8 +33,8 @@ enum Tab {
 const { PASSWORD_MINLENGTH, PASSWORD_MAXLENGTH, PASSWORD_MIN_SCORE } =
   PasswordService;
 
-@localized()
 @customElement("btrix-request-verify")
+@localized()
 export class RequestVerify extends TailwindElement {
   @property({ type: String })
   email!: string;
@@ -99,8 +105,8 @@ export class RequestVerify extends TailwindElement {
   }
 }
 
-@localized()
 @customElement("btrix-account-settings")
+@localized()
 @needLogin
 export class AccountSettings extends BtrixElement {
   @property({ type: String })
@@ -242,9 +248,7 @@ export class AccountSettings extends BtrixElement {
         </footer>
       </form>
 
-      ${(translatedLocales as unknown as string[]).length > 1
-        ? this.renderLanguage()
-        : nothing}
+      ${localize.languages.length > 1 ? this.renderLanguage() : nothing}
     `;
   }
 
@@ -347,6 +351,37 @@ export class AccountSettings extends BtrixElement {
           <btrix-user-language-select
             @sl-select=${this.onSelectLocale}
           ></btrix-user-language-select>
+        </div>
+        <sl-switch
+          .helpText=${msg(
+            "Your browser’s language settings will take precedence over the language chosen above when formatting numbers, dates, and durations.",
+          )}
+          @sl-change=${this.onSelectFormattingPreference}
+          ?checked=${this.appState.userPreferences
+            ?.useBrowserLanguageForFormatting ?? true}
+          class="mt-4 block px-4 pb-4 part-[label]:-order-1 part-[label]:me-2 part-[label]:ms-0 part-[base]:flex part-[form-control-help-text]:max-w-prose part-[label]:flex-grow"
+          >${msg(
+            "Use browser language settings for formatting numbers and dates.",
+          )}</sl-switch
+        >
+        <div class="m-4 mt-0 text-xs">
+          ${msg("For example:")}
+          <btrix-badge
+            >${this.localize.date(new Date(), {
+              dateStyle: "short",
+            })}</btrix-badge
+          >
+          <btrix-badge
+            >${this.localize.date(new Date(), {
+              timeStyle: "short",
+            })}</btrix-badge
+          >
+          <btrix-badge
+            >${this.localize.humanizeDuration(9283849, {
+              unitCount: 2,
+            })}</btrix-badge
+          >
+          <btrix-badge>${this.localize.bytes(3943298234)}</btrix-badge>
         </div>
         <footer class="flex items-center justify-start border-t px-4 py-3">
           <p class="text-neutral-600">
@@ -548,6 +583,26 @@ export class AccountSettings extends BtrixElement {
       variant: "success",
       icon: "check2-circle",
       id: "language-update-status",
+    });
+  };
+
+  /**
+   * Save formatting setting in local storage
+   */
+  private readonly onSelectFormattingPreference = async (e: SlChangeEvent) => {
+    const checked = (e.target as SlSwitch).checked;
+    if (
+      checked !== this.appState.userPreferences?.useBrowserLanguageForFormatting
+    ) {
+      AppStateService.partialUpdateUserPreferences({
+        useBrowserLanguageForFormatting: checked,
+      });
+    }
+
+    this.notify.toast({
+      message: msg("Your formatting preference has been updated."),
+      variant: "success",
+      icon: "check2-circle",
     });
   };
 }

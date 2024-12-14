@@ -156,7 +156,7 @@ export class ArchivedItemDetail extends BtrixElement {
   private get formattedFinishedDate() {
     if (!this.item) return;
 
-    return html`<sl-format-date
+    return html`<btrix-format-date
       date=${this.item.finished!}
       month="2-digit"
       day="2-digit"
@@ -164,7 +164,7 @@ export class ArchivedItemDetail extends BtrixElement {
       hour="numeric"
       minute="numeric"
       time-zone-name="short"
-    ></sl-format-date>`;
+    ></btrix-format-date>`;
   }
 
   willUpdate(changedProperties: PropertyValues<this>) {
@@ -799,7 +799,7 @@ export class ArchivedItemDetail extends BtrixElement {
               `
             : html`
                 <btrix-desc-list-item label=${msg("Start Time")}>
-                  <sl-format-date
+                  <btrix-format-date
                     date=${this.item!.started}
                     month="2-digit"
                     day="2-digit"
@@ -807,7 +807,7 @@ export class ArchivedItemDetail extends BtrixElement {
                     hour="numeric"
                     minute="numeric"
                     time-zone-name="short"
-                  ></sl-format-date>
+                  ></btrix-format-date>
                 </btrix-desc-list-item>
                 <btrix-desc-list-item label=${msg("Finish Time")}>
                   ${this.item!.finished
@@ -856,25 +856,23 @@ export class ArchivedItemDetail extends BtrixElement {
         <btrix-desc-list-item label=${msg("Size")}>
           ${this.item
             ? html`${this.item.fileSize
-                ? html`<sl-format-bytes
-                      value=${this.item.fileSize || 0}
-                      display="narrow"
-                    ></sl-format-bytes
-                    >${this.item.stats
-                      ? html`<span>,</span
-                          ><span
-                            class="tracking-tighter${this.isActive
-                              ? " text-violet-600"
-                              : ""} font-mono"
-                          >
-                            ${this.localize.number(+this.item.stats.done)}
-                            <span class="text-0-400">/</span>
-                            ${this.localize.number(+this.item.stats.found)}
-                          </span>
-                          <span
-                            >${pluralOf("pages", +this.item.stats.found)}</span
-                          >`
-                      : ""}`
+                ? html`${this.localize.bytes(this.item.fileSize || 0, {
+                    unitDisplay: "narrow",
+                  })}${this.item.stats
+                    ? html`<span>,</span
+                        ><span
+                          class="tracking-tighter${this.isActive
+                            ? " text-violet-600"
+                            : ""} font-mono"
+                        >
+                          ${this.localize.number(+this.item.stats.done)}
+                          <span class="text-0-400">/</span>
+                          ${this.localize.number(+this.item.stats.found)}
+                        </span>
+                        <span
+                          >${pluralOf("pages", +this.item.stats.found)}</span
+                        >`
+                    : ""}`
                 : html`<span class="text-0-400">${msg("Unknown")}</span>`}`
             : html`<sl-skeleton class="h-[16px] w-24"></sl-skeleton>`}
         </btrix-desc-list-item>
@@ -1010,7 +1008,7 @@ ${this.item?.description}
                             ></sl-icon>
                           </sl-tooltip>`,
                       )}
-                      <sl-format-bytes value=${file.size}></sl-format-bytes>
+                      ${this.localize.bytes(Number(file.size))}
                     </div>
                   </li>
                 `,

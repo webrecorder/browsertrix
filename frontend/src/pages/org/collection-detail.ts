@@ -487,13 +487,10 @@ export class CollectionDetail extends BtrixElement {
           (col) =>
             `${this.localize.number(col.crawlCount)} ${pluralOf("items", col.crawlCount)}`,
         )}
-        ${this.renderDetailItem(
-          msg("Total Size"),
-          (col) =>
-            html`<sl-format-bytes
-              value=${col.totalSize || 0}
-              display="narrow"
-            ></sl-format-bytes>`,
+        ${this.renderDetailItem(msg("Total Size"), (col) =>
+          this.localize.bytes(col.totalSize || 0, {
+            unitDisplay: "narrow",
+          }),
         )}
         ${this.renderDetailItem(
           msg("Total Pages"),
@@ -503,14 +500,14 @@ export class CollectionDetail extends BtrixElement {
         ${this.renderDetailItem(
           msg("Last Updated"),
           (col) =>
-            html`<sl-format-date
+            html`<btrix-format-date
               date=${col.modified}
               month="2-digit"
               day="2-digit"
               year="2-digit"
               hour="2-digit"
               minute="2-digit"
-            ></sl-format-date>`,
+            ></btrix-format-date>`,
         )}
       </btrix-desc-list>
     `;

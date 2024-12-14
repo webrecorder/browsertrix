@@ -895,16 +895,16 @@ export class ArchivedItemQA extends BtrixElement {
           ${when(
             this.page,
             (page) => html`
-              <sl-format-date
+              <btrix-format-date
                 class="font-monostyle text-xs text-neutral-500"
-                date=${page.ts}
+                .date=${page.ts}
                 month="2-digit"
                 day="2-digit"
                 year="2-digit"
                 hour="2-digit"
                 minute="2-digit"
               >
-              </sl-format-date>
+              </btrix-format-date>
             `,
           )}
         </div>

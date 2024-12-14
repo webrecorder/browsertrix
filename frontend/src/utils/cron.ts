@@ -92,9 +92,27 @@ export function humanizeSchedule(
         intervalMsg = msg(str`Every ${formattedWeekDay}`);
         break;
       case "monthly": {
-        intervalMsg = msg(
-          str`Monthly on the ${localize.number(days[0], { ordinal: true })}`,
-        );
+        intervalMsg = localize.ordinal(days[0], {
+          // This one doesn't make much sense in English, but it could in other languages/locales
+          zero: msg(str`Monthly on the zeroth`, {
+            id: "monthly-interval-ordinal-zero",
+          }),
+          one: msg(str`Monthly on the ${localize.number(days[0])}st`, {
+            id: "monthly-interval-ordinal-one",
+          }),
+          two: msg(str`Monthly on the ${localize.number(days[0])}nd`, {
+            id: "monthly-interval-ordinal-two",
+          }),
+          few: msg(str`Monthly on the ${localize.number(days[0])}rd`, {
+            id: "monthly-interval-ordinal-few",
+          }),
+          many: msg(str`Monthly on the ${localize.number(days[0])}th`, {
+            id: "monthly-interval-ordinal-many",
+          }),
+          other: msg(str`Monthly on the ${localize.number(days[0])}th`, {
+            id: "monthly-interval-ordinal-other",
+          }),
+        });
 
         break;
       }

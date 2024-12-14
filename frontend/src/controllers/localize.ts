@@ -6,7 +6,7 @@ import roundDuration from "@/utils/round-duration";
 
 export class LocalizeController extends SlLocalizeController {
   /**
-   * Custom number formatter that uses ordinals
+   * Custom number formatter
    */
   readonly number = localize.number;
 
@@ -19,6 +19,8 @@ export class LocalizeController extends SlLocalizeController {
    * Custom duration formatter
    */
   readonly duration = localize.duration;
+
+  readonly ordinal = localize.ordinal;
 
   readonly humanizeDuration = (value: number, options?: PrettyMsOptions) => {
     const duration = roundDuration(value, options);

@@ -43,12 +43,6 @@ import(
   /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/divider/divider"
 );
 import(
-  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/format-bytes/format-bytes"
-);
-import(
-  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/format-date/format-date"
-);
-import(
   /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/menu/menu"
 );
 import(

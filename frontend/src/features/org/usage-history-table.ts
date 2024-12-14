@@ -147,13 +147,13 @@ export class UsageHistoryTable extends BtrixElement {
 
         const tableRows = [
           html`
-            <sl-format-date
+            <btrix-format-date
               date="${mY}-15T00:00:00.000Z"
               time-zone="utc"
               month="long"
               year="numeric"
             >
-            </sl-format-date>
+            </btrix-format-date>
           `,
           humanizeExecutionSeconds(crawlTime || 0),
           totalSecondsUsed ? humanizeExecutionSeconds(totalSecondsUsed) : "--",

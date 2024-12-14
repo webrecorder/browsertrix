@@ -90,5 +90,6 @@ export default defineConfig({
     command: "yarn serve",
     port: 9871,
     reuseExistingServer: !process.env.CI,
+    stdout: "pipe",
   },
 });

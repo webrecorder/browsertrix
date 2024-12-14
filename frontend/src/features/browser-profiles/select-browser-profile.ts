@@ -84,12 +84,12 @@ export class SelectBrowserProfile extends BtrixElement {
               ${profile.name}
               <div slot="suffix">
                 <div class="text-xs">
-                  <sl-format-date
-                    date=${profile.modified}
+                  <btrix-format-date
+                    .date=${profile.modified}
                     month="2-digit"
                     day="2-digit"
                     year="2-digit"
-                  ></sl-format-date>
+                  ></btrix-format-date>
                 </div></div
             ></sl-option>
           `,
@@ -102,14 +102,14 @@ export class SelectBrowserProfile extends BtrixElement {
             ? html`
                 <span>
                   ${msg("Last updated")}
-                  <sl-format-date
-                    date=${this.selectedProfile.modified}
+                  <btrix-format-date
+                    .date=${this.selectedProfile.modified}
                     month="2-digit"
                     day="2-digit"
                     year="2-digit"
                     hour="2-digit"
                     minute="2-digit"
-                  ></sl-format-date>
+                  ></btrix-format-date>
                 </span>
                 ${this.selectedProfile.proxyId
                   ? html` <span>

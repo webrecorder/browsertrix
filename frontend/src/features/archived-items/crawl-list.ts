@@ -74,14 +74,14 @@ export class CrawlListItem extends BtrixElement {
         <div>
           ${this.safeRender(
             (crawl) => html`
-              <sl-format-date
+              <btrix-format-date
                 date=${crawl.started}
                 month="2-digit"
                 day="2-digit"
                 year="2-digit"
                 hour="2-digit"
                 minute="2-digit"
-              ></sl-format-date>
+              ></btrix-format-date>
             `,
           )}
         </div>
@@ -144,14 +144,14 @@ export class CrawlListItem extends BtrixElement {
               <btrix-table-cell>
                 ${this.safeRender(
                   (crawl) => html`
-                    <sl-format-date
+                    <btrix-format-date
                       date=${crawl.started}
                       month="2-digit"
                       day="2-digit"
                       year="2-digit"
                       hour="2-digit"
                       minute="2-digit"
-                    ></sl-format-date>
+                    ></btrix-format-date>
                   `,
                 )}
               </btrix-table-cell>
@@ -160,14 +160,14 @@ export class CrawlListItem extends BtrixElement {
           ${this.safeRender((crawl) =>
             crawl.finished
               ? html`
-                  <sl-format-date
+                  <btrix-format-date
                     date=${crawl.finished}
                     month="2-digit"
                     day="2-digit"
                     year="2-digit"
                     hour="2-digit"
                     minute="2-digit"
-                  ></sl-format-date>
+                  ></btrix-format-date>
                 `
               : html`<span class="text-neutral-400" role="presentation"
                   >---</span
@@ -185,10 +185,9 @@ export class CrawlListItem extends BtrixElement {
           )}
         </btrix-table-cell>
         <btrix-table-cell>
-          <sl-format-bytes
-            value=${this.crawl.fileSize || 0}
-            display="narrow"
-          ></sl-format-bytes>
+          ${this.localize.bytes(this.crawl.fileSize || 0, {
+            unitDisplay: "narrow",
+          })}
         </btrix-table-cell>
         <btrix-table-cell>
           ${this.safeRender((crawl) => {

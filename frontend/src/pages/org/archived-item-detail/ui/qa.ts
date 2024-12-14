@@ -349,26 +349,26 @@ export class ArchivedItemDetailQA extends BtrixElement {
             ></btrix-crawl-status>
           </btrix-table-cell>
           <btrix-table-cell>
-            <sl-format-date
+            <btrix-format-date
               date=${run.started}
               month="2-digit"
               day="2-digit"
               year="2-digit"
               hour="2-digit"
               minute="2-digit"
-            ></sl-format-date>
+            ></btrix-format-date>
           </btrix-table-cell>
           <btrix-table-cell>
             ${run.finished
               ? html`
-                  <sl-format-date
+                  <btrix-format-date
                     date=${run.finished}
                     month="2-digit"
                     day="2-digit"
                     year="2-digit"
                     hour="2-digit"
                     minute="2-digit"
-                  ></sl-format-date>
+                  ></btrix-format-date>
                 `
               : notApplicable()}
           </btrix-table-cell>
@@ -429,14 +429,14 @@ export class ArchivedItemDetailQA extends BtrixElement {
             ${msg(
               str`This analysis run includes data for ${runToBeDeleted.stats.done} ${pluralOf("pages", runToBeDeleted.stats.done)} and was started on `,
             )}
-            <sl-format-date
+            <btrix-format-date
               date=${runToBeDeleted.started}
               month="2-digit"
               day="2-digit"
               year="2-digit"
               hour="2-digit"
               minute="2-digit"
-            ></sl-format-date>
+            ></btrix-format-date>
             ${msg("by")} ${runToBeDeleted.userName}.
           </div>
           <div slot="footer" class="flex justify-between">

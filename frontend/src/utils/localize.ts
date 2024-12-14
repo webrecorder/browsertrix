@@ -5,8 +5,11 @@
  * to avoid encoding issues when importing the polyfill asynchronously in the test server.
  * See https://github.com/web-dev-server/web-dev-server/issues/1
  */
+import { match } from "@formatjs/intl-localematcher";
 import { configureLocalization } from "@lit/localize";
-import uniq from "lodash/fp/uniq";
+import uniq from "lodash/uniq";
+
+import { cached } from "./weakCache";
 
 import { sourceLocale, targetLocales } from "@/__generated__/locale-codes";
 import {
@@ -15,7 +18,6 @@ import {
   type AllLanguageCodes,
   type LanguageCode,
 } from "@/types/localization";
-import { numberFormatter } from "@/utils/number";
 import appState from "@/utils/state";
 
 const { getLocale, setLocale } = configureLocalization({
@@ -37,53 +39,143 @@ const defaultDurationOptions: Intl.DurationFormatOptions = {
   style: "narrow",
 };
 
-export class Localize {
-  // Cache default formatters
-  private readonly numberFormatter = new Map([
-    [sourceLocale, numberFormatter(sourceLocale)],
+/**
+ * Merge app language, app settings, and navigator language into a single list of languages.
+ * @param targetLang The app language
+ * @param useNavigatorLocales Use navigator languages not matching app target language
+ * @param navigatorLocales List of requested languages (from `navigator.languages`)
+ * @returns List of locales for formatting quantities (e.g. dates, numbers, bytes, etc)
+ */
+export function mergeLocales(
+  targetLang: LanguageCode,
+  useNavigatorLocales: boolean,
+  navigatorLocales: readonly string[],
+) {
+  if (useNavigatorLocales) {
+    return uniq([...navigatorLocales, targetLang]);
+  }
+  return uniq([
+    ...navigatorLocales.filter(
+      (lang) => new Intl.Locale(lang).language === targetLang,
+    ),
+    targetLang,
   ]);
-  private readonly dateFormatter = new Map([
-    [sourceLocale, new Intl.DateTimeFormat(sourceLocale, defaultDateOptions)],
-  ]);
-  private readonly durationFormatter = new Map([
-    [
-      sourceLocale,
-      new Intl.DurationFormat(sourceLocale, defaultDurationOptions),
-    ],
-  ]);
+}
 
+/**
+ * Cached number formatter, with smart defaults.
+ *
+ * Uses {@linkcode cached} to keep a smart auto-filling and self-clearing cache,
+ * keyed by app language, user language preferences (from app settings and from
+ * navigator), and formatter options.
+ */
+const numberFormatter = cached(
+  (
+    lang: LanguageCode,
+    useNavigatorLocales: boolean,
+    navigatorLocales: readonly string[],
+    options?: Intl.NumberFormatOptions,
+  ) =>
+    new Intl.NumberFormat(
+      mergeLocales(lang, useNavigatorLocales, navigatorLocales),
+      options,
+    ),
+);
+
+/**
+ * Cached date/time formatter, with smart defaults.
+ *
+ * Uses {@linkcode cached} to keep a smart auto-filling and self-clearing cache,
+ * keyed by app language, user language preferences (from app settings and from
+ * navigator), and formatter options.
+ */
+const dateFormatter = cached(
+  (
+    lang: LanguageCode,
+    useNavigatorLocales: boolean,
+    navigatorLocales: readonly string[],
+    options: Intl.DateTimeFormatOptions = defaultDateOptions,
+  ) =>
+    new Intl.DateTimeFormat(
+      mergeLocales(lang, useNavigatorLocales, navigatorLocales),
+      options,
+    ),
+);
+
+/**
+ * Cached duration formatter, with smart defaults.
+ *
+ * Uses {@linkcode cached} to keep a smart auto-filling and self-clearing cache,
+ * keyed by app language, user language preferences (from app settings and from
+ * navigator), and formatter options.
+ */
+const durationFormatter = cached(
+  (
+    lang: LanguageCode,
+    useNavigatorLocales: boolean,
+    navigatorLocales: readonly string[],
+    options: Intl.DurationFormatOptions = defaultDurationOptions,
+  ) =>
+    new Intl.DurationFormat(
+      mergeLocales(lang, useNavigatorLocales, navigatorLocales),
+      options,
+    ),
+);
+
+const pluralFormatter = cached(
+  (
+    lang: LanguageCode,
+    useNavigatorLocales: boolean,
+    navigatorLocales: readonly string[],
+    options: Intl.PluralRulesOptions,
+  ) =>
+    new Intl.PluralRules(
+      mergeLocales(lang, useNavigatorLocales, navigatorLocales),
+      options,
+    ),
+);
+
+export class Localize {
   get activeLanguage() {
     // Use html `lang` as the source of truth since that's
     // the attribute watched by Shoelace
-    return document.documentElement.lang as LanguageCode;
+    return new Intl.Locale(document.documentElement.lang)
+      .language as LanguageCode;
   }
   private set activeLanguage(lang: LanguageCode) {
     // Setting the `lang` attribute will automatically localize
     // all Shoelace elements and `BtrixElement`s
-    document.documentElement.lang = lang;
+    document.documentElement.lang = mergeLocales(
+      lang,
+      false,
+      navigator.languages,
+    )[0];
+  }
+
+  get activeLocales() {
+    return mergeLocales(
+      localize.activeLanguage,
+      appState.userPreferences?.useBrowserLanguageForFormatting ?? true,
+      navigator.languages,
+    );
   }
 
   get languages() {
-    return uniq([
-      ...translatedLocales,
-      ...window.navigator.languages.map(langShortCode),
-    ]);
+    return appState.settings?.localesEnabled ?? translatedLocales;
   }
 
   constructor(initialLanguage: LanguageCode = sourceLocale) {
-    this.setLanguage(initialLanguage);
+    void this.setLanguage(initialLanguage);
   }
 
-  initLanguage() {
-    this.setLanguage(
-      appState.userPreferences?.language || getBrowserLang() || sourceLocale,
-    );
+  async initLanguage() {
+    await this.setLanguage(getDefaultLang());
   }
 
   /**
    * User-initiated language setting
    */
-  setLanguage(lang: LanguageCode) {
+  async setLanguage(lang: LanguageCode) {
     const { error } = languageCodeSchema.safeParse(lang);
 
     if (error) {
@@ -91,44 +183,33 @@ export class Localize {
       return;
     }
 
-    if (!this.numberFormatter.get(lang)) {
-      this.numberFormatter.set(lang, numberFormatter(lang));
-    }
-    if (!this.dateFormatter.get(lang)) {
-      this.dateFormatter.set(
-        lang,
-        new Intl.DateTimeFormat(lang, defaultDateOptions),
-      );
-    }
-
     this.activeLanguage = lang;
-    this.setTranslation(lang);
+    await this.setTranslation(lang);
   }
 
-  readonly number = (
-    n: number,
-    opts?: Intl.NumberFormatOptions & { ordinal?: boolean },
-  ) => {
+  readonly number = (n: number, opts?: Intl.NumberFormatOptions) => {
     if (isNaN(n)) return "";
 
-    let formatter = this.numberFormatter.get(localize.activeLanguage);
+    const formatter = numberFormatter(
+      localize.activeLanguage,
+      appState.userPreferences?.useBrowserLanguageForFormatting ?? true,
+      navigator.languages,
+      opts,
+    );
 
-    if ((opts && !opts.ordinal) || !formatter) {
-      formatter = new Intl.NumberFormat(localize.activeLanguage, opts);
-    }
-
-    return formatter.format(n, opts);
+    return formatter.format(n);
   };
 
   // Custom date formatter that takes missing `Z` into account
   readonly date = (d: Date | string, opts?: Intl.DateTimeFormatOptions) => {
     const date = new Date(d instanceof Date || d.endsWith("Z") ? d : `${d}Z`);
 
-    let formatter = this.dateFormatter.get(localize.activeLanguage);
-
-    if (opts || !formatter) {
-      formatter = new Intl.DateTimeFormat(localize.activeLanguage, opts);
-    }
+    const formatter = dateFormatter(
+      localize.activeLanguage,
+      appState.userPreferences?.useBrowserLanguageForFormatting ?? true,
+      navigator.languages,
+      opts,
+    );
 
     return formatter.format(date);
   };
@@ -137,38 +218,51 @@ export class Localize {
     d: Intl.DurationType,
     opts?: Intl.DurationFormatOptions,
   ) => {
-    let formatter = this.durationFormatter.get(localize.activeLanguage);
-
-    if (opts || !formatter) {
-      formatter = new Intl.DurationFormat(localize.activeLanguage, opts);
-    }
+    const formatter = durationFormatter(
+      localize.activeLanguage,
+      appState.userPreferences?.useBrowserLanguageForFormatting ?? true,
+      navigator.languages,
+      opts,
+    );
 
     return formatter.format(d);
   };
 
-  private setTranslation(lang: LanguageCode) {
+  private async setTranslation(lang: LanguageCode) {
     if (
       lang !== getLocale() &&
       (translatedLocales as AllLanguageCodes).includes(lang)
     ) {
-      void setLocale(lang);
+      await setLocale(lang);
     }
   }
+
+  readonly ordinal = (
+    value: number,
+    phrases: Record<Intl.LDMLPluralRule, string>,
+  ) => {
+    const formatter = pluralFormatter(
+      localize.activeLanguage,
+      appState.userPreferences?.useBrowserLanguageForFormatting ?? true,
+      navigator.languages,
+      { type: "ordinal" },
+    );
+    const pluralRule = formatter.select(value);
+    return phrases[pluralRule];
+  };
 }
 
 const localize = new Localize(sourceLocale);
 
 export default localize;
 
-function langShortCode(locale: string) {
-  return locale.split("-")[0] as LanguageCode;
-}
-
-export function getBrowserLang() {
+export function getDefaultLang() {
   // Default to current user browser language
-  const browserLanguage = window.navigator.language;
-  if (browserLanguage) {
-    return langShortCode(browserLanguage);
-  }
-  return null;
+  return match(
+    appState.userPreferences?.language
+      ? [appState.userPreferences.language]
+      : navigator.languages,
+    appState.settings?.localesEnabled ?? translatedLocales,
+    sourceLocale,
+  ) as LanguageCode;
 }

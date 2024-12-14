@@ -40,7 +40,7 @@ import {
   translatedLocales,
   type TranslatedLocaleEnum,
 } from "@/types/localization";
-import { type AppSettings } from "@/utils/app";
+import { getAppSettings, type AppSettings } from "@/utils/app";
 import { DEFAULT_MAX_SCALE } from "@/utils/crawler";
 import localize from "@/utils/localize";
 import { toast } from "@/utils/notify";
@@ -115,6 +115,20 @@ export class App extends BtrixElement {
     if (authState && !this.userInfo) {
       void this.fetchAndUpdateUserInfo();
     }
+
+    try {
+      this.settings = await getAppSettings();
+    } catch (e) {
+      console.error(e);
+      this.notify.toast({
+        message: msg("Couldn’t initialize Browsertrix correctly."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+        id: "get-app-settings-error",
+      });
+    } finally {
+      await localize.initLanguage();
+    }
     super.connectedCallback();
 
     this.addEventListener("btrix-navigate", this.onNavigateTo);
@@ -154,10 +168,6 @@ export class App extends BtrixElement {
         this.updateOrgSlugIfNeeded();
       }
     }
-  }
-
-  protected firstUpdated(): void {
-    localize.initLanguage();
   }
 
   getLocationPathname() {

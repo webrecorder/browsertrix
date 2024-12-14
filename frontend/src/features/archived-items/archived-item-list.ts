@@ -226,13 +226,13 @@ export class ArchivedItemListItem extends BtrixElement {
             @click=${this.onTooltipClick}
             hoist
           >
-            <sl-format-date
+            <btrix-format-date
               class="truncate"
-              date=${this.item.finished}
+              .date=${this.item.finished}
               month="2-digit"
               day="2-digit"
               year="2-digit"
-            ></sl-format-date>
+            ></btrix-format-date>
           </sl-tooltip>
         </btrix-table-cell>
         <btrix-table-cell class="tabular-nums">
@@ -243,11 +243,11 @@ export class ArchivedItemListItem extends BtrixElement {
             })}
             @click=${this.onTooltipClick}
           >
-            <sl-format-bytes
-              class="truncate"
-              value=${this.item.fileSize || 0}
-              display="narrow"
-            ></sl-format-bytes>
+            <span class="truncate">
+              ${this.localize.bytes(this.item.fileSize || 0, {
+                unitDisplay: "narrow",
+              })}
+            </span>
           </sl-tooltip>
         </btrix-table-cell>
         <btrix-table-cell class="tabular-nums">
