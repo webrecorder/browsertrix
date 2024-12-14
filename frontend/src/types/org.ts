@@ -52,7 +52,7 @@ export type CrawlingDefaults = z.infer<typeof crawlingDefaultsSchema>;
 export const orgDataSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
-  created: apiDateSchema.optional().nullable(),
+  created: apiDateSchema.nullable(),
   slug: z.string(),
   default: z.boolean(),
   quotas: orgQuotasSchema,

@@ -202,7 +202,7 @@ export class Localize {
 
   // Custom date formatter that takes missing `Z` into account
   readonly date = (
-    d: Date | string | null | undefined,
+    d: Date | string | null,
     opts?: Intl.DateTimeFormatOptions,
   ) => {
     if (!d) {
