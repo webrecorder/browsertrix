@@ -50,5 +50,5 @@ def test_api_settings():
         "signUpUrl": "",
         "salesEmail": "",
         "supportEmail": "",
-        "localesEnabled": ["en", "es"],
+        "localesEnabled": None,
     }
