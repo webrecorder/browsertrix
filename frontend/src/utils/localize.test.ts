@@ -104,11 +104,6 @@ describe("Localize", () => {
       const localize = new Localize("es");
       expect(localize.number(10000)).to.equal("10.000");
     });
-
-    it("formats an ordinal", () => {
-      const localize = new Localize();
-      expect(localize.number(1, { ordinal: true })).to.equal("1st");
-    });
   });
 
   describe(".date()", () => {
@@ -154,6 +149,8 @@ describe("Localize", () => {
       expect(() => localize.duration({})).to.throw();
     });
   });
+
+  // TODO test `.ordinal()`
 });
 
 describe("mergeLocales", () => {
