@@ -201,7 +201,13 @@ export class Localize {
   };
 
   // Custom date formatter that takes missing `Z` into account
-  readonly date = (d: Date | string, opts?: Intl.DateTimeFormatOptions) => {
+  readonly date = (
+    d: Date | string | null | undefined,
+    opts?: Intl.DateTimeFormatOptions,
+  ) => {
+    if (!d) {
+      return "";
+    }
     const date = new Date(d instanceof Date || d.endsWith("Z") ? d : `${d}Z`);
 
     const formatter = dateFormatter(
