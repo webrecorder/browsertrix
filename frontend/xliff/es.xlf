@@ -4408,12 +4408,6 @@
         <source>Your trial ends within one day</source>
         <target state="translated">Su periodo de prueba termina en un día</target>
       </trans-unit>
-      <trans-unit xml:space="preserve" id="he8a019fc239da9d2">
-        <source>Your free trial ends on <x id="0" equiv-text="${dateStr}"/>. To continue using
-                    Browsertrix, select <x id="1" equiv-text="&lt;strong&gt;"/>Choose Plan<x id="2" equiv-text="&lt;/strong&gt;"/> in
-                    <x id="3" equiv-text="${billingTabLink}"/>.</source>
-        <target state="translated">Su periodo de prueba termina en <x id="0" equiv-text="${dateStr}"/>. Para seguir utilizando Browsertrix, seleccione <x id="1" equiv-text="&lt;strong&gt;"/>Elegir plan<x id="2" equiv-text="&lt;/strong&gt;"/> en <x id="3" equiv-text="${billingTabLink}"/>.</target>
-      </trans-unit>
       <trans-unit id="se5578c14db3c7b2b">
         <source>Your web archives are always yours — you can download any archived items you'd like to keep
                   before the trial ends!</source>
@@ -4485,6 +4479,11 @@
       </trans-unit>
       <trans-unit id="h8eb4021572d41d99">
         <source>Name &amp; Schedule</source>
+      </trans-unit>
+      <trans-unit id="h737a03dd2c6c5d2a">
+        <source>Your free trial ends on <x id="0" equiv-text="${dateStr}"/>. To continue using
+                    Browsertrix, select <x id="1" equiv-text="&lt;strong&gt;"/>Subscribe Now<x id="2" equiv-text="&lt;/strong&gt;"/> in
+                    <x id="3" equiv-text="${billingTabLink}"/>.</source>
       </trans-unit>
     </body>
   </file>
