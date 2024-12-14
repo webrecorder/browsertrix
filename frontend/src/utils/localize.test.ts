@@ -39,7 +39,7 @@ describe("Localize", () => {
     it("returns the correct languages", () => {
       stub(window.navigator, "languages").get(() => ["en-US", "ar", "ko"]);
       const localize = new Localize();
-      expect(localize.languages).to.eql(["en", "es"]);
+      expect(localize.languages).to.eql(["de", "en", "es", "fr", "pt"]);
     });
   });
 
