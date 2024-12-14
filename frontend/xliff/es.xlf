@@ -1805,7 +1805,7 @@
         <source>All files and logs associated with this item will also be deleted, and the crawl will no longer be visible in its associated Workflow.</source>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s039b6434e8a75560">
-        <source>Delete <x id="0" equiv-text="${this.itemToDelete?.type === &quot;upload&quot;&#10;    ? msg(&quot;Upload&quot;)&#10;    : msg(&quot;Crawl&quot;)}"/></source>
+        <source>Delete <x id="0" equiv-text="${org.name}"/></source>
         <target state="translated">Eliminar <x id="0" equiv-text="${this.itemToDelete?.type === &quot;upload&quot;&#10;    ? msg(&quot;Upload&quot;)&#10;    : msg(&quot;Crawl&quot;)}"/></target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s96668830629e0dfc">
@@ -2074,7 +2074,7 @@
         <target state="translated">+<x id="0" equiv-text="${data.origins.length - 1}"/></target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s922123a81f238186">
-        <source>By <x id="0" equiv-text="${data.createdByName}"/></source>
+        <source>By <x id="0" equiv-text="${this.item.userName}"/></source>
         <target state="translated">Por <x id="0" equiv-text="${data.createdByName}"/></target>
       </trans-unit>
       <trans-unit id="s0d2b97026d57ffd0">
@@ -4377,25 +4377,6 @@
         <source>Choose your preferred language for displaying Browsertrix in your browser.</source>
         <target state="translated">Elija su idioma preferido para visualizar Browsertrix en su navegador.</target>
       </trans-unit>
-      <trans-unit id="h88cfbf4cb1b57616">
-        <source>Deleting an org will delete all
-                  <x id="0" equiv-text="&lt;strong class=&quot;font-semibold&quot;&gt;&#10;                    &lt;sl-format-bytes value=&quot;${org.bytesStored}&quot;&gt;&lt;/sl-format-bytes&gt;&#10;                  &lt;/strong&gt;"/>
-                  of data associated with the org.</source>
-      </trans-unit>
-      <trans-unit id="hc95f75343ebc2ce0">
-        <source>Crawls:
-                    <x id="0" equiv-text="&lt;sl-format-bytes value=&quot;${org.bytesStoredCrawls}&quot;&gt;&lt;/sl-format-bytes&gt;"/></source>
-      </trans-unit>
-      <trans-unit xml:space="preserve" id="h9e8c0254131f987c">
-        <source>Uploads:
-                    <x id="0" equiv-text="&lt;sl-format-bytes value=&quot;${org.bytesStoredUploads}&quot;&gt;&lt;/sl-format-bytes&gt;"/></source>
-        <target state="translated">Subidas: <x id="0" equiv-text="&lt;sl-format-bytes value=&quot;${org.bytesStoredUploads}&quot;&gt;&lt;/sl-format-bytes&gt;"/></target>
-      </trans-unit>
-      <trans-unit xml:space="preserve" id="hc4433ba5eba156e2">
-        <source>Profiles:
-                    <x id="0" equiv-text="&lt;sl-format-bytes value=&quot;${org.bytesStoredProfiles}&quot;&gt;&lt;/sl-format-bytes&gt;"/></source>
-        <target state="translated">Perfiles: <x id="0" equiv-text="&lt;sl-format-bytes value=&quot;${org.bytesStoredProfiles}&quot;&gt;&lt;/sl-format-bytes&gt;"/></target>
-      </trans-unit>
       <trans-unit xml:space="preserve" id="s582e36ff4a424786">
         <source>Removing <x id="0" equiv-text="${this.localize.number(removeCount)} ${pluralOf(&quot;items&quot;, removeCount)}"/></source>
         <target state="translated">Eliminar <x id="0" equiv-text="${this.localize.number(removeCount)} ${pluralOf(&quot;items&quot;, removeCount)}"/></target>
@@ -4407,12 +4388,6 @@
       <trans-unit xml:space="preserve" id="se4dfda71fd51327d">
         <source>Your trial ends within one day</source>
         <target state="translated">Su periodo de prueba termina en un día</target>
-      </trans-unit>
-      <trans-unit xml:space="preserve" id="he8a019fc239da9d2">
-        <source>Your free trial ends on <x id="0" equiv-text="${dateStr}"/>. To continue using
-                    Browsertrix, select <x id="1" equiv-text="&lt;strong&gt;"/>Choose Plan<x id="2" equiv-text="&lt;/strong&gt;"/> in
-                    <x id="3" equiv-text="${billingTabLink}"/>.</source>
-        <target state="translated">Su periodo de prueba termina en <x id="0" equiv-text="${dateStr}"/>. Para seguir utilizando Browsertrix, seleccione <x id="1" equiv-text="&lt;strong&gt;"/>Elegir plan<x id="2" equiv-text="&lt;/strong&gt;"/> en <x id="3" equiv-text="${billingTabLink}"/>.</target>
       </trans-unit>
       <trans-unit id="se5578c14db3c7b2b">
         <source>Your web archives are always yours — you can download any archived items you'd like to keep
@@ -4485,6 +4460,59 @@
       </trans-unit>
       <trans-unit id="h8eb4021572d41d99">
         <source>Name &amp; Schedule</source>
+      </trans-unit>
+      <trans-unit id="h30ddaf03878f27b9">
+        <source>Deleting an org will delete all
+                  <x id="0" equiv-text="&lt;strong class=&quot;font-semibold&quot;&gt;&#10;                    ${this.localize.bytes(org.bytesStored)}&#10;                  &lt;/strong&gt;"/>
+                  of data associated with the org.</source>
+      </trans-unit>
+      <trans-unit id="hd246a3ddb77fb7e5">
+        <source><x id="0" equiv-text="${msg(&quot;Crawls&quot;)}"/>:
+                  <x id="1" equiv-text="${this.localize.bytes(org.bytesStoredCrawls)}"/></source>
+      </trans-unit>
+      <trans-unit id="h737a03dd2c6c5d2a">
+        <source>Your free trial ends on <x id="0" equiv-text="${dateStr}"/>. To continue using
+                    Browsertrix, select <x id="1" equiv-text="&lt;strong&gt;"/>Subscribe Now<x id="2" equiv-text="&lt;/strong&gt;"/> in
+                    <x id="3" equiv-text="${billingTabLink}"/>.</source>
+      </trans-unit>
+      <trans-unit id="saf8636a6d65b1842">
+        <source>Your browser’s language settings will take precedence over the language chosen above when formatting numbers, dates, and durations.</source>
+      </trans-unit>
+      <trans-unit id="sf3e0a9a76635b431">
+        <source>Use browser language settings for formatting numbers and dates.</source>
+      </trans-unit>
+      <trans-unit id="s7458c3e835ad08bc">
+        <source>For example:</source>
+      </trans-unit>
+      <trans-unit id="sc72c35c940c8e9eb">
+        <source>Your formatting preference has been updated.</source>
+      </trans-unit>
+      <trans-unit id="sf36c01d89a1ee87f">
+        <source>Couldn’t initialize Browsertrix correctly.</source>
+      </trans-unit>
+      <trans-unit id="ordinal-suffix-few">
+        <source>rd</source>
+        <note from="lit-localize">Ordinal suffix for "few", e.g. 3rd (the "rd" part)</note>
+      </trans-unit>
+      <trans-unit id="ordinal-suffix-many">
+        <source>th</source>
+        <note from="lit-localize">Ordinal suffix for "many" (not used in English, but for example in Gujarati, the "ઠો" part of 6ઠો)</note>
+      </trans-unit>
+      <trans-unit id="ordinal-suffix-one">
+        <source>st</source>
+        <note from="lit-localize">Ordinal suffix for "one", e.g. 1st (the "st" part)</note>
+      </trans-unit>
+      <trans-unit id="ordinal-suffix-other">
+        <source>th</source>
+        <note from="lit-localize">Ordinal suffix for "other", e.g. 4th (the "th" part)</note>
+      </trans-unit>
+      <trans-unit id="ordinal-suffix-two">
+        <source>nd</source>
+        <note from="lit-localize">Ordinal suffix for "two", e.g. 2nd (the "nd" part)</note>
+      </trans-unit>
+      <trans-unit id="ordinal-suffix-zero">
+        <source>th</source>
+        <note from="lit-localize">Ordinal suffix for "zero", e.g. 0th (the "th" part)</note>
       </trans-unit>
     </body>
   </file>
