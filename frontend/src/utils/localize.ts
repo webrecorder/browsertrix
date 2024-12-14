@@ -18,7 +18,6 @@ import {
   type AllLanguageCodes,
   type LanguageCode,
 } from "@/types/localization";
-import { numberFormatter as customNumberFormatter } from "@/utils/number";
 import appState from "@/utils/state";
 
 const { getLocale, setLocale } = configureLocalization({
@@ -83,7 +82,7 @@ const numberFormatter = cached(
     navigatorLocales: readonly string[],
     options?: Intl.NumberFormatOptions,
   ) =>
-    customNumberFormatter(
+    new Intl.NumberFormat(
       mergeLocales(lang, useNavigatorLocales, navigatorLocales),
       options,
     ),
@@ -129,6 +128,19 @@ const durationFormatter = cached(
     ),
 );
 
+const pluralFormatter = cached(
+  (
+    lang: LanguageCode,
+    useNavigatorLocales: boolean,
+    navigatorLocales: readonly string[],
+    options: Intl.PluralRulesOptions,
+  ) =>
+    new Intl.PluralRules(
+      mergeLocales(lang, useNavigatorLocales, navigatorLocales),
+      options,
+    ),
+);
+
 export class Localize {
   get activeLanguage() {
     // Use html `lang` as the source of truth since that's
@@ -144,6 +156,14 @@ export class Localize {
       false,
       navigator.languages,
     )[0];
+  }
+
+  get activeLocales() {
+    return mergeLocales(
+      localize.activeLanguage,
+      appState.userPreferences?.useBrowserLanguageForFormatting ?? true,
+      navigator.languages,
+    );
   }
 
   get languages() {
@@ -173,10 +193,7 @@ export class Localize {
     await this.setTranslation(lang);
   }
 
-  readonly number = (
-    n: number,
-    opts?: Intl.NumberFormatOptions & { ordinal?: boolean },
-  ) => {
+  readonly number = (n: number, opts?: Intl.NumberFormatOptions) => {
     if (isNaN(n)) return "";
 
     const formatter = numberFormatter(
@@ -186,7 +203,7 @@ export class Localize {
       opts,
     );
 
-    return formatter.format(n, opts);
+    return formatter.format(n);
   };
 
   // Custom date formatter that takes missing `Z` into account
@@ -225,6 +242,20 @@ export class Localize {
       await setLocale(lang);
     }
   }
+
+  readonly ordinal = (
+    value: number,
+    phrases: Record<Intl.LDMLPluralRule, string>,
+  ) => {
+    const formatter = pluralFormatter(
+      localize.activeLanguage,
+      appState.userPreferences?.useBrowserLanguageForFormatting ?? true,
+      navigator.languages,
+      { type: "ordinal" },
+    );
+    const pluralRule = formatter.select(value);
+    return phrases[pluralRule];
+  };
 }
 
 const localize = new Localize(sourceLocale);

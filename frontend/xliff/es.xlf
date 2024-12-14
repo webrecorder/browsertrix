@@ -429,10 +429,6 @@
         <source>Every <x id="0" equiv-text="${formattedWeekDay}"/></source>
         <target state="translated">Cada <x id="0" equiv-text="${formattedWeekDay}"/></target>
       </trans-unit>
-      <trans-unit xml:space="preserve" id="s37a3a294775e081a">
-        <source>Monthly on the <x id="0" equiv-text="${localize.number(days[0], { ordinal: true })}"/></source>
-        <target state="translated">Mensualmente el <x id="0" equiv-text="${localize.number(days[0], { ordinal: true })}"/></target>
-      </trans-unit>
       <trans-unit xml:space="preserve" id="s2bc963c5c7bac2e1">
         <source>Every day at <x id="0" equiv-text="${formattedTime}"/></source>
         <target state="translated">Cada día a las <x id="0" equiv-text="${formattedTime}"/></target>
@@ -2750,18 +2746,6 @@
                   cannot be undone.</source>
         <target state="translated">¿Está seguro que desea eliminar <x id="0" equiv-text="&lt;strong class=&quot;font-semibold&quot;&gt;${org.name}&lt;/strong&gt;"/>? Esta acción no se puede deshacer.</target>
       </trans-unit>
-      <trans-unit id="h88cfbf4cb1b57616">
-        <source>Deleting an org will delete all <x equiv-text="&lt;strong class=&quot;font-semibold&quot;&gt;&#10;                    &lt;sl-format-bytes value=&quot;${org.bytesStored}&quot;&gt;&lt;/sl-format-bytes&gt;&#10;                  &lt;/strong&gt;" id="0"/> of data associated with the org.</source>
-      </trans-unit>
-      <trans-unit id="hc95f75343ebc2ce0">
-        <source>Crawls: <x equiv-text="&lt;sl-format-bytes value=&quot;${org.bytesStoredCrawls}&quot;&gt;&lt;/sl-format-bytes&gt;" id="0"/></source>
-      </trans-unit>
-      <trans-unit id="h9e8c0254131f987c">
-        <source>Uploads: <x equiv-text="&lt;sl-format-bytes value=&quot;${org.bytesStoredUploads}&quot;&gt;&lt;/sl-format-bytes&gt;" id="0"/></source>
-      </trans-unit>
-      <trans-unit id="hc4433ba5eba156e2">
-        <source>Profiles: <x equiv-text="&lt;sl-format-bytes value=&quot;${org.bytesStoredProfiles}&quot;&gt;&lt;/sl-format-bytes&gt;" id="0"/></source>
-      </trans-unit>
       <trans-unit xml:space="preserve" id="se49bbaeabfd85d48">
         <source>Type "<x id="0" equiv-text="${confirmationStr}"/>" to confirm</source>
         <target state="translated">Escriba "<x id="0" equiv-text="${confirmationStr}"/>" para confirmar</target>
@@ -4490,29 +4474,23 @@
       <trans-unit id="sf36c01d89a1ee87f">
         <source>Couldn’t initialize Browsertrix correctly.</source>
       </trans-unit>
-      <trans-unit id="ordinal-suffix-few">
-        <source>rd</source>
-        <note from="lit-localize">Ordinal suffix for "few", e.g. 3rd (the "rd" part)</note>
+      <trans-unit id="monthly-interval-ordinal-zero">
+        <source>Monthly on the zeroth</source>
       </trans-unit>
-      <trans-unit id="ordinal-suffix-many">
-        <source>th</source>
-        <note from="lit-localize">Ordinal suffix for "many" (not used in English, but for example in Gujarati, the "ઠો" part of 6ઠો)</note>
+      <trans-unit id="monthly-interval-ordinal-one">
+        <source>Monthly on the <x id="0" equiv-text="${localize.number(days[0])}"/>st</source>
       </trans-unit>
-      <trans-unit id="ordinal-suffix-one">
-        <source>st</source>
-        <note from="lit-localize">Ordinal suffix for "one", e.g. 1st (the "st" part)</note>
+      <trans-unit id="monthly-interval-ordinal-two">
+        <source>Monthly on the <x id="0" equiv-text="${localize.number(days[0])}"/>nd</source>
       </trans-unit>
-      <trans-unit id="ordinal-suffix-other">
-        <source>th</source>
-        <note from="lit-localize">Ordinal suffix for "other", e.g. 4th (the "th" part)</note>
+      <trans-unit id="monthly-interval-ordinal-few">
+        <source>Monthly on the <x id="0" equiv-text="${localize.number(days[0])}"/>rd</source>
       </trans-unit>
-      <trans-unit id="ordinal-suffix-two">
-        <source>nd</source>
-        <note from="lit-localize">Ordinal suffix for "two", e.g. 2nd (the "nd" part)</note>
+      <trans-unit id="monthly-interval-ordinal-many">
+        <source>Monthly on the <x id="0" equiv-text="${localize.number(days[0])}"/>th</source>
       </trans-unit>
-      <trans-unit id="ordinal-suffix-zero">
-        <source>th</source>
-        <note from="lit-localize">Ordinal suffix for "zero", e.g. 0th (the "th" part)</note>
+      <trans-unit id="monthly-interval-ordinal-other">
+        <source>Monthly on the <x id="0" equiv-text="${localize.number(days[0])}"/>th</source>
       </trans-unit>
     </body>
   </file>
