@@ -13,6 +13,7 @@ export const sourceLocale = `en`;
 export const targetLocales = [
   `de`,
   `es`,
+  `fr`,
   `pt`,
 ] as const;
 
@@ -23,5 +24,6 @@ export const allLocales = [
   `de`,
   `en`,
   `es`,
+  `fr`,
   `pt`,
 ] as const;
