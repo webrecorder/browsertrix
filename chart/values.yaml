@@ -1,8 +1,10 @@
 # Global Settings
 # =========================================
 
-# locales available to choose from in the front end
-locales_enabled: "en,es"
+# locales available to choose from in the UI
+# if not set, all locales available by default
+# ex: enable only 'en' and 'es' locales
+# locales_enabled: "en,es"
 
 
 # Crawler Settings
