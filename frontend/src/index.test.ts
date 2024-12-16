@@ -6,7 +6,7 @@ import { NavigateController } from "./controllers/navigate";
 import { NotifyController } from "./controllers/notify";
 import { type AppSettings } from "./utils/app";
 import AuthService from "./utils/AuthService";
-import appState, { AppStateService } from "./utils/state";
+import { AppStateService } from "./utils/state";
 import { formatAPIUser } from "./utils/user";
 
 import { App, type APIUser } from ".";
