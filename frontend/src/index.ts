@@ -255,6 +255,8 @@ export class App extends BtrixElement {
   }
 
   render() {
+    if (!this.settings) return;
+
     return html`
       <div class="min-w-screen flex min-h-screen flex-col">
         ${this.renderNavBar()} ${this.renderAlertBanner()}
