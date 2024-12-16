@@ -603,6 +603,7 @@ export class AccountSettings extends BtrixElement {
       message: msg("Your formatting preference has been updated."),
       variant: "success",
       icon: "check2-circle",
+      id: "account-settings-formatting",
     });
   };
 }
