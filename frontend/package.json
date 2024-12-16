@@ -125,7 +125,8 @@
     "@open-wc/testing": "^3.2.0",
     "@playwright/test": "1.49.0",
     "@web/test-runner": "^0.13.22",
-    "@web/test-runner-playwright": "^0.11.0"
+    "@web/test-runner-playwright": "^0.11.0",
+    "http-proxy-middleware": "^3.0.3"
   },
   "lint-staged": {
     "*.{ts,js,html,css,json,webmanifest}": "prettier --write"
