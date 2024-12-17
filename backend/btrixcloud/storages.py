@@ -277,8 +277,10 @@ class StorageOps:
         bucket, key = parts.path[1:].split("/", 1)
 
         # use presign_endpoint for actual connection here
+        # split key into bucket, key, as actual bucket in domain
         if use_presign_url and storage.presign_endpoint_url:
             parts = urlsplit(storage.presign_endpoint_url)
+            bucket, key = key.split("/", 1)
 
         endpoint_url = parts.scheme + "://" + parts.netloc
 
