@@ -175,6 +175,8 @@ export class App extends BtrixElement {
 
   async initTranslation() {
     await localize.initLanguage();
+    // TODO We might want to set this in a lit-localize-status event listener
+    // see https://lit.dev/docs/localization/runtime-mode/#example-of-using-the-status-event
     this.translationReady = true;
   }
 
