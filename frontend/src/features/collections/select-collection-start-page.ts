@@ -215,7 +215,7 @@ export class SelectCollectionStartPage extends BtrixElement {
         if (!items.length) {
           return html`
             <sl-menu-item slot="menu-item" disabled>
-              ${msg("No matching Collections found.")}
+              ${msg("No matching pages found.")}
             </sl-menu-item>
           `;
         }
