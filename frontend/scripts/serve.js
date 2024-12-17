@@ -27,8 +27,8 @@ Object.keys(devServer.proxy).forEach((path) => {
   app.use(
     path,
     createProxyMiddleware({
-      target: devServer.proxy[path],
-      changeOrigin: true,
+      ...devServer.proxy[path],
+      followRedirects: true,
     }),
   );
 });

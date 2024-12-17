@@ -14,7 +14,8 @@ jobs:
     timeout-minutes: 60
     runs-on: ubuntu-latest
     env:
-      DEV_PASSWORD: ${{ secrets.DEV_PASSWORD }}
+      E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
+      E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
       API_BASE_URL: ${{ secrets.API_BASE_URL }}
       working-directory: ./frontend
     steps:
@@ -65,7 +66,8 @@ jobs:
         run: |
           cd frontend
           touch .env
-          echo DEV_PASSWORD="${{ secrets.DEV_PASSWORD }}" >> .env
+          echo E2E_USER_EMAIL="${{ secrets.E2E_USER_EMAIL }}" >> .env
+          echo E2E_USER_PASSWORD="${{ secrets.E2E_USER_PASSWORD }}" >> .env
           echo API_BASE_URL=${{ secrets.API_BASE_URL }} >> .env
           cat .env
 

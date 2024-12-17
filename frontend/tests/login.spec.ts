@@ -11,15 +11,22 @@ test("test", async ({ baseURL }) => {
     await page.waitForLoadState("load");
     await page.waitForSelector('input[name="username"]');
     await page.click('input[name="username"]');
-    await page.fill('input[name="username"]', "dev@webrecorder.net");
-    await page.click('input[name="password"]');
-    const devPassword = process.env.DEV_PASSWORD;
-    if (!devPassword) {
+
+    const e2eEmail = process.env.E2E_USER_EMAIL;
+    if (!e2eEmail) {
       throw new Error(
-        "DEV_PASSWORD environment variable is not defined or null.",
+        "E2E_USER_EMAIL environment variable is not defined or null.",
       );
     }
-    await page.fill('input[name="password"]', devPassword);
+    await page.fill('input[name="username"]', e2eEmail);
+    await page.click('input[name="password"]');
+    const e2ePassword = process.env.E2E_USER_PASSWORD;
+    if (!e2ePassword) {
+      throw new Error(
+        "E2E_USER_PASSWORD environment variable is not defined or null.",
+      );
+    }
+    await page.fill('input[name="password"]', e2ePassword);
     await page.click('sl-button:has-text("Log In")');
   } finally {
     await browser.close();
