@@ -101,7 +101,7 @@ export class SelectCollectionAccess extends BtrixElement {
             >
             <div class="p-2">
               ${msg(
-                "If public, the following collection details will be visible:",
+                "In addition to replay, the following collection details will be visible:",
               )}
               <ul class="mt-2 list-inside list-disc">
                 <li>${msg("Name")}</li>
