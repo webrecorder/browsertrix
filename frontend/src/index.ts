@@ -95,6 +95,9 @@ export class App extends BtrixElement {
   authService = new AuthService();
 
   @state()
+  private translationReady = false;
+
+  @state()
   private viewState!: ViewState<typeof ROUTES>;
 
   @state()
@@ -155,7 +158,7 @@ export class App extends BtrixElement {
       AppStateService.updateSettings(this.settings || null);
 
       if (this.settings && !changedProperties.get("settings")) {
-        void localize.initLanguage();
+        void this.initTranslation();
       }
     }
     if (changedProperties.has("viewState")) {
@@ -168,6 +171,11 @@ export class App extends BtrixElement {
         this.updateOrgSlugIfNeeded();
       }
     }
+  }
+
+  async initTranslation() {
+    await localize.initLanguage();
+    this.translationReady = true;
   }
 
   getLocationPathname() {
@@ -264,7 +272,7 @@ export class App extends BtrixElement {
   }
 
   render() {
-    if (!this.settings) return;
+    if (!this.translationReady) return;
 
     return html`
       <div class="min-w-screen flex min-h-screen flex-col">
