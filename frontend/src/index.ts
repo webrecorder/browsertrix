@@ -70,8 +70,8 @@ export interface UserGuideEventMap {
   "btrix-user-guide-show": CustomEvent<{ path?: string }>;
 }
 
-@localized()
 @customElement("browsertrix-app")
+@localized()
 export class App extends BtrixElement {
   /**
    * Browsertrix app version to display in the UI
