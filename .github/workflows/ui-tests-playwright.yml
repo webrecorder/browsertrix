@@ -76,7 +76,7 @@ jobs:
 
       - name: Run Playwright tests
         working-directory: frontend
-        run: DEBUG=* yarn playwright test
+        run: yarn playwright test
 
       - uses: actions/upload-artifact@v4
         if: always()
