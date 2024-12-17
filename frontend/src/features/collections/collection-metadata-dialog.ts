@@ -165,7 +165,7 @@ export class CollectionMetadataDialog extends BtrixElement {
         ${when(
           this.showPublicWarning && this.org,
           (org) => html`
-            <btrix-alert variant="warning" class="mt-3">
+            <btrix-alert variant="warning" class="mt-2">
               ${org.enablePublicProfile
                 ? msg(
                     "This collection will be visible on the org public profile, even without archived items. You may want to set visibility to 'Unlisted' until archived items have been added.",

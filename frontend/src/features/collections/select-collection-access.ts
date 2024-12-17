@@ -2,6 +2,7 @@ import { localized, msg } from "@lit/localize";
 import type { SlIcon, SlSelectEvent } from "@shoelace-style/shoelace";
 import { html } from "lit";
 import { customElement, property } from "lit/decorators.js";
+import { when } from "lit/directives/when.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { CollectionAccess } from "@/types/collection";
@@ -91,6 +92,29 @@ export class SelectCollectionAccess extends BtrixElement {
           </sl-menu>
         </sl-dropdown>
       </div>
+      ${when(
+        this.value === CollectionAccess.Public,
+        () => html`
+          <btrix-details class="mt-2">
+            <span slot="title">
+              ${msg("What information will be visible to the public?")}</span
+            >
+            <div class="p-2">
+              ${msg(
+                "If public, the following collection details will be visible:",
+              )}
+              <ul class="mt-2 list-inside list-disc">
+                <li>${msg("Name")}</li>
+                <li>${msg("Summary")}</li>
+                <li>${msg("About")}</li>
+                <li>${msg("Collection Period")}</li>
+                <li>${msg("Total Pages")}</li>
+                <li>${msg("Collection Size")}</li>
+              </ul>
+            </div>
+          </btrix-details>
+        `,
+      )}
     `;
   }
 }
