@@ -278,7 +278,7 @@ class StorageOps:
 
         # use presign_endpoint for actual connection here
         if use_presign_url and storage.presign_endpoint_url:
-            endpoint_url = storage.presign_endpoint_url
+            parts = urlsplit(storage.presign_endpoint_url)
 
         endpoint_url = parts.scheme + "://" + parts.netloc
 
