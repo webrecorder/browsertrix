@@ -189,9 +189,11 @@ export class SelectCollectionStartPage extends BtrixElement {
           label=${msg("Page URL")}
           placeholder=${msg("Start typing a URL...")}
           clearable
-          @sl-clear=${() => {
-            this.combobox?.hide();
-            void this.searchResults.run();
+          @sl-focus=${() => {
+            this.combobox?.show();
+          }}
+          @sl-clear=${async () => {
+            this.searchQuery = "";
           }}
           @sl-input=${this.onSearchInput as UnderlyingFunction<
             typeof this.onSearchInput
