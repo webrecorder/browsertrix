@@ -40,7 +40,7 @@ import {
   translatedLocales,
   type TranslatedLocaleEnum,
 } from "@/types/localization";
-import { getAppSettings, type AppSettings } from "@/utils/app";
+import { type AppSettings } from "@/utils/app";
 import { DEFAULT_MAX_SCALE } from "@/utils/crawler";
 import localize from "@/utils/localize";
 import { toast } from "@/utils/notify";
@@ -70,20 +70,32 @@ export interface UserGuideEventMap {
   "btrix-user-guide-show": CustomEvent<{ path?: string }>;
 }
 
-@localized()
 @customElement("browsertrix-app")
+@localized()
 export class App extends BtrixElement {
+  /**
+   * Browsertrix app version to display in the UI
+   */
   @property({ type: String })
   version?: string;
 
+  /**
+   * Base URL for user guide documentation
+   */
   @property({ type: String })
   docsUrl = "/docs/";
 
+  /**
+   * App settings from `/api/settings`
+   */
   @property({ type: Object })
   settings?: AppSettings;
 
   private readonly router = new APIRouter(ROUTES);
   authService = new AuthService();
+
+  @state()
+  private translationReady = false;
 
   @state()
   private viewState!: ViewState<typeof ROUTES>;
@@ -116,19 +128,6 @@ export class App extends BtrixElement {
       void this.fetchAndUpdateUserInfo();
     }
 
-    try {
-      this.settings = await getAppSettings();
-    } catch (e) {
-      console.error(e);
-      this.notify.toast({
-        message: msg("Couldn’t initialize Browsertrix correctly."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-        id: "get-app-settings-error",
-      });
-    } finally {
-      await localize.initLanguage();
-    }
     super.connectedCallback();
 
     this.addEventListener("btrix-navigate", this.onNavigateTo);
@@ -157,6 +156,10 @@ export class App extends BtrixElement {
   willUpdate(changedProperties: Map<string, unknown>) {
     if (changedProperties.has("settings")) {
       AppStateService.updateSettings(this.settings || null);
+
+      if (this.settings && !changedProperties.get("settings")) {
+        void this.initTranslation();
+      }
     }
     if (changedProperties.has("viewState")) {
       if (this.viewState.route === "orgs") {
@@ -168,6 +171,13 @@ export class App extends BtrixElement {
         this.updateOrgSlugIfNeeded();
       }
     }
+  }
+
+  async initTranslation() {
+    await localize.initLanguage();
+    // TODO We might want to set this in a lit-localize-status event listener
+    // see https://lit.dev/docs/localization/runtime-mode/#example-of-using-the-status-event
+    this.translationReady = true;
   }
 
   getLocationPathname() {
@@ -264,6 +274,8 @@ export class App extends BtrixElement {
   }
 
   render() {
+    if (!this.translationReady) return;
+
     return html`
       <div class="min-w-screen flex min-h-screen flex-col">
         ${this.renderNavBar()} ${this.renderAlertBanner()}

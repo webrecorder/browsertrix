@@ -6,7 +6,7 @@ import { NavigateController } from "./controllers/navigate";
 import { NotifyController } from "./controllers/notify";
 import { type AppSettings } from "./utils/app";
 import AuthService from "./utils/AuthService";
-import appState, { AppStateService } from "./utils/state";
+import { AppStateService } from "./utils/state";
 import { formatAPIUser } from "./utils/user";
 
 import { App, type APIUser } from ".";
@@ -62,6 +62,22 @@ describe("browsertrix-app", () => {
     expect(el).instanceOf(App);
   });
 
+  it("blocks render if settings aren't defined", async () => {
+    stub(AuthService, "initSessionStorage").returns(
+      Promise.resolve({
+        headers: { Authorization: "_fake_headers_" },
+        tokenExpiresAt: 0,
+        username: "test-auth@example.com",
+      }),
+    );
+    // @ts-expect-error checkFreshness is private
+    stub(AuthService.prototype, "checkFreshness");
+    const el = await fixture<App>(html` <browsertrix-app></browsertrix-app>`);
+    await el.updateComplete;
+
+    expect(el.shadowRoot?.childElementCount).to.equal(0);
+  });
+
   it("renders home when authenticated", async () => {
     stub(AuthService, "initSessionStorage").returns(
       Promise.resolve({
@@ -72,8 +88,9 @@ describe("browsertrix-app", () => {
     );
     // @ts-expect-error checkFreshness is private
     stub(AuthService.prototype, "checkFreshness");
-    stub(appState, "settings").returns(mockAppSettings);
-    const el = await fixture<App>(html` <browsertrix-app></browsertrix-app>`);
+    const el = await fixture<App>(
+      html` <browsertrix-app .settings=${mockAppSettings}></browsertrix-app>`,
+    );
     await el.updateComplete;
     expect(el.shadowRoot?.querySelector("btrix-home")).to.exist;
   });
@@ -82,7 +99,6 @@ describe("browsertrix-app", () => {
     stub(AuthService, "initSessionStorage").returns(Promise.resolve(null));
     // @ts-expect-error checkFreshness is private
     stub(AuthService.prototype, "checkFreshness");
-    stub(appState, "settings").returns(mockAppSettings);
     stub(NavigateController, "createNavigateEvent").callsFake(
       () =>
         new CustomEvent("x-ignored", {
@@ -90,7 +106,9 @@ describe("browsertrix-app", () => {
         }),
     );
 
-    const el = await fixture<App>(html` <browsertrix-app></browsertrix-app>`);
+    const el = await fixture<App>(
+      html` <browsertrix-app .settings=${mockAppSettings}></browsertrix-app>`,
+    );
     expect(el.shadowRoot?.querySelector("btrix-home")).to.exist;
   });
 
