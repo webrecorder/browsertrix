@@ -33,6 +33,14 @@ export class MarkdownViewer extends LitElement {
       p {
         line-height: inherit;
       }
+
+      p:first-child {
+        margin-top: 0;
+      }
+
+      p:last-child {
+        margin-bottom: 0;
+      }
     `,
   ];
 

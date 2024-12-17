@@ -26,7 +26,7 @@ export class CollectionsGrid extends BtrixElement {
   collections?: PublicCollection[];
 
   render() {
-    const gridClassNames = tw`grid flex-1 grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-4`;
+    const gridClassNames = tw`grid flex-1 grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4`;
 
     if (!this.collections || !this.slug) {
       const thumb = html`

@@ -177,7 +177,7 @@ export class OrgProfile extends BtrixElement {
 
   private renderCollections(collections: PublicOrgCollections["collections"]) {
     return html`
-      <header class="mb-3 mt-7 flex items-center justify-between">
+      <header class="mb-3 flex items-center justify-between lg:mt-7">
         ${pageHeading({
           content: msg("Collections"),
         })}

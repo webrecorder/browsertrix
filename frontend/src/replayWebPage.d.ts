@@ -8,7 +8,8 @@
  * @attr {String} noSandbox
  * @attr {String} noCache
  * @attr {String} url
- * @attr {String} ts}
+ * @attr {String} ts
+ * @attr {String} embed
  *
  * @fires rwp-url-change
  * @fires rwp-page-loading

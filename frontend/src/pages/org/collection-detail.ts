@@ -572,7 +572,7 @@ export class CollectionDetail extends BtrixElement {
                   ></btrix-markdown-editor>
                 `
               : html`
-                  <div class="rounded-lg border px-4 py-2 leading-relaxed">
+                  <div class="rounded-lg border p-4 leading-relaxed">
                     ${collection.description
                       ? html`
                           <btrix-markdown-viewer

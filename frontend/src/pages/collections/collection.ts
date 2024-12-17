@@ -241,7 +241,7 @@ export class Collection extends BtrixElement {
 
     if (collection.description) {
       return html`
-        <div class="flex flex-1 flex-col gap-7 lg:flex-row">
+        <div class="flex flex-1 flex-col gap-10 lg:flex-row">
           <section
             class="flex-1 py-3 leading-relaxed lg:rounded-lg lg:border lg:p-6"
           >

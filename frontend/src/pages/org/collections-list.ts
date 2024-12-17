@@ -413,9 +413,10 @@ export class CollectionsList extends BtrixElement {
     if (this.collections?.items.length) {
       return html`
         <btrix-table
+          class="[--btrix-column-gap:var(--sl-spacing-small)]"
           style="grid-template-columns: min-content [clickable-start] 50ch repeat(4, 1fr) [clickable-end] min-content"
         >
-          <btrix-table-head class="mb-2">
+          <btrix-table-head class="mb-2 whitespace-nowrap">
             <btrix-table-header-cell>
               <span class="sr-only">${msg("Collection Access")}</span>
             </btrix-table-header-cell>
@@ -436,7 +437,7 @@ export class CollectionsList extends BtrixElement {
               <span class="sr-only">${msg("Row Actions")}</span>
             </btrix-table-header-cell>
           </btrix-table-head>
-          <btrix-table-body style="--btrix-row-gap: var(--sl-spacing-x-small)">
+          <btrix-table-body class="[--btrix-row-gap:var(--sl-spacing-x-small)]">
             ${this.collections.items.map(this.renderItem)}
           </btrix-table-body>
         </btrix-table>
@@ -507,7 +508,7 @@ export class CollectionsList extends BtrixElement {
 
   private readonly renderItem = (col: Collection) => html`
     <btrix-table-row
-      class="cursor-pointer select-none rounded border shadow transition-all focus-within:bg-neutral-50 hover:bg-neutral-50 hover:shadow-none"
+      class="cursor-pointer select-none whitespace-nowrap rounded border shadow transition-all focus-within:bg-neutral-50 hover:bg-neutral-50 hover:shadow-none"
     >
       <btrix-table-cell class="p-3">
         ${choose(col.access, [
