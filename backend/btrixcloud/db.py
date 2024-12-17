@@ -95,7 +95,7 @@ async def update_and_prepare_db(
     """
     await ping_db(mdb)
     print("Database setup started", flush=True)
-    if await run_db_migrations(mdb, user_manager, background_job_ops):
+    if await run_db_migrations(mdb, user_manager, background_job_ops, page_ops):
         await drop_indexes(mdb)
     await create_indexes(
         org_ops,
@@ -114,7 +114,7 @@ async def update_and_prepare_db(
 
 
 # ============================================================================
-async def run_db_migrations(mdb, user_manager, background_job_ops):
+async def run_db_migrations(mdb, user_manager, background_job_ops, page_ops):
     """Run database migrations."""
 
     # if first run, just set version and exit
@@ -147,7 +147,7 @@ async def run_db_migrations(mdb, user_manager, background_job_ops):
             migration_module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(migration_module)
             migration = migration_module.Migration(
-                mdb, background_job_ops=background_job_ops
+                mdb, background_job_ops=background_job_ops, page_ops=page_ops
             )
             if await migration.run():
                 migrations_run = True

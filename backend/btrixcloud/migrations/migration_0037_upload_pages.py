@@ -2,6 +2,8 @@
 Migration 0037 -- upload pages
 """
 
+from uuid import UUID
+
 from btrixcloud.migrations import BaseMigration
 
 
@@ -16,6 +18,17 @@ class Migration(BaseMigration):
         super().__init__(mdb, migration_version=MIGRATION_VERSION)
 
         self.background_job_ops = kwargs.get("background_job_ops")
+        self.page_ops = kwargs.get("page_ops")
+
+    async def org_upload_pages_already_added(self, oid: UUID) -> bool:
+        """Check if upload pages have already been added for this org"""
+        mdb_crawls = self.mdb["crawls"]
+        async for upload in mdb_crawls.find({"oid": oid, "type": "upload"}):
+            upload_id = upload["_id"]
+            _, total = await self.page_ops.list_pages(upload_id)
+            if total > 0:
+                return True
+        return False
 
     async def migrate_up(self):
         """Perform migration up.
@@ -28,9 +41,22 @@ class Migration(BaseMigration):
             )
             return
 
+        if self.page_ops is None:
+            print(
+                "Unable to start background job, missing page_ops", flush=True
+            )
+            return
+
         mdb_orgs = self.mdb["organizations"]
         async for org in mdb_orgs.find():
             oid = org["_id"]
+
+            pages_already_added = await self.org_upload_pages_already_added(oid)
+
+            if pages_already_added:
+                print(f"Skipping org {oid}, upload pages already added to db", flush=True)
+                continue
+
             try:
                 await self.background_job_ops.create_re_add_org_pages_job(
                     oid, crawl_type="upload"
