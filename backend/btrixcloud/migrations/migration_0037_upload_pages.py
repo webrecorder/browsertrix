@@ -42,9 +42,7 @@ class Migration(BaseMigration):
             return
 
         if self.page_ops is None:
-            print(
-                "Unable to start background job, missing page_ops", flush=True
-            )
+            print("Unable to start background job, missing page_ops", flush=True)
             return
 
         mdb_orgs = self.mdb["organizations"]
@@ -54,7 +52,9 @@ class Migration(BaseMigration):
             pages_already_added = await self.org_upload_pages_already_added(oid)
 
             if pages_already_added:
-                print(f"Skipping org {oid}, upload pages already added to db", flush=True)
+                print(
+                    f"Skipping org {oid}, upload pages already added to db", flush=True
+                )
                 continue
 
             try:
