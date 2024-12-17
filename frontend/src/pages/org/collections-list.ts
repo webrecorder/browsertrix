@@ -619,7 +619,8 @@ export class CollectionsList extends BtrixElement {
             ? html`
                 <sl-menu-item
                   style="--sl-color-neutral-700: var(--success)"
-                  @click=${() => void this.onTogglePublic(col, true)}
+                  @click=${() =>
+                    void this.updateAccess(col, CollectionAccess.Unlisted)}
                 >
                   <sl-icon
                     name=${SelectCollectionAccess.Options.unlisted.icon}
@@ -641,9 +642,37 @@ export class CollectionsList extends BtrixElement {
                   <sl-icon name="copy" slot="prefix"></sl-icon>
                   ${msg("Copy Share Link")}
                 </sl-menu-item>
+                ${col.access === CollectionAccess.Unlisted
+                  ? html`
+                      <sl-menu-item
+                        @click=${() =>
+                          void this.updateAccess(col, CollectionAccess.Public)}
+                      >
+                        <sl-icon
+                          name=${SelectCollectionAccess.Options.public.icon}
+                          slot="prefix"
+                        ></sl-icon>
+                        ${msg("Make Public")}
+                      </sl-menu-item>
+                    `
+                  : html`
+                      <sl-menu-item
+                        @click=${() =>
+                          void this.updateAccess(
+                            col,
+                            CollectionAccess.Unlisted,
+                          )}
+                      >
+                        <sl-icon
+                          name=${SelectCollectionAccess.Options.unlisted.icon}
+                          slot="prefix"
+                        ></sl-icon>
+                        ${msg("Make Unlisted")}
+                      </sl-menu-item>
+                    `}
                 <sl-menu-item
-                  style="--sl-color-neutral-700: var(--warning)"
-                  @click=${() => void this.onTogglePublic(col, false)}
+                  @click=${() =>
+                    void this.updateAccess(col, CollectionAccess.Private)}
                 >
                   <sl-icon
                     name=${SelectCollectionAccess.Options.private.icon}
@@ -652,6 +681,7 @@ export class CollectionsList extends BtrixElement {
                   ${msg("Make Private")}
                 </sl-menu-item>
               `}
+
           <btrix-menu-item-link
             href=${`/api/orgs/${this.orgId}/collections/${col.id}/download?auth_bearer=${authToken}`}
             download
@@ -701,10 +731,7 @@ export class CollectionsList extends BtrixElement {
     }
   });
 
-  private async onTogglePublic(coll: Collection, isPublic: boolean) {
-    const access = !isPublic
-      ? CollectionAccess.Private
-      : CollectionAccess.Unlisted;
+  private async updateAccess(coll: Collection, access: CollectionAccess) {
     await this.api.fetch(`/orgs/${this.orgId}/collections/${coll.id}`, {
       method: "PATCH",
       body: JSON.stringify({ access }),
