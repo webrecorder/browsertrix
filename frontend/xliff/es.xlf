@@ -179,7 +179,7 @@
       </trans-unit>
       <trans-unit xml:space="preserve" id="s3512b3c95c7a5c3a">
         <source>Last Updated</source>
-        <target state="translated">Última actualización</target>
+        <target state="translated">Última Actualización</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s63d894b1ddb06289">
         <source>Description</source>
@@ -1090,11 +1090,11 @@
       </trans-unit>
       <trans-unit xml:space="preserve" id="hcb76d3d062f4fe97">
         <source> <x id="0" equiv-text="&lt;span class=&quot;truncate&quot;&gt;${firstSeed}&lt;/span&gt;&#10;          &lt;span class=&quot;whitespace-nowrap text-neutral-500&quot;&gt;"/>+<x id="1" equiv-text="${remainderCount}"/> URL<x id="2" equiv-text="&lt;/span&gt;"/></source>
-        <target state="translated"><x id="0" equiv-text="&lt;span class=&quot;truncate&quot;&gt;${firstSeed}&lt;/span&gt;&#10;          &lt;span class=&quot;whitespace-nowrap text-neutral-500&quot;&gt;"/>+<x id="1" equiv-text="${remainderCount}"/> URL<x id="2" equiv-text="&lt;/span&gt;"/></target>
+        <target state="translated"> <x id="0" equiv-text="&lt;span class=&quot;truncate&quot;&gt;${firstSeed}&lt;/span&gt;&#10;          &lt;span class=&quot;whitespace-nowrap text-neutral-500&quot;&gt;"/>+<x id="1" equiv-text="${remainderCount}"/> URL<x id="2" equiv-text="&lt;/span&gt;"/></target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="h0f472740ba5c3c86">
         <source> <x id="0" equiv-text="&lt;span class=&quot;truncate&quot;&gt;${firstSeed}&lt;/span&gt;&#10;        &lt;span class=&quot;whitespace-nowrap text-neutral-500&quot;&gt;"/>+<x id="1" equiv-text="${remainderCount}"/> URLs<x id="2" equiv-text="&lt;/span&gt;"/></source>
-        <target state="translated"><x id="0" equiv-text="&lt;span class=&quot;truncate&quot;&gt;${firstSeed}&lt;/span&gt;&#10;        &lt;span class=&quot;whitespace-nowrap text-neutral-500&quot;&gt;"/>+<x id="1" equiv-text="${remainderCount}"/> URLs<x id="2" equiv-text="&lt;/span&gt;"/></target>
+        <target state="translated"> <x id="0" equiv-text="&lt;span class=&quot;truncate&quot;&gt;${firstSeed}&lt;/span&gt;&#10;        &lt;span class=&quot;whitespace-nowrap text-neutral-500&quot;&gt;"/>+<x id="1" equiv-text="${remainderCount}"/> URLs<x id="2" equiv-text="&lt;/span&gt;"/></target>
       </trans-unit>
       <trans-unit id="s900a5e61e7ade066">
         <source>View:</source>
@@ -1418,7 +1418,8 @@
         <source>
                       <x id="0" equiv-text="&lt;span class=&quot;text-primary&quot;&gt;${htmlCount}&lt;/span&gt;"/>
                       HTML <x id="1" equiv-text="${pluralOf(&quot;pages&quot;, htmlCount)}&#10;                    "/></source>
-        <target state="translated"><x id="0" equiv-text="&lt;span class=&quot;text-primary&quot;&gt;${htmlCount}&lt;/span&gt;"/> HTML <x id="1" equiv-text="${pluralOf(&quot;pages&quot;, htmlCount)}&#10;                    "/></target>
+        <target state="translated">
+                      <x id="0" equiv-text="&lt;span class=&quot;text-primary&quot;&gt;${htmlCount}&lt;/span&gt;"/> HTML <x id="1" equiv-text="${pluralOf(&quot;pages&quot;, htmlCount)}&#10;                    "/></target>
       </trans-unit>
       <trans-unit id="h7d8f1533bbc700e1">
         <source><x id="0" equiv-text="&lt;span class=&quot;text-neutral-600&quot;&gt;${fileCount}&lt;/span&gt;"/> Non-HTML files captured as <x id="1" equiv-text="${pluralOf(&quot;pages&quot;, fileCount)}&#10;                    "/></source>
@@ -1792,7 +1793,7 @@
       </trans-unit>
       <trans-unit xml:space="preserve" id="s039b6434e8a75560">
         <source>Delete <x id="0" equiv-text="${org.name}"/></source>
-        <target state="translated">Eliminar <x id="0" equiv-text="${this.itemToDelete?.type === &quot;upload&quot;&#10;    ? msg(&quot;Upload&quot;)&#10;    : msg(&quot;Crawl&quot;)}"/></target>
+        <target state="translated">Eliminar <x id="0" equiv-text="${org.name}"/></target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s96668830629e0dfc">
         <source>Upload</source>
@@ -3733,7 +3734,7 @@
       </trans-unit>
       <trans-unit xml:space="preserve" id="sc9a2484754aae7bb">
         <source>You've joined <x id="0" equiv-text="${org.name || inviteInfo.orgName || msg(&quot;Browsertrix&quot;)}"/>.</source>
-        <target state="translated">Te has unido a <x id="0" equiv-text="${org.name || inviteInfo.orgName || msg(&quot;Browsertrix&quot;)}"/></target>
+        <target state="translated">Te has unido a <x id="0" equiv-text="${org.name || inviteInfo.orgName || msg(&quot;Browsertrix&quot;)}"/>.</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="sdb8ec1b3a5726c88">
         <source>Browsertrix</source>
@@ -4271,7 +4272,7 @@
       </trans-unit>
       <trans-unit xml:space="preserve" id="sadfb54de733655c9">
         <source>Using proxy: </source>
-        <target state="translated">Usar proxy:</target>
+        <target state="translated">Usar proxy: </target>
       </trans-unit>
       <trans-unit id="hda7aa624404fc0ed">
         <source>Refer to our user guide on <x id="0" equiv-text="&lt;a class=&quot;text-neutral-500 underline hover:text-primary&quot; href=&quot;/docs/user-guide/org-settings/&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;&gt;"/>org settings<x id="1" equiv-text="&lt;/a&gt;"/> for details.</source>
