@@ -113,6 +113,7 @@ export class Collection extends BtrixElement {
         )}
 
         <btrix-share-collection
+          slug=${this.slug || ""}
           collectionId=${ifDefined(this.collectionId)}
           .collection=${collection}
         ></btrix-share-collection>

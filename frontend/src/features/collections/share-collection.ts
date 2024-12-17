@@ -41,6 +41,9 @@ export type SelectThumbnailDetail = {
 @customElement("btrix-share-collection")
 export class ShareCollection extends BtrixElement {
   @property({ type: String })
+  slug = "";
+
+  @property({ type: String })
   collectionId = "";
 
   @property({ type: Object })
@@ -181,25 +184,33 @@ export class ShareCollection extends BtrixElement {
                     `
                   : nothing}
               `,
-              () => html`
-                <btrix-menu-item-link
-                  href=${`/api/orgs/${this.collection?.oid}/collections/${this.collectionId}/download`}
-                  download
-                >
-                  <sl-icon name="cloud-download" slot="prefix"></sl-icon>
-                  ${msg("Download Collection")}
-                  ${when(
-                    this.collection?.totalSize,
-                    (size) => html`
-                      <span
-                        slot="suffix"
-                        class="font-monostyle text-xs text-neutral-500"
-                        >${this.localize.bytes(size)}</span
-                      >
-                    `,
-                  )}
-                </btrix-menu-item-link>
-              `,
+            )}
+            ${when(this.slug && this.collection, (collection) =>
+              collection.access === CollectionAccess.Public &&
+              collection.allowPublicDownload
+                ? html`
+                    <btrix-menu-item-link
+                      href=${`/api/public/orgs/${this.slug}/collections/${this.collectionId}/download`}
+                      download
+                      ?disabled=${!this.collection?.totalSize}
+                    >
+                      <sl-icon name="cloud-download" slot="prefix"></sl-icon>
+                      ${msg("Download Collection")}
+                      ${when(
+                        this.collection,
+                        (collection) => html`
+                          <btrix-badge
+                            slot="suffix"
+                            class="font-monostyle text-xs text-neutral-500"
+                            >${this.localize.bytes(
+                              collection.totalSize || 0,
+                            )}</btrix-badge
+                          >
+                        `,
+                      )}
+                    </btrix-menu-item-link>
+                  `
+                : nothing,
             )}
           </sl-menu>
         </sl-dropdown>

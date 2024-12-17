@@ -25,6 +25,7 @@ export const publicCollectionSchema = z.object({
   crawlCount: z.number(),
   pageCount: z.number(),
   totalSize: z.number(),
+  allowPublicDownload: z.boolean(),
 });
 export type PublicCollection = z.infer<typeof publicCollectionSchema>;
 

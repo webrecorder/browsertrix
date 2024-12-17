@@ -52,7 +52,7 @@ export class CollectionMetadataDialog extends BtrixElement {
   private readonly form!: Promise<HTMLFormElement>;
 
   private readonly validateNameMax = maxLengthValidator(50);
-  private readonly validateCaptionMax = maxLengthValidator(150);
+  private readonly validateCaptionMax = maxLengthValidator(130);
 
   protected firstUpdated(): void {
     if (this.open) {

@@ -654,9 +654,15 @@ export class CollectionsList extends BtrixElement {
           <btrix-menu-item-link
             href=${`/api/orgs/${this.orgId}/collections/${col.id}/download?auth_bearer=${authToken}`}
             download
+            ?disabled=${!col.totalSize}
           >
             <sl-icon name="cloud-download" slot="prefix"></sl-icon>
-            ${msg("Download Collection")}
+            ${msg("Download")}
+            <btrix-badge
+              slot="suffix"
+              class="font-monostyle text-xs text-neutral-500"
+              >${this.localize.bytes(col.totalSize)}</btrix-badge
+            >
           </btrix-menu-item-link>
           <sl-divider></sl-divider>
           <sl-menu-item

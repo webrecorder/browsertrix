@@ -87,7 +87,7 @@ export class CollectionsGrid extends BtrixElement {
                   ${collection.caption &&
                   html`
                     <p
-                      class="mt-1.5 text-pretty text-xs leading-relaxed text-stone-500 transition-colors group-hover:text-cyan-600"
+                      class="mt-1.5 text-pretty leading-relaxed text-stone-500 transition-colors group-hover:text-cyan-600"
                     >
                       ${collection.caption}
                     </p>

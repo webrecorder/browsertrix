@@ -478,9 +478,22 @@ export class CollectionDetail extends BtrixElement {
           <btrix-menu-item-link
             href=${`/api/orgs/${this.orgId}/collections/${this.collectionId}/download?auth_bearer=${authToken}`}
             download
+            ?disabled=${!this.collection?.totalSize}
           >
             <sl-icon name="cloud-download" slot="prefix"></sl-icon>
             ${msg("Download Collection")}
+            ${when(
+              this.collection,
+              (collection) => html`
+                <btrix-badge
+                  slot="suffix"
+                  class="font-monostyle text-xs text-neutral-500"
+                  >${this.localize.bytes(
+                    collection.totalSize || 0,
+                  )}</btrix-badge
+                >
+              `,
+            )}
           </btrix-menu-item-link>
           <sl-divider></sl-divider>
           <sl-menu-item
