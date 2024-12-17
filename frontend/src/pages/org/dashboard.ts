@@ -1,7 +1,7 @@
 import { localized, msg } from "@lit/localize";
 import { Task } from "@lit/task";
 import type { SlSelectEvent } from "@shoelace-style/shoelace";
-import { html, type PropertyValues, type TemplateResult } from "lit";
+import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
@@ -277,14 +277,16 @@ export class Dashboard extends BtrixElement {
                     <btrix-menu-item-link
                       href=${`${this.navigate.orgBasePath}/collections`}
                     >
-                      <sl-icon slot="prefix" name="gear"></sl-icon>
+                      <sl-icon slot="prefix" name="collection-fill"></sl-icon>
                       ${msg("Manage Collections")}
                     </btrix-menu-item-link>
                     <btrix-menu-item-link
                       href=${`/${RouteNamespace.PublicOrgs}/${this.orgSlug}`}
                     >
                       <sl-icon slot="prefix" name="globe2"></sl-icon>
-                      ${msg("Visit Public Profile")}
+                      ${this.org?.enablePublicProfile
+                        ? msg("Visit Public Profile")
+                        : msg("Preview Public Profile")}
                     </btrix-menu-item-link>
                   </sl-menu>
                 </btrix-overflow-dropdown>
@@ -295,7 +297,49 @@ export class Dashboard extends BtrixElement {
             <btrix-collections-grid
               slug=${this.orgSlug || ""}
               .collections=${this.publicCollections.value}
-            ></btrix-collections-grid>
+            >
+              ${this.org && !this.org.enablePublicProfile
+                ? html`
+                    <div slot="empty" class="px-3 py-10 text-center">
+                      <p class="mb-3 text-base text-neutral-500">
+                        ${msg("No public collections yet.")}
+                      </p>
+                      <div>
+                        ${this.metrics?.collectionsCount
+                          ? html`
+                              <sl-button
+                                @click=${() => {
+                                  this.navigate.to(
+                                    `${this.navigate.orgBasePath}/collections`,
+                                  );
+                                }}
+                              >
+                                <sl-icon
+                                  slot="prefix"
+                                  name="collection-fill"
+                                ></sl-icon>
+                                ${msg("Manage Collections")}
+                              </sl-button>
+                            `
+                          : html`
+                              <sl-button
+                                @click=${() => {
+                                  this.dispatchEvent(
+                                    new CustomEvent("select-new-dialog", {
+                                      detail: "collection",
+                                    }) as SelectNewDialogEvent,
+                                  );
+                                }}
+                              >
+                                <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+                                ${msg("Create a Collection")}
+                              </sl-button>
+                            `}
+                      </div>
+                    </div>
+                  `
+                : nothing}
+            </btrix-collections-grid>
           </div>
         </section>
       </main>

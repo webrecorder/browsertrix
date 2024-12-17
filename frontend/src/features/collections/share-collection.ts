@@ -251,6 +251,18 @@ export class ShareCollection extends BtrixElement {
                   );
                 }}
               ></btrix-select-collection-access>
+              ${when(
+                this.org &&
+                  !this.org.enablePublicProfile &&
+                  this.collection?.access === CollectionAccess.Public,
+                () => html`
+                  <btrix-alert variant="warning" class="mt-3">
+                    ${msg(
+                      "The org profile page isn't public yet. To make the org profile and this collection visible to the public, update profile visibility in org settings.",
+                    )}
+                  </btrix-alert>
+                `,
+              )}
             </div>
             <div class="mb-7">
               <div class="form-label">${msg("Thumbnail")}</div>

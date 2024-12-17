@@ -1,7 +1,7 @@
 import { localized, msg } from "@lit/localize";
 import type { SlInput, SlMenuItem } from "@shoelace-style/shoelace";
 import Fuse from "fuse.js";
-import { html, type PropertyValues } from "lit";
+import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
 import { guard } from "lit/directives/guard.js";
@@ -642,20 +642,8 @@ export class CollectionsList extends BtrixElement {
                   <sl-icon name="copy" slot="prefix"></sl-icon>
                   ${msg("Copy Share Link")}
                 </sl-menu-item>
-                ${col.access === CollectionAccess.Unlisted
+                ${col.access === CollectionAccess.Public
                   ? html`
-                      <sl-menu-item
-                        @click=${() =>
-                          void this.updateAccess(col, CollectionAccess.Public)}
-                      >
-                        <sl-icon
-                          name=${SelectCollectionAccess.Options.public.icon}
-                          slot="prefix"
-                        ></sl-icon>
-                        ${msg("Make Public")}
-                      </sl-menu-item>
-                    `
-                  : html`
                       <sl-menu-item
                         @click=${() =>
                           void this.updateAccess(
@@ -669,7 +657,24 @@ export class CollectionsList extends BtrixElement {
                         ></sl-icon>
                         ${msg("Make Unlisted")}
                       </sl-menu-item>
-                    `}
+                    `
+                  : this.org?.enablePublicProfile
+                    ? html`
+                        <sl-menu-item
+                          @click=${() =>
+                            void this.updateAccess(
+                              col,
+                              CollectionAccess.Public,
+                            )}
+                        >
+                          <sl-icon
+                            name=${SelectCollectionAccess.Options.public.icon}
+                            slot="prefix"
+                          ></sl-icon>
+                          ${msg("Make Public")}
+                        </sl-menu-item>
+                      `
+                    : nothing}
                 <sl-menu-item
                   @click=${() =>
                     void this.updateAccess(col, CollectionAccess.Private)}

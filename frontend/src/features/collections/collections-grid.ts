@@ -43,11 +43,13 @@ export class CollectionsGrid extends BtrixElement {
 
     if (!this.collections.length) {
       return html`
-        <div class="px-3 py-10 text-center">
-          <p class="text-base text-neutral-500">
-            ${msg("No public collections yet.")}
-          </p>
-        </div>
+        <slot name="empty">
+          <div class="px-3 py-10 text-center">
+            <p class="text-base text-neutral-500">
+              ${msg("No public collections yet.")}
+            </p>
+          </div>
+        </slot>
       `;
     }
 
