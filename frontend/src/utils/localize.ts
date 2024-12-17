@@ -20,11 +20,19 @@ import {
 } from "@/types/localization";
 import appState from "@/utils/state";
 
+// Pre-load all locales
+const localizedTemplates = new Map(
+  targetLocales.map((locale) => [
+    locale,
+    import(`/src/__generated__/locales/${locale}.ts`),
+  ]),
+);
+
 const { getLocale, setLocale } = configureLocalization({
   sourceLocale,
   targetLocales,
   loadLocale: async (locale: string) =>
-    import(`/src/__generated__/locales/${locale}.ts`),
+    localizedTemplates.get(locale as (typeof targetLocales)[number]),
 });
 
 const defaultDateOptions: Intl.DateTimeFormatOptions = {
