@@ -314,6 +314,7 @@ export class CollectionStartPageDialog extends BtrixElement {
           message: msg("Home view updated."),
           variant: "success",
           icon: "check2-circle",
+          id: "home-view-update-status",
         });
       }
 
@@ -333,6 +334,7 @@ export class CollectionStartPageDialog extends BtrixElement {
             message: msg("Home view and collection thumbnail updated."),
             variant: "success",
             icon: "check2-circle",
+            id: "home-view-update-status",
           });
         } catch (err) {
           console.debug(err);
@@ -343,6 +345,7 @@ export class CollectionStartPageDialog extends BtrixElement {
             ),
             variant: "warning",
             icon: "exclamation-triangle",
+            id: "home-view-update-status",
           });
         }
       }
@@ -355,6 +358,7 @@ export class CollectionStartPageDialog extends BtrixElement {
         message: msg("Sorry, couldn't update home view at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "home-view-update-status",
       });
     }
   }
