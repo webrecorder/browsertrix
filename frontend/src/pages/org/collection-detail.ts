@@ -162,7 +162,7 @@ export class CollectionDetail extends BtrixElement {
         ${this.renderInfoBar()}
       </div>
       <div
-        class="sticky top-0 -mx-3 mb-3 flex items-center justify-between bg-white px-3 pt-3 shadow-lg shadow-white"
+        class="sticky top-0 z-50 -mx-3 mb-3 flex items-center justify-between bg-white px-3 pt-3 shadow-lg shadow-white"
       >
         ${this.renderTabs()}
         ${when(this.isCrawler, () =>
@@ -725,13 +725,13 @@ export class CollectionDetail extends BtrixElement {
       <div class="aspect-4/3 overflow-hidden rounded-lg border">
         <replay-web-page
           source=${replaySource}
-          replayBase="/replay/"
           config="${config}"
           coll=${this.collectionId}
           url=${this.collection.homeUrl ||
           /* must be empty string to reset the attribute: */ ""}
           ts=${formatRwpTimestamp(this.collection.homeUrlTs) ||
           /* must be empty string to reset the attribute: */ ""}
+          replayBase="/replay/"
           noSandbox="true"
           noCache="true"
           @rwp-url-change=${() => {

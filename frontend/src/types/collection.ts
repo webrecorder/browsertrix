@@ -26,6 +26,9 @@ export const publicCollectionSchema = z.object({
   pageCount: z.number(),
   totalSize: z.number(),
   allowPublicDownload: z.boolean(),
+  homeUrl: z.string().url().nullable(),
+  homeUrlPageId: z.string().url().nullable(),
+  homeUrlTs: z.string().datetime().nullable(),
 });
 export type PublicCollection = z.infer<typeof publicCollectionSchema>;
 
@@ -34,9 +37,6 @@ export const collectionSchema = publicCollectionSchema.extend({
   modified: z.string().datetime(),
   tags: z.array(z.string()),
   access: z.nativeEnum(CollectionAccess),
-  homeUrl: z.string().url().nullable(),
-  homeUrlPageId: z.string().url().nullable(),
-  homeUrlTs: z.string().datetime().nullable(),
 });
 export type Collection = z.infer<typeof collectionSchema>;
 

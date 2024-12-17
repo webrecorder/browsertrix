@@ -10,6 +10,7 @@ import { page } from "@/layouts/page";
 import { RouteNamespace } from "@/routes";
 import type { PublicCollection } from "@/types/collection";
 import type { PublicOrgCollections } from "@/types/org";
+import { formatRwpTimestamp } from "@/utils/replay";
 
 enum Tab {
   Replay = "replay",
@@ -191,6 +192,12 @@ export class Collection extends BtrixElement {
       <section class="h-[calc(100vh-4rem)] overflow-hidden rounded-lg border">
         <replay-web-page
           source=${replaySource}
+          url=${ifDefined(collection.homeUrl || undefined)}
+          ts=${ifDefined(
+            collection.homeUrlTs
+              ? formatRwpTimestamp(collection.homeUrlTs)
+              : undefined,
+          )}
           replayBase="/replay/"
           noSandbox="true"
           noCache="true"

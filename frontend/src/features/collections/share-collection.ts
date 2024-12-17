@@ -108,9 +108,7 @@ export class ShareCollection extends BtrixElement {
         <sl-tooltip
           content=${this.clipboardController.isCopied
             ? ClipboardController.text.copied
-            : this.collection.access === CollectionAccess.Unlisted
-              ? msg("Copy unlisted link")
-              : msg("Copy public link")}
+            : msg("Copy shareable link")}
         >
           <sl-button
             variant=${this.collection.crawlCount ? "primary" : "default"}
