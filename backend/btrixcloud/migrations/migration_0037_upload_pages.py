@@ -22,6 +22,13 @@ class Migration(BaseMigration):
 
     async def org_upload_pages_already_added(self, oid: UUID) -> bool:
         """Check if upload pages have already been added for this org"""
+        if self.page_ops is None:
+            print(
+                f"page_ops missing, assuming pages need to be added for org {oid}",
+                flush=True,
+            )
+            return False
+
         mdb_crawls = self.mdb["crawls"]
         async for upload in mdb_crawls.find({"oid": oid, "type": "upload"}):
             upload_id = upload["_id"]
@@ -39,10 +46,6 @@ class Migration(BaseMigration):
             print(
                 "Unable to start background job, missing background_job_ops", flush=True
             )
-            return
-
-        if self.page_ops is None:
-            print("Unable to start background job, missing page_ops", flush=True)
             return
 
         mdb_orgs = self.mdb["organizations"]
