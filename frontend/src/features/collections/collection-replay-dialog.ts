@@ -132,15 +132,18 @@ export class CollectionStartPageDialog extends BtrixElement {
         ${msg("Enter a Page URL to preview it")}
       </p>
     `;
-    const snapshot = this.homeUrl
-      ? {
-          url: this.homeUrl,
-          ts: this.homeTs,
-          pageId: this.homePageId,
-        }
-      : this.selectedSnapshot;
+    const snapshot =
+      this.selectedSnapshot ||
+      (this.homeUrl
+        ? {
+            url: this.homeUrl,
+            ts: this.homeTs,
+            pageId: this.homePageId,
+          }
+        : null);
 
     if (snapshot) {
+      console.log(this.selectedSnapshot);
       urlPreview = html`
         <iframe
           class="inline-block size-full"
