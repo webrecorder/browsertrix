@@ -314,10 +314,14 @@ export class ShareCollection extends BtrixElement {
         return;
       }
 
+      const isSelected = path === selectedImgSrc;
+
       return html`
         <sl-tooltip content=${msg("Use thumbnail")}>
           <button
-            class="aspect-video flex-1 overflow-hidden rounded ring-1 ring-neutral-300 transition-all hover:ring-2 hover:ring-blue-300"
+            class="${isSelected
+              ? "ring-blue-300 ring-2"
+              : "ring-stone-600/10 ring-1"} aspect-video flex-1 overflow-hidden rounded transition-all hover:ring-2 hover:ring-blue-300"
             @click=${() => {
               this.dispatchEvent(
                 new CustomEvent<SelectThumbnailDetail>(
@@ -333,9 +337,9 @@ export class ShareCollection extends BtrixElement {
               class="flex size-full flex-col items-center justify-center bg-cover"
               style="background-image:url('${path}')"
             >
-              ${path === selectedImgSrc
+              ${isSelected
                 ? html`<sl-icon
-                    class="size-10 text-white drop-shadow-md"
+                    class="size-10 text-blue-50 drop-shadow-md"
                     name="check-lg"
                   ></sl-icon>`
                 : nothing}

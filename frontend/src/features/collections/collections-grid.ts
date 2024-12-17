@@ -43,13 +43,12 @@ export class CollectionsGrid extends BtrixElement {
 
     if (!this.collections.length) {
       return html`
-        <slot name="empty">
-          <div class="px-3 py-10 text-center">
-            <p class="text-base text-neutral-500">
-              ${msg("No public collections yet.")}
-            </p>
-          </div>
-        </slot>
+        <div class="flex flex-col items-center justify-center gap-3 px-3 py-10">
+          <p class="text-base text-neutral-500">
+            ${msg("No public collections yet.")}
+          </p>
+          <slot name="empty-actions"></slot>
+        </div>
       `;
     }
 
@@ -68,7 +67,7 @@ export class CollectionsGrid extends BtrixElement {
                 @click=${this.navigate.link}
               >
                 <div
-                  class="relative mb-4 rounded-lg shadow-md shadow-cyan-700/20 transition-shadow group-hover:shadow-sm"
+                  class="relative mb-4 rounded-lg shadow-md shadow-stone-600/10 ring-1 ring-stone-600/10 transition-shadow group-hover:shadow-sm"
                 >
                   <btrix-collection-thumbnail
                     src=${ifDefined(

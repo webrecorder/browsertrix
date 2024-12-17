@@ -288,6 +288,17 @@ export class Dashboard extends BtrixElement {
                         ? msg("Visit Public Profile")
                         : msg("Preview Public Profile")}
                     </btrix-menu-item-link>
+                    ${this.org && !this.org.enablePublicProfile
+                      ? html`
+                          <sl-divider></sl-divider>
+                          <btrix-menu-item-link
+                            href=${`${this.navigate.orgBasePath}/settings`}
+                          >
+                            <sl-icon slot="prefix" name="gear"></sl-icon>
+                            ${msg("Update Org Visibility")}
+                          </btrix-menu-item-link>
+                        `
+                      : nothing}
                   </sl-menu>
                 </btrix-overflow-dropdown>
               `,
@@ -298,52 +309,61 @@ export class Dashboard extends BtrixElement {
               slug=${this.orgSlug || ""}
               .collections=${this.publicCollections.value}
             >
-              ${this.org && !this.org.enablePublicProfile
-                ? html`
-                    <div slot="empty" class="px-3 py-10 text-center">
-                      <p class="mb-3 text-base text-neutral-500">
-                        ${msg("No public collections yet.")}
-                      </p>
-                      <div>
-                        ${this.metrics?.collectionsCount
-                          ? html`
-                              <sl-button
-                                @click=${() => {
-                                  this.navigate.to(
-                                    `${this.navigate.orgBasePath}/collections`,
-                                  );
-                                }}
-                              >
-                                <sl-icon
-                                  slot="prefix"
-                                  name="collection-fill"
-                                ></sl-icon>
-                                ${msg("Manage Collections")}
-                              </sl-button>
-                            `
-                          : html`
-                              <sl-button
-                                @click=${() => {
-                                  this.dispatchEvent(
-                                    new CustomEvent("select-new-dialog", {
-                                      detail: "collection",
-                                    }) as SelectNewDialogEvent,
-                                  );
-                                }}
-                              >
-                                <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-                                ${msg("Create a Collection")}
-                              </sl-button>
-                            `}
-                      </div>
-                    </div>
-                  `
-                : nothing}
+              ${this.renderNoPublicCollections()}
             </btrix-collections-grid>
           </div>
         </section>
       </main>
     `;
+  }
+
+  private renderNoPublicCollections() {
+    if (!this.org || !this.metrics) return;
+
+    let button: TemplateResult;
+
+    if (this.metrics.collectionsCount) {
+      if (this.org.enablePublicProfile) {
+        button = html`
+          <sl-button
+            @click=${() => {
+              this.navigate.to(`${this.navigate.orgBasePath}/collections`);
+            }}
+          >
+            <sl-icon slot="prefix" name="collection-fill"></sl-icon>
+            ${msg("Manage Collections")}
+          </sl-button>
+        `;
+      } else {
+        button = html`
+          <sl-button
+            @click=${() => {
+              this.navigate.to(`${this.navigate.orgBasePath}/settings`);
+            }}
+          >
+            <sl-icon slot="prefix" name="gear"></sl-icon>
+            ${msg("Update Org Visibility")}
+          </sl-button>
+        `;
+      }
+    } else {
+      button = html`
+        <sl-button
+          @click=${() => {
+            this.dispatchEvent(
+              new CustomEvent("select-new-dialog", {
+                detail: "collection",
+              }) as SelectNewDialogEvent,
+            );
+          }}
+        >
+          <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+          ${msg("Create a Collection")}
+        </sl-button>
+      `;
+    }
+
+    return html`<div slot="empty-actions">${button}</div>`;
   }
 
   private renderStorageMeter(metrics: Metrics) {
