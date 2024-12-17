@@ -73,12 +73,21 @@ export interface UserGuideEventMap {
 @localized()
 @customElement("browsertrix-app")
 export class App extends BtrixElement {
+  /**
+   * Browsertrix app version to display in the UI
+   */
   @property({ type: String })
   version?: string;
 
+  /**
+   * Base URL for user guide documentation
+   */
   @property({ type: String })
   docsUrl = "/docs/";
 
+  /**
+   * App settings from `/api/settings`
+   */
   @property({ type: Object })
   settings?: AppSettings;
 
