@@ -170,9 +170,19 @@ export class CollectionMetadataDialog extends BtrixElement {
                 ? msg(
                     "This collection will be visible on the org public profile, even without archived items. You may want to set visibility to 'Unlisted' until archived items have been added.",
                   )
-                : msg(
-                    "This collection will be visible on the org profile page, which isn't public yet. To make the org profile and this collection visible to the public, update profile visibility in org settings.",
-                  )}
+                : html`
+                    ${msg(
+                      "This collection will be visible on the org profile page, which isn't public yet. To make the org profile and this collection visible to the public, update org profile settings.",
+                    )}
+                    <a
+                      class="ml-auto flex items-center gap-1.5 font-medium underline hover:no-underline"
+                      href=${`${this.navigate.orgBasePath}/settings`}
+                      target="_blank"
+                    >
+                      ${msg("Open org settings")}
+                      <sl-icon name="box-arrow-up-right"></sl-icon>
+                    </a>
+                  `}
             </btrix-alert>
           `,
         )}
