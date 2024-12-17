@@ -51,7 +51,6 @@ export function pageHeader({
     <header
       class=${clsx(
         tw`mt-5 flex flex-col gap-3 lg:flex-row`,
-        actions && tw`items-end lg:items-start`,
         border && tw`border-b pb-3`,
         classNames,
       )}
