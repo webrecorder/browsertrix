@@ -143,7 +143,6 @@ export class CollectionStartPageDialog extends BtrixElement {
         : null);
 
     if (snapshot) {
-      console.log(this.selectedSnapshot);
       urlPreview = html`
         <iframe
           class="inline-block size-full"
