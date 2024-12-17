@@ -267,16 +267,18 @@ class StorageOps:
         self, storage: S3Storage, use_presign_url=False
     ) -> AsyncIterator[tuple[AIOS3Client, str, str]]:
         """context manager for s3 client"""
-        if use_presign_url:
-            endpoint_url = storage.presign_endpoint_url or storage.endpoint_url
-        else:
-            endpoint_url = storage.endpoint_url
+        # parse bucket and key from standard endpoint_url
+        endpoint_url = storage.endpoint_url
 
         if not endpoint_url.endswith("/"):
             endpoint_url += "/"
 
         parts = urlsplit(endpoint_url)
         bucket, key = parts.path[1:].split("/", 1)
+
+        # use presign_endpoint for actual connection here
+        if use_presign_url and storage.presign_endpoint_url:
+            endpoint_url = storage.presign_endpoint_url
 
         endpoint_url = parts.scheme + "://" + parts.netloc
 
