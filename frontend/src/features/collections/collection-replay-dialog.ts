@@ -145,7 +145,7 @@ export class CollectionStartPageDialog extends BtrixElement {
         <iframe
           class="inline-block size-full"
           id="thumbnailPreview"
-          src=${`/replay/w/${this.collectionId}/${formatRwpTimestamp(snapshot.ts)}id_/urn:screenshot:${snapshot.url}`}
+          src=${`/replay/w/${this.collectionId}/${formatRwpTimestamp(snapshot.ts)}id_/urn:thumbnail:${snapshot.url}`}
         >
         </iframe>
       `;
