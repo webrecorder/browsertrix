@@ -141,10 +141,8 @@ class StorageOps:
 
         if self.is_local_minio:
             access_endpoint_url = "/data/"
-            use_access_for_presign = False
         else:
             access_endpoint_url = storage.get("access_endpoint_url") or endpoint_url
-            use_access_for_presign = is_bool(storage.get("use_access_for_presign"))
             presign_endpoint_url = storage.get("presign_endpoint_url") or endpoint_url
 
         return S3Storage(
@@ -154,7 +152,6 @@ class StorageOps:
             endpoint_url=endpoint_url,
             endpoint_no_bucket_url=endpoint_no_bucket_url,
             access_endpoint_url=access_endpoint_url,
-            use_access_for_presign=use_access_for_presign,
             presign_endpoint_url=presign_endpoint_url,
         )
 
@@ -181,7 +178,6 @@ class StorageOps:
             endpoint_no_bucket_url=endpoint_no_bucket_url,
             access_endpoint_url=storagein.access_endpoint_url or storagein.endpoint_url,
             presign_endpoint_url=storagein.endpoint_url,
-            use_access_for_presign=True,
         )
 
         try:
@@ -273,8 +269,6 @@ class StorageOps:
         """context manager for s3 client"""
         if use_presign_url:
             endpoint_url = storage.presign_endpoint_url
-        elif storage.use_access_for_presign:
-            endpoint_url = storage.access_endpoint_url
         else:
             endpoint_url = storage.endpoint_url
 
@@ -477,8 +471,7 @@ class StorageOps:
             )
 
             if (
-                not s3storage.use_access_for_presign
-                and s3storage.access_endpoint_url
+                s3storage.access_endpoint_url
                 and s3storage.access_endpoint_url != s3storage.presign_endpoint_url
             ):
                 presigned_url = presigned_url.replace(

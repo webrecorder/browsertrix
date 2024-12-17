@@ -1181,7 +1181,6 @@ class S3Storage(BaseModel):
     access_endpoint_url: str
     presign_endpoint_url: str = Field(default_factory=lambda data: data["endpoint_url"])  # type: ignore
     region: str = ""
-    use_access_for_presign: bool = True
 
 
 # ============================================================================
