@@ -1165,6 +1165,7 @@ class S3StorageIn(BaseModel):
     endpoint_url: str
     bucket: str
     access_endpoint_url: Optional[str] = None
+    presign_endpoint_url: Optional[str] = None
     region: str = ""
 
 
@@ -1179,7 +1180,7 @@ class S3Storage(BaseModel):
     access_key: str
     secret_key: str
     access_endpoint_url: str
-    presign_endpoint_url: str = Field(default_factory=lambda data: data["endpoint_url"])  # type: ignore
+    presign_endpoint_url: str = ""
     region: str = ""
 
 

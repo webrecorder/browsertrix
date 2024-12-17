@@ -177,7 +177,7 @@ class StorageOps:
             endpoint_url=endpoint_url,
             endpoint_no_bucket_url=endpoint_no_bucket_url,
             access_endpoint_url=storagein.access_endpoint_url or storagein.endpoint_url,
-            presign_endpoint_url=storagein.endpoint_url,
+            presign_endpoint_url=storagein.presign_endpoint_url,
         )
 
         try:
@@ -268,7 +268,7 @@ class StorageOps:
     ) -> AsyncIterator[tuple[AIOS3Client, str, str]]:
         """context manager for s3 client"""
         if use_presign_url:
-            endpoint_url = storage.presign_endpoint_url
+            endpoint_url = storage.presign_endpoint_url or storage.endpoint_url
         else:
             endpoint_url = storage.endpoint_url
 
@@ -470,12 +470,16 @@ class StorageOps:
                 "get_object", Params={"Bucket": bucket, "Key": key}, ExpiresIn=duration
             )
 
+            presign_endpoint_url = (
+                s3storage.presign_endpoint_url or s3storage.endpoint_url
+            )
+
             if (
                 s3storage.access_endpoint_url
-                and s3storage.access_endpoint_url != s3storage.presign_endpoint_url
+                and s3storage.access_endpoint_url != presign_endpoint_url
             ):
                 presigned_url = presigned_url.replace(
-                    s3storage.presign_endpoint_url, s3storage.access_endpoint_url
+                    presign_endpoint_url, s3storage.access_endpoint_url
                 )
 
         return presigned_url
