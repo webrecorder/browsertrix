@@ -16,7 +16,7 @@
       </trans-unit>
       <trans-unit xml:space="preserve" id="s07018373ca29dfcb">
         <source>Monthly execution minutes quota reached</source>
-        <target state="translated">Cuota mensual de minutos alcanzó su capacidad</target>
+        <target state="translated">Cuota mensual de minutos alcanzada</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s0a11c2ffb8309d1a">
         <source>Not found</source>
@@ -44,7 +44,7 @@
       </trans-unit>
       <trans-unit xml:space="preserve" id="s2099d599ac75e503">
         <source>Archived Items</source>
-        <target state="translated">Archivado</target>
+        <target state="translated">Elementos archivados</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="sfa480f50d480c290">
         <source>Shareable</source>
@@ -60,7 +60,7 @@
       </trans-unit>
       <trans-unit xml:space="preserve" id="s833f0d71eaa06739">
         <source>Select Items</source>
-        <target state="translated">Elija ítems</target>
+        <target state="translated">Seleccionar elementos</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s0e6ebc9cdd39780b">
         <source>Delete Collection?</source>
@@ -94,7 +94,7 @@
       </trans-unit>
       <trans-unit xml:space="preserve" id="s0379fc73608ab971">
         <source>Done</source>
-        <target state="translated">hecho</target>
+        <target state="translated">Hecho</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s11161fdebb62dcc9">
         <source>Link to Share</source>
@@ -102,7 +102,7 @@
       </trans-unit>
       <trans-unit xml:space="preserve" id="s4708cb91cd6afef0">
         <source>This collection can be viewed by anyone with the link.</source>
-        <target state="translated">Esta colección puede ser consultada por cualquier persona con este enlace.</target>
+        <target state="translated">Esta colección puede ser vista por cualquier persona con este enlace.</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s0921b07ddda1f1b1">
         <source>Open in New Tab</source>
@@ -118,8 +118,9 @@
       <trans-unit id="h54da0b63b416aa90">
         <source>Add the following embed code to your HTML page:</source>
       </trans-unit>
-      <trans-unit id="sdbf249ab40dc18fa">
+      <trans-unit id="sdbf249ab40dc18fa" xml:space="preserve">
         <source>Copy Embed Code</source>
+        <target state="translated">Copiar código embed</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="h648aaa4b436a5970">
         <source>Add the following JavaScript to your
@@ -150,7 +151,7 @@
       </trans-unit>
       <trans-unit id="s8975026acabb194d" xml:space="preserve">
         <source>Select Archived Items</source>
-        <target state="translated">Seleccionar archivados</target>
+        <target state="translated">Seleccionar elementos archivados</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s1a24424753185138">
         <source>Make Shareable</source>
@@ -181,7 +182,7 @@
       </trans-unit>
       <trans-unit xml:space="preserve" id="s3512b3c95c7a5c3a">
         <source>Last Updated</source>
-        <target state="translated">Última actualización</target>
+        <target state="translated">Última Actualización</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s63d894b1ddb06289">
         <source>Description</source>
@@ -210,8 +211,9 @@
         <source>Page not found.</source>
         <target state="translated">Página no encontrada.</target>
       </trans-unit>
-      <trans-unit id="s6f6715b26a9dd225">
+      <trans-unit id="s6f6715b26a9dd225" xml:space="preserve">
         <source>This Collection doesn’t have any archived items, yet.</source>
+        <target state="translated">Esta colección no tiene elementos archivados todavía.</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="sf3f1aa4156bb5055">
         <source>Remove from Collection</source>
@@ -685,8 +687,9 @@
       <trans-unit id="s35d5a98fef05c2e2">
         <source>View archived items and collections</source>
       </trans-unit>
-      <trans-unit id="s760d19695f403a5d">
+      <trans-unit id="s760d19695f403a5d" xml:space="preserve">
         <source>View crawl workflows</source>
+        <target state="translated">Ver flujos de crawl</target>
       </trans-unit>
       <trans-unit id="sc6c8efa8df64bbf6">
         <source>View, replay, and download archived items</source>
@@ -701,11 +704,13 @@
       <trans-unit id="s8985e2eee822a8a8">
         <source>All Viewer permissions, plus:</source>
       </trans-unit>
-      <trans-unit id="s2305e925ed4b2d44">
+      <trans-unit id="s2305e925ed4b2d44" xml:space="preserve">
         <source>Create crawl workflows</source>
+        <target state="translated">Crear flujos de crawl</target>
       </trans-unit>
-      <trans-unit id="sc194ca87fef5ac61">
+      <trans-unit id="sc194ca87fef5ac61" xml:space="preserve">
         <source>Create browser profiles</source>
+        <target state="translated">Crear perfiles</target>
       </trans-unit>
       <trans-unit id="sb600cf68d73b98ca">
         <source>Upload archived items</source>
@@ -1018,8 +1023,9 @@
       <trans-unit id="scb57efea186060b1">
         <source>Delete Crawl</source>
       </trans-unit>
-      <trans-unit id="se0e0c906e2ad3b0a">
+      <trans-unit id="se0e0c906e2ad3b0a" xml:space="preserve">
         <source>Crawl Workflows</source>
+        <target state="translated">Flujos de crawl</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s4d80f6e1da39d26e">
         <source>Edit Settings</source>
@@ -1096,11 +1102,11 @@
       </trans-unit>
       <trans-unit xml:space="preserve" id="hcb76d3d062f4fe97">
         <source> <x id="0" equiv-text="&lt;span class=&quot;truncate&quot;&gt;${firstSeed}&lt;/span&gt;&#10;          &lt;span class=&quot;whitespace-nowrap text-neutral-500&quot;&gt;"/>+<x id="1" equiv-text="${remainderCount}"/> URL<x id="2" equiv-text="&lt;/span&gt;"/></source>
-        <target state="translated"><x id="0" equiv-text="&lt;span class=&quot;truncate&quot;&gt;${firstSeed}&lt;/span&gt;&#10;          &lt;span class=&quot;whitespace-nowrap text-neutral-500&quot;&gt;"/>+<x id="1" equiv-text="${remainderCount}"/> URL<x id="2" equiv-text="&lt;/span&gt;"/></target>
+        <target state="translated"> <x id="0" equiv-text="&lt;span class=&quot;truncate&quot;&gt;${firstSeed}&lt;/span&gt;&#10;          &lt;span class=&quot;whitespace-nowrap text-neutral-500&quot;&gt;"/>+<x id="1" equiv-text="${remainderCount}"/> URL<x id="2" equiv-text="&lt;/span&gt;"/></target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="h0f472740ba5c3c86">
         <source> <x id="0" equiv-text="&lt;span class=&quot;truncate&quot;&gt;${firstSeed}&lt;/span&gt;&#10;        &lt;span class=&quot;whitespace-nowrap text-neutral-500&quot;&gt;"/>+<x id="1" equiv-text="${remainderCount}"/> URLs<x id="2" equiv-text="&lt;/span&gt;"/></source>
-        <target state="translated"><x id="0" equiv-text="&lt;span class=&quot;truncate&quot;&gt;${firstSeed}&lt;/span&gt;&#10;        &lt;span class=&quot;whitespace-nowrap text-neutral-500&quot;&gt;"/>+<x id="1" equiv-text="${remainderCount}"/> URLs<x id="2" equiv-text="&lt;/span&gt;"/></target>
+        <target state="translated"> <x id="0" equiv-text="&lt;span class=&quot;truncate&quot;&gt;${firstSeed}&lt;/span&gt;&#10;        &lt;span class=&quot;whitespace-nowrap text-neutral-500&quot;&gt;"/>+<x id="1" equiv-text="${remainderCount}"/> URLs<x id="2" equiv-text="&lt;/span&gt;"/></target>
       </trans-unit>
       <trans-unit id="s900a5e61e7ade066">
         <source>View:</source>
@@ -1426,7 +1432,8 @@
         <source>
                       <x id="0" equiv-text="&lt;span class=&quot;text-primary&quot;&gt;${htmlCount}&lt;/span&gt;"/>
                       HTML <x id="1" equiv-text="${pluralOf(&quot;pages&quot;, htmlCount)}&#10;                    "/></source>
-        <target state="translated"><x id="0" equiv-text="&lt;span class=&quot;text-primary&quot;&gt;${htmlCount}&lt;/span&gt;"/> HTML <x id="1" equiv-text="${pluralOf(&quot;pages&quot;, htmlCount)}&#10;                    "/></target>
+        <target state="translated">
+                      <x id="0" equiv-text="&lt;span class=&quot;text-primary&quot;&gt;${htmlCount}&lt;/span&gt;"/> HTML <x id="1" equiv-text="${pluralOf(&quot;pages&quot;, htmlCount)}&#10;                    "/></target>
       </trans-unit>
       <trans-unit id="h7d8f1533bbc700e1">
         <source>
@@ -1580,8 +1587,9 @@
       <trans-unit id="sc022cfb22694b207">
         <source>Sorry, couldn't retrieve archived item at this time.</source>
       </trans-unit>
-      <trans-unit id="s3d197283cb019b5a">
+      <trans-unit id="s3d197283cb019b5a" xml:space="preserve">
         <source>Overview</source>
+        <target state="translated">Información General</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s17845e39451afe17">
         <source>Quality Assurance</source>
@@ -1591,8 +1599,9 @@
         <source>WACZ Files</source>
         <target state="translated">Archivos WACZ</target>
       </trans-unit>
-      <trans-unit id="s2734c290e261a94d">
+      <trans-unit id="s2734c290e261a94d" xml:space="preserve">
         <source>Crawl Settings</source>
+        <target state="translated">Configuración de Crawl</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s58cfa43fd4318df9">
         <source>Download all files as a single WACZ</source>
@@ -1802,7 +1811,7 @@
       </trans-unit>
       <trans-unit xml:space="preserve" id="s039b6434e8a75560">
         <source>Delete <x id="0" equiv-text="${org.name}"/></source>
-        <target state="translated">Eliminar <x id="0" equiv-text="${this.itemToDelete?.type === &quot;upload&quot;&#10;    ? msg(&quot;Upload&quot;)&#10;    : msg(&quot;Crawl&quot;)}"/></target>
+        <target state="translated">Eliminar <x id="0" equiv-text="${org.name}"/></target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s96668830629e0dfc">
         <source>Upload</source>
@@ -1990,8 +1999,9 @@
         <source>Yes, Discard Changes</source>
         <target state="translated">Sí, descartar cambios</target>
       </trans-unit>
-      <trans-unit id="s984cf207ea75350f">
+      <trans-unit id="s984cf207ea75350f" xml:space="preserve">
         <source>Browser Profiles</source>
+        <target state="translated">Perfiles de navegador</target>
       </trans-unit>
       <trans-unit id="s527bc3bad26def9d">
         <source>Not used in any crawl workflows.</source>
@@ -2083,8 +2093,9 @@
         <source>Create New...</source>
         <target state="translated">Crear nuevo...</target>
       </trans-unit>
-      <trans-unit id="s91c206764e342fbd">
+      <trans-unit id="s91c206764e342fbd" xml:space="preserve">
         <source>Crawl Workflow</source>
+        <target state="translated">Flujo de crawl</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="sf49525241bba3b06">
         <source>Storage</source>
@@ -2093,8 +2104,9 @@
       <trans-unit id="s8f30271298d1c702">
         <source>Archived Item</source>
       </trans-unit>
-      <trans-unit id="sdabda2230cd87b68">
+      <trans-unit id="sdabda2230cd87b68" xml:space="preserve">
         <source>Crawling</source>
+        <target state="translated">Crawleo</target>
       </trans-unit>
       <trans-unit id="sd15f184f058660bf">
         <source>Crawl Running</source>
@@ -3771,7 +3783,7 @@
       </trans-unit>
       <trans-unit xml:space="preserve" id="sc9a2484754aae7bb">
         <source>You've joined <x id="0" equiv-text="${org.name || inviteInfo.orgName || msg(&quot;Browsertrix&quot;)}"/>.</source>
-        <target state="translated">Te has unido a <x id="0" equiv-text="${org.name || inviteInfo.orgName || msg(&quot;Browsertrix&quot;)}"/></target>
+        <target state="translated">Te has unido a <x id="0" equiv-text="${org.name || inviteInfo.orgName || msg(&quot;Browsertrix&quot;)}"/>.</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="sdb8ec1b3a5726c88">
         <source>Browsertrix</source>
@@ -4206,8 +4218,9 @@
       <trans-unit id="sa403185f2ed90589">
         <source>Scope options</source>
       </trans-unit>
-      <trans-unit id="sede6d0c607d400db">
+      <trans-unit id="sede6d0c607d400db" xml:space="preserve">
         <source>New Crawl Workflow</source>
+        <target state="translated">Nuevo flujo de crawl</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s51691497846184b2">
         <source>Setup Guide</source>
@@ -4315,7 +4328,7 @@
       </trans-unit>
       <trans-unit xml:space="preserve" id="sadfb54de733655c9">
         <source>Using proxy: </source>
-        <target state="translated">Usar proxy:</target>
+        <target state="translated">Usar proxy: </target>
       </trans-unit>
       <trans-unit id="hda7aa624404fc0ed">
         <source>Refer to our user guide on
