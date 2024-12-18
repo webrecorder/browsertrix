@@ -277,7 +277,7 @@ class StorageOps:
 
         async with session.create_client(
             "s3",
-            region_name=storage.region or "us-east-1",
+            region_name=storage.region or "any",
             endpoint_url=endpoint_url,
             aws_access_key_id=storage.access_key,
             aws_secret_access_key=storage.secret_key,
@@ -452,7 +452,7 @@ class StorageOps:
 
         async with self.get_s3_client(
             s3storage,
-            True,
+            for_presign=True,
         ) as (client, bucket, key):
             orig_key = key
             key += crawlfile.filename
