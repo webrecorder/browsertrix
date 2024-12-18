@@ -24,6 +24,16 @@ if (!process.env.API_BASE_URL) {
 const RWP_BASE_URL =
   process.env.RWP_BASE_URL || "https://cdn.jsdelivr.net/npm/replaywebpage/";
 
+// Enable Plausible (or another analytics) script locally
+const plausibleScript = process.env.PLAUSIBLE_SRC
+  ? `const script = document.createElement("script");
+script.src = "${process.env.PLAUSIBLE_SRC}";
+script.defer = true;
+script.dataset.domain = "${process.env.PLAUSIBLE_DOMAIN}";
+document.head.appendChild(script);
+window.analytics = window.plausible || function () { (window.plausible.q = window.plausible.q || []).push(arguments); };`
+  : "";
+
 const devBackendUrl = new URL(process.env.API_BASE_URL);
 
 module.exports = [
@@ -79,7 +89,7 @@ module.exports = [
         // serve empty analytics script
         server.app?.get("/extra.js", (req, res) => {
           res.set("Content-Type", "application/javascript");
-          res.status(200).send("");
+          res.status(200).send(plausibleScript);
         });
 
         return middlewares;
