@@ -220,4 +220,6 @@ plausible.src = "https://plausible.io/js/script.js";
 plausible.defer = true;
 plausible.dataset.domain = "app.browsertrix.com";
 document.head.appendChild(plausible);
+
+window.analytics = window.plausible || function () { (window.plausible.q = window.plausible.q || []).push(arguments); };
 ```
