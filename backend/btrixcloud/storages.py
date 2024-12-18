@@ -277,7 +277,7 @@ class StorageOps:
 
         async with session.create_client(
             "s3",
-            region_name=storage.region or "any",
+            region_name=storage.region or "us-east-1",
             endpoint_url=endpoint_url,
             aws_access_key_id=storage.access_key,
             aws_secret_access_key=storage.secret_key,
