@@ -2059,6 +2059,7 @@ class DeleteReplicaJob(BackgroundJob):
     object_type: str
     object_id: str
     replica_storage: StorageRef
+    schedule: Optional[str] = None
 
 
 # ============================================================================

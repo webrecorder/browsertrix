@@ -96,6 +96,9 @@ superuser:
 # Set name for default organization created with superuser
 default_org: "My Organization"
 
+# Set number of days replica file deletion should be delayed by
+replica_deletion_delay_days: 7
+
 
 # API Image
 # =========================================

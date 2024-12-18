@@ -85,6 +85,8 @@ data:
 
   LOCALES_ENABLED: "{{ .Values.locales_enabled }}"
 
+  REPLICA_DELETION_DELAY_DAYS: "{{ .Values.replica_deletion_delay_days | default 0 }}"
+
 
 ---
 apiVersion: v1
