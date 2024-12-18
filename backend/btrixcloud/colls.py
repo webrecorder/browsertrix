@@ -635,6 +635,7 @@ class CollectionOps:
         match_query: dict[str, object] = {"oid": oid, "crawl_id": {"$in": crawl_ids}}
 
         if url_prefix:
+            url_prefix = urllib.parse.unquote(url_prefix)
             regex_pattern = f"^{url_prefix}"
             match_query["url"] = {"$regex": regex_pattern, "$options": "i"}
 
@@ -1059,11 +1060,10 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops, user_de
         page: int = 1,
     ):
         """Retrieve paginated list of urls in collection sorted by snapshot count"""
-        url_prefix = urllib.parse.unquote(urlPrefix) if urlPrefix else None
         pages, total = await colls.list_urls_in_collection(
             coll_id=coll_id,
             oid=oid,
-            url_prefix=url_prefix,
+            url_prefix=urlPrefix,
             page_size=pageSize,
             page=page,
         )
