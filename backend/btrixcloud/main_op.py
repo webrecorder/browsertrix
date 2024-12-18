@@ -31,6 +31,7 @@ def main():
         crawl_config_ops,
         _,
         crawl_ops,
+        _,
         page_ops,
         coll_ops,
         _,
