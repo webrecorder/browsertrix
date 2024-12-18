@@ -24,14 +24,9 @@ if (!process.env.API_BASE_URL) {
 const RWP_BASE_URL =
   process.env.RWP_BASE_URL || "https://cdn.jsdelivr.net/npm/replaywebpage/";
 
-// Enable Plausible (or another analytics) script locally
-const plausibleScript = process.env.PLAUSIBLE_SRC
-  ? `const script = document.createElement("script");
-script.src = "${process.env.PLAUSIBLE_SRC}";
-script.defer = true;
-script.dataset.domain = "${process.env.PLAUSIBLE_DOMAIN}";
-document.head.appendChild(script);
-window.analytics = window.plausible || function () { (window.plausible.q = window.plausible.q || []).push(arguments); };`
+// Enable injected extra.js script (e.g. for analytics)
+const extraScript = process.env.EXTRA_SCRIPT_URL
+  ? `let script = document.createElement("script"); script.src = "${process.env.EXTRA_SCRIPT_URL}"; document.head.appendChild(script);`
   : "";
 
 const devBackendUrl = new URL(process.env.API_BASE_URL);
@@ -89,7 +84,7 @@ module.exports = [
         // serve empty analytics script
         server.app?.get("/extra.js", (req, res) => {
           res.set("Content-Type", "application/javascript");
-          res.status(200).send(plausibleScript);
+          res.status(200).send(extraScript);
         });
 
         return middlewares;
