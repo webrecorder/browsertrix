@@ -95,24 +95,26 @@ export class SelectCollectionAccess extends BtrixElement {
       ${when(
         this.value === CollectionAccess.Public,
         () => html`
-          <btrix-details class="mt-2">
-            <span slot="title">
-              ${msg("What information will be visible to the public?")}</span
+          <sl-details class="mt-2 part-[header]:p-2">
+            <div
+              slot="summary"
+              class="flex items-center gap-1.5 text-neutral-600"
             >
-            <div class="p-2">
-              ${msg(
-                "In addition to replay, the following collection details will be visible:",
-              )}
-              <ul class="mt-2 list-inside list-disc">
-                <li>${msg("Name")}</li>
-                <li>${msg("Summary")}</li>
-                <li>${msg("About")}</li>
-                <li>${msg("Collection Period")}</li>
-                <li>${msg("Total Pages")}</li>
-                <li>${msg("Collection Size")}</li>
-              </ul>
+              <sl-icon name="info-circle"></sl-icon>
+              ${msg("What information will be visible to the public?")}
             </div>
-          </btrix-details>
+            ${msg(
+              "In addition to replay, the following collection details will be visible:",
+            )}
+            <ul class="mt-2 list-inside list-disc">
+              <li>${msg("Name")}</li>
+              <li>${msg("Summary")}</li>
+              <li>${msg("About")}</li>
+              <li>${msg("Collection Period")}</li>
+              <li>${msg("Total Pages")}</li>
+              <li>${msg("Collection Size")}</li>
+            </ul>
+          </sl-details>
         `,
       )}
     `;

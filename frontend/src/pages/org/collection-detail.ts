@@ -10,13 +10,8 @@ import queryString from "query-string";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { MarkdownEditor } from "@/components/ui/markdown-editor";
 import type { PageChangeEvent } from "@/components/ui/pagination";
-import type { Thumbnail } from "@/features/collections/collection-thumbnail";
 import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
-import type {
-  SelectThumbnailDetail,
-  SelectVisibilityDetail,
-  ShareCollection,
-} from "@/features/collections/share-collection";
+import type { ShareCollection } from "@/features/collections/share-collection";
 import { pageHeader } from "@/layouts/page";
 import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
 import type {
@@ -141,17 +136,9 @@ export class CollectionDetail extends BtrixElement {
           <btrix-share-collection
             collectionId=${this.collectionId}
             .collection=${this.collection}
-            @btrix-select-visibility=${(
-              e: CustomEvent<SelectVisibilityDetail>,
-            ) => {
+            @btrix-change=${(e: CustomEvent) => {
               e.stopPropagation();
-              void this.updateVisibility(e.detail.item.value);
-            }}
-            @btrix-select-thumbnail=${(
-              e: CustomEvent<SelectThumbnailDetail>,
-            ) => {
-              e.stopPropagation();
-              void this.updateThumbnail(e.detail);
+              void this.fetchCollection();
             }}
           ></btrix-share-collection>
           ${when(this.isCrawler, this.renderActions)}
@@ -751,91 +738,6 @@ export class CollectionDetail extends BtrixElement {
       <sl-spinner></sl-spinner>
     </div>
   `;
-
-  private async updateVisibility(access: CollectionAccess) {
-    const prevValue = this.collection?.access;
-
-    // Optimistic update
-    if (this.collection) {
-      this.collection = { ...this.collection, access };
-    }
-
-    try {
-      await this.api.fetch<{ updated: boolean }>(
-        `/orgs/${this.orgId}/collections/${this.collectionId}`,
-        {
-          method: "PATCH",
-          body: JSON.stringify({ access }),
-        },
-      );
-
-      this.notify.toast({
-        message: msg("Collection visibility updated."),
-        variant: "success",
-        icon: "check2-circle",
-      });
-    } catch (err) {
-      console.debug(err);
-
-      // Revert optimistic update
-      if (this.collection && prevValue !== undefined) {
-        this.collection = { ...this.collection, access: prevValue };
-      }
-
-      this.notify.toast({
-        message: msg("Sorry, couldn't update visibility at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-      });
-    }
-  }
-
-  async updateThumbnail({
-    defaultThumbnailName,
-  }: {
-    defaultThumbnailName: Thumbnail | null;
-  }) {
-    const prevValue = this.collection?.defaultThumbnailName;
-
-    // Optimistic update
-    if (this.collection) {
-      this.collection = { ...this.collection, defaultThumbnailName };
-    }
-
-    try {
-      await this.api.fetch<{ updated: boolean }>(
-        `/orgs/${this.orgId}/collections/${this.collectionId}`,
-        {
-          method: "PATCH",
-          body: JSON.stringify({ defaultThumbnailName }),
-        },
-      );
-
-      void this.fetchCollection();
-
-      this.notify.toast({
-        message: msg("Thumbnail updated."),
-        variant: "success",
-        icon: "check2-circle",
-      });
-    } catch (err) {
-      console.debug(err);
-
-      // Revert optimistic update
-      if (this.collection && prevValue !== undefined) {
-        this.collection = {
-          ...this.collection,
-          defaultThumbnailName: prevValue,
-        };
-      }
-
-      this.notify.toast({
-        message: msg("Sorry, couldn't update thumbnail at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-      });
-    }
-  }
 
   private readonly confirmDelete = () => {
     this.openDialogName = "delete";
