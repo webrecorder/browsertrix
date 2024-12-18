@@ -40,7 +40,7 @@ else:
 class EventWebhookOps:
     """Event webhook notification management"""
 
-    # pylint: disable=invalid-name, too-many-arguments, too-many-locals
+    # pylint: disable=invalid-name, too-many-arguments, too-many-locals, too-many-positional-arguments
 
     org_ops: OrgOps
     crawl_ops: CrawlOps
@@ -556,7 +556,7 @@ class EventWebhookOps:
         )
 
 
-# pylint: disable=too-many-arguments, too-many-locals, invalid-name, fixme
+# pylint: disable=too-many-arguments, too-many-locals, invalid-name, fixme, too-many-positional-arguments
 def init_event_webhooks_api(mdb, org_ops, app):
     """init event webhooks system"""
     # pylint: disable=invalid-name

@@ -190,7 +190,7 @@ def main() -> None:
 
     crawl_manager = CrawlManager()
 
-    storage_ops = init_storages_api(org_ops, crawl_manager)
+    storage_ops = init_storages_api(org_ops, crawl_manager, current_active_user)
 
     background_job_ops = init_background_jobs_api(
         app,
@@ -253,6 +253,8 @@ def main() -> None:
     init_uploads_api(*base_crawl_init)
 
     org_ops.set_ops(base_crawl_ops, profiles, coll_ops, background_job_ops)
+
+    storage_ops.set_ops(background_job_ops)
 
     user_manager.set_ops(org_ops, crawl_config_ops, base_crawl_ops)
 
