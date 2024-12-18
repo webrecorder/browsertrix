@@ -8,6 +8,7 @@ from collections import Counter
 from uuid import UUID, uuid4
 from typing import Optional, List, TYPE_CHECKING, cast, Dict, Tuple, Any, Union
 import os
+import urllib.parse
 
 import asyncio
 import pymongo
@@ -1058,10 +1059,11 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops, user_de
         page: int = 1,
     ):
         """Retrieve paginated list of urls in collection sorted by snapshot count"""
+        url_prefix = urllib.parse.unquote(urlPrefix) if urlPrefix else None
         pages, total = await colls.list_urls_in_collection(
             coll_id=coll_id,
             oid=oid,
-            url_prefix=urlPrefix,
+            url_prefix=url_prefix,
             page_size=pageSize,
             page=page,
         )
