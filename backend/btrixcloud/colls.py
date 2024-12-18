@@ -8,6 +8,7 @@ from collections import Counter
 from uuid import UUID, uuid4
 from typing import Optional, List, TYPE_CHECKING, cast, Dict, Tuple, Any, Union
 import os
+import re
 import urllib.parse
 
 import asyncio
@@ -636,7 +637,7 @@ class CollectionOps:
 
         if url_prefix:
             url_prefix = urllib.parse.unquote(url_prefix)
-            regex_pattern = f"^{url_prefix}"
+            regex_pattern = f"^{re.escape(url_prefix)}"
             match_query["url"] = {"$regex": regex_pattern, "$options": "i"}
 
         aggregate = [{"$match": match_query}]
