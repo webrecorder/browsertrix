@@ -1,15 +1,21 @@
 /**
  * Custom tracking for analytics.
  *
- * `window.analytics` should be made available through the `extra.js` injected by the server.
+ * Any third-party analytics script will need to have been made
+ * available through the `extra.js` injected by the server.
  */
-declare global {
-  // eslint-disable-next-line no-var
-  var analytics: (
-    event: string,
-    opts: { props?: { [key: string]: unknown } },
-  ) => {};
-}
+
+// type Track = (
+//   event: string,
+//   opts: { props?: { [key: string]: unknown } },
+// ) => {};
+
+// ANALYTICS_NAMESPACE is specified with webpack `DefinePlugin`
+const analytics = window.process.env.ANALYTICS_NAMESPACE
+  ? (window as any)[window.process.env.ANALYTICS_NAMESPACE as string]
+  : null;
+
+console.log("analytics:", analytics);
 
 export enum TrackEvent {
   ViewPublicCollection = "View Public Collection",
@@ -18,12 +24,12 @@ export enum TrackEvent {
 }
 
 export function track(event: TrackEvent, props?: { [key: string]: unknown }) {
-  if (!(window.analytics as unknown)) {
+  if (!analytics) {
     return;
   }
 
   try {
-    window.analytics(event, { props });
+    analytics(event, { props });
   } catch (err) {
     console.debug(err);
   }
