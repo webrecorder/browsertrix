@@ -142,7 +142,7 @@ const main = {
         loader: "html-loader",
       },
       {
-        test: /\.(woff(2)?|ttf|svg|webp)(\?v=\d+\.\d+\.\d+)?$/,
+        test: /\.(woff(2)?|ttf|svg|webp|avif)(\?v=\d+\.\d+\.\d+)?$/,
         include: path.resolve(__dirname, "src"),
         type: "asset/resource",
       },

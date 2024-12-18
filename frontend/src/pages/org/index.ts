@@ -586,8 +586,9 @@ export class Org extends BtrixElement {
     if (params.collectionId) {
       return html`<btrix-collection-detail
         collectionId=${params.collectionId}
-        collectionTab=${(params.collectionTab as CollectionTab | undefined) ||
-        "replay"}
+        collectionTab=${ifDefined(
+          params.collectionTab as CollectionTab | undefined,
+        )}
         ?isCrawler=${this.appState.isCrawler}
       ></btrix-collection-detail>`;
     }
