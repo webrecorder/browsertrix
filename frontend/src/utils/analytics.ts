@@ -11,10 +11,20 @@ declare global {
   ) => {};
 }
 
-export function track(event: string, props?: { [key: string]: unknown }) {
+export enum TrackEvent {
+  ViewPublicCollection = "View Public Collection",
+  CopyPublicCollectionLink = "Copy Share Collection Link",
+  DownloadPublicCollection = "Download Public Collection",
+}
+
+export function track(event: TrackEvent, props?: { [key: string]: unknown }) {
   if (!(window.analytics as unknown)) {
     return;
   }
 
-  window.analytics(event, { props });
+  try {
+    window.analytics(event, { props });
+  } catch (err) {
+    console.debug(err);
+  }
 }
