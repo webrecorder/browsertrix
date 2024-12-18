@@ -1206,6 +1206,55 @@ def test_get_public_collection_unlisted(crawler_auth_headers, default_org_id):
         assert field not in coll
 
 
+def test_get_public_collection_unlisted_org_profile_disabled(
+    admin_auth_headers, default_org_id
+):
+    # Disable org profile
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/public-profile",
+        headers=admin_auth_headers,
+        json={
+            "enablePublicProfile": False,
+        },
+    )
+    assert r.status_code == 200
+    assert r.json()["updated"]
+
+    # Verify we can still get public details for unlisted collection
+    r = requests.get(
+        f"{API_PREFIX}/public/orgs/{default_org_slug}/collections/{_second_public_coll_id}"
+    )
+    assert r.status_code == 200
+    coll = r.json()
+
+    assert coll["id"] == _second_public_coll_id
+    assert coll["oid"] == default_org_id
+    assert coll["access"] == "unlisted"
+    assert coll["name"]
+    assert coll["resources"]
+    assert coll["dateEarliest"]
+    assert coll["dateLatest"]
+    assert coll["crawlCount"] > 0
+    assert coll["pageCount"] > 0
+    assert coll["totalSize"] > 0
+    assert coll["defaultThumbnailName"] == "orange-default.avif"
+    assert coll["allowPublicDownload"]
+
+    for field in NON_PUBLIC_COLL_FIELDS:
+        assert field not in coll
+
+    # Re-enable org profile
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/public-profile",
+        headers=admin_auth_headers,
+        json={
+            "enablePublicProfile": True,
+        },
+    )
+    assert r.status_code == 200
+    assert r.json()["updated"]
+
+
 def test_delete_thumbnail(crawler_auth_headers, default_org_id):
     r = requests.delete(
         f"{API_PREFIX}/orgs/{default_org_id}/collections/{_public_coll_id}/thumbnail",
@@ -1267,6 +1316,39 @@ def test_download_streaming_public_collection(crawler_auth_headers, default_org_
         headers=crawler_auth_headers,
         json={
             "allowPublicDownload": True,
+        },
+    )
+    assert r.status_code == 200
+    assert r.json()["updated"]
+
+    with TemporaryFile() as fh:
+        with requests.get(
+            f"{API_PREFIX}/public/orgs/{default_org_slug}/collections/{_public_coll_id}/download",
+            stream=True,
+        ) as r:
+            assert r.status_code == 200
+            for chunk in r.iter_content():
+                fh.write(chunk)
+
+        fh.seek(0)
+        with ZipFile(fh, "r") as zip_file:
+            contents = zip_file.namelist()
+
+            assert len(contents) == 2
+            for filename in contents:
+                assert filename.endswith(".wacz") or filename == "datapackage.json"
+                assert zip_file.getinfo(filename).compress_type == ZIP_STORED
+
+
+def test_download_streaming_public_collection_profile_disabled(
+    admin_auth_headers, default_org_id
+):
+    # Disable org public profile and ensure download still works for public collection
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/public-profile",
+        headers=admin_auth_headers,
+        json={
+            "enablePublicProfile": False,
         },
     )
     assert r.status_code == 200
