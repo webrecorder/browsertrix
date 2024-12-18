@@ -166,6 +166,9 @@ const main = {
 
     new webpack.DefinePlugin({
       "window.process.env.WEBSOCKET_HOST": JSON.stringify(WEBSOCKET_HOST),
+      "window.process.env.ANALYTICS_NAMESPACE": JSON.stringify(
+        process.env.ANALYTICS_NAMESPACE,
+      ),
     }),
 
     new webpack.optimize.LimitChunkCountPlugin({

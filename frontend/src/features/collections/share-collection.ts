@@ -25,6 +25,7 @@ import {
   type Collection,
   type PublicCollection,
 } from "@/types/collection";
+import { track, TrackEvent } from "@/utils/analytics";
 
 enum Tab {
   Link = "link",
@@ -113,6 +114,12 @@ export class ShareCollection extends BtrixElement {
             ?disabled=${!this.shareLink}
             @click=${() => {
               void this.clipboardController.copy(this.shareLink);
+
+              track(TrackEvent.CopyPublicCollectionLink, {
+                slug: this.slug,
+                collectionId: this.collectionId,
+                copiedFromPublicPage: this.navigate.isPublicPage,
+              });
             }}
           >
             <sl-icon
@@ -188,6 +195,12 @@ export class ShareCollection extends BtrixElement {
                       href=${`/api/public/orgs/${this.slug}/collections/${this.collectionId}/download`}
                       download
                       ?disabled=${!this.collection?.totalSize}
+                      @click=${() => {
+                        track(TrackEvent.DownloadPublicCollection, {
+                          slug: this.slug,
+                          collectionId: this.collectionId,
+                        });
+                      }}
                     >
                       <sl-icon name="cloud-download" slot="prefix"></sl-icon>
                       ${msg("Download Collection")}
