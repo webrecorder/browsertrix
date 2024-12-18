@@ -51,7 +51,7 @@ from .models import (
     AddedResponseName,
 )
 
-from .utils import is_bool, slug_from_name
+from .utils import slug_from_name
 from .version import __version__
 
 
@@ -78,14 +78,11 @@ class StorageOps:
     org_ops: OrgOps
     crawl_manager: CrawlManager
 
-    is_local_minio: bool
     frontend_origin: str
 
     def __init__(self, org_ops, crawl_manager) -> None:
         self.org_ops = org_ops
         self.crawl_manager = crawl_manager
-
-        self.is_local_minio = is_bool(os.environ.get("IS_LOCAL_MINIO"))
 
         frontend_origin = os.environ.get(
             "FRONTEND_ORIGIN", "http://browsertrix-cloud-frontend"
@@ -139,10 +136,7 @@ class StorageOps:
         if bucket_name:
             endpoint_url += bucket_name + "/"
 
-        if self.is_local_minio:
-            access_endpoint_url = "/data/"
-        else:
-            access_endpoint_url = storage.get("access_endpoint_url") or endpoint_url
+        access_endpoint_url = storage.get("access_endpoint_url") or endpoint_url
 
         return S3Storage(
             access_key=storage["access_key"],
