@@ -580,11 +580,13 @@ class CrawlOperator(BaseOperator):
         spec = data.parent.get("spec", {})
         crawl_id = spec["id"]
         oid = spec.get("oid")
+        # filter by role as well (job vs qa-job)
+        role = data.parent.get("metadata", {}).get("labels", {}).get("role")
         related_resources = [
             {
                 "apiVersion": BTRIX_API,
                 "resource": "crawljobs",
-                "labelSelector": {"matchLabels": {"btrix.org": oid}},
+                "labelSelector": {"matchLabels": {"btrix.org": oid, "role": role}},
             },
         ]
 
