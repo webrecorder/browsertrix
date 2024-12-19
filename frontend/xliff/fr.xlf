@@ -281,23 +281,29 @@
         <source>Your trial will end on <x id="0" equiv-text="${futureCancelDate}"/></source>
         <target state="translated">Votre période d'essai va prendre fin à <x id="0" equiv-text="${futureCancelDate}"/></target>
       </trans-unit>
-      <trans-unit id="s0fd618c2a8596617">
+      <trans-unit id="s0fd618c2a8596617" xml:space="preserve">
         <source>subscribe to keep your account</source>
+        <target state="translated">Abonnez-vous pour conserver votre compte</target>
       </trans-unit>
-      <trans-unit id="s5f5b3049f319a00a">
+      <trans-unit id="s5f5b3049f319a00a" xml:space="preserve">
         <source>Your plan will be canceled on <x id="0" equiv-text="${futureCancelDate}"/></source>
+        <target state="translated">Votre plan sera annulé le <x id="0" equiv-text="${futureCancelDate}"/></target>
       </trans-unit>
-      <trans-unit id="sc8fa6bd4dc311b6a">
+      <trans-unit id="sc8fa6bd4dc311b6a" xml:space="preserve">
         <source>Monthly quota</source>
+        <target state="translated">Limite mensuelle</target>
       </trans-unit>
-      <trans-unit id="s87d8a89eee6ca824">
+      <trans-unit id="s87d8a89eee6ca824" xml:space="preserve">
         <source>Subscription status, features, and add-ons, if applicable.</source>
+        <target state="translated">Statut de l'abonnement, caractéristiques et ajouts, si possible.</target>
       </trans-unit>
-      <trans-unit id="s2ab646dc4c6667ec">
+      <trans-unit id="s2ab646dc4c6667ec" xml:space="preserve">
         <source>To continue using Browsertrix at the end of your trial, click “<x id="0" equiv-text="${this.portalUrlLabel}"/>”.</source>
+        <target state="translated">Pour contribuer à utiliser Browsertrix, à la fin de votre période d'essai, cliquez sur “<x id="0" equiv-text="${this.portalUrlLabel}"/>”.</target>
       </trans-unit>
-      <trans-unit id="sc93b55ebdda10016">
+      <trans-unit id="sc93b55ebdda10016" xml:space="preserve">
         <source>You can view plan details, update payment methods, and update billing information by clicking “<x id="0" equiv-text="${this.portalUrlLabel}"/>”.</source>
+        <target state="translated">Pour voir votre plan détaillé, pour mettre à jour vos méthodes de paiement et vos informations de facturation, cliquez sur “<x id="0" equiv-text="${this.portalUrlLabel}"/>”.</target>
       </trans-unit>
       <trans-unit id="h1abcffb9335ebc6d">
         <source>To upgrade to Pro, contact us at <x id="0" equiv-text="&lt;a class=&quot;${linkClassList}&quot; href=&quot;${`mailto:${this.salesEmail}?subject=${msg(str `Upgrade Browsertrix plan (${this.userOrg?.name})`)}`}&quot; rel=&quot;noopener noreferrer nofollow&quot;&gt;${this.salesEmail}&lt;/a&gt;"/>.</source>
