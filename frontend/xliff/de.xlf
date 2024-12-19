@@ -3842,9 +3842,6 @@
       <trans-unit id="sc72c35c940c8e9eb">
         <source>Your formatting preference has been updated.</source>
       </trans-unit>
-      <trans-unit id="sf36c01d89a1ee87f">
-        <source>Couldn’t initialize Browsertrix correctly.</source>
-      </trans-unit>
     </body>
   </file>
 </xliff>
