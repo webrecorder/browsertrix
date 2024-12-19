@@ -305,29 +305,37 @@
         <source>You can view plan details, update payment methods, and update billing information by clicking “<x id="0" equiv-text="${this.portalUrlLabel}"/>”.</source>
         <target state="translated">Pour voir votre plan détaillé, pour mettre à jour vos méthodes de paiement et vos informations de facturation, cliquez sur “<x id="0" equiv-text="${this.portalUrlLabel}"/>”.</target>
       </trans-unit>
-      <trans-unit id="h1abcffb9335ebc6d">
+      <trans-unit id="h1abcffb9335ebc6d" xml:space="preserve">
         <source>To upgrade to Pro, contact us at <x id="0" equiv-text="&lt;a class=&quot;${linkClassList}&quot; href=&quot;${`mailto:${this.salesEmail}?subject=${msg(str `Upgrade Browsertrix plan (${this.userOrg?.name})`)}`}&quot; rel=&quot;noopener noreferrer nofollow&quot;&gt;${this.salesEmail}&lt;/a&gt;"/>.</source>
+        <target state="translated">Pour mettre à jour au niveau "Pro", contactez nous à <x id="0" equiv-text="&lt;a class=&quot;${linkClassList}&quot; href=&quot;${`mailto:${this.salesEmail}?subject=${msg(str `Upgrade Browsertrix plan (${this.userOrg?.name})`)}`}&quot; rel=&quot;noopener noreferrer nofollow&quot;&gt;${this.salesEmail}&lt;/a&gt;"/>.</target>
       </trans-unit>
-      <trans-unit id="s7ec899c7c6213c52">
+      <trans-unit id="s7ec899c7c6213c52" xml:space="preserve">
         <source>Upgrade Browsertrix plan (<x id="0" equiv-text="${this.userOrg?.name}"/>)</source>
+        <target state="translated">Mettre à jour le plan de Browsertrix (<x id="0" equiv-text="${this.userOrg?.name}"/>)</target>
       </trans-unit>
-      <trans-unit id="s00341480baa290eb">
+      <trans-unit id="s00341480baa290eb" xml:space="preserve">
         <source>Contact us at <x id="0" equiv-text="${this.salesEmail}"/> to make changes to your plan.</source>
+        <target state="translated">Contactez nous à <x id="0" equiv-text="${this.salesEmail}"/> pour faire des changements à votre plan.</target>
       </trans-unit>
-      <trans-unit id="s1d04dbb2d7ee4b9b">
+      <trans-unit id="s1d04dbb2d7ee4b9b" xml:space="preserve">
         <source>Contact your Browsertrix host administrator to make changes to your plan.</source>
+        <target state="translated">Contactez votre administrateur Browsertrix pour faire des changements à votre plan.</target>
       </trans-unit>
-      <trans-unit id="sf98af5da948f4280">
+      <trans-unit id="sf98af5da948f4280" xml:space="preserve">
         <source>Usage History</source>
+        <target state="translated">Historique d'utilisation</target>
       </trans-unit>
-      <trans-unit id="s3fd6cf99e3f6c454">
+      <trans-unit id="s3fd6cf99e3f6c454" xml:space="preserve">
         <source>Starter</source>
+        <target state="translated">Démarrage</target>
       </trans-unit>
-      <trans-unit id="s53a526d5c80c3e28">
+      <trans-unit id="s53a526d5c80c3e28" xml:space="preserve">
         <source>Standard</source>
+        <target state="translated">Standard</target>
       </trans-unit>
-      <trans-unit id="scce75a19b57e0095">
+      <trans-unit id="scce75a19b57e0095" xml:space="preserve">
         <source>Plus</source>
+        <target state="translated">Plus</target>
       </trans-unit>
       <trans-unit id="sa45a194b58837e4f">
         <source>Active</source>
