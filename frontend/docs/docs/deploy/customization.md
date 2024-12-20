@@ -46,9 +46,12 @@ storages:
     access_endpoint_url: /data/
 ```
 
+This configuration uses the locally deployed Minio service, which is available when `minio_local: true` is set (enabled default).
+
+
 ### Using External S3 Storage Providers
 
-The following is an example storage configuration using an external provider instead of local minio:
+Browsertrix can also be used with external S3 storage providers, which can be configured as follows:
 
 ```yaml
 storages:
@@ -70,6 +73,8 @@ The `endpoint_url` should be provided in 'path prefix' form (with the bucket aft
 `https://s3provider.example.com/bucket/path/`.
 
 Browsertrix will handle presigning S3 URLs so that WACZ files (and other data) can be accessed directly, using URLSs of the form: `https://s3provider.example.com/bucket/path/to/files/crawl.wacz?signature...`
+
+Since the local Minio service is not used, `minio_local: false` can be set to save resource in not deploying Minio.
 
 
 ### Custom Access Endpoint URL
