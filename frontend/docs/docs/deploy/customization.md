@@ -32,7 +32,14 @@ crawler_channels:
 
 ## Storage
 
-The `storage` setting is used to specify primary and replica storage for a Browsertrix deployment. All configured storage options must be S3-compatible buckets. At minimum, there must be one configured storage option, as can be seen in the default configuration:
+The `storage` setting is used to specify primary and replica storage for a Browsertrix deployment. All configured storage options must be S3-compatible buckets. At minimum, there must be one configured storage option, which includes a `is_default_primary: true`.
+
+### Using Local Minio Storage
+
+Browsertrix includes a built-in Minio storage service, which is enabled by default (`minio_local: true` is set).
+
+The configuration for this is as follows:
+
 
 ```yaml
 storages:
@@ -40,14 +47,60 @@ storages:
     type: "s3"
     access_key: "ADMIN"
     secret_key: "PASSW0RD"
-    bucket_name: *local_bucket_name
+    bucket_name: btrix-data
 
     endpoint_url: "http://local-minio.default:9000/"
+    access_endpoint_url: /data/
 ```
 
-It is possible to add one or more replica storage locations. If replica locations are enabled, all stored content in the application will be automatically replicated to each configured replica storage location in background jobs after being stored in the default primary storage. If replica locations are enabled, at least one must be set as the default replica location for primary backups. This is indicated with `is_default_replica: True`. If more than one storage location is configured, the primary storage must also be indicated with `is_default_primary: True`.
+The `access_key` and `secret_key` should be changed, otherwise no additional changes are needed, and all local data will be stored in this Minio instance by default.
 
-For example, here is what a storage configuration with two replica locations, one in another bucket on the same Minio S3 service as primary storage as well as another in an external S3 provider:
+The S3 bucket is accessible via `/data/` path on the same host Browsertrix is running on, eg. `http://localhost:30870/data/`.
+
+
+### Using External S3 Storage Providers
+
+Browsertrix can also be used with external S3 storage providers, which can be configured as follows:
+
+```yaml
+storages:
+  - name: default
+    type: "s3"
+    access_key: "accesskey"
+    secret_key: "secret"
+
+    endpoint_url: "https://s3provider.example.com/bucket/path/"
+    access_endpoint_url: "https://my-custom-domain.example.com/path/" #optional
+    is_default_primary: true
+```
+
+
+When using an external S3 provider, a custom `access_endpoint_url` can be provided, and the `bucket_name` need to be specified separately.
+This URL is used for direct access to WACZ files, and can be used to specify a custom domain to access the bucket.
+
+The `endpoint_url` should be provided in 'path prefix' form (with the bucket after the path), eg:
+`https://s3provider.example.com/bucket/path/`.
+
+Browsertrix will handle presigning S3 URLs so that WACZ files (and other data) can be accessed directly, using URLs of the form: `https://s3provider.example.com/bucket/path/to/files/crawl.wacz?signature...`
+
+Since the local Minio service is not used, `minio_local: false` can be set to save resource in not deploying Minio.
+
+
+### Custom Access Endpoint URL
+
+It may be useful to provide a custom access endpoint for accessing WACZ files and other data. if the `access_endpoint_url` is provided,
+it should be in 'virtual host' form (the bucket is not added to the path, but is assumed to be the in the host).
+
+The host portion of the URL is then replaced with the `access_endpoint_url`. For example, given `endpoint_url: https://s3provider.example.com/bucket/path/` and `access_endpoint_url: https://my-custom-domain.example.com/path/`, a URL to a WACZ files in 'virtual host' form may be `https://bucket.s3provider.example.com/path/to/files/crawl.wacz?signature...`.
+
+The `https://bucket.s3provider.example.com/path/` is then replaced with the `https://my-custom-domain.example.com/path/`, and the final URL becomes `https://my-custom-domain.example.com/path/to/files/crawl.wacz?signature...`.
+
+
+### Storage Replicas
+
+It is possible to add one or more replica storage locations. If replica locations are enabled, all stored content in the application will be automatically replicated to each configured replica storage location in background jobs after being stored in the default primary storage. If replica locations are enabled, at least one must be set as the default replica location for primary backups. This is indicated with `is_default_replica: true`. If more than one storage location is configured, the primary storage must also be indicated with `is_default_primary: true`.
+
+For example, here is what a storage configuration with two replica locations, one in another bucket on the same local Minio S3 service as primary storage as well as another in an external S3 provider:
 
 ```yaml
 storages:
@@ -55,10 +108,11 @@ storages:
     type: "s3"
     access_key: "ADMIN"
     secret_key: "PASSW0RD"
-    bucket_name: *local_bucket_name
+    bucket_name: btrix-data
+    access_endpoint_url: /data/
 
     endpoint_url: "http://local-minio.default:9000/"
-    is_default_primary: True
+    is_default_primary: true
 
   - name: "replica-0"
     type: "s3"
@@ -67,7 +121,7 @@ storages:
     bucket_name: "replica-0"
 
     endpoint_url: "http://local-minio.default:9000/"
-    is_default_replica: True
+    is_default_replica: true
 
   - name: "replica-1"
     type: "s3"
@@ -75,7 +129,8 @@ storages:
     secret_key: "secret"
     bucket_name: "replica-1"
 
-    endpoint_url: "http://s3provider.example.com"
+    endpoint_url: "https://s3provider.example.com/bucket/path/"
+    access_endpoint_url: "https://my-custom-domain.example.com/path/"
 ```
 
 ## Horizontal Autoscaling

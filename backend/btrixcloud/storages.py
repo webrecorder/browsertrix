@@ -29,6 +29,7 @@ from zipfile import ZipInfo
 from fastapi import Depends, HTTPException
 from stream_zip import stream_zip, NO_COMPRESSION_64, Method
 from remotezip import RemoteZip
+from aiobotocore.config import AioConfig
 
 import aiobotocore.session
 import requests
@@ -50,7 +51,7 @@ from .models import (
     AddedResponseName,
 )
 
-from .utils import is_bool, slug_from_name
+from .utils import slug_from_name
 from .version import __version__
 
 
@@ -77,14 +78,11 @@ class StorageOps:
     org_ops: OrgOps
     crawl_manager: CrawlManager
 
-    is_local_minio: bool
     frontend_origin: str
 
     def __init__(self, org_ops, crawl_manager) -> None:
         self.org_ops = org_ops
         self.crawl_manager = crawl_manager
-
-        self.is_local_minio = is_bool(os.environ.get("IS_LOCAL_MINIO"))
 
         frontend_origin = os.environ.get(
             "FRONTEND_ORIGIN", "http://browsertrix-cloud-frontend"
@@ -138,12 +136,7 @@ class StorageOps:
         if bucket_name:
             endpoint_url += bucket_name + "/"
 
-        if self.is_local_minio:
-            access_endpoint_url = "/data/"
-            use_access_for_presign = False
-        else:
-            access_endpoint_url = storage.get("access_endpoint_url") or endpoint_url
-            use_access_for_presign = is_bool(storage.get("use_access_for_presign"))
+        access_endpoint_url = storage.get("access_endpoint_url") or endpoint_url
 
         return S3Storage(
             access_key=storage["access_key"],
@@ -152,7 +145,6 @@ class StorageOps:
             endpoint_url=endpoint_url,
             endpoint_no_bucket_url=endpoint_no_bucket_url,
             access_endpoint_url=access_endpoint_url,
-            use_access_for_presign=use_access_for_presign,
         )
 
     async def add_custom_storage(
@@ -177,7 +169,6 @@ class StorageOps:
             endpoint_url=endpoint_url,
             endpoint_no_bucket_url=endpoint_no_bucket_url,
             access_endpoint_url=storagein.access_endpoint_url or storagein.endpoint_url,
-            use_access_for_presign=True,
         )
 
         try:
@@ -264,12 +255,12 @@ class StorageOps:
 
     @asynccontextmanager
     async def get_s3_client(
-        self, storage: S3Storage, use_access=False
+        self, storage: S3Storage, for_presign=False
     ) -> AsyncIterator[tuple[AIOS3Client, str, str]]:
         """context manager for s3 client"""
-        endpoint_url = (
-            storage.endpoint_url if not use_access else storage.access_endpoint_url
-        )
+        # parse bucket and key from standard endpoint_url
+        endpoint_url = storage.endpoint_url
+
         if not endpoint_url.endswith("/"):
             endpoint_url += "/"
 
@@ -280,12 +271,17 @@ class StorageOps:
 
         session = aiobotocore.session.get_session()
 
+        config = None
+        if for_presign and storage.access_endpoint_url != storage.endpoint_url:
+            config = AioConfig(s3={"addressing_style": "virtual"})
+
         async with session.create_client(
             "s3",
-            region_name=storage.region,
+            region_name=storage.region or "us-east-1",
             endpoint_url=endpoint_url,
             aws_access_key_id=storage.access_key,
             aws_secret_access_key=storage.secret_key,
+            config=config,
         ) as client:
             yield client, bucket, key
 
@@ -454,11 +450,11 @@ class StorageOps:
 
         s3storage = self.get_org_storage_by_ref(org, crawlfile.storage)
 
-        async with self.get_s3_client(s3storage, s3storage.use_access_for_presign) as (
-            client,
-            bucket,
-            key,
-        ):
+        async with self.get_s3_client(
+            s3storage,
+            for_presign=True,
+        ) as (client, bucket, key):
+            orig_key = key
             key += crawlfile.filename
 
             presigned_url = await client.generate_presigned_url(
@@ -466,12 +462,15 @@ class StorageOps:
             )
 
             if (
-                not s3storage.use_access_for_presign
-                and s3storage.access_endpoint_url
+                s3storage.access_endpoint_url
                 and s3storage.access_endpoint_url != s3storage.endpoint_url
             ):
+                parts = urlsplit(s3storage.endpoint_url)
+                host_endpoint_url = (
+                    f"{parts.scheme}://{bucket}.{parts.netloc}/{orig_key}"
+                )
                 presigned_url = presigned_url.replace(
-                    s3storage.endpoint_url, s3storage.access_endpoint_url
+                    host_endpoint_url, s3storage.access_endpoint_url
                 )
 
         return presigned_url
@@ -490,11 +489,7 @@ class StorageOps:
 
         s3storage = self.get_org_storage_by_ref(org, storage)
 
-        async with self.get_s3_client(s3storage) as (
-            client,
-            bucket,
-            key,
-        ):
+        async with self.get_s3_client(s3storage) as (client, bucket, key):
             key += filename
             response = await client.delete_object(Bucket=bucket, Key=key)
             status_code = response["ResponseMetadata"]["HTTPStatusCode"]
