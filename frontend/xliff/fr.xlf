@@ -8,7 +8,7 @@
       </trans-unit>
       <trans-unit id="scbeafb2ef469257c" xml:space="preserve">
         <source>Need login</source>
-        <target state="needs-translation">Besoin d'un login</target>
+        <target state="translated">Connexion nécessaire</target>
       </trans-unit>
       <trans-unit id="sa3ce85ea4e96897c" xml:space="preserve">
         <source>Storage quota reached</source>
@@ -337,17 +337,21 @@
         <source>Plus</source>
         <target state="translated">Plus</target>
       </trans-unit>
-      <trans-unit id="sa45a194b58837e4f">
+      <trans-unit id="sa45a194b58837e4f" xml:space="preserve">
         <source>Active</source>
+        <target state="translated">Actif</target>
       </trans-unit>
-      <trans-unit id="sd95c2c71d3eaada7">
+      <trans-unit id="sd95c2c71d3eaada7" xml:space="preserve">
         <source>Free Trial</source>
+        <target state="translated">Essai gratuit</target>
       </trans-unit>
-      <trans-unit id="s88297f67c4182ba0">
+      <trans-unit id="s88297f67c4182ba0" xml:space="preserve">
         <source>Paused, payment failed</source>
+        <target state="translated">En pause, le paiement a échoué</target>
       </trans-unit>
-      <trans-unit id="sa30c4d3b566b6b1a">
+      <trans-unit id="sa30c4d3b566b6b1a" xml:space="preserve">
         <source>Canceled</source>
+        <target state="translated">Annulé</target>
       </trans-unit>
       <trans-unit id="s8e067719f45b0458">
         <source>Pro</source>
@@ -355,14 +359,17 @@
       <trans-unit id="s8e49ef99717ff3d4">
         <source><x id="0" equiv-text="${this.localize.number(quotas.maxConcurrentCrawls)}"/> concurrent <x id="1" equiv-text="${pluralOf(&quot;crawls&quot;, quotas.maxConcurrentCrawls)}"/></source>
       </trans-unit>
-      <trans-unit id="se9ef1815463f8000">
+      <trans-unit id="se9ef1815463f8000" xml:space="preserve">
         <source>Unlimited</source>
+        <target state="translated">Illimité</target>
       </trans-unit>
-      <trans-unit id="sdf3aa31f524a7300">
+      <trans-unit id="sdf3aa31f524a7300" xml:space="preserve">
         <source><x id="0" equiv-text="${maxExecMinutesPerMonth || msg(&quot;Unlimited minutes&quot;)}"/> of crawling time</source>
+        <target state="needs-translation">Recherche</target>
       </trans-unit>
-      <trans-unit id="s1228a18c03355491">
+      <trans-unit id="s1228a18c03355491" xml:space="preserve">
         <source>Unlimited minutes</source>
+        <target state="translated">Minutes illimitées</target>
       </trans-unit>
       <trans-unit id="sab5061cf8c519285">
         <source><x id="0" equiv-text="${storageBytesText}"/> of disk space</source>
@@ -370,11 +377,13 @@
       <trans-unit id="s1d6a13ef53c51ee9">
         <source><x id="0" equiv-text="${maxPagesPerCrawl || msg(&quot;Unlimited pages&quot;)}"/> per crawl</source>
       </trans-unit>
-      <trans-unit id="s41de0883966c23c8">
+      <trans-unit id="s41de0883966c23c8" xml:space="preserve">
         <source>Unlimited pages</source>
+        <target state="translated">Pages illimitées</target>
       </trans-unit>
-      <trans-unit id="s35ccaf9d67c65607">
+      <trans-unit id="s35ccaf9d67c65607" xml:space="preserve">
         <source>Unlimited concurrent crawls</source>
+        <target state="needs-translation">Nombre illimité de collectes simultanées</target>
       </trans-unit>
       <trans-unit id="sc27403512c49c425">
         <source>Pro plan change request (<x id="0" equiv-text="${this.userOrg?.name}"/>)</source>
@@ -382,20 +391,24 @@
       <trans-unit id="sc2a7f6d40341e683">
         <source>Contact Sales</source>
       </trans-unit>
-      <trans-unit id="sded4cfc4d8910016">
+      <trans-unit id="sded4cfc4d8910016" xml:space="preserve">
         <source>Browser Default</source>
+        <target state="translated">Navigateur par défaut</target>
       </trans-unit>
-      <trans-unit id="sefcf950b3cc4fc3b">
+      <trans-unit id="sefcf950b3cc4fc3b" xml:space="preserve">
         <source>Language</source>
+        <target state="translated">Langue</target>
       </trans-unit>
-      <trans-unit id="sf334547f9650322f">
+      <trans-unit id="sf334547f9650322f" xml:space="preserve">
         <source>Select Type</source>
+        <target state="needs-translation">Choisir le type</target>
       </trans-unit>
       <trans-unit id="s08513d4147b6cb21">
         <source>Matches Text</source>
       </trans-unit>
-      <trans-unit id="sd27a8f54aca5d278">
+      <trans-unit id="sd27a8f54aca5d278" xml:space="preserve">
         <source>Regex</source>
+        <target state="translated">Expression régulière</target>
       </trans-unit>
       <trans-unit id="h8c21d04827e5cb19">
         <source>Regular Expression syntax error: <x id="0" equiv-text="&lt;code&gt;${this.fieldErrorMessage}&lt;/code&gt;"/></source>
@@ -403,53 +416,65 @@
       <trans-unit id="h1a1f28e6632c15d0">
         <source>Please enter a valid constructor string pattern. See <x id="0" equiv-text="&lt;a class=&quot;underline hover:no-underline&quot; href=&quot;https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp&quot; target=&quot;_blank&quot; rel=&quot;noopener noreferrer nofollow&quot;&gt;&lt;code&gt;"/>RegExp<x id="1" equiv-text="&lt;/code&gt;"/> docs<x id="2" equiv-text="&lt;/a&gt;"/>.</source>
       </trans-unit>
-      <trans-unit id="s312a6fda81078718">
+      <trans-unit id="s312a6fda81078718" xml:space="preserve">
         <source>Exclusions</source>
+        <target state="translated">Exclusions</target>
       </trans-unit>
-      <trans-unit id="s4163bbb813fbc8c9">
+      <trans-unit id="s4163bbb813fbc8c9" xml:space="preserve">
         <source>Exclusion Type</source>
+        <target state="translated">Type d'exclusion</target>
       </trans-unit>
-      <trans-unit id="s682de1f27bbe4d2e">
+      <trans-unit id="s682de1f27bbe4d2e" xml:space="preserve">
         <source>Exclusion Value</source>
+        <target state="translated">Valeur d'exclusion</target>
       </trans-unit>
       <trans-unit id="s234f4d8778048245">
         <source>Add More</source>
       </trans-unit>
-      <trans-unit id="s9fb5a3993c135689">
+      <trans-unit id="s9fb5a3993c135689" xml:space="preserve">
         <source>Remove exclusion</source>
+        <target state="translated">Supprimer l'exclusion</target>
       </trans-unit>
-      <trans-unit id="sd3fbc5df51c1beec">
+      <trans-unit id="sd3fbc5df51c1beec" xml:space="preserve">
         <source>Enter value</source>
+        <target state="translated">Entrer la valeur</target>
       </trans-unit>
-      <trans-unit id="sae0550426935cd1e">
+      <trans-unit id="sae0550426935cd1e" xml:space="preserve">
         <source>Exclusion already exists. Please edit or remove to continue</source>
+        <target state="translated">L'exclusion existe déjà. Merci de modifier ou supprimer pour continuer</target>
       </trans-unit>
       <trans-unit id="sbe7425a3b5445ba7">
         <source>Please enter <x id="0" equiv-text="${MIN_LENGTH}"/> or more characters</source>
       </trans-unit>
-      <trans-unit id="s74abf58e08f32710">
+      <trans-unit id="s74abf58e08f32710" xml:space="preserve">
         <source>Please enter a valid Regular Expression constructor pattern</source>
+        <target state="needs-translation">Merci de saisir un modèle valide de construction d'expression régulière</target>
       </trans-unit>
-      <trans-unit id="s3c6391ad20986b33">
+      <trans-unit id="s3c6391ad20986b33" xml:space="preserve">
         <source>Tags separated by comma</source>
+        <target state="needs-translation">Tags séparés par une virgule</target>
       </trans-unit>
-      <trans-unit id="s03aa3cfb08dff960">
+      <trans-unit id="s03aa3cfb08dff960" xml:space="preserve">
         <source>Tags</source>
+        <target state="needs-translation">Tags</target>
       </trans-unit>
       <trans-unit id="s0e3006648a1a80a5">
         <source>Add “<x id="0" equiv-text="${this.inputValue.toLocaleLowerCase()}"/>”</source>
       </trans-unit>
-      <trans-unit id="sfff90c46fdba31db">
+      <trans-unit id="sfff90c46fdba31db" xml:space="preserve">
         <source>(unnamed item)</source>
+        <target state="needs-translation">(item sans nom)</target>
       </trans-unit>
       <trans-unit id="s8265788524ca2260">
         <source><x id="0" equiv-text="${formattedTime}"/> daily</source>
       </trans-unit>
-      <trans-unit id="s2acb3777ed86adb6">
+      <trans-unit id="s2acb3777ed86adb6" xml:space="preserve">
         <source>Every <x id="0" equiv-text="${formattedWeekDay}"/></source>
+        <target state="needs-translation">Tous les</target>
       </trans-unit>
-      <trans-unit id="s2bc963c5c7bac2e1">
+      <trans-unit id="s2bc963c5c7bac2e1" xml:space="preserve">
         <source>Every day at <x id="0" equiv-text="${formattedTime}"/></source>
+        <target state="needs-translation">Chaque jour à</target>
       </trans-unit>
       <trans-unit id="s3fc21c0b1ae61eb7">
         <source>Every <x id="0" equiv-text="${formattedWeekDay}"/> at <x id="1" equiv-text="${formattedTime}"/></source>
@@ -457,17 +482,20 @@
       <trans-unit id="s478f33dea36e1d3f">
         <source>On day <x id="0" equiv-text="${nextDate.getDate()}"/> of the month at <x id="1" equiv-text="${formattedTime}"/></source>
       </trans-unit>
-      <trans-unit id="s44f6ab2c6b3cff23">
+      <trans-unit id="s44f6ab2c6b3cff23" xml:space="preserve">
         <source>Default: Unlimited</source>
+        <target state="translated">Par défaut : illimité</target>
       </trans-unit>
       <trans-unit id="sf21761e7f8e0550e">
         <source>Default: <x id="0" equiv-text="${localize.number(value)}"/></source>
       </trans-unit>
-      <trans-unit id="s5ae0226079b4d5fc">
+      <trans-unit id="s5ae0226079b4d5fc" xml:space="preserve">
         <source>Specify exclusion rules for what pages should not be visited. Exclusions apply to all URLs.</source>
+        <target state="translated">Spécifiez des règles d'exclusion pour les pages qui ne doivent pas être collectées. Les exclusions s'appliquent à toutes les URLs.</target>
       </trans-unit>
-      <trans-unit id="sa663117885b91a78">
+      <trans-unit id="sa663117885b91a78" xml:space="preserve">
         <source>Adds a hard limit on the number of pages that will be crawled.</source>
+        <target state="translated">Ajoute une limite stricte au nombre de pages qui seront collectées.</target>
       </trans-unit>
       <trans-unit id="s4ad6912b1925acb3">
         <source>Gracefully stop the crawler after a specified time limit.</source>
@@ -475,14 +503,17 @@
       <trans-unit id="s4d0d8767ec20220b">
         <source>Gracefully stop the crawler after a specified size limit.</source>
       </trans-unit>
-      <trans-unit id="scd0d4a13a709c62f">
+      <trans-unit id="scd0d4a13a709c62f" xml:space="preserve">
         <source>Limits amount of time to wait for a page to load. Behaviors will run after this timeout only if the page is partially or fully loaded.</source>
+        <target state="translated">Limite le temps d'attente pour le chargement d'une page. Après ce délai, les comportements attendus n'auront lieu que si la page est partiellement ou totalement chargée.</target>
       </trans-unit>
-      <trans-unit id="se49a3313529da9ce">
+      <trans-unit id="se49a3313529da9ce" xml:space="preserve">
         <source>Waits on the page after initial HTML page load prior to moving on to next steps such as link extraction and behaviors. Can be useful with pages that are slow to load page contents.</source>
+        <target state="needs-translation">Attend sur la page après le chargement initial de la page HTML avant de passer aux étapes suivantes telles que l'extraction de liens et les comportements. Peut être utile pour les pages dont le contenu est lent à charger.</target>
       </trans-unit>
-      <trans-unit id="s332a2eb380d83e9e">
+      <trans-unit id="s332a2eb380d83e9e" xml:space="preserve">
         <source>Limits how long behaviors can run on each page.</source>
+        <target state="needs-translation">Limite la durée d'exécution des comportements sur chaque page.</target>
       </trans-unit>
       <trans-unit id="s60b7cb2386c892ef">
         <source>Waits on the page after behaviors are complete before moving onto the next page. Can be helpful for rate limiting.</source>
