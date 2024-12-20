@@ -15,6 +15,13 @@ spec:
   schedule: "{{ schedule }}"
 
   jobTemplate:
+    metadata:
+      labels:
+        role: "background-job"
+        job_type: {{ job_type }}
+        job_id: {{ id }}
+        btrix.org: {{ oid }}
+
     spec:
       template:
         spec:

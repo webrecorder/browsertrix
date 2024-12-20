@@ -35,7 +35,7 @@ class BgJobOperator(BaseOperator):
         labels: dict[str, str] = metadata.get("labels", {})
         oid: str = labels.get("btrix.org") or ""
         job_type: str = labels.get("job_type") or ""
-        job_id: str = metadata.get("name")
+        job_id: str = labels.get("job_id") or metadata.get("name")
 
         status = data.object["status"]
         success = status.get("succeeded") == 1
