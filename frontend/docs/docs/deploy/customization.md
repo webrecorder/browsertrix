@@ -133,6 +133,8 @@ storages:
     access_endpoint_url: "https://my-custom-domain.example.com/path/"
 ```
 
+When replica locations are set, the default behavior when a crawl, upload, or browser profile is deleted is that the replica files are deleted at the same time as the file in primary storage. To delay deletion of replicas, set `replica_deletion_delay_days` in the Helm chart to the number of days by which to delay replica file deletion. This feature gives Browsertrix administrators time in the event of files being deleted accidentally or maliciously to recover copies from configured replica locations.
+
 ## Horizontal Autoscaling
 
 Browsertrix also includes support for horizontal auto-scaling for both the backend and frontend pods.
