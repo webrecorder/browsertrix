@@ -406,7 +406,7 @@ class CrawlManager(K8sAPI):
         """create scheduled job to delay replica file in x days"""
         now = dt_now()
         run_at = now + timedelta(days=delay_days)
-        schedule = f"0 0 {run_at.day} {run_at.month} *"
+        schedule = f"{run_at.minute} {run_at.hour} {run_at.day} {run_at.month} *"
 
         params["schedule"] = schedule
 
