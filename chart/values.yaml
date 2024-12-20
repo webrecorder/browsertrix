@@ -97,7 +97,8 @@ superuser:
 default_org: "My Organization"
 
 # Set number of days replica file deletion should be delayed by
-replica_deletion_delay_days: 7
+# if set >0, will keep replicas (if any) for this number of days
+replica_deletion_delay_days: 0
 
 
 # API Image
