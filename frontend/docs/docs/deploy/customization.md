@@ -40,9 +40,10 @@ storages:
     type: "s3"
     access_key: "ADMIN"
     secret_key: "PASSW0RD"
-    bucket_name: *local_bucket_name
+    bucket_name: btrix-data
 
     endpoint_url: "http://local-minio.default:9000/"
+    access_endpoint_url: /data/
 ```
 
 It is possible to add one or more replica storage locations. If replica locations are enabled, all stored content in the application will be automatically replicated to each configured replica storage location in background jobs after being stored in the default primary storage. If replica locations are enabled, at least one must be set as the default replica location for primary backups. This is indicated with `is_default_replica: True`. If more than one storage location is configured, the primary storage must also be indicated with `is_default_primary: True`.
@@ -55,7 +56,7 @@ storages:
     type: "s3"
     access_key: "ADMIN"
     secret_key: "PASSW0RD"
-    bucket_name: *local_bucket_name
+    bucket_name: btrix-data
 
     endpoint_url: "http://local-minio.default:9000/"
     is_default_primary: True
@@ -75,8 +76,31 @@ storages:
     secret_key: "secret"
     bucket_name: "replica-1"
 
-    endpoint_url: "http://s3provider.example.com"
+    endpoint_url: "https://s3provider.example.com/bucket/path/"
+    access_endpoint_url: "https://my-custom-domain.example.com/path/"
 ```
+
+
+### Using External S3 Storage Providers
+
+When using an external S3 provider, a custom `access_endpoint_url` can be provided.
+This URL is used for direct access to WACZ files, and can be used to specify a custom domain to access the bucket.
+
+The `endpoint_url` should be provided in 'path prefix' form (with the bucket after the path), eg:
+`https://s3provider.example.com/bucket/path/`.
+
+Browsertrix will handle presigning S3 URLs so that WACZ files (and other data) can be accessed directly, using URLSs of the form: `https://s3provider.example.com/bucket/path/to/files/crawl.wacz?signature...`
+
+
+### Custom Access Endpoint URL
+
+It may be useful to provide a custom access endpoint for accessing WACZ files and other data. if the `access_endpoint_url` is provided,
+it should be in 'virtual host' form (the bucket is not added to the path, but is assumed to be the in the host).
+
+The host portion of the URL is then replaced with the `access_endpoint_url`. For example, given `endpoint_url: https://s3provider.example.com/bucket/path/` and `access_endpoint_url: https://my-custom-domain.example.com/path/`, a URL to a WACZ files may be `https://bucket.s3provider.example.com/path/to/files/crawl.wacz?signature...`.
+
+The `https://bucket.s3provider.example.com/path/` is then replaced with the `https://my-custom-domain.example.com/path/`, and the final URL becomes `https://my-custom-domain.example.com/path/to/files/crawl.wacz?signature...`.
+
 
 ## Horizontal Autoscaling
 
