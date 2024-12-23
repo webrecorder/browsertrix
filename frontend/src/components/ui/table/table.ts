@@ -48,6 +48,7 @@ tableCSS.split("}").forEach((rule: string) => {
  * @slot head
  * @slot
  * @csspart head
+ * @cssproperty --btrix-column-gap
  * @cssproperty --btrix-cell-gap
  * @cssproperty --btrix-cell-padding-top
  * @cssproperty --btrix-cell-padding-left
@@ -58,6 +59,7 @@ tableCSS.split("}").forEach((rule: string) => {
 export class Table extends LitElement {
   static styles = css`
     :host {
+      --btrix-column-gap: 0;
       --btrix-cell-gap: 0;
       --btrix-cell-padding-top: 0;
       --btrix-cell-padding-bottom: 0;
@@ -65,6 +67,7 @@ export class Table extends LitElement {
       --btrix-cell-padding-right: 0;
 
       display: grid;
+      column-gap: var(--btrix-column-gap, 0);
     }
   `;
 

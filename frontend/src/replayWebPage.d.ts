@@ -8,10 +8,24 @@
  * @attr {String} noSandbox
  * @attr {String} noCache
  * @attr {String} url
+ * @attr {String} ts
+ * @attr {String} embed
+ *
+ * @fires rwp-url-change
+ * @fires rwp-page-loading
  */
-class ReplayWebPage {
+class ReplayWebPage extends HTMLElement {
   fullReload(): void {}
 }
+
+type RwpUrlChangeEvent = CustomEvent<{
+  type: "urlchange";
+  view: "pages" | "replay";
+  replayNotFoundError: boolean;
+  title?: string;
+  ts?: string;
+  url?: string;
+}>;
 
 declare global {
   interface HTMLElementTagNameMap {

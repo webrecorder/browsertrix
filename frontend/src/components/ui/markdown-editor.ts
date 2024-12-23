@@ -1,4 +1,4 @@
-import { msg, str } from "@lit/localize";
+import { localized, msg, str } from "@lit/localize";
 import { wrap, type AwaitableInstance } from "ink-mde";
 import { css, html, type PropertyValues } from "lit";
 import { customElement, property, query } from "lit/decorators.js";
@@ -16,6 +16,7 @@ export type MarkdownChangeEvent = CustomEvent<MarkdownChangeDetail>;
  *
  * @fires btrix-change MarkdownChangeEvent
  */
+@localized()
 @customElement("btrix-markdown-editor")
 export class MarkdownEditor extends BtrixElement {
   static styles = css`
@@ -53,10 +54,17 @@ export class MarkdownEditor extends BtrixElement {
       white-space: nowrap;
       border-width: 0;
     }
+
+    .cm-line:only-child {
+      min-height: 8em;
+    }
   `;
 
   @property({ type: String })
   label = "";
+
+  @property({ type: String })
+  placeholder = "";
 
   @property({ type: String })
   initialValue = "";
@@ -74,6 +82,11 @@ export class MarkdownEditor extends BtrixElement {
 
   public checkValidity() {
     return this.textarea?.checkValidity();
+  }
+
+  public async focus() {
+    await this.updateComplete;
+    (await this.editor)?.focus();
   }
 
   protected willUpdate(changedProperties: PropertyValues<this>): void {
@@ -99,7 +112,7 @@ export class MarkdownEditor extends BtrixElement {
     const isInvalid = this.maxlength && this.value.length > this.maxlength;
     return html`
       <fieldset ?data-invalid=${isInvalid} ?data-user-invalid=${isInvalid}>
-        <label class="form-label">${this.label}</label>
+        ${this.label && html`<label class="form-label">${this.label}</label>`}
         <textarea id="editor-textarea"></textarea>
         <div class="helpText flex items-baseline justify-between">
           <p class="text-xs">
@@ -181,6 +194,7 @@ export class MarkdownEditor extends BtrixElement {
         taskList: false,
         upload: false,
       },
+      placeholder: this.placeholder,
     });
   }
 }
