@@ -1,7 +1,6 @@
 """k8s background jobs"""
 
 import asyncio
-import os
 from datetime import datetime
 from typing import Optional, Tuple, Union, List, Dict, TYPE_CHECKING, cast
 from uuid import UUID
@@ -22,6 +21,7 @@ from .models import (
     DeleteReplicaJob,
     DeleteOrgJob,
     RecalculateOrgStatsJob,
+    ReAddOrgPagesJob,
     PaginatedBackgroundJobResponse,
     AnyJob,
     StorageRef,
@@ -301,8 +301,6 @@ class BackgroundJobOps:
         try:
             job_id = await self.crawl_manager.run_delete_org_job(
                 oid=str(org.id),
-                backend_image=os.environ.get("BACKEND_IMAGE", ""),
-                pull_policy=os.environ.get("BACKEND_IMAGE_PULL_POLICY", ""),
                 existing_job_id=existing_job_id,
             )
             if existing_job_id:
@@ -346,8 +344,6 @@ class BackgroundJobOps:
         try:
             job_id = await self.crawl_manager.run_recalculate_org_stats_job(
                 oid=str(org.id),
-                backend_image=os.environ.get("BACKEND_IMAGE", ""),
-                pull_policy=os.environ.get("BACKEND_IMAGE_PULL_POLICY", ""),
                 existing_job_id=existing_job_id,
             )
             if existing_job_id:
@@ -379,6 +375,52 @@ class BackgroundJobOps:
         except Exception as exc:
             # pylint: disable=raise-missing-from
             print(f"warning: recalculate org stats job could not be started: {exc}")
+            return None
+
+    async def create_re_add_org_pages_job(
+        self,
+        oid: UUID,
+        crawl_type: Optional[str] = None,
+        existing_job_id: Optional[str] = None,
+    ):
+        """Create job to (re)add all pages in an org, optionally filtered by crawl type"""
+
+        try:
+            job_id = await self.crawl_manager.run_re_add_org_pages_job(
+                oid=str(oid),
+                crawl_type=crawl_type,
+                existing_job_id=existing_job_id,
+            )
+            if existing_job_id:
+                readd_pages_job = await self.get_background_job(existing_job_id, oid)
+                previous_attempt = {
+                    "started": readd_pages_job.started,
+                    "finished": readd_pages_job.finished,
+                }
+                if readd_pages_job.previousAttempts:
+                    readd_pages_job.previousAttempts.append(previous_attempt)
+                else:
+                    readd_pages_job.previousAttempts = [previous_attempt]
+                readd_pages_job.started = dt_now()
+                readd_pages_job.finished = None
+                readd_pages_job.success = None
+            else:
+                readd_pages_job = ReAddOrgPagesJob(
+                    id=job_id,
+                    oid=oid,
+                    crawl_type=crawl_type,
+                    started=dt_now(),
+                )
+
+            await self.jobs.find_one_and_update(
+                {"_id": job_id}, {"$set": readd_pages_job.to_dict()}, upsert=True
+            )
+
+            return job_id
+        # pylint: disable=broad-exception-caught
+        except Exception as exc:
+            # pylint: disable=raise-missing-from
+            print(f"warning: re-add org pages job could not be started: {exc}")
             return None
 
     async def job_finished(
@@ -430,7 +472,11 @@ class BackgroundJobOps:
     async def get_background_job(
         self, job_id: str, oid: Optional[UUID] = None
     ) -> Union[
-        CreateReplicaJob, DeleteReplicaJob, DeleteOrgJob, RecalculateOrgStatsJob
+        CreateReplicaJob,
+        DeleteReplicaJob,
+        DeleteOrgJob,
+        RecalculateOrgStatsJob,
+        ReAddOrgPagesJob,
     ]:
         """Get background job"""
         query: dict[str, object] = {"_id": job_id}
@@ -453,6 +499,9 @@ class BackgroundJobOps:
 
         if data["type"] == BgJobType.RECALCULATE_ORG_STATS:
             return RecalculateOrgStatsJob.from_dict(data)
+
+        if data["type"] == BgJobType.READD_ORG_PAGES:
+            return ReAddOrgPagesJob.from_dict(data)
 
         return DeleteOrgJob.from_dict(data)
 
@@ -592,6 +641,13 @@ class BackgroundJobOps:
         if job.type == BgJobType.RECALCULATE_ORG_STATS:
             await self.create_recalculate_org_stats_job(
                 org,
+                existing_job_id=job_id,
+            )
+
+        if job.type == BgJobType.READD_ORG_PAGES:
+            await self.create_re_add_org_pages_job(
+                org.id,
+                job.crawl_type,
                 existing_job_id=job_id,
             )
 
