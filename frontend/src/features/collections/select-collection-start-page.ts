@@ -298,7 +298,7 @@ export class SelectCollectionStartPage extends BtrixElement {
     const query = queryString.stringify({
       page,
       pageSize,
-      urlPrefix,
+      urlPrefix: urlPrefix ? window.encodeURIComponent(urlPrefix) : undefined,
     });
     return this.api.fetch<APIPaginatedList<Page>>(
       `/orgs/${this.orgId}/collections/${id}/urls?${query}`,
