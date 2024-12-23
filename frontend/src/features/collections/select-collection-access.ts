@@ -2,6 +2,7 @@ import { localized, msg } from "@lit/localize";
 import type { SlIcon, SlSelectEvent } from "@shoelace-style/shoelace";
 import { html } from "lit";
 import { customElement, property } from "lit/decorators.js";
+import { when } from "lit/directives/when.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { CollectionAccess } from "@/types/collection";
@@ -23,7 +24,6 @@ export class SelectCollectionAccess extends BtrixElement {
       icon: "link-45deg",
       detail: msg("Only people with the link can view"),
     },
-
     [CollectionAccess.Public]: {
       label: msg("Public"),
       icon: "globe2",
@@ -83,13 +83,40 @@ export class SelectCollectionAccess extends BtrixElement {
                 >
                   <sl-icon slot="prefix" name=${icon}></sl-icon>
                   <span class="font-medium">${label}</span>
-                  <span slot="suffix" class="text-neutral-500">${detail}</span>
+                  <span slot="suffix" class="text-neutral-500">
+                    ${detail}
+                  </span>
                 </sl-menu-item>
               `,
             )}
           </sl-menu>
         </sl-dropdown>
       </div>
+      ${when(
+        this.value === CollectionAccess.Public,
+        () => html`
+          <sl-details class="mt-2 part-[header]:p-2">
+            <div
+              slot="summary"
+              class="flex items-center gap-1.5 text-neutral-600"
+            >
+              <sl-icon name="info-circle"></sl-icon>
+              ${msg("What information will be visible to the public?")}
+            </div>
+            ${msg(
+              "In addition to replay, the following collection details will be visible:",
+            )}
+            <ul class="mt-2 list-inside list-disc">
+              <li>${msg("Name")}</li>
+              <li>${msg("Summary")}</li>
+              <li>${msg("About")}</li>
+              <li>${msg("Collection Period")}</li>
+              <li>${msg("Total Pages")}</li>
+              <li>${msg("Collection Size")}</li>
+            </ul>
+          </sl-details>
+        `,
+      )}
     `;
   }
 }

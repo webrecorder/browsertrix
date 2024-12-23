@@ -44,6 +44,8 @@ enum AbortReason {
  * ></btrix-file-uploader>
  * ```
  *
+ * @TODO Refactor to use this.api.upload
+ *
  * @event request-close
  * @event upload-start
  * @event uploaded
