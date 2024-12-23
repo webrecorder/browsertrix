@@ -482,10 +482,7 @@ export class WorkflowsList extends BtrixElement {
   }
 
   private readonly renderWorkflowItem = (workflow: ListWorkflow) => html`
-    <btrix-workflow-list-item
-      orgSlug=${this.appState.orgSlug || ""}
-      .workflow=${workflow}
-    >
+    <btrix-workflow-list-item .workflow=${workflow}>
       <sl-menu slot="menu">${this.renderMenuItems(workflow)}</sl-menu>
     </btrix-workflow-list-item>
   `;
@@ -577,7 +574,9 @@ export class WorkflowsList extends BtrixElement {
             </sl-menu-item>`,
       )}
       <sl-menu-item
-        @click=${() => CopyButton.copyToClipboard(workflow.tags.join(", "))}
+        @click=${() => {
+          CopyButton.copyToClipboard(workflow.tags.join(", "));
+        }}
         ?disabled=${!workflow.tags.length}
       >
         <sl-icon name="tags" slot="prefix"></sl-icon>

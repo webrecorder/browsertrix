@@ -1,5 +1,5 @@
 import { localized, msg, str } from "@lit/localize";
-import clsx from "clsx";
+import clsx, { type ClassValue } from "clsx";
 import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -724,7 +724,7 @@ export class ArchivedItemDetail extends BtrixElement {
   private renderPanel(
     heading: string | TemplateResult,
     content: TemplateResult | undefined,
-    classes: clsx.ClassValue[] = [],
+    classes: ClassValue[] = [],
   ) {
     const headingIsTitle = typeof heading === "string";
     return html`
