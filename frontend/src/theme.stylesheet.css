@@ -234,6 +234,26 @@
     box-shadow: var(--sl-shadow-large);
   }
 
+  sl-tab-group {
+    --indicator-color: var(--sl-color-primary-500);
+  }
+
+  sl-tab::part(base) {
+    padding: var(--sl-spacing-small) var(--sl-spacing-medium);
+  }
+
+  sl-tab:not([active]):not(:hover)::part(base) {
+    color: var(--sl-color-neutral-500);
+  }
+
+  sl-tab:not([active]):hover::part(base) {
+    color: var(--sl-color-neutral-600);
+  }
+
+  sl-tab[active]::part(base) {
+    color: var(--sl-color-primary-500);
+  }
+
   /* For single-input forms with submit button inline */
   /* Requires form control and button to be direct children */
   .inline-control-input,
