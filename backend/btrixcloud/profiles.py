@@ -426,7 +426,7 @@ class ProfileOps:
 
         # Delete file from storage
         if profile.resource:
-            await self.storage_ops.delete_crawl_file_object(org, profile.resource)
+            await self.storage_ops.delete_file_object(org, profile.resource)
             await self.orgs.inc_org_bytes_stored(
                 org.id, -profile.resource.size, "profile"
             )
