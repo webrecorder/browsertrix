@@ -37,6 +37,12 @@ export class NavigateController implements ReactiveController {
     return "/";
   }
 
+  get isPublicPage() {
+    return window.location.pathname.startsWith(
+      `/${RouteNamespace.PublicOrgs}/`,
+    );
+  }
+
   constructor(host: NavigateController["host"]) {
     this.host = host;
     host.addController(this);
