@@ -1,6 +1,5 @@
 // @ts-check
 // cSpell:ignore glitchtip
-// webpack.config.js
 const childProcess = require("child_process");
 const fs = require("fs");
 const path = require("path");
@@ -235,10 +234,10 @@ const main = {
     }),
     ...(process.env.RSDOCTOR
       ? [
-        new (require("@rsdoctor/rspack-plugin").RsdoctorRspackPlugin)({
-          supports: { generateTileGraph: true },
-        }),
-      ]
+          new (require("@rsdoctor/rspack-plugin").RsdoctorRspackPlugin)({
+            supports: { generateTileGraph: true },
+          }),
+        ]
       : []),
   ],
 };
