@@ -124,7 +124,7 @@
       </trans-unit>
       <trans-unit id="h54da0b63b416aa90" xml:space="preserve">
         <source>Add the following embed code to your HTML page:</source>
-        <target state="translated">Ajouter le code suivant intégré de votre page HTML:</target>
+        <target state="translated">Ajouter le code suivant intégré de votre page HTML :</target>
       </trans-unit>
       <trans-unit id="sdbf249ab40dc18fa" xml:space="preserve">
         <source>Copy Embed Code</source>
@@ -456,7 +456,7 @@
       </trans-unit>
       <trans-unit id="sbe7425a3b5445ba7" xml:space="preserve">
         <source>Please enter <x id="0" equiv-text="${MIN_LENGTH}"/> or more characters</source>
-        <target state="translated">Merci d'entrer  ce minimum de caractères <x id="0" equiv-text="${MIN_LENGTH}"/>  ou plus de caractères</target>
+        <target state="translated">Merci d'entrer ce minimum de caractères <x id="0" equiv-text="${MIN_LENGTH}"/> ou plus de caractères</target>
       </trans-unit>
       <trans-unit id="s74abf58e08f32710" xml:space="preserve">
         <source>Please enter a valid Regular Expression constructor pattern</source>
@@ -480,7 +480,7 @@
       </trans-unit>
       <trans-unit id="s8265788524ca2260" xml:space="preserve">
         <source><x id="0" equiv-text="${formattedTime}"/> daily</source>
-        <target state="translated"><x id="0" equiv-text="${formattedTime}"/><x id="0" equiv-text="${formattedTime}"/> quotidiennement</target>
+        <target state="translated"><x id="0" equiv-text="${formattedTime}"/> quotidiennement</target>
       </trans-unit>
       <trans-unit id="s2acb3777ed86adb6" xml:space="preserve">
         <source>Every <x id="0" equiv-text="${formattedWeekDay}"/></source>
