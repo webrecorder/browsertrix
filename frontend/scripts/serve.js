@@ -15,7 +15,7 @@ require("dotenv").config({
   path: dotEnvPath,
 });
 
-const [devConfig] = require("../webpack.dev.js");
+const [devConfig] = require("../rspack.dev.js");
 
 const app = express();
 
@@ -23,11 +23,11 @@ const { devServer } = devConfig;
 
 devServer.setupMiddlewares([], { app });
 
-Object.keys(devServer.proxy).forEach((path) => {
+devServer.proxy.forEach((proxy) => {
   app.use(
-    path,
+    proxy.context,
     createProxyMiddleware({
-      ...devServer.proxy[path],
+      ...proxy,
       followRedirects: true,
     }),
   );
