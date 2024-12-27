@@ -11,8 +11,8 @@ COPY --link lit-localize.json \
   postcss.config.js \
   tailwind.config.js \
   tsconfig.json \
-  webpack.config.js \
-  webpack.prod.js \
+  rspack.config.js \
+  rspack.prod.js \
   .eslintrc.js \
   tsconfig.eslint.json \
   index.d.ts \
