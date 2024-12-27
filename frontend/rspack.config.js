@@ -5,11 +5,9 @@ const childProcess = require("child_process");
 const fs = require("fs");
 const path = require("path");
 
-const CopyPlugin = require("copy-webpack-plugin");
-const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin");
+const rspack = require("@rspack/core");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
-const TsconfigPathsPlugin = require("tsconfig-paths-webpack-plugin");
-const webpack = require("webpack");
+const { TsCheckerRspackPlugin } = require("ts-checker-rspack-plugin");
 
 // @ts-ignore
 const packageJSON = require("./package.json");
@@ -79,7 +77,7 @@ const version = (() => {
   return packageJSON.version;
 })();
 
-/** @type {import('webpack').Configuration} */
+/** @type {import('@rspack/core').Configuration} */
 const main = {
   entry: "./src/index.ts",
   output: {
@@ -105,13 +103,27 @@ const main = {
             },
           },
           {
-            loader: "ts-loader",
+            loader: "builtin:swc-loader",
             options: {
               onlyCompileBundledFiles: true,
               transpileOnly: true,
+              jsc: {
+                parser: {
+                  syntax: "typescript",
+                  decorators: true,
+                },
+                transform: {
+                  // legacyDecorator: true,
+                  // decoratorMetadata: true,
+                  // decoratorVersion: "2022-03",
+                  useDefineForClassFields: false,
+                },
+              },
+              externalHelpers: true,
             },
           },
         ],
+        type: "javascript/auto",
         exclude: /node_modules/,
       },
       {
@@ -151,28 +163,27 @@ const main = {
 
   resolve: {
     extensions: [".ts", ".js"],
-    // @ts-ignore
-    plugins: [new TsconfigPathsPlugin()],
+    tsConfig: path.resolve(__dirname, "./tsconfig.json"),
   },
 
   plugins: [
     // Shim polyfill
-    new webpack.ProvidePlugin({
+    new rspack.ProvidePlugin({
       "Intl.DurationFormat": path.resolve(
         __dirname,
         "lib/intl-durationformat.js",
       ),
     }),
 
-    new webpack.DefinePlugin({
+    new rspack.DefinePlugin({
       "window.process.env.WEBSOCKET_HOST": JSON.stringify(WEBSOCKET_HOST),
     }),
 
-    new webpack.optimize.LimitChunkCountPlugin({
+    new rspack.optimize.LimitChunkCountPlugin({
       maxChunks: 12,
     }),
 
-    new ForkTsCheckerWebpackPlugin({
+    new TsCheckerRspackPlugin({
       typescript: {
         configOverwrite: {
           exclude: ["**/*.test.ts", "tests/**/*.ts", "playwright.config.ts"],
@@ -198,7 +209,7 @@ const main = {
       scriptLoading: "defer",
     }),
 
-    new CopyPlugin({
+    new rspack.CopyRspackPlugin({
       patterns: [
         // Copy Shoelace assets to dist/shoelace
         {

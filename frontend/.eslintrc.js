@@ -143,7 +143,7 @@ module.exports = {
     {
       extends: ["plugin:@typescript-eslint/disable-type-checked"],
       files: [
-        "webpack.*.js",
+        "rspack.*.js",
         "config/*.js",
         "scripts/*.js",
         ".*.js",
