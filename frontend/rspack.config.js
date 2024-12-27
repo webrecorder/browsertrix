@@ -237,6 +237,9 @@ const main = {
     ...(process.env.BUNDLE_ANALYZER
       ? [new (require("webpack-bundle-analyzer").BundleAnalyzerPlugin)()]
       : []),
+    ...(process.env.RSDOCTOR
+      ? [new (require('@rsdoctor/rspack-plugin').RsdoctorRspackPlugin)(),]
+      : []),
   ],
 };
 

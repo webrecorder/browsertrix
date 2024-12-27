@@ -87,6 +87,7 @@
     "build": "rspack build --config rspack.prod.js",
     "build-dev": "rspack build --mode development",
     "build:analyze": "BUNDLE_ANALYZER=true rspack --config rspack.prod.js",
+    "build:doctor": "RSDOCTOR=true rspack --config rspack.prod.js",
     "start": "rspack serve --mode=development --config rspack.dev.js",
     "serve": "node scripts/serve.js",
     "lint": "eslint --fix .",
@@ -99,6 +100,7 @@
   },
   "devDependencies": {
     "@lit/localize-tools": "^0.8.0",
+    "@rsdoctor/rspack-plugin": "^0.4.12",
     "@rspack/cli": "^1.1.8",
     "@rspack/core": "^1.1.8",
     "@types/webpack-bundle-analyzer": "^4.7.0",
