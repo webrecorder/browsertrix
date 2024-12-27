@@ -29,7 +29,7 @@ const devBackendUrl = new URL(process.env.API_BASE_URL);
 module.exports = [
   merge(
     main,
-    /** @type {import('@rspack/core').Configuration} */
+    /** @type {import('@rspack/cli').Configuration} */
     {
       devtool: "eval-cheap-source-map",
       devServer: {
@@ -89,13 +89,15 @@ module.exports = [
         },
         port: 9870,
       },
-      // cache: {
-      //   type: "filesystem",
-      //   hashAlgorithm: "xxhash64",
-      //   buildDependencies: {
-      //     config: [__filename],
-      //   },
-      // },
+      // RSPack only supports in-memory cache at the moment,
+      // see https://rspack.dev/config/cache
+      /* cache: {
+        type: "filesystem",
+        hashAlgorithm: "xxhash64",
+        buildDependencies: {
+          config: [__filename],
+        },
+      }, */
       cache: true,
       plugins: [
         new ESLintPlugin({

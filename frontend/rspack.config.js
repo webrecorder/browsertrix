@@ -77,7 +77,7 @@ const version = (() => {
   return packageJSON.version;
 })();
 
-/** @type {import('@rspack/core').Configuration} */
+/** @type {import('@rspack/cli').Configuration} */
 const main = {
   entry: "./src/index.ts",
   output: {
@@ -104,22 +104,17 @@ const main = {
           },
           {
             loader: "builtin:swc-loader",
+            /** @type {import('@rspack/core').SwcLoaderOptions} */
             options: {
-              onlyCompileBundledFiles: true,
-              transpileOnly: true,
               jsc: {
                 parser: {
                   syntax: "typescript",
                   decorators: true,
                 },
                 transform: {
-                  // legacyDecorator: true,
-                  // decoratorMetadata: true,
-                  // decoratorVersion: "2022-03",
                   useDefineForClassFields: false,
                 },
               },
-              externalHelpers: true,
             },
           },
         ],
@@ -137,7 +132,12 @@ const main = {
         exclude: /\.stylesheet\.css$/,
         use: [
           "style-loader",
-          { loader: "css-loader", options: { importLoaders: 1 } },
+          { loader: "css-loader", options: { importLoaders: 2 } },
+          {
+            loader: "builtin:lightningcss-loader",
+            /** @type {import('@rspack/core').LightningcssLoaderOptions} */
+            options: {},
+          },
           "postcss-loader",
         ],
       },
