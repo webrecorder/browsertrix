@@ -388,8 +388,9 @@
       <trans-unit id="sc27403512c49c425">
         <source>Pro plan change request (<x id="0" equiv-text="${this.userOrg?.name}"/>)</source>
       </trans-unit>
-      <trans-unit id="sc2a7f6d40341e683">
+      <trans-unit id="sc2a7f6d40341e683" xml:space="preserve">
         <source>Contact Sales</source>
+        <target state="translated">Contact pour les ventes</target>
       </trans-unit>
       <trans-unit id="sded4cfc4d8910016" xml:space="preserve">
         <source>Browser Default</source>
@@ -401,20 +402,23 @@
       </trans-unit>
       <trans-unit id="sf334547f9650322f" xml:space="preserve">
         <source>Select Type</source>
-        <target state="needs-translation">Choisir le type</target>
+        <target state="translated">Sélectionner un type</target>
       </trans-unit>
-      <trans-unit id="s08513d4147b6cb21">
+      <trans-unit id="s08513d4147b6cb21" xml:space="preserve">
         <source>Matches Text</source>
+        <target state="translated">Texte concordant</target>
       </trans-unit>
       <trans-unit id="sd27a8f54aca5d278" xml:space="preserve">
         <source>Regex</source>
         <target state="translated">Expression régulière</target>
       </trans-unit>
-      <trans-unit id="h8c21d04827e5cb19">
+      <trans-unit id="h8c21d04827e5cb19" xml:space="preserve">
         <source>Regular Expression syntax error: <x id="0" equiv-text="&lt;code&gt;${this.fieldErrorMessage}&lt;/code&gt;"/></source>
+        <target state="translated">Erreur de syntaxe d'expression régulière : <x id="0" equiv-text="&lt;code&gt;${this.fieldErrorMessage}&lt;/code&gt;"/></target>
       </trans-unit>
-      <trans-unit id="h1a1f28e6632c15d0">
+      <trans-unit id="h1a1f28e6632c15d0" xml:space="preserve">
         <source>Please enter a valid constructor string pattern. See <x id="0" equiv-text="&lt;a class=&quot;underline hover:no-underline&quot; href=&quot;https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp&quot; target=&quot;_blank&quot; rel=&quot;noopener noreferrer nofollow&quot;&gt;&lt;code&gt;"/>RegExp<x id="1" equiv-text="&lt;/code&gt;"/> docs<x id="2" equiv-text="&lt;/a&gt;"/>.</source>
+        <target state="translated">Merci d'entrer une chaîne de construction valide. Voir <x id="0" equiv-text="&lt;a class=&quot;underline hover:no-underline&quot; href=&quot;https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp&quot; target=&quot;_blank&quot; rel=&quot;noopener noreferrer nofollow&quot;&gt;&lt;code&gt;"/>RegExp<x id="1" equiv-text="&lt;/code&gt;"/> docs<x id="2" equiv-text="&lt;/a&gt;"/>.</target>
       </trans-unit>
       <trans-unit id="s312a6fda81078718" xml:space="preserve">
         <source>Exclusions</source>
@@ -428,8 +432,9 @@
         <source>Exclusion Value</source>
         <target state="translated">Valeur d'exclusion</target>
       </trans-unit>
-      <trans-unit id="s234f4d8778048245">
+      <trans-unit id="s234f4d8778048245" xml:space="preserve">
         <source>Add More</source>
+        <target state="translated">Ajouter plus</target>
       </trans-unit>
       <trans-unit id="s9fb5a3993c135689" xml:space="preserve">
         <source>Remove exclusion</source>
@@ -443,8 +448,9 @@
         <source>Exclusion already exists. Please edit or remove to continue</source>
         <target state="translated">L'exclusion existe déjà. Merci de modifier ou supprimer pour continuer</target>
       </trans-unit>
-      <trans-unit id="sbe7425a3b5445ba7">
+      <trans-unit id="sbe7425a3b5445ba7" xml:space="preserve">
         <source>Please enter <x id="0" equiv-text="${MIN_LENGTH}"/> or more characters</source>
+        <target state="translated">Merci d'entrer  ce minimum de caractères <x id="0" equiv-text="${MIN_LENGTH}"/>  ou plus de caractères</target>
       </trans-unit>
       <trans-unit id="s74abf58e08f32710" xml:space="preserve">
         <source>Please enter a valid Regular Expression constructor pattern</source>
@@ -458,36 +464,41 @@
         <source>Tags</source>
         <target state="needs-translation">Tags</target>
       </trans-unit>
-      <trans-unit id="s0e3006648a1a80a5">
+      <trans-unit id="s0e3006648a1a80a5" xml:space="preserve">
         <source>Add “<x id="0" equiv-text="${this.inputValue.toLocaleLowerCase()}"/>”</source>
+        <target state="translated">Ajouter “<x id="0" equiv-text="${this.inputValue.toLocaleLowerCase()}"/>”</target>
       </trans-unit>
       <trans-unit id="sfff90c46fdba31db" xml:space="preserve">
         <source>(unnamed item)</source>
         <target state="needs-translation">(item sans nom)</target>
       </trans-unit>
-      <trans-unit id="s8265788524ca2260">
+      <trans-unit id="s8265788524ca2260" xml:space="preserve">
         <source><x id="0" equiv-text="${formattedTime}"/> daily</source>
+        <target state="translated"><x id="0" equiv-text="${formattedTime}"/><x id="0" equiv-text="${formattedTime}"/> quotidiennement</target>
       </trans-unit>
       <trans-unit id="s2acb3777ed86adb6" xml:space="preserve">
         <source>Every <x id="0" equiv-text="${formattedWeekDay}"/></source>
-        <target state="needs-translation">Tous les</target>
+        <target state="translated">Tous les <x id="0" equiv-text="${formattedWeekDay}"/></target>
       </trans-unit>
       <trans-unit id="s2bc963c5c7bac2e1" xml:space="preserve">
         <source>Every day at <x id="0" equiv-text="${formattedTime}"/></source>
-        <target state="needs-translation">Chaque jour à</target>
+        <target state="translated">Chaque jour à <x id="0" equiv-text="${formattedTime}"/></target>
       </trans-unit>
-      <trans-unit id="s3fc21c0b1ae61eb7">
+      <trans-unit id="s3fc21c0b1ae61eb7" xml:space="preserve">
         <source>Every <x id="0" equiv-text="${formattedWeekDay}"/> at <x id="1" equiv-text="${formattedTime}"/></source>
+        <target state="translated">Tous les jours de semaine <x id="0" equiv-text="${formattedWeekDay}"/> à <x id="1" equiv-text="${formattedTime}"/></target>
       </trans-unit>
-      <trans-unit id="s478f33dea36e1d3f">
+      <trans-unit id="s478f33dea36e1d3f" xml:space="preserve">
         <source>On day <x id="0" equiv-text="${nextDate.getDate()}"/> of the month at <x id="1" equiv-text="${formattedTime}"/></source>
+        <target state="translated">Le prochain jour <x id="0" equiv-text="${nextDate.getDate()}"/> du mois à <x id="1" equiv-text="${formattedTime}"/></target>
       </trans-unit>
       <trans-unit id="s44f6ab2c6b3cff23" xml:space="preserve">
         <source>Default: Unlimited</source>
         <target state="translated">Par défaut : illimité</target>
       </trans-unit>
-      <trans-unit id="sf21761e7f8e0550e">
+      <trans-unit id="sf21761e7f8e0550e" xml:space="preserve">
         <source>Default: <x id="0" equiv-text="${localize.number(value)}"/></source>
+        <target state="translated">Valeur par défaut : <x id="0" equiv-text="${localize.number(value)}"/></target>
       </trans-unit>
       <trans-unit id="s5ae0226079b4d5fc" xml:space="preserve">
         <source>Specify exclusion rules for what pages should not be visited. Exclusions apply to all URLs.</source>
@@ -497,11 +508,13 @@
         <source>Adds a hard limit on the number of pages that will be crawled.</source>
         <target state="translated">Ajoute une limite stricte au nombre de pages qui seront collectées.</target>
       </trans-unit>
-      <trans-unit id="s4ad6912b1925acb3">
+      <trans-unit id="s4ad6912b1925acb3" xml:space="preserve">
         <source>Gracefully stop the crawler after a specified time limit.</source>
+        <target state="translated">Merci d'arrêter le robot moissonneur après le délai spécifié.</target>
       </trans-unit>
-      <trans-unit id="s4d0d8767ec20220b">
+      <trans-unit id="s4d0d8767ec20220b" xml:space="preserve">
         <source>Gracefully stop the crawler after a specified size limit.</source>
+        <target state="translated">Merci d'arrêter la collecte après la fin du délai spécifié.</target>
       </trans-unit>
       <trans-unit id="scd0d4a13a709c62f" xml:space="preserve">
         <source>Limits amount of time to wait for a page to load. Behaviors will run after this timeout only if the page is partially or fully loaded.</source>
@@ -513,13 +526,15 @@
       </trans-unit>
       <trans-unit id="s332a2eb380d83e9e" xml:space="preserve">
         <source>Limits how long behaviors can run on each page.</source>
-        <target state="needs-translation">Limite la durée d'exécution des comportements sur chaque page.</target>
+        <target state="translated">Limite la durée d'exécution des comportements sur chaque page.</target>
       </trans-unit>
-      <trans-unit id="s60b7cb2386c892ef">
+      <trans-unit id="s60b7cb2386c892ef" xml:space="preserve">
         <source>Waits on the page after behaviors are complete before moving onto the next page. Can be helpful for rate limiting.</source>
+        <target state="translated">Attend sur la page après la fin du comportement et avant de te déplacer sur la prochaine page. Peut être utile comme limitation de débit.</target>
       </trans-unit>
-      <trans-unit id="s750a2fea733037cb">
+      <trans-unit id="s750a2fea733037cb" xml:space="preserve">
         <source>Choose a custom profile to make use of saved cookies and logged-in accounts. Note that websites may log profiles out after a period of time.</source>
+        <target state="translated">Choisit un profil spécifique pour utiliser les cookies sauvegardés et les comptes authentifiés. Notez que les sites Web peuvent ajouter des profilés de déconnexion après une période de temps.</target>
       </trans-unit>
       <trans-unit id="scd15181280405de6">
         <source>Choose a Browsertrix Crawler Release Channel. If available, other versions may provide new/experimental crawling features.</source>
