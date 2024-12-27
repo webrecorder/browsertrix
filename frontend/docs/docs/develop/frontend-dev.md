@@ -108,18 +108,17 @@ To stop the development server type ++ctrl+c++ into your command line terminal.
 
 ## Scripts
 
-| `yarn <name>`      |                                                                                                                   |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------|
-| `start`            | runs app in development server, reloading on file changes                                                         |
-| `test`             | runs tests in chromium with playwright                                                                            |
-| `build-dev`        | bundles app and outputs it in `dist` directory                                                                    |
-| `build`            | bundles app, optimized for production, and outputs it to `dist`                                                   |
-| `build:analyze`    | visualize sizes out bundles with [Webpack Bundle Analyzer](https://www.npmjs.com/package/webpack-bundle-analyzer) |
-| `build:doctor`     | inspect output size, warnings, suggestions, and more with [Rsdoctor](https://rsdoctor.dev/)                       |
-| `lint`             | find and fix auto-fixable javascript errors                                                                       |
-| `format`           | formats js, html, and css files                                                                                   |
-| `localize:extract` | generate XLIFF file to be translated                                                                              |
-| `localize:build`   | output a localized version of strings/templates                                                                   |
+| `yarn <name>`      |                                                                                             |
+| ------------------ | --------------------------------------------------------------------------------------------|
+| `start`            | runs app in development server, reloading on file changes                                   |
+| `test`             | runs tests in chromium with playwright                                                      |
+| `build-dev`        | bundles app and outputs it in `dist` directory                                              |
+| `build`            | bundles app, optimized for production, and outputs it to `dist`                             |
+| `build:doctor`     | inspect output size, warnings, suggestions, and more with [Rsdoctor](https://rsdoctor.dev/) |
+| `lint`             | find and fix auto-fixable javascript errors                                                 |
+| `format`           | formats js, html, and css files                                                             |
+| `localize:extract` | generate XLIFF file to be translated                                                        |
+| `localize:build`   | output a localized version of strings/templates                                             |
 
 ## Testing
 

@@ -233,12 +233,12 @@ const main = {
         },
       ],
     }),
-    // @ts-ignore
-    ...(process.env.BUNDLE_ANALYZER
-      ? [new (require("webpack-bundle-analyzer").BundleAnalyzerPlugin)()]
-      : []),
     ...(process.env.RSDOCTOR
-      ? [new (require('@rsdoctor/rspack-plugin').RsdoctorRspackPlugin)(),]
+      ? [
+        new (require("@rsdoctor/rspack-plugin").RsdoctorRspackPlugin)({
+          supports: { generateTileGraph: true },
+        }),
+      ]
       : []),
   ],
 };
