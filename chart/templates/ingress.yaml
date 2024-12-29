@@ -102,7 +102,9 @@ spec:
     - http01:
         ingress:
           ingressClassName: {{ .Values.ingress_class | default "nginx" }}
+          {{- if .Values.ingress.includeClassAnno }}
           class: {{ .Values.ingress_class | default "nginx" }}
+          {{- end }}
 
 {{ end }}
 {{ end }}
