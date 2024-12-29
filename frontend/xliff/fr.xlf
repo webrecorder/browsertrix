@@ -1192,77 +1192,101 @@
       <trans-unit id="sb090ab524895d2b4">
         <source>All Crawls</source>
       </trans-unit>
-      <trans-unit id="he775de5878ab0942">
+      <trans-unit id="he775de5878ab0942" xml:space="preserve">
         <source>Crawl is currently running. <x id="0" equiv-text="&lt;a href=&quot;${`${window.location.pathname}#watch`}&quot; class=&quot;underline hover:no-underline&quot;&gt;"/>Watch Crawl Progress<x id="1" equiv-text="&lt;/a&gt;"/></source>
+        <target state="translated">La collecte est en train de rouler. <x id="0" equiv-text="&lt;a href=&quot;${`${window.location.pathname}#watch`}&quot; class=&quot;underline hover:no-underline&quot;&gt;"/>Surveiller le progrès de la collecte<x id="1" equiv-text="&lt;/a&gt;"/></target>
       </trans-unit>
-      <trans-unit id="s76d9944af031bdb3">
+      <trans-unit id="s76d9944af031bdb3" xml:space="preserve">
         <source>No matching crawls found.</source>
+        <target state="translated">Pas de collecte repérée.</target>
       </trans-unit>
-      <trans-unit id="sf76674a7d3d83ab2">
+      <trans-unit id="sf76674a7d3d83ab2" xml:space="preserve">
         <source>No crawls yet.</source>
+        <target state="translated">Pas de collecte présentement.</target>
       </trans-unit>
-      <trans-unit id="se72232cb8fce7869">
+      <trans-unit id="se72232cb8fce7869" xml:space="preserve">
         <source>Pages Crawled</source>
+        <target state="translated">Pages collectées</target>
       </trans-unit>
-      <trans-unit id="s1582c2bf884b8052">
+      <trans-unit id="s1582c2bf884b8052" xml:space="preserve">
         <source>Run Duration</source>
+        <target state="translated">Temps de collecte</target>
       </trans-unit>
-      <trans-unit id="s1885dd59daa24f31">
+      <trans-unit id="s1885dd59daa24f31" xml:space="preserve">
         <source>Crawl Size</source>
+        <target state="translated">Taille de la collecte</target>
       </trans-unit>
-      <trans-unit id="s63dc27cd73a61aa2">
+      <trans-unit id="s63dc27cd73a61aa2" xml:space="preserve">
         <source>Browser Windows</source>
+        <target state="translated">Fenêtres du navigateur</target>
       </trans-unit>
-      <trans-unit id="s5e72081d8c9517b2">
+      <trans-unit id="s5e72081d8c9517b2" xml:space="preserve">
         <source>Crawl starting...</source>
+        <target state="translated">Collecte qui démarre...</target>
       </trans-unit>
-      <trans-unit id="s8b33ac8b95791469">
+      <trans-unit id="s8b33ac8b95791469" xml:space="preserve">
         <source>Crawl waiting for available resources before it can continue...</source>
+        <target state="translated">Collecte en attente de ressources disponibles avant de pouvoir se poursuivre...</target>
       </trans-unit>
-      <trans-unit id="s8764f257cc35167f">
+      <trans-unit id="s8764f257cc35167f" xml:space="preserve">
         <source>Crawl waiting for others to finish, concurrent limit per Organization reached...</source>
+        <target state="translated">Collecte en attente que les autres se terminent, la limite maximale par organisme, de collectes concurrentes atteinte...</target>
       </trans-unit>
-      <trans-unit id="s4cb3d6de6b76708d">
+      <trans-unit id="s4cb3d6de6b76708d" xml:space="preserve">
         <source>Crawl finishing...</source>
+        <target state="translated">Collectes en train de se terminer...</target>
       </trans-unit>
-      <trans-unit id="s9faa4c27631001f6">
+      <trans-unit id="s9faa4c27631001f6" xml:space="preserve">
         <source>Crawl stopping...</source>
+        <target state="translated">Collecte en train de s'arrêter....</target>
       </trans-unit>
-      <trans-unit id="sb660858279ecdbc7">
+      <trans-unit id="sb660858279ecdbc7" xml:space="preserve">
         <source>Crawl workflow is not currently running.</source>
+        <target state="translated">La collecte n'est pas en train de rouler.</target>
       </trans-unit>
-      <trans-unit id="s2d60617060d16a4a">
+      <trans-unit id="s2d60617060d16a4a" xml:space="preserve">
         <source>Replay Latest Crawl</source>
+        <target state="translated">Rejouer la dernière collecte</target>
       </trans-unit>
-      <trans-unit id="sb0977bdf896ee15d">
+      <trans-unit id="sb0977bdf896ee15d" xml:space="preserve">
         <source>QA Latest Crawl</source>
+        <target state="translated">Contrôle de qualité le plus récent</target>
       </trans-unit>
-      <trans-unit id="s0b3d512df6b7e85c">
+      <trans-unit id="s0b3d512df6b7e85c" xml:space="preserve">
         <source>Crawl is not running.</source>
+        <target state="translated">Collecte n'est pas en train de rouler.</target>
       </trans-unit>
-      <trans-unit id="h27573a6e2ed7211d">
+      <trans-unit id="h27573a6e2ed7211d" xml:space="preserve">
         <source>Viewing error logs for currently running crawl. <x id="0" equiv-text="&lt;a href=&quot;${`${window.location.pathname}#watch`}&quot; class=&quot;underline hover:no-underline&quot;&gt;"/>Watch Crawl Progress<x id="1" equiv-text="&lt;/a&gt;"/></source>
+        <target state="translated">Visionner les erreurs du journal de bord de la collecte qui roule présentement. <x id="0" equiv-text="&lt;a href=&quot;${`${window.location.pathname}#watch`}&quot; class=&quot;underline hover:no-underline&quot;&gt;"/>Regarder le progrès de la collecte<x id="1" equiv-text="&lt;/a&gt;"/></target>
       </trans-unit>
-      <trans-unit id="s31b57d50c6a992ba">
+      <trans-unit id="s31b57d50c6a992ba" xml:space="preserve">
         <source>Error logs currently not available.</source>
+        <target state="translated">Les erreurs du journal de bord ne sont pas consultables.</target>
       </trans-unit>
-      <trans-unit id="s639f3dec21008b90">
+      <trans-unit id="s639f3dec21008b90" xml:space="preserve">
         <source>No error logs found yet for latest crawl.</source>
+        <target state="translated">Aucune erreur détectée dans la collecte la plus récente.</target>
       </trans-unit>
-      <trans-unit id="sb663339526803ecb">
+      <trans-unit id="sb663339526803ecb" xml:space="preserve">
         <source>Logs will show here after you run a crawl.</source>
+        <target state="translated">Le journal de bord va s'afficher ici après avoir démarrer une collecte.</target>
       </trans-unit>
-      <trans-unit id="sa641ef4b0f2af2b4">
+      <trans-unit id="sa641ef4b0f2af2b4" xml:space="preserve">
         <source>Displaying latest <x id="0" equiv-text="${this.localize.number(LOGS_PAGE_SIZE)}"/> errors of <x id="1" equiv-text="${this.localize.number(this.logs!.total)}"/>.</source>
+        <target state="translated">Afficher les erreurs récentes <x id="0" equiv-text="${this.localize.number(LOGS_PAGE_SIZE)}"/><x id="1" equiv-text="${this.localize.number(this.logs!.total)}"/>.</target>
       </trans-unit>
-      <trans-unit id="sa7bc374e662a4beb">
+      <trans-unit id="sa7bc374e662a4beb" xml:space="preserve">
         <source>Upcoming Pages</source>
+        <target state="translated">Prochaines pages</target>
       </trans-unit>
-      <trans-unit id="s70a238ad69373ab0">
+      <trans-unit id="s70a238ad69373ab0" xml:space="preserve">
         <source>Crawl Queue Editor</source>
+        <target state="translated">Édition de la file d'attente</target>
       </trans-unit>
-      <trans-unit id="s6ae6bdeecf9a5bb9">
+      <trans-unit id="s6ae6bdeecf9a5bb9" xml:space="preserve">
         <source>Done Editing</source>
+        <target state="translated">Modification terminée</target>
       </trans-unit>
       <trans-unit id="sffcdff4dee19a06f">
         <source>Change the number of browser windows crawling in parallel. This change will take effect immediately on the currently running crawl and update crawl workflow settings.</source>
