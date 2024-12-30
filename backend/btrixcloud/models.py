@@ -1439,6 +1439,8 @@ class OrgOut(BaseMongoModel):
     allowedProxies: list[str] = []
     crawlingDefaults: Optional[CrawlConfigDefaults] = None
 
+    lastCrawlFinished: Optional[datetime] = None
+
 
 # ============================================================================
 class Organization(BaseMongoModel):
@@ -1493,6 +1495,8 @@ class Organization(BaseMongoModel):
     allowSharedProxies: bool = False
     allowedProxies: list[str] = []
     crawlingDefaults: Optional[CrawlConfigDefaults] = None
+
+    lastCrawlFinished: Optional[datetime] = None
 
     def is_owner(self, user):
         """Check if user is owner"""

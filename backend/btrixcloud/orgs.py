@@ -1358,6 +1358,14 @@ class OrgOps:
 
         return {"success": True}
 
+    async def set_last_crawl_finished(self, oid: UUID):
+        """Recalculate and set lastCrawlFinished field on org"""
+        last_crawl_finished = await self.base_crawl_ops.get_org_last_crawl_finished(oid)
+        await self.orgs.find_one_and_update(
+            {"_id": oid},
+            {"$set": {"lastCrawlFinished": last_crawl_finished}},
+        )
+
 
 # ============================================================================
 # pylint: disable=too-many-statements, too-many-arguments
