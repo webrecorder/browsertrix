@@ -13,6 +13,7 @@ import { when } from "lit/directives/when.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
+import { SubscriptionStatus } from "@/types/billing";
 import type { ProxiesAPIResponse, Proxy } from "@/types/crawler";
 import type { OrgData } from "@/utils/orgs";
 
@@ -596,6 +597,69 @@ export class OrgsList extends BtrixElement {
       };
     }
 
+    let subscription = {
+      icon: none,
+      description: msg("No Subscription"),
+    };
+
+    if (org.subscription) {
+      switch (org.subscription.status) {
+        case SubscriptionStatus.Active:
+          subscription = {
+            icon: html`<sl-icon
+              class="text-base text-success"
+              name="nut-fill"
+              label=${msg("Active Subscription")}
+            ></sl-icon>`,
+            description: msg("Active Subscription"),
+          };
+          break;
+        case SubscriptionStatus.Trialing:
+          subscription = {
+            icon: html`<sl-icon
+              class="text-base text-neutral-400"
+              name="nut"
+              label=${msg("Trial")}
+            ></sl-icon>`,
+            description: msg("Trial"),
+          };
+          break;
+        case SubscriptionStatus.TrialingCanceled:
+          subscription = {
+            icon: html`<sl-icon
+              class="text-base text-danger"
+              name="nut"
+              label=${msg("Trial Cancelled")}
+            ></sl-icon>`,
+            description: msg("Trial Canceled"),
+          };
+          break;
+        case SubscriptionStatus.PausedPaymentFailed:
+          subscription = {
+            icon: html`<sl-icon
+              class="text-base text-warning"
+              name="nut"
+              label=${msg("Payment Failed")}
+            ></sl-icon>`,
+            description: msg("Payment Failed"),
+          };
+          break;
+        case SubscriptionStatus.Cancelled:
+          subscription = {
+            icon: html`<sl-icon
+              class="text-base text-danger"
+              name="nut"
+              label=${msg("Canceled")}
+            >
+            </sl-icon>`,
+            description: msg("Canceled"),
+          };
+          break;
+        default:
+          break;
+      }
+    }
+
     return html`
       <btrix-table-row
         class="${isUserOrg
@@ -605,6 +669,9 @@ export class OrgsList extends BtrixElement {
         <btrix-table-cell class="min-w-6 pl-2">
           <sl-tooltip content=${status.description}>
             ${status.icon}
+          </sl-tooltip>
+          <sl-tooltip content=${subscription.description}>
+            ${subscription.icon}
           </sl-tooltip>
         </btrix-table-cell>
         <btrix-table-cell class="p-2" rowClickTarget="a">
