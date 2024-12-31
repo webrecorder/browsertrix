@@ -79,6 +79,9 @@ export class OrgsList extends BtrixElement {
           <btrix-table-header-cell class="px-2">
             ${msg("Bytes Stored")}
           </btrix-table-header-cell>
+          <btrix-table-header-cell class="px-2">
+            ${msg("Last Crawl")}
+          </btrix-table-header-cell>
           <btrix-table-header-cell>
             <span class="sr-only">${msg("Actions")}</span>
           </btrix-table-header-cell>
@@ -619,7 +622,6 @@ export class OrgsList extends BtrixElement {
               : org.name}
           </a>
         </btrix-table-cell>
-
         <btrix-table-cell class="p-2">
           ${this.localize.date(org.created, { dateStyle: "short" })}
         </btrix-table-cell>
@@ -629,6 +631,11 @@ export class OrgsList extends BtrixElement {
         <btrix-table-cell class="p-2">
           ${org.bytesStored
             ? this.localize.bytes(org.bytesStored, { unitDisplay: "narrow" })
+            : none}
+        </btrix-table-cell>
+        <btrix-table-cell class="p-2">
+          ${org.lastCrawlFinished
+            ? this.localize.date(org.lastCrawlFinished, { dateStyle: "short" })
             : none}
         </btrix-table-cell>
         <btrix-table-cell class="p-1">
