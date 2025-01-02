@@ -589,7 +589,7 @@ class CrawlConfigOps:
 
     async def stats_recompute_last(self, cid: UUID, size: int, inc_crawls: int = 1):
         """recompute stats by incrementing size counter and number of crawls"""
-        update_query: dict[str, object] = {}
+        set_query: dict[str, object] = {}
 
         running_crawl = await self.get_running_crawl(cid)
 
@@ -609,42 +609,44 @@ class CrawlConfigOps:
             if last_crawl:
                 last_crawl_finished = last_crawl.get("finished")
 
-                update_query["lastCrawlId"] = str(last_crawl.get("_id"))
-                update_query["lastCrawlStartTime"] = last_crawl.get("started")
-                update_query["lastStartedBy"] = last_crawl.get("userid")
-                update_query["lastStartedByName"] = last_crawl.get("userName")
-                update_query["lastCrawlTime"] = last_crawl_finished
-                update_query["lastCrawlState"] = last_crawl.get("state")
-                update_query["lastCrawlSize"] = sum(
+                set_query["lastCrawlId"] = str(last_crawl.get("_id"))
+                set_query["lastCrawlStartTime"] = last_crawl.get("started")
+                set_query["lastStartedBy"] = last_crawl.get("userid")
+                set_query["lastStartedByName"] = last_crawl.get("userName")
+                set_query["lastCrawlTime"] = last_crawl_finished
+                set_query["lastCrawlState"] = last_crawl.get("state")
+                set_query["lastCrawlSize"] = sum(
                     file_.get("size", 0) for file_ in last_crawl.get("files", [])
                 )
-                update_query["lastCrawlStopping"] = False
-                update_query["isCrawlRunning"] = False
+                set_query["lastCrawlStopping"] = False
+                set_query["isCrawlRunning"] = False
 
                 if last_crawl_finished:
-                    update_query["lastRun"] = last_crawl_finished
+                    set_query["lastRun"] = last_crawl_finished
             # If no last crawl exists and no running crawl, reset stats
             else:
-                update_query["lastCrawlId"] = None
-                update_query["lastCrawlStartTime"] = None
-                update_query["lastStartedBy"] = None
-                update_query["lastStartedByName"] = None
-                update_query["lastCrawlTime"] = None
-                update_query["lastCrawlState"] = None
-                update_query["lastCrawlSize"] = 0
-                update_query["lastRun"] = None
-                update_query["isCrawlRunning"] = False
+                set_query["lastCrawlId"] = None
+                set_query["lastCrawlStartTime"] = None
+                set_query["lastStartedBy"] = None
+                set_query["lastStartedByName"] = None
+                set_query["lastCrawlTime"] = None
+                set_query["lastCrawlState"] = None
+                set_query["lastCrawlSize"] = 0
+                set_query["lastRun"] = None
+                set_query["isCrawlRunning"] = False
+
+        update: dict[str, object] = {
+            "$inc": {
+                "totalSize": size,
+                "crawlCount": inc_crawls,
+                "crawlSuccessfulCount": inc_crawls,
+            },
+        }
+        if set_query:
+            update["$set"] = set_query
 
         result = await self.crawl_configs.find_one_and_update(
-            {"_id": cid, "inactive": {"$ne": True}},
-            {
-                "$set": update_query,
-                "$inc": {
-                    "totalSize": size,
-                    "crawlCount": inc_crawls,
-                    "crawlSuccessfulCount": inc_crawls,
-                },
-            },
+            {"_id": cid, "inactive": {"$ne": True}}, update
         )
 
         return result is not None
