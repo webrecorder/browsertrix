@@ -208,9 +208,9 @@ Browsertrix has the ability to cryptographically sign WACZ files with [Authsign]
 
 You can enable sign-ups by setting `registration_enabled` to `"1"`. Once enabled, your users can register by visiting `/sign-up`.
 
-## Analytics
+## Analytics & Other Extras
 
-You can add a script to inject any sort of analytics into the frontend by setting `inject_analytics` to the script. If present, it will be injected as a blocking script tag into every page — so we recommend you create the script tags that handle your analytics from within this script.
+You can add a script to inject analytics, bug reporting tools, etc. into the frontend by setting `inject_extra` to script contents of your choosing. If present, it will be injected as a blocking script tag into every page — so we recommend you create the script tags that handle your analytics from within this script, rather than loading resources directly.
 
 For example, here's a script that adds Plausible Analytics tracking:
 
