@@ -24,11 +24,6 @@ if (!process.env.API_BASE_URL) {
 const RWP_BASE_URL =
   process.env.RWP_BASE_URL || "https://cdn.jsdelivr.net/npm/replaywebpage/";
 
-// Enable injected extra.js script (e.g. for analytics)
-const extraScript = process.env.EXTRA_SCRIPT_URL
-  ? `let script = document.createElement("script"); script.src = "${process.env.EXTRA_SCRIPT_URL}"; document.head.appendChild(script);`
-  : "";
-
 const devBackendUrl = new URL(process.env.API_BASE_URL);
 
 module.exports = [
@@ -81,10 +76,10 @@ module.exports = [
           res.status(404).send(`{"error": "placeholder_for_replay"}`);
         });
 
-        // serve empty analytics script
+        // Serve analytics script, which is set by the backend Helm chart
         server.app?.get("/extra.js", (req, res) => {
           res.set("Content-Type", "application/javascript");
-          res.status(200).send(extraScript);
+          res.status(200).send(process.env.INJECT_ANALYTICS || "");
         });
 
         return middlewares;

@@ -12,7 +12,8 @@
 
 // ANALYTICS_NAMESPACE is specified with webpack `DefinePlugin`
 const analytics = window.process.env.ANALYTICS_NAMESPACE
-  ? (window as any)[window.process.env.ANALYTICS_NAMESPACE as string]
+  ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (window as any)[window.process.env.ANALYTICS_NAMESPACE]
   : null;
 
 console.log("analytics:", analytics);
