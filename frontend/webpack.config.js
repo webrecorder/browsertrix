@@ -12,7 +12,6 @@ const TsconfigPathsPlugin = require("tsconfig-paths-webpack-plugin");
 const webpack = require("webpack");
 
 const defineConfig = require("./config/define.js");
-
 // @ts-ignore
 const packageJSON = require("./package.json");
 
