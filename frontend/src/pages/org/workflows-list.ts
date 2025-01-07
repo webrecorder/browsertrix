@@ -593,7 +593,7 @@ export class WorkflowsList extends BtrixElement {
             ${msg("Duplicate Workflow")}
           </sl-menu-item>
           ${when(
-            !workflow.lastCrawlId,
+            !workflow.crawlCount,
             () => html`
               <sl-divider></sl-divider>
               <sl-menu-item
