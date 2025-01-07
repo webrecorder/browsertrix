@@ -20,10 +20,18 @@ jobs:
     outputs:
       matches: ${{ steps.filter.outputs.matches }}
     steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 2  # important, to fetch previous commit
+
+    # workaround for https://github.com/dorny/paths-filter/issues/240
+    - id: previous-sha
+      run: 'echo "sha=$(git rev-list -n 1 ${{ github.ref }}^)" >> $GITHUB_OUTPUT'
+
     - uses: dorny/paths-filter@v3
       id: filter
       with:
-        base: ${{ github.ref }}
+        base: "${{ steps.previous-sha.outputs.sha }}"
         filters: |
           matches:
             - 'backend/**'
