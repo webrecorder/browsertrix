@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.4
-FROM --platform=$BUILDPLATFORM docker.io/library/node:18 as build_deps
+FROM --platform=$BUILDPLATFORM docker.io/library/node:22 as build_deps
 
 WORKDIR /app
 COPY .yarnrc yarn.lock package.json ./
