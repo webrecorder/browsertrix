@@ -3,8 +3,8 @@ import { type SlSelect } from "@shoelace-style/shoelace";
 import { html } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
+import { BtrixElement } from "@/classes/BtrixElement";
 import type { ProxiesAPIResponse, Proxy } from "@/pages/org/types";
-import LiteElement from "@/utils/LiteElement";
 
 type SelectCrawlerProxyChangeDetail = {
   value: string | null;
@@ -35,7 +35,7 @@ export type SelectCrawlerProxyUpdateEvent =
  */
 @customElement("btrix-select-crawler-proxy")
 @localized()
-export class SelectCrawlerProxy extends LiteElement {
+export class SelectCrawlerProxy extends BtrixElement {
   @property({ type: String })
   proxyId: string | null = null;
 
@@ -182,7 +182,7 @@ export class SelectCrawlerProxy extends LiteElement {
         }),
       );
     } catch (e) {
-      this.notify({
+      this.notify.toast({
         message: msg("Sorry, couldn't retrieve proxies at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
@@ -192,7 +192,7 @@ export class SelectCrawlerProxy extends LiteElement {
   }
 
   private async getOrgProxies(): Promise<ProxiesAPIResponse> {
-    return this.apiFetch<ProxiesAPIResponse>(
+    return this.api.fetch<ProxiesAPIResponse>(
       `/orgs/${this.orgId}/crawlconfigs/crawler-proxies`,
     );
   }
