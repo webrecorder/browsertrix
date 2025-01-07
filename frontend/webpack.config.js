@@ -10,6 +10,7 @@ const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const TsconfigPathsPlugin = require("tsconfig-paths-webpack-plugin");
 const webpack = require("webpack");
+const defineConfig = require("./config/define.js");
 
 // @ts-ignore
 const packageJSON = require("./package.json");
@@ -23,11 +24,6 @@ const dotEnvPath = path.resolve(
 require("dotenv").config({
   path: dotEnvPath,
 });
-
-const WEBSOCKET_HOST =
-  isDevServer && process.env.API_BASE_URL
-    ? new URL(process.env.API_BASE_URL).host
-    : process.env.WEBSOCKET_HOST || "";
 
 const DOCS_URL = process.env.DOCS_URL
   ? new URL(process.env.DOCS_URL)
@@ -164,12 +160,7 @@ const main = {
       ),
     }),
 
-    new webpack.DefinePlugin({
-      "window.process.env.WEBSOCKET_HOST": JSON.stringify(WEBSOCKET_HOST),
-      "window.process.env.ANALYTICS_NAMESPACE": JSON.stringify(
-        process.env.ANALYTICS_NAMESPACE,
-      ),
-    }),
+    new webpack.DefinePlugin(defineConfig),
 
     new webpack.optimize.LimitChunkCountPlugin({
       maxChunks: 12,
