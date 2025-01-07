@@ -10,7 +10,7 @@ Instead of rebuilding the entire frontend image to view your UI changes, you can
 
 The frontend development server requires an existing backend that has been deployed locally or is in production. See [Deploying Browsertrix](../deploy/index.md).
 
-### 2. Node.js ≥18
+### 2. Node.js ≥20
 
 To check if you already have Node.js installed, run the following command in your command line terminal:
 
@@ -18,7 +18,7 @@ To check if you already have Node.js installed, run the following command in you
 node --version
 ```
 
-You should see a version number like `v18.12.1`. If you see a command line error instead of a version number, [install Node.js](https://nodejs.org/en/download/package-manager) before continuing.
+You should see a version number like `v20.17.0`. If you see a command line error instead of a version number, [install Node.js](https://nodejs.org/en/download/package-manager) before continuing.
 
 ??? question "What if my other project requires a different version of Node.js?"
 
