@@ -9,7 +9,6 @@ import isEqual from "lodash/fp/isEqual";
 
 import type { QATab } from "./archived-item-qa/types";
 import type { Tab as CollectionTab } from "./collection-detail";
-import { proxiesContext } from "./context";
 import type {
   Member,
   OrgRemoveMemberEvent,
@@ -17,6 +16,7 @@ import type {
 } from "./settings/settings";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import { proxiesContext, type ProxiesContext } from "@/context/org";
 import type { QuotaUpdateDetail } from "@/controllers/api";
 import needLogin from "@/decorators/needLogin";
 import type { CollectionSavedEvent } from "@/features/collections/collection-metadata-dialog";
@@ -96,6 +96,9 @@ const UUID_REGEX =
 @customElement("btrix-org")
 @needLogin
 export class Org extends BtrixElement {
+  @provide({ context: proxiesContext })
+  proxies: ProxiesContext = null;
+
   @property({ type: Object })
   viewStateData?: ViewState["data"];
 
@@ -117,9 +120,6 @@ export class Org extends BtrixElement {
 
   @state()
   private isCreateDialogVisible = false;
-
-  @provide({ context: proxiesContext })
-  proxies: ProxiesAPIResponse | null = null;
 
   connectedCallback() {
     super.connectedCallback();
@@ -153,6 +153,7 @@ export class Org extends BtrixElement {
     ) {
       if (this.userOrg) {
         void this.updateOrg();
+        void this.updateOrgProxies();
       } else {
         // Couldn't find org with slug, redirect to first org
         const org = this.userInfo.orgs[0] as UserOrg | undefined;
@@ -206,8 +207,6 @@ export class Org extends BtrixElement {
       if (!isEqual(this.org, org)) {
         AppStateService.updateOrg(org);
       }
-
-      this.proxies = await this.getOrgProxies(this.orgId);
     } catch (e) {
       console.debug(e);
       this.notify.toast({
@@ -216,6 +215,14 @@ export class Org extends BtrixElement {
         icon: "exclamation-octagon",
         id: "org-retrieve-error",
       });
+    }
+  }
+
+  private async updateOrgProxies() {
+    try {
+      this.proxies = await this.getOrgProxies(this.orgId);
+    } catch (e) {
+      console.debug(e);
     }
   }
 
@@ -237,6 +244,8 @@ export class Org extends BtrixElement {
     // Sync URL to create dialog
     const dialogName = this.getDialogName();
     if (dialogName) this.openDialog(dialogName);
+
+    void this.updateOrgProxies();
   }
 
   private getDialogName() {

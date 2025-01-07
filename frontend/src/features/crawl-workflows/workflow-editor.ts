@@ -1,3 +1,4 @@
+import { consume } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
 import type {
   SlChangeEvent,
@@ -43,6 +44,7 @@ import type { SelectCrawlerProxyChangeEvent } from "@/components/ui/select-crawl
 import type { Tab } from "@/components/ui/tab-list";
 import type { TagInputEvent, TagsChangeEvent } from "@/components/ui/tag-input";
 import type { TimeInputChangeEvent } from "@/components/ui/time-input";
+import { proxiesContext, type ProxiesContext } from "@/context/org";
 import { type SelectBrowserProfileChangeEvent } from "@/features/browser-profiles/select-browser-profile";
 import type { CollectionsChangeEvent } from "@/features/collections/collections-add";
 import type { QueueExclusionTable } from "@/features/crawl-workflows/queue-exclusion-table";
@@ -188,6 +190,9 @@ type CrawlConfigResponse = {
 @localized()
 @customElement("btrix-workflow-editor")
 export class WorkflowEditor extends BtrixElement {
+  @consume({ context: proxiesContext, subscribe: true })
+  private readonly proxies?: ProxiesContext;
+
   @property({ type: String })
   configId?: string;
 
@@ -1329,17 +1334,24 @@ https://archiveweb.page/images/${"logo.svg"}`}
         ></btrix-select-browser-profile>
       `)}
       ${this.renderHelpTextCol(infoTextStrings["browserProfile"])}
-      ${inputCol(html`
-        <btrix-select-crawler-proxy
-          orgId=${this.orgId}
-          .proxyId="${this.formState.proxyId || ""}"
-          @on-change=${(e: SelectCrawlerProxyChangeEvent) =>
-            this.updateFormState({
-              proxyId: e.detail.value,
-            })}
-        ></btrix-select-crawler-proxy>
-      `)}
-      ${this.renderHelpTextCol(infoTextStrings["proxyId"])}
+      ${this.proxies?.servers.length
+        ? [
+            inputCol(html`
+              <btrix-select-crawler-proxy
+                defaultProxyId=${ifDefined(
+                  this.proxies.default_proxy_id ?? undefined,
+                )}
+                .proxyServers=${this.proxies.servers}
+                .proxyId="${this.formState.proxyId || ""}"
+                @on-change=${(e: SelectCrawlerProxyChangeEvent) =>
+                  this.updateFormState({
+                    proxyId: e.detail.value,
+                  })}
+              ></btrix-select-crawler-proxy>
+            `),
+            this.renderHelpTextCol(infoTextStrings["proxyId"]),
+          ]
+        : nothing}
       ${inputCol(html`
         <sl-radio-group
           name="scale"
