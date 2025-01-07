@@ -24,6 +24,7 @@ import "./styles.css";
 
 import { OrgTab, RouteNamespace, ROUTES } from "./routes";
 import type { UserInfo, UserOrg } from "./types/user";
+import { pageView, type AnalyticsTrackProps } from "./utils/analytics";
 import APIRouter, { type ViewState } from "./utils/APIRouter";
 import AuthService, {
   type AuthEventDetail,
@@ -156,6 +157,10 @@ export class App extends BtrixElement {
         this.showUserGuide(e.detail.path);
       },
     );
+  }
+
+  firstUpdated() {
+    this.trackPageView();
   }
 
   willUpdate(changedProperties: Map<string, unknown>) {
@@ -296,6 +301,22 @@ export class App extends BtrixElement {
     } else {
       window.history.pushState(this.viewState, "", urlStr);
     }
+
+    this.trackPageView();
+  }
+
+  trackPageView() {
+    const { slug, collectionId } = this.viewState.params;
+    const pageViewProps: AnalyticsTrackProps = {
+      org_slug: slug || null,
+      logged_in: !!this.authState,
+    };
+
+    if (collectionId) {
+      pageViewProps.collection_id = collectionId;
+    }
+
+    pageView(pageViewProps);
   }
 
   render() {

@@ -20,11 +20,13 @@ import { SelectCollectionAccess } from "./select-collection-access";
 import { BtrixElement } from "@/classes/BtrixElement";
 import { ClipboardController } from "@/controllers/clipboard";
 import { RouteNamespace } from "@/routes";
+import { AnalyticsTrackEvent } from "@/trackEvents";
 import {
   CollectionAccess,
   type Collection,
   type PublicCollection,
 } from "@/types/collection";
+import { track } from "@/utils/analytics";
 
 enum Tab {
   Link = "link",
@@ -113,6 +115,13 @@ export class ShareCollection extends BtrixElement {
             ?disabled=${!this.shareLink}
             @click=${() => {
               void this.clipboardController.copy(this.shareLink);
+
+              track(AnalyticsTrackEvent.CopyShareCollectionLink, {
+                org_slug: this.slug,
+                collection_id: this.collectionId,
+                collection_name: this.collection?.name,
+                logged_in: !!this.authState,
+              });
             }}
           >
             <sl-icon
@@ -188,6 +197,13 @@ export class ShareCollection extends BtrixElement {
                       href=${`/api/public/orgs/${this.slug}/collections/${this.collectionId}/download`}
                       download
                       ?disabled=${!this.collection?.totalSize}
+                      @click=${() => {
+                        track(AnalyticsTrackEvent.DownloadPublicCollection, {
+                          org_slug: this.slug,
+                          collection_id: this.collectionId,
+                          collection_name: this.collection?.name,
+                        });
+                      }}
                     >
                       <sl-icon name="cloud-download" slot="prefix"></sl-icon>
                       ${msg("Download Collection")}
