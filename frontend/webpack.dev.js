@@ -76,7 +76,7 @@ module.exports = [
           res.status(404).send(`{"error": "placeholder_for_replay"}`);
         });
 
-        // Serve analytics script, which is set by the backend Helm chart
+        // Serve analytics script, which is set in prod as an env variable by the Helm chart
         server.app?.get("/extra.js", (req, res) => {
           res.set("Content-Type", "application/javascript");
           res.status(200).send(process.env.INJECT_EXTRA || "");
