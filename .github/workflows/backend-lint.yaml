@@ -23,7 +23,7 @@ jobs:
 
       # workaround for https://github.com/dorny/paths-filter/issues/240
       - id: previous-sha
-        run: 'echo "sha=$(git rev-list -n 1 ${{ github.ref }}^)" >> $GITHUB_OUTPUT'
+        run: 'echo "sha=$(git rev-parse HEAD^1)" >> $GITHUB_OUTPUT'
 
       - uses: dorny/paths-filter@v3
         id: filter
