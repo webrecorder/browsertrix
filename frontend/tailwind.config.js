@@ -1,10 +1,10 @@
-const theme = require("@webrecorder/hickory/tokens/tailwind");
-const { tailwindTransform } = require("postcss-lit");
+import theme from "@webrecorder/hickory/tokens/tailwind";
+import { tailwindTransform } from "postcss-lit";
 
-const attributes = require("./config/tailwind/plugins/attributes");
-const containPlugin = require("./config/tailwind/plugins/contain");
-const contentVisibilityPlugin = require("./config/tailwind/plugins/content-visibility");
-const cssPartsPlugin = require("./config/tailwind/plugins/parts");
+import attributes from "./config/tailwind/plugins/attributes";
+import containPlugin from "./config/tailwind/plugins/contain";
+import contentVisibilityPlugin from "./config/tailwind/plugins/content-visibility";
+import cssPartsPlugin from "./config/tailwind/plugins/parts";
 
 /**
  * Merge Shoelace and hickory themes
