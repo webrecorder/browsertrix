@@ -7,7 +7,8 @@ import type {
   SlMenuItem,
 } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
-import { css, html, nothing } from "lit";
+import Fuse from "fuse.js";
+import { css, html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 
@@ -56,12 +57,62 @@ export class OrgsList extends BtrixElement {
   @query("#orgDeleteButton")
   private readonly orgDeleteButton?: SlButton | null;
 
+  // For fuzzy search:
+  private readonly fuse = new Fuse(this.orgList ?? [], {
+    keys: [
+      "id",
+      "name",
+      "slug",
+      "users.name",
+      "users.email",
+      "subscription.subId",
+      "subscription.planId",
+    ],
+    useExtendedSearch: true,
+  });
+
+  @state()
+  private search = "";
+
+  protected willUpdate(changedProperties: PropertyValues<this>) {
+    if (changedProperties.has("orgList")) {
+      this.fuse.setCollection(this.orgList ?? []);
+    }
+  }
+
+  protected firstUpdated() {
+    this.fuse.setCollection(this.orgList ?? []);
+  }
+
   render() {
     if (this.skeleton) {
       return this.renderSkeleton();
     }
 
+    const orgs = this.search
+      ? this.fuse.search(this.search).map(({ item }) => item)
+      : this.orgList;
+
     return html`
+      <sl-input
+        value=${this.search}
+        clearable
+        size="small"
+        class="mb-6"
+        placeholder=${msg(
+          "Search all orgs by name, id, slug, users, and subscriptions",
+        )}
+        @sl-input=${(e: Event) => {
+          this.search = (e.target as SlInput).value.trim() || "";
+        }}
+      >
+        <sl-icon
+          name="search"
+          slot="prefix"
+          aria-hidden="true"
+          library="default"
+        ></sl-icon
+      ></sl-input>
       <btrix-table>
         <btrix-table-head class="mb-2">
           <btrix-table-header-cell>
@@ -84,7 +135,7 @@ export class OrgsList extends BtrixElement {
           </btrix-table-header-cell>
         </btrix-table-head>
         <btrix-table-body class="rounded border">
-          ${this.orgList?.map(this.renderOrg)}
+          ${orgs?.map(this.renderOrg)}
         </btrix-table-body>
       </btrix-table>
 
