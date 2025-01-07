@@ -25,6 +25,11 @@ jobs:
       - id: previous-sha
         run: 'echo "sha=$(git rev-list -n 1 ${{ github.ref }}^)" >> $GITHUB_OUTPUT'
 
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+        with:
+          limit-access-to-actor: true
+
       - uses: dorny/paths-filter@v3
         id: filter
         with:
