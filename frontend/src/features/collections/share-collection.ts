@@ -117,7 +117,7 @@ export class ShareCollection extends BtrixElement {
               void this.clipboardController.copy(this.shareLink);
 
               track(AnalyticsTrackEvent.CopyShareCollectionLink, {
-                slug: this.slug,
+                org_slug: this.slug,
                 collection_id: this.collectionId,
                 collection_name: this.collection?.name,
                 logged_in: !!this.authState,
@@ -199,7 +199,7 @@ export class ShareCollection extends BtrixElement {
                       ?disabled=${!this.collection?.totalSize}
                       @click=${() => {
                         track(AnalyticsTrackEvent.DownloadPublicCollection, {
-                          slug: this.slug,
+                          org_slug: this.slug,
                           collection_id: this.collectionId,
                           collection_name: this.collection?.name,
                         });

@@ -7,7 +7,12 @@
 
 import { AnalyticsTrackEvent } from "../trackEvents";
 
-type AnalyticsTrackProps = { [key: string]: unknown };
+export type AnalyticsTrackProps = {
+  org_slug: string | null;
+  collection_id?: string | null;
+  collection_name?: string | null;
+  logged_in?: boolean;
+};
 
 export function track(
   event: `${AnalyticsTrackEvent}`,
