@@ -26,7 +26,7 @@ import type { OrgData } from "@/utils/orgs";
 export class OrgsList extends BtrixElement {
   static styles = css`
     btrix-table {
-      grid-template-columns: min-content [clickable-start] 50ch auto auto auto [clickable-end] min-content;
+      grid-template-columns: min-content [clickable-start] minmax(auto, 50ch) auto auto auto [clickable-end] min-content;
     }
   `;
 
@@ -666,7 +666,7 @@ export class OrgsList extends BtrixElement {
           ? ""
           : "opacity-50"} cursor-pointer select-none border-b bg-neutral-0 transition-colors first-of-type:rounded-t last-of-type:rounded-b last-of-type:border-none focus-within:bg-neutral-50 hover:bg-neutral-50"
       >
-        <btrix-table-cell class="min-w-6 pl-2">
+        <btrix-table-cell class="min-w-6 gap-1 pl-2">
           <sl-tooltip content=${status.description}>
             ${status.icon}
           </sl-tooltip>
