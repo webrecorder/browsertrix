@@ -215,14 +215,14 @@ You can add a script to inject analytics, bug reporting tools, etc. into the fro
 For example, enabling analytics and tracking might look like this:
 
 ```yaml
-inject_analytics: >
+inject_extra: >
   const analytics = document.createElement("script");
   analytics.src = "https://cdn.example.com/analytics.js";
   analytics.defer = true;
 
   document.head.appendChild(analytics);
 
-  window.analytics = window.analytics 
+  window.analytics = window.analytics
     || function () { (window.analytics.q = window.analytics.q || []).push(arguments); };
 ```
 
