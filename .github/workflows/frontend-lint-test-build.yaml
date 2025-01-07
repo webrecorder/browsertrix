@@ -37,16 +37,11 @@ jobs:
               - 'frontend/*.ts'
               - '.github/workflows/frontend-lint-test-build.yaml'
 
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-        with:
-          limit-access-to-actor: true
-
   unit-tests:
     name: Unit Tests
     runs-on: ubuntu-latest
     needs: paths-filter
-    if: needs.paths-filter.outputs.src == 'true'
+    if: needs.paths-filter.outputs.matches == 'true'
     strategy:
       matrix:
         node: [20, 22]
@@ -107,7 +102,7 @@ jobs:
   integration-tests:
     name: Integration Tests
     needs: paths-filter
-    if: needs.paths-filter.outputs.src == 'true'
+    if: needs.paths-filter.outputs.matches == 'true'
     timeout-minutes: 60
     runs-on: ubuntu-latest
     strategy:
@@ -190,7 +185,7 @@ jobs:
     name: Lint
     runs-on: ubuntu-latest
     needs: paths-filter
-    if: needs.paths-filter.outputs.src == 'true'
+    if: needs.paths-filter.outputs.matches == 'true'
     strategy:
       matrix:
         node: [20, 22]
@@ -223,7 +218,7 @@ jobs:
     name: Localize
     runs-on: ubuntu-latest
     needs: paths-filter
-    if: needs.paths-filter.outputs.src == 'true'
+    if: needs.paths-filter.outputs.matches == 'true'
     strategy:
       matrix:
         node: [20, 22]
@@ -256,7 +251,7 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     needs: paths-filter
-    if: needs.paths-filter.outputs.src == 'true'
+    if: needs.paths-filter.outputs.matches == 'true'
     strategy:
       matrix:
         node: [20, 22]

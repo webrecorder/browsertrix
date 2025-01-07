@@ -34,6 +34,13 @@ jobs:
               - 'ansible/**'
               - '.github/workflows/ansible-lint.yaml'
 
+  debug:
+    needs: paths-filter
+    runs-on: ubuntu-latest
+    steps:
+      - name: echo
+        run: echo "${{steps.filter.outputs.matches}}"
+
   build:
     needs: paths-filter
     if: needs.paths-filter.outputs.matches == 'true'
