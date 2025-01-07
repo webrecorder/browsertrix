@@ -25,14 +25,14 @@ export class CollectionStartPageDialog extends BtrixElement {
     { label: string; icon: NonNullable<SlIcon["name"]>; detail: string }
   > = {
     [HomeView.Pages]: {
-      label: msg("Default"),
+      label: msg("List of Pages"),
       icon: "list-ul",
       detail: `${msg("ReplayWeb.Page default view")}`,
     },
     [HomeView.URL]: {
-      label: msg("Page"),
-      icon: "file-earmark",
-      detail: msg("Load a single page URL"),
+      label: msg("Start Page"),
+      icon: "file-earmark-richtext",
+      detail: msg("Show a single URL snapshot"),
     },
   };
 
@@ -188,7 +188,7 @@ export class CollectionStartPageDialog extends BtrixElement {
       <form @submit=${this.onSubmit}>
         <sl-select
           name="homeView"
-          label=${msg("Select View")}
+          label=${msg("Select Initial View")}
           value=${this.homeView}
           hoist
           ?disabled=${!this.replayLoaded}
