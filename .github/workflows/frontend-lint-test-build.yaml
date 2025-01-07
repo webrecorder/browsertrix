@@ -37,6 +37,11 @@ jobs:
               - 'frontend/*.ts'
               - '.github/workflows/frontend-lint-test-build.yaml'
 
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+        with:
+          limit-access-to-actor: true
+
   unit-tests:
     name: Unit Tests
     runs-on: ubuntu-latest
