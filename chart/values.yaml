@@ -451,9 +451,9 @@ ingress:
 
 ingress_class: nginx
 
-# Optional: Analytics injection script
-# This runs as a blocking script on the frontend, so usually you'll want to have it just add a single script tag to the page with the `defer` attribute.
-# inject_analytics: // your analytics injection script here
+# Optional: Front-end injected script
+# This runs as a blocking script on the frontend, so usually you'll want to have it just add a single script tag to the page with the `defer` attribute. Useful for things like analytics and bug tracking.
+# inject_extra: // your front-end injected script
 
 
 # Signing Options
