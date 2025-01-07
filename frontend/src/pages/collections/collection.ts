@@ -10,7 +10,6 @@ import { page } from "@/layouts/page";
 import { RouteNamespace } from "@/routes";
 import type { PublicCollection } from "@/types/collection";
 import type { PublicOrgCollections } from "@/types/org";
-import { track, TrackEvent } from "@/utils/analytics";
 import { formatRwpTimestamp } from "@/utils/replay";
 
 enum Tab {
@@ -71,13 +70,6 @@ export class Collection extends BtrixElement {
     },
     args: () => [this.slug, this.collectionId] as const,
   });
-
-  firstUpdated() {
-    track(TrackEvent.ViewPublicCollection, {
-      slug: this.slug,
-      collectionId: this.collectionId,
-    });
-  }
 
   render() {
     return this.collection.render({

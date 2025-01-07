@@ -18,20 +18,31 @@ const analytics = window.process.env.ANALYTICS_NAMESPACE
 
 console.log("analytics:", analytics);
 
-export enum TrackEvent {
-  ViewPublicCollection = "View Public Collection",
-  CopyPublicCollectionLink = "Copy Share Collection Link",
-  DownloadPublicCollection = "Download Public Collection",
+export enum AnalyticsTrackEvent {
+  PageView = "pageview",
+  CopyPublicCollectionLink = "[Collections] Copy share collection link",
+  DownloadPublicCollection = "[Collections] Download public collection",
 }
 
-export function track(event: TrackEvent, props?: { [key: string]: unknown }) {
+type AnalyticsTrackProps = { [key: string]: unknown };
+
+export function track(
+  event: `${AnalyticsTrackEvent}`,
+  props?: AnalyticsTrackProps,
+) {
   if (!analytics) {
     return;
   }
 
   try {
-    analytics(event, { props });
+    console.log("event:", event);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (window as any)["plausible"](event, { props });
   } catch (err) {
     console.debug(err);
   }
+}
+
+export function pageView(props?: AnalyticsTrackProps) {
+  track(AnalyticsTrackEvent.PageView, props);
 }

@@ -24,6 +24,7 @@ import "./styles.css";
 
 import { OrgTab, RouteNamespace, ROUTES } from "./routes";
 import type { UserInfo, UserOrg } from "./types/user";
+import { pageView } from "./utils/analytics";
 import APIRouter, { type ViewState } from "./utils/APIRouter";
 import AuthService, {
   type AuthEventDetail,
@@ -156,6 +157,10 @@ export class App extends BtrixElement {
         this.showUserGuide(e.detail.path);
       },
     );
+  }
+
+  firstUpdated() {
+    pageView(this.viewState.params);
   }
 
   willUpdate(changedProperties: Map<string, unknown>) {
@@ -296,6 +301,8 @@ export class App extends BtrixElement {
     } else {
       window.history.pushState(this.viewState, "", urlStr);
     }
+
+    pageView(this.viewState.params);
   }
 
   render() {
