@@ -638,7 +638,7 @@ export class OrgsList extends BtrixElement {
           subscription = {
             icon: html`<sl-icon
               class="text-base text-warning"
-              name="nut"
+              name="nut-fill"
               label=${msg("Payment Failed")}
             ></sl-icon>`,
             description: msg("Payment Failed"),
