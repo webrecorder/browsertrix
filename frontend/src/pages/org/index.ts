@@ -1,3 +1,4 @@
+import { provide } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
 import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
@@ -8,6 +9,7 @@ import isEqual from "lodash/fp/isEqual";
 
 import type { QATab } from "./archived-item-qa/types";
 import type { Tab as CollectionTab } from "./collection-detail";
+import { proxiesContext } from "./context";
 import type {
   Member,
   OrgRemoveMemberEvent,
@@ -19,6 +21,7 @@ import type { QuotaUpdateDetail } from "@/controllers/api";
 import needLogin from "@/decorators/needLogin";
 import type { CollectionSavedEvent } from "@/features/collections/collection-metadata-dialog";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
+import type { ProxiesAPIResponse } from "@/types/crawler";
 import type { UserOrg } from "@/types/user";
 import { isApiError } from "@/utils/api";
 import type { ViewState } from "@/utils/APIRouter";
@@ -115,6 +118,9 @@ export class Org extends BtrixElement {
   @state()
   private isCreateDialogVisible = false;
 
+  @provide({ context: proxiesContext })
+  proxies: ProxiesAPIResponse | null = null;
+
   connectedCallback() {
     super.connectedCallback();
     this.addEventListener(
@@ -200,6 +206,8 @@ export class Org extends BtrixElement {
       if (!isEqual(this.org, org)) {
         AppStateService.updateOrg(org);
       }
+
+      this.proxies = await this.getOrgProxies(this.orgId);
     } catch (e) {
       console.debug(e);
       this.notify.toast({
@@ -634,6 +642,12 @@ export class Org extends BtrixElement {
     return data;
   }
 
+  private async getOrgProxies(orgId: string): Promise<ProxiesAPIResponse> {
+    return this.api.fetch<ProxiesAPIResponse>(
+      `/orgs/${orgId}/crawlconfigs/crawler-proxies`,
+    );
+  }
+
   private async onOrgRemoveMember(e: OrgRemoveMemberEvent) {
     void this.removeMember(e.detail.member);
   }
@@ -682,9 +696,15 @@ export class Org extends BtrixElement {
         icon: "check2-circle",
         id: "user-updated-status",
       });
+
       const org = await this.getOrg(this.orgId);
 
-      AppStateService.updateOrg(org);
+      if (org) {
+        AppStateService.partialUpdateOrg({
+          id: org.id,
+          users: org.users,
+        });
+      }
     } catch (e) {
       console.debug(e);
 
@@ -742,7 +762,12 @@ export class Org extends BtrixElement {
       } else {
         const org = await this.getOrg(this.orgId);
 
-        AppStateService.updateOrg(org);
+        if (org) {
+          AppStateService.partialUpdateOrg({
+            id: org.id,
+            users: org.users,
+          });
+        }
       }
     } catch (e) {
       console.debug(e);
