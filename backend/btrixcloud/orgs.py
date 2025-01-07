@@ -220,11 +220,24 @@ class OrgOps:
         sort_query = {"default": -1}
 
         if sort_by:
-            sort_fields = ("name", "slug", "readOnly")
+            sort_fields = (
+                "name",
+                "slug",
+                "readOnly",
+                "lastCrawlFinished",
+                "subscriptionStatus",
+                "subscriptionPlan",
+            )
             if sort_by not in sort_fields:
                 raise HTTPException(status_code=400, detail="invalid_sort_by")
             if sort_direction not in (1, -1):
                 raise HTTPException(status_code=400, detail="invalid_sort_direction")
+
+            if sort_by == "subscriptionStatus":
+                sort_by = "subscription.status"
+
+            if sort_by == "subscriptionPlan":
+                sort_by = "subscription.planId"
 
             # Do lexical sort of names
             if sort_by == "name":

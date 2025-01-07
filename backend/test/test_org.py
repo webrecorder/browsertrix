@@ -755,3 +755,23 @@ def test_sort_orgs(admin_auth_headers):
         if last_name:
             assert org_name_lower < last_name
         last_name = org_name_lower
+
+    # Sort desc by lastCrawlFinished, ensure default org still first
+    r = requests.get(
+        f"{API_PREFIX}/orgs?sortBy=lastCrawlFinished&sortDirection=-1",
+        headers=admin_auth_headers,
+    )
+    data = r.json()
+    orgs = data["items"]
+
+    assert orgs[0]["default"]
+
+    other_orgs = orgs[1:]
+    last_last_crawl_finished = None
+    for org in other_orgs:
+        last_crawl_finished = org.get("lastCrawlFinished")
+        if not last_crawl_finished:
+            continue
+        if last_last_crawl_finished:
+            assert last_crawl_finished <= last_last_crawl_finished
+        last_last_crawl_finished = last_crawl_finished
