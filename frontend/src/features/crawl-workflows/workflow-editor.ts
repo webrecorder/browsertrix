@@ -1343,7 +1343,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
                 )}
                 .proxyServers=${this.proxies.servers}
                 .proxyId="${this.formState.proxyId || ""}"
-                @on-change=${(e: SelectCrawlerProxyChangeEvent) =>
+                @btrix-change=${(e: SelectCrawlerProxyChangeEvent) =>
                   this.updateFormState({
                     proxyId: e.detail.value,
                   })}
