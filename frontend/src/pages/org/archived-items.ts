@@ -264,29 +264,28 @@ export class CrawlsList extends BtrixElement {
     return html`
       <main>
         <div class="contents">
-          ${pageHeader(
-            msg("Archived Items"),
-            when(
-              this.isCrawler,
-              () => html`
-                <sl-tooltip
-                  content=${msg("Org Storage Full")}
-                  ?disabled=${!this.org?.storageQuotaReached}
-                >
-                  <sl-button
-                    size="small"
-                    variant="primary"
-                    @click=${() => (this.isUploadingArchive = true)}
-                    ?disabled=${isArchivingDisabled(this.org)}
+          ${pageHeader({
+            title: msg("Archived Items"),
+            actions: this.isCrawler
+              ? html`
+                  <sl-tooltip
+                    content=${msg("Org Storage Full")}
+                    ?disabled=${!this.org?.storageQuotaReached}
                   >
-                    <sl-icon slot="prefix" name="upload"></sl-icon>
-                    ${msg("Upload WACZ")}
-                  </sl-button>
-                </sl-tooltip>
-              `,
-            ),
-            tw`mb-3`,
-          )}
+                    <sl-button
+                      size="small"
+                      variant="primary"
+                      @click=${() => (this.isUploadingArchive = true)}
+                      ?disabled=${isArchivingDisabled(this.org)}
+                    >
+                      <sl-icon slot="prefix" name="upload"></sl-icon>
+                      ${msg("Upload WACZ")}
+                    </sl-button>
+                  </sl-tooltip>
+                `
+              : nothing,
+            classNames: tw`mb-3`,
+          })}
           <div class="mb-3 flex gap-2">
             ${listTypes.map(({ label, itemType, icon }) => {
               const isSelected = itemType === this.itemType;

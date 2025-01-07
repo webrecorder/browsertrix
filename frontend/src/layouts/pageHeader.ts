@@ -118,7 +118,7 @@ export function pageHeader({
   secondary?: Content;
   actions?: Content;
   border?: boolean;
-  classNames?: typeof tw;
+  classNames?: typeof tw | string;
 }) {
   return html`
     <header

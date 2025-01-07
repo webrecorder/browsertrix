@@ -144,7 +144,10 @@ export class AccountSettings extends BtrixElement {
         title=${msg("Account Settings")}
       ></btrix-document-title>
 
-      ${pageHeader(msg("Account Settings"), undefined, tw`mb-3 lg:mb-5`)}
+      ${pageHeader({
+        title: msg("Account Settings"),
+        classNames: tw`mb-3 lg:mb-5`,
+      })}
 
       <btrix-tab-list activePanel=${this.activeTab} hideIndicator>
         <header slot="header" class="flex h-7 items-end justify-between">
