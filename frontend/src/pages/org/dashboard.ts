@@ -154,7 +154,7 @@ export class Dashboard extends BtrixElement {
               </sl-dropdown>`,
           )}
         `,
-        classNames: tw`mb-6`,
+        classNames: tw`border-b-transparent lg:mb-2`,
       })}
       <main>
         <div class="mb-10 flex flex-col gap-6 md:flex-row">
