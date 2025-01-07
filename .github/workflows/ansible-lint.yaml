@@ -23,7 +23,7 @@ jobs:
 
       # workaround for https://github.com/dorny/paths-filter/issues/240
       - id: previous-sha
-        run: 'echo "sha=$(git rev-list -n 1 ${{ github.ref }}^)" >> $GITHUB_OUTPUT'
+        run: 'echo "sha=$(git rev-list -n 1 pull/${{ github.ref_name }}^)" >> $GITHUB_OUTPUT'
 
       - name: Setup tmate session
         uses: mxschmitt/action-tmate@v3
