@@ -1666,6 +1666,9 @@ export class WorkflowDetail extends BtrixElement {
         id: "archived-item-delete-status",
       });
       void this.fetchCrawls();
+
+      // Update crawl count
+      void this.fetchWorkflow();
     } catch (e) {
       if (this.crawlToDelete) {
         this.confirmDeleteCrawl(this.crawlToDelete);
