@@ -20,12 +20,13 @@ import { SelectCollectionAccess } from "./select-collection-access";
 import { BtrixElement } from "@/classes/BtrixElement";
 import { ClipboardController } from "@/controllers/clipboard";
 import { RouteNamespace } from "@/routes";
+import { AnalyticsTrackEvent } from "@/trackEvents";
 import {
   CollectionAccess,
   type Collection,
   type PublicCollection,
 } from "@/types/collection";
-import { AnalyticsTrackEvent, track } from "@/utils/analytics";
+import { track } from "@/utils/analytics";
 
 enum Tab {
   Link = "link",
