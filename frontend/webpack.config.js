@@ -94,6 +94,7 @@ const main = {
       {
         test: /\.ts$/,
         include: path.resolve(__dirname, "src"),
+        exclude: path.resolve(__dirname, "src/__generated__"),
         use: [
           {
             loader: "postcss-loader",
@@ -112,7 +113,20 @@ const main = {
             },
           },
         ],
-        exclude: /node_modules/,
+      },
+      {
+        // Generated source files
+        test: /\.ts$/,
+        include: path.resolve(__dirname, "src/__generated__"),
+        use: [
+          {
+            loader: "ts-loader",
+            options: {
+              onlyCompileBundledFiles: true,
+              transpileOnly: true,
+            },
+          },
+        ],
       },
       {
         // Global styles and assets, like fonts and Shoelace,
