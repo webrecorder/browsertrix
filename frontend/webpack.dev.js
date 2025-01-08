@@ -28,7 +28,7 @@ const devBackendUrl = new URL(process.env.API_BASE_URL);
 
 module.exports = [
   merge(main, {
-    devtool: "eval-cheap-source-map",
+    devtool: "eval",
     /** @type {import('webpack-dev-server').Configuration} */
     devServer: {
       watchFiles: ["src/**/*", __filename],
