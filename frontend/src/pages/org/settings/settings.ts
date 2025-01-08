@@ -1,7 +1,7 @@
 import { localized, msg, str } from "@lit/localize";
 import type { SlInput } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
-import { html, unsafeCSS, type PropertyValues } from "lit";
+import { html, nothing, unsafeCSS, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -136,21 +136,23 @@ export class OrgSettings extends BtrixElement {
   }
 
   render() {
-    return html` ${pageHeader(
-        msg("Org Settings"),
-        when(
-          this.userInfo?.orgs && this.userInfo.orgs.length > 1 && this.userOrg,
-          (userOrg) => html`
-            <div class="text-neutral-400">
-              ${msg(
-                html`Viewing
-                  <strong class="font-medium">${userOrg.name}</strong>`,
-              )}
-            </div>
-          `,
-        ),
-        tw`mb-3 lg:mb-5`,
-      )}
+    return html` ${pageHeader({
+        title: msg("Org Settings"),
+        actions:
+          this.userInfo?.orgs && this.userInfo.orgs.length > 1 && this.userOrg
+            ? html`
+                <div class="text-neutral-400">
+                  ${msg(
+                    html`Viewing
+                      <strong class="font-medium"
+                        >${this.userOrg.name}</strong
+                      >`,
+                  )}
+                </div>
+              `
+            : nothing,
+        classNames: tw`mb-3 lg:mb-5`,
+      })}
 
       <btrix-tab-list activePanel=${this.activePanel} hideIndicator>
         <header slot="header" class="flex h-7 items-end justify-between">

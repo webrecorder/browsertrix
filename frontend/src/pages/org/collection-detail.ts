@@ -13,8 +13,7 @@ import type { MarkdownEditor } from "@/components/ui/markdown-editor";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
 import type { ShareCollection } from "@/features/collections/share-collection";
-import { pageHeader } from "@/layouts/page";
-import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
+import { pageHeader, pageNav, type Breadcrumb } from "@/layouts/pageHeader";
 import type {
   APIPaginatedList,
   APIPaginationQuery,

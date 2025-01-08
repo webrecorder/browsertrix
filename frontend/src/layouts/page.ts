@@ -1,13 +1,10 @@
-import clsx from "clsx";
 import { html, nothing, type TemplateResult } from "lit";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { html as staticHtml, unsafeStatic } from "lit/static-html.js";
 
-import { pageNav, pageTitle } from "./pageHeader";
+import { pageHeader, pageNav } from "./pageHeader";
 
 import { tw } from "@/utils/tailwind";
-
-type Content = string | TemplateResult | typeof nothing;
 
 export function pageHeading({
   content,
@@ -26,48 +23,6 @@ export function pageHeading({
         html`<sl-skeleton class="my-.5 h-5 w-60" effect="sheen"></sl-skeleton>`
       }
     </${tag}>
-  `;
-}
-
-// TODO consolidate with pageHeader.ts https://github.com/webrecorder/browsertrix/issues/2197
-export function pageHeader({
-  title,
-  prefix,
-  suffix,
-  secondary,
-  actions,
-  border = true,
-  classNames,
-}: {
-  title?: Content;
-  prefix?: Content;
-  suffix?: Content;
-  secondary?: Content;
-  actions?: Content;
-  border?: boolean;
-  classNames?: typeof tw;
-}) {
-  return html`
-    <header
-      class=${clsx(
-        tw`mt-5 flex flex-col gap-3 lg:flex-row`,
-        border && tw`border-b pb-3`,
-        classNames,
-      )}
-    >
-      <div class="flex flex-1 flex-col gap-2">
-        <div class="flex flex-wrap items-center gap-2.5">
-          ${prefix}${pageTitle(title)}${suffix}
-        </div>
-        ${secondary}
-      </div>
-
-      ${actions
-        ? html`<div class="ml-auto flex flex-shrink-0 items-center gap-2">
-            ${actions}
-          </div>`
-        : nothing}
-    </header>
   `;
 }
 

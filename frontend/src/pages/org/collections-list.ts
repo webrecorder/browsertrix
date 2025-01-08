@@ -132,12 +132,10 @@ export class CollectionsList extends BtrixElement {
   render() {
     return html`
       <div class="contents">
-        ${pageHeader(
-          msg("Collections"),
-          when(
-            this.isCrawler,
-            () => html`
-              <sl-button
+        ${pageHeader({
+          title: msg("Collections"),
+          actions: this.isCrawler
+            ? html` <sl-button
                 variant="primary"
                 size="small"
                 ?disabled=${!this.org || this.org.readOnly}
@@ -145,11 +143,10 @@ export class CollectionsList extends BtrixElement {
               >
                 <sl-icon slot="prefix" name="plus-lg"></sl-icon>
                 ${msg("New Collection")}
-              </sl-button>
-            `,
-          ),
-          tw`border-b-transparent`,
-        )}
+              </sl-button>`
+            : nothing,
+          classNames: tw`border-b-transparent`,
+        })}
       </div>
 
       <link rel="preload" as="image" href=${noCollectionsImg} />
