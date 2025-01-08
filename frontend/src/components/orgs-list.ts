@@ -628,7 +628,7 @@ export class OrgsList extends BtrixElement {
           subscription = {
             icon: html`<sl-icon
               class="text-base text-neutral-400"
-              name="nut"
+              name="x-square-fill"
               label=${msg("Trial Cancelled")}
             ></sl-icon>`,
             description: msg("Trial Canceled"),
