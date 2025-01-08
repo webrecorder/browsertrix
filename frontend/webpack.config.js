@@ -4,6 +4,7 @@
 const childProcess = require("child_process");
 const fs = require("fs");
 const path = require("path");
+const threadLoader = require("thread-loader");
 
 const CopyPlugin = require("copy-webpack-plugin");
 const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin");
@@ -79,6 +80,20 @@ const version = (() => {
   return packageJSON.version;
 })();
 
+/** @type {Partial<import('ts-loader').Options>} */
+const tsLoaderOptions = {
+  onlyCompileBundledFiles: true,
+  transpileOnly: true,
+  // Enables compatibility with thread-loader
+  happyPackMode: true,
+};
+
+const threadLoaderOptions = {
+  poolTimeout: isDevServer ? Infinity : 2000,
+};
+
+threadLoader.warmup(threadLoaderOptions, ["ts-loader"]);
+
 /** @type {import('webpack').Configuration} */
 const main = {
   entry: "./src/index.ts",
@@ -91,6 +106,7 @@ const main = {
 
   module: {
     rules: [
+      // Non-generated source files
       {
         test: /\.ts$/,
         include: path.resolve(__dirname, "src"),
@@ -106,11 +122,12 @@ const main = {
             },
           },
           {
+            loader: "thread-loader",
+            options: threadLoaderOptions,
+          },
+          {
             loader: "ts-loader",
-            options: {
-              onlyCompileBundledFiles: true,
-              transpileOnly: true,
-            },
+            options: tsLoaderOptions,
           },
         ],
       },
@@ -120,11 +137,12 @@ const main = {
         include: path.resolve(__dirname, "src/__generated__"),
         use: [
           {
+            loader: "thread-loader",
+            options: threadLoaderOptions,
+          },
+          {
             loader: "ts-loader",
-            options: {
-              onlyCompileBundledFiles: true,
-              transpileOnly: true,
-            },
+            options: tsLoaderOptions,
           },
         ],
       },
@@ -190,6 +208,11 @@ const main = {
       typescript: {
         configOverwrite: {
           exclude: ["**/*.test.ts", "tests/**/*.ts", "playwright.config.ts"],
+        },
+        // Re-enable type checking when `happyPackMode` is enabled
+        diagnosticOptions: {
+          semantic: true,
+          syntactic: true,
         },
       },
     }),
