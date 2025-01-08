@@ -27,6 +27,14 @@ export class MarkdownEditor extends BtrixElement {
       --ink-block-padding: var(--sl-input-spacing-small);
     }
 
+    .ink-mde-textarea {
+      flex-grow: 1;
+    }
+
+    .ink-mde {
+      height: 100%;
+    }
+
     .ink-mde {
       border: solid var(--sl-input-border-width) var(--sl-input-border-color);
     }
@@ -56,7 +64,8 @@ export class MarkdownEditor extends BtrixElement {
     }
 
     .cm-line:only-child {
-      min-height: 8em;
+      height: 100%;
+      min-height: 20em;
     }
   `;
 
@@ -111,7 +120,11 @@ export class MarkdownEditor extends BtrixElement {
   render() {
     const isInvalid = this.maxlength && this.value.length > this.maxlength;
     return html`
-      <fieldset ?data-invalid=${isInvalid} ?data-user-invalid=${isInvalid}>
+      <fieldset
+        ?data-invalid=${isInvalid}
+        ?data-user-invalid=${isInvalid}
+        class="flex h-full flex-col"
+      >
         ${this.label && html`<label class="form-label">${this.label}</label>`}
         <textarea id="editor-textarea"></textarea>
         <div class="helpText flex items-baseline justify-between">

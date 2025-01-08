@@ -1,4 +1,5 @@
 import { localized, msg, str } from "@lit/localize";
+import clsx from "clsx";
 import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
@@ -24,6 +25,7 @@ import type { ArchivedItem, Crawl, Upload } from "@/types/crawler";
 import type { CrawlState } from "@/types/crawlState";
 import { pluralOf } from "@/utils/pluralize";
 import { formatRwpTimestamp } from "@/utils/replay";
+import { tw } from "@/utils/tailwind";
 
 const ABORT_REASON_THROTTLE = "throttled";
 const INITIAL_ITEMS_PAGE_SIZE = 20;
@@ -148,7 +150,7 @@ export class CollectionDetail extends BtrixElement {
       <div class="mt-3 rounded-lg border px-4 py-2">
         ${this.renderInfoBar()}
       </div>
-      <div class="flex items-center justify-between p-3">
+      <div class="flex items-center justify-between py-3">
         ${this.renderTabs()}
         ${when(this.isCrawler, () =>
           choose(this.collectionTab, [
@@ -173,23 +175,6 @@ export class CollectionDetail extends BtrixElement {
               `,
             ],
             [
-              Tab.About,
-              () =>
-                when(
-                  !this.isEditingDescription,
-                  () => html`
-                    <sl-button
-                      size="small"
-                      @click=${() => (this.isEditingDescription = true)}
-                      ?disabled=${!this.collection}
-                    >
-                      <sl-icon name="pencil" slot="prefix"></sl-icon>
-                      ${msg("Edit")}
-                    </sl-button>
-                  `,
-                ),
-            ],
-            [
               Tab.Items,
               () => html`
                 <sl-button
@@ -211,7 +196,7 @@ export class CollectionDetail extends BtrixElement {
           Tab.Items,
           () => guard([this.archivedItems], this.renderArchivedItems),
         ],
-        [Tab.About, () => this.renderDescription()],
+        [Tab.About, () => this.renderAbout()],
       ])}
 
       <btrix-dialog
@@ -525,66 +510,133 @@ export class CollectionDetail extends BtrixElement {
     `;
   }
 
-  private renderDescription() {
+  // TODO Consolidate with collection.ts
+  private renderAbout() {
+    const dateRange = (collection: Collection) => {
+      if (!collection.dateEarliest || !collection.dateLatest) {
+        return msg("n/a");
+      }
+      const format: Intl.DateTimeFormatOptions = {
+        month: "long",
+        year: "numeric",
+      };
+      const dateEarliest = this.localize.date(collection.dateEarliest, format);
+      const dateLatest = this.localize.date(collection.dateLatest, format);
+
+      if (dateEarliest === dateLatest) return dateLatest;
+
+      return msg(str`${dateEarliest} to ${dateLatest}`, {
+        desc: "Date range formatted to show full month name and year",
+      });
+    };
+    const skeleton = html`<sl-skeleton class="w-24"></sl-skeleton>`;
+
+    const metadata = html`
+      <btrix-desc-list>
+        <btrix-desc-list-item label=${msg("Collection Period")}>
+          <span class="font-sans"
+            >${this.collection ? dateRange(this.collection) : skeleton}</span
+          >
+        </btrix-desc-list-item>
+      </btrix-desc-list>
+    `;
+
     return html`
-      <section>
-        ${when(
-          this.collection,
-          (collection) =>
-            this.isEditingDescription
-              ? html`
-                  <div class="flex justify-center leading-relaxed">
-                    <div class="w-full md:max-w-[783px]">
-                      <btrix-markdown-editor
-                        initialValue=${collection.description || ""}
-                        placeholder=${msg("Tell viewers about this collection")}
-                        maxlength=${4000}
-                      ></btrix-markdown-editor>
-                      <div
-                        class="flex-column mt-4 flex justify-between border-t pt-4"
-                      >
-                        <sl-button
-                          size="small"
-                          @click=${() => (this.isEditingDescription = false)}
-                        >
-                          ${msg("Cancel")}
-                        </sl-button>
-                        <sl-button
-                          variant="primary"
-                          size="small"
-                          @click=${() => void this.saveDescription()}
-                          ?disabled=${!this.collection}
-                        >
-                          ${msg("Update Description")}
-                        </sl-button>
-                      </div>
-                    </div>
-                  </div>
-                `
-              : html`
-                  <div
-                    class="flex justify-center rounded-lg border leading-relaxed"
-                  >
-                    ${collection.description
-                      ? html`
-                          <div
-                            class="min-h-full w-full px-8 py-12 md:max-w-[783px]"
-                          >
+      <div class="flex flex-1 flex-col gap-10 lg:flex-row">
+        <section class="flex w-full max-w-4xl flex-col leading-relaxed">
+          <header class="mb-3 flex min-h-8 items-end justify-between">
+            <h2 class="text-base font-semibold leading-none">
+              ${msg("Description")}
+            </h2>
+            ${when(
+              this.collection?.description && !this.isEditingDescription,
+              () => html`
+                <sl-button
+                  size="small"
+                  @click=${() => (this.isEditingDescription = true)}
+                >
+                  <sl-icon name="pencil" slot="prefix"></sl-icon>
+                  ${msg("Edit Description")}
+                </sl-button>
+              `,
+            )}
+          </header>
+          ${when(
+            this.collection,
+            (collection) =>
+              this.isEditingDescription
+                ? this.renderDescriptionForm()
+                : html`
+                    <div
+                      class=${clsx(
+                        tw`flex-1 rounded-lg border p-3 lg:p-6`,
+                        !collection.description &&
+                          tw`flex flex-col items-center justify-center`,
+                      )}
+                    >
+                      ${collection.description
+                        ? html`
                             <btrix-markdown-viewer
                               value=${collection.description}
                             ></btrix-markdown-viewer>
-                          </div>
-                        `
-                      : html`
-                          <p class="py-10 text-center text-neutral-500">
-                            ${msg("No description provided.")}
-                          </p>
-                        `}
-                  </div>
-                `,
-          this.renderSpinner,
-        )}
-      </section>
+                          `
+                        : html`
+                            <div class="text-center text-neutral-500">
+                              <p class="mb-3">
+                                ${msg("No description provided.")}
+                              </p>
+                              <sl-button
+                                size="small"
+                                @click=${() =>
+                                  (this.isEditingDescription = true)}
+                                ?disabled=${!this.collection}
+                              >
+                                <sl-icon name="pencil" slot="prefix"></sl-icon>
+                                ${msg("Add Description")}
+                              </sl-button>
+                            </div>
+                          `}
+                    </div>
+                  `,
+            this.renderSpinner,
+          )}
+        </section>
+        <section class="flex-1">
+          <btrix-section-heading>
+            <h2>${msg("Metadata")}</h2>
+          </btrix-section-heading>
+          <div class="mt-5">${metadata}</div>
+        </section>
+      </div>
+    `;
+  }
+
+  private renderDescriptionForm() {
+    if (!this.collection) return;
+
+    return html`
+      <btrix-markdown-editor
+        class="flex-1"
+        initialValue=${this.collection.description || ""}
+        placeholder=${msg("Tell viewers about this collection")}
+        maxlength=${4000}
+      ></btrix-markdown-editor>
+      <div class="flex-column mt-4 flex justify-between border-t pt-4">
+        <sl-button
+          size="small"
+          @click=${() => (this.isEditingDescription = false)}
+        >
+          ${msg("Cancel")}
+        </sl-button>
+        <sl-button
+          variant="primary"
+          size="small"
+          @click=${() => void this.saveDescription()}
+          ?disabled=${!this.collection}
+        >
+          ${msg("Update Description")}
+        </sl-button>
+      </div>
     `;
   }
 
@@ -741,7 +793,7 @@ export class CollectionDetail extends BtrixElement {
 
   private readonly renderSpinner = () => html`
     <div
-      class="flex items-center justify-center rounded-lg border py-24 text-3xl"
+      class="flex min-h-full items-center justify-center rounded-lg border py-24 text-3xl"
     >
       <sl-spinner></sl-spinner>
     </div>
