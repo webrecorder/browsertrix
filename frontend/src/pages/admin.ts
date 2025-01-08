@@ -366,6 +366,7 @@ export class Admin extends BtrixElement {
         method: "POST",
         body: JSON.stringify(params),
       });
+      await this.fetchOrgs();
       const userInfo = await this.getUserInfo();
       AppStateService.updateUser(formatAPIUser(userInfo));
 
