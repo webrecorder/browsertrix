@@ -4,11 +4,12 @@
 const childProcess = require("child_process");
 const fs = require("fs");
 const path = require("path");
-const threadLoader = require("thread-loader");
+
 
 const CopyPlugin = require("copy-webpack-plugin");
 const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
+const threadLoader = require("thread-loader");
 const TsconfigPathsPlugin = require("tsconfig-paths-webpack-plugin");
 const webpack = require("webpack");
 

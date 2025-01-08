@@ -1,8 +1,8 @@
 // @ts-check
-const webpack = require("webpack");
 const path = require("path");
 
 const ESLintPlugin = require("eslint-webpack-plugin");
+const webpack = require("webpack");
 const { merge } = require("webpack-merge");
 
 const baseConfigs = require("./webpack.config.js");
