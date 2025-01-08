@@ -148,9 +148,7 @@ export class CollectionDetail extends BtrixElement {
       <div class="mt-3 rounded-lg border px-4 py-2">
         ${this.renderInfoBar()}
       </div>
-      <div
-        class="sticky top-0 z-50 -mx-3 mb-3 flex items-center justify-between bg-white px-3 pt-3 shadow-lg shadow-white"
-      >
+      <div class="flex items-center justify-between p-3">
         ${this.renderTabs()}
         ${when(this.isCrawler, () =>
           choose(this.collectionTab, [
@@ -719,26 +717,25 @@ export class CollectionDetail extends BtrixElement {
     const headers = this.authState?.headers;
     const config = JSON.stringify({ headers });
 
-    return html`<section>
-      <div class="aspect-4/3 overflow-hidden rounded-lg border">
-        <replay-web-page
-          source=${replaySource}
-          config="${config}"
-          coll=${this.collectionId}
-          url=${this.collection.homeUrl ||
-          /* must be empty string to reset the attribute: */ ""}
-          ts=${formatRwpTimestamp(this.collection.homeUrlTs) ||
-          /* must be empty string to reset the attribute: */ ""}
-          replayBase="/replay/"
-          noSandbox="true"
-          noCache="true"
-          @rwp-url-change=${() => {
-            if (!this.isRwpLoaded) {
-              this.isRwpLoaded = true;
-            }
-          }}
-        ></replay-web-page>
-      </div>
+    return html` <section class="overflow-hidden rounded-lg border">
+      <replay-web-page
+        class="h-[calc(100vh-6.5rem)]"
+        source=${replaySource}
+        config="${config}"
+        coll=${this.collectionId}
+        url=${this.collection.homeUrl ||
+        /* must be empty string to reset the attribute: */ ""}
+        ts=${formatRwpTimestamp(this.collection.homeUrlTs) ||
+        /* must be empty string to reset the attribute: */ ""}
+        replayBase="/replay/"
+        noSandbox="true"
+        noCache="true"
+        @rwp-url-change=${() => {
+          if (!this.isRwpLoaded) {
+            this.isRwpLoaded = true;
+          }
+        }}
+      ></replay-web-page>
     </section>`;
   };
 
