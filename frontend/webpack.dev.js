@@ -102,7 +102,9 @@ module.exports = [
     plugins: [
       // Speed up rebuilds by excluding vendor modules
       new webpack.DllReferencePlugin({
-        manifest: require.resolve("./dist/vendor/lit-manifest.json"),
+        manifest: require.resolve(
+          path.join(__dirname, "dist/vendor/lit-manifest.json"),
+        ),
       }),
 
       new ESLintPlugin({
