@@ -1,5 +1,5 @@
 // @ts-check
-
+const webpack = require("webpack");
 const path = require("path");
 
 const ESLintPlugin = require("eslint-webpack-plugin");
@@ -100,6 +100,11 @@ module.exports = [
       },
     },
     plugins: [
+      // Speed up rebuilds by excluding vendor modules
+      new webpack.DllReferencePlugin({
+        manifest: require.resolve("./dist/vendor/lit-manifest.json"),
+      }),
+
       new ESLintPlugin({
         extensions: ["ts", "js"],
       }),

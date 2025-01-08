@@ -1,13 +1,11 @@
 /**
- * Separate vendor modules to speed up rebuild
+ * Separate vendor modules to speed up development rebuild
  */
 const path = require("path");
+
 const webpack = require("webpack");
 
 module.exports = {
-  resolve: {
-    extensions: [".ts"],
-  },
   entry: {
     lit: ["lit", "@lit/localize"],
   },

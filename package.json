@@ -1,0 +1,5 @@
+{
+  "devDependencies": {
+    "@parabol/webpack-autodll-plugin": "^1.3.0"
+  }
+}
