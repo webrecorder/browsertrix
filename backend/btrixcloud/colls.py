@@ -764,7 +764,7 @@ class CollectionOps:
             await self.storage_ops.delete_file_object(org, thumbnail_file)
             raise HTTPException(
                 status_code=400,
-                detail="Upload failed: maxiumum thumbnail size (2 MB) exceeded",
+                detail="max_thumbnail_size_2_mb_exceeded",
             )
 
         if coll.thumbnail:
