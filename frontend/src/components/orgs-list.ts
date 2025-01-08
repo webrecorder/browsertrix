@@ -608,7 +608,7 @@ export class OrgsList extends BtrixElement {
           subscription = {
             icon: html`<sl-icon
               class="text-base text-success"
-              name="nut-fill"
+              name="credit-card-fill"
               label=${msg("Active Subscription")}
             ></sl-icon>`,
             description: msg("Active Subscription"),
@@ -618,7 +618,7 @@ export class OrgsList extends BtrixElement {
           subscription = {
             icon: html`<sl-icon
               class="text-base text-neutral-400"
-              name="nut"
+              name="basket-fill"
               label=${msg("Trial")}
             ></sl-icon>`,
             description: msg("Trial"),
@@ -627,7 +627,7 @@ export class OrgsList extends BtrixElement {
         case SubscriptionStatus.TrialingCanceled:
           subscription = {
             icon: html`<sl-icon
-              class="text-base text-danger"
+              class="text-base text-neutral-400"
               name="nut"
               label=${msg("Trial Cancelled")}
             ></sl-icon>`,
@@ -637,8 +637,8 @@ export class OrgsList extends BtrixElement {
         case SubscriptionStatus.PausedPaymentFailed:
           subscription = {
             icon: html`<sl-icon
-              class="text-base text-warning"
-              name="nut-fill"
+              class="text-base text-danger"
+              name="exclamation-triangle-fill"
               label=${msg("Payment Failed")}
             ></sl-icon>`,
             description: msg("Payment Failed"),
@@ -647,8 +647,8 @@ export class OrgsList extends BtrixElement {
         case SubscriptionStatus.Cancelled:
           subscription = {
             icon: html`<sl-icon
-              class="text-base text-danger"
-              name="nut-fill"
+              class="text-base text-neutral-400"
+              name="x-square-fill"
               label=${msg("Canceled")}
             >
             </sl-icon>`,
