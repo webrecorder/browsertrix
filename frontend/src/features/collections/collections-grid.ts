@@ -63,11 +63,11 @@ export class CollectionsGrid extends BtrixElement {
                 href=${this.navigate.isPublicPage
                   ? `/${RouteNamespace.PublicOrgs}/${this.slug}/collections/${collection.id}`
                   : `/${RouteNamespace.PrivateOrgs}/${this.slug}/collections/view/${collection.id}`}
-                class="group block h-full rounded-lg transition-all hover:scale-[102%]"
+                class="group block h-full rounded-lg"
                 @click=${this.navigate.link}
               >
                 <div
-                  class="relative mb-4 rounded-lg shadow-md shadow-stone-600/10 ring-1 ring-stone-600/10 transition-shadow group-hover:shadow-sm"
+                  class="relative mb-4 rounded-lg shadow-md shadow-stone-600/10 ring-1 ring-stone-600/10 transition group-hover:shadow-stone-800/20 group-hover:ring-stone-800/20"
                 >
                   <btrix-collection-thumbnail
                     src=${ifDefined(
