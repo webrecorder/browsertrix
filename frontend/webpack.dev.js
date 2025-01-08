@@ -34,15 +34,29 @@ const plugins = [
 ];
 
 // Dev config may be used in Playwright E2E CI tests
-if (!process.env.CI) {
-  plugins.unshift(
-    // Speed up rebuilds by excluding vendor modules
-    new webpack.DllReferencePlugin({
-      manifest: require.resolve(
-        path.join(__dirname, "dist/vendor/lit-manifest.json"),
-      ),
-    }),
-  );
+if (process.env.WEBPACK_SERVE === "true") {
+  let litManifest;
+
+  try {
+    litManifest = require.resolve(
+      path.join(__dirname, "dist/vendor/lit-manifest.json"),
+    );
+  } catch {
+    console.warn(
+      "`lit-manifest.json` not found. If you're seeing this with `yarn start`, ensure the file exists. You can ignore this message otherwise.",
+    );
+  }
+
+  if (litManifest) {
+    plugins.unshift(
+      // Speed up rebuilds by excluding vendor modules
+      new webpack.DllReferencePlugin({
+        manifest: require.resolve(
+          path.join(__dirname, "dist/vendor/lit-manifest.json"),
+        ),
+      }),
+    );
+  }
 }
 
 module.exports = [
