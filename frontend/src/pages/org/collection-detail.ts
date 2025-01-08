@@ -115,7 +115,7 @@ export class CollectionDetail extends BtrixElement {
       if (this.descriptionEditor) {
         // FIXME Focus on editor ready instead of timeout
         window.setTimeout(() => {
-          void this.descriptionEditor?.focus();
+          this.descriptionEditor && void this.descriptionEditor.focus();
         }, 200);
       }
     }
