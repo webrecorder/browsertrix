@@ -170,6 +170,10 @@ const main = {
   },
 
   plugins: [
+    new webpack.DllReferencePlugin({
+      manifest: require.resolve("./dist/vendor/lit-manifest.json"),
+    }),
+
     // Shim polyfill
     new webpack.ProvidePlugin({
       "Intl.DurationFormat": path.resolve(

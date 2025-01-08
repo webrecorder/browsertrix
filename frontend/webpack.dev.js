@@ -40,6 +40,10 @@ module.exports = [
           directory: shoelaceAssetsSrcPath,
           publicPath: "/" + shoelaceAssetsPublicPath,
         },
+        {
+          directory: path.join(__dirname, "dist/vendor"),
+          publicPath: "/vendor",
+        },
       ],
       historyApiFallback: true,
       proxy: [
