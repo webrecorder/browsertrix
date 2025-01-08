@@ -553,19 +553,29 @@ export class CollectionDetail extends BtrixElement {
           (collection) =>
             this.isEditingDescription
               ? html`
-                  <btrix-markdown-editor
-                    initialValue=${collection.description || ""}
-                    placeholder=${msg("Tell viewers about this collection")}
-                    maxlength=${4000}
-                  ></btrix-markdown-editor>
+                  <div class="flex justify-center leading-relaxed">
+                    <div class="w-full md:max-w-[783px]">
+                      <btrix-markdown-editor
+                        initialValue=${collection.description || ""}
+                        placeholder=${msg("Tell viewers about this collection")}
+                        maxlength=${4000}
+                      ></btrix-markdown-editor>
+                    </div>
+                  </div>
                 `
               : html`
-                  <div class="rounded-lg border p-4 leading-relaxed">
+                  <div
+                    class="flex justify-center rounded-lg border leading-relaxed"
+                  >
                     ${collection.description
                       ? html`
-                          <btrix-markdown-viewer
-                            value=${collection.description}
-                          ></btrix-markdown-viewer>
+                          <div
+                            class="min-h-full w-full px-8 py-12 md:max-w-[783px]"
+                          >
+                            <btrix-markdown-viewer
+                              value=${collection.description}
+                            ></btrix-markdown-viewer>
+                          </div>
                         `
                       : html`
                           <p class="py-10 text-center text-neutral-500">
