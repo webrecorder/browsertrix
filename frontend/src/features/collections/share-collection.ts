@@ -388,7 +388,7 @@ export class ShareCollection extends BtrixElement {
             >
               ${isSelected
                 ? html`<sl-icon
-                    class="size-10 text-white drop-shadow-md"
+                    class="size-10 stroke-black/50 text-white drop-shadow-md [paint-order:stroke]"
                     name="check-lg"
                   ></sl-icon>`
                 : nothing}
