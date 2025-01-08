@@ -15,6 +15,7 @@ import { RouteNamespace } from "@/routes";
 import type { PublicCollection } from "@/types/collection";
 import type { PublicOrgCollections } from "@/types/org";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
+import { tw } from "@/utils/tailwind";
 
 type Metrics = {
   storageUsedBytes: number;
@@ -84,9 +85,9 @@ export class Dashboard extends BtrixElement {
       this.metrics.storageUsedBytes >= this.metrics.storageQuotaBytes;
 
     return html`
-      ${pageHeader(
-        this.userOrg?.name,
-        html`
+      ${pageHeader({
+        title: this.userOrg?.name,
+        actions: html`
           ${when(
             this.appState.isAdmin,
             () =>
@@ -153,8 +154,8 @@ export class Dashboard extends BtrixElement {
               </sl-dropdown>`,
           )}
         `,
-        "mb-6",
-      )}
+        classNames: tw`border-b-transparent lg:mb-2`,
+      })}
       <main>
         <div class="mb-10 flex flex-col gap-6 md:flex-row">
           ${this.renderCard(

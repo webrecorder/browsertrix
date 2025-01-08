@@ -197,9 +197,9 @@ export class WorkflowsList extends BtrixElement {
   render() {
     return html`
       <div class="contents">
-        ${pageHeader(
-          msg("Crawl Workflows"),
-          html`
+        ${pageHeader({
+          title: msg("Crawl Workflows"),
+          actions: html`
             ${when(
               this.appState.isAdmin,
               () =>
@@ -293,8 +293,8 @@ export class WorkflowsList extends BtrixElement {
               `,
             )}
           `,
-          tw`border-b-transparent`,
-        )}
+          classNames: tw`border-b-transparent`,
+        })}
         <div class="sticky top-2 z-10 mb-3 rounded-lg border bg-neutral-50 p-4">
           ${this.renderControls()}
         </div>
