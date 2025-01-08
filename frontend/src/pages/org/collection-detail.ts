@@ -178,36 +178,19 @@ export class CollectionDetail extends BtrixElement {
             [
               Tab.About,
               () =>
-                this.isEditingDescription
-                  ? html`
-                      <div>
-                        <sl-button
-                          variant="primary"
-                          size="small"
-                          @click=${() => void this.saveDescription()}
-                          ?disabled=${!this.collection}
-                        >
-                          <sl-icon name="check-lg" slot="prefix"></sl-icon>
-                          ${msg("Save")}
-                        </sl-button>
-                        <sl-button
-                          size="small"
-                          @click=${() => (this.isEditingDescription = false)}
-                        >
-                          ${msg("Cancel")}
-                        </sl-button>
-                      </div>
-                    `
-                  : html`
-                      <sl-button
-                        size="small"
-                        @click=${() => (this.isEditingDescription = true)}
-                        ?disabled=${!this.collection}
-                      >
-                        <sl-icon name="pencil" slot="prefix"></sl-icon>
-                        ${msg("Edit")}
-                      </sl-button>
-                    `,
+                when(
+                  !this.isEditingDescription,
+                  () => html`
+                    <sl-button
+                      size="small"
+                      @click=${() => (this.isEditingDescription = true)}
+                      ?disabled=${!this.collection}
+                    >
+                      <sl-icon name="pencil" slot="prefix"></sl-icon>
+                      ${msg("Edit")}
+                    </sl-button>
+                  `,
+                ),
             ],
             [
               Tab.Items,
@@ -560,6 +543,24 @@ export class CollectionDetail extends BtrixElement {
                         placeholder=${msg("Tell viewers about this collection")}
                         maxlength=${4000}
                       ></btrix-markdown-editor>
+                      <div
+                        class="flex-column mt-4 flex justify-between border-t pt-4"
+                      >
+                        <sl-button
+                          size="small"
+                          @click=${() => (this.isEditingDescription = false)}
+                        >
+                          ${msg("Cancel")}
+                        </sl-button>
+                        <sl-button
+                          variant="primary"
+                          size="small"
+                          @click=${() => void this.saveDescription()}
+                          ?disabled=${!this.collection}
+                        >
+                          ${msg("Update Description")}
+                        </sl-button>
+                      </div>
                     </div>
                   </div>
                 `
