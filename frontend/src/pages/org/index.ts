@@ -585,6 +585,7 @@ export class Org extends BtrixElement {
 
     if (params.collectionId) {
       return html`<btrix-collection-detail
+        class="flex min-h-screen flex-1 flex-col pb-7"
         collectionId=${params.collectionId}
         collectionTab=${ifDefined(
           params.collectionTab as CollectionTab | undefined,

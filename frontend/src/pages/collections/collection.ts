@@ -206,6 +206,7 @@ export class Collection extends BtrixElement {
     `;
   }
 
+  // TODO Consolidate with collection-detail.ts
   private renderAbout(collection: PublicCollection) {
     const dateRange = () => {
       if (!collection.dateEarliest || !collection.dateLatest) {
@@ -243,13 +244,13 @@ export class Collection extends BtrixElement {
       return html`
         <div class="flex flex-1 flex-col gap-10 lg:flex-row">
           <section
-            class="flex-1 py-3 leading-relaxed lg:rounded-lg lg:border lg:p-6"
+            class="w-full max-w-4xl py-3 leading-relaxed lg:rounded-lg lg:border lg:p-6"
           >
             <btrix-markdown-viewer
               value=${collection.description}
             ></btrix-markdown-viewer>
           </section>
-          <section class="min-w-60 lg:-mt-8">
+          <section class="flex-1 lg:-mt-8">
             <btrix-section-heading>
               <h3>${msg("Metadata")}</h3>
             </btrix-section-heading>
