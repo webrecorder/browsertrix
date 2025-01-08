@@ -26,6 +26,25 @@ const RWP_BASE_URL =
 
 const devBackendUrl = new URL(process.env.API_BASE_URL);
 
+/** @type {import('webpack').Configuration['plugins']} */
+const plugins = [
+  new ESLintPlugin({
+    extensions: ["ts", "js"],
+  }),
+];
+
+// Dev config may be used in Playwright E2E CI tests
+if (!process.env.CI) {
+  plugins.unshift(
+    // Speed up rebuilds by excluding vendor modules
+    new webpack.DllReferencePlugin({
+      manifest: require.resolve(
+        path.join(__dirname, "dist/vendor/lit-manifest.json"),
+      ),
+    }),
+  );
+}
+
 module.exports = [
   merge(main, {
     devtool: "eval",
@@ -99,18 +118,7 @@ module.exports = [
         config: [__filename],
       },
     },
-    plugins: [
-      // Speed up rebuilds by excluding vendor modules
-      new webpack.DllReferencePlugin({
-        manifest: require.resolve(
-          path.join(__dirname, "dist/vendor/lit-manifest.json"),
-        ),
-      }),
-
-      new ESLintPlugin({
-        extensions: ["ts", "js"],
-      }),
-    ],
+    plugins,
   }),
   {
     ...vnc,
