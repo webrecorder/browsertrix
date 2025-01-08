@@ -42,22 +42,24 @@ module.exports = [
         },
       ],
       historyApiFallback: true,
-      proxy: {
-        "/api": {
+      proxy: [
+        {
+          context: "/api",
+
           target: devBackendUrl.href,
           headers: {
             Host: devBackendUrl.host,
           },
           ws: true,
         },
-
-        "/data": {
+        {
+          context: "/data",
           target: devBackendUrl.href,
           headers: {
             Host: devBackendUrl.host,
           },
         },
-      },
+      ],
       setupMiddlewares: (middlewares, server) => {
         // Serve replay service worker file
         server.app?.get("/replay/sw.js", (req, res) => {

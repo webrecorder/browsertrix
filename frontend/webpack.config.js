@@ -14,7 +14,7 @@ const webpack = require("webpack");
 // @ts-ignore
 const packageJSON = require("./package.json");
 
-const isDevServer = process.env.WEBPACK_SERVE;
+const isDevServer = process.env.WEBPACK_SERVE === "true";
 
 const dotEnvPath = path.resolve(
   process.cwd(),
