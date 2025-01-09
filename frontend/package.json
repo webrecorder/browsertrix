@@ -8,6 +8,7 @@
     "@formatjs/intl-durationformat": "^0.6.4",
     "@formatjs/intl-localematcher": "^0.5.9",
     "@ianvs/prettier-plugin-sort-imports": "^4.2.1",
+    "@lit/context": "^1.1.3",
     "@lit/localize": "^0.12.1",
     "@lit/task": "^1.0.0",
     "@novnc/novnc": "^1.4.0-beta",
