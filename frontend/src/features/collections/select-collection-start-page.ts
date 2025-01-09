@@ -123,7 +123,7 @@ export class SelectCollectionStartPage extends BtrixElement {
         ${this.renderPageSearch()}
         <sl-select
           label=${msg("Snapshot")}
-          placeholder="--"
+          placeholder=${msg("Enter a page URL to choose snapshot")}
           value=${this.selectedSnapshot?.pageId || ""}
           ?disabled=${!this.selectedPage}
           @sl-change=${async (e: SlChangeEvent) => {
@@ -189,6 +189,7 @@ export class SelectCollectionStartPage extends BtrixElement {
           label=${msg("Page URL")}
           placeholder=${msg("Start typing a URL...")}
           clearable
+          required
           @sl-focus=${() => {
             this.combobox?.show();
           }}
