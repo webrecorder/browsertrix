@@ -1279,7 +1279,7 @@
       </trans-unit>
       <trans-unit id="h0f472740ba5c3c86" xml:space="preserve">
         <source><x id="0" equiv-text="&lt;span class=&quot;truncate&quot;&gt;${firstSeed}&lt;/span&gt;&#10;        &lt;span class=&quot;whitespace-nowrap text-neutral-500&quot;&gt;"/>+<x id="1" equiv-text="${remainderCount}"/> URLs<x id="2" equiv-text="&lt;/span&gt;"/></source>
-        <target state="translated"><x id="0" equiv-text="&lt;span class=&quot;truncate&quot;&gt;${firstSeed}&lt;/span&gt;&#10; . . . . . . . . &lt;span class=&quot;whitespace-nowrap text-neutral-500&quot;&gt;"/>+<x id="1" equiv-text="${remainderCount}"/> URL<x id="2" equiv-text="&lt;/span&gt;"/><x id="2" equiv-text="&lt;/span&gt;"/></target>
+        <target state="translated"><x id="0" equiv-text="&lt;span class=&quot;truncate&quot;&gt;${firstSeed}&lt;/span&gt;&#10; &lt;span class=&quot;whitespace-nowrap text-neutral-500&quot;&gt;"/>+<x id="1" equiv-text="${remainderCount}"/> URL<x id="2" equiv-text="&lt;/span&gt;"/><x id="2" equiv-text="&lt;/span&gt;"/></target>
       </trans-unit>
       <trans-unit id="s900a5e61e7ade066" xml:space="preserve">
         <source>View:</source>
@@ -1587,7 +1587,7 @@
       </trans-unit>
       <trans-unit id="h649ef1ec13735ee9" xml:space="preserve">
         <source><x id="0" equiv-text="${firstSeed}&#10;        &lt;span class=&quot;text-neutral-500&quot;&gt;"/>+<x id="1" equiv-text="${remainderCount}"/> URLs<x id="2" equiv-text="&lt;/span&gt;"/></source>
-        <target state="translated"><x id="0" equiv-text="${firstSeed}&#10; ...... ..&lt;span class=&quot;text-neutral-500&quot;&gt;"/>+<x id="1" equiv-text="${remainderCount}"/> URL<x id="2" equiv-text="&lt;/span&gt;"/></target>
+        <target state="translated"><x id="0" equiv-text="${firstSeed}&#10; &lt;span class=&quot;text-neutral-500&quot;&gt;"/>+<x id="1" equiv-text="${remainderCount}"/> URL<x id="2" equiv-text="&lt;/span&gt;"/></target>
       </trans-unit>
       <trans-unit id="s442425cd7d61051f" xml:space="preserve">
         <source>No matching Workflows found.</source>
@@ -1675,7 +1675,7 @@
       </trans-unit>
       <trans-unit id="s984a5e18d85b6d57" xml:space="preserve">
         <source><x id="0" equiv-text="${this.mostRecentNonFailedQARun.stats.found === 0&#10;    ? msg(&quot;Loading&quot;)&#10;    : `${this.mostRecentNonFailedQARun.stats.done}/${this.mostRecentNonFailedQARun.stats.found}`} ${pluralOf(&quot;pages&quot;, this.mostRecentNonFailedQARun.stats.found)}"/> </source>
-        <target state="translated"><x id="0" equiv-text="${this.mostRecentNonFailedQARun.stats.found === 0&#10;....? msg(&quot;Loading&quot;)&#10;....: `${this.mostRecentNonFailedQARun.stats.done}/${this.mostRecentNonFailedQARun.stats.found}`} ${pluralOf(&quot;pages&quot;, this.mostRecentNonFailedQARun.stats.found)}"/>. </target>
+        <target state="translated"><x id="0" equiv-text="${this.mostRecentNonFailedQARun.stats.found === 0&#10;? msg(&quot;Loading&quot;)&#10;: `${this.mostRecentNonFailedQARun.stats.done}/${this.mostRecentNonFailedQARun.stats.found}`} ${pluralOf(&quot;pages&quot;, this.mostRecentNonFailedQARun.stats.found)}"/> </target>
       </trans-unit>
       <trans-unit id="sb59d68ed12d46377" xml:space="preserve">
         <source>Loading</source>
