@@ -18,6 +18,7 @@ import type { CrawlLog } from "@/features/archived-items/crawl-logs";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { ExclusionEditor } from "@/features/crawl-workflows/exclusion-editor";
 import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
+import { deleteConfirmation } from "@/strings/ui";
 import type { APIPaginatedList } from "@/types/api";
 import { type CrawlState } from "@/types/crawlState";
 import { isApiError } from "@/utils/api";
@@ -54,7 +55,13 @@ export class WorkflowDetail extends BtrixElement {
   isCrawler!: boolean;
 
   @property({ type: String })
-  openDialogName?: "scale" | "exclusions" | "cancel" | "stop" | "delete";
+  openDialogName?:
+    | "scale"
+    | "exclusions"
+    | "cancel"
+    | "stop"
+    | "delete"
+    | "deleteCrawl";
 
   @property({ type: String })
   initialActivePanel?: Tab;
@@ -255,14 +262,14 @@ export class WorkflowDetail extends BtrixElement {
   render() {
     if (this.isEditing && this.isCrawler) {
       return html`
-        <div class="grid grid-cols-1 gap-7">
+        <div class="grid grid-cols-1 gap-7 pb-7">
           ${when(this.workflow, this.renderEditor)}
         </div>
       `;
     }
 
     return html`
-      <div class="grid grid-cols-1 gap-7">
+      <div class="grid grid-cols-1 gap-7 pb-7">
         <div class="col-span-1">${this.renderBreadcrumbs()}</div>
 
         <div>
@@ -355,7 +362,7 @@ export class WorkflowDetail extends BtrixElement {
       </btrix-dialog>
       <btrix-dialog
         .label=${msg("Delete Crawl?")}
-        .open=${this.openDialogName === "delete"}
+        .open=${this.openDialogName === "deleteCrawl"}
         @sl-request-close=${() => (this.openDialogName = undefined)}
         @sl-show=${this.showDialog}
         @sl-after-hide=${() => (this.isDialogVisible = false)}
@@ -391,6 +398,32 @@ export class WorkflowDetail extends BtrixElement {
         @sl-after-hide=${() => (this.isDialogVisible = false)}
       >
         ${this.isDialogVisible ? this.renderEditScale() : ""}
+      </btrix-dialog>
+      <btrix-dialog
+        .label=${msg("Delete Workflow?")}
+        .open=${this.openDialogName === "delete"}
+        @sl-request-close=${() => (this.openDialogName = undefined)}
+        @sl-show=${this.showDialog}
+        @sl-after-hide=${() => (this.isDialogVisible = false)}
+      >
+        ${deleteConfirmation(this.renderName())}
+        <div slot="footer" class="flex justify-between">
+          <sl-button
+            size="small"
+            .autofocus=${true}
+            @click=${() => (this.openDialogName = undefined)}
+            >${msg("Cancel")}</sl-button
+          >
+          <sl-button
+            size="small"
+            variant="danger"
+            @click=${async () => {
+              void this.delete();
+              this.openDialogName = undefined;
+            }}
+            >${msg("Delete Workflow")}</sl-button
+          >
+        </div>
       </btrix-dialog>
     `;
   }
@@ -736,12 +769,12 @@ export class WorkflowDetail extends BtrixElement {
             ${msg("Duplicate Workflow")}
           </sl-menu-item>
           ${when(
-            !this.lastCrawlId,
+            !workflow.crawlCount,
             () => html`
               <sl-divider></sl-divider>
               <sl-menu-item
                 style="--sl-color-neutral-700: var(--danger)"
-                @click=${() => void this.delete()}
+                @click=${() => (this.openDialogName = "delete")}
               >
                 <sl-icon name="trash3" slot="prefix"></sl-icon>
                 ${msg("Delete Workflow")}
@@ -842,7 +875,7 @@ export class WorkflowDetail extends BtrixElement {
 
   private renderCrawls() {
     return html`
-      <section>
+      <section class="h-56 min-h-max">
         <div
           class="mb-3 flex items-center justify-end rounded-lg border bg-neutral-50 p-4"
         >
@@ -1643,7 +1676,7 @@ export class WorkflowDetail extends BtrixElement {
 
   private readonly confirmDeleteCrawl = (crawl: Crawl) => {
     this.crawlToDelete = crawl;
-    this.openDialogName = "delete";
+    this.openDialogName = "deleteCrawl";
   };
 
   private async deleteCrawl(crawl: Crawl) {
@@ -1666,6 +1699,9 @@ export class WorkflowDetail extends BtrixElement {
         id: "archived-item-delete-status",
       });
       void this.fetchCrawls();
+
+      // Update crawl count
+      void this.fetchWorkflow();
     } catch (e) {
       if (this.crawlToDelete) {
         this.confirmDeleteCrawl(this.crawlToDelete);

@@ -1,7 +1,11 @@
 import { localized, msg, str } from "@lit/localize";
-import type { SlCheckbox, SlSelectEvent } from "@shoelace-style/shoelace";
+import type {
+  SlCheckbox,
+  SlDialog,
+  SlSelectEvent,
+} from "@shoelace-style/shoelace";
 import { html, type PropertyValues } from "lit";
-import { customElement, state } from "lit/decorators.js";
+import { customElement, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
@@ -21,6 +25,7 @@ import { type SelectEvent } from "@/components/ui/search-combobox";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
 import { pageHeader } from "@/layouts/pageHeader";
 import scopeTypeLabels from "@/strings/crawl-workflows/scopeType";
+import { deleteConfirmation } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import { NewWorkflowOnlyScopeType } from "@/types/workflow";
 import { isApiError } from "@/utils/api";
@@ -92,6 +97,9 @@ export class WorkflowsList extends BtrixElement {
   private fetchErrorStatusCode?: number;
 
   @state()
+  private workflowToDelete?: ListWorkflow;
+
+  @state()
   private orderBy: {
     field: SortField;
     direction: SortDirection;
@@ -105,6 +113,9 @@ export class WorkflowsList extends BtrixElement {
 
   @state()
   private filterByCurrentUser = false;
+
+  @query("#deleteDialog")
+  private readonly deleteDialog?: SlDialog | null;
 
   // For fuzzy search:
   private readonly searchKeys = ["name", "firstSeed"];
@@ -311,12 +322,52 @@ export class WorkflowsList extends BtrixElement {
             </btrix-alert>
           </div>
         `,
-        () =>
-          this.workflows
-            ? this.workflows.total
-              ? this.renderWorkflowList()
-              : this.renderEmptyState()
-            : this.renderLoading(),
+        () => html`
+          <div class="pb-10">
+            ${this.workflows
+              ? this.workflows.total
+                ? this.renderWorkflowList()
+                : this.renderEmptyState()
+              : this.renderLoading()}
+          </div>
+        `,
+      )}
+      ${this.renderDialogs()}
+    `;
+  }
+
+  private renderDialogs() {
+    return html`
+      ${when(
+        this.workflowToDelete,
+        (workflow) => html`
+          <btrix-dialog id="deleteDialog" .label=${msg("Delete Workflow?")}>
+            ${deleteConfirmation(this.renderName(workflow))}
+            <div slot="footer" class="flex justify-between">
+              <sl-button
+                size="small"
+                .autofocus=${true}
+                @click=${() => void this.deleteDialog?.hide()}
+                >${msg("Cancel")}</sl-button
+              >
+              <sl-button
+                size="small"
+                variant="danger"
+                @click=${async () => {
+                  void this.deleteDialog?.hide();
+
+                  try {
+                    await this.delete(workflow);
+                    this.workflowToDelete = undefined;
+                  } catch {
+                    void this.deleteDialog?.show();
+                  }
+                }}
+                >${msg("Delete Workflow")}</sl-button
+              >
+            </div>
+          </btrix-dialog>
+        `,
       )}
     `;
   }
@@ -593,12 +644,16 @@ export class WorkflowsList extends BtrixElement {
             ${msg("Duplicate Workflow")}
           </sl-menu-item>
           ${when(
-            !workflow.lastCrawlId,
+            !workflow.crawlCount,
             () => html`
               <sl-divider></sl-divider>
               <sl-menu-item
                 style="--sl-color-neutral-700: var(--danger)"
-                @click=${() => void this.delete(workflow)}
+                @click=${async () => {
+                  this.workflowToDelete = workflow;
+                  await this.updateComplete;
+                  void this.deleteDialog?.show();
+                }}
               >
                 <sl-icon name="trash3" slot="prefix"></sl-icon>
                 ${msg("Delete Workflow")}
