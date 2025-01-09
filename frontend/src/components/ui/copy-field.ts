@@ -14,8 +14,8 @@ import { tw } from "@/utils/tailwind";
  * <btrix-copy-field label="my field" value=${value}></btrix-copy-field>
  * ```
  */
-@localized()
 @customElement("btrix-copy-field")
+@localized()
 export class CopyField extends TailwindElement {
   @property({ type: String })
   value?: string;

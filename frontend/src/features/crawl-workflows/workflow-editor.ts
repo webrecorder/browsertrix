@@ -187,8 +187,8 @@ type CrawlConfigResponse = {
   quotas?: { maxPagesPerCrawl?: number };
   id?: string;
 };
-@localized()
 @customElement("btrix-workflow-editor")
+@localized()
 export class WorkflowEditor extends BtrixElement {
   @consume({ context: proxiesContext, subscribe: true })
   private readonly proxies?: ProxiesContext;

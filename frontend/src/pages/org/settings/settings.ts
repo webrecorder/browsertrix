@@ -59,8 +59,8 @@ export type OrgRemoveMemberEvent = CustomEvent<{
  * @fires org-user-role-change
  * @fires org-remove-member
  */
-@localized()
 @customElement("btrix-org-settings")
+@localized()
 export class OrgSettings extends BtrixElement {
   static styles = styles;
 

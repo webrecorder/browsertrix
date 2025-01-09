@@ -57,8 +57,8 @@ const labelFor = (severity: Required<ArchivedItem["reviewStatus"]>) => {
   }
 };
 
-@localized()
 @customElement("btrix-qa-review-status")
+@localized()
 export class QAReviewStatus extends TailwindElement {
   static styles = css`
     sl-icon {

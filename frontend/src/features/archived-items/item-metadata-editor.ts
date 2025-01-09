@@ -27,8 +27,8 @@ import LiteElement, { html } from "@/utils/LiteElement";
  * @event request-close
  * @event updated
  */
-@localized()
 @customElement("btrix-item-metadata-editor")
+@localized()
 export class CrawlMetadataEditor extends LiteElement {
   @property({ type: Object })
   crawl?: ArchivedItem;

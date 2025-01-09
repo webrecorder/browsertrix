@@ -140,8 +140,8 @@ const machine = createMachine<FormContext, FormEvent, FormTypestate>(
   },
 );
 
-@localized()
 @customElement("btrix-log-in")
+@localized()
 export class LogInPage extends BtrixElement {
   @property({ type: Object })
   viewState!: ViewState<Routes>;

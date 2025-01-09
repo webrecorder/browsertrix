@@ -84,8 +84,8 @@ const tabToPrefix: Record<QATypes.QATab, string> = {
   replay: "",
 };
 
-@localized()
 @customElement("btrix-archived-item-qa")
+@localized()
 export class ArchivedItemQA extends BtrixElement {
   static styles = styles;
 

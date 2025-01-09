@@ -39,8 +39,8 @@ const MIN_LENGTH = 2;
  * @fires btrix-change ExclusionChangeEvent
  * @fires btrix-add ExclusionAddEvent
  */
-@localized()
 @customElement("btrix-queue-exclusion-form")
+@localized()
 export class QueueExclusionForm extends LiteElement {
   @property({ type: Boolean })
   isSubmitting = false;

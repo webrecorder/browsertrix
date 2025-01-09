@@ -35,8 +35,8 @@ const INITIAL_PAGE_SIZE = 20;
  * ></btrix-browser-profiles-list>
  * ```
  */
-@localized()
 @customElement("btrix-browser-profiles-list")
+@localized()
 export class BrowserProfilesList extends BtrixElement {
   @property({ type: Boolean })
   isCrawler = false;

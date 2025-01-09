@@ -24,8 +24,8 @@ import { formatAPIUser } from "@/utils/user";
  * Only accessed by superadmins. Regular users will be redirected their org.
  * See https://github.com/webrecorder/browsertrix/issues/1972
  */
-@localized()
 @customElement("btrix-home")
+@localized()
 export class Admin extends BtrixElement {
   @state()
   private orgList?: OrgData[];

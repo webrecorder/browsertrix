@@ -53,8 +53,8 @@ const POLL_INTERVAL_SECONDS = 5;
  * <btrix-archived-item-detail></btrix-archived-item-detail>
  * ```
  */
-@localized()
 @customElement("btrix-archived-item-detail")
+@localized()
 export class ArchivedItemDetail extends BtrixElement {
   @property({ type: String })
   itemType: ArchivedItem["type"] = "crawl";

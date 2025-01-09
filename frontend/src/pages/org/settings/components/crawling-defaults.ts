@@ -45,8 +45,8 @@ function section(section: SectionsEnum | "exclusions", cols: Cols) {
   `;
 }
 
-@localized()
 @customElement("btrix-org-settings-crawling-defaults")
+@localized()
 export class OrgSettingsCrawlWorkflows extends BtrixElement {
   static styles = css`
     btrix-section-heading {

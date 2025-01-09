@@ -24,8 +24,8 @@ type Org = UserOrg & Partial<OrgData>;
 /**
  * @event btrix-invite-success
  */
-@localized()
 @customElement("btrix-invite-form")
+@localized()
 export class InviteForm extends BtrixElement {
   @property({ type: Array, attribute: false })
   orgs?: Org[] = [];

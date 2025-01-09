@@ -17,8 +17,8 @@ export type UpdatePageApprovalDetail = {
  * @fires btrix-update-page-approval
  * @fires btrix-show-comments
  */
-@localized()
 @customElement("btrix-page-qa-approval")
+@localized()
 export class PageQAToolbar extends BtrixElement {
   static styles = css`
     :host {

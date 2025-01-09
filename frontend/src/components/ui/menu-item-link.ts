@@ -15,8 +15,8 @@ import { NavigateController } from "@/controllers/navigate";
  *
  * Based on https://github.com/shoelace-style/shoelace/blob/d0b71adb81e21687a5ef036565dad44bc609bcce/src/components/menu-item/menu-item.component.ts
  */
-@localized()
 @customElement("btrix-menu-item-link")
+@localized()
 export class MenuItemLink extends TailwindElement {
   static styles = [menuItemStyles];
 

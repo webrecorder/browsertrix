@@ -31,8 +31,8 @@ import { pluralOf } from "@/utils/pluralize";
 /**
  * @slot menu
  */
-@localized()
 @customElement("btrix-crawl-list-item")
+@localized()
 export class CrawlListItem extends BtrixElement {
   static styles = css`
     :host {
@@ -239,8 +239,8 @@ export class CrawlListItem extends BtrixElement {
 /**
  * @slot
  */
-@localized()
 @customElement("btrix-crawl-list")
+@localized()
 export class CrawlList extends TailwindElement {
   static styles = css`
     btrix-table {

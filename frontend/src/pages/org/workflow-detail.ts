@@ -42,8 +42,8 @@ const LOGS_PAGE_SIZE = 50;
  * <btrix-workflow-detail></btrix-workflow-detail>
  * ```
  */
-@localized()
 @customElement("btrix-workflow-detail")
+@localized()
 export class WorkflowDetail extends BtrixElement {
   @property({ type: String })
   workflowId!: string;

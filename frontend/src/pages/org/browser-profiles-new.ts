@@ -18,8 +18,8 @@ import { isApiError } from "@/utils/api";
  * ></btrix-browser-profiles-new>
  * ```
  */
-@localized()
 @customElement("btrix-browser-profiles-new")
+@localized()
 export class BrowserProfilesNew extends BtrixElement {
   @property({ type: String })
   browserId!: string;

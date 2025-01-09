@@ -25,8 +25,8 @@ export type CollectionSavedEvent = CustomEvent<{
 /**
  * @fires btrix-collection-saved CollectionSavedEvent Fires
  */
-@localized()
 @customElement("btrix-collection-metadata-dialog")
+@localized()
 export class CollectionMetadataDialog extends BtrixElement {
   @property({ type: Object })
   collection?: Collection;

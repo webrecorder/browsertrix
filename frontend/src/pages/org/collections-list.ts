@@ -52,8 +52,8 @@ const sortableFields: Record<
 };
 const MIN_SEARCH_LENGTH = 2;
 
-@localized()
 @customElement("btrix-collections-list")
+@localized()
 export class CollectionsList extends BtrixElement {
   @property({ type: Boolean })
   isCrawler?: boolean;

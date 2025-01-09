@@ -17,8 +17,8 @@ type URLs = string[];
  * ></btrix-crawl-pending-exclusions>
  * ```
  */
-@localized()
 @customElement("btrix-crawl-pending-exclusions")
+@localized()
 export class CrawlPendingExclusions extends BtrixElement {
   @property({ type: Array })
   matchedURLs: URLs | null = null;

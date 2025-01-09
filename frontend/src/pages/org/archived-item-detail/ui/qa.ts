@@ -71,8 +71,8 @@ function statusWithIcon(
 /**
  * @fires btrix-qa-runs-update
  */
-@localized()
 @customElement("btrix-archived-item-detail-qa")
+@localized()
 export class ArchivedItemDetailQA extends BtrixElement {
   static styles = css`
     btrix-table {

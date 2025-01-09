@@ -13,8 +13,8 @@ export type CrawlLog = {
   message: string;
 };
 
-@localized()
 @customElement("btrix-crawl-logs")
+@localized()
 export class CrawlLogs extends LitElement {
   static styles = [
     truncate,
