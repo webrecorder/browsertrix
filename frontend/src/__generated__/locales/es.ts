@@ -724,9 +724,9 @@
                 <a class="text-blue-500 hover:text-blue-600" href="https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax" target="_blank" rel="noopener noreferrer nofollow">GitHub Flavored Markdown</a>.`,
 's0ceeb7d3fb3dfde6': `Keep typing to search.`,
 's237f0a38a4c51a36': `Crawler Proxy Server`,
-'s22bb367ab94a971e': `Sorry, couldn't retrieve proxies at this time.`,
 'sb07ea0d5070f719d': `Crawler Release Channel`,
 'saf8787e5652ecdfa': `Sorry, couldn't retrieve crawler channels at this time.`,
+'s542b4494d4c58414': `Search all orgs by name, id, slug, users, and subscriptions`,
 'sfba7b662681a9f92': `Max Concurrent Crawls`,
 's3f807ba2fb999331': `Max Pages Per Crawl`,
 's2557cf3e70ee62dc': `Org Storage Quota (GB)`,
@@ -1039,6 +1039,10 @@
 's3178784df91234f5': `This org name is already taken, try another one.`,
 'sd391c62881795bdc': `This org URL identifier is already taken, try another one.`,
 'sb3f61c2b54e564f7': `This org URL identifier is invalid. Please use alphanumeric characters and dashes (-) only.`,
+'h19d357f5b1d2fafe': html`
+    Are you sure you want to delete
+    <strong class="font-semibold">${0}</strong>?
+  `,
 'sa27852a4bea47423': `Watch Crawl`,
 's09075b7d9df189b9': `Workflow not found.`,
 'sf612ca852330362b': `Sorry, couldn't retrieve Workflow at this time.`,
@@ -1052,6 +1056,8 @@
 'se6cd38c76bc4114a': `Delete Crawl?`,
 's7db0f40fc7d6a04d': `All files and logs associated with this crawl will also be deleted, and the crawl will be removed from any Collection it is a part of.`,
 'scb57efea186060b1': `Delete Crawl`,
+'s537a1aeb41fca7c0': `Delete Workflow?`,
+'s094bfe263487597f': `Delete Workflow`,
 's7824618ab2f5160b': `Edit workflow settings`,
 's33807afa94c15a25': `Browser windows can only be edited while a crawl is starting or running`,
 's8cf2c15722a31ab4': `Downloading will be enabled when this crawl is finished.`,
@@ -1060,7 +1066,6 @@
 'sc75900abc0ec0f82': `Stop Crawl`,
 's3d9a304e32d9da4b': `Edit Workflow Settings`,
 's6068ea17740268c3': `Duplicate Workflow`,
-'s094bfe263487597f': `Delete Workflow`,
 's900a5e61e7ade066': `View:`,
 'sb090ab524895d2b4': `All Crawls`,
 'he775de5878ab0942': html`Crawl is currently running.

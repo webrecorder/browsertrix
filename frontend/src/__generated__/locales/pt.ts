@@ -155,7 +155,6 @@
 's2d84a282e9aa4c24': `Default Proxy:`,
 'sa7d29818c0933c2a': `No Proxy`,
 's59675d3bb2b7b629': `Description:`,
-'s22bb367ab94a971e': `Sorry, couldn't retrieve proxies at this time.`,
 'sb07ea0d5070f719d': `Crawler Release Channel`,
 'sc966d49eebca4286': `Latest`,
 'se19df7d58cd5fff7': `Version:`,
@@ -163,6 +162,7 @@
 's48e186fb300e5464': `Time`,
 's09085707b5a0d793': `AM`,
 's09421b07b5d1e9e6': `PM`,
+'s542b4494d4c58414': `Search all orgs by name, id, slug, users, and subscriptions`,
 'sad3e3c8146fc920f': `Status`,
 'sb41b2cfbbc52565b': `Created`,
 's9f5a5f23312798f0': `Members`,
@@ -802,6 +802,10 @@
 's3178784df91234f5': `This org name is already taken, try another one.`,
 'sd391c62881795bdc': `This org URL identifier is already taken, try another one.`,
 'sb3f61c2b54e564f7': `This org URL identifier is invalid. Please use alphanumeric characters and dashes (-) only.`,
+'h19d357f5b1d2fafe': html`
+    Are you sure you want to delete
+    <strong class="font-semibold">${0}</strong>?
+  `,
 'sa27852a4bea47423': `Watch Crawl`,
 's665f4200fb9fc550': `Error Logs`,
 's9d8b8aa2b404c2c8': `Settings`,
@@ -819,6 +823,8 @@
 's7db0f40fc7d6a04d': `All files and logs associated with this crawl will also be deleted, and the crawl will be removed from any Collection it is a part of.`,
 'scb57efea186060b1': `Delete Crawl`,
 'sc8865a6e612fb020': `Edit Browser Windows`,
+'s537a1aeb41fca7c0': `Delete Workflow?`,
+'s094bfe263487597f': `Delete Workflow`,
 'se0e0c906e2ad3b0a': `Crawl Workflows`,
 's4d80f6e1da39d26e': `Edit Settings`,
 's7824618ab2f5160b': `Edit workflow settings`,
@@ -834,7 +840,6 @@
 's3d9a304e32d9da4b': `Edit Workflow Settings`,
 'saae760a5004a02b5': `Copy Tags`,
 's6068ea17740268c3': `Duplicate Workflow`,
-'s094bfe263487597f': `Delete Workflow`,
 'sf72695e8cd91f93c': str`${0} on ${1}`,
 'hcb76d3d062f4fe97': html` <span class="truncate">${0}</span>
           <span class="whitespace-nowrap text-neutral-500">+${1} URL</span>`,
