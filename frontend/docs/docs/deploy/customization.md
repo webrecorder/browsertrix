@@ -227,3 +227,21 @@ inject_extra: >
 ```
 
 Note that the script will only run when the web app loads, i.e. the first time the app is loaded in the browser and on hard refresh. The script will not run again upon clicking a link in the web app. This shouldn't be an issue with most analytics libraries, which should listen for changes to [window history](https://developer.mozilla.org/en-US/docs/Web/API/History). If you have a custom script that needs to re-run when the frontend URL changes, you'll need to add an event listener for the [`popstate` event](https://developer.mozilla.org/en-US/docs/Web/API/Window/popstate_event).
+
+### Tracking events
+
+Certain events, such as public collection views, link copies, and downloads, can be optionally tracked by setting `window.btrixEvent` in your `inject_extra` config. This should be a function that conforms to the following type:
+
+```ts
+type btrixEvent = (
+  event: string,
+  extra?: {
+    props?: {
+      org_slug: string | null;
+      collection_id?: string | null;
+      collection_name?: string | null;
+      logged_in?: boolean;
+    };
+  },
+) => void;
+```

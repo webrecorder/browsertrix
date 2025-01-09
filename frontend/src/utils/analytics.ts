@@ -14,22 +14,25 @@ export type AnalyticsTrackProps = {
   logged_in?: boolean;
 };
 
+declare global {
+  interface Window {
+    btrixEvent?: (
+      event: string,
+      extra?: { props?: AnalyticsTrackProps },
+    ) => void;
+  }
+}
+
 export function track(
   event: `${AnalyticsTrackEvent}`,
   props?: AnalyticsTrackProps,
 ) {
-  // ANALYTICS_NAMESPACE is specified with webpack `DefinePlugin`
-  const analytics = window.process.env.ANALYTICS_NAMESPACE
-    ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (window as any)[window.process.env.ANALYTICS_NAMESPACE]
-    : null;
-
-  if (!analytics) {
+  if (!window.btrixEvent) {
     return;
   }
 
   try {
-    analytics(event, { props });
+    window.btrixEvent(event, { props });
   } catch (err) {
     console.debug(err);
   }
