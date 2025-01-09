@@ -63,6 +63,9 @@ export class SelectCollectionStartPage extends BtrixElement {
   @state()
   public selectedSnapshot?: Snapshot;
 
+  @state()
+  private pageUrlError?: string;
+
   @query("btrix-combobox")
   private readonly combobox?: Combobox | null;
 
@@ -213,6 +216,34 @@ export class SelectCollectionStartPage extends BtrixElement {
           @sl-blur=${this.pageUrlOnBlur}
         >
           <sl-icon name="search" slot="prefix"></sl-icon>
+          ${when(
+            this.selectedPage,
+            (page) => html`
+              <div slot="suffix" class="flex items-center">
+                <sl-tooltip hoist>
+                  <sl-icon
+                    name="check-lg"
+                    class="size-4 text-base text-success"
+                  ></sl-icon>
+                  <span slot="content" class="break-all">${page.url}</span>
+                </sl-tooltip>
+              </div>
+            `,
+          )}
+          ${when(
+            this.pageUrlError,
+            (error) => html`
+              <div slot="suffix" class="flex items-center">
+                <sl-tooltip hoist>
+                  <sl-icon
+                    name="exclamation-lg"
+                    class="size-4 text-base text-danger"
+                  ></sl-icon>
+                  <div slot="content">${error}</div>
+                </sl-tooltip>
+              </div>
+            `,
+          )}
         </sl-input>
         ${this.renderSearchResults()}
       </btrix-combobox>
@@ -220,10 +251,8 @@ export class SelectCollectionStartPage extends BtrixElement {
   }
 
   private resetInputValidity() {
-    if (!this.input) return;
-
-    this.input.setCustomValidity("");
-    this.input.helpText = "";
+    this.pageUrlError = undefined;
+    this.input?.setCustomValidity("");
   }
 
   private readonly pageUrlOnBlur = async () => {
@@ -247,11 +276,10 @@ export class SelectCollectionStartPage extends BtrixElement {
 
     if (results.total === 0) {
       if (this.input) {
-        const errorMessage = msg(
-          "Page not found in collection. Please check the URL and try again.",
+        this.pageUrlError = msg(
+          "Page not found in collection. Please check the URL and try again",
         );
-        this.input.setCustomValidity(errorMessage);
-        this.input.helpText = errorMessage;
+        this.input.setCustomValidity(this.pageUrlError);
       }
 
       // Clear selection
