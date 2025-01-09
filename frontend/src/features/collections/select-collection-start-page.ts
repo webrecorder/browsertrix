@@ -29,8 +29,10 @@ type Page = {
   snapshots: Snapshot[];
 };
 
+type SnapshotItem = Snapshot & { url: string };
+
 export type SelectSnapshotDetail = {
-  item: Snapshot & { url: string };
+  item: SnapshotItem | null;
 };
 
 const DEFAULT_PROTOCOL = "http";
@@ -59,12 +61,12 @@ export class SelectCollectionStartPage extends BtrixElement {
   private selectedPage?: Page;
 
   @state()
-  private selectedSnapshot?: Snapshot;
+  public selectedSnapshot?: Snapshot;
 
   @query("btrix-combobox")
   private readonly combobox?: Combobox | null;
 
-  @query("sl-input")
+  @query("#pageUrlInput")
   private readonly input?: SlInput | null;
 
   public get page() {
@@ -82,6 +84,20 @@ export class SelectCollectionStartPage extends BtrixElement {
       }
       this.searchQuery = this.homeUrl;
       void this.initSelection();
+    }
+    if (changedProperties.has("selectedSnapshot")) {
+      this.dispatchEvent(
+        new CustomEvent<SelectSnapshotDetail>("btrix-select", {
+          detail: {
+            item: this.selectedPage?.url
+              ? ({
+                  url: this.selectedPage.url,
+                  ...this.selectedSnapshot,
+                } as SnapshotItem)
+              : null,
+          },
+        }),
+      );
     }
   }
 
@@ -123,8 +139,11 @@ export class SelectCollectionStartPage extends BtrixElement {
         ${this.renderPageSearch()}
         <sl-select
           label=${msg("Snapshot")}
-          placeholder=${msg("Enter a page URL to choose snapshot")}
+          placeholder=${this.selectedPage
+            ? msg("Choose a snapshot")
+            : msg("Enter a page URL to choose snapshot")}
           value=${this.selectedSnapshot?.pageId || ""}
+          ?required=${this.selectedPage && !this.selectedSnapshot}
           ?disabled=${!this.selectedPage}
           @sl-change=${async (e: SlChangeEvent) => {
             const { value } = e.currentTarget as SlSelect;
@@ -134,19 +153,6 @@ export class SelectCollectionStartPage extends BtrixElement {
             this.selectedSnapshot = this.selectedPage?.snapshots.find(
               ({ pageId }) => pageId === value,
             );
-
-            if (this.selectedSnapshot) {
-              this.dispatchEvent(
-                new CustomEvent<SelectSnapshotDetail>("btrix-select", {
-                  detail: {
-                    item: {
-                      url: this.selectedPage!.url,
-                      ...this.selectedSnapshot,
-                    },
-                  },
-                }),
-              );
-            }
           }}
         >
           ${when(
@@ -186,19 +192,25 @@ export class SelectCollectionStartPage extends BtrixElement {
         }}
       >
         <sl-input
+          id="pageUrlInput"
           label=${msg("Page URL")}
           placeholder=${msg("Start typing a URL...")}
           clearable
-          required
           @sl-focus=${() => {
+            this.resetInputValidity();
             this.combobox?.show();
           }}
           @sl-clear=${async () => {
+            this.resetInputValidity();
+
             this.searchQuery = "";
+            this.selectedPage = undefined;
+            this.selectedSnapshot = undefined;
           }}
           @sl-input=${this.onSearchInput as UnderlyingFunction<
             typeof this.onSearchInput
           >}
+          @sl-blur=${this.pageUrlOnBlur}
         >
           <sl-icon name="search" slot="prefix"></sl-icon>
         </sl-input>
@@ -206,6 +218,51 @@ export class SelectCollectionStartPage extends BtrixElement {
       </btrix-combobox>
     `;
   }
+
+  private resetInputValidity() {
+    if (!this.input) return;
+
+    this.input.setCustomValidity("");
+    this.input.helpText = "";
+  }
+
+  private readonly pageUrlOnBlur = async () => {
+    if (!this.searchQuery) return;
+
+    if (this.selectedPage) {
+      // Ensure input value matches the URL, e.g. if the user pressed
+      // backspace on an existing URL
+      if (this.searchQuery !== this.selectedPage.url && this.input) {
+        this.input.value = this.selectedPage.url;
+      }
+
+      return;
+    }
+
+    await this.searchResults.taskComplete;
+
+    const results = this.searchResults.value;
+
+    if (!results) return;
+
+    if (results.total === 0) {
+      if (this.input) {
+        const errorMessage = msg(
+          "Page not found in collection. Please check the URL and try again.",
+        );
+        this.input.setCustomValidity(errorMessage);
+        this.input.helpText = errorMessage;
+      }
+
+      // Clear selection
+      this.selectedPage = undefined;
+      this.selectedSnapshot = undefined;
+    } else if (results.total === 1) {
+      // Choose only option, e.g. for copy-paste
+      this.selectedPage = this.searchResults.value.items[0];
+      this.selectedSnapshot = this.selectedPage.snapshots[0];
+    }
+  };
 
   private renderSearchResults() {
     return this.searchResults.render({
@@ -242,18 +299,6 @@ export class SelectCollectionStartPage extends BtrixElement {
                   this.combobox?.hide();
 
                   this.selectedSnapshot = this.selectedPage.snapshots[0];
-
-                  await this.updateComplete;
-                  this.dispatchEvent(
-                    new CustomEvent<SelectSnapshotDetail>("btrix-select", {
-                      detail: {
-                        item: {
-                          url: this.selectedPage.url,
-                          ...this.selectedSnapshot,
-                        },
-                      },
-                    }),
-                  );
                 }}
                 >${item.url}
               </sl-menu-item>
