@@ -252,11 +252,7 @@ export class ShareCollection extends BtrixElement {
 
           <sl-tab-panel name=${Tab.Link}>
             <div class="px-4 pb-4">
-              ${when(
-                showSettings && this.collection,
-                this.renderSettings,
-                this.renderShareLink,
-              )}
+              ${when(showSettings && this.collection, this.renderSettings)}
             </div>
           </sl-tab-panel>
 
@@ -266,7 +262,6 @@ export class ShareCollection extends BtrixElement {
         </sl-tab-group>
 
         <div slot="footer">
-          ${when(showSettings, this.renderShareLink)}
           <sl-button size="small" @click=${() => (this.showDialog = false)}>
             ${msg("Done")}
           </sl-button>
@@ -287,6 +282,10 @@ export class ShareCollection extends BtrixElement {
             );
           }}
         ></btrix-select-collection-access>
+        ${when(
+          this.collection?.access != CollectionAccess.Private,
+          this.renderShareLink,
+        )}
         ${when(
           this.org &&
             !this.org.enablePublicProfile &&
@@ -389,7 +388,7 @@ export class ShareCollection extends BtrixElement {
             >
               ${isSelected
                 ? html`<sl-icon
-                    class="size-10 text-white drop-shadow-md"
+                    class="size-10 stroke-black/50 text-white drop-shadow-md [paint-order:stroke]"
                     name="check-lg"
                   ></sl-icon>`
                 : nothing}
@@ -410,7 +409,7 @@ export class ShareCollection extends BtrixElement {
 
   private readonly renderShareLink = () => {
     return html`
-      <div class="text-left">
+      <div class="mt-4 text-left">
         <div class="form-label">${msg("Link to Share")}</div>
         <btrix-copy-field
           class="mb-3"
