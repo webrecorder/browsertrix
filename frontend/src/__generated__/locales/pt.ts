@@ -1321,7 +1321,6 @@
 's1cc6234f5ae1d6c8': `Sorry, couldn't update password at this time.`,
 'sfa66f095b5a35ccc': `Your language preference has been updated.`,
 'sc72c35c940c8e9eb': `Your formatting preference has been updated.`,
-'sf36c01d89a1ee87f': `Couldn’t initialize Browsertrix correctly.`,
 's79e8cc71a5975b04': `Message`,
 's95aec54f13a08d1e': `User Guide`,
 'se20cc4e6ad4e27be': `Open in new window`,

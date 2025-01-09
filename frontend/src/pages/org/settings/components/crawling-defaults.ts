@@ -1,3 +1,4 @@
+import { consume } from "@lit/context";
 import { localized, msg } from "@lit/localize";
 import type { SlButton } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
@@ -9,6 +10,8 @@ import { ifDefined } from "lit/directives/if-defined.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { LanguageSelect } from "@/components/ui/language-select";
+import type { SelectCrawlerProxy } from "@/components/ui/select-crawler-proxy";
+import { proxiesContext, type ProxiesContext } from "@/context/org";
 import type { QueueExclusionTable } from "@/features/crawl-workflows/queue-exclusion-table";
 import { columns, type Cols } from "@/layouts/columns";
 import infoTextStrings from "@/strings/crawl-workflows/infoText";
@@ -25,7 +28,7 @@ import {
 } from "@/utils/workflow";
 
 type FieldName = keyof FormState;
-type Field = Record<FieldName, TemplateResult<1>>;
+type Field = Record<FieldName, TemplateResult<1> | undefined>;
 
 const PLACEHOLDER_EXCLUSIONS = [""]; // Add empty slot
 
@@ -51,6 +54,9 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
     }
   `;
 
+  @consume({ context: proxiesContext, subscribe: true })
+  private readonly proxies?: ProxiesContext;
+
   @state()
   private defaults: WorkflowDefaults = appDefaults;
 
@@ -59,6 +65,9 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
 
   @query("btrix-language-select")
   languageSelect?: LanguageSelect | null;
+
+  @query("btrix-select-crawler-proxy")
+  proxySelect?: SelectCrawlerProxy | null;
 
   @query('sl-button[type="submit"]')
   submitButton?: SlButton | null;
@@ -195,10 +204,16 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
           size="small"
         ></btrix-select-browser-profile>
       `,
-      proxyId: html` <btrix-select-crawler-proxy
-        orgId=${this.orgId}
-        .proxyId="${orgDefaults.proxyId || null}"
-      ></btrix-select-crawler-proxy>`,
+      proxyId: this.proxies?.servers.length
+        ? html` <btrix-select-crawler-proxy
+            defaultProxyId=${ifDefined(
+              this.proxies.default_proxy_id ?? undefined,
+            )}
+            .proxyServers=${this.proxies.servers}
+            .proxyId="${orgDefaults.proxyId || null}"
+            size="small"
+          ></btrix-select-crawler-proxy>`
+        : undefined,
       crawlerChannel: html`
         <btrix-select-crawler
           crawlerChannel=${ifDefined(orgDefaults.crawlerChannel)}
@@ -254,10 +269,12 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
             Object.entries(this.fields).map(([sectionName, fields]) =>
               section(
                 sectionName as SectionsEnum,
-                Object.entries(fields).map(([fieldName, field]) => [
-                  field,
-                  infoTextStrings[fieldName as FieldName],
-                ]),
+                Object.entries(fields)
+                  .filter(([, field]) => field as unknown)
+                  .map(([fieldName, field]) => [
+                    field,
+                    infoTextStrings[fieldName as FieldName],
+                  ]),
               ),
             ),
           )}
@@ -291,7 +308,7 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
       blockAds: values.blockAds === "on",
       profileid: values.profileid,
       crawlerChannel: values.crawlerChannel,
-      proxyId: values.proxyId,
+      proxyId: this.proxySelect?.value || undefined,
       userAgent: values.userAgent,
       lang: this.languageSelect?.value || undefined,
       exclude: this.exclusionTable?.exclusions?.filter((v) => v) || [],

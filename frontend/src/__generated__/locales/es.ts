@@ -1327,7 +1327,6 @@
 'sf3e0a9a76635b431': `Use browser language settings for formatting numbers and dates.`,
 's7458c3e835ad08bc': `For example:`,
 'sc72c35c940c8e9eb': `Your formatting preference has been updated.`,
-'sf36c01d89a1ee87f': `Couldn’t initialize Browsertrix correctly.`,
 'sb92e2629adb0b7a5': `You must belong to at least one org in order to access Browsertrix features.`,
 's273f0ee82bf2b922': str`If you haven't received an invitation to an org, please contact us at ${0}.`,
 's95aeb2828c01b0de': str`If you haven't received an invitation to an org, please contact your Browsertrix administrator.`,
