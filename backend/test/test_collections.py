@@ -1193,7 +1193,7 @@ def test_get_public_collection(default_org_id):
 
     # Collection isn't public
     r = requests.get(
-        f"{API_PREFIX}/public/orgs/{default_org_slug}/collections/{PUBLIC_COLLECTION_SLUG}"
+        f"{API_PREFIX}/public/orgs/{default_org_slug}/collections/{UPDATED_SLUG}"
     )
     assert r.status_code == 404
     assert r.json()["detail"] == "collection_not_found"

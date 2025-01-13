@@ -171,15 +171,13 @@ def stream_dict_list_as_csv(
 
 def get_duplicate_key_error_field(err: DuplicateKeyError) -> str:
     """Get name of duplicate field from pymongo DuplicateKeyError"""
-    dupe_field = "name"
     if err.details:
         key_value = err.details.get("keyValue")
         if key_value:
-            try:
-                dupe_field = list(key_value.keys())[0]
-            except IndexError:
-                pass
-    return dupe_field
+            for field in key_value.keys():
+                if field in ("name", "slug"):
+                    return field
+    return "name"
 
 
 def get_origin(headers) -> str:
