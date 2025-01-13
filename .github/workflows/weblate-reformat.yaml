@@ -6,7 +6,7 @@ jobs:
   # In order to be able to have required checks, a workflow can't be entirely
   # skipped: see https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/collaborating-on-repositories-with-code-quality-features/troubleshooting-required-status-checks#handling-skipped-but-required-checks
   paths-filter:
-    name: "Filter Paths"
+    name: "Changed files?"
     runs-on: ubuntu-latest
     # Only run on PRs with a target branch set of 'weblate'
     if: github.base_ref == 'weblate'
