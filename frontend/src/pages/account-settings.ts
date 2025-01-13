@@ -149,25 +149,15 @@ export class AccountSettings extends BtrixElement {
         classNames: tw`mb-3 lg:mb-5`,
       })}
 
-      <btrix-tab-list activePanel=${this.activeTab} hideIndicator>
-        <header slot="header" class="flex h-7 items-end justify-between">
-          ${choose(
-            this.activeTab,
-            [
-              [Tab.Profile, () => html`<h2>${msg("Display Name")}</h2>`],
-              [Tab.Security, () => html`<h2>${msg("Password")}</h2>`],
-            ],
-            () => html`<h2>${this.tabLabels[this.activeTab]}</h2>`,
-          )}
-        </header>
+      <btrix-tab-group active=${this.activeTab} placement="start">
         ${this.renderTab(Tab.Profile)} ${this.renderTab(Tab.Security)}
-        <btrix-tab-panel name=${Tab.Profile}>
+        <btrix-tab-group-panel name=${Tab.Profile}>
           ${this.renderProfile()}
-        </btrix-tab-panel>
-        <btrix-tab-panel name=${Tab.Security}>
+        </btrix-tab-group-panel>
+        <btrix-tab-group-panel name=${Tab.Security}>
           ${this.renderSecurity()}
-        </btrix-tab-panel>
-      </btrix-tab-list>
+        </btrix-tab-group-panel>
+      </btrix-tab-group>
     `;
   }
 
@@ -175,6 +165,7 @@ export class AccountSettings extends BtrixElement {
     if (!this.userInfo) return;
 
     return html`
+      <h2 class="mb-2 text-lg font-medium">${msg("Display Name")}</h2>
       <form class="mb-5 rounded-lg border" @submit=${this.onSubmitName}>
         <div class="p-4">
           <p class="mb-2">
@@ -257,6 +248,7 @@ export class AccountSettings extends BtrixElement {
 
   private renderSecurity() {
     return html`
+      <h2 class="mb-2 text-lg font-medium">${msg("Password")}</h2>
       <form class="rounded-lg border" @submit=${this.onSubmitPassword}>
         <div class="p-4">
           <sl-input
@@ -304,14 +296,11 @@ export class AccountSettings extends BtrixElement {
   }
 
   private renderTab(name: Tab) {
-    const isActive = name === this.activeTab;
-
     return html`
-      <btrix-navigation-button
+      <btrix-tab-group-tab
         slot="nav"
+        panel=${name}
         href=${`/account/settings/${name}`}
-        .active=${isActive}
-        aria-selected=${isActive}
         @click=${this.navigate.link}
       >
         ${choose(name, [
@@ -325,7 +314,7 @@ export class AccountSettings extends BtrixElement {
           ],
         ])}
         ${this.tabLabels[name]}
-      </btrix-navigation-button>
+      </btrix-tab-group-tab>
     `;
   }
 
