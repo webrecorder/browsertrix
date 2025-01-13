@@ -1306,6 +1306,8 @@ class OrgOps:
         # collections
         for collection in org_data.get("collections", []):
             collection = json_stream.to_standard_types(collection)
+            if not collection.get("slug"):
+                collection["slug"] = slug_from_name(collection["name"])
             await self.colls_db.insert_one(Collection.from_dict(collection).to_dict())
 
     async def delete_org_and_data(
