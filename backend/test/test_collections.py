@@ -18,6 +18,7 @@ SECOND_COLLECTION_NAME = "second-collection"
 DESCRIPTION = "Test description"
 CAPTION = "Short caption"
 UPDATED_CAPTION = "Updated caption"
+SECOND_PUBLIC_COLL_SLUG = "second-public-collection"
 
 NON_PUBLIC_COLL_FIELDS = (
     "tags",
@@ -830,6 +831,7 @@ def test_list_public_collections(
         json={
             "crawlIds": [crawler_crawl_id],
             "name": "Second public collection",
+            "slug": SECOND_PUBLIC_COLL_SLUG,
             "description": "Lorem ipsum",
             "access": "public",
         },
@@ -1131,7 +1133,7 @@ def test_list_public_colls_home_url_thumbnail():
 
 def test_get_public_collection(default_org_id):
     r = requests.get(
-        f"{API_PREFIX}/public/orgs/{default_org_slug}/collections/{_public_coll_id}"
+        f"{API_PREFIX}/public/orgs/{default_org_slug}/collections/{PUBLIC_COLLECTION_SLUG}"
     )
     assert r.status_code == 200
     coll = r.json()
@@ -1142,13 +1144,14 @@ def test_get_public_collection(default_org_id):
     assert coll["name"]
     assert coll["created"]
     assert coll["modified"]
-    assert coll["slug"]
+    assert coll["slug"] == PUBLIC_COLLECTION_SLUG
     assert coll["resources"]
     assert coll["dateEarliest"]
     assert coll["dateLatest"]
     assert coll["crawlCount"] > 0
     assert coll["pageCount"] > 0
     assert coll["totalSize"] > 0
+    assert coll.get("redirectToSlug") is None
 
     for field in NON_PUBLIC_COLL_FIELDS:
         assert field not in coll
@@ -1175,22 +1178,22 @@ def test_get_public_collection(default_org_id):
     # Invalid org slug - don't reveal whether org exists or not, use
     # same exception as if collection doesn't exist
     r = requests.get(
-        f"{API_PREFIX}/public/orgs/doesntexist/collections/{_public_coll_id}"
+        f"{API_PREFIX}/public/orgs/doesntexist/collections/{PUBLIC_COLLECTION_SLUG}"
     )
     assert r.status_code == 404
     assert r.json()["detail"] == "collection_not_found"
 
-    # Invalid collection id
+    # Unused slug
     random_uuid = uuid4()
     r = requests.get(
-        f"{API_PREFIX}/public/orgs/{default_org_slug}/collections/{random_uuid}"
+        f"{API_PREFIX}/public/orgs/{default_org_slug}/collections/someslugnotinuse"
     )
     assert r.status_code == 404
     assert r.json()["detail"] == "collection_not_found"
 
     # Collection isn't public
     r = requests.get(
-        f"{API_PREFIX}/public/orgs/{default_org_slug}/collections/{ _coll_id}"
+        f"{API_PREFIX}/public/orgs/{default_org_slug}/collections/{PUBLIC_COLLECTION_SLUG}"
     )
     assert r.status_code == 404
     assert r.json()["detail"] == "collection_not_found"
@@ -1210,7 +1213,7 @@ def test_get_public_collection_unlisted(crawler_auth_headers, default_org_id):
 
     # Verify single public collection GET endpoint works for unlisted collection
     r = requests.get(
-        f"{API_PREFIX}/public/orgs/{default_org_slug}/collections/{_second_public_coll_id}"
+        f"{API_PREFIX}/public/orgs/{default_org_slug}/collections/{SECOND_PUBLIC_COLL_SLUG}"
     )
     assert r.status_code == 200
     coll = r.json()
@@ -1221,7 +1224,7 @@ def test_get_public_collection_unlisted(crawler_auth_headers, default_org_id):
     assert coll["name"]
     assert coll["created"]
     assert coll["modified"]
-    assert coll["slug"]
+    assert coll["slug"] == SECOND_PUBLIC_COLL_SLUG
     assert coll["resources"]
     assert coll["dateEarliest"]
     assert coll["dateLatest"]
@@ -1251,7 +1254,7 @@ def test_get_public_collection_unlisted_org_profile_disabled(
 
     # Verify we can still get public details for unlisted collection
     r = requests.get(
-        f"{API_PREFIX}/public/orgs/{default_org_slug}/collections/{_second_public_coll_id}"
+        f"{API_PREFIX}/public/orgs/{default_org_slug}/collections/{SECOND_PUBLIC_COLL_SLUG}"
     )
     assert r.status_code == 200
     coll = r.json()
@@ -1337,7 +1340,7 @@ def test_unset_collection_home_url(
 def test_download_streaming_public_collection(crawler_auth_headers, default_org_id):
     # Check that download is blocked if allowPublicDownload is False
     with requests.get(
-        f"{API_PREFIX}/public/orgs/{default_org_slug}/collections/{_public_coll_id}/download",
+        f"{API_PREFIX}/public/orgs/{default_org_slug}/collections/{PUBLIC_COLLECTION_SLUG}/download",
         stream=True,
     ) as r:
         assert r.status_code == 403
@@ -1355,7 +1358,7 @@ def test_download_streaming_public_collection(crawler_auth_headers, default_org_
 
     with TemporaryFile() as fh:
         with requests.get(
-            f"{API_PREFIX}/public/orgs/{default_org_slug}/collections/{_public_coll_id}/download",
+            f"{API_PREFIX}/public/orgs/{default_org_slug}/collections/{PUBLIC_COLLECTION_SLUG}/download",
             stream=True,
         ) as r:
             assert r.status_code == 200
@@ -1388,7 +1391,7 @@ def test_download_streaming_public_collection_profile_disabled(
 
     with TemporaryFile() as fh:
         with requests.get(
-            f"{API_PREFIX}/public/orgs/{default_org_slug}/collections/{_public_coll_id}/download",
+            f"{API_PREFIX}/public/orgs/{default_org_slug}/collections/{PUBLIC_COLLECTION_SLUG}/download",
             stream=True,
         ) as r:
             assert r.status_code == 200
@@ -1403,6 +1406,33 @@ def test_download_streaming_public_collection_profile_disabled(
             for filename in contents:
                 assert filename.endswith(".wacz") or filename == "datapackage.json"
                 assert zip_file.getinfo(filename).compress_type == ZIP_STORED
+
+
+def test_get_public_collection_slug_redirect(admin_auth_headers, default_org_id):
+    # Update public collection slug
+    new_slug = "new-slug"
+
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_public_coll_id}",
+        headers=admin_auth_headers,
+        json={
+            "slug": new_slug,
+        },
+    )
+    assert r.status_code == 200
+    assert r.json()["updated"]
+
+    # Get public collection from previous slug
+    r = requests.get(
+        f"{API_PREFIX}/public/orgs/{default_org_slug}/collections/{PUBLIC_COLLECTION_SLUG}"
+    )
+    assert r.status_code == 200
+    coll = r.json()
+
+    assert coll["id"] == _public_coll_id
+    assert coll["oid"] == default_org_id
+    assert coll["slug"] == new_slug
+    assert coll["redirectToSlug"] == new_slug
 
 
 def test_delete_collection(crawler_auth_headers, default_org_id, crawler_crawl_id):

@@ -1348,6 +1348,7 @@ class PublicCollOut(BaseMongoModel):
     defaultThumbnailName: Optional[str] = None
 
     allowPublicDownload: bool = True
+    redirectToSlug: Optional[str] = None
 
 
 # ============================================================================
