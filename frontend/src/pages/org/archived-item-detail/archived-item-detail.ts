@@ -543,7 +543,7 @@ export class ArchivedItemDetail extends BtrixElement {
     };
     return html`
       <nav
-        class="sticky top-0 -mx-3 flex flex-row gap-2 overflow-x-auto px-3 pb-4 text-center md:mt-10 md:flex-col md:text-start"
+        class="sticky top-0 -mx-3 flex flex-row gap-2 overflow-x-auto px-3 pb-4 text-center md:flex-col md:text-start"
         role="menu"
       >
         ${renderNavItem({
@@ -716,7 +716,7 @@ export class ArchivedItemDetail extends BtrixElement {
 
   private renderTitle(title: string | TemplateResult<1>) {
     return html`<h2
-      class="flex items-center gap-2 text-lg font-semibold leading-8"
+      class="flex items-center gap-2 text-lg font-medium leading-8"
     >
       ${title}
     </h2>`;
