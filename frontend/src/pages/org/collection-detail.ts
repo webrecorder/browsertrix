@@ -479,16 +479,33 @@ export class CollectionDetail extends BtrixElement {
           (col) =>
             `${this.localize.number(col.pageCount)} ${pluralOf("pages", col.pageCount)}`,
         )}
+        ${when(this.collection?.created, (created) =>
+          // Collections created before 49516bc4 is released may not have date in db
+          created
+            ? this.renderDetailItem(
+                msg("Date Created"),
+                () =>
+                  html`<btrix-format-date
+                    date=${created}
+                    month="long"
+                    day="numeric"
+                    year="numeric"
+                    hour="numeric"
+                    minute="numeric"
+                  ></btrix-format-date>`,
+              )
+            : nothing,
+        )}
         ${this.renderDetailItem(
           msg("Last Updated"),
           (col) =>
             html`<btrix-format-date
               date=${col.modified}
-              month="2-digit"
-              day="2-digit"
-              year="2-digit"
-              hour="2-digit"
-              minute="2-digit"
+              month="long"
+              day="numeric"
+              year="numeric"
+              hour="numeric"
+              minute="numeric"
             ></btrix-format-date>`,
         )}
       </btrix-desc-list>
