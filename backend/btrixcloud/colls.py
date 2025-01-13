@@ -13,6 +13,7 @@ import urllib.parse
 
 import asyncio
 import pymongo
+from pymongo.collation import Collation
 from fastapi import Depends, HTTPException, Response
 from fastapi.responses import StreamingResponse
 from starlette.requests import Request
@@ -51,7 +52,7 @@ from .models import (
     MIN_UPLOAD_PART_SIZE,
     PublicCollOut,
 )
-from .utils import dt_now
+from .utils import dt_now, slug_from_name, get_duplicate_key_error_field
 
 if TYPE_CHECKING:
     from .orgs import OrgOps
@@ -98,8 +99,17 @@ class CollectionOps:
 
     async def init_index(self):
         """init lookup index"""
+        case_insensitive_collation = Collation(locale="en", strength=1)
         await self.collections.create_index(
-            [("oid", pymongo.ASCENDING), ("name", pymongo.ASCENDING)], unique=True
+            [("oid", pymongo.ASCENDING), ("name", pymongo.ASCENDING)],
+            unique=True,
+            collation=case_insensitive_collation,
+        )
+
+        await self.collections.create_index(
+            [("oid", pymongo.ASCENDING), ("slug", pymongo.ASCENDING)],
+            unique=True,
+            collation=case_insensitive_collation,
         )
 
         await self.collections.create_index(
@@ -117,6 +127,7 @@ class CollectionOps:
             id=coll_id,
             oid=oid,
             name=coll_in.name,
+            slug=coll_in.slug or slug_from_name(coll_in.name),
             description=coll_in.description,
             caption=coll_in.caption,
             created=created,
@@ -139,8 +150,11 @@ class CollectionOps:
                 )
 
             return {"added": True, "id": coll_id, "name": coll.name}
-        except pymongo.errors.DuplicateKeyError:
+        except pymongo.errors.DuplicateKeyError as err:
             # pylint: disable=raise-missing-from
+            field = get_duplicate_key_error_field(err)
+            if field == "slug":
+                raise HTTPException(status_code=400, detail="collection_slug_taken")
             raise HTTPException(status_code=400, detail="collection_name_taken")
 
     async def update_collection(
@@ -152,17 +166,36 @@ class CollectionOps:
         if len(query) == 0:
             raise HTTPException(status_code=400, detail="no_update_data")
 
+        name_update = query.get("name")
+        slug_update = query.get("slug")
+
+        previous_slug = None
+
+        if name_update or slug_update:
+            # If we're updating slug, save old one to previousSlugs to support redirects
+            coll = await self.get_collection(coll_id)
+            previous_slug = coll.slug
+
+        if name_update and not slug_update:
+            slug = slug_from_name(name_update)
+            query["slug"] = slug
+
         query["modified"] = dt_now()
+
+        db_update = {"$set": query}
+        if previous_slug:
+            db_update["$push"] = {"previousSlugs": previous_slug}
 
         try:
             result = await self.collections.find_one_and_update(
                 {"_id": coll_id, "oid": org.id},
-                {"$set": query},
+                db_update,
                 return_document=pymongo.ReturnDocument.AFTER,
             )
-        except pymongo.errors.DuplicateKeyError:
+        except pymongo.errors.DuplicateKeyError as err:
             # pylint: disable=raise-missing-from
-            raise HTTPException(status_code=400, detail="collection_name_taken")
+            field = get_duplicate_key_error_field(err)
+            raise HTTPException(status_code=400, detail=f"collection_{field}_taken")
 
         if not result:
             raise HTTPException(status_code=404, detail="collection_not_found")

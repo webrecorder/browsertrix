@@ -9,8 +9,11 @@ from .conftest import API_PREFIX, NON_DEFAULT_ORG_NAME, NON_DEFAULT_ORG_SLUG
 from .utils import read_in_chunks
 
 COLLECTION_NAME = "Test collection"
+COLLECTION_SLUG = "test-collection"
 PUBLIC_COLLECTION_NAME = "Public Test collection"
+PUBLIC_COLLECTION_SLUG = "custom-public-collection-slug"
 UPDATED_NAME = "Updated tést cöllection"
+UPDATED_SLUG = "updated-test-collection"
 SECOND_COLLECTION_NAME = "second-collection"
 DESCRIPTION = "Test description"
 CAPTION = "Short caption"
@@ -74,6 +77,7 @@ def test_create_collection(
 
     assert data["id"] == _coll_id
     assert data["name"] == COLLECTION_NAME
+    assert data["slug"] == COLLECTION_SLUG
     assert data["caption"] == CAPTION
     assert data["crawlCount"] == 1
     assert data["pageCount"] > 0
@@ -98,6 +102,7 @@ def test_create_public_collection(
         json={
             "crawlIds": [crawler_crawl_id],
             "name": PUBLIC_COLLECTION_NAME,
+            "slug": PUBLIC_COLLECTION_SLUG,
             "caption": CAPTION,
             "access": "public",
             "allowPublicDownload": False,
@@ -131,7 +136,7 @@ def test_create_collection_taken_name(
         },
     )
     assert r.status_code == 400
-    assert r.json()["detail"] == "collection_name_taken"
+    assert r.json()["detail"] in ("collection_name_taken", "collection_slug_taken")
 
 
 def test_create_collection_empty_name(
@@ -207,6 +212,7 @@ def test_rename_collection(
 
     assert data["id"] == _coll_id
     assert data["name"] == UPDATED_NAME
+    assert data["slug"] == UPDATED_SLUG
     assert data["modified"] >= modified
 
 
@@ -237,7 +243,16 @@ def test_rename_collection_taken_name(
         json={"name": SECOND_COLLECTION_NAME},
     )
     assert r.status_code == 400
-    assert r.json()["detail"] == "collection_name_taken"
+    assert r.json()["detail"] in ("collection_name_taken", "collection_slug_taken")
+
+    # Try to set first coll's slug to value already used for second collection
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}",
+        headers=crawler_auth_headers,
+        json={"slug": SECOND_COLLECTION_NAME},
+    )
+    assert r.status_code == 400
+    assert r.json()["detail"] == "collection_slug_taken"
 
 
 def test_add_remove_crawl_from_collection(
@@ -324,6 +339,7 @@ def test_get_collection(crawler_auth_headers, default_org_id):
     data = r.json()
     assert data["id"] == _coll_id
     assert data["name"] == UPDATED_NAME
+    assert data["slug"] == UPDATED_SLUG
     assert data["oid"] == default_org_id
     assert data["description"] == DESCRIPTION
     assert data["caption"] == UPDATED_CAPTION
@@ -346,6 +362,7 @@ def test_get_collection_replay(crawler_auth_headers, default_org_id):
     data = r.json()
     assert data["id"] == _coll_id
     assert data["name"] == UPDATED_NAME
+    assert data["slug"] == UPDATED_SLUG
     assert data["oid"] == default_org_id
     assert data["description"] == DESCRIPTION
     assert data["caption"] == UPDATED_CAPTION
@@ -524,6 +541,7 @@ def test_list_collections(
     first_coll = [coll for coll in items if coll["name"] == UPDATED_NAME][0]
     assert first_coll["id"] == _coll_id
     assert first_coll["name"] == UPDATED_NAME
+    assert first_coll["slug"] == UPDATED_SLUG
     assert first_coll["oid"] == default_org_id
     assert first_coll["description"] == DESCRIPTION
     assert first_coll["caption"] == UPDATED_CAPTION
@@ -540,6 +558,7 @@ def test_list_collections(
     second_coll = [coll for coll in items if coll["name"] == SECOND_COLLECTION_NAME][0]
     assert second_coll["id"]
     assert second_coll["name"] == SECOND_COLLECTION_NAME
+    assert second_coll["slug"] == SECOND_COLLECTION_NAME
     assert second_coll["oid"] == default_org_id
     assert second_coll.get("description") is None
     assert second_coll["crawlCount"] == 1
@@ -888,6 +907,7 @@ def test_list_public_collections(
         assert collection["name"]
         assert collection["created"]
         assert collection["modified"]
+        assert collection["slug"]
         assert collection["dateEarliest"]
         assert collection["dateLatest"]
         assert collection["crawlCount"] > 0
@@ -1122,6 +1142,7 @@ def test_get_public_collection(default_org_id):
     assert coll["name"]
     assert coll["created"]
     assert coll["modified"]
+    assert coll["slug"]
     assert coll["resources"]
     assert coll["dateEarliest"]
     assert coll["dateLatest"]
@@ -1200,6 +1221,7 @@ def test_get_public_collection_unlisted(crawler_auth_headers, default_org_id):
     assert coll["name"]
     assert coll["created"]
     assert coll["modified"]
+    assert coll["slug"]
     assert coll["resources"]
     assert coll["dateEarliest"]
     assert coll["dateLatest"]
@@ -1240,6 +1262,7 @@ def test_get_public_collection_unlisted_org_profile_disabled(
     assert coll["name"]
     assert coll["created"]
     assert coll["modified"]
+    assert coll["slug"]
     assert coll["resources"]
     assert coll["dateEarliest"]
     assert coll["dateLatest"]

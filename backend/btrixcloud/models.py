@@ -1236,6 +1236,7 @@ class Collection(BaseMongoModel):
     """Org collection structure"""
 
     name: str = Field(..., min_length=1)
+    slug: str = Field(..., min_length=1)
     oid: UUID
     description: Optional[str] = None
     caption: Optional[str] = None
@@ -1264,12 +1265,15 @@ class Collection(BaseMongoModel):
 
     allowPublicDownload: Optional[bool] = True
 
+    previousSlugs: List[str] = []
+
 
 # ============================================================================
 class CollIn(BaseModel):
     """Collection Passed in By User"""
 
     name: str = Field(..., min_length=1)
+    slug: Optional[str] = None
     description: Optional[str] = None
     caption: Optional[str] = None
     crawlIds: Optional[List[str]] = []
@@ -1285,6 +1289,7 @@ class CollOut(BaseMongoModel):
     """Collection output model with annotations."""
 
     name: str
+    slug: str
     oid: UUID
     description: Optional[str] = None
     caption: Optional[str] = None
@@ -1319,6 +1324,7 @@ class PublicCollOut(BaseMongoModel):
     """Collection output model with annotations."""
 
     name: str
+    slug: str
     oid: UUID
     description: Optional[str] = None
     caption: Optional[str] = None
@@ -1349,6 +1355,7 @@ class UpdateColl(BaseModel):
     """Update collection"""
 
     name: Optional[str] = None
+    slug: Optional[str] = None
     description: Optional[str] = None
     caption: Optional[str] = None
     access: Optional[CollAccessType] = None
