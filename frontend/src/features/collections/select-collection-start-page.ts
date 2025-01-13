@@ -217,14 +217,13 @@ export class SelectCollectionStartPage extends BtrixElement {
           <sl-icon name="search" slot="prefix"></sl-icon>
           ${when(
             this.selectedPage,
-            (page) => html`
+            () => html`
               <div slot="suffix" class="flex items-center">
-                <sl-tooltip hoist>
+                <sl-tooltip hoist content=${msg("Page found in collection")}>
                   <sl-icon
                     name="check-lg"
                     class="size-4 text-base text-success"
                   ></sl-icon>
-                  <span slot="content" class="break-all">${page.url}</span>
                 </sl-tooltip>
               </div>
             `,
@@ -233,12 +232,11 @@ export class SelectCollectionStartPage extends BtrixElement {
             this.pageUrlError,
             (error) => html`
               <div slot="suffix" class="flex items-center">
-                <sl-tooltip hoist>
+                <sl-tooltip hoist content=${error}>
                   <sl-icon
                     name="exclamation-lg"
                     class="size-4 text-base text-danger"
                   ></sl-icon>
-                  <div slot="content">${error}</div>
                 </sl-tooltip>
               </div>
             `,
@@ -302,7 +300,7 @@ export class SelectCollectionStartPage extends BtrixElement {
         if (!items.length) {
           return html`
             <sl-menu-item slot="menu-item" disabled>
-              ${msg("No matching pages found.")}
+              ${msg("No matching page found.")}
             </sl-menu-item>
           `;
         }

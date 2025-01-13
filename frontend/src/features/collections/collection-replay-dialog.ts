@@ -154,12 +154,15 @@ export class CollectionStartPageDialog extends BtrixElement {
 
     if (snapshot) {
       urlPreview = html`
-        <iframe
-          class="inline-block size-full"
-          id="thumbnailPreview"
-          src=${`/replay/w/${this.collectionId}/${formatRwpTimestamp(snapshot.ts)}id_/urn:thumbnail:${snapshot.url}`}
-        >
-        </iframe>
+        <sl-tooltip hoist>
+          <iframe
+            class="inline-block size-full"
+            id="thumbnailPreview"
+            src=${`/replay/w/${this.collectionId}/${formatRwpTimestamp(snapshot.ts)}id_/urn:thumbnail:${snapshot.url}`}
+          >
+          </iframe>
+          <span slot="content" class="break-all">${snapshot.url}</span>
+        </sl-tooltip>
       `;
     }
 
