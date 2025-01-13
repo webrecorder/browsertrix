@@ -70,8 +70,10 @@ export class TabGroup extends TailwindElement {
       >
         <div
           class=${clsx(
-            tw`flex flex-1 gap-2`,
-            this.placement === "start" && tw`lg:max-w-[16.5rem] lg:flex-col`,
+            tw`flex flex-1 flex-col gap-2`,
+            this.placement === "start"
+              ? tw`lg:sticky lg:top-2 lg:max-w-[16.5rem] lg:self-start`
+              : tw`lg:flex-row`,
           )}
           @keydown=${this.onKeyDown}
         >

@@ -12,7 +12,6 @@ import type { Crawl, Seed, Workflow, WorkflowParams } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { PageChangeEvent } from "@/components/ui/pagination";
-import { type IntersectEvent } from "@/components/utils/observable";
 import { ClipboardController } from "@/controllers/clipboard";
 import type { CrawlLog } from "@/features/archived-items/crawl-logs";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
@@ -113,8 +112,6 @@ export class WorkflowDetail extends BtrixElement {
 
   private timerId?: number;
 
-  private isPanelHeaderVisible?: boolean;
-
   private getWorkflowPromise?: Promise<Workflow>;
   private getSeedsPromise?: Promise<APIPaginatedList<Seed>>;
 
@@ -180,13 +177,6 @@ export class WorkflowDetail extends BtrixElement {
       changedProperties.has("activePanel") &&
       this.activePanel
     ) {
-      if (!this.isPanelHeaderVisible) {
-        // Scroll panel header into view
-        this.querySelector("btrix-tab-list")?.scrollIntoView({
-          behavior: "smooth",
-        });
-      }
-
       if (this.activePanel === "crawls") {
         void this.fetchCrawls();
       }
@@ -456,22 +446,20 @@ export class WorkflowDetail extends BtrixElement {
   }
 
   private readonly renderTabList = () => html`
-    <btrix-tab-list activePanel=${ifDefined(this.activePanel)} hideIndicator>
-      <btrix-observable
-        slot="header"
-        @intersect=${({ detail }: IntersectEvent) =>
-          (this.isPanelHeaderVisible = detail.entry.isIntersecting)}
+    <btrix-tab-group active=${ifDefined(this.activePanel)} placement="start">
+      <header
+        class="mb-2 flex h-7 items-center justify-between text-lg font-medium"
       >
-        <header class="flex h-5 items-center justify-between">
-          ${this.renderPanelHeader()}
-        </header>
-      </btrix-observable>
+        ${this.renderPanelHeader()}
+      </header>
 
       ${this.renderTab("crawls")} ${this.renderTab("watch")}
       ${this.renderTab("logs")} ${this.renderTab("settings")}
 
-      <btrix-tab-panel name="crawls">${this.renderCrawls()}</btrix-tab-panel>
-      <btrix-tab-panel name="watch">
+      <btrix-tab-group-panel name="crawls">
+        ${this.renderCrawls()}
+      </btrix-tab-group-panel>
+      <btrix-tab-group-panel name="watch">
         ${until(
           this.getWorkflowPromise?.then(
             () => html`
@@ -486,12 +474,14 @@ export class WorkflowDetail extends BtrixElement {
             `,
           ),
         )}
-      </btrix-tab-panel>
-      <btrix-tab-panel name="logs">${this.renderLogs()}</btrix-tab-panel>
-      <btrix-tab-panel name="settings">
+      </btrix-tab-group-panel>
+      <btrix-tab-group-panel name="logs">
+        ${this.renderLogs()}
+      </btrix-tab-group-panel>
+      <btrix-tab-group-panel name="settings">
         ${this.renderSettings()}
-      </btrix-tab-panel>
-    </btrix-tab-list>
+      </btrix-tab-group-panel>
+    </btrix-tab-group>
   `;
 
   private renderPanelHeader() {
@@ -582,11 +572,11 @@ export class WorkflowDetail extends BtrixElement {
   private renderTab(tabName: Tab, { disabled = false } = {}) {
     const isActive = tabName === this.activePanel;
     return html`
-      <btrix-navigation-button
+      <btrix-tab-group-tab
         slot="nav"
+        panel=${tabName}
         href=${`${window.location.pathname}#${tabName}`}
-        .active=${isActive}
-        .disabled=${disabled}
+        ?disabled=${disabled}
         aria-selected=${isActive}
         aria-disabled=${disabled}
         @click=${(e: MouseEvent) => {
@@ -603,7 +593,7 @@ export class WorkflowDetail extends BtrixElement {
           ["settings", () => html`<sl-icon name="file-code-fill"></sl-icon>`],
         ])}
         ${this.tabLabels[tabName]}
-      </btrix-navigation-button>
+      </btrix-tab-group-tab>
     `;
   }
 
