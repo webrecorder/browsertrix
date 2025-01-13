@@ -6,8 +6,6 @@ import { NavigationButton } from "@/components/ui/navigation/navigation-button";
 export type TabClickDetail = { panel: string };
 
 /**
- * TODO consolidate with btrix-tab-list btrix-tab
- *
  * @fires btrix-select-tab
  */
 @customElement("btrix-tab-group-tab")

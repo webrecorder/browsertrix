@@ -3,9 +3,6 @@ import { customElement, property } from "lit/decorators.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 
-/**
- * TODO consolidate with btrix-tab-list btrix-tab-panel
- */
 @customElement("btrix-tab-group-panel")
 export class TabGroupPanel extends TailwindElement {
   @property({ type: String })

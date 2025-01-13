@@ -9,6 +9,8 @@ const DEFAULT_PANEL_ID = "default-panel";
 export const TWO_COL_SCREEN_MIN_CSS = css`64.5rem`;
 
 /**
+ * @deprecated Use `btrix-tab-group`
+ *
  * Tab list
  *
  * Usage example:
@@ -45,6 +47,9 @@ export class TabPanel extends TailwindElement {
   }
 }
 
+/**
+ * @deprecated Use `btrix-tab-group`
+ */
 @customElement("btrix-tab")
 export class Tab extends TailwindElement {
   // ID of panel the tab labels/controls
@@ -76,6 +81,9 @@ export class Tab extends TailwindElement {
 type TabElement = Tab & HTMLElement;
 type TabPanelElement = TabPanel & HTMLElement;
 
+/**
+ * @deprecated Use `btrix-tab-group`
+ */
 @customElement("btrix-tab-list")
 export class TabList extends TailwindElement {
   static styles = css`
