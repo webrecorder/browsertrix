@@ -34,6 +34,7 @@ export type PublicCollection = z.infer<typeof publicCollectionSchema>;
 
 export const collectionSchema = publicCollectionSchema.extend({
   id: z.string(),
+  created: z.string().datetime(),
   modified: z.string().datetime(),
   tags: z.array(z.string()),
   access: z.nativeEnum(CollectionAccess),
