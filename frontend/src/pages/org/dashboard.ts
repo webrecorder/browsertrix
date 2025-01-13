@@ -29,8 +29,8 @@ type Metrics = {
   publicCollectionsCount: number;
 };
 
-@localized()
 @customElement("btrix-dashboard")
+@localized()
 export class Dashboard extends BtrixElement {
   @property({ type: Boolean })
   isCrawler?: boolean;

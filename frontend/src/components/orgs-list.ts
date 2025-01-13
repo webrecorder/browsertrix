@@ -21,8 +21,8 @@ import type { OrgData } from "@/utils/orgs";
  * @fires update-quotas
  * @fires update-proxies
  */
-@localized()
 @customElement("btrix-orgs-list")
+@localized()
 export class OrgsList extends BtrixElement {
   static styles = css`
     btrix-table {

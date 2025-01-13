@@ -35,8 +35,8 @@ export type CollectionsChangeEvent = CustomEvent<{
  * ```
  * @events collections-change
  */
-@localized()
 @customElement("btrix-collections-add")
+@localized()
 export class CollectionsAdd extends BtrixElement {
   @property({ type: Array })
   initialCollections?: string[];

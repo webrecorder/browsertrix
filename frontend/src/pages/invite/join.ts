@@ -12,8 +12,8 @@ import LiteElement, { html } from "@/utils/LiteElement";
 
 import "./ui/org-form";
 
-@localized()
 @customElement("btrix-join")
+@localized()
 export class Join extends LiteElement {
   @property({ type: String })
   token?: string;

@@ -10,8 +10,8 @@ import { animatePulse } from "@/utils/css";
 
 type CrawlType = "crawl" | "upload" | "qa";
 
-@localized()
 @customElement("btrix-crawl-status")
+@localized()
 export class CrawlStatus extends TailwindElement {
   @property({ type: String })
   state?: CrawlState | AnyString;

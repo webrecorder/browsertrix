@@ -18,8 +18,8 @@ import { TailwindElement } from "@/classes/TailwindElement";
  *
  * @event on-copied
  */
-@localized()
 @customElement("btrix-copy-button")
+@localized()
 export class CopyButton extends TailwindElement {
   @property({ type: String })
   value?: string;

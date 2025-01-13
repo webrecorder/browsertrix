@@ -28,8 +28,8 @@ const INITIAL_ITEMS_PAGE_SIZE = 20;
 const TABS = ["replay", "items"] as const;
 export type Tab = (typeof TABS)[number];
 
-@localized()
 @customElement("btrix-collection-detail")
+@localized()
 export class CollectionDetail extends BtrixElement {
   @property({ type: String })
   collectionId!: string;

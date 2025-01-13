@@ -23,8 +23,8 @@ import { TailwindElement } from "@/classes/TailwindElement";
  *< /btrix-overflow-dropdown>
  * ```
  */
-@localized()
 @customElement("btrix-overflow-dropdown")
+@localized()
 export class OverflowDropdown extends TailwindElement {
   @state()
   private hasMenuItems?: boolean;

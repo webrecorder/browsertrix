@@ -19,8 +19,8 @@ import { formatPercentage, pageDetails } from "./page-details";
 import { TailwindElement } from "@/classes/TailwindElement";
 import { type ArchivedItemQAPage } from "@/types/qa";
 
-@localized()
 @customElement("btrix-qa-page")
+@localized()
 export class QaPage extends TailwindElement {
   @property({ type: Object })
   page?: ArchivedItemQAPage;

@@ -24,8 +24,8 @@ type Item = {
   state?: CrawlState;
 };
 
-@localized()
 @customElement("btrix-detail-page-title")
+@localized()
 export class DetailPageTitle extends TailwindElement {
   @property({ type: Object })
   item: Item | undefined;

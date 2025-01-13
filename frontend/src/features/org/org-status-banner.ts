@@ -15,8 +15,8 @@ type Alert = {
   };
 };
 
-@localized()
 @customElement("btrix-org-status-banner")
+@localized()
 export class OrgStatusBanner extends BtrixElement {
   render() {
     if (!this.org) return;

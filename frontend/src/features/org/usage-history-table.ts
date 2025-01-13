@@ -5,8 +5,8 @@ import { customElement } from "lit/decorators.js";
 import { BtrixElement } from "@/classes/BtrixElement";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 
-@localized()
 @customElement("btrix-usage-history-table")
+@localized()
 export class UsageHistoryTable extends BtrixElement {
   private readonly hasMonthlyTime = () =>
     this.org?.monthlyExecSeconds &&

@@ -21,8 +21,8 @@ const manageLinkClasslist = clsx(
   tw`flex cursor-pointer items-center gap-2 p-2 text-sm font-semibold leading-none`,
 );
 
-@localized()
 @customElement("btrix-org-settings-billing")
+@localized()
 export class OrgSettingsBilling extends BtrixElement {
   static styles = css`
     .form-label {

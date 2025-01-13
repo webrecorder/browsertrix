@@ -20,8 +20,8 @@ import "./ui/org-form";
  * Uses custom redirect instead of needLogin decorator to suppress "need login"
  * message when accessing root URL.
  */
-@localized()
 @customElement("btrix-accept-invite")
+@localized()
 export class AcceptInvite extends BtrixElement {
   @property({ type: String })
   token?: string;

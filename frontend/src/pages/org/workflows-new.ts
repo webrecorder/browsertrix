@@ -35,8 +35,8 @@ const workflowTabToGuideHash: Record<string, GuideHash> = {
  * <btrix-workflows-new></btrix-workflows-new>
  * ```
  */
-@localized()
 @customElement("btrix-workflows-new")
+@localized()
 export class WorkflowsNew extends LiteElement {
   @property({ type: Boolean })
   isCrawler!: boolean;

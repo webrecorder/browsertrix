@@ -76,8 +76,8 @@ const sortableFields: Record<
  * <btrix-workflows-list></btrix-workflows-list>
  * ```
  */
-@localized()
 @customElement("btrix-workflows-list")
+@localized()
 export class WorkflowsList extends BtrixElement {
   static FieldLabels: Record<SearchFields, string> = {
     name: msg("Name"),

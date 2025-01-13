@@ -26,8 +26,8 @@ export type CheckboxChangeEventDetail = {
  * @slot actionCell - Action cell
  * @fires btrix-checkbox-change
  */
-@localized()
 @customElement("btrix-archived-item-list-item")
+@localized()
 export class ArchivedItemListItem extends BtrixElement {
   static styles = css`
     :host {
@@ -334,8 +334,8 @@ export class ArchivedItemListItem extends BtrixElement {
  * @slot checkboxCell
  * @slot actionCell
  */
-@localized()
 @customElement("btrix-archived-item-list")
+@localized()
 export class ArchivedItemList extends TailwindElement {
   static styles = css`
     btrix-table {

@@ -31,8 +31,8 @@ const POLL_INTERVAL_SECONDS = 5;
  * ></btrix-crawl-queue>
  * ```
  */
-@localized()
 @customElement("btrix-crawl-queue")
+@localized()
 export class CrawlQueue extends BtrixElement {
   @property({ type: String })
   crawlId?: string;

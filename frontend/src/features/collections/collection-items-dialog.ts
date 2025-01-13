@@ -39,7 +39,7 @@ import { pluralOf } from "@/utils/pluralize";
 
 const TABS = ["crawl", "upload"] as const;
 type Tab = (typeof TABS)[number];
-const searchKeys = ["name", "firstSeed"];
+const searchKeys = ["name", "firstSeed"] as const;
 const crawlSortOptions: SortOptions = [
   {
     // NOTE "finished" field doesn't exist in crawlconfigs,
@@ -69,8 +69,8 @@ const uploadSortOptions: SortOptions = [
 const COLLECTION_ITEMS_MAX = 1000;
 const DEFAULT_PAGE_SIZE = 10;
 
-@localized()
 @customElement("btrix-collection-items-dialog")
+@localized()
 export class CollectionItemsDialog extends BtrixElement {
   static styles = css`
     btrix-dialog {

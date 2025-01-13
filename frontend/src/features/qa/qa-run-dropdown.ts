@@ -11,8 +11,8 @@ export type SelectDetail = { item: { id: string } };
 /**
  * @fires btrix-select
  */
-@localized()
 @customElement("btrix-qa-run-dropdown")
+@localized()
 export class QaRunDropdown extends BtrixElement {
   @property({ type: Array })
   items: QARun[] = [];

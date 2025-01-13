@@ -25,8 +25,8 @@ export type OrgUpdatedDetail = {
 /**
  * @fires btrix-org-updated
  */
-@localized()
 @customElement("btrix-org-form")
+@localized()
 export class OrgForm extends BtrixElement {
   @property({ type: String })
   newOrgId?: string;

@@ -4,8 +4,8 @@ import { customElement, state } from "lit/decorators.js";
 import AuthService, { type LoggedInEventDetail } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
 
-@localized()
 @customElement("btrix-sign-up")
+@localized()
 export class SignUp extends LiteElement {
   @state()
   isSignedUpWithoutAuth?: boolean;

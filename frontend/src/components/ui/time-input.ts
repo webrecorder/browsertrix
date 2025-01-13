@@ -24,8 +24,8 @@ export type TimeInputChangeEvent = CustomEvent<TimeInputChangeDetail>;
  * @events
  * time-change TimeInputChangeEvent
  */
-@localized()
 @customElement("btrix-time-input")
+@localized()
 export class TimeInput extends LitElement {
   // postcss-lit-disable-next-line
   static styles = css`

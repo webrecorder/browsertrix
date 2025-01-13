@@ -76,8 +76,8 @@ const sortableFields: Record<
  * <btrix-archived-items></btrix-archived-items>
  * ```
  */
-@localized()
 @customElement("btrix-archived-items")
+@localized()
 export class CrawlsList extends BtrixElement {
   static FieldLabels: Record<SearchFields, string> = {
     name: msg("Name"),

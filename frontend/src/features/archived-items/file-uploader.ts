@@ -48,8 +48,8 @@ enum AbortReason {
  * @event upload-start
  * @event uploaded
  */
-@localized()
 @customElement("btrix-file-uploader")
+@localized()
 export class FileUploader extends BtrixElement {
   @property({ type: Boolean })
   open = false;

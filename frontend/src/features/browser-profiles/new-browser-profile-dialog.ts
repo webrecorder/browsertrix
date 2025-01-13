@@ -18,8 +18,8 @@ import { type SelectCrawlerProxyChangeEvent } from "@/components/ui/select-crawl
 import { proxiesContext, type ProxiesContext } from "@/context/org";
 import LiteElement, { html } from "@/utils/LiteElement";
 
-@localized()
 @customElement("btrix-new-browser-profile-dialog")
+@localized()
 export class NewBrowserProfileDialog extends LiteElement {
   @consume({ context: proxiesContext, subscribe: true })
   private readonly proxies?: ProxiesContext;

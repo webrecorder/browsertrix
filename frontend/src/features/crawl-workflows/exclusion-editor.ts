@@ -33,8 +33,8 @@ type ResponseData = {
  *
  * @event on-success On successful edit
  */
-@localized()
 @customElement("btrix-exclusion-editor")
+@localized()
 export class ExclusionEditor extends LiteElement {
   @property({ type: String })
   crawlId?: string;
