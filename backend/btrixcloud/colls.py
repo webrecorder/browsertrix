@@ -1109,7 +1109,7 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops, user_de
         coll, redirect = await colls.get_collection_by_slug(coll_slug)
 
         return await colls.get_public_collection_out(
-            cast(UUID, coll.id), org, redirect=redirect, allow_unlisted=True
+            coll.id, org, redirect=redirect, allow_unlisted=True
         )
 
     @app.get(
@@ -1136,7 +1136,7 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops, user_de
         if coll.allowPublicDownload is False:
             raise HTTPException(status_code=403, detail="not_allowed")
 
-        return await colls.download_collection(cast(UUID, coll.id), org)
+        return await colls.download_collection(coll.id, org)
 
     @app.get(
         "/orgs/{oid}/collections/{coll_id}/urls",

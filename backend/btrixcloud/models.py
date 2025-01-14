@@ -1235,6 +1235,7 @@ class CollAccessType(str, Enum):
 class Collection(BaseMongoModel):
     """Org collection structure"""
 
+    id: UUID
     name: str = Field(..., min_length=1)
     slug: str = Field(..., min_length=1)
     oid: UUID
@@ -1288,6 +1289,7 @@ class CollIn(BaseModel):
 class CollOut(BaseMongoModel):
     """Collection output model with annotations."""
 
+    id: UUID
     name: str
     slug: str
     oid: UUID
@@ -1323,6 +1325,7 @@ class CollOut(BaseMongoModel):
 class PublicCollOut(BaseMongoModel):
     """Collection output model with annotations."""
 
+    id: UUID
     name: str
     slug: str
     oid: UUID
