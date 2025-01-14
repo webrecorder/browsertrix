@@ -17,6 +17,9 @@ enum HomeView {
   URL = "url",
 }
 
+/**
+ * @fires btrix-change
+ */
 @localized()
 @customElement("btrix-collection-replay-dialog")
 export class CollectionStartPageDialog extends BtrixElement {
@@ -82,13 +85,20 @@ export class CollectionStartPageDialog extends BtrixElement {
   }
 
   render() {
+    const showTooltip =
+      this.homeView === HomeView.URL && !this.selectedSnapshot;
     return html`
       <btrix-dialog
         .label=${msg("Configure Replay Home")}
         .open=${this.open}
         class="[--width:60rem]"
         @sl-show=${() => (this.showContent = true)}
-        @sl-after-hide=${() => (this.showContent = false)}
+        @sl-after-hide=${() => {
+          this.homeView = this.homeUrl ? HomeView.URL : HomeView.Pages;
+          this.isSubmitting = false;
+          this.selectedSnapshot = null;
+          this.showContent = false;
+        }}
       >
         ${this.showContent ? this.renderContent() : nothing}
         <div slot="footer" class="flex items-center justify-between gap-3">
@@ -98,17 +108,22 @@ export class CollectionStartPageDialog extends BtrixElement {
             @click=${() => void this.dialog?.hide()}
             >${msg("Cancel")}</sl-button
           >
-          <sl-button
-            variant="primary"
-            size="small"
-            ?disabled=${!this.replayLoaded}
-            ?loading=${this.isSubmitting}
-            @click=${() => {
-              this.form?.requestSubmit();
-            }}
+          <sl-tooltip
+            content=${msg("Choose a page snapshot")}
+            ?disabled=${!showTooltip}
           >
-            ${msg("Save")}
-          </sl-button>
+            <sl-button
+              variant="primary"
+              size="small"
+              ?disabled=${!this.replayLoaded || showTooltip}
+              ?loading=${this.isSubmitting}
+              @click=${() => {
+                this.form?.requestSubmit();
+              }}
+            >
+              ${msg("Save")}
+            </sl-button>
+          </sl-tooltip>
         </div>
       </btrix-dialog>
     `;
@@ -144,12 +159,15 @@ export class CollectionStartPageDialog extends BtrixElement {
 
     if (snapshot) {
       urlPreview = html`
-        <iframe
-          class="inline-block size-full"
-          id="thumbnailPreview"
-          src=${`/replay/w/${this.collectionId}/${formatRwpTimestamp(snapshot.ts)}id_/urn:thumbnail:${snapshot.url}`}
-        >
-        </iframe>
+        <sl-tooltip hoist>
+          <iframe
+            class="inline-block size-full"
+            id="thumbnailPreview"
+            src=${`/replay/w/${this.collectionId}/${formatRwpTimestamp(snapshot.ts)}id_/urn:thumbnail:${snapshot.url}`}
+          >
+          </iframe>
+          <span slot="content" class="break-all">${snapshot.url}</span>
+        </sl-tooltip>
       `;
     }
 
@@ -194,6 +212,16 @@ export class CollectionStartPageDialog extends BtrixElement {
           ?disabled=${!this.replayLoaded}
           @sl-change=${(e: SlChangeEvent) => {
             this.homeView = (e.currentTarget as SlSelect).value as HomeView;
+
+            if (this.homeView === HomeView.Pages) {
+              if (
+                !this.homePageId ||
+                this.homePageId !== this.selectedSnapshot?.pageId
+              ) {
+                // Reset unsaved selected snapshot
+                this.selectedSnapshot = null;
+              }
+            }
           }}
         >
           ${this.replayLoaded
@@ -280,6 +308,12 @@ export class CollectionStartPageDialog extends BtrixElement {
     const form = e.currentTarget as HTMLFormElement;
     const { homeView, useThumbnail } = serialize(form);
 
+    if (homeView === HomeView.Pages && !this.homePageId) {
+      // No changes to save
+      this.open = false;
+      return;
+    }
+
     this.isSubmitting = true;
 
     try {
@@ -287,6 +321,8 @@ export class CollectionStartPageDialog extends BtrixElement {
         pageId:
           (homeView === HomeView.URL && this.selectedSnapshot?.pageId) || null,
       });
+
+      this.dispatchEvent(new CustomEvent("btrix-change"));
 
       const shouldUpload =
         homeView === HomeView.URL &&

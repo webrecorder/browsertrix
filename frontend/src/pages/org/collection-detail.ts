@@ -241,15 +241,13 @@ export class CollectionDetail extends BtrixElement {
 
       <btrix-collection-replay-dialog
         ?open=${this.openDialogName === "editStartPage"}
-        @sl-hide=${async () => {
-          this.openDialogName = undefined;
-
+        @btrix-change=${() => {
           // Don't do full refresh of rwp so that rwp-url-change fires
           this.isRwpLoaded = false;
 
-          await this.fetchCollection();
-          await this.updateComplete;
+          void this.fetchCollection();
         }}
+        @sl-hide=${async () => (this.openDialogName = undefined)}
         collectionId=${this.collectionId}
         .homeUrl=${this.collection?.homeUrl}
         .homePageId=${this.collection?.homeUrlPageId}
