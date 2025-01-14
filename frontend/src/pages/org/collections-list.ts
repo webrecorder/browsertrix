@@ -16,6 +16,7 @@ import type { PageChangeEvent } from "@/components/ui/pagination";
 import { ClipboardController } from "@/controllers/clipboard";
 import type { CollectionSavedEvent } from "@/features/collections/collection-metadata-dialog";
 import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
+import { emptyMessage } from "@/layouts/emptyMessage";
 import { pageHeader } from "@/layouts/pageHeader";
 import { RouteNamespace } from "@/routes";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
@@ -28,7 +29,6 @@ import type { UnderlyingFunction } from "@/types/utils";
 import { isApiError } from "@/utils/api";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
-import noCollectionsImg from "~assets/images/no-collections-found.webp";
 
 type Collections = APIPaginatedList<Collection>;
 type SearchFields = "name";
@@ -149,7 +149,6 @@ export class CollectionsList extends BtrixElement {
         })}
       </div>
 
-      <link rel="preload" as="image" href=${noCollectionsImg} />
       ${when(this.fetchErrorStatusCode, this.renderFetchError, () =>
         this.collections
           ? html`
@@ -230,53 +229,6 @@ export class CollectionsList extends BtrixElement {
     html`<div class="my-24 flex w-full items-center justify-center text-3xl">
       <sl-spinner></sl-spinner>
     </div>`;
-
-  private readonly renderEmpty = () => html`
-    <div
-      class="grid grid-cols-[max-content] justify-center justify-items-center gap-3 text-center"
-    >
-      <figure>
-        <div class="aspect-square w-[27rem] max-w-[100vw]">
-          <img src=${noCollectionsImg} />
-        </div>
-        <figcaption class="text-lg font-semibold text-primary">
-          ${this.isCrawler
-            ? msg("Start building your Collection.")
-            : msg("No Collections Found")}
-        </figcaption>
-      </figure>
-      ${when(
-        this.isCrawler,
-        () => html`
-          <p class="max-w-[18em]">
-            ${msg(
-              "Organize your crawls into a Collection to easily replay them together.",
-            )}
-          </p>
-          <div>
-            <sl-button
-              variant="primary"
-              @click=${() => {
-                this.dispatchEvent(
-                  new CustomEvent("select-new-dialog", {
-                    detail: "collection",
-                  }) as SelectNewDialogEvent,
-                );
-              }}
-            >
-              <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-              ${msg("Create a New Collection")}
-            </sl-button>
-          </div>
-        `,
-        () => html`
-          <p class="max-w-[18em]">
-            ${msg("Your organization doesn't have any Collections, yet.")}
-          </p>
-        `,
-      )}
-    </div>
-  `;
 
   private renderControls() {
     return html`
@@ -464,22 +416,19 @@ export class CollectionsList extends BtrixElement {
       `;
     }
 
+    const message = msg("Your org doesn’t have any collections yet.");
+
     return html`
-      <div class="rounded-lg border bg-neutral-50 p-4 text-center">
-        <p class="text-center">
-          <span class="text-neutral-400">${msg("No Collections Yet.")}</span>
-        </p>
-        ${when(
-          this.isCrawler,
-          () => html`
-            <p class="p-4 text-center">
-              ${msg(
-                "Organize your crawls into a Collection to easily replay them together.",
-              )}
-            </p>
-            <div>
+      ${when(
+        this.isCrawler,
+        () =>
+          emptyMessage({
+            message,
+            detail: msg(
+              "Collections let you easily organize, replay, and share multiple crawls.",
+            ),
+            actions: html`
               <sl-button
-                variant="primary"
                 @click=${() => {
                   this.dispatchEvent(
                     new CustomEvent("select-new-dialog", {
@@ -489,17 +438,15 @@ export class CollectionsList extends BtrixElement {
                 }}
               >
                 <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-                ${msg("Create a New Collection")}
+                ${msg("Create Collection")}
               </sl-button>
-            </div>
-          `,
-          () => html`
-            <p class="max-w-[18em] text-center">
-              ${msg("Your organization doesn't have any Collections, yet.")}
-            </p>
-          `,
-        )}
-      </div>
+            `,
+          }),
+        () =>
+          emptyMessage({
+            message,
+          }),
+      )}
     `;
   };
 
