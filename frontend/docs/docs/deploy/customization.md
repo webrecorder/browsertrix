@@ -230,7 +230,7 @@ Note that the script will only run when the web app loads, i.e. the first time t
 
 ### Tracking events
 
-Certain events, such as public collection views, link copies, and downloads, can be optionally tracked by setting `window.btrixEvent` in your `inject_extra` config. This should be a function that conforms to the following type:
+Certain anonymized user interactions—such as public collection views, downloads, and shares—can be tracked for the purpose of collecting and analyzing metrics. To enable tracking these events, set `window.btrixEvent` in your `inject_extra` config to your custom track call. This should be a JavaScript function that conforms to the following type:
 
 ```ts
 type btrixEvent = (
@@ -245,3 +245,5 @@ type btrixEvent = (
   },
 ) => void;
 ```
+
+Tracking is optional and will never expose personally identifiable information.
