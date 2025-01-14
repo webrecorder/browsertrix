@@ -94,6 +94,7 @@ export const orgDataSchema = z.object({
   crawlingDefaults: crawlingDefaultsSchema.nullable(),
   allowSharedProxies: z.boolean(),
   allowedProxies: z.array(z.string()),
+  lastCrawlFinished: apiDateSchema.nullable(),
   enablePublicProfile: z.boolean(),
   publicDescription: z.string().nullable(),
   publicUrl: z.string().nullable(),

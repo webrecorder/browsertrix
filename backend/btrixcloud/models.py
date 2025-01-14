@@ -1723,6 +1723,8 @@ class OrgOut(BaseMongoModel):
     allowedProxies: list[str] = []
     crawlingDefaults: Optional[CrawlConfigDefaults] = None
 
+    lastCrawlFinished: Optional[datetime] = None
+
     enablePublicProfile: bool = False
     publicDescription: str = ""
     publicUrl: str = ""
@@ -1781,6 +1783,8 @@ class Organization(BaseMongoModel):
     allowSharedProxies: bool = False
     allowedProxies: list[str] = []
     crawlingDefaults: Optional[CrawlConfigDefaults] = None
+
+    lastCrawlFinished: Optional[datetime] = None
 
     enablePublicProfile: bool = False
     publicDescription: Optional[str] = None

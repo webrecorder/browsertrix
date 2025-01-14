@@ -14,6 +14,7 @@ import { when } from "lit/directives/when.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
+import { SubscriptionStatus } from "@/types/billing";
 import type { ProxiesAPIResponse, Proxy } from "@/types/crawler";
 import type { OrgData } from "@/utils/orgs";
 
@@ -26,7 +27,7 @@ import type { OrgData } from "@/utils/orgs";
 export class OrgsList extends BtrixElement {
   static styles = css`
     btrix-table {
-      grid-template-columns: min-content [clickable-start] 50ch auto auto auto [clickable-end] min-content;
+      grid-template-columns: min-content [clickable-start] minmax(auto, 50ch) auto auto auto [clickable-end] min-content;
     }
   `;
 
@@ -129,6 +130,9 @@ export class OrgsList extends BtrixElement {
           </btrix-table-header-cell>
           <btrix-table-header-cell class="px-2">
             ${msg("Bytes Stored")}
+          </btrix-table-header-cell>
+          <btrix-table-header-cell class="px-2">
+            ${msg("Last Crawl")}
           </btrix-table-header-cell>
           <btrix-table-header-cell>
             <span class="sr-only">${msg("Actions")}</span>
@@ -644,15 +648,81 @@ export class OrgsList extends BtrixElement {
       };
     }
 
+    let subscription = {
+      icon: none,
+      description: msg("No Subscription"),
+    };
+
+    if (org.subscription) {
+      switch (org.subscription.status) {
+        case SubscriptionStatus.Active:
+          subscription = {
+            icon: html`<sl-icon
+              class="text-base text-success"
+              name="credit-card-fill"
+              label=${msg("Active Subscription")}
+            ></sl-icon>`,
+            description: msg("Active Subscription"),
+          };
+          break;
+        case SubscriptionStatus.Trialing:
+          subscription = {
+            icon: html`<sl-icon
+              class="text-base text-neutral-400"
+              name="basket-fill"
+              label=${msg("Trial")}
+            ></sl-icon>`,
+            description: msg("Trial"),
+          };
+          break;
+        case SubscriptionStatus.TrialingCanceled:
+          subscription = {
+            icon: html`<sl-icon
+              class="text-base text-neutral-400"
+              name="x-square-fill"
+              label=${msg("Trial Cancelled")}
+            ></sl-icon>`,
+            description: msg("Trial Canceled"),
+          };
+          break;
+        case SubscriptionStatus.PausedPaymentFailed:
+          subscription = {
+            icon: html`<sl-icon
+              class="text-base text-danger"
+              name="exclamation-triangle-fill"
+              label=${msg("Payment Failed")}
+            ></sl-icon>`,
+            description: msg("Payment Failed"),
+          };
+          break;
+        case SubscriptionStatus.Cancelled:
+          subscription = {
+            icon: html`<sl-icon
+              class="text-base text-neutral-400"
+              name="x-square-fill"
+              label=${msg("Canceled")}
+            >
+            </sl-icon>`,
+            description: msg("Canceled"),
+          };
+          break;
+        default:
+          break;
+      }
+    }
+
     return html`
       <btrix-table-row
         class="${isUserOrg
           ? ""
           : "opacity-50"} cursor-pointer select-none border-b bg-neutral-0 transition-colors first-of-type:rounded-t last-of-type:rounded-b last-of-type:border-none focus-within:bg-neutral-50 hover:bg-neutral-50"
       >
-        <btrix-table-cell class="min-w-6 pl-2">
+        <btrix-table-cell class="min-w-6 gap-1 pl-2">
           <sl-tooltip content=${status.description}>
             ${status.icon}
+          </sl-tooltip>
+          <sl-tooltip content=${subscription.description}>
+            ${subscription.icon}
           </sl-tooltip>
         </btrix-table-cell>
         <btrix-table-cell class="p-2" rowClickTarget="a">
@@ -670,7 +740,6 @@ export class OrgsList extends BtrixElement {
               : org.name}
           </a>
         </btrix-table-cell>
-
         <btrix-table-cell class="p-2">
           ${this.localize.date(org.created, { dateStyle: "short" })}
         </btrix-table-cell>
@@ -680,6 +749,11 @@ export class OrgsList extends BtrixElement {
         <btrix-table-cell class="p-2">
           ${org.bytesStored
             ? this.localize.bytes(org.bytesStored, { unitDisplay: "narrow" })
+            : none}
+        </btrix-table-cell>
+        <btrix-table-cell class="p-2">
+          ${org.lastCrawlFinished
+            ? this.localize.date(org.lastCrawlFinished, { dateStyle: "short" })
             : none}
         </btrix-table-cell>
         <btrix-table-cell class="p-1">

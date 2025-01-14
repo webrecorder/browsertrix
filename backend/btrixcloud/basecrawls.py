@@ -1,6 +1,6 @@
 """ base crawl type """
 
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Optional, List, Union, Dict, Any, Type, TYPE_CHECKING, cast, Tuple
 from uuid import UUID
 import urllib.parse
@@ -358,6 +358,8 @@ class BaseCrawlOps:
         res = await self.crawls.delete_many(query)
 
         await self.orgs.inc_org_bytes_stored(org.id, -size, type_)
+
+        await self.orgs.set_last_crawl_finished(org.id)
 
         quota_reached = self.orgs.storage_quota_reached(org)
 
@@ -852,6 +854,21 @@ class BaseCrawlOps:
                 uploads_size += item_size
 
         return total_size, crawls_size, uploads_size
+
+    async def get_org_last_crawl_finished(self, oid: UUID) -> Optional[datetime]:
+        """Get last crawl finished time for org"""
+        last_crawl_finished: Optional[datetime] = None
+
+        cursor = (
+            self.crawls.find({"oid": oid, "finished": {"$ne": None}})
+            .sort({"finished": -1})
+            .limit(1)
+        )
+        last_crawl = await cursor.to_list(length=1)
+        if last_crawl:
+            last_crawl_finished = last_crawl[0].get("finished")
+
+        return last_crawl_finished
 
 
 # ============================================================================
