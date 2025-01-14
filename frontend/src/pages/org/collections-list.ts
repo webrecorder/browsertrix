@@ -231,53 +231,6 @@ export class CollectionsList extends BtrixElement {
       <sl-spinner></sl-spinner>
     </div>`;
 
-  private readonly renderEmpty = () => html`
-    <div
-      class="grid grid-cols-[max-content] justify-center justify-items-center gap-3 text-center"
-    >
-      <figure>
-        <div class="aspect-square w-[27rem] max-w-[100vw]">
-          <img src=${noCollectionsImg} />
-        </div>
-        <figcaption class="text-lg font-semibold text-primary">
-          ${this.isCrawler
-            ? msg("Start building your Collection.")
-            : msg("No Collections Found")}
-        </figcaption>
-      </figure>
-      ${when(
-        this.isCrawler,
-        () => html`
-          <p class="max-w-[18em]">
-            ${msg(
-              "Organize your crawls into a Collection to easily replay them together.",
-            )}
-          </p>
-          <div>
-            <sl-button
-              variant="primary"
-              @click=${() => {
-                this.dispatchEvent(
-                  new CustomEvent("select-new-dialog", {
-                    detail: "collection",
-                  }) as SelectNewDialogEvent,
-                );
-              }}
-            >
-              <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-              ${msg("Create a New Collection")}
-            </sl-button>
-          </div>
-        `,
-        () => html`
-          <p class="max-w-[18em]">
-            ${msg("Your organization doesn't have any Collections, yet.")}
-          </p>
-        `,
-      )}
-    </div>
-  `;
-
   private renderControls() {
     return html`
       <div
