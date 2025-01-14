@@ -166,9 +166,13 @@ export class CollectionDetail extends BtrixElement {
                   <sl-button
                     size="small"
                     @click=${() => (this.openDialogName = "editStartPage")}
-                    ?disabled=${!this.collection?.crawlCount}
+                    ?disabled=${!this.collection?.crawlCount ||
+                    !this.isRwpLoaded}
                   >
-                    <sl-icon name="gear" slot="prefix"></sl-icon>
+                    ${!this.collection ||
+                    Boolean(this.collection.crawlCount && !this.isRwpLoaded)
+                      ? html`<sl-spinner slot="prefix"></sl-spinner>`
+                      : html`<sl-icon name="gear" slot="prefix"></sl-icon>`}
                     ${msg("Configure View")}
                   </sl-button>
                 </sl-tooltip>

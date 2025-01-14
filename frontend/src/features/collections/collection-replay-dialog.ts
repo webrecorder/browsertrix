@@ -6,18 +6,14 @@ import { customElement, property, query, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
-import "./collection-snapshot-preview";
-
-import { type CollectionSnapshotPreview } from "./collection-snapshot-preview";
+import {
+  HomeView,
+  type CollectionSnapshotPreview,
+} from "./collection-snapshot-preview";
 import type { SelectSnapshotDetail } from "./select-collection-start-page";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
-
-enum HomeView {
-  Pages = "pages",
-  URL = "url",
-}
 
 /**
  * @fires btrix-change
@@ -81,8 +77,8 @@ export class CollectionStartPageDialog extends BtrixElement {
   private readonly thumbnailPreview?: CollectionSnapshotPreview | null;
 
   willUpdate(changedProperties: PropertyValues<this>) {
-    if (changedProperties.has("homeUrl") && this.homeUrl) {
-      this.homeView = HomeView.URL;
+    if (changedProperties.has("homeUrl")) {
+      this.homeView = this.homeUrl ? HomeView.URL : HomeView.Pages;
     }
   }
 
@@ -144,11 +140,6 @@ export class CollectionStartPageDialog extends BtrixElement {
   }
 
   private renderPreview() {
-    let urlPreview = html`
-      <p class="m-3 text-pretty text-neutral-500">
-        ${msg("Enter a Page URL to preview it")}
-      </p>
-    `;
     const snapshot =
       this.selectedSnapshot ||
       (this.homeUrl
@@ -156,21 +147,19 @@ export class CollectionStartPageDialog extends BtrixElement {
             url: this.homeUrl,
             ts: this.homeTs,
             pageId: this.homePageId,
+            status: 200,
           }
         : null);
 
-    if (snapshot) {
-      urlPreview = html`
-        <btrix-collection-snapshot-preview
-          class="contents"
-          id="thumbnailPreview"
-          collectionId=${this.collectionId || ""}
-          url=${snapshot.url || ""}
-          timestamp=${snapshot.ts || ""}
-        >
-        </btrix-collection-snapshot-preview>
-      `;
-    }
+    const replaySource = `/api/orgs/${this.orgId}/collections/${this.collectionId}/replay.json`;
+    // TODO Get query from replay-web-page embed
+    const query = queryString.stringify({
+      source: replaySource,
+      customColl: this.collectionId,
+      embed: "default",
+      noCache: 1,
+      noSandbox: 1,
+    });
 
     return html`
       <div
@@ -178,13 +167,15 @@ export class CollectionStartPageDialog extends BtrixElement {
           ? "flex items-center justify-center"
           : ""} relative aspect-video overflow-hidden rounded-lg border bg-slate-50"
       >
-        ${when(
-          this.homeView === HomeView.URL && this.replayLoaded,
-          () => urlPreview,
-        )}
-        <div class="${this.homeView === HomeView.URL ? "offscreen" : ""}">
-          ${this.renderReplay()}
-        </div>
+        <btrix-collection-snapshot-preview
+          class="contents"
+          id="thumbnailPreview"
+          collectionId=${this.collectionId || ""}
+          view=${this.homeView}
+          replaySrc=${`/replay/?${query}#view=pages`}
+          .snapshot=${snapshot}
+        >
+        </btrix-collection-snapshot-preview>
 
         ${when(
           !this.replayLoaded,
@@ -282,34 +273,18 @@ export class CollectionStartPageDialog extends BtrixElement {
     `;
   }
 
-  private renderReplay() {
-    const replaySource = `/api/orgs/${this.orgId}/collections/${this.collectionId}/replay.json`;
-    // TODO Get query from replay-web-page embed
-    const query = queryString.stringify({
-      source: replaySource,
-      customColl: this.collectionId,
-      embed: "default",
-      noCache: 1,
-      noSandbox: 1,
-    });
-
-    return html`<div class="aspect-video w-[200%]">
-      <div class="pointer-events-none aspect-video origin-top-left scale-50">
-        <iframe
-          class="inline-block size-full"
-          src=${`/replay/?${query}#view=pages`}
-        ></iframe>
-      </div>
-    </div>`;
-  }
-
   private async onSubmit(e: SubmitEvent) {
     e.preventDefault();
 
     const form = e.currentTarget as HTMLFormElement;
     const { homeView, useThumbnail } = serialize(form);
 
-    if (homeView === HomeView.Pages && !this.homePageId) {
+    if (
+      (homeView === HomeView.Pages && !this.homePageId) ||
+      (homeView === HomeView.URL &&
+        this.selectedSnapshot &&
+        this.homePageId === this.selectedSnapshot.pageId)
+    ) {
       // No changes to save
       this.open = false;
       return;
@@ -323,8 +298,6 @@ export class CollectionStartPageDialog extends BtrixElement {
           (homeView === HomeView.URL && this.selectedSnapshot?.pageId) || null,
       });
 
-      this.dispatchEvent(new CustomEvent("btrix-change"));
-
       const shouldUpload =
         homeView === HomeView.URL &&
         useThumbnail === "on" &&
@@ -334,19 +307,13 @@ export class CollectionStartPageDialog extends BtrixElement {
       const fileName = `page-thumbnail_${this.selectedSnapshot?.pageId}.jpeg`;
       let file: File | undefined;
 
-      if (shouldUpload && this.thumbnailPreview?.src) {
-        const { src } = this.thumbnailPreview;
+      if (shouldUpload && this.thumbnailPreview) {
+        const blob = await this.thumbnailPreview.thumbnailBlob;
 
-        // Wait to get the thumbnail image before closing the dialog
-        try {
-          const resp = await this.thumbnailPreview.fetch(src);
-          const blob = await resp.blob();
-
+        if (blob) {
           file = new File([blob], fileName, {
             type: blob.type,
           });
-        } catch (err) {
-          console.debug(err);
         }
       } else {
         this.notify.toast({
@@ -388,6 +355,8 @@ export class CollectionStartPageDialog extends BtrixElement {
           });
         }
       }
+
+      this.dispatchEvent(new CustomEvent("btrix-change"));
     } catch (err) {
       console.debug(err);
 
