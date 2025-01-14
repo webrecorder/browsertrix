@@ -120,12 +120,13 @@ export class ShareCollection extends BtrixElement {
             @click=${() => {
               void this.clipboardController.copy(this.shareLink);
 
-              track(AnalyticsTrackEvent.CopyShareCollectionLink, {
-                org_slug: this.orgSlug,
-                collection_id: this.collectionId,
-                collection_name: this.collection?.name,
-                logged_in: !!this.authState,
-              });
+              if (this.collection?.access === CollectionAccess.Public) {
+                track(AnalyticsTrackEvent.CopyShareCollectionLink, {
+                  org_slug: this.orgSlug,
+                  collection_slug: this.collection.slug,
+                  logged_in: !!this.authState,
+                });
+              }
             }}
           >
             <sl-icon
@@ -204,8 +205,7 @@ export class ShareCollection extends BtrixElement {
                       @click=${() => {
                         track(AnalyticsTrackEvent.DownloadPublicCollection, {
                           org_slug: this.orgSlug,
-                          collection_id: this.collectionId,
-                          collection_name: this.collection?.name,
+                          collection_slug: this.collection?.slug,
                         });
                       }}
                     >

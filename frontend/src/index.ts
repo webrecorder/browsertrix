@@ -310,14 +310,14 @@ export class App extends BtrixElement {
   }
 
   trackPageView() {
-    const { slug, collectionId } = this.viewState.params;
+    const { slug, collectionSlug } = this.viewState.params;
     const pageViewProps: AnalyticsTrackProps = {
       org_slug: slug || null,
       logged_in: !!this.authState,
     };
 
-    if (collectionId) {
-      pageViewProps.collection_id = collectionId;
+    if (collectionSlug) {
+      pageViewProps.collection_slug = collectionSlug;
     }
 
     pageView(pageViewProps);
