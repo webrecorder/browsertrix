@@ -29,7 +29,6 @@ import type { UnderlyingFunction } from "@/types/utils";
 import { isApiError } from "@/utils/api";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
-import noCollectionsImg from "~assets/images/no-collections-found.webp";
 
 type Collections = APIPaginatedList<Collection>;
 type SearchFields = "name";
@@ -150,7 +149,6 @@ export class CollectionsList extends BtrixElement {
         })}
       </div>
 
-      <link rel="preload" as="image" href=${noCollectionsImg} />
       ${when(this.fetchErrorStatusCode, this.renderFetchError, () =>
         this.collections
           ? html`
