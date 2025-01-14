@@ -1,12 +1,12 @@
 """
-Migration 0038 -- collection access
+Migration 0039 -- collection slugs
 """
 
 from btrixcloud.migrations import BaseMigration
 from btrixcloud.utils import slug_from_name
 
 
-MIGRATION_VERSION = "0038"
+MIGRATION_VERSION = "0039"
 
 
 class Migration(BaseMigration):
