@@ -208,23 +208,28 @@ export class Collection extends BtrixElement {
   }
 
   private renderAbout(collection: PublicCollection) {
-    return about({
-      description: collection.description
-        ? html` <div
-            class="py-3 leading-relaxed lg:rounded-lg lg:border lg:p-6"
-          >
-            <btrix-markdown-viewer
-              value=${collection.description}
-            ></btrix-markdown-viewer>
-          </div>`
-        : null,
-      metadata: {
-        dateEarliest: collection.dateEarliest,
-        dateLatest: collection.dateLatest,
-        pageCount: collection.pageCount,
-        totalSize: collection.totalSize,
-      },
-    });
+    return html`
+      <div class="mt-5 px-2">
+        ${about({
+          description: collection.description
+            ? html`<h2 class="mb-2 text-lg font-medium text-neutral-800">
+                  ${msg("About This Collection")}
+                </h2>
+                <div class="lg:pr-12">
+                  <btrix-markdown-viewer
+                    value=${collection.description}
+                  ></btrix-markdown-viewer>
+                </div>`
+            : null,
+          metadata: {
+            dateEarliest: collection.dateEarliest,
+            dateLatest: collection.dateLatest,
+            pageCount: collection.pageCount,
+            totalSize: collection.totalSize,
+          },
+        })}
+      </div>
+    `;
   }
 
   private async fetchCollections({

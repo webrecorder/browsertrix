@@ -501,29 +501,31 @@ export class CollectionDetail extends BtrixElement {
       `;
     };
 
-    return about({
-      description: html`
-        <header class="mb-3 flex min-h-8 items-end justify-between">
-          <h2 class="text-base font-medium leading-none">
-            ${msg("Description")}
-          </h2>
-          ${when(
-            this.collection?.description && !this.isEditingDescription,
-            () => html`
-              <sl-button
-                size="small"
-                @click=${() => (this.isEditingDescription = true)}
-              >
-                <sl-icon name="pencil" slot="prefix"></sl-icon>
-                ${msg("Edit Description")}
-              </sl-button>
-            `,
-          )}
-        </header>
-        ${when(this.collection, renderDescription, this.renderSpinner)}
-      `,
-      metadata: this.collection,
-    });
+    return html`
+      <div class="mt-5">
+        ${about({
+          description: html`
+            <header class="mb-3 flex min-h-8 items-end justify-between">
+              <h2 class="text-lg font-medium">${msg("Description")}</h2>
+              ${when(
+                this.collection?.description && !this.isEditingDescription,
+                () => html`
+                  <sl-button
+                    size="small"
+                    @click=${() => (this.isEditingDescription = true)}
+                  >
+                    <sl-icon name="pencil" slot="prefix"></sl-icon>
+                    ${msg("Edit Description")}
+                  </sl-button>
+                `,
+              )}
+            </header>
+            ${when(this.collection, renderDescription, this.renderSpinner)}
+          `,
+          metadata: this.collection,
+        })}
+      </div>
+    `;
   }
 
   private renderDescriptionForm() {

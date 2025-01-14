@@ -91,7 +91,7 @@ export function about({
   metadata?: Metadata;
 }) {
   return html`
-    <div class="flex flex-1 flex-col gap-10 lg:flex-row">
+    <div class="flex flex-1 flex-col gap-x-16 gap-y-10 lg:flex-row">
       ${description === null
         ? nothing
         : html`
@@ -100,10 +100,10 @@ export function about({
             </section>
           `}
       <section class="flex-1">
-        <btrix-section-heading>
-          <h2>${msg("Metadata")}</h2>
-        </btrix-section-heading>
-        <div class="mt-5">${descList(metadata)}</div>
+        <h2 class="mb-3 text-lg font-medium text-neutral-800">
+          ${msg("Metadata")}
+        </h2>
+        ${descList(metadata)}
       </section>
     </div>
   `;
