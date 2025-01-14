@@ -5,6 +5,7 @@ import type {
   SlInput,
   SlSelect,
 } from "@shoelace-style/shoelace";
+import clsx from "clsx";
 import { html, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
@@ -16,6 +17,7 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import type { Combobox } from "@/components/ui/combobox";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { UnderlyingFunction } from "@/types/utils";
+import { tw } from "@/utils/tailwind";
 
 type Snapshot = {
   pageId: string;
@@ -188,6 +190,29 @@ export class SelectCollectionStartPage extends BtrixElement {
   }
 
   private renderPageSearch() {
+    let prefix: {
+      icon: string;
+      tooltip: string;
+      className?: string;
+    } = {
+      icon: "search",
+      tooltip: msg("Search for a page in this collection"),
+    };
+
+    if (this.pageUrlError) {
+      prefix = {
+        icon: "exclamation-lg",
+        tooltip: this.pageUrlError,
+        className: tw`text-danger`,
+      };
+    } else if (this.selectedPage) {
+      prefix = {
+        icon: "check-lg",
+        tooltip: msg("Page exists in collection"),
+        className: tw`text-success`,
+      };
+    }
+
     return html`
       <btrix-combobox
         @request-close=${() => {
@@ -198,6 +223,7 @@ export class SelectCollectionStartPage extends BtrixElement {
           id="pageUrlInput"
           label=${msg("Page URL")}
           placeholder=${msg("Start typing a URL...")}
+          clearable
           @sl-focus=${() => {
             this.resetInputValidity();
             this.combobox?.show();
@@ -214,33 +240,18 @@ export class SelectCollectionStartPage extends BtrixElement {
           >}
           @sl-blur=${this.pageUrlOnBlur}
         >
-          <sl-icon name="search" slot="prefix"></sl-icon>
-          ${when(
-            this.selectedPage,
-            () => html`
-              <div slot="suffix" class="flex items-center">
-                <sl-tooltip hoist content=${msg("Page found in collection")}>
-                  <sl-icon
-                    name="check-lg"
-                    class="size-4 text-base text-success"
-                  ></sl-icon>
-                </sl-tooltip>
-              </div>
-            `,
-          )}
-          ${when(
-            this.pageUrlError,
-            (error) => html`
-              <div slot="suffix" class="flex items-center">
-                <sl-tooltip hoist content=${error}>
-                  <sl-icon
-                    name="exclamation-lg"
-                    class="size-4 text-base text-danger"
-                  ></sl-icon>
-                </sl-tooltip>
-              </div>
-            `,
-          )}
+          <div slot="prefix" class="inline-flex items-center">
+            <sl-tooltip
+              hoist
+              content=${prefix.tooltip}
+              placement="bottom-start"
+            >
+              <sl-icon
+                name=${prefix.icon}
+                class=${clsx(tw`size-4 text-base`, prefix.className)}
+              ></sl-icon>
+            </sl-tooltip>
+          </div>
         </sl-input>
         ${this.renderSearchResults()}
       </btrix-combobox>
