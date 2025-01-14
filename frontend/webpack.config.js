@@ -5,9 +5,11 @@ const childProcess = require("child_process");
 const fs = require("fs");
 const path = require("path");
 
+
 const CopyPlugin = require("copy-webpack-plugin");
 const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
+const threadLoader = require("thread-loader");
 const TsconfigPathsPlugin = require("tsconfig-paths-webpack-plugin");
 const webpack = require("webpack");
 
@@ -15,7 +17,7 @@ const defineConfig = require("./config/define.js");
 // @ts-ignore
 const packageJSON = require("./package.json");
 
-const isDevServer = process.env.WEBPACK_SERVE;
+const isDevServer = process.env.WEBPACK_SERVE === "true";
 
 const dotEnvPath = path.resolve(
   process.cwd(),
@@ -75,6 +77,20 @@ const version = (() => {
   return packageJSON.version;
 })();
 
+/** @type {Partial<import('ts-loader').Options>} */
+const tsLoaderOptions = {
+  onlyCompileBundledFiles: true,
+  transpileOnly: true,
+  // Enables compatibility with thread-loader
+  happyPackMode: true,
+};
+
+const threadLoaderOptions = {
+  poolTimeout: isDevServer ? Infinity : 2000,
+};
+
+threadLoader.warmup(threadLoaderOptions, ["ts-loader"]);
+
 /** @type {import('webpack').Configuration} */
 const main = {
   entry: "./src/index.ts",
@@ -87,9 +103,11 @@ const main = {
 
   module: {
     rules: [
+      // Non-generated source files
       {
         test: /\.ts$/,
         include: path.resolve(__dirname, "src"),
+        exclude: path.resolve(__dirname, "src/__generated__"),
         use: [
           {
             loader: "postcss-loader",
@@ -101,14 +119,29 @@ const main = {
             },
           },
           {
+            loader: "thread-loader",
+            options: threadLoaderOptions,
+          },
+          {
             loader: "ts-loader",
-            options: {
-              onlyCompileBundledFiles: true,
-              transpileOnly: true,
-            },
+            options: tsLoaderOptions,
           },
         ],
-        exclude: /node_modules/,
+      },
+      {
+        // Generated source files
+        test: /\.ts$/,
+        include: path.resolve(__dirname, "src/__generated__"),
+        use: [
+          {
+            loader: "thread-loader",
+            options: threadLoaderOptions,
+          },
+          {
+            loader: "ts-loader",
+            options: tsLoaderOptions,
+          },
+        ],
       },
       {
         // Global styles and assets, like fonts and Shoelace,
@@ -170,6 +203,11 @@ const main = {
       typescript: {
         configOverwrite: {
           exclude: ["**/*.test.ts", "tests/**/*.ts", "playwright.config.ts"],
+        },
+        // Re-enable type checking when `happyPackMode` is enabled
+        diagnosticOptions: {
+          semantic: true,
+          syntactic: true,
         },
       },
     }),

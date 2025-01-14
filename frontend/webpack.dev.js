@@ -1,8 +1,8 @@
 // @ts-check
-
 const path = require("path");
 
 const ESLintPlugin = require("eslint-webpack-plugin");
+const webpack = require("webpack");
 const { merge } = require("webpack-merge");
 
 const baseConfigs = require("./webpack.config.js");
@@ -26,9 +26,42 @@ const RWP_BASE_URL =
 
 const devBackendUrl = new URL(process.env.API_BASE_URL);
 
+/** @type {import('webpack').Configuration['plugins']} */
+const plugins = [
+  new ESLintPlugin({
+    extensions: ["ts", "js"],
+  }),
+];
+
+// Dev config may be used in Playwright E2E CI tests
+if (process.env.WEBPACK_SERVE === "true") {
+  let litManifest;
+
+  try {
+    litManifest = require.resolve(
+      path.join(__dirname, "dist/vendor/lit-manifest.json"),
+    );
+  } catch {
+    console.warn(
+      "`lit-manifest.json` not found. If you're seeing this with `yarn start`, ensure the file exists. You can ignore this message otherwise.",
+    );
+  }
+
+  if (litManifest) {
+    plugins.unshift(
+      // Speed up rebuilds by excluding vendor modules
+      new webpack.DllReferencePlugin({
+        manifest: require.resolve(
+          path.join(__dirname, "dist/vendor/lit-manifest.json"),
+        ),
+      }),
+    );
+  }
+}
+
 module.exports = [
   merge(main, {
-    devtool: "eval-cheap-source-map",
+    devtool: "eval",
     /** @type {import('webpack-dev-server').Configuration} */
     devServer: {
       watchFiles: ["src/**/*", __filename],
@@ -40,24 +73,30 @@ module.exports = [
           directory: shoelaceAssetsSrcPath,
           publicPath: "/" + shoelaceAssetsPublicPath,
         },
+        {
+          directory: path.join(__dirname, "dist/vendor"),
+          publicPath: "/vendor",
+        },
       ],
       historyApiFallback: true,
-      proxy: {
-        "/api": {
+      proxy: [
+        {
+          context: "/api",
+
           target: devBackendUrl.href,
           headers: {
             Host: devBackendUrl.host,
           },
           ws: true,
         },
-
-        "/data": {
+        {
+          context: "/data",
           target: devBackendUrl.href,
           headers: {
             Host: devBackendUrl.host,
           },
         },
-      },
+      ],
       setupMiddlewares: (middlewares, server) => {
         // Serve replay service worker file
         server.app?.get("/replay/sw.js", (req, res) => {
@@ -93,11 +132,7 @@ module.exports = [
         config: [__filename],
       },
     },
-    plugins: [
-      new ESLintPlugin({
-        extensions: ["ts", "js"],
-      }),
-    ],
+    plugins,
   }),
   {
     ...vnc,

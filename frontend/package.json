@@ -78,13 +78,14 @@
     "style-loader": "^3.3.0",
     "tailwindcss": "^3.4.1",
     "terser-webpack-plugin": "^5.3.10",
+    "thread-loader": "^4.0.4",
     "ts-loader": "^9.2.6",
     "tsconfig-paths-webpack-plugin": "^4.1.0",
     "typescript": "^5.3.3",
     "update-dotenv": "^1.1.1",
     "url-pattern": "^1.0.3",
-    "webpack": "^5.88.0",
-    "webpack-cli": "^4.8.0",
+    "webpack": "^5.97.1",
+    "webpack-cli": "^5.1.4",
     "webpack-merge": "^5.8.0",
     "yaml": "^2.0.0-11",
     "zod": "^3.23.8"
@@ -97,6 +98,7 @@
     "build": "webpack --config webpack.prod.js",
     "build-dev": "webpack --mode development",
     "build:analyze": "BUNDLE_ANALYZER=true webpack --config webpack.prod.js",
+    "prestart": "webpack --mode development --config vendor.webpack.config.js",
     "start": "webpack serve --mode=development --config webpack.dev.js",
     "serve": "node scripts/serve.js",
     "lint": "eslint --fix .",
@@ -120,7 +122,7 @@
     "sinon": "^12.0.1",
     "ts-lit-plugin": "^2.0.1",
     "webpack-bundle-analyzer": "^4.10.1",
-    "webpack-dev-server": "^4.15.0"
+    "webpack-dev-server": "^5.2.0"
   },
   "optionalDependencies": {
     "@esm-bundle/chai": "^4.3.4-fix.0",

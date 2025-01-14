@@ -19,6 +19,9 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <script src="/extra.js"></script>
+    <%if (environment === "development") { %>
+      <script defer src="/vendor/dll.lit.js"></script>
+    <% } %>
   </head>
   <body>
     <script>
