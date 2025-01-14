@@ -1,3 +1,4 @@
+import { consume } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
 import type {
   SlChangeEvent,
@@ -43,6 +44,8 @@ import type { SelectCrawlerProxyChangeEvent } from "@/components/ui/select-crawl
 import type { Tab } from "@/components/ui/tab-list";
 import type { TagInputEvent, TagsChangeEvent } from "@/components/ui/tag-input";
 import type { TimeInputChangeEvent } from "@/components/ui/time-input";
+import { validURL } from "@/components/ui/url-input";
+import { proxiesContext, type ProxiesContext } from "@/context/org";
 import { type SelectBrowserProfileChangeEvent } from "@/features/browser-profiles/select-browser-profile";
 import type { CollectionsChangeEvent } from "@/features/collections/collections-add";
 import type { QueueExclusionTable } from "@/features/crawl-workflows/queue-exclusion-table";
@@ -161,13 +164,6 @@ function getLocalizedWeekDays() {
   );
 }
 
-function validURL(url: string) {
-  // adapted from: https://gist.github.com/dperini/729294
-  return /^(?:https?:\/\/)?(?:\S+(?::\S*)?@)?(?:(?!(?:10|127)(?:\.\d{1,3}){3})(?!(?:169\.254|192\.168)(?:\.\d{1,3}){2})(?!172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z0-9\u00a1-\uffff][a-z0-9\u00a1-\uffff_-]{0,62})?[a-z0-9\u00a1-\uffff]\.)+(?:[a-z\u00a1-\uffff]{2,}\.?))(?::\d{2,5})?(?:[/?#]\S*)?$/i.test(
-    url,
-  );
-}
-
 const trimArray = flow(uniq, compact);
 const urlListToArray = flow(
   (str?: string) => (str?.length ? str.trim().split(/\s+/g) : []),
@@ -185,9 +181,12 @@ type CrawlConfigResponse = {
   quotas?: { maxPagesPerCrawl?: number };
   id?: string;
 };
-@localized()
 @customElement("btrix-workflow-editor")
+@localized()
 export class WorkflowEditor extends BtrixElement {
+  @consume({ context: proxiesContext, subscribe: true })
+  private readonly proxies?: ProxiesContext;
+
   @property({ type: String })
   configId?: string;
 
@@ -786,6 +785,7 @@ export class WorkflowEditor extends BtrixElement {
       ${this.formState.scopeType === ScopeType.Page
         ? html`
             ${inputCol(html`
+              <!-- TODO Use btrix-url-input -->
               <sl-input
                 name="urlList"
                 label=${msg("Page URL")}
@@ -1329,17 +1329,24 @@ https://archiveweb.page/images/${"logo.svg"}`}
         ></btrix-select-browser-profile>
       `)}
       ${this.renderHelpTextCol(infoTextStrings["browserProfile"])}
-      ${inputCol(html`
-        <btrix-select-crawler-proxy
-          orgId=${this.orgId}
-          .proxyId="${this.formState.proxyId || ""}"
-          @on-change=${(e: SelectCrawlerProxyChangeEvent) =>
-            this.updateFormState({
-              proxyId: e.detail.value,
-            })}
-        ></btrix-select-crawler-proxy>
-      `)}
-      ${this.renderHelpTextCol(infoTextStrings["proxyId"])}
+      ${this.proxies?.servers.length
+        ? [
+            inputCol(html`
+              <btrix-select-crawler-proxy
+                defaultProxyId=${ifDefined(
+                  this.proxies.default_proxy_id ?? undefined,
+                )}
+                .proxyServers=${this.proxies.servers}
+                .proxyId="${this.formState.proxyId || ""}"
+                @btrix-change=${(e: SelectCrawlerProxyChangeEvent) =>
+                  this.updateFormState({
+                    proxyId: e.detail.value,
+                  })}
+              ></btrix-select-crawler-proxy>
+            `),
+            this.renderHelpTextCol(infoTextStrings["proxyId"]),
+          ]
+        : nothing}
       ${inputCol(html`
         <sl-radio-group
           name="scale"

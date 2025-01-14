@@ -75,8 +75,8 @@ export type QaSortChangeDetail = APISortQuery & { sortBy: SortableFieldNames };
  * @fires btrix-qa-filter-change
  * @fires btrix-qa-sort-change
  */
-@localized()
 @customElement("btrix-qa-page-list")
+@localized()
 export class PageList extends BtrixElement {
   @property({ type: String })
   qaRunId?: string;

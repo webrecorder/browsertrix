@@ -38,8 +38,8 @@ export type BrowserConnectionChange = {
  * @fires btrix-browser-reload
  * @fires btrix-browser-connection-change
  */
-@localized()
 @customElement("btrix-profile-browser")
+@localized()
 export class ProfileBrowser extends BtrixElement {
   @property({ type: String })
   browserId?: string;

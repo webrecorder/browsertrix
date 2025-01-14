@@ -27,8 +27,8 @@ const DESCRIPTION_MAXLENGTH = 500;
  * ></btrix-browser-profiles-detail>
  * ```
  */
-@localized()
 @customElement("btrix-browser-profiles-detail")
+@localized()
 export class BrowserProfilesDetail extends BtrixElement {
   @property({ type: String })
   profileId!: string;

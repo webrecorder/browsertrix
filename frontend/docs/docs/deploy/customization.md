@@ -208,16 +208,22 @@ Browsertrix has the ability to cryptographically sign WACZ files with [Authsign]
 
 You can enable sign-ups by setting `registration_enabled` to `"1"`. Once enabled, your users can register by visiting `/sign-up`.
 
-## Analytics
+## Inject Extra JavaScript
 
-You can add a script to inject any sort of analytics into the frontend by setting `inject_analytics` to the script. If present, it will be injected as a blocking script tag into every page — so we recommend you create the script tags that handle your analytics from within this script.
+You can add a script to inject analytics, bug reporting tools, etc. into the frontend by setting `inject_extra` to script contents of your choosing. If present, it will be injected as a blocking script tag that runs when the frontend web app is initialized.
 
-For example, here's a script that adds Plausible Analytics tracking:
+For example, enabling analytics and tracking might look like this:
 
-```ts
-const plausible = document.createElement("script");
-plausible.src = "https://plausible.io/js/script.js";
-plausible.defer = true;
-plausible.dataset.domain = "app.browsertrix.com";
-document.head.appendChild(plausible);
+```yaml
+inject_extra: >
+  const analytics = document.createElement("script");
+  analytics.src = "https://cdn.example.com/analytics.js";
+  analytics.defer = true;
+
+  document.head.appendChild(analytics);
+
+  window.analytics = window.analytics
+    || function () { (window.analytics.q = window.analytics.q || []).push(arguments); };
 ```
+
+Note that the script will only run when the web app loads, i.e. the first time the app is loaded in the browser and on hard refresh. The script will not run again upon clicking a link in the web app. This shouldn't be an issue with most analytics libraries, which should listen for changes to [window history](https://developer.mozilla.org/en-US/docs/Web/API/History). If you have a custom script that needs to re-run when the frontend URL changes, you'll need to add an event listener for the [`popstate` event](https://developer.mozilla.org/en-US/docs/Web/API/Window/popstate_event).

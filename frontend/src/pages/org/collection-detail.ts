@@ -1,5 +1,5 @@
 import { localized, msg, str } from "@lit/localize";
-import type { SlCheckbox } from "@shoelace-style/shoelace";
+import clsx from "clsx";
 import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
@@ -10,35 +10,40 @@ import queryString from "query-string";
 import type { Embed as ReplayWebPage } from "replaywebpage";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import type { MarkdownEditor } from "@/components/ui/markdown-editor";
 import type { PageChangeEvent } from "@/components/ui/pagination";
-import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
+import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
+import type { ShareCollection } from "@/features/collections/share-collection";
+import { pageHeader, pageNav, type Breadcrumb } from "@/layouts/pageHeader";
 import type {
   APIPaginatedList,
   APIPaginationQuery,
   APISortQuery,
 } from "@/types/api";
-import type { Collection } from "@/types/collection";
+import { CollectionAccess, type Collection } from "@/types/collection";
 import type { ArchivedItem, Crawl, Upload } from "@/types/crawler";
 import type { CrawlState } from "@/types/crawlState";
 import { pluralOf } from "@/utils/pluralize";
+import { formatRwpTimestamp } from "@/utils/replay";
+import { tw } from "@/utils/tailwind";
 
 const ABORT_REASON_THROTTLE = "throttled";
-const DESCRIPTION_MAX_HEIGHT_PX = 200;
 const INITIAL_ITEMS_PAGE_SIZE = 20;
-const TABS = ["replay", "items"] as const;
-export type Tab = (typeof TABS)[number];
 
-@localized()
+export enum Tab {
+  Replay = "replay",
+  About = "about",
+  Items = "items",
+}
+
 @customElement("btrix-collection-detail")
+@localized()
 export class CollectionDetail extends BtrixElement {
   @property({ type: String })
   collectionId!: string;
 
   @property({ type: String })
-  collectionTab?: Tab = TABS[0];
-
-  @property({ type: Boolean })
-  isCrawler?: boolean;
+  collectionTab: Tab = Tab.Replay;
 
   @state()
   private collection?: Collection;
@@ -47,22 +52,26 @@ export class CollectionDetail extends BtrixElement {
   private archivedItems?: APIPaginatedList<ArchivedItem>;
 
   @state()
-  private openDialogName?: "delete" | "editMetadata" | "editItems";
+  private openDialogName?:
+    | "delete"
+    | "editMetadata"
+    | "editItems"
+    | "editStartPage";
 
   @state()
-  private isDescriptionExpanded = false;
+  private isEditingDescription = false;
 
   @state()
-  private showShareInfo = false;
-
-  @query(".description")
-  private readonly description?: HTMLElement | null;
-
-  @query(".descriptionExpandBtn")
-  private readonly descriptionExpandBtn?: HTMLElement | null;
+  private isRwpLoaded = false;
 
   @query("replay-web-page")
   private readonly replayEmbed?: ReplayWebPage | null;
+
+  @query("btrix-share-collection")
+  private readonly shareCollection?: ShareCollection | null;
+
+  @query("btrix-markdown-editor")
+  private readonly descriptionEditor?: MarkdownEditor | null;
 
   // Use to cancel requests
   private getArchivedItemsController: AbortController | null = null;
@@ -71,15 +80,23 @@ export class CollectionDetail extends BtrixElement {
     Tab,
     { icon: { name: string; library: string }; text: string }
   > = {
-    replay: {
+    [Tab.Replay]: {
       icon: { name: "replaywebpage", library: "app" },
       text: msg("Replay"),
     },
-    items: {
+    [Tab.Items]: {
       icon: { name: "list-ul", library: "default" },
       text: msg("Archived Items"),
     },
+    [Tab.About]: {
+      icon: { name: "info-square-fill", library: "default" },
+      text: msg("About"),
+    },
   };
+
+  private get isCrawler() {
+    return this.appState.isCrawler;
+  }
 
   protected async willUpdate(
     changedProperties: PropertyValues<this> & Map<string, unknown>,
@@ -93,86 +110,94 @@ export class CollectionDetail extends BtrixElement {
   protected async updated(
     changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {
-    if (changedProperties.has("collection") && this.collection) {
-      void this.checkTruncateDescription();
+    if (
+      changedProperties.has("isEditingDescription") &&
+      this.isEditingDescription
+    ) {
+      if (this.descriptionEditor) {
+        // FIXME Focus on editor ready instead of timeout
+        window.setTimeout(() => {
+          this.descriptionEditor && void this.descriptionEditor.focus();
+        }, 200);
+      }
     }
   }
 
   render() {
     return html` <div class="mb-7">${this.renderBreadcrumbs()}</div>
-      <header class="items-center gap-2 pb-3 md:flex">
-        <div class="mb-2 flex w-full items-center gap-2 md:mb-0">
-          <div class="flex size-8 items-center justify-center">
-            ${this.collection?.isPublic
-              ? html`
-                  <sl-tooltip content=${msg("Shareable")}>
-                    <sl-icon
-                      class="text-lg text-success-600"
-                      name="people-fill"
-                    ></sl-icon>
-                  </sl-tooltip>
-                `
-              : html`
-                  <sl-tooltip content=${msg("Private")}>
-                    <sl-icon class="text-lg" name="eye-slash-fill"></sl-icon>
-                  </sl-tooltip>
-                `}
-          </div>
-          <h1 class="min-w-0 flex-1 truncate text-xl font-semibold leading-7">
-            ${this.collection?.name ||
-            html`<sl-skeleton class="w-96"></sl-skeleton>`}
-          </h1>
-        </div>
-        ${when(
-          this.isCrawler || this.collection?.isPublic,
-          () => html`
-            <sl-button
-              variant=${this.collection?.crawlCount ? "primary" : "default"}
-              size="small"
-              @click=${() => (this.showShareInfo = true)}
-            >
-              <sl-icon name="box-arrow-up" slot="prefix"></sl-icon>
-              ${msg("Share")}
-            </sl-button>
-          `,
-        )}
-        ${when(this.isCrawler, this.renderActions)}
-      </header>
-      <div class="mb-3 rounded-lg border px-4 py-2">
+      ${pageHeader({
+        title: this.collection?.name,
+        border: false,
+        prefix: this.renderAccessIcon(),
+        secondary: this.collection?.caption
+          ? html`<div class="text-pretty text-neutral-600">
+              ${this.collection.caption}
+            </div>`
+          : nothing,
+        actions: html`
+          <btrix-share-collection
+            collectionId=${this.collectionId}
+            .collection=${this.collection}
+            @btrix-change=${(e: CustomEvent) => {
+              e.stopPropagation();
+              void this.fetchCollection();
+            }}
+          ></btrix-share-collection>
+          ${when(this.isCrawler, this.renderActions)}
+        `,
+      })}
+
+      <div class="mt-3 rounded-lg border px-4 py-2">
         ${this.renderInfoBar()}
       </div>
-      <div class="mb-3 flex items-center justify-between">
+      <div class="flex items-center justify-between py-3">
         ${this.renderTabs()}
-        ${when(
-          this.isCrawler,
-          () => html`
-            <sl-button
-              variant=${!this.collection || this.collection.crawlCount
-                ? "default"
-                : "primary"}
-              size="small"
-              @click=${() => (this.openDialogName = "editItems")}
-              ?disabled=${!this.collection}
-            >
-              <sl-icon name="ui-checks" slot="prefix"></sl-icon>
-              ${msg("Select Items")}
-            </sl-button>
-          `,
+        ${when(this.isCrawler, () =>
+          choose(this.collectionTab, [
+            [
+              Tab.Replay,
+              () => html`
+                <sl-tooltip
+                  content=${this.collection?.crawlCount
+                    ? msg("Choose what page viewers see first in replay")
+                    : msg("Add items to select a home page")}
+                  ?disabled=${Boolean(this.collection?.crawlCount)}
+                >
+                  <sl-button
+                    size="small"
+                    @click=${() => (this.openDialogName = "editStartPage")}
+                    ?disabled=${!this.collection?.crawlCount}
+                  >
+                    <sl-icon name="house-gear" slot="prefix"></sl-icon>
+                    ${msg("Configure Home")}
+                  </sl-button>
+                </sl-tooltip>
+              `,
+            ],
+            [
+              Tab.Items,
+              () => html`
+                <sl-button
+                  size="small"
+                  @click=${() => (this.openDialogName = "editItems")}
+                  ?disabled=${!this.collection}
+                >
+                  <sl-icon name="ui-checks" slot="prefix"></sl-icon>
+                  ${msg("Select Items")}
+                </sl-button>
+              `,
+            ],
+          ]),
         )}
       </div>
-      ${choose(
-        this.collectionTab,
+      ${choose(this.collectionTab, [
+        [Tab.Replay, () => guard([this.collection], this.renderReplay)],
         [
-          ["replay", () => guard([this.collection], this.renderReplay)],
-          [
-            "items",
-            () => guard([this.archivedItems], this.renderArchivedItems),
-          ],
+          Tab.Items,
+          () => guard([this.archivedItems], this.renderArchivedItems),
         ],
-
-        () => html`<btrix-not-found></btrix-not-found>`,
-      )}
-      <div class="my-7">${this.renderDescription()}</div>
+        [Tab.About, () => this.renderAbout()],
+      ])}
 
       <btrix-dialog
         .label=${msg("Delete Collection?")}
@@ -213,6 +238,25 @@ export class CollectionDetail extends BtrixElement {
         }}
       >
       </btrix-collection-items-dialog>
+
+      <btrix-collection-replay-dialog
+        ?open=${this.openDialogName === "editStartPage"}
+        @sl-hide=${async () => {
+          this.openDialogName = undefined;
+
+          // Don't do full refresh of rwp so that rwp-url-change fires
+          this.isRwpLoaded = false;
+
+          await this.fetchCollection();
+          await this.updateComplete;
+        }}
+        collectionId=${this.collectionId}
+        .homeUrl=${this.collection?.homeUrl}
+        .homePageId=${this.collection?.homeUrlPageId}
+        .homeTs=${this.collection?.homeUrlTs}
+        ?replayLoaded=${this.isRwpLoaded}
+      ></btrix-collection-replay-dialog>
+
       ${when(
         this.collection,
         () => html`
@@ -227,8 +271,57 @@ export class CollectionDetail extends BtrixElement {
           >
           </btrix-collection-metadata-dialog>
         `,
-      )}
-      ${this.renderShareDialog()}`;
+      )}`;
+  }
+
+  private renderAccessIcon() {
+    return choose(this.collection?.access, [
+      [
+        CollectionAccess.Private,
+        () => html`
+          <sl-tooltip
+            content=${SelectCollectionAccess.Options[CollectionAccess.Private]
+              .label}
+          >
+            <sl-icon
+              class="text-lg text-neutral-600"
+              name=${SelectCollectionAccess.Options[CollectionAccess.Private]
+                .icon}
+            ></sl-icon>
+          </sl-tooltip>
+        `,
+      ],
+      [
+        CollectionAccess.Unlisted,
+        () => html`
+          <sl-tooltip
+            content=${SelectCollectionAccess.Options[CollectionAccess.Unlisted]
+              .label}
+          >
+            <sl-icon
+              class="text-lg text-neutral-600"
+              name=${SelectCollectionAccess.Options[CollectionAccess.Unlisted]
+                .icon}
+            ></sl-icon>
+          </sl-tooltip>
+        `,
+      ],
+      [
+        CollectionAccess.Public,
+        () => html`
+          <sl-tooltip
+            content=${SelectCollectionAccess.Options[CollectionAccess.Public]
+              .label}
+          >
+            <sl-icon
+              class="text-lg text-success-600"
+              name=${SelectCollectionAccess.Options[CollectionAccess.Public]
+                .icon}
+            ></sl-icon>
+          </sl-tooltip>
+        `,
+      ],
+    ]);
   }
 
   private refreshReplay() {
@@ -240,140 +333,6 @@ export class CollectionDetail extends BtrixElement {
       }
     }
   }
-
-  private getPublicReplayURL() {
-    return new URL(
-      `/api/orgs/${this.orgId}/collections/${this.collectionId}/public/replay.json`,
-      window.location.href,
-    ).href;
-  }
-
-  private renderShareDialog() {
-    return html`
-      <btrix-dialog
-        .label=${msg("Share Collection")}
-        .open=${this.showShareInfo}
-        @sl-hide=${() => (this.showShareInfo = false)}
-        style="--width: 32rem;"
-      >
-        ${
-          this.collection?.isPublic
-            ? ""
-            : html`<p class="mb-3">
-                ${msg(
-                  "Make this collection shareable to enable a public viewing link.",
-                )}
-              </p>`
-        }
-        ${when(
-          this.isCrawler,
-          () => html`
-            <div class="mb-5">
-              <sl-switch
-                ?checked=${this.collection?.isPublic}
-                @sl-change=${(e: CustomEvent) =>
-                  void this.onTogglePublic((e.target as SlCheckbox).checked)}
-                >${msg("Collection is Shareable")}</sl-switch
-              >
-            </div>
-          `,
-        )}
-        </div>
-        ${when(this.collection?.isPublic, this.renderShareInfo)}
-        <div slot="footer" class="flex justify-end">
-          <sl-button size="small" @click=${() => (this.showShareInfo = false)}
-            >${msg("Done")}</sl-button
-          >
-        </div>
-      </btrix-dialog>
-    `;
-  }
-
-  private readonly renderShareInfo = () => {
-    const replaySrc = this.getPublicReplayURL();
-    const encodedReplaySrc = encodeURIComponent(replaySrc);
-    const publicReplayUrl = `https://replayweb.page?source=${encodedReplaySrc}`;
-    const embedCode = `<replay-web-page source="${replaySrc}"></replay-web-page>`;
-    const importCode = `importScripts("https://replayweb.page/sw.js");`;
-
-    return html` <btrix-section-heading
-        >${msg("Link to Share")}</btrix-section-heading
-      >
-      <section class="mb-5 mt-3">
-        <p class="mb-3">
-          ${msg("This collection can be viewed by anyone with the link.")}
-        </p>
-
-        <btrix-copy-field
-          class="mb-2"
-          .value="${publicReplayUrl}"
-          hideContentFromScreenReaders
-          hoist
-        >
-          <sl-tooltip slot="prefix" content=${msg("Open in New Tab")} hoist>
-            <sl-icon-button
-              href=${publicReplayUrl}
-              name="box-arrow-up-right"
-              target="_blank"
-              class="m-px"
-            >
-            </sl-icon-button>
-          </sl-tooltip>
-        </btrix-copy-field>
-      </section>
-      <btrix-section-heading>${msg("Embed Collection")}</btrix-section-heading>
-      <section class="mt-3">
-        <p class="mb-3">
-          ${msg(
-            html`Share this collection by embedding it into an existing webpage.`,
-          )}
-        </p>
-        <p class="mb-3">
-          ${msg(html`Add the following embed code to your HTML page:`)}
-        </p>
-        <div class="relative mb-5 rounded border bg-slate-50 p-3 pr-9">
-          <btrix-code value=${embedCode}></btrix-code>
-          <div class="absolute right-1 top-1">
-            <btrix-copy-button
-              .getValue=${() => embedCode}
-              content=${msg("Copy Embed Code")}
-              hoist
-              raised
-            ></btrix-copy-button>
-          </div>
-        </div>
-        <p class="mb-3">
-          ${msg(
-            html`Add the following JavaScript to your
-              <code class="text-[0.9em]">/replay/sw.js</code>:`,
-          )}
-        </p>
-        <div class="relative mb-5 rounded border bg-slate-50 p-3 pr-9">
-          <btrix-code language="javascript" value=${importCode}></btrix-code>
-          <div class="absolute right-1 top-1">
-            <btrix-copy-button
-              .getValue=${() => importCode}
-              content=${msg("Copy JS")}
-              hoist
-              raised
-            ></btrix-copy-button>
-          </div>
-        </div>
-        <p>
-          ${msg(
-            html`See
-              <a
-                class="text-primary"
-                href="https://replayweb.page/docs/embedding"
-                target="_blank"
-              >
-                our embedding guide</a
-              >
-              for more details.`,
-          )}
-        </p>
-      </section>`;
-  };
 
   private readonly renderBreadcrumbs = () => {
     const breadcrumbs: Breadcrumb[] = [
@@ -392,8 +351,10 @@ export class CollectionDetail extends BtrixElement {
   private readonly renderTabs = () => {
     return html`
       <nav class="flex gap-2">
-        ${TABS.map((tabName) => {
+        ${Object.values(Tab).map((tabName) => {
           const isSelected = tabName === this.collectionTab;
+          const tab = this.tabLabels[tabName];
+
           return html`
             <btrix-navigation-button
               .active=${isSelected}
@@ -402,10 +363,10 @@ export class CollectionDetail extends BtrixElement {
               @click=${this.navigate.link}
             >
               <sl-icon
-                name=${this.tabLabels[tabName].icon.name}
-                library=${this.tabLabels[tabName].icon.library}
+                name=${tab.icon.name}
+                library=${tab.icon.library}
               ></sl-icon>
-              ${this.tabLabels[tabName].text}</btrix-navigation-button
+              ${tab.text}</btrix-navigation-button
             >
           `;
         })}
@@ -426,46 +387,66 @@ export class CollectionDetail extends BtrixElement {
             <sl-icon name="pencil" slot="prefix"></sl-icon>
             ${msg("Edit Metadata")}
           </sl-menu-item>
+          <sl-menu-item
+            @click=${async () => {
+              // replay-web-page needs to be available in order to configure start page
+              if (this.collectionTab !== Tab.Replay) {
+                this.navigate.to(
+                  `${this.navigate.orgBasePath}/collections/view/${this.collectionId}/${Tab.Replay}`,
+                );
+                await this.updateComplete;
+              }
+
+              this.openDialogName = "editStartPage";
+            }}
+            ?disabled=${!this.collection?.crawlCount}
+          >
+            <sl-icon name="house-gear" slot="prefix"></sl-icon>
+            ${msg("Configure Replay Home")}
+          </sl-menu-item>
+          <sl-menu-item
+            @click=${async () => {
+              if (this.collectionTab !== Tab.About) {
+                this.navigate.to(
+                  `${this.navigate.orgBasePath}/collections/view/${this.collectionId}/${Tab.About}`,
+                );
+                await this.updateComplete;
+              }
+
+              this.isEditingDescription = true;
+            }}
+          >
+            <sl-icon name="pencil-square" slot="prefix"></sl-icon>
+            ${msg("Edit About Section")}
+          </sl-menu-item>
           <sl-menu-item @click=${() => (this.openDialogName = "editItems")}>
             <sl-icon name="ui-checks" slot="prefix"></sl-icon>
             ${msg("Select Archived Items")}
           </sl-menu-item>
           <sl-divider></sl-divider>
-          ${!this.collection?.isPublic
-            ? html`
-                <sl-menu-item
-                  style="--sl-color-neutral-700: var(--success)"
-                  @click=${() => void this.onTogglePublic(true)}
-                >
-                  <sl-icon name="people-fill" slot="prefix"></sl-icon>
-                  ${msg("Make Shareable")}
-                </sl-menu-item>
-              `
-            : html`
-                <sl-menu-item style="--sl-color-neutral-700: var(--success)">
-                  <sl-icon name="box-arrow-up-right" slot="prefix"></sl-icon>
-                  <a
-                    target="_blank"
-                    slot="prefix"
-                    href="https://replayweb.page?source=${this.getPublicReplayURL()}"
-                  >
-                    Visit Shareable URL
-                  </a>
-                </sl-menu-item>
-                <sl-menu-item
-                  style="--sl-color-neutral-700: var(--warning)"
-                  @click=${() => void this.onTogglePublic(false)}
-                >
-                  <sl-icon name="eye-slash" slot="prefix"></sl-icon>
-                  ${msg("Make Private")}
-                </sl-menu-item>
-              `}
+          <sl-menu-item @click=${() => this.shareCollection?.show()}>
+            <sl-icon slot="prefix" name="box-arrow-up"></sl-icon>
+            ${msg("Share Collection")}
+          </sl-menu-item>
           <btrix-menu-item-link
             href=${`/api/orgs/${this.orgId}/collections/${this.collectionId}/download?auth_bearer=${authToken}`}
             download
+            ?disabled=${!this.collection?.totalSize}
           >
             <sl-icon name="cloud-download" slot="prefix"></sl-icon>
             ${msg("Download Collection")}
+            ${when(
+              this.collection,
+              (collection) => html`
+                <btrix-badge
+                  slot="suffix"
+                  class="font-monostyle text-xs text-neutral-500"
+                  >${this.localize.bytes(
+                    collection.totalSize || 0,
+                  )}</btrix-badge
+                >
+              `,
+            )}
           </btrix-menu-item-link>
           <sl-divider></sl-divider>
           <sl-menu-item
@@ -529,71 +510,133 @@ export class CollectionDetail extends BtrixElement {
     `;
   }
 
-  private renderDescription() {
+  // TODO Consolidate with collection.ts
+  private renderAbout() {
+    const dateRange = (collection: Collection) => {
+      if (!collection.dateEarliest || !collection.dateLatest) {
+        return msg("n/a");
+      }
+      const format: Intl.DateTimeFormatOptions = {
+        month: "long",
+        year: "numeric",
+      };
+      const dateEarliest = this.localize.date(collection.dateEarliest, format);
+      const dateLatest = this.localize.date(collection.dateLatest, format);
+
+      if (dateEarliest === dateLatest) return dateLatest;
+
+      return msg(str`${dateEarliest} to ${dateLatest}`, {
+        desc: "Date range formatted to show full month name and year",
+      });
+    };
+    const skeleton = html`<sl-skeleton class="w-24"></sl-skeleton>`;
+
+    const metadata = html`
+      <btrix-desc-list>
+        <btrix-desc-list-item label=${msg("Collection Period")}>
+          <span class="font-sans"
+            >${this.collection ? dateRange(this.collection) : skeleton}</span
+          >
+        </btrix-desc-list-item>
+      </btrix-desc-list>
+    `;
+
     return html`
-      <section>
-        <header class="flex items-center justify-between">
-          <h2 class="mb-1 h-8 min-h-fit text-lg font-semibold leading-none">
-            ${msg("Description")}
-          </h2>
-          ${when(
-            this.isCrawler,
-            () => html`
-              <sl-icon-button
-                class="text-base"
-                name="pencil"
-                @click=${() => (this.openDialogName = "editMetadata")}
-                label=${msg("Edit description")}
-              ></sl-icon-button>
-            `,
-          )}
-        </header>
-        <main>
+      <div class="flex flex-1 flex-col gap-10 lg:flex-row">
+        <section class="flex w-full max-w-4xl flex-col leading-relaxed">
+          <header class="mb-3 flex min-h-8 items-end justify-between">
+            <h2 class="text-base font-semibold leading-none">
+              ${msg("Description")}
+            </h2>
+            ${when(
+              this.collection?.description && !this.isEditingDescription,
+              () => html`
+                <sl-button
+                  size="small"
+                  @click=${() => (this.isEditingDescription = true)}
+                >
+                  <sl-icon name="pencil" slot="prefix"></sl-icon>
+                  ${msg("Edit Description")}
+                </sl-button>
+              `,
+            )}
+          </header>
           ${when(
             this.collection,
-            () => html`
-              <main class="rounded-lg border">
-                ${this.collection?.description
-                  ? html`<div
-                        class="description mx-auto max-w-prose overflow-hidden py-5 transition-all"
-                        style=${`max-height: ${DESCRIPTION_MAX_HEIGHT_PX}px`}
-                      >
-                        <btrix-markdown-viewer
-                          value=${this.collection.description}
-                        ></btrix-markdown-viewer>
-                      </div>
-                      <div
-                        role="button"
-                        class="descriptionExpandBtn hidden border-t p-2 text-right font-medium text-neutral-500 transition-colors hover:bg-neutral-50"
-                        @click=${this.toggleTruncateDescription}
-                      >
-                        <span class="mr-1 inline-block align-middle"
-                          >${this.isDescriptionExpanded
-                            ? msg("Less")
-                            : msg("More")}</span
-                        >
-                        <sl-icon
-                          class="inline-block align-middle text-base"
-                          name=${this.isDescriptionExpanded
-                            ? "chevron-double-up"
-                            : "chevron-double-down"}
-                        ></sl-icon>
-                      </div> `
-                  : html`<div class="p-5 text-center text-neutral-400">
-                      ${msg("No description added.")}
-                    </div>`}
-              </main>
-            `,
-            () =>
-              html`<div
-                class="flex items-center justify-center rounded border text-3xl"
-                style=${`max-height: ${DESCRIPTION_MAX_HEIGHT_PX}px`}
-              >
-                <sl-spinner></sl-spinner>
-              </div>`,
+            (collection) =>
+              this.isEditingDescription
+                ? this.renderDescriptionForm()
+                : html`
+                    <div
+                      class=${clsx(
+                        tw`flex-1 rounded-lg border p-3 lg:p-6`,
+                        !collection.description &&
+                          tw`flex flex-col items-center justify-center`,
+                      )}
+                    >
+                      ${collection.description
+                        ? html`
+                            <btrix-markdown-viewer
+                              value=${collection.description}
+                            ></btrix-markdown-viewer>
+                          `
+                        : html`
+                            <div class="text-center text-neutral-500">
+                              <p class="mb-3">
+                                ${msg("No description provided.")}
+                              </p>
+                              <sl-button
+                                size="small"
+                                @click=${() =>
+                                  (this.isEditingDescription = true)}
+                                ?disabled=${!this.collection}
+                              >
+                                <sl-icon name="pencil" slot="prefix"></sl-icon>
+                                ${msg("Add Description")}
+                              </sl-button>
+                            </div>
+                          `}
+                    </div>
+                  `,
+            this.renderSpinner,
           )}
-        </main>
-      </section>
+        </section>
+        <section class="flex-1">
+          <btrix-section-heading>
+            <h2>${msg("Metadata")}</h2>
+          </btrix-section-heading>
+          <div class="mt-5">${metadata}</div>
+        </section>
+      </div>
+    `;
+  }
+
+  private renderDescriptionForm() {
+    if (!this.collection) return;
+
+    return html`
+      <btrix-markdown-editor
+        class="flex-1"
+        initialValue=${this.collection.description || ""}
+        placeholder=${msg("Tell viewers about this collection")}
+        maxlength=${4000}
+      ></btrix-markdown-editor>
+      <div class="flex-column mt-4 flex justify-between border-t pt-4">
+        <sl-button
+          size="small"
+          @click=${() => (this.isEditingDescription = false)}
+        >
+          ${msg("Cancel")}
+        </sl-button>
+        <sl-button
+          variant="primary"
+          size="small"
+          @click=${() => void this.saveDescription()}
+          ?disabled=${!this.collection}
+        >
+          ${msg("Update Description")}
+        </sl-button>
+      </div>
     `;
   }
 
@@ -633,11 +676,7 @@ export class CollectionDetail extends BtrixElement {
             )}
           `;
         },
-        () => html`
-          <div class="my-12 flex w-full items-center justify-center text-2xl">
-            <sl-spinner></sl-spinner>
-          </div>
-        `,
+        this.renderSpinner,
       )}
     </section>`;
 
@@ -660,11 +699,25 @@ export class CollectionDetail extends BtrixElement {
 
   private renderEmptyState() {
     return html`
-      <div class="rounded border p-5">
+      <div class="rounded border px-3 py-12">
         <p class="text-center text-neutral-500">
           ${this.archivedItems?.page && this.archivedItems.page > 1
             ? msg("Page not found.")
-            : msg("This Collection doesn’t have any archived items, yet.")}
+            : html`
+                ${msg("This Collection doesn’t have any archived items, yet.")}
+                ${this.isCrawler &&
+                html`
+                  <div class="mt-3">
+                    <sl-button
+                      variant="primary"
+                      @click=${() => (this.openDialogName = "editItems")}
+                    >
+                      <sl-icon name="ui-checks" slot="prefix"></sl-icon>
+                      ${msg("Add Archived Items")}
+                    </sl-button>
+                  </div>
+                `}
+              `}
         </p>
       </div>
     `;
@@ -705,7 +758,10 @@ export class CollectionDetail extends BtrixElement {
   `;
 
   private readonly renderReplay = () => {
-    if (!this.collection?.crawlCount) {
+    if (!this.collection) {
+      return this.renderSpinner();
+    }
+    if (!this.collection.crawlCount) {
       return this.renderEmptyState();
     }
 
@@ -713,64 +769,35 @@ export class CollectionDetail extends BtrixElement {
     const headers = this.authState?.headers;
     const config = JSON.stringify({ headers });
 
-    return html`<section>
-      <main>
-        <div class="aspect-4/3 overflow-hidden rounded-lg border">
-          <replay-web-page
-            source=${replaySource}
-            replayBase="/replay/"
-            config="${config}"
-            noSandbox="true"
-            noCache="true"
-          ></replay-web-page>
-        </div>
-      </main>
+    return html` <section class="overflow-hidden rounded-lg border">
+      <replay-web-page
+        class="h-[calc(100vh-6.5rem)]"
+        source=${replaySource}
+        config="${config}"
+        coll=${this.collectionId}
+        url=${this.collection.homeUrl ||
+        /* must be empty string to reset the attribute: */ ""}
+        ts=${formatRwpTimestamp(this.collection.homeUrlTs) ||
+        /* must be empty string to reset the attribute: */ ""}
+        replayBase="/replay/"
+        noSandbox="true"
+        noCache="true"
+        @rwp-url-change=${() => {
+          if (!this.isRwpLoaded) {
+            this.isRwpLoaded = true;
+          }
+        }}
+      ></replay-web-page>
     </section>`;
   };
 
-  private async checkTruncateDescription() {
-    await this.updateComplete;
-
-    window.requestAnimationFrame(() => {
-      if (
-        this.description?.scrollHeight ??
-        0 > (this.description?.clientHeight ?? 0)
-      ) {
-        this.descriptionExpandBtn?.classList.remove("hidden");
-      }
-    });
-  }
-
-  private readonly toggleTruncateDescription = () => {
-    const description = this.description;
-    if (!description) {
-      console.debug("no .description");
-      return;
-    }
-    this.isDescriptionExpanded = !this.isDescriptionExpanded;
-    if (this.isDescriptionExpanded) {
-      description.style.maxHeight = `${description.scrollHeight}px`;
-    } else {
-      description.style.maxHeight = `${DESCRIPTION_MAX_HEIGHT_PX}px`;
-      description.closest("section")?.scrollIntoView({
-        behavior: "smooth",
-      });
-    }
-  };
-
-  private async onTogglePublic(isPublic: boolean) {
-    const res = await this.api.fetch<{ updated: boolean }>(
-      `/orgs/${this.orgId}/collections/${this.collectionId}`,
-      {
-        method: "PATCH",
-        body: JSON.stringify({ isPublic }),
-      },
-    );
-
-    if (res.updated && this.collection) {
-      this.collection = { ...this.collection, isPublic };
-    }
-  }
+  private readonly renderSpinner = () => html`
+    <div
+      class="flex min-h-full items-center justify-center rounded-lg border py-24 text-3xl"
+    >
+      <sl-spinner></sl-spinner>
+    </div>
+  `;
 
   private readonly confirmDelete = () => {
     this.openDialogName = "delete";
@@ -914,6 +941,53 @@ export class CollectionDetail extends BtrixElement {
         variant: "danger",
         icon: "exclamation-octagon",
         id: "collection-item-remove-status",
+      });
+    }
+  }
+
+  private async saveDescription() {
+    if (!this.descriptionEditor?.checkValidity()) {
+      // TODO
+      return;
+    }
+
+    const description = this.descriptionEditor.value;
+
+    try {
+      await this.api.fetch<Collection>(
+        `/orgs/${this.orgId}/collections/${this.collectionId}`,
+        {
+          method: "PATCH",
+          body: JSON.stringify({
+            description,
+          }),
+        },
+      );
+
+      this.notify.toast({
+        message: msg("Description updated."),
+        variant: "success",
+        icon: "check2-circle",
+      });
+
+      if (this.collection) {
+        this.collection = {
+          ...this.collection,
+          description,
+        };
+      }
+      this.isEditingDescription = false;
+
+      void this.fetchCollection();
+    } catch (err) {
+      console.debug(err);
+
+      this.notify.toast({
+        message: msg(
+          "Sorry, couldn't save collection description at this time.",
+        ),
+        variant: "danger",
+        icon: "exclamation-octagon",
       });
     }
   }

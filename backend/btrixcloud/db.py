@@ -82,6 +82,7 @@ async def update_and_prepare_db(
     invite_ops,
     storage_ops,
     page_ops,
+    background_job_ops,
     db_inited,
 ):
     """Prepare database for application.
@@ -96,6 +97,7 @@ async def update_and_prepare_db(
     print("Database setup started", flush=True)
     if await run_db_migrations(mdb, user_manager, page_ops, org_ops):
         await drop_indexes(mdb)
+
     await create_indexes(
         org_ops,
         crawl_ops,

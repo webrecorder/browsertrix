@@ -78,6 +78,7 @@ from .models import (
     RemovedResponse,
     OrgSlugsResponse,
     OrgImportResponse,
+    OrgPublicProfileUpdate,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import (
@@ -304,6 +305,14 @@ class OrgOps:
         res = await self.orgs.find_one({"_id": oid})
         if not res:
             raise HTTPException(status_code=400, detail="invalid_org_id")
+
+        return Organization.from_dict(res)
+
+    async def get_org_by_slug(self, slug: str) -> Organization:
+        """Get an org by id"""
+        res = await self.orgs.find_one({"slug": slug})
+        if not res:
+            raise HTTPException(status_code=400, detail="invalid_org_slug")
 
         return Organization.from_dict(res)
 
@@ -953,7 +962,7 @@ class OrgOps:
         )
         collections_count = await self.colls_db.count_documents({"oid": org.id})
         public_collections_count = await self.colls_db.count_documents(
-            {"oid": org.id, "isPublic": True}
+            {"oid": org.id, "access": {"$in": ["public", "unlisted"]}}
         )
 
         return {
@@ -1007,6 +1016,21 @@ class OrgOps:
         res = await self.orgs.find_one_and_update(
             {"_id": org.id, "subscription.readOnlyOnCancel": False},
             {"$set": {"subscription.readOnlyOnCancel": update.readOnlyOnCancel}},
+        )
+        return res is not None
+
+    async def update_public_profile(
+        self, org: Organization, update: OrgPublicProfileUpdate
+    ):
+        """Update or enable/disable organization's public profile"""
+        query = update.dict(exclude_unset=True)
+
+        if len(query) == 0:
+            raise HTTPException(status_code=400, detail="no_update_data")
+
+        res = await self.orgs.find_one_and_update(
+            {"_id": org.id},
+            {"$set": query},
         )
         return res is not None
 
@@ -1571,6 +1595,19 @@ def init_orgs_api(
             raise HTTPException(status_code=403, detail="Not Allowed")
 
         await ops.update_read_only_on_cancel(org, update)
+
+        return {"updated": True}
+
+    @router.post(
+        "/public-profile",
+        tags=["organizations", "collections"],
+        response_model=UpdatedResponse,
+    )
+    async def update_public_profile(
+        update: OrgPublicProfileUpdate,
+        org: Organization = Depends(org_owner_dep),
+    ):
+        await ops.update_public_profile(org, update)
 
         return {"updated": True}
 

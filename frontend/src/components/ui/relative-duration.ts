@@ -18,8 +18,8 @@ export type HumanizeOptions = {
  * <btrix-relative-duration value=${value}></btrix-relative-duration>
  * ```
  */
-@localized()
 @customElement("btrix-relative-duration")
+@localized()
 export class RelativeDuration extends LitElement {
   readonly localize = new LocalizeController(this);
 

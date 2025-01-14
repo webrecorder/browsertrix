@@ -26,8 +26,8 @@ const { PASSWORD_MINLENGTH, PASSWORD_MAXLENGTH, PASSWORD_MIN_SCORE } =
  * @event authenticated
  * @event unauthenticated
  */
-@localized()
 @customElement("btrix-sign-up-form")
+@localized()
 export class SignUpForm extends LiteElement {
   /** Optional read-only email, e.g. for invitations */
   @property({ type: String })

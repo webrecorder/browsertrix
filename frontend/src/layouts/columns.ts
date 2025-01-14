@@ -29,7 +29,7 @@ export function infoCol(content: TemplateResult | string, topPadding: string) {
         class="block h-4 w-4 flex-shrink-0 text-base"
         name="info-circle"
       ></sl-icon>
-      <div class="text-xs leading-4">${content}</div>
+      <div class="-mt-0.5 text-pretty text-xs leading-5">${content}</div>
     </div>
   `;
 }

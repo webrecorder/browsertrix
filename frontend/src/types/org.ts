@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { apiDateSchema } from "./api";
 import { subscriptionSchema } from "./billing";
+import { publicCollectionSchema } from "./collection";
 
 export enum OrgReadOnlyReason {
   SubscriptionPaused = "subscriptionPaused",
@@ -94,8 +95,22 @@ export const orgDataSchema = z.object({
   allowSharedProxies: z.boolean(),
   allowedProxies: z.array(z.string()),
   lastCrawlFinished: apiDateSchema.nullable(),
+  enablePublicProfile: z.boolean(),
+  publicDescription: z.string().nullable(),
+  publicUrl: z.string().nullable(),
 });
 export type OrgData = z.infer<typeof orgDataSchema>;
 
 export const orgConfigSchema = z.unknown();
 export type OrgConfig = z.infer<typeof orgConfigSchema>;
+
+export const publicOrgCollectionsSchema = z.object({
+  org: z.object({
+    name: z.string(),
+    description: z.string(),
+    url: z.string(),
+    verified: z.boolean(),
+  }),
+  collections: z.array(publicCollectionSchema),
+});
+export type PublicOrgCollections = z.infer<typeof publicOrgCollectionsSchema>;

@@ -4307,9 +4307,6 @@
         <source>Description:</source>
         <target state="translated">Descripción:</target>
       </trans-unit>
-      <trans-unit id="s22bb367ab94a971e">
-        <source>Sorry, couldn't retrieve proxies at this time.</source>
-      </trans-unit>
       <trans-unit id="s438a40049bb04715">
         <source>Proxy Settings for: <x id="0" equiv-text="${this.currOrg?.name || &quot;&quot;}"/></source>
       </trans-unit>
@@ -4484,9 +4481,6 @@
       <trans-unit id="sc72c35c940c8e9eb">
         <source>Your formatting preference has been updated.</source>
       </trans-unit>
-      <trans-unit id="sf36c01d89a1ee87f">
-        <source>Couldn’t initialize Browsertrix correctly.</source>
-      </trans-unit>
       <trans-unit id="monthly-interval-ordinal-zero">
         <source>Monthly on the zeroth</source>
       </trans-unit>
@@ -4504,6 +4498,18 @@
       </trans-unit>
       <trans-unit id="monthly-interval-ordinal-other">
         <source>Monthly on the <x id="0" equiv-text="${localize.number(days[0])}"/>th</source>
+      </trans-unit>
+      <trans-unit id="s542b4494d4c58414">
+        <source>Search all orgs by name, id, slug, users, and subscriptions</source>
+      </trans-unit>
+      <trans-unit id="h19d357f5b1d2fafe">
+        <source>
+    Are you sure you want to delete
+    <x id="0" equiv-text="&lt;strong class=&quot;font-semibold&quot;&gt;${name}&lt;/strong&gt;"/>?
+  </source>
+      </trans-unit>
+      <trans-unit id="s537a1aeb41fca7c0">
+        <source>Delete Workflow?</source>
       </trans-unit>
     </body>
   </file>

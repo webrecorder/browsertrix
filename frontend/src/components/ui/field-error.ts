@@ -4,8 +4,8 @@ import { customElement, property } from "lit/decorators.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 
-@localized()
 @customElement("btrix-field-error")
+@localized()
 export class FieldError extends TailwindElement {
   @property({ type: Boolean })
   hidden = true;

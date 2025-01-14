@@ -1,7 +1,7 @@
 import { localized, msg, str } from "@lit/localize";
-import { type SlInput } from "@shoelace-style/shoelace";
+import type { SlInput, SlSelectEvent } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
-import { html } from "lit";
+import { html, nothing } from "lit";
 import {
   customElement,
   property,
@@ -11,10 +11,12 @@ import {
 } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 
+import { DEFAULT_THUMBNAIL } from "./collection-thumbnail";
+
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
-import type { MarkdownEditor } from "@/components/ui/markdown-editor";
-import type { Collection } from "@/types/collection";
+import type { SelectCollectionAccess } from "@/features/collections/select-collection-access";
+import { CollectionAccess, type Collection } from "@/types/collection";
 import { isApiError } from "@/utils/api";
 import { maxLengthValidator } from "@/utils/form";
 
@@ -25,8 +27,8 @@ export type CollectionSavedEvent = CustomEvent<{
 /**
  * @fires btrix-collection-saved CollectionSavedEvent Fires
  */
-@localized()
 @customElement("btrix-collection-metadata-dialog")
+@localized()
 export class CollectionMetadataDialog extends BtrixElement {
   @property({ type: Object })
   collection?: Collection;
@@ -40,22 +42,33 @@ export class CollectionMetadataDialog extends BtrixElement {
   @state()
   private isSubmitting = false;
 
-  @query("btrix-markdown-editor")
-  private readonly descriptionEditor?: MarkdownEditor | null;
+  @state()
+  private showPublicWarning = false;
+
+  @query("btrix-select-collection-access")
+  private readonly selectCollectionAccess?: SelectCollectionAccess | null;
 
   @queryAsync("#collectionForm")
   private readonly form!: Promise<HTMLFormElement>;
 
   private readonly validateNameMax = maxLengthValidator(50);
+  private readonly validateCaptionMax = maxLengthValidator(150);
+
+  protected firstUpdated(): void {
+    if (this.open) {
+      this.isDialogVisible = true;
+    }
+  }
+
   render() {
     return html` <btrix-dialog
       label=${this.collection
-        ? msg("Edit Collection Metadata")
+        ? msg("Edit Metadata")
         : msg("Create a New Collection")}
       ?open=${this.open}
       @sl-show=${() => (this.isDialogVisible = true)}
       @sl-after-hide=${() => (this.isDialogVisible = false)}
-      style="--width: 46rem"
+      class="[--width:40rem]"
     >
       ${when(this.isDialogVisible, () => this.renderForm())}
       <div slot="footer" class="flex items-center justify-end gap-3">
@@ -69,14 +82,6 @@ export class CollectionMetadataDialog extends BtrixElement {
           }}
           >${msg("Cancel")}</sl-button
         >
-        ${when(
-          !this.collection,
-          () => html`
-            <aside class="text-xs text-neutral-500">
-              ${msg("You can rename your collection later")}
-            </aside>
-          `,
-        )}
 
         <sl-button
           variant="primary"
@@ -104,49 +109,85 @@ export class CollectionMetadataDialog extends BtrixElement {
     return html`
       <form id="collectionForm" @reset=${this.onReset} @submit=${this.onSubmit}>
         <sl-input
-          class="with-max-help-text mb-2"
-          id="collectionForm-name-input"
+          class="with-max-help-text"
           name="name"
-          label=${msg("Collection Name")}
+          label=${msg("Name")}
           value=${this.collection?.name || ""}
           placeholder=${msg("My Collection")}
           autocomplete="off"
           required
           help-text=${this.validateNameMax.helpText}
           @sl-input=${this.validateNameMax.validate}
-        ></sl-input>
-        <sl-divider></sl-divider>
-        <btrix-markdown-editor
-          label=${msg("Description")}
-          name="description"
-          initialValue=${this.collection?.description || ""}
-          maxlength=${4000}
-        ></btrix-markdown-editor>
+        >
+        </sl-input>
+        <sl-textarea
+          class="with-max-help-text"
+          name="caption"
+          value=${this.collection?.caption || ""}
+          placeholder=${msg("Summarize the collection's content")}
+          autocomplete="off"
+          rows="2"
+          help-text=${this.validateCaptionMax.helpText}
+          @sl-input=${this.validateCaptionMax.validate}
+        >
+          <span slot="label">
+            ${msg("Summary")}
+            <sl-tooltip>
+              <span slot="content">
+                ${msg(
+                  "Write a short description that summarizes this collection. If the collection is public, this description will be visible next to the collection name.",
+                )}
+                ${this.collection
+                  ? nothing
+                  : msg(
+                      "You can write a longer description in the 'About' section after creating the collection.",
+                    )}
+              </span>
+              <sl-icon
+                name="info-circle"
+                style="vertical-align: -.175em"
+              ></sl-icon>
+            </sl-tooltip>
+          </span>
+        </sl-textarea>
         ${when(
           !this.collection,
           () => html`
             <sl-divider></sl-divider>
-            <label>
-              <sl-switch name="isPublic"
-                >${msg("Publicly Accessible")}</sl-switch
-              >
-              <sl-tooltip
-                content=${msg(
-                  "Enable public access to make Collections shareable. Only people with the shared link can view your Collection.",
-                )}
-                hoist
-                @sl-hide=${this.stopProp}
-                @sl-after-hide=${this.stopProp}
-                ><sl-icon
-                  class="ml-1 inline-block align-middle text-slate-500"
-                  name="info-circle"
-                ></sl-icon
-              ></sl-tooltip>
-            </label>
+            <btrix-select-collection-access
+              @sl-select=${(e: SlSelectEvent) =>
+                (this.showPublicWarning =
+                  (e.detail.item.value as CollectionAccess) ===
+                  CollectionAccess.Public)}
+            ></btrix-select-collection-access>
+          `,
+        )}
+        ${when(
+          this.showPublicWarning && this.org,
+          (org) => html`
+            <btrix-alert variant="warning" class="mt-2">
+              ${org.enablePublicProfile
+                ? msg(
+                    "This collection will be visible on the org public profile, even without archived items. You may want to set visibility to 'Unlisted' until archived items have been added.",
+                  )
+                : html`
+                    ${msg(
+                      "This collection will be visible on the org profile page, which isn't public yet. To make the org profile and this collection visible to the public, update org profile settings.",
+                    )}
+                    <a
+                      class="ml-auto flex items-center gap-1.5 font-medium underline hover:no-underline"
+                      href=${`${this.navigate.orgBasePath}/settings`}
+                      target="_blank"
+                    >
+                      ${msg("Open org settings")}
+                      <sl-icon name="box-arrow-up-right"></sl-icon>
+                    </a>
+                  `}
+            </btrix-alert>
           `,
         )}
 
-        <input class="invisible size-0" type="submit" />
+        <input class="offscreen" type="submit" />
       </form>
     `;
   }
@@ -165,22 +206,23 @@ export class CollectionMetadataDialog extends BtrixElement {
 
     const form = event.target as HTMLFormElement;
     const nameInput = form.querySelector<SlInput>('sl-input[name="name"]');
-    if (
-      !nameInput?.checkValidity() ||
-      !this.descriptionEditor?.checkValidity()
-    ) {
+
+    if (!nameInput?.checkValidity()) {
       return;
     }
 
-    const { name, isPublic } = serialize(form);
-    const description = this.descriptionEditor.value;
+    const { name, caption } = serialize(form);
 
     this.isSubmitting = true;
     try {
       const body = JSON.stringify({
         name,
-        description,
-        isPublic: Boolean(isPublic),
+        caption,
+        access:
+          this.selectCollectionAccess?.value ||
+          this.collection?.access ||
+          CollectionAccess.Private,
+        defaultThumbnailName: DEFAULT_THUMBNAIL,
       });
       let path = `/orgs/${this.orgId}/collections`;
       let method = "POST";
@@ -201,9 +243,9 @@ export class CollectionMetadataDialog extends BtrixElement {
         }) as CollectionSavedEvent,
       );
       this.notify.toast({
-        message: msg(
-          str`Successfully saved "${data.name || name}" Collection.`,
-        ),
+        message: this.collection
+          ? msg(str`"${data.name || name}" metadata updated`)
+          : msg(str`Created "${data.name || name}" collection`),
         variant: "success",
         icon: "check2-circle",
         id: "collection-metadata-status",
@@ -223,12 +265,5 @@ export class CollectionMetadataDialog extends BtrixElement {
     }
 
     this.isSubmitting = false;
-  }
-
-  /**
-   * https://github.com/shoelace-style/shoelace/issues/170
-   */
-  private stopProp(e: CustomEvent) {
-    e.stopPropagation();
   }
 }

@@ -29,9 +29,9 @@ export const textColorFromSeverity = cached((severity: Severity) => {
     case "good":
       return tw`text-green-600`;
     case "moderate":
-      return tw`text-yellow-600`;
+      return tw`text-yellow-500`;
     case "severe":
-      return tw`text-red-600`;
+      return tw`text-red-500`;
     default:
       return "";
   }

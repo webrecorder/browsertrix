@@ -7,8 +7,8 @@ import needLogin from "@/decorators/needLogin";
 import type { APIPaginatedList } from "@/types/api";
 import type { OrgData } from "@/utils/orgs";
 
-@localized()
 @customElement("btrix-orgs")
+@localized()
 @needLogin
 export class Orgs extends BtrixElement {
   @state()

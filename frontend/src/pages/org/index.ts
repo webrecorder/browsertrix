@@ -1,3 +1,4 @@
+import { provide } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
 import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
@@ -15,10 +16,13 @@ import type {
 } from "./settings/settings";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import { proxiesContext, type ProxiesContext } from "@/context/org";
 import type { QuotaUpdateDetail } from "@/controllers/api";
 import needLogin from "@/decorators/needLogin";
 import type { CollectionSavedEvent } from "@/features/collections/collection-metadata-dialog";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
+import { OrgTab, RouteNamespace } from "@/routes";
+import type { ProxiesAPIResponse } from "@/types/crawler";
 import type { UserOrg } from "@/types/user";
 import { isApiError } from "@/utils/api";
 import type { ViewState } from "@/utils/APIRouter";
@@ -37,6 +41,7 @@ import "./browser-profiles-detail";
 import "./browser-profiles-list";
 import "./settings/settings";
 import "./dashboard";
+import "./profile";
 
 import(/* webpackChunkName: "org" */ "./archived-item-qa/archived-item-qa");
 import(/* webpackChunkName: "org" */ "./workflows-new");
@@ -51,19 +56,19 @@ type ArchivedItemPageParams = {
   collectionId?: string;
 };
 export type OrgParams = {
-  home: Record<string, never>;
-  workflows: ArchivedItemPageParams & {
+  [OrgTab.Dashboard]: Record<string, never>;
+  [OrgTab.Workflows]: ArchivedItemPageParams & {
     scopeType?: WorkflowFormState["scopeType"];
     new?: ResourceName;
     itemPageId?: string;
     qaTab?: QATab;
     qaRunId?: string;
   };
-  items: ArchivedItemPageParams & {
+  [OrgTab.Items]: ArchivedItemPageParams & {
     itemType?: string;
     qaTab?: QATab;
   };
-  "browser-profiles": {
+  [OrgTab.BrowserProfiles]: {
     browserProfileId?: string;
     browserId?: string;
     new?: ResourceName;
@@ -75,24 +80,24 @@ export type OrgParams = {
     navigateUrl?: string;
     proxyId?: string;
   };
-  collections: ArchivedItemPageParams & {
+  [OrgTab.Collections]: ArchivedItemPageParams & {
     collectionTab?: string;
   };
-  settings: {
+  [OrgTab.Settings]: {
     settingsTab?: "information" | "members";
   };
 };
-export type OrgTab = keyof OrgParams;
-
-const defaultTab = "home";
 
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
-@localized()
 @customElement("btrix-org")
+@localized()
 @needLogin
 export class Org extends BtrixElement {
+  @provide({ context: proxiesContext })
+  proxies: ProxiesContext = null;
+
   @property({ type: Object })
   viewStateData?: ViewState["data"];
 
@@ -104,7 +109,7 @@ export class Org extends BtrixElement {
   params: OrgParams[OrgTab] = {};
 
   @property({ type: String })
-  orgTab: OrgTab = defaultTab;
+  orgTab?: OrgTab | string;
 
   @property({ type: Number })
   maxScale: number = DEFAULT_MAX_SCALE;
@@ -116,6 +121,12 @@ export class Org extends BtrixElement {
   private isCreateDialogVisible = false;
 
   connectedCallback() {
+    if (
+      !this.orgTab ||
+      !Object.values(OrgTab).includes(this.orgTab as OrgTab)
+    ) {
+      this.navigate.to(`${this.navigate.orgBasePath}/${OrgTab.Dashboard}`);
+    }
     super.connectedCallback();
     this.addEventListener(
       "btrix-execution-minutes-quota-update",
@@ -147,11 +158,14 @@ export class Org extends BtrixElement {
     ) {
       if (this.userOrg) {
         void this.updateOrg();
+        void this.updateOrgProxies();
       } else {
         // Couldn't find org with slug, redirect to first org
         const org = this.userInfo.orgs[0] as UserOrg | undefined;
         if (org) {
-          this.navigate.to(`/orgs/${org.slug}`);
+          this.navigate.to(
+            `/${RouteNamespace.PrivateOrgs}/${org.slug}/${OrgTab.Dashboard}`,
+          );
         } else {
           this.navigate.to(`/account/settings`);
         }
@@ -211,6 +225,14 @@ export class Org extends BtrixElement {
     }
   }
 
+  private async updateOrgProxies() {
+    try {
+      this.proxies = await this.getOrgProxies(this.orgId);
+    } catch (e) {
+      console.debug(e);
+    }
+  }
+
   async firstUpdated() {
     // if slug is actually an orgId (UUID), attempt to lookup the slug
     // and redirect to the slug url
@@ -229,6 +251,8 @@ export class Org extends BtrixElement {
     // Sync URL to create dialog
     const dialogName = this.getDialogName();
     if (dialogName) this.openDialog(dialogName);
+
+    void this.updateOrgProxies();
   }
 
   private getDialogName() {
@@ -264,9 +288,9 @@ export class Org extends BtrixElement {
             choose(
               this.orgTab,
               [
-                ["home", this.renderDashboard],
+                [OrgTab.Dashboard, this.renderDashboard],
                 [
-                  "items",
+                  OrgTab.Items,
                   () => html`
                     <btrix-document-title
                       title=${`${msg("Archived Items")} - ${userOrg.name}`}
@@ -275,7 +299,7 @@ export class Org extends BtrixElement {
                   `,
                 ],
                 [
-                  "workflows",
+                  OrgTab.Workflows,
                   () => html`
                     <btrix-document-title
                       title=${`${msg("Crawl Workflows")} - ${userOrg.name}`}
@@ -284,7 +308,7 @@ export class Org extends BtrixElement {
                   `,
                 ],
                 [
-                  "browser-profiles",
+                  OrgTab.BrowserProfiles,
                   () => html`
                     <btrix-document-title
                       title=${`${msg("Browser Profiles")} - ${userOrg.name}`}
@@ -293,7 +317,7 @@ export class Org extends BtrixElement {
                   `,
                 ],
                 [
-                  "collections",
+                  OrgTab.Collections,
                   () => html`
                     <btrix-document-title
                       title=${`${msg("Collections")} - ${userOrg.name}`}
@@ -302,7 +326,7 @@ export class Org extends BtrixElement {
                   `,
                 ],
                 [
-                  "settings",
+                  OrgTab.Settings,
                   () =>
                     this.appState.isAdmin
                       ? html`
@@ -333,37 +357,31 @@ export class Org extends BtrixElement {
       >
         <nav class="-mx-3 flex items-end overflow-x-auto px-3 xl:px-6">
           ${this.renderNavTab({
-            tabName: "home",
-            label: msg("Overview"),
-            path: "",
+            tabName: OrgTab.Dashboard,
+            label: msg("Dashboard"),
           })}
           ${this.renderNavTab({
-            tabName: "workflows",
+            tabName: OrgTab.Workflows,
             label: msg("Crawling"),
-            path: "workflows",
           })}
           ${this.renderNavTab({
-            tabName: "items",
+            tabName: OrgTab.Items,
             label: msg("Archived Items"),
-            path: "items",
           })}
           ${this.renderNavTab({
-            tabName: "collections",
+            tabName: OrgTab.Collections,
             label: msg("Collections"),
-            path: "collections",
           })}
           ${when(this.appState.isCrawler, () =>
             this.renderNavTab({
-              tabName: "browser-profiles",
+              tabName: OrgTab.BrowserProfiles,
               label: msg("Browser Profiles"),
-              path: "browser-profiles",
             }),
           )}
           ${when(this.appState.isAdmin || this.userInfo?.isSuperAdmin, () =>
             this.renderNavTab({
-              tabName: "settings",
+              tabName: OrgTab.Settings,
               label: msg("Settings"),
-              path: "settings",
             }),
           )}
         </nav>
@@ -373,22 +391,14 @@ export class Org extends BtrixElement {
     `;
   }
 
-  private renderNavTab({
-    tabName,
-    label,
-    path,
-  }: {
-    tabName: OrgTab;
-    label: string;
-    path: string;
-  }) {
+  private renderNavTab({ tabName, label }: { tabName: OrgTab; label: string }) {
     const isActive = this.orgTab === tabName;
 
     return html`
       <a
         id="${tabName}-tab"
         class="block flex-shrink-0 rounded-t px-3 transition-colors hover:bg-neutral-50"
-        href=${`${this.navigate.orgBasePath}${path ? `/${path}` : ""}`}
+        href=${`${this.navigate.orgBasePath}/${tabName}`}
         aria-selected=${isActive}
         @click=${this.navigate.link}
       >
@@ -425,7 +435,7 @@ export class Org extends BtrixElement {
           ?open=${this.openDialogName === "upload"}
           @request-close=${() => (this.openDialogName = undefined)}
           @uploaded=${() => {
-            if (this.orgTab === "home") {
+            if (this.orgTab === OrgTab.Dashboard) {
               this.navigate.to(`${this.navigate.orgBasePath}/items/upload`);
             }
           }}
@@ -592,9 +602,11 @@ export class Org extends BtrixElement {
 
     if (params.collectionId) {
       return html`<btrix-collection-detail
+        class="flex min-h-screen flex-1 flex-col pb-7"
         collectionId=${params.collectionId}
-        collectionTab=${(params.collectionTab as CollectionTab | undefined) ||
-        "replay"}
+        collectionTab=${ifDefined(
+          params.collectionTab as CollectionTab | undefined,
+        )}
         ?isCrawler=${this.appState.isCrawler}
       ></btrix-collection-detail>`;
     }
@@ -634,12 +646,20 @@ export class Org extends BtrixElement {
     return data;
   }
 
+  private async getOrgProxies(orgId: string): Promise<ProxiesAPIResponse> {
+    return this.api.fetch<ProxiesAPIResponse>(
+      `/orgs/${orgId}/crawlconfigs/crawler-proxies`,
+    );
+  }
+
   private async onOrgRemoveMember(e: OrgRemoveMemberEvent) {
     void this.removeMember(e.detail.member);
   }
 
   private async onStorageQuotaUpdate(e: CustomEvent<QuotaUpdateDetail>) {
     e.stopPropagation();
+
+    if (!this.org) return;
 
     const { reached } = e.detail;
 
@@ -653,6 +673,8 @@ export class Org extends BtrixElement {
     e: CustomEvent<QuotaUpdateDetail>,
   ) {
     e.stopPropagation();
+
+    if (!this.org) return;
 
     const { reached } = e.detail;
 
@@ -682,9 +704,15 @@ export class Org extends BtrixElement {
         icon: "check2-circle",
         id: "user-updated-status",
       });
+
       const org = await this.getOrg(this.orgId);
 
-      AppStateService.updateOrg(org);
+      if (org) {
+        AppStateService.partialUpdateOrg({
+          id: org.id,
+          users: org.users,
+        });
+      }
     } catch (e) {
       console.debug(e);
 
@@ -742,7 +770,12 @@ export class Org extends BtrixElement {
       } else {
         const org = await this.getOrg(this.orgId);
 
-        AppStateService.updateOrg(org);
+        if (org) {
+          AppStateService.partialUpdateOrg({
+            id: org.id,
+            users: org.users,
+          });
+        }
       }
     } catch (e) {
       console.debug(e);

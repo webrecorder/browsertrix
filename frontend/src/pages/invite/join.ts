@@ -6,14 +6,15 @@ import { renderInviteMessage } from "./ui/inviteMessage";
 
 import type { SignUpSuccessDetail } from "@/features/accounts/sign-up-form";
 import type { OrgUpdatedDetail } from "@/pages/invite/ui/org-form";
+import { OrgTab, RouteNamespace } from "@/routes";
 import type { UserOrg, UserOrgInviteInfo } from "@/types/user";
 import AuthService, { type LoggedInEventDetail } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
 
 import "./ui/org-form";
 
-@localized()
 @customElement("btrix-join")
+@localized()
 export class Join extends LiteElement {
   @property({ type: String })
   token?: string;
@@ -76,7 +77,9 @@ export class Join extends LiteElement {
                           e: CustomEvent<OrgUpdatedDetail>,
                         ) => {
                           e.stopPropagation();
-                          this.navTo(`/orgs/${e.detail.data.slug}`);
+                          this.navTo(
+                            `/${RouteNamespace.PrivateOrgs}/${e.detail.data.slug}/${OrgTab.Dashboard}`,
+                          );
                         }}
                       ></btrix-org-form>
                     `
@@ -171,7 +174,7 @@ export class Join extends LiteElement {
 
     if (!inviteInfo?.firstOrgAdmin) {
       if (inviteInfo?.orgSlug) {
-        this.navTo(`/orgs/${inviteInfo.orgSlug}`);
+        this.navTo(`/orgs/${inviteInfo.orgSlug}/dashboard`);
       } else {
         this.navTo(this.orgBasePath);
       }

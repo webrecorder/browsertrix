@@ -30,8 +30,8 @@ export type SortChangeEventDetail = Partial<SortBy>;
  * @fires btrix-filter-change
  * @fires btrix-sort-change
  */
-@localized()
 @customElement("btrix-item-list-controls")
+@localized()
 export class ItemListControls extends TailwindElement {
   static styles = css``;
 

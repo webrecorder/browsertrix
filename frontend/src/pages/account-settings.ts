@@ -144,7 +144,10 @@ export class AccountSettings extends BtrixElement {
         title=${msg("Account Settings")}
       ></btrix-document-title>
 
-      ${pageHeader(msg("Account Settings"), undefined, tw`mb-3 lg:mb-5`)}
+      ${pageHeader({
+        title: msg("Account Settings"),
+        classNames: tw`mb-3 lg:mb-5`,
+      })}
 
       <btrix-tab-list activePanel=${this.activeTab} hideIndicator>
         <header slot="header" class="flex h-7 items-end justify-between">
@@ -386,14 +389,13 @@ export class AccountSettings extends BtrixElement {
         <footer class="flex items-center justify-start border-t px-4 py-3">
           <p class="text-neutral-600">
             ${msg("Help us translate Browsertrix.")}
-            <a
-              class="inline-flex items-center gap-1 text-blue-500 hover:text-blue-600"
+            <btrix-link
               href="https://docs.browsertrix.com/develop/localization/"
               target="_blank"
+              variant="primary"
             >
               ${msg("Contribute to translations")}
-              <sl-icon slot="suffix" name="arrow-right"></sl-icon
-            ></a>
+            </btrix-link>
           </p>
         </footer>
       </section>

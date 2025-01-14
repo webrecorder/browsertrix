@@ -5,8 +5,8 @@ import { customElement, state } from "lit/decorators.js";
 import { BtrixElement } from "@/classes/BtrixElement";
 import needLogin from "@/decorators/needLogin";
 
-@localized()
 @customElement("btrix-users-invite")
+@localized()
 @needLogin
 export class UsersInvite extends BtrixElement {
   @state()

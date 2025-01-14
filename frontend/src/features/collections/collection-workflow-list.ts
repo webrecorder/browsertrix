@@ -31,8 +31,8 @@ const CRAWLS_PAGE_SIZE = 50;
  * @fires btrix-selection-change
  * @fires btrix-auto-add-change
  */
-@localized()
 @customElement("btrix-collection-workflow-list")
+@localized()
 export class CollectionWorkflowList extends BtrixElement {
   static styles = css`
     :host {

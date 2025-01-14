@@ -2411,9 +2411,6 @@
       <trans-unit id="s59675d3bb2b7b629">
         <source>Description:</source>
       </trans-unit>
-      <trans-unit id="s22bb367ab94a971e">
-        <source>Sorry, couldn't retrieve proxies at this time.</source>
-      </trans-unit>
       <trans-unit id="s48e186fb300e5464">
         <source>Time</source>
       </trans-unit>
@@ -3842,8 +3839,17 @@
       <trans-unit id="sc72c35c940c8e9eb">
         <source>Your formatting preference has been updated.</source>
       </trans-unit>
-      <trans-unit id="sf36c01d89a1ee87f">
-        <source>Couldn’t initialize Browsertrix correctly.</source>
+      <trans-unit id="s542b4494d4c58414">
+        <source>Search all orgs by name, id, slug, users, and subscriptions</source>
+      </trans-unit>
+      <trans-unit id="h19d357f5b1d2fafe">
+        <source>
+    Are you sure you want to delete
+    <x id="0" equiv-text="&lt;strong class=&quot;font-semibold&quot;&gt;${name}&lt;/strong&gt;"/>?
+  </source>
+      </trans-unit>
+      <trans-unit id="s537a1aeb41fca7c0">
+        <source>Delete Workflow?</source>
       </trans-unit>
     </body>
   </file>

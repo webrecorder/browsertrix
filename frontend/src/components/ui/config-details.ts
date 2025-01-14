@@ -27,8 +27,8 @@ import { pluralOf } from "@/utils/pluralize";
  * ></btrix-config-details>
  * ```
  */
-@localized()
 @customElement("btrix-config-details")
+@localized()
 export class ConfigDetails extends BtrixElement {
   @property({ type: Object })
   crawlConfig?: CrawlConfig;

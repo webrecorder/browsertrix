@@ -1,8 +1,9 @@
 import { localized, msg } from "@lit/localize";
 import type { SlInput, SlMenuItem } from "@shoelace-style/shoelace";
 import Fuse from "fuse.js";
-import { html, type PropertyValues } from "lit";
+import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
+import { choose } from "lit/directives/choose.js";
 import { guard } from "lit/directives/guard.js";
 import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
@@ -12,10 +13,17 @@ import type { SelectNewDialogEvent } from ".";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { PageChangeEvent } from "@/components/ui/pagination";
+import { ClipboardController } from "@/controllers/clipboard";
 import type { CollectionSavedEvent } from "@/features/collections/collection-metadata-dialog";
+import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
 import { pageHeader } from "@/layouts/pageHeader";
+import { RouteNamespace } from "@/routes";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
-import type { Collection, CollectionSearchValues } from "@/types/collection";
+import {
+  CollectionAccess,
+  type Collection,
+  type CollectionSearchValues,
+} from "@/types/collection";
 import type { UnderlyingFunction } from "@/types/utils";
 import { isApiError } from "@/utils/api";
 import { pluralOf } from "@/utils/pluralize";
@@ -52,8 +60,8 @@ const sortableFields: Record<
 };
 const MIN_SEARCH_LENGTH = 2;
 
-@localized()
 @customElement("btrix-collections-list")
+@localized()
 export class CollectionsList extends BtrixElement {
   @property({ type: Boolean })
   isCrawler?: boolean;
@@ -101,6 +109,10 @@ export class CollectionsList extends BtrixElement {
     threshold: 0.2, // stricter; default is 0.6
   });
 
+  private getShareLink(collection: Collection) {
+    return `${window.location.protocol}//${window.location.hostname}${window.location.port ? `:${window.location.port}` : ""}/${collection.access === CollectionAccess.Private ? `${RouteNamespace.PrivateOrgs}/${this.orgSlug}/collections/view` : `${RouteNamespace.PublicOrgs}/${this.orgSlug}/collections`}/${collection.id}`;
+  }
+
   private get hasSearchStr() {
     return this.searchByValue.length >= MIN_SEARCH_LENGTH;
   }
@@ -120,12 +132,10 @@ export class CollectionsList extends BtrixElement {
   render() {
     return html`
       <div class="contents">
-        ${pageHeader(
-          msg("Collections"),
-          when(
-            this.isCrawler,
-            () => html`
-              <sl-button
+        ${pageHeader({
+          title: msg("Collections"),
+          actions: this.isCrawler
+            ? html` <sl-button
                 variant="primary"
                 size="small"
                 ?disabled=${!this.org || this.org.readOnly}
@@ -133,11 +143,10 @@ export class CollectionsList extends BtrixElement {
               >
                 <sl-icon slot="prefix" name="plus-lg"></sl-icon>
                 ${msg("New Collection")}
-              </sl-button>
-            `,
-          ),
-          tw`border-b-transparent`,
-        )}
+              </sl-button>`
+            : nothing,
+          classNames: tw`border-b-transparent`,
+        })}
       </div>
 
       <link rel="preload" as="image" href=${noCollectionsImg} />
@@ -401,9 +410,10 @@ export class CollectionsList extends BtrixElement {
     if (this.collections?.items.length) {
       return html`
         <btrix-table
+          class="[--btrix-column-gap:var(--sl-spacing-small)]"
           style="grid-template-columns: min-content [clickable-start] 50ch repeat(4, 1fr) [clickable-end] min-content"
         >
-          <btrix-table-head class="mb-2">
+          <btrix-table-head class="mb-2 whitespace-nowrap">
             <btrix-table-header-cell>
               <span class="sr-only">${msg("Collection Access")}</span>
             </btrix-table-header-cell>
@@ -424,7 +434,7 @@ export class CollectionsList extends BtrixElement {
               <span class="sr-only">${msg("Row Actions")}</span>
             </btrix-table-header-cell>
           </btrix-table-head>
-          <btrix-table-body style="--btrix-row-gap: var(--sl-spacing-x-small)">
+          <btrix-table-body class="[--btrix-row-gap:var(--sl-spacing-x-small)]">
             ${this.collections.items.map(this.renderItem)}
           </btrix-table-body>
         </btrix-table>
@@ -495,28 +505,61 @@ export class CollectionsList extends BtrixElement {
 
   private readonly renderItem = (col: Collection) => html`
     <btrix-table-row
-      class="cursor-pointer select-none rounded border shadow transition-all focus-within:bg-neutral-50 hover:bg-neutral-50 hover:shadow-none"
+      class="cursor-pointer select-none whitespace-nowrap rounded border shadow transition-all focus-within:bg-neutral-50 hover:bg-neutral-50 hover:shadow-none"
     >
       <btrix-table-cell class="p-3">
-        ${col.isPublic
-          ? html`
-              <sl-tooltip content=${msg("Shareable")}>
+        ${choose(col.access, [
+          [
+            CollectionAccess.Private,
+            () => html`
+              <sl-tooltip
+                content=${SelectCollectionAccess.Options[
+                  CollectionAccess.Private
+                ].label}
+              >
+                <sl-icon
+                  class="inline-block align-middle text-neutral-600"
+                  name=${SelectCollectionAccess.Options[
+                    CollectionAccess.Private
+                  ].icon}
+                ></sl-icon>
+              </sl-tooltip>
+            `,
+          ],
+          [
+            CollectionAccess.Unlisted,
+            () => html`
+              <sl-tooltip
+                content=${SelectCollectionAccess.Options[
+                  CollectionAccess.Unlisted
+                ].label}
+              >
+                <sl-icon
+                  class="inline-block align-middle text-neutral-600"
+                  name=${SelectCollectionAccess.Options[
+                    CollectionAccess.Unlisted
+                  ].icon}
+                ></sl-icon>
+              </sl-tooltip>
+            `,
+          ],
+          [
+            CollectionAccess.Public,
+            () => html`
+              <sl-tooltip
+                content=${SelectCollectionAccess.Options[
+                  CollectionAccess.Public
+                ].label}
+              >
                 <sl-icon
                   class="inline-block align-middle text-success-600"
-                  name="people-fill"
-                  label=${msg("Shareable Collection")}
+                  name=${SelectCollectionAccess.Options[CollectionAccess.Public]
+                    .icon}
                 ></sl-icon>
               </sl-tooltip>
-            `
-          : html`
-              <sl-tooltip content=${msg("Private")}>
-                <sl-icon
-                  class="inline-block align-middle"
-                  name="eye-slash-fill"
-                  label=${msg("Private Collection")}
-                ></sl-icon>
-              </sl-tooltip>
-            `}
+            `,
+          ],
+        ])}
       </btrix-table-cell>
       <btrix-table-cell rowClickTarget="a">
         <a
@@ -569,43 +612,90 @@ export class CollectionsList extends BtrixElement {
             ${msg("Edit Metadata")}
           </sl-menu-item>
           <sl-divider></sl-divider>
-          ${!col.isPublic
+          ${col.access === CollectionAccess.Private
             ? html`
                 <sl-menu-item
                   style="--sl-color-neutral-700: var(--success)"
-                  @click=${() => void this.onTogglePublic(col, true)}
+                  @click=${() =>
+                    void this.updateAccess(col, CollectionAccess.Unlisted)}
                 >
-                  <sl-icon name="people-fill" slot="prefix"></sl-icon>
-                  ${msg("Make Shareable")}
+                  <sl-icon
+                    name=${SelectCollectionAccess.Options.unlisted.icon}
+                    slot="prefix"
+                  ></sl-icon>
+                  ${msg("Enable Share Link")}
                 </sl-menu-item>
               `
             : html`
-                <sl-menu-item style="--sl-color-neutral-700: var(--success)">
-                  <sl-icon name="box-arrow-up-right" slot="prefix"></sl-icon>
-                  <a
-                    target="_blank"
-                    slot="prefix"
-                    href="https://replayweb.page?source=${this.getPublicReplayURL(
-                      col,
-                    )}"
-                  >
-                    Visit Shareable URL
-                  </a>
-                </sl-menu-item>
                 <sl-menu-item
-                  style="--sl-color-neutral-700: var(--warning)"
-                  @click=${() => void this.onTogglePublic(col, false)}
+                  style="--sl-color-neutral-700: var(--success)"
+                  @click=${() => {
+                    ClipboardController.copyToClipboard(this.getShareLink(col));
+                    this.notify.toast({
+                      message: msg("Link copied"),
+                    });
+                  }}
                 >
-                  <sl-icon name="eye-slash" slot="prefix"></sl-icon>
+                  <sl-icon name="copy" slot="prefix"></sl-icon>
+                  ${msg("Copy Share Link")}
+                </sl-menu-item>
+                ${col.access === CollectionAccess.Public
+                  ? html`
+                      <sl-menu-item
+                        @click=${() =>
+                          void this.updateAccess(
+                            col,
+                            CollectionAccess.Unlisted,
+                          )}
+                      >
+                        <sl-icon
+                          name=${SelectCollectionAccess.Options.unlisted.icon}
+                          slot="prefix"
+                        ></sl-icon>
+                        ${msg("Make Unlisted")}
+                      </sl-menu-item>
+                    `
+                  : this.org?.enablePublicProfile
+                    ? html`
+                        <sl-menu-item
+                          @click=${() =>
+                            void this.updateAccess(
+                              col,
+                              CollectionAccess.Public,
+                            )}
+                        >
+                          <sl-icon
+                            name=${SelectCollectionAccess.Options.public.icon}
+                            slot="prefix"
+                          ></sl-icon>
+                          ${msg("Make Public")}
+                        </sl-menu-item>
+                      `
+                    : nothing}
+                <sl-menu-item
+                  @click=${() =>
+                    void this.updateAccess(col, CollectionAccess.Private)}
+                >
+                  <sl-icon
+                    name=${SelectCollectionAccess.Options.private.icon}
+                    slot="prefix"
+                  ></sl-icon>
                   ${msg("Make Private")}
                 </sl-menu-item>
               `}
+
           <btrix-menu-item-link
             href=${`/api/orgs/${this.orgId}/collections/${col.id}/download?auth_bearer=${authToken}`}
             download
+            ?disabled=${!col.totalSize}
           >
             <sl-icon name="cloud-download" slot="prefix"></sl-icon>
-            ${msg("Download Collection")}
+            ${msg("Download")}
+            <btrix-badge
+              slot="suffix"
+              class="font-monostyle text-xs text-neutral-500"
+              >${this.localize.bytes(col.totalSize)}</btrix-badge
+            >
           </btrix-menu-item-link>
           <sl-divider></sl-divider>
           <sl-menu-item
@@ -643,10 +733,10 @@ export class CollectionsList extends BtrixElement {
     }
   });
 
-  private async onTogglePublic(coll: Collection, isPublic: boolean) {
+  private async updateAccess(coll: Collection, access: CollectionAccess) {
     await this.api.fetch(`/orgs/${this.orgId}/collections/${coll.id}`, {
       method: "PATCH",
-      body: JSON.stringify({ isPublic }),
+      body: JSON.stringify({ access }),
     });
 
     void this.fetchCollections();

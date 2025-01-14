@@ -147,6 +147,10 @@
     background-color: theme(colors.primary.500);
   }
 
+  sl-radio-button[checked]::part(button) {
+    background-color: theme(colors.primary.500);
+  }
+
   /* Elevate select and buttons */
   sl-select::part(combobox),
   sl-button:not([variant="text"])::part(base) {
@@ -212,8 +216,8 @@
   }
 
   /* Have button group take up whole width */
-  sl-radio-group::part(button-group),
-  sl-radio-group sl-radio-button {
+  sl-radio-group:not([size="small"])::part(button-group),
+  sl-radio-group:not([size="small"]) sl-radio-button {
     width: 100%;
     min-width: min-content;
   }
@@ -228,6 +232,26 @@
   sl-tooltip.invert-tooltip::part(body) {
     outline: 1px solid var(--sl-panel-border-color);
     box-shadow: var(--sl-shadow-large);
+  }
+
+  sl-tab-group {
+    --indicator-color: var(--sl-color-primary-500);
+  }
+
+  sl-tab::part(base) {
+    padding: var(--sl-spacing-small) var(--sl-spacing-medium);
+  }
+
+  sl-tab:not([active]):not(:hover)::part(base) {
+    color: var(--sl-color-neutral-500);
+  }
+
+  sl-tab:not([active]):hover::part(base) {
+    color: var(--sl-color-neutral-600);
+  }
+
+  sl-tab[active]::part(base) {
+    color: var(--sl-color-primary-500);
   }
 
   /* For single-input forms with submit button inline */
@@ -371,6 +395,18 @@
 
   sl-drawer::part(footer) {
     border-top: 1px solid var(--sl-panel-border-color);
+  }
+
+  sl-button.button-card {
+    @apply w-full;
+  }
+
+  sl-button.button-card::part(base) {
+    @apply min-h-20 justify-between leading-none;
+  }
+
+  sl-button.button-card::part(label) {
+    @apply flex flex-1 flex-col justify-center gap-2 text-left;
   }
 }
 

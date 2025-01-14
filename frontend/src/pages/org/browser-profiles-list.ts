@@ -35,8 +35,8 @@ const INITIAL_PAGE_SIZE = 20;
  * ></btrix-browser-profiles-list>
  * ```
  */
-@localized()
 @customElement("btrix-browser-profiles-list")
+@localized()
 export class BrowserProfilesList extends BtrixElement {
   @property({ type: Boolean })
   isCrawler = false;
@@ -93,30 +93,29 @@ export class BrowserProfilesList extends BtrixElement {
   }
 
   render() {
-    return html`${pageHeader(
-        msg("Browser Profiles"),
-        when(
-          this.isCrawler,
-          () => html`
-            <sl-button
-              variant="primary"
-              size="small"
-              ?disabled=${isArchivingDisabled(this.org)}
-              @click=${() => {
-                this.dispatchEvent(
-                  new CustomEvent("select-new-dialog", {
-                    detail: "browser-profile",
-                  }) as SelectNewDialogEvent,
-                );
-              }}
-            >
-              <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-              ${msg("New Browser Profile")}
-            </sl-button>
-          `,
-        ),
-        tw`mb-3`,
-      )}
+    return html`${pageHeader({
+        title: msg("Browser Profiles"),
+        actions: this.isCrawler
+          ? html`
+              <sl-button
+                variant="primary"
+                size="small"
+                ?disabled=${isArchivingDisabled(this.org)}
+                @click=${() => {
+                  this.dispatchEvent(
+                    new CustomEvent("select-new-dialog", {
+                      detail: "browser-profile",
+                    }) as SelectNewDialogEvent,
+                  );
+                }}
+              >
+                <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+                ${msg("New Browser Profile")}
+              </sl-button>
+            `
+          : undefined,
+        classNames: tw`mb-3`,
+      })}
       <div class="pb-1">${this.renderTable()}</div>`;
   }
 

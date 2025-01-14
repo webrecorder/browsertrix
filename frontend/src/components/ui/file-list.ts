@@ -18,8 +18,8 @@ export type FileRemoveEvent = CustomEvent<FileRemoveDetail>;
 /**
  * @event on-remove FileRemoveEvent
  */
-@localized()
 @customElement("btrix-file-list-item")
+@localized()
 export class FileListItem extends BtrixElement {
   static styles = [
     truncate,

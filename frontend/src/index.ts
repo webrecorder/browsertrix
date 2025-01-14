@@ -8,6 +8,7 @@ import type {
 } from "@shoelace-style/shoelace";
 import { html, nothing, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import isEqual from "lodash/fp/isEqual";
 
@@ -21,9 +22,9 @@ import "./assets/fonts/Inter/inter.css";
 import "./assets/fonts/Recursive/recursive.css";
 import "./styles.css";
 
-import type { OrgTab } from "./pages/org";
-import { ROUTES } from "./routes";
+import { OrgTab, RouteNamespace, ROUTES } from "./routes";
 import type { UserInfo, UserOrg } from "./types/user";
+import { pageView, type AnalyticsTrackProps } from "./utils/analytics";
 import APIRouter, { type ViewState } from "./utils/APIRouter";
 import AuthService, {
   type AuthEventDetail,
@@ -98,7 +99,7 @@ export class App extends BtrixElement {
   private translationReady = false;
 
   @state()
-  private viewState!: ViewState<typeof ROUTES>;
+  private viewState!: ViewState;
 
   @state()
   private fullDocsUrl = "/docs/";
@@ -112,6 +113,12 @@ export class App extends BtrixElement {
   @query("#userGuideDrawer")
   private readonly userGuideDrawer!: SlDrawer;
 
+  get isUserInCurrentOrg(): boolean {
+    const { slug } = this.viewState.params;
+    if (!this.userInfo || !slug) return false;
+    return Boolean(this.userInfo.orgs.some((org) => org.slug === slug));
+  }
+
   async connectedCallback() {
     let authState: AuthService["authState"] = null;
     try {
@@ -123,7 +130,6 @@ export class App extends BtrixElement {
     if (authState) {
       this.authService.saveLogin(authState);
     }
-    this.syncViewState();
     if (authState && !this.userInfo) {
       void this.fetchAndUpdateUserInfo();
     }
@@ -153,6 +159,10 @@ export class App extends BtrixElement {
     );
   }
 
+  firstUpdated() {
+    this.trackPageView();
+  }
+
   willUpdate(changedProperties: Map<string, unknown>) {
     if (changedProperties.has("settings")) {
       AppStateService.updateSettings(this.settings || null);
@@ -162,14 +172,30 @@ export class App extends BtrixElement {
       }
     }
     if (changedProperties.has("viewState")) {
-      if (this.viewState.route === "orgs") {
+      this.handleViewStateChange(
+        changedProperties.get("viewState") as undefined | ViewState,
+      );
+    }
+  }
+
+  private handleViewStateChange(prevValue?: ViewState) {
+    switch (this.viewState.route) {
+      case "orgs":
+        // Orgs index page don't exist right now
         this.routeTo(this.navigate.orgBasePath);
-      } else if (
-        changedProperties.get("viewState") &&
-        this.viewState.route === "org"
-      ) {
-        this.updateOrgSlugIfNeeded();
+        break;
+      case "publicOrgs":
+        // Public index page don't exist right now
+        this.routeTo("/");
+        break;
+      case "org": {
+        if (prevValue) {
+          this.updateOrgSlugIfNeeded();
+        }
+        break;
       }
+      default:
+        break;
     }
   }
 
@@ -211,7 +237,11 @@ export class App extends BtrixElement {
 
   private updateOrgSlugIfNeeded() {
     const slug = this.viewState.params.slug || null;
-    if (this.viewState.route === "org" && slug !== this.appState.orgSlug) {
+    if (
+      this.isUserInCurrentOrg &&
+      this.viewState.route === "org" &&
+      slug !== this.appState.orgSlug
+    ) {
       AppStateService.updateOrgSlug(slug);
     }
   }
@@ -271,6 +301,22 @@ export class App extends BtrixElement {
     } else {
       window.history.pushState(this.viewState, "", urlStr);
     }
+
+    this.trackPageView();
+  }
+
+  trackPageView() {
+    const { slug, collectionId } = this.viewState.params;
+    const pageViewProps: AnalyticsTrackProps = {
+      org_slug: slug || null,
+      logged_in: !!this.authState,
+    };
+
+    if (collectionId) {
+      pageViewProps.collection_id = collectionId;
+    }
+
+    pageView(pageViewProps);
   }
 
   render() {
@@ -279,7 +325,9 @@ export class App extends BtrixElement {
     return html`
       <div class="min-w-screen flex min-h-screen flex-col">
         ${this.renderNavBar()} ${this.renderAlertBanner()}
-        <main class="relative flex flex-auto">${this.renderPage()}</main>
+        <main class="relative flex flex-auto md:min-h-[calc(100vh-3.125rem)]">
+          ${this.renderPage()}
+        </main>
         <div class="border-t border-neutral-100">${this.renderFooter()}</div>
       </div>
 
@@ -352,8 +400,8 @@ export class App extends BtrixElement {
   private renderNavBar() {
     const isSuperAdmin = this.userInfo?.isSuperAdmin;
     let homeHref = "/";
-    if (!isSuperAdmin && this.appState.orgSlug) {
-      homeHref = this.navigate.orgBasePath;
+    if (!isSuperAdmin && this.appState.orgSlug && this.authState) {
+      homeHref = `${this.navigate.orgBasePath}/${OrgTab.Dashboard}`;
     }
 
     const showFullLogo =
@@ -415,7 +463,11 @@ export class App extends BtrixElement {
               `,
             )}
           </div>
-          <div class="order-2 flex flex-grow-0 items-center gap-4 md:order-3">
+          <div
+            class="${this.authState
+              ? "gap-4"
+              : "gap-2"} order-2 flex flex-grow-0 items-center md:order-3"
+          >
             ${this.authState
               ? html`${this.userInfo && !isSuperAdmin
                     ? html`
@@ -470,7 +522,18 @@ export class App extends BtrixElement {
                     </sl-menu>
                   </sl-dropdown>`
               : html`
-                  ${this.renderSignUpLink()}
+                  ${this.viewState.route !== "login"
+                    ? html`
+                        <sl-button
+                          size="small"
+                          variant="primary"
+                          href="/log-in"
+                          @click=${this.navigate.link}
+                        >
+                          ${msg("Sign In")}
+                        </sl-button>
+                      `
+                    : nothing}
                   ${(translatedLocales as unknown as string[]).length > 2
                     ? html`
                         <btrix-user-language-select
@@ -500,35 +563,6 @@ export class App extends BtrixElement {
     `;
   }
 
-  private renderSignUpLink() {
-    const { registrationEnabled, signUpUrl } = this.appState.settings || {};
-
-    if (registrationEnabled) {
-      return html`
-        <sl-button
-          href="/sign-up"
-          size="small"
-          @click="${(e: MouseEvent) => {
-            if (!this.navigate.handleAnchorClick(e)) {
-              return;
-            }
-            this.routeTo("/sign-up");
-          }}"
-        >
-          ${msg("Sign Up")}
-        </sl-button>
-      `;
-    }
-
-    if (signUpUrl) {
-      return html`
-        <sl-button href=${signUpUrl} size="small">
-          ${msg("Sign Up")}
-        </sl-button>
-      `;
-    }
-  }
-
   private renderOrgs() {
     const orgs = this.userInfo?.orgs;
     if (!orgs) return;
@@ -553,7 +587,7 @@ export class App extends BtrixElement {
           ? html`
               <a
                 class="font-medium text-neutral-600"
-                href=${this.navigate.orgBasePath}
+                href=${`${this.navigate.orgBasePath}/${OrgTab.Dashboard}`}
                 @click=${this.navigate.link}
               >
                 ${selectedOption.name.slice(0, orgNameLength)}
@@ -578,7 +612,9 @@ export class App extends BtrixElement {
               @sl-select=${(e: CustomEvent<{ item: { value: string } }>) => {
                 const { value } = e.detail.item;
                 if (value) {
-                  this.routeTo(`/orgs/${value}`);
+                  this.routeTo(
+                    `/${RouteNamespace.PrivateOrgs}/${value}/${OrgTab.Dashboard}`,
+                  );
                 } else {
                   if (this.userInfo) {
                     this.clearSelectedOrg();
@@ -652,9 +688,9 @@ export class App extends BtrixElement {
   private renderFooter() {
     return html`
       <footer
-        class="mx-auto box-border flex w-full max-w-screen-desktop flex-col items-center justify-between gap-4 p-3 md:flex-row"
+        class="mx-auto box-border flex w-full max-w-screen-desktop flex-col items-center  gap-4 p-3 md:flex-row"
       >
-        <div>
+        <div class="flex-1">
           <a
             class="flex items-center gap-2 leading-none text-neutral-400 hover:text-primary"
             href="https://github.com/webrecorder/browsertrix"
@@ -665,9 +701,11 @@ export class App extends BtrixElement {
             ${msg("Source Code")}
           </a>
         </div>
-        <div>
+        <div class="flex-1">
           <a
-            class="flex items-center gap-2 leading-none text-neutral-400 hover:text-primary"
+            class="${this.version
+              ? "justify-center"
+              : "justify-end"} flex items-center gap-2 leading-none text-neutral-400 hover:text-primary"
             href="https://forum.webrecorder.net/c/help/5"
             target="_blank"
             rel="noopener"
@@ -678,7 +716,9 @@ export class App extends BtrixElement {
         </div>
         ${this.version
           ? html`
-              <div class="flex items-center justify-center gap-2 leading-none">
+              <div
+                class="flex flex-1 items-center justify-end gap-2 leading-none"
+              >
                 <btrix-copy-button
                   class="size-4 text-neutral-400"
                   .getValue=${() => this.version}
@@ -695,6 +735,7 @@ export class App extends BtrixElement {
     `;
   }
 
+  // TODO move into separate component
   private renderPage() {
     switch (this.viewState.route) {
       case "signUp": {
@@ -735,7 +776,7 @@ export class App extends BtrixElement {
       case "loginWithRedirect":
       case "forgotPassword":
         return html`<btrix-log-in
-          class="flex w-full items-center justify-center md:bg-neutral-50"
+          class="flex w-full flex-col items-center justify-center md:bg-neutral-50"
           .viewState=${this.viewState}
           redirectUrl=${this.viewState.params.redirectUrl ||
           this.viewState.data?.redirectUrl}
@@ -757,19 +798,40 @@ export class App extends BtrixElement {
         const slug = this.viewState.params.slug;
         const orgPath = this.viewState.pathname;
         const pathname = this.getLocationPathname();
-        const orgTab =
-          pathname
-            .slice(pathname.indexOf(slug) + slug.length)
-            .replace(/(^\/|\/$)/, "")
-            .split("/")[0] || "home";
+        const orgTab = pathname
+          .slice(pathname.indexOf(slug) + slug.length)
+          .replace(/(^\/|\/$)/, "")
+          .split("/")[0];
+
         return html`<btrix-org
           class="w-full"
           .viewStateData=${this.viewState.data}
           .params=${this.viewState.params}
           .maxScale=${this.appState.settings?.maxScale || DEFAULT_MAX_SCALE}
           orgPath=${orgPath.split(slug)[1]}
-          orgTab=${orgTab as OrgTab}
+          orgTab=${orgTab}
         ></btrix-org>`;
+      }
+
+      case "publicOrgProfile":
+        return html`<btrix-org-profile
+          class="w-full"
+          slug=${this.viewState.params.slug}
+        ></btrix-org-profile>`;
+
+      case "publicCollection": {
+        const { collectionId, collectionTab } = this.viewState.params;
+
+        if (!collectionId) {
+          break;
+        }
+
+        return html`<btrix-collection
+          class="w-full"
+          slug=${this.viewState.params.slug}
+          collectionId=${collectionId}
+          tab=${ifDefined(collectionTab || undefined)}
+        ></btrix-collection>`;
       }
 
       case "accountSettings":
@@ -818,9 +880,6 @@ export class App extends BtrixElement {
         }
         // falls through
       }
-
-      // case "components":
-      //   return html`<btrix-components></btrix-components>`;
 
       default:
         return this.renderNotFoundPage();
@@ -939,7 +998,10 @@ export class App extends BtrixElement {
     });
 
     if (!detail.api) {
-      this.routeTo(detail.redirectUrl || this.navigate.orgBasePath);
+      this.routeTo(
+        detail.redirectUrl ||
+          `${this.navigate.orgBasePath}/${OrgTab.Dashboard}`,
+      );
     }
 
     if (detail.firstLogin) {

@@ -8,7 +8,7 @@ You can create, view, search for, and run crawl workflows from the **Crawling** 
 
 ## Create a Crawl Workflow
 
-Create new crawl workflows from the **Crawling** page, or the  _Create New ..._ shortcut from **Overview**.
+Create new crawl workflows from the **Crawling** page, or the  _Create New ..._ shortcut from **Dashboard**.
 
 ### Choose what to crawl
 
