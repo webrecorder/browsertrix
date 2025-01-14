@@ -16,6 +16,7 @@ import type { PageChangeEvent } from "@/components/ui/pagination";
 import { ClipboardController } from "@/controllers/clipboard";
 import type { CollectionSavedEvent } from "@/features/collections/collection-metadata-dialog";
 import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
+import { emptyMessage } from "@/layouts/emptyMessage";
 import { pageHeader } from "@/layouts/pageHeader";
 import { RouteNamespace } from "@/routes";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
@@ -417,22 +418,19 @@ export class CollectionsList extends BtrixElement {
       `;
     }
 
+    const message = msg("Your org doesn’t have any collections yet.");
+
     return html`
-      <div class="rounded-lg border bg-neutral-50 p-4 text-center">
-        <p class="text-center">
-          <span class="text-neutral-400">${msg("No Collections Yet.")}</span>
-        </p>
-        ${when(
-          this.isCrawler,
-          () => html`
-            <p class="p-4 text-center">
-              ${msg(
-                "Organize your crawls into a Collection to easily replay them together.",
-              )}
-            </p>
-            <div>
+      ${when(
+        this.isCrawler,
+        () =>
+          emptyMessage({
+            message,
+            detail: msg(
+              "Collections let you easily organize, replay, and share multiple crawls.",
+            ),
+            actions: html`
               <sl-button
-                variant="primary"
                 @click=${() => {
                   this.dispatchEvent(
                     new CustomEvent("select-new-dialog", {
@@ -442,17 +440,15 @@ export class CollectionsList extends BtrixElement {
                 }}
               >
                 <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-                ${msg("Create a New Collection")}
+                ${msg("Create Collection")}
               </sl-button>
-            </div>
-          `,
-          () => html`
-            <p class="max-w-[18em] text-center">
-              ${msg("Your organization doesn't have any Collections, yet.")}
-            </p>
-          `,
-        )}
-      </div>
+            `,
+          }),
+        () =>
+          emptyMessage({
+            message,
+          }),
+      )}
     `;
   };
 
