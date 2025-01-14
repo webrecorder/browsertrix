@@ -183,7 +183,7 @@ export class Collection extends BtrixElement {
 
   private renderReplay(collection: PublicCollection) {
     const replaySource = new URL(
-      `/api/orgs/${collection.oid}/collections/${this.collectionSlug}/public/replay.json`,
+      `/api/orgs/${collection.oid}/collections/${collection.id}/public/replay.json`,
       window.location.href,
     ).href;
 
