@@ -1,6 +1,6 @@
 import { localized, msg, str } from "@lit/localize";
 import clsx from "clsx";
-import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
+import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
 import { guard } from "lit/directives/guard.js";
@@ -24,7 +24,6 @@ import type {
 import { CollectionAccess, type Collection } from "@/types/collection";
 import type { ArchivedItem, Crawl, Upload } from "@/types/crawler";
 import type { CrawlState } from "@/types/crawlState";
-import { pluralOf } from "@/utils/pluralize";
 import { formatRwpTimestamp } from "@/utils/replay";
 import { tw } from "@/utils/tailwind";
 
@@ -128,7 +127,6 @@ export class CollectionDetail extends BtrixElement {
     return html` <div class="mb-7">${this.renderBreadcrumbs()}</div>
       ${pageHeader({
         title: this.collection?.name,
-        border: false,
         prefix: this.renderAccessIcon(),
         secondary: this.collection?.caption
           ? html`<div class="text-pretty text-neutral-600">
@@ -148,9 +146,6 @@ export class CollectionDetail extends BtrixElement {
         `,
       })}
 
-      <div class="mt-3 rounded-lg border px-4 py-2">
-        ${this.renderInfoBar()}
-      </div>
       <div class="flex items-center justify-between py-3">
         ${this.renderTabs()}
         ${when(this.isCrawler, () =>
@@ -365,8 +360,17 @@ export class CollectionDetail extends BtrixElement {
                 name=${tab.icon.name}
                 library=${tab.icon.library}
               ></sl-icon>
-              ${tab.text}</btrix-navigation-button
-            >
+              ${tab.text}
+              ${this.collection && tabName === Tab.Items
+                ? html`
+                    <btrix-badge
+                      >${this.localize.number(
+                        this.collection.crawlCount,
+                      )}</btrix-badge
+                    >
+                  `
+                : nothing}
+            </btrix-navigation-button>
           `;
         })}
       </nav>
@@ -460,62 +464,6 @@ export class CollectionDetail extends BtrixElement {
     `;
   };
 
-  private renderInfoBar() {
-    return html`
-      <btrix-desc-list horizontal>
-        ${this.renderDetailItem(
-          msg("Archived Items"),
-          (col) =>
-            `${this.localize.number(col.crawlCount)} ${pluralOf("items", col.crawlCount)}`,
-        )}
-        ${when(this.collection?.created, (created) =>
-          // Collections created before 49516bc4 is released may not have date in db
-          created
-            ? this.renderDetailItem(
-                msg("Date Created"),
-                () =>
-                  html`<btrix-format-date
-                    date=${created}
-                    month="long"
-                    day="numeric"
-                    year="numeric"
-                    hour="numeric"
-                    minute="numeric"
-                  ></btrix-format-date>`,
-              )
-            : nothing,
-        )}
-        ${this.renderDetailItem(
-          msg("Last Updated"),
-          (col) =>
-            html`<btrix-format-date
-              date=${col.modified}
-              month="long"
-              day="numeric"
-              year="numeric"
-              hour="numeric"
-              minute="numeric"
-            ></btrix-format-date>`,
-        )}
-      </btrix-desc-list>
-    `;
-  }
-
-  private renderDetailItem(
-    label: string | TemplateResult,
-    renderContent: (collection: Collection) => TemplateResult | string,
-  ) {
-    return html`
-      <btrix-desc-list-item label=${label}>
-        ${when(
-          this.collection,
-          () => renderContent(this.collection!),
-          () => html`<sl-skeleton class="w-full"></sl-skeleton>`,
-        )}
-      </btrix-desc-list-item>
-    `;
-  }
-
   private renderAbout() {
     const emptyMessage = html`
       <div class="text-center text-neutral-500">
@@ -556,7 +504,7 @@ export class CollectionDetail extends BtrixElement {
     return about({
       description: html`
         <header class="mb-3 flex min-h-8 items-end justify-between">
-          <h2 class="text-base font-semibold leading-none">
+          <h2 class="text-base font-medium leading-none">
             ${msg("Description")}
           </h2>
           ${when(

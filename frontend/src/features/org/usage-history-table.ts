@@ -3,6 +3,7 @@ import { html } from "lit";
 import { customElement } from "lit/decorators.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import { noData } from "@/strings/ui";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 
 @customElement("btrix-usage-history-table")
@@ -156,27 +157,29 @@ export class UsageHistoryTable extends BtrixElement {
             </btrix-format-date>
           `,
           humanizeExecutionSeconds(crawlTime || 0),
-          totalSecondsUsed ? humanizeExecutionSeconds(totalSecondsUsed) : "--",
+          totalSecondsUsed
+            ? humanizeExecutionSeconds(totalSecondsUsed)
+            : noData,
         ];
         if (this.hasMonthlyTime()) {
           tableRows.push(
             monthlySecondsUsed
               ? humanizeExecutionSeconds(monthlySecondsUsed)
-              : "--",
+              : noData,
           );
         }
         if (this.hasExtraTime()) {
           tableRows.push(
             extraSecondsUsed
               ? humanizeExecutionSeconds(extraSecondsUsed)
-              : "--",
+              : noData,
           );
         }
         if (this.hasGiftedTime()) {
           tableRows.push(
             giftedSecondsUsed
               ? humanizeExecutionSeconds(giftedSecondsUsed)
-              : "--",
+              : noData,
           );
         }
         return tableRows;

@@ -2,6 +2,7 @@ import { localized, msg } from "@lit/localize";
 import { css, html, LitElement } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
+import { noData } from "@/strings/ui";
 import type { APIPaginatedList } from "@/types/api";
 import { truncate } from "@/utils/css";
 
@@ -182,7 +183,7 @@ export class CrawlLogs extends LitElement {
               ${key === "stack" ||
               (typeof value !== "string" && typeof value !== "number")
                 ? this.renderPre(value)
-                : value || "--"}
+                : value || noData}
             </btrix-desc-list-item>
           `,
         )}

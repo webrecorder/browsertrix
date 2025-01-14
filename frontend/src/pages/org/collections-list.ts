@@ -46,7 +46,7 @@ const sortableFields: Record<
   { label: string; defaultDirection?: SortDirection }
 > = {
   modified: {
-    label: msg("Last Updated"),
+    label: msg("Last Modified"),
     defaultDirection: "desc",
   },
   name: {
@@ -380,7 +380,7 @@ export class CollectionsList extends BtrixElement {
               ${msg("Total Pages")}
             </btrix-table-header-cell>
             <btrix-table-header-cell>
-              ${msg("Last Updated")}
+              ${msg("Last Modified")}
             </btrix-table-header-cell>
             <btrix-table-header-cell>
               <span class="sr-only">${msg("Row Actions")}</span>
@@ -533,11 +533,9 @@ export class CollectionsList extends BtrixElement {
       <btrix-table-cell>
         <btrix-format-date
           date=${col.modified}
-          month="2-digit"
-          day="2-digit"
-          year="2-digit"
-          hour="2-digit"
-          minute="2-digit"
+          month="long"
+          day="numeric"
+          year="numeric"
         ></btrix-format-date>
       </btrix-table-cell>
       <btrix-table-cell class="p-0">

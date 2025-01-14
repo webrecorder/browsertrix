@@ -218,7 +218,12 @@ export class Collection extends BtrixElement {
             ></btrix-markdown-viewer>
           </div>`
         : null,
-      metadata: collection,
+      metadata: {
+        dateEarliest: collection.dateEarliest,
+        dateLatest: collection.dateLatest,
+        pageCount: collection.pageCount,
+        totalSize: collection.totalSize,
+      },
     });
   }
 

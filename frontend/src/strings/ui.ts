@@ -3,6 +3,8 @@ import { html, type TemplateResult } from "lit";
 
 export const notApplicable = msg("n/a");
 
+export const noData = "--";
+
 // TODO Refactor all generic confirmation messages to use utility
 export const deleteConfirmation = (name: string | TemplateResult) =>
   msg(html`

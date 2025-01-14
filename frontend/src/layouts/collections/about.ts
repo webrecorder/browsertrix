@@ -5,11 +5,12 @@ import { notApplicable } from "@/strings/ui";
 import type { Collection } from "@/types/collection";
 import localize from "@/utils/localize";
 
-type Metadata = {
-  dateEarliest: Collection["dateEarliest"];
-  dateLatest: Collection["dateLatest"];
-  pageCount: Collection["pageCount"];
-  totalSize: Collection["pageCount"];
+type Metadata = Pick<
+  Collection,
+  "dateEarliest" | "dateLatest" | "pageCount" | "totalSize"
+> & {
+  created?: Collection["created"];
+  modified?: Collection["modified"];
 };
 
 const dateRange = (metadata: Metadata) => {
@@ -46,6 +47,38 @@ const descList = (metadata?: Metadata) => {
       <btrix-desc-list-item label=${msg("Collection Size")}>
         ${safeValue((metadata) => localize.bytes(metadata.totalSize))}
       </btrix-desc-list-item>
+      ${metadata?.created
+        ? html`
+            <btrix-desc-list-item label=${msg("Created")}>
+              <span class="font-sans"
+                >${localize.date(metadata.created, {
+                  month: "long",
+                  day: "numeric",
+                  year: "numeric",
+                  hour: "numeric",
+                  minute: "numeric",
+                  timeZoneName: "short",
+                })}</span
+              >
+            </btrix-desc-list-item>
+          `
+        : nothing}
+      ${metadata?.modified && metadata.modified !== metadata.created
+        ? html`
+            <btrix-desc-list-item label=${msg("Updated")}>
+              <span class="font-sans"
+                >${localize.date(metadata.modified, {
+                  month: "long",
+                  day: "numeric",
+                  year: "numeric",
+                  hour: "numeric",
+                  minute: "numeric",
+                  timeZoneName: "short",
+                })}</span
+              >
+            </btrix-desc-list-item>
+          `
+        : nothing}
     </btrix-desc-list>
   `;
 };
@@ -66,7 +99,6 @@ export function about({
               ${description}
             </section>
           `}
-
       <section class="flex-1">
         <btrix-section-heading>
           <h2>${msg("Metadata")}</h2>
