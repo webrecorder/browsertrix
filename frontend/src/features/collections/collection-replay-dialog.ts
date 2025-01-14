@@ -93,7 +93,12 @@ export class CollectionStartPageDialog extends BtrixElement {
         .open=${this.open}
         class="[--width:60rem]"
         @sl-show=${() => (this.showContent = true)}
-        @sl-after-hide=${() => (this.showContent = false)}
+        @sl-after-hide=${() => {
+          this.homeView = this.homeUrl ? HomeView.URL : HomeView.Pages;
+          this.isSubmitting = false;
+          this.selectedSnapshot = null;
+          this.showContent = false;
+        }}
       >
         ${this.showContent ? this.renderContent() : nothing}
         <div slot="footer" class="flex items-center justify-between gap-3">
@@ -207,6 +212,16 @@ export class CollectionStartPageDialog extends BtrixElement {
           ?disabled=${!this.replayLoaded}
           @sl-change=${(e: SlChangeEvent) => {
             this.homeView = (e.currentTarget as SlSelect).value as HomeView;
+
+            if (this.homeView === HomeView.Pages) {
+              if (
+                !this.homePageId ||
+                this.homePageId !== this.selectedSnapshot?.pageId
+              ) {
+                // Reset unsaved selected snapshot
+                this.selectedSnapshot = null;
+              }
+            }
           }}
         >
           ${this.replayLoaded
