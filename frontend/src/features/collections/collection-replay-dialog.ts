@@ -89,7 +89,7 @@ export class CollectionStartPageDialog extends BtrixElement {
       this.homeView === HomeView.URL && !this.selectedSnapshot;
     return html`
       <btrix-dialog
-        .label=${msg("Configure Replay Home")}
+        .label=${msg("Configure Replay View")}
         .open=${this.open}
         class="[--width:60rem]"
         @sl-show=${() => (this.showContent = true)}

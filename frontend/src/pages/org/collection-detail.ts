@@ -168,8 +168,8 @@ export class CollectionDetail extends BtrixElement {
                     @click=${() => (this.openDialogName = "editStartPage")}
                     ?disabled=${!this.collection?.crawlCount}
                   >
-                    <sl-icon name="house-gear" slot="prefix"></sl-icon>
-                    ${msg("Configure Home")}
+                    <sl-icon name="gear" slot="prefix"></sl-icon>
+                    ${msg("Configure View")}
                   </sl-button>
                 </sl-tooltip>
               `,
@@ -399,8 +399,8 @@ export class CollectionDetail extends BtrixElement {
             }}
             ?disabled=${!this.collection?.crawlCount}
           >
-            <sl-icon name="house-gear" slot="prefix"></sl-icon>
-            ${msg("Configure Replay Home")}
+            <sl-icon name="gear" slot="prefix"></sl-icon>
+            ${msg("Configure Replay View")}
           </sl-menu-item>
           <sl-menu-item
             @click=${async () => {
