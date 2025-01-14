@@ -798,7 +798,6 @@ export class CollectionDetail extends BtrixElement {
         noSandbox="true"
         noCache="true"
         @rwp-url-change=${() => {
-          console.log("url change");
           if (!this.isRwpLoaded) {
             this.isRwpLoaded = true;
           }
