@@ -1,7 +1,13 @@
 import { localized, msg, str } from "@lit/localize";
 import type { SlInput } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
-import { html, nothing, unsafeCSS, type PropertyValues } from "lit";
+import {
+  html,
+  nothing,
+  unsafeCSS,
+  type PropertyValues,
+  type TemplateResult,
+} from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -154,53 +160,7 @@ export class OrgSettings extends BtrixElement {
         classNames: tw`mb-3 lg:mb-5`,
       })}
 
-      <btrix-tab-list activePanel=${this.activePanel} hideIndicator>
-        <header slot="header" class="flex h-7 items-end justify-between">
-          ${choose(
-            this.activePanel,
-            [
-              [
-                "members",
-                () => html`
-                  <h3>${msg("Active Members")}</h3>
-                  <sl-button
-                    href=${`${this.navigate.orgBasePath}/settings/members?invite`}
-                    variant="primary"
-                    size="small"
-                    @click=${this.navigate.link}
-                  >
-                    <sl-icon
-                      slot="prefix"
-                      name="person-add"
-                      aria-hidden="true"
-                      library="default"
-                    ></sl-icon>
-                    ${msg("Invite New Member")}
-                  </sl-button>
-                `,
-              ],
-              ["billing", () => html`<h3>${msg("Current Plan")}</h3> `],
-              [
-                "crawling-defaults",
-                () =>
-                  html`<h3 class="flex items-center gap-2">
-                    ${msg("Crawling Defaults")}
-                    <sl-tooltip
-                      content=${msg(
-                        "Default settings for all new crawl workflows. Existing workflows will not be affected.",
-                      )}
-                    >
-                      <sl-icon
-                        class="text-base text-neutral-500"
-                        name="info-circle"
-                      ></sl-icon>
-                    </sl-tooltip>
-                  </h3>`,
-              ],
-            ],
-            () => html`<h3>${this.tabLabels[this.activePanel]}</h3>`,
-          )}
-        </header>
+      <btrix-tab-group active=${this.activePanel} placement="start">
         ${this.renderTab("information", "settings")}
         ${this.renderTab("members", "settings/members")}
         ${when(this.appState.settings?.billingEnabled, () =>
@@ -208,34 +168,83 @@ export class OrgSettings extends BtrixElement {
         )}
         ${this.renderTab("crawling-defaults", "settings/crawling-defaults")}
 
-        <btrix-tab-panel name="information">
+        <btrix-tab-group-panel name="information">
+          ${this.renderPanelHeader({ title: msg("General") })}
           ${this.renderInformation()}
           <btrix-org-settings-profile></btrix-org-settings-profile>
           ${this.renderApi()}
-        </btrix-tab-panel>
-        <btrix-tab-panel name="members">
+        </btrix-tab-group-panel>
+        <btrix-tab-group-panel name="members">
+          ${this.renderPanelHeader({
+            title: msg("Active Members"),
+            actions: html`
+              <sl-button
+                href=${`${this.navigate.orgBasePath}/settings/members?invite`}
+                variant="primary"
+                size="small"
+                @click=${this.navigate.link}
+              >
+                <sl-icon
+                  slot="prefix"
+                  name="person-add"
+                  aria-hidden="true"
+                  library="default"
+                ></sl-icon>
+                ${msg("Invite New Member")}
+              </sl-button>
+            `,
+          })}
           ${this.renderMembers()}
-        </btrix-tab-panel>
-        <btrix-tab-panel name="billing">
+        </btrix-tab-group-panel>
+        <btrix-tab-group-panel name="billing">
+          ${this.renderPanelHeader({ title: msg("Current Plan") })}
           <btrix-org-settings-billing
             .salesEmail=${this.appState.settings?.salesEmail}
           ></btrix-org-settings-billing>
-        </btrix-tab-panel>
-        <btrix-tab-panel name="crawling-defaults">
+        </btrix-tab-group-panel>
+        <btrix-tab-group-panel name="crawling-defaults">
+          ${this.renderPanelHeader({
+            title: msg("Crawling Defaults"),
+            actions: html`
+              <sl-tooltip
+                content=${msg(
+                  "Default settings for all new crawl workflows. Existing workflows will not be affected.",
+                )}
+              >
+                <sl-icon
+                  class="text-base text-neutral-500"
+                  name="info-circle"
+                ></sl-icon>
+              </sl-tooltip>
+            `,
+          })}
           <btrix-org-settings-crawling-defaults></btrix-org-settings-crawling-defaults>
-        </btrix-tab-panel>
-      </btrix-tab-list>`;
+        </btrix-tab-group-panel>
+      </btrix-tab-group>`;
+  }
+
+  private renderPanelHeader({
+    title,
+    actions,
+  }: {
+    title: string;
+    actions?: TemplateResult;
+  }) {
+    return html`
+      <header class="mb-2 flex items-center justify-between">
+        <h3 class="text-lg font-medium">${title}</h3>
+        ${actions}
+      </header>
+    `;
   }
 
   private renderTab(name: Tab, path: string) {
-    const isActive = name === this.activePanel;
     return html`
-      <btrix-navigation-button
+      <btrix-tab-group-tab
         slot="nav"
+        panel=${name}
         href=${`${this.navigate.orgBasePath}/${path}`}
-        .active=${isActive}
         @click=${this.navigate.link}
-        aria-selected=${isActive}
       >
         ${choose(name, [
           [
@@ -250,7 +259,7 @@ export class OrgSettings extends BtrixElement {
           ],
         ])}
         ${this.tabLabels[name]}
-      </btrix-navigation-button>
+      </btrix-tab-group-tab>
     `;
   }
 

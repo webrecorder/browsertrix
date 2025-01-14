@@ -1,3 +1,4 @@
+import clsx from "clsx";
 import { html, type PropertyValues } from "lit";
 import {
   customElement,
@@ -9,15 +10,28 @@ import type { TabClickDetail, TabGroupTab } from "./tab";
 import { type TabGroupPanel } from "./tab-panel";
 
 import { TailwindElement } from "@/classes/TailwindElement";
+import { tw } from "@/utils/tailwind";
 
 /**
- * TODO consolidate with btrix-tab-list
+ * @example Usage:
+ * ```ts
+ * <btrix-tab-group>
+ *   <btrix-tab-group-tab slot="nav" panel="first">First</btrix-tab-group-tab>
+ *   <btrix-tab-group-tab slot="nav" panel="second">Second</btrix-tab-group-tab>
+ *   <btrix-tab-group-panel name="first">First tab content</btrix-tab-group-panel>
+ *   <btrix-tab-group-panel name="second">First tab content</btrix-tab-group-panel>
+ * </btrix-tab-group>
+ * ```
  */
 @customElement("btrix-tab-group")
 export class TabGroup extends TailwindElement {
   /* Active panel name */
   @property({ type: String, reflect: false })
   active = "";
+
+  /* Nav placement */
+  @property({ type: String })
+  placement: "top" | "start" = "top";
 
   @property({ type: String, noAccessor: true, reflect: true })
   role = "tablist";
@@ -48,10 +62,27 @@ export class TabGroup extends TailwindElement {
 
   render() {
     return html`
-      <div class="mb-4 flex gap-2" @keydown=${this.onKeyDown}>
-        <slot name="nav" @btrix-select-tab=${this.onSelectTab}></slot>
+      <div
+        class=${clsx(
+          tw`flex flex-col`,
+          this.placement === "start" && tw`gap-8 lg:flex-row`,
+        )}
+      >
+        <div
+          class=${clsx(
+            tw`flex flex-1 flex-col gap-2`,
+            this.placement === "start"
+              ? tw`lg:sticky lg:top-2 lg:max-w-[16.5rem] lg:self-start`
+              : tw`lg:flex-row`,
+          )}
+          @keydown=${this.onKeyDown}
+        >
+          <slot name="nav" @btrix-select-tab=${this.onSelectTab}></slot>
+        </div>
+        <div class="flex-1">
+          <slot></slot>
+        </div>
       </div>
-      <slot></slot>
     `;
   }
 
