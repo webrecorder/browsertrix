@@ -14,6 +14,7 @@ import type { MarkdownEditor } from "@/components/ui/markdown-editor";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
 import type { ShareCollection } from "@/features/collections/share-collection";
+import { about } from "@/layouts/collections/about";
 import { pageHeader, pageNav, type Breadcrumb } from "@/layouts/pageHeader";
 import type {
   APIPaginatedList,
@@ -467,16 +468,6 @@ export class CollectionDetail extends BtrixElement {
           (col) =>
             `${this.localize.number(col.crawlCount)} ${pluralOf("items", col.crawlCount)}`,
         )}
-        ${this.renderDetailItem(msg("Total Size"), (col) =>
-          this.localize.bytes(col.totalSize || 0, {
-            unitDisplay: "narrow",
-          }),
-        )}
-        ${this.renderDetailItem(
-          msg("Total Pages"),
-          (col) =>
-            `${this.localize.number(col.pageCount)} ${pluralOf("pages", col.pageCount)}`,
-        )}
         ${when(this.collection?.created, (created) =>
           // Collections created before 49516bc4 is released may not have date in db
           created
@@ -525,105 +516,66 @@ export class CollectionDetail extends BtrixElement {
     `;
   }
 
-  // TODO Consolidate with collection.ts
   private renderAbout() {
-    const dateRange = (collection: Collection) => {
-      if (!collection.dateEarliest || !collection.dateLatest) {
-        return msg("n/a");
-      }
-      const format: Intl.DateTimeFormatOptions = {
-        month: "long",
-        year: "numeric",
-      };
-      const dateEarliest = this.localize.date(collection.dateEarliest, format);
-      const dateLatest = this.localize.date(collection.dateLatest, format);
-
-      if (dateEarliest === dateLatest) return dateLatest;
-
-      return msg(str`${dateEarliest} to ${dateLatest}`, {
-        desc: "Date range formatted to show full month name and year",
-      });
-    };
-    const skeleton = html`<sl-skeleton class="w-24"></sl-skeleton>`;
-
-    const metadata = html`
-      <btrix-desc-list>
-        <btrix-desc-list-item label=${msg("Collection Period")}>
-          <span class="font-sans"
-            >${this.collection ? dateRange(this.collection) : skeleton}</span
-          >
-        </btrix-desc-list-item>
-      </btrix-desc-list>
-    `;
-
-    return html`
-      <div class="flex flex-1 flex-col gap-10 lg:flex-row">
-        <section class="flex w-full max-w-4xl flex-col leading-relaxed">
-          <header class="mb-3 flex min-h-8 items-end justify-between">
-            <h2 class="text-base font-semibold leading-none">
-              ${msg("Description")}
-            </h2>
-            ${when(
-              this.collection?.description && !this.isEditingDescription,
-              () => html`
-                <sl-button
-                  size="small"
-                  @click=${() => (this.isEditingDescription = true)}
-                >
-                  <sl-icon name="pencil" slot="prefix"></sl-icon>
-                  ${msg("Edit Description")}
-                </sl-button>
-              `,
-            )}
-          </header>
-          ${when(
-            this.collection,
-            (collection) =>
-              this.isEditingDescription
-                ? this.renderDescriptionForm()
-                : html`
-                    <div
-                      class=${clsx(
-                        tw`flex-1 rounded-lg border p-3 lg:p-6`,
-                        !collection.description &&
-                          tw`flex flex-col items-center justify-center`,
-                      )}
-                    >
-                      ${collection.description
-                        ? html`
-                            <btrix-markdown-viewer
-                              value=${collection.description}
-                            ></btrix-markdown-viewer>
-                          `
-                        : html`
-                            <div class="text-center text-neutral-500">
-                              <p class="mb-3">
-                                ${msg("No description provided.")}
-                              </p>
-                              <sl-button
-                                size="small"
-                                @click=${() =>
-                                  (this.isEditingDescription = true)}
-                                ?disabled=${!this.collection}
-                              >
-                                <sl-icon name="pencil" slot="prefix"></sl-icon>
-                                ${msg("Add Description")}
-                              </sl-button>
-                            </div>
-                          `}
-                    </div>
-                  `,
-            this.renderSpinner,
-          )}
-        </section>
-        <section class="flex-1">
-          <btrix-section-heading>
-            <h2>${msg("Metadata")}</h2>
-          </btrix-section-heading>
-          <div class="mt-5">${metadata}</div>
-        </section>
+    const emptyMessage = html`
+      <div class="text-center text-neutral-500">
+        <p class="mb-3">${msg("No description provided.")}</p>
+        <sl-button
+          size="small"
+          @click=${() => (this.isEditingDescription = true)}
+          ?disabled=${!this.collection}
+        >
+          <sl-icon name="pencil" slot="prefix"></sl-icon>
+          ${msg("Add Description")}
+        </sl-button>
       </div>
     `;
+
+    const renderDescription = (collection: Collection) => {
+      if (this.isEditingDescription) return this.renderDescriptionForm();
+
+      return html`
+        <div
+          class=${clsx(
+            tw`flex-1 rounded-lg border p-3 lg:p-6`,
+            !collection.description &&
+              tw`flex flex-col items-center justify-center`,
+          )}
+        >
+          ${collection.description
+            ? html`
+                <btrix-markdown-viewer
+                  value=${collection.description}
+                ></btrix-markdown-viewer>
+              `
+            : emptyMessage}
+        </div>
+      `;
+    };
+
+    return about({
+      description: html`
+        <header class="mb-3 flex min-h-8 items-end justify-between">
+          <h2 class="text-base font-semibold leading-none">
+            ${msg("Description")}
+          </h2>
+          ${when(
+            this.collection?.description && !this.isEditingDescription,
+            () => html`
+              <sl-button
+                size="small"
+                @click=${() => (this.isEditingDescription = true)}
+              >
+                <sl-icon name="pencil" slot="prefix"></sl-icon>
+                ${msg("Edit Description")}
+              </sl-button>
+            `,
+          )}
+        </header>
+        ${when(this.collection, renderDescription, this.renderSpinner)}
+      `,
+      metadata: this.collection,
+    });
   }
 
   private renderDescriptionForm() {
