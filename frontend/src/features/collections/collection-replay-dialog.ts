@@ -6,11 +6,13 @@ import { customElement, property, query, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
+import "./collection-snapshot-preview";
+
+import { type CollectionSnapshotPreview } from "./collection-snapshot-preview";
 import type { SelectSnapshotDetail } from "./select-collection-start-page";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
-import { formatRwpTimestamp } from "@/utils/replay";
 
 enum HomeView {
   Pages = "pages",
@@ -76,7 +78,7 @@ export class CollectionStartPageDialog extends BtrixElement {
   private readonly form?: HTMLFormElement | null;
 
   @query("#thumbnailPreview")
-  private readonly thumbnailPreview?: HTMLIFrameElement | null;
+  private readonly thumbnailPreview?: CollectionSnapshotPreview | null;
 
   willUpdate(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("homeUrl") && this.homeUrl) {
@@ -159,15 +161,14 @@ export class CollectionStartPageDialog extends BtrixElement {
 
     if (snapshot) {
       urlPreview = html`
-        <sl-tooltip hoist>
-          <iframe
-            class="inline-block size-full"
-            id="thumbnailPreview"
-            src=${`/replay/w/${this.collectionId}/${formatRwpTimestamp(snapshot.ts)}id_/urn:thumbnail:${snapshot.url}`}
-          >
-          </iframe>
-          <span slot="content" class="break-all">${snapshot.url}</span>
-        </sl-tooltip>
+        <btrix-collection-snapshot-preview
+          class="contents"
+          id="thumbnailPreview"
+          collectionId=${this.collectionId || ""}
+          url=${snapshot.url || ""}
+          timestamp=${snapshot.ts || ""}
+        >
+        </btrix-collection-snapshot-preview>
       `;
     }
 
@@ -338,7 +339,7 @@ export class CollectionStartPageDialog extends BtrixElement {
 
         // Wait to get the thumbnail image before closing the dialog
         try {
-          const resp = await this.thumbnailPreview.contentWindow!.fetch(src);
+          const resp = await this.thumbnailPreview.fetch(src);
           const blob = await resp.blob();
 
           file = new File([blob], fileName, {
