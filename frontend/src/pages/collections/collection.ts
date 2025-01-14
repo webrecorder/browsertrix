@@ -1,4 +1,4 @@
-import { localized, msg, str } from "@lit/localize";
+import { localized, msg } from "@lit/localize";
 import { Task } from "@lit/task";
 import { html, type TemplateResult } from "lit";
 import { customElement, property } from "lit/decorators.js";
@@ -6,6 +6,7 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import { about } from "@/layouts/collections/about";
 import { page } from "@/layouts/page";
 import { RouteNamespace } from "@/routes";
 import type { PublicCollection } from "@/types/collection";
@@ -206,61 +207,19 @@ export class Collection extends BtrixElement {
     `;
   }
 
-  // TODO Consolidate with collection-detail.ts
   private renderAbout(collection: PublicCollection) {
-    const dateRange = () => {
-      if (!collection.dateEarliest || !collection.dateLatest) {
-        return msg("n/a");
-      }
-      const format: Intl.DateTimeFormatOptions = {
-        month: "long",
-        year: "numeric",
-      };
-      const dateEarliest = this.localize.date(collection.dateEarliest, format);
-      const dateLatest = this.localize.date(collection.dateLatest, format);
-
-      if (dateEarliest === dateLatest) return dateLatest;
-
-      return msg(str`${dateEarliest} to ${dateLatest}`, {
-        desc: "Date range formatted to show full month name and year",
-      });
-    };
-
-    const metadata = html`
-      <btrix-desc-list>
-        <btrix-desc-list-item label=${msg("Collection Period")}>
-          <span class="font-sans">${dateRange()}</span>
-        </btrix-desc-list-item>
-        <btrix-desc-list-item label=${msg("Total Pages")}>
-          ${this.localize.number(collection.pageCount)}
-        </btrix-desc-list-item>
-        <btrix-desc-list-item label=${msg("Collection Size")}>
-          ${this.localize.bytes(collection.totalSize)}
-        </btrix-desc-list-item>
-      </btrix-desc-list>
-    `;
-
-    if (collection.description) {
-      return html`
-        <div class="flex flex-1 flex-col gap-10 lg:flex-row">
-          <section
-            class="w-full max-w-4xl py-3 leading-relaxed lg:rounded-lg lg:border lg:p-6"
+    return about({
+      description: collection.description
+        ? html` <div
+            class="py-3 leading-relaxed lg:rounded-lg lg:border lg:p-6"
           >
             <btrix-markdown-viewer
               value=${collection.description}
             ></btrix-markdown-viewer>
-          </section>
-          <section class="flex-1 lg:-mt-8">
-            <btrix-section-heading>
-              <h3>${msg("Metadata")}</h3>
-            </btrix-section-heading>
-            <div class="mt-5">${metadata}</div>
-          </section>
-        </div>
-      `;
-    }
-
-    return html`<div class="rounded-lg border p-6">${metadata}</div>`;
+          </div>`
+        : null,
+      metadata: collection,
+    });
   }
 
   private async fetchCollections({

@@ -1,5 +1,5 @@
 import { msg, str } from "@lit/localize";
-import { html, type TemplateResult } from "lit";
+import { html, nothing, type TemplateResult } from "lit";
 
 import { notApplicable } from "@/strings/ui";
 import type { Collection } from "@/types/collection";
@@ -54,14 +54,19 @@ export function about({
   description,
   metadata,
 }: {
-  description: TemplateResult;
+  description: TemplateResult | null;
   metadata?: Metadata;
 }) {
   return html`
     <div class="flex flex-1 flex-col gap-10 lg:flex-row">
-      <section class="flex w-full max-w-4xl flex-col leading-relaxed">
-        ${description}
-      </section>
+      ${description === null
+        ? nothing
+        : html`
+            <section class="flex w-full max-w-4xl flex-col leading-relaxed">
+              ${description}
+            </section>
+          `}
+
       <section class="flex-1">
         <btrix-section-heading>
           <h2>${msg("Metadata")}</h2>
