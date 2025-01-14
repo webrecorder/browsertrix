@@ -1,6 +1,5 @@
 """ base crawl type """
 
-import os
 from datetime import datetime, timedelta
 from typing import Optional, List, Union, Dict, Any, Type, TYPE_CHECKING, cast, Tuple
 from uuid import UUID

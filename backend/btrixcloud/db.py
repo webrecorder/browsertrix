@@ -117,6 +117,7 @@ async def update_and_prepare_db(
 
 
 # ============================================================================
+# pylint: disable=too-many-locals
 async def run_db_migrations(mdb, user_manager, page_ops, org_ops, background_job_ops):
     """Run database migrations."""
 
