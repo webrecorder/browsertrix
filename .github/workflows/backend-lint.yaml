@@ -1,4 +1,4 @@
-name: ansible-lint
+name: Backend Lint + Type Check
 
 on: [push, pull_request]
 
@@ -31,33 +31,39 @@ jobs:
           base: "${{ steps.previous-sha.outputs.sha }}"
           filters: |
             matches:
-              - 'ansible/**'
-              - '.github/workflows/ansible-lint.yaml'
+              - 'backend/**'
+              - '.github/workflows/backend-lint.yaml'
 
-  build:
+  unit-tests:
     needs: paths-filter
     if: needs.paths-filter.outputs.matches == 'true'
-    name: Ansible Lint
     runs-on: ubuntu-latest
-
     steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0 # needed for progressive mode to work
+      - name: checkout
+        uses: actions/checkout@v2
 
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.12'
+          python-version: '3.10'
 
       - name: Install dependencies
         run: |
-          cd ansible/
+          cd backend/
           python -m pip install --upgrade pip
-          pip install pipenv
-          pipenv sync
+          pip install -r requirements.txt
+          pip install -r dev-requirements.txt
 
-      - name: Lint
+      - name: Style Check
         run: |
-          cd ansible
-          pipenv run ansible-lint -c ./lint-cfg.yml ./do_setup.yml
+          black --check backend/btrixcloud/
+
+      - name: Lint Check
+        run: |
+          cd backend/
+          pylint btrixcloud/
+
+      - name: Type Check
+        run: |
+          cd backend/
+          mypy --install-types --non-interactive --check-untyped-defs btrixcloud/

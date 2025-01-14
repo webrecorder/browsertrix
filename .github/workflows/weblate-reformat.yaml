@@ -1,15 +1,38 @@
 name: Weblate Reformat
 on:
-  pull_request_target:
-    paths:
-      - 'frontend/xliff/**'
-      - '.github/workflows/weblate-reformat.yaml'
-
-    branches:
-      - 'weblate'
+  pull_request_target
 
 jobs:
-  setup-and-build:
+  # In order to be able to have required checks, a workflow can't be entirely
+  # skipped: see https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/collaborating-on-repositories-with-code-quality-features/troubleshooting-required-status-checks#handling-skipped-but-required-checks
+  paths-filter:
+    name: "Changed files?"
+    runs-on: ubuntu-latest
+    # Only run on PRs with a target branch set of 'weblate'
+    if: github.base_ref == 'weblate'
+    outputs:
+      matches: ${{ steps.filter.outputs.matches }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2  # important, to fetch previous commit
+
+      # workaround for https://github.com/dorny/paths-filter/issues/240
+      - id: previous-sha
+        run: 'echo "sha=$(git rev-parse HEAD^1)" >> $GITHUB_OUTPUT'
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          base: "${{ steps.previous-sha.outputs.sha }}"
+          filters: |
+            matches:
+              - 'frontend/xliff/**'
+              - '.github/workflows/weblate-reformat.yaml'
+
+  reformat:
+    needs: paths-filter
+    if: needs.paths-filter.outputs.matches == 'true'
     runs-on: ubuntu-latest
     permissions:
       # Give the default GITHUB_TOKEN write permission to commit and push the
@@ -35,7 +58,7 @@ jobs:
         env:
           HUSKY: 0
         run: yarn install --frozen-lockfile
-   
+
       # Localize:
       - name: Reformat XLIFF files
         working-directory: frontend
