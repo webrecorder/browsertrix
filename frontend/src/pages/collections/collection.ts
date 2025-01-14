@@ -65,15 +65,14 @@ export class Collection extends BtrixElement {
         collectionSlug,
       });
 
-      if (!collection.crawlCount && (this.tab as unknown) === Tab.Replay) {
-        this.tab = Tab.About;
+      if (collection.redirectToSlug) {
+        this.navigate.to(
+          `/${RouteNamespace.PublicOrgs}/${this.orgSlug}/collections/${collection.redirectToSlug}`,
+        );
       }
 
-      if (collection.slug !== this.collectionSlug) {
-        // Redirect to newest slug
-        this.navigate.to(
-          `/${RouteNamespace.PublicOrgs}/${this.orgSlug}/collections/${collection.slug}`,
-        );
+      if (!collection.crawlCount && (this.tab as unknown) === Tab.Replay) {
+        this.tab = Tab.About;
       }
 
       return collection;
@@ -292,7 +291,7 @@ export class Collection extends BtrixElement {
   }: {
     orgSlug: string;
     collectionSlug: string;
-  }): Promise<PublicCollection> {
+  }): Promise<PublicCollection & { redirectToSlug?: string | null }> {
     const resp = await fetch(
       `/api/public/orgs/${orgSlug}/collections/${collectionSlug}`,
       {
