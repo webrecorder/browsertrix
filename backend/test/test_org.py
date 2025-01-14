@@ -17,7 +17,7 @@ invite_email = "test-user@example.com"
 def test_ensure_only_one_default_org(admin_auth_headers):
     r = requests.get(f"{API_PREFIX}/orgs", headers=admin_auth_headers)
     data = r.json()
-    assert data["total"] == 1
+    assert data["total"] == 2
 
     orgs = data["items"]
     default_orgs = [org for org in orgs if org["default"]]

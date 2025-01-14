@@ -19,9 +19,9 @@ import {
 } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import { CopyButton } from "@/components/ui/copy-button";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import { type SelectEvent } from "@/components/ui/search-combobox";
+import { ClipboardController } from "@/controllers/clipboard";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
 import { pageHeader } from "@/layouts/pageHeader";
 import scopeTypeLabels from "@/strings/crawl-workflows/scopeType";
@@ -208,9 +208,9 @@ export class WorkflowsList extends BtrixElement {
   render() {
     return html`
       <div class="contents">
-        ${pageHeader(
-          msg("Crawl Workflows"),
-          html`
+        ${pageHeader({
+          title: msg("Crawl Workflows"),
+          actions: html`
             ${when(
               this.appState.isAdmin,
               () =>
@@ -304,8 +304,8 @@ export class WorkflowsList extends BtrixElement {
               `,
             )}
           `,
-          tw`border-b-transparent`,
-        )}
+          classNames: tw`border-b-transparent`,
+        })}
         <div class="sticky top-2 z-10 mb-3 rounded-lg border bg-neutral-50 p-4">
           ${this.renderControls()}
         </div>
@@ -625,9 +625,8 @@ export class WorkflowsList extends BtrixElement {
             </sl-menu-item>`,
       )}
       <sl-menu-item
-        @click=${() => {
-          CopyButton.copyToClipboard(workflow.tags.join(", "));
-        }}
+        @click=${() =>
+          ClipboardController.copyToClipboard(workflow.tags.join(", "))}
         ?disabled=${!workflow.tags.length}
       >
         <sl-icon name="tags" slot="prefix"></sl-icon>

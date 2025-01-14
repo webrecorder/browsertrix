@@ -1,6 +1,7 @@
 import { localized, msg } from "@lit/localize";
+import { Task } from "@lit/task";
 import type { SlSelectEvent } from "@shoelace-style/shoelace";
-import { html, type PropertyValues, type TemplateResult } from "lit";
+import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
@@ -8,8 +9,13 @@ import { when } from "lit/directives/when.js";
 import type { SelectNewDialogEvent } from ".";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import { pageHeading } from "@/layouts/page";
 import { pageHeader } from "@/layouts/pageHeader";
+import { RouteNamespace } from "@/routes";
+import type { PublicCollection } from "@/types/collection";
+import type { PublicOrgCollections } from "@/types/org";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
+import { tw } from "@/utils/tailwind";
 
 type Metrics = {
   storageUsedBytes: number;
@@ -46,6 +52,19 @@ export class Dashboard extends BtrixElement {
     runningTime: "blue",
   };
 
+  private readonly publicCollections = new Task(this, {
+    task: async ([slug, metrics]) => {
+      if (!slug) throw new Error("slug required");
+
+      if (!metrics) return undefined;
+      if (!metrics.publicCollectionsCount) return [];
+
+      const collections = await this.fetchCollections({ slug });
+      return collections;
+    },
+    args: () => [this.orgSlug, this.metrics] as const,
+  });
+
   willUpdate(changedProperties: PropertyValues<this> & Map<string, unknown>) {
     if (changedProperties.has("appState.orgSlug") && this.orgId) {
       void this.fetchMetrics();
@@ -66,19 +85,20 @@ export class Dashboard extends BtrixElement {
       this.metrics.storageUsedBytes >= this.metrics.storageQuotaBytes;
 
     return html`
-      ${pageHeader(
-        this.userOrg?.name,
-        html`
+      ${pageHeader({
+        title: this.userOrg?.name,
+        actions: html`
           ${when(
             this.appState.isAdmin,
             () =>
-              html` <sl-icon-button
-                href=${`${this.navigate.orgBasePath}/settings`}
-                class="size-8 text-base"
-                name="gear"
-                label=${msg("Edit org settings")}
-                @click=${this.navigate.link}
-              ></sl-icon-button>`,
+              html`<sl-tooltip content=${msg("Manage org settings")}>
+                <sl-icon-button
+                  href=${`${this.navigate.orgBasePath}/settings`}
+                  class="size-8 text-base"
+                  name="gear"
+                  @click=${this.navigate.link}
+                ></sl-icon-button>
+              </sl-tooltip>`,
           )}
           ${when(
             this.isCrawler,
@@ -134,8 +154,8 @@ export class Dashboard extends BtrixElement {
               </sl-dropdown>`,
           )}
         `,
-        "mb-6",
-      )}
+        classNames: tw`border-b-transparent lg:mb-2`,
+      })}
       <main>
         <div class="mb-10 flex flex-col gap-6 md:flex-row">
           ${this.renderCard(
@@ -244,14 +264,107 @@ export class Dashboard extends BtrixElement {
             `,
           )}
         </div>
-        <section class="mb-10">
-          <btrix-details>
-            <span slot="title">${msg("Usage History")}</span>
-            <btrix-usage-history-table></btrix-usage-history-table>
-          </btrix-details>
+
+        <section class="mb-16">
+          <header class="mb-1.5 flex items-center justify-between">
+            ${pageHeading({
+              content: msg("Public Collections"),
+            })}
+            ${when(
+              this.appState.isCrawler,
+              () => html`
+                <btrix-overflow-dropdown>
+                  <sl-menu>
+                    <btrix-menu-item-link
+                      href=${`${this.navigate.orgBasePath}/collections`}
+                    >
+                      <sl-icon slot="prefix" name="collection-fill"></sl-icon>
+                      ${msg("Manage Collections")}
+                    </btrix-menu-item-link>
+                    <btrix-menu-item-link
+                      href=${`/${RouteNamespace.PublicOrgs}/${this.orgSlug}`}
+                    >
+                      <sl-icon slot="prefix" name="globe2"></sl-icon>
+                      ${this.org?.enablePublicProfile
+                        ? msg("Visit Public Profile")
+                        : msg("Preview Public Profile")}
+                    </btrix-menu-item-link>
+                    ${this.org && !this.org.enablePublicProfile
+                      ? html`
+                          <sl-divider></sl-divider>
+                          <btrix-menu-item-link
+                            href=${`${this.navigate.orgBasePath}/settings`}
+                          >
+                            <sl-icon slot="prefix" name="gear"></sl-icon>
+                            ${msg("Update Org Visibility")}
+                          </btrix-menu-item-link>
+                        `
+                      : nothing}
+                  </sl-menu>
+                </btrix-overflow-dropdown>
+              `,
+            )}
+          </header>
+          <div class="rounded-lg border p-10">
+            <btrix-collections-grid
+              slug=${this.orgSlug || ""}
+              .collections=${this.publicCollections.value}
+            >
+              ${this.renderNoPublicCollections()}
+            </btrix-collections-grid>
+          </div>
         </section>
       </main>
     `;
+  }
+
+  private renderNoPublicCollections() {
+    if (!this.org || !this.metrics) return;
+
+    let button: TemplateResult;
+
+    if (this.metrics.collectionsCount) {
+      if (this.org.enablePublicProfile) {
+        button = html`
+          <sl-button
+            @click=${() => {
+              this.navigate.to(`${this.navigate.orgBasePath}/collections`);
+            }}
+          >
+            <sl-icon slot="prefix" name="collection-fill"></sl-icon>
+            ${msg("Manage Collections")}
+          </sl-button>
+        `;
+      } else {
+        button = html`
+          <sl-button
+            @click=${() => {
+              this.navigate.to(`${this.navigate.orgBasePath}/settings`);
+            }}
+          >
+            <sl-icon slot="prefix" name="gear"></sl-icon>
+            ${msg("Update Org Visibility")}
+          </sl-button>
+        `;
+      }
+    } else {
+      button = html`
+        <sl-button
+          @click=${() => {
+            this.dispatchEvent(
+              new CustomEvent("select-new-dialog", {
+                detail: "collection",
+              }) as SelectNewDialogEvent,
+            );
+          }}
+        >
+          <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+          ${msg("Create a Collection")}
+        </sl-button>
+      `;
+    }
+
+    return html`<div slot="empty-actions">${button}</div>`;
   }
 
   private renderStorageMeter(metrics: Metrics) {
@@ -686,6 +799,25 @@ export class Dashboard extends BtrixElement {
         icon: "exclamation-octagon",
         id: "metrics-retrieve-error",
       });
+    }
+  }
+
+  private async fetchCollections({
+    slug,
+  }: {
+    slug: string;
+  }): Promise<PublicCollection[]> {
+    const resp = await fetch(`/api/public/orgs/${slug}/collections`, {
+      headers: { "Content-Type": "application/json" },
+    });
+
+    switch (resp.status) {
+      case 200:
+        return ((await resp.json()) as PublicOrgCollections).collections;
+      case 404:
+        return [];
+      default:
+        throw resp.status;
     }
   }
 }

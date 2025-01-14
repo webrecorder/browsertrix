@@ -9,6 +9,8 @@ import { playwrightLauncher } from "@web/test-runner-playwright";
 import glob from "glob";
 import { typescriptPaths as typescriptPathsPlugin } from "rollup-plugin-typescript-paths";
 
+import defineConfig from "./config/define.js";
+
 const commonjs = fromRollup(commonjsPlugin);
 const typescriptPaths = fromRollup(typescriptPathsPlugin);
 
@@ -55,6 +57,7 @@ export default {
       ts: true,
       tsconfig: fileURLToPath(new URL("./tsconfig.json", import.meta.url)),
       target: "esnext",
+      define: defineConfig,
     }),
     commonjs({
       include: [

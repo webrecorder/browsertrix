@@ -674,7 +674,7 @@ export class CollectionItemsDialog extends BtrixElement {
       this.close();
       this.dispatchEvent(new CustomEvent("btrix-collection-saved"));
       this.notify.toast({
-        message: msg(str`Successfully saved archived item selection.`),
+        message: msg(str`Archived item selection updated.`),
         variant: "success",
         icon: "check2-circle",
         id: "archived-item-selection-status",
@@ -683,7 +683,7 @@ export class CollectionItemsDialog extends BtrixElement {
       this.notify.toast({
         message: isApiError(e)
           ? e.message
-          : msg("Something unexpected went wrong"),
+          : msg("Sorry, couldn't save archived item selection at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
         id: "archived-item-selection-status",

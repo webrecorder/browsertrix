@@ -7,6 +7,8 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { NavigateController } from "@/controllers/navigate";
 import { tw } from "@/utils/tailwind";
 
+type Content = string | TemplateResult | typeof nothing;
+
 export type Breadcrumb = {
   href?: string;
   content?: string | TemplateResult;
@@ -84,10 +86,11 @@ export function pageBack({ href, content }: Breadcrumb) {
   });
 }
 
-export function pageTitle(title?: string | TemplateResult) {
+export function pageTitle(title?: string | TemplateResult | typeof nothing) {
   return html`
     <h1 class="min-w-0 text-xl font-semibold leading-8">
-      ${title || html`<sl-skeleton class="my-.5 h-5 w-60"></sl-skeleton>`}
+      ${title ||
+      html`<sl-skeleton class="my-.5 h-5 w-60" effect="sheen"></sl-skeleton>`}
     </h1>
   `;
 }
@@ -100,21 +103,42 @@ export function pageNav(breadcrumbs: Breadcrumb[]) {
   return pageBreadcrumbs(breadcrumbs);
 }
 
-export function pageHeader(
-  title?: string | TemplateResult,
-  suffix?: TemplateResult<1>,
-  classNames?: string,
-) {
+export function pageHeader({
+  title,
+  prefix,
+  suffix,
+  secondary,
+  actions,
+  border = true,
+  classNames,
+}: {
+  title?: Content;
+  prefix?: Content;
+  suffix?: Content;
+  secondary?: Content;
+  actions?: Content;
+  border?: boolean;
+  classNames?: typeof tw | string;
+}) {
   return html`
     <header
       class=${clsx(
-        "mt-5 flex items-end flex-wrap justify-between gap-2 border-b pb-3",
+        tw`mt-5 flex flex-col gap-3 lg:flex-row`,
+        border && tw`border-b pb-3`,
         classNames,
       )}
     >
-      ${pageTitle(title)}
-      ${suffix
-        ? html`<div class="ml-auto flex items-center gap-2">${suffix}</div>`
+      <div class="flex flex-1 flex-col gap-2">
+        <div class="flex flex-wrap items-center gap-2.5">
+          ${prefix}${pageTitle(title)}${suffix}
+        </div>
+        ${secondary}
+      </div>
+
+      ${actions
+        ? html`<div class="ml-auto flex flex-shrink-0 items-center gap-2">
+            ${actions}
+          </div>`
         : nothing}
     </header>
   `;

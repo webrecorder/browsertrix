@@ -1,9 +1,6 @@
 """ handle user uploads into browsertrix """
 
 import uuid
-import hashlib
-import os
-import base64
 from urllib.parse import unquote
 from uuid import UUID
 
@@ -13,7 +10,6 @@ from typing import Optional, List, Any
 from fastapi import Depends, UploadFile, File
 from fastapi import HTTPException
 from starlette.requests import Request
-from pathvalidate import sanitize_filename
 
 from .basecrawls import BaseCrawlOps
 from .storages import CHUNK_SIZE
@@ -27,16 +23,14 @@ from .models import (
     Organization,
     PaginatedCrawlOutResponse,
     User,
-    StorageRef,
     UpdatedResponse,
     DeletedResponseQuota,
     AddedResponseIdQuota,
+    FilePreparer,
+    MIN_UPLOAD_PART_SIZE,
 )
 from .pagination import paginated_format, DEFAULT_PAGE_SIZE
 from .utils import dt_now
-
-
-MIN_UPLOAD_PART_SIZE = 10000000
 
 
 # ============================================================================
@@ -105,9 +99,10 @@ class UploadOps(BaseCrawlOps):
         if prev_upload:
             try:
                 await self._delete_crawl_files(prev_upload, org)
+                await self.page_ops.delete_crawl_pages(prev_upload.id, org.id)
             # pylint: disable=broad-exception-caught
             except Exception as exc:
-                print("replace file deletion failed", exc)
+                print(f"Error handling previous upload: {exc}", flush=True)
 
         return await self._create_upload(
             files, name, description, collections, tags, id_, org, user
@@ -195,6 +190,8 @@ class UploadOps(BaseCrawlOps):
             self.event_webhook_ops.create_upload_finished_notification(crawl_id, org.id)
         )
 
+        asyncio.create_task(self.page_ops.add_crawl_pages_to_db_from_wacz(crawl_id))
+
         await self.orgs.inc_org_bytes_stored(org.id, file_size, "upload")
 
         quota_reached = self.orgs.storage_quota_reached(org)
@@ -222,39 +219,6 @@ class UploadOps(BaseCrawlOps):
             raise HTTPException(status_code=404, detail="uploaded_crawl_not_found")
 
         return {"deleted": True, "storageQuotaReached": quota_reached}
-
-
-# ============================================================================
-class FilePreparer:
-    """wrapper to compute digest / name for streaming upload"""
-
-    def __init__(self, prefix, filename):
-        self.upload_size = 0
-        self.upload_hasher = hashlib.sha256()
-        self.upload_name = prefix + self.prepare_filename(filename)
-
-    def add_chunk(self, chunk):
-        """add chunk for file"""
-        self.upload_size += len(chunk)
-        self.upload_hasher.update(chunk)
-
-    def get_crawl_file(self, storage: StorageRef):
-        """get crawl file"""
-        return CrawlFile(
-            filename=self.upload_name,
-            hash=self.upload_hasher.hexdigest(),
-            size=self.upload_size,
-            storage=storage,
-        )
-
-    def prepare_filename(self, filename):
-        """prepare filename by sanitizing and adding extra string
-        to avoid duplicates"""
-        name = sanitize_filename(filename.rsplit("/", 1)[-1])
-        parts = name.split(".")
-        randstr = base64.b32encode(os.urandom(5)).lower()
-        parts[0] += "-" + randstr.decode("utf-8")
-        return ".".join(parts)
 
 
 # ============================================================================
@@ -446,3 +410,5 @@ def init_uploads_api(app, user_dep, *args):
         org: Organization = Depends(org_crawl_dep),
     ):
         return await ops.delete_uploads(delete_list, org, user)
+
+    return ops

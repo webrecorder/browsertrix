@@ -5,6 +5,9 @@ Crawl-related models and types
 from datetime import datetime
 from enum import Enum, IntEnum
 from uuid import UUID
+import base64
+import hashlib
+import mimetypes
 import os
 
 from typing import Optional, List, Dict, Union, Literal, Any, get_args
@@ -21,6 +24,7 @@ from pydantic import (
     BeforeValidator,
     TypeAdapter,
 )
+from pathvalidate import sanitize_filename
 
 # from fastapi_users import models as fastapi_users_models
 
@@ -28,6 +32,20 @@ from .db import BaseMongoModel
 
 # crawl scale for constraint
 MAX_CRAWL_SCALE = int(os.environ.get("MAX_CRAWL_SCALE", 3))
+
+# Presign duration must be less than 604800 seconds (one week),
+# so set this one minute short of a week
+PRESIGN_MINUTES_MAX = 10079
+PRESIGN_MINUTES_DEFAULT = PRESIGN_MINUTES_MAX
+
+# Expire duration seconds for presigned urls
+PRESIGN_DURATION_MINUTES = int(
+    os.environ.get("PRESIGN_DURATION_MINUTES") or PRESIGN_MINUTES_DEFAULT
+)
+PRESIGN_DURATION_SECONDS = min(PRESIGN_DURATION_MINUTES, PRESIGN_MINUTES_MAX) * 60
+
+# Minimum part size for file uploads
+MIN_UPLOAD_PART_SIZE = 10000000
 
 # annotated types
 # ============================================================================
@@ -779,6 +797,9 @@ class BaseCrawl(CoreCrawlable, BaseMongoModel):
 
     reviewStatus: ReviewStatus = None
 
+    filePageCount: Optional[int] = 0
+    errorPageCount: Optional[int] = 0
+
 
 # ============================================================================
 class CollIdName(BaseModel):
@@ -995,9 +1016,6 @@ class Crawl(BaseCrawl, CrawlConfigCore):
     qa: Optional[QARun] = None
     qaFinished: Optional[Dict[str, QARun]] = {}
 
-    filePageCount: Optional[int] = 0
-    errorPageCount: Optional[int] = 0
-
 
 # ============================================================================
 class CrawlCompleteIn(BaseModel):
@@ -1051,8 +1069,166 @@ class UpdateUpload(UpdateCrawl):
 
 
 # ============================================================================
+class FilePreparer:
+    """wrapper to compute digest / name for streaming upload"""
+
+    def __init__(self, prefix, filename):
+        self.upload_size = 0
+        self.upload_hasher = hashlib.sha256()
+        self.upload_name = prefix + self.prepare_filename(filename)
+
+    def add_chunk(self, chunk):
+        """add chunk for file"""
+        self.upload_size += len(chunk)
+        self.upload_hasher.update(chunk)
+
+    def get_crawl_file(self, storage: StorageRef):
+        """get crawl file"""
+        return CrawlFile(
+            filename=self.upload_name,
+            hash=self.upload_hasher.hexdigest(),
+            size=self.upload_size,
+            storage=storage,
+        )
+
+    def prepare_filename(self, filename):
+        """prepare filename by sanitizing and adding extra string
+        to avoid duplicates"""
+        name = sanitize_filename(filename.rsplit("/", 1)[-1])
+        parts = name.split(".")
+        randstr = base64.b32encode(os.urandom(5)).lower()
+        parts[0] += "-" + randstr.decode("utf-8")
+        return ".".join(parts)
+
+
+# ============================================================================
+
+### USER-UPLOADED IMAGES ###
+
+
+# ============================================================================
+class ImageFileOut(BaseModel):
+    """output for user-upload imaged file (conformance to Data Resource Spec)"""
+
+    name: str
+    path: str
+    hash: str
+    size: int
+
+    originalFilename: str
+    mime: str
+    userid: UUID
+    userName: str
+    created: datetime
+
+
+# ============================================================================
+class PublicImageFileOut(BaseModel):
+    """public output for user-upload imaged file (conformance to Data Resource Spec)"""
+
+    name: str
+    path: str
+    hash: str
+    size: int
+
+    mime: str
+
+
+# ============================================================================
+class ImageFile(BaseFile):
+    """User-uploaded image file"""
+
+    originalFilename: str
+    mime: str
+    userid: UUID
+    userName: str
+    created: datetime
+
+    async def get_image_file_out(self, org, storage_ops) -> ImageFileOut:
+        """Get ImageFileOut with new presigned url"""
+        presigned_url = await storage_ops.get_presigned_url(
+            org, self, PRESIGN_DURATION_SECONDS
+        )
+
+        return ImageFileOut(
+            name=self.filename,
+            path=presigned_url or "",
+            hash=self.hash,
+            size=self.size,
+            originalFilename=self.originalFilename,
+            mime=self.mime,
+            userid=self.userid,
+            userName=self.userName,
+            created=self.created,
+        )
+
+    async def get_public_image_file_out(self, org, storage_ops) -> PublicImageFileOut:
+        """Get PublicImageFileOut with new presigned url"""
+        presigned_url = await storage_ops.get_presigned_url(
+            org, self, PRESIGN_DURATION_SECONDS
+        )
+
+        return PublicImageFileOut(
+            name=self.filename,
+            path=presigned_url or "",
+            hash=self.hash,
+            size=self.size,
+            mime=self.mime,
+        )
+
+
+# ============================================================================
+class ImageFilePreparer(FilePreparer):
+    """Wrapper for user image streaming uploads"""
+
+    # pylint: disable=too-many-arguments, too-many-function-args
+
+    def __init__(
+        self,
+        prefix,
+        filename,
+        original_filename: str,
+        user: User,
+        created: datetime,
+    ):
+        super().__init__(prefix, filename)
+
+        self.original_filename = original_filename
+        self.mime, _ = mimetypes.guess_type(original_filename) or ("image/jpeg", None)
+        self.userid = user.id
+        self.user_name = user.name
+        self.created = created
+
+    def get_image_file(
+        self,
+        storage: StorageRef,
+    ) -> ImageFile:
+        """get user-uploaded image file"""
+        return ImageFile(
+            filename=self.upload_name,
+            hash=self.upload_hasher.hexdigest(),
+            size=self.upload_size,
+            storage=storage,
+            originalFilename=self.original_filename,
+            mime=self.mime,
+            userid=self.userid,
+            userName=self.user_name,
+            created=self.created,
+        )
+
+
+# ============================================================================
 
 ### COLLECTIONS ###
+
+
+# ============================================================================
+class CollAccessType(str, Enum):
+    """Collection access types"""
+
+    PRIVATE = "private"
+    UNLISTED = "unlisted"
+    PUBLIC = "public"
 
 
 # ============================================================================
@@ -1062,16 +1238,29 @@ class Collection(BaseMongoModel):
     name: str = Field(..., min_length=1)
     oid: UUID
     description: Optional[str] = None
+    caption: Optional[str] = None
     modified: Optional[datetime] = None
 
     crawlCount: Optional[int] = 0
     pageCount: Optional[int] = 0
     totalSize: Optional[int] = 0
 
+    dateEarliest: Optional[datetime] = None
+    dateLatest: Optional[datetime] = None
+
     # Sorted by count, descending
     tags: Optional[List[str]] = []
 
-    isPublic: Optional[bool] = False
+    access: CollAccessType = CollAccessType.PRIVATE
+
+    homeUrl: Optional[AnyHttpUrl] = None
+    homeUrlTs: Optional[datetime] = None
+    homeUrlPageId: Optional[UUID] = None
+
+    thumbnail: Optional[ImageFile] = None
+    defaultThumbnailName: Optional[str] = None
+
+    allowPublicDownload: Optional[bool] = True
 
 
 # ============================================================================
@@ -1080,16 +1269,74 @@ class CollIn(BaseModel):
 
     name: str = Field(..., min_length=1)
     description: Optional[str] = None
+    caption: Optional[str] = None
     crawlIds: Optional[List[str]] = []
 
-    isPublic: bool = False
+    access: CollAccessType = CollAccessType.PRIVATE
+
+    defaultThumbnailName: Optional[str] = None
+    allowPublicDownload: bool = True
 
 
 # ============================================================================
-class CollOut(Collection):
+class CollOut(BaseMongoModel):
     """Collection output model with annotations."""
 
+    name: str
+    oid: UUID
+    description: Optional[str] = None
+    caption: Optional[str] = None
+    modified: Optional[datetime] = None
+
+    crawlCount: Optional[int] = 0
+    pageCount: Optional[int] = 0
+    totalSize: Optional[int] = 0
+
+    dateEarliest: Optional[datetime] = None
+    dateLatest: Optional[datetime] = None
+
+    # Sorted by count, descending
+    tags: Optional[List[str]] = []
+
+    access: CollAccessType = CollAccessType.PRIVATE
+
+    homeUrl: Optional[AnyHttpUrl] = None
+    homeUrlTs: Optional[datetime] = None
+    homeUrlPageId: Optional[UUID] = None
+
     resources: List[CrawlFileOut] = []
+    thumbnail: Optional[ImageFileOut] = None
+    defaultThumbnailName: Optional[str] = None
+
+    allowPublicDownload: bool = True
+
+
+# ============================================================================
+class PublicCollOut(BaseMongoModel):
+    """Collection output model with annotations."""
+
+    name: str
+    oid: UUID
+    description: Optional[str] = None
+    caption: Optional[str] = None
+
+    crawlCount: Optional[int] = 0
+    pageCount: Optional[int] = 0
+    totalSize: Optional[int] = 0
+
+    dateEarliest: Optional[datetime] = None
+    dateLatest: Optional[datetime] = None
+
+    access: CollAccessType = CollAccessType.PUBLIC
+
+    homeUrl: Optional[AnyHttpUrl] = None
+    homeUrlTs: Optional[datetime] = None
+
+    resources: List[CrawlFileOut] = []
+    thumbnail: Optional[PublicImageFileOut] = None
+    defaultThumbnailName: Optional[str] = None
+
+    allowPublicDownload: bool = True
 
 
 # ============================================================================
@@ -1098,7 +1345,17 @@ class UpdateColl(BaseModel):
 
     name: Optional[str] = None
     description: Optional[str] = None
-    isPublic: Optional[bool] = None
+    caption: Optional[str] = None
+    access: Optional[CollAccessType] = None
+    defaultThumbnailName: Optional[str] = None
+    allowPublicDownload: Optional[bool] = None
+
+
+# ============================================================================
+class UpdateCollHomeUrl(BaseModel):
+    """Update home url for collection"""
+
+    pageId: Optional[UUID] = None
 
 
 # ============================================================================
@@ -1141,6 +1398,24 @@ class RenameOrg(BaseModel):
 
     name: str
     slug: Optional[str] = None
+
+
+# ============================================================================
+class PublicOrgDetails(BaseModel):
+    """Model for org details that are available in public profile"""
+
+    name: str
+    description: str = ""
+    url: str = ""
+
+
+# ============================================================================
+class OrgPublicCollections(BaseModel):
+    """Model for listing public collections in org"""
+
+    org: PublicOrgDetails
+
+    collections: List[PublicCollOut] = []
 
 
 # ============================================================================
@@ -1372,6 +1647,15 @@ class OrgReadOnlyUpdate(BaseModel):
 
 
 # ============================================================================
+class OrgPublicProfileUpdate(BaseModel):
+    """Organization enablePublicProfile update"""
+
+    enablePublicProfile: Optional[bool] = None
+    publicDescription: Optional[str] = None
+    publicUrl: Optional[str] = None
+
+
+# ============================================================================
 class OrgWebhookUrls(BaseModel):
     """Organization webhook URLs"""
 
@@ -1439,6 +1723,10 @@ class OrgOut(BaseMongoModel):
     allowedProxies: list[str] = []
     crawlingDefaults: Optional[CrawlConfigDefaults] = None
 
+    enablePublicProfile: bool = False
+    publicDescription: str = ""
+    publicUrl: str = ""
+
 
 # ============================================================================
 class Organization(BaseMongoModel):
@@ -1493,6 +1781,10 @@ class Organization(BaseMongoModel):
     allowSharedProxies: bool = False
     allowedProxies: list[str] = []
     crawlingDefaults: Optional[CrawlConfigDefaults] = None
+
+    enablePublicProfile: bool = False
+    publicDescription: Optional[str] = None
+    publicUrl: Optional[str] = None
 
     def is_owner(self, user):
         """Check if user is owner"""
@@ -2022,6 +2314,7 @@ class BgJobType(str, Enum):
     DELETE_REPLICA = "delete-replica"
     DELETE_ORG = "delete-org"
     RECALCULATE_ORG_STATS = "recalculate-org-stats"
+    READD_ORG_PAGES = "readd-org-pages"
 
 
 # ============================================================================
@@ -2076,6 +2369,14 @@ class RecalculateOrgStatsJob(BackgroundJob):
 
 
 # ============================================================================
+class ReAddOrgPagesJob(BackgroundJob):
+    """Model for tracking jobs to readd an org's pages"""
+
+    type: Literal[BgJobType.READD_ORG_PAGES] = BgJobType.READD_ORG_PAGES
+    crawl_type: Optional[str] = None
+
+
+# ============================================================================
 # Union of all job types, for response model
 
 AnyJob = RootModel[
@@ -2085,6 +2386,7 @@ AnyJob = RootModel[
         BackgroundJob,
         DeleteOrgJob,
         RecalculateOrgStatsJob,
+        ReAddOrgPagesJob,
     ]
 ]
 
@@ -2196,7 +2498,7 @@ class PageWithAllQA(Page):
 class PageOut(Page):
     """Model for pages output, no QA"""
 
-    status: Optional[int] = 200
+    status: int = 200
 
 
 # ============================================================================
@@ -2220,6 +2522,24 @@ class PageNoteUpdatedResponse(BaseModel):
 
     updated: bool
     data: PageNote
+
+
+# ============================================================================
+class PageIdTimestamp(BaseModel):
+    """Simplified model for page info to include in PageUrlCount"""
+
+    pageId: UUID
+    ts: Optional[datetime] = None
+    status: int = 200
+
+
+# ============================================================================
+class PageUrlCount(BaseModel):
+    """Model for counting pages by URL"""
+
+    url: AnyHttpUrl
+    count: int = 0
+    snapshots: List[PageIdTimestamp] = []
 
 
 # ============================================================================
@@ -2468,3 +2788,10 @@ class PaginatedUserEmailsResponse(PaginatedResponse):
     """Response model for user emails with org info"""
 
     items: List[UserEmailWithOrgInfo]
+
+
+# ============================================================================
+class PaginatedPageUrlCountResponse(PaginatedResponse):
+    """Response model for page count by url"""
+
+    items: List[PageUrlCount]

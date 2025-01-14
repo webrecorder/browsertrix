@@ -918,7 +918,7 @@ class CrawlOps(BaseCrawlOps):
         """delete crawl qa wacz files"""
         qa_run = await self.get_qa_run(crawl_id, qa_run_id, org)
         for file_ in qa_run.files:
-            if not await self.storage_ops.delete_crawl_file_object(org, file_):
+            if not await self.storage_ops.delete_file_object(org, file_):
                 raise HTTPException(status_code=400, detail="file_deletion_error")
             # Not replicating QA run WACZs yet
             # await self.background_job_ops.create_delete_replica_jobs(
