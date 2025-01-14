@@ -110,6 +110,7 @@ class CollectionOps:
         """Add new collection"""
         crawl_ids = coll_in.crawlIds if coll_in.crawlIds else []
         coll_id = uuid4()
+        created = dt_now()
         modified = dt_now()
 
         coll = Collection(
@@ -118,6 +119,7 @@ class CollectionOps:
             name=coll_in.name,
             description=coll_in.description,
             caption=coll_in.caption,
+            created=created,
             modified=modified,
             access=coll_in.access,
             defaultThumbnailName=coll_in.defaultThumbnailName,

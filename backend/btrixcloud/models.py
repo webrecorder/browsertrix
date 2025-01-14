@@ -1239,6 +1239,8 @@ class Collection(BaseMongoModel):
     oid: UUID
     description: Optional[str] = None
     caption: Optional[str] = None
+
+    created: Optional[datetime] = None
     modified: Optional[datetime] = None
 
     crawlCount: Optional[int] = 0
@@ -1286,6 +1288,7 @@ class CollOut(BaseMongoModel):
     oid: UUID
     description: Optional[str] = None
     caption: Optional[str] = None
+    created: Optional[datetime] = None
     modified: Optional[datetime] = None
 
     crawlCount: Optional[int] = 0
@@ -1319,6 +1322,8 @@ class PublicCollOut(BaseMongoModel):
     oid: UUID
     description: Optional[str] = None
     caption: Optional[str] = None
+    created: Optional[datetime] = None
+    modified: Optional[datetime] = None
 
     crawlCount: Optional[int] = 0
     pageCount: Optional[int] = 0
