@@ -17,7 +17,6 @@ CAPTION = "Short caption"
 UPDATED_CAPTION = "Updated caption"
 
 NON_PUBLIC_COLL_FIELDS = (
-    "modified",
     "tags",
     "homeUrlPageId",
 )
@@ -887,6 +886,8 @@ def test_list_public_collections(
         assert collection["oid"]
         assert collection["access"] == "public"
         assert collection["name"]
+        assert collection["created"]
+        assert collection["modified"]
         assert collection["dateEarliest"]
         assert collection["dateLatest"]
         assert collection["crawlCount"] > 0
@@ -1070,6 +1071,8 @@ def test_list_public_colls_home_url_thumbnail():
         assert coll["oid"]
         assert coll["access"] == "public"
         assert coll["name"]
+        assert coll["created"]
+        assert coll["modified"]
         assert coll["resources"]
         assert coll["dateEarliest"]
         assert coll["dateLatest"]
@@ -1117,6 +1120,8 @@ def test_get_public_collection(default_org_id):
     assert coll["oid"] == default_org_id
     assert coll["access"] == "public"
     assert coll["name"]
+    assert coll["created"]
+    assert coll["modified"]
     assert coll["resources"]
     assert coll["dateEarliest"]
     assert coll["dateLatest"]
@@ -1193,6 +1198,8 @@ def test_get_public_collection_unlisted(crawler_auth_headers, default_org_id):
     assert coll["oid"] == default_org_id
     assert coll["access"] == "unlisted"
     assert coll["name"]
+    assert coll["created"]
+    assert coll["modified"]
     assert coll["resources"]
     assert coll["dateEarliest"]
     assert coll["dateLatest"]
@@ -1231,6 +1238,8 @@ def test_get_public_collection_unlisted_org_profile_disabled(
     assert coll["oid"] == default_org_id
     assert coll["access"] == "unlisted"
     assert coll["name"]
+    assert coll["created"]
+    assert coll["modified"]
     assert coll["resources"]
     assert coll["dateEarliest"]
     assert coll["dateLatest"]

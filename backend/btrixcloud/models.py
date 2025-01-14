@@ -1288,6 +1288,7 @@ class CollOut(BaseMongoModel):
     oid: UUID
     description: Optional[str] = None
     caption: Optional[str] = None
+    created: Optional[datetime] = None
     modified: Optional[datetime] = None
 
     crawlCount: Optional[int] = 0
@@ -1321,6 +1322,8 @@ class PublicCollOut(BaseMongoModel):
     oid: UUID
     description: Optional[str] = None
     caption: Optional[str] = None
+    created: Optional[datetime] = None
+    modified: Optional[datetime] = None
 
     crawlCount: Optional[int] = 0
     pageCount: Optional[int] = 0
@@ -2170,27 +2173,27 @@ class BaseCollectionItemBody(WebhookNotificationBody):
 class CollectionItemAddedBody(BaseCollectionItemBody):
     """Webhook notification POST body for collection additions"""
 
-    event: Literal[
+    event: Literal[WebhookEventType.ADDED_TO_COLLECTION] = (
         WebhookEventType.ADDED_TO_COLLECTION
-    ] = WebhookEventType.ADDED_TO_COLLECTION
+    )
 
 
 # ============================================================================
 class CollectionItemRemovedBody(BaseCollectionItemBody):
     """Webhook notification POST body for collection removals"""
 
-    event: Literal[
+    event: Literal[WebhookEventType.REMOVED_FROM_COLLECTION] = (
         WebhookEventType.REMOVED_FROM_COLLECTION
-    ] = WebhookEventType.REMOVED_FROM_COLLECTION
+    )
 
 
 # ============================================================================
 class CollectionDeletedBody(WebhookNotificationBody):
     """Webhook notification base POST body for collection changes"""
 
-    event: Literal[
+    event: Literal[WebhookEventType.COLLECTION_DELETED] = (
         WebhookEventType.COLLECTION_DELETED
-    ] = WebhookEventType.COLLECTION_DELETED
+    )
     collectionId: str
 
 
@@ -2249,9 +2252,9 @@ class UploadDeletedBody(BaseArchivedItemBody):
 class QaAnalysisStartedBody(BaseArchivedItemBody):
     """Webhook notification POST body for when qa analysis run starts"""
 
-    event: Literal[
+    event: Literal[WebhookEventType.QA_ANALYSIS_STARTED] = (
         WebhookEventType.QA_ANALYSIS_STARTED
-    ] = WebhookEventType.QA_ANALYSIS_STARTED
+    )
 
     qaRunId: str
 
@@ -2260,9 +2263,9 @@ class QaAnalysisStartedBody(BaseArchivedItemBody):
 class QaAnalysisFinishedBody(BaseArchivedItemFinishedBody):
     """Webhook notification POST body for when qa analysis run finishes"""
 
-    event: Literal[
+    event: Literal[WebhookEventType.QA_ANALYSIS_FINISHED] = (
         WebhookEventType.QA_ANALYSIS_FINISHED
-    ] = WebhookEventType.QA_ANALYSIS_FINISHED
+    )
 
     qaRunId: str
 
