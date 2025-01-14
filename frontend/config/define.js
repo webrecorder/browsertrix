@@ -22,7 +22,4 @@ const WEBSOCKET_HOST =
 
 module.exports = {
   "window.process.env.WEBSOCKET_HOST": JSON.stringify(WEBSOCKET_HOST),
-  "window.process.env.ANALYTICS_NAMESPACE": JSON.stringify(
-    process.env.ANALYTICS_NAMESPACE || "",
-  ),
 };
