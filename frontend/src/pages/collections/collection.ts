@@ -1,5 +1,5 @@
 import { localized, msg, str } from "@lit/localize";
-import { Task } from "@lit/task";
+import { Task, TaskStatus } from "@lit/task";
 import { html, type TemplateResult } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -84,21 +84,17 @@ export class Collection extends BtrixElement {
   private readonly renderComplete = (collection: PublicCollection) => {
     const org = this.orgCollections.value?.org;
     const header: Parameters<typeof page>[0] = {
-      breadcrumbs: org
-        ? [
-            {
-              href: `/${RouteNamespace.PublicOrgs}/${this.orgSlug}`,
-              content: org.name,
-            },
-            {
-              href: `/${RouteNamespace.PublicOrgs}/${this.orgSlug}`,
-              content: msg("Collections"),
-            },
-            {
-              content: collection.name,
-            },
-          ]
-        : [],
+      breadcrumbs:
+        this.orgCollections.status > TaskStatus.PENDING
+          ? org
+            ? [
+                {
+                  href: `/${RouteNamespace.PublicOrgs}/${this.orgSlug}`,
+                  content: org.name,
+                },
+              ]
+            : undefined
+          : [],
       title: collection.name || "",
       actions: html`
         ${when(
