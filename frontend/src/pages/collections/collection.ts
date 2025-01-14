@@ -21,16 +21,16 @@ enum Tab {
 @customElement("btrix-collection")
 export class Collection extends BtrixElement {
   @property({ type: String })
-  slug?: string;
+  orgSlug?: string;
 
   @property({ type: String })
-  collectionId?: string;
+  collectionSlug?: string;
 
   @property({ type: String })
   tab: Tab | string = Tab.Replay;
 
   get canEditCollection() {
-    return this.slug === this.orgSlugState && this.appState.isCrawler;
+    return this.orgSlug === this.orgSlugState && this.appState.isCrawler;
   }
 
   private readonly tabLabels: Record<
@@ -48,19 +48,22 @@ export class Collection extends BtrixElement {
   };
 
   private readonly orgCollections = new Task(this, {
-    task: async ([slug]) => {
-      if (!slug) throw new Error("slug required");
-      const org = await this.fetchCollections({ slug });
+    task: async ([orgSlug]) => {
+      if (!orgSlug) throw new Error("orgSlug required");
+      const org = await this.fetchCollections({ orgSlug });
       return org;
     },
-    args: () => [this.slug] as const,
+    args: () => [this.orgSlug] as const,
   });
 
   private readonly collection = new Task(this, {
-    task: async ([slug, collectionId]) => {
-      if (!slug || !collectionId)
-        throw new Error("slug and collection required");
-      const collection = await this.fetchCollection({ slug, collectionId });
+    task: async ([orgSlug, collectionSlug]) => {
+      if (!orgSlug || !collectionSlug)
+        throw new Error("orgSlug and collection required");
+      const collection = await this.fetchCollection({
+        orgSlug,
+        collectionSlug,
+      });
 
       if (!collection.crawlCount && (this.tab as unknown) === Tab.Replay) {
         this.tab = Tab.About;
@@ -68,7 +71,7 @@ export class Collection extends BtrixElement {
 
       return collection;
     },
-    args: () => [this.slug, this.collectionId] as const,
+    args: () => [this.orgSlug, this.collectionSlug] as const,
   });
 
   render() {
@@ -84,11 +87,11 @@ export class Collection extends BtrixElement {
       breadcrumbs: org
         ? [
             {
-              href: `/${RouteNamespace.PublicOrgs}/${this.slug}`,
+              href: `/${RouteNamespace.PublicOrgs}/${this.orgSlug}`,
               content: org.name,
             },
             {
-              href: `/${RouteNamespace.PublicOrgs}/${this.slug}`,
+              href: `/${RouteNamespace.PublicOrgs}/${this.orgSlug}`,
               content: msg("Collections"),
             },
             {
@@ -103,8 +106,8 @@ export class Collection extends BtrixElement {
           () => html`
             <sl-tooltip content=${msg("Edit collection")}>
               <sl-icon-button
-                href="${this.navigate.orgBasePath}/collections/view/${this
-                  .collectionId}"
+                href="${this.navigate
+                  .orgBasePath}/collections/view/${collection.id}"
                 class="size-8 text-base"
                 name="pencil"
                 @click=${this.navigate.link}
@@ -114,8 +117,8 @@ export class Collection extends BtrixElement {
         )}
 
         <btrix-share-collection
-          slug=${this.slug || ""}
-          collectionId=${ifDefined(this.collectionId)}
+          orgSlug=${this.orgSlug || ""}
+          collectionId=${collection.id}
           .collection=${collection}
         ></btrix-share-collection>
       `,
@@ -170,7 +173,7 @@ export class Collection extends BtrixElement {
       <btrix-navigation-button
         .active=${isSelected}
         aria-selected="${isSelected}"
-        href=${`/${RouteNamespace.PublicOrgs}/${this.slug}/collections/${this.collectionId}/${tab}`}
+        href=${`/${RouteNamespace.PublicOrgs}/${this.orgSlug}/collections/${this.collectionSlug}/${tab}`}
         @click=${this.navigate.link}
       >
         <sl-icon
@@ -184,7 +187,7 @@ export class Collection extends BtrixElement {
 
   private renderReplay(collection: PublicCollection) {
     const replaySource = new URL(
-      `/api/orgs/${collection.oid}/collections/${this.collectionId}/public/replay.json`,
+      `/api/orgs/${collection.oid}/collections/${this.collectionSlug}/public/replay.json`,
       window.location.href,
     ).href;
 
@@ -264,11 +267,11 @@ export class Collection extends BtrixElement {
   }
 
   private async fetchCollections({
-    slug,
+    orgSlug,
   }: {
-    slug: string;
+    orgSlug: string;
   }): Promise<PublicOrgCollections> {
-    const resp = await fetch(`/api/public/orgs/${slug}/collections`, {
+    const resp = await fetch(`/api/public/orgs/${orgSlug}/collections`, {
       headers: { "Content-Type": "application/json" },
     });
 
@@ -281,14 +284,14 @@ export class Collection extends BtrixElement {
   }
 
   private async fetchCollection({
-    slug,
-    collectionId,
+    orgSlug,
+    collectionSlug,
   }: {
-    slug: string;
-    collectionId: string;
+    orgSlug: string;
+    collectionSlug: string;
   }): Promise<PublicCollection> {
     const resp = await fetch(
-      `/api/public/orgs/${slug}/collections/${collectionId}`,
+      `/api/public/orgs/${orgSlug}/collections/${collectionSlug}`,
       {
         headers: { "Content-Type": "application/json" },
       },

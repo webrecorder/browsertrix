@@ -61,7 +61,7 @@ export class CollectionsGrid extends BtrixElement {
             <li class="relative col-span-1">
               <a
                 href=${this.navigate.isPublicPage
-                  ? `/${RouteNamespace.PublicOrgs}/${this.slug}/collections/${collection.id}`
+                  ? `/${RouteNamespace.PublicOrgs}/${this.slug}/collections/${collection.slug}`
                   : `/${RouteNamespace.PrivateOrgs}/${this.slug}/collections/view/${collection.id}`}
                 class="group block h-full rounded-lg"
                 @click=${this.navigate.link}
@@ -109,7 +109,7 @@ export class CollectionsGrid extends BtrixElement {
         <btrix-overflow-dropdown raised>
           <sl-menu>
             <btrix-menu-item-link
-              href=${`/${RouteNamespace.PublicOrgs}/${this.orgSlugState}/collections/${collection.id}`}
+              href=${`/${RouteNamespace.PublicOrgs}/${this.orgSlugState}/collections/${collection.slug}`}
             >
               <sl-icon slot="prefix" name="globe2"></sl-icon>
               ${msg("Visit Public Page")}

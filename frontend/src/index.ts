@@ -820,20 +820,20 @@ export class App extends BtrixElement {
       case "publicOrgProfile":
         return html`<btrix-org-profile
           class="w-full"
-          slug=${this.viewState.params.slug}
+          orgSlug=${this.viewState.params.slug}
         ></btrix-org-profile>`;
 
       case "publicCollection": {
-        const { collectionId, collectionTab } = this.viewState.params;
+        const { collectionSlug, collectionTab } = this.viewState.params;
 
-        if (!collectionId) {
+        if (!collectionSlug) {
           break;
         }
 
         return html`<btrix-collection
           class="w-full"
-          slug=${this.viewState.params.slug}
-          collectionId=${collectionId}
+          orgSlug=${this.viewState.params.slug}
+          collectionSlug=${collectionSlug}
           tab=${ifDefined(collectionTab || undefined)}
         ></btrix-collection>`;
       }

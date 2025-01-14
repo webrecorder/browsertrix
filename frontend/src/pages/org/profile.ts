@@ -12,13 +12,13 @@ import type { OrgData, PublicOrgCollections } from "@/types/org";
 @customElement("btrix-org-profile")
 export class OrgProfile extends BtrixElement {
   @property({ type: String })
-  slug?: string;
+  orgSlug?: string;
 
   @state()
   private isPrivatePreview = false;
 
   get canEditOrg() {
-    return this.slug === this.orgSlugState && this.appState.isAdmin;
+    return this.orgSlug === this.orgSlugState && this.appState.isAdmin;
   }
 
   private readonly orgCollections = new Task(this, {
@@ -27,11 +27,11 @@ export class OrgProfile extends BtrixElement {
       const org = await this.fetchCollections({ slug });
       return org;
     },
-    args: () => [this.slug] as const,
+    args: () => [this.orgSlug] as const,
   });
 
   render() {
-    if (!this.slug) {
+    if (!this.orgSlug) {
       return this.renderError();
     }
 
@@ -196,7 +196,7 @@ export class OrgProfile extends BtrixElement {
       </header>
       <div class="flex-1 pb-16">
         <btrix-collections-grid
-          slug=${this.slug || ""}
+          slug=${this.orgSlug || ""}
           .collections=${collections}
         ></btrix-collections-grid>
       </div>
@@ -270,7 +270,7 @@ export class OrgProfile extends BtrixElement {
   private async getUserOrg(): Promise<PublicOrgCollections | null> {
     try {
       const userInfo = this.userInfo || (await this.api.fetch("/users/me"));
-      const userOrg = userInfo?.orgs.find((org) => org.slug === this.slug);
+      const userOrg = userInfo?.orgs.find((org) => org.slug === this.orgSlug);
 
       if (!userOrg) {
         return null;
