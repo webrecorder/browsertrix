@@ -62,7 +62,7 @@ export class ShareCollection extends BtrixElement {
       return `${baseUrl}/${
         this.collection.access === CollectionAccess.Private
           ? `${RouteNamespace.PrivateOrgs}/${this.orgSlugState}/collections/view/${this.collectionId}`
-          : `${RouteNamespace.PublicOrgs}/${this.orgSlugState}/collections/${this.collection.slug}`
+          : `${RouteNamespace.PublicOrgs}/${this.orgSlug}/collections/${this.collection.slug}`
       }`;
     }
     return "";

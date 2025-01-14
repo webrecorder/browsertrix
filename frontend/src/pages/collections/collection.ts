@@ -69,6 +69,13 @@ export class Collection extends BtrixElement {
         this.tab = Tab.About;
       }
 
+      if (collection.slug !== this.collectionSlug) {
+        // Redirect to newest slug
+        this.navigate.to(
+          `/${RouteNamespace.PublicOrgs}/${this.orgSlug}/collections/${collection.slug}`,
+        );
+      }
+
       return collection;
     },
     args: () => [this.orgSlug, this.collectionSlug] as const,
