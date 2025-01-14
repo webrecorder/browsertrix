@@ -1,7 +1,7 @@
 import { localized, msg } from "@lit/localize";
 import { Task } from "@lit/task";
 import type { SlSelectEvent } from "@shoelace-style/shoelace";
-import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
+import { html, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
@@ -9,6 +9,7 @@ import { when } from "lit/directives/when.js";
 import type { SelectNewDialogEvent } from ".";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import { ClipboardController } from "@/controllers/clipboard";
 import { pageHeading } from "@/layouts/page";
 import { pageHeader } from "@/layouts/pageHeader";
 import { RouteNamespace } from "@/routes";
@@ -289,17 +290,37 @@ export class Dashboard extends BtrixElement {
                         ? msg("Visit Public Profile")
                         : msg("Preview Public Profile")}
                     </btrix-menu-item-link>
-                    ${this.org && !this.org.enablePublicProfile
-                      ? html`
-                          <sl-divider></sl-divider>
-                          <btrix-menu-item-link
-                            href=${`${this.navigate.orgBasePath}/settings`}
-                          >
-                            <sl-icon slot="prefix" name="gear"></sl-icon>
-                            ${msg("Update Org Visibility")}
-                          </btrix-menu-item-link>
-                        `
-                      : nothing}
+                    ${when(this.org, (org) =>
+                      org.enablePublicProfile
+                        ? html`
+                            <sl-menu-item
+                              @click=${() => {
+                                ClipboardController.copyToClipboard(
+                                  `${window.location.protocol}//${window.location.hostname}${
+                                    window.location.port
+                                      ? `:${window.location.port}`
+                                      : ""
+                                  }/${RouteNamespace.PublicOrgs}/${this.orgSlugState}`,
+                                );
+                                this.notify.toast({
+                                  message: msg("Link copied"),
+                                });
+                              }}
+                            >
+                              <sl-icon name="copy" slot="prefix"></sl-icon>
+                              ${msg("Copy Link to Profile")}
+                            </sl-menu-item>
+                          `
+                        : html`
+                            <sl-divider></sl-divider>
+                            <btrix-menu-item-link
+                              href=${`${this.navigate.orgBasePath}/settings`}
+                            >
+                              <sl-icon slot="prefix" name="gear"></sl-icon>
+                              ${msg("Update Org Visibility")}
+                            </btrix-menu-item-link>
+                          `,
+                    )}
                   </sl-menu>
                 </btrix-overflow-dropdown>
               `,
