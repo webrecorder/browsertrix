@@ -154,7 +154,7 @@ export class Org extends BtrixElement {
     if (
       changedProperties.has("appState.orgSlug") &&
       this.userInfo &&
-      this.orgSlug
+      this.orgSlugState
     ) {
       if (this.userOrg) {
         void this.updateOrg();
@@ -236,14 +236,14 @@ export class Org extends BtrixElement {
   async firstUpdated() {
     // if slug is actually an orgId (UUID), attempt to lookup the slug
     // and redirect to the slug url
-    if (this.orgSlug && UUID_REGEX.test(this.orgSlug)) {
-      const org = await this.getOrg(this.orgSlug);
+    if (this.orgSlugState && UUID_REGEX.test(this.orgSlugState)) {
+      const org = await this.getOrg(this.orgSlugState);
       const actualSlug = org?.slug;
       if (actualSlug) {
         this.navigate.to(
           window.location.href
             .slice(window.location.origin.length)
-            .replace(this.orgSlug, actualSlug),
+            .replace(this.orgSlugState, actualSlug),
         );
         return;
       }

@@ -113,8 +113,12 @@ export class App extends BtrixElement {
   @query("#userGuideDrawer")
   private readonly userGuideDrawer!: SlDrawer;
 
+  get orgSlugInPath() {
+    return this.viewState.params.slug || "";
+  }
+
   get isUserInCurrentOrg(): boolean {
-    const { slug } = this.viewState.params;
+    const slug = this.orgSlugInPath;
     if (!this.userInfo || !slug) return false;
     return Boolean(this.userInfo.orgs.some((org) => org.slug === slug));
   }
@@ -567,12 +571,12 @@ export class App extends BtrixElement {
     const orgs = this.userInfo?.orgs;
     if (!orgs) return;
 
-    const selectedOption = this.orgSlug
-      ? orgs.find(({ slug }) => slug === this.orgSlug)
+    const selectedOption = this.orgSlugInPath
+      ? orgs.find(({ slug }) => slug === this.orgSlugInPath)
       : { slug: "", name: msg("All Organizations") };
     if (!selectedOption) {
       console.debug(
-        `Couldn't find organization with slug ${this.orgSlug}`,
+        `Couldn't find organization with slug ${this.orgSlugInPath}`,
         orgs,
       );
       return;

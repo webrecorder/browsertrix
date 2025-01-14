@@ -30,7 +30,7 @@ export class Collection extends BtrixElement {
   tab: Tab | string = Tab.Replay;
 
   get canEditCollection() {
-    return this.slug === this.orgSlug && this.appState.isCrawler;
+    return this.slug === this.orgSlugState && this.appState.isCrawler;
   }
 
   private readonly tabLabels: Record<

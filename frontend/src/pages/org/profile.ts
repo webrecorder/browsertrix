@@ -18,7 +18,7 @@ export class OrgProfile extends BtrixElement {
   private isPrivatePreview = false;
 
   get canEditOrg() {
-    return this.slug === this.orgSlug && this.appState.isAdmin;
+    return this.slug === this.orgSlugState && this.appState.isAdmin;
   }
 
   private readonly orgCollections = new Task(this, {

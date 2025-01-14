@@ -109,7 +109,7 @@ export class CollectionsGrid extends BtrixElement {
         <btrix-overflow-dropdown raised>
           <sl-menu>
             <btrix-menu-item-link
-              href=${`/${RouteNamespace.PublicOrgs}/${this.orgSlug}/collections/${collection.id}`}
+              href=${`/${RouteNamespace.PublicOrgs}/${this.orgSlugState}/collections/${collection.id}`}
             >
               <sl-icon slot="prefix" name="globe2"></sl-icon>
               ${msg("Visit Public Page")}

@@ -62,7 +62,7 @@ export class Dashboard extends BtrixElement {
       const collections = await this.fetchCollections({ slug });
       return collections;
     },
-    args: () => [this.orgSlug, this.metrics] as const,
+    args: () => [this.orgSlugState, this.metrics] as const,
   });
 
   willUpdate(changedProperties: PropertyValues<this> & Map<string, unknown>) {
@@ -282,7 +282,7 @@ export class Dashboard extends BtrixElement {
                       ${msg("Manage Collections")}
                     </btrix-menu-item-link>
                     <btrix-menu-item-link
-                      href=${`/${RouteNamespace.PublicOrgs}/${this.orgSlug}`}
+                      href=${`/${RouteNamespace.PublicOrgs}/${this.orgSlugState}`}
                     >
                       <sl-icon slot="prefix" name="globe2"></sl-icon>
                       ${this.org?.enablePublicProfile
@@ -307,7 +307,7 @@ export class Dashboard extends BtrixElement {
           </header>
           <div class="rounded-lg border p-10">
             <btrix-collections-grid
-              slug=${this.orgSlug || ""}
+              slug=${this.orgSlugState || ""}
               .collections=${this.publicCollections.value}
             >
               ${this.renderNoPublicCollections()}

@@ -37,7 +37,7 @@ export default class LiteElement extends LitElement {
     return this.appState.orgId;
   }
 
-  protected get orgSlug() {
+  protected get orgSlugState() {
     return this.appState.orgSlug;
   }
 

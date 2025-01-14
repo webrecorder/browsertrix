@@ -300,7 +300,7 @@ export class OrgSettings extends BtrixElement {
                   label=${msg("Org URL")}
                   placeholder="my-organization"
                   autocomplete="off"
-                  value=${this.orgSlug || ""}
+                  value=${this.orgSlugState || ""}
                   minlength="2"
                   maxlength="30"
                   required
@@ -674,7 +674,7 @@ export class OrgSettings extends BtrixElement {
 
     const params = {
       name: orgName,
-      slug: this.orgSlug!,
+      slug: this.orgSlugState!,
     };
 
     if (this.slugValue) {
