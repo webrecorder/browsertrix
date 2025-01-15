@@ -1,13 +1,11 @@
 import { consume } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
 import type {
-  SlChangeEvent,
   SlCheckbox,
   SlInput,
   SlRadio,
   SlRadioGroup,
   SlSelect,
-  SlSwitch,
   SlTextarea,
 } from "@shoelace-style/shoelace";
 import Fuse from "fuse.js";
@@ -50,6 +48,8 @@ import { type SelectBrowserProfileChangeEvent } from "@/features/browser-profile
 import type { CollectionsChangeEvent } from "@/features/collections/collections-add";
 import type { QueueExclusionTable } from "@/features/crawl-workflows/queue-exclusion-table";
 import { infoCol, inputCol } from "@/layouts/columns";
+import { pageSectionsWithNav } from "@/layouts/pageSectionsWithNav";
+import { panel } from "@/layouts/panel";
 import infoTextStrings from "@/strings/crawl-workflows/infoText";
 import scopeTypeLabels from "@/strings/crawl-workflows/scopeType";
 import sectionStrings from "@/strings/crawl-workflows/section";
@@ -231,6 +231,15 @@ export class WorkflowEditor extends BtrixElement {
   private readonly validateNameMax = maxLengthValidator(50);
   private readonly validateDescriptionMax = maxLengthValidator(350);
 
+  private readonly tabLabels: Record<StepName, string> = {
+    crawlSetup: sectionStrings.scope,
+    crawlLimits: msg("Limits"),
+    browserSettings: sectionStrings.browserSettings,
+    crawlScheduling: sectionStrings.scheduling,
+    crawlMetadata: msg("Metadata"),
+    confirmSettings: msg("Review Settings"),
+  };
+
   private get formHasError() {
     return (
       !this.hasRequiredFields() ||
@@ -378,21 +387,6 @@ export class WorkflowEditor extends BtrixElement {
   }
 
   render() {
-    const tabLabels: Record<StepName, string> = {
-      crawlSetup: sectionStrings.scope,
-      crawlLimits: msg("Limits"),
-      browserSettings: sectionStrings.browserSettings,
-      crawlScheduling: sectionStrings.scheduling,
-      crawlMetadata: msg("Metadata"),
-      confirmSettings: msg("Review Settings"),
-    };
-    let orderedTabNames = STEPS as readonly StepName[];
-
-    if (this.configId) {
-      // Remove review tab
-      orderedTabNames = orderedTabNames.slice(0, -1);
-    }
-
     return html`
       <form
         name="newJobConfig"
@@ -402,281 +396,83 @@ export class WorkflowEditor extends BtrixElement {
         @sl-blur=${this.validateOnBlur}
         @sl-change=${this.updateFormStateOnChange}
       >
-        <btrix-tab-list
-          activePanel="newJobConfig-${this.progressState!.activeTab}"
-          progressPanel=${ifDefined(
-            this.configId
-              ? undefined
-              : `newJobConfig-${this.progressState!.activeTab}`,
-          )}
-        >
-          <header slot="header" class="flex items-baseline justify-between">
-            <h3 class="font-semibold">
-              ${tabLabels[this.progressState!.activeTab]}
-            </h3>
-            <p class="text-xs font-normal text-neutral-500">
-              ${msg(
-                html`Fields marked with
-                  <span style="color:var(--sl-input-required-content-color)"
-                    >*</span
-                  >
-                  are required`,
-              )}
-            </p>
-          </header>
-
-          ${orderedTabNames.map((tabName) =>
-            this.renderNavItem(tabName, tabLabels[tabName]),
-          )}
-
-          <btrix-tab-panel name="newJobConfig-crawlSetup" class="scroll-m-3">
-            ${this.renderPanelContent(this.renderScope(), {
-              isFirst: true,
-            })}
-          </btrix-tab-panel>
-          <btrix-tab-panel name="newJobConfig-crawlLimits" class="scroll-m-3">
-            ${this.renderPanelContent(this.renderCrawlLimits())}
-          </btrix-tab-panel>
-          <btrix-tab-panel
-            name="newJobConfig-browserSettings"
-            class="scroll-m-3"
-          >
-            ${this.renderPanelContent(this.renderCrawlBehaviors())}
-          </btrix-tab-panel>
-          <btrix-tab-panel
-            name="newJobConfig-crawlScheduling"
-            class="scroll-m-3"
-          >
-            ${this.renderPanelContent(this.renderJobScheduling())}
-          </btrix-tab-panel>
-          <btrix-tab-panel name="newJobConfig-crawlMetadata" class="scroll-m-3">
-            ${this.renderPanelContent(this.renderJobMetadata())}
-          </btrix-tab-panel>
-          <btrix-tab-panel
-            name="newJobConfig-confirmSettings"
-            class="scroll-m-3"
-          >
-            ${this.renderPanelContent(this.renderConfirmSettings(), {
-              isLast: true,
-            })}
-          </btrix-tab-panel>
-        </btrix-tab-list>
+        ${pageSectionsWithNav({
+          nav: this.renderNav(),
+          main: this.renderFormSections(),
+          sticky: true,
+        })}
+        ${this.renderFooter()}
       </form>
     `;
   }
 
-  private renderNavItem(tabName: StepName, content: TemplateResult | string) {
-    const isActive = tabName === this.progressState!.activeTab;
-    const isConfirmSettings = tabName === "confirmSettings";
-    const { error: isInvalid, completed } = this.progressState!.tabs[tabName];
-    let icon: TemplateResult = html``;
+  private renderNav() {
+    let orderedTabNames = STEPS as readonly StepName[];
 
-    if (!this.configId) {
-      const iconProps = {
-        name: "circle",
-        library: "default",
-        class: "text-neutral-400",
-      };
-      if (isConfirmSettings) {
-        iconProps.name = "info-circle";
-        iconProps.class = "text-base";
-      } else {
-        if (isInvalid) {
-          iconProps.name = "exclamation-circle";
-          iconProps.class = "text-danger";
-        } else if (isActive) {
-          iconProps.name = "pencil-circle-dashed";
-          iconProps.library = "app";
-          iconProps.class = "text-base";
-        } else if (completed) {
-          iconProps.name = "check-circle";
-        }
-      }
-
-      icon = html`
-        <sl-tooltip
-          content=${msg("Form section contains errors")}
-          ?disabled=${!isInvalid}
-          hoist
-        >
-          <sl-icon
-            name=${iconProps.name}
-            library=${iconProps.library}
-            class="${iconProps.class} mr-1 inline-block align-middle text-base"
-          ></sl-icon>
-        </sl-tooltip>
-      `;
-    }
-
-    return html`
-      <btrix-tab
-        slot="nav"
-        name="newJobConfig-${tabName}"
-        class="whitespace-nowrap"
-        @click=${this.tabClickHandler(tabName)}
-      >
-        ${icon}
-        <span
-          class="whitespace-normal${this.configId
-            ? " ml-1"
-            : ""} inline-block align-middle"
-        >
-          ${content}
-        </span>
-      </btrix-tab>
-    `;
-  }
-
-  private renderPanelContent(
-    content: TemplateResult,
-    { isFirst = false, isLast = false } = {},
-  ) {
-    return html`
-      <div class="flex h-full min-h-[21rem] flex-col">
-        <div
-          class="grid flex-1 grid-cols-5 gap-4 rounded-lg rounded-b-none border border-b-0 p-6"
-        >
-          ${content}
-          ${when(this.serverError, () =>
-            this.renderErrorAlert(this.serverError!),
-          )}
-        </div>
-
-        ${this.renderFooter({ isFirst, isLast })}
-      </div>
-    `;
-  }
-
-  private renderFooter({ isFirst = false, isLast = false }) {
     if (this.configId) {
-      return html`
-        <footer
-          class="sticky bottom-0 z-50 flex items-center justify-end gap-2 rounded-b-lg border bg-white px-6 py-4"
-        >
-          <div class="mr-auto">${this.renderRunNowToggle()}</div>
-          <aside class="text-xs text-neutral-500">
-            ${msg("Changes in all sections will be saved")}
-          </aside>
-          <sl-button
-            type="submit"
-            size="small"
-            variant="primary"
-            ?disabled=${this.isSubmitting}
-            ?loading=${this.isSubmitting}
-          >
-            ${msg("Save Workflow")}
-          </sl-button>
-        </footer>
-      `;
-    }
-
-    if (!this.configId) {
-      return html`
-        <footer
-          class="sticky bottom-0 z-50 flex items-center justify-end gap-2 rounded-b-lg border bg-white px-6 py-4"
-        >
-          ${this.renderSteppedFooterButtons({ isFirst, isLast })}
-        </footer>
-      `;
+      // Remove review tab
+      orderedTabNames = orderedTabNames.slice(0, -1);
     }
 
     return html`
-      <div class="flex items-center justify-end gap-2 border-t px-6 py-4">
-        ${when(
-          this.configId,
-          () => html`
-            <div class="mr-auto">${this.renderRunNowToggle()}</div>
-            <sl-button
-              type="submit"
-              size="small"
-              variant="primary"
-              ?disabled=${this.isSubmitting}
-              ?loading=${this.isSubmitting}
+      ${orderedTabNames.map(
+        (tab) => html`
+          <btrix-navigation-button href=${`#${tab}`}>
+            ${this.tabLabels[tab]}
+          </btrix-navigation-button>
+        `,
+      )}
+    `;
+  }
+
+  private renderFormSections() {
+    return html`
+      <div class="mb-10 flex flex-col gap-10 px-2">
+        ${this.formSections.map(({ name, desc, render, open }) =>
+          panel({
+            heading: this.tabLabels[name],
+            content: html`<sl-details
+              class="part-[base]:rounded-lg part-[base]:border"
+              ?open=${open}
             >
-              ${msg("Save Changes")}
-            </sl-button>
-          `,
-          () => this.renderSteppedFooterButtons({ isFirst, isLast }),
+              <p class="text-neutral-600" slot="summary">${desc}</p>
+              <div class="grid grid-cols-5 gap-5">${render.bind(this)()}</div>
+            </sl-details>`,
+          }),
         )}
       </div>
+
+      ${when(this.serverError, (error) => this.renderErrorAlert(error))}
     `;
   }
 
-  private renderSteppedFooterButtons({
-    isFirst,
-    isLast,
-  }: {
-    isFirst: boolean;
-    isLast: boolean;
-  }) {
-    if (isLast) {
-      return html`<sl-button
-          class="mr-auto"
-          size="small"
-          @click=${this.backStep}
-        >
-          <sl-icon slot="prefix" name="chevron-left"></sl-icon>
-          ${msg("Previous Step")}
+  private renderFooter() {
+    return html`
+      <footer
+        class="sticky bottom-2 z-50 flex items-center justify-end gap-2 rounded-lg border bg-white px-6 py-4 shadow"
+      >
+        <sl-button class="mr-auto" size="small" type="reset">
+          ${msg("Cancel")}
         </sl-button>
-        ${this.renderRunNowToggle()}
         <sl-button
-          type="submit"
           size="small"
-          variant="primary"
-          ?disabled=${this.isSubmitting || this.formHasError}
-          ?loading=${this.isSubmitting}
+          type=${this.configId ? "submit" : "button"}
+          variant=${this.configId ? "primary" : "default"}
+          ?disabled=${this.isSubmitting}
+          ?loading=${!!this.configId && this.isSubmitting}
         >
-          ${msg("Save Workflow")}
-        </sl-button>`;
-    }
-    return html`
-      ${isFirst
-        ? nothing
-        : html`
-            <sl-button class="mr-auto" size="small" @click=${this.backStep}>
-              <sl-icon slot="prefix" name="chevron-left"></sl-icon>
-              ${msg("Previous Step")}
-            </sl-button>
-          `}
-      <sl-button size="small" variant="primary" @click=${this.nextStep}>
-        <sl-icon slot="suffix" name="chevron-right"></sl-icon>
-        ${msg("Next Step")}
-      </sl-button>
-      <sl-button
-        size="small"
-        @click=${() => {
-          if (this.hasRequiredFields()) {
-            this.updateProgressState({
-              activeTab: "confirmSettings",
-            });
-          } else {
-            this.nextStep();
-          }
-        }}
-      >
-        <sl-icon slot="suffix" name="chevron-double-right"></sl-icon>
-        ${msg(html`Review & Save`)}
-      </sl-button>
-    `;
-  }
-
-  private renderRunNowToggle() {
-    return html`
-      <sl-switch
-        class="mr-1"
-        ?checked=${this.formState.runNow}
-        ?disabled=${isArchivingDisabled(this.org, true)}
-        @sl-change=${(e: SlChangeEvent) => {
-          this.updateFormState(
-            {
-              runNow: (e.target as SlSwitch).checked,
-            },
-            true,
-          );
-        }}
-      >
-        ${msg("Run on Save")}
-      </sl-switch>
+          ${this.configId ? msg("Save") : msg("Create")}
+        </sl-button>
+        <sl-button
+          size="small"
+          type=${this.configId ? "button" : "submit"}
+          variant=${this.configId ? "default" : "primary"}
+          ?disabled=${this.isSubmitting || isArchivingDisabled(this.org, true)}
+          ?loading=${!this.configId && this.isSubmitting}
+        >
+          ${this.configId ? msg("Save and Run") : msg("Run Workflow")}
+        </sl-button>
+      </footer>
     `;
   }
 
@@ -1660,7 +1456,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
   private renderErrorAlert(errorMessage: string | TemplateResult) {
     return html`
-      <div class="col-span-5">
+      <div class="mb-5">
         <btrix-alert variant="danger">${errorMessage}</btrix-alert>
       </div>
     `;
@@ -1717,6 +1513,42 @@ https://archiveweb.page/images/${"logo.svg"}`}
       ${errorAlert}
     `;
   };
+
+  private readonly formSections: {
+    name: StepName;
+    desc: string;
+    render: () => TemplateResult<1>;
+    open?: boolean;
+  }[] = [
+    {
+      name: "crawlSetup",
+      desc: msg("Specify the range and depth of your crawl."),
+      render: this.renderScope,
+      open: true,
+    },
+    {
+      name: "crawlLimits",
+      desc: msg("Enforce maximum limits on your crawl."),
+      render: this.renderCrawlLimits,
+    },
+    {
+      name: "browserSettings",
+      desc: msg(
+        "Configure the browser that's used to visit URLs during the crawl.",
+      ),
+      render: this.renderCrawlBehaviors,
+    },
+    {
+      name: "crawlScheduling",
+      desc: msg("Schedule recurring crawls."),
+      render: this.renderJobScheduling,
+    },
+    {
+      name: "crawlMetadata",
+      desc: msg("Describe and organize crawls from this workflow."),
+      render: this.renderJobMetadata,
+    },
+  ];
 
   private changeScopeType(value: FormState["scopeType"]) {
     const prevScopeType = this.formState.scopeType;
