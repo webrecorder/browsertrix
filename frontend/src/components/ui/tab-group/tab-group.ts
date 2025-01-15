@@ -1,4 +1,3 @@
-import clsx from "clsx";
 import { html, type PropertyValues } from "lit";
 import {
   customElement,
@@ -10,7 +9,7 @@ import type { TabClickDetail, TabGroupTab } from "./tab";
 import { type TabGroupPanel } from "./tab-panel";
 
 import { TailwindElement } from "@/classes/TailwindElement";
-import { tw } from "@/utils/tailwind";
+import { pageSectionsWithNav } from "@/layouts/pageSectionsWithNav";
 
 /**
  * @example Usage:
@@ -32,6 +31,10 @@ export class TabGroup extends TailwindElement {
   /* Nav placement */
   @property({ type: String })
   placement: "top" | "start" = "top";
+
+  /* Nav sticky */
+  @property({ type: Boolean })
+  sticky = true;
 
   @property({ type: String, noAccessor: true, reflect: true })
   role = "tablist";
@@ -61,29 +64,16 @@ export class TabGroup extends TailwindElement {
   }
 
   render() {
-    return html`
-      <div
-        class=${clsx(
-          tw`flex flex-col`,
-          this.placement === "start" && tw`gap-8 lg:flex-row`,
-        )}
-      >
-        <div
-          class=${clsx(
-            tw`flex flex-1 flex-col gap-2`,
-            this.placement === "start"
-              ? tw`lg:sticky lg:top-2 lg:max-w-[16.5rem] lg:self-start`
-              : tw`lg:flex-row`,
-          )}
-          @keydown=${this.onKeyDown}
-        >
-          <slot name="nav" @btrix-select-tab=${this.onSelectTab}></slot>
-        </div>
-        <div class="flex-1">
-          <slot></slot>
-        </div>
-      </div>
-    `;
+    return pageSectionsWithNav({
+      nav: html`<slot
+        name="nav"
+        @btrix-select-tab=${this.onSelectTab}
+        @keydown=${this.onKeyDown}
+      ></slot>`,
+      main: html`<slot></slot>`,
+      placement: this.placement,
+      sticky: this.sticky,
+    });
   }
 
   private handleActiveChange() {
