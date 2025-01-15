@@ -1,5 +1,5 @@
 import { html, LitElement } from "lit";
-import { customElement, query } from "lit/decorators.js";
+import { customElement, property } from "lit/decorators.js";
 
 type IntersectionEventDetail = {
   entry: IntersectionObserverEntry;
@@ -11,23 +11,26 @@ export type IntersectEvent = CustomEvent<IntersectionEventDetail>;
  *
  * @example Usage:
  * ```
- * <btrix-observable @intersect=${console.log}>
+ * <btrix-observable @btrix-intersect=${console.log}>
  *   Observe me!
  * </btrix-observable>
  * ```
  *
- * @event intersect { entry: IntersectionObserverEntry }
+ * @fires btrix-intersect { entry: IntersectionObserverEntry }
  */
 @customElement("btrix-observable")
 export class Observable extends LitElement {
-  @query(".target")
-  private readonly target?: HTMLElement;
+  @property({ type: Object })
+  options?: IntersectionObserverInit;
 
   private observer?: IntersectionObserver;
 
   connectedCallback(): void {
     super.connectedCallback();
-    this.observer = new IntersectionObserver(this.handleIntersect);
+    this.observer = new IntersectionObserver(
+      this.handleIntersect,
+      this.options,
+    );
   }
 
   disconnectedCallback(): void {
@@ -36,18 +39,18 @@ export class Observable extends LitElement {
   }
 
   firstUpdated() {
-    this.observer?.observe(this.target!);
+    this.observer?.observe(this);
   }
 
   private readonly handleIntersect = ([entry]: IntersectionObserverEntry[]) => {
     this.dispatchEvent(
-      new CustomEvent<IntersectionEventDetail>("intersect", {
+      new CustomEvent<IntersectionEventDetail>("btrix-intersect", {
         detail: { entry },
       }),
     );
   };
 
   render() {
-    return html`<div class="target"><slot></slot></div>`;
+    return html`<slot></slot>`;
   }
 }

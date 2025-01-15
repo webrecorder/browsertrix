@@ -201,7 +201,7 @@ export class CrawlQueue extends BtrixElement {
               ${msg("End of queue")}
             </div>`,
           () => html`
-            <btrix-observable @intersect=${this.onLoadMoreIntersect}>
+            <btrix-observable @btrix-intersect=${this.onLoadMoreIntersect}>
               <div class="py-3">
                 <sl-icon-button
                   name="three-dots"
