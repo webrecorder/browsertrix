@@ -138,6 +138,7 @@ export const getDefaultFormState = (): FormState => ({
   autoAddCollections: [],
   description: null,
   autoscrollBehavior: true,
+  autoclickBehavior: false,
   userAgent: null,
   crawlerChannel: "default",
   proxyId: null,
@@ -285,6 +286,9 @@ export function getInitialFormState(params: {
       params.initialWorkflow.config.limit ?? defaultFormState.pageLimit,
     autoscrollBehavior: params.initialWorkflow.config.behaviors
       ? params.initialWorkflow.config.behaviors.includes("autoscroll")
+      : defaultFormState.autoscrollBehavior,
+    autoclickBehavior: params.initialWorkflow.config.behaviors
+      ? params.initialWorkflow.config.behaviors.includes("autoclick")
       : defaultFormState.autoscrollBehavior,
     userAgent:
       params.initialWorkflow.config.userAgent ?? defaultFormState.userAgent,
