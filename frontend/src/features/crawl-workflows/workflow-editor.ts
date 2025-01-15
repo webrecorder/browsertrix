@@ -2,12 +2,14 @@ import { consume } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
 import type {
   SlCheckbox,
+  SlHideEvent,
   SlInput,
   SlRadio,
   SlRadioGroup,
   SlSelect,
   SlTextarea,
 } from "@shoelace-style/shoelace";
+import clsx from "clsx";
 import Fuse from "fuse.js";
 import { mergeDeep } from "immutable";
 import type { LanguageCode } from "iso-639-1";
@@ -53,12 +55,7 @@ import { panel } from "@/layouts/panel";
 import infoTextStrings from "@/strings/crawl-workflows/infoText";
 import scopeTypeLabels from "@/strings/crawl-workflows/scopeType";
 import sectionStrings from "@/strings/crawl-workflows/section";
-import {
-  ScopeType,
-  type CrawlConfig,
-  type Seed,
-  type WorkflowParams,
-} from "@/types/crawler";
+import { ScopeType, type Seed, type WorkflowParams } from "@/types/crawler";
 import { NewWorkflowOnlyScopeType } from "@/types/workflow";
 import { isApiError, type Detail } from "@/utils/api";
 import { DEPTH_SUPPORTED_SCOPES, isPageScopeType } from "@/utils/crawler";
@@ -97,7 +94,6 @@ const STEPS = [
   "browserSettings",
   "crawlScheduling",
   "crawlMetadata",
-  "confirmSettings",
 ] as const;
 type StepName = (typeof STEPS)[number];
 type TabState = {
@@ -115,6 +111,7 @@ const DEFAULT_BEHAVIORS = [
   "autofetch",
   "siteSpecific",
 ];
+const formName = "newJobConfig" as const;
 
 const getDefaultProgressState = (hasConfigId = false): ProgressState => {
   let activeTab: StepName = "crawlSetup";
@@ -143,10 +140,6 @@ const getDefaultProgressState = (hasConfigId = false): ProgressState => {
         completed: hasConfigId,
       },
       crawlMetadata: {
-        error: false,
-        completed: hasConfigId,
-      },
-      confirmSettings: {
         error: false,
         completed: hasConfigId,
       },
@@ -237,7 +230,6 @@ export class WorkflowEditor extends BtrixElement {
     browserSettings: sectionStrings.browserSettings,
     crawlScheduling: sectionStrings.scheduling,
     crawlMetadata: msg("Metadata"),
-    confirmSettings: msg("Review Settings"),
   };
 
   private get formHasError() {
@@ -280,11 +272,11 @@ export class WorkflowEditor extends BtrixElement {
     "": "",
   };
 
-  @query('form[name="newJobConfig"]')
-  formElem?: HTMLFormElement;
+  @query(`form[name="${formName}"]`)
+  private readonly formElem?: HTMLFormElement;
 
-  @queryAsync("btrix-tab-panel[aria-hidden=false]")
-  activeTabPanel!: Promise<HTMLElement | null>;
+  @queryAsync(`.${formName}--panel--active`)
+  private readonly activeTabPanel!: Promise<HTMLElement | null>;
 
   connectedCallback(): void {
     this.initializeEditor();
@@ -389,7 +381,7 @@ export class WorkflowEditor extends BtrixElement {
   render() {
     return html`
       <form
-        name="newJobConfig"
+        name="${formName}"
         @reset=${this.onReset}
         @submit=${this.onSubmit}
         @keydown=${this.onKeyDown}
@@ -407,6 +399,9 @@ export class WorkflowEditor extends BtrixElement {
   }
 
   private renderNav() {
+    const baseUrl = `${this.navigate.orgBasePath}/workflows/${
+      this.configId ? `${this.configId}?edit` : "new"
+    }`;
     let orderedTabNames = STEPS as readonly StepName[];
 
     if (this.configId) {
@@ -414,31 +409,59 @@ export class WorkflowEditor extends BtrixElement {
       orderedTabNames = orderedTabNames.slice(0, -1);
     }
 
-    return html`
-      ${orderedTabNames.map(
-        (tab) => html`
-          <btrix-navigation-button href=${`#${tab}`}>
-            ${this.tabLabels[tab]}
-          </btrix-navigation-button>
-        `,
-      )}
-    `;
+    const button = (tab: StepName) => {
+      const isActive = tab === this.progressState?.activeTab;
+      return html`
+        <btrix-navigation-button
+          href=${`${baseUrl}#${tab}`}
+          .active=${isActive}
+          aria-selected="${isActive}"
+          @click=${this.tabClickHandler(tab)}
+        >
+          ${this.tabLabels[tab]}
+        </btrix-navigation-button>
+      `;
+    };
+
+    return html` ${orderedTabNames.map(button)} `;
   }
 
   private renderFormSections() {
+    const content = ({
+      name,
+      desc,
+      render,
+      required,
+    }: (typeof this.formSections)[number]) => {
+      const hasError = this.progressState?.tabs[name].error;
+
+      return html`<sl-details
+        class="part-[base]:rounded-lg part-[base]:border"
+        ?open=${required || hasError}
+        @sl-hide=${(e: SlHideEvent) => {
+          if (hasError) {
+            e.preventDefault();
+            // TODO focus on error
+          }
+        }}
+      >
+        <p class="text-neutral-600" slot="summary">${desc}</p>
+        <div class="grid grid-cols-5 gap-5">${render.bind(this)()}</div>
+      </sl-details>`;
+    };
     return html`
       <div class="mb-10 flex flex-col gap-10 px-2">
-        ${this.formSections.map(({ name, desc, render, required }) =>
+        ${this.formSections.map((section) =>
           panel({
-            heading: this.tabLabels[name],
-            content: html`<sl-details
-              class="part-[base]:rounded-lg part-[base]:border"
-              ?open=${required}
-            >
-              <p class="text-neutral-600" slot="summary">${desc}</p>
-              <div class="grid grid-cols-5 gap-5">${render.bind(this)()}</div>
-            </sl-details>`,
-            actions: required
+            id: `${section.name}--panel`,
+            className: clsx(
+              `${formName}--panel`,
+              section.name === this.progressState?.activeTab &&
+                `${formName}--panel--active`,
+            ),
+            heading: this.tabLabels[section.name],
+            content: content(section),
+            actions: section.required
               ? html`<p class="text-xs font-normal text-neutral-500">
                   ${msg(
                     html`Fields marked with
@@ -476,7 +499,7 @@ export class WorkflowEditor extends BtrixElement {
             size="small"
             type=${this.configId ? "submit" : "button"}
             variant=${this.configId ? "primary" : "default"}
-            ?disabled=${this.isSubmitting || !hasRequiredFields}
+            ?disabled=${this.isSubmitting}
             ?loading=${!!this.configId && this.isSubmitting}
           >
             ${this.configId ? msg("Save") : msg("Create")}
@@ -486,7 +509,6 @@ export class WorkflowEditor extends BtrixElement {
             type=${this.configId ? "button" : "submit"}
             variant=${this.configId ? "default" : "primary"}
             ?disabled=${this.isSubmitting ||
-            !hasRequiredFields ||
             isArchivingDisabled(this.org, true)}
             ?loading=${!this.configId && this.isSubmitting}
           >
@@ -1483,58 +1505,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
     `;
   }
 
-  private readonly renderConfirmSettings = () => {
-    const errorAlert = when(this.formHasError, () => {
-      const pageScope = isPageScopeType(this.formState.scopeType);
-      const crawlSetupUrl = `${window.location.href.split("#")[0]}#crawlSetup`;
-      const errorMessage = this.hasRequiredFields()
-        ? msg(
-            "There are issues with this Workflow. Please go through previous steps and fix all issues to continue.",
-          )
-        : html`
-            ${msg("There is an issue with this Crawl Workflow:")}<br /><br />
-            ${msg(
-              html`${pageScope ? msg("Page URL(s)") : msg("Crawl Start URL")}
-                required in
-                <a
-                  href="${crawlSetupUrl}"
-                  class="bold underline hover:no-underline"
-                  >Scope</a
-                >. `,
-            )}
-            <br /><br />
-            ${msg("Please fix to continue.")}
-          `;
-
-      return this.renderErrorAlert(errorMessage);
-    });
-
-    return html`
-      ${errorAlert}
-
-      <div class="col-span-5">
-        ${when(this.progressState!.activeTab === "confirmSettings", () => {
-          // Prevent parsing and rendering tab when not visible
-          const crawlConfig = this.parseConfig();
-          const profileName = this.formState.browserProfile?.name;
-
-          return html`<btrix-config-details
-            .crawlConfig=${{
-              ...crawlConfig,
-              profileName,
-              oid: this.orgId,
-              image: null,
-            } as CrawlConfig}
-            .seeds=${crawlConfig.config.seeds}
-          >
-          </btrix-config-details>`;
-        })}
-      </div>
-
-      ${errorAlert}
-    `;
-  };
-
   private readonly formSections: {
     name: StepName;
     desc: string;
@@ -1615,11 +1585,16 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
   private async scrollToPanelTop() {
     const activeTabPanel = await this.activeTabPanel;
-    if (activeTabPanel && activeTabPanel.getBoundingClientRect().top < 0) {
-      activeTabPanel.scrollIntoView({
-        behavior: "smooth",
-      });
+
+    if (!activeTabPanel) {
+      console.debug("no activeTabPanel");
+      return;
     }
+
+    // TODO scroll into view if needed
+    activeTabPanel.scrollIntoView();
+
+    void (await this.activeTabPanel)?.querySelector("sl-details")?.show();
   }
 
   private async handleRemoveRegex(e: CustomEvent) {
@@ -1675,25 +1650,26 @@ https://archiveweb.page/images/${"logo.svg"}`}
   };
 
   private syncTabErrorState(el: HTMLElement) {
-    const panelEl = el.closest("btrix-tab-panel")!;
-    const tabName = panelEl
-      .getAttribute("name")!
-      .replace("newJobConfig-", "") as StepName;
-    const hasInvalid = panelEl.querySelector("[data-user-invalid]");
+    console.log("TODO syncTabErrorState", el);
+    // const panelEl = el.closest("btrix-tab-panel")!;
+    // const tabName = panelEl
+    //   .getAttribute("name")!
+    //   .replace("newJobConfig-", "") as StepName;
+    // const hasInvalid = panelEl.querySelector("[data-user-invalid]");
 
-    if (!hasInvalid && this.progressState!.tabs[tabName].error) {
-      this.updateProgressState({
-        tabs: {
-          [tabName]: { error: false },
-        },
-      });
-    } else if (hasInvalid && !this.progressState!.tabs[tabName].error) {
-      this.updateProgressState({
-        tabs: {
-          [tabName]: { error: true },
-        },
-      });
-    }
+    // if (!hasInvalid && this.progressState!.tabs[tabName].error) {
+    //   this.updateProgressState({
+    //     tabs: {
+    //       [tabName]: { error: false },
+    //     },
+    //   });
+    // } else if (hasInvalid && !this.progressState!.tabs[tabName].error) {
+    //   this.updateProgressState({
+    //     tabs: {
+    //       [tabName]: { error: true },
+    //     },
+    //   });
+    // }
   }
 
   private updateFormStateOnChange(e: Event) {
@@ -1738,43 +1714,14 @@ https://archiveweb.page/images/${"logo.svg"}`}
       e.stopPropagation();
       return;
     }
-    window.location.hash = step;
+
     this.updateProgressState({ activeTab: step });
   };
 
-  private backStep() {
-    const targetTabIdx = STEPS.indexOf(this.progressState!.activeTab);
-    if (targetTabIdx) {
-      this.updateProgressState({
-        activeTab: STEPS[targetTabIdx - 1] as StepName,
-      });
-    }
-  }
-
-  private nextStep() {
-    const isValid = this.checkCurrentPanelValidity();
-
-    if (isValid) {
-      const { activeTab } = this.progressState!;
-      const nextTab = STEPS[STEPS.indexOf(activeTab) + 1] as StepName;
-      this.updateProgressState({
-        activeTab: nextTab,
-        tabs: {
-          [activeTab]: {
-            completed: true,
-          },
-        },
-      });
-    }
-  }
-
-  private readonly checkCurrentPanelValidity = (): boolean => {
+  private readonly checkCurrentPanelValidity = async (): Promise<boolean> => {
     if (!this.formElem) return false;
 
-    const currentTab = this.progressState!.activeTab as StepName;
-    const activePanel = this.formElem.querySelector(
-      `btrix-tab-panel[name="newJobConfig-${currentTab}"]`,
-    );
+    const activePanel = await this.activeTabPanel;
     const invalidElems = [...activePanel!.querySelectorAll("[data-invalid]")];
 
     const hasInvalid = Boolean(invalidElems.length);
@@ -1815,7 +1762,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
   private async onSubmit(event: SubmitEvent) {
     event.preventDefault();
-    const isValid = this.checkCurrentPanelValidity();
+    const isValid = await this.checkCurrentPanelValidity();
     await this.updateComplete;
 
     if (!isValid || this.formHasError) {

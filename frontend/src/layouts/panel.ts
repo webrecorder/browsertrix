@@ -1,4 +1,5 @@
 import { html, type TemplateResult } from "lit";
+import { ifDefined } from "lit/directives/if-defined.js";
 
 import { pageHeading } from "./page";
 
@@ -30,10 +31,14 @@ export function panel({
   content,
   heading,
   actions,
+  id,
+  className,
 }: {
   content: TemplateResult;
+  id?: string;
+  className?: string;
 } & Parameters<typeof panelHeader>[0]) {
-  return html`<section>
+  return html`<section id=${ifDefined(id)} class=${ifDefined(className)}>
     ${panelHeader({ heading, actions })} ${content}
   </section>`;
 }
