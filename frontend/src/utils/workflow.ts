@@ -84,6 +84,7 @@ export type FormState = {
   autoAddCollections: string[];
   description: WorkflowParams["description"];
   autoscrollBehavior: boolean;
+  autoclickBehavior: boolean;
   userAgent: string | null;
   crawlerChannel: string;
   proxyId: string | null;
