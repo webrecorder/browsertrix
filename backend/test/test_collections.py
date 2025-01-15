@@ -1434,6 +1434,32 @@ def test_get_public_collection_slug_redirect(admin_auth_headers, default_org_id)
     assert coll["slug"] == new_slug
     assert coll["redirectToSlug"] == new_slug
 
+    # Rename second public collection slug to now-unused PUBLIC_COLLECTION_SLUG
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_second_public_coll_id}",
+        headers=admin_auth_headers,
+        json={
+            "slug": PUBLIC_COLLECTION_SLUG,
+        },
+    )
+    assert r.status_code == 200
+    assert r.json()["updated"]
+
+    # Delete second public collection
+    r = requests.delete(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_second_public_coll_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["success"]
+
+    # Verify that trying to go to PUBLIC_COLLECTION_SLUG now 404s instead of taking
+    # us to the collection that had the slug before it was reassigned
+    r = requests.get(
+        f"{API_PREFIX}/public/orgs/{default_org_slug}/collections/{PUBLIC_COLLECTION_SLUG}"
+    )
+    assert r.status_code == 404
+
 
 def test_delete_collection(crawler_auth_headers, default_org_id, crawler_crawl_id):
     # Delete second collection

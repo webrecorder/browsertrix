@@ -121,17 +121,18 @@ class CollectionOps:
         crawl_ids = coll_in.crawlIds if coll_in.crawlIds else []
         coll_id = uuid4()
         created = dt_now()
-        modified = dt_now()
+
+        slug = coll_in.slug or slug_from_name(coll_in.name)
 
         coll = Collection(
             id=coll_id,
             oid=oid,
             name=coll_in.name,
-            slug=coll_in.slug or slug_from_name(coll_in.name),
+            slug=slug,
             description=coll_in.description,
             caption=coll_in.caption,
             created=created,
-            modified=modified,
+            modified=created,
             access=coll_in.access,
             defaultThumbnailName=coll_in.defaultThumbnailName,
             allowPublicDownload=coll_in.allowPublicDownload,
@@ -139,6 +140,8 @@ class CollectionOps:
         try:
             await self.collections.insert_one(coll.to_dict())
             org = await self.orgs.get_org_by_id(oid)
+            await self.clear_org_previous_slugs_matching_slug(slug, org)
+
             if crawl_ids:
                 await self.crawl_ops.add_to_collection(crawl_ids, coll_id, org)
                 await self.update_collection_counts_and_tags(coll_id)
@@ -177,6 +180,7 @@ class CollectionOps:
         if name_update and not slug_update:
             slug = slug_from_name(name_update)
             query["slug"] = slug
+            slug_update = slug
 
         query["modified"] = dt_now()
 
@@ -198,7 +202,19 @@ class CollectionOps:
         if not result:
             raise HTTPException(status_code=404, detail="collection_not_found")
 
+        if slug_update:
+            await self.clear_org_previous_slugs_matching_slug(slug_update, org)
+
         return {"updated": True}
+
+    async def clear_org_previous_slugs_matching_slug(
+        self, slug: str, org: Organization
+    ):
+        """Clear new slug from previousSlugs array of other collections in same org"""
+        await self.collections.update_many(
+            {"oid": org.id, "previousSlugs": slug},
+            {"$pull": {"previousSlugs": slug}},
+        )
 
     async def add_crawls_to_collection(
         self, coll_id: UUID, crawl_ids: List[str], org: Organization
