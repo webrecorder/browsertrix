@@ -340,7 +340,7 @@ class CrawlOperator(BaseOperator):
 
         return self.load_from_yaml("redis.yaml", params)
 
-    async def _filter_autoclick_behavior(
+    def _filter_autoclick_behavior(
         self, behaviors: Optional[str], crawler_image: str
     ) -> Optional[str]:
         """Remove autoclick behavior if crawler version doesn't support it"""
