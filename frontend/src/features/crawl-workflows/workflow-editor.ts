@@ -35,6 +35,7 @@ import { range } from "lit/directives/range.js";
 import { when } from "lit/directives/when.js";
 import compact from "lodash/fp/compact";
 import flow from "lodash/fp/flow";
+import throttle from "lodash/fp/throttle";
 import uniq from "lodash/fp/uniq";
 
 import { BtrixElement } from "@/classes/BtrixElement";
@@ -47,6 +48,7 @@ import type { TabListTab } from "@/components/ui/tab-list";
 import type { TagInputEvent, TagsChangeEvent } from "@/components/ui/tag-input";
 import type { TimeInputChangeEvent } from "@/components/ui/time-input";
 import { validURL } from "@/components/ui/url-input";
+import type { IntersectEvent } from "@/components/utils/observable";
 import { proxiesContext, type ProxiesContext } from "@/context/org";
 import { type SelectBrowserProfileChangeEvent } from "@/features/browser-profiles/select-browser-profile";
 import type { CollectionsChangeEvent } from "@/features/collections/collections-add";
@@ -58,6 +60,7 @@ import infoTextStrings from "@/strings/crawl-workflows/infoText";
 import scopeTypeLabels from "@/strings/crawl-workflows/scopeType";
 import sectionStrings from "@/strings/crawl-workflows/section";
 import { ScopeType, type Seed, type WorkflowParams } from "@/types/crawler";
+import type { UnderlyingFunction } from "@/types/utils";
 import { NewWorkflowOnlyScopeType } from "@/types/workflow";
 import { isApiError, type Detail } from "@/utils/api";
 import { DEPTH_SUPPORTED_SCOPES, isPageScopeType } from "@/utils/crawler";
@@ -295,6 +298,11 @@ export class WorkflowEditor extends BtrixElement {
     });
   }
 
+  disconnectedCallback(): void {
+    this.onFormSectionIntersect.cancel();
+    super.disconnectedCallback();
+  }
+
   async willUpdate(
     changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {
@@ -390,13 +398,6 @@ export class WorkflowEditor extends BtrixElement {
   }
 
   private renderNav() {
-    let orderedTabNames = STEPS as readonly StepName[];
-
-    if (this.configId) {
-      // Remove review tab
-      orderedTabNames = orderedTabNames.slice(0, -1);
-    }
-
     const button = (tab: StepName) => {
       const isActive = tab === this.progressState?.activeTab;
       return html`
@@ -412,13 +413,13 @@ export class WorkflowEditor extends BtrixElement {
 
     return html`
       <btrix-tab-list tab=${ifDefined(this.progressState?.activeTab)}>
-        ${orderedTabNames.map(button)}
+        ${STEPS.map(button)}
       </btrix-tab-list>
     `;
   }
 
   private renderFormSections() {
-    const content = ({
+    const panelBody = ({
       name,
       desc,
       render,
@@ -443,31 +444,48 @@ export class WorkflowEditor extends BtrixElement {
         <div class="grid grid-cols-5 gap-5">${render.bind(this)()}</div>
       </sl-details>`;
     };
+
+    const formSection = (section: (typeof this.formSections)[number]) => html`
+      <btrix-observable
+        data-tab=${section.name}
+        .options=${
+          {
+            // rootMargin: "0px 0px -80px 0px",
+            // threshold: [0, 0.25, 1],
+            // threshold: 0.5,
+          }
+        }
+        @btrix-intersect=${this.onFormSectionIntersect as UnderlyingFunction<
+          typeof this.onFormSectionIntersect
+        >}
+      >
+        ${panel({
+          id: `${section.name}--panel`,
+          className: clsx(
+            `${formName}--panel`,
+            section.name === this.progressState?.activeTab &&
+              `${formName}--panel--active`,
+          ),
+          heading: this.tabLabels[section.name],
+          body: panelBody(section),
+          actions: section.required
+            ? html`<p class="text-xs font-normal text-neutral-500">
+                ${msg(
+                  html`Fields marked with
+                    <span style="color:var(--sl-input-required-content-color)"
+                      >*</span
+                    >
+                    are required`,
+                )}
+              </p>`
+            : undefined,
+        })}
+      </btrix-observable>
+    `;
+
     return html`
       <div class="mb-10 flex flex-col gap-10 px-2">
-        ${this.formSections.map((section) =>
-          panel({
-            id: `${section.name}--panel`,
-            className: clsx(
-              `${formName}--panel`,
-              section.name === this.progressState?.activeTab &&
-                `${formName}--panel--active`,
-            ),
-            heading: this.tabLabels[section.name],
-            content: content(section),
-            actions: section.required
-              ? html`<p class="text-xs font-normal text-neutral-500">
-                  ${msg(
-                    html`Fields marked with
-                      <span style="color:var(--sl-input-required-content-color)"
-                        >*</span
-                      >
-                      are required`,
-                  )}
-                </p>`
-              : undefined,
-          }),
-        )}
+        ${this.formSections.map(formSection)}
       </div>
 
       ${when(this.serverError, (error) => this.renderErrorAlert(error))}
@@ -1570,6 +1588,33 @@ https://archiveweb.page/images/${"logo.svg"}`}
     this.updateFormState(formState);
   }
 
+  private intersectionEntries: IntersectionObserverEntry[] = [];
+
+  private readonly onFormSectionIntersect = throttle(8)((e: IntersectEvent) => {
+    const { entry } = e.detail;
+
+    const observableEl = entry.target as HTMLElement;
+    const tab = observableEl.dataset["tab"] as StepName;
+    const tabIndex = STEPS.indexOf(tab);
+
+    if (tabIndex === -1) {
+      console.debug("tab not in steps:", tab);
+      return;
+    }
+
+    this.intersectionEntries[tabIndex] = entry;
+
+    if (!entry.isIntersecting) return;
+
+    // TODO Check if this is the only visible tab
+    const intersecting = this.intersectionEntries.find(
+      (entry) => entry.isIntersecting,
+    );
+    console.log("intersecting:", tab, intersecting?.target);
+
+    this.updateProgressState({ activeTab: tab as StepName });
+  });
+
   private hasRequiredFields(): boolean {
     if (isPageScopeType(this.formState.scopeType)) {
       return Boolean(this.formState.urlList);
@@ -1579,25 +1624,21 @@ https://archiveweb.page/images/${"logo.svg"}`}
   }
 
   private async scrollToPanelTop() {
-    const activeTabPanel = await this.activeTabPanel;
-
-    if (!activeTabPanel) {
-      console.debug("no activeTabPanel");
-      return;
-    }
-
-    // TODO scroll into view if needed
-    activeTabPanel.scrollIntoView();
-
-    const details = (await this.activeTabPanel)?.querySelector("sl-details");
-
-    if (details) {
-      if (details.open) {
-        this.moveFocus(details);
-      } else {
-        void details.show();
-      }
-    }
+    // const activeTabPanel = await this.activeTabPanel;
+    // if (!activeTabPanel) {
+    //   console.debug("no activeTabPanel");
+    //   return;
+    // }
+    // // TODO scroll into view if needed
+    // activeTabPanel.scrollIntoView();
+    // const details = (await this.activeTabPanel)?.querySelector("sl-details");
+    // if (details) {
+    //   if (details.open) {
+    //     this.moveFocus(details);
+    //   } else {
+    //     // void details.show();
+    //   }
+    // }
   }
 
   private moveFocus(details?: SlDetails | null) {

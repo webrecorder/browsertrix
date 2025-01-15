@@ -28,17 +28,17 @@ export function panelBody({ content }: { content: TemplateResult }) {
  * @TODO Refactor components to use panel
  */
 export function panel({
-  content,
   heading,
   actions,
+  body,
   id,
   className,
 }: {
-  content: TemplateResult;
+  body: TemplateResult;
   id?: string;
   className?: string;
 } & Parameters<typeof panelHeader>[0]) {
   return html`<section id=${ifDefined(id)} class=${ifDefined(className)}>
-    ${panelHeader({ heading, actions })} ${content}
+    ${panelHeader({ heading, actions })} ${body}
   </section>`;
 }
