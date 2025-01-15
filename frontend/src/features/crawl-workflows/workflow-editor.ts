@@ -428,16 +428,27 @@ export class WorkflowEditor extends BtrixElement {
   private renderFormSections() {
     return html`
       <div class="mb-10 flex flex-col gap-10 px-2">
-        ${this.formSections.map(({ name, desc, render, open }) =>
+        ${this.formSections.map(({ name, desc, render, required }) =>
           panel({
             heading: this.tabLabels[name],
             content: html`<sl-details
               class="part-[base]:rounded-lg part-[base]:border"
-              ?open=${open}
+              ?open=${required}
             >
               <p class="text-neutral-600" slot="summary">${desc}</p>
               <div class="grid grid-cols-5 gap-5">${render.bind(this)()}</div>
             </sl-details>`,
+            actions: required
+              ? html`<p class="text-xs font-normal text-neutral-500">
+                  ${msg(
+                    html`Fields marked with
+                      <span style="color:var(--sl-input-required-content-color)"
+                        >*</span
+                      >
+                      are required`,
+                  )}
+                </p>`
+              : undefined,
           }),
         )}
       </div>
@@ -447,6 +458,8 @@ export class WorkflowEditor extends BtrixElement {
   }
 
   private renderFooter() {
+    const hasRequiredFields = this.hasRequiredFields();
+
     return html`
       <footer
         class="sticky bottom-2 z-50 flex items-center justify-end gap-2 rounded-lg border bg-white px-6 py-4 shadow"
@@ -454,24 +467,32 @@ export class WorkflowEditor extends BtrixElement {
         <sl-button class="mr-auto" size="small" type="reset">
           ${msg("Cancel")}
         </sl-button>
-        <sl-button
-          size="small"
-          type=${this.configId ? "submit" : "button"}
-          variant=${this.configId ? "primary" : "default"}
-          ?disabled=${this.isSubmitting}
-          ?loading=${!!this.configId && this.isSubmitting}
+        <sl-tooltip
+          content=${msg("Please check all required fields")}
+          ?disabled=${hasRequiredFields}
+          hoist
         >
-          ${this.configId ? msg("Save") : msg("Create")}
-        </sl-button>
-        <sl-button
-          size="small"
-          type=${this.configId ? "button" : "submit"}
-          variant=${this.configId ? "default" : "primary"}
-          ?disabled=${this.isSubmitting || isArchivingDisabled(this.org, true)}
-          ?loading=${!this.configId && this.isSubmitting}
-        >
-          ${this.configId ? msg("Save and Run") : msg("Run Workflow")}
-        </sl-button>
+          <sl-button
+            size="small"
+            type=${this.configId ? "submit" : "button"}
+            variant=${this.configId ? "primary" : "default"}
+            ?disabled=${this.isSubmitting || !hasRequiredFields}
+            ?loading=${!!this.configId && this.isSubmitting}
+          >
+            ${this.configId ? msg("Save") : msg("Create")}
+          </sl-button>
+          <sl-button
+            size="small"
+            type=${this.configId ? "button" : "submit"}
+            variant=${this.configId ? "default" : "primary"}
+            ?disabled=${this.isSubmitting ||
+            !hasRequiredFields ||
+            isArchivingDisabled(this.org, true)}
+            ?loading=${!this.configId && this.isSubmitting}
+          >
+            ${this.configId ? msg("Save and Run") : msg("Run Workflow")}
+          </sl-button>
+        </sl-tooltip>
       </footer>
     `;
   }
@@ -1518,13 +1539,13 @@ https://archiveweb.page/images/${"logo.svg"}`}
     name: StepName;
     desc: string;
     render: () => TemplateResult<1>;
-    open?: boolean;
+    required?: boolean;
   }[] = [
     {
       name: "crawlSetup",
       desc: msg("Specify the range and depth of your crawl."),
       render: this.renderScope,
-      open: true,
+      required: true,
     },
     {
       name: "crawlLimits",
