@@ -8,50 +8,10 @@ const DEFAULT_PANEL_ID = "default-panel";
 // postcss-lit-disable-next-line
 export const TWO_COL_SCREEN_MIN_CSS = css`64.5rem`;
 
-/**
- * @deprecated Use `btrix-tab-group`
- *
- * Tab list
- *
- * Usage example:
- * ```ts
- * <btrix-tab-list activePanel="one">
- *   <btrix-tab slot="nav" name="one">One</btrix-tab>
- *   <btrix-tab slot="nav" name="two">Two</btrix-tab>
- * </btrix-tab-list>
- *
- * <btrix-tab-panel name="one">Tab one content</btrix-tab-panel>
- * <btrix-tab-panel name="two">Tab two content</btrix-tab-panel>
- * ```
- */
+const tabTagName = "btrix-tab-list-tab" as const;
 
-@customElement("btrix-tab-panel")
-export class TabPanel extends TailwindElement {
-  @property({ type: String })
-  name?: string;
-
-  @property({ type: Boolean })
-  active = false;
-
-  render() {
-    return html`
-      <div
-        class="flex-auto aria-hidden:hidden"
-        role="tabpanel"
-        id=${ifDefined(this.name)}
-        aria-hidden=${!this.active}
-      >
-        <slot></slot>
-      </div>
-    `;
-  }
-}
-
-/**
- * @deprecated Use `btrix-tab-group`
- */
-@customElement("btrix-tab")
-export class Tab extends TailwindElement {
+@customElement(tabTagName)
+export class TabListTab extends TailwindElement {
   // ID of panel the tab labels/controls
   @property({ type: String })
   name?: string;
@@ -65,7 +25,7 @@ export class Tab extends TailwindElement {
   render() {
     return html`
       <li
-        class="cursor-pointer px-3 py-4 font-semibold leading-tight text-neutral-500 transition-colors duration-fast aria-disabled:cursor-default aria-selected:text-primary-600"
+        class="cursor-pointer p-3 font-semibold leading-tight text-neutral-500 transition-colors duration-fast aria-disabled:cursor-default aria-selected:text-primary-600"
         role="tab"
         aria-selected=${this.active}
         aria-controls=${ifDefined(this.name)}
@@ -78,41 +38,24 @@ export class Tab extends TailwindElement {
   }
 }
 
-type TabElement = Tab & HTMLElement;
-type TabPanelElement = TabPanel & HTMLElement;
+type TabElement = TabListTab & HTMLElement;
 
 /**
- * @deprecated Use `btrix-tab-group`
+ * Tab list with indicator
+ *
+ * Usage example:
+ * ```ts
+ * <btrix-tab-list tab="one">
+ *   <btrix-tab name="one">One</btrix-tab>
+ *   <btrix-tab name="two">Two</btrix-tab>
+ * </btrix-tab-list>
+ * ```
  */
 @customElement("btrix-tab-list")
 export class TabList extends TailwindElement {
   static styles = css`
     :host {
       --track-width: 4px;
-    }
-
-    .btrix-tab-list-container {
-      display: grid;
-      grid-template-areas:
-        "menu"
-        "header"
-        "main";
-      grid-template-columns: 1fr;
-      grid-column-gap: 1.5rem;
-      grid-row-gap: 1rem;
-    }
-
-    @media only screen and (min-width: ${TWO_COL_SCREEN_MIN_CSS}) {
-      .btrix-tab-list-container {
-        grid-template-areas:
-          ". header"
-          "menu main";
-        grid-template-columns: 16.5rem 1fr;
-      }
-    }
-
-    .navWrapper {
-      grid-area: menu;
     }
 
     @media only screen and (min-width: ${TWO_COL_SCREEN_MIN_CSS}) {
@@ -173,7 +116,7 @@ export class TabList extends TailwindElement {
       position: absolute;
       width: var(--track-width);
       border-radius: var(--track-width);
-      background-color: var(--sl-color-primary-600);
+      background-color: var(--sl-color-primary-500);
     }
 
     @media only screen and (min-width: ${TWO_COL_SCREEN_MIN_CSS}) {
@@ -184,9 +127,9 @@ export class TabList extends TailwindElement {
     }
   `;
 
-  // ID of visible panel
+  // ID of active tab
   @property({ type: String })
-  activePanel: string = DEFAULT_PANEL_ID;
+  tab: string = DEFAULT_PANEL_ID;
 
   // If panels are linear, the current panel in progress
   @property({ type: String })
@@ -202,8 +145,8 @@ export class TabList extends TailwindElement {
   private readonly indicatorElem!: HTMLElement;
 
   updated(changedProperties: PropertyValues<this>) {
-    if (changedProperties.has("activePanel") && this.activePanel) {
-      this.onActiveChange(!changedProperties.get("activePanel"));
+    if (changedProperties.has("tab") && this.tab) {
+      this.onActiveChange(!changedProperties.get("tab"));
     }
     if (changedProperties.has("progressPanel") && this.progressPanel) {
       this.onProgressChange(!changedProperties.get("progressPanel"));
@@ -235,15 +178,7 @@ export class TabList extends TailwindElement {
   }
 
   render() {
-    return html`
-      <div class="btrix-tab-list-container">
-        <div class="navWrapper min-w-0">${this.renderNav()}</div>
-        <div class="header"><slot name="header"></slot></div>
-        <div class="content">
-          <slot></slot>
-        </div>
-      </div>
-    `;
+    return html`<div class="navWrapper min-w-0">${this.renderNav()}</div>`;
   }
 
   renderNav() {
@@ -256,35 +191,26 @@ export class TabList extends TailwindElement {
           class="nav ${this.progressPanel ? "linear" : "nonlinear"} ${this
             .hideIndicator
             ? "hide-indicator"
-            : "show-indicator"} -m-3 overflow-x-hidden p-3"
+            : "show-indicator"} -mx-3 overflow-x-hidden px-3"
         >
           <div class="track" role="presentation">
             <div class="indicator" role="presentation"></div>
           </div>
 
-          <ul class="tablist -m-3 overflow-x-auto p-3" role="tablist">
-            <slot name="nav"></slot>
+          <ul class="tablist -mx-3 overflow-x-auto px-3" role="tablist">
+            <slot></slot>
           </ul>
         </div>
       </sl-resize-observer>
     `;
   }
 
-  private getPanels(): TabPanelElement[] {
-    const slotElems = this.renderRoot
-      .querySelector<HTMLSlotElement>(".content slot:not([name])")!
-      .assignedElements();
-    return ([...slotElems] as TabPanelElement[]).filter(
-      (el) => el.tagName.toLowerCase() === "btrix-tab-panel",
-    );
-  }
-
   private getTabs(): TabElement[] {
     const slotElems = this.renderRoot
-      .querySelector<HTMLSlotElement>("slot[name='nav']")!
+      .querySelector<HTMLSlotElement>("slot")!
       .assignedElements();
     return ([...slotElems] as TabElement[]).filter(
-      (el) => el.tagName.toLowerCase() === "btrix-tab",
+      (el) => el.tagName.toLowerCase() === tabTagName,
     );
   }
 
@@ -305,7 +231,7 @@ export class TabList extends TailwindElement {
 
   private onActiveChange(isFirstChange: boolean) {
     this.getTabs().forEach((tab) => {
-      if (tab.name === this.activePanel) {
+      if (tab.name === this.tab) {
         tab.active = true;
 
         if (!this.progressPanel) {
@@ -313,16 +239,6 @@ export class TabList extends TailwindElement {
         }
       } else {
         tab.active = false;
-      }
-    });
-    this.getPanels().forEach((panel) => {
-      panel.active = panel.name === this.activePanel;
-      if (panel.active) {
-        panel.style.display = "flex";
-        panel.setAttribute("aria-hidden", "false");
-      } else {
-        panel.style.display = "none";
-        panel.setAttribute("aria-hidden", "true");
       }
     });
   }

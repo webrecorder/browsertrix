@@ -1,7 +1,9 @@
 import { consume } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
 import type {
+  SlAfterShowEvent,
   SlCheckbox,
+  SlDetails,
   SlHideEvent,
   SlInput,
   SlRadio,
@@ -41,7 +43,7 @@ import type {
   SelectCrawlerUpdateEvent,
 } from "@/components/ui/select-crawler";
 import type { SelectCrawlerProxyChangeEvent } from "@/components/ui/select-crawler-proxy";
-import type { Tab } from "@/components/ui/tab-list";
+import type { TabListTab } from "@/components/ui/tab-list";
 import type { TagInputEvent, TagsChangeEvent } from "@/components/ui/tag-input";
 import type { TimeInputChangeEvent } from "@/components/ui/time-input";
 import { validURL } from "@/components/ui/url-input";
@@ -333,24 +335,13 @@ export class WorkflowEditor extends BtrixElement {
         this.progressState.activeTab
       ) {
         void this.scrollToPanelTop();
-
-        // Focus on first field in section
-        (await this.activeTabPanel)
-          ?.querySelector<HTMLElement>(
-            "sl-input, sl-textarea, sl-select, sl-radio-group",
-          )
-          ?.focus();
       }
     }
   }
 
   async firstUpdated() {
     // Focus on first field in section
-    (await this.activeTabPanel)
-      ?.querySelector<HTMLElement>(
-        "sl-input, sl-textarea, sl-select, sl-radio-group",
-      )
-      ?.focus();
+    this.moveFocus((await this.activeTabPanel)?.querySelector("sl-details"));
 
     if (this.orgId) {
       void this.fetchTags();
@@ -399,9 +390,6 @@ export class WorkflowEditor extends BtrixElement {
   }
 
   private renderNav() {
-    const baseUrl = `${this.navigate.orgBasePath}/workflows/${
-      this.configId ? `${this.configId}?edit` : "new"
-    }`;
     let orderedTabNames = STEPS as readonly StepName[];
 
     if (this.configId) {
@@ -412,18 +400,21 @@ export class WorkflowEditor extends BtrixElement {
     const button = (tab: StepName) => {
       const isActive = tab === this.progressState?.activeTab;
       return html`
-        <btrix-navigation-button
-          href=${`${baseUrl}#${tab}`}
+        <btrix-tab-list-tab
+          name=${tab}
           .active=${isActive}
-          aria-selected="${isActive}"
           @click=${this.tabClickHandler(tab)}
         >
           ${this.tabLabels[tab]}
-        </btrix-navigation-button>
+        </btrix-tab-list-tab>
       `;
     };
 
-    return html` ${orderedTabNames.map(button)} `;
+    return html`
+      <btrix-tab-list tab=${ifDefined(this.progressState?.activeTab)}>
+        ${orderedTabNames.map(button)}
+      </btrix-tab-list>
+    `;
   }
 
   private renderFormSections() {
@@ -438,6 +429,9 @@ export class WorkflowEditor extends BtrixElement {
       return html`<sl-details
         class="part-[base]:rounded-lg part-[base]:border"
         ?open=${required || hasError}
+        @sl-after-show=${(e: SlAfterShowEvent) => {
+          this.moveFocus(e.target as SlDetails);
+        }}
         @sl-hide=${(e: SlHideEvent) => {
           if (hasError) {
             e.preventDefault();
@@ -632,6 +626,7 @@ export class WorkflowEditor extends BtrixElement {
                 autocomplete="off"
                 inputmode="url"
                 value=${this.formState.urlList}
+                autofocus
                 required
                 @sl-input=${async (e: Event) => {
                   const inputEl = e.target as SlInput;
@@ -1594,7 +1589,31 @@ https://archiveweb.page/images/${"logo.svg"}`}
     // TODO scroll into view if needed
     activeTabPanel.scrollIntoView();
 
-    void (await this.activeTabPanel)?.querySelector("sl-details")?.show();
+    const details = (await this.activeTabPanel)?.querySelector("sl-details");
+
+    if (details) {
+      if (details.open) {
+        this.moveFocus(details);
+      } else {
+        void details.show();
+      }
+    }
+  }
+
+  private moveFocus(details?: SlDetails | null) {
+    if (!details) return;
+
+    const required = details.querySelector<HTMLElement>("[required]");
+
+    if (required) {
+      required.focus();
+    } else {
+      details
+        .querySelector<HTMLElement>(
+          "sl-input, sl-textarea, sl-select, sl-radio-group",
+        )
+        ?.focus();
+    }
   }
 
   private async handleRemoveRegex(e: CustomEvent) {
@@ -1708,13 +1727,13 @@ https://archiveweb.page/images/${"logo.svg"}`}
   }
 
   private readonly tabClickHandler = (step: StepName) => (e: MouseEvent) => {
-    const tab = e.currentTarget as Tab;
+    const tab = e.currentTarget as TabListTab;
     if (tab.disabled || tab.active) {
       e.preventDefault();
       e.stopPropagation();
       return;
     }
-
+    window.location.hash = step;
     this.updateProgressState({ activeTab: step });
   };
 
