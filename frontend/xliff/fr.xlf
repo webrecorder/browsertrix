@@ -32,7 +32,7 @@
       </trans-unit>
       <trans-unit id="h7ee8a6e551e702ba" xml:space="preserve">
         <source> <x id="0" equiv-text="${this.renderInput()}"/> of <x id="1" equiv-text="${this.pages} "/></source>
-        <target state="translated"><x id="0" equiv-text="${this.renderInput()}"/> of <x id="1" equiv-text="${this.pages} "/></target>
+        <target state="translated"> <x id="0" equiv-text="${this.renderInput()}"/> of <x id="1" equiv-text="${this.pages} "/></target>
       </trans-unit>
       <trans-unit id="s5697808ce744d508" xml:space="preserve">
         <source>Current page, page <x id="0" equiv-text="${this.page}"/></source>
@@ -209,7 +209,7 @@
       </trans-unit>
       <trans-unit id="s21c76a0f6cae7920" xml:space="preserve">
         <source>Row actions</source>
-        <target state="needs-translation">Rangée d'actions</target>
+        <target state="translated">Actions de ligne (Row actions)</target>
       </trans-unit>
       <trans-unit id="s27914822b37139fb" xml:space="preserve">
         <source>Page not found.</source>
@@ -915,8 +915,9 @@
         <source>This org URL identifier is invalid. Please use alphanumeric characters and dashes (-) only.</source>
         <target state="translated">Cet identifiant d'URL d'organisation est invalide. Merci d'utiliser un code alphanumérique composé uniquement de caractères et de tirets.</target>
       </trans-unit>
-      <trans-unit id="h58a74834f0ef0fcb">
+      <trans-unit id="h58a74834f0ef0fcb" xml:space="preserve">
         <source>Supports <x id="0" equiv-text="&lt;a class=&quot;text-blue-500 hover:text-blue-600&quot; href=&quot;https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax&quot; target=&quot;_blank&quot; rel=&quot;noopener noreferrer nofollow&quot;&gt;"/>GitHub Flavored Markdown<x id="1" equiv-text="&lt;/a&gt;"/>.</source>
+        <target state="translated">Supports <x id="0" equiv-text="&lt;a class=&quot;text-blue-500 hover:text-blue-600&quot; href=&quot;https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax&quot; target=&quot;_blank&quot; rel=&quot;noopener noreferrer nofollow&quot;&gt;"/>GitHub Flavored Markdown<x id="1" equiv-text="&lt;/a&gt;"/>.</target>
       </trans-unit>
       <trans-unit id="s7a89a316efd4e9c0" xml:space="preserve">
         <source>Please shorten the description to <x id="0" equiv-text="${this.localize.number(this.maxlength)}"/> or fewer characters.</source>
@@ -1236,7 +1237,7 @@
       </trans-unit>
       <trans-unit id="se74c84fa68b23eba" xml:space="preserve">
         <source>Org Storage Full or Monthly Execution Minutes Reached</source>
-        <target state="needs-translation">Minutes d'exécution complètes ou mensuelles du stockage de l'organisation atteintes</target>
+        <target state="translated">Limite de stockage pleine ou limite mensuelle de minutes de l'organisation atteintes</target>
       </trans-unit>
       <trans-unit id="s3e80c83387cea4f1" xml:space="preserve">
         <source>Run Crawl</source>
@@ -1292,10 +1293,11 @@
       </trans-unit>
       <trans-unit id="hcb76d3d062f4fe97" xml:space="preserve">
         <source> <x id="0" equiv-text="&lt;span class=&quot;truncate&quot;&gt;${firstSeed}&lt;/span&gt;&#10;          &lt;span class=&quot;whitespace-nowrap text-neutral-500&quot;&gt;"/>+<x id="1" equiv-text="${remainderCount}"/> URL<x id="2" equiv-text="&lt;/span&gt;"/></source>
-        <target state="translated"><x id="0" equiv-text="&lt;span class=&quot;truncate&quot;&gt;${firstSeed}&lt;/span&gt;&#10;          &lt;span class=&quot;whitespace-nowrap text-neutral-500&quot;&gt;"/>+<x id="1" equiv-text="${remainderCount}"/> URL<x id="2" equiv-text="&lt;/span&gt;"/></target>
+        <target state="translated"> <x id="0" equiv-text="&lt;span class=&quot;truncate&quot;&gt;${firstSeed}&lt;/span&gt;&#10;          &lt;span class=&quot;whitespace-nowrap text-neutral-500&quot;&gt;"/>+<x id="1" equiv-text="${remainderCount}"/> URL<x id="2" equiv-text="&lt;/span&gt;"/></target>
       </trans-unit>
       <trans-unit id="h0f472740ba5c3c86" xml:space="preserve">
         <source> <x id="0" equiv-text="&lt;span class=&quot;truncate&quot;&gt;${firstSeed}&lt;/span&gt;&#10;        &lt;span class=&quot;whitespace-nowrap text-neutral-500&quot;&gt;"/>+<x id="1" equiv-text="${remainderCount}"/> URLs<x id="2" equiv-text="&lt;/span&gt;"/></source>
+        <target state="translated"> <x id="0" equiv-text="&lt;span class=&quot;truncate&quot;&gt;${firstSeed}&lt;/span&gt;&#10;        &lt;span class=&quot;whitespace-nowrap text-neutral-500&quot;&gt;"/>+<x id="1" equiv-text="${remainderCount}"/> URLs<x id="2" equiv-text="&lt;/span&gt;"/></target>
       </trans-unit>
       <trans-unit id="s900a5e61e7ade066" xml:space="preserve">
         <source>View:</source>
@@ -1601,9 +1603,11 @@
       </trans-unit>
       <trans-unit id="hc226df43ef96e720" xml:space="preserve">
         <source><x id="0" equiv-text="${firstSeed}&#10;          &lt;span class=&quot;text-neutral-500&quot;&gt;"/>+<x id="1" equiv-text="${remainderCount}"/> URL<x id="2" equiv-text="&lt;/span&gt;"/></source>
+        <target state="translated"><x id="0" equiv-text="${firstSeed}&#10;           &lt;span class=&quot;text-neutral-500&quot;&gt;"/>+<x id="1" equiv-text="${remainderCount}"/> URL<x id="2" equiv-text="&lt;/span&gt;"/></target>
       </trans-unit>
       <trans-unit id="h649ef1ec13735ee9" xml:space="preserve">
         <source><x id="0" equiv-text="${firstSeed}&#10;        &lt;span class=&quot;text-neutral-500&quot;&gt;"/>+<x id="1" equiv-text="${remainderCount}"/> URLs<x id="2" equiv-text="&lt;/span&gt;"/></source>
+        <target state="translated"><x id="0" equiv-text="${firstSeed}&#10;        &lt;span class=&quot;text-neutral-500&quot;&gt;"/>+<x id="1" equiv-text="${remainderCount}"/> URLs<x id="2" equiv-text="&lt;/span&gt;"/></target>
       </trans-unit>
       <trans-unit id="s442425cd7d61051f" xml:space="preserve">
         <source>No matching Workflows found.</source>
@@ -1730,11 +1734,18 @@
         <source>
                       <x id="0" equiv-text="&lt;span class=&quot;text-primary&quot;&gt;${htmlCount}&lt;/span&gt;"/>
                       HTML <x id="1" equiv-text="${pluralOf(&quot;pages&quot;, htmlCount)}&#10;                    "/></source>
+        <target state="translated">
+                      <x id="0" equiv-text="&lt;span class=&quot;text-primary&quot;&gt;${htmlCount}&lt;/span&gt;"/>
+
+                      HTML <x id="1" equiv-text="${pluralOf(&quot;pages&quot;, htmlCount)}&#10;                    "/></target>
       </trans-unit>
       <trans-unit id="h7d8f1533bbc700e1" xml:space="preserve">
         <source>
                       <x id="0" equiv-text="&lt;span class=&quot;text-neutral-600&quot;&gt;${fileCount}&lt;/span&gt;"/>
                       Non-HTML files captured as <x id="1" equiv-text="${pluralOf(&quot;pages&quot;, fileCount)}&#10;                    "/></source>
+        <target state="translated">
+                      <x id="0" equiv-text="&lt;span class=&quot;text-neutral-600&quot;&gt;${fileCount}&lt;/span&gt;"/>
+                      Non-HTML files captured as <x id="1" equiv-text="${pluralOf(&quot;pages&quot;, fileCount)}&#10;                    "/></target>
       </trans-unit>
       <trans-unit id="ha312818a16d5146b" xml:space="preserve">
         <source>
