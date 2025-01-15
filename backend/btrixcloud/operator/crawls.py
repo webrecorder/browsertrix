@@ -382,11 +382,13 @@ class CrawlOperator(BaseOperator):
 
         crawlconfig = await self.crawl_config_ops.get_crawl_config(crawl.cid, crawl.oid)
 
-        params["config"] = json.dumps(crawlconfig.get_raw_config())
+        raw_config = crawlconfig.get_raw_config()
 
-        params["config"]["behaviors"] = self._filter_autoclick_behavior(
-            params["config"]["behaviors"], params["crawler_image"]
+        raw_config["behaviors"] = self._filter_autoclick_behavior(
+            raw_config["behaviors"], params["crawler_image"]
         )
+
+        params["config"] = json.dumps(raw_config)
 
         return self.load_from_yaml("crawl_configmap.yaml", params)
 
