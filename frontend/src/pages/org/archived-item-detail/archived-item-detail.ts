@@ -873,7 +873,8 @@ export class ArchivedItemDetail extends BtrixElement {
                         <span
                           >${pluralOf("pages", +this.item.stats.found)}</span
                         >`
-                    : html`<span>
+                    : html`<span>,</span
+                        ><span>
                           ${this.localize.number(
                             this.item.pageCount ? +this.item.pageCount : 0,
                           )}
