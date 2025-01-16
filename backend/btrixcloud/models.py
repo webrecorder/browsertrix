@@ -797,6 +797,8 @@ class BaseCrawl(CoreCrawlable, BaseMongoModel):
 
     reviewStatus: ReviewStatus = None
 
+    pageCount: Optional[int] = 0
+
     filePageCount: Optional[int] = 0
     errorPageCount: Optional[int] = 0
 
