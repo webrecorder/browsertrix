@@ -521,6 +521,7 @@ class CrawlOps(BaseCrawlOps):
             try:
                 re.compile(regex)
             except re.error:
+                # pylint: disable=raise-missing-from
                 raise HTTPException(
                     status_code=422, detail="invalid_regular_expression"
                 )
