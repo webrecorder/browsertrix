@@ -1603,7 +1603,6 @@
       </trans-unit>
       <trans-unit id="hc226df43ef96e720" xml:space="preserve">
         <source><x id="0" equiv-text="${firstSeed}&#10;          &lt;span class=&quot;text-neutral-500&quot;&gt;"/>+<x id="1" equiv-text="${remainderCount}"/> URL<x id="2" equiv-text="&lt;/span&gt;"/></source>
-        <target state="translated"><x id="0" equiv-text="${firstSeed}&#10;           &lt;span class=&quot;text-neutral-500&quot;&gt;"/>+<x id="1" equiv-text="${remainderCount}"/> URL<x id="2" equiv-text="&lt;/span&gt;"/></target>
       </trans-unit>
       <trans-unit id="h649ef1ec13735ee9" xml:space="preserve">
         <source><x id="0" equiv-text="${firstSeed}&#10;        &lt;span class=&quot;text-neutral-500&quot;&gt;"/>+<x id="1" equiv-text="${remainderCount}"/> URLs<x id="2" equiv-text="&lt;/span&gt;"/></source>
