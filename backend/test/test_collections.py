@@ -1151,7 +1151,6 @@ def test_get_public_collection(default_org_id):
     assert coll["crawlCount"] > 0
     assert coll["pageCount"] > 0
     assert coll["totalSize"] > 0
-    assert coll.get("redirectToSlug") is None
 
     for field in NON_PUBLIC_COLL_FIELDS:
         assert field not in coll
@@ -1432,7 +1431,6 @@ def test_get_public_collection_slug_redirect(admin_auth_headers, default_org_id)
     assert coll["id"] == _public_coll_id
     assert coll["oid"] == default_org_id
     assert coll["slug"] == new_slug
-    assert coll["redirectToSlug"] == new_slug
 
     # Rename second public collection slug to now-unused PUBLIC_COLLECTION_SLUG
     r = requests.patch(

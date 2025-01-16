@@ -65,9 +65,9 @@ export class Collection extends BtrixElement {
         collectionSlug,
       });
 
-      if (collection.redirectToSlug) {
+      if (collection.slug !== collectionSlug) {
         this.navigate.to(
-          `/${RouteNamespace.PublicOrgs}/${this.orgSlug}/collections/${collection.redirectToSlug}`,
+          `/${RouteNamespace.PublicOrgs}/${this.orgSlug}/collections/${collection.slug}`,
         );
       }
 
@@ -291,7 +291,7 @@ export class Collection extends BtrixElement {
   }: {
     orgSlug: string;
     collectionSlug: string;
-  }): Promise<PublicCollection & { redirectToSlug?: string | null }> {
+  }): Promise<PublicCollection> {
     const resp = await fetch(
       `/api/public/orgs/${orgSlug}/collections/${collectionSlug}`,
       {

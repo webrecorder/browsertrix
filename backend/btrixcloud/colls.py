@@ -311,13 +311,13 @@ class CollectionOps:
 
     async def get_collection_by_slug(
         self, coll_slug: str, public_or_unlisted_only: bool = False
-    ) -> Tuple[Collection, bool]:
-        """Get collection by slug, as well as bool indicating if redirected from previous slug"""
+    ) -> Collection:
+        """Get collection by slug"""
         try:
             result = await self.get_collection_raw_by_slug(
                 coll_slug, public_or_unlisted_only=public_or_unlisted_only
             )
-            return Collection.from_dict(result), False
+            return Collection.from_dict(result)
         # pylint: disable=broad-exception-caught
         except Exception:
             pass
@@ -327,7 +327,7 @@ class CollectionOps:
             previous_slugs=True,
             public_or_unlisted_only=public_or_unlisted_only,
         )
-        return Collection.from_dict(result), True
+        return Collection.from_dict(result)
 
     async def get_collection_out(
         self,
@@ -355,7 +355,6 @@ class CollectionOps:
         self,
         coll_id: UUID,
         org: Organization,
-        redirect: bool = False,
         allow_unlisted: bool = False,
     ) -> PublicCollOut:
         """Get PublicCollOut by id"""
@@ -376,9 +375,6 @@ class CollectionOps:
             result["thumbnail"] = await image_file.get_public_image_file_out(
                 org, self.storage_ops
             )
-
-        if redirect:
-            result["redirectToSlug"] = result.get("slug", "")
 
         return PublicCollOut.from_dict(result)
 
@@ -1122,11 +1118,9 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops, user_de
             # pylint: disable=raise-missing-from
             raise HTTPException(status_code=404, detail="collection_not_found")
 
-        coll, redirect = await colls.get_collection_by_slug(coll_slug)
+        coll = await colls.get_collection_by_slug(coll_slug)
 
-        return await colls.get_public_collection_out(
-            coll.id, org, redirect=redirect, allow_unlisted=True
-        )
+        return await colls.get_public_collection_out(coll.id, org, allow_unlisted=True)
 
     @app.get(
         "/public/orgs/{org_slug}/collections/{coll_slug}/download",
@@ -1145,7 +1139,7 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops, user_de
             raise HTTPException(status_code=404, detail="collection_not_found")
 
         # Make sure collection exists and is public/unlisted
-        coll, _ = await colls.get_collection_by_slug(
+        coll = await colls.get_collection_by_slug(
             coll_slug, public_or_unlisted_only=True
         )
 
