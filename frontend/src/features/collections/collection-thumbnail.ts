@@ -41,7 +41,7 @@ export class CollectionThumbnail extends BtrixElement {
   render() {
     return html`
       <img
-        class="aspect-video rounded-lg bg-slate-50 object-cover"
+        class="aspect-video w-full rounded-lg bg-neutral-200 object-cover"
         src=${this.src || DEFAULT_THUMBNAIL_VARIANT.path}
       />
     `;

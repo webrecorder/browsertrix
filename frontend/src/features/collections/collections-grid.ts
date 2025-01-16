@@ -30,10 +30,13 @@ export class CollectionsGrid extends BtrixElement {
 
     if (!this.collections || !this.slug) {
       const thumb = html`
-        <sl-skeleton
-          class="block aspect-video [--border-radius:var(--sl-border-radius-large)]"
-          effect="sheen"
-        ></sl-skeleton>
+        <div>
+          <sl-skeleton
+            class="mb-4 block aspect-video rounded-lg shadow-md shadow-stone-600/10 ring-1 ring-stone-600/10 [--border-radius:var(--sl-border-radius-large)]"
+          ></sl-skeleton>
+          <sl-skeleton class="w-32" effect="sheen"></sl-skeleton>
+          <sl-skeleton class="mb-1 mt-3 w-24" effect="sheen"></sl-skeleton>
+        </div>
       `;
 
       return html`
@@ -79,7 +82,9 @@ export class CollectionsGrid extends BtrixElement {
                   ></btrix-collection-thumbnail>
                   ${this.renderDateBadge(collection)}
                 </div>
-                <div class="${showActions ? "mr-9" : ""} min-h-9 leading-tight">
+                <div
+                  class="${showActions ? "mr-9" : ""} min-h-12 leading-tight"
+                >
                   <strong
                     class="text-base font-medium leading-tight text-stone-700 transition-colors group-hover:text-cyan-600"
                   >
