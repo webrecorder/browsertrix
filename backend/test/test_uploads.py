@@ -276,7 +276,7 @@ def test_get_upload_pages(admin_auth_headers, default_org_id, upload_id):
 
     # Check that pageCount was stored on upload
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{upload_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads/{upload_id}",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
