@@ -28,6 +28,8 @@ type Metrics = {
   crawlCount: number;
   uploadCount: number;
   pageCount: number;
+  crawlPageCount: number;
+  uploadPageCount: number;
   profileCount: number;
   workflowsRunningCount: number;
   maxConcurrentCrawls: number;
@@ -236,10 +238,31 @@ export class Dashboard extends BtrixElement {
                   pluralLabel: msg("Crawl Workflows Waiting"),
                   iconProps: { name: "hourglass-split", color: "violet" },
                 })}
+                <sl-divider
+                  style="--spacing:var(--sl-spacing-small)"
+                ></sl-divider>
                 ${this.renderStat({
-                  value: metrics.pageCount,
+                  value: metrics.crawlPageCount,
                   singleLabel: msg("Page Crawled"),
                   pluralLabel: msg("Pages Crawled"),
+                  iconProps: {
+                    name: "file-richtext-fill",
+                    color: this.colors.crawls,
+                  },
+                })}
+                ${this.renderStat({
+                  value: metrics.uploadPageCount,
+                  singleLabel: msg("Page Uploaded"),
+                  pluralLabel: msg("Pages Uploaded"),
+                  iconProps: {
+                    name: "file-richtext-fill",
+                    color: this.colors.uploads,
+                  },
+                })}
+                ${this.renderStat({
+                  value: metrics.pageCount,
+                  singleLabel: msg("Page Total"),
+                  pluralLabel: msg("Pages Total"),
                   iconProps: { name: "file-richtext-fill" },
                 })}
               </dl>

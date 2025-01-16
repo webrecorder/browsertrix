@@ -939,7 +939,10 @@ class OrgOps:
         archived_item_count = 0
         crawl_count = 0
         upload_count = 0
+
         page_count = 0
+        crawl_page_count = 0
+        upload_page_count = 0
 
         async for item_data in self.crawls_db.find({"oid": org.id}):
             item = BaseCrawl.from_dict(item_data)
@@ -948,10 +951,12 @@ class OrgOps:
             archived_item_count += 1
             if item.type == "crawl":
                 crawl_count += 1
+                crawl_page_count += item.pageCount or 0
             if item.type == "upload":
                 upload_count += 1
-            if item.stats:
-                page_count += item.stats.done
+                upload_page_count += item.pageCount or 0
+            if item.pageCount:
+                page_count += item.pageCount
 
         profile_count = await self.profiles_db.count_documents({"oid": org.id})
         workflows_running_count = await self.crawls_db.count_documents(
@@ -975,6 +980,8 @@ class OrgOps:
             "crawlCount": crawl_count,
             "uploadCount": upload_count,
             "pageCount": page_count,
+            "crawlPageCount": crawl_page_count,
+            "uploadPageCount": upload_page_count,
             "profileCount": profile_count,
             "workflowsRunningCount": workflows_running_count,
             "maxConcurrentCrawls": max_concurrent_crawls,

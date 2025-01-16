@@ -1917,6 +1917,8 @@ class OrgMetrics(BaseModel):
     crawlCount: int
     uploadCount: int
     pageCount: int
+    crawlPageCount: int
+    uploadPageCount: int
     profileCount: int
     workflowsRunningCount: int
     maxConcurrentCrawls: int
