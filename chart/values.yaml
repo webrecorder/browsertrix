@@ -447,11 +447,11 @@ ingress:
   cert_email: "test@example.com"
   tls: false
 
-  # This is related to the issues webrecorder/browsertrix#1570 and cert-manager/cert-manager#6184
-  # This relates to the new `http01.ingress.ingressClassName` solver spec attribute which got introduced in the recent v1.15 cert-manager version.
-  # Cert-manager v1.15 does not want the fields ingressClassName and class be set at the same time.
-  useOldClassField: false
-  
+  # If set, will use the old 'kubernetes.io/ingress.class' annotation instead of the new ingressClassName
+  # also uses old http01.ingress.class in cert-manager instead of http01.ingress.ingressClassName
+  # provided for backwards compatibility
+  useOldClassAnnotation: false
+
   # Optional: Uncomment to use your own cluster-issuer instead of default ACME https validation
   # custom_cluster_issuer: custom_cluster_issuer-name
 
