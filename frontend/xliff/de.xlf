@@ -41,9 +41,6 @@
       <trans-unit id="s2099d599ac75e503">
         <source>Archived Items</source>
       </trans-unit>
-      <trans-unit id="sfa480f50d480c290">
-        <source>Shareable</source>
-      </trans-unit>
       <trans-unit id="se7bee6e9a9b5394c">
         <source>Private</source>
       </trans-unit>
@@ -69,48 +66,20 @@
       <trans-unit id="s41203abb9f802a84">
         <source>Share Collection</source>
       </trans-unit>
-      <trans-unit id="s54bbf34e3e18b439">
-        <source>Make this collection shareable to enable a public viewing link.</source>
-      </trans-unit>
-      <trans-unit id="seeb6295e19bc1400">
-        <source>Collection is Shareable</source>
-      </trans-unit>
       <trans-unit id="s0379fc73608ab971">
         <source>Done</source>
       </trans-unit>
       <trans-unit id="s11161fdebb62dcc9">
         <source>Link to Share</source>
       </trans-unit>
-      <trans-unit id="s4708cb91cd6afef0">
-        <source>This collection can be viewed by anyone with the link.</source>
-      </trans-unit>
       <trans-unit id="s0921b07ddda1f1b1">
         <source>Open in New Tab</source>
-      </trans-unit>
-      <trans-unit id="sb8096046172ad45a">
-        <source>Embed Collection</source>
-      </trans-unit>
-      <trans-unit id="h7066b35dd7e4517e">
-        <source>Share this collection by embedding it into an existing webpage.</source>
-      </trans-unit>
-      <trans-unit id="h54da0b63b416aa90">
-        <source>Add the following embed code to your HTML page:</source>
       </trans-unit>
       <trans-unit id="sdbf249ab40dc18fa">
         <source>Copy Embed Code</source>
       </trans-unit>
-      <trans-unit id="h648aaa4b436a5970">
-        <source>Add the following JavaScript to your
-              <x id="0" equiv-text="&lt;code class=&quot;text-[0.9em]&quot;&gt;"/>/replay/sw.js<x id="1" equiv-text="&lt;/code&gt;"/>:</source>
-      </trans-unit>
       <trans-unit id="s4f0cf5a844f978f3">
         <source>Copy JS</source>
-      </trans-unit>
-      <trans-unit id="hf56186ec17103fb3">
-        <source>See
-              <x id="0" equiv-text="&lt;a class=&quot;text-primary&quot; href=&quot;https://replayweb.page/docs/embedding&quot; target=&quot;_blank&quot;&gt;"/>
-                our embedding guide<x id="1" equiv-text="&lt;/a&gt;"/>
-              for more details.</source>
       </trans-unit>
       <trans-unit id="s3f5390ecd7d14626">
         <source>Collections</source>
@@ -123,9 +92,6 @@
       </trans-unit>
       <trans-unit id="s8975026acabb194d">
         <source>Select Archived Items</source>
-      </trans-unit>
-      <trans-unit id="s1a24424753185138">
-        <source>Make Shareable</source>
       </trans-unit>
       <trans-unit id="s7e5bf5d1b7f08ba4">
         <source>Make Private</source>
@@ -147,12 +113,6 @@
       </trans-unit>
       <trans-unit id="s80b0d32b285ce4d7">
         <source>Edit description</source>
-      </trans-unit>
-      <trans-unit id="sa5ef80b4bb9b39f8">
-        <source>Less</source>
-      </trans-unit>
-      <trans-unit id="s37a9e8aec5713460">
-        <source>More</source>
       </trans-unit>
       <trans-unit id="s6b33dfbbaf6a2014">
         <source>No description added.</source>
@@ -513,10 +473,6 @@
       <trans-unit id="s121cd82dcf118d06">
         <source>Org Settings</source>
       </trans-unit>
-      <trans-unit id="h9c83f117a7e3a93f">
-        <source>Viewing
-                  <x id="0" equiv-text="&lt;strong class=&quot;font-medium&quot;&gt;${userOrg.name}&lt;/strong&gt;"/></source>
-      </trans-unit>
       <trans-unit id="s52d61e7db1ece998">
         <source>Active Members</source>
       </trans-unit>
@@ -535,23 +491,11 @@
       <trans-unit id="s734b679e69b9fe4e">
         <source>My Organization</source>
       </trans-unit>
-      <trans-unit id="s523d7b042c762733">
-        <source>Name of your organization that is visible to all org members.</source>
-      </trans-unit>
       <trans-unit id="sfe0fcf030a91a7d2">
         <source>Custom URL Identifier</source>
       </trans-unit>
-      <trans-unit id="s736e0de127d6aba2">
-        <source>Org home page: <x id="0" equiv-text="${window.location.protocol}"/>//<x id="1" equiv-text="${window.location.hostname}"/>/orgs/<x id="2" equiv-text="${this.slugValue&#10;    ? slugifyStrict(this.slugValue)&#10;    : this.orgSlug}"/></source>
-      </trans-unit>
-      <trans-unit id="s0559157886d79c76">
-        <source>Customize your organization's web address for accessing Browsertrix.</source>
-      </trans-unit>
       <trans-unit id="s719552bdda1832f6">
         <source>Org ID</source>
-      </trans-unit>
-      <trans-unit id="s0d005b5de55948e4">
-        <source>Use this ID to reference this org in the Browsertrix API.</source>
       </trans-unit>
       <trans-unit id="s68a8a3c2dd867ac9">
         <source>URL Identifier too short</source>
@@ -698,14 +642,8 @@
       <trans-unit id="s7a89a316efd4e9c0">
         <source>Please shorten the description to <x id="0" equiv-text="${this.localize.number(this.maxlength)}"/> or fewer characters.</source>
       </trans-unit>
-      <trans-unit id="s6ee5d5975cae2ed4">
-        <source>Edit Collection Metadata</source>
-      </trans-unit>
       <trans-unit id="s918e070311f7573c">
         <source>Create a New Collection</source>
-      </trans-unit>
-      <trans-unit id="s7c0283bbbff2ab2f">
-        <source>You can rename your collection later</source>
       </trans-unit>
       <trans-unit id="s33f85f24c0f5f008">
         <source>Save</source>
@@ -713,20 +651,8 @@
       <trans-unit id="s866c12ab4f3d1c87">
         <source>Create Collection</source>
       </trans-unit>
-      <trans-unit id="scd67e2d22e89af48">
-        <source>Collection Name</source>
-      </trans-unit>
       <trans-unit id="sf9e77dd881f8333d">
         <source>My Collection</source>
-      </trans-unit>
-      <trans-unit id="s75a2e5409f11285f">
-        <source>Publicly Accessible</source>
-      </trans-unit>
-      <trans-unit id="s529880061faf7209">
-        <source>Enable public access to make Collections shareable. Only people with the shared link can view your Collection.</source>
-      </trans-unit>
-      <trans-unit id="s77001a56d74ac617">
-        <source>Successfully saved "<x id="0" equiv-text="${data.name || name}"/>" Collection.</source>
       </trans-unit>
       <trans-unit id="s0014ed029ed0ef6f">
         <source>This name is already taken.</source>
@@ -754,9 +680,6 @@
       </trans-unit>
       <trans-unit id="sa7264597ca290e44">
         <source>Specify a domain name, start page URL, or path on a website and let the crawler automatically find pages within that scope.</source>
-      </trans-unit>
-      <trans-unit id="s6c98d4e4eff5c8bb">
-        <source>Copied to clipboard!</source>
       </trans-unit>
       <trans-unit id="s3687049d1af562c4">
         <source>Copy</source>
@@ -1707,9 +1630,6 @@
       <trans-unit id="s5ac7d4f485d82e8c">
         <source>Shareable Collection</source>
       </trans-unit>
-      <trans-unit id="sc052d225a3066b68">
-        <source>Private Collection</source>
-      </trans-unit>
       <trans-unit id="sa9c9e33629402ea8">
         <source>Something unexpected went wrong while retrieving Collections.</source>
       </trans-unit>
@@ -1866,9 +1786,6 @@
       </trans-unit>
       <trans-unit id="s0d2b97026d57ffd0">
         <source>Starting up browser with selected profile...</source>
-      </trans-unit>
-      <trans-unit id="s1a68485acac52eb0">
-        <source>Edit org settings</source>
       </trans-unit>
       <trans-unit id="sd7cb8be58c9b3603">
         <source>Create New...</source>
@@ -2542,9 +2459,6 @@
       <trans-unit id="s9e437ca7310a2c69">
         <source>Re-enable Archiving</source>
       </trans-unit>
-      <trans-unit id="sec77d4da6a57f2b7">
-        <source>Page not found</source>
-      </trans-unit>
       <trans-unit id="s492e6fe0b20b7ebd">
         <source>Beta feature</source>
       </trans-unit>
@@ -2842,9 +2756,6 @@
       </trans-unit>
       <trans-unit id="s4a0cbea3f0b22976">
         <source>Save Selection</source>
-      </trans-unit>
-      <trans-unit id="s18471d24ae3141ba">
-        <source>Successfully saved archived item selection.</source>
       </trans-unit>
       <trans-unit id="sc9e34cb12aab0e3a">
         <source>Updated.</source>
@@ -3274,9 +3185,6 @@
       <trans-unit id="s5e6b698a2ec87331">
         <source>Sign up</source>
       </trans-unit>
-      <trans-unit id="s67c74844cd95f5fe">
-        <source>Sign in with password</source>
-      </trans-unit>
       <trans-unit id="s7d44a141de0e2c9b">
         <source>Forgot your password?</source>
       </trans-unit>
@@ -3288,9 +3196,6 @@
       </trans-unit>
       <trans-unit id="s9ada74585cd89b16">
         <source>Your email address</source>
-      </trans-unit>
-      <trans-unit id="sb6f5b47cf81180bc">
-        <source>Request password reset</source>
       </trans-unit>
       <trans-unit id="sbf550ad9b31a5f6d">
         <source>Sorry, invalid username or password</source>
@@ -3850,6 +3755,416 @@
       </trans-unit>
       <trans-unit id="s537a1aeb41fca7c0">
         <source>Delete Workflow?</source>
+      </trans-unit>
+      <trans-unit id="sf4de3bfbfaca12e5">
+        <source>Copied</source>
+      </trans-unit>
+      <trans-unit id="sb942b315658ac651">
+        <source>Sorry, we couldn’t find that page</source>
+      </trans-unit>
+      <trans-unit id="sf7c17754a1389f21">
+        <source>Check the URL to make sure you’ve entered it correctly.</source>
+      </trans-unit>
+      <trans-unit id="sa72130488c1d7c67">
+        <source>Go to Home</source>
+      </trans-unit>
+      <trans-unit id="sbd8ee44f2619fd58">
+        <source>Did you click a link to get here?</source>
+      </trans-unit>
+      <trans-unit id="s81ec7a6847534d5e">
+        <source>Go Back</source>
+      </trans-unit>
+      <trans-unit id="s091d5407b5b32e84">
+        <source>Or</source>
+      </trans-unit>
+      <trans-unit id="s6139a6bb752f2af3">
+        <source>Report a Broken Link</source>
+      </trans-unit>
+      <trans-unit id="s6590981742c5b548">
+        <source>This organization has been verified by Webrecorder to be who they say they are.</source>
+      </trans-unit>
+      <trans-unit id="s58cbb77b29a98292">
+        <source>No public collections yet.</source>
+      </trans-unit>
+      <trans-unit id="s198f9d12552a9134">
+        <source>Visit Public Page</source>
+      </trans-unit>
+      <trans-unit id="sd42dca30d5e7c463">
+        <source>Archived item selection updated.</source>
+      </trans-unit>
+      <trans-unit id="s49b6f6e5b5e06b50">
+        <source>Sorry, couldn't save archived item selection at this time.</source>
+      </trans-unit>
+      <trans-unit id="s406d1cc8b34de381">
+        <source>Only org members can view</source>
+      </trans-unit>
+      <trans-unit id="sf9ca5cc93c622eb7">
+        <source>Unlisted</source>
+      </trans-unit>
+      <trans-unit id="se0ca0ce6d58bdb0a">
+        <source>Only people with the link can view</source>
+      </trans-unit>
+      <trans-unit id="sdd1ff479d04ac140">
+        <source>Public</source>
+      </trans-unit>
+      <trans-unit id="s1bbb1dfa96413a00">
+        <source>Anyone can view on the org's public profile</source>
+      </trans-unit>
+      <trans-unit id="s1219d97b49650c05">
+        <source>Visibility</source>
+      </trans-unit>
+      <trans-unit id="s678bd3e57c834466">
+        <source>What information will be visible to the public?</source>
+      </trans-unit>
+      <trans-unit id="s44fe58b844d5ddcb">
+        <source>In addition to replay, the following collection details will be visible:</source>
+      </trans-unit>
+      <trans-unit id="sc9474bf7a0668d73">
+        <source>Summary</source>
+      </trans-unit>
+      <trans-unit id="s0487f33d9ddaabde">
+        <source>About</source>
+      </trans-unit>
+      <trans-unit id="s52ed67729b51627a">
+        <source>Collection Period</source>
+      </trans-unit>
+      <trans-unit id="s851b32ef11f415c2">
+        <source>Collection Size</source>
+      </trans-unit>
+      <trans-unit id="s9eecfb2a2647cc24">
+        <source>Summarize the collection's content</source>
+      </trans-unit>
+      <trans-unit id="s6a05ad3f740ad8d8">
+        <source>Write a short description that summarizes this collection. If the collection is public, this description will be visible next to the collection name.</source>
+      </trans-unit>
+      <trans-unit id="s2cf3aa941fb481b9">
+        <source>You can write a longer description in the 'About' section after creating the collection.</source>
+      </trans-unit>
+      <trans-unit id="s88b7cc857e3104f6">
+        <source>This collection will be visible on the org public profile, even without archived items. You may want to set visibility to 'Unlisted' until archived items have been added.</source>
+      </trans-unit>
+      <trans-unit id="sde5576872ee6936d">
+        <source>This collection will be visible on the org profile page, which isn't public yet. To make the org profile and this collection visible to the public, update org profile settings.</source>
+      </trans-unit>
+      <trans-unit id="sd27c7f88dd56a528">
+        <source>Open org settings</source>
+      </trans-unit>
+      <trans-unit id="sd82f616578d2b33d">
+        <source>"<x id="0" equiv-text="${data.name || name}"/>" metadata updated</source>
+      </trans-unit>
+      <trans-unit id="secbc28fc1f3d93ff">
+        <source>Created "<x id="0" equiv-text="${data.name || name}"/>" collection</source>
+      </trans-unit>
+      <trans-unit id="sce256a8918a7f18d">
+        <source>Snapshot</source>
+      </trans-unit>
+      <trans-unit id="s66da7b7937e76a3a">
+        <source>Start typing a URL...</source>
+      </trans-unit>
+      <trans-unit id="sfedd97f6911305d1">
+        <source>No matching pages found.</source>
+      </trans-unit>
+      <trans-unit id="s7bec6de4e84e7519">
+        <source>ReplayWeb.Page default view</source>
+      </trans-unit>
+      <trans-unit id="s060e481b4a246a3e">
+        <source>Start Page</source>
+      </trans-unit>
+      <trans-unit id="s5d948bb5f9f0a378">
+        <source>Show a single URL snapshot</source>
+      </trans-unit>
+      <trans-unit id="s7cdd26a53c30f8c5">
+        <source>Configure Replay Home</source>
+      </trans-unit>
+      <trans-unit id="s417b90913e05bc17">
+        <source>Preview</source>
+      </trans-unit>
+      <trans-unit id="sba95a48e4f04034a">
+        <source>Enter a Page URL to preview it</source>
+      </trans-unit>
+      <trans-unit id="sb6462847faa30cda">
+        <source>Select Initial View</source>
+      </trans-unit>
+      <trans-unit id="s6a4c947594f2381c">
+        <source>Update collection thumbnail</source>
+      </trans-unit>
+      <trans-unit id="sc908c5f1031c792e">
+        <source>If this collection is public, the preview will be used as the thumbnail for this collection.</source>
+      </trans-unit>
+      <trans-unit id="s08424d50f3652d8e">
+        <source>Home view updated.</source>
+      </trans-unit>
+      <trans-unit id="s160b13b51411be0d">
+        <source>Home view and collection thumbnail updated.</source>
+      </trans-unit>
+      <trans-unit id="s7f6dd306e737f166">
+        <source>Home view updated, but couldn't update collection thumbnail at this time.</source>
+      </trans-unit>
+      <trans-unit id="sea308a8fee0cb2e3">
+        <source>Sorry, couldn't update home view at this time.</source>
+      </trans-unit>
+      <trans-unit id="s61af106a9ca3fc0d">
+        <source>Copy shareable link</source>
+      </trans-unit>
+      <trans-unit id="s9a2a2fda9cfa1ddc">
+        <source>Copy Link</source>
+      </trans-unit>
+      <trans-unit id="sfa31fe37b0f5159e">
+        <source>View Embed Code</source>
+      </trans-unit>
+      <trans-unit id="s4b51add4ad998a51">
+        <source>Visit Unlisted Page</source>
+      </trans-unit>
+      <trans-unit id="sd256b73f9f213896">
+        <source>Link Settings</source>
+      </trans-unit>
+      <trans-unit id="s8f80709597e4b1a1">
+        <source>Share “<x id="0" equiv-text="${this.collection?.name}"/>”</source>
+      </trans-unit>
+      <trans-unit id="s3cf89cb47fdde7e9">
+        <source>Link</source>
+      </trans-unit>
+      <trans-unit id="scace301a88231cce">
+        <source>Embed</source>
+      </trans-unit>
+      <trans-unit id="s7d4ca6f5d4394185">
+        <source>The org profile page isn't public yet. To make the org profile and this collection visible to the public, update profile visibility in org settings.</source>
+      </trans-unit>
+      <trans-unit id="s476ddc7cbb32ffa7">
+        <source>Thumbnail</source>
+      </trans-unit>
+      <trans-unit id="s602cfd34f602d6f9">
+        <source>Choose a thumbnail to represent this collection in the org dashboard and profile page.</source>
+      </trans-unit>
+      <trans-unit id="s175d37c8eb04d73e">
+        <source>Downloads</source>
+      </trans-unit>
+      <trans-unit id="seb65dc388069e62f">
+        <source>If enabled, a button to download this collection will be visible in the shareable page. Please note that even if the download button is disabled, anyone determined to download a shared collection can do so through developer tools. If this is a concern, keep your collection private.</source>
+      </trans-unit>
+      <trans-unit id="sdbc2a1377cc1d250">
+        <source>Show download button</source>
+      </trans-unit>
+      <trans-unit id="sd04b82fd51c30b88">
+        <source>Use thumbnail</source>
+      </trans-unit>
+      <trans-unit id="sf37f3c3d85619290">
+        <source>Change the visibility setting to embed this collection.</source>
+      </trans-unit>
+      <trans-unit id="h3a14a39406b82931">
+        <source>To embed this collection into an existing webpage, add the
+          following embed code:</source>
+      </trans-unit>
+      <trans-unit id="hacc9b91be8da34c8">
+        <source>Add the following JavaScript to your
+            <x id="0" equiv-text="&lt;code class=&quot;text-[0.9em]&quot;&gt;"/>/replay/sw.js<x id="1" equiv-text="&lt;/code&gt;"/>:</source>
+      </trans-unit>
+      <trans-unit id="h654faf8fb38c80f3">
+        <source>See
+            <x id="0" equiv-text="&lt;a class=&quot;text-primary&quot; href=&quot;https://replayweb.page/docs/embedding&quot; target=&quot;_blank&quot;&gt;"/>
+              our embedding guide<x id="1" equiv-text="&lt;/a&gt;"/>
+            for more details.</source>
+      </trans-unit>
+      <trans-unit id="s47517309258c9bfa">
+        <source>Collection visibility updated.</source>
+      </trans-unit>
+      <trans-unit id="se1e88c4395c9c391">
+        <source>Sorry, couldn't update visibility at this time.</source>
+      </trans-unit>
+      <trans-unit id="scc462370fbf7699a">
+        <source>Thumbnail updated.</source>
+      </trans-unit>
+      <trans-unit id="s7f6e7c70a39bec6b">
+        <source>Sorry, couldn't update thumbnail at this time.</source>
+      </trans-unit>
+      <trans-unit id="sf5cd9781b7bafc94">
+        <source>Download button enabled.</source>
+      </trans-unit>
+      <trans-unit id="s2b2cb4cfe88bcb69">
+        <source>Download button hidden.</source>
+      </trans-unit>
+      <trans-unit id="se5594d78d52b0b03">
+        <source>Sorry, couldn't update download button at this time.</source>
+      </trans-unit>
+      <trans-unit id="sf39becada022c325">
+        <source>Choose what page viewers see first in replay</source>
+      </trans-unit>
+      <trans-unit id="s1cb226f223599f56">
+        <source>Add items to select a home page</source>
+      </trans-unit>
+      <trans-unit id="s3879a0e50452a712">
+        <source>Configure Home</source>
+      </trans-unit>
+      <trans-unit id="s1f45d250722817c7">
+        <source>Edit About Section</source>
+      </trans-unit>
+      <trans-unit id="sd720fd983f132077">
+        <source>Edit Description</source>
+      </trans-unit>
+      <trans-unit id="s3f65af47b6c8cdff">
+        <source>No description provided.</source>
+      </trans-unit>
+      <trans-unit id="s0cb0a82088e45196">
+        <source>Add Description</source>
+      </trans-unit>
+      <trans-unit id="sadeca8316f2de694">
+        <source>Tell viewers about this collection</source>
+      </trans-unit>
+      <trans-unit id="s00b81a0a3a70b016">
+        <source>Update Description</source>
+      </trans-unit>
+      <trans-unit id="s3ab41740c64e8df2">
+        <source>Add Archived Items</source>
+      </trans-unit>
+      <trans-unit id="s424ad53d3338b12c">
+        <source>Description updated.</source>
+      </trans-unit>
+      <trans-unit id="s4d61bc76df7560ab">
+        <source>Sorry, couldn't save collection description at this time.</source>
+      </trans-unit>
+      <trans-unit id="s11f08e9ad26dbe94">
+        <source>Allow anyone to view org</source>
+      </trans-unit>
+      <trans-unit id="s213ea1039161ce68">
+        <source>If enabled, anyone will be able to view your org's profile page and public collections.</source>
+      </trans-unit>
+      <trans-unit id="s3e4aa3f8d6f45a57">
+        <source>Write a short description to introduce your organization.</source>
+      </trans-unit>
+      <trans-unit id="s82665b2ffabc9c0a">
+        <source>Website</source>
+      </trans-unit>
+      <trans-unit id="sc75a8ddcb729c2a6">
+        <source>Link to your organization's (or your personal) website.</source>
+      </trans-unit>
+      <trans-unit id="s11e6aadfd3000971">
+        <source>Profile Page</source>
+      </trans-unit>
+      <trans-unit id="h4077380edd0a56a4">
+        <source>To customize this URL,
+              <x id="0" equiv-text="&lt;a href=&quot;${`${location.pathname}#org-url`}&quot; class=&quot;text-cyan-500 underline decoration-cyan-500/30 transition hover:text-cyan-600 hover:decoration-cyan-500/50&quot;&gt;${msg(&quot;update your Org URL in General settings&quot;)}&lt;/a&gt;"/>.</source>
+      </trans-unit>
+      <trans-unit id="s117475fa47155b08">
+        <source>update your Org URL in General settings</source>
+      </trans-unit>
+      <trans-unit id="s5a10c7fdb12b5dd4">
+        <source>Preview public profile page</source>
+      </trans-unit>
+      <trans-unit id="sd19e4d886017cde5">
+        <source>Org profile has been updated.</source>
+      </trans-unit>
+      <trans-unit id="s3a081663dfc1a779">
+        <source>Sorry, couldn't update org at this time.</source>
+      </trans-unit>
+      <trans-unit id="he6324c47251f0727">
+        <source>Viewing
+                      <x id="0" equiv-text="&lt;strong class=&quot;font-medium&quot;&gt;${this.userOrg.name}&lt;/strong&gt;"/></source>
+      </trans-unit>
+      <trans-unit id="s2ccab3f1e005dbc4">
+        <source>Choose a name that represents your organization, your team, or your personal web archive.</source>
+      </trans-unit>
+      <trans-unit id="sf8388a998523b72c">
+        <source>Org URL</source>
+      </trans-unit>
+      <trans-unit id="s624704a0ec11e0b8">
+        <source>Customize your org's Browsertrix URL. This will also apply to the URL to your org's public profile page, if you've enabled it.</source>
+      </trans-unit>
+      <trans-unit id="sf64646b094ecba96">
+        <source>Developer Tools</source>
+      </trans-unit>
+      <trans-unit id="s30ed673daca7e44b">
+        <source>Use this ID to reference your org in the Browsertrix API.</source>
+      </trans-unit>
+      <trans-unit id="s2bad581c2ce4d1d7">
+        <source>Enable Share Link</source>
+      </trans-unit>
+      <trans-unit id="s1f224cf8b88cb893">
+        <source>Link copied</source>
+      </trans-unit>
+      <trans-unit id="s0337805916bf0549">
+        <source>Copy Share Link</source>
+      </trans-unit>
+      <trans-unit id="s270a5ff2d45dad7f">
+        <source>Make Unlisted</source>
+      </trans-unit>
+      <trans-unit id="sa96c92e537e246f8">
+        <source>Make Public</source>
+      </trans-unit>
+      <trans-unit id="sd3386a2ef42e80b9">
+        <source>Download</source>
+      </trans-unit>
+      <trans-unit id="s5fd20da1d23fe8c5">
+        <source>Manage org settings</source>
+      </trans-unit>
+      <trans-unit id="s15c412aa2f2d4d3d">
+        <source>Public Collections</source>
+      </trans-unit>
+      <trans-unit id="s11f71e0566d8cc93">
+        <source>Manage Collections</source>
+      </trans-unit>
+      <trans-unit id="s572de8695b1fb540">
+        <source>Visit Public Profile</source>
+      </trans-unit>
+      <trans-unit id="s680d420bc14b4a55">
+        <source>Preview Public Profile</source>
+      </trans-unit>
+      <trans-unit id="s4032472d9776d466">
+        <source>Update Org Visibility</source>
+      </trans-unit>
+      <trans-unit id="se25e3fa3c918d26e">
+        <source>Create a Collection</source>
+      </trans-unit>
+      <trans-unit id="s9fe218c5322a4331">
+        <source>This is a private preview of your org's profile page</source>
+      </trans-unit>
+      <trans-unit id="sf7d5d1911b9dd6b1">
+        <source>Update your org's profile settings to make this page visible to anyone on the internet.</source>
+      </trans-unit>
+      <trans-unit id="s0d5c241bca67f37d">
+        <source>Go to Settings</source>
+      </trans-unit>
+      <trans-unit id="s0f8659a3eea42cd6">
+        <source>Edit org profile</source>
+      </trans-unit>
+      <trans-unit id="sbc163672f44598f3">
+        <source>Manage collections</source>
+      </trans-unit>
+      <trans-unit id="se87b7534b82892ab">
+        <source><x id="0" equiv-text="${org.name}"/> is web archiving with Browsertrix.</source>
+      </trans-unit>
+      <trans-unit id="s08250b6ffcc61273">
+        <source>Do you have web archives to share?</source>
+      </trans-unit>
+      <trans-unit id="s909144751c40f105">
+        <source>Get started with Browsertrix</source>
+      </trans-unit>
+      <trans-unit id="s7fee95b66225e1fb">
+        <source>Dashboard</source>
+      </trans-unit>
+      <trans-unit id="s10a35688032060b4">
+        <source>Return to Sign In</source>
+      </trans-unit>
+      <trans-unit id="sc4eedb434536bdb4">
+        <source>Need an account?</source>
+      </trans-unit>
+      <trans-unit id="s77419748aa9dcc7c">
+        <source>Request Password Reset</source>
+      </trans-unit>
+      <trans-unit id="s7b37d08c6fefddb1">
+        <source>Browse Collection</source>
+      </trans-unit>
+      <trans-unit id="sf2dbd171f2672a76">
+        <source>About This Collection</source>
+      </trans-unit>
+      <trans-unit id="sc7dec6fac2707f7b">
+        <source>Edit collection</source>
+      </trans-unit>
+      <trans-unit id="s5e94738a2eeb8943">
+        <source>Sign In</source>
+      </trans-unit>
+      <trans-unit id="sfa251e3af0f9c14c">
+        <source><x id="0" equiv-text="${dateEarliest}"/> to <x id="1" equiv-text="${dateLatest}"/></source>
+        <note from="lit-localize">Date range formatted to show full month name and year</note>
       </trans-unit>
     </body>
   </file>
