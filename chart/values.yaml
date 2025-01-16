@@ -446,6 +446,12 @@ ingress:
   #host: ""
   cert_email: "test@example.com"
   tls: false
+
+  # If set, will use the old 'kubernetes.io/ingress.class' annotation instead of the new ingressClassName
+  # also uses old http01.ingress.class in cert-manager instead of http01.ingress.ingressClassName
+  # provided for backwards compatibility
+  useOldClassAnnotation: false
+
   # Optional: Uncomment to use your own cluster-issuer instead of default ACME https validation
   # custom_cluster_issuer: custom_cluster_issuer-name
 

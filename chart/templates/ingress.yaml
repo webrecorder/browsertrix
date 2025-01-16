@@ -7,6 +7,9 @@ metadata:
   name: ingress-main
   namespace: {{ .Release.Namespace }}
   annotations:
+    {{- if .Values.ingress.useOldClassAnnotation }}
+    kubernetes.io/ingress.class: {{ .Values.ingress_class | default "nginx" }}
+    {{- end }}
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/proxy-body-size: "0"
     nginx.ingress.kubernetes.io/proxy-request-buffering: "off"
@@ -21,7 +24,9 @@ metadata:
       proxy_set_header X-Forwarded-Proto {{ .Values.ingress.tls | ternary "https" "http" }};
 
 spec:
+  {{- if not .Values.ingress.useOldClassAnnotation }}
   ingressClassName: {{ .Values.ingress_class | default "nginx" }}
+  {{- end }}
   {{- if .Values.ingress.tls }}
   tls:
     - hosts:
@@ -58,11 +63,16 @@ metadata:
   name: ingress-authsign
   namespace: {{ .Release.Namespace }}
   annotations:
+    {{- if .Values.ingress.useOldClassAnnotation }}
+    kubernetes.io/ingress.class: {{ .Values.ingress_class | default "nginx" }}
+    {{- end }}
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
     nginx.ingress.kubernetes.io/upstream-vhost: "{{ .Values.signer.host }}"
 
 spec:
+  {{- if not .Values.ingress.useOldClassAnnotation }}
   ingressClassName: {{ .Values.ingress_class | default "nginx" }}
+  {{- end }}
   rules:
   - host: {{ .Values.signer.host }}
     http:
@@ -101,8 +111,11 @@ spec:
     solvers:
     - http01:
         ingress:
+          {{- if not .Values.ingress.useOldClassAnnotation }}
           ingressClassName: {{ .Values.ingress_class | default "nginx" }}
+          {{- else }}
           class: {{ .Values.ingress_class | default "nginx" }}
+          {{- end }}
 
 {{ end }}
 {{ end }}
