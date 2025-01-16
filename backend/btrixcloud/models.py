@@ -797,6 +797,8 @@ class BaseCrawl(CoreCrawlable, BaseMongoModel):
 
     reviewStatus: ReviewStatus = None
 
+    pageCount: Optional[int] = 0
+
     filePageCount: Optional[int] = 0
     errorPageCount: Optional[int] = 0
 
@@ -872,6 +874,7 @@ class CrawlOut(BaseMongoModel):
     lastQAState: Optional[str] = None
     lastQAStarted: Optional[datetime] = None
 
+    pageCount: Optional[int] = 0
     filePageCount: Optional[int] = 0
     errorPageCount: Optional[int] = 0
 
@@ -1914,6 +1917,8 @@ class OrgMetrics(BaseModel):
     crawlCount: int
     uploadCount: int
     pageCount: int
+    crawlPageCount: int
+    uploadPageCount: int
     profileCount: int
     workflowsRunningCount: int
     maxConcurrentCrawls: int
