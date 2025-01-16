@@ -517,6 +517,14 @@ class CrawlOps(BaseCrawlOps):
         """add new exclusion to config or remove exclusion from config
         for given crawl_id, update config on crawl"""
 
+        if add:
+            try:
+                re.compile(regex)
+            except re.error:
+                raise HTTPException(
+                    status_code=422, detail="invalid_regular_expression"
+                )
+
         crawl = await self.get_crawl(crawl_id, org)
 
         if crawl.state not in RUNNING_AND_WAITING_STATES:
