@@ -71,7 +71,7 @@ export class OrgSettingsProfile extends BtrixElement {
           <div class="mb-2">
             <btrix-copy-field
               label=${msg("Profile Page")}
-              value=${`${orgBaseUrl}/${RouteNamespace.PublicOrgs}/${this.orgSlug}`}
+              value=${`${orgBaseUrl}/${RouteNamespace.PublicOrgs}/${this.orgSlugState}`}
               .monostyle=${false}
             ></btrix-copy-field>
           </div>
@@ -97,7 +97,7 @@ export class OrgSettingsProfile extends BtrixElement {
           <div class="p-5">${columns(cols)}</div>
           <footer class="flex items-center justify-between border-t px-4 py-3">
             <btrix-link
-              href=${`/${RouteNamespace.PublicOrgs}/${this.orgSlug}`}
+              href=${`/${RouteNamespace.PublicOrgs}/${this.orgSlugState}`}
               target="_blank"
             >
               ${msg("Preview public profile page")}

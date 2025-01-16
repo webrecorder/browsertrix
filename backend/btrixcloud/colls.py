@@ -13,6 +13,7 @@ import urllib.parse
 
 import asyncio
 import pymongo
+from pymongo.collation import Collation
 from fastapi import Depends, HTTPException, Response
 from fastapi.responses import StreamingResponse
 from starlette.requests import Request
@@ -51,7 +52,7 @@ from .models import (
     MIN_UPLOAD_PART_SIZE,
     PublicCollOut,
 )
-from .utils import dt_now
+from .utils import dt_now, slug_from_name, get_duplicate_key_error_field
 
 if TYPE_CHECKING:
     from .orgs import OrgOps
@@ -98,8 +99,17 @@ class CollectionOps:
 
     async def init_index(self):
         """init lookup index"""
+        case_insensitive_collation = Collation(locale="en", strength=1)
         await self.collections.create_index(
-            [("oid", pymongo.ASCENDING), ("name", pymongo.ASCENDING)], unique=True
+            [("oid", pymongo.ASCENDING), ("name", pymongo.ASCENDING)],
+            unique=True,
+            collation=case_insensitive_collation,
+        )
+
+        await self.collections.create_index(
+            [("oid", pymongo.ASCENDING), ("slug", pymongo.ASCENDING)],
+            unique=True,
+            collation=case_insensitive_collation,
         )
 
         await self.collections.create_index(
@@ -111,16 +121,18 @@ class CollectionOps:
         crawl_ids = coll_in.crawlIds if coll_in.crawlIds else []
         coll_id = uuid4()
         created = dt_now()
-        modified = dt_now()
+
+        slug = coll_in.slug or slug_from_name(coll_in.name)
 
         coll = Collection(
             id=coll_id,
             oid=oid,
             name=coll_in.name,
+            slug=slug,
             description=coll_in.description,
             caption=coll_in.caption,
             created=created,
-            modified=modified,
+            modified=created,
             access=coll_in.access,
             defaultThumbnailName=coll_in.defaultThumbnailName,
             allowPublicDownload=coll_in.allowPublicDownload,
@@ -128,6 +140,8 @@ class CollectionOps:
         try:
             await self.collections.insert_one(coll.to_dict())
             org = await self.orgs.get_org_by_id(oid)
+            await self.clear_org_previous_slugs_matching_slug(slug, org)
+
             if crawl_ids:
                 await self.crawl_ops.add_to_collection(crawl_ids, coll_id, org)
                 await self.update_collection_counts_and_tags(coll_id)
@@ -139,9 +153,10 @@ class CollectionOps:
                 )
 
             return {"added": True, "id": coll_id, "name": coll.name}
-        except pymongo.errors.DuplicateKeyError:
+        except pymongo.errors.DuplicateKeyError as err:
             # pylint: disable=raise-missing-from
-            raise HTTPException(status_code=400, detail="collection_name_taken")
+            field = get_duplicate_key_error_field(err)
+            raise HTTPException(status_code=400, detail=f"collection_{field}_taken")
 
     async def update_collection(
         self, coll_id: UUID, org: Organization, update: UpdateColl
@@ -152,22 +167,54 @@ class CollectionOps:
         if len(query) == 0:
             raise HTTPException(status_code=400, detail="no_update_data")
 
+        name_update = query.get("name")
+        slug_update = query.get("slug")
+
+        previous_slug = None
+
+        if name_update or slug_update:
+            # If we're updating slug, save old one to previousSlugs to support redirects
+            coll = await self.get_collection(coll_id)
+            previous_slug = coll.slug
+
+        if name_update and not slug_update:
+            slug = slug_from_name(name_update)
+            query["slug"] = slug
+            slug_update = slug
+
         query["modified"] = dt_now()
+
+        db_update = {"$set": query}
+        if previous_slug:
+            db_update["$push"] = {"previousSlugs": previous_slug}
 
         try:
             result = await self.collections.find_one_and_update(
                 {"_id": coll_id, "oid": org.id},
-                {"$set": query},
+                db_update,
                 return_document=pymongo.ReturnDocument.AFTER,
             )
-        except pymongo.errors.DuplicateKeyError:
+        except pymongo.errors.DuplicateKeyError as err:
             # pylint: disable=raise-missing-from
-            raise HTTPException(status_code=400, detail="collection_name_taken")
+            field = get_duplicate_key_error_field(err)
+            raise HTTPException(status_code=400, detail=f"collection_{field}_taken")
 
         if not result:
             raise HTTPException(status_code=404, detail="collection_not_found")
 
+        if slug_update:
+            await self.clear_org_previous_slugs_matching_slug(slug_update, org)
+
         return {"updated": True}
+
+    async def clear_org_previous_slugs_matching_slug(
+        self, slug: str, org: Organization
+    ):
+        """Clear new slug from previousSlugs array of other collections in same org"""
+        await self.collections.update_many(
+            {"oid": org.id, "previousSlugs": slug},
+            {"$pull": {"previousSlugs": slug}},
+        )
 
     async def add_crawls_to_collection(
         self, coll_id: UUID, crawl_ids: List[str], org: Organization
@@ -234,11 +281,52 @@ class CollectionOps:
 
         return result
 
+    async def get_collection_raw_by_slug(
+        self,
+        coll_slug: str,
+        previous_slugs: bool = False,
+        public_or_unlisted_only: bool = False,
+    ) -> Dict[str, Any]:
+        """Get collection by slug (current or previous) as dict from database"""
+        query: dict[str, object] = {}
+        if previous_slugs:
+            query["previousSlugs"] = coll_slug
+        else:
+            query["slug"] = coll_slug
+        if public_or_unlisted_only:
+            query["access"] = {"$in": ["public", "unlisted"]}
+
+        result = await self.collections.find_one(query)
+        if not result:
+            raise HTTPException(status_code=404, detail="collection_not_found")
+
+        return result
+
     async def get_collection(
         self, coll_id: UUID, public_or_unlisted_only: bool = False
     ) -> Collection:
         """Get collection by id"""
         result = await self.get_collection_raw(coll_id, public_or_unlisted_only)
+        return Collection.from_dict(result)
+
+    async def get_collection_by_slug(
+        self, coll_slug: str, public_or_unlisted_only: bool = False
+    ) -> Collection:
+        """Get collection by slug"""
+        try:
+            result = await self.get_collection_raw_by_slug(
+                coll_slug, public_or_unlisted_only=public_or_unlisted_only
+            )
+            return Collection.from_dict(result)
+        # pylint: disable=broad-exception-caught
+        except Exception:
+            pass
+
+        result = await self.get_collection_raw_by_slug(
+            coll_slug,
+            previous_slugs=True,
+            public_or_unlisted_only=public_or_unlisted_only,
+        )
         return Collection.from_dict(result)
 
     async def get_collection_out(
@@ -264,7 +352,10 @@ class CollectionOps:
         return CollOut.from_dict(result)
 
     async def get_public_collection_out(
-        self, coll_id: UUID, org: Organization, allow_unlisted: bool = False
+        self,
+        coll_id: UUID,
+        org: Organization,
+        allow_unlisted: bool = False,
     ) -> PublicCollOut:
         """Get PublicCollOut by id"""
         result = await self.get_collection_raw(coll_id)
@@ -1012,13 +1103,13 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops, user_de
         )
 
     @app.get(
-        "/public/orgs/{org_slug}/collections/{coll_id}",
+        "/public/orgs/{org_slug}/collections/{coll_slug}",
         tags=["collections", "public"],
         response_model=PublicCollOut,
     )
     async def get_public_collection(
         org_slug: str,
-        coll_id: UUID,
+        coll_slug: str,
     ):
         try:
             org = await colls.orgs.get_org_by_slug(org_slug)
@@ -1027,16 +1118,18 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops, user_de
             # pylint: disable=raise-missing-from
             raise HTTPException(status_code=404, detail="collection_not_found")
 
-        return await colls.get_public_collection_out(coll_id, org, allow_unlisted=True)
+        coll = await colls.get_collection_by_slug(coll_slug)
+
+        return await colls.get_public_collection_out(coll.id, org, allow_unlisted=True)
 
     @app.get(
-        "/public/orgs/{org_slug}/collections/{coll_id}/download",
+        "/public/orgs/{org_slug}/collections/{coll_slug}/download",
         tags=["collections", "public"],
         response_model=bytes,
     )
     async def download_public_collection(
         org_slug: str,
-        coll_id: UUID,
+        coll_slug: str,
     ):
         try:
             org = await colls.orgs.get_org_by_slug(org_slug)
@@ -1046,12 +1139,14 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops, user_de
             raise HTTPException(status_code=404, detail="collection_not_found")
 
         # Make sure collection exists and is public/unlisted
-        coll = await colls.get_collection(coll_id, public_or_unlisted_only=True)
+        coll = await colls.get_collection_by_slug(
+            coll_slug, public_or_unlisted_only=True
+        )
 
         if coll.allowPublicDownload is False:
             raise HTTPException(status_code=403, detail="not_allowed")
 
-        return await colls.download_collection(coll_id, org)
+        return await colls.download_collection(coll.id, org)
 
     @app.get(
         "/orgs/{oid}/collections/{coll_id}/urls",

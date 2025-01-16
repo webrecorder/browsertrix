@@ -8,6 +8,7 @@ export enum CollectionAccess {
 
 export const publicCollectionSchema = z.object({
   id: z.string(),
+  slug: z.string(),
   oid: z.string(),
   name: z.string(),
   caption: z.string().nullable(),

@@ -40,7 +40,7 @@ enum Tab {
 @customElement("btrix-share-collection")
 export class ShareCollection extends BtrixElement {
   @property({ type: String })
-  slug = "";
+  orgSlug = "";
 
   @property({ type: String })
   collectionId = "";
@@ -59,7 +59,11 @@ export class ShareCollection extends BtrixElement {
   private get shareLink() {
     const baseUrl = `${window.location.protocol}//${window.location.hostname}${window.location.port ? `:${window.location.port}` : ""}`;
     if (this.collection) {
-      return `${baseUrl}/${this.collection.access === CollectionAccess.Private ? `${RouteNamespace.PrivateOrgs}/${this.orgSlug}/collections/view` : `${RouteNamespace.PublicOrgs}/${this.orgSlug}/collections`}/${this.collectionId}`;
+      return `${baseUrl}/${
+        this.collection.access === CollectionAccess.Private
+          ? `${RouteNamespace.PrivateOrgs}/${this.orgSlugState}/collections/view/${this.collectionId}`
+          : `${RouteNamespace.PublicOrgs}/${this.orgSlug}/collections/${this.collection.slug}`
+      }`;
     }
     return "";
   }
@@ -116,12 +120,13 @@ export class ShareCollection extends BtrixElement {
             @click=${() => {
               void this.clipboardController.copy(this.shareLink);
 
-              track(AnalyticsTrackEvent.CopyShareCollectionLink, {
-                org_slug: this.slug,
-                collection_id: this.collectionId,
-                collection_name: this.collection?.name,
-                logged_in: !!this.authState,
-              });
+              if (this.collection?.access === CollectionAccess.Public) {
+                track(AnalyticsTrackEvent.CopyShareCollectionLink, {
+                  org_slug: this.orgSlug,
+                  collection_slug: this.collection.slug,
+                  logged_in: !!this.authState,
+                });
+              }
             }}
           >
             <sl-icon
@@ -189,19 +194,18 @@ export class ShareCollection extends BtrixElement {
                   : nothing}
               `,
             )}
-            ${when(this.slug && this.collection, (collection) =>
+            ${when(this.orgSlug && this.collection, (collection) =>
               collection.access === CollectionAccess.Public &&
               collection.allowPublicDownload
                 ? html`
                     <btrix-menu-item-link
-                      href=${`/api/public/orgs/${this.slug}/collections/${this.collectionId}/download`}
+                      href=${`/api/public/orgs/${this.orgSlug}/collections/${this.collectionId}/download`}
                       download
                       ?disabled=${!this.collection?.totalSize}
                       @click=${() => {
                         track(AnalyticsTrackEvent.DownloadPublicCollection, {
-                          org_slug: this.slug,
-                          collection_id: this.collectionId,
-                          collection_name: this.collection?.name,
+                          org_slug: this.orgSlug,
+                          collection_slug: this.collection?.slug,
                         });
                       }}
                     >
@@ -252,7 +256,11 @@ export class ShareCollection extends BtrixElement {
 
           <sl-tab-panel name=${Tab.Link}>
             <div class="px-4 pb-4">
-              ${when(showSettings && this.collection, this.renderSettings)}
+              ${when(
+                showSettings && this.collection,
+                this.renderSettings,
+                this.renderShareLink,
+              )}
             </div>
           </sl-tab-panel>
 
@@ -283,10 +291,6 @@ export class ShareCollection extends BtrixElement {
           }}
         ></btrix-select-collection-access>
         ${when(
-          this.collection?.access != CollectionAccess.Private,
-          this.renderShareLink,
-        )}
-        ${when(
           this.org &&
             !this.org.enablePublicProfile &&
             this.collection?.access === CollectionAccess.Public,
@@ -299,6 +303,10 @@ export class ShareCollection extends BtrixElement {
           `,
         )}
       </div>
+      ${when(
+        this.collection?.access != CollectionAccess.Private,
+        () => html`<div class="mb-7">${this.renderShareLink()}</div>`,
+      )}
       <div class="mb-7">
         <div class="form-label flex items-center gap-1.5">
           ${msg("Thumbnail")}
@@ -409,7 +417,7 @@ export class ShareCollection extends BtrixElement {
 
   private readonly renderShareLink = () => {
     return html`
-      <div class="mt-4 text-left">
+      <div class="text-left">
         <div class="form-label">${msg("Link to Share")}</div>
         <btrix-copy-field
           class="mb-3"

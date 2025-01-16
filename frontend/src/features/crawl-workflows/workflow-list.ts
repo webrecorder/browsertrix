@@ -220,7 +220,7 @@ export class WorkflowListItem extends BtrixElement {
         }
         e.preventDefault();
         await this.updateComplete;
-        const href = `/orgs/${this.orgSlug}/workflows/${
+        const href = `/orgs/${this.orgSlugState}/workflows/${
           this.workflow?.id
         }#${this.workflow?.isCrawlRunning ? "watch" : "crawls"}`;
         this.navigate.to(href);

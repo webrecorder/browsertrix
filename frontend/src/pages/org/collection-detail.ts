@@ -136,6 +136,7 @@ export class CollectionDetail extends BtrixElement {
           : nothing,
         actions: html`
           <btrix-share-collection
+            orgSlug=${this.orgSlugState || ""}
             collectionId=${this.collectionId}
             .collection=${this.collection}
             @btrix-change=${(e: CustomEvent) => {

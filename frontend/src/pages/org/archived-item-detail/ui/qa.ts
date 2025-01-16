@@ -269,7 +269,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
                       ? html`—
                           <a
                             class="text-primary"
-                            href=${`/orgs/${this.orgSlug}/workflows/${this.workflowId}/crawls/${this.crawlId}#logs`}
+                            href=${`/orgs/${this.orgSlugState}/workflows/${this.workflowId}/crawls/${this.crawlId}#logs`}
                             >${msg("View error logs")}</a
                           >`
                       : ""}
