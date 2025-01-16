@@ -276,7 +276,7 @@ export class ExclusionEditor extends LiteElement {
       if (isApiError(e)) {
         if (e.message === "exclusion_already_exists") {
           this.exclusionFieldErrorMessage = msg("Exclusion already exists");
-        } else if (e.message === "invalid_regex") {
+        } else if (e.message === "invalid_regular_expression") {
           this.exclusionFieldErrorMessage = msg("Invalid Regex");
         }
       } else {
