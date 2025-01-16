@@ -84,6 +84,7 @@ export type FormState = {
   autoAddCollections: string[];
   description: WorkflowParams["description"];
   autoscrollBehavior: boolean;
+  autoclickBehavior: boolean;
   userAgent: string | null;
   crawlerChannel: string;
   proxyId: string | null;
@@ -138,6 +139,7 @@ export const getDefaultFormState = (): FormState => ({
   autoAddCollections: [],
   description: null,
   autoscrollBehavior: true,
+  autoclickBehavior: false,
   userAgent: null,
   crawlerChannel: "default",
   proxyId: null,
@@ -286,6 +288,9 @@ export function getInitialFormState(params: {
     autoscrollBehavior: params.initialWorkflow.config.behaviors
       ? params.initialWorkflow.config.behaviors.includes("autoscroll")
       : defaultFormState.autoscrollBehavior,
+    autoclickBehavior: params.initialWorkflow.config.behaviors
+      ? params.initialWorkflow.config.behaviors.includes("autoclick")
+      : defaultFormState.autoclickBehavior,
     userAgent:
       params.initialWorkflow.config.userAgent ?? defaultFormState.userAgent,
     crawlerChannel:

@@ -340,6 +340,31 @@ class CrawlOperator(BaseOperator):
 
         return self.load_from_yaml("redis.yaml", params)
 
+    def _filter_autoclick_behavior(
+        self, behaviors: Optional[str], crawler_image: str
+    ) -> Optional[str]:
+        """Remove autoclick behavior if crawler version doesn't support it"""
+        min_autoclick_crawler_image = os.environ.get("MIN_AUTOCLICK_CRAWLER_IMAGE")
+
+        if (
+            min_autoclick_crawler_image
+            and behaviors
+            and "autoclick" in behaviors
+            and crawler_image
+            and crawler_image < min_autoclick_crawler_image
+        ):
+            print(
+                "Crawler version < min_autoclick_crawler_image, removing autoclick behavior",
+                flush=True,
+            )
+            behaviors_list = behaviors.split(",")
+            filtered_behaviors = [
+                behavior for behavior in behaviors_list if behavior != "autoclick"
+            ]
+            return ",".join(filtered_behaviors)
+
+        return behaviors
+
     async def _load_crawl_configmap(self, crawl: CrawlSpec, children, params):
         name = f"crawl-config-{crawl.id}"
 
@@ -357,7 +382,13 @@ class CrawlOperator(BaseOperator):
 
         crawlconfig = await self.crawl_config_ops.get_crawl_config(crawl.cid, crawl.oid)
 
-        params["config"] = json.dumps(crawlconfig.get_raw_config())
+        raw_config = crawlconfig.get_raw_config()
+
+        raw_config["behaviors"] = self._filter_autoclick_behavior(
+            raw_config["behaviors"], params["crawler_image"]
+        )
+
+        params["config"] = json.dumps(raw_config)
 
         return self.load_from_yaml("crawl_configmap.yaml", params)
 
