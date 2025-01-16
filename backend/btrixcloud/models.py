@@ -874,6 +874,7 @@ class CrawlOut(BaseMongoModel):
     lastQAState: Optional[str] = None
     lastQAStarted: Optional[datetime] = None
 
+    pageCount: Optional[int] = 0
     filePageCount: Optional[int] = 0
     errorPageCount: Optional[int] = 0
 
