@@ -5,7 +5,6 @@ const childProcess = require("child_process");
 const fs = require("fs");
 const path = require("path");
 
-
 const CopyPlugin = require("copy-webpack-plugin");
 const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
