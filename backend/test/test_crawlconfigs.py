@@ -487,3 +487,23 @@ def test_get_crawler_channels(crawler_auth_headers, default_org_id):
     for crawler_channel in crawler_channels:
         assert crawler_channel["id"]
         assert crawler_channel["image"]
+
+
+def test_exclude_invalid_regex(crawler_auth_headers, default_org_id, sample_crawl_data):
+    sample_crawl_data["exclude"] = "["
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        headers=crawler_auth_headers,
+        json=sample_crawl_data,
+    )
+    assert r.status_code == 422
+    assert r.json()["detail"] == "invalid_regular_expression"
+
+    sample_crawl_data["exclude"] = ["abc.*", "["]
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        headers=crawler_auth_headers,
+        json=sample_crawl_data,
+    )
+    assert r.status_code == 422
+    assert r.json()["detail"] == "invalid_regular_expression"

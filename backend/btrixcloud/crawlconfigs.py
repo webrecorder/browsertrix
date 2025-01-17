@@ -215,6 +215,19 @@ class CrawlConfigOps:
             if not self.can_org_use_proxy(org, config_in.proxyId):
                 raise HTTPException(status_code=404, detail="proxy_not_found")
 
+        if config_in.config.exclude:
+            exclude = config_in.config.exclude
+            if isinstance(exclude, str):
+                exclude = [exclude]
+            for regex in exclude:
+                try:
+                    re.compile(regex)
+                except re.error:
+                    # pylint: disable=raise-missing-from
+                    raise HTTPException(
+                        status_code=422, detail="invalid_regular_expression"
+                    )
+
         now = dt_now()
         crawlconfig = CrawlConfig(
             id=uuid4(),
