@@ -161,7 +161,7 @@ def test_update_config_invalid_exclude_regex(
         headers=crawler_auth_headers,
         json={"config": {"exclude": "["}},
     )
-    assert r.status_code == 422
+    assert r.status_code == 400
     assert r.json()["detail"] == "invalid_regex"
 
     r = requests.patch(
@@ -169,7 +169,7 @@ def test_update_config_invalid_exclude_regex(
         headers=crawler_auth_headers,
         json={"config": {"exclude": ["abc.*", "["]}},
     )
-    assert r.status_code == 422
+    assert r.status_code == 400
     assert r.json()["detail"] == "invalid_regex"
 
 
@@ -518,7 +518,7 @@ def test_add_crawl_config_invalid_exclude_regex(
         headers=crawler_auth_headers,
         json=sample_crawl_data,
     )
-    assert r.status_code == 422
+    assert r.status_code == 400
     assert r.json()["detail"] == "invalid_regex"
 
     sample_crawl_data["exclude"] = ["abc.*", "["]
@@ -527,5 +527,5 @@ def test_add_crawl_config_invalid_exclude_regex(
         headers=crawler_auth_headers,
         json=sample_crawl_data,
     )
-    assert r.status_code == 422
+    assert r.status_code == 400
     assert r.json()["detail"] == "invalid_regex"

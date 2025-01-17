@@ -153,7 +153,7 @@ def test_add_invalid_exclusion(admin_auth_headers, default_org_id):
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}/exclusions?regex=[",
         headers=admin_auth_headers,
     )
-    assert r.status_code == 422
+    assert r.status_code == 400
     assert r.json()["detail"] == "invalid_regex"
 
 
