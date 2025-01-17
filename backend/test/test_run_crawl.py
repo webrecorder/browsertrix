@@ -154,7 +154,7 @@ def test_add_invalid_exclusion(admin_auth_headers, default_org_id):
         headers=admin_auth_headers,
     )
     assert r.status_code == 422
-    assert r.json()["detail"] == "invalid_regular_expression"
+    assert r.json()["detail"] == "invalid_regex"
 
 
 def test_remove_exclusion(admin_auth_headers, default_org_id):

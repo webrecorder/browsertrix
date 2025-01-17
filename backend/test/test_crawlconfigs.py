@@ -162,7 +162,7 @@ def test_update_config_invalid_exclude_regex(
         json={"config": {"exclude": "["}},
     )
     assert r.status_code == 422
-    assert r.json()["detail"] == "invalid_regular_expression"
+    assert r.json()["detail"] == "invalid_regex"
 
     r = requests.patch(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
@@ -170,7 +170,7 @@ def test_update_config_invalid_exclude_regex(
         json={"config": {"exclude": ["abc.*", "["]}},
     )
     assert r.status_code == 422
-    assert r.json()["detail"] == "invalid_regular_expression"
+    assert r.json()["detail"] == "invalid_regex"
 
 
 def test_update_config_data(crawler_auth_headers, default_org_id, sample_crawl_data):
@@ -519,7 +519,7 @@ def test_add_crawl_config_invalid_exclude_regex(
         json=sample_crawl_data,
     )
     assert r.status_code == 422
-    assert r.json()["detail"] == "invalid_regular_expression"
+    assert r.json()["detail"] == "invalid_regex"
 
     sample_crawl_data["exclude"] = ["abc.*", "["]
     r = requests.post(
@@ -528,4 +528,4 @@ def test_add_crawl_config_invalid_exclude_regex(
         json=sample_crawl_data,
     )
     assert r.status_code == 422
-    assert r.json()["detail"] == "invalid_regular_expression"
+    assert r.json()["detail"] == "invalid_regex"
