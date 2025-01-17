@@ -63,7 +63,7 @@ class Migration(BaseMigration):
             try:
                 name = coll_raw.get("name", "")
                 slug = slug_from_name(name)
-                self.dedup_slug(name, slug, coll_id, colls_mdb)
+                await self.dedup_slug(name, slug, coll_id, colls_mdb)
             # pylint: disable=broad-exception-caught
             except Exception as err:
                 print(
