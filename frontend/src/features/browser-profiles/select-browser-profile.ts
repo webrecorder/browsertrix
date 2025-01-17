@@ -1,6 +1,6 @@
 import { localized, msg } from "@lit/localize";
 import { type SlSelect } from "@shoelace-style/shoelace";
-import { html, nothing, type PropertyValues } from "lit";
+import { html, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import orderBy from "lodash/fp/orderBy";
@@ -137,7 +137,9 @@ export class SelectBrowserProfile extends BtrixElement {
                     <sl-icon name="box-arrow-up-right"></sl-icon>
                   </a>
                 `
-              : nothing}
+              : html` <sl-skeleton
+                  class="mb-1 ml-auto h-4 w-24"
+                ></sl-skeleton>`}
         </div>
       </sl-select>
 
