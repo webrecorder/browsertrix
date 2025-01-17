@@ -153,6 +153,26 @@ def test_update_config_invalid_format(
     assert r.status_code == 422
 
 
+def test_update_config_invalid_exclude_regex(
+    crawler_auth_headers, default_org_id, sample_crawl_data
+):
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
+        headers=crawler_auth_headers,
+        json={"config": {"exclude": "["}},
+    )
+    assert r.status_code == 422
+    assert r.json()["detail"] == "invalid_regular_expression"
+
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
+        headers=crawler_auth_headers,
+        json={"config": {"exclude": ["abc.*", "["]}},
+    )
+    assert r.status_code == 422
+    assert r.json()["detail"] == "invalid_regular_expression"
+
+
 def test_update_config_data(crawler_auth_headers, default_org_id, sample_crawl_data):
     r = requests.patch(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
@@ -489,7 +509,9 @@ def test_get_crawler_channels(crawler_auth_headers, default_org_id):
         assert crawler_channel["image"]
 
 
-def test_exclude_invalid_regex(crawler_auth_headers, default_org_id, sample_crawl_data):
+def test_add_crawl_config_invalid_exclude_regex(
+    crawler_auth_headers, default_org_id, sample_crawl_data
+):
     sample_crawl_data["exclude"] = "["
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",

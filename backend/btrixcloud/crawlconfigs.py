@@ -43,7 +43,7 @@ from .models import (
     CrawlerProxy,
     CrawlerProxies,
 )
-from .utils import dt_now, slug_from_name
+from .utils import dt_now, slug_from_name, validate_regexes
 
 if TYPE_CHECKING:
     from .orgs import OrgOps
@@ -219,14 +219,7 @@ class CrawlConfigOps:
             exclude = config_in.config.exclude
             if isinstance(exclude, str):
                 exclude = [exclude]
-            for regex in exclude:
-                try:
-                    re.compile(regex)
-                except re.error:
-                    # pylint: disable=raise-missing-from
-                    raise HTTPException(
-                        status_code=422, detail="invalid_regular_expression"
-                    )
+            validate_regexes(exclude)
 
         now = dt_now()
         crawlconfig = CrawlConfig(
@@ -334,6 +327,12 @@ class CrawlConfigOps:
         """Update name, scale, schedule, and/or tags for an existing crawl config"""
 
         orig_crawl_config = await self.get_crawl_config(cid, org.id)
+
+        if update.config.exclude:
+            exclude = update.config.exclude
+            if isinstance(exclude, str):
+                exclude = [exclude]
+            validate_regexes(exclude)
 
         # indicates if any k8s crawl config settings changed
         changed = False

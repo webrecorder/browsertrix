@@ -24,6 +24,7 @@ from .utils import (
     date_to_str,
     parse_jsonl_error_messages,
     stream_dict_list_as_csv,
+    validate_regexes,
 )
 from .basecrawls import BaseCrawlOps
 from .crawlmanager import CrawlManager
@@ -518,13 +519,7 @@ class CrawlOps(BaseCrawlOps):
         for given crawl_id, update config on crawl"""
 
         if add:
-            try:
-                re.compile(regex)
-            except re.error:
-                # pylint: disable=raise-missing-from
-                raise HTTPException(
-                    status_code=422, detail="invalid_regular_expression"
-                )
+            validate_regexes([regex])
 
         crawl = await self.get_crawl(crawl_id, org)
 
