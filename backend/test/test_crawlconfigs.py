@@ -512,7 +512,7 @@ def test_get_crawler_channels(crawler_auth_headers, default_org_id):
 def test_add_crawl_config_invalid_exclude_regex(
     crawler_auth_headers, default_org_id, sample_crawl_data
 ):
-    sample_crawl_data["exclude"] = "["
+    sample_crawl_data["config"]["exclude"] = "["
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
         headers=crawler_auth_headers,
@@ -521,7 +521,7 @@ def test_add_crawl_config_invalid_exclude_regex(
     assert r.status_code == 400
     assert r.json()["detail"] == "invalid_regex"
 
-    sample_crawl_data["exclude"] = ["abc.*", "["]
+    sample_crawl_data["config"]["exclude"] = ["abc.*", "["]
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
         headers=crawler_auth_headers,
