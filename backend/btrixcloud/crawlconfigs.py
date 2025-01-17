@@ -328,7 +328,7 @@ class CrawlConfigOps:
 
         orig_crawl_config = await self.get_crawl_config(cid, org.id)
 
-        if update.config.exclude:
+        if update.config and update.config.exclude:
             exclude = update.config.exclude
             if isinstance(exclude, str):
                 exclude = [exclude]
