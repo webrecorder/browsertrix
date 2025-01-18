@@ -5,6 +5,7 @@ Migration 0039 -- collection slugs
 from pymongo.errors import DuplicateKeyError
 from pymongo.collation import Collation
 import pymongo
+from uuid import UUID
 
 from btrixcloud.migrations import BaseMigration
 from btrixcloud.utils import slug_from_name
@@ -20,7 +21,7 @@ class Migration(BaseMigration):
         super().__init__(mdb, migration_version=MIGRATION_VERSION)
 
     async def dedup_slug(
-        self, name: str, slug_base: str, coll_id: str, colls_mdb
+        self, name: str, slug_base: str, coll_id: UUID, colls_mdb
     ) -> None:
         """attempt to set slug, if duplicate, append suffix until a valid slug is found
         also update original name with same suffix"""
@@ -40,6 +41,7 @@ class Migration(BaseMigration):
                 slug = f"{slug_base}-{count}"
 
         if count > 1:
+            print(f"Dedup name '{name}' -> '{name} {count}'")
             await colls_mdb.find_one_and_update(
                 {"_id": coll_id}, {"$set": {"name": f"{name} {count}"}}
             )
@@ -51,6 +53,8 @@ class Migration(BaseMigration):
         """
         colls_mdb = self.mdb["collections"]
         case_insensitive_collation = Collation(locale="en", strength=1)
+
+        colls_mdb.drop_indexes()
 
         await colls_mdb.create_index(
             [("oid", pymongo.ASCENDING), ("slug", pymongo.ASCENDING)],
