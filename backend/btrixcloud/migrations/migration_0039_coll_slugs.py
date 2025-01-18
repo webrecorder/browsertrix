@@ -56,6 +56,11 @@ class Migration(BaseMigration):
 
         colls_mdb.drop_indexes()
 
+        # set slug to random value to ensure uniqueness
+        await colls_mdb.update_many(
+            {}, [{"$set": {"slug": {"$toString": {"$rand": {}}}}}]
+        )
+
         await colls_mdb.create_index(
             [("oid", pymongo.ASCENDING), ("slug", pymongo.ASCENDING)],
             unique=True,
