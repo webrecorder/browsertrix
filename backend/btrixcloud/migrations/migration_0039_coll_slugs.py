@@ -35,6 +35,7 @@ class Migration(BaseMigration):
                     {"_id": coll_id},
                     {"$set": {"slug": slug}},
                 )
+                print("Slug set: " + slug)
                 break
             except DuplicateKeyError:
                 # pylint: disable=raise-missing-from
@@ -68,7 +69,7 @@ class Migration(BaseMigration):
             collation=case_insensitive_collation,
         )
 
-        async for coll_raw in colls_mdb.find({"slug": None}):
+        async for coll_raw in colls_mdb.find({}):
             coll_id = coll_raw["_id"]
             try:
                 name = coll_raw.get("name", "")
