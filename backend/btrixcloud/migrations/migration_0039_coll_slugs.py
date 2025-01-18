@@ -55,7 +55,7 @@ class Migration(BaseMigration):
         colls_mdb = self.mdb["collections"]
         case_insensitive_collation = Collation(locale="en", strength=1)
 
-        colls_mdb.drop_indexes()
+        await colls_mdb.drop_indexes()
 
         # set slug to random value to ensure uniqueness
         await colls_mdb.update_many(
