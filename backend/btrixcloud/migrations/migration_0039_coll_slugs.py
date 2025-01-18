@@ -2,10 +2,11 @@
 Migration 0039 -- collection slugs
 """
 
+from uuid import UUID
+
 from pymongo.errors import DuplicateKeyError
 from pymongo.collation import Collation
 import pymongo
-from uuid import UUID
 
 from btrixcloud.migrations import BaseMigration
 from btrixcloud.utils import slug_from_name
