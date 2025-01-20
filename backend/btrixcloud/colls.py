@@ -412,7 +412,15 @@ class CollectionOps:
         aggregate = [{"$match": match_query}]
 
         if sort_by:
-            if sort_by not in ("modified", "name", "description", "totalSize"):
+            if sort_by not in (
+                "created",
+                "modified",
+                "dateEarliest",
+                "dateLatest",
+                "name",
+                "description",
+                "totalSize",
+            ):
                 raise HTTPException(status_code=400, detail="invalid_sort_by")
             if sort_direction not in (1, -1):
                 raise HTTPException(status_code=400, detail="invalid_sort_direction")
