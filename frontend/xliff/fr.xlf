@@ -3126,8 +3126,9 @@
         <source>Max Pages Per Crawl</source>
         <target state="translated">Maximum de pages par collecte</target>
       </trans-unit>
-      <trans-unit id="s2557cf3e70ee62dc">
+      <trans-unit id="s2557cf3e70ee62dc" xml:space="preserve">
         <source>Org Storage Quota (GB)</source>
+        <target state="translated">Quota de stockage pour l'organisme (GB)</target>
       </trans-unit>
       <trans-unit id="s8a803831f3ac3903" xml:space="preserve">
         <source>Max Execution Minutes Per Month</source>
@@ -3188,8 +3189,9 @@
         <source>Disable Archiving</source>
         <target state="translated">Désactiver l'archivage</target>
       </trans-unit>
-      <trans-unit id="s2f2866981870fee3">
+      <trans-unit id="s2f2866981870fee3" xml:space="preserve">
         <source>Confirm Org Deletion: <x id="0" equiv-text="${this.currOrg?.name || &quot;&quot;}"/></source>
+        <target state="translated">Confirmer la suppression de l'organisme : <x id="0" equiv-text="${this.currOrg?.name || &quot;&quot;}"/></target>
       </trans-unit>
       <trans-unit id="hbc605ddee9667ea5" xml:space="preserve">
         <source>Are you sure you want to delete <x id="0" equiv-text="&lt;strong class=&quot;font-semibold&quot;&gt;${org.name}&lt;/strong&gt;"/>? This cannot be undone.</source>
@@ -3199,8 +3201,9 @@
         <source>Type "<x id="0" equiv-text="${confirmationStr}"/>" to confirm</source>
         <target state="translated">Type "<x id="0" equiv-text="${confirmationStr}"/>" à confirmer</target>
       </trans-unit>
-      <trans-unit id="s91622815dce6a0ec">
+      <trans-unit id="s91622815dce6a0ec" xml:space="preserve">
         <source>Delete Org</source>
+        <target state="translated">Supprimer l'organisme</target>
       </trans-unit>
       <trans-unit id="s3eab2ed27de13f27" xml:space="preserve">
         <source>Archiving in "<x id="0" equiv-text="${org.name}"/>" is disabled.</source>
@@ -3210,17 +3213,21 @@
         <source>Archiving in "<x id="0" equiv-text="${org.name}"/>" is re-enabled.</source>
         <target state="translated">L'archivage dans "<x id="0" equiv-text="${org.name}"/>" est réactivé.</target>
       </trans-unit>
-      <trans-unit id="s42dfcfdcb5aee47e">
+      <trans-unit id="s42dfcfdcb5aee47e" xml:space="preserve">
         <source>Sorry, couldn't update org archiving ability at this time.</source>
+        <target state="translated">Désolé, la capacité d'archivage de l'organisme ne peut être mise à jour pour le moment.</target>
       </trans-unit>
-      <trans-unit id="s4b9eccf40f4a605d">
+      <trans-unit id="s4b9eccf40f4a605d" xml:space="preserve">
         <source>Sorry, couldn't get all proxies at this time.</source>
+        <target state="translated">Désolé, les proxies ne peuvent pas tout être obtenus pour le moment.</target>
       </trans-unit>
-      <trans-unit id="s081029829332df74">
+      <trans-unit id="s081029829332df74" xml:space="preserve">
         <source>Org "<x id="0" equiv-text="${org.name}"/>" has been deleted.</source>
+        <target state="translated">L'organisme "<x id="0" equiv-text="${org.name}"/>" a été effacé.</target>
       </trans-unit>
-      <trans-unit id="s4de74a2a08a74bff">
+      <trans-unit id="s4de74a2a08a74bff" xml:space="preserve">
         <source>Sorry, couldn't delete org at this time.</source>
+        <target state="translated">Désolé, l'organisme ne peut être effacé pour le moment.</target>
       </trans-unit>
       <trans-unit id="sd8adbc60f2886b80" xml:space="preserve">
         <source>Issue</source>
@@ -3270,8 +3277,9 @@
         <source>This part of Browsertrix is in beta!</source>
         <target state="translated">Cette partie de Browsertrix est en version bêta !</target>
       </trans-unit>
-      <trans-unit id="sd5498363c7a9c870">
+      <trans-unit id="sd5498363c7a9c870" xml:space="preserve">
         <source>Parts might change or be broken. Please share your thoughts with us!</source>
+        <target state="needs-translation">Certaines parties pourraient changer ou être brisées. N'hésitez pas à nous faire part de vos remarques!</target>
       </trans-unit>
       <trans-unit id="sa0b562a796b69487" xml:space="preserve">
         <source>Beta</source>
@@ -3289,8 +3297,9 @@
         <source>Organization</source>
         <target state="translated">Organisation</target>
       </trans-unit>
-      <trans-unit id="s6c6e1788cde76cc2">
+      <trans-unit id="s6c6e1788cde76cc2" xml:space="preserve">
         <source>Select an org</source>
+        <target state="translated">Sélectionner un organisme</target>
       </trans-unit>
       <trans-unit id="s318065b4139dd6d9" xml:space="preserve">
         <source>Required for first member</source>
@@ -3300,8 +3309,9 @@
         <source>Enter your email</source>
         <target state="translated">Saisissez votre courriel</target>
       </trans-unit>
-      <trans-unit id="s115ed3de58eca847">
+      <trans-unit id="s115ed3de58eca847" xml:space="preserve">
         <source>you@email.com</source>
+        <target state="translated">vous@email.com</target>
       </trans-unit>
       <trans-unit id="sf6e1665c7022a1f8" xml:space="preserve">
         <source>Password</source>
@@ -3339,213 +3349,277 @@
         <source>Not applicable</source>
         <target state="translated">Ne s'applique pas</target>
       </trans-unit>
-      <trans-unit id="s0382d73823585617">
+      <trans-unit id="s0382d73823585617" xml:space="preserve">
         <source><x id="0" equiv-text="${typeLabel}"/>: <x id="1" equiv-text="${crawlStatus.label}"/></source>
+        <target state="translated"><x id="0" equiv-text="${typeLabel}"/> : <x id="1" equiv-text="${crawlStatus.label}"/></target>
       </trans-unit>
-      <trans-unit id="s9fdb0be4e08e3609">
+      <trans-unit id="s9fdb0be4e08e3609" xml:space="preserve">
         <source>QA Analysis: <x id="0" equiv-text="${qaStatus.label}"/> (<x id="1" equiv-text="${activeProgress}"/>% finished)</source>
+        <target state="translated">Contrôle de qualité : <x id="0" equiv-text="${qaStatus.label}"/> (<x id="1" equiv-text="${activeProgress}"/>% terminé)</target>
       </trans-unit>
-      <trans-unit id="s9087c0239aa5bd6d">
+      <trans-unit id="s9087c0239aa5bd6d" xml:space="preserve">
         <source>QA Analysis: <x id="0" equiv-text="${isUpload ? &quot;Not Applicable&quot; : qaStatus.label || msg(&quot;None&quot;)}"/></source>
+        <target state="translated">Contrôle de qualité : <x id="0" equiv-text="${isUpload ? &quot;Not Applicable&quot; : qaStatus.label || msg(&quot;None&quot;)}"/></target>
       </trans-unit>
-      <trans-unit id="s2fb39b9ba9441537">
+      <trans-unit id="s2fb39b9ba9441537" xml:space="preserve">
         <source><x id="0" equiv-text="${this.localize.number(this.item.stats?.done ? +this.item.stats.done : 0)}"/> crawled, <x id="1" equiv-text="${this.localize.number(this.item.stats?.found ? +this.item.stats.found : 0)}"/> found</source>
+        <target state="translated"><x id="0" equiv-text="${this.localize.number(this.item.stats?.done ? +this.item.stats.done : 0)}"/> collecté, <x id="1" equiv-text="${this.localize.number(this.item.stats?.found ? +this.item.stats.found : 0)}"/> trouvé</target>
       </trans-unit>
-      <trans-unit id="s1a8b76905717bc34">
+      <trans-unit id="s1a8b76905717bc34" xml:space="preserve">
         <source>Last run started on <x id="0" equiv-text="${localize.date(lastQAStarted)}"/></source>
+        <target state="needs-translation">La dernière collecte a commencé le <x id="0" equiv-text="${localize.date(lastQAStarted)}"/></target>
       </trans-unit>
       <trans-unit id="sa0ffc3feac61fcc4" xml:space="preserve">
         <source>Rated <x id="0" equiv-text="${this.item.reviewStatus}"/> / <x id="1" equiv-text="${ReviewStatus.Excellent}"/></source>
         <target state="translated">Évalué <x id="0" equiv-text="${this.item.reviewStatus}"/> / <x id="1" equiv-text="${ReviewStatus.Excellent}"/></target>
       </trans-unit>
-      <trans-unit id="s4e31ba44d4056425">
+      <trans-unit id="s4e31ba44d4056425" xml:space="preserve">
         <source>No QA review submitted</source>
+        <target state="translated">Aucune révision du contrôle de qualité n'a été soumise</target>
       </trans-unit>
-      <trans-unit id="se661780e1199546f">
+      <trans-unit id="se661780e1199546f" xml:space="preserve">
         <source>QA Analysis Runs</source>
+        <target state="needs-translation">Le contrôle de qualité est en cours</target>
       </trans-unit>
       <trans-unit id="s92921878e886e36d" xml:space="preserve">
         <source>Duration</source>
         <target state="translated">Durée</target>
       </trans-unit>
-      <trans-unit id="s3c162d34398019aa">
+      <trans-unit id="s3c162d34398019aa" xml:space="preserve">
         <source>Collection Auto-Add</source>
+        <target state="translated">Ajout automatique de la collection</target>
       </trans-unit>
       <trans-unit id="s68291c1557198475" xml:space="preserve">
         <source>Search by Collection name</source>
         <target state="translated">Recherche par nom de collection</target>
       </trans-unit>
-      <trans-unit id="s7cbfe1eb01181972">
+      <trans-unit id="s7cbfe1eb01181972" xml:space="preserve">
         <source>Start typing to search Collections.</source>
+        <target state="translated">Commencer à saisir pour chercher des collections.</target>
       </trans-unit>
-      <trans-unit id="sabcad5f4717bc336">
+      <trans-unit id="sabcad5f4717bc336" xml:space="preserve">
         <source>No matching Collections found.</source>
+        <target state="translated">Aucune collection trouvée.</target>
       </trans-unit>
-      <trans-unit id="s125a86b2f45bbb25">
+      <trans-unit id="s125a86b2f45bbb25" xml:space="preserve">
         <source><x id="0" equiv-text="${item.crawlCount}"/> items</source>
+        <target state="translated"><x id="0" equiv-text="${item.crawlCount}"/> items</target>
       </trans-unit>
-      <trans-unit id="s849f950e0b812cf4">
+      <trans-unit id="s849f950e0b812cf4" xml:space="preserve">
         <source>Remove from auto-add</source>
+        <target state="translated">Retirer de l'ajout automatique</target>
       </trans-unit>
       <trans-unit id="sa777c574a8222f0f" xml:space="preserve">
         <source>Add to Collection</source>
         <target state="translated">Ajouter à la collection</target>
       </trans-unit>
-      <trans-unit id="s84f53a9ae5b34f78">
+      <trans-unit id="s84f53a9ae5b34f78" xml:space="preserve">
         <source>Successfully saved crawl details.</source>
+        <target state="translated">Les détails de la collecte ont été sauvegardés avec succès.</target>
       </trans-unit>
-      <trans-unit id="s9e5ae4184a72363a">
+      <trans-unit id="s9e5ae4184a72363a" xml:space="preserve">
         <source>Sorry, couldn't save crawl details at this time.</source>
+        <target state="translated">Désolé, les détails de la collecte ne peuvent être sauvegardés pour le moment.</target>
       </trans-unit>
-      <trans-unit id="sf32f25806ba4fd81">
+      <trans-unit id="sf32f25806ba4fd81" xml:space="preserve">
         <source>Pending Exclusions</source>
+        <target state="translated">Exclusions en attente</target>
       </trans-unit>
-      <trans-unit id="s1eee55ca9401677a">
+      <trans-unit id="s1eee55ca9401677a" xml:space="preserve">
         <source>+<x id="0" equiv-text="${this.localize.number(this.total)}"/> URLs</source>
+        <target state="translated">+<x id="0" equiv-text="${this.localize.number(this.total)}"/> URLs</target>
       </trans-unit>
-      <trans-unit id="s2bdd9994851a31c4">
+      <trans-unit id="s2bdd9994851a31c4" xml:space="preserve">
         <source>+1 URL</source>
+        <target state="translated">+1 URL</target>
       </trans-unit>
-      <trans-unit id="s28d7266643f5992f">
+      <trans-unit id="s28d7266643f5992f" xml:space="preserve">
         <source>No matches</source>
+        <target state="translated">Aucune correspondance</target>
       </trans-unit>
-      <trans-unit id="s96a817ae5ad03253">
+      <trans-unit id="s96a817ae5ad03253" xml:space="preserve">
         <source>No matching URLs found in queue.</source>
+        <target state="translated">Aucun URL correspondant dans la file d'attente.</target>
       </trans-unit>
-      <trans-unit id="sbbdd27eea29fea6f">
+      <trans-unit id="sbbdd27eea29fea6f" xml:space="preserve">
         <source>Start typing an exclusion to view matching URLs in the queue.</source>
+        <target state="translated">Commencer à saisir une exclusion pour voir les URLs correspondants dans la file d'attente.</target>
       </trans-unit>
-      <trans-unit id="sdbd27d37273261f2">
+      <trans-unit id="sdbd27d37273261f2" xml:space="preserve">
         <source>Queued URLs</source>
+        <target state="translated">URLs dans la file d'attente</target>
       </trans-unit>
-      <trans-unit id="se7f351ae6cbb41f0">
+      <trans-unit id="se7f351ae6cbb41f0" xml:space="preserve">
         <source>Queued URLs from 1 to <x id="0" equiv-text="${this.localize.number(this.queue.total)}"/></source>
+        <target state="translated">URLs dans la file d'attente de 1 à <x id="0" equiv-text="${this.localize.number(this.queue.total)}"/></target>
       </trans-unit>
-      <trans-unit id="h077c8fe82a78c616">
+      <trans-unit id="h077c8fe82a78c616" xml:space="preserve">
         <source>Queued URLs from <x id="0" equiv-text="&lt;btrix-inline-input class=&quot;mx-1 inline-block&quot; style=&quot;width: ${Math.max(offsetValue.toString().length, 2) + 2}ch&quot; value=&quot;1&quot; inputmode=&quot;numeric&quot; size=&quot;small&quot; autocomplete=&quot;off&quot; @sl-input=&quot;${(e: SlInputEvent) =&gt; {&#10;    const input = e.target as SlInput;&#10;    input.style.width = getInputWidth(input.value);&#10;}}&quot; @sl-change=&quot;${async (e: SlChangeEvent) =&gt; {&#10;    const input = e.target as SlInput;&#10;    const int = +input.value.replace(/\D/g, &quot;&quot;);&#10;    await this.updateComplete;&#10;    const value = Math.max(1, Math.min(int, this.queue!.total - 1));&#10;    input.value = value.toString();&#10;    this.pageOffset = value - 1;&#10;}}&quot;&gt;&lt;/btrix-inline-input&gt;"/> to <x id="1" equiv-text="${this.localize.number(countMax)}"/> of <x id="2" equiv-text="${this.localize.number(this.queue.total)}&#10;        "/></source>
+        <target state="translated">URLs dans la file d'attente de &lt;x id="0" equiv-text="&amp;lt ;btrix-inline-input class=&amp;quot ;mx-1 inline-block&amp;quot ; style=&amp;quot ;width : ${Math.max(offsetValue.toString().length, 2) + 2}ch&amp;quot ; value=&amp;quot ;1&amp;quot ; inputmode=&amp;quot ;numeric&amp;quot ; size=&amp;quot ;small&amp;quot ; autocomplete=&amp;quot ;off&amp;quot ; @sl-input=&amp;quot ;${(e : SlInputEvent) =&amp;gt ; {&amp;#10 ;    const input = e.target as SlInput ;&amp;#10 ;    input.style.width = getInputWidth(input.value) ;&amp;#10 ;}}&amp;quot ; @sl-change=&amp;quot ;${async (e : SlChangeEvent) =&amp;gt ; {&amp;#10 ;    const input = e.target as SlInput ;&amp;#10 ;    const int = +input.value.replace(/\D/g, &amp;quot ;&amp;quot ;) ;&amp;#10 ;    await this.updateComplete ;&amp;#10 ;    const value = Math.max(1, Math.min(int, this.queue !.total - 1)) ;&amp;#10 ;    input.value = value.toString() ;&amp;#10 ;    this.pageOffset = value - 1 ;&amp;#10 ;}}&amp;quot ;&amp;gt ;&amp;lt ;/btrix-inline-input&amp;gt ;"/&gt; to &lt;x id="1" equiv-text="${this.localize.number(countMax)}"/&gt; of &lt;x id="2" equiv-text="${this.localize.number(this.queue.total)}&amp;#10 ;        "/&gt;</target>
       </trans-unit>
-      <trans-unit id="s4dfaf5cfc90f8493">
+      <trans-unit id="s4dfaf5cfc90f8493" xml:space="preserve">
         <source>No pages queued.</source>
+        <target state="translated">Aucune page dans la file d'attente.</target>
       </trans-unit>
-      <trans-unit id="s8e853be463b322f0">
+      <trans-unit id="s8e853be463b322f0" xml:space="preserve">
         <source>End of queue</source>
+        <target state="translated">Fin de la file d'attente</target>
       </trans-unit>
-      <trans-unit id="s7584ded3d749c75e">
+      <trans-unit id="s7584ded3d749c75e" xml:space="preserve">
         <source>Load more</source>
+        <target state="needs-translation">Télécharger plus</target>
       </trans-unit>
-      <trans-unit id="s813262fab638bbfc">
+      <trans-unit id="s813262fab638bbfc" xml:space="preserve">
         <source>-<x id="0" equiv-text="${this.localize.number(this.matchedTotal)}"/> URLs</source>
+        <target state="translated">-<x id="0" equiv-text="${this.localize.number(this.matchedTotal)}"/> URLs</target>
       </trans-unit>
-      <trans-unit id="s6c4a20fdba7af262">
+      <trans-unit id="s6c4a20fdba7af262" xml:space="preserve">
         <source>-1 URL</source>
+        <target state="translated">-1 URL</target>
       </trans-unit>
-      <trans-unit id="s2342004e9c7c2f6a">
+      <trans-unit id="s2342004e9c7c2f6a" xml:space="preserve">
         <source>Sorry, couldn't fetch crawl queue at this time.</source>
+        <target state="translated">Désolé, la file d'attente de la collecte ne peut être récupérée pour le moment.</target>
       </trans-unit>
-      <trans-unit id="s5db7bd625b7a6a49">
+      <trans-unit id="s5db7bd625b7a6a49" xml:space="preserve">
         <source>File to Upload</source>
+        <target state="translated">Fichiers à télécharger</target>
       </trans-unit>
-      <trans-unit id="sd784144d0c062bd0">
+      <trans-unit id="sd784144d0c062bd0" xml:space="preserve">
         <source>Browse Files</source>
+        <target state="translated">Explorer les fichiers</target>
       </trans-unit>
-      <trans-unit id="s807ea65f0643e257">
+      <trans-unit id="s807ea65f0643e257" xml:space="preserve">
         <source>Select a .wacz file to upload</source>
+        <target state="translated">Sélectionner un fichier .wacz à télécharger</target>
       </trans-unit>
-      <trans-unit id="sc60cfa93d82aa39c">
+      <trans-unit id="sc60cfa93d82aa39c" xml:space="preserve">
         <source>Our Website (example.com)</source>
+        <target state="translated">Notre site Web (exemple.com)</target>
       </trans-unit>
-      <trans-unit id="s962895dbdd4ad0b7">
+      <trans-unit id="s962895dbdd4ad0b7" xml:space="preserve">
         <source>Cancel this upload?</source>
+        <target state="translated">Annuler ce téléchargement ?</target>
       </trans-unit>
-      <trans-unit id="se7692167f1edeef2">
+      <trans-unit id="se7692167f1edeef2" xml:space="preserve">
         <source>Uploading...</source>
+        <target state="translated">Téléchargement en cours...</target>
       </trans-unit>
-      <trans-unit id="s1ff918403135632b">
+      <trans-unit id="s1ff918403135632b" xml:space="preserve">
         <source>Keep this window open until your upload finishes.</source>
+        <target state="translated">Gardez cette fenêtre ouverte jusqu'à la fin du téléchargement.</target>
       </trans-unit>
-      <trans-unit id="hb8ae169d4ea6d7a3">
+      <trans-unit id="hb8ae169d4ea6d7a3" xml:space="preserve">
         <source>Successfully uploaded <x id="0" equiv-text="&lt;strong&gt;${name}&lt;/strong&gt;"/>.<x id="1" equiv-text="&lt;br&gt;&#10;              &lt;a class=&quot;underline hover:no-underline&quot; href=&quot;${this.navigate.orgBasePath}/items/upload/${data.id}&quot; @click=&quot;${this.navigate.link}&quot;&gt;"/>View Item<x id="2" equiv-text="&lt;/a&gt; "/></source>
+        <target state="translated">Téléchargement effectué avec succès <x id="0" equiv-text="&lt;strong&gt;${name}&lt;/strong&gt;"/>.<x id="1" equiv-text="&lt;br&gt;&#10;              &lt;a class=&quot;underline hover:no-underline&quot; href=&quot;${this.navigate.orgBasePath}/items/upload/${data.id}&quot; @click=&quot;${this.navigate.link}&quot;&gt;"/> Voir l'item<x id="2" equiv-text="&lt;/a&gt; "/></target>
       </trans-unit>
-      <trans-unit id="scccaadc44687f6bf">
+      <trans-unit id="scccaadc44687f6bf" xml:space="preserve">
         <source>Sorry, couldn't upload file at this time.</source>
+        <target state="translated">Désolé, le fichier ne peut être téléchargé pour le moment.</target>
       </trans-unit>
-      <trans-unit id="s13df06b5e1720f7f">
+      <trans-unit id="s13df06b5e1720f7f" xml:space="preserve">
         <source>Your org does not have enough storage to upload this file.</source>
+        <target state="translated">Votre organisme ne dispose pas d'assez de stockage pour pouvoir télécharger ce fichier.</target>
       </trans-unit>
-      <trans-unit id="s52d81506be796d67">
+      <trans-unit id="s52d81506be796d67" xml:space="preserve">
         <source>Filter by name</source>
+        <target state="translated">Filtrer par nom</target>
       </trans-unit>
-      <trans-unit id="s0b030282c6ff15dd">
+      <trans-unit id="s0b030282c6ff15dd" xml:space="preserve">
         <source>Create a New Browser Profile</source>
+        <target state="translated">Créer un nouveau profil de navigation</target>
       </trans-unit>
-      <trans-unit id="s31173036c8f30b4c">
+      <trans-unit id="s31173036c8f30b4c" xml:space="preserve">
         <source>Starting URL</source>
+        <target state="needs-translation">URL de départ</target>
       </trans-unit>
-      <trans-unit id="s837b2b5793a240b3">
+      <trans-unit id="s837b2b5793a240b3" xml:space="preserve">
         <source>https://example.com</source>
+        <target state="translated">https://exemple.com</target>
       </trans-unit>
-      <trans-unit id="s4efd5471466a0988">
+      <trans-unit id="s4efd5471466a0988" xml:space="preserve">
         <source>Start Browsing</source>
+        <target state="translated">Commencer à naviguer</target>
       </trans-unit>
-      <trans-unit id="s726c436f1051f770">
+      <trans-unit id="s726c436f1051f770" xml:space="preserve">
         <source>Starting up browser for new profile...</source>
+        <target state="needs-translation">Démarrage du navigateur pour un nouveau profil</target>
       </trans-unit>
-      <trans-unit id="sb91d1be10eb2c7da">
+      <trans-unit id="sb91d1be10eb2c7da" xml:space="preserve">
         <source>Last updated</source>
+        <target state="translated">Dernière mise à jour</target>
       </trans-unit>
-      <trans-unit id="sadfb54de733655c9">
+      <trans-unit id="sadfb54de733655c9" xml:space="preserve">
         <source>Using proxy:</source>
+        <target state="needs-translation">Utilisation du proxy :</target>
       </trans-unit>
-      <trans-unit id="s1ee610c805b33e8e">
+      <trans-unit id="s1ee610c805b33e8e" xml:space="preserve">
         <source>Check Profile</source>
+        <target state="translated">Vérifier le profil</target>
       </trans-unit>
-      <trans-unit id="sb1b1656b3a49e81a">
+      <trans-unit id="sb1b1656b3a49e81a" xml:space="preserve">
         <source>View Profiles</source>
+        <target state="translated">Voir les profils</target>
       </trans-unit>
-      <trans-unit id="s4e59c71197f2a840">
+      <trans-unit id="s4e59c71197f2a840" xml:space="preserve">
         <source>This org doesn't have any custom profiles yet.</source>
+        <target state="translated">Cet organisme n'a pas encore de profil personnalisé.</target>
       </trans-unit>
-      <trans-unit id="sd8c5a340f076fd18">
+      <trans-unit id="sd8c5a340f076fd18" xml:space="preserve">
         <source>Create profile</source>
+        <target state="translated">Créer un profil</target>
       </trans-unit>
-      <trans-unit id="sfd20092783b9309d">
+      <trans-unit id="sfd20092783b9309d" xml:space="preserve">
         <source><x id="0" equiv-text="${this.localize.number(selected)}"/> / <x id="1" equiv-text="${this.localize.number(total)}"/> crawl</source>
+        <target state="translated"><x id="0" equiv-text="${this.localize.number(selected)}"/> / <x id="1" equiv-text="${this.localize.number(total)}"/> collecte</target>
       </trans-unit>
-      <trans-unit id="sd6a07c24d3ae246a">
+      <trans-unit id="sd6a07c24d3ae246a" xml:space="preserve">
         <source><x id="0" equiv-text="${this.localize.number(selected)}"/> / <x id="1" equiv-text="${this.localize.number(total)}"/> crawls</source>
+        <target state="translated"><x id="0" equiv-text="${this.localize.number(selected)}"/> / <x id="1" equiv-text="${this.localize.number(total)}"/> collectes</target>
       </trans-unit>
-      <trans-unit id="sea0ac3af5d7a3071">
+      <trans-unit id="sea0ac3af5d7a3071" xml:space="preserve">
         <source>0 crawls</source>
+        <target state="translated">0 collecte</target>
       </trans-unit>
-      <trans-unit id="sdfbbc387c71bad18">
+      <trans-unit id="sdfbbc387c71bad18" xml:space="preserve">
         <source>Auto-Add</source>
+        <target state="translated">Ajout automatique</target>
       </trans-unit>
-      <trans-unit id="s1b210718400e7ea8">
+      <trans-unit id="s1b210718400e7ea8" xml:space="preserve">
         <source><x id="0" equiv-text="${this.localize.number(pageCount)}"/> page</source>
+        <target state="translated"><x id="0" equiv-text="${this.localize.number(pageCount)}"/> page</target>
       </trans-unit>
-      <trans-unit id="s279de934d8a18e21">
+      <trans-unit id="s279de934d8a18e21" xml:space="preserve">
         <source><x id="0" equiv-text="${this.localize.number(pageCount)}"/> pages</source>
+        <target state="translated"><x id="0" equiv-text="${this.localize.number(pageCount)}"/> pages</target>
       </trans-unit>
-      <trans-unit id="s514cde9d19a9adc5">
+      <trans-unit id="s514cde9d19a9adc5" xml:space="preserve">
         <source>Started by <x id="0" equiv-text="${crawl.userName}"/></source>
+        <target state="translated">Démarré par <x id="0" equiv-text="${crawl.userName}"/></target>
       </trans-unit>
-      <trans-unit id="s9b31004ff434426e">
+      <trans-unit id="s9b31004ff434426e" xml:space="preserve">
         <source>Crawl Finished</source>
+        <target state="translated">Collecte terminée</target>
       </trans-unit>
-      <trans-unit id="saa33768e03c45fc8">
+      <trans-unit id="saa33768e03c45fc8" xml:space="preserve">
         <source>File Size</source>
+        <target state="translated">Taille du fichier</target>
       </trans-unit>
-      <trans-unit id="sf51117c57a1110ec">
+      <trans-unit id="sf51117c57a1110ec" xml:space="preserve">
         <source>in <x id="0" equiv-text="${this.collectionName}"/></source>
+        <target state="translated">dans <x id="0" equiv-text="${this.collectionName}"/></target>
       </trans-unit>
-      <trans-unit id="sf27239dda9b1416d">
+      <trans-unit id="sf27239dda9b1416d" xml:space="preserve">
         <source>Crawls in Collection (<x id="0" equiv-text="${this.localize.number(data!.total)}"/>)</source>
+        <target state="translated">Collectes dans la collection (<x id="0" equiv-text="${this.localize.number(data!.total)}"/>)</target>
       </trans-unit>
-      <trans-unit id="sa3d5a7186b818303">
+      <trans-unit id="sa3d5a7186b818303" xml:space="preserve">
         <source>All Workflows (<x id="0" equiv-text="${this.localize.number(data!.total)}"/>)</source>
+        <target state="needs-translation">Tous les flux de tâches (<x id="0" equiv-text="${this.localize.number(data!.total)}"/>)</target>
       </trans-unit>
-      <trans-unit id="s49730f3d5751a433">
+      <trans-unit id="s49730f3d5751a433" xml:space="preserve">
         <source>Loading...</source>
+        <target state="translated">Chargement...</target>
       </trans-unit>
       <trans-unit id="sd7d35ab49e07fe79">
         <source>Uploads in Collection (<x id="0" equiv-text="${this.localize.number(this.uploads!.total)}"/>)</source>
@@ -3769,29 +3843,37 @@
       <trans-unit id="s0e598010b73d1398">
         <source>There are issues with this Workflow. Please go through previous steps and fix all issues to continue.</source>
       </trans-unit>
-      <trans-unit id="s0a81f678a90d8133">
+      <trans-unit id="s0a81f678a90d8133" xml:space="preserve">
         <source>There is an issue with this Crawl Workflow:</source>
+        <target state="translated">Il y a un problème avec le flux de travail de cette collecte :</target>
       </trans-unit>
-      <trans-unit id="h94a6d35ca79705c4">
+      <trans-unit id="h94a6d35ca79705c4" xml:space="preserve">
         <source><x id="0" equiv-text="${pageScope ? msg(&quot;Page URL(s)&quot;) : msg(&quot;Crawl Start URL&quot;)}"/> required in <x id="1" equiv-text="&lt;a href=&quot;${crawlSetupUrl}&quot; class=&quot;bold underline hover:no-underline&quot;&gt;"/>Scope<x id="2" equiv-text="&lt;/a&gt;"/>. </source>
+        <target state="needs-translation"><x id="0" equiv-text="${pageScope ? msg(&quot;Page URL(s)&quot;) : msg(&quot;Crawl Start URL&quot;)}"/> requis dans <x id="1" equiv-text="&lt;a href=&quot;${crawlSetupUrl}&quot; class=&quot;bold underline hover:no-underline&quot;&gt;"/>étendue<x id="2" equiv-text="&lt;/a&gt;"/>. </target>
       </trans-unit>
-      <trans-unit id="sdd3e1b91cb27a4d5">
+      <trans-unit id="sdd3e1b91cb27a4d5" xml:space="preserve">
         <source>Page URL(s)</source>
+        <target state="needs-translation">URL(s)</target>
       </trans-unit>
-      <trans-unit id="s67b76d03e88b5990">
+      <trans-unit id="s67b76d03e88b5990" xml:space="preserve">
         <source>Please fix to continue.</source>
+        <target state="translated">Veuillez corriger pour continuer.</target>
       </trans-unit>
-      <trans-unit id="s265a8f6e25a8c5f2">
+      <trans-unit id="s265a8f6e25a8c5f2" xml:space="preserve">
         <source>Workflow created.</source>
+        <target state="translated">Flux de travail créé.</target>
       </trans-unit>
-      <trans-unit id="s6f5d63a06a530e47">
+      <trans-unit id="s6f5d63a06a530e47" xml:space="preserve">
         <source>Crawl started with new workflow settings.</source>
+        <target state="needs-translation">Collecte démarrée avec les nouveaux paramètres du flux de travail.</target>
       </trans-unit>
-      <trans-unit id="sb59e91f2312fbb0b">
+      <trans-unit id="sb59e91f2312fbb0b" xml:space="preserve">
         <source>Workflow updated.</source>
+        <target state="translated">Flux de travail mis à jour.</target>
       </trans-unit>
-      <trans-unit id="scb2c6b3674a42128">
+      <trans-unit id="scb2c6b3674a42128" xml:space="preserve">
         <source>Workflow saved without starting crawl.</source>
+        <target state="translated">Flux de travail sauvegardé sans démarrage de la collecte.</target>
       </trans-unit>
       <trans-unit id="s429899b1dcafcad4">
         <source>Could not run crawl with new workflow settings due to already running crawl.</source>
