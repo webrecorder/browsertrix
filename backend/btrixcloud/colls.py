@@ -415,17 +415,23 @@ class CollectionOps:
             if sort_by not in (
                 "created",
                 "modified",
-                "dateEarliest",
                 "dateLatest",
                 "name",
-                "description",
+                "crawlCount",
+                "pageCount",
                 "totalSize",
             ):
                 raise HTTPException(status_code=400, detail="invalid_sort_by")
             if sort_direction not in (1, -1):
                 raise HTTPException(status_code=400, detail="invalid_sort_direction")
 
-            aggregate.extend([{"$sort": {sort_by: sort_direction}}])
+            sort_query = {sort_by: sort_direction}
+
+            # add secondary sort keys:
+            if sort_by == "dateLatest":
+                sort_query["dateEarliest"] = sort_direction
+
+            aggregate.extend([{"$sort": sort_query}])
 
         aggregate.extend(
             [
