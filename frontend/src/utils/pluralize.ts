@@ -91,6 +91,32 @@ const plurals = {
       id: "pages.plural.other",
     }),
   },
+  snapshots: {
+    zero: msg("snapshots", {
+      desc: 'plural form of "snapshot" for zero snapshots',
+      id: "snapshots.plural.zero",
+    }),
+    one: msg("snapshot", {
+      desc: 'singular form for "snapshot"',
+      id: "snapshots.plural.one",
+    }),
+    two: msg("snapshots", {
+      desc: 'plural form of "snapshot" for two snapshots',
+      id: "snapshots.plural.two",
+    }),
+    few: msg("snapshots", {
+      desc: 'plural form of "snapshot" for few snapshots',
+      id: "snapshots.plural.few",
+    }),
+    many: msg("snapshots", {
+      desc: 'plural form of "snapshot" for many snapshots',
+      id: "snapshots.plural.many",
+    }),
+    other: msg("snapshots", {
+      desc: 'plural form of "snapshot" for multiple/other snapshots',
+      id: "snapshots.plural.other",
+    }),
+  },
   comments: {
     zero: msg("comments", {
       desc: 'plural form of "comment" for zero comments',

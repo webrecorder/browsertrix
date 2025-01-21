@@ -6,9 +6,9 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import { metadataColumn } from "@/layouts/collections/metadataColumn";
 import { page } from "@/layouts/page";
 import { RouteNamespace } from "@/routes";
-import { monthYearDateRange } from "@/strings/utils";
 import type { PublicCollection } from "@/types/collection";
 import type { PublicOrgCollections } from "@/types/org";
 import { formatRwpTimestamp } from "@/utils/replay";
@@ -213,24 +213,7 @@ export class Collection extends BtrixElement {
   }
 
   private renderAbout(collection: PublicCollection) {
-    const metadata = html`
-      <btrix-desc-list>
-        <btrix-desc-list-item label=${msg("Collection Period")}>
-          <span class="font-sans">
-            ${monthYearDateRange(
-              collection.dateEarliest,
-              collection.dateLatest,
-            )}
-          </span>
-        </btrix-desc-list-item>
-        <btrix-desc-list-item label=${msg("Total Pages")}>
-          ${this.localize.number(collection.pageCount)}
-        </btrix-desc-list-item>
-        <btrix-desc-list-item label=${msg("Collection Size")}>
-          ${this.localize.bytes(collection.totalSize)}
-        </btrix-desc-list-item>
-      </btrix-desc-list>
-    `;
+    const metadata = metadataColumn(collection);
 
     if (collection.description) {
       return html`
