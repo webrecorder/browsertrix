@@ -246,7 +246,13 @@ export class OrgProfile extends BtrixElement {
   }: {
     slug: string;
   }): Promise<PublicOrgCollections | void> {
-    const resp = await fetch(`/api/public/orgs/${slug}/collections`, {
+    const params: APISortQuery<Collection> = {
+      sortBy: "dateLatest",
+      sortDirection: SortDirection.Descending,
+    };
+    const query = queryString.stringify(params);
+
+    const resp = await fetch(`/api/public/orgs/${slug}/collections?${query}`, {
       headers: { "Content-Type": "application/json" },
     });
 
@@ -281,7 +287,7 @@ export class OrgProfile extends BtrixElement {
       }
 
       const org = await this.api.fetch<OrgData>(`/orgs/${userOrg.id}`);
-      const collections = await this.getPublicCollections({
+      const collections = await this.getUserPublicCollections({
         orgId: this.orgId,
       });
 
@@ -299,7 +305,7 @@ export class OrgProfile extends BtrixElement {
     }
   }
 
-  private async getPublicCollections({ orgId }: { orgId: string }) {
+  private async getUserPublicCollections({ orgId }: { orgId: string }) {
     const params: APISortQuery<Collection> & {
       access: CollectionAccess;
     } = {
