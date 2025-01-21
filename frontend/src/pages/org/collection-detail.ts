@@ -15,6 +15,7 @@ import type { PageChangeEvent } from "@/components/ui/pagination";
 import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
 import type { ShareCollection } from "@/features/collections/share-collection";
 import { pageHeader, pageNav, type Breadcrumb } from "@/layouts/pageHeader";
+import { monthYearDateRange } from "@/strings/utils";
 import type {
   APIPaginatedList,
   APIPaginationQuery,
@@ -509,6 +510,7 @@ export class CollectionDetail extends BtrixElement {
               year="numeric"
               hour="numeric"
               minute="numeric"
+              time-zone-name="short"
             ></btrix-format-date>`,
         )}
       </btrix-desc-list>
@@ -530,32 +532,19 @@ export class CollectionDetail extends BtrixElement {
     `;
   }
 
-  // TODO Consolidate with collection.ts
   private renderAbout() {
-    const dateRange = (collection: Collection) => {
-      if (!collection.dateEarliest || !collection.dateLatest) {
-        return msg("n/a");
-      }
-      const format: Intl.DateTimeFormatOptions = {
-        month: "long",
-        year: "numeric",
-      };
-      const dateEarliest = this.localize.date(collection.dateEarliest, format);
-      const dateLatest = this.localize.date(collection.dateLatest, format);
-
-      if (dateEarliest === dateLatest) return dateLatest;
-
-      return msg(str`${dateEarliest} to ${dateLatest}`, {
-        desc: "Date range formatted to show full month name and year",
-      });
-    };
     const skeleton = html`<sl-skeleton class="w-24"></sl-skeleton>`;
 
     const metadata = html`
       <btrix-desc-list>
         <btrix-desc-list-item label=${msg("Collection Period")}>
           <span class="font-sans"
-            >${this.collection ? dateRange(this.collection) : skeleton}</span
+            >${this.collection
+              ? monthYearDateRange(
+                  this.collection.dateEarliest,
+                  this.collection.dateLatest,
+                )
+              : skeleton}</span
           >
         </btrix-desc-list-item>
       </btrix-desc-list>

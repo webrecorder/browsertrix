@@ -19,6 +19,7 @@ import { SelectCollectionAccess } from "@/features/collections/select-collection
 import { emptyMessage } from "@/layouts/emptyMessage";
 import { pageHeader } from "@/layouts/pageHeader";
 import { RouteNamespace } from "@/routes";
+import { monthYearDateRange } from "@/strings/utils";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import {
   CollectionAccess,
@@ -366,13 +367,16 @@ export class CollectionsList extends BtrixElement {
       return html`
         <btrix-table
           class="[--btrix-column-gap:var(--sl-spacing-small)]"
-          style="grid-template-columns: min-content [clickable-start] 50ch repeat(4, 1fr) [clickable-end] min-content"
+          style="grid-template-columns: min-content [clickable-start] 50ch repeat(5, 1fr) [clickable-end] min-content"
         >
           <btrix-table-head class="mb-2 whitespace-nowrap">
             <btrix-table-header-cell>
               <span class="sr-only">${msg("Collection Access")}</span>
             </btrix-table-header-cell>
             <btrix-table-header-cell>${msg("Name")}</btrix-table-header-cell>
+            <btrix-table-header-cell>
+              ${msg("Collection Period")}
+            </btrix-table-header-cell>
             <btrix-table-header-cell>
               ${msg("Archived Items")}
             </btrix-table-header-cell>
@@ -521,6 +525,9 @@ export class CollectionsList extends BtrixElement {
         </a>
       </btrix-table-cell>
       <btrix-table-cell>
+        ${monthYearDateRange(col.dateEarliest, col.dateLatest)}
+      </btrix-table-cell>
+      <btrix-table-cell>
         ${this.localize.number(col.crawlCount, { notation: "compact" })}
         ${pluralOf("items", col.crawlCount)}
       </btrix-table-cell>
@@ -539,8 +546,6 @@ export class CollectionsList extends BtrixElement {
           month="2-digit"
           day="2-digit"
           year="2-digit"
-          hour="2-digit"
-          minute="2-digit"
         ></btrix-format-date>
       </btrix-table-cell>
       <btrix-table-cell class="p-0">

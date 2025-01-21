@@ -1,4 +1,4 @@
-import { localized, msg, str } from "@lit/localize";
+import { localized, msg } from "@lit/localize";
 import { Task, TaskStatus } from "@lit/task";
 import { html, type TemplateResult } from "lit";
 import { customElement, property } from "lit/decorators.js";
@@ -8,6 +8,7 @@ import { when } from "lit/directives/when.js";
 import { BtrixElement } from "@/classes/BtrixElement";
 import { page } from "@/layouts/page";
 import { RouteNamespace } from "@/routes";
+import { monthYearDateRange } from "@/strings/utils";
 import type { PublicCollection } from "@/types/collection";
 import type { PublicOrgCollections } from "@/types/org";
 import { formatRwpTimestamp } from "@/utils/replay";
@@ -211,30 +212,16 @@ export class Collection extends BtrixElement {
     `;
   }
 
-  // TODO Consolidate with collection-detail.ts
   private renderAbout(collection: PublicCollection) {
-    const dateRange = () => {
-      if (!collection.dateEarliest || !collection.dateLatest) {
-        return msg("n/a");
-      }
-      const format: Intl.DateTimeFormatOptions = {
-        month: "long",
-        year: "numeric",
-      };
-      const dateEarliest = this.localize.date(collection.dateEarliest, format);
-      const dateLatest = this.localize.date(collection.dateLatest, format);
-
-      if (dateEarliest === dateLatest) return dateLatest;
-
-      return msg(str`${dateEarliest} to ${dateLatest}`, {
-        desc: "Date range formatted to show full month name and year",
-      });
-    };
-
     const metadata = html`
       <btrix-desc-list>
         <btrix-desc-list-item label=${msg("Collection Period")}>
-          <span class="font-sans">${dateRange()}</span>
+          <span class="font-sans">
+            ${monthYearDateRange(
+              collection.dateEarliest,
+              collection.dateLatest,
+            )}
+          </span>
         </btrix-desc-list-item>
         <btrix-desc-list-item label=${msg("Total Pages")}>
           ${this.localize.number(collection.pageCount)}
