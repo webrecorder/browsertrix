@@ -582,7 +582,7 @@ class CollectionOps:
                 total_size += file.size
 
             try:
-                _, crawl_pages = await self.page_ops.list_pages(
+                _, crawl_pages = await self.page_ops.list_pages_snapshots(
                     crawl.id, org, page_size=1_000_000
                 )
                 page_count += crawl_pages

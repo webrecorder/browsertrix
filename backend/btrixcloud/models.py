@@ -798,6 +798,7 @@ class BaseCrawl(CoreCrawlable, BaseMongoModel):
     reviewStatus: ReviewStatus = None
 
     pageCount: Optional[int] = 0
+    snapshotCount: Optional[int] = 0
 
     filePageCount: Optional[int] = 0
     errorPageCount: Optional[int] = 0
@@ -875,6 +876,7 @@ class CrawlOut(BaseMongoModel):
     lastQAStarted: Optional[datetime] = None
 
     pageCount: Optional[int] = 0
+    snapshotCount: Optional[int] = 0
     filePageCount: Optional[int] = 0
     errorPageCount: Optional[int] = 0
 
