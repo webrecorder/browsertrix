@@ -96,9 +96,10 @@ if TYPE_CHECKING:
     from .profiles import ProfileOps
     from .users import UserManager
     from .background_jobs import BackgroundJobOps
+    from .pages import PageOps
 else:
     InviteOps = BaseCrawlOps = ProfileOps = CollectionOps = object
-    BackgroundJobOps = UserManager = object
+    BackgroundJobOps = UserManager = PageOps = object
 
 
 DEFAULT_ORG = os.environ.get("DEFAULT_ORG", "My Organization")
@@ -156,13 +157,15 @@ class OrgOps:
         profile_ops: ProfileOps,
         coll_ops: CollectionOps,
         background_job_ops: BackgroundJobOps,
+        page_ops: PageOps,
     ) -> None:
-        """Set base crawl ops"""
+        """Set additional ops classes"""
         # pylint: disable=attribute-defined-outside-init
         self.base_crawl_ops = base_crawl_ops
         self.profile_ops = profile_ops
         self.coll_ops = coll_ops
         self.background_job_ops = background_job_ops
+        self.page_ops = page_ops
 
     def set_default_primary_storage(self, storage: StorageRef):
         """set default primary storage"""
@@ -940,13 +943,12 @@ class OrgOps:
         crawl_count = 0
         upload_count = 0
 
-        page_count = 0
-        crawl_page_count = 0
-        upload_page_count = 0
-
         snapshot_count = 0
         crawl_snapshot_count = 0
         upload_snapshot_count = 0
+
+        crawl_ids = []
+        upload_ids = []
 
         async for item_data in self.crawls_db.find({"oid": org.id}):
             item = BaseCrawl.from_dict(item_data)
@@ -955,16 +957,20 @@ class OrgOps:
             archived_item_count += 1
             if item.type == "crawl":
                 crawl_count += 1
-                crawl_page_count += item.pageCount or 0
                 crawl_snapshot_count += item.snapshotCount or 0
+                crawl_ids.append(item.id)
             if item.type == "upload":
                 upload_count += 1
-                upload_page_count += item.pageCount or 0
                 upload_snapshot_count += item.snapshotCount or 0
-            if item.pageCount:
-                page_count += item.pageCount
+                upload_ids.append(item.id)
             if item.snapshotCount:
                 snapshot_count += item.snapshotCount
+
+        all_archived_item_ids = crawl_ids + upload_ids
+
+        page_count = await self.page_ops.get_unique_page_count(all_archived_item_ids)
+        crawl_page_count = await self.page_ops.get_unique_page_count(crawl_ids)
+        upload_page_count = await self.page_ops.get_unique_page_count(upload_ids)
 
         profile_count = await self.profiles_db.count_documents({"oid": org.id})
         workflows_running_count = await self.crawls_db.count_documents(
