@@ -1252,6 +1252,7 @@ class Collection(BaseMongoModel):
 
     crawlCount: Optional[int] = 0
     pageCount: Optional[int] = 0
+    snapshotCount: Optional[int] = 0
     totalSize: Optional[int] = 0
 
     dateEarliest: Optional[datetime] = None
@@ -1305,6 +1306,7 @@ class CollOut(BaseMongoModel):
 
     crawlCount: Optional[int] = 0
     pageCount: Optional[int] = 0
+    snapshotCount: Optional[int] = 0
     totalSize: Optional[int] = 0
 
     dateEarliest: Optional[datetime] = None
@@ -1341,6 +1343,7 @@ class PublicCollOut(BaseMongoModel):
 
     crawlCount: Optional[int] = 0
     pageCount: Optional[int] = 0
+    snapshotCount: Optional[int] = 0
     totalSize: Optional[int] = 0
 
     dateEarliest: Optional[datetime] = None

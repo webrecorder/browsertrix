@@ -663,7 +663,7 @@ class PageOps:
 
         return crawl_type
 
-    def get_unique_page_count(self, crawl_id: str):
+    async def get_unique_page_count(self, crawl_id: str):
         """Get count of unique page URLs in archived item"""
         unique_pages = await self.pages.distinct("url", {"crawl_id": crawl_id})
         return len(unique_pages) or 0
