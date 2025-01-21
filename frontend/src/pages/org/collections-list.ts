@@ -45,14 +45,6 @@ const sortableFields: Record<
   SortField,
   { label: string; defaultDirection?: SortDirection }
 > = {
-  modified: {
-    label: msg("Last Modified"),
-    defaultDirection: SortDirection.Descending,
-  },
-  dateLatest: {
-    label: msg("Collection Period"),
-    defaultDirection: SortDirection.Descending,
-  },
   name: {
     label: msg("Name"),
     defaultDirection: SortDirection.Ascending,
@@ -63,6 +55,14 @@ const sortableFields: Record<
   },
   pageCount: {
     label: msg("Pages"),
+    defaultDirection: SortDirection.Descending,
+  },
+  dateLatest: {
+    label: msg("Collection Period"),
+    defaultDirection: SortDirection.Descending,
+  },
+  modified: {
+    label: msg("Last Modified"),
     defaultDirection: SortDirection.Descending,
   },
 };
@@ -379,9 +379,6 @@ export class CollectionsList extends BtrixElement {
             </btrix-table-header-cell>
             <btrix-table-header-cell>${msg("Name")}</btrix-table-header-cell>
             <btrix-table-header-cell>
-              ${msg("Collection Period")}
-            </btrix-table-header-cell>
-            <btrix-table-header-cell>
               ${msg("Archived Items")}
             </btrix-table-header-cell>
             <btrix-table-header-cell>
@@ -389,6 +386,9 @@ export class CollectionsList extends BtrixElement {
             </btrix-table-header-cell>
             <btrix-table-header-cell>
               ${msg("Total Pages")}
+            </btrix-table-header-cell>
+            <btrix-table-header-cell>
+              ${msg("Collection Period")}
             </btrix-table-header-cell>
             <btrix-table-header-cell>
               ${msg("Last Modified")}
@@ -529,9 +529,6 @@ export class CollectionsList extends BtrixElement {
         </a>
       </btrix-table-cell>
       <btrix-table-cell>
-        ${monthYearDateRange(col.dateEarliest, col.dateLatest)}
-      </btrix-table-cell>
-      <btrix-table-cell>
         ${this.localize.number(col.crawlCount, { notation: "compact" })}
         ${pluralOf("items", col.crawlCount)}
       </btrix-table-cell>
@@ -543,6 +540,9 @@ export class CollectionsList extends BtrixElement {
       <btrix-table-cell>
         ${this.localize.number(col.pageCount, { notation: "compact" })}
         ${pluralOf("pages", col.pageCount)}
+      </btrix-table-cell>
+      <btrix-table-cell>
+        ${monthYearDateRange(col.dateEarliest, col.dateLatest)}
       </btrix-table-cell>
       <btrix-table-cell>
         <btrix-format-date
