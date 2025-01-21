@@ -1534,7 +1534,7 @@ class CrawlOperator(BaseOperator):
         )
 
         if state in SUCCESSFUL_STATES and crawl.oid:
-            await self.page_ops.set_archived_item_page_count(crawl.id)
+            await self.page_ops.set_archived_item_page_snapshot_counts(crawl.id)
             await self.org_ops.inc_org_bytes_stored(
                 crawl.oid, status.filesAddedSize, "crawl"
             )
