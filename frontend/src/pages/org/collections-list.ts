@@ -39,7 +39,7 @@ type SearchResult = {
     value: string;
   };
 };
-type SortField = "modified" | "dateLatest" | "name" | "totalSize";
+type SortField = "modified" | "dateLatest" | "name" | "totalSize" | "pageCount";
 const INITIAL_PAGE_SIZE = 20;
 const sortableFields: Record<
   SortField,
@@ -59,6 +59,10 @@ const sortableFields: Record<
   },
   totalSize: {
     label: msg("Size"),
+    defaultDirection: SortDirection.Descending,
+  },
+  pageCount: {
+    label: msg("Pages"),
     defaultDirection: SortDirection.Descending,
   },
 };
