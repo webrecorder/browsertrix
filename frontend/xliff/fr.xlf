@@ -3939,26 +3939,32 @@
       <trans-unit id="s40b5b363fefc9199">
         <source>Please remove or fix the following invalid URL: <x id="0" equiv-text="${invalidUrl}"/></source>
       </trans-unit>
-      <trans-unit id="saf63d34c8601dd41">
+      <trans-unit id="saf63d34c8601dd41" xml:space="preserve">
         <source><x id="0" equiv-text="${humanizeSchedule(workflow.schedule, {&#10;    length: &quot;short&quot;,&#10;})}"/> </source>
+        <target state="translated">&lt;x id="0" equiv-text="${humanizeSchedule(workflow.schedule, {&amp;#10 ;    length : &amp;quot ;short&amp;quot ;,&amp;#10 ;})}"/&gt; </target>
       </trans-unit>
-      <trans-unit id="s136b21dec9a221bd">
+      <trans-unit id="s136b21dec9a221bd" xml:space="preserve">
         <source>Manual run by <x id="0" equiv-text="${workflow.lastStartedByName}"/></source>
+        <target state="translated">Exécution manuelle par <x id="0" equiv-text="${workflow.lastStartedByName}"/></target>
       </trans-unit>
-      <trans-unit id="sde7cc417de1b3246">
+      <trans-unit id="sde7cc417de1b3246" xml:space="preserve">
         <source>---</source>
+        <target state="translated">---</target>
       </trans-unit>
       <trans-unit id="sa84bc532c73403ed">
         <source>Running for <x id="0" equiv-text="${this.localize.humanizeDuration(diff, {&#10;    compact: true,&#10;})}"/></source>
       </trans-unit>
-      <trans-unit id="sc154fb69dffcdef9">
+      <trans-unit id="sc154fb69dffcdef9" xml:space="preserve">
         <source>billing settings</source>
+        <target state="translated">Paramètres de facturation</target>
       </trans-unit>
-      <trans-unit id="s7fa0d24b94690373">
+      <trans-unit id="s7fa0d24b94690373" xml:space="preserve">
         <source>Your subscription ends on <x id="0" equiv-text="${dateStr}"/>. Your user account, org, and all associated data will be deleted.</source>
+        <target state="translated">Votre abonnement expire le <x id="0" equiv-text="${dateStr}"/>. Votre compte d'utilisateur, d'organisme, et toutes les données associées, seront supprimés.</target>
       </trans-unit>
-      <trans-unit id="h16be212de6638b6c">
+      <trans-unit id="h16be212de6638b6c" xml:space="preserve">
         <source>We suggest downloading your archived items before they are deleted. To keep your plan and data, see <x id="0" equiv-text="${billingTabLink}"/>.</source>
+        <target state="translated">Nous vous conseillons de télécharger vos éléments archivés avant qu'ils ne soient supprimés. Pour conserver votre plan et vos données, voir <x id="0" equiv-text="${billingTabLink}"/>.</target>
       </trans-unit>
       <trans-unit id="s1f1b3cea8b3a20f3">
         <source>You have <x id="0" equiv-text="${daysDiff}"/> days left of your Browsertrix trial</source>
