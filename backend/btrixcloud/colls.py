@@ -564,6 +564,7 @@ class CollectionOps:
 
     async def update_collection_counts_and_tags(self, collection_id: UUID):
         """Set current crawl info in config when crawl begins"""
+        # pylint: disable=too-many-locals
         crawl_count = 0
         page_count = 0
         snapshot_count = 0
