@@ -51,7 +51,7 @@ export class CollectionDetail extends BtrixElement {
   collectionId!: string;
 
   @property({ type: String })
-  collectionTab: Tab = Tab.Replay;
+  collectionTab: Tab | null = Tab.Replay;
 
   @state()
   private collection?: Collection;
@@ -112,6 +112,9 @@ export class CollectionDetail extends BtrixElement {
     if (changedProperties.has("collectionId")) {
       void this.fetchCollection();
       void this.fetchArchivedItems({ page: 1 });
+    }
+    if (changedProperties.has("collectionTab") && this.collectionTab === null) {
+      this.collectionTab = Tab.Replay;
     }
   }
 
