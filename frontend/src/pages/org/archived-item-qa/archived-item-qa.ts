@@ -38,6 +38,7 @@ import type {
 } from "@/types/api";
 import type { ArchivedItem, ArchivedItemPageComment } from "@/types/crawler";
 import type { ArchivedItemQAPage, QARun } from "@/types/qa";
+import { SortDirection as APISortDirection } from "@/types/utils";
 import {
   isActive,
   isSuccessfullyFinished,
@@ -553,7 +554,8 @@ export class ArchivedItemQA extends BtrixElement {
             .pages=${this.pages}
             .orderBy=${{
               field: this.sortPagesBy.sortBy,
-              direction: (this.sortPagesBy.sortDirection === -1
+              direction: (this.sortPagesBy.sortDirection ===
+              APISortDirection.Descending
                 ? "desc"
                 : "asc") as SortDirection,
             }}
