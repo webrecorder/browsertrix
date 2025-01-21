@@ -409,9 +409,7 @@ class CollectionOps:
         elif access:
             match_query["access"] = access
 
-        aggregate: List[Dict[str, Dict[str, Union[int, object]]]] = [
-            {"$match": match_query}
-        ]
+        aggregate: List[Dict[str, Dict[str, object]]] = [{"$match": match_query}]
 
         if sort_by:
             if sort_by not in (
@@ -429,7 +427,7 @@ class CollectionOps:
             if sort_direction not in (1, -1):
                 raise HTTPException(status_code=400, detail="invalid_sort_direction")
 
-            sort_query = {sort_by: sort_direction}
+            sort_query: Dict[str, int] = {sort_by: sort_direction}
 
             # add secondary sort keys:
             if sort_by == "dateLatest":
