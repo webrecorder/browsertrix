@@ -1,7 +1,7 @@
 import { localized, msg } from "@lit/localize";
 import { Task } from "@lit/task";
 import type { SlSelectEvent } from "@shoelace-style/shoelace";
-import { html, type PropertyValues, type TemplateResult } from "lit";
+import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
@@ -333,15 +333,17 @@ export class Dashboard extends BtrixElement {
                               ${msg("Copy Link to Profile")}
                             </sl-menu-item>
                           `
-                        : html`
-                            <sl-divider></sl-divider>
-                            <btrix-menu-item-link
-                              href=${`${this.navigate.orgBasePath}/settings`}
-                            >
-                              <sl-icon slot="prefix" name="gear"></sl-icon>
-                              ${msg("Update Org Visibility")}
-                            </btrix-menu-item-link>
-                          `,
+                        : this.appState.isAdmin
+                          ? html`
+                              <sl-divider></sl-divider>
+                              <btrix-menu-item-link
+                                href=${`${this.navigate.orgBasePath}/settings`}
+                              >
+                                <sl-icon slot="prefix" name="gear"></sl-icon>
+                                ${msg("Update Org Profile")}
+                              </btrix-menu-item-link>
+                            `
+                          : nothing,
                     )}
                   </sl-menu>
                 </btrix-overflow-dropdown>
