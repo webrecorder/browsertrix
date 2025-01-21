@@ -2,7 +2,6 @@
 Migration 0041 - Rationalize page and snapshot counts
 """
 
-from btrixcloud.colls import CollectionOps
 from btrixcloud.migrations import BaseMigration
 
 

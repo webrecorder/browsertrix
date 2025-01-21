@@ -627,6 +627,7 @@ class CollectionOps:
 
     async def update_collection_dates(self, coll_id: UUID):
         """Update collection earliest and latest dates from page timestamps"""
+        # pylint: disable=too-many-locals
         coll = await self.get_collection(coll_id)
         crawl_ids = await self.get_collection_crawl_ids(coll_id)
 
