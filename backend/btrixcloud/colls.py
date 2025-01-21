@@ -422,6 +422,8 @@ class CollectionOps:
                 "crawlCount",
                 "pageCount",
                 "totalSize",
+                "description",
+                "caption",
             ):
                 raise HTTPException(status_code=400, detail="invalid_sort_by")
             if sort_direction not in (1, -1):
