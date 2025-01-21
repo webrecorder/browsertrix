@@ -39,7 +39,13 @@ type SearchResult = {
     value: string;
   };
 };
-type SortField = "modified" | "dateLatest" | "name" | "totalSize" | "pageCount";
+type SortField =
+  | "modified"
+  | "dateLatest"
+  | "name"
+  | "totalSize"
+  | "pageCount"
+  | "crawlCount";
 const INITIAL_PAGE_SIZE = 20;
 const sortableFields: Record<
   SortField,
@@ -49,16 +55,20 @@ const sortableFields: Record<
     label: msg("Name"),
     defaultDirection: SortDirection.Ascending,
   },
-  totalSize: {
-    label: msg("Size"),
+  dateLatest: {
+    label: msg("Collection Period"),
+    defaultDirection: SortDirection.Descending,
+  },
+  crawlCount: {
+    label: msg("Archived Items"),
     defaultDirection: SortDirection.Descending,
   },
   pageCount: {
     label: msg("Pages"),
     defaultDirection: SortDirection.Descending,
   },
-  dateLatest: {
-    label: msg("Collection Period"),
+  totalSize: {
+    label: msg("Size"),
     defaultDirection: SortDirection.Descending,
   },
   modified: {
@@ -371,25 +381,20 @@ export class CollectionsList extends BtrixElement {
       return html`
         <btrix-table
           class="[--btrix-column-gap:var(--sl-spacing-small)]"
-          style="grid-template-columns: min-content [clickable-start] 50ch repeat(5, 1fr) [clickable-end] min-content"
+          style="grid-template-columns: min-content [clickable-start] 48em repeat(4, 1fr) [clickable-end] min-content"
         >
           <btrix-table-head class="mb-2 whitespace-nowrap">
             <btrix-table-header-cell>
               <span class="sr-only">${msg("Collection Access")}</span>
             </btrix-table-header-cell>
-            <btrix-table-header-cell>${msg("Name")}</btrix-table-header-cell>
+            <btrix-table-header-cell>
+              ${msg(html`Name & Collection Period`)}
+            </btrix-table-header-cell>
             <btrix-table-header-cell>
               ${msg("Archived Items")}
             </btrix-table-header-cell>
-            <btrix-table-header-cell>
-              ${msg("Total Size")}
-            </btrix-table-header-cell>
-            <btrix-table-header-cell>
-              ${msg("Total Pages")}
-            </btrix-table-header-cell>
-            <btrix-table-header-cell>
-              ${msg("Collection Period")}
-            </btrix-table-header-cell>
+            <btrix-table-header-cell>${msg("Pages")}</btrix-table-header-cell>
+            <btrix-table-header-cell>${msg("Size")}</btrix-table-header-cell>
             <btrix-table-header-cell>
               ${msg("Last Modified")}
             </btrix-table-header-cell>
@@ -525,7 +530,10 @@ export class CollectionsList extends BtrixElement {
           href=${`${this.navigate.orgBasePath}/collections/view/${col.id}`}
           @click=${this.navigate.link}
         >
-          ${col.name}
+          <div class="mb-0.5 truncate">${col.name}</div>
+          <div class="text-xs leading-4 text-neutral-500">
+            ${monthYearDateRange(col.dateEarliest, col.dateLatest)}
+          </div>
         </a>
       </btrix-table-cell>
       <btrix-table-cell>
@@ -533,16 +541,13 @@ export class CollectionsList extends BtrixElement {
         ${pluralOf("items", col.crawlCount)}
       </btrix-table-cell>
       <btrix-table-cell>
-        ${this.localize.bytes(col.totalSize || 0, {
-          unitDisplay: "narrow",
-        })}
-      </btrix-table-cell>
-      <btrix-table-cell>
         ${this.localize.number(col.pageCount, { notation: "compact" })}
         ${pluralOf("pages", col.pageCount)}
       </btrix-table-cell>
       <btrix-table-cell>
-        ${monthYearDateRange(col.dateEarliest, col.dateLatest)}
+        ${this.localize.bytes(col.totalSize || 0, {
+          unitDisplay: "narrow",
+        })}
       </btrix-table-cell>
       <btrix-table-cell>
         <btrix-format-date
