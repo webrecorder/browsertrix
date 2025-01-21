@@ -566,10 +566,11 @@ class CollectionOps:
         """Set current crawl info in config when crawl begins"""
         # pylint: disable=too-many-locals
         crawl_count = 0
-        page_count = 0
         snapshot_count = 0
         total_size = 0
         tags = []
+
+        crawl_ids = []
 
         coll = await self.get_collection(collection_id)
         org = await self.orgs.get_org_by_id(coll.oid)
@@ -592,17 +593,14 @@ class CollectionOps:
             except Exception:
                 pass
 
-            try:
-                crawl_page_count = await self.page_ops.get_unique_page_count(crawl.id)
-                page_count += crawl_page_count
-            # pylint: disable=broad-exception-caught
-            except Exception:
-                pass
-
             if crawl.tags:
                 tags.extend(crawl.tags)
 
+            crawl_ids.append(crawl.id)
+
         sorted_tags = [tag for tag, count in Counter(tags).most_common()]
+
+        page_count = await self.page_ops.get_unique_page_count(crawl_ids)
 
         await self.collections.find_one_and_update(
             {"_id": collection_id},
