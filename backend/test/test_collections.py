@@ -1109,7 +1109,7 @@ def test_list_public_colls_home_url_thumbnail():
         assert coll["snapshotCount"] > 0
         assert coll["totalSize"] > 0
 
-        for field in non_public_coll_fields:
+        for field in non_public_fields:
             assert field not in coll
 
         if coll["id"] == _public_coll_id:
