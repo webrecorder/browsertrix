@@ -500,7 +500,7 @@ export class CollectionDetail extends BtrixElement {
             : nothing,
         )}
         ${this.renderDetailItem(
-          msg("Last Updated"),
+          msg("Last Modified"),
           (col) =>
             html`<btrix-format-date
               date=${col.modified}

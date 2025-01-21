@@ -25,7 +25,7 @@ import {
   type Collection,
   type CollectionSearchValues,
 } from "@/types/collection";
-import type { UnderlyingFunction } from "@/types/utils";
+import { SortDirection, type UnderlyingFunction } from "@/types/utils";
 import { isApiError } from "@/utils/api";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
@@ -38,24 +38,27 @@ type SearchResult = {
     value: string;
   };
 };
-type SortField = "modified" | "name" | "totalSize";
-type SortDirection = "asc" | "desc";
+type SortField = "modified" | "dateLatest" | "name" | "totalSize";
 const INITIAL_PAGE_SIZE = 20;
 const sortableFields: Record<
   SortField,
   { label: string; defaultDirection?: SortDirection }
 > = {
   modified: {
-    label: msg("Last Updated"),
-    defaultDirection: "desc",
+    label: msg("Last Modified"),
+    defaultDirection: SortDirection.Descending,
+  },
+  dateLatest: {
+    label: msg("Collection Period"),
+    defaultDirection: SortDirection.Descending,
   },
   name: {
     label: msg("Name"),
-    defaultDirection: "asc",
+    defaultDirection: SortDirection.Ascending,
   },
   totalSize: {
     label: msg("Size"),
-    defaultDirection: "desc",
+    defaultDirection: SortDirection.Descending,
   },
 };
 const MIN_SEARCH_LENGTH = 2;
@@ -269,7 +272,7 @@ export class CollectionsList extends BtrixElement {
               @click=${() => {
                 this.orderBy = {
                   ...this.orderBy,
-                  direction: this.orderBy.direction === "asc" ? "desc" : "asc",
+                  direction: -1 * this.orderBy.direction,
                 };
               }}
             ></sl-icon-button>
@@ -380,7 +383,7 @@ export class CollectionsList extends BtrixElement {
               ${msg("Total Pages")}
             </btrix-table-header-cell>
             <btrix-table-header-cell>
-              ${msg("Last Updated")}
+              ${msg("Last Modified")}
             </btrix-table-header-cell>
             <btrix-table-header-cell>
               <span class="sr-only">${msg("Row Actions")}</span>
@@ -783,7 +786,7 @@ export class CollectionsList extends BtrixElement {
           this.collections?.pageSize ||
           INITIAL_PAGE_SIZE,
         sortBy: this.orderBy.field,
-        sortDirection: this.orderBy.direction === "desc" ? -1 : 1,
+        sortDirection: this.orderBy.direction,
       },
       {
         arrayFormat: "comma",

@@ -3,10 +3,14 @@ import { Task } from "@lit/task";
 import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
+import queryString from "query-string";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { page, pageHeading } from "@/layouts/page";
+import type { APIPaginatedList, APISortQuery } from "@/types/api";
+import { CollectionAccess, type Collection } from "@/types/collection";
 import type { OrgData, PublicOrgCollections } from "@/types/org";
+import { SortDirection } from "@/types/utils";
 
 @localized()
 @customElement("btrix-org-profile")
@@ -277,6 +281,9 @@ export class OrgProfile extends BtrixElement {
       }
 
       const org = await this.api.fetch<OrgData>(`/orgs/${userOrg.id}`);
+      const collections = await this.getPublicCollections({
+        orgId: this.orgId,
+      });
 
       return {
         org: {
@@ -285,10 +292,27 @@ export class OrgProfile extends BtrixElement {
           url: org.publicUrl || "",
           verified: false, // TODO
         },
-        collections: [], // TODO
+        collections,
       };
     } catch {
       return null;
     }
+  }
+
+  private async getPublicCollections({ orgId }: { orgId: string }) {
+    const params: APISortQuery<Collection> & {
+      access: CollectionAccess;
+    } = {
+      sortBy: "dateLatest",
+      sortDirection: SortDirection.Descending,
+      access: CollectionAccess.Public,
+    };
+    const query = queryString.stringify(params);
+
+    const data = await this.api.fetch<APIPaginatedList<Collection>>(
+      `/orgs/${orgId}/collections?${query}`,
+    );
+
+    return data.items;
   }
 }
