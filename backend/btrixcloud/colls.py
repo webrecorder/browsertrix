@@ -396,7 +396,7 @@ class CollectionOps:
         page = page - 1
         skip = page * page_size
 
-        match_query: dict[str, Union[str, UUID, int, object]] = {"oid": org.id}
+        match_query: Dict[str, Union[str, UUID, int, object]] = {"oid": org.id}
 
         if name:
             match_query["name"] = name
@@ -409,7 +409,9 @@ class CollectionOps:
         elif access:
             match_query["access"] = access
 
-        aggregate = [{"$match": match_query}]
+        aggregate: List[Dict[str, Union[str, UUID, int, object]]] = [
+            {"$match": match_query}
+        ]
 
         if sort_by:
             if sort_by not in (
