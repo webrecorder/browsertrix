@@ -1322,11 +1322,15 @@ class OrgOps:
             await self.pages_db.insert_one(PageWithAllQA.from_dict(page).to_dict())
 
         # collections
-        for collection in org_data.get("collections", []):
-            collection = json_stream.to_standard_types(collection)
-            if not collection.get("slug"):
-                collection["slug"] = slug_from_name(collection["name"])
-            await self.colls_db.insert_one(Collection.from_dict(collection).to_dict())
+        for coll_raw in org_data.get("collections", []):
+            coll_raw = json_stream.to_standard_types(coll_raw)
+
+            if not coll_raw.get("slug"):
+                coll_raw["slug"] = slug_from_name(coll_raw["name"])
+
+            collection = Collection.from_dict(coll_raw)
+            await self.colls_db.insert_one(collection.to_dict())
+            await self.coll_ops.update_collection_counts_and_tags(collection.id)
 
     async def delete_org_and_data(
         self, org: Organization, user_manager: UserManager
