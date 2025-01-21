@@ -3621,119 +3621,156 @@
         <source>Loading...</source>
         <target state="translated">Chargement...</target>
       </trans-unit>
-      <trans-unit id="sd7d35ab49e07fe79">
+      <trans-unit id="sd7d35ab49e07fe79" xml:space="preserve">
         <source>Uploads in Collection (<x id="0" equiv-text="${this.localize.number(this.uploads!.total)}"/>)</source>
+        <target state="translated">Téléchargements dans la collection (<x id="0" equiv-text="${this.localize.number(this.uploads!.total)}"/>)</target>
       </trans-unit>
-      <trans-unit id="s84c2e4081c2bf6d7">
+      <trans-unit id="s84c2e4081c2bf6d7" xml:space="preserve">
         <source>All Uploads (<x id="0" equiv-text="${this.localize.number(this.uploads!.total)}"/>)</source>
+        <target state="translated">Tous les téléchargements (<x id="0" equiv-text="${this.localize.number(this.uploads!.total)}"/>)</target>
       </trans-unit>
-      <trans-unit id="s1e2b42118528e92f">
+      <trans-unit id="s1e2b42118528e92f" xml:space="preserve">
         <source>In Collection?</source>
+        <target state="translated">Dans la collection ?</target>
       </trans-unit>
-      <trans-unit id="sa03a63e319c2f89b">
+      <trans-unit id="sa03a63e319c2f89b" xml:space="preserve">
         <source>No matching uploads found.</source>
+        <target state="translated">Aucun téléchargement correspondant n'a été trouvé.</target>
       </trans-unit>
-      <trans-unit id="s06d6c6dc05578422">
+      <trans-unit id="s06d6c6dc05578422" xml:space="preserve">
         <source>Only items in Collection</source>
+        <target state="translated">Items seulement dans la collection</target>
       </trans-unit>
-      <trans-unit id="s8a6f4e542c686466">
+      <trans-unit id="s8a6f4e542c686466" xml:space="preserve">
         <source>Only mine</source>
+        <target state="needs-translation">Seulement les miens</target>
       </trans-unit>
-      <trans-unit id="s13e37d380ccd180d">
+      <trans-unit id="s13e37d380ccd180d" xml:space="preserve">
         <source>No changes to save</source>
+        <target state="translated">Aucun changement à sauvegarder</target>
       </trans-unit>
-      <trans-unit id="s8ad4a17ab2b75854">
+      <trans-unit id="s8ad4a17ab2b75854" xml:space="preserve">
         <source>Adding <x id="0" equiv-text="${this.localize.number(addCount)} ${pluralOf(&quot;items&quot;, addCount)}"/></source>
+        <target state="needs-translation">Ajoutant <x id="0" equiv-text="${this.localize.number(addCount)} ${pluralOf(&quot;items&quot;, addCount)}"/></target>
       </trans-unit>
-      <trans-unit id="s582e36ff4a424786">
+      <trans-unit id="s582e36ff4a424786" xml:space="preserve">
         <source>Removing <x id="0" equiv-text="${this.localize.number(removeCount)} ${pluralOf(&quot;items&quot;, removeCount)}"/></source>
+        <target state="needs-translation">Supprimant <x id="0" equiv-text="${this.localize.number(removeCount)} ${pluralOf(&quot;items&quot;, removeCount)}"/></target>
       </trans-unit>
-      <trans-unit id="s4a0cbea3f0b22976">
+      <trans-unit id="s4a0cbea3f0b22976" xml:space="preserve">
         <source>Save Selection</source>
+        <target state="translated">Sauvegarder la sélection</target>
       </trans-unit>
-      <trans-unit id="sc9e34cb12aab0e3a">
+      <trans-unit id="sc9e34cb12aab0e3a" xml:space="preserve">
         <source>Updated.</source>
+        <target state="translated">Mis à jour.</target>
       </trans-unit>
-      <trans-unit id="s83c70a729f1dd241">
+      <trans-unit id="s83c70a729f1dd241" xml:space="preserve">
         <source>Something unexpected went wrong, couldn't save auto-add setting.</source>
+        <target state="translated">Un problème inattendu s'est produit, les paramètres d'ajout automatique n'ont pas pu être sauvegardés.</target>
       </trans-unit>
-      <trans-unit id="sae69bd370363cb62">
+      <trans-unit id="sae69bd370363cb62" xml:space="preserve">
         <source>Run on a specific date and time</source>
+        <target state="translated">Exécuter à une date et une heure précises</target>
       </trans-unit>
-      <trans-unit id="sb407b40e2e7a98c1">
+      <trans-unit id="sb407b40e2e7a98c1" xml:space="preserve">
         <source>Run on a recurring basis</source>
+        <target state="translated">Exécuter sur une base récurrente</target>
       </trans-unit>
-      <trans-unit id="s4d1422b9bc3d0a7e">
+      <trans-unit id="s4d1422b9bc3d0a7e" xml:space="preserve">
         <source>Daily</source>
+        <target state="translated">Quotidien</target>
       </trans-unit>
-      <trans-unit id="s1ed5bb575207cece">
+      <trans-unit id="s1ed5bb575207cece" xml:space="preserve">
         <source>Weekly</source>
+        <target state="translated">Hebdomadaire</target>
       </trans-unit>
-      <trans-unit id="s046a35bfdd88a596">
+      <trans-unit id="s046a35bfdd88a596" xml:space="preserve">
         <source>Monthly</source>
+        <target state="translated">Mensuel</target>
       </trans-unit>
-      <trans-unit id="sb15d4f1e13d04925">
+      <trans-unit id="sb15d4f1e13d04925" xml:space="preserve">
         <source>Limits</source>
+        <target state="translated">Limites</target>
       </trans-unit>
-      <trans-unit id="s980b48ea42f59abe">
+      <trans-unit id="s980b48ea42f59abe" xml:space="preserve">
         <source>Review Settings</source>
+        <target state="translated">Paramètres de révision</target>
       </trans-unit>
-      <trans-unit id="hf77ba6b1d74e2cdb">
+      <trans-unit id="hf77ba6b1d74e2cdb" xml:space="preserve">
         <source>Fields marked with <x id="0" equiv-text="&lt;span style=&quot;color:var(--sl-input-required-content-color)&quot;&gt;"/>*<x id="1" equiv-text="&lt;/span&gt;"/> are required</source>
+        <target state="translated">Les champs marqués avec <x id="0" equiv-text="&lt;span style=&quot;color:var(--sl-input-required-content-color)&quot;&gt;"/>*<x id="1" equiv-text="&lt;/span&gt;"/> sont requis</target>
       </trans-unit>
-      <trans-unit id="s5f94c84437a8594c">
+      <trans-unit id="s5f94c84437a8594c" xml:space="preserve">
         <source>Form section contains errors</source>
+        <target state="translated">La section du formulaire contient des erreurs</target>
       </trans-unit>
-      <trans-unit id="sf39dc9c47c9ff82c">
+      <trans-unit id="sf39dc9c47c9ff82c" xml:space="preserve">
         <source>Changes in all sections will be saved</source>
+        <target state="translated">Les modifications apportées à toutes les sections seront sauvegardées</target>
       </trans-unit>
-      <trans-unit id="s814a0cb8f2908f75">
+      <trans-unit id="s814a0cb8f2908f75" xml:space="preserve">
         <source>Save Workflow</source>
+        <target state="translated">Sauvegarder le flux de travail</target>
       </trans-unit>
-      <trans-unit id="s74e4c44c09eaa53a">
+      <trans-unit id="s74e4c44c09eaa53a" xml:space="preserve">
         <source>Previous Step</source>
+        <target state="translated">Étape précédente</target>
       </trans-unit>
-      <trans-unit id="sc2c5b518e1f5c85a">
+      <trans-unit id="sc2c5b518e1f5c85a" xml:space="preserve">
         <source>Next Step</source>
+        <target state="translated">Étape suivante</target>
       </trans-unit>
-      <trans-unit id="hf4626f0918c0d6a0">
+      <trans-unit id="hf4626f0918c0d6a0" xml:space="preserve">
         <source>Review &amp; Save</source>
+        <target state="translated">Réviser &amp; sauvegarder</target>
       </trans-unit>
       <trans-unit id="s9645fd859ac5dbd8">
         <source>Run on Save</source>
       </trans-unit>
-      <trans-unit id="s7af85d601db244a7">
+      <trans-unit id="s7af85d601db244a7" xml:space="preserve">
         <source>Tells the crawler which pages it can visit.</source>
+        <target state="translated">Indique au robot moissonneur les pages qu'il peut visiter.</target>
       </trans-unit>
-      <trans-unit id="se1e6d1d7a1a133e9">
+      <trans-unit id="se1e6d1d7a1a133e9" xml:space="preserve">
         <source>Exclude Pages</source>
+        <target state="translated">Exclure des pages</target>
       </trans-unit>
-      <trans-unit id="scbd664e4049d11f3">
+      <trans-unit id="scbd664e4049d11f3" xml:space="preserve">
         <source>Specify exclusion rules for what pages should not be visited.</source>
+        <target state="translated">Spécifier des règles d'exclusion pour les pages qui ne doivent pas être visitées.</target>
       </trans-unit>
-      <trans-unit id="s262c31c801cfbcd9">
+      <trans-unit id="s262c31c801cfbcd9" xml:space="preserve">
         <source>Please enter a valid URL.</source>
+        <target state="translated">Veuillez saisir une URL valide.</target>
       </trans-unit>
-      <trans-unit id="s12e1314dc1f74824">
+      <trans-unit id="s12e1314dc1f74824" xml:space="preserve">
         <source>The URL of the page to crawl.</source>
+        <target state="translated">L'URL de la page à collecter.</target>
       </trans-unit>
-      <trans-unit id="s0cd2df7d9d95ae68">
+      <trans-unit id="s0cd2df7d9d95ae68" xml:space="preserve">
         <source>At least 1 URL is required.</source>
+        <target state="translated">Au moins 1 URL est requise.</target>
       </trans-unit>
-      <trans-unit id="s41d2278219615589">
+      <trans-unit id="s41d2278219615589" xml:space="preserve">
         <source>The crawler will visit and record each URL listed here. You can enter up to <x id="0" equiv-text="${this.localize.number(URL_LIST_MAX_URLS)}"/> URLs.</source>
+        <target state="translated">Le robot moissonneur visitera et enregistrera chaque URL listée ici. Vous pouvez saisir jusqu'à <x id="0" equiv-text="${this.localize.number(URL_LIST_MAX_URLS)}"/> URLs.</target>
       </trans-unit>
-      <trans-unit id="s150f5e42dc1aad38">
+      <trans-unit id="s150f5e42dc1aad38" xml:space="preserve">
         <source>Include any linked page (“one hop out”)</source>
+        <target state="translated">Inclure toute page liée (“one hop out”)</target>
       </trans-unit>
-      <trans-unit id="sfc5e402f8b21ef5f">
+      <trans-unit id="sfc5e402f8b21ef5f" xml:space="preserve">
         <source>If checked, the crawler will visit pages one link away.</source>
+        <target state="translated">Si cette case est cochée, le robot moissonneur visitera les pages situées à un lien de distance.</target>
       </trans-unit>
-      <trans-unit id="hef8020bab2159211">
+      <trans-unit id="hef8020bab2159211" xml:space="preserve">
         <source>Will crawl all pages and paths in the same directory, e.g. <x id="0" equiv-text="&lt;span class=&quot;break-word break-word text-blue-500&quot;&gt;${exampleDomain}&lt;/span&gt;&lt;span class=&quot;break-word font-medium text-blue-500&quot;&gt;${examplePathname.slice(0, examplePathname.lastIndexOf(&quot;/&quot;))}"/>/<x id="1" equiv-text="&lt;/span&gt;"/></source>
+        <target state="translated">Collectera toutes les pages et chemins appartenant au même répertoire, c.a.d. <x id="0" equiv-text="&lt;span class=&quot;break-word break-word text-blue-500&quot;&gt;${exampleDomain}&lt;/span&gt;&lt;span class=&quot;break-word font-medium text-blue-500&quot;&gt;${examplePathname.slice(0, examplePathname.lastIndexOf(&quot;/&quot;))}"/>/<x id="1" equiv-text="&lt;/span&gt;"/></target>
       </trans-unit>
-      <trans-unit id="hed4c39f98af5c58f">
+      <trans-unit id="hed4c39f98af5c58f" xml:space="preserve">
         <source>Will crawl all pages on <x id="0" equiv-text="&lt;span class=&quot;text-blue-500&quot;&gt;${exampleHost}&lt;/span&gt;"/> and ignore pages on any subdomains.</source>
+        <target state="translated">Collectera toutes les pages sur <x id="0" equiv-text="&lt;span class=&quot;text-blue-500&quot;&gt;${exampleHost}&lt;/span&gt;"/> et ignorera les pages de tous les sous-domaines.</target>
       </trans-unit>
       <trans-unit id="ha8f0ffdb034da2d1">
         <source>Will crawl all pages on <x id="0" equiv-text="&lt;span class=&quot;text-blue-500&quot;&gt;${exampleHost}&lt;/span&gt;"/> and <x id="1" equiv-text="&lt;span class=&quot;text-blue-500&quot;&gt;"/>subdomain.<x id="2" equiv-text="${exampleHost}&lt;/span&gt;"/>.</source>
