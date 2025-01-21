@@ -409,7 +409,9 @@ class CollectionOps:
         elif access:
             match_query["access"] = access
 
-        aggregate = [{"$match": match_query}]
+        aggregate: List[Dict[str, Dict[str, Union[int, object]]]] = [
+            {"$match": match_query}
+        ]
 
         if sort_by:
             if sort_by not in (
