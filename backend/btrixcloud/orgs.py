@@ -944,6 +944,10 @@ class OrgOps:
         crawl_page_count = 0
         upload_page_count = 0
 
+        snapshot_count = 0
+        crawl_snapshot_count = 0
+        upload_snapshot_count = 0
+
         async for item_data in self.crawls_db.find({"oid": org.id}):
             item = BaseCrawl.from_dict(item_data)
             if item.state not in SUCCESSFUL_STATES:
@@ -952,11 +956,15 @@ class OrgOps:
             if item.type == "crawl":
                 crawl_count += 1
                 crawl_page_count += item.pageCount or 0
+                crawl_snapshot_count += item.snapshotCount or 0
             if item.type == "upload":
                 upload_count += 1
                 upload_page_count += item.pageCount or 0
+                upload_snapshot_count += item.snapshotCount or 0
             if item.pageCount:
                 page_count += item.pageCount
+            if item.snapshotCount:
+                snapshot_count += item.snapshotCount
 
         profile_count = await self.profiles_db.count_documents({"oid": org.id})
         workflows_running_count = await self.crawls_db.count_documents(
@@ -982,6 +990,9 @@ class OrgOps:
             "pageCount": page_count,
             "crawlPageCount": crawl_page_count,
             "uploadPageCount": upload_page_count,
+            "snapshotCount": snapshot_count,
+            "crawlSnapshotCount": crawl_snapshot_count,
+            "uploadSnapshotCount": upload_snapshot_count,
             "profileCount": profile_count,
             "workflowsRunningCount": workflows_running_count,
             "maxConcurrentCrawls": max_concurrent_crawls,
