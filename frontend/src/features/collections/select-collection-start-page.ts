@@ -82,11 +82,7 @@ export class SelectCollectionStartPage extends BtrixElement {
 
   protected willUpdate(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("collection") && this.collection) {
-      if (this.input && this.collection.homeUrl) {
-        this.input.value = this.collection.homeUrl;
-        this.searchQuery = this.collection.homeUrl;
-      }
-      void this.initSelection();
+      void this.initSelection(this.collection);
     }
   }
 
@@ -107,29 +103,38 @@ export class SelectCollectionStartPage extends BtrixElement {
     }
   }
 
-  private async initSelection() {
-    await this.updateComplete;
-    await this.searchResults.taskComplete;
-
-    const homeUrl = this.collection?.homeUrl;
-    const homeTs = this.collection?.homeUrlTs;
-
-    if (homeUrl && this.searchResults.value) {
-      this.selectedPage = this.searchResults.value.items.find(
-        ({ url }) => url === homeUrl,
-      );
-
-      if (this.selectedPage && homeTs) {
-        this.selectedSnapshot = this.selectedPage.snapshots.find(
-          ({ ts }) => ts === homeTs,
-        );
-      }
+  private async initSelection(collection: Collection) {
+    if (!collection.homeUrl && collection.pageCount !== 1) {
+      return;
     }
+
+    const pageUrls = await this.getPageUrls({
+      id: collection.id,
+      urlPrefix: collection.homeUrl || "",
+      pageSize: 1,
+    });
+
+    if (!pageUrls.total) {
+      return;
+    }
+
+    const startPage = pageUrls.items[0];
+
+    if (this.input) {
+      this.input.value = startPage.url;
+    }
+
+    const homeTs = collection.homeUrlTs;
+
+    this.selectedPage = startPage;
+    this.selectedSnapshot = homeTs
+      ? this.selectedPage.snapshots.find(({ ts }) => ts === homeTs)
+      : this.selectedPage.snapshots[0];
   }
 
   private readonly searchResults = new Task(this, {
     task: async ([searchValue], { signal }) => {
-      const searchResults = await this.getPageUrls(
+      const pageUrls = await this.getPageUrls(
         {
           id: this.collectionId!,
           urlPrefix: searchValue,
@@ -137,7 +142,7 @@ export class SelectCollectionStartPage extends BtrixElement {
         signal,
       );
 
-      return searchResults;
+      return pageUrls;
     },
     args: () => [this.searchQuery] as const,
   });
@@ -154,6 +159,7 @@ export class SelectCollectionStartPage extends BtrixElement {
           value=${this.selectedSnapshot?.pageId || ""}
           ?required=${this.selectedPage && !this.selectedSnapshot}
           ?disabled=${!this.selectedPage}
+          hoist
           @sl-change=${async (e: SlChangeEvent) => {
             const { value } = e.currentTarget as SlSelect;
 
@@ -227,7 +233,7 @@ export class SelectCollectionStartPage extends BtrixElement {
           id="pageUrlInput"
           label=${msg("Page URL")}
           placeholder=${msg("Start typing a URL...")}
-          clearable
+          ?clearable=${this.collection && this.collection.pageCount > 1}
           @sl-focus=${() => {
             this.resetInputValidity();
             this.combobox?.show();
