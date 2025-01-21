@@ -16,6 +16,7 @@ import queryString from "query-string";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Combobox } from "@/components/ui/combobox";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
+import type { Collection } from "@/types/collection";
 import type { UnderlyingFunction } from "@/types/utils";
 import { tw } from "@/utils/tailwind";
 
@@ -50,11 +51,8 @@ export class SelectCollectionStartPage extends BtrixElement {
   @property({ type: String })
   collectionId?: string;
 
-  @property({ type: String })
-  homeUrl?: string | null = null;
-
-  @property({ type: String })
-  homeTs?: string | null = null;
+  @property({ type: Object })
+  collection?: Collection;
 
   @state()
   private searchQuery = "";
@@ -82,14 +80,17 @@ export class SelectCollectionStartPage extends BtrixElement {
     return this.selectedSnapshot;
   }
 
-  updated(changedProperties: PropertyValues<this>) {
-    if (changedProperties.has("homeUrl") && this.homeUrl) {
-      if (this.input) {
-        this.input.value = this.homeUrl;
+  protected willUpdate(changedProperties: PropertyValues<this>) {
+    if (changedProperties.has("collection") && this.collection) {
+      if (this.input && this.collection.homeUrl) {
+        this.input.value = this.collection.homeUrl;
+        this.searchQuery = this.collection.homeUrl;
       }
-      this.searchQuery = this.homeUrl;
       void this.initSelection();
     }
+  }
+
+  updated(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("selectedSnapshot")) {
       this.dispatchEvent(
         new CustomEvent<SelectSnapshotDetail>("btrix-select", {
@@ -110,14 +111,17 @@ export class SelectCollectionStartPage extends BtrixElement {
     await this.updateComplete;
     await this.searchResults.taskComplete;
 
-    if (this.homeUrl && this.searchResults.value) {
+    const homeUrl = this.collection?.homeUrl;
+    const homeTs = this.collection?.homeUrlTs;
+
+    if (homeUrl && this.searchResults.value) {
       this.selectedPage = this.searchResults.value.items.find(
-        ({ url }) => url === this.homeUrl,
+        ({ url }) => url === homeUrl,
       );
 
-      if (this.selectedPage && this.homeTs) {
+      if (this.selectedPage && homeTs) {
         this.selectedSnapshot = this.selectedPage.snapshots.find(
-          ({ ts }) => ts === this.homeTs,
+          ({ ts }) => ts === homeTs,
         );
       }
     }
