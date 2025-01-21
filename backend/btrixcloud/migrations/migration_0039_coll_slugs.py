@@ -35,7 +35,6 @@ class Migration(BaseMigration):
                     {"_id": coll_id},
                     {"$set": {"slug": slug}},
                 )
-                print("Slug set: " + slug)
                 break
             except DuplicateKeyError:
                 # pylint: disable=raise-missing-from
