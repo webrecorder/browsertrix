@@ -4932,7 +4932,7 @@
       </trans-unit>
       <trans-unit id="sf9ca5cc93c622eb7" xml:space="preserve">
         <source>Unlisted</source>
-        <target state="needs-translation">Sur liste rouge</target>
+        <target state="needs-translation">Non listé</target>
       </trans-unit>
       <trans-unit id="se0ca0ce6d58bdb0a" xml:space="preserve">
         <source>Only people with the link can view</source>
@@ -4962,53 +4962,67 @@
         <source>Summary</source>
         <target state="translated">Résumé</target>
       </trans-unit>
-      <trans-unit id="s0487f33d9ddaabde">
+      <trans-unit id="s0487f33d9ddaabde" xml:space="preserve">
         <source>About</source>
+        <target state="translated">À propos</target>
       </trans-unit>
-      <trans-unit id="s52ed67729b51627a">
+      <trans-unit id="s52ed67729b51627a" xml:space="preserve">
         <source>Collection Period</source>
+        <target state="needs-translation">Durée de la collection</target>
       </trans-unit>
-      <trans-unit id="s851b32ef11f415c2">
+      <trans-unit id="s851b32ef11f415c2" xml:space="preserve">
         <source>Collection Size</source>
+        <target state="translated">Taille de la collection</target>
       </trans-unit>
-      <trans-unit id="s9eecfb2a2647cc24">
+      <trans-unit id="s9eecfb2a2647cc24" xml:space="preserve">
         <source>Summarize the collection's content</source>
+        <target state="translated">Résumer le contenu de la collection</target>
       </trans-unit>
-      <trans-unit id="s6a05ad3f740ad8d8">
+      <trans-unit id="s6a05ad3f740ad8d8" xml:space="preserve">
         <source>Write a short description that summarizes this collection. If the collection is public, this description will be visible next to the collection name.</source>
+        <target state="translated">Rédigez une courte description qui résume cette collection. Si la collection est publique, cette description sera visible à côté du nom de la collection.</target>
       </trans-unit>
-      <trans-unit id="s2cf3aa941fb481b9">
+      <trans-unit id="s2cf3aa941fb481b9" xml:space="preserve">
         <source>You can write a longer description in the 'About' section after creating the collection.</source>
+        <target state="translated">Vous pouvez rédiger une description plus longue dans la section « À propos » après avoir créé la collection.</target>
       </trans-unit>
-      <trans-unit id="s88b7cc857e3104f6">
+      <trans-unit id="s88b7cc857e3104f6" xml:space="preserve">
         <source>This collection will be visible on the org public profile, even without archived items. You may want to set visibility to 'Unlisted' until archived items have been added.</source>
+        <target state="translated">Cette collection sera visible sur le profil public de l'organisme, même en absence d'éléments archivés. Il peut être utile de régler la visibilité sur « Non listé » jusqu'à ce que des éléments archivés aient été ajoutés.</target>
       </trans-unit>
-      <trans-unit id="sde5576872ee6936d">
+      <trans-unit id="sde5576872ee6936d" xml:space="preserve">
         <source>This collection will be visible on the org profile page, which isn't public yet. To make the org profile and this collection visible to the public, update org profile settings.</source>
+        <target state="translated">Cette collection sera visible sur la page de profil de l'organisme, qui n'est pas encore publique. Pour rendre le profil de l'organisme et cette collection visibles au public, mettez à jour les paramètres du profil de l'organisme.</target>
       </trans-unit>
-      <trans-unit id="sd27c7f88dd56a528">
+      <trans-unit id="sd27c7f88dd56a528" xml:space="preserve">
         <source>Open org settings</source>
+        <target state="translated">Ouvrir les paramètres de l'organisme</target>
       </trans-unit>
-      <trans-unit id="sd82f616578d2b33d">
+      <trans-unit id="sd82f616578d2b33d" xml:space="preserve">
         <source>"<x id="0" equiv-text="${data.name || name}"/>" metadata updated</source>
+        <target state="translated">"<x id="0" equiv-text="${data.name || name}"/>" métadonnées mises à jour</target>
       </trans-unit>
       <trans-unit id="secbc28fc1f3d93ff">
         <source>Created "<x id="0" equiv-text="${data.name || name}"/>" collection</source>
       </trans-unit>
-      <trans-unit id="sce256a8918a7f18d">
+      <trans-unit id="sce256a8918a7f18d" xml:space="preserve">
         <source>Snapshot</source>
+        <target state="translated">Capture d'écran</target>
       </trans-unit>
-      <trans-unit id="s66da7b7937e76a3a">
+      <trans-unit id="s66da7b7937e76a3a" xml:space="preserve">
         <source>Start typing a URL...</source>
+        <target state="translated">Commencer à saisir une URL...</target>
       </trans-unit>
-      <trans-unit id="sfedd97f6911305d1">
+      <trans-unit id="sfedd97f6911305d1" xml:space="preserve">
         <source>No matching pages found.</source>
+        <target state="translated">Aucune page correspondante trouvée.</target>
       </trans-unit>
       <trans-unit id="s7bec6de4e84e7519">
         <source>ReplayWeb.Page default view</source>
       </trans-unit>
-      <trans-unit id="s060e481b4a246a3e">
+      <trans-unit id="s060e481b4a246a3e" xml:space="preserve">
         <source>Start Page</source>
+        <target state="translated">Démarrer la page</target>
       </trans-unit>
       <trans-unit id="s5d948bb5f9f0a378">
         <source>Show a single URL snapshot</source>
@@ -5016,11 +5030,13 @@
       <trans-unit id="s7cdd26a53c30f8c5">
         <source>Configure Replay Home</source>
       </trans-unit>
-      <trans-unit id="s417b90913e05bc17">
+      <trans-unit id="s417b90913e05bc17" xml:space="preserve">
         <source>Preview</source>
+        <target state="translated">Aperçu</target>
       </trans-unit>
-      <trans-unit id="sba95a48e4f04034a">
+      <trans-unit id="sba95a48e4f04034a" xml:space="preserve">
         <source>Enter a Page URL to preview it</source>
+        <target state="translated">Saisissez une URL pour la visualiser</target>
       </trans-unit>
       <trans-unit id="sb6462847faa30cda">
         <source>Select Initial View</source>
