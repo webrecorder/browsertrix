@@ -42,7 +42,7 @@ class Migration(BaseMigration):
                 slug = f"{slug_base}-{count}"
 
         if count > 1:
-            print(f"Dedup name '{name}' -> '{name} {count}'")
+            print(f"Duplicate collection name '{name}' set to '{name} {count}'")
             await colls_mdb.find_one_and_update(
                 {"_id": coll_id}, {"$set": {"name": f"{name} {count}"}}
             )
