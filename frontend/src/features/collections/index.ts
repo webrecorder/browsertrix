@@ -1,7 +1,7 @@
 import("./collections-add");
 import("./collections-grid");
 import("./collection-items-dialog");
-import("./collection-metadata-dialog");
+import("./collection-edit-dialog");
 import("./collection-replay-dialog");
 import("./collection-workflow-list");
 import("./select-collection-access");

@@ -52,11 +52,7 @@ export class CollectionDetail extends BtrixElement {
   private archivedItems?: APIPaginatedList<ArchivedItem>;
 
   @state()
-  private openDialogName?:
-    | "delete"
-    | "editMetadata"
-    | "editItems"
-    | "editStartPage";
+  private openDialogName?: "delete" | "edit" | "editItems" | "editStartPage";
 
   @state()
   private isEditingDescription = false;
@@ -124,7 +120,8 @@ export class CollectionDetail extends BtrixElement {
   }
 
   render() {
-    return html` <div class="mb-7">${this.renderBreadcrumbs()}</div>
+    return html`
+      <div class="mb-7">${this.renderBreadcrumbs()}</div>
       ${pageHeader({
         title: this.collection?.name,
         border: false,
@@ -260,21 +257,17 @@ export class CollectionDetail extends BtrixElement {
         ?replayLoaded=${this.isRwpLoaded}
       ></btrix-collection-replay-dialog>
 
-      ${when(
-        this.collection,
-        () => html`
-          <btrix-collection-metadata-dialog
-            .collection=${this.collection!}
-            ?open=${this.openDialogName === "editMetadata"}
-            @sl-hide=${() => (this.openDialogName = undefined)}
-            @btrix-collection-saved=${() => {
-              this.refreshReplay();
-              void this.fetchCollection();
-            }}
-          >
-          </btrix-collection-metadata-dialog>
-        `,
-      )}`;
+      <btrix-collection-edit-dialog
+        .collection=${this.collection}
+        ?open=${this.openDialogName === "edit"}
+        @sl-hide=${() => (this.openDialogName = undefined)}
+        @btrix-collection-saved=${() => {
+          this.refreshReplay();
+          // TODO maybe we can return the updated collection from the update endpoint, and avoid an extra fetch?
+          void this.fetchCollection();
+        }}
+      ></btrix-collection-edit-dialog>
+    `;
   }
 
   private renderAccessIcon() {
@@ -386,9 +379,9 @@ export class CollectionDetail extends BtrixElement {
           >${msg("Actions")}</sl-button
         >
         <sl-menu>
-          <sl-menu-item @click=${() => (this.openDialogName = "editMetadata")}>
+          <sl-menu-item @click=${() => (this.openDialogName = "edit")}>
             <sl-icon name="pencil" slot="prefix"></sl-icon>
-            ${msg("Edit Metadata")}
+            ${msg("Edit Collection")}
           </sl-menu-item>
           <sl-menu-item
             @click=${async () => {

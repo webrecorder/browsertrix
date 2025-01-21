@@ -29,6 +29,9 @@ export class TabGroup extends TailwindElement {
   @property({ type: String, reflect: false })
   active = "";
 
+  @property({ type: String })
+  overrideTabLayout?: string;
+
   /* Nav placement */
   @property({ type: String })
   placement: "top" | "start" = "top";
@@ -70,10 +73,12 @@ export class TabGroup extends TailwindElement {
       >
         <div
           class=${clsx(
-            tw`flex flex-1 flex-col gap-2`,
-            this.placement === "start"
-              ? tw`lg:sticky lg:top-2 lg:max-w-[16.5rem] lg:self-start`
-              : tw`lg:flex-row`,
+            this.overrideTabLayout || [
+              tw`flex flex-1 flex-col gap-2`,
+              this.placement === "start"
+                ? tw`lg:sticky lg:top-2 lg:max-w-[16.5rem] lg:self-start`
+                : tw`lg:flex-row`,
+            ],
           )}
           @keydown=${this.onKeyDown}
         >
