@@ -5,7 +5,7 @@ import type {
   SlSelectEvent,
   SlSwitch,
 } from "@shoelace-style/shoelace";
-import { html, nothing } from "lit";
+import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
@@ -43,6 +43,16 @@ export class CollectionShareSettings extends BtrixElement {
   public defaultThumbnailName?: `${Thumbnail}` | null = this.collection
     ?.defaultThumbnailName as `${Thumbnail}` | null;
 
+  protected willUpdate(changedProperties: PropertyValues<this>): void {
+    if (changedProperties.has("collection")) {
+      this.access = this.collection?.access;
+      this.allowPublicDownload = this.collection?.allowPublicDownload;
+      this.defaultThumbnailName = this.collection?.defaultThumbnailName as
+        | `${Thumbnail}`
+        | null;
+    }
+  }
+
   private get shareLink() {
     const baseUrl = `${window.location.protocol}//${window.location.hostname}${window.location.port ? `:${window.location.port}` : ""}`;
     if (this.collection) {
@@ -70,6 +80,11 @@ export class CollectionShareSettings extends BtrixElement {
           ?readOnly=${!this.appState.isCrawler}
           @sl-select=${(e: SlSelectEvent) => {
             this.access = (e.target as SelectCollectionAccess).value;
+            this.dispatchEvent(
+              new CustomEvent("btrix-change", {
+                bubbles: true,
+              }),
+            );
           }}
         ></btrix-select-collection-access>
         ${when(
@@ -255,6 +270,11 @@ export class CollectionShareSettings extends BtrixElement {
               : "ring-stone-600/10 ring-1"} aspect-video flex-1 overflow-hidden rounded transition-all hover:ring-2 hover:ring-blue-300"
             @click=${() => {
               this.defaultThumbnailName = name;
+              this.dispatchEvent(
+                new CustomEvent("btrix-change", {
+                  bubbles: true,
+                }),
+              );
             }}
           >
             <div

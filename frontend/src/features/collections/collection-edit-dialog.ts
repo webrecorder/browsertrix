@@ -52,6 +52,9 @@ export class CollectionEdit extends BtrixElement {
   @state()
   errorTab: Tab | null = null;
 
+  @state()
+  dirty = false;
+
   @property({ type: String })
   tab: Tab = "about";
 
@@ -65,10 +68,11 @@ export class CollectionEdit extends BtrixElement {
   private readonly shareSettings?: CollectionShareSettings;
 
   private readonly submitTask = new Task(this, {
-    task: async ([update]: readonly [Record<string, unknown>], { signal }) => {
+    task: async (_, { signal }) => {
       if (!this.collection) throw new Error("Collection is undefined");
       try {
-        const parsedData = collectionUpdateSchema.parse(update);
+        const parsedData = await this.gatherFormData();
+        // just push the updated data
         const justUpdatedData = Object.fromEntries(
           (
             Object.entries(parsedData) as [
@@ -135,16 +139,13 @@ export class CollectionEdit extends BtrixElement {
     };
   }
 
-  private async onSubmit(event: SubmitEvent) {
-    event.preventDefault();
-    event.stopPropagation();
-
-    const form = event.target as HTMLFormElement;
+  private async gatherFormData() {
+    const form = await this.form;
 
     if (!this.descriptionEditor?.checkValidity()) {
       this.errorTab = "about";
       void this.descriptionEditor?.focus();
-      return;
+      throw new Error("invalid description");
     }
 
     const elements = getFormControls(form);
@@ -157,7 +158,7 @@ export class CollectionEdit extends BtrixElement {
         "btrix-tab-group-panel",
       )!.name as Tab;
       (invalidElement as HTMLElement).focus();
-      return;
+      throw new Error("invalid form input");
     } else {
       this.errorTab = null;
     }
@@ -174,7 +175,14 @@ export class CollectionEdit extends BtrixElement {
       allowPublicDownload,
       defaultThumbnailName,
     };
-    void this.submitTask.run([data]);
+    return collectionUpdateSchema.parse(data);
+  }
+
+  private async onSubmit(event: SubmitEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    void this.submitTask.run();
   }
 
   private async hideDialog() {
@@ -217,7 +225,8 @@ export class CollectionEdit extends BtrixElement {
           variant="primary"
           size="small"
           ?loading=${this.submitTask.status === TaskStatus.PENDING}
-          ?disabled=${this.submitTask.status === TaskStatus.PENDING}
+          ?disabled=${this.submitTask.status === TaskStatus.PENDING ||
+          !this.dirty}
           @click=${async () => {
             // Using submit method instead of type="submit" fixes
             // incorrect getRootNode in Chrome
@@ -298,6 +307,15 @@ export class CollectionEdit extends BtrixElement {
         id="collectionEditForm"
         @reset=${this.onReset}
         @submit=${this.onSubmit}
+        @btrix-change=${() => {
+          void this.checkDirty();
+        }}
+        @sl-input=${() => {
+          void this.checkDirty();
+        }}
+        @sl-change=${() => {
+          void this.checkDirty();
+        }}
       >
         <btrix-tab-group placement="start" overrideTabLayout=${tw`flex gap-2`}>
           <btrix-tab-group-tab
@@ -342,5 +360,24 @@ export class CollectionEdit extends BtrixElement {
         <input class="offscreen" type="submit" />
       </form>
     `;
+  }
+  private async checkDirty() {
+    try {
+      const data = await this.gatherFormData();
+      const updates = (
+        Object.entries(data) as [
+          keyof CollectionUpdate,
+          CollectionUpdate[keyof CollectionUpdate],
+        ][]
+      ).filter(([name, value]) => this.collection?.[name] !== value);
+      console.log({ updates });
+      if (updates.length > 0) {
+        this.dirty = true;
+      } else {
+        this.dirty = false;
+      }
+    } catch (e) {
+      this.dirty = true;
+    }
   }
 }
