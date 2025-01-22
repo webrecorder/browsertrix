@@ -1,6 +1,5 @@
 import { localized, msg, str } from "@lit/localize";
 import { Task, TaskStatus } from "@lit/task";
-import { type SlInput } from "@shoelace-style/shoelace";
 import { html, nothing } from "lit";
 import {
   customElement,
@@ -10,8 +9,8 @@ import {
   state,
 } from "lit/decorators.js";
 
+import renderAbout from "./edit-dialog/about-section";
 import checkChanged from "./edit-dialog/helpers/check-changed";
-import gatherState from "./edit-dialog/helpers/gather-state";
 import submitTask from "./edit-dialog/helpers/submit-task";
 import { type CollectionHomepageSettings } from "./edit-dialog/homepage-section";
 import { type CollectionShareSettings } from "./edit-dialog/sharing-section";
@@ -79,8 +78,6 @@ export class CollectionEdit extends BtrixElement {
   @query("btrix-collection-homepage-settings")
   readonly homepageSettings?: CollectionHomepageSettings;
 
-  readonly gatherFormData = gatherState.bind(this);
-
   readonly checkChanged = checkChanged.bind(this);
 
   private readonly submitTask = new Task(this, {
@@ -129,9 +126,64 @@ export class CollectionEdit extends BtrixElement {
       ?open=${this.open}
       @sl-show=${() => (this.isDialogVisible = true)}
       @sl-after-hide=${() => (this.isDialogVisible = false)}
-      class="[--width:var(--btrix-screen-desktop)]"
+      class="h-full [--width:var(--btrix-screen-desktop)]"
     >
-      ${this.renderForm()}
+      <form
+        id="collectionEditForm"
+        @reset=${this.onReset}
+        @submit=${this.onSubmit}
+        @btrix-change=${() => {
+          void this.checkChanged();
+        }}
+        @sl-input=${() => {
+          void this.checkChanged();
+        }}
+        @sl-change=${() => {
+          void this.checkChanged();
+        }}
+      >
+        <btrix-tab-group
+          placement="top"
+          overrideTabLayout=${tw`mb-4 flex gap-2`}
+        >
+          ${this.renderTab({
+            panel: "about",
+            icon: "info-square-fill",
+            string: msg("About"),
+          })}
+          ${this.renderTab({
+            panel: "sharing",
+            icon: "box-arrow-up",
+            string: msg("Sharing"),
+          })}
+          ${this.renderTab({
+            panel: "homepage",
+            icon: "house-fill",
+            string: msg("Homepage"),
+          })}
+
+          <btrix-tab-group-panel name="about">
+            ${renderAbout.bind(this)()}
+          </btrix-tab-group-panel>
+
+          <btrix-tab-group-panel name="sharing">
+            <btrix-collection-share-settings
+              .collection=${this.collection}
+            ></btrix-collection-share-settings>
+          </btrix-tab-group-panel>
+
+          <btrix-tab-group-panel name="homepage">
+            <btrix-collection-homepage-settings
+              .collectionId=${this.collection.id}
+              .homeUrl=${this.collection.homeUrl}
+              .homePageId=${this.collection.homeUrlPageId}
+              .homeTs=${this.collection.homeUrlTs}
+              .replayLoaded=${this.replayLoaded}
+            ></btrix-collection-homepage-settings>
+          </btrix-tab-group-panel>
+        </btrix-tab-group>
+        <input class="offscreen" type="submit" />
+      </form>
       <div slot="footer" class="flex items-center justify-end gap-3">
         <sl-button
           class="mr-auto"
@@ -170,143 +222,24 @@ export class CollectionEdit extends BtrixElement {
     </btrix-dialog>`;
   }
 
-  private renderAbout() {
-    if (!this.collection) return;
-    return html`<btrix-tab-group-panel name="about">
-      <sl-input
-        class="with-max-help-text part-[input]:text-base part-[input]:font-semibold"
-        name="name"
-        label=${msg("Name")}
-        value=${this.collection.name}
-        placeholder=${msg("My Collection")}
-        autocomplete="off"
-        required
-        help-text=${validateNameMax.helpText}
-        @sl-input=${(e: CustomEvent) => {
-          this.validate(validateNameMax)(e);
-          this.name = (e.target as SlInput).value;
-        }}
-      >
-      </sl-input>
-      <sl-textarea
-        class="with-max-help-text"
-        name="caption"
-        value=${this.collection.caption ?? ""}
-        placeholder=${msg("Summarize the collection's content")}
-        autocomplete="off"
-        rows="2"
-        help-text=${validateCaptionMax.helpText}
-        @sl-input=${this.validate(validateCaptionMax)}
-      >
-        <span slot="label">
-          ${msg("Summary")}
-          <sl-tooltip>
-            <span slot="content">
-              ${msg(
-                "Write a short description that summarizes this collection. If the collection is public, this description will be visible next to the collection name.",
-              )}
-            </span>
-            <sl-icon
-              name="info-circle"
-              style="vertical-align: -.175em"
-            ></sl-icon>
-          </sl-tooltip>
-        </span>
-      </sl-textarea>
-      <btrix-markdown-editor
-        class="flex-1"
-        .initialValue=${this.collection.description ?? ""}
-        placeholder=${msg("Tell viewers about this collection")}
-        maxlength=${4000}
-        label=${msg("Description")}
-      ></btrix-markdown-editor>
-    </btrix-tab-group-panel>`;
-  }
-
-  private renderSharing() {
-    if (!this.collection) return;
-    return html`<btrix-tab-group-panel name="sharing">
-      <btrix-collection-share-settings
-        .collection=${this.collection}
-      ></btrix-collection-share-settings>
-    </btrix-tab-group-panel>`;
-  }
-
-  private renderHomepage() {
-    if (!this.collection) return;
-    return html`<btrix-tab-group-panel name="homepage">
-      <btrix-collection-homepage-settings
-        .collectionId=${this.collection.id}
-        .homeUrl=${this.collection.homeUrl}
-        .homePageId=${this.collection.homeUrlPageId}
-        .homeTs=${this.collection.homeUrlTs}
-        .replayLoaded=${this.replayLoaded}
-      ></btrix-collection-homepage-settings>
-    </btrix-tab-group-panel>`;
-  }
-
-  private renderForm() {
-    if (!this.collection) return;
-    return html`
-      <form
-        id="collectionEditForm"
-        @reset=${this.onReset}
-        @submit=${this.onSubmit}
-        @btrix-change=${() => {
-          void this.checkChanged();
-        }}
-        @sl-input=${() => {
-          void this.checkChanged();
-        }}
-        @sl-change=${() => {
-          void this.checkChanged();
-        }}
-      >
-        <btrix-tab-group
-          placement="top"
-          overrideTabLayout=${tw`mb-4 flex gap-2`}
-        >
-          <btrix-tab-group-tab
-            slot="nav"
-            panel="about"
-            variant=${this.errorTab === "about" ? "error" : "primary"}
-          >
-            <sl-icon
-              name=${this.errorTab === "about"
-                ? "exclamation-triangle-fill"
-                : "info-square-fill"}
-            ></sl-icon>
-            ${msg("About")}</btrix-tab-group-tab
-          >
-          <btrix-tab-group-tab
-            slot="nav"
-            panel="sharing"
-            variant=${this.errorTab === "sharing" ? "error" : "primary"}
-          >
-            <sl-icon
-              name=${this.errorTab === "sharing"
-                ? "exclamation-triangle-fill"
-                : "box-arrow-up"}
-            ></sl-icon>
-            ${msg("Sharing")}
-          </btrix-tab-group-tab>
-          <btrix-tab-group-tab
-            slot="nav"
-            panel="homepage"
-            variant=${this.errorTab === "homepage" ? "error" : "primary"}
-          >
-            <sl-icon
-              name=${this.errorTab === "sharing"
-                ? "exclamation-triangle-fill"
-                : "house-fill"}
-            ></sl-icon>
-            ${msg("Homepage")}</btrix-tab-group-tab
-          >
-          ${this.renderAbout()} ${this.renderSharing()} ${this.renderHomepage()}
-          <btrix-tab-group-panel name="homepage"> </btrix-tab-group-panel>
-        </btrix-tab-group>
-        <input class="offscreen" type="submit" />
-      </form>
-    `;
+  private renderTab({
+    panel,
+    icon,
+    string,
+  }: {
+    panel: Tab;
+    icon: string;
+    string: string;
+  }) {
+    return html`<btrix-tab-group-tab
+      slot="nav"
+      panel=${panel}
+      variant=${this.errorTab === panel ? "error" : "primary"}
+    >
+      <sl-icon
+        name=${this.errorTab === panel ? "exclamation-triangle-fill" : icon}
+      ></sl-icon>
+      ${string}
+    </btrix-tab-group-tab>`;
   }
 }

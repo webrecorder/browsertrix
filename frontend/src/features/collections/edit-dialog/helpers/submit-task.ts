@@ -90,6 +90,8 @@ export default function submitTask(
         ),
       );
 
+      console.log(tasks);
+
       await Promise.all(tasks);
 
       this.dispatchEvent(

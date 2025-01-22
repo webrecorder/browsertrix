@@ -1,12 +1,13 @@
 import { type CollectionEdit } from "../../collection-edit-dialog";
 import { HomeView } from "../../collection-snapshot-preview";
-import type { SnapshotItem } from "../../select-collection-start-page";
+
+import gatherState from "./gather-state";
 
 import type { CollectionUpdate } from "@/types/collection";
 
 export default async function checkChanged(this: CollectionEdit) {
   try {
-    const { collectionUpdate, homepage } = await this.gatherFormData();
+    const { collectionUpdate, homepage } = await gatherState.bind(this)();
     const updates = (
       Object.entries(collectionUpdate) as [
         keyof CollectionUpdate,
@@ -14,25 +15,24 @@ export default async function checkChanged(this: CollectionEdit) {
       ][]
     ).filter(([name, value]) => this.collection?.[name] !== value) as [
       keyof CollectionUpdate | "homepage",
-      (
-        | CollectionUpdate[keyof CollectionUpdate]
-        | (typeof homepage & { selectedSnapshot: SnapshotItem | null })
-      ),
+      CollectionUpdate[keyof CollectionUpdate] | typeof homepage,
     ][];
 
-    if (
-      (homepage.homeView === HomeView.Pages && this.homePageId) ||
+    const pageId =
       (homepage.homeView === HomeView.URL &&
-        this.homepageSettings?.selectedSnapshot &&
-        this.homePageId !== this.homepageSettings.selectedSnapshot.pageId)
-    ) {
-      updates.push([
-        "homepage",
-        {
-          ...homepage,
-          selectedSnapshot: this.homepageSettings?.selectedSnapshot ?? null,
-        },
-      ]);
+        homepage.selectedSnapshot?.pageId) ||
+      null;
+
+    const shouldUpload =
+      homepage.homeView === HomeView.URL &&
+      homepage.useThumbnail === "on" &&
+      homepage.selectedSnapshot &&
+      this.collection?.homeUrlPageId !== homepage.selectedSnapshot.pageId;
+
+    // debugger;
+
+    if (pageId != this.collection?.homeUrlPageId || shouldUpload) {
+      updates.push(["homepage", homepage]);
     }
     console.log({ updates });
     if (updates.length > 0) {

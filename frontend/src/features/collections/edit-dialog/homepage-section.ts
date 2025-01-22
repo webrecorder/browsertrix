@@ -185,6 +185,11 @@ export class CollectionHomepageSettings extends BtrixElement {
               .homeTs=${this.homeTs}
               @btrix-select=${async (e: CustomEvent<SelectSnapshotDetail>) => {
                 this.selectedSnapshot = e.detail.item;
+                this.dispatchEvent(
+                  new CustomEvent("btrix-change", {
+                    bubbles: true,
+                  }),
+                );
               }}
             ></btrix-select-collection-start-page>
 
