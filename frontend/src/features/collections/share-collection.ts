@@ -20,7 +20,7 @@ import { SelectCollectionAccess } from "./select-collection-access";
 import { BtrixElement } from "@/classes/BtrixElement";
 import { ClipboardController } from "@/controllers/clipboard";
 import { RouteNamespace } from "@/routes";
-import { warning } from "@/strings/collections/warning";
+import { alerts } from "@/strings/collections/alerts";
 import { AnalyticsTrackEvent } from "@/trackEvents";
 import {
   CollectionAccess,
@@ -297,7 +297,7 @@ export class ShareCollection extends BtrixElement {
             this.collection?.access === CollectionAccess.Public,
           () => html`
             <btrix-alert variant="warning" class="mt-3">
-              ${warning.orgNotPublic}
+              ${alerts.orgNotPublicWarning}
             </btrix-alert>
           `,
         )}
