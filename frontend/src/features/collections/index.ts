@@ -8,3 +8,4 @@ import("./select-collection-access");
 import("./select-collection-start-page");
 import("./share-collection");
 import("./collection-thumbnail");
+import("./edit-dialog/sharing-section");

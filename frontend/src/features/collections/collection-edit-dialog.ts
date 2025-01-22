@@ -10,6 +10,8 @@ import {
   state,
 } from "lit/decorators.js";
 
+import { type CollectionShareSettings } from "./edit-dialog/sharing-section";
+
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
 import { type MarkdownEditor } from "@/components/ui/markdown-editor";
@@ -59,6 +61,9 @@ export class CollectionEdit extends BtrixElement {
   @query("btrix-markdown-editor")
   private readonly descriptionEditor?: MarkdownEditor | null;
 
+  @query("btrix-collection-share-settings")
+  private readonly shareSettings?: CollectionShareSettings;
+
   private readonly submitTask = new Task(this, {
     task: async ([update]: readonly [Record<string, unknown>], { signal }) => {
       if (!this.collection) throw new Error("Collection is undefined");
@@ -72,7 +77,9 @@ export class CollectionEdit extends BtrixElement {
             ][]
           ).filter(([name, value]) => this.collection?.[name] !== value),
         ) as CollectionUpdate;
-        const body = JSON.stringify(justUpdatedData);
+        const body = JSON.stringify({
+          ...justUpdatedData,
+        });
         const path = `/orgs/${this.orgId}/collections/${this.collection.id}`;
         const method = "PATCH";
 
@@ -157,7 +164,16 @@ export class CollectionEdit extends BtrixElement {
 
     const description = this.descriptionEditor.value;
 
-    const data = { ...serialize(form), description };
+    const { access, allowPublicDownload, defaultThumbnailName } =
+      this.shareSettings ?? {};
+
+    const data = {
+      ...serialize(form),
+      description,
+      access,
+      allowPublicDownload,
+      defaultThumbnailName,
+    };
     void this.submitTask.run([data]);
   }
 
@@ -217,6 +233,64 @@ export class CollectionEdit extends BtrixElement {
     </btrix-dialog>`;
   }
 
+  private renderAbout() {
+    if (!this.collection) return;
+    return html`<btrix-tab-group-panel name="about">
+      <sl-input
+        class="with-max-help-text"
+        name="name"
+        label=${msg("Name")}
+        value=${this.collection.name}
+        placeholder=${msg("My Collection")}
+        autocomplete="off"
+        required
+        help-text=${validateNameMax.helpText}
+        @sl-input=${this.validate(validateNameMax)}
+      >
+      </sl-input>
+      <sl-textarea
+        class="with-max-help-text"
+        name="caption"
+        value=${this.collection.caption ?? ""}
+        placeholder=${msg("Summarize the collection's content")}
+        autocomplete="off"
+        rows="2"
+        help-text=${validateCaptionMax.helpText}
+        @sl-input=${this.validate(validateCaptionMax)}
+      >
+        <span slot="label">
+          ${msg("Summary")}
+          <sl-tooltip>
+            <span slot="content">
+              ${msg(
+                "Write a short description that summarizes this collection. If the collection is public, this description will be visible next to the collection name.",
+              )}
+            </span>
+            <sl-icon
+              name="info-circle"
+              style="vertical-align: -.175em"
+            ></sl-icon>
+          </sl-tooltip>
+        </span>
+      </sl-textarea>
+      <btrix-markdown-editor
+        class="flex-1"
+        initialValue=${this.collection.description ?? ""}
+        placeholder=${msg("Tell viewers about this collection")}
+        maxlength=${4000}
+      ></btrix-markdown-editor>
+    </btrix-tab-group-panel>`;
+  }
+
+  private renderSharing() {
+    if (!this.collection) return;
+    return html`<btrix-tab-group-panel name="sharing">
+      <btrix-collection-share-settings
+        .collection=${this.collection}
+      ></btrix-collection-share-settings>
+    </btrix-tab-group-panel>`;
+  }
+
   private renderForm() {
     if (!this.collection) return;
     return html`
@@ -262,52 +336,7 @@ export class CollectionEdit extends BtrixElement {
             ></sl-icon>
             ${msg("Homepage")}</btrix-tab-group-tab
           >
-          <btrix-tab-group-panel name="about">
-            <sl-input
-              class="with-max-help-text"
-              name="name"
-              label=${msg("Name")}
-              value=${this.collection.name}
-              placeholder=${msg("My Collection")}
-              autocomplete="off"
-              required
-              help-text=${validateNameMax.helpText}
-              @sl-input=${this.validate(validateNameMax)}
-            >
-            </sl-input>
-            <sl-textarea
-              class="with-max-help-text"
-              name="caption"
-              value=${this.collection.caption ?? ""}
-              placeholder=${msg("Summarize the collection's content")}
-              autocomplete="off"
-              rows="2"
-              help-text=${validateCaptionMax.helpText}
-              @sl-input=${this.validate(validateCaptionMax)}
-            >
-              <span slot="label">
-                ${msg("Summary")}
-                <sl-tooltip>
-                  <span slot="content">
-                    ${msg(
-                      "Write a short description that summarizes this collection. If the collection is public, this description will be visible next to the collection name.",
-                    )}
-                  </span>
-                  <sl-icon
-                    name="info-circle"
-                    style="vertical-align: -.175em"
-                  ></sl-icon>
-                </sl-tooltip>
-              </span>
-            </sl-textarea>
-            <btrix-markdown-editor
-              class="flex-1"
-              initialValue=${this.collection.description ?? ""}
-              placeholder=${msg("Tell viewers about this collection")}
-              maxlength=${4000}
-            ></btrix-markdown-editor>
-          </btrix-tab-group-panel>
-          <btrix-tab-group-panel name="sharing"> </btrix-tab-group-panel>
+          ${this.renderAbout()} ${this.renderSharing()}
           <btrix-tab-group-panel name="homepage"> </btrix-tab-group-panel>
         </btrix-tab-group>
         <input class="offscreen" type="submit" />
