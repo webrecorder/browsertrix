@@ -11,6 +11,8 @@ export const publicCollectionSchema = z.object({
   slug: z.string(),
   oid: z.string(),
   name: z.string(),
+  created: z.string().datetime(),
+  modified: z.string().datetime(),
   caption: z.string().nullable(),
   description: z.string().nullable(),
   resources: z.array(z.string()),
@@ -25,6 +27,7 @@ export const publicCollectionSchema = z.object({
   defaultThumbnailName: z.string().nullable(),
   crawlCount: z.number(),
   pageCount: z.number(),
+  snapshotCount: z.number(),
   totalSize: z.number(),
   allowPublicDownload: z.boolean(),
   homeUrl: z.string().url().nullable(),
@@ -34,9 +37,6 @@ export const publicCollectionSchema = z.object({
 export type PublicCollection = z.infer<typeof publicCollectionSchema>;
 
 export const collectionSchema = publicCollectionSchema.extend({
-  id: z.string(),
-  created: z.string().datetime(),
-  modified: z.string().datetime(),
   tags: z.array(z.string()),
   access: z.nativeEnum(CollectionAccess),
 });

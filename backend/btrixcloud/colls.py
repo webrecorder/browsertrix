@@ -396,7 +396,7 @@ class CollectionOps:
         page = page - 1
         skip = page * page_size
 
-        match_query: dict[str, object] = {"oid": org.id}
+        match_query: Dict[str, Union[str, UUID, int, object]] = {"oid": org.id}
 
         if name:
             match_query["name"] = name
@@ -409,15 +409,33 @@ class CollectionOps:
         elif access:
             match_query["access"] = access
 
-        aggregate = [{"$match": match_query}]
+        aggregate: List[Dict[str, Union[str, UUID, int, object]]] = [
+            {"$match": match_query}
+        ]
 
         if sort_by:
-            if sort_by not in ("modified", "name", "description", "totalSize"):
+            if sort_by not in (
+                "created",
+                "modified",
+                "dateLatest",
+                "name",
+                "crawlCount",
+                "pageCount",
+                "totalSize",
+                "description",
+                "caption",
+            ):
                 raise HTTPException(status_code=400, detail="invalid_sort_by")
             if sort_direction not in (1, -1):
                 raise HTTPException(status_code=400, detail="invalid_sort_direction")
 
-            aggregate.extend([{"$sort": {sort_by: sort_direction}}])
+            sort_query = {sort_by: sort_direction}
+
+            # add secondary sort keys:
+            if sort_by == "dateLatest":
+                sort_query["dateEarliest"] = sort_direction
+
+            aggregate.extend([{"$sort": sort_query}])
 
         aggregate.extend(
             [
