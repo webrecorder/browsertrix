@@ -31,7 +31,7 @@ type Page = {
   snapshots: Snapshot[];
 };
 
-type SnapshotItem = Snapshot & { url: string };
+export type SnapshotItem = Snapshot & { url: string };
 
 export type SelectSnapshotDetail = {
   item: SnapshotItem | null;

@@ -14,7 +14,10 @@ import {
   state,
 } from "lit/decorators.js";
 
+import { HomeView } from "./collection-snapshot-preview";
+import { type CollectionHomepageSettings } from "./edit-dialog/homepage-section";
 import { type CollectionShareSettings } from "./edit-dialog/sharing-section";
+import { SnapshotItem } from "./select-collection-start-page";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
@@ -50,6 +53,9 @@ export class CollectionEdit extends BtrixElement {
   @property({ type: Boolean })
   open = false;
 
+  @property({ type: String })
+  homePageId?: string | null = null;
+
   @state()
   isDialogVisible = false;
 
@@ -75,6 +81,9 @@ export class CollectionEdit extends BtrixElement {
   @query("btrix-collection-share-settings")
   private readonly shareSettings?: CollectionShareSettings;
 
+  @query("btrix-collection-homepage-settings")
+  private readonly homepageSettings?: CollectionHomepageSettings;
+
   private readonly submitTask = new Task(this, {
     task: async (_, { signal }) => {
       if (!this.collection) throw new Error("Collection is undefined");
@@ -83,7 +92,24 @@ export class CollectionEdit extends BtrixElement {
         const updates = await this.checkChanged();
         console.log(updates);
         if (!updates) throw new Error("invalid_data");
-        const body = JSON.stringify(Object.fromEntries(updates));
+        const updateObject = Object.fromEntries(updates) as CollectionUpdate & {
+          homepage?: {
+            homeView: `${HomeView}`;
+            useThumbnail: "on" | "off";
+            selectedSnapshot: SnapshotItem | null;
+          };
+        };
+        const { homepage, ...rest } = updateObject;
+        const shouldUpload =
+          homepage?.homeView === HomeView.URL &&
+          homepage.useThumbnail === "on" &&
+          homepage.selectedSnapshot &&
+          this.homePageId !== homepage.selectedSnapshot.pageId;
+        let tasks = [];
+        if (shouldUpload) {
+          if (!file || !fileName) throw new Error("file or fileName missing");
+        }
+        const body = JSON.stringify(rest);
         const path = `/orgs/${this.orgId}/collections/${this.collection.id}`;
         const method = "PATCH";
 
@@ -171,14 +197,24 @@ export class CollectionEdit extends BtrixElement {
     const { access, allowPublicDownload, defaultThumbnailName } =
       this.shareSettings ?? {};
 
+    const { homeView, useThumbnail, ...formData } = serialize(
+      form,
+    ) as CollectionUpdate & {
+      homeView: `${HomeView}`;
+      useThumbnail: "on" | "off";
+    };
+
     const data = {
-      ...serialize(form),
+      ...formData,
       description,
       access,
       allowPublicDownload,
       defaultThumbnailName,
     };
-    return collectionUpdateSchema.parse(data);
+    return {
+      collectionUpdate: collectionUpdateSchema.parse(data),
+      homepage: { homeView, useThumbnail },
+    };
   }
 
   private async onSubmit(event: SubmitEvent) {
@@ -378,14 +414,35 @@ export class CollectionEdit extends BtrixElement {
   }
   private async checkChanged() {
     try {
-      const data = await this.gatherFormData();
-      console.log({ data });
+      const { collectionUpdate, homepage } = await this.gatherFormData();
+      console.log({ collectionUpdate, homepage });
       const updates = (
-        Object.entries(data) as [
+        Object.entries(collectionUpdate) as [
           keyof CollectionUpdate,
           CollectionUpdate[keyof CollectionUpdate],
         ][]
-      ).filter(([name, value]) => this.collection?.[name] !== value);
+      ).filter(([name, value]) => this.collection?.[name] !== value) as [
+        keyof CollectionUpdate | "homepage",
+        (
+          | CollectionUpdate[keyof CollectionUpdate]
+          | (typeof homepage & { selectedSnapshot: SnapshotItem | null })
+        ),
+      ][];
+
+      if (
+        (homepage.homeView === HomeView.Pages && this.homePageId) ||
+        (homepage.homeView === HomeView.URL &&
+          this.homepageSettings?.selectedSnapshot &&
+          this.homePageId !== this.homepageSettings.selectedSnapshot.pageId)
+      ) {
+        updates.push([
+          "homepage",
+          {
+            ...homepage,
+            selectedSnapshot: this.homepageSettings?.selectedSnapshot ?? null,
+          },
+        ]);
+      }
       console.log({ updates });
       if (updates.length > 0) {
         this.dirty = true;
