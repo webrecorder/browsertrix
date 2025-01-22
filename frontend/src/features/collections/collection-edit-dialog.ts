@@ -1,7 +1,11 @@
 import { localized, msg, str } from "@lit/localize";
 import { Task, TaskStatus } from "@lit/task";
-import { getFormControls, serialize } from "@shoelace-style/shoelace";
-import { html } from "lit";
+import {
+  getFormControls,
+  serialize,
+  type SlInput,
+} from "@shoelace-style/shoelace";
+import { html, nothing } from "lit";
 import {
   customElement,
   property,
@@ -55,6 +59,10 @@ export class CollectionEdit extends BtrixElement {
   @state()
   dirty = false;
 
+  // Separating this out so that we can eagerly respond to name changes in dialog title & toasts
+  @state()
+  name = this.collection?.name;
+
   @property({ type: String })
   tab: Tab = "about";
 
@@ -71,23 +79,11 @@ export class CollectionEdit extends BtrixElement {
     task: async (_, { signal }) => {
       if (!this.collection) throw new Error("Collection is undefined");
       try {
-        const parsedData = await this.gatherFormData();
         // just push the updated data
-        const justUpdatedData = Object.fromEntries(
-          (
-            Object.entries(parsedData) as [
-              keyof CollectionUpdate,
-              CollectionUpdate[keyof CollectionUpdate],
-            ][]
-          ).filter(([name, value]) => this.collection?.[name] !== value),
-        ) as CollectionUpdate;
-        const body = JSON.stringify({
-          ...justUpdatedData,
-        });
+        const updates = await this.checkChanged();
+        const body = JSON.stringify(updates);
         const path = `/orgs/${this.orgId}/collections/${this.collection.id}`;
         const method = "PATCH";
-
-        console.log();
 
         const data = await this.api.fetch<{ updated: boolean }>(path, {
           method,
@@ -103,7 +99,7 @@ export class CollectionEdit extends BtrixElement {
           }) as CollectionSavedEvent,
         );
         this.notify.toast({
-          message: msg(str`Updated collection “${parsedData.name}”`),
+          message: msg(str`Updated collection “${this.name}”`),
           variant: "success",
           icon: "check2-circle",
           id: "collection-metadata-status",
@@ -153,7 +149,6 @@ export class CollectionEdit extends BtrixElement {
       (el) => !(el as HTMLInputElement).checkValidity(),
     );
     if (invalidElement) {
-      console.error("invalid el", invalidElement);
       this.errorTab = invalidElement.closest<TabGroupPanel>(
         "btrix-tab-group-panel",
       )!.name as Tab;
@@ -202,7 +197,7 @@ export class CollectionEdit extends BtrixElement {
   render() {
     if (!this.collection) return;
     return html`<btrix-dialog
-      label=${msg(str`Edit Collection “${this.collection.name}”`)}
+      label=${msg(str`Edit Collection “${this.name ?? this.collection.name}”`)}
       ?open=${this.open}
       @sl-show=${() => (this.isDialogVisible = true)}
       @sl-after-hide=${() => (this.isDialogVisible = false)}
@@ -220,13 +215,18 @@ export class CollectionEdit extends BtrixElement {
           }}
           >${msg("Cancel")}</sl-button
         >
-
+        ${this.errorTab !== null
+          ? html`<span class="text-sm text-danger"
+              >${msg("Please review issues with your changes.")}</span
+            >`
+          : nothing}
         <sl-button
-          variant="primary"
+          variant=${this.errorTab === null ? "primary" : "danger"}
           size="small"
           ?loading=${this.submitTask.status === TaskStatus.PENDING}
           ?disabled=${this.submitTask.status === TaskStatus.PENDING ||
-          !this.dirty}
+          !this.dirty ||
+          this.errorTab !== null}
           @click=${async () => {
             // Using submit method instead of type="submit" fixes
             // incorrect getRootNode in Chrome
@@ -246,7 +246,7 @@ export class CollectionEdit extends BtrixElement {
     if (!this.collection) return;
     return html`<btrix-tab-group-panel name="about">
       <sl-input
-        class="with-max-help-text"
+        class="with-max-help-text part-[input]:text-base part-[input]:font-semibold"
         name="name"
         label=${msg("Name")}
         value=${this.collection.name}
@@ -254,7 +254,10 @@ export class CollectionEdit extends BtrixElement {
         autocomplete="off"
         required
         help-text=${validateNameMax.helpText}
-        @sl-input=${this.validate(validateNameMax)}
+        @sl-input=${(e: CustomEvent) => {
+          this.validate(validateNameMax)(e);
+          this.name = (e.target as SlInput).value;
+        }}
       >
       </sl-input>
       <sl-textarea
@@ -284,9 +287,10 @@ export class CollectionEdit extends BtrixElement {
       </sl-textarea>
       <btrix-markdown-editor
         class="flex-1"
-        initialValue=${this.collection.description ?? ""}
+        .initialValue=${this.collection.description ?? ""}
         placeholder=${msg("Tell viewers about this collection")}
         maxlength=${4000}
+        label=${msg("Description")}
       ></btrix-markdown-editor>
     </btrix-tab-group-panel>`;
   }
@@ -308,16 +312,19 @@ export class CollectionEdit extends BtrixElement {
         @reset=${this.onReset}
         @submit=${this.onSubmit}
         @btrix-change=${() => {
-          void this.checkDirty();
+          void this.checkChanged();
         }}
         @sl-input=${() => {
-          void this.checkDirty();
+          void this.checkChanged();
         }}
         @sl-change=${() => {
-          void this.checkDirty();
+          void this.checkChanged();
         }}
       >
-        <btrix-tab-group placement="start" overrideTabLayout=${tw`flex gap-2`}>
+        <btrix-tab-group
+          placement="top"
+          overrideTabLayout=${tw`mb-4 flex gap-2`}
+        >
           <btrix-tab-group-tab
             slot="nav"
             panel="about"
@@ -361,7 +368,7 @@ export class CollectionEdit extends BtrixElement {
       </form>
     `;
   }
-  private async checkDirty() {
+  private async checkChanged() {
     try {
       const data = await this.gatherFormData();
       const updates = (
@@ -370,12 +377,12 @@ export class CollectionEdit extends BtrixElement {
           CollectionUpdate[keyof CollectionUpdate],
         ][]
       ).filter(([name, value]) => this.collection?.[name] !== value);
-      console.log({ updates });
       if (updates.length > 0) {
         this.dirty = true;
       } else {
         this.dirty = false;
       }
+      return updates;
     } catch (e) {
       this.dirty = true;
     }
