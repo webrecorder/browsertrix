@@ -301,7 +301,7 @@ export class OrgSettings extends BtrixElement {
               html`
                 <sl-input
                   id="org-url"
-                  class="hide-required-content mb-2 part-[input]:pl-0"
+                  class="hide-required-content mb-2 part-[input]:pl-px"
                   name="orgSlug"
                   size="small"
                   label=${msg("Org URL")}
@@ -313,16 +313,10 @@ export class OrgSettings extends BtrixElement {
                   required
                   @sl-input=${this.handleSlugInput}
                 >
-                  <div slot="prefix" class="font-light text-neutral-400">
-                    ${window.location.hostname}${window.location.port
-                      ? `:${window.location.port}`
-                      : ""}/${RouteNamespace.PrivateOrgs}/
-                  </div>
+                  <div slot="prefix" class="font-light text-neutral-500">/</div>
                 </sl-input>
               `,
-              msg(
-                "Customize your org's Browsertrix URL. This will also apply to the URL to your org's public page, if you've enabled it.",
-              ),
+              msg("Customize your org's Browsertrix URL."),
             ],
             [
               html`
@@ -339,9 +333,7 @@ export class OrgSettings extends BtrixElement {
                   @sl-input=${this.validateDescriptionMax.validate}
                 ></sl-textarea>
               `,
-              msg(
-                "Write a short description to introduce your organization to the public.",
-              ),
+              msg("Write a short description to introduce your organization."),
             ],
             [
               html`
@@ -366,8 +358,8 @@ export class OrgSettings extends BtrixElement {
               this.org,
               (org) =>
                 org.enablePublicProfile
-                  ? msg("View public page")
-                  : msg("Preview public page"),
+                  ? msg("View public org page")
+                  : msg("Preview how your org looks to the public"),
               () => html` <sl-skeleton class="w-36"></sl-skeleton> `,
             )}
           </btrix-link>

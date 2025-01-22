@@ -49,7 +49,7 @@ export class OrgSettingsVisibility extends BtrixElement {
       <section class="rounded-lg border">
         <sl-switch
           .helpText=${msg(
-            "Anyone on the Internet will be able to view basic org information and browse this org's public collections.",
+            "If enabled, anyone on the Internet will be able to view general org information and browse this org's public collections.",
           )}
           @sl-change=${this.onVisibilityChange}
           ?checked=${this.org?.enablePublicProfile}
