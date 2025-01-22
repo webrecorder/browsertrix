@@ -33,6 +33,8 @@ import "./components/billing";
 import "./components/crawling-defaults";
 import "./components/visibility";
 
+import { alerts } from "@/strings/orgs/alerts";
+
 const styles = unsafeCSS(stylesheet);
 
 type Tab = "information" | "members" | "billing" | "crawling-defaults";
@@ -790,7 +792,7 @@ export class OrgSettings extends BtrixElement {
       this.navigate.to(`${this.navigate.orgBasePath}/settings`);
 
       this.notify.toast({
-        message: msg("Org successfully updated."),
+        message: alerts.settingsUpdateSuccess,
         variant: "success",
         icon: "check2-circle",
         id: "org-update-status",

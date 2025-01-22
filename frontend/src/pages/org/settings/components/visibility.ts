@@ -6,6 +6,7 @@ import { customElement } from "lit/decorators.js";
 import { BtrixElement } from "@/classes/BtrixElement";
 import { columns, type Cols } from "@/layouts/columns";
 import { RouteNamespace } from "@/routes";
+import { alerts } from "@/strings/orgs/alerts";
 import { formValidator, maxLengthValidator } from "@/utils/form";
 
 @localized()
@@ -143,7 +144,7 @@ export class OrgSettingsVisibility extends BtrixElement {
       }
 
       this.notify.toast({
-        message: msg("Org settings has been updated."),
+        message: alerts.settingsUpdateSuccess,
         variant: "success",
         icon: "check2-circle",
       });
@@ -151,7 +152,7 @@ export class OrgSettingsVisibility extends BtrixElement {
       console.debug(err);
 
       this.notify.toast({
-        message: msg("Sorry, couldn't update org at this time."),
+        message: alerts.settingsUpdateFailure,
         variant: "danger",
         icon: "exclamation-octagon",
       });
