@@ -1,10 +1,6 @@
 import { localized, msg, str } from "@lit/localize";
 import { Task, TaskStatus } from "@lit/task";
-import {
-  getFormControls,
-  serialize,
-  type SlInput,
-} from "@shoelace-style/shoelace";
+import { type SlInput } from "@shoelace-style/shoelace";
 import { html, nothing } from "lit";
 import {
   customElement,
@@ -14,32 +10,28 @@ import {
   state,
 } from "lit/decorators.js";
 
-import { HomeView } from "./collection-snapshot-preview";
+import checkChanged from "./edit-dialog/helpers/check-changed";
+import gatherState from "./edit-dialog/helpers/gather-state";
+import submitTask from "./edit-dialog/helpers/submit-task";
 import { type CollectionHomepageSettings } from "./edit-dialog/homepage-section";
 import { type CollectionShareSettings } from "./edit-dialog/sharing-section";
-import { type SnapshotItem } from "./select-collection-start-page";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
 import { type MarkdownEditor } from "@/components/ui/markdown-editor";
 import { type TabGroupPanel } from "@/components/ui/tab-group/tab-panel";
-import {
-  collectionUpdateSchema,
-  type Collection,
-  type CollectionUpdate,
-} from "@/types/collection";
-import { isApiError } from "@/utils/api";
+import { type Collection } from "@/types/collection";
 import { maxLengthValidator, type MaxLengthValidator } from "@/utils/form";
 import { tw } from "@/utils/tailwind";
 
-type Tab = "about" | "sharing" | "homepage";
+export type Tab = "about" | "sharing" | "homepage";
 
 export type CollectionSavedEvent = CustomEvent<{
   id: string;
 }>;
 
-const validateNameMax = maxLengthValidator(50);
-const validateCaptionMax = maxLengthValidator(150);
+export const validateNameMax = maxLengthValidator(50);
+export const validateCaptionMax = maxLengthValidator(150);
 
 /**
  * @fires btrix-collection-saved CollectionSavedEvent Fires
@@ -76,136 +68,27 @@ export class CollectionEdit extends BtrixElement {
   tab: Tab = "about";
 
   @queryAsync("#collectionEditForm")
-  private readonly form!: Promise<HTMLFormElement>;
+  readonly form!: Promise<HTMLFormElement>;
 
   @query("btrix-markdown-editor")
-  private readonly descriptionEditor?: MarkdownEditor | null;
+  readonly descriptionEditor?: MarkdownEditor | null;
 
   @query("btrix-collection-share-settings")
-  private readonly shareSettings?: CollectionShareSettings;
+  readonly shareSettings?: CollectionShareSettings;
 
   @query("btrix-collection-homepage-settings")
-  private readonly homepageSettings?: CollectionHomepageSettings;
+  readonly homepageSettings?: CollectionHomepageSettings;
+
+  readonly gatherFormData = gatherState.bind(this);
+
+  readonly checkChanged = checkChanged.bind(this);
 
   private readonly submitTask = new Task(this, {
-    task: async (_, { signal }) => {
-      if (!this.collection) throw new Error("Collection is undefined");
-      try {
-        // just push the updated data
-        const updates = await this.checkChanged();
-        console.log(updates);
-        if (!updates) throw new Error("invalid_data");
-        const updateObject = Object.fromEntries(updates) as CollectionUpdate & {
-          homepage?: {
-            homeView: `${HomeView}`;
-            useThumbnail: "on" | "off";
-            selectedSnapshot: SnapshotItem | null;
-          };
-        };
-        const { homepage, ...rest } = updateObject;
-        const pageId =
-          (homepage?.homeView === HomeView.URL &&
-            homepage.selectedSnapshot?.pageId) ||
-          null;
-        const tasks = [];
-
-        if (this.collection.homeUrlPageId !== pageId) {
-          tasks.push(
-            this.api.fetch(
-              `/orgs/${this.orgId}/collections/${this.collection.id}/home-url`,
-              {
-                method: "POST",
-                body: JSON.stringify({
-                  pageId,
-                }),
-                signal,
-              },
-            ),
-          );
-        }
-
-        const shouldUpload =
-          homepage?.homeView === HomeView.URL &&
-          homepage.useThumbnail === "on" &&
-          homepage.selectedSnapshot &&
-          this.homePageId !== homepage.selectedSnapshot.pageId;
-
-        // TODO get filename from rwp?
-        const fileName = `page-thumbnail_${homepage?.selectedSnapshot?.pageId}.jpeg`;
-        let file: File | undefined;
-
-        if (shouldUpload && this.homepageSettings?.thumbnailPreview) {
-          const blob =
-            await this.homepageSettings.thumbnailPreview.thumbnailBlob;
-
-          if (blob) {
-            file = new File([blob], fileName, {
-              type: blob.type,
-            });
-          }
-        }
-
-        if (shouldUpload) {
-          if (!file) throw new Error("invalid_data");
-          tasks.push(
-            this.api.upload(
-              `/orgs/${this.orgId}/collections/${this.collection.id}/thumbnail?filename=${fileName}`,
-              file,
-              signal,
-            ),
-          );
-          rest.defaultThumbnailName = null;
-        }
-        tasks.push(
-          await this.api.fetch<{ updated: boolean }>(
-            `/orgs/${this.orgId}/collections/${this.collection.id}`,
-            {
-              method: "PATCH",
-              body: JSON.stringify(rest),
-              signal,
-            },
-          ),
-        );
-
-        await Promise.all(tasks);
-
-        this.dispatchEvent(
-          new CustomEvent("btrix-collection-saved", {
-            detail: {
-              id: this.collection.id,
-            },
-          }) as CollectionSavedEvent,
-        );
-        this.notify.toast({
-          message: msg(
-            str`Updated collection “${this.name || this.collection.name}”`,
-          ),
-          variant: "success",
-          icon: "check2-circle",
-          id: "collection-metadata-status",
-        });
-      } catch (e) {
-        let message = isApiError(e) && e.message;
-        if (message === "collection_name_taken") {
-          message = msg("This name is already taken.");
-        }
-        if (message === "invalid_data") {
-          message = msg("Please review issues with your changes.");
-        }
-        console.error(e);
-        this.notify.toast({
-          message: message || msg("Something unexpected went wrong"),
-          variant: "danger",
-          icon: "exclamation-octagon",
-          id: "collection-metadata-status",
-        });
-        throw e;
-      }
-    },
+    task: submitTask.bind(this)(),
     autoRun: false,
   });
 
-  private validate(validator: MaxLengthValidator) {
+  validate(validator: MaxLengthValidator) {
     return (e: CustomEvent) => {
       const valid = validator.validate(e);
       if (!valid) {
@@ -215,54 +98,6 @@ export class CollectionEdit extends BtrixElement {
       } else {
         this.errorTab = null;
       }
-    };
-  }
-
-  private async gatherFormData() {
-    const form = await this.form;
-
-    if (!this.descriptionEditor?.checkValidity()) {
-      this.errorTab = "about";
-      void this.descriptionEditor?.focus();
-      throw new Error("invalid_data");
-    }
-
-    const elements = getFormControls(form);
-    const invalidElement = elements.find(
-      (el) => !(el as HTMLInputElement).checkValidity(),
-    );
-    if (invalidElement) {
-      this.errorTab = invalidElement.closest<TabGroupPanel>(
-        "btrix-tab-group-panel",
-      )!.name as Tab;
-      (invalidElement as HTMLElement).focus();
-      throw new Error("invalid_data");
-    } else {
-      this.errorTab = null;
-    }
-
-    const description = this.descriptionEditor.value;
-
-    const { access, allowPublicDownload, defaultThumbnailName } =
-      this.shareSettings ?? {};
-
-    const { homeView, useThumbnail, ...formData } = serialize(
-      form,
-    ) as CollectionUpdate & {
-      homeView: `${HomeView}`;
-      useThumbnail: "on" | "off";
-    };
-
-    const data = {
-      ...formData,
-      description,
-      access,
-      allowPublicDownload,
-      defaultThumbnailName,
-    };
-    return {
-      collectionUpdate: collectionUpdateSchema.parse(data),
-      homepage: { homeView, useThumbnail },
     };
   }
 
@@ -473,48 +308,5 @@ export class CollectionEdit extends BtrixElement {
         <input class="offscreen" type="submit" />
       </form>
     `;
-  }
-  private async checkChanged() {
-    try {
-      const { collectionUpdate, homepage } = await this.gatherFormData();
-      console.log({ collectionUpdate, homepage });
-      const updates = (
-        Object.entries(collectionUpdate) as [
-          keyof CollectionUpdate,
-          CollectionUpdate[keyof CollectionUpdate],
-        ][]
-      ).filter(([name, value]) => this.collection?.[name] !== value) as [
-        keyof CollectionUpdate | "homepage",
-        (
-          | CollectionUpdate[keyof CollectionUpdate]
-          | (typeof homepage & { selectedSnapshot: SnapshotItem | null })
-        ),
-      ][];
-
-      if (
-        (homepage.homeView === HomeView.Pages && this.homePageId) ||
-        (homepage.homeView === HomeView.URL &&
-          this.homepageSettings?.selectedSnapshot &&
-          this.homePageId !== this.homepageSettings.selectedSnapshot.pageId)
-      ) {
-        updates.push([
-          "homepage",
-          {
-            ...homepage,
-            selectedSnapshot: this.homepageSettings?.selectedSnapshot ?? null,
-          },
-        ]);
-      }
-      console.log({ updates });
-      if (updates.length > 0) {
-        this.dirty = true;
-      } else {
-        this.dirty = false;
-      }
-      return updates;
-    } catch (e) {
-      console.error(e);
-      this.dirty = true;
-    }
   }
 }
