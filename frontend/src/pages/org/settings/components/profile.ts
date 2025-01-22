@@ -20,7 +20,7 @@ export class OrgSettingsProfile extends BtrixElement {
       [
         html`
           <label for="orgVisibility" class="form-label text-xs">
-            ${msg("Visibility")}
+            ${msg("Org Visibility")}
           </label>
           <div>
             <sl-switch
@@ -34,37 +34,8 @@ export class OrgSettingsProfile extends BtrixElement {
           </div>
         `,
         msg(
-          "If enabled, anyone will be able to view your org's name, description, and public collections.",
+          "If enabled, anyone will be able to view the org name, description, and public collections in the org's public page or via API.",
         ),
-      ],
-      [
-        html`
-          <sl-textarea
-            class="with-max-help-text"
-            name="publicDescription"
-            size="small"
-            label=${msg("Description")}
-            autocomplete="off"
-            value=${this.org?.publicDescription || ""}
-            minlength="2"
-            rows="2"
-            help-text=${this.validateDescriptionMax.helpText}
-            @sl-input=${this.validateDescriptionMax.validate}
-          ></sl-textarea>
-        `,
-        msg("Write a short description to introduce your organization."),
-      ],
-      [
-        html`
-          <btrix-url-input
-            class="mb-2"
-            name="publicUrl"
-            size="small"
-            label=${msg("Website")}
-            value=${this.org?.publicUrl || ""}
-          ></btrix-url-input>
-        `,
-        msg("Link to your organization's (or your personal) website."),
       ],
       [
         html`
@@ -87,10 +58,41 @@ export class OrgSettingsProfile extends BtrixElement {
           )}
         `,
       ],
+      [
+        html`
+          <sl-textarea
+            class="with-max-help-text"
+            name="publicDescription"
+            size="small"
+            label=${msg("Description")}
+            autocomplete="off"
+            value=${this.org?.publicDescription || ""}
+            minlength="2"
+            rows="2"
+            help-text=${this.validateDescriptionMax.helpText}
+            @sl-input=${this.validateDescriptionMax.validate}
+          ></sl-textarea>
+        `,
+        msg(
+          "Write a short description to introduce your organization to the public.",
+        ),
+      ],
+      [
+        html`
+          <btrix-url-input
+            class="mb-2"
+            name="publicUrl"
+            size="small"
+            label=${msg("Website")}
+            value=${this.org?.publicUrl || ""}
+          ></btrix-url-input>
+        `,
+        msg("Link to your organization's (or your personal) website."),
+      ],
     ];
 
     return html`
-      <h2 class="mb-2 mt-7 text-lg font-medium">${msg("Profile")}</h2>
+      <h2 class="mb-2 mt-7 text-lg font-medium">${msg("Visibility")}</h2>
 
       <section class="rounded-lg border">
         <form @submit=${this.onSubmit}>
@@ -100,7 +102,7 @@ export class OrgSettingsProfile extends BtrixElement {
               href=${`/${RouteNamespace.PublicOrgs}/${this.orgSlugState}`}
               target="_blank"
             >
-              ${msg("Preview public profile page")}
+              ${msg("Preview public page")}
             </btrix-link>
             <sl-button type="submit" size="small" variant="primary">
               ${msg("Save")}
@@ -141,7 +143,7 @@ export class OrgSettingsProfile extends BtrixElement {
       }
 
       this.notify.toast({
-        message: msg("Org profile has been updated."),
+        message: msg("Org settings has been updated."),
         variant: "success",
         icon: "check2-circle",
       });
