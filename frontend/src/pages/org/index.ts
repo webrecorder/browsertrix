@@ -12,6 +12,7 @@ import type { Tab as CollectionTab } from "./collection-detail";
 import type {
   Member,
   OrgRemoveMemberEvent,
+  UpdateOrgDetail,
   UserRoleChangeEvent,
 } from "./settings/settings";
 
@@ -627,6 +628,17 @@ export class Org extends BtrixElement {
     return html`<btrix-org-settings
       activePanel=${activePanel}
       ?isAddingMember=${isAddingMember}
+      @btrix-update-org=${(e: CustomEvent<UpdateOrgDetail>) => {
+        e.stopPropagation();
+
+        // Optimistic update
+        AppStateService.partialUpdateOrg({
+          id: this.orgId,
+          ...e.detail,
+        });
+
+        void this.updateOrg();
+      }}
       @org-user-role-change=${this.onUserRoleChange}
       @org-remove-member=${this.onOrgRemoveMember}
     ></btrix-org-settings>`;
