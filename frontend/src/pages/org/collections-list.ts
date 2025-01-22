@@ -542,7 +542,7 @@ export class CollectionsList extends BtrixElement {
       </btrix-table-cell>
       <btrix-table-cell>
         ${this.localize.number(col.pageCount, { notation: "compact" })}
-        ${pluralOf("pages", col.pageCount)}
+        ${pluralOf("pages", col.uniquePageCount)}
       </btrix-table-cell>
       <btrix-table-cell>
         ${this.localize.bytes(col.totalSize || 0, {

@@ -43,14 +43,14 @@ export function metadataColumn(collection?: Collection | PublicCollection) {
         `,
       })}
       ${metadataItem({
-        label: msg("Pages in Collection"),
+        label: msg("Unique Pages in Collection"),
         render: (col) =>
-          `${localize.number(col.pageCount)} ${pluralOf("pages", col.pageCount)}`,
+          `${localize.number(col.uniquePageCount)} ${pluralOf("pages", col.uniquePageCount)}`,
       })}
       ${metadataItem({
-        label: msg("Total Page Snapshots"),
+        label: msg("Total Pages Crawled"),
         render: (col) =>
-          `${localize.number(col.snapshotCount)} ${pluralOf("snapshots", col.snapshotCount)}`,
+          `${localize.number(col.pageCount)} ${pluralOf("pages", col.pageCount)}`,
       })}
     </btrix-desc-list>
   `;
