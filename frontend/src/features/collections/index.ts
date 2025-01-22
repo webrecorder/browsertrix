@@ -9,3 +9,4 @@ import("./select-collection-start-page");
 import("./share-collection");
 import("./collection-thumbnail");
 import("./edit-dialog/sharing-section");
+import("./edit-dialog/homepage-section");

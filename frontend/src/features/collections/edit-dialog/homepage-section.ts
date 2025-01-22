@@ -58,7 +58,7 @@ export class CollectionHomepageSettings extends BtrixElement {
   selectedSnapshot?: SelectSnapshotDetail["item"];
 
   @query("#thumbnailPreview")
-  private readonly thumbnailPreview?: CollectionSnapshotPreview | null;
+  public readonly thumbnailPreview?: CollectionSnapshotPreview | null;
 
   willUpdate(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("homeUrl")) {

@@ -17,7 +17,7 @@ import {
 import { HomeView } from "./collection-snapshot-preview";
 import { type CollectionHomepageSettings } from "./edit-dialog/homepage-section";
 import { type CollectionShareSettings } from "./edit-dialog/sharing-section";
-import { SnapshotItem } from "./select-collection-start-page";
+import { type SnapshotItem } from "./select-collection-start-page";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
@@ -55,6 +55,9 @@ export class CollectionEdit extends BtrixElement {
 
   @property({ type: String })
   homePageId?: string | null = null;
+
+  @property({ type: Boolean })
+  replayLoaded = false;
 
   @state()
   isDialogVisible = false;
@@ -100,24 +103,71 @@ export class CollectionEdit extends BtrixElement {
           };
         };
         const { homepage, ...rest } = updateObject;
+        const pageId =
+          (homepage?.homeView === HomeView.URL &&
+            homepage.selectedSnapshot?.pageId) ||
+          null;
+        const tasks = [];
+
+        if (this.collection.homeUrlPageId !== pageId) {
+          tasks.push(
+            this.api.fetch(
+              `/orgs/${this.orgId}/collections/${this.collection.id}/home-url`,
+              {
+                method: "POST",
+                body: JSON.stringify({
+                  pageId,
+                }),
+                signal,
+              },
+            ),
+          );
+        }
+
         const shouldUpload =
           homepage?.homeView === HomeView.URL &&
           homepage.useThumbnail === "on" &&
           homepage.selectedSnapshot &&
           this.homePageId !== homepage.selectedSnapshot.pageId;
-        let tasks = [];
-        if (shouldUpload) {
-          if (!file || !fileName) throw new Error("file or fileName missing");
-        }
-        const body = JSON.stringify(rest);
-        const path = `/orgs/${this.orgId}/collections/${this.collection.id}`;
-        const method = "PATCH";
 
-        const data = await this.api.fetch<{ updated: boolean }>(path, {
-          method,
-          body,
-          signal,
-        });
+        // TODO get filename from rwp?
+        const fileName = `page-thumbnail_${homepage?.selectedSnapshot?.pageId}.jpeg`;
+        let file: File | undefined;
+
+        if (shouldUpload && this.homepageSettings?.thumbnailPreview) {
+          const blob =
+            await this.homepageSettings.thumbnailPreview.thumbnailBlob;
+
+          if (blob) {
+            file = new File([blob], fileName, {
+              type: blob.type,
+            });
+          }
+        }
+
+        if (shouldUpload) {
+          if (!file) throw new Error("invalid_data");
+          tasks.push(
+            this.api.upload(
+              `/orgs/${this.orgId}/collections/${this.collection.id}/thumbnail?filename=${fileName}`,
+              file,
+              signal,
+            ),
+          );
+          rest.defaultThumbnailName = null;
+        }
+        tasks.push(
+          await this.api.fetch<{ updated: boolean }>(
+            `/orgs/${this.orgId}/collections/${this.collection.id}`,
+            {
+              method: "PATCH",
+              body: JSON.stringify(rest),
+              signal,
+            },
+          ),
+        );
+
+        await Promise.all(tasks);
 
         this.dispatchEvent(
           new CustomEvent("btrix-collection-saved", {
@@ -134,7 +184,6 @@ export class CollectionEdit extends BtrixElement {
           icon: "check2-circle",
           id: "collection-metadata-status",
         });
-        return data;
       } catch (e) {
         let message = isApiError(e) && e.message;
         if (message === "collection_name_taken") {
@@ -348,6 +397,19 @@ export class CollectionEdit extends BtrixElement {
     </btrix-tab-group-panel>`;
   }
 
+  private renderHomepage() {
+    if (!this.collection) return;
+    return html`<btrix-tab-group-panel name="homepage">
+      <btrix-collection-homepage-settings
+        .collectionId=${this.collection.id}
+        .homeUrl=${this.collection.homeUrl}
+        .homePageId=${this.collection.homeUrlPageId}
+        .homeTs=${this.collection.homeUrlTs}
+        .replayLoaded=${this.replayLoaded}
+      ></btrix-collection-homepage-settings>
+    </btrix-tab-group-panel>`;
+  }
+
   private renderForm() {
     if (!this.collection) return;
     return html`
@@ -405,7 +467,7 @@ export class CollectionEdit extends BtrixElement {
             ></sl-icon>
             ${msg("Homepage")}</btrix-tab-group-tab
           >
-          ${this.renderAbout()} ${this.renderSharing()}
+          ${this.renderAbout()} ${this.renderSharing()} ${this.renderHomepage()}
           <btrix-tab-group-panel name="homepage"> </btrix-tab-group-panel>
         </btrix-tab-group>
         <input class="offscreen" type="submit" />
