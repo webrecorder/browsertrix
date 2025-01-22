@@ -877,7 +877,7 @@ def test_re_add_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_
     )
     assert r.status_code == 403
 
-    # Check that pageCount and snapshotCount were stored on crawl
+    # Check that pageCount and uniquePageCount were stored on crawl
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}",
         headers=crawler_auth_headers,
@@ -885,7 +885,7 @@ def test_re_add_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_
     assert r.status_code == 200
     data = r.json()
     assert data["pageCount"] > 0
-    assert data["snapshotCount"] > 0
+    assert data["uniquePageCount"] > 0
 
 
 def test_crawl_page_notes(crawler_auth_headers, default_org_id, crawler_crawl_id):

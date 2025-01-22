@@ -1,5 +1,5 @@
 """
-Migration 0041 - Rationalize page and snapshot counts
+Migration 0041 - Rationalize page counts
 """
 
 from btrixcloud.migrations import BaseMigration
@@ -20,13 +20,13 @@ class Migration(BaseMigration):
     async def migrate_up(self):
         """Perform migration up.
 
-        Recalculate collections to get new page and snapshot counts
+        Recalculate collections to get new page and unique page counts
         """
         colls_mdb = self.mdb["collections"]
 
         if self.coll_ops is None:
             print(
-                "Unable to set collection page and snapshot counts, missing coll_ops",
+                "Unable to set collection page counts, missing coll_ops",
                 flush=True,
             )
             return
@@ -37,4 +37,7 @@ class Migration(BaseMigration):
                 await self.coll_ops.update_collection_counts_and_tags(coll_id)
             # pylint: disable=broad-exception-caught
             except Exception as err:
-                print(f"Unable to update collection {coll_id}: {err}", flush=True)
+                print(
+                    f"Unable to update page counts for collection {coll_id}: {err}",
+                    flush=True,
+                )

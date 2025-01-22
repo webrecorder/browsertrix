@@ -32,7 +32,7 @@ class Migration(BaseMigration):
         mdb_crawls = self.mdb["crawls"]
         async for upload in mdb_crawls.find({"oid": oid, "type": "upload"}):
             upload_id = upload["_id"]
-            _, total = await self.page_ops.list_page_snapshots(upload_id)
+            _, total = await self.page_ops.list_pages(upload_id)
             if total > 0:
                 return True
         return False

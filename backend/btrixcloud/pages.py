@@ -92,7 +92,7 @@ class PageOps:
             if pages_buffer:
                 await self._add_pages_to_db(crawl_id, pages_buffer)
 
-            await self.set_archived_item_page_snapshot_counts(crawl_id)
+            await self.set_archived_item_page_counts(crawl_id)
 
             print(f"Added pages for crawl {crawl_id} to db", flush=True)
         # pylint: disable=broad-exception-caught, raise-missing-from
@@ -435,7 +435,7 @@ class PageOps:
 
         return {"deleted": True}
 
-    async def list_page_snapshots(
+    async def list_pages(
         self,
         crawl_id: str,
         org: Optional[Organization] = None,
@@ -453,7 +453,7 @@ class PageOps:
         sort_by: Optional[str] = None,
         sort_direction: Optional[int] = -1,
     ) -> Tuple[Union[List[PageOut], List[PageOutWithSingleQA]], int]:
-        """List all page snapshots in crawl"""
+        """List all pages in crawl"""
         # pylint: disable=duplicate-code, too-many-locals, too-many-branches, too-many-statements
         # Zero-index page for query
         page = page - 1
@@ -670,15 +670,15 @@ class PageOps:
         )
         return len(unique_pages) or 0
 
-    async def set_archived_item_page_snapshot_counts(self, crawl_id: str):
-        """Store archived item page and snapshot counts in crawl document"""
-        _, snapshot_count = await self.list_page_snapshots(crawl_id)
+    async def set_archived_item_page_counts(self, crawl_id: str):
+        """Store archived item page and unique page counts in crawl document"""
+        _, page_count = await self.list_pages(crawl_id)
 
-        page_count = await self.get_unique_page_count([crawl_id])
+        unique_page_count = await self.get_unique_page_count([crawl_id])
 
         await self.crawls.find_one_and_update(
             {"_id": crawl_id},
-            {"$set": {"snapshotCount": snapshot_count, "pageCount": page_count}},
+            {"$set": {"uniquePageCount": unique_page_count, "pageCount": page_count}},
         )
 
 
@@ -876,7 +876,7 @@ def init_pages_api(
         if approved:
             formatted_approved = str_list_to_bools(approved.split(","))
 
-        pages, total = await ops.list_page_snapshots(
+        pages, total = await ops.list_pages(
             crawl_id=crawl_id,
             org=org,
             reviewed=reviewed,
@@ -916,7 +916,7 @@ def init_pages_api(
         if approved:
             formatted_approved = str_list_to_bools(approved.split(","))
 
-        pages, total = await ops.list_page_snapshots(
+        pages, total = await ops.list_pages(
             crawl_id=crawl_id,
             org=org,
             qa_run_id=qa_run_id,

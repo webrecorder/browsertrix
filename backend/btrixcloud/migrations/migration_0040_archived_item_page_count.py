@@ -34,10 +34,10 @@ class Migration(BaseMigration):
         async for crawl_raw in crawls_mdb.find({}):
             crawl_id = crawl_raw["_id"]
             try:
-                await self.page_ops.set_archived_item_page_snapshot_counts(crawl_id)
+                await self.page_ops.set_archived_item_page_counts(crawl_id)
             # pylint: disable=broad-exception-caught
             except Exception as err:
                 print(
-                    f"Error saving page/snapshot counts for archived item {crawl_id}: {err}",
+                    f"Error saving page counts for archived item {crawl_id}: {err}",
                     flush=True,
                 )

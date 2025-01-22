@@ -943,9 +943,9 @@ class OrgOps:
         crawl_count = 0
         upload_count = 0
 
-        snapshot_count = 0
-        crawl_snapshot_count = 0
-        upload_snapshot_count = 0
+        page_count = 0
+        crawl_page_count = 0
+        upload_page_count = 0
 
         crawl_ids = []
         upload_ids = []
@@ -957,20 +957,22 @@ class OrgOps:
             archived_item_count += 1
             if item.type == "crawl":
                 crawl_count += 1
-                crawl_snapshot_count += item.snapshotCount or 0
+                crawl_page_count += item.pageCount or 0
                 crawl_ids.append(item.id)
             if item.type == "upload":
                 upload_count += 1
-                upload_snapshot_count += item.snapshotCount or 0
+                upload_page_count += item.pageCount or 0
                 upload_ids.append(item.id)
-            if item.snapshotCount:
-                snapshot_count += item.snapshotCount
+            if item.pageCount:
+                page_count += item.pageCount
 
         all_archived_item_ids = crawl_ids + upload_ids
 
-        page_count = await self.page_ops.get_unique_page_count(all_archived_item_ids)
-        crawl_page_count = await self.page_ops.get_unique_page_count(crawl_ids)
-        upload_page_count = await self.page_ops.get_unique_page_count(upload_ids)
+        unique_page_count = await self.page_ops.get_unique_page_count(
+            all_archived_item_ids
+        )
+        crawl_unique_page_count = await self.page_ops.get_unique_page_count(crawl_ids)
+        upload_unique_page_count = await self.page_ops.get_unique_page_count(upload_ids)
 
         profile_count = await self.profiles_db.count_documents({"oid": org.id})
         workflows_running_count = await self.crawls_db.count_documents(
@@ -996,9 +998,9 @@ class OrgOps:
             "pageCount": page_count,
             "crawlPageCount": crawl_page_count,
             "uploadPageCount": upload_page_count,
-            "snapshotCount": snapshot_count,
-            "crawlSnapshotCount": crawl_snapshot_count,
-            "uploadSnapshotCount": upload_snapshot_count,
+            "uniquePageCount": unique_page_count,
+            "crawlUniquePageCount": crawl_unique_page_count,
+            "uploadUniquePageCount": upload_unique_page_count,
             "profileCount": profile_count,
             "workflowsRunningCount": workflows_running_count,
             "maxConcurrentCrawls": max_concurrent_crawls,

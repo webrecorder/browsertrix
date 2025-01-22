@@ -584,7 +584,7 @@ class CollectionOps:
         """Set current crawl info in config when crawl begins"""
         # pylint: disable=too-many-locals
         crawl_count = 0
-        snapshot_count = 0
+        page_count = 0
         total_size = 0
         tags = []
 
@@ -603,10 +603,10 @@ class CollectionOps:
                 total_size += file.size
 
             try:
-                _, crawl_snapshots = await self.page_ops.list_page_snapshots(
+                _, crawl_page_count = await self.page_ops.list_pages(
                     crawl.id, org, page_size=1_000_000
                 )
-                snapshot_count += crawl_snapshots
+                page_count += crawl_page_count
             # pylint: disable=broad-exception-caught
             except Exception:
                 pass
@@ -618,7 +618,7 @@ class CollectionOps:
 
         sorted_tags = [tag for tag, count in Counter(tags).most_common()]
 
-        page_count = await self.page_ops.get_unique_page_count(crawl_ids)
+        unique_page_count = await self.page_ops.get_unique_page_count(crawl_ids)
 
         await self.collections.find_one_and_update(
             {"_id": collection_id},
@@ -626,7 +626,7 @@ class CollectionOps:
                 "$set": {
                     "crawlCount": crawl_count,
                     "pageCount": page_count,
-                    "snapshotCount": snapshot_count,
+                    "uniquePageCount": unique_page_count,
                     "totalSize": total_size,
                     "tags": sorted_tags,
                 }

@@ -82,7 +82,7 @@ def test_create_collection(
     assert data["caption"] == CAPTION
     assert data["crawlCount"] == 1
     assert data["pageCount"] > 0
-    assert data["snapshotCount"] > 0
+    assert data["uniquePageCount"] > 0
     assert data["totalSize"] > 0
     modified = data["modified"]
     assert modified
@@ -182,7 +182,7 @@ def test_update_collection(
     assert data["caption"] == UPDATED_CAPTION
     assert data["crawlCount"] == 1
     assert data["pageCount"] > 0
-    assert data["snapshotCount"] > 0
+    assert data["uniquePageCount"] > 0
     assert data["totalSize"] > 0
     global modified
     modified = data["modified"]
@@ -272,7 +272,7 @@ def test_add_remove_crawl_from_collection(
     assert data["id"] == _coll_id
     assert data["crawlCount"] == 2
     assert data["pageCount"] > 0
-    assert data["snapshotCount"] > 0
+    assert data["uniquePageCount"] > 0
     assert data["totalSize"] > 0
     assert data["modified"] >= modified
     assert data["tags"] == ["wr-test-2", "wr-test-1"]
@@ -297,7 +297,7 @@ def test_add_remove_crawl_from_collection(
     assert data["id"] == _coll_id
     assert data["crawlCount"] == 0
     assert data["pageCount"] == 0
-    assert data["snapshotCount"] == 0
+    assert data["uniquePageCount"] == 0
     assert data["totalSize"] == 0
     assert data["modified"] >= modified
     assert data.get("tags", []) == []
@@ -328,7 +328,7 @@ def test_add_remove_crawl_from_collection(
     assert data["id"] == _coll_id
     assert data["crawlCount"] == 2
     assert data["pageCount"] > 0
-    assert data["snapshotCount"] > 0
+    assert data["uniquePageCount"] > 0
     assert data["totalSize"] > 0
     assert data["modified"] >= modified
     assert data["tags"] == ["wr-test-2", "wr-test-1"]
@@ -351,7 +351,7 @@ def test_get_collection(crawler_auth_headers, default_org_id):
     assert data["caption"] == UPDATED_CAPTION
     assert data["crawlCount"] == 2
     assert data["pageCount"] > 0
-    assert data["snapshotCount"] > 0
+    assert data["uniquePageCount"] > 0
     assert data["totalSize"] > 0
     assert data["modified"] >= modified
     assert data["tags"] == ["wr-test-2", "wr-test-1"]
@@ -375,7 +375,7 @@ def test_get_collection_replay(crawler_auth_headers, default_org_id):
     assert data["caption"] == UPDATED_CAPTION
     assert data["crawlCount"] == 2
     assert data["pageCount"] > 0
-    assert data["snapshotCount"] > 0
+    assert data["uniquePageCount"] > 0
     assert data["totalSize"] > 0
     assert data["modified"] >= modified
     assert data["tags"] == ["wr-test-2", "wr-test-1"]
@@ -495,7 +495,7 @@ def test_add_upload_to_collection(crawler_auth_headers, default_org_id):
     assert data["id"] == _coll_id
     assert data["crawlCount"] == 3
     assert data["pageCount"] > 0
-    assert data["snapshotCount"] > 0
+    assert data["uniquePageCount"] > 0
     assert data["totalSize"] > 0
     assert data["modified"]
     assert data["tags"] == ["wr-test-2", "wr-test-1"]
@@ -556,7 +556,7 @@ def test_list_collections(
     assert first_coll["caption"] == UPDATED_CAPTION
     assert first_coll["crawlCount"] == 3
     assert first_coll["pageCount"] > 0
-    assert first_coll["snapshotCount"] > 0
+    assert first_coll["uniquePageCount"] > 0
     assert first_coll["totalSize"] > 0
     assert first_coll["modified"]
     assert first_coll["tags"] == ["wr-test-2", "wr-test-1"]
@@ -573,7 +573,7 @@ def test_list_collections(
     assert second_coll.get("description") is None
     assert second_coll["crawlCount"] == 1
     assert second_coll["pageCount"] > 0
-    assert second_coll["snapshotCount"] > 0
+    assert second_coll["uniquePageCount"] > 0
     assert second_coll["totalSize"] > 0
     assert second_coll["modified"]
     assert second_coll["tags"] == ["wr-test-2"]
@@ -594,7 +594,7 @@ def test_remove_upload_from_collection(crawler_auth_headers, default_org_id):
     assert data["id"] == _coll_id
     assert data["crawlCount"] == 2
     assert data["pageCount"] > 0
-    assert data["snapshotCount"] > 0
+    assert data["uniquePageCount"] > 0
     assert data["totalSize"] > 0
     assert data["modified"] >= modified
     assert data.get("tags") == ["wr-test-2", "wr-test-1"]
@@ -925,7 +925,7 @@ def test_list_public_collections(
         assert collection["dateLatest"]
         assert collection["crawlCount"] > 0
         assert collection["pageCount"] > 0
-        assert collection["snapshotCount"] > 0
+        assert collection["uniquePageCount"] > 0
         assert collection["totalSize"] > 0
 
     # Test non-existing slug - it should return a 404 but not reveal
@@ -1106,7 +1106,7 @@ def test_list_public_colls_home_url_thumbnail():
         assert coll["dateLatest"]
         assert coll["crawlCount"] > 0
         assert coll["pageCount"] > 0
-        assert coll["snapshotCount"] > 0
+        assert coll["uniquePageCount"] > 0
         assert coll["totalSize"] > 0
 
         for field in non_public_fields:
@@ -1157,7 +1157,7 @@ def test_get_public_collection(default_org_id):
     assert coll["dateLatest"]
     assert coll["crawlCount"] > 0
     assert coll["pageCount"] > 0
-    assert coll["snapshotCount"] > 0
+    assert coll["uniquePageCount"] > 0
     assert coll["totalSize"] > 0
 
     for field in NON_PUBLIC_COLL_FIELDS:
@@ -1237,7 +1237,7 @@ def test_get_public_collection_unlisted(crawler_auth_headers, default_org_id):
     assert coll["dateLatest"]
     assert coll["crawlCount"] > 0
     assert coll["pageCount"] > 0
-    assert coll["snapshotCount"] > 0
+    assert coll["uniquePageCount"] > 0
     assert coll["totalSize"] > 0
     assert coll["defaultThumbnailName"] == "orange-default.avif"
     assert coll["allowPublicDownload"]
@@ -1279,7 +1279,7 @@ def test_get_public_collection_unlisted_org_profile_disabled(
     assert coll["dateLatest"]
     assert coll["crawlCount"] > 0
     assert coll["pageCount"] > 0
-    assert coll["snapshotCount"] > 0
+    assert coll["uniquePageCount"] > 0
     assert coll["totalSize"] > 0
     assert coll["defaultThumbnailName"] == "orange-default.avif"
     assert coll["allowPublicDownload"]
