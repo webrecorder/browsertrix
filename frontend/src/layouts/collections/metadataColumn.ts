@@ -1,7 +1,7 @@
-import { msg } from "@lit/localize";
 import { html, type TemplateResult } from "lit";
 import { when } from "lit/directives/when.js";
 
+import { metadata } from "@/strings/collections/metadata";
 import { monthYearDateRange } from "@/strings/utils";
 import type { Collection, PublicCollection } from "@/types/collection";
 import localize from "@/utils/localize";
@@ -35,7 +35,7 @@ export function metadataColumn(collection?: Collection | PublicCollection) {
   return html`
     <btrix-desc-list>
       ${metadataItem({
-        label: msg("Collection Period"),
+        label: metadata.dateLatest,
         render: (col) => html`
           <span class="font-sans">
             ${monthYearDateRange(col.dateEarliest, col.dateLatest)}
@@ -43,12 +43,12 @@ export function metadataColumn(collection?: Collection | PublicCollection) {
         `,
       })}
       ${metadataItem({
-        label: msg("Unique Pages in Collection"),
+        label: metadata.uniquePageCount,
         render: (col) =>
           `${localize.number(col.uniquePageCount)} ${pluralOf("pages", col.uniquePageCount)}`,
       })}
       ${metadataItem({
-        label: msg("Total Pages Crawled"),
+        label: metadata.pageCount,
         render: (col) =>
           `${localize.number(col.pageCount)} ${pluralOf("pages", col.pageCount)}`,
       })}

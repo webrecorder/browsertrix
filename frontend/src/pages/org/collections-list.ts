@@ -19,6 +19,7 @@ import { SelectCollectionAccess } from "@/features/collections/select-collection
 import { emptyMessage } from "@/layouts/emptyMessage";
 import { pageHeader } from "@/layouts/pageHeader";
 import { RouteNamespace } from "@/routes";
+import { metadata } from "@/strings/collections/metadata";
 import { monthYearDateRange } from "@/strings/utils";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import {
@@ -56,7 +57,7 @@ const sortableFields: Record<
     defaultDirection: SortDirection.Ascending,
   },
   dateLatest: {
-    label: msg("Collection Period"),
+    label: metadata.dateLatest,
     defaultDirection: SortDirection.Descending,
   },
   crawlCount: {

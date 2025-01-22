@@ -5,6 +5,7 @@ import { customElement, property } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import { metadata } from "@/strings/collections/metadata";
 import { CollectionAccess } from "@/types/collection";
 
 @localized()
@@ -110,9 +111,9 @@ export class SelectCollectionAccess extends BtrixElement {
               <li>${msg("Name")}</li>
               <li>${msg("Summary")}</li>
               <li>${msg("About")}</li>
-              <li>${msg("Collection Period")}</li>
-              <li>${msg("Unique Pages in Collection")}</li>
-              <li>${msg("Total Pages Crawled")}</li>
+              <li>${metadata.dateLatest}</li>
+              <li>${metadata.uniquePageCount}</li>
+              <li>${metadata.pageCount}</li>
               <li>${msg("Collection Size")}</li>
             </ul>
           </sl-details>
