@@ -9,7 +9,7 @@ export enum OrgTab {
 
 export enum RouteNamespace {
   PrivateOrgs = "orgs",
-  PublicOrgs = "profile",
+  PublicOrgs = "explore",
 }
 
 export const ROUTES = {
