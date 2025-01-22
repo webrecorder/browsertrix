@@ -20,6 +20,7 @@ import type { APIUser } from "@/index";
 import { columns } from "@/layouts/columns";
 import { pageHeader } from "@/layouts/pageHeader";
 import { RouteNamespace } from "@/routes";
+import { alerts } from "@/strings/orgs/alerts";
 import type { APIPaginatedList } from "@/types/api";
 import { isApiError } from "@/utils/api";
 import { formValidator, maxLengthValidator } from "@/utils/form";
@@ -32,8 +33,6 @@ import { formatAPIUser } from "@/utils/user";
 import "./components/billing";
 import "./components/crawling-defaults";
 import "./components/visibility";
-
-import { alerts } from "@/strings/orgs/alerts";
 
 const styles = unsafeCSS(stylesheet);
 
