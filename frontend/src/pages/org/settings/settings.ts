@@ -31,7 +31,7 @@ import { formatAPIUser } from "@/utils/user";
 
 import "./components/billing";
 import "./components/crawling-defaults";
-import "./components/profile";
+import "./components/visibility";
 
 const styles = unsafeCSS(stylesheet);
 
@@ -171,7 +171,7 @@ export class OrgSettings extends BtrixElement {
         <btrix-tab-group-panel name="information">
           ${this.renderPanelHeader({ title: msg("General") })}
           ${this.renderInformation()}
-          <btrix-org-settings-profile></btrix-org-settings-profile>
+          <btrix-org-settings-visibility></btrix-org-settings-visibility>
           ${this.renderApi()}
         </btrix-tab-group-panel>
         <btrix-tab-group-panel name="members">

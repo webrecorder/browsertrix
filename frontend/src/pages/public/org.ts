@@ -9,8 +9,8 @@ import { page, pageHeading } from "@/layouts/page";
 import type { OrgData, PublicOrgCollections } from "@/types/org";
 
 @localized()
-@customElement("btrix-org-profile")
-export class OrgProfile extends BtrixElement {
+@customElement("btrix-public-org")
+export class PublicOrg extends BtrixElement {
   @property({ type: String })
   orgSlug?: string;
 

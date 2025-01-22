@@ -9,8 +9,8 @@ import { RouteNamespace } from "@/routes";
 import { formValidator, maxLengthValidator } from "@/utils/form";
 
 @localized()
-@customElement("btrix-org-settings-profile")
-export class OrgSettingsProfile extends BtrixElement {
+@customElement("btrix-org-settings-visibility")
+export class OrgSettingsVisibility extends BtrixElement {
   private readonly validateDescriptionMax = maxLengthValidator(150);
 
   render() {
