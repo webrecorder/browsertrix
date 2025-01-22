@@ -34,7 +34,7 @@ export class OrgSettingsProfile extends BtrixElement {
           </div>
         `,
         msg(
-          "If enabled, anyone will be able to view your org's profile page and public collections.",
+          "If enabled, anyone will be able to view your org's name, description, and public collections.",
         ),
       ],
       [
@@ -70,7 +70,7 @@ export class OrgSettingsProfile extends BtrixElement {
         html`
           <div class="mb-2">
             <btrix-copy-field
-              label=${msg("Profile Page")}
+              label=${msg("Public Page URL")}
               value=${`${orgBaseUrl}/${RouteNamespace.PublicOrgs}/${this.orgSlugState}`}
               .monostyle=${false}
             ></btrix-copy-field>

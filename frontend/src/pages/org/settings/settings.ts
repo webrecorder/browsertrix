@@ -314,7 +314,7 @@ export class OrgSettings extends BtrixElement {
                 </sl-input>
               `,
               msg(
-                "Customize your org's Browsertrix URL. This will also apply to the URL to your org's public profile page, if you've enabled it.",
+                "Customize your org's Browsertrix URL. This will also apply to the URL to your org's public page, if you've enabled it.",
               ),
             ],
           ])}

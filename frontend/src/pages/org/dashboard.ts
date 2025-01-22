@@ -310,8 +310,8 @@ export class Dashboard extends BtrixElement {
                     >
                       <sl-icon slot="prefix" name="globe2"></sl-icon>
                       ${this.org?.enablePublicProfile
-                        ? msg("Visit Public Profile")
-                        : msg("Preview Public Profile")}
+                        ? msg("Visit Public Page")
+                        : msg("Preview Public Page")}
                     </btrix-menu-item-link>
                     ${when(this.org, (org) =>
                       org.enablePublicProfile
@@ -331,7 +331,7 @@ export class Dashboard extends BtrixElement {
                               }}
                             >
                               <sl-icon name="copy" slot="prefix"></sl-icon>
-                              ${msg("Copy Link to Profile")}
+                              ${msg("Copy Link to Public Page")}
                             </sl-menu-item>
                           `
                         : html`

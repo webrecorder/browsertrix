@@ -27,7 +27,7 @@ export class SelectCollectionAccess extends BtrixElement {
     [CollectionAccess.Public]: {
       label: msg("Public"),
       icon: "globe2",
-      detail: msg("Anyone can view on the org's public profile"),
+      detail: msg("Anyone can view on the org's public page"),
     },
   };
 

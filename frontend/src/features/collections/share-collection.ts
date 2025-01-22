@@ -20,6 +20,7 @@ import { SelectCollectionAccess } from "./select-collection-access";
 import { BtrixElement } from "@/classes/BtrixElement";
 import { ClipboardController } from "@/controllers/clipboard";
 import { RouteNamespace } from "@/routes";
+import { warning } from "@/strings/collections/warning";
 import { AnalyticsTrackEvent } from "@/trackEvents";
 import {
   CollectionAccess,
@@ -246,7 +247,7 @@ export class ShareCollection extends BtrixElement {
         @sl-after-hide=${() => {
           this.tabGroup?.show(Tab.Link);
         }}
-        class="[--body-spacing:0] [--width:40rem]"
+        class="[--width:40rem] [--body-spacing:0]"
       >
         <sl-tab-group>
           <sl-tab slot="nav" panel=${Tab.Link}
@@ -296,9 +297,7 @@ export class ShareCollection extends BtrixElement {
             this.collection?.access === CollectionAccess.Public,
           () => html`
             <btrix-alert variant="warning" class="mt-3">
-              ${msg(
-                "The org profile page isn't public yet. To make the org profile and this collection visible to the public, update profile visibility in org settings.",
-              )}
+              ${warning.orgNotPublic}
             </btrix-alert>
           `,
         )}
@@ -311,9 +310,7 @@ export class ShareCollection extends BtrixElement {
         <div class="form-label flex items-center gap-1.5">
           ${msg("Thumbnail")}
           <sl-tooltip
-            content=${msg(
-              "Choose a thumbnail to represent this collection in the org dashboard and profile page.",
-            )}
+            content=${msg("Choose a thumbnail to represent this collection.")}
           >
             <sl-icon name="info-circle"></sl-icon>
           </sl-tooltip>

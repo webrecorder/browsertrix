@@ -87,11 +87,11 @@ export class OrgProfile extends BtrixElement {
           <sl-alert variant="primary" open>
             <sl-icon slot="icon" name="eye-fill"></sl-icon>
             <strong class="font-semibold">
-              ${msg("This is a private preview of your org's profile page")}
+              ${msg("This is a private preview of your org's public page")}
             </strong>
             <p>
               ${msg(
-                "Update your org's profile settings to make this page visible to anyone on the internet.",
+                "Update your org's visibility settings to make this page visible to anyone on the internet.",
               )}
               ${this.appState.isAdmin
                 ? html`
@@ -124,7 +124,7 @@ export class OrgProfile extends BtrixElement {
           actions: when(
             this.canEditOrg,
             () =>
-              html`<sl-tooltip content=${msg("Edit org profile")}>
+              html`<sl-tooltip content=${msg("Edit org")}>
                 <sl-icon-button
                   href="${this.navigate.orgBasePath}/settings"
                   class="size-8 text-base"
