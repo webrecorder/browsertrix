@@ -81,7 +81,9 @@ export class CollectionEdit extends BtrixElement {
       try {
         // just push the updated data
         const updates = await this.checkChanged();
-        const body = JSON.stringify(updates);
+        console.log(updates);
+        if (!updates) throw new Error("invalid_data");
+        const body = JSON.stringify(Object.fromEntries(updates));
         const path = `/orgs/${this.orgId}/collections/${this.collection.id}`;
         const method = "PATCH";
 
@@ -99,7 +101,9 @@ export class CollectionEdit extends BtrixElement {
           }) as CollectionSavedEvent,
         );
         this.notify.toast({
-          message: msg(str`Updated collection “${this.name}”`),
+          message: msg(
+            str`Updated collection “${this.name || this.collection.name}”`,
+          ),
           variant: "success",
           icon: "check2-circle",
           id: "collection-metadata-status",
@@ -110,6 +114,10 @@ export class CollectionEdit extends BtrixElement {
         if (message === "collection_name_taken") {
           message = msg("This name is already taken.");
         }
+        if (message === "invalid_data") {
+          message = msg("Please review issues with your changes.");
+        }
+        console.error(e);
         this.notify.toast({
           message: message || msg("Something unexpected went wrong"),
           variant: "danger",
@@ -141,7 +149,7 @@ export class CollectionEdit extends BtrixElement {
     if (!this.descriptionEditor?.checkValidity()) {
       this.errorTab = "about";
       void this.descriptionEditor?.focus();
-      throw new Error("invalid description");
+      throw new Error("invalid_data");
     }
 
     const elements = getFormControls(form);
@@ -153,7 +161,7 @@ export class CollectionEdit extends BtrixElement {
         "btrix-tab-group-panel",
       )!.name as Tab;
       (invalidElement as HTMLElement).focus();
-      throw new Error("invalid form input");
+      throw new Error("invalid_data");
     } else {
       this.errorTab = null;
     }
@@ -197,7 +205,7 @@ export class CollectionEdit extends BtrixElement {
   render() {
     if (!this.collection) return;
     return html`<btrix-dialog
-      label=${msg(str`Edit Collection “${this.name ?? this.collection.name}”`)}
+      label=${msg(str`Edit Collection “${this.name || this.collection.name}”`)}
       ?open=${this.open}
       @sl-show=${() => (this.isDialogVisible = true)}
       @sl-after-hide=${() => (this.isDialogVisible = false)}
@@ -371,12 +379,14 @@ export class CollectionEdit extends BtrixElement {
   private async checkChanged() {
     try {
       const data = await this.gatherFormData();
+      console.log({ data });
       const updates = (
         Object.entries(data) as [
           keyof CollectionUpdate,
           CollectionUpdate[keyof CollectionUpdate],
         ][]
       ).filter(([name, value]) => this.collection?.[name] !== value);
+      console.log({ updates });
       if (updates.length > 0) {
         this.dirty = true;
       } else {
@@ -384,6 +394,7 @@ export class CollectionEdit extends BtrixElement {
       }
       return updates;
     } catch (e) {
+      console.error(e);
       this.dirty = true;
     }
   }
