@@ -64,7 +64,7 @@ const sortableFields: Record<
     defaultDirection: SortDirection.Descending,
   },
   pageCount: {
-    label: msg("Pages"),
+    label: msg("Total Pages"),
     defaultDirection: SortDirection.Descending,
   },
   totalSize: {
@@ -393,7 +393,9 @@ export class CollectionsList extends BtrixElement {
             <btrix-table-header-cell>
               ${msg("Archived Items")}
             </btrix-table-header-cell>
-            <btrix-table-header-cell>${msg("Pages")}</btrix-table-header-cell>
+            <btrix-table-header-cell
+              >${msg("Total Pages")}</btrix-table-header-cell
+            >
             <btrix-table-header-cell>${msg("Size")}</btrix-table-header-cell>
             <btrix-table-header-cell>
               ${msg("Last Modified")}
@@ -542,7 +544,7 @@ export class CollectionsList extends BtrixElement {
       </btrix-table-cell>
       <btrix-table-cell>
         ${this.localize.number(col.pageCount, { notation: "compact" })}
-        ${pluralOf("pages", col.uniquePageCount)}
+        ${pluralOf("pages", col.pageCount)}
       </btrix-table-cell>
       <btrix-table-cell>
         ${this.localize.bytes(col.totalSize || 0, {

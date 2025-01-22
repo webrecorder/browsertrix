@@ -165,6 +165,7 @@ type ArchivedItemBase = {
   lastQAState: CrawlState | null;
   lastQAStarted: string | null;
   pageCount?: number;
+  uniquePageCount?: number;
   filePageCount?: number;
   errorPageCount?: number;
 };

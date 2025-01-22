@@ -111,7 +111,8 @@ export class SelectCollectionAccess extends BtrixElement {
               <li>${msg("Summary")}</li>
               <li>${msg("About")}</li>
               <li>${msg("Collection Period")}</li>
-              <li>${msg("Total Pages")}</li>
+              <li>${msg("Unique Pages in Collection")}</li>
+              <li>${msg("Total Pages Crawled")}</li>
               <li>${msg("Collection Size")}</li>
             </ul>
           </sl-details>

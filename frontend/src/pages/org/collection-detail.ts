@@ -483,6 +483,11 @@ export class CollectionDetail extends BtrixElement {
           (col) =>
             `${this.localize.number(col.crawlCount)} ${pluralOf("items", col.crawlCount)}`,
         )}
+        ${this.renderDetailItem(
+          msg("Total Pages"),
+          (col) =>
+            `${this.localize.number(col.pageCount)} ${pluralOf("pages", col.crawlCount)}`,
+        )}
         ${when(this.collection?.created, (created) =>
           // Collections created before 49516bc4 is released may not have date in db
           created
