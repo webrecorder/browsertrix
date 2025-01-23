@@ -31,7 +31,7 @@ class Migration(BaseMigration):
             )
             return
 
-        async for coll in colls_mdb.collections.find({}):
+        async for coll in colls_mdb.find({}):
             coll_id = coll["_id"]
             try:
                 await self.coll_ops.update_collection_counts_and_tags(coll_id)
