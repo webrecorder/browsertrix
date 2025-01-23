@@ -1,7 +1,6 @@
 import { consume } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
 import type {
-  SlAfterShowEvent,
   SlCheckbox,
   SlDetails,
   SlHideEvent,
@@ -122,6 +121,8 @@ const DEFAULT_BEHAVIORS = [
 ];
 const formName = "newJobConfig" as const;
 const panelSuffix = "--panel" as const;
+const saveRunButtonName = "saveRun--button" as const;
+const saveButtonName = "save--button" as const;
 
 const getDefaultProgressState = (hasConfigId = false): ProgressState => {
   let activeTab: StepName = "crawlSetup";
@@ -135,6 +136,7 @@ const getDefaultProgressState = (hasConfigId = false): ProgressState => {
 
   return {
     activeTab,
+    // TODO Mark as completed only if form section has data
     tabs: {
       crawlSetup: { error: false, completed: hasConfigId },
       crawlLimits: {
@@ -330,25 +332,6 @@ export class WorkflowEditor extends BtrixElement {
         this.initializeEditor();
       }
     }
-    if (changedProperties.get("progressState") && this.progressState) {
-      if (
-        (changedProperties.get("progressState") as ProgressState).activeTab ===
-          "crawlSetup" &&
-        this.progressState.activeTab !== "crawlSetup"
-      ) {
-        // Show that required tab has error even if input hasn't been touched
-        if (
-          !this.hasRequiredFields() &&
-          !this.progressState.tabs.crawlSetup.error
-        ) {
-          this.updateProgressState({
-            tabs: {
-              crawlSetup: { error: true },
-            },
-          });
-        }
-      }
-    }
   }
 
   updated(changedProperties: PropertyValues<this> & Map<string, unknown>) {
@@ -369,7 +352,9 @@ export class WorkflowEditor extends BtrixElement {
       this.observable.observe(panel);
     });
 
-    void this.scrollToActivePanel();
+    if (this.progressState?.activeTab !== STEPS[0]) {
+      void this.scrollToActivePanel();
+    }
 
     if (this.orgId) {
       void this.fetchTags();
@@ -445,7 +430,8 @@ export class WorkflowEditor extends BtrixElement {
       render,
       required,
     }: (typeof this.formSections)[number]) => {
-      const hasError = this.progressState?.tabs[name].error;
+      const tabProgress = this.progressState?.tabs[name];
+      const hasError = tabProgress?.error;
 
       return html`<sl-details
         class=${clsx(
@@ -456,16 +442,12 @@ export class WorkflowEditor extends BtrixElement {
           hasError &&
             "part-[summary-icon]:text-neutral-400 part-[header]:cursor-default part-[summary-icon]:cursor-not-allowed",
         )}
-        ?open=${required || hasError}
+        ?open=${required || hasError || tabProgress?.completed}
         @sl-show=${() => {
           this.skipIntersectUpdate = true;
           this.updateProgressState({
             activeTab: name,
           });
-        }}
-        @sl-after-show=${(e: SlAfterShowEvent) => {
-          this.moveFocus(e.target as SlDetails);
-          this.skipIntersectUpdate = false;
         }}
         @sl-hide=${(e: SlHideEvent) => {
           // Check if there's any invalid elements before hiding
@@ -481,6 +463,9 @@ export class WorkflowEditor extends BtrixElement {
           }
 
           this.skipIntersectUpdate = true;
+        }}
+        @sl-after-show=${() => {
+          this.skipIntersectUpdate = false;
         }}
         @sl-after-hide=${() => {
           this.skipIntersectUpdate = false;
@@ -554,50 +539,6 @@ export class WorkflowEditor extends BtrixElement {
   }
 
   private renderFooter() {
-    let primaryButton = html`
-      <sl-button
-        size="small"
-        type="submit"
-        variant="primary"
-        ?disabled=${isArchivingDisabled(this.org, true) || this.isSubmitting}
-        ?loading=${this.isSubmitting}
-      >
-        ${msg("Save & Run Workflow")}
-      </sl-button>
-    `;
-    let secondaryButton = html`
-      <sl-button
-        size="small"
-        ?disabled=${this.isSubmitting}
-        ?loading=${this.isSubmitting}
-      >
-        ${msg("Only Save")}
-      </sl-button>
-    `;
-
-    if (this.configId) {
-      primaryButton = html`
-        <sl-button
-          size="small"
-          type="submit"
-          variant="primary"
-          ?disabled=${this.isSubmitting}
-          ?loading=${this.isSubmitting}
-        >
-          ${msg("Save Workflow")}
-        </sl-button>
-      `;
-      secondaryButton = html`
-        <sl-button
-          size="small"
-          ?disabled=${isArchivingDisabled(this.org, true) || this.isSubmitting}
-          ?loading=${this.isSubmitting}
-        >
-          ${msg("Save & Run")}
-        </sl-button>
-      `;
-    }
-
     return html`
       <footer
         class=${clsx(
@@ -612,7 +553,25 @@ export class WorkflowEditor extends BtrixElement {
               </sl-button>
             `
           : nothing}
-        ${primaryButton}${secondaryButton}
+        <sl-button
+          name=${saveRunButtonName}
+          size="small"
+          variant="primary"
+          type="submit"
+          ?disabled=${isArchivingDisabled(this.org, true) || this.isSubmitting}
+          ?loading=${this.isSubmitting}
+        >
+          ${msg(html`Save & Run Crawl`)}
+        </sl-button>
+        <sl-button
+          name=${saveButtonName}
+          size="small"
+          type="submit"
+          ?disabled=${this.isSubmitting}
+          ?loading=${this.isSubmitting}
+        >
+          ${msg("Save")}
+        </sl-button>
       </footer>
     `;
   }
@@ -1714,38 +1673,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
     this.onFormSectionIntersect.cancel();
     this.skipIntersectUpdate = true;
-
-    const details = activeTabPanel.querySelector("sl-details");
-
-    if (!details) {
-      console.debug("no sl-details in:", this.activeTabPanel);
-
-      activeTabPanel.scrollIntoView();
-      return;
-    }
-
-    if (details.open) {
-      // Moving focus will scroll that section into view
-      this.moveFocus(details);
-    } else {
-      activeTabPanel.scrollIntoView();
-    }
-  }
-
-  private moveFocus(details?: SlDetails | null) {
-    if (!details) return;
-
-    const required = details.querySelector<HTMLElement>("[required]");
-
-    if (required) {
-      required.focus();
-    } else {
-      details
-        .querySelector<HTMLElement>(
-          "sl-input, sl-textarea, sl-select, sl-radio-group",
-        )
-        ?.focus();
-    }
+    activeTabPanel.scrollIntoView();
   }
 
   private async handleRemoveRegex(e: CustomEvent) {
@@ -1910,14 +1838,16 @@ https://archiveweb.page/images/${"logo.svg"}`}
     }
   }
 
-  private onSubmit(event: SubmitEvent) {
+  private async onSubmit(event: SubmitEvent) {
     event.preventDefault();
 
-    void this.save();
-  }
-
-  private async save() {
     if (!this.formElem) return;
+
+    if (event.submitter?.getAttribute("name") === saveRunButtonName) {
+      this.updateFormState({
+        runNow: true,
+      });
+    }
 
     const isValid = await this.checkFormValidity(this.formElem);
 
