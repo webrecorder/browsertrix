@@ -231,6 +231,10 @@ export class WorkflowEditor extends BtrixElement {
     rootMargin: "-100px 0px -100px 0px",
   });
 
+  // Use to skip updates on intersect changes, like when scrolling
+  // an element into view on click
+  private skipIntersectUpdate = false;
+
   // For fuzzy search:
   private readonly fuse = new Fuse<string>([], {
     shouldSort: false,
@@ -308,15 +312,6 @@ export class WorkflowEditor extends BtrixElement {
         typeof this.onFormSectionIntersect
       >,
     );
-
-    window.addEventListener("hashchange", () => {
-      const hashValue = window.location.hash.slice(1);
-      if (STEPS.includes(hashValue as (typeof STEPS)[number])) {
-        this.updateProgressState({
-          activeTab: hashValue as StepName,
-        });
-      }
-    });
   }
 
   disconnectedCallback(): void {
@@ -355,16 +350,15 @@ export class WorkflowEditor extends BtrixElement {
     }
   }
 
-  async updated(
-    changedProperties: PropertyValues<this> & Map<string, unknown>,
-  ) {
-    if (changedProperties.get("progressState") && this.progressState) {
-      if (
-        (changedProperties.get("progressState") as ProgressState).activeTab !==
-        this.progressState.activeTab
-      ) {
-        void this.scrollToPanelTop();
-      }
+  updated(changedProperties: PropertyValues<this> & Map<string, unknown>) {
+    if (
+      changedProperties.has("progressState") &&
+      this.progressState &&
+      this.progressState.activeTab !==
+        (changedProperties.get("progressState") as ProgressState | undefined)
+          ?.activeTab
+    ) {
+      window.location.hash = this.progressState.activeTab;
     }
   }
 
@@ -374,8 +368,7 @@ export class WorkflowEditor extends BtrixElement {
       this.observable.observe(panel);
     });
 
-    // Focus on first field in section
-    this.moveFocus((await this.activeTabPanel)?.querySelector("sl-details"));
+    void this.scrollToActivePanel();
 
     if (this.orgId) {
       void this.fetchTags();
@@ -456,14 +449,26 @@ export class WorkflowEditor extends BtrixElement {
       return html`<sl-details
         class="part-[base]:rounded-lg part-[base]:border"
         ?open=${required || hasError}
+        @sl-show=${() => {
+          this.skipIntersectUpdate = true;
+          this.updateProgressState({
+            activeTab: name,
+          });
+        }}
         @sl-after-show=${(e: SlAfterShowEvent) => {
           this.moveFocus(e.target as SlDetails);
+          this.skipIntersectUpdate = false;
         }}
         @sl-hide=${(e: SlHideEvent) => {
           if (hasError) {
             e.preventDefault();
             // TODO focus on error
           }
+
+          this.skipIntersectUpdate = true;
+        }}
+        @sl-after-hide=${() => {
+          this.skipIntersectUpdate = false;
         }}
       >
         <p class="text-neutral-600" slot="summary">${desc}</p>
@@ -477,7 +482,7 @@ export class WorkflowEditor extends BtrixElement {
         className: clsx(
           `${formName}${panelSuffix}`,
           section.name === this.progressState?.activeTab &&
-            `${formName}${panelSuffix}--active`,
+            `${formName}${panelSuffix}--active scroll-mt-7`,
         ),
         heading: this.tabLabels[section.name],
         body: panelBody(section),
@@ -496,7 +501,7 @@ export class WorkflowEditor extends BtrixElement {
     `;
 
     return html`
-      <div class="mb-10 flex flex-col gap-10 px-2">
+      <div class="mb-10 flex flex-col gap-12 px-2">
         ${this.formSections.map(formSection)}
       </div>
 
@@ -1604,18 +1609,23 @@ https://archiveweb.page/images/${"logo.svg"}`}
     const { entries } = (e as IntersectEvent).detail;
     const entry = entries.find((entry) => entry.isIntersecting);
 
-    if (!entry?.isIntersecting) return;
+    if (!entry) return;
 
     const tab = entry.target.id.split(panelSuffix)[0] as StepName;
 
-    const tabIndex = STEPS.indexOf(tab);
+    if (this.skipIntersectUpdate) {
+      this.onFormSectionIntersect.cancel();
+      this.skipIntersectUpdate = false;
+    } else {
+      const tabIndex = STEPS.indexOf(tab);
 
-    if (tabIndex === -1) {
-      console.debug("tab not in steps:", tab);
-      return;
+      if (tabIndex === -1) {
+        console.debug("tab not in steps:", tab);
+        return;
+      }
+
+      this.updateProgressState({ activeTab: tab as StepName });
     }
-
-    this.updateProgressState({ activeTab: tab as StepName });
   });
 
   private hasRequiredFields(): boolean {
@@ -1626,22 +1636,31 @@ https://archiveweb.page/images/${"logo.svg"}`}
     return Boolean(this.formState.primarySeedUrl);
   }
 
-  private async scrollToPanelTop() {
-    // const activeTabPanel = await this.activeTabPanel;
-    // if (!activeTabPanel) {
-    //   console.debug("no activeTabPanel");
-    //   return;
-    // }
-    // // TODO scroll into view if needed
-    // activeTabPanel.scrollIntoView();
-    // const details = (await this.activeTabPanel)?.querySelector("sl-details");
-    // if (details) {
-    //   if (details.open) {
-    //     this.moveFocus(details);
-    //   } else {
-    //     // void details.show();
-    //   }
-    // }
+  private async scrollToActivePanel() {
+    const activeTabPanel = await this.activeTabPanel;
+    if (!activeTabPanel) {
+      console.debug("no activeTabPanel");
+      return;
+    }
+
+    this.onFormSectionIntersect.cancel();
+    this.skipIntersectUpdate = true;
+
+    const details = activeTabPanel.querySelector("sl-details");
+
+    if (!details) {
+      console.debug("no sl-details in:", this.activeTabPanel);
+
+      activeTabPanel.scrollIntoView();
+      return;
+    }
+
+    if (details.open) {
+      // Moving focus will scroll that section into view
+      this.moveFocus(details);
+    } else {
+      activeTabPanel.scrollIntoView();
+    }
   }
 
   private moveFocus(details?: SlDetails | null) {
@@ -1770,16 +1789,21 @@ https://archiveweb.page/images/${"logo.svg"}`}
     });
   }
 
-  private readonly tabClickHandler = (step: StepName) => (e: MouseEvent) => {
-    const tab = e.currentTarget as TabListTab;
-    if (tab.disabled || tab.active) {
-      e.preventDefault();
-      e.stopPropagation();
-      return;
-    }
-    window.location.hash = step;
-    this.updateProgressState({ activeTab: step });
-  };
+  private readonly tabClickHandler =
+    (step: StepName) => async (e: MouseEvent) => {
+      const tab = e.currentTarget as TabListTab;
+      if (tab.disabled || tab.active) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+
+      this.updateProgressState({ activeTab: step });
+
+      await this.updateComplete;
+
+      void this.scrollToActivePanel();
+    };
 
   private readonly checkCurrentPanelValidity = async (): Promise<boolean> => {
     if (!this.formElem) return false;
