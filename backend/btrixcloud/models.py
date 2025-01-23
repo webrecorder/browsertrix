@@ -798,6 +798,7 @@ class BaseCrawl(CoreCrawlable, BaseMongoModel):
     reviewStatus: ReviewStatus = None
 
     pageCount: Optional[int] = 0
+    uniquePageCount: Optional[int] = 0
 
     filePageCount: Optional[int] = 0
     errorPageCount: Optional[int] = 0
@@ -875,6 +876,7 @@ class CrawlOut(BaseMongoModel):
     lastQAStarted: Optional[datetime] = None
 
     pageCount: Optional[int] = 0
+    uniquePageCount: Optional[int] = 0
     filePageCount: Optional[int] = 0
     errorPageCount: Optional[int] = 0
 
@@ -1250,6 +1252,7 @@ class Collection(BaseMongoModel):
 
     crawlCount: Optional[int] = 0
     pageCount: Optional[int] = 0
+    uniquePageCount: Optional[int] = 0
     totalSize: Optional[int] = 0
 
     dateEarliest: Optional[datetime] = None
@@ -1303,6 +1306,7 @@ class CollOut(BaseMongoModel):
 
     crawlCount: Optional[int] = 0
     pageCount: Optional[int] = 0
+    uniquePageCount: Optional[int] = 0
     totalSize: Optional[int] = 0
 
     dateEarliest: Optional[datetime] = None
@@ -1339,6 +1343,7 @@ class PublicCollOut(BaseMongoModel):
 
     crawlCount: Optional[int] = 0
     pageCount: Optional[int] = 0
+    uniquePageCount: Optional[int] = 0
     totalSize: Optional[int] = 0
 
     dateEarliest: Optional[datetime] = None
@@ -1919,6 +1924,9 @@ class OrgMetrics(BaseModel):
     pageCount: int
     crawlPageCount: int
     uploadPageCount: int
+    uniquePageCount: int
+    crawlUniquePageCount: int
+    uploadUniquePageCount: int
     profileCount: int
     workflowsRunningCount: int
     maxConcurrentCrawls: int

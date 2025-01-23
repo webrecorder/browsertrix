@@ -143,10 +143,10 @@ export class SelectCollectionStartPage extends BtrixElement {
       <div class="flex flex-1 flex-col justify-between gap-3">
         ${this.renderPageSearch()}
         <sl-select
-          label=${msg("Snapshot")}
+          label=${msg("Page Timestamp")}
           placeholder=${this.selectedPage
-            ? msg("Choose a snapshot")
-            : msg("Enter a page URL to choose snapshot")}
+            ? msg("Choose a timestamp")
+            : msg("Enter a page URL to choose timestamp")}
           value=${this.selectedSnapshot?.pageId || ""}
           ?required=${this.selectedPage && !this.selectedSnapshot}
           ?disabled=${!this.selectedPage}

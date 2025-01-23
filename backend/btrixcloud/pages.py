@@ -92,7 +92,7 @@ class PageOps:
             if pages_buffer:
                 await self._add_pages_to_db(crawl_id, pages_buffer)
 
-            await self.set_archived_item_page_count(crawl_id)
+            await self.set_archived_item_page_counts(crawl_id)
 
             print(f"Added pages for crawl {crawl_id} to db", flush=True)
         # pylint: disable=broad-exception-caught, raise-missing-from
@@ -663,12 +663,22 @@ class PageOps:
 
         return crawl_type
 
-    async def set_archived_item_page_count(self, crawl_id: str):
-        """Store archived item page count in crawl document"""
+    async def get_unique_page_count(self, crawl_ids: List[str]) -> int:
+        """Get count of unique page URLs across list of archived items"""
+        unique_pages = await self.pages.distinct(
+            "url", {"crawl_id": {"$in": crawl_ids}}
+        )
+        return len(unique_pages) or 0
+
+    async def set_archived_item_page_counts(self, crawl_id: str):
+        """Store archived item page and unique page counts in crawl document"""
         _, page_count = await self.list_pages(crawl_id)
 
+        unique_page_count = await self.get_unique_page_count([crawl_id])
+
         await self.crawls.find_one_and_update(
-            {"_id": crawl_id}, {"$set": {"pageCount": page_count}}
+            {"_id": crawl_id},
+            {"$set": {"uniquePageCount": unique_page_count, "pageCount": page_count}},
         )
 
 
