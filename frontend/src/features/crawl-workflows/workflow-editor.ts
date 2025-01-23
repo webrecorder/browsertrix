@@ -73,7 +73,7 @@ import {
   humanizeNextDate,
   humanizeSchedule,
 } from "@/utils/cron";
-import { maxLengthValidator } from "@/utils/form";
+import { formValidator, maxLengthValidator } from "@/utils/form";
 import localize from "@/utils/localize";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { AppStateService } from "@/utils/state";
@@ -241,6 +241,7 @@ export class WorkflowEditor extends BtrixElement {
     threshold: 0.2, // stricter; default is 0.6
   });
 
+  private readonly checkFormValidity = formValidator(this);
   private readonly validateNameMax = maxLengthValidator(50);
   private readonly validateDescriptionMax = maxLengthValidator(350);
 
@@ -447,7 +448,14 @@ export class WorkflowEditor extends BtrixElement {
       const hasError = this.progressState?.tabs[name].error;
 
       return html`<sl-details
-        class="part-[base]:rounded-lg part-[base]:border"
+        class=${clsx(
+          "part-[base]:rounded-lg part-[base]:border",
+          "part-[content]:[border-top:solid_1px_var(--sl-panel-border-color)]",
+          "part-[header]:hover:text-blue-400 part-[header]:text-neutral-500",
+          "part-[summary-icon]:[rotate:none]",
+          hasError &&
+            "part-[summary-icon]:text-neutral-400 part-[header]:cursor-default part-[summary-icon]:cursor-not-allowed",
+        )}
         ?open=${required || hasError}
         @sl-show=${() => {
           this.skipIntersectUpdate = true;
@@ -460,9 +468,16 @@ export class WorkflowEditor extends BtrixElement {
           this.skipIntersectUpdate = false;
         }}
         @sl-hide=${(e: SlHideEvent) => {
-          if (hasError) {
+          // Check if there's any invalid elements before hiding
+          const invalidEl = (
+            e.currentTarget as SlDetails
+          ).querySelector<SlInput>("[data-user-invalid]");
+
+          if (invalidEl) {
             e.preventDefault();
-            // TODO focus on error
+
+            invalidEl.focus();
+            invalidEl.checkValidity();
           }
 
           this.skipIntersectUpdate = true;
@@ -471,7 +486,36 @@ export class WorkflowEditor extends BtrixElement {
           this.skipIntersectUpdate = false;
         }}
       >
-        <p class="text-neutral-600" slot="summary">${desc}</p>
+        <div slot="expand-icon" class="flex items-center">
+          <sl-tooltip content=${msg("Show section")} hoist>
+            <sl-icon name="chevron-down" class="size-5"></sl-icon>
+          </sl-tooltip>
+        </div>
+        <div slot="collapse-icon" class="flex items-center">
+          ${when(
+            hasError,
+            () => html`
+              <sl-tooltip
+                content=${msg("Please fix all errors in this section")}
+                hoist
+              >
+                <sl-icon
+                  name="exclamation-lg"
+                  class="size-5 text-danger"
+                ></sl-icon>
+              </sl-tooltip>
+            `,
+            () => html`
+              <sl-icon
+                name="chevron-up"
+                class="size-5"
+                label=${msg("Collapse section")}
+              ></sl-icon>
+            `,
+          )}
+        </div>
+
+        <p class="text-neutral-700" slot="summary">${desc}</p>
         <div class="grid grid-cols-5 gap-5">${render.bind(this)()}</div>
       </sl-details>`;
     };
@@ -510,40 +554,65 @@ export class WorkflowEditor extends BtrixElement {
   }
 
   private renderFooter() {
-    const hasRequiredFields = this.hasRequiredFields();
+    let primaryButton = html`
+      <sl-button
+        size="small"
+        type="submit"
+        variant="primary"
+        ?disabled=${isArchivingDisabled(this.org, true) || this.isSubmitting}
+        ?loading=${this.isSubmitting}
+      >
+        ${msg("Save & Run Workflow")}
+      </sl-button>
+    `;
+    let secondaryButton = html`
+      <sl-button
+        size="small"
+        ?disabled=${this.isSubmitting}
+        ?loading=${this.isSubmitting}
+      >
+        ${msg("Only Save")}
+      </sl-button>
+    `;
+
+    if (this.configId) {
+      primaryButton = html`
+        <sl-button
+          size="small"
+          type="submit"
+          variant="primary"
+          ?disabled=${this.isSubmitting}
+          ?loading=${this.isSubmitting}
+        >
+          ${msg("Save Workflow")}
+        </sl-button>
+      `;
+      secondaryButton = html`
+        <sl-button
+          size="small"
+          ?disabled=${isArchivingDisabled(this.org, true) || this.isSubmitting}
+          ?loading=${this.isSubmitting}
+        >
+          ${msg("Save & Run")}
+        </sl-button>
+      `;
+    }
 
     return html`
       <footer
-        class="sticky bottom-2 z-50 flex items-center justify-end gap-2 rounded-lg border bg-white px-6 py-4 shadow"
+        class=${clsx(
+          "flex items-center justify-end gap-2 rounded-lg border bg-white px-6 py-4 mb-7 shadow",
+          this.configId && tw`sticky bottom-2 z-50`,
+        )}
       >
-        <sl-button class="mr-auto" size="small" type="reset">
-          ${msg("Cancel")}
-        </sl-button>
-        <sl-tooltip
-          content=${msg("Please check all required fields")}
-          ?disabled=${hasRequiredFields}
-          hoist
-        >
-          <sl-button
-            size="small"
-            type=${this.configId ? "submit" : "button"}
-            variant=${this.configId ? "primary" : "default"}
-            ?disabled=${this.isSubmitting}
-            ?loading=${!!this.configId && this.isSubmitting}
-          >
-            ${this.configId ? msg("Save") : msg("Create")}
-          </sl-button>
-          <sl-button
-            size="small"
-            type=${this.configId ? "button" : "submit"}
-            variant=${this.configId ? "default" : "primary"}
-            ?disabled=${this.isSubmitting ||
-            isArchivingDisabled(this.org, true)}
-            ?loading=${!this.configId && this.isSubmitting}
-          >
-            ${this.configId ? msg("Save and Run") : msg("Run Workflow")}
-          </sl-button>
-        </sl-tooltip>
+        ${this.configId
+          ? html`
+              <sl-button class="mr-auto" size="small" type="reset">
+                ${msg("Cancel")}
+              </sl-button>
+            `
+          : nothing}
+        ${primaryButton}${secondaryButton}
       </footer>
     `;
   }
@@ -1717,7 +1786,14 @@ https://archiveweb.page/images/${"logo.svg"}`}
     await el.updateComplete;
     await this.updateComplete;
 
-    const currentTab = this.progressState!.activeTab as StepName;
+    const panelEl = el.closest<HTMLElement>(`.${formName}${panelSuffix}`);
+
+    if (!panelEl) {
+      console.debug("no panel for element:", el);
+      return;
+    }
+
+    const currentTab = panelEl.id.split(panelSuffix)[0] as StepName;
     // Check [data-user-invalid] to validate only touched inputs
     if ("userInvalid" in el.dataset) {
       if (this.progressState!.tabs[currentTab].error) return;
@@ -1732,26 +1808,29 @@ https://archiveweb.page/images/${"logo.svg"}`}
   };
 
   private syncTabErrorState(el: HTMLElement) {
-    console.log("TODO syncTabErrorState", el);
-    // const panelEl = el.closest("btrix-tab-panel")!;
-    // const tabName = panelEl
-    //   .getAttribute("name")!
-    //   .replace("newJobConfig-", "") as StepName;
-    // const hasInvalid = panelEl.querySelector("[data-user-invalid]");
+    const panelEl = el.closest<HTMLElement>(`.${formName}${panelSuffix}`);
 
-    // if (!hasInvalid && this.progressState!.tabs[tabName].error) {
-    //   this.updateProgressState({
-    //     tabs: {
-    //       [tabName]: { error: false },
-    //     },
-    //   });
-    // } else if (hasInvalid && !this.progressState!.tabs[tabName].error) {
-    //   this.updateProgressState({
-    //     tabs: {
-    //       [tabName]: { error: true },
-    //     },
-    //   });
-    // }
+    if (!panelEl) {
+      console.debug("no panel for element:", el);
+      return;
+    }
+
+    const tabName = panelEl.id.split(panelSuffix)[0] as StepName;
+    const hasInvalid = panelEl.querySelector("[data-user-invalid]");
+
+    if (!hasInvalid && this.progressState!.tabs[tabName].error) {
+      this.updateProgressState({
+        tabs: {
+          [tabName]: { error: false },
+        },
+      });
+    } else if (hasInvalid && !this.progressState!.tabs[tabName].error) {
+      this.updateProgressState({
+        tabs: {
+          [tabName]: { error: true },
+        },
+      });
+    }
   }
 
   private updateFormStateOnChange(e: Event) {
@@ -1805,22 +1884,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
       void this.scrollToActivePanel();
     };
 
-  private readonly checkCurrentPanelValidity = async (): Promise<boolean> => {
-    if (!this.formElem) return false;
-
-    const activePanel = await this.activeTabPanel;
-    const invalidElems = [...activePanel!.querySelectorAll("[data-invalid]")];
-
-    const hasInvalid = Boolean(invalidElems.length);
-    if (hasInvalid) {
-      invalidElems.forEach((el) => {
-        (el as HTMLInputElement).reportValidity();
-      });
-    }
-
-    return !hasInvalid;
-  };
-
   private onKeyDown(event: KeyboardEvent) {
     const el = event.target as HTMLElement;
     const tagName = el.tagName.toLowerCase();
@@ -1847,10 +1910,16 @@ https://archiveweb.page/images/${"logo.svg"}`}
     }
   }
 
-  private async onSubmit(event: SubmitEvent) {
+  private onSubmit(event: SubmitEvent) {
     event.preventDefault();
-    const isValid = await this.checkCurrentPanelValidity();
-    await this.updateComplete;
+
+    void this.save();
+  }
+
+  private async save() {
+    if (!this.formElem) return;
+
+    const isValid = await this.checkFormValidity(this.formElem);
 
     if (!isValid || this.formHasError) {
       return;
@@ -1932,7 +2001,10 @@ https://archiveweb.page/images/${"logo.svg"}`}
   }
 
   private async onReset() {
-    this.initializeEditor();
+    this.navigate.to(
+      `${this.navigate.orgBasePath}/workflows${this.configId ? `/${this.configId}#settings` : ""}`,
+    );
+    // this.initializeEditor();
   }
 
   /**
