@@ -103,7 +103,10 @@ export class CollectionEdit extends BtrixElement {
     event.preventDefault();
     event.stopPropagation();
 
-    void this.submitTask.run();
+    await this.submitTask.run();
+
+    this.dirty = false;
+    void this.hideDialog();
   }
 
   private async hideDialog() {
@@ -123,8 +126,8 @@ export class CollectionEdit extends BtrixElement {
   render() {
     if (!this.collection) return;
     return html`<btrix-dialog
-      label=${msg(str`Edit Collection “${this.name || this.collection.name}”`)}
-      ?open=${this.open}
+      .label=${msg(str`Edit Collection “${this.name || this.collection.name}”`)}
+      .open=${this.open}
       @sl-show=${() => (this.isDialogVisible = true)}
       @sl-after-hide=${() => (this.isDialogVisible = false)}
       @sl-request-close=${(e: SlRequestCloseEvent) => {
