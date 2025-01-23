@@ -224,6 +224,7 @@ export class SelectCollectionStartPage extends BtrixElement {
           label=${msg("Page URL")}
           placeholder=${msg("Start typing a URL...")}
           clearable
+          autocomplete="off"
           @sl-focus=${() => {
             this.resetInputValidity();
             this.combobox?.show();
