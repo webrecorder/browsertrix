@@ -121,8 +121,6 @@ const DEFAULT_BEHAVIORS = [
 ];
 const formName = "newJobConfig" as const;
 const panelSuffix = "--panel" as const;
-const saveRunButtonName = "saveRun--button" as const;
-const saveButtonName = "save--button" as const;
 
 const getDefaultProgressState = (hasConfigId = false): ProgressState => {
   let activeTab: StepName = "crawlSetup";
@@ -450,10 +448,17 @@ export class WorkflowEditor extends BtrixElement {
           });
         }}
         @sl-hide=${(e: SlHideEvent) => {
+          const el = e.currentTarget as SlDetails;
+
           // Check if there's any invalid elements before hiding
-          const invalidEl = (
-            e.currentTarget as SlDetails
-          ).querySelector<SlInput>("[data-user-invalid]");
+          let invalidEl: SlInput | null = null;
+
+          if (required) {
+            invalidEl = el.querySelector<SlInput>("[required][data-invalid]");
+          }
+
+          invalidEl =
+            invalidEl || el.querySelector<SlInput>("[data-user-invalid]");
 
           if (invalidEl) {
             e.preventDefault();
@@ -490,13 +495,16 @@ export class WorkflowEditor extends BtrixElement {
                 ></sl-icon>
               </sl-tooltip>
             `,
-            () => html`
-              <sl-icon
-                name="chevron-up"
-                class="size-5"
-                label=${msg("Collapse section")}
-              ></sl-icon>
-            `,
+            () =>
+              !required || this.configId
+                ? html`
+                    <sl-icon
+                      name="chevron-up"
+                      class="size-5"
+                      label=${msg("Collapse section")}
+                    ></sl-icon>
+                  `
+                : nothing,
           )}
         </div>
 
@@ -554,7 +562,6 @@ export class WorkflowEditor extends BtrixElement {
             `
           : nothing}
         <sl-button
-          name=${saveRunButtonName}
           size="small"
           variant="primary"
           type="submit"
@@ -564,11 +571,11 @@ export class WorkflowEditor extends BtrixElement {
           ${msg(html`Save & Run Crawl`)}
         </sl-button>
         <sl-button
-          name=${saveButtonName}
           size="small"
-          type="submit"
+          type="button"
           ?disabled=${this.isSubmitting}
           ?loading=${this.isSubmitting}
+          @click=${this.save}
         >
           ${msg("Save")}
         </sl-button>
@@ -602,6 +609,7 @@ export class WorkflowEditor extends BtrixElement {
           name="scopeType"
           label=${msg("Crawl Scope")}
           value=${this.formState.scopeType}
+          hoist
           @sl-change=${(e: Event) =>
             this.changeScopeType(
               (e.target as HTMLSelectElement).value as FormState["scopeType"],
@@ -1717,7 +1725,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
     const panelEl = el.closest<HTMLElement>(`.${formName}${panelSuffix}`);
 
     if (!panelEl) {
-      console.debug("no panel for element:", el);
       return;
     }
 
@@ -1841,17 +1848,20 @@ https://archiveweb.page/images/${"logo.svg"}`}
   private async onSubmit(event: SubmitEvent) {
     event.preventDefault();
 
-    if (!this.formElem) return;
+    this.updateFormState({
+      runNow: true,
+    });
 
-    if (event.submitter?.getAttribute("name") === saveRunButtonName) {
-      this.updateFormState({
-        runNow: true,
-      });
-    }
+    void this.save();
+  }
+
+  private async save() {
+    if (!this.formElem) return;
 
     const isValid = await this.checkFormValidity(this.formElem);
 
     if (!isValid || this.formHasError) {
+      this.formElem.reportValidity();
       return;
     }
 
@@ -1923,7 +1933,12 @@ https://archiveweb.page/images/${"logo.svg"}`}
           }
         }
       } else {
-        this.serverError = msg("Something unexpected went wrong");
+        this.notify.toast({
+          message: msg("Sorry, couldn't save workflow at this time."),
+          variant: "danger",
+          icon: "exclamation-octagon",
+          id: "workflow-created-status",
+        });
       }
     }
 
