@@ -26,6 +26,7 @@ import {
   customElement,
   property,
   query,
+  queryAll,
   queryAsync,
   state,
 } from "lit/decorators.js";
@@ -48,8 +49,11 @@ import type { TabListTab } from "@/components/ui/tab-list";
 import type { TagInputEvent, TagsChangeEvent } from "@/components/ui/tag-input";
 import type { TimeInputChangeEvent } from "@/components/ui/time-input";
 import { validURL } from "@/components/ui/url-input";
-import type { IntersectEvent } from "@/components/utils/observable";
 import { proxiesContext, type ProxiesContext } from "@/context/org";
+import {
+  ObservableController,
+  type IntersectEvent,
+} from "@/controllers/observable";
 import { type SelectBrowserProfileChangeEvent } from "@/features/browser-profiles/select-browser-profile";
 import type { CollectionsChangeEvent } from "@/features/collections/collections-add";
 import type { QueueExclusionTable } from "@/features/crawl-workflows/queue-exclusion-table";
@@ -117,6 +121,7 @@ const DEFAULT_BEHAVIORS = [
   "siteSpecific",
 ];
 const formName = "newJobConfig" as const;
+const panelSuffix = "--panel" as const;
 
 const getDefaultProgressState = (hasConfigId = false): ProgressState => {
   let activeTab: StepName = "crawlSetup";
@@ -220,6 +225,12 @@ export class WorkflowEditor extends BtrixElement {
   @state()
   private serverError?: TemplateResult | string;
 
+  // For observing panel sections position in viewport
+  private readonly observable = new ObservableController(this, {
+    // Add some padding to account for stickied elements
+    rootMargin: "-100px 0px -100px 0px",
+  });
+
   // For fuzzy search:
   private readonly fuse = new Fuse<string>([], {
     shouldSort: false,
@@ -280,13 +291,23 @@ export class WorkflowEditor extends BtrixElement {
   @query(`form[name="${formName}"]`)
   private readonly formElem?: HTMLFormElement;
 
-  @queryAsync(`.${formName}--panel--active`)
+  @queryAll(`.${formName}${panelSuffix}`)
+  private readonly panels?: HTMLElement[];
+
+  @queryAsync(`.${formName}${panelSuffix}--active`)
   private readonly activeTabPanel!: Promise<HTMLElement | null>;
 
   connectedCallback(): void {
     this.initializeEditor();
     super.connectedCallback();
     void this.fetchServerDefaults();
+
+    this.addEventListener(
+      "btrix-intersect",
+      this.onFormSectionIntersect as UnderlyingFunction<
+        typeof this.onFormSectionIntersect
+      >,
+    );
 
     window.addEventListener("hashchange", () => {
       const hashValue = window.location.hash.slice(1);
@@ -348,6 +369,11 @@ export class WorkflowEditor extends BtrixElement {
   }
 
   async firstUpdated() {
+    // Observe form sections to get scroll position
+    this.panels?.forEach((panel) => {
+      this.observable.observe(panel);
+    });
+
     // Focus on first field in section
     this.moveFocus((await this.activeTabPanel)?.querySelector("sl-details"));
 
@@ -446,41 +472,27 @@ export class WorkflowEditor extends BtrixElement {
     };
 
     const formSection = (section: (typeof this.formSections)[number]) => html`
-      <btrix-observable
-        data-tab=${section.name}
-        .options=${
-          {
-            // rootMargin: "0px 0px -80px 0px",
-            // threshold: [0, 0.25, 1],
-            // threshold: 0.5,
-          }
-        }
-        @btrix-intersect=${this.onFormSectionIntersect as UnderlyingFunction<
-          typeof this.onFormSectionIntersect
-        >}
-      >
-        ${panel({
-          id: `${section.name}--panel`,
-          className: clsx(
-            `${formName}--panel`,
-            section.name === this.progressState?.activeTab &&
-              `${formName}--panel--active`,
-          ),
-          heading: this.tabLabels[section.name],
-          body: panelBody(section),
-          actions: section.required
-            ? html`<p class="text-xs font-normal text-neutral-500">
-                ${msg(
-                  html`Fields marked with
-                    <span style="color:var(--sl-input-required-content-color)"
-                      >*</span
-                    >
-                    are required`,
-                )}
-              </p>`
-            : undefined,
-        })}
-      </btrix-observable>
+      ${panel({
+        id: `${section.name}${panelSuffix}`,
+        className: clsx(
+          `${formName}${panelSuffix}`,
+          section.name === this.progressState?.activeTab &&
+            `${formName}${panelSuffix}--active`,
+        ),
+        heading: this.tabLabels[section.name],
+        body: panelBody(section),
+        actions: section.required
+          ? html`<p class="text-xs font-normal text-neutral-500">
+              ${msg(
+                html`Fields marked with
+                  <span style="color:var(--sl-input-required-content-color)"
+                    >*</span
+                  >
+                  are required`,
+              )}
+            </p>`
+          : undefined,
+      })}
     `;
 
     return html`
@@ -1588,29 +1600,20 @@ https://archiveweb.page/images/${"logo.svg"}`}
     this.updateFormState(formState);
   }
 
-  private intersectionEntries: IntersectionObserverEntry[] = [];
+  private readonly onFormSectionIntersect = throttle(10)((e: Event) => {
+    const { entries } = (e as IntersectEvent).detail;
+    const entry = entries.find((entry) => entry.isIntersecting);
 
-  private readonly onFormSectionIntersect = throttle(8)((e: IntersectEvent) => {
-    const { entry } = e.detail;
+    if (!entry?.isIntersecting) return;
 
-    const observableEl = entry.target as HTMLElement;
-    const tab = observableEl.dataset["tab"] as StepName;
+    const tab = entry.target.id.split(panelSuffix)[0] as StepName;
+
     const tabIndex = STEPS.indexOf(tab);
 
     if (tabIndex === -1) {
       console.debug("tab not in steps:", tab);
       return;
     }
-
-    this.intersectionEntries[tabIndex] = entry;
-
-    if (!entry.isIntersecting) return;
-
-    // TODO Check if this is the only visible tab
-    const intersecting = this.intersectionEntries.find(
-      (entry) => entry.isIntersecting,
-    );
-    console.log("intersecting:", tab, intersecting?.target);
 
     this.updateProgressState({ activeTab: tab as StepName });
   });
