@@ -12,6 +12,7 @@ import type { Embed as ReplayWebPage } from "replaywebpage";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { MarkdownEditor } from "@/components/ui/markdown-editor";
 import type { PageChangeEvent } from "@/components/ui/pagination";
+import type { Tab as EditDialogTab } from "@/features/collections/collection-edit-dialog";
 import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
 import type { ShareCollection } from "@/features/collections/share-collection";
 import { pageHeader, pageNav, type Breadcrumb } from "@/layouts/pageHeader";
@@ -52,7 +53,10 @@ export class CollectionDetail extends BtrixElement {
   private archivedItems?: APIPaginatedList<ArchivedItem>;
 
   @state()
-  private openDialogName?: "delete" | "edit" | "editItems" | "editStartPage";
+  private openDialogName?: "delete" | "edit" | "editItems";
+
+  @state()
+  private editTab?: EditDialogTab;
 
   @state()
   private isEditingDescription = false;
@@ -163,7 +167,10 @@ export class CollectionDetail extends BtrixElement {
                 >
                   <sl-button
                     size="small"
-                    @click=${() => (this.openDialogName = "editStartPage")}
+                    @click=${() => {
+                      this.openDialogName = "edit";
+                      this.editTab = "homepage";
+                    }}
                     ?disabled=${!this.collection?.crawlCount ||
                     !this.isRwpLoaded}
                   >
@@ -241,24 +248,9 @@ export class CollectionDetail extends BtrixElement {
       >
       </btrix-collection-items-dialog>
 
-      <btrix-collection-replay-dialog
-        ?open=${this.openDialogName === "editStartPage"}
-        @btrix-change=${() => {
-          // Don't do full refresh of rwp so that rwp-url-change fires
-          this.isRwpLoaded = false;
-
-          void this.fetchCollection();
-        }}
-        @sl-hide=${async () => (this.openDialogName = undefined)}
-        collectionId=${this.collectionId}
-        .homeUrl=${this.collection?.homeUrl}
-        .homePageId=${this.collection?.homeUrlPageId}
-        .homeTs=${this.collection?.homeUrlTs}
-        ?replayLoaded=${this.isRwpLoaded}
-      ></btrix-collection-replay-dialog>
-
       <btrix-collection-edit-dialog
         .collection=${this.collection}
+        .tab=${this.editTab ?? "about"}
         ?open=${this.openDialogName === "edit"}
         @sl-hide=${() => (this.openDialogName = undefined)}
         @btrix-collection-saved=${() => {
@@ -400,7 +392,8 @@ export class CollectionDetail extends BtrixElement {
                 await this.updateComplete;
               }
 
-              this.openDialogName = "editStartPage";
+              this.openDialogName = "edit";
+              this.editTab = "homepage";
             }}
             ?disabled=${!this.collection?.crawlCount}
           >

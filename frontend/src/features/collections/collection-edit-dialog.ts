@@ -53,6 +53,9 @@ export class CollectionEdit extends BtrixElement {
   @state()
   isDialogVisible = false;
 
+  @property({ type: String })
+  tab: Tab = "about";
+
   @state()
   errorTab: Tab | null = null;
 
@@ -62,9 +65,6 @@ export class CollectionEdit extends BtrixElement {
   // Separating this out so that we can eagerly respond to name changes in dialog title & toasts
   @state()
   name = this.collection?.name;
-
-  @property({ type: String })
-  tab: Tab = "about";
 
   @queryAsync("#collectionEditForm")
   readonly form!: Promise<HTMLFormElement>;
@@ -145,6 +145,10 @@ export class CollectionEdit extends BtrixElement {
         <btrix-tab-group
           placement="top"
           overrideTabLayout=${tw`mb-4 flex gap-2`}
+          active=${this.tab}
+          @btrix-tab-change=${(e: CustomEvent<Tab>) => {
+            this.tab = e.detail;
+          }}
         >
           ${this.renderTab({
             panel: "about",
