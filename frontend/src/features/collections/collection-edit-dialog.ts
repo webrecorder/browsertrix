@@ -1,5 +1,6 @@
 import { localized, msg, str } from "@lit/localize";
 import { Task, TaskStatus } from "@lit/task";
+import { type SlRequestCloseEvent } from "@shoelace-style/shoelace";
 import { html, nothing } from "lit";
 import {
   customElement,
@@ -126,6 +127,11 @@ export class CollectionEdit extends BtrixElement {
       ?open=${this.open}
       @sl-show=${() => (this.isDialogVisible = true)}
       @sl-after-hide=${() => (this.isDialogVisible = false)}
+      @sl-request-close=${(e: SlRequestCloseEvent) => {
+        // Prevent accidental closes unless data has been saved
+        // Closing via the close buttons is fine though, cause it resets the form first.
+        if (this.dirty) e.preventDefault();
+      }}
       class="h-full [--width:var(--btrix-screen-desktop)]"
     >
       <form
@@ -197,15 +203,20 @@ export class CollectionEdit extends BtrixElement {
             // incorrect getRootNode in Chrome
             (await this.form).reset();
           }}
-          >${msg("Cancel")}</sl-button
+          >${this.dirty ? msg("Discard Changes") : msg("Cancel")}</sl-button
         >
+        ${this.dirty
+          ? html`<span class="text-sm text-warning"
+              >${msg("Unsaved changes.")}</span
+            >`
+          : nothing}
         ${this.errorTab !== null
           ? html`<span class="text-sm text-danger"
               >${msg("Please review issues with your changes.")}</span
             >`
           : nothing}
         <sl-button
-          variant=${this.errorTab === null ? "primary" : "danger"}
+          variant="primary"
           size="small"
           ?loading=${this.submitTask.status === TaskStatus.PENDING}
           ?disabled=${this.submitTask.status === TaskStatus.PENDING ||
