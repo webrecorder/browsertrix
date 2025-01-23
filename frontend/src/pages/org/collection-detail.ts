@@ -373,6 +373,18 @@ export class CollectionDetail extends BtrixElement {
     const authToken = this.authState?.headers.Authorization.split(" ")[1];
 
     return html`
+      <sl-button-group>
+        <sl-button
+          variant="primary"
+          size="small"
+          @click=${() => {
+            this.openDialogName = "edit";
+          }}
+        >
+          <sl-icon name="pencil" slot="prefix"></sl-icon>
+          ${msg("Edit Collection")}
+        </sl-button>
+      </sl-button-group>
       <sl-dropdown distance="4">
         <sl-button slot="trigger" size="small" caret
           >${msg("Actions")}</sl-button

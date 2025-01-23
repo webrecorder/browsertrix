@@ -25,11 +25,9 @@ export default async function checkChanged(this: CollectionEdit) {
 
     const shouldUpload =
       homepage.homeView === HomeView.URL &&
-      homepage.useThumbnail === "on" &&
+      homepage.useThumbnail &&
       homepage.selectedSnapshot &&
       this.collection?.homeUrlPageId !== homepage.selectedSnapshot.pageId;
-
-    // debugger;
 
     if (pageId != this.collection?.homeUrlPageId || shouldUpload) {
       updates.push(["homepage", homepage]);

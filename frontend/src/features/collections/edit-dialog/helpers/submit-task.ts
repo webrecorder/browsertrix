@@ -79,16 +79,18 @@ export default function submitTask(
         );
         rest.defaultThumbnailName = null;
       }
-      tasks.push(
-        await this.api.fetch<{ updated: boolean }>(
-          `/orgs/${this.orgId}/collections/${this.collection.id}`,
-          {
-            method: "PATCH",
-            body: JSON.stringify(rest),
-            signal,
-          },
-        ),
-      );
+      console.log({ rest, shouldUpload });
+      if (Object.keys(rest).length)
+        tasks.push(
+          await this.api.fetch<{ updated: boolean }>(
+            `/orgs/${this.orgId}/collections/${this.collection.id}`,
+            {
+              method: "PATCH",
+              body: JSON.stringify(rest),
+              signal,
+            },
+          ),
+        );
 
       console.log(tasks);
 

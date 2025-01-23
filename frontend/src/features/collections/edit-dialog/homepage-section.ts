@@ -1,8 +1,9 @@
 import { localized, msg } from "@lit/localize";
-import {
-  type SlChangeEvent,
-  type SlIcon,
-  type SlSelect,
+import type {
+  SlChangeEvent,
+  SlCheckbox,
+  SlIcon,
+  SlSelect,
 } from "@shoelace-style/shoelace";
 import { html, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
@@ -53,6 +54,8 @@ export class CollectionHomepageSettings extends BtrixElement {
 
   @state()
   homeView = HomeView.Pages;
+
+  useThumbnail = true;
 
   @state()
   selectedSnapshot?: SelectSnapshotDetail["item"];
@@ -193,7 +196,14 @@ export class CollectionHomepageSettings extends BtrixElement {
               }}
             ></btrix-select-collection-start-page>
 
-            <sl-checkbox name="useThumbnail" class="mt-3" checked>
+            <sl-checkbox
+              name="useThumbnail"
+              class="mt-3"
+              checked
+              @sl-change=${(e: SlChangeEvent) => {
+                this.useThumbnail = (e.currentTarget as SlCheckbox).checked;
+              }}
+            >
               ${msg("Update collection thumbnail")}
               <sl-tooltip
                 content=${msg(

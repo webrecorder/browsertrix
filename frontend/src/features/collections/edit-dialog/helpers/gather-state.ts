@@ -1,7 +1,6 @@
 import { getFormControls, serialize } from "@shoelace-style/shoelace";
 
 import { type CollectionEdit, type Tab } from "../../collection-edit-dialog";
-import { type HomeView } from "../../collection-snapshot-preview";
 
 import type { TabGroupPanel } from "@/components/ui/tab-group/tab-panel";
 import {
@@ -37,12 +36,9 @@ export default async function gatherState(this: CollectionEdit) {
   const { access, allowPublicDownload, defaultThumbnailName } =
     this.shareSettings ?? {};
 
-  const { homeView, useThumbnail, ...formData } = serialize(
-    form,
-  ) as CollectionUpdate & {
-    homeView: `${HomeView}`;
-    useThumbnail: "on" | "off";
-  };
+  const formData = serialize(form) as CollectionUpdate;
+
+  const { homeView, useThumbnail, selectedSnapshot } = this.homepageSettings!;
 
   const data = {
     ...formData,
@@ -57,7 +53,7 @@ export default async function gatherState(this: CollectionEdit) {
     homepage: {
       homeView,
       useThumbnail,
-      selectedSnapshot: this.homepageSettings?.selectedSnapshot ?? null,
+      selectedSnapshot,
     },
   };
 }
