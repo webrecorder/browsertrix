@@ -21,7 +21,7 @@ DEFAULT_NAMESPACE: str = os.environ.get("DEFAULT_NAMESPACE", "default")
 
 
 # ============================================================================
-# pylint: disable=too-many-positional-arguments
+# pylint: disable=too-many-positional-arguments, too-many-public-methods
 class CrawlManager(K8sAPI):
     """abstract crawl manager"""
 
