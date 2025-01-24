@@ -131,7 +131,7 @@ async def update_and_prepare_db(
 
 
 # ============================================================================
-# pylint: disable=too-many-locals, too-many-arguments
+# pylint: disable=too-many-locals, too-many-arguments, too-many-positional-arguments
 async def run_db_migrations(
     mdb, user_manager, page_ops, org_ops, background_job_ops, coll_ops
 ):
