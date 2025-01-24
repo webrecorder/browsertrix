@@ -432,7 +432,7 @@ class BackgroundJobOps:
             return job_id
         # pylint: disable=broad-exception-caught
         except Exception as exc:
-             # pylint: disable=raise-missing-from
+            # pylint: disable=raise-missing-from
             print(f"warning: re-add org pages job could not be started: {exc}")
             return None
 
