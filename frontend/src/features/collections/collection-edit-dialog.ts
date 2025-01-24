@@ -1,7 +1,7 @@
 import { localized, msg, str } from "@lit/localize";
 import { Task, TaskStatus } from "@lit/task";
 import { type SlRequestCloseEvent } from "@shoelace-style/shoelace";
-import { html, nothing } from "lit";
+import { html, nothing, type PropertyValues } from "lit";
 import {
   customElement,
   property,
@@ -35,12 +35,20 @@ export const validateCaptionMax = maxLengthValidator(150);
 
 /**
  * @fires btrix-collection-saved CollectionSavedEvent Fires
+ * @fires btrix-close
  */
 @customElement("btrix-collection-edit-dialog")
 @localized()
 export class CollectionEdit extends BtrixElement {
   @property({ type: Object })
   collection?: Collection;
+
+  /** For contexts where we don't have the full collection object already -
+   * Will cause this to fetch the collection internally, so avoid if there's
+   * already a collection object available where this is being used.
+   */
+  @property({ type: String })
+  collectionId?: string;
 
   @property({ type: Boolean })
   open = false;
@@ -67,6 +75,9 @@ export class CollectionEdit extends BtrixElement {
   @state()
   name = this.collection?.name;
 
+  @query("btrix-dialog")
+  readonly dialog?: Dialog;
+
   @queryAsync("#collectionEditForm")
   readonly form!: Promise<HTMLFormElement>;
 
@@ -78,6 +89,25 @@ export class CollectionEdit extends BtrixElement {
 
   @query("btrix-collection-homepage-settings")
   readonly homepageSettings?: CollectionHomepageSettings;
+
+  protected willUpdate(changedProperties: PropertyValues<this>): void {
+    console.log(
+      "changed stuff",
+      Object.fromEntries(
+        [...changedProperties.entries()].map(([k, v]) => [
+          k,
+          [v, this[k as keyof typeof this]],
+        ]),
+      ),
+    );
+    if (changedProperties.has("collectionId") && this.collectionId) {
+      void this.fetchCollection(this.collectionId);
+    }
+    if (changedProperties.has("collectionId") && !this.collectionId) {
+      this.onReset();
+      this.collection = undefined;
+    }
+  }
 
   readonly checkChanged = checkChanged.bind(this);
 
@@ -110,7 +140,7 @@ export class CollectionEdit extends BtrixElement {
   }
 
   private async hideDialog() {
-    void (await this.form).closest<Dialog>("btrix-dialog")!.hide();
+    void this.dialog?.hide();
   }
 
   private onReset() {
@@ -124,12 +154,16 @@ export class CollectionEdit extends BtrixElement {
   }
 
   render() {
-    if (!this.collection) return;
     return html`<btrix-dialog
-      .label=${msg(str`Edit Collection “${this.name || this.collection.name}”`)}
+      .label=${this.collection
+        ? msg(str`Edit Collection “${this.name || this.collection.name}”`)
+        : msg("Edit Collection")}
       .open=${this.open}
       @sl-show=${() => (this.isDialogVisible = true)}
-      @sl-after-hide=${() => (this.isDialogVisible = false)}
+      @sl-after-hide=${() => {
+        this.isDialogVisible = false;
+        this.dispatchEvent(new CustomEvent("btrix-close", { bubbles: true }));
+      }}
       @sl-request-close=${(e: SlRequestCloseEvent) => {
         // Prevent accidental closes unless data has been saved
         // Closing via the close buttons is fine though, cause it resets the form first.
@@ -139,66 +173,74 @@ export class CollectionEdit extends BtrixElement {
       }}
       class="h-full [--width:var(--btrix-screen-desktop)]"
     >
-      <form
-        id="collectionEditForm"
-        @reset=${this.onReset}
-        @submit=${this.onSubmit}
-        @btrix-change=${() => {
-          void this.checkChanged();
-        }}
-        @sl-input=${() => {
-          void this.checkChanged();
-        }}
-        @sl-change=${() => {
-          void this.checkChanged();
-        }}
-      >
-        <btrix-tab-group
-          placement="top"
-          overrideTabLayout=${tw`mb-4 flex gap-2`}
-          active=${this.tab}
-          @btrix-tab-change=${(e: CustomEvent<Tab>) => {
-            this.tab = e.detail;
-          }}
-        >
-          ${this.renderTab({
-            panel: "about",
-            icon: "info-square-fill",
-            string: msg("About"),
-          })}
-          ${this.renderTab({
-            panel: "sharing",
-            icon: "box-arrow-up",
-            string: msg("Sharing"),
-          })}
-          ${this.renderTab({
-            panel: "homepage",
-            icon: "house-fill",
-            string: msg("Homepage"),
-          })}
+      ${this.collection
+        ? html`
+            <form
+              id="collectionEditForm"
+              @reset=${this.onReset}
+              @submit=${this.onSubmit}
+              @btrix-change=${() => {
+                void this.checkChanged();
+              }}
+              @sl-input=${() => {
+                void this.checkChanged();
+              }}
+              @sl-change=${() => {
+                void this.checkChanged();
+              }}
+            >
+              <btrix-tab-group
+                placement="top"
+                overrideTabLayout=${tw`mb-4 flex gap-2`}
+                active=${this.tab}
+                @btrix-tab-change=${(e: CustomEvent<Tab>) => {
+                  this.tab = e.detail;
+                }}
+              >
+                ${this.renderTab({
+                  panel: "about",
+                  icon: "info-square-fill",
+                  string: msg("About"),
+                })}
+                ${this.renderTab({
+                  panel: "sharing",
+                  icon: "box-arrow-up",
+                  string: msg("Sharing"),
+                })}
+                ${this.renderTab({
+                  panel: "homepage",
+                  icon: "house-fill",
+                  string: msg("Homepage"),
+                })}
 
-          <btrix-tab-group-panel name="about">
-            ${renderAbout.bind(this)()}
-          </btrix-tab-group-panel>
+                <btrix-tab-group-panel name="about">
+                  ${renderAbout.bind(this)()}
+                </btrix-tab-group-panel>
 
-          <btrix-tab-group-panel name="sharing">
-            <btrix-collection-share-settings
-              .collection=${this.collection}
-            ></btrix-collection-share-settings>
-          </btrix-tab-group-panel>
+                <btrix-tab-group-panel name="sharing">
+                  <btrix-collection-share-settings
+                    .collection=${this.collection}
+                  ></btrix-collection-share-settings>
+                </btrix-tab-group-panel>
 
-          <btrix-tab-group-panel name="homepage">
-            <btrix-collection-homepage-settings
-              .collectionId=${this.collection.id}
-              .homeUrl=${this.collection.homeUrl}
-              .homePageId=${this.collection.homeUrlPageId}
-              .homeTs=${this.collection.homeUrlTs}
-              .replayLoaded=${this.replayLoaded}
-            ></btrix-collection-homepage-settings>
-          </btrix-tab-group-panel>
-        </btrix-tab-group>
-        <input class="offscreen" type="submit" />
-      </form>
+                <btrix-tab-group-panel name="homepage">
+                  <btrix-collection-homepage-settings
+                    .collectionId=${this.collection.id}
+                    .homeUrl=${this.collection.homeUrl}
+                    .homePageId=${this.collection.homeUrlPageId}
+                    .homeTs=${this.collection.homeUrlTs}
+                    .replayLoaded=${this.replayLoaded}
+                  ></btrix-collection-homepage-settings>
+                </btrix-tab-group-panel>
+              </btrix-tab-group>
+              <input class="offscreen" type="submit" />
+            </form>
+          `
+        : html`
+            <div class="grid h-max min-h-[50svh] place-items-center">
+              <sl-spinner class="text-3xl"></sl-spinner>
+            </div>
+          `}
       <div slot="footer" class="flex items-center justify-end gap-3">
         <sl-button
           class="mr-auto"
@@ -261,5 +303,26 @@ export class CollectionEdit extends BtrixElement {
       ></sl-icon>
       ${string}
     </btrix-tab-group-tab>`;
+  }
+
+  private async fetchCollection(id: string) {
+    try {
+      this.collection = await this.getCollection(id);
+    } catch (e) {
+      this.notify.toast({
+        message: msg("Sorry, couldn't retrieve Collection at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+        id: "collection-retrieve-status",
+      });
+    }
+  }
+
+  private async getCollection(id: string) {
+    const data = await this.api.fetch<Collection>(
+      `/orgs/${this.orgId}/collections/${id}/replay.json`,
+    );
+
+    return data;
   }
 }

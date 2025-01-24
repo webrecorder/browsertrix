@@ -1,6 +1,6 @@
 import { localized, msg } from "@lit/localize";
 import { html, nothing } from "lit";
-import { customElement, property } from "lit/decorators.js";
+import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 
@@ -24,6 +24,9 @@ export class CollectionsGrid extends BtrixElement {
 
   @property({ type: Array })
   collections?: PublicCollection[];
+
+  @state()
+  collectionBeingEdited: string | null = null;
 
   render() {
     const gridClassNames = tw`grid flex-1 grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4`;
@@ -100,6 +103,19 @@ export class CollectionsGrid extends BtrixElement {
           `,
         )}
       </ul>
+      ${when(
+        showActions,
+        () =>
+          html`<btrix-collection-edit-dialog
+            .collectionId=${this.collectionBeingEdited ?? undefined}
+            ?open=${!!this.collectionBeingEdited}
+            @btrix-close=${() => {
+              this.collectionBeingEdited = null;
+              // TODO propagate an event back up & refresh collections
+              // void this.fetchCollection();
+            }}
+          ></btrix-collection-edit-dialog>`,
+      )}
     `;
   }
 
@@ -108,6 +124,12 @@ export class CollectionsGrid extends BtrixElement {
       <div class="pointer-events-auto absolute bottom-2 right-2">
         <btrix-overflow-dropdown raised>
           <sl-menu>
+            <sl-menu-item
+              @click=${() => (this.collectionBeingEdited = collection.id)}
+            >
+              <sl-icon name="pencil" slot="prefix"></sl-icon>
+              ${msg("Edit Collection")}
+            </sl-menu-item>
             <btrix-menu-item-link
               href=${`/${RouteNamespace.PublicOrgs}/${this.orgSlugState}/collections/${collection.slug}`}
             >
