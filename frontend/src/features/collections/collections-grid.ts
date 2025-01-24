@@ -109,7 +109,7 @@ export class CollectionsGrid extends BtrixElement {
           html`<btrix-collection-edit-dialog
             .collectionId=${this.collectionBeingEdited ?? undefined}
             ?open=${!!this.collectionBeingEdited}
-            @btrix-close=${() => {
+            @sl-hide=${() => {
               this.collectionBeingEdited = null;
               // TODO propagate an event back up & refresh collections
               // void this.fetchCollection();

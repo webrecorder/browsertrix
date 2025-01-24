@@ -1,6 +1,9 @@
 import { getFormControls, serialize } from "@shoelace-style/shoelace";
 
-import { type CollectionEdit, type Tab } from "../../collection-edit-dialog";
+import {
+  type CollectionEdit,
+  type EditDialogTab,
+} from "../../collection-edit-dialog";
 
 import type { TabGroupPanel } from "@/components/ui/tab-group/tab-panel";
 import {
@@ -24,7 +27,7 @@ export default async function gatherState(this: CollectionEdit) {
   if (invalidElement) {
     this.errorTab = invalidElement.closest<TabGroupPanel>(
       "btrix-tab-group-panel",
-    )!.name as Tab;
+    )!.name as EditDialogTab;
     (invalidElement as HTMLElement).focus();
     throw new Error("invalid_data");
   } else {

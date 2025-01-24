@@ -24,7 +24,9 @@ import { type Collection } from "@/types/collection";
 import { maxLengthValidator, type MaxLengthValidator } from "@/utils/form";
 import { tw } from "@/utils/tailwind";
 
-export type Tab = "about" | "sharing" | "homepage";
+type Tab = "about" | "sharing" | "homepage";
+
+export type { Tab as EditDialogTab };
 
 export type CollectionSavedEvent = CustomEvent<{
   id: string;
@@ -35,7 +37,6 @@ export const validateCaptionMax = maxLengthValidator(150);
 
 /**
  * @fires btrix-collection-saved CollectionSavedEvent Fires
- * @fires btrix-close
  */
 @customElement("btrix-collection-edit-dialog")
 @localized()
@@ -91,15 +92,6 @@ export class CollectionEdit extends BtrixElement {
   readonly homepageSettings?: CollectionHomepageSettings;
 
   protected willUpdate(changedProperties: PropertyValues<this>): void {
-    console.log(
-      "changed stuff",
-      Object.fromEntries(
-        [...changedProperties.entries()].map(([k, v]) => [
-          k,
-          [v, this[k as keyof typeof this]],
-        ]),
-      ),
-    );
     if (changedProperties.has("collectionId") && this.collectionId) {
       void this.fetchCollection(this.collectionId);
     }
@@ -162,14 +154,13 @@ export class CollectionEdit extends BtrixElement {
       @sl-show=${() => (this.isDialogVisible = true)}
       @sl-after-hide=${() => {
         this.isDialogVisible = false;
-        this.dispatchEvent(new CustomEvent("btrix-close", { bubbles: true }));
+        // Reset the open tab when closing the dialog
+        this.tab = "about";
       }}
       @sl-request-close=${(e: SlRequestCloseEvent) => {
         // Prevent accidental closes unless data has been saved
         // Closing via the close buttons is fine though, cause it resets the form first.
         if (this.dirty) e.preventDefault();
-        // Reset the open tab when closing the dialog
-        this.tab = "about";
       }}
       class="h-full [--width:var(--btrix-screen-desktop)]"
     >

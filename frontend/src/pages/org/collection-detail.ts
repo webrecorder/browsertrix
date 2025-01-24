@@ -12,7 +12,7 @@ import type { Embed as ReplayWebPage } from "replaywebpage";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { MarkdownEditor } from "@/components/ui/markdown-editor";
 import type { PageChangeEvent } from "@/components/ui/pagination";
-import type { Tab as EditDialogTab } from "@/features/collections/collection-edit-dialog";
+import type { EditDialogTab } from "@/features/collections/collection-edit-dialog";
 import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
 import type { ShareCollection } from "@/features/collections/share-collection";
 import { pageNav, pageTitle, type Breadcrumb } from "@/layouts/pageHeader";
