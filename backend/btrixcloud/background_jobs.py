@@ -306,8 +306,6 @@ class BackgroundJobOps:
     ) -> str:
         """Create background job to delete org and its data"""
 
-        job_type = BgJobType.DELETE_ORG.value
-
         try:
             job_id = await self.crawl_manager.run_delete_org_job(
                 oid=str(org.id),
