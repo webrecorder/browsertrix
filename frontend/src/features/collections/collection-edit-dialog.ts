@@ -134,6 +134,8 @@ export class CollectionEdit extends BtrixElement {
         // Prevent accidental closes unless data has been saved
         // Closing via the close buttons is fine though, cause it resets the form first.
         if (this.dirty) e.preventDefault();
+        // Reset the open tab when closing the dialog
+        this.tab = "about";
       }}
       class="h-full [--width:var(--btrix-screen-desktop)]"
     >

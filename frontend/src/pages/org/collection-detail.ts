@@ -15,7 +15,7 @@ import type { PageChangeEvent } from "@/components/ui/pagination";
 import type { Tab as EditDialogTab } from "@/features/collections/collection-edit-dialog";
 import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
 import type { ShareCollection } from "@/features/collections/share-collection";
-import { pageHeader, pageNav, type Breadcrumb } from "@/layouts/pageHeader";
+import { pageNav, pageTitle, type Breadcrumb } from "@/layouts/pageHeader";
 import type {
   APIPaginatedList,
   APIPaginationQuery,
@@ -126,16 +126,30 @@ export class CollectionDetail extends BtrixElement {
   render() {
     return html`
       <div class="mb-7">${this.renderBreadcrumbs()}</div>
-      ${pageHeader({
-        title: this.collection?.name,
-        border: false,
-        prefix: this.renderAccessIcon(),
-        secondary: this.collection?.caption
-          ? html`<div class="text-pretty text-neutral-600">
-              ${this.collection.caption}
-            </div>`
-          : nothing,
-        actions: html`
+      <header class=${clsx(tw`mt-5 flex flex-col gap-3 lg:flex-row`)}>
+        <div
+          class="-mb-2 -ml-2 -mr-1 -mt-1 flex flex-none flex-col gap-2 self-start rounded-lg pb-2 pl-2 pr-1 pt-1 transition-colors has-[sl-icon-button:hover]:bg-primary-50"
+        >
+          <div class="flex flex-wrap items-center gap-2.5">
+            ${this.renderAccessIcon()}${pageTitle(this.collection?.name)}
+            ${this.collection &&
+            html`<sl-icon-button
+              name="pencil"
+              aria-label=${msg("Edit Collection")}
+              @click=${async () => {
+                this.openDialogName = "edit";
+                this.editTab = "about";
+              }}
+            ></sl-icon-button>`}
+          </div>
+          ${this.collection?.caption
+            ? html`<div class="text-pretty text-neutral-600">
+                ${this.collection.caption}
+              </div>`
+            : nothing}
+        </div>
+
+        <div class="ml-auto flex flex-shrink-0 items-center gap-2">
           <btrix-share-collection
             orgSlug=${this.orgSlugState || ""}
             collectionId=${this.collectionId}
@@ -146,8 +160,8 @@ export class CollectionDetail extends BtrixElement {
             }}
           ></btrix-share-collection>
           ${when(this.isCrawler, this.renderActions)}
-        `,
-      })}
+        </div>
+      </header>
 
       <div class="mt-3 rounded-lg border px-4 py-2">
         ${this.renderInfoBar()}
