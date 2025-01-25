@@ -17,7 +17,7 @@ from pymongo.errors import InvalidName
 from .migrations import BaseMigration
 
 
-CURR_DB_VERSION = "0040"
+CURR_DB_VERSION = "0041"
 
 
 # ============================================================================
@@ -96,7 +96,7 @@ async def update_and_prepare_db(
     await ping_db(mdb)
     print("Database setup started", flush=True)
     if await run_db_migrations(
-        mdb, user_manager, page_ops, org_ops, background_job_ops
+        mdb, user_manager, page_ops, org_ops, background_job_ops, coll_ops
     ):
         await drop_indexes(mdb)
 
@@ -117,8 +117,10 @@ async def update_and_prepare_db(
 
 
 # ============================================================================
-# pylint: disable=too-many-locals
-async def run_db_migrations(mdb, user_manager, page_ops, org_ops, background_job_ops):
+# pylint: disable=too-many-locals, too-many-arguments
+async def run_db_migrations(
+    mdb, user_manager, page_ops, org_ops, background_job_ops, coll_ops
+):
     """Run database migrations."""
 
     # if first run, just set version and exit
@@ -155,6 +157,7 @@ async def run_db_migrations(mdb, user_manager, page_ops, org_ops, background_job
                 page_ops=page_ops,
                 org_ops=org_ops,
                 background_job_ops=background_job_ops,
+                coll_ops=coll_ops,
             )
             if await migration.run():
                 migrations_run = True

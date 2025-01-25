@@ -194,3 +194,13 @@ def get_origin(headers) -> str:
         return default_origin
 
     return scheme + "://" + host
+
+
+def validate_regexes(regexes: List[str]):
+    """Validate regular expressions, raise HTTPException if invalid"""
+    for regex in regexes:
+        try:
+            re.compile(regex)
+        except re.error:
+            # pylint: disable=raise-missing-from
+            raise HTTPException(status_code=400, detail="invalid_regex")

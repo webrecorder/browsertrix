@@ -1,11 +1,11 @@
 """
-Migration 0040 -- archived item pageCount
+Migration 0041 - Rationalize page counts
 """
 
 from btrixcloud.migrations import BaseMigration
 
 
-MIGRATION_VERSION = "0040"
+MIGRATION_VERSION = "0041"
 
 
 class Migration(BaseMigration):
@@ -15,29 +15,29 @@ class Migration(BaseMigration):
     def __init__(self, mdb, **kwargs):
         super().__init__(mdb, migration_version=MIGRATION_VERSION)
 
-        self.page_ops = kwargs.get("page_ops")
+        self.coll_ops = kwargs.get("coll_ops")
 
     async def migrate_up(self):
         """Perform migration up.
 
-        Calculate and store pageCount for archived items that don't have it yet
+        Recalculate collections to get new page and unique page counts
         """
-        crawls_mdb = self.mdb["crawls"]
+        colls_mdb = self.mdb["collections"]
 
-        if self.page_ops is None:
+        if self.coll_ops is None:
             print(
-                "Unable to set pageCount for archived items, missing page_ops",
+                "Unable to set collection page counts, missing coll_ops",
                 flush=True,
             )
             return
 
-        async for crawl_raw in crawls_mdb.find({}):
-            crawl_id = crawl_raw["_id"]
+        async for coll in colls_mdb.find({}):
+            coll_id = coll["_id"]
             try:
-                await self.page_ops.set_archived_item_page_counts(crawl_id)
+                await self.coll_ops.update_collection_counts_and_tags(coll_id)
             # pylint: disable=broad-exception-caught
             except Exception as err:
                 print(
-                    f"Error saving page counts for archived item {crawl_id}: {err}",
+                    f"Unable to update page counts for collection {coll_id}: {err}",
                     flush=True,
                 )

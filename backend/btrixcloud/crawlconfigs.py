@@ -43,7 +43,7 @@ from .models import (
     CrawlerProxy,
     CrawlerProxies,
 )
-from .utils import dt_now, slug_from_name
+from .utils import dt_now, slug_from_name, validate_regexes
 
 if TYPE_CHECKING:
     from .orgs import OrgOps
@@ -189,7 +189,7 @@ class CrawlConfigOps:
 
         return profile_filename
 
-    # pylint: disable=invalid-name
+    # pylint: disable=invalid-name, too-many-branches
     async def add_crawl_config(
         self,
         config_in: CrawlConfigIn,
@@ -214,6 +214,12 @@ class CrawlConfigOps:
         if config_in.proxyId:
             if not self.can_org_use_proxy(org, config_in.proxyId):
                 raise HTTPException(status_code=404, detail="proxy_not_found")
+
+        if config_in.config.exclude:
+            exclude = config_in.config.exclude
+            if isinstance(exclude, str):
+                exclude = [exclude]
+            validate_regexes(exclude)
 
         now = dt_now()
         crawlconfig = CrawlConfig(
@@ -317,10 +323,16 @@ class CrawlConfigOps:
     async def update_crawl_config(
         self, cid: UUID, org: Organization, user: User, update: UpdateCrawlConfig
     ) -> dict[str, bool | str]:
-        # pylint: disable=too-many-locals
+        # pylint: disable=too-many-locals, too-many-branches, too-many-statements
         """Update name, scale, schedule, and/or tags for an existing crawl config"""
 
         orig_crawl_config = await self.get_crawl_config(cid, org.id)
+
+        if update.config and update.config.exclude:
+            exclude = update.config.exclude
+            if isinstance(exclude, str):
+                exclude = [exclude]
+            validate_regexes(exclude)
 
         # indicates if any k8s crawl config settings changed
         changed = False

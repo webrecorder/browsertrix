@@ -136,12 +136,13 @@ export class CollectionMetadataDialog extends BtrixElement {
             <sl-tooltip>
               <span slot="content">
                 ${msg(
-                  "Write a short description that summarizes this collection. If the collection is public, this description will be visible next to the collection name.",
+                  "Write a short description that summarizes this collection. If the collection is shareable, this will appear next to the collection name.",
                 )}
                 ${this.collection
                   ? nothing
                   : msg(
-                      "You can write a longer description in the 'About' section after creating the collection.",
+                      html`You can add a longer description in the “About”
+                      section after creating the collection.`,
                     )}
               </span>
               <sl-icon

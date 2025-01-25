@@ -3,10 +3,14 @@ import { Task } from "@lit/task";
 import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
+import queryString from "query-string";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { page, pageHeading } from "@/layouts/page";
+import type { APIPaginatedList, APISortQuery } from "@/types/api";
+import { CollectionAccess, type Collection } from "@/types/collection";
 import type { OrgData, PublicOrgCollections } from "@/types/org";
+import { SortDirection } from "@/types/utils";
 
 @localized()
 @customElement("btrix-public-org")
@@ -242,7 +246,13 @@ export class PublicOrg extends BtrixElement {
   }: {
     slug: string;
   }): Promise<PublicOrgCollections | void> {
-    const resp = await fetch(`/api/public/orgs/${slug}/collections`, {
+    const params: APISortQuery<Collection> = {
+      sortBy: "dateLatest",
+      sortDirection: SortDirection.Descending,
+    };
+    const query = queryString.stringify(params);
+
+    const resp = await fetch(`/api/public/orgs/${slug}/collections?${query}`, {
       headers: { "Content-Type": "application/json" },
     });
 
@@ -277,6 +287,9 @@ export class PublicOrg extends BtrixElement {
       }
 
       const org = await this.api.fetch<OrgData>(`/orgs/${userOrg.id}`);
+      const collections = await this.getUserPublicCollections({
+        orgId: this.orgId,
+      });
 
       return {
         org: {
@@ -285,10 +298,27 @@ export class PublicOrg extends BtrixElement {
           url: org.publicUrl || "",
           verified: false, // TODO
         },
-        collections: [], // TODO
+        collections,
       };
     } catch {
       return null;
     }
+  }
+
+  private async getUserPublicCollections({ orgId }: { orgId: string }) {
+    const params: APISortQuery<Collection> & {
+      access: CollectionAccess;
+    } = {
+      sortBy: "dateLatest",
+      sortDirection: SortDirection.Descending,
+      access: CollectionAccess.Public,
+    };
+    const query = queryString.stringify(params);
+
+    const data = await this.api.fetch<APIPaginatedList<Collection>>(
+      `/orgs/${orgId}/collections?${query}`,
+    );
+
+    return data.items;
   }
 }

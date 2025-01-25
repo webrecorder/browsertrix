@@ -255,7 +255,7 @@ def main() -> None:
     crawls.set_page_ops(page_ops)
     upload_ops.set_page_ops(page_ops)
 
-    org_ops.set_ops(base_crawl_ops, profiles, coll_ops, background_job_ops)
+    org_ops.set_ops(base_crawl_ops, profiles, coll_ops, background_job_ops, page_ops)
 
     user_manager.set_ops(org_ops, crawl_config_ops, base_crawl_ops)
 
