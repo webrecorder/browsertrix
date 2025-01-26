@@ -10,12 +10,15 @@ import { html, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
-import sortBy from "lodash/fp/sortBy";
+import filter from "lodash/fp/filter";
+import flow from "lodash/fp/flow";
+import orderBy from "lodash/fp/orderBy";
 import queryString from "query-string";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Combobox } from "@/components/ui/combobox";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
+import type { Collection } from "@/types/collection";
 import type { UnderlyingFunction } from "@/types/utils";
 import { tw } from "@/utils/tailwind";
 
@@ -39,7 +42,11 @@ export type SelectSnapshotDetail = {
 
 const DEFAULT_PROTOCOL = "http";
 
-const sortByTs = sortBy<Snapshot>("ts");
+// TODO Check if backend can sort and filter snapshots instead
+const sortByTs = flow(
+  filter<Snapshot>(({ status }) => status < 300),
+  orderBy<Snapshot>("ts")("desc"),
+) as (snapshots: Snapshot[]) => Snapshot[];
 
 /**
  * @fires btrix-select
@@ -50,11 +57,8 @@ export class SelectCollectionStartPage extends BtrixElement {
   @property({ type: String })
   collectionId?: string;
 
-  @property({ type: String })
-  homeUrl?: string | null = null;
-
-  @property({ type: String })
-  homeTs?: string | null = null;
+  @property({ type: Object })
+  collection?: Collection;
 
   @state()
   private searchQuery = "";
@@ -82,14 +86,13 @@ export class SelectCollectionStartPage extends BtrixElement {
     return this.selectedSnapshot;
   }
 
-  updated(changedProperties: PropertyValues<this>) {
-    if (changedProperties.has("homeUrl") && this.homeUrl) {
-      if (this.input) {
-        this.input.value = this.homeUrl;
-      }
-      this.searchQuery = this.homeUrl;
-      void this.initSelection();
+  protected willUpdate(changedProperties: PropertyValues<this>) {
+    if (changedProperties.has("collection") && this.collection) {
+      void this.initSelection(this.collection);
     }
+  }
+
+  updated(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("selectedSnapshot")) {
       this.dispatchEvent(
         new CustomEvent<SelectSnapshotDetail>("btrix-select", {
@@ -106,26 +109,50 @@ export class SelectCollectionStartPage extends BtrixElement {
     }
   }
 
-  private async initSelection() {
-    await this.updateComplete;
-    await this.searchResults.taskComplete;
-
-    if (this.homeUrl && this.searchResults.value) {
-      this.selectedPage = this.searchResults.value.items.find(
-        ({ url }) => url === this.homeUrl,
-      );
-
-      if (this.selectedPage && this.homeTs) {
-        this.selectedSnapshot = this.selectedPage.snapshots.find(
-          ({ ts }) => ts === this.homeTs,
-        );
-      }
+  private async initSelection(collection: Collection) {
+    if (!collection.homeUrl && collection.pageCount !== 1) {
+      return;
     }
+
+    const pageUrls = await this.getPageUrls({
+      id: collection.id,
+      urlPrefix: collection.homeUrl || "",
+      pageSize: 1,
+    });
+
+    if (!pageUrls.total) {
+      return;
+    }
+
+    const startPage = pageUrls.items[0];
+
+    if (this.input) {
+      this.input.value = startPage.url;
+    }
+
+    this.selectedPage = this.formatPage(startPage);
+
+    const homeTs = collection.homeUrlTs;
+
+    this.selectedSnapshot = homeTs
+      ? this.selectedPage.snapshots.find(({ ts }) => ts === homeTs)
+      : this.selectedPage.snapshots[0];
+  }
+
+  /**
+   * Format page for display
+   * @TODO Check if backend can sort and filter snapshots instead
+   */
+  private formatPage(page: Page) {
+    return {
+      ...page,
+      snapshots: sortByTs(page.snapshots),
+    };
   }
 
   private readonly searchResults = new Task(this, {
     task: async ([searchValue], { signal }) => {
-      const searchResults = await this.getPageUrls(
+      const pageUrls = await this.getPageUrls(
         {
           id: this.collectionId!,
           urlPrefix: searchValue,
@@ -133,7 +160,7 @@ export class SelectCollectionStartPage extends BtrixElement {
         signal,
       );
 
-      return searchResults;
+      return pageUrls;
     },
     args: () => [this.searchQuery] as const,
   });
@@ -150,6 +177,7 @@ export class SelectCollectionStartPage extends BtrixElement {
           value=${this.selectedSnapshot?.pageId || ""}
           ?required=${this.selectedPage && !this.selectedSnapshot}
           ?disabled=${!this.selectedPage}
+          hoist
           @sl-change=${async (e: SlChangeEvent) => {
             const { value } = e.currentTarget as SlSelect;
 
@@ -160,34 +188,21 @@ export class SelectCollectionStartPage extends BtrixElement {
             );
           }}
         >
-          ${when(
-            this.selectedSnapshot,
-            (snapshot) => html`
-              <btrix-badge
-                slot="suffix"
-                variant=${snapshot.status < 300 ? "success" : "danger"}
-                >${snapshot.status}</btrix-badge
-              >
-            `,
-          )}
-          ${when(this.selectedPage, (item) =>
-            item.snapshots.map(
-              ({ pageId, ts, status }) => html`
-                <sl-option value=${pageId}>
-                  ${this.localize.date(ts)}
-                  <btrix-badge
-                    slot="suffix"
-                    variant=${status < 300 ? "success" : "danger"}
-                    >${status}</btrix-badge
-                  >
-                </sl-option>
-              `,
-            ),
-          )}
+          ${when(this.selectedPage, this.renderSnapshotOptions)}
         </sl-select>
       </div>
     `;
   }
+
+  private readonly renderSnapshotOptions = ({ snapshots }: Page) => {
+    return html`
+      ${snapshots.map(
+        ({ pageId, ts }) => html`
+          <sl-option value=${pageId}> ${this.localize.date(ts)} </sl-option>
+        `,
+      )}
+    `;
+  };
 
   private renderPageSearch() {
     let prefix: {
@@ -223,7 +238,7 @@ export class SelectCollectionStartPage extends BtrixElement {
           id="pageUrlInput"
           label=${msg("Page URL")}
           placeholder=${msg("Start typing a URL...")}
-          clearable
+          ?clearable=${this.collection && this.collection.pageCount > 1}
           @sl-focus=${() => {
             this.resetInputValidity();
             this.combobox?.show();
@@ -295,7 +310,7 @@ export class SelectCollectionStartPage extends BtrixElement {
       this.selectedSnapshot = undefined;
     } else if (results.total === 1) {
       // Choose only option, e.g. for copy-paste
-      this.selectedPage = this.searchResults.value.items[0];
+      this.selectedPage = this.formatPage(this.searchResults.value.items[0]);
       this.selectedSnapshot = this.selectedPage.snapshots[0];
     }
   };
@@ -326,11 +341,7 @@ export class SelectCollectionStartPage extends BtrixElement {
                     this.input.value = item.url;
                   }
 
-                  this.selectedPage = {
-                    ...item,
-                    // TODO check if backend can sort
-                    snapshots: sortByTs(item.snapshots).reverse(),
-                  };
+                  this.selectedPage = this.formatPage(item);
 
                   this.combobox?.hide();
 

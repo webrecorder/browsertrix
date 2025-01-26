@@ -265,9 +265,7 @@ export class CollectionDetail extends BtrixElement {
         }}
         @sl-hide=${async () => (this.openDialogName = undefined)}
         collectionId=${this.collectionId}
-        .homeUrl=${this.collection?.homeUrl}
-        .homePageId=${this.collection?.homeUrlPageId}
-        .homeTs=${this.collection?.homeUrlTs}
+        .collection=${this.collection}
         ?replayLoaded=${this.isRwpLoaded}
       ></btrix-collection-replay-dialog>
 
