@@ -273,6 +273,9 @@ export class OrgSettings extends BtrixElement {
   private renderInformation() {
     if (!this.userOrg) return;
 
+    const baseUrl = `${window.location.hostname}${window.location.port ? `:${window.location.port}` : ""}`;
+    const slugValue = this.slugValue || this.orgSlugState;
+
     return html`<section class="rounded-lg border">
       <form @submit=${this.onOrgInfoSubmit}>
         <div class="p-5">
@@ -313,7 +316,32 @@ export class OrgSettings extends BtrixElement {
                   required
                   @sl-input=${this.handleSlugInput}
                 >
-                  <div slot="prefix" class="font-light text-neutral-500">/</div>
+                  <div slot="prefix" class="font-light text-neutral-500">
+                    ${baseUrl}/
+                  </div>
+                  <div slot="help-text" class="leading-relaxed">
+                    ${msg("Examples of org URL in use")}:
+                    <ul class="list-inside list-disc">
+                      <li>
+                        ${msg("Settings")} ${msg("(current page)")}:
+                        <span class="break-word text-blue-500">
+                          /${RouteNamespace.PrivateOrgs}/${slugValue}/settings
+                        </span>
+                      </li>
+                      <li>
+                        ${msg("Dashboard")}:
+                        <span class="break-word text-blue-500">
+                          /${RouteNamespace.PrivateOrgs}/${slugValue}/dashboard
+                        </span>
+                      </li>
+                      <li>
+                        ${msg("Public gallery")}:
+                        <span class="break-word text-blue-500">
+                          /${RouteNamespace.PublicOrgs}/${slugValue}/collections
+                        </span>
+                      </li>
+                    </ul>
+                  </div>
                 </sl-input>
               `,
               msg("Customize your org's Browsertrix URL."),
@@ -411,7 +439,7 @@ export class OrgSettings extends BtrixElement {
     this.slugValue = slugifyStrict(input.value);
 
     input.setCustomValidity(
-      this.slugValue.length < 2 ? msg("URL Identifier too short") : "",
+      this.slugValue.length < 2 ? msg("URL too short") : "",
     );
   }
 
