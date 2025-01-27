@@ -61,7 +61,7 @@ export class CollectionDetail extends BtrixElement {
   private archivedItems?: APIPaginatedList<ArchivedItem>;
 
   @state()
-  private openDialogName?: "delete" | "edit" | "editItems";
+  private openDialogName?: "delete" | "edit" | "replaySettings" | "editItems";
 
   @state()
   private editTab?: EditDialogTab;
@@ -149,7 +149,7 @@ export class CollectionDetail extends BtrixElement {
               aria-label=${msg("Edit Collection")}
               @click=${async () => {
                 this.openDialogName = "edit";
-                this.editTab = "about";
+                this.editTab = "general";
               }}
             ></sl-icon-button>`}
           </div>
@@ -193,8 +193,7 @@ export class CollectionDetail extends BtrixElement {
                   <sl-button
                     size="small"
                     @click=${() => {
-                      this.openDialogName = "edit";
-                      this.editTab = "homepage";
+                      this.openDialogName = "replaySettings";
                     }}
                     ?disabled=${!this.collection?.crawlCount ||
                     !this.isRwpLoaded}
@@ -273,9 +272,24 @@ export class CollectionDetail extends BtrixElement {
       >
       </btrix-collection-items-dialog>
 
+      <btrix-collection-replay-dialog
+        ?open=${this.openDialogName === "replaySettings"}
+        @btrix-change=${() => {
+          // Don't do full refresh of rwp so that rwp-url-change fires
+          this.isRwpLoaded = false;
+
+          void this.fetchCollection();
+        }}
+        @sl-hide=${async () => (this.openDialogName = undefined)}
+        collectionId=${this.collectionId}
+        .collection=${this.collection}
+        ?replayLoaded=${this.isRwpLoaded}
+      >
+      </btrix-collection-replay-dialog>
+
       <btrix-collection-edit-dialog
         .collection=${this.collection}
-        .tab=${this.editTab ?? "about"}
+        .tab=${this.editTab ?? "general"}
         ?open=${this.openDialogName === "edit"}
         @sl-hide=${() => (this.openDialogName = undefined)}
         @btrix-collection-saved=${() => {
@@ -289,6 +303,7 @@ export class CollectionDetail extends BtrixElement {
 
           void this.fetchCollection();
         }}
+        .replayWebPage=${this.replayEmbed}
         ?replayLoaded=${this.isRwpLoaded}
       ></btrix-collection-edit-dialog>
     `;
@@ -429,8 +444,7 @@ export class CollectionDetail extends BtrixElement {
                 await this.updateComplete;
               }
 
-              this.openDialogName = "edit";
-              this.editTab = "homepage";
+              this.openDialogName = "replaySettings";
             }}
             ?disabled=${!this.collection?.crawlCount}
           >

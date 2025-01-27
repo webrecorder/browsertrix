@@ -33,7 +33,7 @@ export class CollectionSnapshotPreview extends TailwindElement {
   view?: HomeView;
 
   @property({ type: Object })
-  snapshot?: SelectSnapshotDetail["item"];
+  snapshot?: Partial<SelectSnapshotDetail["item"]>;
 
   @query("iframe")
   private readonly iframe?: HTMLIFrameElement | null;

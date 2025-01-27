@@ -1,10 +1,5 @@
 import { localized, msg } from "@lit/localize";
-import type {
-  SlChangeEvent,
-  SlCheckbox,
-  SlIcon,
-  SlSelect,
-} from "@shoelace-style/shoelace";
+import type { SlChangeEvent, SlIcon, SlSelect } from "@shoelace-style/shoelace";
 import { html, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
@@ -195,27 +190,6 @@ export class CollectionHomepageSettings extends BtrixElement {
                 );
               }}
             ></btrix-select-collection-start-page>
-
-            <sl-checkbox
-              name="useThumbnail"
-              class="mt-3"
-              checked
-              @sl-change=${(e: SlChangeEvent) => {
-                this.useThumbnail = (e.currentTarget as SlCheckbox).checked;
-              }}
-            >
-              ${msg("Update collection thumbnail")}
-              <sl-tooltip
-                content=${msg(
-                  "If this collection is public, the preview will be used as the thumbnail for this collection.",
-                )}
-              >
-                <sl-icon
-                  name="info-circle"
-                  class="[vertical-align:-.175em]"
-                ></sl-icon>
-              </sl-tooltip>
-            </sl-checkbox>
           </section>
         `,
       )}

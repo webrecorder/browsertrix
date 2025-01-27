@@ -248,7 +248,7 @@ export class CollectionsList extends BtrixElement {
       <btrix-collection-edit-dialog
             .collection=${this.selectedCollection}
             ?open=${this.openDialogName === "edit"}
-            .tab=${this.openEditDialogTab ?? "about"}
+            .tab=${this.openEditDialogTab ?? "general"}
             @sl-hide=${() => {
               this.openDialogName = undefined;
             }}
