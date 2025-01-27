@@ -24,6 +24,7 @@ from .utils import (
     date_to_str,
     parse_jsonl_error_messages,
     stream_dict_list_as_csv,
+    validate_regexes,
 )
 from .basecrawls import BaseCrawlOps
 from .crawlmanager import CrawlManager
@@ -516,6 +517,9 @@ class CrawlOps(BaseCrawlOps):
     ) -> dict[str, bool]:
         """add new exclusion to config or remove exclusion from config
         for given crawl_id, update config on crawl"""
+
+        if add:
+            validate_regexes([regex])
 
         crawl = await self.get_crawl(crawl_id, org)
 

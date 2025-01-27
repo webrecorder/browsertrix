@@ -569,6 +569,9 @@ def test_org_metrics(crawler_auth_headers, default_org_id):
     assert data["uploadCount"] >= 0
     assert data["archivedItemCount"] == data["crawlCount"] + data["uploadCount"]
     assert data["pageCount"] > 0
+    assert data["uniquePageCount"] > 0
+    assert data["crawlUniquePageCount"] > 0
+    assert data["uploadUniquePageCount"] >= 0
     assert data["profileCount"] >= 0
     assert data["workflowsRunningCount"] >= 0
     assert data["workflowsQueuedCount"] >= 0

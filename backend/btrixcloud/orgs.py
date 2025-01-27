@@ -96,9 +96,10 @@ if TYPE_CHECKING:
     from .profiles import ProfileOps
     from .users import UserManager
     from .background_jobs import BackgroundJobOps
+    from .pages import PageOps
 else:
     InviteOps = BaseCrawlOps = ProfileOps = CollectionOps = object
-    BackgroundJobOps = UserManager = object
+    BackgroundJobOps = UserManager = PageOps = object
 
 
 DEFAULT_ORG = os.environ.get("DEFAULT_ORG", "My Organization")
@@ -110,7 +111,7 @@ DEL_ITEMS = 1000
 
 
 # ============================================================================
-# pylint: disable=too-many-public-methods, too-many-instance-attributes, too-many-locals
+# pylint: disable=too-many-public-methods, too-many-instance-attributes, too-many-locals, too-many-arguments
 class OrgOps:
     """Organization API operations"""
 
@@ -156,13 +157,15 @@ class OrgOps:
         profile_ops: ProfileOps,
         coll_ops: CollectionOps,
         background_job_ops: BackgroundJobOps,
+        page_ops: PageOps,
     ) -> None:
-        """Set base crawl ops"""
+        """Set additional ops classes"""
         # pylint: disable=attribute-defined-outside-init
         self.base_crawl_ops = base_crawl_ops
         self.profile_ops = profile_ops
         self.coll_ops = coll_ops
         self.background_job_ops = background_job_ops
+        self.page_ops = page_ops
 
     def set_default_primary_storage(self, storage: StorageRef):
         """set default primary storage"""
@@ -944,6 +947,9 @@ class OrgOps:
         crawl_page_count = 0
         upload_page_count = 0
 
+        crawl_ids = []
+        upload_ids = []
+
         async for item_data in self.crawls_db.find({"oid": org.id}):
             item = BaseCrawl.from_dict(item_data)
             if item.state not in SUCCESSFUL_STATES:
@@ -952,11 +958,21 @@ class OrgOps:
             if item.type == "crawl":
                 crawl_count += 1
                 crawl_page_count += item.pageCount or 0
+                crawl_ids.append(item.id)
             if item.type == "upload":
                 upload_count += 1
                 upload_page_count += item.pageCount or 0
+                upload_ids.append(item.id)
             if item.pageCount:
                 page_count += item.pageCount
+
+        all_archived_item_ids = crawl_ids + upload_ids
+
+        unique_page_count = await self.page_ops.get_unique_page_count(
+            all_archived_item_ids
+        )
+        crawl_unique_page_count = await self.page_ops.get_unique_page_count(crawl_ids)
+        upload_unique_page_count = await self.page_ops.get_unique_page_count(upload_ids)
 
         profile_count = await self.profiles_db.count_documents({"oid": org.id})
         workflows_running_count = await self.crawls_db.count_documents(
@@ -982,6 +998,9 @@ class OrgOps:
             "pageCount": page_count,
             "crawlPageCount": crawl_page_count,
             "uploadPageCount": upload_page_count,
+            "uniquePageCount": unique_page_count,
+            "crawlUniquePageCount": crawl_unique_page_count,
+            "uploadUniquePageCount": upload_unique_page_count,
             "profileCount": profile_count,
             "workflowsRunningCount": workflows_running_count,
             "maxConcurrentCrawls": max_concurrent_crawls,
@@ -1311,11 +1330,15 @@ class OrgOps:
             await self.pages_db.insert_one(PageWithAllQA.from_dict(page).to_dict())
 
         # collections
-        for collection in org_data.get("collections", []):
-            collection = json_stream.to_standard_types(collection)
-            if not collection.get("slug"):
-                collection["slug"] = slug_from_name(collection["name"])
-            await self.colls_db.insert_one(Collection.from_dict(collection).to_dict())
+        for coll_raw in org_data.get("collections", []):
+            coll_raw = json_stream.to_standard_types(coll_raw)
+
+            if not coll_raw.get("slug"):
+                coll_raw["slug"] = slug_from_name(coll_raw["name"])
+
+            collection = Collection.from_dict(coll_raw)
+            await self.colls_db.insert_one(collection.to_dict())
+            await self.coll_ops.update_collection_counts_and_tags(collection.id)
 
     async def delete_org_and_data(
         self, org: Organization, user_manager: UserManager
