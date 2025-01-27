@@ -13,6 +13,7 @@ import {
   DEFAULT_THUMBNAIL_VARIANT,
   Thumbnail,
 } from "../collection-thumbnail";
+import { type SelectSnapshotDetail } from "../select-collection-start-page";
 
 import type { PublicCollection } from "@/types/collection";
 
@@ -67,7 +68,19 @@ export default function renderGeneral(this: CollectionEdit) {
         </sl-tooltip>
       </div>
       ${renderThumbnails.bind(this)()}
-    </div>`;
+    </div>
+    <btrix-select-collection-start-page
+      .collection=${this.collection}
+      .collectionId=${this.collectionId || this.collection.id}
+      @btrix-select=${async (e: CustomEvent<SelectSnapshotDetail>) => {
+        this.selectedSnapshot = e.detail.item;
+        this.dispatchEvent(
+          new CustomEvent("btrix-change", {
+            bubbles: true,
+          }),
+        );
+      }}
+    ></btrix-select-collection-start-page>`;
 }
 
 function renderThumbnails(this: CollectionEdit) {
@@ -86,10 +99,22 @@ function renderThumbnails(this: CollectionEdit) {
   }
 
   const thumbnail = (
-    thumbnail: Thumbnail | NonNullable<PublicCollection["thumbnail"]>,
+    thumbnail?: Thumbnail | NonNullable<PublicCollection["thumbnail"]>,
   ) => {
     let name: Thumbnail | null = null;
     let path = "";
+
+    if (!thumbnail)
+      return html` <sl-tooltip content=${msg("Select a page thumbnail")}
+        ><button
+          class="row-start-2 flex aspect-video items-center justify-center overflow-hidden rounded bg-neutral-50 ring-1 ring-stone-600/10 transition-all hover:ring-2 hover:ring-blue-300"
+          disabled
+        >
+          <sl-icon
+            class="size-10 stroke-black/50 text-white drop-shadow-md [paint-order:stroke]"
+            name="plus-lg"
+          ></sl-icon></button
+      ></sl-tooltip>`;
 
     if (Object.values(Thumbnail).some((t) => t === thumbnail)) {
       name = thumbnail as Thumbnail;
@@ -110,7 +135,7 @@ function renderThumbnails(this: CollectionEdit) {
         <button
           class="${isSelected
             ? "ring-blue-300 ring-2"
-            : "ring-stone-600/10 ring-1"} aspect-video flex-1 overflow-hidden rounded transition-all hover:ring-2 hover:ring-blue-300"
+            : "ring-stone-600/10 ring-1"} row-start-2 aspect-video flex-1 overflow-hidden rounded transition-all hover:ring-2 hover:ring-blue-300"
           @click=${() => {
             this.defaultThumbnailName = name;
             this.dispatchEvent(
@@ -137,8 +162,18 @@ function renderThumbnails(this: CollectionEdit) {
   };
 
   return html`
-    <div class="flex gap-3">
-      ${when(this.collection?.thumbnail, (t) => thumbnail(t))}
+    <div class="mt-3 grid grid-cols-5 gap-3">
+      <div class="row-start-1 text-xs text-neutral-500">
+        ${msg("Page Thumbnail")}
+      </div>
+      ${when(
+        this.collection?.thumbnail,
+        (t) => thumbnail(t),
+        () => thumbnail(),
+      )}
+      <div class="row-start-1 text-xs text-neutral-600">
+        ${msg("Placeholder")}
+      </div>
       ${thumbnail(Thumbnail.Cyan)} ${thumbnail(Thumbnail.Green)}
       ${thumbnail(Thumbnail.Yellow)} ${thumbnail(Thumbnail.Orange)}
     </div>

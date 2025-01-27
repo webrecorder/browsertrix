@@ -12,6 +12,7 @@ import {
 import type { SelectSnapshotDetail } from "../select-collection-start-page";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import { type Collection } from "@/types/collection";
 
 const OPTIONS: Record<
   HomeView,
@@ -29,11 +30,11 @@ const OPTIONS: Record<
   },
 };
 
-@customElement("btrix-collection-homepage-settings")
+@customElement("btrix-collection-thumbnail-select")
 @localized()
-export class CollectionHomepageSettings extends BtrixElement {
-  @property({ type: String })
-  collectionId?: string;
+export class CollectionThumbnailSelect extends BtrixElement {
+  @property({ type: Object })
+  collection?: Collection;
 
   @property({ type: String })
   homeUrl?: string | null = null;
@@ -49,8 +50,6 @@ export class CollectionHomepageSettings extends BtrixElement {
 
   @state()
   homeView = HomeView.Pages;
-
-  useThumbnail = true;
 
   @state()
   selectedSnapshot?: SelectSnapshotDetail["item"];
@@ -88,11 +87,11 @@ export class CollectionHomepageSettings extends BtrixElement {
           }
         : null);
 
-    const replaySource = `/api/orgs/${this.orgId}/collections/${this.collectionId}/replay.json`;
+    const replaySource = `/api/orgs/${this.orgId}/collections/${this.collection!.id}/replay.json`;
     // TODO Get query from replay-web-page embed
     const query = queryString.stringify({
       source: replaySource,
-      customColl: this.collectionId,
+      customColl: this.collection!.id,
       embed: "default",
       noCache: 1,
       noSandbox: 1,
@@ -107,7 +106,7 @@ export class CollectionHomepageSettings extends BtrixElement {
         <btrix-collection-snapshot-preview
           class="contents"
           id="thumbnailPreview"
-          collectionId=${this.collectionId || ""}
+          collectionId=${this.collection!.id || ""}
           view=${this.homeView}
           replaySrc=${`/replay/?${query}#view=pages`}
           .snapshot=${snapshot}
@@ -176,21 +175,7 @@ export class CollectionHomepageSettings extends BtrixElement {
         this.homeView === HomeView.URL,
         () => html`
           <sl-divider></sl-divider>
-          <section>
-            <btrix-select-collection-start-page
-              .collectionId=${this.collectionId}
-              .homeUrl=${this.homeUrl}
-              .homeTs=${this.homeTs}
-              @btrix-select=${async (e: CustomEvent<SelectSnapshotDetail>) => {
-                this.selectedSnapshot = e.detail.item;
-                this.dispatchEvent(
-                  new CustomEvent("btrix-change", {
-                    bubbles: true,
-                  }),
-                );
-              }}
-            ></btrix-select-collection-start-page>
-          </section>
+          <section></section>
         `,
       )}
     `;

@@ -16,6 +16,10 @@ import renderGeneral from "./edit-dialog/general-section";
 import checkChanged from "./edit-dialog/helpers/check-changed";
 import submitTask from "./edit-dialog/helpers/submit-task";
 import { type CollectionShareSettings } from "./edit-dialog/sharing-section";
+import {
+  type SelectSnapshotDetail,
+  type SnapshotItem,
+} from "./select-collection-start-page";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
@@ -86,6 +90,9 @@ export class CollectionEdit extends BtrixElement {
   defaultThumbnailName: `${Thumbnail}` | null = this.collection
     ?.defaultThumbnailName as `${Thumbnail}` | null;
 
+  @state()
+  selectedSnapshot: SnapshotItem | null = null;
+
   @query("btrix-dialog")
   readonly dialog?: Dialog;
 
@@ -102,6 +109,11 @@ export class CollectionEdit extends BtrixElement {
     if (changedProperties.has("collectionId") && !this.collectionId) {
       this.onReset();
       this.collection = undefined;
+    }
+    if (changedProperties.has("collection")) {
+      this.defaultThumbnailName = this.collection?.defaultThumbnailName as
+        | `${Thumbnail}`
+        | null;
     }
   }
 
@@ -196,7 +208,7 @@ export class CollectionEdit extends BtrixElement {
                 >
                   ${this.renderTab({
                     panel: "general",
-                    icon: "info-lg",
+                    icon: "info-square",
                     string: msg("About"),
                   })}
                   ${this.renderTab({
