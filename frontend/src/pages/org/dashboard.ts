@@ -330,7 +330,7 @@ export class Dashboard extends BtrixElement {
                               }}
                             >
                               <sl-icon name="copy" slot="prefix"></sl-icon>
-                              ${msg("Copy Link to Gallery")}
+                              ${msg("Copy Link to Public Gallery")}
                             </sl-menu-item>
                           `
                         : this.appState.isAdmin

@@ -46,7 +46,7 @@ export class OrgSettingsVisibility extends BtrixElement {
         html`
           <div class="mb-2">
             <btrix-copy-field
-              label=${msg("Gallery URL")}
+              label=${msg("Public Gallery URL")}
               value=${`${orgBaseUrl}/${RouteNamespace.PublicOrgs}/${this.orgSlugState}`}
               .monostyle=${false}
             ></btrix-copy-field>
