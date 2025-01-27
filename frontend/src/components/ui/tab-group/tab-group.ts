@@ -13,6 +13,7 @@ import { TailwindElement } from "@/classes/TailwindElement";
 import { tw } from "@/utils/tailwind";
 
 /**
+ * @fires btrix-tab-change
  * @example Usage:
  * ```ts
  * <btrix-tab-group>
@@ -28,6 +29,9 @@ export class TabGroup extends TailwindElement {
   /* Active panel name */
   @property({ type: String, reflect: false })
   active = "";
+
+  @property({ type: String })
+  overrideTabLayout?: string;
 
   /* Nav placement */
   @property({ type: String })
@@ -70,10 +74,12 @@ export class TabGroup extends TailwindElement {
       >
         <div
           class=${clsx(
-            tw`flex flex-1 flex-col gap-2`,
-            this.placement === "start"
-              ? tw`lg:sticky lg:top-2 lg:max-w-[16.5rem] lg:self-start`
-              : tw`lg:flex-row`,
+            this.overrideTabLayout || [
+              tw`flex flex-1 flex-col gap-2`,
+              this.placement === "start"
+                ? tw`lg:sticky lg:top-2 lg:max-w-[16.5rem] lg:self-start`
+                : tw`lg:flex-row`,
+            ],
           )}
           @keydown=${this.onKeyDown}
         >
@@ -155,5 +161,11 @@ export class TabGroup extends TailwindElement {
   private onSelectTab(e: CustomEvent<TabClickDetail>) {
     e.stopPropagation();
     this.active = e.detail.panel;
+    this.dispatchEvent(
+      new CustomEvent<string>("btrix-tab-change", {
+        detail: this.active,
+        bubbles: true,
+      }),
+    );
   }
 }

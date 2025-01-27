@@ -12,13 +12,14 @@ import type { Embed as ReplayWebPage } from "replaywebpage";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { MarkdownEditor } from "@/components/ui/markdown-editor";
 import type { PageChangeEvent } from "@/components/ui/pagination";
+import type { EditDialogTab } from "@/features/collections/collection-edit-dialog";
 import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
 import type { ShareCollection } from "@/features/collections/share-collection";
 import {
   metadataColumn,
   metadataItemWithCollection,
 } from "@/layouts/collections/metadataColumn";
-import { pageHeader, pageNav, type Breadcrumb } from "@/layouts/pageHeader";
+import { pageNav, pageTitle, type Breadcrumb } from "@/layouts/pageHeader";
 import type {
   APIPaginatedList,
   APIPaginationQuery,
@@ -60,11 +61,10 @@ export class CollectionDetail extends BtrixElement {
   private archivedItems?: APIPaginatedList<ArchivedItem>;
 
   @state()
-  private openDialogName?:
-    | "delete"
-    | "editMetadata"
-    | "editItems"
-    | "editStartPage";
+  private openDialogName?: "delete" | "edit" | "editItems";
+
+  @state()
+  private editTab?: EditDialogTab;
 
   @state()
   private isEditingDescription = false;
@@ -135,17 +135,32 @@ export class CollectionDetail extends BtrixElement {
   }
 
   render() {
-    return html` <div class="mb-7">${this.renderBreadcrumbs()}</div>
-      ${pageHeader({
-        title: this.collection?.name,
-        border: false,
-        prefix: this.renderAccessIcon(),
-        secondary: this.collection?.caption
-          ? html`<div class="text-pretty text-neutral-600">
-              ${this.collection.caption}
-            </div>`
-          : nothing,
-        actions: html`
+    return html`
+      <div class="mb-7">${this.renderBreadcrumbs()}</div>
+      <header class=${clsx(tw`mt-5 flex flex-col gap-3 lg:flex-row`)}>
+        <div
+          class="-mb-2 -ml-2 -mr-1 -mt-1 flex flex-none flex-col gap-2 self-start rounded-lg pb-2 pl-2 pr-1 pt-1 transition-colors has-[sl-icon-button:hover]:bg-primary-50"
+        >
+          <div class="flex flex-wrap items-center gap-2.5">
+            ${this.renderAccessIcon()}${pageTitle(this.collection?.name)}
+            ${this.collection &&
+            html`<sl-icon-button
+              name="pencil"
+              aria-label=${msg("Edit Collection")}
+              @click=${async () => {
+                this.openDialogName = "edit";
+                this.editTab = "about";
+              }}
+            ></sl-icon-button>`}
+          </div>
+          ${this.collection?.caption
+            ? html`<div class="text-pretty text-neutral-600">
+                ${this.collection.caption}
+              </div>`
+            : nothing}
+        </div>
+
+        <div class="ml-auto flex flex-shrink-0 items-center gap-2">
           <btrix-share-collection
             orgSlug=${this.orgSlugState || ""}
             collectionId=${this.collectionId}
@@ -156,8 +171,8 @@ export class CollectionDetail extends BtrixElement {
             }}
           ></btrix-share-collection>
           ${when(this.isCrawler, this.renderActions)}
-        `,
-      })}
+        </div>
+      </header>
 
       <div class="mt-3 rounded-lg border px-4 py-2">
         ${this.renderInfoBar()}
@@ -177,7 +192,10 @@ export class CollectionDetail extends BtrixElement {
                 >
                   <sl-button
                     size="small"
-                    @click=${() => (this.openDialogName = "editStartPage")}
+                    @click=${() => {
+                      this.openDialogName = "edit";
+                      this.editTab = "homepage";
+                    }}
                     ?disabled=${!this.collection?.crawlCount ||
                     !this.isRwpLoaded}
                   >
@@ -255,37 +273,25 @@ export class CollectionDetail extends BtrixElement {
       >
       </btrix-collection-items-dialog>
 
-      <btrix-collection-replay-dialog
-        ?open=${this.openDialogName === "editStartPage"}
+      <btrix-collection-edit-dialog
+        .collection=${this.collection}
+        .tab=${this.editTab ?? "about"}
+        ?open=${this.openDialogName === "edit"}
+        @sl-hide=${() => (this.openDialogName = undefined)}
+        @btrix-collection-saved=${() => {
+          this.refreshReplay();
+          // TODO maybe we can return the updated collection from the update endpoint, and avoid an extra fetch?
+          void this.fetchCollection();
+        }}
         @btrix-change=${() => {
           // Don't do full refresh of rwp so that rwp-url-change fires
           this.isRwpLoaded = false;
 
           void this.fetchCollection();
         }}
-        @sl-hide=${async () => (this.openDialogName = undefined)}
-        collectionId=${this.collectionId}
-        .homeUrl=${this.collection?.homeUrl}
-        .homePageId=${this.collection?.homeUrlPageId}
-        .homeTs=${this.collection?.homeUrlTs}
         ?replayLoaded=${this.isRwpLoaded}
-      ></btrix-collection-replay-dialog>
-
-      ${when(
-        this.collection,
-        () => html`
-          <btrix-collection-metadata-dialog
-            .collection=${this.collection!}
-            ?open=${this.openDialogName === "editMetadata"}
-            @sl-hide=${() => (this.openDialogName = undefined)}
-            @btrix-collection-saved=${() => {
-              this.refreshReplay();
-              void this.fetchCollection();
-            }}
-          >
-          </btrix-collection-metadata-dialog>
-        `,
-      )}`;
+      ></btrix-collection-edit-dialog>
+    `;
   }
 
   private renderAccessIcon() {
@@ -392,14 +398,26 @@ export class CollectionDetail extends BtrixElement {
     const authToken = this.authState?.headers.Authorization.split(" ")[1];
 
     return html`
+      <sl-button-group>
+        <sl-button
+          variant="primary"
+          size="small"
+          @click=${() => {
+            this.openDialogName = "edit";
+          }}
+        >
+          <sl-icon name="pencil" slot="prefix"></sl-icon>
+          ${msg("Edit Collection")}
+        </sl-button>
+      </sl-button-group>
       <sl-dropdown distance="4">
         <sl-button slot="trigger" size="small" caret
           >${msg("Actions")}</sl-button
         >
         <sl-menu>
-          <sl-menu-item @click=${() => (this.openDialogName = "editMetadata")}>
+          <sl-menu-item @click=${() => (this.openDialogName = "edit")}>
             <sl-icon name="pencil" slot="prefix"></sl-icon>
-            ${msg("Edit Metadata")}
+            ${msg("Edit Collection")}
           </sl-menu-item>
           <sl-menu-item
             @click=${async () => {
@@ -411,7 +429,8 @@ export class CollectionDetail extends BtrixElement {
                 await this.updateComplete;
               }
 
-              this.openDialogName = "editStartPage";
+              this.openDialogName = "edit";
+              this.editTab = "homepage";
             }}
             ?disabled=${!this.collection?.crawlCount}
           >

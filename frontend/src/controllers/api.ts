@@ -173,6 +173,7 @@ export class APIController implements ReactiveController {
   async upload(
     path: string,
     file: File,
+    abortSignal?: AbortSignal,
   ): Promise<{ id: string; added: boolean; storageQuotaReached: boolean }> {
     const auth = appState.auth;
 
@@ -185,6 +186,9 @@ export class APIController implements ReactiveController {
     }
 
     return new Promise((resolve, reject) => {
+      if (abortSignal?.aborted) {
+        reject(AbortReason.UserCancel);
+      }
       const xhr = new XMLHttpRequest();
 
       xhr.open("PUT", `/api/${path}`);
@@ -220,6 +224,11 @@ export class APIController implements ReactiveController {
       xhr.upload.addEventListener("progress", this.onUploadProgress);
 
       xhr.send(file);
+
+      abortSignal?.addEventListener("abort", () => {
+        xhr.abort();
+        reject(AbortReason.UserCancel);
+      });
 
       this.uploadRequest = xhr;
     });

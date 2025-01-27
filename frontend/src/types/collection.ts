@@ -45,3 +45,17 @@ export type Collection = z.infer<typeof collectionSchema>;
 export type CollectionSearchValues = {
   names: string[];
 };
+
+export const collectionUpdateSchema = z
+  .object({
+    slug: z.string(),
+    name: z.string(),
+    description: z.string(),
+    caption: z.string(),
+    access: z.string(),
+    defaultThumbnailName: z.string().nullable(),
+    allowPublicDownload: z.boolean(),
+  })
+  .partial();
+
+export type CollectionUpdate = z.infer<typeof collectionUpdateSchema>;

@@ -62,7 +62,8 @@ export class CollectionMetadataDialog extends BtrixElement {
   }
 
   render() {
-    return html` <btrix-dialog
+    console.log("awa awa awaawawawa");
+    return html`<btrix-dialog
       label=${this.collection
         ? msg("Edit Metadata")
         : msg("Create a New Collection")}
