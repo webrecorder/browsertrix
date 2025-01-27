@@ -22,6 +22,28 @@ export class OrgSettingsVisibility extends BtrixElement {
     const cols: Cols = [
       [
         html`
+          <label for="orgVisibility" class="form-label text-xs">
+            ${msg("Visibility")}
+          </label>
+          <div>
+            <sl-switch
+              id="orgVisibility"
+              name="enablePublicProfile"
+              size="small"
+              @sl-change=${this.onVisibilityChange}
+              ?checked=${this.org?.enablePublicProfile}
+              ?disabled=${!this.org}
+            >
+              ${msg("Allow anyone to view org")}
+            </sl-switch>
+          </div>
+        `,
+        msg(
+          "If enabled, anyone on the Internet will be able to view general org information and browse this org's public collections.",
+        ),
+      ],
+      [
+        html`
           <div class="mb-2">
             <btrix-copy-field
               label=${msg("Public Page URL")}
@@ -47,17 +69,7 @@ export class OrgSettingsVisibility extends BtrixElement {
       <h2 class="mb-2 mt-7 text-lg font-medium">${msg("Visibility")}</h2>
 
       <section class="rounded-lg border">
-        <sl-switch
-          .helpText=${msg(
-            "If enabled, anyone on the Internet will be able to view general org information and browse this org's public collections.",
-          )}
-          @sl-change=${this.onVisibilityChange}
-          ?checked=${this.org?.enablePublicProfile}
-          ?disabled=${!this.org}
-          class="mt-4 block px-5 pb-5 part-[label]:-order-1 part-[label]:me-2 part-[label]:ms-0 part-[base]:flex part-[form-control-help-text]:max-w-prose part-[label]:flex-grow"
-          >${msg("Allow anyone to view org")}</sl-switch
-        >
-        <div class="px-5 pb-5">${columns(cols)}</div>
+        <div class="p-5">${columns(cols)}</div>
       </section>
     `;
   }
