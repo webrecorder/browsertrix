@@ -23,7 +23,7 @@ export class OrgSettingsVisibility extends BtrixElement {
       [
         html`
           <label for="orgVisibility" class="form-label text-xs">
-            ${msg("Visibility")}
+            ${msg("Gallery Visibility")}
           </label>
           <div>
             <sl-switch
@@ -34,19 +34,19 @@ export class OrgSettingsVisibility extends BtrixElement {
               ?checked=${this.org?.enablePublicProfile}
               ?disabled=${!this.org}
             >
-              ${msg("Allow anyone to view org")}
+              ${msg("Enable gallery of public collections")}
             </sl-switch>
           </div>
         `,
         msg(
-          "If enabled, anyone on the Internet will be able to view general org information and browse this org's public collections.",
+          "If enabled, anyone on the Internet will be able to browse this org's public collections and view general org information.",
         ),
       ],
       [
         html`
           <div class="mb-2">
             <btrix-copy-field
-              label=${msg("Public Page URL")}
+              label=${msg("Gallery URL")}
               value=${`${orgBaseUrl}/${RouteNamespace.PublicOrgs}/${this.orgSlugState}`}
               .monostyle=${false}
             ></btrix-copy-field>
@@ -66,7 +66,9 @@ export class OrgSettingsVisibility extends BtrixElement {
     ];
 
     return html`
-      <h2 class="mb-2 mt-7 text-lg font-medium">${msg("Visibility")}</h2>
+      <h2 class="mb-2 mt-7 text-lg font-medium">
+        ${msg("Public Collections Gallery")}
+      </h2>
 
       <section class="rounded-lg border">
         <div class="p-5">${columns(cols)}</div>
@@ -107,7 +109,7 @@ export class OrgSettingsVisibility extends BtrixElement {
       );
 
       this.notify.toast({
-        message: msg("Updated org visibility."),
+        message: msg("Updated public collections gallery visibility."),
         variant: "success",
         icon: "check2-circle",
         id: UPDATED_STATUS_TOAST_ID,

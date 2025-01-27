@@ -2,6 +2,6 @@ import { msg } from "@lit/localize";
 
 export const alerts = {
   orgNotPublicWarning: msg(
-    "This org isn't visible to the public yet. To make the org and this collection public, update the org's visibility settings.",
+    "This doesn't have a public collections gallery enabled yet. To make this collection and basic org information public, update the org's gallery visibility setting.",
   ),
 };

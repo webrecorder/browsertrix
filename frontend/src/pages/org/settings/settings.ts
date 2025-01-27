@@ -358,8 +358,8 @@ export class OrgSettings extends BtrixElement {
               this.org,
               (org) =>
                 org.enablePublicProfile
-                  ? msg("View public org page")
-                  : msg("Preview how your org looks to the public"),
+                  ? msg("View as public")
+                  : msg("Preview how information appears to the public"),
               () => html` <sl-skeleton class="w-36"></sl-skeleton> `,
             )}
           </btrix-link>

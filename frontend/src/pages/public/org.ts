@@ -91,11 +91,13 @@ export class PublicOrg extends BtrixElement {
           <sl-alert variant="primary" open>
             <sl-icon slot="icon" name="eye-fill"></sl-icon>
             <strong class="font-semibold">
-              ${msg("This is a private preview of your org's public page")}
+              ${msg(
+                "This is a private preview of the public collections gallery",
+              )}
             </strong>
             <p>
               ${msg(
-                "Update your org's visibility settings to make this page visible to anyone on the internet.",
+                "Update your org's public collections gallery settings to make this page visible to anyone on the internet.",
               )}
               ${this.appState.isAdmin
                 ? html`
