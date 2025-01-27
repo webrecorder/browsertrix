@@ -4,17 +4,20 @@ Settings that apply to the entire organization are found in the **Settings** pag
 
 ## General
 
-### Name and URL
+### Name, URL, and other basic information
 
-Choose a display name for your org that's unique and memorable, like the name of your company, organization, or personal project. This name will be visible in the org's [public profile](#profile), if that page is enabled.
+Your org name appears throughout the web application and in email notifications. Choose a display name for your org that's unique and memorable, like the name of your company, organization, or personal project.
 
-The org URL is where you and other org members will go to view the dashboard, configure org settings, and manage all other org-related activities. Changing this URL will also update the URL of your org's public profile, if enabled.
+The org URL is where you and other org members will go to view the dashboard, configure org settings, and manage all other org-related activities. If your org has a [public collections gallery](#public-collections-gallery) enabled, changing this will also update the URL to the gallery.
 
-Org name and URLs are unique to each Browsertrix instance (for example, on `app.browsertrix.com`) and you may be prompted to change the org name or URL identifier if either are already in use by another org.
+Org name and URLs are unique to each Browsertrix instance (for example, on `app.browsertrix.com`) and you may be prompted to change the org name or URL if either are already in use by another org.
 
-### Profile
+??? info "What information will be visible to the public?"
+    All org information is private until you make the org visible. Once your org is made visible to the public, the org name, description, and website will appear on the org's public gallery page. You can preview how information appears to the public by clicking **View as public**.
 
-Enable and configure a public profile page for your org. Once enabled, anyone on the internet with a link to your org's profile page will be able to view public information like the org name, description, and public collections.
+### Public Collections Gallery
+
+Enable a homepage for your public collections to easily share all public collections in your org. Once enabled, anyone on the internet with a link to your org's public collections gallery will be able to browse public collections and view general information like the org name, description, and website.
 
 ## Billing
 

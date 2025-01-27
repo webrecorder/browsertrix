@@ -820,11 +820,11 @@ export class App extends BtrixElement {
         ></btrix-org>`;
       }
 
-      case "publicOrgProfile":
-        return html`<btrix-org-profile
+      case "publicOrg":
+        return html`<btrix-public-org
           class="w-full"
           orgSlug=${this.viewState.params.slug}
-        ></btrix-org-profile>`;
+        ></btrix-public-org>`;
 
       case "publicCollection": {
         const { collectionSlug, collectionTab } = this.viewState.params;

@@ -20,10 +20,11 @@ import type { APIUser } from "@/index";
 import { columns } from "@/layouts/columns";
 import { pageHeader } from "@/layouts/pageHeader";
 import { RouteNamespace } from "@/routes";
+import { alerts } from "@/strings/orgs/alerts";
 import type { APIPaginatedList } from "@/types/api";
 import { isApiError } from "@/utils/api";
 import { formValidator, maxLengthValidator } from "@/utils/form";
-import { AccessCode, isAdmin, isCrawler } from "@/utils/orgs";
+import { AccessCode, isAdmin, isCrawler, type OrgData } from "@/utils/orgs";
 import slugifyStrict from "@/utils/slugify";
 import { AppStateService } from "@/utils/state";
 import { tw } from "@/utils/tailwind";
@@ -31,7 +32,7 @@ import { formatAPIUser } from "@/utils/user";
 
 import "./components/billing";
 import "./components/crawling-defaults";
-import "./components/profile";
+import "./components/visibility";
 
 const styles = unsafeCSS(stylesheet);
 
@@ -55,6 +56,10 @@ export type OrgRemoveMemberEvent = CustomEvent<{
   member: Member;
 }>;
 
+export type UpdateOrgDetail = Partial<OrgData>;
+
+export const UPDATED_STATUS_TOAST_ID = "org-updated-status" as const;
+
 /**
  * Usage:
  * ```ts
@@ -64,6 +69,7 @@ export type OrgRemoveMemberEvent = CustomEvent<{
  * ></btrix-org-settings>
  * ```
  *
+ * @fires btrix-update-org
  * @fires org-user-role-change
  * @fires org-remove-member
  */
@@ -103,6 +109,7 @@ export class OrgSettings extends BtrixElement {
   }
 
   private readonly validateOrgNameMax = maxLengthValidator(40);
+  private readonly validateDescriptionMax = maxLengthValidator(150);
 
   async willUpdate(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("isAddingMember") && this.isAddingMember) {
@@ -171,7 +178,7 @@ export class OrgSettings extends BtrixElement {
         <btrix-tab-group-panel name="information">
           ${this.renderPanelHeader({ title: msg("General") })}
           ${this.renderInformation()}
-          <btrix-org-settings-profile></btrix-org-settings-profile>
+          <btrix-org-settings-visibility></btrix-org-settings-visibility>
           ${this.renderApi()}
         </btrix-tab-group-panel>
         <btrix-tab-group-panel name="members">
@@ -294,7 +301,7 @@ export class OrgSettings extends BtrixElement {
               html`
                 <sl-input
                   id="org-url"
-                  class="hide-required-content mb-2 part-[input]:pl-0"
+                  class="hide-required-content mb-2 part-[input]:pl-px"
                   name="orgSlug"
                   size="small"
                   label=${msg("Org URL")}
@@ -306,20 +313,56 @@ export class OrgSettings extends BtrixElement {
                   required
                   @sl-input=${this.handleSlugInput}
                 >
-                  <div slot="prefix" class="font-light text-neutral-400">
-                    ${window.location.hostname}${window.location.port
-                      ? `:${window.location.port}`
-                      : ""}/${RouteNamespace.PrivateOrgs}/
-                  </div>
+                  <div slot="prefix" class="font-light text-neutral-500">/</div>
                 </sl-input>
               `,
-              msg(
-                "Customize your org's Browsertrix URL. This will also apply to the URL to your org's public profile page, if you've enabled it.",
-              ),
+              msg("Customize your org's Browsertrix URL."),
+            ],
+            [
+              html`
+                <sl-textarea
+                  class="with-max-help-text"
+                  name="publicDescription"
+                  size="small"
+                  label=${msg("Description")}
+                  autocomplete="off"
+                  value=${this.org?.publicDescription || ""}
+                  minlength="2"
+                  rows="2"
+                  help-text=${this.validateDescriptionMax.helpText}
+                  @sl-input=${this.validateDescriptionMax.validate}
+                ></sl-textarea>
+              `,
+              msg("Write a short description to introduce your organization."),
+            ],
+            [
+              html`
+                <btrix-url-input
+                  class="mb-2"
+                  name="publicUrl"
+                  size="small"
+                  label=${msg("Website")}
+                  value=${this.org?.publicUrl || ""}
+                ></btrix-url-input>
+              `,
+              msg("Link to your organization's (or your personal) website."),
             ],
           ])}
         </div>
-        <footer class="flex justify-end border-t px-4 py-3">
+        <footer class="flex items-center justify-between border-t px-4 py-3">
+          <btrix-link
+            href=${`/${RouteNamespace.PublicOrgs}/${this.orgSlugState}`}
+            target="_blank"
+          >
+            ${when(
+              this.org,
+              (org) =>
+                org.enablePublicProfile
+                  ? msg("View as public")
+                  : msg("Preview how information appears to the public"),
+              () => html` <sl-skeleton class="w-36"></sl-skeleton> `,
+            )}
+          </btrix-link>
           <sl-button
             type="submit"
             size="small"
@@ -668,24 +711,81 @@ export class OrgSettings extends BtrixElement {
     e.preventDefault();
 
     const formEl = e.target as HTMLFormElement;
-    if (!(await this.checkFormValidity(formEl))) return;
+    if (!(await this.checkFormValidity(formEl)) || !this.org) return;
 
-    const { orgName } = serialize(formEl) as { orgName: string };
-
-    const params = {
-      name: orgName,
-      slug: this.orgSlugState!,
+    const { orgName, publicDescription, publicUrl } = serialize(formEl) as {
+      orgName: string;
+      publicDescription: string;
+      publicUrl: string;
     };
 
-    if (this.slugValue) {
-      params.slug = slugifyStrict(this.slugValue);
+    // TODO See if backend can combine into one endpoint
+    const requests: Promise<unknown>[] = [];
+
+    if (orgName !== this.org.name || this.slugValue) {
+      const params = {
+        name: orgName,
+        slug: this.orgSlugState!,
+      };
+
+      if (this.slugValue) {
+        params.slug = slugifyStrict(this.slugValue);
+      }
+
+      requests.push(this.renameOrg(params));
     }
 
-    this.isSavingOrgName = true;
+    if (
+      publicDescription !== (this.org.publicDescription ?? "") ||
+      publicUrl !== (this.org.publicUrl ?? "")
+    ) {
+      requests.push(
+        this.updateOrgProfile({
+          publicDescription: publicDescription || this.org.publicDescription,
+          publicUrl: publicUrl || this.org.publicUrl,
+        }),
+      );
+    }
 
-    await this.renameOrg(params);
+    if (requests.length) {
+      this.isSavingOrgName = true;
 
-    this.isSavingOrgName = false;
+      try {
+        await Promise.all(requests);
+
+        this.notify.toast({
+          message: alerts.settingsUpdateSuccess,
+          variant: "success",
+          icon: "check2-circle",
+          id: UPDATED_STATUS_TOAST_ID,
+        });
+      } catch (err) {
+        console.debug(err);
+
+        let message = alerts.settingsUpdateFailure;
+
+        if (isApiError(err)) {
+          if (err.details === "duplicate_org_name") {
+            message = msg("This org name is already taken, try another one.");
+          } else if (err.details === "duplicate_org_slug") {
+            message = msg("This org URL is already taken, try another one.");
+          } else if (err.details === "invalid_slug") {
+            message = msg(
+              "This org URL is invalid. Please use alphanumeric characters and dashes (-) only.",
+            );
+          }
+        }
+
+        this.notify.toast({
+          message,
+          variant: "danger",
+          icon: "exclamation-octagon",
+          id: UPDATED_STATUS_TOAST_ID,
+        });
+      }
+
+      this.isSavingOrgName = false;
+    }
   }
 
   private readonly selectUserRole = (user: User) => (e: Event) => {
@@ -777,52 +877,50 @@ export class OrgSettings extends BtrixElement {
   }
 
   private async renameOrg({ name, slug }: { name: string; slug: string }) {
-    try {
-      await this.api.fetch(`/orgs/${this.orgId}/rename`, {
+    await this.api.fetch(`/orgs/${this.orgId}/rename`, {
+      method: "POST",
+      body: JSON.stringify({ name, slug }),
+    });
+
+    const user = await this.getCurrentUser();
+
+    AppStateService.updateUser(formatAPIUser(user), slug);
+
+    this.navigate.to(`${this.navigate.orgBasePath}/settings`);
+  }
+
+  private async updateOrgProfile({
+    publicDescription,
+    publicUrl,
+  }: {
+    publicDescription: string | null;
+    publicUrl: string | null;
+  }) {
+    const data = await this.api.fetch<{ updated: boolean }>(
+      `/orgs/${this.orgId}/public-profile`,
+      {
         method: "POST",
-        body: JSON.stringify({ name, slug }),
-      });
+        body: JSON.stringify({
+          publicDescription,
+          publicUrl,
+        }),
+      },
+    );
 
-      const user = await this.getCurrentUser();
-
-      AppStateService.updateUser(formatAPIUser(user), slug);
-
-      this.navigate.to(`${this.navigate.orgBasePath}/settings`);
-
-      this.notify.toast({
-        message: msg("Org successfully updated."),
-        variant: "success",
-        icon: "check2-circle",
-        id: "org-update-status",
-      });
-    } catch (e) {
-      console.debug(e);
-
-      let message = msg(
-        "Sorry, couldn't rename organization at this time. Try again later from org settings.",
-      );
-
-      if (isApiError(e)) {
-        if (e.details === "duplicate_org_name") {
-          message = msg("This org name is already taken, try another one.");
-        } else if (e.details === "duplicate_org_slug") {
-          message = msg(
-            "This org URL identifier is already taken, try another one.",
-          );
-        } else if (e.details === "invalid_slug") {
-          message = msg(
-            "This org URL identifier is invalid. Please use alphanumeric characters and dashes (-) only.",
-          );
-        }
-      }
-
-      this.notify.toast({
-        message: message,
-        variant: "danger",
-        icon: "exclamation-octagon",
-        id: "org-update-status",
-      });
+    if (!data.updated) {
+      throw new Error("`data.updated` is not true");
     }
+
+    this.dispatchEvent(
+      new CustomEvent<UpdateOrgDetail>("btrix-update-org", {
+        detail: {
+          publicDescription,
+          publicUrl,
+        },
+        bubbles: true,
+        composed: true,
+      }),
+    );
   }
 
   private async getCurrentUser(): Promise<APIUser> {
