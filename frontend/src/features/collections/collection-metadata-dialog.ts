@@ -16,6 +16,7 @@ import { DEFAULT_THUMBNAIL } from "./collection-thumbnail";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
 import type { SelectCollectionAccess } from "@/features/collections/select-collection-access";
+import { alerts } from "@/strings/collections/alerts";
 import { CollectionAccess, type Collection } from "@/types/collection";
 import { isApiError } from "@/utils/api";
 import { maxLengthValidator } from "@/utils/form";
@@ -169,12 +170,10 @@ export class CollectionMetadataDialog extends BtrixElement {
             <btrix-alert variant="warning" class="mt-2">
               ${org.enablePublicProfile
                 ? msg(
-                    "This collection will be visible on the org public profile, even without archived items. You may want to set visibility to 'Unlisted' until archived items have been added.",
+                    "This collection will be visible in the org public collection gallery, even without archived items. You may want to set visibility to 'Unlisted' until archived items have been added.",
                   )
                 : html`
-                    ${msg(
-                      "This collection will be visible on the org profile page, which isn't public yet. To make the org profile and this collection visible to the public, update org profile settings.",
-                    )}
+                    ${alerts.orgNotPublicWarning}
                     <a
                       class="ml-auto flex items-center gap-1.5 font-medium underline hover:no-underline"
                       href=${`${this.navigate.orgBasePath}/settings`}

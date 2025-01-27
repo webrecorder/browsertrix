@@ -13,8 +13,8 @@ import type { OrgData, PublicOrgCollections } from "@/types/org";
 import { SortDirection } from "@/types/utils";
 
 @localized()
-@customElement("btrix-org-profile")
-export class OrgProfile extends BtrixElement {
+@customElement("btrix-public-org")
+export class PublicOrg extends BtrixElement {
   @property({ type: String })
   orgSlug?: string;
 
@@ -91,11 +91,13 @@ export class OrgProfile extends BtrixElement {
           <sl-alert variant="primary" open>
             <sl-icon slot="icon" name="eye-fill"></sl-icon>
             <strong class="font-semibold">
-              ${msg("This is a private preview of your org's profile page")}
+              ${msg(
+                "This is a private preview of the public collections gallery",
+              )}
             </strong>
             <p>
               ${msg(
-                "Update your org's profile settings to make this page visible to anyone on the internet.",
+                "Update your org's public collections gallery settings to make this page visible to anyone on the internet.",
               )}
               ${this.appState.isAdmin
                 ? html`
@@ -128,11 +130,11 @@ export class OrgProfile extends BtrixElement {
           actions: when(
             this.canEditOrg,
             () =>
-              html`<sl-tooltip content=${msg("Edit org profile")}>
+              html`<sl-tooltip content=${msg("Change org settings")}>
                 <sl-icon-button
                   href="${this.navigate.orgBasePath}/settings"
                   class="size-8 text-base"
-                  name="pencil"
+                  name="gear"
                   @click=${this.navigate.link}
                 ></sl-icon-button>
               </sl-tooltip>`,
