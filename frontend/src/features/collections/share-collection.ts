@@ -178,7 +178,7 @@ export class ShareCollection extends BtrixElement {
         @sl-after-hide=${() => {
           this.tabGroup?.show(Tab.Link);
         }}
-        class="[--body-spacing:0] [--width:40rem]"
+        class="[--width:40rem] [--body-spacing:0]"
       >
         <sl-tab-group>
           <sl-tab slot="nav" panel=${Tab.Link}
