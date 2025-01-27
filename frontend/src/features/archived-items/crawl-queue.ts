@@ -115,37 +115,37 @@ export class CrawlQueue extends BtrixElement {
     const getInputWidth = (v: number | string) =>
       `${Math.max(v.toString().length, 3) + 2}ch`;
 
+    const fromInput = html` <btrix-inline-input
+      class="mx-1 inline-block"
+      style="width: ${Math.max(offsetValue.toString().length, 2) + 2}ch"
+      value="1"
+      inputmode="numeric"
+      size="small"
+      autocomplete="off"
+      @sl-input=${(e: SlInputEvent) => {
+        const input = e.target as SlInput;
+
+        input.style.width = getInputWidth(input.value);
+      }}
+      @sl-change=${async (e: SlChangeEvent) => {
+        const input = e.target as SlInput;
+        const int = +input.value.replace(/\D/g, "");
+
+        await this.updateComplete;
+
+        const value = Math.max(1, Math.min(int, this.queue!.total - 1));
+
+        input.value = value.toString();
+        this.pageOffset = value - 1;
+      }}
+    ></btrix-inline-input>`;
+
+    const max = this.localize.number(countMax);
+    const total = this.localize.number(this.queue.total);
+
     return html`
       <div class="flex items-center text-neutral-500">
-        ${msg(html`
-          Queued URLs from
-          <btrix-inline-input
-            class="mx-1 inline-block"
-            style="width: ${Math.max(offsetValue.toString().length, 2) + 2}ch"
-            value="1"
-            inputmode="numeric"
-            size="small"
-            autocomplete="off"
-            @sl-input=${(e: SlInputEvent) => {
-              const input = e.target as SlInput;
-
-              input.style.width = getInputWidth(input.value);
-            }}
-            @sl-change=${async (e: SlChangeEvent) => {
-              const input = e.target as SlInput;
-              const int = +input.value.replace(/\D/g, "");
-
-              await this.updateComplete;
-
-              const value = Math.max(1, Math.min(int, this.queue!.total - 1));
-
-              input.value = value.toString();
-              this.pageOffset = value - 1;
-            }}
-          ></btrix-inline-input>
-          to ${this.localize.number(countMax)} of
-          ${this.localize.number(this.queue.total)}
-        `)}
+        ${msg(html`Queued URLs from ${fromInput} to ${max} of ${total}`)}
       </div>
     `;
   }

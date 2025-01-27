@@ -234,9 +234,9 @@ export class WorkflowListItem extends BtrixElement {
           ${this.safeRender((workflow) => {
             if (workflow.schedule) {
               return msg(
-                str`${humanizeSchedule(workflow.schedule, {
+                humanizeSchedule(workflow.schedule, {
                   length: "short",
-                })}`,
+                }),
               );
             }
             if (workflow.lastStartedByName) {
