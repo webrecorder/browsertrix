@@ -416,7 +416,7 @@ export class CollectionDetail extends BtrixElement {
       <sl-button
         size="small"
         variant="primary"
-        @click=${async () => {
+        @click=${() => {
           this.openDialogName = "edit";
           this.editTab = "general";
         }}
