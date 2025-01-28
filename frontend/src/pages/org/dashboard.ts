@@ -89,6 +89,42 @@ export class Dashboard extends BtrixElement {
     return html`
       ${pageHeader({
         title: this.userOrg?.name,
+        secondary: html`
+          ${when(
+            this.org?.publicDescription,
+            (publicDescription) => html`
+              <div class="text-pretty text-stone-600">${publicDescription}</div>
+            `,
+          )}
+          ${when(this.org?.publicUrl, (urlStr) => {
+            let url: URL;
+            try {
+              url = new URL(urlStr);
+            } catch {
+              return nothing;
+            }
+
+            return html`
+              <div
+                class="flex items-center gap-1.5 text-pretty text-neutral-700"
+              >
+                <sl-icon
+                  name="globe2"
+                  class="size-4 text-stone-400"
+                  label=${msg("Website")}
+                ></sl-icon>
+                <a
+                  class="font-medium leading-none text-stone-500 transition-colors hover:text-stone-600"
+                  href="${url.href}"
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                >
+                  ${url.href.split("//")[1].replace(/\/$/, "")}
+                </a>
+              </div>
+            `;
+          })}
+        `,
         actions: html`
           ${when(
             this.appState.isAdmin,
