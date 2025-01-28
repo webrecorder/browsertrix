@@ -3,14 +3,18 @@ import { Task } from "@lit/task";
 import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
+import queryString from "query-string";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { page, pageHeading } from "@/layouts/page";
+import type { APIPaginatedList, APISortQuery } from "@/types/api";
+import { CollectionAccess, type Collection } from "@/types/collection";
 import type { OrgData, PublicOrgCollections } from "@/types/org";
+import { SortDirection } from "@/types/utils";
 
 @localized()
-@customElement("btrix-org-profile")
-export class OrgProfile extends BtrixElement {
+@customElement("btrix-public-org")
+export class PublicOrg extends BtrixElement {
   @property({ type: String })
   orgSlug?: string;
 
@@ -87,11 +91,13 @@ export class OrgProfile extends BtrixElement {
           <sl-alert variant="primary" open>
             <sl-icon slot="icon" name="eye-fill"></sl-icon>
             <strong class="font-semibold">
-              ${msg("This is a private preview of your org's profile page")}
+              ${msg(
+                "This is a private preview of the public collections gallery",
+              )}
             </strong>
             <p>
               ${msg(
-                "Update your org's profile settings to make this page visible to anyone on the internet.",
+                "Update your org's public collections gallery settings to make this page visible to anyone on the internet.",
               )}
               ${this.appState.isAdmin
                 ? html`
@@ -124,11 +130,11 @@ export class OrgProfile extends BtrixElement {
           actions: when(
             this.canEditOrg,
             () =>
-              html`<sl-tooltip content=${msg("Edit org profile")}>
+              html`<sl-tooltip content=${msg("Change org settings")}>
                 <sl-icon-button
                   href="${this.navigate.orgBasePath}/settings"
                   class="size-8 text-base"
-                  name="pencil"
+                  name="gear"
                   @click=${this.navigate.link}
                 ></sl-icon-button>
               </sl-tooltip>`,
@@ -242,7 +248,13 @@ export class OrgProfile extends BtrixElement {
   }: {
     slug: string;
   }): Promise<PublicOrgCollections | void> {
-    const resp = await fetch(`/api/public/orgs/${slug}/collections`, {
+    const params: APISortQuery<Collection> = {
+      sortBy: "dateLatest",
+      sortDirection: SortDirection.Descending,
+    };
+    const query = queryString.stringify(params);
+
+    const resp = await fetch(`/api/public/orgs/${slug}/collections?${query}`, {
       headers: { "Content-Type": "application/json" },
     });
 
@@ -277,6 +289,9 @@ export class OrgProfile extends BtrixElement {
       }
 
       const org = await this.api.fetch<OrgData>(`/orgs/${userOrg.id}`);
+      const collections = await this.getUserPublicCollections({
+        orgId: this.orgId,
+      });
 
       return {
         org: {
@@ -285,10 +300,27 @@ export class OrgProfile extends BtrixElement {
           url: org.publicUrl || "",
           verified: false, // TODO
         },
-        collections: [], // TODO
+        collections,
       };
     } catch {
       return null;
     }
+  }
+
+  private async getUserPublicCollections({ orgId }: { orgId: string }) {
+    const params: APISortQuery<Collection> & {
+      access: CollectionAccess;
+    } = {
+      sortBy: "dateLatest",
+      sortDirection: SortDirection.Descending,
+      access: CollectionAccess.Public,
+    };
+    const query = queryString.stringify(params);
+
+    const data = await this.api.fetch<APIPaginatedList<Collection>>(
+      `/orgs/${orgId}/collections?${query}`,
+    );
+
+    return data.items;
   }
 }

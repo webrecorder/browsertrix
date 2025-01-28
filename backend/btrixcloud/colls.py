@@ -396,7 +396,7 @@ class CollectionOps:
         page = page - 1
         skip = page * page_size
 
-        match_query: dict[str, object] = {"oid": org.id}
+        match_query: Dict[str, Union[str, UUID, int, object]] = {"oid": org.id}
 
         if name:
             match_query["name"] = name
@@ -409,15 +409,33 @@ class CollectionOps:
         elif access:
             match_query["access"] = access
 
-        aggregate = [{"$match": match_query}]
+        aggregate: List[Dict[str, Union[str, UUID, int, object]]] = [
+            {"$match": match_query}
+        ]
 
         if sort_by:
-            if sort_by not in ("modified", "name", "description", "totalSize"):
+            if sort_by not in (
+                "created",
+                "modified",
+                "dateLatest",
+                "name",
+                "crawlCount",
+                "pageCount",
+                "totalSize",
+                "description",
+                "caption",
+            ):
                 raise HTTPException(status_code=400, detail="invalid_sort_by")
             if sort_direction not in (1, -1):
                 raise HTTPException(status_code=400, detail="invalid_sort_direction")
 
-            aggregate.extend([{"$sort": {sort_by: sort_direction}}])
+            sort_query = {sort_by: sort_direction}
+
+            # add secondary sort keys:
+            if sort_by == "dateLatest":
+                sort_query["dateEarliest"] = sort_direction
+
+            aggregate.extend([{"$sort": sort_query}])
 
         aggregate.extend(
             [
@@ -564,10 +582,13 @@ class CollectionOps:
 
     async def update_collection_counts_and_tags(self, collection_id: UUID):
         """Set current crawl info in config when crawl begins"""
+        # pylint: disable=too-many-locals
         crawl_count = 0
         page_count = 0
         total_size = 0
         tags = []
+
+        crawl_ids = []
 
         coll = await self.get_collection(collection_id)
         org = await self.orgs.get_org_by_id(coll.oid)
@@ -582,10 +603,10 @@ class CollectionOps:
                 total_size += file.size
 
             try:
-                _, crawl_pages = await self.page_ops.list_pages(
+                _, crawl_page_count = await self.page_ops.list_pages(
                     crawl.id, org, page_size=1_000_000
                 )
-                page_count += crawl_pages
+                page_count += crawl_page_count
             # pylint: disable=broad-exception-caught
             except Exception:
                 pass
@@ -593,7 +614,11 @@ class CollectionOps:
             if crawl.tags:
                 tags.extend(crawl.tags)
 
+            crawl_ids.append(crawl.id)
+
         sorted_tags = [tag for tag, count in Counter(tags).most_common()]
+
+        unique_page_count = await self.page_ops.get_unique_page_count(crawl_ids)
 
         await self.collections.find_one_and_update(
             {"_id": collection_id},
@@ -601,6 +626,7 @@ class CollectionOps:
                 "$set": {
                     "crawlCount": crawl_count,
                     "pageCount": page_count,
+                    "uniquePageCount": unique_page_count,
                     "totalSize": total_size,
                     "tags": sorted_tags,
                 }
@@ -618,6 +644,7 @@ class CollectionOps:
 
     async def update_collection_dates(self, coll_id: UUID):
         """Update collection earliest and latest dates from page timestamps"""
+        # pylint: disable=too-many-locals
         coll = await self.get_collection(coll_id)
         crawl_ids = await self.get_collection_crawl_ids(coll_id)
 

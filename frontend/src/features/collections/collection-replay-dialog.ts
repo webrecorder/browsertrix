@@ -14,6 +14,7 @@ import type { SelectSnapshotDetail } from "./select-collection-start-page";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
+import type { Collection } from "@/types/collection";
 
 /**
  * @fires btrix-change
@@ -40,14 +41,8 @@ export class CollectionStartPageDialog extends BtrixElement {
   @property({ type: String })
   collectionId?: string;
 
-  @property({ type: String })
-  homeUrl?: string | null = null;
-
-  @property({ type: String })
-  homePageId?: string | null = null;
-
-  @property({ type: String })
-  homeTs?: string | null = null;
+  @property({ type: Object })
+  collection?: Collection;
 
   @property({ type: Boolean })
   open = false;
@@ -77,8 +72,8 @@ export class CollectionStartPageDialog extends BtrixElement {
   private readonly thumbnailPreview?: CollectionSnapshotPreview | null;
 
   willUpdate(changedProperties: PropertyValues<this>) {
-    if (changedProperties.has("homeUrl")) {
-      this.homeView = this.homeUrl ? HomeView.URL : HomeView.Pages;
+    if (changedProperties.has("collection") && this.collection) {
+      this.homeView = this.collection.homeUrl ? HomeView.URL : HomeView.Pages;
     }
   }
 
@@ -92,7 +87,12 @@ export class CollectionStartPageDialog extends BtrixElement {
         class="[--width:60rem]"
         @sl-show=${() => (this.showContent = true)}
         @sl-after-hide=${() => {
-          this.homeView = this.homeUrl ? HomeView.URL : HomeView.Pages;
+          if (this.collection) {
+            this.homeView = this.collection.homeUrl
+              ? HomeView.URL
+              : HomeView.Pages;
+          }
+
           this.isSubmitting = false;
           this.selectedSnapshot = null;
           this.showContent = false;
@@ -142,11 +142,11 @@ export class CollectionStartPageDialog extends BtrixElement {
   private renderPreview() {
     const snapshot =
       this.selectedSnapshot ||
-      (this.homeUrl
+      (this.collection?.homeUrl
         ? {
-            url: this.homeUrl,
-            ts: this.homeTs,
-            pageId: this.homePageId,
+            url: this.collection.homeUrl,
+            ts: this.collection.homeUrlTs,
+            pageId: this.collection.homeUrlPageId,
             status: 200,
           }
         : null);
@@ -207,8 +207,8 @@ export class CollectionStartPageDialog extends BtrixElement {
 
             if (this.homeView === HomeView.Pages) {
               if (
-                !this.homePageId ||
-                this.homePageId !== this.selectedSnapshot?.pageId
+                !this.collection?.homeUrlPageId ||
+                this.collection.homeUrlPageId !== this.selectedSnapshot?.pageId
               ) {
                 // Reset unsaved selected snapshot
                 this.selectedSnapshot = null;
@@ -244,8 +244,7 @@ export class CollectionStartPageDialog extends BtrixElement {
             <section>
               <btrix-select-collection-start-page
                 .collectionId=${this.collectionId}
-                .homeUrl=${this.homeUrl}
-                .homeTs=${this.homeTs}
+                .collection=${this.collection}
                 @btrix-select=${async (
                   e: CustomEvent<SelectSnapshotDetail>,
                 ) => {
@@ -280,10 +279,10 @@ export class CollectionStartPageDialog extends BtrixElement {
     const { homeView, useThumbnail } = serialize(form);
 
     if (
-      (homeView === HomeView.Pages && !this.homePageId) ||
+      (homeView === HomeView.Pages && !this.collection?.homeUrlPageId) ||
       (homeView === HomeView.URL &&
         this.selectedSnapshot &&
-        this.homePageId === this.selectedSnapshot.pageId)
+        this.collection?.homeUrlPageId === this.selectedSnapshot.pageId)
     ) {
       // No changes to save
       this.open = false;
@@ -302,7 +301,7 @@ export class CollectionStartPageDialog extends BtrixElement {
         homeView === HomeView.URL &&
         useThumbnail === "on" &&
         this.selectedSnapshot &&
-        this.homePageId !== this.selectedSnapshot.pageId;
+        this.collection?.homeUrlPageId !== this.selectedSnapshot.pageId;
       // TODO get filename from rwp?
       const fileName = `page-thumbnail_${this.selectedSnapshot?.pageId}.jpeg`;
       let file: File | undefined;

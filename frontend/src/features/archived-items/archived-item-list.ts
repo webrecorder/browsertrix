@@ -252,7 +252,24 @@ export class ArchivedItemListItem extends BtrixElement {
         </btrix-table-cell>
         <btrix-table-cell class="tabular-nums">
           ${isUpload
-            ? notApplicable
+            ? html`<sl-tooltip
+                hoist
+                @click=${this.onTooltipClick}
+                content=${msg(
+                  str`${this.localize.number(
+                    this.item.pageCount ? +this.item.pageCount : 0,
+                  )}`,
+                )}
+              >
+                <div class="min-w-4">
+                  ${this.localize.number(
+                    this.item.pageCount ? +this.item.pageCount : 0,
+                    {
+                      notation: "compact",
+                    },
+                  )}
+                </div>
+              </sl-tooltip>`
             : html`<sl-tooltip
                 hoist
                 @click=${this.onTooltipClick}

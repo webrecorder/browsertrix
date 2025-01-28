@@ -274,6 +274,16 @@ def test_get_upload_pages(admin_auth_headers, default_org_id, upload_id):
     assert page.get("modified") is None
     assert page.get("approved") is None
 
+    # Check that pageCount and uniquePageCount stored on upload
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads/{upload_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["pageCount"] > 0
+    assert data["uniquePageCount"] > 0
+
 
 def test_replace_upload(
     admin_auth_headers, default_org_id, uploads_collection_id, upload_id

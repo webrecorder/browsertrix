@@ -1299,6 +1299,20 @@ https://archiveweb.page/images/${"logo.svg"}`}
         ),
         false,
       )}
+      ${inputCol(
+        html`<sl-checkbox
+          name="autoclickBehavior"
+          ?checked=${this.formState.autoclickBehavior}
+        >
+          ${msg("Autoclick behavior")}
+        </sl-checkbox>`,
+      )}
+      ${this.renderHelpTextCol(
+        msg(
+          `When enabled the browser will automatically click on links that don't navigate to other pages.`,
+        ),
+        false,
+      )}
       ${inputCol(html`
         <sl-input
           name="pageExtraDelaySeconds"
@@ -2151,16 +2165,27 @@ https://archiveweb.page/images/${"logo.svg"}`}
         lang: this.formState.lang || "",
         blockAds: this.formState.blockAds,
         exclude: trimArray(this.formState.exclusions),
-        behaviors: (this.formState.autoscrollBehavior
-          ? DEFAULT_BEHAVIORS
-          : DEFAULT_BEHAVIORS.slice(1)
-        ).join(","),
+        behaviors: this.setBehaviors(),
       },
       crawlerChannel: this.formState.crawlerChannel || "default",
       proxyId: this.formState.proxyId,
     };
 
     return config;
+  }
+
+  private setBehaviors(): string {
+    let behaviors = (
+      this.formState.autoscrollBehavior
+        ? DEFAULT_BEHAVIORS
+        : DEFAULT_BEHAVIORS.slice(1)
+    ).join(",");
+
+    if (this.formState.autoclickBehavior) {
+      behaviors += ",autoclick";
+    }
+
+    return behaviors;
   }
 
   private parseUrlListConfig(): Pick<

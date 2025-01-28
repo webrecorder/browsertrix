@@ -22,5 +22,7 @@ export type Range<F extends number, T extends number> = Exclude<
   Enumerate<F>
 >;
 
-/** 1 or -1, but will accept any number for easier typing where this is used **/
-export type SortDirection = -1 | 1 | (number & {});
+export enum SortDirection {
+  Descending = -1,
+  Ascending = 1,
+}

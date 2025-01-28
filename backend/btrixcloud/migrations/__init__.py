@@ -3,6 +3,7 @@ BaseMigration class to subclass in each migration module
 """
 
 import os
+import traceback
 from pymongo.errors import OperationFailure
 
 
@@ -73,6 +74,7 @@ class BaseMigration:
                 await self.set_db_version()
             except OperationFailure as err:
                 print(f"Error running migration {self.migration_version}: {err}")
+                traceback.print_exc()
                 return False
 
         else:
