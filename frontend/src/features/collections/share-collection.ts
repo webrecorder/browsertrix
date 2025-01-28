@@ -108,6 +108,79 @@ export class ShareCollection extends BtrixElement {
     }
 
     return html`
+      <div class="flex items-center gap-2">
+        <btrix-copy-button
+          .getValue=${() => this.shareLink}
+          content=${msg("Copy Link")}
+          @click=${() => {
+            void this.clipboardController.copy(this.shareLink);
+
+            if (this.collection?.access === CollectionAccess.Public) {
+              track(AnalyticsTrackEvent.CopyShareCollectionLink, {
+                org_slug: this.orgSlug,
+                collection_slug: this.collection.slug,
+                logged_in: !!this.authState,
+              });
+            }
+          }}
+        ></btrix-copy-button>
+        <sl-tooltip content=${msg("View Embed Code")}>
+          <sl-icon-button
+            class="text-base"
+            name="code-slash"
+            @click=${() => {
+              this.tabGroup?.show(Tab.Embed);
+              this.showDialog = true;
+            }}
+          >
+          </sl-icon-button>
+        </sl-tooltip>
+        ${when(this.orgSlug && this.collection, (collection) =>
+          collection.access === CollectionAccess.Public &&
+          collection.allowPublicDownload
+            ? html`
+                <sl-tooltip
+                  content=${msg("Download Collection: ") +
+                  this.localize.bytes(collection.totalSize || 0)}
+                >
+                  <sl-icon-button
+                    class="text-base"
+                    name="cloud-download"
+                    href=${`/api/public/orgs/${this.orgSlug}/collections/${this.collectionId}/download`}
+                    ?disabled=${!this.collection?.totalSize}
+                    @click=${() => {
+                      track(AnalyticsTrackEvent.DownloadPublicCollection, {
+                        org_slug: this.orgSlug,
+                        collection_slug: this.collection?.slug,
+                      });
+                    }}
+                  >
+                  </sl-icon-button>
+                </sl-tooltip>
+              `
+            : nothing,
+        )}
+        ${this.collection?.access === CollectionAccess.Unlisted
+          ? html`
+              <sl-icon
+                slot="prefix"
+                name=${SelectCollectionAccess.Options.unlisted.icon}
+              ></sl-icon>
+              ${msg("Visit Unlisted Page")}
+            `
+          : html`
+              <sl-tooltip content=${msg("Visit Public Page")}>
+                <sl-icon-button
+                  class="text-base"
+                  name=${SelectCollectionAccess.Options.public.icon}
+                  href=${this.shareLink}
+                  ?disabled=${!this.shareLink}
+                >
+                </sl-icon-button>
+              </sl-tooltip>
+            `}
+      </div>
+
       <sl-button-group>
         <sl-tooltip
           content=${this.clipboardController.isCopied
@@ -247,7 +320,7 @@ export class ShareCollection extends BtrixElement {
         @sl-after-hide=${() => {
           this.tabGroup?.show(Tab.Link);
         }}
-        class="[--width:40rem] [--body-spacing:0]"
+        class="[--body-spacing:0] [--width:40rem]"
       >
         <sl-tab-group>
           <sl-tab slot="nav" panel=${Tab.Link}
