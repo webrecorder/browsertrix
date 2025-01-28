@@ -156,6 +156,7 @@ class CrawlOperator(BaseOperator):
             scale=spec.get("scale", 1),
             started=data.parent["metadata"]["creationTimestamp"],
             stopping=spec.get("stopping", False),
+            paused=spec.get("paused", False),
             timeout=spec.get("timeout") or 0,
             max_crawl_size=int(spec.get("maxCrawlSize") or 0),
             scheduled=spec.get("manual") != "1",
@@ -236,6 +237,8 @@ class CrawlOperator(BaseOperator):
                 "starting", status, crawl, allowed_from=["waiting_org_limit"]
             )
 
+        was_paused = status.state == "paused" and not crawl.paused
+
         if len(pods):
             for pod_name, pod in pods.items():
                 self.sync_resources(status, pod_name, pod, data.children)
@@ -260,6 +263,11 @@ class CrawlOperator(BaseOperator):
             )
 
         else:
+            if crawl.paused:
+                await self.set_state(
+                    "paused", status, crawl, allowed_from=RUNNING_AND_WAITING_STATES
+                )
+
             status.scale = 1
 
         children = self._load_redis(params, status, data.children)
@@ -275,9 +283,9 @@ class CrawlOperator(BaseOperator):
         params["storage_path"] = storage_path
         params["storage_secret"] = storage_secret
 
-        # only resolve if not already set
-        # not automatically updating image for existing crawls
-        if not status.crawlerImage:
+        # resolve if image is empty or crawl is paused
+        # not automatically updating image for running crawls
+        if not status.crawlerImage or was_paused:
             status.crawlerImage = self.crawl_config_ops.get_channel_crawler_image(
                 crawl.crawler_channel
             )
@@ -307,14 +315,18 @@ class CrawlOperator(BaseOperator):
         else:
             params["force_restart"] = False
 
-        children.extend(await self._load_crawl_configmap(crawl, data.children, params))
+        children.extend(
+            await self._load_crawl_configmap(crawl, was_paused, data.children, params)
+        )
 
         if crawl.qa_source_crawl_id:
             params["qa_source_crawl_id"] = crawl.qa_source_crawl_id
             children.extend(await self._load_qa_configmap(params, data.children))
 
         for i in range(0, status.scale):
-            children.extend(self._load_crawler(params, i, status, data.children))
+            children.extend(
+                self._load_crawler(params, i, status, data.children, crawl.paused)
+            )
 
         return {
             "status": status.dict(exclude_none=True),
@@ -365,11 +377,13 @@ class CrawlOperator(BaseOperator):
 
         return behaviors
 
-    async def _load_crawl_configmap(self, crawl: CrawlSpec, children, params):
+    async def _load_crawl_configmap(
+        self, crawl: CrawlSpec, was_paused: bool, children, params
+    ):
         name = f"crawl-config-{crawl.id}"
 
         configmap = children[CMAP].get(name)
-        if configmap:
+        if configmap and not was_paused:
             metadata = configmap["metadata"]
             configmap["metadata"] = {
                 "name": metadata["name"],
@@ -412,7 +426,8 @@ class CrawlOperator(BaseOperator):
         params["qa_source_replay_json"] = crawl_replay.json(include={"resources"})
         return self.load_from_yaml("qa_configmap.yaml", params)
 
-    def _load_crawler(self, params, i, status: CrawlStatus, children):
+    # pylint: disable=too-many-arguments
+    def _load_crawler(self, params, i, status: CrawlStatus, children, paused: bool):
         name = f"crawl-{params['id']}-{i}"
         has_pod = name in children[POD]
 
@@ -438,12 +453,12 @@ class CrawlOperator(BaseOperator):
             params["memory_limit"] = self.k8s.max_crawler_memory_size
         params["storage"] = pod_info.newStorage or params.get("crawler_storage")
         params["workers"] = params.get(worker_field) or 1
-        params["do_restart"] = False
+        params["init_crawler"] = not paused
         if has_pod:
             restart_reason = pod_info.should_restart_pod(params.get("force_restart"))
             if restart_reason:
                 print(f"Restarting {name}, reason: {restart_reason}")
-                params["do_restart"] = True
+                params["init_crawler"] = False
 
         return self.load_from_yaml("crawler.yaml", params)
 
@@ -833,10 +848,14 @@ class CrawlOperator(BaseOperator):
                 ):
                     # mark as waiting (if already running)
                     await self.set_state(
-                        "waiting_capacity",
+                        "waiting_capacity" if not crawl.paused else "paused",
                         status,
                         crawl,
-                        allowed_from=RUNNING_AND_STARTING_ONLY,
+                        allowed_from=(
+                            RUNNING_AND_STARTING_ONLY
+                            if not crawl.paused
+                            else RUNNING_AND_WAITING_STATES
+                        ),
                     )
 
                 if not crawler_running and redis:

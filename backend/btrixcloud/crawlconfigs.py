@@ -426,10 +426,11 @@ class CrawlConfigOps:
                 status_code=404, detail=f"Crawl Config '{cid}' not found"
             )
 
+        crawlconfig = CrawlConfig.from_dict(result)
+
         # update in crawl manager to change schedule
         if schedule_changed:
             try:
-                crawlconfig = CrawlConfig.from_dict(result)
                 await self.crawl_manager.update_scheduled_job(crawlconfig, str(user.id))
 
             except Exception as exc:
@@ -447,8 +448,14 @@ class CrawlConfigOps:
             "execMinutesQuotaReached": self.org_ops.exec_mins_quota_reached(org),
         }
         if run_now:
-            crawl_id = await self.run_now(cid, org, user)
-            ret["started"] = crawl_id
+            curr_crawl = await self.get_running_crawl(crawlconfig.id)
+            if curr_crawl and curr_crawl.state == "paused":
+                print("CURR", curr_crawl.state, curr_crawl.id)
+                await self.crawl_manager.update_paused_crawl(curr_crawl.id, crawlconfig)
+            else:
+                crawl_id = await self.run_now(cid, org, user)
+                ret["started"] = crawl_id
+
         return ret
 
     async def update_usernames(self, userid: UUID, updated_name: str) -> None:
@@ -670,6 +677,7 @@ class CrawlConfigOps:
         crawlconfig.lastCrawlState = crawl.state
         crawlconfig.lastCrawlSize = crawl.stats.size if crawl.stats else 0
         crawlconfig.lastCrawlStopping = crawl.stopping
+        crawlconfig.lastCrawlPausing = crawl.pausing
         crawlconfig.isCrawlRunning = True
 
     async def get_crawl_config_out(self, cid: UUID, org: Organization):

@@ -253,6 +253,18 @@ class CrawlManager(K8sAPI):
             qa_source=qa_source,
         )
 
+    async def update_paused_crawl(self, crawl_id: str, crawlconfig: CrawlConfig):
+        """update existing paused crawl"""
+        patch = dict(
+            crawlerChannel=crawlconfig.crawlerChannel,
+            scale=crawlconfig.scale,
+            timeout=crawlconfig.crawlTimeout,
+            maxCrawlSize=crawlconfig.maxCrawlSize,
+            proxy_id=crawlconfig.proxyId or DEFAULT_PROXY_ID,
+        )
+        print(patch)
+        return await self._patch_job(crawl_id, patch)
+
     async def remove_org_storage(self, storage: StorageRef, oid: str) -> bool:
         """Delete custom org storage secret"""
         storage_secret = storage.get_storage_secret_name(oid)
@@ -337,6 +349,10 @@ class CrawlManager(K8sAPI):
             return await self._patch_job(crawl_id, patch)
 
         return await self.delete_crawl_job(crawl_id)
+
+    async def pause_resume_crawl(self, crawl_id: str, pause: bool) -> dict:
+        """pause or unpause a crawl"""
+        return await self._patch_job(crawl_id, {"paused": int(pause)})
 
     async def delete_crawl_configs_for_org(self, org: str) -> None:
         """Delete all crawl configs for given org"""

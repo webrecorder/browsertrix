@@ -75,6 +75,7 @@ class CrawlSpec(BaseModel):
     started: str
     crawler_channel: str
     stopping: bool = False
+    paused: bool = False
     scheduled: bool = False
     timeout: int = 0
     max_crawl_size: int = 0

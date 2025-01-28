@@ -28,7 +28,7 @@ spec:
 # -------
 # CRAWLER
 # -------
-{% if not do_restart %}
+{% if init_crawler %}
 ---
 apiVersion: v1
 kind: Pod
