@@ -412,10 +412,6 @@ export class CollectionDetail extends BtrixElement {
             ${msg("Select Archived Items")}
           </sl-menu-item>
           <sl-divider></sl-divider>
-          <sl-menu-item @click=${() => this.shareCollection?.show()}>
-            <sl-icon slot="prefix" name="box-arrow-up"></sl-icon>
-            ${msg("Share Collection")}
-          </sl-menu-item>
           <btrix-menu-item-link
             href=${`/api/orgs/${this.orgId}/collections/${this.collectionId}/download?auth_bearer=${authToken}`}
             download
