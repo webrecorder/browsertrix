@@ -218,7 +218,7 @@ class UserOrgInfoOut(BaseModel):
 
 # ============================================================================
 TYPE_RUNNING_STATES = Literal[
-    "running", "pending-wait", "generate-wacz", "uploading-wacz"
+    "running", "pending-wait", "generate-wacz", "uploading-wacz", "paused"
 ]
 RUNNING_STATES = get_args(TYPE_RUNNING_STATES)
 
@@ -478,6 +478,7 @@ class CrawlConfigOut(CrawlConfigCore, CrawlConfigAdditional):
     id: UUID
 
     lastCrawlStopping: Optional[bool] = False
+    lastCrawlPausing: Optional[bool] = False
     profileName: Optional[str] = None
     firstSeed: Optional[str] = None
     seedCount: int = 0
@@ -863,6 +864,7 @@ class CrawlOut(BaseMongoModel):
     seedCount: Optional[int] = None
     profileName: Optional[str] = None
     stopping: Optional[bool] = False
+    pausing: Optional[bool] = False
     manual: bool = False
     cid_rev: Optional[int] = None
     scale: Scale = 1
@@ -1017,6 +1019,7 @@ class Crawl(BaseCrawl, CrawlConfigCore):
     manual: bool = False
 
     stopping: Optional[bool] = False
+    pausing: Optional[bool] = False
 
     qaCrawlExecSeconds: int = 0
 
