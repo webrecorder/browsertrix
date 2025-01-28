@@ -26,6 +26,9 @@ export class CrawlStatus extends TailwindElement {
   stopping = false;
 
   @property({ type: Boolean })
+  pausing = false;
+
+  @property({ type: Boolean })
   hoist = false;
 
   static styles = [
@@ -116,6 +119,38 @@ export class CrawlStatus extends TailwindElement {
           style="color: ${color}"
         ></sl-icon>`;
         label = msg("Stopping");
+        break;
+
+      case "pausing":
+        color = "var(--sl-color-violet-600)";
+        icon = html`<sl-icon
+          name="pause-btn"
+          class="animatePulse"
+          slot="prefix"
+          style="color: ${color}"
+        ></sl-icon>`;
+        label = msg("Pausing");
+        break;
+
+      case "unpausing":
+        color = "var(--sl-color-violet-600)";
+        icon = html`<sl-icon
+          name="play-btn"
+          class="animatePulse"
+          slot="prefix"
+          style="color: ${color}"
+        ></sl-icon>`;
+        label = msg("Resuming");
+        break;
+
+      case "paused":
+        color = "var(--sl-color-violet-600)";
+        icon = html`<sl-icon
+          name="pause-btn"
+          slot="prefix"
+          style="color: ${color}"
+        ></sl-icon>`;
+        label = msg("Paused");
         break;
 
       case "pending-wait":
@@ -258,9 +293,21 @@ export class CrawlStatus extends TailwindElement {
     return { icon, label, cssColor: color };
   }
 
+  filterState() {
+    if (this.stopping && this.state === "running") {
+      return "stopping";
+    }
+    if (this.pausing && this.state === "running") {
+      return "pausing";
+    }
+    if (!this.pausing && this.state === "paused") {
+      return "unpausing";
+    }
+    return this.state;
+  }
+
   render() {
-    const state =
-      this.stopping && this.state === "running" ? "stopping" : this.state;
+    const state = this.filterState();
     const { icon, label } = CrawlStatus.getContent(state, this.type);
     if (this.hideLabel) {
       return html`<div class="flex items-center">

@@ -386,6 +386,10 @@ class CrawlManager(K8sAPI):
 
         return await self.delete_crawl_job(crawl_id)
 
+    async def pause_resume_crawl(self, crawl_id: str, pause: bool) -> dict:
+        """pause or unpause a crawl"""
+        return await self._patch_job(crawl_id, {"paused": int(pause)})
+
     async def delete_crawl_configs_for_org(self, org: str) -> None:
         """Delete all crawl configs for given org"""
         await self._delete_crawl_configs(f"btrix.org={org}")

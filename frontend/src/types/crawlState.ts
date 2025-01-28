@@ -4,6 +4,7 @@ export const RUNNING_STATES = [
   "pending-wait",
   "generate-wacz",
   "uploading-wacz",
+  "paused",
 ] as const;
 
 // Match backend TYPE_WAITING_STATES in models.py
