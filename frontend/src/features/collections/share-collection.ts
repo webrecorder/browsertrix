@@ -161,7 +161,7 @@ export class ShareCollection extends BtrixElement {
               `
             : nothing,
         )}
-        ${this.collection?.access === CollectionAccess.Unlisted
+        ${this.collection.access === CollectionAccess.Unlisted
           ? html`
               <sl-icon
                 slot="prefix"
