@@ -325,19 +325,28 @@ export class OrgSettings extends BtrixElement {
                       <li>
                         ${msg("Settings")} ${msg("(current page)")}:
                         <span class="break-word text-blue-500">
-                          /${RouteNamespace.PrivateOrgs}/${slugValue}/settings
+                          /${RouteNamespace.PrivateOrgs}/<strong
+                            class="font-medium"
+                            >${slugValue}</strong
+                          >/settings
                         </span>
                       </li>
                       <li>
                         ${msg("Dashboard")}:
                         <span class="break-word text-blue-500">
-                          /${RouteNamespace.PrivateOrgs}/${slugValue}/dashboard
+                          /${RouteNamespace.PrivateOrgs}/<strong
+                            class="font-medium"
+                            >${slugValue}</strong
+                          >/dashboard
                         </span>
                       </li>
                       <li>
                         ${msg("Public gallery")}:
                         <span class="break-word text-blue-500">
-                          /${RouteNamespace.PublicOrgs}/${slugValue}/collections
+                          /${RouteNamespace.PublicOrgs}/<strong
+                            class="font-medium"
+                            >${slugValue}</strong
+                          >
                         </span>
                       </li>
                     </ul>
