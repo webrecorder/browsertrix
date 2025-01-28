@@ -416,9 +416,12 @@ export class CollectionDetail extends BtrixElement {
       <sl-button
         size="small"
         variant="primary"
-        @click=${() => (this.openDialogName = "editMetadata")}
+        @click=${async () => {
+          this.openDialogName = "edit";
+          this.editTab = "general";
+        }}
       >
-        <sl-icon slot="prefix" name="gear"></sl-icon>
+        <sl-icon slot="prefix" name="pencil"></sl-icon>
         ${msg("Edit Collection")}
       </sl-button>
       <sl-dropdown distance="4">
