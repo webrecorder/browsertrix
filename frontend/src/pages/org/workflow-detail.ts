@@ -570,6 +570,27 @@ export class WorkflowDetail extends BtrixElement {
           <sl-button-group>
             <sl-button
               size="small"
+              @click=${this.pauseUnpause}
+              ?disabled=${!this.lastCrawlId ||
+              this.isCancelingOrStoppingCrawl ||
+              this.workflow?.lastCrawlStopping ||
+              this.workflow?.lastCrawlPausing ===
+                (this.workflow?.lastCrawlState === "running")}
+            >
+              <sl-icon
+                name=${workflow.lastCrawlState !== "paused"
+                  ? "pause-btn"
+                  : "play-btn"}
+                slot="prefix"
+              ></sl-icon>
+              <span
+                >${workflow.lastCrawlState !== "paused"
+                  ? msg("Pause")
+                  : msg("Resume")}</span
+              >
+            </sl-button>
+            <sl-button
+              size="small"
               @click=${() => (this.openDialogName = "stop")}
               ?disabled=${!this.lastCrawlId ||
               this.isCancelingOrStoppingCrawl ||
@@ -709,6 +730,7 @@ export class WorkflowDetail extends BtrixElement {
             <btrix-crawl-status
               state=${workflow.lastCrawlState || msg("No Crawls Yet")}
               ?stopping=${workflow.lastCrawlStopping}
+              ?pausing=${workflow.lastCrawlPausing}
             ></btrix-crawl-status>
           `,
         )}
@@ -1650,6 +1672,33 @@ export class WorkflowDetail extends BtrixElement {
         variant: "danger",
         icon: "exclamation-octagon",
         id: "workflow-delete-status",
+      });
+    }
+  }
+
+  private async pauseUnpause() {
+    if (!this.lastCrawlId) return;
+
+    const pause = this.workflow?.lastCrawlState !== "paused";
+
+    try {
+      const data = await this.api.fetch<{ success: boolean }>(
+        `/orgs/${this.orgId}/crawls/${this.lastCrawlId}/${pause ? "pause" : "unpause"}`,
+        {
+          method: "POST",
+        },
+      );
+      if (data.success) {
+        void this.fetchWorkflow();
+      } else {
+        throw data;
+      }
+    } catch {
+      this.notify.toast({
+        message: msg("Something went wrong, couldn't pause or unpause crawl."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+        id: "crawl-pause-error",
       });
     }
   }

@@ -765,6 +765,7 @@ class CrawlConfigOps:
         crawlconfig.lastCrawlState = crawl.state
         crawlconfig.lastCrawlSize = crawl.stats.size if crawl.stats else 0
         crawlconfig.lastCrawlStopping = crawl.stopping
+        crawlconfig.lastCrawlPausing = crawl.pausing
         crawlconfig.isCrawlRunning = True
 
     async def get_crawl_config_out(self, cid: UUID, org: Organization):
