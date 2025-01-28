@@ -121,22 +121,9 @@ export class CollectionsGrid extends BtrixElement {
   private readonly renderActions = (collection: PublicCollection) => html`
     <div class="pointer-events-none absolute left-0 right-0 top-0 aspect-video">
       <div class="pointer-events-auto absolute bottom-2 right-2">
-        <btrix-overflow-dropdown raised>
-          <sl-menu>
-            <sl-menu-item
-              @click=${() => (this.collectionBeingEdited = collection.id)}
-            >
-              <sl-icon name="pencil" slot="prefix"></sl-icon>
-              ${msg("Edit Collection")}
-            </sl-menu-item>
-            <btrix-menu-item-link
-              href=${`/${RouteNamespace.PublicOrgs}/${this.orgSlugState}/collections/${collection.slug}`}
-            >
-              <sl-icon slot="prefix" name="globe2"></sl-icon>
-              ${msg("Visit Public Collections Gallery")}
-            </btrix-menu-item-link>
-          </sl-menu>
-        </btrix-overflow-dropdown>
+        <btrix-button raised>
+          <sl-icon label=${msg("Edit Collection")} name="pencil"></sl-icon>
+        </btrix-button>
       </div>
     </div>
   `;
