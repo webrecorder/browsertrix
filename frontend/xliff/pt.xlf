@@ -1597,18 +1597,6 @@
         <source>Are you sure you want to delete
                 <x id="0" equiv-text="&lt;strong&gt;${this.selectedCollection?.name}&lt;/strong&gt;"/>?</source>
       </trans-unit>
-      <trans-unit id="s777098c61f6b518a">
-        <source>Start building your Collection.</source>
-      </trans-unit>
-      <trans-unit id="s04200a50c7577767">
-        <source>No Collections Found</source>
-      </trans-unit>
-      <trans-unit id="s9f8154ea8167f3f7">
-        <source>Organize your crawls into a Collection to easily replay them together.</source>
-      </trans-unit>
-      <trans-unit id="s15aac264eaeac4fc">
-        <source>Your organization doesn't have any Collections, yet.</source>
-      </trans-unit>
       <trans-unit id="s7be481b712fcb089">
         <source>Search by Name</source>
       </trans-unit>
@@ -1623,9 +1611,6 @@
       </trans-unit>
       <trans-unit id="sa3242c7021e01280">
         <source>Row Actions</source>
-      </trans-unit>
-      <trans-unit id="sf0c64ac402e1e0b9">
-        <source>No Collections Yet.</source>
       </trans-unit>
       <trans-unit id="s5ac7d4f485d82e8c">
         <source>Shareable Collection</source>
@@ -3018,7 +3003,7 @@
       </trans-unit>
       <trans-unit id="saf63d34c8601dd41">
         <source>
-          <x id="0" equiv-text="${humanizeSchedule(workflow.schedule, {&#10;    length: &quot;short&quot;,&#10;})}"/>
+          <x id="0" equiv-text="${this.localize.number(this.item.pageCount ? +this.item.pageCount : 0)}"/>
         </source>
       </trans-unit>
       <trans-unit id="s136b21dec9a221bd">
@@ -3861,9 +3846,6 @@
       <trans-unit id="s66da7b7937e76a3a">
         <source>Start typing a URL...</source>
       </trans-unit>
-      <trans-unit id="sfedd97f6911305d1">
-        <source>No matching pages found.</source>
-      </trans-unit>
       <trans-unit id="s7bec6de4e84e7519">
         <source>ReplayWeb.Page default view</source>
       </trans-unit>
@@ -3872,9 +3854,6 @@
       </trans-unit>
       <trans-unit id="s5d948bb5f9f0a378">
         <source>Show a single URL snapshot</source>
-      </trans-unit>
-      <trans-unit id="s7cdd26a53c30f8c5">
-        <source>Configure Replay Home</source>
       </trans-unit>
       <trans-unit id="s417b90913e05bc17">
         <source>Preview</source>
@@ -3991,9 +3970,6 @@
       </trans-unit>
       <trans-unit id="s1cb226f223599f56">
         <source>Add items to select a home page</source>
-      </trans-unit>
-      <trans-unit id="s3879a0e50452a712">
-        <source>Configure Home</source>
       </trans-unit>
       <trans-unit id="s1f45d250722817c7">
         <source>Edit About Section</source>
@@ -4165,6 +4141,78 @@
       <trans-unit id="sfa251e3af0f9c14c">
         <source><x id="0" equiv-text="${dateEarliest}"/> to <x id="1" equiv-text="${dateLatest}"/></source>
         <note from="lit-localize">Date range formatted to show full month name and year</note>
+      </trans-unit>
+      <trans-unit id="s2428027aa3e49f16">
+        <source>Last Crawl</source>
+      </trans-unit>
+      <trans-unit id="sb9e424bd9e3e2723">
+        <source>No Subscription</source>
+      </trans-unit>
+      <trans-unit id="s7da138cc56abec6c">
+        <source>Active Subscription</source>
+      </trans-unit>
+      <trans-unit id="se3d7a30d5e45c393">
+        <source>Trial</source>
+      </trans-unit>
+      <trans-unit id="s5aff130b6d78c668">
+        <source>Trial Cancelled</source>
+      </trans-unit>
+      <trans-unit id="s2e515f3ca456f9c6">
+        <source>Trial Canceled</source>
+      </trans-unit>
+      <trans-unit id="s31e12850da47731e">
+        <source>Payment Failed</source>
+      </trans-unit>
+      <trans-unit id="s1ebb825e892a8359">
+        <source>Choose a snapshot</source>
+      </trans-unit>
+      <trans-unit id="s6e8c186600b4f8a6">
+        <source>Enter a page URL to choose snapshot</source>
+      </trans-unit>
+      <trans-unit id="s537d04835ef62b2b">
+        <source>Search for a page in this collection</source>
+      </trans-unit>
+      <trans-unit id="sb48ebdd9325e370b">
+        <source>Page exists in collection</source>
+      </trans-unit>
+      <trans-unit id="s485d151771b0a33c">
+        <source>Page not found in collection. Please check the URL and try again</source>
+      </trans-unit>
+      <trans-unit id="sd632247a75e16736">
+        <source>No matching page found.</source>
+      </trans-unit>
+      <trans-unit id="s6bea976384dcc959">
+        <source>Couldn't load preview. Try another snapshot</source>
+      </trans-unit>
+      <trans-unit id="s1b5466748e5d9733">
+        <source>Configure Replay View</source>
+      </trans-unit>
+      <trans-unit id="s8df0435252529c62">
+        <source>Choose a page snapshot</source>
+      </trans-unit>
+      <trans-unit id="s7239e04f3953266c">
+        <source>Configure View</source>
+      </trans-unit>
+      <trans-unit id="s9b649a5c57384213">
+        <source>Your org doesn’t have any collections yet.</source>
+      </trans-unit>
+      <trans-unit id="sa35d8dcb231a2c75">
+        <source>Collections let you easily organize, replay, and share multiple crawls.</source>
+      </trans-unit>
+      <trans-unit id="sd42ed7f1a573d096">
+        <source>Page Uploaded</source>
+      </trans-unit>
+      <trans-unit id="s8a3aa1db56f18c55">
+        <source>Pages Uploaded</source>
+      </trans-unit>
+      <trans-unit id="saff358234fee600c">
+        <source>Page Total</source>
+      </trans-unit>
+      <trans-unit id="s1fda6e1bbcd65195">
+        <source>Pages Total</source>
+      </trans-unit>
+      <trans-unit id="s2f8856b910d3ebf8">
+        <source>Copy Link to Profile</source>
       </trans-unit>
     </body>
   </file>

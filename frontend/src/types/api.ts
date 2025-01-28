@@ -30,7 +30,7 @@ export type APIPaginationQuery = {
   pageSize?: number;
 };
 
-export type APISortQuery = {
-  sortBy?: string;
+export type APISortQuery<T = Record<string, unknown>> = {
+  sortBy?: keyof T;
   sortDirection?: SortDirection;
 };

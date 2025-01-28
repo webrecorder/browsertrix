@@ -14,13 +14,21 @@ import type { MarkdownEditor } from "@/components/ui/markdown-editor";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
 import type { ShareCollection } from "@/features/collections/share-collection";
+import {
+  metadataColumn,
+  metadataItemWithCollection,
+} from "@/layouts/collections/metadataColumn";
 import { pageHeader, pageNav, type Breadcrumb } from "@/layouts/pageHeader";
 import type {
   APIPaginatedList,
   APIPaginationQuery,
   APISortQuery,
 } from "@/types/api";
-import { CollectionAccess, type Collection } from "@/types/collection";
+import {
+  CollectionAccess,
+  type Collection,
+  type PublicCollection,
+} from "@/types/collection";
 import type { ArchivedItem, Crawl, Upload } from "@/types/crawler";
 import type { CrawlState } from "@/types/crawlState";
 import { pluralOf } from "@/utils/pluralize";
@@ -43,7 +51,7 @@ export class CollectionDetail extends BtrixElement {
   collectionId!: string;
 
   @property({ type: String })
-  collectionTab: Tab = Tab.Replay;
+  collectionTab: Tab | null = Tab.Replay;
 
   @state()
   private collection?: Collection;
@@ -104,6 +112,9 @@ export class CollectionDetail extends BtrixElement {
     if (changedProperties.has("collectionId")) {
       void this.fetchCollection();
       void this.fetchArchivedItems({ page: 1 });
+    }
+    if (changedProperties.has("collectionTab") && this.collectionTab === null) {
+      this.collectionTab = Tab.Replay;
     }
   }
 
@@ -254,9 +265,7 @@ export class CollectionDetail extends BtrixElement {
         }}
         @sl-hide=${async () => (this.openDialogName = undefined)}
         collectionId=${this.collectionId}
-        .homeUrl=${this.collection?.homeUrl}
-        .homePageId=${this.collection?.homeUrlPageId}
-        .homeTs=${this.collection?.homeUrlTs}
+        .collection=${this.collection}
         ?replayLoaded=${this.isRwpLoaded}
       ></btrix-collection-replay-dialog>
 
@@ -472,11 +481,6 @@ export class CollectionDetail extends BtrixElement {
           (col) =>
             `${this.localize.number(col.crawlCount)} ${pluralOf("items", col.crawlCount)}`,
         )}
-        ${this.renderDetailItem(msg("Total Size"), (col) =>
-          this.localize.bytes(col.totalSize || 0, {
-            unitDisplay: "narrow",
-          }),
-        )}
         ${this.renderDetailItem(
           msg("Total Pages"),
           (col) =>
@@ -495,12 +499,13 @@ export class CollectionDetail extends BtrixElement {
                     year="numeric"
                     hour="numeric"
                     minute="numeric"
+                    time-zone-name="short"
                   ></btrix-format-date>`,
               )
             : nothing,
         )}
         ${this.renderDetailItem(
-          msg("Last Updated"),
+          msg("Last Modified"),
           (col) =>
             html`<btrix-format-date
               date=${col.modified}
@@ -509,6 +514,7 @@ export class CollectionDetail extends BtrixElement {
               year="numeric"
               hour="numeric"
               minute="numeric"
+              time-zone-name="short"
             ></btrix-format-date>`,
         )}
       </btrix-desc-list>
@@ -517,67 +523,58 @@ export class CollectionDetail extends BtrixElement {
 
   private renderDetailItem(
     label: string | TemplateResult,
-    renderContent: (collection: Collection) => TemplateResult | string,
+    renderContent: (collection: PublicCollection) => TemplateResult | string,
   ) {
-    return html`
-      <btrix-desc-list-item label=${label}>
-        ${when(
-          this.collection,
-          () => renderContent(this.collection!),
-          () => html`<sl-skeleton class="w-full"></sl-skeleton>`,
-        )}
-      </btrix-desc-list-item>
-    `;
+    return metadataItemWithCollection(this.collection)({
+      label,
+      render: renderContent,
+    });
   }
 
-  // TODO Consolidate with collection.ts
   private renderAbout() {
-    const dateRange = (collection: Collection) => {
-      if (!collection.dateEarliest || !collection.dateLatest) {
-        return msg("n/a");
-      }
-      const format: Intl.DateTimeFormatOptions = {
-        month: "long",
-        year: "numeric",
-      };
-      const dateEarliest = this.localize.date(collection.dateEarliest, format);
-      const dateLatest = this.localize.date(collection.dateLatest, format);
-
-      if (dateEarliest === dateLatest) return dateLatest;
-
-      return msg(str`${dateEarliest} to ${dateLatest}`, {
-        desc: "Date range formatted to show full month name and year",
-      });
-    };
-    const skeleton = html`<sl-skeleton class="w-24"></sl-skeleton>`;
-
-    const metadata = html`
-      <btrix-desc-list>
-        <btrix-desc-list-item label=${msg("Collection Period")}>
-          <span class="font-sans"
-            >${this.collection ? dateRange(this.collection) : skeleton}</span
-          >
-        </btrix-desc-list-item>
-      </btrix-desc-list>
-    `;
+    const metadata = metadataColumn(this.collection);
 
     return html`
       <div class="flex flex-1 flex-col gap-10 lg:flex-row">
         <section class="flex w-full max-w-4xl flex-col leading-relaxed">
-          <header class="mb-3 flex min-h-8 items-end justify-between">
-            <h2 class="text-base font-semibold leading-none">
-              ${msg("Description")}
-            </h2>
+          <header class="mb-2 flex min-h-8 items-center justify-between">
+            <div class="flex items-center gap-2">
+              <h2 class="text-base font-medium">
+                ${msg("About This Collection")}
+              </h2>
+              <sl-tooltip>
+                <div slot="content">
+                  <p class="mb-3">
+                    ${msg(
+                      html`Describe your collection in long-form rich text (e.g.
+                        <strong>bold</strong> and <em>italicized</em> text.)`,
+                    )}
+                  </p>
+                  <p>
+                    ${msg(
+                      html`If this collection is shareable, this will appear in
+                      the “About This Collection” section of the shared
+                      collection.`,
+                    )}
+                  </p>
+                </div>
+                <sl-icon
+                  name="info-circle"
+                  class="size-4 text-base text-neutral-500 [vertical-align:-.175em]"
+                ></sl-icon>
+              </sl-tooltip>
+            </div>
             ${when(
               this.collection?.description && !this.isEditingDescription,
               () => html`
-                <sl-button
-                  size="small"
-                  @click=${() => (this.isEditingDescription = true)}
-                >
-                  <sl-icon name="pencil" slot="prefix"></sl-icon>
-                  ${msg("Edit Description")}
-                </sl-button>
+                <sl-tooltip content=${msg("Edit description")}>
+                  <sl-icon-button
+                    class="text-base"
+                    name="pencil"
+                    @click=${() => (this.isEditingDescription = true)}
+                  >
+                  </sl-icon-button>
+                </sl-tooltip>
               `,
             )}
           </header>
@@ -602,7 +599,7 @@ export class CollectionDetail extends BtrixElement {
                           `
                         : html`
                             <div class="text-center text-neutral-500">
-                              <p class="mb-3">
+                              <p class="mb-3 max-w-prose">
                                 ${msg("No description provided.")}
                               </p>
                               <sl-button

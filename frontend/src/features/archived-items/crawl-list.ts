@@ -191,12 +191,13 @@ export class CrawlListItem extends BtrixElement {
         </btrix-table-cell>
         <btrix-table-cell>
           ${this.safeRender((crawl) => {
-            const pagesComplete = +(crawl.stats?.done || 0);
             const pagesFound = +(crawl.stats?.found || 0);
             if (crawl.finished) {
+              const pagesComplete = crawl.pageCount ? +crawl.pageCount : 0;
               return `${this.localize.number(pagesComplete, { notation: "compact" })} ${pluralOf("pages", pagesComplete)}`;
             }
 
+            const pagesComplete = +(crawl.stats?.done || 0);
             return `${this.localize.number(pagesComplete, { notation: "compact" })} / ${this.localize.number(pagesFound, { notation: "compact" })} ${pluralOf("pages", pagesFound)}`;
           })}
         </btrix-table-cell>

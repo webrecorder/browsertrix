@@ -233,11 +233,9 @@ export class WorkflowListItem extends BtrixElement {
         <div class="desc">
           ${this.safeRender((workflow) => {
             if (workflow.schedule) {
-              return msg(
-                str`${humanizeSchedule(workflow.schedule, {
-                  length: "short",
-                })}`,
-              );
+              return humanizeSchedule(workflow.schedule, {
+                length: "short",
+              });
             }
             if (workflow.lastStartedByName) {
               return msg(str`Manual run by ${workflow.lastStartedByName}`);

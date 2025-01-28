@@ -71,10 +71,9 @@ export class CollectionsGrid extends BtrixElement {
                 >
                   <btrix-collection-thumbnail
                     src=${ifDefined(
-                      collection.thumbnail?.path ||
-                        Object.entries(CollectionThumbnail.Variants).find(
-                          ([name]) => name === collection.defaultThumbnailName,
-                        )?.[1].path,
+                      Object.entries(CollectionThumbnail.Variants).find(
+                        ([name]) => name === collection.defaultThumbnailName,
+                      )?.[1].path || collection.thumbnail?.path,
                     )}
                   ></btrix-collection-thumbnail>
                   ${this.renderDateBadge(collection)}
@@ -112,7 +111,7 @@ export class CollectionsGrid extends BtrixElement {
               href=${`/${RouteNamespace.PublicOrgs}/${this.orgSlugState}/collections/${collection.slug}`}
             >
               <sl-icon slot="prefix" name="globe2"></sl-icon>
-              ${msg("Visit Public Page")}
+              ${msg("Visit Public Collections Gallery")}
             </btrix-menu-item-link>
           </sl-menu>
         </btrix-overflow-dropdown>

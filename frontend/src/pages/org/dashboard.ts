@@ -1,10 +1,11 @@
 import { localized, msg } from "@lit/localize";
 import { Task } from "@lit/task";
 import type { SlSelectEvent } from "@shoelace-style/shoelace";
-import { html, type PropertyValues, type TemplateResult } from "lit";
+import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
+import queryString from "query-string";
 
 import type { SelectNewDialogEvent } from ".";
 
@@ -13,8 +14,9 @@ import { ClipboardController } from "@/controllers/clipboard";
 import { pageHeading } from "@/layouts/page";
 import { pageHeader } from "@/layouts/pageHeader";
 import { RouteNamespace } from "@/routes";
-import type { PublicCollection } from "@/types/collection";
-import type { PublicOrgCollections } from "@/types/org";
+import type { APIPaginatedList, APISortQuery } from "@/types/api";
+import { CollectionAccess, type Collection } from "@/types/collection";
+import { SortDirection } from "@/types/utils";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 import { tw } from "@/utils/tailwind";
 
@@ -28,6 +30,8 @@ type Metrics = {
   crawlCount: number;
   uploadCount: number;
   pageCount: number;
+  crawlPageCount: number;
+  uploadPageCount: number;
   profileCount: number;
   workflowsRunningCount: number;
   maxConcurrentCrawls: number;
@@ -54,16 +58,13 @@ export class Dashboard extends BtrixElement {
   };
 
   private readonly publicCollections = new Task(this, {
-    task: async ([slug, metrics]) => {
-      if (!slug) throw new Error("slug required");
+    task: async ([orgId]) => {
+      if (!orgId) throw new Error("orgId required");
 
-      if (!metrics) return undefined;
-      if (!metrics.publicCollectionsCount) return [];
-
-      const collections = await this.fetchCollections({ slug });
+      const collections = await this.getPublicCollections({ orgId });
       return collections;
     },
-    args: () => [this.orgSlugState, this.metrics] as const,
+    args: () => [this.orgId] as const,
   });
 
   willUpdate(changedProperties: PropertyValues<this> & Map<string, unknown>) {
@@ -236,10 +237,31 @@ export class Dashboard extends BtrixElement {
                   pluralLabel: msg("Crawl Workflows Waiting"),
                   iconProps: { name: "hourglass-split", color: "violet" },
                 })}
+                <sl-divider
+                  style="--spacing:var(--sl-spacing-small)"
+                ></sl-divider>
                 ${this.renderStat({
-                  value: metrics.pageCount,
+                  value: metrics.crawlPageCount,
                   singleLabel: msg("Page Crawled"),
                   pluralLabel: msg("Pages Crawled"),
+                  iconProps: {
+                    name: "file-richtext-fill",
+                    color: this.colors.crawls,
+                  },
+                })}
+                ${this.renderStat({
+                  value: metrics.uploadPageCount,
+                  singleLabel: msg("Page Uploaded"),
+                  pluralLabel: msg("Pages Uploaded"),
+                  iconProps: {
+                    name: "file-richtext-fill",
+                    color: this.colors.uploads,
+                  },
+                })}
+                ${this.renderStat({
+                  value: metrics.pageCount,
+                  singleLabel: msg("Page Total"),
+                  pluralLabel: msg("Pages Total"),
                   iconProps: { name: "file-richtext-fill" },
                 })}
               </dl>
@@ -287,8 +309,8 @@ export class Dashboard extends BtrixElement {
                     >
                       <sl-icon slot="prefix" name="globe2"></sl-icon>
                       ${this.org?.enablePublicProfile
-                        ? msg("Visit Public Profile")
-                        : msg("Preview Public Profile")}
+                        ? msg("Visit Public Collections Gallery")
+                        : msg("Preview Public Collections Gallery")}
                     </btrix-menu-item-link>
                     ${when(this.org, (org) =>
                       org.enablePublicProfile
@@ -308,18 +330,20 @@ export class Dashboard extends BtrixElement {
                               }}
                             >
                               <sl-icon name="copy" slot="prefix"></sl-icon>
-                              ${msg("Copy Link to Profile")}
+                              ${msg("Copy Link to Public Gallery")}
                             </sl-menu-item>
                           `
-                        : html`
-                            <sl-divider></sl-divider>
-                            <btrix-menu-item-link
-                              href=${`${this.navigate.orgBasePath}/settings`}
-                            >
-                              <sl-icon slot="prefix" name="gear"></sl-icon>
-                              ${msg("Update Org Visibility")}
-                            </btrix-menu-item-link>
-                          `,
+                        : this.appState.isAdmin
+                          ? html`
+                              <sl-divider></sl-divider>
+                              <btrix-menu-item-link
+                                href=${`${this.navigate.orgBasePath}/settings`}
+                              >
+                                <sl-icon slot="prefix" name="gear"></sl-icon>
+                                ${msg("Update Org Profile")}
+                              </btrix-menu-item-link>
+                            `
+                          : nothing,
                     )}
                   </sl-menu>
                 </btrix-overflow-dropdown>
@@ -345,29 +369,16 @@ export class Dashboard extends BtrixElement {
     let button: TemplateResult;
 
     if (this.metrics.collectionsCount) {
-      if (this.org.enablePublicProfile) {
-        button = html`
-          <sl-button
-            @click=${() => {
-              this.navigate.to(`${this.navigate.orgBasePath}/collections`);
-            }}
-          >
-            <sl-icon slot="prefix" name="collection-fill"></sl-icon>
-            ${msg("Manage Collections")}
-          </sl-button>
-        `;
-      } else {
-        button = html`
-          <sl-button
-            @click=${() => {
-              this.navigate.to(`${this.navigate.orgBasePath}/settings`);
-            }}
-          >
-            <sl-icon slot="prefix" name="gear"></sl-icon>
-            ${msg("Update Org Visibility")}
-          </sl-button>
-        `;
-      }
+      button = html`
+        <sl-button
+          @click=${() => {
+            this.navigate.to(`${this.navigate.orgBasePath}/collections`);
+          }}
+        >
+          <sl-icon slot="prefix" name="collection-fill"></sl-icon>
+          ${msg("Manage Collections")}
+        </sl-button>
+      `;
     } else {
       button = html`
         <sl-button
@@ -823,22 +834,20 @@ export class Dashboard extends BtrixElement {
     }
   }
 
-  private async fetchCollections({
-    slug,
-  }: {
-    slug: string;
-  }): Promise<PublicCollection[]> {
-    const resp = await fetch(`/api/public/orgs/${slug}/collections`, {
-      headers: { "Content-Type": "application/json" },
-    });
+  private async getPublicCollections({ orgId }: { orgId: string }) {
+    const params: APISortQuery<Collection> & {
+      access: CollectionAccess;
+    } = {
+      sortBy: "dateLatest",
+      sortDirection: SortDirection.Descending,
+      access: CollectionAccess.Public,
+    };
+    const query = queryString.stringify(params);
 
-    switch (resp.status) {
-      case 200:
-        return ((await resp.json()) as PublicOrgCollections).collections;
-      case 404:
-        return [];
-      default:
-        throw resp.status;
-    }
+    const data = await this.api.fetch<APIPaginatedList<Collection>>(
+      `/orgs/${orgId}/collections?${query}`,
+    );
+
+    return data.items;
   }
 }
