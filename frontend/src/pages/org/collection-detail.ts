@@ -413,18 +413,14 @@ export class CollectionDetail extends BtrixElement {
     const authToken = this.authState?.headers.Authorization.split(" ")[1];
 
     return html`
-      <sl-button-group>
-        <sl-button
-          variant="primary"
-          size="small"
-          @click=${() => {
-            this.openDialogName = "edit";
-          }}
-        >
-          <sl-icon name="pencil" slot="prefix"></sl-icon>
-          ${msg("Edit Collection")}
-        </sl-button>
-      </sl-button-group>
+      <sl-button
+        size="small"
+        variant="primary"
+        @click=${() => (this.openDialogName = "editMetadata")}
+      >
+        <sl-icon slot="prefix" name="gear"></sl-icon>
+        ${msg("Edit Collection")}
+      </sl-button>
       <sl-dropdown distance="4">
         <sl-button slot="trigger" size="small" caret
           >${msg("Actions")}</sl-button
@@ -449,22 +445,7 @@ export class CollectionDetail extends BtrixElement {
             ?disabled=${!this.collection?.crawlCount}
           >
             <sl-icon name="gear" slot="prefix"></sl-icon>
-            ${msg("Configure Replay View")}
-          </sl-menu-item>
-          <sl-menu-item
-            @click=${async () => {
-              if (this.collectionTab !== Tab.About) {
-                this.navigate.to(
-                  `${this.navigate.orgBasePath}/collections/view/${this.collectionId}/${Tab.About}`,
-                );
-                await this.updateComplete;
-              }
-
-              this.isEditingDescription = true;
-            }}
-          >
-            <sl-icon name="pencil-square" slot="prefix"></sl-icon>
-            ${msg("Edit About Section")}
+            ${msg("Edit Collection")}
           </sl-menu-item>
           <sl-menu-item @click=${() => (this.openDialogName = "editItems")}>
             <sl-icon name="ui-checks" slot="prefix"></sl-icon>
