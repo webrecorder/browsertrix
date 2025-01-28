@@ -147,6 +147,7 @@ export class ShareCollection extends BtrixElement {
                     class="text-base"
                     name="cloud-download"
                     href=${`/api/public/orgs/${this.orgSlug}/collections/${this.collectionId}/download`}
+                    download
                     ?disabled=${!this.collection?.totalSize}
                     @click=${() => {
                       track(AnalyticsTrackEvent.DownloadPublicCollection, {
@@ -180,130 +181,6 @@ export class ShareCollection extends BtrixElement {
               </sl-tooltip>
             `}
       </div>
-
-      <sl-button-group>
-        <sl-tooltip
-          content=${this.clipboardController.isCopied
-            ? ClipboardController.text.copied
-            : msg("Copy shareable link")}
-        >
-          <sl-button
-            variant=${this.collection.crawlCount ? "primary" : "default"}
-            size="small"
-            ?disabled=${!this.shareLink}
-            @click=${() => {
-              void this.clipboardController.copy(this.shareLink);
-
-              if (this.collection?.access === CollectionAccess.Public) {
-                track(AnalyticsTrackEvent.CopyShareCollectionLink, {
-                  org_slug: this.orgSlug,
-                  collection_slug: this.collection.slug,
-                  logged_in: !!this.authState,
-                });
-              }
-            }}
-          >
-            <sl-icon
-              name=${this.clipboardController.isCopied
-                ? "check-lg"
-                : "link-45deg"}
-            >
-            </sl-icon>
-            ${msg("Copy Link")}
-          </sl-button>
-        </sl-tooltip>
-        <sl-dropdown distance="4" placement="bottom-end">
-          <sl-button
-            slot="trigger"
-            size="small"
-            variant=${this.collection.crawlCount ? "primary" : "default"}
-            caret
-          >
-          </sl-button>
-          <sl-menu>
-            <sl-menu-item
-              @click=${() => {
-                this.tabGroup?.show(Tab.Embed);
-                this.showDialog = true;
-              }}
-            >
-              <sl-icon slot="prefix" name="code-slash"></sl-icon>
-              ${msg("View Embed Code")}
-            </sl-menu-item>
-            ${when(
-              this.authState && !this.navigate.isPublicPage,
-              () => html`
-                <btrix-menu-item-link
-                  href=${this.shareLink}
-                  ?disabled=${!this.shareLink}
-                >
-                  ${this.collection?.access === CollectionAccess.Unlisted
-                    ? html`
-                        <sl-icon
-                          slot="prefix"
-                          name=${SelectCollectionAccess.Options.unlisted.icon}
-                        ></sl-icon>
-                        ${msg("Visit Unlisted Page")}
-                      `
-                    : html`
-                        <sl-icon
-                          slot="prefix"
-                          name=${SelectCollectionAccess.Options.public.icon}
-                        ></sl-icon>
-                        ${msg("Visit Public Page")}
-                      `}
-                </btrix-menu-item-link>
-                ${this.appState.isCrawler
-                  ? html`
-                      <sl-divider></sl-divider>
-                      <sl-menu-item
-                        @click=${() => {
-                          this.showDialog = true;
-                        }}
-                      >
-                        <sl-icon slot="prefix" name="box-arrow-up"></sl-icon>
-                        ${msg("Link Settings")}
-                      </sl-menu-item>
-                    `
-                  : nothing}
-              `,
-            )}
-            ${when(this.orgSlug && this.collection, (collection) =>
-              collection.access === CollectionAccess.Public &&
-              collection.allowPublicDownload
-                ? html`
-                    <btrix-menu-item-link
-                      href=${`/api/public/orgs/${this.orgSlug}/collections/${this.collectionId}/download`}
-                      download
-                      ?disabled=${!this.collection?.totalSize}
-                      @click=${() => {
-                        track(AnalyticsTrackEvent.DownloadPublicCollection, {
-                          org_slug: this.orgSlug,
-                          collection_slug: this.collection?.slug,
-                        });
-                      }}
-                    >
-                      <sl-icon name="cloud-download" slot="prefix"></sl-icon>
-                      ${msg("Download Collection")}
-                      ${when(
-                        this.collection,
-                        (collection) => html`
-                          <btrix-badge
-                            slot="suffix"
-                            class="font-monostyle text-xs text-neutral-500"
-                            >${this.localize.bytes(
-                              collection.totalSize || 0,
-                            )}</btrix-badge
-                          >
-                        `,
-                      )}
-                    </btrix-menu-item-link>
-                  `
-                : nothing,
-            )}
-          </sl-menu>
-        </sl-dropdown>
-      </sl-button-group>
     `;
   }
 
