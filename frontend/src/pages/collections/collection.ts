@@ -104,26 +104,26 @@ export class Collection extends BtrixElement {
           : [],
       title: collection.name || "",
       actions: html`
-        ${when(
-          this.canEditCollection,
-          () => html`
-            <sl-tooltip content=${msg("Edit collection")}>
-              <sl-icon-button
-                href="${this.navigate
-                  .orgBasePath}/collections/view/${collection.id}"
-                class="size-8 text-base"
-                name="pencil"
-                @click=${this.navigate.link}
-              ></sl-icon-button>
-            </sl-tooltip>
-          `,
-        )}
-
         <btrix-share-collection
           orgSlug=${this.orgSlug || ""}
           collectionId=${collection.id}
           .collection=${collection}
         ></btrix-share-collection>
+        ${when(
+          this.canEditCollection,
+          () => html`
+            <sl-button
+              href="${this.navigate
+                .orgBasePath}/collections/view/${collection.id}"
+              size="small"
+              variant="primary"
+              @click=${this.navigate.link}
+            >
+              <sl-icon slot="prefix" name="gear"></sl-icon>
+              ${msg("Edit Collection")}
+            </sl-button>
+          `,
+        )}
       `,
     };
 
