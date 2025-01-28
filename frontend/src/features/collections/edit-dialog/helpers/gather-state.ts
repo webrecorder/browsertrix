@@ -14,12 +14,6 @@ import {
 export default async function gatherState(this: CollectionEdit) {
   const form = await this.form;
 
-  if (!this.descriptionEditor?.checkValidity()) {
-    this.errorTab = "about";
-    void this.descriptionEditor?.focus();
-    throw new Error("invalid_data");
-  }
-
   const elements = getFormControls(form);
   const invalidElement = elements.find(
     (el) => !(el as HTMLInputElement).checkValidity(),
@@ -34,28 +28,21 @@ export default async function gatherState(this: CollectionEdit) {
     this.errorTab = null;
   }
 
-  const description = this.descriptionEditor.value;
-
-  const { access, allowPublicDownload, defaultThumbnailName } =
-    this.shareSettings ?? {};
+  const { access, allowPublicDownload } = this.shareSettings ?? {};
 
   const formData = serialize(form) as CollectionUpdate;
 
-  const { homeView, useThumbnail, selectedSnapshot } = this.homepageSettings!;
+  const selectedSnapshot = this.thumbnailSelector?.selectedSnapshot;
 
   const data = {
     ...formData,
-    description,
     access,
     allowPublicDownload,
-    defaultThumbnailName,
   };
 
   return {
     collectionUpdate: collectionUpdateSchema.parse(data),
-    homepage: {
-      homeView,
-      useThumbnail,
+    thumbnail: {
       selectedSnapshot,
     },
   };

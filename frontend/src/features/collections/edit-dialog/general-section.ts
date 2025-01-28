@@ -13,7 +13,6 @@ import {
   DEFAULT_THUMBNAIL_VARIANT,
   Thumbnail,
 } from "../collection-thumbnail";
-import { type SelectSnapshotDetail } from "../select-collection-start-page";
 
 import type { PublicCollection } from "@/types/collection";
 
@@ -69,18 +68,11 @@ export default function renderGeneral(this: CollectionEdit) {
       </div>
       ${renderThumbnails.bind(this)()}
     </div>
-    <btrix-select-collection-start-page
+    <btrix-collection-thumbnail-select
       .collection=${this.collection}
-      .collectionId=${this.collectionId || this.collection.id}
-      @btrix-select=${async (e: CustomEvent<SelectSnapshotDetail>) => {
-        this.selectedSnapshot = e.detail.item;
-        this.dispatchEvent(
-          new CustomEvent("btrix-change", {
-            bubbles: true,
-          }),
-        );
-      }}
-    ></btrix-select-collection-start-page>`;
+      .replayLoaded=${this.replayLoaded}
+    >
+    </btrix-collection-thumbnail-select>`;
 }
 
 function renderThumbnails(this: CollectionEdit) {

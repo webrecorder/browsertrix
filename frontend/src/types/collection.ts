@@ -6,6 +6,16 @@ export enum CollectionAccess {
   Unlisted = "unlisted",
 }
 
+export const collectionThumbnailPageSchema = z.object({
+  url: z.string().url(),
+  urlPageId: z.string().url(),
+  urlTs: z.string().datetime(),
+});
+
+export type CollectionThumbnailPage = z.infer<
+  typeof collectionThumbnailPageSchema
+>;
+
 export const publicCollectionSchema = z.object({
   id: z.string(),
   slug: z.string(),
@@ -22,6 +32,7 @@ export const publicCollectionSchema = z.object({
     .object({
       name: z.string(),
       path: z.string().url(),
+      thumbnailPage: collectionThumbnailPageSchema.nullable(),
     })
     .nullable(),
   defaultThumbnailName: z.string().nullable(),

@@ -1,5 +1,4 @@
 import { type CollectionEdit } from "../../collection-edit-dialog";
-import { HomeView } from "../../collection-snapshot-preview";
 
 import gatherState from "./gather-state";
 
@@ -7,30 +6,23 @@ import type { CollectionUpdate } from "@/types/collection";
 
 export default async function checkChanged(this: CollectionEdit) {
   try {
-    const { collectionUpdate, homepage } = await gatherState.bind(this)();
+    const { collectionUpdate, thumbnail } = await gatherState.bind(this)();
     const updates = (
       Object.entries(collectionUpdate) as [
         keyof CollectionUpdate,
         CollectionUpdate[keyof CollectionUpdate],
       ][]
     ).filter(([name, value]) => this.collection?.[name] !== value) as [
-      keyof CollectionUpdate | "homepage",
-      CollectionUpdate[keyof CollectionUpdate] | typeof homepage,
+      keyof CollectionUpdate | "thumbnail",
+      CollectionUpdate[keyof CollectionUpdate] | typeof thumbnail,
     ][];
 
-    const pageId =
-      (homepage.homeView === HomeView.URL &&
-        homepage.selectedSnapshot?.pageId) ||
-      null;
-
     const shouldUpload =
-      homepage.homeView === HomeView.URL &&
-      homepage.useThumbnail &&
-      homepage.selectedSnapshot &&
-      this.collection?.homeUrlPageId !== homepage.selectedSnapshot.pageId;
+      thumbnail.selectedSnapshot &&
+      this.collection?.thumbnail?.thumbnailPage !== thumbnail.selectedSnapshot;
 
-    if (pageId != this.collection?.homeUrlPageId || shouldUpload) {
-      updates.push(["homepage", homepage]);
+    if (shouldUpload) {
+      updates.push(["thumbnail", thumbnail]);
     }
     console.log({ updates });
     if (updates.length > 0) {

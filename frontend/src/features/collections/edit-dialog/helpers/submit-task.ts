@@ -5,10 +5,11 @@ import {
   type CollectionEdit,
   type CollectionSavedEvent,
 } from "../../collection-edit-dialog";
-import { HomeView } from "../../collection-snapshot-preview";
-import { type SnapshotItem } from "../../select-collection-start-page";
 
-import { type CollectionUpdate } from "@/types/collection";
+import {
+  type CollectionThumbnailPage,
+  type CollectionUpdate,
+} from "@/types/collection";
 import { isApiError } from "@/utils/api";
 
 export default function submitTask(
@@ -20,55 +21,25 @@ export default function submitTask(
       const updates = await this.checkChanged();
       if (!updates) throw new Error("invalid_data");
       const updateObject = Object.fromEntries(updates) as CollectionUpdate & {
-        homepage?: {
-          homeView: `${HomeView}`;
-          useThumbnail: "on" | "off";
-          selectedSnapshot: SnapshotItem | null;
+        thumbnail?: {
+          selectedSnapshot: CollectionThumbnailPage;
         };
       };
-      const { homepage, ...rest } = updateObject;
-      const pageId =
-        (homepage?.homeView === HomeView.URL &&
-          homepage.selectedSnapshot?.pageId) ||
-        null;
+      const { thumbnail: { selectedSnapshot } = {}, ...rest } = updateObject;
       const tasks = [];
 
-      if (this.collection.homeUrlPageId !== pageId) {
-        tasks.push(
-          this.api.fetch(
-            `/orgs/${this.orgId}/collections/${this.collection.id}/home-url`,
-            {
-              method: "POST",
-              body: JSON.stringify({
-                pageId,
-              }),
-              signal,
-            },
-          ),
-        );
-      }
-
-      const shouldUpload =
-        homepage?.homeView === HomeView.URL &&
-        homepage.useThumbnail === "on" &&
-        homepage.selectedSnapshot &&
-        this.homePageId !== homepage.selectedSnapshot.pageId;
-
       // TODO get filename from rwp?
-      const fileName = `page-thumbnail_${homepage?.selectedSnapshot?.pageId}.jpeg`;
+      const fileName = `page-thumbnail_${selectedSnapshot?.urlPageId}.jpeg`;
       let file: File | undefined;
 
-      if (shouldUpload && this.homepageSettings?.thumbnailPreview) {
-        const blob = await this.homepageSettings.thumbnailPreview.thumbnailBlob;
-
+      if (selectedSnapshot) {
+        const blob =
+          await this.thumbnailSelector?.thumbnailPreview?.thumbnailBlob;
         if (blob) {
           file = new File([blob], fileName, {
             type: blob.type,
           });
         }
-      }
-
-      if (shouldUpload) {
         if (!file) throw new Error("invalid_data");
         tasks.push(
           this.api.upload(
@@ -79,7 +50,8 @@ export default function submitTask(
         );
         rest.defaultThumbnailName = null;
       }
-      console.log({ rest, shouldUpload });
+
+      console.log({ rest });
       if (Object.keys(rest).length)
         tasks.push(
           await this.api.fetch<{ updated: boolean }>(

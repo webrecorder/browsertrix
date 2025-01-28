@@ -16,10 +16,7 @@ import renderGeneral from "./edit-dialog/general-section";
 import checkChanged from "./edit-dialog/helpers/check-changed";
 import submitTask from "./edit-dialog/helpers/submit-task";
 import { type CollectionShareSettings } from "./edit-dialog/sharing-section";
-import {
-  type SelectSnapshotDetail,
-  type SnapshotItem,
-} from "./select-collection-start-page";
+import { type CollectionThumbnailSelect } from "./edit-dialog/thumbnail-select";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
@@ -90,9 +87,6 @@ export class CollectionEdit extends BtrixElement {
   defaultThumbnailName: `${Thumbnail}` | null = this.collection
     ?.defaultThumbnailName as `${Thumbnail}` | null;
 
-  @state()
-  selectedSnapshot: SnapshotItem | null = null;
-
   @query("btrix-dialog")
   readonly dialog?: Dialog;
 
@@ -101,6 +95,9 @@ export class CollectionEdit extends BtrixElement {
 
   @query("btrix-collection-share-settings")
   readonly shareSettings?: CollectionShareSettings;
+
+  @query("btrix-collection-thumbnail-select")
+  readonly thumbnailSelector?: CollectionThumbnailSelect;
 
   protected willUpdate(changedProperties: PropertyValues<this>): void {
     if (changedProperties.has("collectionId") && this.collectionId) {
