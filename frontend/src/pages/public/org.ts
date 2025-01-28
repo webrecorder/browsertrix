@@ -138,7 +138,7 @@ export class PublicOrg extends BtrixElement {
                   @click=${this.navigate.link}
                 ></sl-icon-button>
               </sl-tooltip>
-              <sl-tooltip content=${msg("Change org settings")}>
+              <sl-tooltip content=${msg("Change Org Settings")}>
                 <sl-icon-button
                   href="${this.navigate.orgBasePath}/settings"
                   class="size-8 text-base"
@@ -199,7 +199,7 @@ export class PublicOrg extends BtrixElement {
         ${when(
           this.canEditOrg,
           () =>
-            html`<sl-tooltip content=${msg("Manage collections")}>
+            html`<sl-tooltip content=${msg("Manage Collections")}>
               <sl-icon-button
                 href=${`${this.navigate.orgBasePath}/collections`}
                 class="size-8 text-base"
