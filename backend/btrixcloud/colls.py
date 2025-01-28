@@ -3,7 +3,7 @@ Collections API
 """
 
 # pylint: disable=too-many-lines
-
+from datetime import datetime
 from collections import Counter
 from uuid import UUID, uuid4
 from typing import Optional, List, TYPE_CHECKING, cast, Dict, Tuple, Any, Union
@@ -20,10 +20,12 @@ from starlette.requests import Request
 
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .models import (
+    AnyHttpUrl,
     Collection,
     CollIn,
     CollOut,
     CollIdName,
+    CollectionThumbnailPage,
     UpdateColl,
     AddRemoveCrawlList,
     BaseCrawl,
@@ -836,7 +838,15 @@ class CollectionOps:
         return {"updated": True}
 
     async def upload_thumbnail_stream(
-        self, stream, filename: str, coll_id: UUID, org: Organization, user: User
+        self,
+        stream,
+        filename: str,
+        coll_id: UUID,
+        org: Organization,
+        user: User,
+        sourceUrl: Optional[AnyHttpUrl],
+        sourceTs: Optional[datetime],
+        sourcePageId: Optional[UUID],
     ) -> Dict[str, bool]:
         """Upload file as stream to use as collection thumbnail"""
         coll = await self.get_collection(coll_id)
@@ -894,6 +904,11 @@ class CollectionOps:
                 )
 
         coll.thumbnail = thumbnail_file
+
+        if sourceUrl and sourceTs and sourcePageId:
+            coll.thumbnail.thumbnailPage = CollectionThumbnailPage(
+                sourceUrl, sourceTs, sourcePageId
+            )
 
         # Update entire document to avoid bson.errors.InvalidDocument exception
         await self.collections.find_one_and_update(
@@ -1218,6 +1233,9 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops, user_de
         request: Request,
         filename: str,
         coll_id: UUID,
+        sourceUrl: Optional[AnyHttpUrl],
+        sourceTs: Optional[datetime],
+        sourcePageId: Optional[UUID],
         org: Organization = Depends(org_crawl_dep),
         user: User = Depends(user_dep),
     ):

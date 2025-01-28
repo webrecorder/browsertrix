@@ -41,9 +41,13 @@ export default function submitTask(
           });
         }
         if (!file) throw new Error("invalid_data");
+        const searchParams = new URLSearchParams({
+          filename: fileName,
+          ...selectedSnapshot,
+        });
         tasks.push(
           this.api.upload(
-            `/orgs/${this.orgId}/collections/${this.collection.id}/thumbnail?filename=${fileName}`,
+            `/orgs/${this.orgId}/collections/${this.collection.id}/thumbnail?${searchParams.toString()}`,
             file,
             signal,
           ),
