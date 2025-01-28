@@ -145,7 +145,9 @@ export class CrawlQueue extends BtrixElement {
 
     return html`
       <div class="flex items-center text-neutral-500">
-        ${msg(html`Queued URLs from ${fromInput} to ${max} of ${total}`)}
+        ${msg(html`Queued URLs from ${fromInput} to ${max} of ${total}`, {
+          id: "h077c8fe82a78c616",
+        })}
       </div>
     `;
   }
