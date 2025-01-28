@@ -426,10 +426,6 @@ export class CollectionDetail extends BtrixElement {
           >${msg("Actions")}</sl-button
         >
         <sl-menu>
-          <sl-menu-item @click=${() => (this.openDialogName = "edit")}>
-            <sl-icon name="pencil" slot="prefix"></sl-icon>
-            ${msg("Edit Collection")}
-          </sl-menu-item>
           <sl-menu-item
             @click=${async () => {
               // replay-web-page needs to be available in order to configure start page
