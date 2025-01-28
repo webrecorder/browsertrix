@@ -55,19 +55,7 @@ export default function renderGeneral(this: CollectionEdit) {
         </sl-tooltip>
       </span>
     </sl-textarea>
-    <div class="mb-7">
-      <div class="form-label flex items-center gap-1.5">
-        ${msg("Thumbnail")}
-        <sl-tooltip
-          content=${msg(
-            "Choose a thumbnail to represent this collection in the org dashboard and profile page.",
-          )}
-        >
-          <sl-icon name="info-circle"></sl-icon>
-        </sl-tooltip>
-      </div>
-      ${renderThumbnails.bind(this)()}
-    </div>
+    <div class="mb-7">${renderThumbnails.bind(this)()}</div>
     <btrix-collection-thumbnail-select
       .collection=${this.collection}
       .replayLoaded=${this.replayLoaded}
@@ -101,6 +89,9 @@ function renderThumbnails(this: CollectionEdit) {
         ><button
           class="row-start-2 flex aspect-video items-center justify-center overflow-hidden rounded bg-neutral-50 ring-1 ring-stone-600/10 transition-all hover:ring-2 hover:ring-blue-300"
           disabled
+          role="radio"
+          type="button"
+          aria-checked=${false}
         >
           <sl-icon
             class="size-10 stroke-black/50 text-white drop-shadow-md [paint-order:stroke]"
@@ -128,13 +119,12 @@ function renderThumbnails(this: CollectionEdit) {
           class="${isSelected
             ? "ring-blue-300 ring-2"
             : "ring-stone-600/10 ring-1"} row-start-2 aspect-video flex-1 overflow-hidden rounded transition-all hover:ring-2 hover:ring-blue-300"
+          role="radio"
+          type="button"
+          aria-checked=${isSelected}
           @click=${() => {
             this.defaultThumbnailName = name;
-            this.dispatchEvent(
-              new CustomEvent("btrix-change", {
-                bubbles: true,
-              }),
-            );
+            void this.checkChanged.bind(this)();
           }}
         >
           <div
@@ -154,20 +144,35 @@ function renderThumbnails(this: CollectionEdit) {
   };
 
   return html`
-    <div class="mt-3 grid grid-cols-5 gap-3">
-      <div class="row-start-1 text-xs text-neutral-500">
-        ${msg("Page Thumbnail")}
+    <fieldset role="radiogroup" aria-labelledby="collection-thumbnail-selector">
+      <label
+        id="collection-thumbnail-selector"
+        class="form-label flex items-center gap-1.5"
+      >
+        ${msg("Thumbnail")}
+        <sl-tooltip
+          content=${msg(
+            "Choose a thumbnail to represent this collection in the org dashboard and profile page.",
+          )}
+        >
+          <sl-icon name="info-circle"></sl-icon>
+        </sl-tooltip>
+      </label>
+      <div class="mt-3 grid grid-cols-5 gap-3">
+        <div class="row-start-1 text-xs text-neutral-500">
+          ${msg("Page Thumbnail")}
+        </div>
+        ${when(
+          this.collection?.thumbnail,
+          (t) => thumbnail(t),
+          () => thumbnail(),
+        )}
+        <div class="row-start-1 text-xs text-neutral-600">
+          ${msg("Placeholder")}
+        </div>
+        ${thumbnail(Thumbnail.Cyan)} ${thumbnail(Thumbnail.Green)}
+        ${thumbnail(Thumbnail.Yellow)} ${thumbnail(Thumbnail.Orange)}
       </div>
-      ${when(
-        this.collection?.thumbnail,
-        (t) => thumbnail(t),
-        () => thumbnail(),
-      )}
-      <div class="row-start-1 text-xs text-neutral-600">
-        ${msg("Placeholder")}
-      </div>
-      ${thumbnail(Thumbnail.Cyan)} ${thumbnail(Thumbnail.Green)}
-      ${thumbnail(Thumbnail.Yellow)} ${thumbnail(Thumbnail.Orange)}
-    </div>
+    </fieldset>
   `;
 }
