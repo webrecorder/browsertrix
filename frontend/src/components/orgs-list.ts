@@ -382,20 +382,17 @@ export class OrgsList extends BtrixElement {
             <ul class="mb-3 text-neutral-600">
               <li>
                 ${msg(
-                  html`${msg("Crawls")}:
-                  ${this.localize.bytes(org.bytesStoredCrawls)}`,
+                  str`Crawls: ${this.localize.bytes(org.bytesStoredCrawls)}`,
                 )}
               </li>
               <li>
                 ${msg(
-                  html`${msg("Uploads")}:
-                  ${this.localize.bytes(org.bytesStoredUploads)}`,
+                  str`Uploads: ${this.localize.bytes(org.bytesStoredUploads)}`,
                 )}
               </li>
               <li>
                 ${msg(
-                  html`${msg("Profiles")}:
-                  ${this.localize.bytes(org.bytesStoredProfiles)}`,
+                  str`Profiles: ${this.localize.bytes(org.bytesStoredProfiles)}`,
                 )}
               </li>
             </ul>
