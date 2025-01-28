@@ -2583,7 +2583,11 @@
         <source>Queued URLs from 1 to <x id="0" equiv-text="${this.localize.number(this.queue.total)}"/></source>
       </trans-unit>
       <trans-unit id="h077c8fe82a78c616">
-        <source>Queued URLs from <x id="0" equiv-text="${fromInput}"/> to <x id="1" equiv-text="${max}"/> of <x id="2" equiv-text="${total}"/></source>
+        <source>
+          Queued URLs from
+          <x id="0" equiv-text="&lt;btrix-inline-input class=&quot;mx-1 inline-block&quot; style=&quot;width: ${Math.max(offsetValue.toString().length, 2) + 2}ch&quot; value=&quot;1&quot; inputmode=&quot;numeric&quot; size=&quot;small&quot; autocomplete=&quot;off&quot; @sl-input=&quot;${(e: SlInputEvent) =&gt; {&#10;    const input = e.target as SlInput;&#10;    input.style.width = getInputWidth(input.value);&#10;}}&quot; @sl-change=&quot;${async (e: SlChangeEvent) =&gt; {&#10;    const input = e.target as SlInput;&#10;    const int = +input.value.replace(/\D/g, &quot;&quot;);&#10;    await this.updateComplete;&#10;    const value = Math.max(1, Math.min(int, this.queue!.total - 1));&#10;    input.value = value.toString();&#10;    this.pageOffset = value - 1;&#10;}}&quot;&gt;&lt;/btrix-inline-input&gt;"/>
+          to <x id="1" equiv-text="${this.localize.number(countMax)}"/> of
+          <x id="2" equiv-text="${this.localize.number(this.queue.total)}&#10;        "/></source>
       </trans-unit>
       <trans-unit id="s4dfaf5cfc90f8493">
         <source>No pages queued.</source>
@@ -3704,6 +3708,10 @@
                   <x id="0" equiv-text="&lt;strong class=&quot;font-semibold&quot;&gt;&#10;                    ${this.localize.bytes(org.bytesStored)}&#10;                  &lt;/strong&gt;"/>
                   of data associated with the org.</source>
       </trans-unit>
+      <trans-unit id="hd246a3ddb77fb7e5">
+        <source><x id="0" equiv-text="${msg(&quot;Crawls&quot;)}"/>:
+                  <x id="1" equiv-text="${this.localize.bytes(org.bytesStoredCrawls)}"/></source>
+      </trans-unit>
       <trans-unit id="h737a03dd2c6c5d2a">
         <source>Your free trial ends on <x id="0" equiv-text="${dateStr}"/>. To continue using
                     Browsertrix, select <x id="1" equiv-text="&lt;strong&gt;"/>Subscribe Now<x id="2" equiv-text="&lt;/strong&gt;"/> in
@@ -3784,6 +3792,9 @@
       <trans-unit id="sdd1ff479d04ac140">
         <source>Public</source>
       </trans-unit>
+      <trans-unit id="s1bbb1dfa96413a00">
+        <source>Anyone can view on the org's public profile</source>
+      </trans-unit>
       <trans-unit id="s1219d97b49650c05">
         <source>Visibility</source>
       </trans-unit>
@@ -3808,6 +3819,18 @@
       <trans-unit id="s9eecfb2a2647cc24">
         <source>Summarize the collection's content</source>
       </trans-unit>
+      <trans-unit id="s6a05ad3f740ad8d8">
+        <source>Write a short description that summarizes this collection. If the collection is public, this description will be visible next to the collection name.</source>
+      </trans-unit>
+      <trans-unit id="s2cf3aa941fb481b9">
+        <source>You can write a longer description in the 'About' section after creating the collection.</source>
+      </trans-unit>
+      <trans-unit id="s88b7cc857e3104f6">
+        <source>This collection will be visible on the org public profile, even without archived items. You may want to set visibility to 'Unlisted' until archived items have been added.</source>
+      </trans-unit>
+      <trans-unit id="sde5576872ee6936d">
+        <source>This collection will be visible on the org profile page, which isn't public yet. To make the org profile and this collection visible to the public, update org profile settings.</source>
+      </trans-unit>
       <trans-unit id="sd27c7f88dd56a528">
         <source>Open org settings</source>
       </trans-unit>
@@ -3816,6 +3839,9 @@
       </trans-unit>
       <trans-unit id="secbc28fc1f3d93ff">
         <source>Created "<x id="0" equiv-text="${data.name || name}"/>" collection</source>
+      </trans-unit>
+      <trans-unit id="sce256a8918a7f18d">
+        <source>Snapshot</source>
       </trans-unit>
       <trans-unit id="s66da7b7937e76a3a">
         <source>Start typing a URL...</source>
@@ -3880,8 +3906,14 @@
       <trans-unit id="scace301a88231cce">
         <source>Embed</source>
       </trans-unit>
+      <trans-unit id="s7d4ca6f5d4394185">
+        <source>The org profile page isn't public yet. To make the org profile and this collection visible to the public, update profile visibility in org settings.</source>
+      </trans-unit>
       <trans-unit id="s476ddc7cbb32ffa7">
         <source>Thumbnail</source>
+      </trans-unit>
+      <trans-unit id="s602cfd34f602d6f9">
+        <source>Choose a thumbnail to represent this collection in the org dashboard and profile page.</source>
       </trans-unit>
       <trans-unit id="s175d37c8eb04d73e">
         <source>Downloads</source>
@@ -3942,6 +3974,9 @@
       <trans-unit id="s1f45d250722817c7">
         <source>Edit About Section</source>
       </trans-unit>
+      <trans-unit id="sd720fd983f132077">
+        <source>Edit Description</source>
+      </trans-unit>
       <trans-unit id="s3f65af47b6c8cdff">
         <source>No description provided.</source>
       </trans-unit>
@@ -3963,6 +3998,12 @@
       <trans-unit id="s4d61bc76df7560ab">
         <source>Sorry, couldn't save collection description at this time.</source>
       </trans-unit>
+      <trans-unit id="s11f08e9ad26dbe94">
+        <source>Allow anyone to view org</source>
+      </trans-unit>
+      <trans-unit id="s213ea1039161ce68">
+        <source>If enabled, anyone will be able to view your org's profile page and public collections.</source>
+      </trans-unit>
       <trans-unit id="s3e4aa3f8d6f45a57">
         <source>Write a short description to introduce your organization.</source>
       </trans-unit>
@@ -3972,12 +4013,21 @@
       <trans-unit id="sc75a8ddcb729c2a6">
         <source>Link to your organization's (or your personal) website.</source>
       </trans-unit>
+      <trans-unit id="s11e6aadfd3000971">
+        <source>Profile Page</source>
+      </trans-unit>
       <trans-unit id="h4077380edd0a56a4">
         <source>To customize this URL,
               <x id="0" equiv-text="&lt;a href=&quot;${`${location.pathname}#org-url`}&quot; class=&quot;text-cyan-500 underline decoration-cyan-500/30 transition hover:text-cyan-600 hover:decoration-cyan-500/50&quot;&gt;${msg(&quot;update your Org URL in General settings&quot;)}&lt;/a&gt;"/>.</source>
       </trans-unit>
       <trans-unit id="s117475fa47155b08">
         <source>update your Org URL in General settings</source>
+      </trans-unit>
+      <trans-unit id="s5a10c7fdb12b5dd4">
+        <source>Preview public profile page</source>
+      </trans-unit>
+      <trans-unit id="sd19e4d886017cde5">
+        <source>Org profile has been updated.</source>
       </trans-unit>
       <trans-unit id="s3a081663dfc1a779">
         <source>Sorry, couldn't update org at this time.</source>
@@ -3991,6 +4041,9 @@
       </trans-unit>
       <trans-unit id="sf8388a998523b72c">
         <source>Org URL</source>
+      </trans-unit>
+      <trans-unit id="s624704a0ec11e0b8">
+        <source>Customize your org's Browsertrix URL. This will also apply to the URL to your org's public profile page, if you've enabled it.</source>
       </trans-unit>
       <trans-unit id="sf64646b094ecba96">
         <source>Developer Tools</source>
@@ -4025,11 +4078,29 @@
       <trans-unit id="s11f71e0566d8cc93">
         <source>Manage Collections</source>
       </trans-unit>
+      <trans-unit id="s572de8695b1fb540">
+        <source>Visit Public Profile</source>
+      </trans-unit>
+      <trans-unit id="s680d420bc14b4a55">
+        <source>Preview Public Profile</source>
+      </trans-unit>
+      <trans-unit id="s4032472d9776d466">
+        <source>Update Org Visibility</source>
+      </trans-unit>
       <trans-unit id="se25e3fa3c918d26e">
         <source>Create a Collection</source>
       </trans-unit>
+      <trans-unit id="s9fe218c5322a4331">
+        <source>This is a private preview of your org's profile page</source>
+      </trans-unit>
+      <trans-unit id="sf7d5d1911b9dd6b1">
+        <source>Update your org's profile settings to make this page visible to anyone on the internet.</source>
+      </trans-unit>
       <trans-unit id="s0d5c241bca67f37d">
         <source>Go to Settings</source>
+      </trans-unit>
+      <trans-unit id="s0f8659a3eea42cd6">
+        <source>Edit org profile</source>
       </trans-unit>
       <trans-unit id="sbc163672f44598f3">
         <source>Manage collections</source>
@@ -4068,7 +4139,7 @@
         <source>Sign In</source>
       </trans-unit>
       <trans-unit id="sfa251e3af0f9c14c">
-        <source><x id="0" equiv-text="${startMonthYear}"/> to <x id="1" equiv-text="${endMonthYear}"/></source>
+        <source><x id="0" equiv-text="${dateEarliest}"/> to <x id="1" equiv-text="${dateLatest}"/></source>
         <note from="lit-localize">Date range formatted to show full month name and year</note>
       </trans-unit>
       <trans-unit id="s2428027aa3e49f16">
@@ -4091,6 +4162,12 @@
       </trans-unit>
       <trans-unit id="s31e12850da47731e">
         <source>Payment Failed</source>
+      </trans-unit>
+      <trans-unit id="s1ebb825e892a8359">
+        <source>Choose a snapshot</source>
+      </trans-unit>
+      <trans-unit id="s6e8c186600b4f8a6">
+        <source>Enter a page URL to choose snapshot</source>
       </trans-unit>
       <trans-unit id="s537d04835ef62b2b">
         <source>Search for a page in this collection</source>
@@ -4134,123 +4211,8 @@
       <trans-unit id="s1fda6e1bbcd65195">
         <source>Pages Total</source>
       </trans-unit>
-      <trans-unit id="s271e65e1451601ef">
-        <source>Crawls: <x id="0" equiv-text="${this.localize.bytes(org.bytesStoredCrawls)}"/></source>
-      </trans-unit>
-      <trans-unit id="s6fc1df91bcc961d3">
-        <source>Uploads: <x id="0" equiv-text="${this.localize.bytes(org.bytesStoredUploads)}"/></source>
-      </trans-unit>
-      <trans-unit id="sbe6bd4a4b8f70dc1">
-        <source>Profiles: <x id="0" equiv-text="${this.localize.bytes(org.bytesStoredProfiles)}"/></source>
-      </trans-unit>
-      <trans-unit id="s79eada3541c04902">
-        <source>Visit Public Collections Gallery</source>
-      </trans-unit>
-      <trans-unit id="s9f0d2cd0850b47df">
-        <source>Unique Pages in Collection</source>
-      </trans-unit>
-      <trans-unit id="s97a904f2a41ddc4b">
-        <source>Total Pages Crawled</source>
-      </trans-unit>
-      <trans-unit id="s37cc328c4da4b137">
-        <source>Anyone can view from the org public collections gallery</source>
-      </trans-unit>
-      <trans-unit id="s8debd5b6fc21f95e">
-        <source>This doesn't have a public collections gallery enabled yet. To make this collection and basic org information public, update the org's gallery visibility setting.</source>
-      </trans-unit>
-      <trans-unit id="s7834e4ac05eb381a">
-        <source>Write a short description that summarizes this collection. If the collection is shareable, this will appear next to the collection name.</source>
-      </trans-unit>
-      <trans-unit id="h842eab6f58bd30b6">
-        <source>You can add a longer description in the “About”
-                      section after creating the collection.</source>
-      </trans-unit>
-      <trans-unit id="sa6c663d28c4eeb33">
-        <source>This collection will be visible in the org public collection gallery, even without archived items. You may want to set visibility to 'Unlisted' until archived items have been added.</source>
-      </trans-unit>
-      <trans-unit id="s1d7d69e58796f97a">
-        <source>Page Timestamp</source>
-      </trans-unit>
-      <trans-unit id="s3025ddefad4c31c7">
-        <source>Choose a timestamp</source>
-      </trans-unit>
-      <trans-unit id="sf160136cfa00f822">
-        <source>Enter a page URL to choose timestamp</source>
-      </trans-unit>
-      <trans-unit id="sa78fe8d21978bf72">
-        <source>Choose a thumbnail to represent this collection.</source>
-      </trans-unit>
-      <trans-unit id="s2892cf7cbbdf4424">
-        <source>Autoclick behavior</source>
-      </trans-unit>
-      <trans-unit id="se49bd27b259a14ed">
-        <source>When enabled the browser will automatically click on links that don't navigate to other pages.</source>
-      </trans-unit>
-      <trans-unit id="hb4d7d27dcde87b24">
-        <source>Describe your collection in long-form rich text (e.g.
-                        <x id="0" equiv-text="&lt;strong&gt;"/>bold<x id="1" equiv-text="&lt;/strong&gt;"/> and <x id="2" equiv-text="&lt;em&gt;"/>italicized<x id="3" equiv-text="&lt;/em&gt;"/> text.)</source>
-      </trans-unit>
-      <trans-unit id="h46ac9a2331d608e2">
-        <source>If this collection is shareable, this will appear in
-                      the “About This Collection” section of the shared
-                      collection.</source>
-      </trans-unit>
-      <trans-unit id="s492c3c47283fe263">
-        <source>Updated org settings.</source>
-      </trans-unit>
-      <trans-unit id="s03e7aeb29699eda3">
-        <source>Gallery Visibility</source>
-      </trans-unit>
-      <trans-unit id="saa4273ec1218f017">
-        <source>Enable gallery of public collections</source>
-      </trans-unit>
-      <trans-unit id="sf3009f5b3aeaa198">
-        <source>If enabled, anyone on the Internet will be able to browse this org's public collections and view general org information.</source>
-      </trans-unit>
-      <trans-unit id="s40ec8928bedb7be3">
-        <source>Public Gallery URL</source>
-      </trans-unit>
-      <trans-unit id="s8283503fb503486b">
-        <source>Public Collections Gallery</source>
-      </trans-unit>
-      <trans-unit id="s7af5c9ef29b322ac">
-        <source>Updated public collections gallery visibility.</source>
-      </trans-unit>
-      <trans-unit id="s7bcbd0fafce2565d">
-        <source>Customize your org's Browsertrix URL.</source>
-      </trans-unit>
-      <trans-unit id="s9837b3ec388e7929">
-        <source>View as public</source>
-      </trans-unit>
-      <trans-unit id="sf4cf567dd8cffff6">
-        <source>Preview how information appears to the public</source>
-      </trans-unit>
-      <trans-unit id="s9826534c5f9f250d">
-        <source>This org URL is already taken, try another one.</source>
-      </trans-unit>
-      <trans-unit id="se90868439a248884">
-        <source>This org URL is invalid. Please use alphanumeric characters and dashes (-) only.</source>
-      </trans-unit>
-      <trans-unit id="h33ab0b911e13ad09">
-        <source>Name &amp; Collection Period</source>
-      </trans-unit>
-      <trans-unit id="s79c808f60cabe77b">
-        <source>Preview Public Collections Gallery</source>
-      </trans-unit>
-      <trans-unit id="scd7bdf8f40a096f8">
-        <source>Copy Link to Public Gallery</source>
-      </trans-unit>
-      <trans-unit id="s4bb49d6b8c58db7b">
-        <source>Update Org Profile</source>
-      </trans-unit>
-      <trans-unit id="sd1aa96c20f885a8f">
-        <source>This is a private preview of the public collections gallery</source>
-      </trans-unit>
-      <trans-unit id="s949a92849e4dadd0">
-        <source>Update your org's public collections gallery settings to make this page visible to anyone on the internet.</source>
-      </trans-unit>
-      <trans-unit id="s188114adebc9330c">
-        <source>Change org settings</source>
+      <trans-unit id="s2f8856b910d3ebf8">
+        <source>Copy Link to Profile</source>
       </trans-unit>
     </body>
   </file>
