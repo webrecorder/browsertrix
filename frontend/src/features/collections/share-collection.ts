@@ -16,7 +16,7 @@ import {
   Thumbnail,
 } from "./collection-thumbnail";
 import { collectionShareLink } from "./helpers/share-link";
-import { SelectCollectionAccess } from "./select-collection-access";
+import { type SelectCollectionAccess } from "./select-collection-access";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { ClipboardController } from "@/controllers/clipboard";
