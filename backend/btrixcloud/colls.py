@@ -837,6 +837,7 @@ class CollectionOps:
 
         return {"updated": True}
 
+    # pylint: disable=too-many-locals
     async def upload_thumbnail_stream(
         self,
         stream,
