@@ -541,8 +541,6 @@ export class WorkflowEditor extends BtrixElement {
       <div class="mb-10 flex flex-col gap-12 px-2">
         ${this.formSections.map(formSection)}
       </div>
-
-      ${when(this.serverError, (error) => this.renderErrorAlert(error))}
     `;
   }
 
@@ -551,7 +549,7 @@ export class WorkflowEditor extends BtrixElement {
       <footer
         class=${clsx(
           "flex items-center justify-end gap-2 rounded-lg border bg-white px-6 py-4 mb-7 shadow",
-          this.configId && tw`sticky bottom-2 z-50`,
+          (this.configId || this.serverError) && tw`sticky bottom-2 z-50`,
         )}
       >
         ${this.configId
@@ -561,6 +559,8 @@ export class WorkflowEditor extends BtrixElement {
               </sl-button>
             `
           : nothing}
+        ${when(this.serverError, (error) => this.renderErrorAlert(error))}
+
         <sl-button
           size="small"
           variant="primary"
@@ -1560,11 +1560,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
   }
 
   private renderErrorAlert(errorMessage: string | TemplateResult) {
-    return html`
-      <div class="mb-5">
-        <btrix-alert variant="danger">${errorMessage}</btrix-alert>
-      </div>
-    `;
+    return html` <div class="px-2 text-danger">${errorMessage}</div> `;
   }
 
   private readonly formSections: {
