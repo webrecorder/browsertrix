@@ -103,7 +103,7 @@ replica_deletion_delay_days: 0
 
 # API Image
 # =========================================
-backend_image: "docker.io/webrecorder/browsertrix-backend:1.13.2"
+backend_image: "docker.io/webrecorder/browsertrix-backend:1.13.3"
 backend_pull_policy: "Always"
 
 backend_password_secret: "PASSWORD!"
@@ -158,7 +158,7 @@ backend_avg_memory_threshold: 95
 
 # Nginx Image
 # =========================================
-frontend_image: "docker.io/webrecorder/browsertrix-frontend:1.13.2"
+frontend_image: "docker.io/webrecorder/browsertrix-frontend:1.13.3"
 frontend_pull_policy: "Always"
 
 frontend_cpu: "10m"
