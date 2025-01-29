@@ -34,13 +34,12 @@ export default function renderGeneral(this: CollectionEdit) {
       }}
     >
     </sl-input>
-    <sl-textarea
+    <sl-input
       class="with-max-help-text"
       name="caption"
       value=${this.collection.caption ?? ""}
       placeholder=${msg("Summarize the collection's content")}
       autocomplete="off"
-      rows="2"
       help-text=${validateCaptionMax.helpText}
       @sl-input=${this.validate(validateCaptionMax)}
     >
@@ -55,7 +54,7 @@ export default function renderGeneral(this: CollectionEdit) {
           <sl-icon name="info-circle" style="vertical-align: -.175em"></sl-icon>
         </sl-tooltip>
       </span>
-    </sl-textarea>
+    </sl-input>
     <div class="mb-7">${renderThumbnails.bind(this)()}</div>
     <btrix-collection-thumbnail-select
       .collection=${this.collection}
