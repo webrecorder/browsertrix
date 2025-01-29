@@ -21,7 +21,10 @@ import { type CollectionThumbnailSelect } from "./edit-dialog/thumbnail-select";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
 import { type TabGroupPanel } from "@/components/ui/tab-group/tab-panel";
-import { type Collection } from "@/types/collection";
+import {
+  type Collection,
+  type CollectionThumbnailSource,
+} from "@/types/collection";
 import { maxLengthValidator, type MaxLengthValidator } from "@/utils/form";
 import { formatRwpTimestamp } from "@/utils/replay";
 import { tw } from "@/utils/tailwind";
@@ -86,6 +89,9 @@ export class CollectionEdit extends BtrixElement {
   @state()
   defaultThumbnailName: `${Thumbnail}` | null = this.collection
     ?.defaultThumbnailName as `${Thumbnail}` | null;
+
+  @state()
+  selectedSnapshot: CollectionThumbnailSource | null = null;
 
   @query("btrix-dialog")
   readonly dialog?: Dialog;

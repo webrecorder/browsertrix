@@ -32,6 +32,9 @@ export class CollectionSnapshotPreview extends TailwindElement {
   @property({ type: String })
   view?: HomeView;
 
+  @property({ type: Boolean })
+  noSpinner = false;
+
   @property({ type: Object })
   snapshot?: Partial<SelectSnapshotDetail["item"]>;
 
@@ -117,6 +120,7 @@ export class CollectionSnapshotPreview extends TailwindElement {
 
   private readonly renderImage = () => {
     if (!this.snapshot) {
+      if (this.noSpinner) return;
       return html`
         <p class="m-3 text-pretty text-neutral-500">
           ${msg("Enter a Page URL to preview it")}
@@ -164,9 +168,12 @@ export class CollectionSnapshotPreview extends TailwindElement {
     </p>
   `;
 
-  private readonly renderSpinner = () => html`
-    <div class="flex size-full items-center justify-center text-2xl">
-      <sl-spinner></sl-spinner>
-    </div>
-  `;
+  private readonly renderSpinner = () => {
+    if (this.noSpinner) return;
+    return html`
+      <div class="flex size-full items-center justify-center text-2xl">
+        <sl-spinner></sl-spinner>
+      </div>
+    `;
+  };
 }

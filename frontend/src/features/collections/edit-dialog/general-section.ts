@@ -2,6 +2,7 @@ import { msg } from "@lit/localize";
 import { type SlInput } from "@shoelace-style/shoelace";
 import { html, nothing } from "lit";
 import { when } from "lit/directives/when.js";
+import queryString from "query-string";
 
 import {
   validateCaptionMax,
@@ -59,6 +60,10 @@ export default function renderGeneral(this: CollectionEdit) {
     <btrix-collection-thumbnail-select
       .collection=${this.collection}
       .replayLoaded=${this.replayLoaded}
+      @btrix-change=${() => {
+        this.selectedSnapshot =
+          this.thumbnailSelector?.selectedSnapshot ?? null;
+      }}
     >
     </btrix-collection-thumbnail-select>`;
 }
@@ -99,15 +104,16 @@ function renderThumbnails(this: CollectionEdit) {
           ></sl-icon></button
       ></sl-tooltip>`;
 
-    if (Object.values(Thumbnail).some((t) => t === thumbnail)) {
-      name = thumbnail as Thumbnail;
+    if (typeof thumbnail === "string") {
+      // we know that the thumbnail here is one of the placeholders
+      name = thumbnail;
       path = CollectionThumbnail.Variants[name].path;
     } else {
-      path = (thumbnail as NonNullable<PublicCollection["thumbnail"]>).path;
+      path = thumbnail.path;
     }
 
     if (!path) {
-      console.debug("no path for thumbnail:", thumbnail);
+      console.error("no path for thumbnail:", thumbnail);
       return;
     }
 
@@ -162,10 +168,9 @@ function renderThumbnails(this: CollectionEdit) {
         <div class="row-start-1 text-xs text-neutral-500">
           ${msg("Page Thumbnail")}
         </div>
-        ${when(
+        ${renderPageThumbnail.bind(this)(
           this.collection?.thumbnail,
-          (t) => thumbnail(t),
-          () => thumbnail(),
+          selectedImgSrc,
         )}
         <div class="row-start-1 text-xs text-neutral-600">
           ${msg("Placeholder")}
@@ -174,5 +179,71 @@ function renderThumbnails(this: CollectionEdit) {
         ${thumbnail(Thumbnail.Yellow)} ${thumbnail(Thumbnail.Orange)}
       </div>
     </fieldset>
+  `;
+}
+
+function renderPageThumbnail(
+  this: CollectionEdit,
+  currentThumbnail?: { name: string; path: string } | null,
+  selectedImgSrc?: string,
+) {
+  const replaySource = `/api/orgs/${this.orgId}/collections/${this.collection!.id}/replay.json`;
+  // TODO Get query from replay-web-page embed
+  const query = queryString.stringify({
+    source: replaySource,
+    customColl: this.collection!.id,
+    embed: "default",
+    noCache: 1,
+    noSandbox: 1,
+  });
+
+  const isSelected = currentThumbnail?.path === selectedImgSrc;
+
+  return html`
+    <button
+      class="row-start-2 flex aspect-video items-center justify-center overflow-hidden rounded bg-neutral-50 ring-1 ring-stone-600/10 transition-all hover:ring-2 hover:ring-blue-300"
+      ?disabled=${!currentThumbnail}
+      role="radio"
+      type="button"
+      aria-checked=${!!currentThumbnail}
+      @click=${() => {
+        this.defaultThumbnailName = this.collection
+          ?.thumbnail as unknown as Thumbnail;
+        void this.checkChanged.bind(this)();
+      }}
+    >
+      <div
+        class="relative flex size-full flex-col items-center justify-center bg-cover"
+        style="background-image:url('${currentThumbnail?.path}')"
+      >
+        ${isSelected
+          ? html`<sl-icon
+              class="size-10 stroke-black/50 text-white drop-shadow-md [paint-order:stroke]"
+              name="check-lg"
+            ></sl-icon>`
+          : nothing}
+        <btrix-collection-snapshot-preview
+          class="absolute inset-0"
+          id="thumbnailPreview"
+          collectionId=${this.collection!.id || ""}
+          view="url"
+          replaySrc=${`/replay/?${query}#view=pages`}
+          .snapshot=${this.selectedSnapshot}
+          noSpinner
+        >
+        </btrix-collection-snapshot-preview>
+
+        ${when(
+          !this.replayLoaded,
+          () => html`
+            <div
+              class="absolute inset-0 flex items-center justify-center text-2xl"
+            >
+              <sl-spinner></sl-spinner>
+            </div>
+          `,
+        )}
+      </div>
+    </button>
   `;
 }
