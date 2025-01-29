@@ -19,7 +19,7 @@ export default async function checkChanged(this: CollectionEdit) {
 
     const shouldUpload =
       thumbnail.selectedSnapshot &&
-      this.collection?.thumbnail?.thumbnailPage !== thumbnail.selectedSnapshot;
+      this.collection?.thumbnailSource !== thumbnail.selectedSnapshot;
 
     if (shouldUpload) {
       updates.push(["thumbnail", thumbnail]);
