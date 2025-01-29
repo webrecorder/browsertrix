@@ -349,7 +349,7 @@ export class Dashboard extends BtrixElement {
                   ${when(this.org, (org) =>
                     org.enablePublicProfile
                       ? html` <btrix-copy-button
-                          .getValue=${() => this.shareLink}
+                          .getValue=${() => null}
                           content=${msg("Copy Link to Public Gallery")}
                           @click=${() => {
                             ClipboardController.copyToClipboard(
