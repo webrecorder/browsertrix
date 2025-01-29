@@ -83,6 +83,7 @@ class PageOps:
 
                 if len(pages_buffer) > batch_size:
                     await self._add_pages_to_db(crawl_id, pages_buffer)
+                    pages_buffer = []
 
                 pages_buffer.append(
                     self._get_page_from_dict(page_dict, crawl_id, crawl.oid)
@@ -99,6 +100,38 @@ class PageOps:
         except Exception as err:
             traceback.print_exc()
             print(f"Error adding pages for crawl {crawl_id} to db: {err}", flush=True)
+
+    async def add_crawl_wacz_filename_to_pages(self, crawl_id: str):
+        """Add WACZ filename to existing pages in crawl if not already set"""
+        try:
+            crawl = await self.crawl_ops.get_crawl_out(crawl_id)
+            for wacz_file in crawl.resources:
+                wacz_filename = wacz_file.name
+                wacz_page_ids = []
+
+                stream = await self.storage_ops.sync_stream_wacz_pages([wacz_file])
+                for page_dict in stream:
+                    if not page_dict.get("url"):
+                        continue
+
+                    if page_dict.get("filename"):
+                        continue
+
+                    if page_dict.get("id"):
+                        wacz_page_ids.append(page_dict["id"])
+
+                # Update pages in batch per-filename
+                await self.pages.update_many(
+                    {"_id": {"$in": wacz_page_ids}},
+                    {"$set": {"filename": wacz_filename}},
+                )
+        # pylint: disable=broad-exception-caught, raise-missing-from
+        except Exception as err:
+            traceback.print_exc()
+            print(
+                f"Error adding filename to pages from item {crawl_id} to db: {err}",
+                flush=True,
+            )
 
     def _get_page_from_dict(
         self, page_dict: Dict[str, Any], crawl_id: str, oid: UUID
