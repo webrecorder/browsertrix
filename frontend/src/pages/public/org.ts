@@ -130,7 +130,7 @@ export class PublicOrg extends BtrixElement {
           actions: when(
             this.canEditOrg,
             () => html`
-              <sl-tooltip content=${msg("Back to Dashboard")}>
+              <sl-tooltip content=${msg("Go to Dashboard")}>
                 <sl-icon-button
                   href="${this.navigate.orgBasePath}/dashboard"
                   class="size-8 text-base"

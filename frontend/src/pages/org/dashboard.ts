@@ -126,6 +126,18 @@ export class Dashboard extends BtrixElement {
           })}
         `,
         actions: html`
+          <sl-tooltip
+            content=${this.org?.enablePublicProfile
+              ? msg("Visit Public Collections Gallery")
+              : msg("Preview Public Collections Gallery")}
+          >
+            <sl-icon-button
+              href=${`/${RouteNamespace.PublicOrgs}/${this.orgSlugState}`}
+              class="size-8 text-base"
+              name="globe2"
+              @click=${this.navigate.link}
+            ></sl-icon-button>
+          </sl-tooltip>
           ${when(
             this.appState.isAdmin,
             () =>
@@ -339,14 +351,6 @@ export class Dashboard extends BtrixElement {
                     >
                       <sl-icon slot="prefix" name="collection-fill"></sl-icon>
                       ${msg("Manage Collections")}
-                    </btrix-menu-item-link>
-                    <btrix-menu-item-link
-                      href=${`/${RouteNamespace.PublicOrgs}/${this.orgSlugState}`}
-                    >
-                      <sl-icon slot="prefix" name="globe2"></sl-icon>
-                      ${this.org?.enablePublicProfile
-                        ? msg("Visit Public Collections Gallery")
-                        : msg("Preview Public Collections Gallery")}
                     </btrix-menu-item-link>
                     ${when(this.org, (org) =>
                       org.enablePublicProfile
