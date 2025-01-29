@@ -116,11 +116,10 @@ export class Collection extends BtrixElement {
               href="${this.navigate
                 .orgBasePath}/collections/view/${collection.id}"
               size="small"
-              variant="primary"
+              variant="text"
               @click=${this.navigate.link}
             >
-              <sl-icon slot="prefix" name="gear"></sl-icon>
-              ${msg("Edit Collection")}
+              ${msg("Go to Private Page")}
             </sl-button>
           `,
         )}
