@@ -1,5 +1,4 @@
 import { localized, msg, str } from "@lit/localize";
-import type { SlInput } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import {
   html,
@@ -16,23 +15,17 @@ import { when } from "lit/directives/when.js";
 import stylesheet from "./settings.stylesheet.css";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import type { APIUser } from "@/index";
 import { columns } from "@/layouts/columns";
 import { pageHeader } from "@/layouts/pageHeader";
-import { RouteNamespace } from "@/routes";
-import { alerts } from "@/strings/orgs/alerts";
 import type { APIPaginatedList } from "@/types/api";
 import { isApiError } from "@/utils/api";
-import { formValidator, maxLengthValidator } from "@/utils/form";
+import { formValidator } from "@/utils/form";
 import { AccessCode, isAdmin, isCrawler, type OrgData } from "@/utils/orgs";
-import slugifyStrict from "@/utils/slugify";
-import { AppStateService } from "@/utils/state";
 import { tw } from "@/utils/tailwind";
-import { formatAPIUser } from "@/utils/user";
 
+import "./components/general";
 import "./components/billing";
 import "./components/crawling-defaults";
-import "./components/visibility";
 
 const styles = unsafeCSS(stylesheet);
 
@@ -85,9 +78,6 @@ export class OrgSettings extends BtrixElement {
   isAddingMember = false;
 
   @state()
-  private isSavingOrgName = false;
-
-  @state()
   private pendingInvites: Invite[] = [];
 
   @state()
@@ -95,9 +85,6 @@ export class OrgSettings extends BtrixElement {
 
   @state()
   private isSubmittingInvite = false;
-
-  @state()
-  private slugValue = "";
 
   private get tabLabels(): Record<Tab, string> {
     return {
@@ -107,9 +94,6 @@ export class OrgSettings extends BtrixElement {
       "crawling-defaults": msg("Crawling Defaults"),
     };
   }
-
-  private readonly validateOrgNameMax = maxLengthValidator(40);
-  private readonly validateDescriptionMax = maxLengthValidator(150);
 
   async willUpdate(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("isAddingMember") && this.isAddingMember) {
@@ -177,8 +161,7 @@ export class OrgSettings extends BtrixElement {
 
         <btrix-tab-group-panel name="information">
           ${this.renderPanelHeader({ title: msg("General") })}
-          ${this.renderInformation()}
-          <btrix-org-settings-visibility></btrix-org-settings-visibility>
+          <btrix-org-settings-general></btrix-org-settings-general>
           ${this.renderApi()}
         </btrix-tab-group-panel>
         <btrix-tab-group-panel name="members">
@@ -270,150 +253,6 @@ export class OrgSettings extends BtrixElement {
     `;
   }
 
-  private renderInformation() {
-    if (!this.userOrg) return;
-
-    const baseUrl = `${window.location.hostname}${window.location.port ? `:${window.location.port}` : ""}`;
-    const slugValue = this.slugValue || this.orgSlugState;
-
-    return html`<section class="rounded-lg border">
-      <form @submit=${this.onOrgInfoSubmit}>
-        <div class="p-5">
-          ${columns([
-            [
-              html`
-                <sl-input
-                  class="with-max-help-text hide-required-content"
-                  name="orgName"
-                  size="small"
-                  label=${msg("Org Name")}
-                  placeholder=${msg("My Organization")}
-                  autocomplete="off"
-                  value=${this.userOrg.name}
-                  minlength="2"
-                  required
-                  help-text=${this.validateOrgNameMax.helpText}
-                  @sl-input=${this.validateOrgNameMax.validate}
-                ></sl-input>
-              `,
-              msg(
-                "Choose a name that represents your organization, your team, or your personal web archive.",
-              ),
-            ],
-            [
-              html`
-                <sl-input
-                  id="org-url"
-                  class="hide-required-content mb-2 part-[input]:pl-px"
-                  name="orgSlug"
-                  size="small"
-                  label=${msg("Org URL")}
-                  placeholder="my-organization"
-                  autocomplete="off"
-                  value=${this.orgSlugState || ""}
-                  minlength="2"
-                  maxlength="30"
-                  required
-                  @sl-input=${this.handleSlugInput}
-                >
-                  <div slot="prefix" class="font-light text-neutral-500">
-                    ${baseUrl}/
-                  </div>
-                  <div slot="help-text" class="leading-relaxed">
-                    ${msg("Examples of org URL in use")}:
-                    <ul class="list-inside list-disc">
-                      <li>
-                        ${msg("Settings")} ${msg("(current page)")}:
-                        <span class="break-word text-blue-500">
-                          /${RouteNamespace.PrivateOrgs}/<strong
-                            class="font-medium"
-                            >${slugValue}</strong
-                          >/settings
-                        </span>
-                      </li>
-                      <li>
-                        ${msg("Dashboard")}:
-                        <span class="break-word text-blue-500">
-                          /${RouteNamespace.PrivateOrgs}/<strong
-                            class="font-medium"
-                            >${slugValue}</strong
-                          >/dashboard
-                        </span>
-                      </li>
-                      <li>
-                        ${msg("Public gallery")}:
-                        <span class="break-word text-blue-500">
-                          /${RouteNamespace.PublicOrgs}/<strong
-                            class="font-medium"
-                            >${slugValue}</strong
-                          >
-                        </span>
-                      </li>
-                    </ul>
-                  </div>
-                </sl-input>
-              `,
-              msg("Customize your org's Browsertrix URL."),
-            ],
-            [
-              html`
-                <sl-textarea
-                  class="with-max-help-text"
-                  name="publicDescription"
-                  size="small"
-                  label=${msg("Description")}
-                  autocomplete="off"
-                  value=${this.org?.publicDescription || ""}
-                  minlength="2"
-                  rows="2"
-                  help-text=${this.validateDescriptionMax.helpText}
-                  @sl-input=${this.validateDescriptionMax.validate}
-                ></sl-textarea>
-              `,
-              msg("Write a short description to introduce your organization."),
-            ],
-            [
-              html`
-                <btrix-url-input
-                  class="mb-2"
-                  name="publicUrl"
-                  size="small"
-                  label=${msg("Website")}
-                  value=${this.org?.publicUrl || ""}
-                ></btrix-url-input>
-              `,
-              msg("Link to your organization's (or your personal) website."),
-            ],
-          ])}
-        </div>
-        <footer class="flex items-center justify-between border-t px-4 py-3">
-          <btrix-link
-            href=${`/${RouteNamespace.PublicOrgs}/${this.orgSlugState}`}
-            target="_blank"
-          >
-            ${when(
-              this.org,
-              (org) =>
-                org.enablePublicProfile
-                  ? msg("View as public")
-                  : msg("Preview how information appears to the public"),
-              () => html` <sl-skeleton class="w-36"></sl-skeleton> `,
-            )}
-          </btrix-link>
-          <sl-button
-            type="submit"
-            size="small"
-            variant="primary"
-            ?disabled=${this.isSavingOrgName}
-            ?loading=${this.isSavingOrgName}
-          >
-            ${msg("Save")}
-          </sl-button>
-        </footer>
-      </form>
-    </section>`;
-  }
-
   private renderApi() {
     if (!this.userOrg) return;
 
@@ -437,19 +276,6 @@ export class OrgSettings extends BtrixElement {
           ])}
         </div>
       </section>`;
-  }
-
-  private handleSlugInput(e: InputEvent) {
-    const input = e.target as SlInput;
-    // Ideally this would match against the full character map that slugify uses
-    // but this'll do for most use cases
-    const end = input.value.match(/[\s*_+~.,()'"!\-:@]$/g) ? "-" : "";
-    input.value = slugifyStrict(input.value) + end;
-    this.slugValue = slugifyStrict(input.value);
-
-    input.setCustomValidity(
-      this.slugValue.length < 2 ? msg("URL too short") : "",
-    );
   }
 
   private renderMembers() {
@@ -744,87 +570,6 @@ export class OrgSettings extends BtrixElement {
     }
   }
 
-  private async onOrgInfoSubmit(e: SubmitEvent) {
-    e.preventDefault();
-
-    const formEl = e.target as HTMLFormElement;
-    if (!(await this.checkFormValidity(formEl)) || !this.org) return;
-
-    const { orgName, publicDescription, publicUrl } = serialize(formEl) as {
-      orgName: string;
-      publicDescription: string;
-      publicUrl: string;
-    };
-
-    // TODO See if backend can combine into one endpoint
-    const requests: Promise<unknown>[] = [];
-
-    if (orgName !== this.org.name || this.slugValue) {
-      const params = {
-        name: orgName,
-        slug: this.orgSlugState!,
-      };
-
-      if (this.slugValue) {
-        params.slug = slugifyStrict(this.slugValue);
-      }
-
-      requests.push(this.renameOrg(params));
-    }
-
-    if (
-      publicDescription !== (this.org.publicDescription ?? "") ||
-      publicUrl !== (this.org.publicUrl ?? "")
-    ) {
-      requests.push(
-        this.updateOrgProfile({
-          publicDescription: publicDescription || this.org.publicDescription,
-          publicUrl: publicUrl || this.org.publicUrl,
-        }),
-      );
-    }
-
-    if (requests.length) {
-      this.isSavingOrgName = true;
-
-      try {
-        await Promise.all(requests);
-
-        this.notify.toast({
-          message: alerts.settingsUpdateSuccess,
-          variant: "success",
-          icon: "check2-circle",
-          id: UPDATED_STATUS_TOAST_ID,
-        });
-      } catch (err) {
-        console.debug(err);
-
-        let message = alerts.settingsUpdateFailure;
-
-        if (isApiError(err)) {
-          if (err.details === "duplicate_org_name") {
-            message = msg("This org name is already taken, try another one.");
-          } else if (err.details === "duplicate_org_slug") {
-            message = msg("This org URL is already taken, try another one.");
-          } else if (err.details === "invalid_slug") {
-            message = msg(
-              "This org URL is invalid. Please use alphanumeric characters and dashes (-) only.",
-            );
-          }
-        }
-
-        this.notify.toast({
-          message,
-          variant: "danger",
-          icon: "exclamation-octagon",
-          id: UPDATED_STATUS_TOAST_ID,
-        });
-      }
-
-      this.isSavingOrgName = false;
-    }
-  }
-
   private readonly selectUserRole = (user: User) => (e: Event) => {
     this.dispatchEvent(
       new CustomEvent("org-user-role-change", {
@@ -911,57 +656,6 @@ export class OrgSettings extends BtrixElement {
         id: "user-updated-status",
       });
     }
-  }
-
-  private async renameOrg({ name, slug }: { name: string; slug: string }) {
-    await this.api.fetch(`/orgs/${this.orgId}/rename`, {
-      method: "POST",
-      body: JSON.stringify({ name, slug }),
-    });
-
-    const user = await this.getCurrentUser();
-
-    AppStateService.updateUser(formatAPIUser(user), slug);
-
-    this.navigate.to(`${this.navigate.orgBasePath}/settings`);
-  }
-
-  private async updateOrgProfile({
-    publicDescription,
-    publicUrl,
-  }: {
-    publicDescription: string | null;
-    publicUrl: string | null;
-  }) {
-    const data = await this.api.fetch<{ updated: boolean }>(
-      `/orgs/${this.orgId}/public-profile`,
-      {
-        method: "POST",
-        body: JSON.stringify({
-          publicDescription,
-          publicUrl,
-        }),
-      },
-    );
-
-    if (!data.updated) {
-      throw new Error("`data.updated` is not true");
-    }
-
-    this.dispatchEvent(
-      new CustomEvent<UpdateOrgDetail>("btrix-update-org", {
-        detail: {
-          publicDescription,
-          publicUrl,
-        },
-        bubbles: true,
-        composed: true,
-      }),
-    );
-  }
-
-  private async getCurrentUser(): Promise<APIUser> {
-    return this.api.fetch("/users/me");
   }
 
   /**
