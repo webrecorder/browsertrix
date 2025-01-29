@@ -136,7 +136,7 @@ export function pageHeader({
       </div>
 
       ${actions
-        ? html`<div class="ml-auto flex flex-shrink-0 items-center gap-2">
+        ? html`<div class="ml-auto flex flex-shrink-0 items-end gap-2">
             ${actions}
           </div>`
         : nothing}

@@ -9,7 +9,7 @@ export enum OrgTab {
 
 export enum RouteNamespace {
   PrivateOrgs = "orgs",
-  PublicOrgs = "profile",
+  PublicOrgs = "explore",
 }
 
 export const ROUTES = {
@@ -35,7 +35,7 @@ export const ROUTES = {
     `(/${OrgTab.Settings}(/:settingsTab))`,
   ].join(""),
   publicOrgs: `/${RouteNamespace.PublicOrgs}(/)`,
-  publicOrgProfile: `/${RouteNamespace.PublicOrgs}/:slug(/)`,
+  publicOrg: `/${RouteNamespace.PublicOrgs}/:slug(/)`,
   publicCollection: `/${RouteNamespace.PublicOrgs}/:slug/collections/:collectionSlug(/:collectionTab)`,
   users: "/users",
   usersInvite: "/users/invite",

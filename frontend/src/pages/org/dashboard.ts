@@ -89,11 +89,59 @@ export class Dashboard extends BtrixElement {
     return html`
       ${pageHeader({
         title: this.userOrg?.name,
+        secondary: html`
+          ${when(
+            this.org?.publicDescription,
+            (publicDescription) => html`
+              <div class="text-pretty text-stone-600">${publicDescription}</div>
+            `,
+          )}
+          ${when(this.org?.publicUrl, (urlStr) => {
+            let url: URL;
+            try {
+              url = new URL(urlStr);
+            } catch {
+              return nothing;
+            }
+
+            return html`
+              <div
+                class="flex items-center gap-1.5 text-pretty text-neutral-700"
+              >
+                <sl-icon
+                  name="globe2"
+                  class="size-4 text-stone-400"
+                  label=${msg("Website")}
+                ></sl-icon>
+                <a
+                  class="font-medium leading-none text-stone-500 transition-colors hover:text-stone-600"
+                  href="${url.href}"
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                >
+                  ${url.href.split("//")[1].replace(/\/$/, "")}
+                </a>
+              </div>
+            `;
+          })}
+        `,
         actions: html`
+          <sl-tooltip
+            content=${this.org?.enablePublicProfile
+              ? msg("Visit Public Collections Gallery")
+              : msg("Preview Public Collections Gallery")}
+          >
+            <sl-icon-button
+              href=${`/${RouteNamespace.PublicOrgs}/${this.orgSlugState}`}
+              class="size-8 text-base"
+              name="globe2"
+              @click=${this.navigate.link}
+            ></sl-icon-button>
+          </sl-tooltip>
           ${when(
             this.appState.isAdmin,
             () =>
-              html`<sl-tooltip content=${msg("Manage org settings")}>
+              html`<sl-tooltip content=${msg("Change Org Settings")}>
                 <sl-icon-button
                   href=${`${this.navigate.orgBasePath}/settings`}
                   class="size-8 text-base"
@@ -304,14 +352,6 @@ export class Dashboard extends BtrixElement {
                       <sl-icon slot="prefix" name="collection-fill"></sl-icon>
                       ${msg("Manage Collections")}
                     </btrix-menu-item-link>
-                    <btrix-menu-item-link
-                      href=${`/${RouteNamespace.PublicOrgs}/${this.orgSlugState}`}
-                    >
-                      <sl-icon slot="prefix" name="globe2"></sl-icon>
-                      ${this.org?.enablePublicProfile
-                        ? msg("Visit Public Profile")
-                        : msg("Preview Public Profile")}
-                    </btrix-menu-item-link>
                     ${when(this.org, (org) =>
                       org.enablePublicProfile
                         ? html`
@@ -330,7 +370,7 @@ export class Dashboard extends BtrixElement {
                               }}
                             >
                               <sl-icon name="copy" slot="prefix"></sl-icon>
-                              ${msg("Copy Link to Profile")}
+                              ${msg("Copy Link to Public Gallery")}
                             </sl-menu-item>
                           `
                         : this.appState.isAdmin
