@@ -14,13 +14,7 @@ import clsx from "clsx";
 import Fuse from "fuse.js";
 import { mergeDeep } from "immutable";
 import type { LanguageCode } from "iso-639-1";
-import {
-  html,
-  nothing,
-  type LitElement,
-  type PropertyValues,
-  type TemplateResult,
-} from "lit";
+import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import {
   customElement,
   property,
@@ -55,7 +49,10 @@ import {
 } from "@/controllers/observable";
 import { type SelectBrowserProfileChangeEvent } from "@/features/browser-profiles/select-browser-profile";
 import type { CollectionsChangeEvent } from "@/features/collections/collections-add";
-import type { QueueExclusionTable } from "@/features/crawl-workflows/queue-exclusion-table";
+import type {
+  ExclusionChangeEvent,
+  QueueExclusionTable,
+} from "@/features/crawl-workflows/queue-exclusion-table";
 import { infoCol, inputCol } from "@/layouts/columns";
 import { pageSectionsWithNav } from "@/layouts/pageSectionsWithNav";
 import { panel } from "@/layouts/panel";
@@ -65,7 +62,7 @@ import sectionStrings from "@/strings/crawl-workflows/section";
 import { ScopeType, type Seed, type WorkflowParams } from "@/types/crawler";
 import type { UnderlyingFunction } from "@/types/utils";
 import { NewWorkflowOnlyScopeType } from "@/types/workflow";
-import { isApiError, type Detail } from "@/utils/api";
+import { isApiError } from "@/utils/api";
 import { DEPTH_SUPPORTED_SCOPES, isPageScopeType } from "@/utils/crawler";
 import {
   getUTCSchedule,
@@ -301,6 +298,9 @@ export class WorkflowEditor extends BtrixElement {
 
   @queryAsync(`.${formName}${panelSuffix}--active`)
   private readonly activeTabPanel!: Promise<HTMLElement | null>;
+
+  @query("btrix-queue-exclusion-table")
+  private readonly exclusionTable?: QueueExclusionTable | null;
 
   connectedCallback(): void {
     this.initializeEditor();
@@ -671,11 +671,7 @@ export class WorkflowEditor extends BtrixElement {
                       @btrix-change=${this.handleChangeRegex}
                     ></btrix-queue-exclusion-table>
                   `)}
-                  ${this.renderHelpTextCol(
-                    msg(
-                      `Specify exclusion rules for what pages should not be visited.`,
-                    ),
-                  )}
+                  ${this.renderHelpTextCol(infoTextStrings["exclusions"])}
                 </div>
               </btrix-details>
             </div>
@@ -1685,7 +1681,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
   }
 
   private async handleRemoveRegex(e: CustomEvent) {
-    const { exclusions } = e.target as QueueExclusionTable;
+    const table = e.target as QueueExclusionTable;
+    const { exclusions } = table;
 
     if (!this.formState.exclusions) {
       this.updateFormState(
@@ -1698,17 +1695,50 @@ https://archiveweb.page/images/${"logo.svg"}`}
       this.updateFormState({ exclusions }, true);
     }
 
-    // Check if we removed an erroring input
-    const table = e.target as LitElement;
+    this.updateExclusionsValidity();
+
     await this.updateComplete;
-    await table.updateComplete;
-    this.syncTabErrorState(table);
+    await this.exclusionTable?.updateComplete;
+
+    // Update tab error state if an invalid regex was removed
+    if (e.detail.valid === false && table.checkValidity()) {
+      this.syncTabErrorState(table);
+    }
   }
 
-  private handleChangeRegex(e: CustomEvent) {
-    const { exclusions } = e.target as QueueExclusionTable;
+  private async handleChangeRegex(e: ExclusionChangeEvent) {
+    const table = e.target as QueueExclusionTable;
+    const { exclusions } = table;
 
     this.updateFormState({ exclusions }, true);
+    this.updateExclusionsValidity();
+
+    await this.updateComplete;
+    await this.exclusionTable?.updateComplete;
+
+    if (e.detail.valid === false || !table.checkValidity()) {
+      this.updateProgressState({
+        tabs: {
+          crawlSetup: { error: true },
+        },
+      });
+    } else {
+      this.syncTabErrorState(table);
+    }
+  }
+
+  /**
+   * HACK Set data attribute manually so that
+   * exclusions table works with `syncTabErrorState`
+   */
+  private updateExclusionsValidity() {
+    if (this.exclusionTable?.checkValidity() === false) {
+      this.exclusionTable.setAttribute("data-invalid", "true");
+      this.exclusionTable.setAttribute("data-user-invalid", "true");
+    } else {
+      this.exclusionTable?.removeAttribute("data-invalid");
+      this.exclusionTable?.removeAttribute("data-user-invalid");
+    }
   }
 
   private readonly validateOnBlur = async (e: Event) => {
@@ -1924,12 +1954,23 @@ https://archiveweb.page/images/${"logo.svg"}`}
             id: "workflow-created-status",
           });
         } else {
-          const isConfigError = ({ loc }: Detail) =>
-            loc.some((v: string) => v === "config");
-          if (Array.isArray(e.details) && e.details.some(isConfigError)) {
-            this.serverError = this.formatConfigServerError(e.details);
-          } else {
-            this.serverError = e.message;
+          this.notify.toast({
+            message: msg("Please fix all errors and try again."),
+            variant: "danger",
+            icon: "exclamation-octagon",
+            id: "workflow-created-status",
+          });
+
+          const errorDetail = Array.isArray(e.details)
+            ? e.details[0]
+            : e.details;
+
+          if (typeof errorDetail === "string") {
+            this.serverError = `${msg("Please fix the following issue: ")} ${
+              errorDetail === "invalid_regex"
+                ? msg("Page exclusion contains invalid regex")
+                : errorDetail.replace(/_/, " ")
+            }`;
           }
         }
       } else {
@@ -1950,34 +1991,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
       `${this.navigate.orgBasePath}/workflows${this.configId ? `/${this.configId}#settings` : ""}`,
     );
     // this.initializeEditor();
-  }
-
-  /**
-   * Format `config` related API error returned from server
-   */
-  private formatConfigServerError(details: Detail[]): TemplateResult {
-    const detailsWithoutDictError = details.filter(
-      ({ type }) => type !== "type_error.dict",
-    );
-
-    const renderDetail = ({ loc, msg: detailMsg }: Detail) => html`
-      <li>
-        ${loc.some((v: string) => v === "seeds") &&
-        typeof loc[loc.length - 1] === "number"
-          ? msg(str`Seed URL ${loc[loc.length - 1] + 1}: `)
-          : `${loc[loc.length - 1]}: `}
-        ${detailMsg}
-      </li>
-    `;
-
-    return html`
-      ${msg(
-        "Couldn't save Workflow. Please fix the following Workflow issues:",
-      )}
-      <ul class="w-fit list-disc pl-4">
-        ${detailsWithoutDictError.map(renderDetail)}
-      </ul>
-    `;
   }
 
   private validateUrlList(
