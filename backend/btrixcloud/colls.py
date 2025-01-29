@@ -25,7 +25,7 @@ from .models import (
     CollIn,
     CollOut,
     CollIdName,
-    CollectionThumbnailPage,
+    CollectionThumbnailSource,
     UpdateColl,
     AddRemoveCrawlList,
     BaseCrawl,
@@ -844,9 +844,9 @@ class CollectionOps:
         coll_id: UUID,
         org: Organization,
         user: User,
-        sourceUrl: Optional[AnyHttpUrl],
-        sourceTs: Optional[datetime],
-        sourcePageId: Optional[UUID],
+        source_url: Optional[AnyHttpUrl] = None,
+        source_ts: Optional[datetime] = None,
+        source_page_id: Optional[UUID] = None,
     ) -> Dict[str, bool]:
         """Upload file as stream to use as collection thumbnail"""
         coll = await self.get_collection(coll_id)
@@ -905,9 +905,11 @@ class CollectionOps:
 
         coll.thumbnail = thumbnail_file
 
-        if sourceUrl and sourceTs and sourcePageId:
-            coll.thumbnail.thumbnailPage = CollectionThumbnailPage(
-                sourceUrl, sourceTs, sourcePageId
+        if source_url and source_ts and source_page_id:
+            coll.thumbnailSource = CollectionThumbnailSource(
+                url=source_url,
+                urlTs=source_ts,
+                urlPageId=source_page_id,
             )
 
         # Update entire document to avoid bson.errors.InvalidDocument exception

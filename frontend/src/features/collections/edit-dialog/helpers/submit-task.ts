@@ -7,7 +7,7 @@ import {
 } from "../../collection-edit-dialog";
 
 import {
-  type CollectionThumbnailPage,
+  type CollectionThumbnailSource,
   type CollectionUpdate,
 } from "@/types/collection";
 import { isApiError } from "@/utils/api";
@@ -22,7 +22,7 @@ export default function submitTask(
       if (!updates) throw new Error("invalid_data");
       const updateObject = Object.fromEntries(updates) as CollectionUpdate & {
         thumbnail?: {
-          selectedSnapshot: CollectionThumbnailPage;
+          selectedSnapshot: CollectionThumbnailSource;
         };
       };
       const { thumbnail: { selectedSnapshot } = {}, ...rest } = updateObject;
@@ -43,7 +43,9 @@ export default function submitTask(
         if (!file) throw new Error("invalid_data");
         const searchParams = new URLSearchParams({
           filename: fileName,
-          ...selectedSnapshot,
+          url: selectedSnapshot.url,
+          url_ts: selectedSnapshot.urlTs,
+          url_page_id: selectedSnapshot.urlPageId,
         });
         tasks.push(
           this.api.upload(

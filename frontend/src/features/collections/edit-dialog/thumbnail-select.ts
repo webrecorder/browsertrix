@@ -10,7 +10,7 @@ import type { SelectSnapshotDetail } from "../select-collection-start-page";
 import { BtrixElement } from "@/classes/BtrixElement";
 import {
   type Collection,
-  type CollectionThumbnailPage,
+  type CollectionThumbnailSource,
 } from "@/types/collection";
 
 @customElement("btrix-collection-thumbnail-select")
@@ -23,14 +23,14 @@ export class CollectionThumbnailSelect extends BtrixElement {
   replayLoaded = false;
 
   @state()
-  selectedSnapshot: CollectionThumbnailPage | null = null;
+  selectedSnapshot: CollectionThumbnailSource | null = null;
 
   @query("#thumbnailPreview")
   public readonly thumbnailPreview?: CollectionSnapshotPreview | null;
 
   protected willUpdate(changedProperties: PropertyValues<this>): void {
     if (changedProperties.has("collection")) {
-      this.selectedSnapshot = this.collection?.thumbnail?.thumbnailPage ?? null;
+      this.selectedSnapshot = this.collection?.thumbnailSource ?? null;
     }
   }
 

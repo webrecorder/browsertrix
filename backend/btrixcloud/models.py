@@ -1237,17 +1237,12 @@ class CollAccessType(str, Enum):
 
 
 # ============================================================================
-class CollectionThumbnailPage(BaseModel):
+class CollectionThumbnailSource(BaseModel):
     """The page source for a thumbnail"""
 
     url: AnyHttpUrl
     urlTs: datetime
     urlPageId: UUID
-
-
-# ============================================================================
-class CollectionThumbnail(ImageFileOut):
-    thumbnailPage: Optional[CollectionThumbnailPage] = None
 
 
 # ============================================================================
@@ -1281,7 +1276,8 @@ class Collection(BaseMongoModel):
     homeUrlTs: Optional[datetime] = None
     homeUrlPageId: Optional[UUID] = None
 
-    thumbnail: Optional[CollectionThumbnail] = None
+    thumbnail: Optional[ImageFile] = None
+    thumbnailSource: Optional[CollectionThumbnailSource] = None
     defaultThumbnailName: Optional[str] = None
 
     allowPublicDownload: Optional[bool] = True
@@ -1336,7 +1332,8 @@ class CollOut(BaseMongoModel):
     homeUrlPageId: Optional[UUID] = None
 
     resources: List[CrawlFileOut] = []
-    thumbnail: Optional[CollectionThumbnail] = None
+    thumbnail: Optional[ImageFileOut] = None
+    thumbnailSource: Optional[CollectionThumbnailSource] = None
     defaultThumbnailName: Optional[str] = None
 
     allowPublicDownload: bool = True
