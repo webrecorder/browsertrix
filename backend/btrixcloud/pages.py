@@ -105,29 +105,34 @@ class PageOps:
         """Add WACZ filename to existing pages in crawl if not already set"""
         try:
             crawl = await self.crawl_ops.get_crawl_out(crawl_id)
-            for wacz_file in crawl.resources:
+            if not crawl.resources:
+                return
 
+            for wacz_file in crawl.resources:
+                # Strip oid directory from filename
                 filename = wacz_file.name
                 name_parts = wacz_file.name.split("/")
                 if name_parts and len(name_parts) > 1:
                     filename = name_parts[-1]
 
-                wacz_page_ids = []
+                page_ids_to_update = []
 
                 stream = await self.storage_ops.sync_stream_wacz_pages([wacz_file])
                 for page_dict in stream:
                     if not page_dict.get("url"):
                         continue
 
-                    if page_dict.get("filename"):
-                        continue
-
-                    if page_dict.get("id"):
-                        wacz_page_ids.append(page_dict["id"])
+                    page_id = page_dict.get("id")
+                    if page_id:
+                        try:
+                            page_ids_to_update.append(UUID(page_id))
+                        # pylint: disable=broad-exception-caught
+                        except Exception:
+                            continue
 
                 # Update pages in batch per-filename
                 await self.pages.update_many(
-                    {"_id": {"$in": wacz_page_ids}},
+                    {"_id": {"$in": page_ids_to_update}},
                     {"$set": {"filename": filename}},
                 )
         # pylint: disable=broad-exception-caught, raise-missing-from

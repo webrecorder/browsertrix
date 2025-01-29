@@ -25,8 +25,6 @@ class Migration(BaseMigration):
         """
         pages_mdb = self.mdb["pages"]
 
-        crawl_ids_to_update = set()
-
         if self.page_ops is None:
             print(
                 "Unable to add filename to pages, missing page_ops",
@@ -34,11 +32,7 @@ class Migration(BaseMigration):
             )
             return
 
-        async for page_raw in pages_mdb.find({"filename": None}):
-            crawl_id = page_raw.get("crawl_id")
-            if crawl_id:
-                crawl_ids_to_update.add(crawl_id)
-
+        crawl_ids_to_update = await pages_mdb.distinct("crawl_id", {"filename": None})
         for crawl_id in crawl_ids_to_update:
             try:
                 await self.page_ops.add_crawl_wacz_filename_to_pages(crawl_id)
