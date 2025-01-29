@@ -12,6 +12,7 @@ import type { Embed as ReplayWebPage } from "replaywebpage";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { MarkdownEditor } from "@/components/ui/markdown-editor";
 import type { PageChangeEvent } from "@/components/ui/pagination";
+import { viewStateContext, type ViewStateContext } from "@/context/view-state";
 import type { EditDialogTab } from "@/features/collections/collection-edit-dialog";
 import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
 import type { ShareCollection } from "@/features/collections/share-collection";
@@ -20,6 +21,7 @@ import {
   metadataItemWithCollection,
 } from "@/layouts/collections/metadataColumn";
 import { pageNav, pageTitle, type Breadcrumb } from "@/layouts/pageHeader";
+import { RouteNamespace } from "@/routes";
 import type {
   APIPaginatedList,
   APIPaginationQuery,
@@ -72,6 +74,9 @@ export class CollectionDetail extends BtrixElement {
   @state()
   private isRwpLoaded = false;
 
+  @consume({ context: viewStateContext })
+  viewState?: ViewStateContext;
+
   @query("replay-web-page")
   private readonly replayEmbed?: ReplayWebPage | null;
 
@@ -101,6 +106,18 @@ export class CollectionDetail extends BtrixElement {
       text: msg("About"),
     },
   };
+
+  private get shareLink() {
+    const baseUrl = `${window.location.protocol}//${window.location.hostname}${window.location.port ? `:${window.location.port}` : ""}`;
+    if (this.collection) {
+      return `${baseUrl}/${
+        this.collection.access === CollectionAccess.Private
+          ? `${RouteNamespace.PrivateOrgs}/${this.orgSlugState}/collections/view/${this.collection.id}`
+          : `${RouteNamespace.PublicOrgs}/${this.viewState?.params.slug || ""}/collections/${this.collection.slug}`
+      }`;
+    }
+    return "";
+  }
 
   private get isCrawler() {
     return this.appState.isCrawler;
@@ -136,7 +153,29 @@ export class CollectionDetail extends BtrixElement {
 
   render() {
     return html`
-      <div class="mb-7">${this.renderBreadcrumbs()}</div>
+      <div class="mb-7 flex justify-between">
+        ${this.renderBreadcrumbs()}
+        ${this.collection &&
+        (this.collection.access === CollectionAccess.Unlisted ||
+          this.collection.access === CollectionAccess.Public)
+          ? html`
+              <a
+                href=${this.shareLink}
+                class="flex h-5 items-center gap-1 truncate whitespace-nowrap font-medium leading-5 text-primary"
+              >
+                <sl-icon
+                  slot="prefix"
+                  name=${this.collection.access === CollectionAccess.Unlisted
+                    ? SelectCollectionAccess.Options.unlisted.icon
+                    : SelectCollectionAccess.Options.public.icon}
+                ></sl-icon>
+                ${this.collection.access === CollectionAccess.Unlisted
+                  ? msg("Visit Unlisted Page")
+                  : msg("Visit Public Page")}
+              </a>
+            `
+          : nothing}
+      </div>
       <header class=${clsx(tw`mt-5 flex flex-col gap-3 lg:flex-row`)}>
         <div
           class="-mb-2 -ml-2 -mr-1 -mt-1 flex flex-none flex-col gap-2 self-start rounded-lg pb-2 pl-2 pr-1 pt-1 transition-colors has-[sl-icon-button:hover]:bg-primary-50"
