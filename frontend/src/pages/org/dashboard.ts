@@ -344,49 +344,34 @@ export class Dashboard extends BtrixElement {
             ${when(
               this.appState.isCrawler,
               () => html`
-                <btrix-overflow-dropdown>
-                  <sl-menu>
-                    <btrix-menu-item-link
+                <div class="flex items-center gap-2">
+                  <!-- TODO Refactor clipboard code, get URL in a nicer way? -->
+                  ${when(this.org, (org) =>
+                    org.enablePublicProfile
+                      ? html` <btrix-copy-button
+                          .getValue=${() => this.shareLink}
+                          content=${msg("Copy Link to Public Gallery")}
+                          @click=${() => {
+                            ClipboardController.copyToClipboard(
+                              `${window.location.protocol}//${window.location.hostname}${
+                                window.location.port
+                                  ? `:${window.location.port}`
+                                  : ""
+                              }/${RouteNamespace.PublicOrgs}/${this.orgSlugState}`,
+                            );
+                          }}
+                        ></btrix-copy-button>`
+                      : nothing,
+                  )}
+                  <sl-tooltip content=${msg("Manage Collections")}>
+                    <sl-icon-button
                       href=${`${this.navigate.orgBasePath}/collections`}
-                    >
-                      <sl-icon slot="prefix" name="collection-fill"></sl-icon>
-                      ${msg("Manage Collections")}
-                    </btrix-menu-item-link>
-                    ${when(this.org, (org) =>
-                      org.enablePublicProfile
-                        ? html`
-                            <sl-menu-item
-                              @click=${() => {
-                                ClipboardController.copyToClipboard(
-                                  `${window.location.protocol}//${window.location.hostname}${
-                                    window.location.port
-                                      ? `:${window.location.port}`
-                                      : ""
-                                  }/${RouteNamespace.PublicOrgs}/${this.orgSlugState}`,
-                                );
-                                this.notify.toast({
-                                  message: msg("Link copied"),
-                                });
-                              }}
-                            >
-                              <sl-icon name="copy" slot="prefix"></sl-icon>
-                              ${msg("Copy Link to Public Gallery")}
-                            </sl-menu-item>
-                          `
-                        : this.appState.isAdmin
-                          ? html`
-                              <sl-divider></sl-divider>
-                              <btrix-menu-item-link
-                                href=${`${this.navigate.orgBasePath}/settings`}
-                              >
-                                <sl-icon slot="prefix" name="gear"></sl-icon>
-                                ${msg("Update Org Profile")}
-                              </btrix-menu-item-link>
-                            `
-                          : nothing,
-                    )}
-                  </sl-menu>
-                </btrix-overflow-dropdown>
+                      class="size-8 text-base"
+                      name="collection"
+                      @click=${this.navigate.link}
+                    ></sl-icon-button>
+                  </sl-tooltip>
+                </div>
               `,
             )}
           </header>
