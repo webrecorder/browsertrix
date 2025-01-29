@@ -1,3 +1,4 @@
+import { consume } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
 import clsx from "clsx";
 import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
@@ -14,6 +15,7 @@ import type { MarkdownEditor } from "@/components/ui/markdown-editor";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import { viewStateContext, type ViewStateContext } from "@/context/view-state";
 import type { EditDialogTab } from "@/features/collections/collection-edit-dialog";
+import { collectionShareLink } from "@/features/collections/helpers/share-link";
 import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
 import type { ShareCollection } from "@/features/collections/share-collection";
 import {
@@ -21,7 +23,6 @@ import {
   metadataItemWithCollection,
 } from "@/layouts/collections/metadataColumn";
 import { pageNav, pageTitle, type Breadcrumb } from "@/layouts/pageHeader";
-import { RouteNamespace } from "@/routes";
 import type {
   APIPaginatedList,
   APIPaginationQuery,
@@ -108,15 +109,11 @@ export class CollectionDetail extends BtrixElement {
   };
 
   private get shareLink() {
-    const baseUrl = `${window.location.protocol}//${window.location.hostname}${window.location.port ? `:${window.location.port}` : ""}`;
-    if (this.collection) {
-      return `${baseUrl}/${
-        this.collection.access === CollectionAccess.Private
-          ? `${RouteNamespace.PrivateOrgs}/${this.orgSlugState}/collections/view/${this.collection.id}`
-          : `${RouteNamespace.PublicOrgs}/${this.viewState?.params.slug || ""}/collections/${this.collection.slug}`
-      }`;
-    }
-    return "";
+    return collectionShareLink(
+      this.collection,
+      this.orgSlugState,
+      this.viewState?.params.slug || "",
+    );
   }
 
   private get isCrawler() {

@@ -10,11 +10,11 @@ import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 
+import { collectionShareLink } from "../helpers/share-link";
 import { type SelectCollectionAccess } from "../select-collection-access";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { viewStateContext, type ViewStateContext } from "@/context/view-state";
-import { RouteNamespace } from "@/routes";
 import { CollectionAccess, type Collection } from "@/types/collection";
 
 @customElement("btrix-collection-share-settings")
@@ -39,15 +39,11 @@ export class CollectionShareSettings extends BtrixElement {
   }
 
   private get shareLink() {
-    const baseUrl = `${window.location.protocol}//${window.location.hostname}${window.location.port ? `:${window.location.port}` : ""}`;
-    if (this.collection) {
-      return `${baseUrl}/${
-        this.collection.access === CollectionAccess.Private
-          ? `${RouteNamespace.PrivateOrgs}/${this.orgSlugState}/collections/view/${this.collection.id}`
-          : `${RouteNamespace.PublicOrgs}/${this.viewState?.params.slug || ""}/collections/${this.collection.slug}`
-      }`;
-    }
-    return "";
+    return collectionShareLink(
+      this.collection,
+      this.orgSlugState,
+      this.viewState?.params.slug || "",
+    );
   }
 
   private get publicReplaySrc() {
