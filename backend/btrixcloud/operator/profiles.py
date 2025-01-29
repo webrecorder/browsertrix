@@ -1,4 +1,4 @@
-""" Operator handler for ProfileJobs """
+"""Operator handler for ProfileJobs"""
 
 from btrixcloud.utils import str_to_date, dt_now
 

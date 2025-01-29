@@ -1,4 +1,4 @@
-""" shared helper to initialize ops classes """
+"""shared helper to initialize ops classes"""
 
 from typing import Tuple
 

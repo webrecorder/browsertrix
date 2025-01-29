@@ -1,4 +1,4 @@
-""" operators module """
+"""operators module"""
 
 from .profiles import ProfileOperator
 from .bgjobs import BgJobOperator

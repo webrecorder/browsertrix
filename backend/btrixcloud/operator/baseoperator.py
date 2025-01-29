@@ -1,4 +1,4 @@
-""" Base Operator class for all operators """
+"""Base Operator class for all operators"""
 
 import asyncio
 import os

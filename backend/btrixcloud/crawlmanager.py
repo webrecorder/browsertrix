@@ -1,4 +1,4 @@
-""" shared crawl manager implementation """
+"""shared crawl manager implementation"""
 
 import os
 import secrets

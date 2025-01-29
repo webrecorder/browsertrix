@@ -1,4 +1,4 @@
-""" base crawl type """
+"""base crawl type"""
 
 from datetime import datetime, timedelta
 from typing import Optional, List, Union, Dict, Any, Type, TYPE_CHECKING, cast, Tuple
