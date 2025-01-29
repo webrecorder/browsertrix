@@ -619,7 +619,9 @@ class StorageOps:
 
             line_iter: Iterator[bytes] = self._sync_get_filestream(wacz_url, filename)
             for line in line_iter:
-                yield _parse_json(line.decode("utf-8", errors="ignore"))
+                page_json = _parse_json(line.decode("utf-8", errors="ignore"))
+                page_json["filename"] = wacz_filename
+                yield page_json
 
         page_generators: List[Iterator[Dict[Any, Any]]] = []
 

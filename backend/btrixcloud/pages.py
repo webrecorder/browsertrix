@@ -127,6 +127,7 @@ class PageOps:
             loadState=page_dict.get("loadState"),
             status=status,
             mime=page_dict.get("mime", "text/html"),
+            filename=page_dict.get("filename"),
             ts=(str_to_date(ts) if ts else dt_now()),
         )
         p.compute_page_type()
