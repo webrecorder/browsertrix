@@ -1243,7 +1243,14 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops, user_de
         user: User = Depends(user_dep),
     ):
         return await colls.upload_thumbnail_stream(
-            request.stream(), filename, coll_id, org, user
+            request.stream(),
+            filename,
+            coll_id,
+            org,
+            user,
+            sourceUrl,
+            sourceTs,
+            sourcePageId,
         )
 
     @app.delete(
