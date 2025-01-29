@@ -10,7 +10,6 @@ import queryString from "query-string";
 import type { SelectNewDialogEvent } from ".";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import { ClipboardController } from "@/controllers/clipboard";
 import { pageHeading } from "@/layouts/page";
 import { pageHeader } from "@/layouts/pageHeader";
 import { RouteNamespace } from "@/routes";
@@ -349,17 +348,11 @@ export class Dashboard extends BtrixElement {
                   ${when(this.org, (org) =>
                     org.enablePublicProfile
                       ? html` <btrix-copy-button
-                          .getValue=${() => null}
+                          value=${new URL(
+                            `/${RouteNamespace.PublicOrgs}/${this.orgSlugState}`,
+                            window.location.toString(),
+                          ).toString()}
                           content=${msg("Copy Link to Public Gallery")}
-                          @click=${() => {
-                            ClipboardController.copyToClipboard(
-                              `${window.location.protocol}//${window.location.hostname}${
-                                window.location.port
-                                  ? `:${window.location.port}`
-                                  : ""
-                              }/${RouteNamespace.PublicOrgs}/${this.orgSlugState}`,
-                            );
-                          }}
                         ></btrix-copy-button>`
                       : nothing,
                   )}
