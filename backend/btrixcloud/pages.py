@@ -106,7 +106,12 @@ class PageOps:
         try:
             crawl = await self.crawl_ops.get_crawl_out(crawl_id)
             for wacz_file in crawl.resources:
-                wacz_filename = wacz_file.name
+
+                filename = wacz_file.name
+                name_parts = wacz_file.name.split("/")
+                if name_parts and len(name_parts) > 1:
+                    filename = name_parts[-1]
+
                 wacz_page_ids = []
 
                 stream = await self.storage_ops.sync_stream_wacz_pages([wacz_file])
@@ -123,7 +128,7 @@ class PageOps:
                 # Update pages in batch per-filename
                 await self.pages.update_many(
                     {"_id": {"$in": wacz_page_ids}},
-                    {"$set": {"filename": wacz_filename}},
+                    {"$set": {"filename": filename}},
                 )
         # pylint: disable=broad-exception-caught, raise-missing-from
         except Exception as err:
