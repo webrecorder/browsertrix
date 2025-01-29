@@ -1,4 +1,4 @@
-""" CrawlOperator """
+"""CrawlOperator"""
 
 import traceback
 import os

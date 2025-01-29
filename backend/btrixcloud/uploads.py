@@ -1,4 +1,4 @@
-""" handle user uploads into browsertrix """
+"""handle user uploads into browsertrix"""
 
 import uuid
 from urllib.parse import unquote
