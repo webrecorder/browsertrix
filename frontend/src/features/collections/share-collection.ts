@@ -170,26 +170,6 @@ export class ShareCollection extends BtrixElement {
               `
             : nothing,
         )}
-        ${isFullCollection(this.collection) &&
-        this.collection.access === CollectionAccess.Unlisted
-          ? html`
-              <sl-icon
-                slot="prefix"
-                name=${SelectCollectionAccess.Options.unlisted.icon}
-              ></sl-icon>
-              ${msg("Visit Unlisted Page")}
-            `
-          : html`
-              <sl-tooltip content=${msg("Visit Public Page")}>
-                <sl-icon-button
-                  class="text-base"
-                  name=${SelectCollectionAccess.Options.public.icon}
-                  href=${this.shareLink}
-                  ?disabled=${!this.shareLink}
-                >
-                </sl-icon-button>
-              </sl-tooltip>
-            `}
       </div>
     `;
   }
