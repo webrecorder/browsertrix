@@ -173,12 +173,15 @@ export class CollectionDetail extends BtrixElement {
             `
           : nothing}
       </div>
-      <header class=${clsx(tw`mt-5 flex flex-col gap-3 lg:flex-row`)}>
+      <header class="mt-5 flex min-h-16 flex-col gap-3  lg:flex-row">
         <div
-          class="-mb-2 -ml-2 -mr-1 -mt-1 flex flex-none flex-col gap-2 self-start rounded-lg pb-2 pl-2 pr-1 pt-1 transition-colors has-[sl-icon-button:hover]:bg-primary-50"
+          class="-mb-1 -ml-2 -mr-1 -mt-1 flex flex-none flex-col gap-2 self-start rounded-lg pb-1 pl-2 pr-1 pt-1 transition-colors has-[sl-icon-button:hover]:bg-primary-50"
         >
           <div class="flex flex-wrap items-center gap-2.5">
-            ${this.renderAccessIcon()}${pageTitle(this.collection?.name)}
+            ${this.renderAccessIcon()}${pageTitle(
+              this.collection?.name,
+              tw`mb-2 h-6 w-60`,
+            )}
             ${this.collection &&
             html`<sl-icon-button
               name="pencil"
@@ -189,11 +192,15 @@ export class CollectionDetail extends BtrixElement {
               }}
             ></sl-icon-button>`}
           </div>
-          ${this.collection?.caption
-            ? html`<div class="text-pretty text-neutral-600">
-                ${this.collection.caption}
-              </div>`
-            : nothing}
+          ${this.collection
+            ? this.collection.caption
+              ? html`<div class="text-pretty text-neutral-600">
+                  ${this.collection.caption}
+                </div>`
+              : html`<div class="text-pretty text-neutral-500">
+                  ${msg("Add a summary...")}
+                </div>`
+            : html`<sl-skeleton></sl-skeleton>`}
         </div>
 
         <div class="ml-auto flex flex-shrink-0 items-center gap-2">

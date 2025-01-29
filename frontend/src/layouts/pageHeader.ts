@@ -86,11 +86,17 @@ export function pageBack({ href, content }: Breadcrumb) {
   });
 }
 
-export function pageTitle(title?: string | TemplateResult | typeof nothing) {
+export function pageTitle(
+  title?: string | TemplateResult | typeof nothing,
+  skeletonClass?: string,
+) {
   return html`
     <h1 class="min-w-0 text-xl font-semibold leading-8">
       ${title ||
-      html`<sl-skeleton class="my-.5 h-5 w-60" effect="sheen"></sl-skeleton>`}
+      html`<sl-skeleton
+        class=${skeletonClass ?? "my-.5 h-5 w-60"}
+        effect="sheen"
+      ></sl-skeleton>`}
     </h1>
   `;
 }
