@@ -43,9 +43,9 @@ export default function submitTask(
         if (!file) throw new Error("invalid_data");
         const searchParams = new URLSearchParams({
           filename: fileName,
-          url: selectedSnapshot.url,
-          url_ts: selectedSnapshot.urlTs,
-          url_page_id: selectedSnapshot.urlPageId,
+          sourceUrl: selectedSnapshot.url,
+          sourceTs: selectedSnapshot.urlTs,
+          sourcePageId: selectedSnapshot.urlPageId,
         });
         tasks.push(
           this.api.upload(
