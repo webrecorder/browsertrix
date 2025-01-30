@@ -20,7 +20,7 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import { proxiesContext, type ProxiesContext } from "@/context/org";
 import type { QuotaUpdateDetail } from "@/controllers/api";
 import needLogin from "@/decorators/needLogin";
-import type { CollectionSavedEvent } from "@/features/collections/collection-metadata-dialog";
+import type { CollectionSavedEvent } from "@/features/collections/collection-create-dialog";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
 import { OrgTab, RouteNamespace } from "@/routes";
 import type { ProxiesAPIResponse } from "@/types/crawler";
