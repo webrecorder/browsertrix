@@ -445,7 +445,7 @@ export class Org extends BtrixElement {
           @sl-hide=${() => (this.openDialogName = undefined)}
         >
         </btrix-new-browser-profile-dialog>
-        <btrix-collection-metadata-dialog
+        <btrix-collection-create-dialog
           ?open=${this.openDialogName === "collection"}
           @sl-hide=${() => (this.openDialogName = undefined)}
           @btrix-collection-saved=${(e: CollectionSavedEvent) => {
@@ -454,7 +454,7 @@ export class Org extends BtrixElement {
             );
           }}
         >
-        </btrix-collection-metadata-dialog>
+        </btrix-collection-create-dialog>
       </div>
     `;
   }

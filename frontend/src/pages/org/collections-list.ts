@@ -226,7 +226,7 @@ export class CollectionsList extends BtrixElement {
         )}
         </div>
       </btrix-dialog>
-      <btrix-collection-metadata-dialog
+      <btrix-collection-create-dialog
         .collection=${
           this.openDialogName === "create" ? undefined : this.selectedCollection
         }
@@ -243,7 +243,7 @@ export class CollectionsList extends BtrixElement {
           }
         }}
       >
-      </btrix-collection-metadata-dialog>
+      </btrix-collection-create-dialog>
       <btrix-collection-edit-dialog
             .collection=${this.selectedCollection}
             ?open=${this.openDialogName === "edit"}

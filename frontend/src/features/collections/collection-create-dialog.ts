@@ -1,7 +1,7 @@
 import { localized, msg, str } from "@lit/localize";
 import type { SlInput, SlSelectEvent } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
-import { html, nothing } from "lit";
+import { html } from "lit";
 import {
   customElement,
   property,
@@ -28,12 +28,9 @@ export type CollectionSavedEvent = CustomEvent<{
 /**
  * @fires btrix-collection-saved CollectionSavedEvent Fires
  */
-@customElement("btrix-collection-metadata-dialog")
+@customElement("btrix-collection-create-dialog")
 @localized()
-export class CollectionMetadataDialog extends BtrixElement {
-  @property({ type: Object })
-  collection?: Collection;
-
+export class CollectionCreateDialog extends BtrixElement {
   @property({ type: Boolean })
   open = false;
 
@@ -63,9 +60,7 @@ export class CollectionMetadataDialog extends BtrixElement {
 
   render() {
     return html`<btrix-dialog
-      label=${this.collection
-        ? msg("Edit Metadata")
-        : msg("Create a New Collection")}
+      label=${msg("Create a New Collection")}
       ?open=${this.open}
       @sl-show=${() => (this.isDialogVisible = true)}
       @sl-after-hide=${() => (this.isDialogVisible = false)}
@@ -98,9 +93,7 @@ export class CollectionMetadataDialog extends BtrixElement {
             );
             form.requestSubmit(submitInput);
           }}
-          >${this.collection
-            ? msg("Save")
-            : msg("Create Collection")}</sl-button
+          >${msg("Create Collection")}</sl-button
         >
       </div>
     </btrix-dialog>`;
@@ -113,7 +106,6 @@ export class CollectionMetadataDialog extends BtrixElement {
           class="with-max-help-text"
           name="name"
           label=${msg("Name")}
-          value=${this.collection?.name || ""}
           placeholder=${msg("My Collection")}
           autocomplete="off"
           required
@@ -121,13 +113,11 @@ export class CollectionMetadataDialog extends BtrixElement {
           @sl-input=${this.validateNameMax.validate}
         >
         </sl-input>
-        <sl-textarea
+        <sl-input
           class="with-max-help-text"
           name="caption"
-          value=${this.collection?.caption || ""}
           placeholder=${msg("Summarize the collection's content")}
           autocomplete="off"
-          rows="2"
           help-text=${this.validateCaptionMax.helpText}
           @sl-input=${this.validateCaptionMax.validate}
         >
@@ -138,12 +128,10 @@ export class CollectionMetadataDialog extends BtrixElement {
                 ${msg(
                   "Write a short description that summarizes this collection. If the collection is shareable, this will appear next to the collection name.",
                 )}
-                ${this.collection
-                  ? nothing
-                  : msg(
-                      html`You can add a longer description in the “About”
-                      section after creating the collection.`,
-                    )}
+                ${msg(
+                  html`You can add a longer description in the “About” section
+                  after creating the collection.`,
+                )}
               </span>
               <sl-icon
                 name="info-circle"
@@ -151,19 +139,16 @@ export class CollectionMetadataDialog extends BtrixElement {
               ></sl-icon>
             </sl-tooltip>
           </span>
-        </sl-textarea>
-        ${when(
-          !this.collection,
-          () => html`
-            <sl-divider></sl-divider>
-            <btrix-select-collection-access
-              @sl-select=${(e: SlSelectEvent) =>
-                (this.showPublicWarning =
-                  (e.detail.item.value as CollectionAccess) ===
-                  CollectionAccess.Public)}
-            ></btrix-select-collection-access>
-          `,
-        )}
+        </sl-input>
+
+        <sl-divider></sl-divider>
+        <btrix-select-collection-access
+          @sl-select=${(e: SlSelectEvent) =>
+            (this.showPublicWarning =
+              (e.detail.item.value as CollectionAccess) ===
+              CollectionAccess.Public)}
+        ></btrix-select-collection-access>
+
         ${when(
           this.showPublicWarning && this.org,
           (org) => html`
@@ -218,18 +203,11 @@ export class CollectionMetadataDialog extends BtrixElement {
       const body = JSON.stringify({
         name,
         caption,
-        access:
-          this.selectCollectionAccess?.value ||
-          this.collection?.access ||
-          CollectionAccess.Private,
+        access: this.selectCollectionAccess?.value || CollectionAccess.Private,
         defaultThumbnailName: DEFAULT_THUMBNAIL,
       });
-      let path = `/orgs/${this.orgId}/collections`;
-      let method = "POST";
-      if (this.collection) {
-        path = `/orgs/${this.orgId}/collections/${this.collection.id}`;
-        method = "PATCH";
-      }
+      const path = `/orgs/${this.orgId}/collections`;
+      const method = "POST";
       const data = await this.api.fetch<Collection>(path, {
         method,
         body,
@@ -238,14 +216,12 @@ export class CollectionMetadataDialog extends BtrixElement {
       this.dispatchEvent(
         new CustomEvent("btrix-collection-saved", {
           detail: {
-            id: this.collection?.id || data.id,
+            id: data.id,
           },
         }) as CollectionSavedEvent,
       );
       this.notify.toast({
-        message: this.collection
-          ? msg(str`"${data.name || name}" metadata updated`)
-          : msg(str`Created "${data.name || name}" collection`),
+        message: msg(str`Created "${data.name || name}" collection`),
         variant: "success",
         icon: "check2-circle",
         id: "collection-metadata-status",
