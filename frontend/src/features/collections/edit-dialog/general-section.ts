@@ -21,7 +21,7 @@ import { tw } from "@/utils/tailwind";
 export default function renderGeneral(this: CollectionEdit) {
   if (!this.collection) return;
   return html`<sl-input
-      class="with-max-help-text part-[input]:text-base part-[input]:font-semibold"
+      class="with-max-help-text"
       name="name"
       label=${msg("Name")}
       value=${this.collection.name}
