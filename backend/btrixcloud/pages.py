@@ -1,5 +1,7 @@
 """crawl pages"""
 
+# pylint: disable=too-many-lines
+
 import asyncio
 import os
 import re
@@ -651,7 +653,7 @@ class PageOps:
             query["url"] = {"$regex": regex_pattern, "$options": "i"}
 
         elif url:
-            query["url"] = url
+            query["url"] = urllib.parse.unquote(url)
 
         aggregate = [{"$match": query}]
 
