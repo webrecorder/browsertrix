@@ -1,8 +1,7 @@
 import { localized } from "@lit/localize";
 import { html, type PropertyValues } from "lit";
-import { customElement, property, query, state } from "lit/decorators.js";
+import { customElement, property, state } from "lit/decorators.js";
 
-import { type CollectionSnapshotPreview } from "../collection-snapshot-preview";
 import type { SelectSnapshotDetail } from "../select-collection-start-page";
 
 import { BtrixElement } from "@/classes/BtrixElement";
@@ -21,10 +20,8 @@ export class CollectionThumbnailSelect extends BtrixElement {
   replayLoaded = false;
 
   @state()
-  selectedSnapshot: CollectionThumbnailSource | null = null;
-
-  @query("#thumbnailPreview")
-  public readonly thumbnailPreview?: CollectionSnapshotPreview | null;
+  selectedSnapshot: CollectionThumbnailSource | null =
+    this.collection?.thumbnailSource ?? null;
 
   protected willUpdate(changedProperties: PropertyValues<this>): void {
     if (changedProperties.has("collection")) {
@@ -34,9 +31,17 @@ export class CollectionThumbnailSelect extends BtrixElement {
 
   render() {
     return html`<section>
-      <btrix-select-collection-start-page
+      <btrix-select-collection-page
+        mode="thumbnail"
         .collection=${this.collection}
         .collectionId=${this.collection?.id}
+        .initialSelectedSnapshot=${this.selectedSnapshot
+          ? {
+              pageId: this.selectedSnapshot.urlPageId,
+              ts: this.selectedSnapshot.urlTs,
+              status: 200,
+            }
+          : undefined}
         @btrix-select=${async (e: CustomEvent<SelectSnapshotDetail>) => {
           this.dispatchEvent(
             new CustomEvent("btrix-change", {
@@ -47,7 +52,7 @@ export class CollectionThumbnailSelect extends BtrixElement {
           const { url, ts, pageId } = e.detail.item;
           this.selectedSnapshot = { url, urlTs: ts, urlPageId: pageId };
         }}
-      ></btrix-select-collection-start-page>
+      ></btrix-select-collection-page>
     </section>`;
   }
 }

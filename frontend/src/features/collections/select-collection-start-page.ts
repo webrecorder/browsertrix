@@ -52,13 +52,16 @@ const sortByTs = flow(
  * @fires btrix-select
  */
 @localized()
-@customElement("btrix-select-collection-start-page")
-export class SelectCollectionStartPage extends BtrixElement {
+@customElement("btrix-select-collection-page")
+export class SelectCollectionPage extends BtrixElement {
   @property({ type: String })
   collectionId?: string;
 
   @property({ type: Object })
   collection?: Collection;
+
+  @property({ type: String })
+  mode: "homepage" | "thumbnail" = "homepage";
 
   @state()
   private searchQuery = "";
@@ -66,8 +69,11 @@ export class SelectCollectionStartPage extends BtrixElement {
   @state()
   private selectedPage?: Page;
 
+  @property({ type: Object })
+  public initialSelectedSnapshot?: Snapshot;
+
   @state()
-  public selectedSnapshot?: Snapshot;
+  public selectedSnapshot?: Snapshot = this.initialSelectedSnapshot;
 
   @state()
   private pageUrlError?: string;
@@ -77,6 +83,18 @@ export class SelectCollectionStartPage extends BtrixElement {
 
   @query("#pageUrlInput")
   private readonly input?: SlInput | null;
+
+  private get url() {
+    return this.mode === "homepage"
+      ? this.collection?.homeUrl
+      : this.collection?.thumbnailSource?.url;
+  }
+
+  private get ts() {
+    return this.mode === "homepage"
+      ? this.collection?.homeUrlTs
+      : this.collection?.thumbnailSource?.urlTs;
+  }
 
   public get page() {
     return this.selectedPage;
@@ -110,13 +128,13 @@ export class SelectCollectionStartPage extends BtrixElement {
   }
 
   private async initSelection(collection: Collection) {
-    if (!collection.homeUrl && collection.pageCount !== 1) {
+    if (!this.url && collection.pageCount !== 1) {
       return;
     }
 
     const pageUrls = await this.getPageUrls({
       id: collection.id,
-      urlPrefix: collection.homeUrl || "",
+      urlPrefix: this.url || "",
       pageSize: 1,
     });
 
@@ -127,12 +145,12 @@ export class SelectCollectionStartPage extends BtrixElement {
     const startPage = pageUrls.items[0];
 
     if (this.input) {
-      this.input.value = startPage.url;
+      this.input.value = this.url ?? startPage.url;
     }
 
     this.selectedPage = this.formatPage(startPage);
 
-    const homeTs = collection.homeUrlTs;
+    const homeTs = this.ts;
 
     this.selectedSnapshot = homeTs
       ? this.selectedPage.snapshots.find(({ ts }) => ts === homeTs)

@@ -1,3 +1,5 @@
+import { isEqual } from "lodash";
+
 import { type CollectionEdit } from "../../collection-edit-dialog";
 
 import gatherState from "./gather-state";
@@ -19,7 +21,8 @@ export default async function checkChanged(this: CollectionEdit) {
 
     const shouldUpload =
       thumbnail.selectedSnapshot &&
-      this.collection?.thumbnailSource !== thumbnail.selectedSnapshot;
+      !isEqual(this.collection?.thumbnailSource, thumbnail.selectedSnapshot) &&
+      this.blobIsLoaded;
 
     if (shouldUpload) {
       updates.push(["thumbnail", thumbnail]);

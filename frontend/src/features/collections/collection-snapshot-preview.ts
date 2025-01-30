@@ -1,7 +1,7 @@
 import { localized, msg } from "@lit/localize";
 import { Task } from "@lit/task";
 import clsx from "clsx";
-import { html, type PropertyValues } from "lit";
+import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 
 import type { SelectSnapshotDetail } from "./select-collection-start-page";
@@ -41,26 +41,40 @@ export class CollectionSnapshotPreview extends TailwindElement {
   @query("iframe")
   private readonly iframe?: HTMLIFrameElement | null;
 
+  @query("img#preview")
+  private readonly previewImg?: HTMLImageElement | null;
+
   @state()
   private iframeLoaded = false;
 
+  // Set up a promise and a helper callback so that we can wait until the iframe is loaded, rather than returning nothing when it's not yet loaded
+  private iframeLoadComplete!: () => void;
+  private readonly iframeLoadedPromise = new Promise<void>((res) => {
+    if (this.iframeLoaded) res();
+    this.iframeLoadComplete = res;
+  });
+
   public get thumbnailBlob() {
-    return this.blobTask.taskComplete.finally(() => this.blobTask.value);
+    return this.blobTask.taskComplete.then(() => this.blobTask.value);
   }
 
+  // public async getBlob() {
+  //   return (
+  //     this.blobTask.value ??
+  //     this.blobTask.run([this.collectionId, this.snapshot])
+  //   );
+  // }
+
   private readonly blobTask = new Task(this, {
-    task: async ([collectionId, snapshot, iframeLoaded]) => {
-      if (
-        !collectionId ||
-        !snapshot ||
-        !iframeLoaded ||
-        !this.iframe?.contentWindow
-      ) {
+    task: async ([collectionId, snapshot], { signal }) => {
+      await this.iframeLoadedPromise;
+      if (!collectionId || !snapshot || !this.iframe?.contentWindow) {
         return;
       }
 
       const resp = await this.iframe.contentWindow.fetch(
         `/replay/w/${this.collectionId}/${formatRwpTimestamp(snapshot.ts)}id_/urn:thumbnail:${snapshot.url}`,
+        { signal },
       );
 
       if (resp.status === 200) {
@@ -69,11 +83,15 @@ export class CollectionSnapshotPreview extends TailwindElement {
 
       throw new Error(`couldn't get thumbnail`);
     },
-    args: () => [this.collectionId, this.snapshot, this.iframeLoaded] as const,
+    args: () => [this.collectionId, this.snapshot] as const,
   });
+
+  @state()
+  private prevObjUrl?: string;
 
   private readonly objectUrlTask = new Task(this, {
     task: ([blob]) => {
+      this.prevObjUrl = this.objectUrlTask.value;
       if (!blob) return "";
 
       const url = URL.createObjectURL(blob);
@@ -98,9 +116,15 @@ export class CollectionSnapshotPreview extends TailwindElement {
       changedProperties.has("collectionId") ||
       changedProperties.has("snapshot")
     ) {
-      if (this.objectUrlTask.value) {
-        URL.revokeObjectURL(this.objectUrlTask.value);
-      }
+      // revoke object urls once the `<img>` element has loaded the next url, to
+      // prevent flashes
+
+      this.previewImg?.addEventListener("load", () => {
+        if (this.prevObjUrl) {
+          URL.revokeObjectURL(this.prevObjUrl);
+          this.prevObjUrl = undefined;
+        }
+      });
     }
   }
 
@@ -113,7 +137,7 @@ export class CollectionSnapshotPreview extends TailwindElement {
 
     return this.blobTask.render({
       complete: this.renderImage,
-      pending: this.renderSpinner,
+      pending: this.renderImage,
       error: this.renderError,
     });
   }
@@ -131,13 +155,23 @@ export class CollectionSnapshotPreview extends TailwindElement {
     return html`
       <div class="size-full">
         <sl-tooltip hoist>
-          ${this.objectUrlTask.render({
-            complete: (value) =>
-              value
-                ? html`<img class="size-full" src=${value} />`
-                : this.renderSpinner(),
-            pending: () => "pending",
-          })}
+          <div class="relative size-full">
+            ${this.prevObjUrl
+              ? html`<img
+                  class="absolute inset-0 size-full"
+                  role="presentation"
+                  src=${this.prevObjUrl}
+                />`
+              : nothing}
+            ${this.objectUrlTask.value
+              ? html`<img
+                  class="absolute inset-0 size-full"
+                  id="preview"
+                  src=${this.objectUrlTask.value}
+                />`
+              : nothing}
+          </div>
+          ${this.objectUrlTask.value ? nothing : this.renderSpinner()}
           <span slot="content" class="break-all">${this.snapshot.url}</span>
         </sl-tooltip>
       </div>
@@ -155,6 +189,7 @@ export class CollectionSnapshotPreview extends TailwindElement {
             src=${this.replaySrc}
             @load=${() => {
               this.iframeLoaded = true;
+              this.iframeLoadComplete();
             }}
           ></iframe>
         </div>
@@ -163,8 +198,10 @@ export class CollectionSnapshotPreview extends TailwindElement {
   }
 
   private readonly renderError = () => html`
-    <p class="m-3 text-pretty text-danger">
-      ${msg("Couldn't load preview. Try another snapshot")}
+    <p
+      class="absolute inset-0 my-auto grid place-content-center text-pretty p-3 text-xs text-danger"
+    >
+      ${msg("Couldn't load preview. Try another URL or timestamp.")}
     </p>
   `;
 

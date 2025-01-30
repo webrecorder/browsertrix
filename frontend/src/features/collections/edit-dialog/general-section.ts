@@ -1,7 +1,7 @@
 import { msg } from "@lit/localize";
 import { type SlInput } from "@shoelace-style/shoelace";
+import clsx from "clsx";
 import { html, nothing } from "lit";
-import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
 import {
@@ -16,6 +16,7 @@ import {
 } from "../collection-thumbnail";
 
 import type { PublicCollection } from "@/types/collection";
+import { tw } from "@/utils/tailwind";
 
 export default function renderGeneral(this: CollectionEdit) {
   if (!this.collection) return;
@@ -59,7 +60,8 @@ export default function renderGeneral(this: CollectionEdit) {
     <btrix-collection-thumbnail-select
       .collection=${this.collection}
       .replayLoaded=${this.replayLoaded}
-      @btrix-change=${() => {
+      @btrix-change=${async () => {
+        await this.updateComplete;
         this.selectedSnapshot =
           this.thumbnailSelector?.selectedSnapshot ?? null;
       }}
@@ -68,7 +70,7 @@ export default function renderGeneral(this: CollectionEdit) {
 }
 
 function renderThumbnails(this: CollectionEdit) {
-  let selectedImgSrc = DEFAULT_THUMBNAIL_VARIANT.path;
+  let selectedImgSrc: string | null = DEFAULT_THUMBNAIL_VARIANT.path;
 
   if (this.defaultThumbnailName) {
     const variant = Object.entries(CollectionThumbnail.Variants).find(
@@ -80,6 +82,8 @@ function renderThumbnails(this: CollectionEdit) {
     }
   } else if (this.collection?.thumbnail) {
     selectedImgSrc = this.collection.thumbnail.path;
+  } else if (this.selectedSnapshot) {
+    selectedImgSrc = null;
   }
 
   const thumbnail = (
@@ -167,10 +171,7 @@ function renderThumbnails(this: CollectionEdit) {
         <div class="row-start-1 text-xs text-neutral-500">
           ${msg("Page Thumbnail")}
         </div>
-        ${renderPageThumbnail.bind(this)(
-          this.collection?.thumbnail,
-          selectedImgSrc,
-        )}
+        ${renderPageThumbnail.bind(this)(this.collection?.thumbnail?.path)}
         <div class="row-start-1 text-xs text-neutral-600">
           ${msg("Placeholder")}
         </div>
@@ -183,8 +184,7 @@ function renderThumbnails(this: CollectionEdit) {
 
 function renderPageThumbnail(
   this: CollectionEdit,
-  currentThumbnail?: { name: string; path: string } | null,
-  selectedImgSrc?: string,
+  initialPath?: string | null,
 ) {
   const replaySource = `/api/orgs/${this.orgId}/collections/${this.collection!.id}/replay.json`;
   // TODO Get query from replay-web-page embed
@@ -196,28 +196,46 @@ function renderPageThumbnail(
     noSandbox: 1,
   });
 
-  const isSelected = currentThumbnail?.path === selectedImgSrc;
+  console.log("this.defaultThumbnailName", this.defaultThumbnailName);
+
+  const isSelected = this.defaultThumbnailName == null;
+
+  this.thumbnailPreview?.thumbnailBlob
+    .then(() => {
+      this.blobIsLoaded = true;
+    })
+    .catch(() => {
+      this.blobIsLoaded = false;
+    });
+
+  const disabled =
+    (this.selectedSnapshot == null && !!initialPath) || !this.blobIsLoaded;
+
+  console.log({ blobIsLoaded: this.blobIsLoaded });
 
   return html`
     <button
-      class="row-start-2 flex aspect-video items-center justify-center overflow-hidden rounded bg-neutral-50 ring-1 ring-stone-600/10 transition-all hover:ring-2 hover:ring-blue-300"
-      ?disabled=${!currentThumbnail}
+      class=${clsx(
+        isSelected ? tw`ring-2 ring-blue-300` : tw`ring-1 ring-stone-600/10`,
+        tw`row-start-2 aspect-video flex-1 overflow-hidden rounded transition-all`,
+        !disabled && tw`hover:ring-2 hover:ring-blue-300`,
+      )}
+      ?disabled=${disabled}
       role="radio"
       type="button"
-      aria-checked=${!!currentThumbnail}
+      aria-checked=${isSelected}
       @click=${() => {
-        this.defaultThumbnailName = this.collection
-          ?.thumbnail as unknown as Thumbnail;
+        this.defaultThumbnailName = null;
         void this.checkChanged.bind(this)();
       }}
     >
       <div
         class="relative flex size-full flex-col items-center justify-center bg-cover"
-        style="background-image:url('${currentThumbnail?.path}')"
+        style="background-image:url('${initialPath}')"
       >
         ${isSelected
           ? html`<sl-icon
-              class="size-10 stroke-black/50 text-white drop-shadow-md [paint-order:stroke]"
+              class="relative z-10 size-10 stroke-black/50 text-white drop-shadow-md [paint-order:stroke]"
               name="check-lg"
             ></sl-icon>`
           : nothing}
@@ -228,20 +246,9 @@ function renderPageThumbnail(
           view="url"
           replaySrc=${`/replay/?${query}#view=pages`}
           .snapshot=${this.selectedSnapshot}
-          noSpinner
+          ?noSpinner=${!!initialPath}
         >
         </btrix-collection-snapshot-preview>
-
-        ${when(
-          !this.replayLoaded,
-          () => html`
-            <div
-              class="absolute inset-0 flex items-center justify-center text-2xl"
-            >
-              <sl-spinner></sl-spinner>
-            </div>
-          `,
-        )}
       </div>
     </button>
   `;

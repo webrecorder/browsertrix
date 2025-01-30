@@ -11,6 +11,7 @@ import {
 } from "lit/decorators.js";
 import { type Embed } from "replaywebpage";
 
+import { type CollectionSnapshotPreview } from "./collection-snapshot-preview";
 import { type Thumbnail } from "./collection-thumbnail";
 import renderGeneral from "./edit-dialog/general-section";
 import checkChanged from "./edit-dialog/helpers/check-changed";
@@ -93,6 +94,9 @@ export class CollectionEdit extends BtrixElement {
   @state()
   selectedSnapshot: CollectionThumbnailSource | null = null;
 
+  @state()
+  blobIsLoaded = false;
+
   @query("btrix-dialog")
   readonly dialog?: Dialog;
 
@@ -104,6 +108,9 @@ export class CollectionEdit extends BtrixElement {
 
   @query("btrix-collection-thumbnail-select")
   readonly thumbnailSelector?: CollectionThumbnailSelect;
+
+  @query("btrix-collection-snapshot-preview")
+  public readonly thumbnailPreview?: CollectionSnapshotPreview | null;
 
   protected willUpdate(changedProperties: PropertyValues<this>): void {
     if (changedProperties.has("collectionId") && this.collectionId) {

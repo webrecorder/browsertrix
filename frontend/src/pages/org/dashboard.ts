@@ -372,6 +372,9 @@ export class Dashboard extends BtrixElement {
             <btrix-collections-grid
               slug=${this.orgSlugState || ""}
               .collections=${this.publicCollections.value}
+              @btrix-collection-saved=${async () => {
+                void this.publicCollections.run([this.orgId]);
+              }}
             >
               ${this.renderNoPublicCollections()}
             </btrix-collections-grid>

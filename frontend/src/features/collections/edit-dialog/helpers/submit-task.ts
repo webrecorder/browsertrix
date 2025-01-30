@@ -1,10 +1,7 @@
 import { msg, str } from "@lit/localize";
 import { type TaskFunction } from "@lit/task";
 
-import {
-  type CollectionEdit,
-  type CollectionSavedEvent,
-} from "../../collection-edit-dialog";
+import { type CollectionEdit } from "../../collection-edit-dialog";
 
 import {
   type CollectionThumbnailSource,
@@ -33,8 +30,9 @@ export default function submitTask(
       let file: File | undefined;
 
       if (selectedSnapshot) {
-        const blob =
-          await this.thumbnailSelector?.thumbnailPreview?.thumbnailBlob;
+        const blob = await this.thumbnailPreview?.thumbnailBlob.catch(() => {
+          throw new Error("invalid_data");
+        });
         if (blob) {
           file = new File([blob], fileName, {
             type: blob.type,
@@ -75,11 +73,15 @@ export default function submitTask(
       await Promise.all(tasks);
 
       this.dispatchEvent(
-        new CustomEvent("btrix-collection-saved", {
+        new CustomEvent<{
+          id: string;
+        }>("btrix-collection-saved", {
           detail: {
             id: this.collection.id,
           },
-        }) as CollectionSavedEvent,
+          bubbles: true,
+          composed: true,
+        }),
       );
       this.notify.toast({
         message: msg(
