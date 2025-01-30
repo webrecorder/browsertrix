@@ -583,6 +583,7 @@ def test_list_collections(
 
 
 def test_list_pages_in_collection(crawler_auth_headers, default_org_id):
+    # Test list endpoint
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/pages",
         headers=crawler_auth_headers,
@@ -607,6 +608,42 @@ def test_list_pages_in_collection(crawler_auth_headers, default_org_id):
         assert page["mime"]
         assert page["isError"] in (True, False)
         assert page["isFile"] in (True, False)
+
+    # Save info for page to test url and urlPrefix filters
+    coll_page = pages[0]
+    coll_page_id = coll_page["id"]
+    coll_page_url = coll_page["url"]
+
+    # Test exact url filter
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/pages?url={coll_page_url}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data["total"] == 1
+    matching_page = data["items"][0]
+    assert matching_page["id"] == coll_page_id
+    assert matching_page["url"] == coll_page_url
+
+    # Test urlPrefix filter
+    url_prefix = coll_page_url[:8]
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/pages?urlPrefix={url_prefix}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data["total"] >= 1
+
+    found_matching_page = False
+    for page in data["items"]:
+        if page["id"] == coll_page_id and page["url"] == coll_page_url:
+            found_matching_page = True
+
+    assert found_matching_page
 
 
 def test_remove_upload_from_collection(crawler_auth_headers, default_org_id):
