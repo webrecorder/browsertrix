@@ -582,6 +582,33 @@ def test_list_collections(
     assert second_coll["dateLatest"]
 
 
+def test_list_pages_in_collection(crawler_auth_headers, default_org_id):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/pages",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data["total"] >= 0
+
+    pages = data["items"]
+    assert pages
+
+    for page in pages:
+        assert page["id"]
+        assert page["oid"]
+        assert page["crawl_id"]
+        assert page["url"]
+        assert page["ts"]
+        assert page.get("title") or page.get("title") is None
+        assert page["loadState"]
+        assert page["status"]
+        assert page["mime"]
+        assert page["isError"] in (True, False)
+        assert page["isFile"] in (True, False)
+
+
 def test_remove_upload_from_collection(crawler_auth_headers, default_org_id):
     # Remove upload
     r = requests.post(
