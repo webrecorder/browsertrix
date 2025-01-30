@@ -575,6 +575,7 @@ class PageOps:
         org: Optional[Organization] = None,
         url: Optional[str] = None,
         url_prefix: Optional[str] = None,
+        ts: Optional[datetime] = None,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         sort_by: Optional[str] = None,
@@ -601,6 +602,9 @@ class PageOps:
 
         elif url:
             query["url"] = urllib.parse.unquote(url)
+
+        if ts:
+            query["ts"] = ts
 
         aggregate = [{"$match": query}]
 
@@ -983,6 +987,7 @@ def init_pages_api(
         org: Organization = Depends(org_viewer_dep),
         url: Optional[str] = None,
         urlPrefix: Optional[str] = None,
+        ts: Optional[datetime] = None,
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         sortBy: Optional[str] = None,
@@ -994,6 +999,7 @@ def init_pages_api(
             org=org,
             url=url,
             url_prefix=urlPrefix,
+            ts=ts,
             page_size=pageSize,
             page=page,
             sort_by=sortBy,

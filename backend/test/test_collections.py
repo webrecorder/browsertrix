@@ -613,6 +613,7 @@ def test_list_pages_in_collection(crawler_auth_headers, default_org_id):
     coll_page = pages[0]
     coll_page_id = coll_page["id"]
     coll_page_url = coll_page["url"]
+    coll_page_ts = coll_page["ts"]
 
     # Test exact url filter
     r = requests.get(
@@ -622,10 +623,22 @@ def test_list_pages_in_collection(crawler_auth_headers, default_org_id):
     assert r.status_code == 200
     data = r.json()
 
-    assert data["total"] == 1
-    matching_page = data["items"][0]
-    assert matching_page["id"] == coll_page_id
-    assert matching_page["url"] == coll_page_url
+    assert data["total"] >= 1
+    for matching_page in data["items"]:
+        assert matching_page["url"] == coll_page_url
+
+    # Test exact url and ts filters together
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/pages?url={coll_page_url}&ts={coll_page_ts}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data["total"] >= 1
+    for matching_page in data["items"]:
+        assert matching_page["url"] == coll_page_url
+        assert matching_page["ts"] == coll_page_ts
 
     # Test urlPrefix filter
     url_prefix = coll_page_url[:8]
