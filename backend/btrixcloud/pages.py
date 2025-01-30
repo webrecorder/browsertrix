@@ -1,6 +1,7 @@
 """crawl pages"""
 
 import asyncio
+import os
 import traceback
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional, Tuple, List, Dict, Any, Union
@@ -110,11 +111,7 @@ class PageOps:
 
             for wacz_file in crawl.resources:
                 # Strip oid directory from filename
-                filename = wacz_file.name
-                name_parts = wacz_file.name.split("/")
-                if name_parts and len(name_parts) > 1:
-                    filename = name_parts[-1]
-
+                filename = os.path.basename(wacz_file.name)
                 page_ids_to_update = []
 
                 stream = await self.storage_ops.sync_stream_wacz_pages([wacz_file])
