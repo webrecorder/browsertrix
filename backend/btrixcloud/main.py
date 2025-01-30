@@ -248,7 +248,14 @@ def main() -> None:
     upload_ops = init_uploads_api(*base_crawl_init)
 
     page_ops = init_pages_api(
-        app, mdb, crawls, org_ops, storage_ops, background_job_ops, current_active_user
+        app,
+        mdb,
+        crawls,
+        org_ops,
+        storage_ops,
+        background_job_ops,
+        coll_ops,
+        current_active_user,
     )
 
     base_crawl_ops.set_page_ops(page_ops)
