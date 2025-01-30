@@ -152,7 +152,7 @@ export class CollectionSnapshotPreview extends TailwindElement {
       if (this.noSpinner) return;
       return html`
         <p
-          class="absolute inset-0 my-auto grid place-content-center text-pretty p-3 text-neutral-500"
+          class="absolute inset-0 my-auto grid place-content-center text-balance p-3 text-neutral-500"
         >
           ${msg("Enter a Page URL to preview it.")}
         </p>
@@ -207,7 +207,7 @@ export class CollectionSnapshotPreview extends TailwindElement {
 
   private readonly renderError = () => html`
     <p
-      class="absolute inset-0 my-auto grid place-content-center text-pretty p-3 text-xs text-danger"
+      class="absolute inset-0 my-auto grid place-content-center text-balance p-3 text-xs text-danger"
     >
       ${msg("Couldn't load preview. Try another URL or timestamp.")}
     </p>
