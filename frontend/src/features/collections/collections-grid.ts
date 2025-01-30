@@ -147,7 +147,7 @@ export class CollectionsGrid extends BtrixElement {
     return html`
       <btrix-badge variant="primary" class="absolute right-3 top-3">
         ${earliestYear}
-        ${latestYear !== earliestYear ? html` - ${latestYear} ` : nothing}
+        ${latestYear !== earliestYear ? html` – ${latestYear} ` : nothing}
       </btrix-badge>
     `;
   }
