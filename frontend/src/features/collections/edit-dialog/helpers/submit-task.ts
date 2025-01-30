@@ -55,7 +55,6 @@ export default function submitTask(
         rest.defaultThumbnailName = null;
       }
 
-      console.log({ rest });
       if (Object.keys(rest).length)
         tasks.push(
           await this.api.fetch<{ updated: boolean }>(
@@ -67,8 +66,6 @@ export default function submitTask(
             },
           ),
         );
-
-      console.log(tasks);
 
       await Promise.all(tasks);
 

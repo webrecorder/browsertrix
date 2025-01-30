@@ -196,8 +196,6 @@ function renderPageThumbnail(
     noSandbox: 1,
   });
 
-  console.log("this.defaultThumbnailName", this.defaultThumbnailName);
-
   const isSelected = this.defaultThumbnailName == null;
 
   this.thumbnailPreview?.thumbnailBlob
@@ -210,13 +208,6 @@ function renderPageThumbnail(
 
   const enabled =
     (!!this.selectedSnapshot && this.blobIsLoaded) || !!initialPath;
-
-  console.log({
-    selectedSnapshot: this.selectedSnapshot,
-    blobIsLoaded: this.blobIsLoaded,
-    initialPath,
-    enabled,
-  });
 
   return html`
     <button

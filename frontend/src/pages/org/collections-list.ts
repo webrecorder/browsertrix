@@ -153,7 +153,6 @@ export class CollectionsList extends BtrixElement {
   }
 
   render() {
-    console.log(this.openDialogName);
     return html`
       <div class="contents">
         ${pageHeader({

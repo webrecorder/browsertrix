@@ -27,7 +27,6 @@ export default async function checkChanged(this: CollectionEdit) {
     if (shouldUpload) {
       updates.push(["thumbnail", thumbnail]);
     }
-    console.log({ updates });
     if (updates.length > 0) {
       this.dirty = true;
     } else {
