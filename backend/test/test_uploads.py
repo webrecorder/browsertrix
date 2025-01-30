@@ -252,6 +252,7 @@ def test_get_upload_pages(admin_auth_headers, default_org_id, upload_id):
         assert page["crawl_id"] == upload_id
         assert page["url"]
         assert page["ts"]
+        assert page["filename"]
         assert page.get("title") or page.get("title") is None
 
     page_id = pages[0]["id"]
@@ -267,6 +268,7 @@ def test_get_upload_pages(admin_auth_headers, default_org_id, upload_id):
     assert page["crawl_id"]
     assert page["url"]
     assert page["ts"]
+    assert page["filename"]
     assert page.get("title") or page.get("title") is None
 
     assert page["notes"] == []
