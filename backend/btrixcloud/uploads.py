@@ -202,6 +202,9 @@ class UploadOps(BaseCrawlOps):
                     org.id, file, crawl_id, "upload"
                 )
 
+        if collections:
+            await self.colls.update_crawl_collections(crawl_id)
+
         return {"id": crawl_id, "added": True, "storageQuotaReached": quota_reached}
 
     async def delete_uploads(
