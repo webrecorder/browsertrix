@@ -285,6 +285,26 @@ def test_get_upload_pages(admin_auth_headers, default_org_id, upload_id):
     assert data["uniquePageCount"] > 0
 
 
+def test_uploads_collection_updated(
+    admin_auth_headers, default_org_id, uploads_collection_id, upload_id
+):
+    # Verify that collection is updated when WACZ is added on upload
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{uploads_collection_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data["crawlCount"] > 0
+    assert data["pageCount"] > 0
+    assert data["uniquePageCount"] > 0
+    assert data["totalSize"] > 0
+    assert data["dateEarliest"]
+    assert data["dateLatest"]
+    assert data["modified"] > data["created"]
+
+
 def test_replace_upload(
     admin_auth_headers, default_org_id, uploads_collection_id, upload_id
 ):
