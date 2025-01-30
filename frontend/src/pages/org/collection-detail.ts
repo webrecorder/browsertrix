@@ -150,15 +150,17 @@ export class CollectionDetail extends BtrixElement {
 
   render() {
     return html`
-      <div class="mb-7 flex justify-between">
+      <div class="mb-7 flex justify-between align-baseline">
         ${this.renderBreadcrumbs()}
         ${this.collection &&
         (this.collection.access === CollectionAccess.Unlisted ||
           this.collection.access === CollectionAccess.Public)
           ? html`
-              <a
+              <sl-button
                 href=${this.shareLink}
-                class="flex h-5 items-center gap-1 truncate whitespace-nowrap font-medium leading-5 text-primary"
+                size="small"
+                variant="text"
+                class="-mx-3 -mb-3.5 -mt-1.5"
               >
                 <sl-icon
                   slot="prefix"
@@ -167,9 +169,9 @@ export class CollectionDetail extends BtrixElement {
                     : SelectCollectionAccess.Options.public.icon}
                 ></sl-icon>
                 ${this.collection.access === CollectionAccess.Unlisted
-                  ? msg("Visit Unlisted Page")
-                  : msg("Visit Public Page")}
-              </a>
+                  ? msg("Go to Unlisted Page")
+                  : msg("Go to Public Page")}
+              </sl-button>
             `
           : nothing}
       </div>

@@ -10,6 +10,7 @@ import queryString from "query-string";
 import type { SelectNewDialogEvent } from ".";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import { type CollectionSavedEvent } from "@/features/collections/collection-edit-dialog";
 import { pageHeading } from "@/layouts/page";
 import { pageHeader } from "@/layouts/pageHeader";
 import { RouteNamespace } from "@/routes";
@@ -48,6 +49,9 @@ export class Dashboard extends BtrixElement {
   @state()
   private metrics?: Metrics;
 
+  @state()
+  collectionRefreshing: string | null = null;
+
   private readonly colors = {
     default: "neutral",
     crawls: "green",
@@ -61,6 +65,7 @@ export class Dashboard extends BtrixElement {
       if (!orgId) throw new Error("orgId required");
 
       const collections = await this.getPublicCollections({ orgId });
+      this.collectionRefreshing = null;
       return collections;
     },
     args: () => [this.orgId] as const,
@@ -372,7 +377,9 @@ export class Dashboard extends BtrixElement {
             <btrix-collections-grid
               slug=${this.orgSlugState || ""}
               .collections=${this.publicCollections.value}
-              @btrix-collection-saved=${async () => {
+              .collectionRefreshing=${this.collectionRefreshing}
+              @btrix-collection-saved=${async (e: CollectionSavedEvent) => {
+                this.collectionRefreshing = e.detail.id;
                 void this.publicCollections.run([this.orgId]);
               }}
             >

@@ -1,4 +1,5 @@
 import { localized, msg } from "@lit/localize";
+import clsx from "clsx";
 import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -27,6 +28,9 @@ export class CollectionsGrid extends BtrixElement {
 
   @state()
   collectionBeingEdited: string | null = null;
+
+  @property({ type: String })
+  collectionRefreshing: string | null = null;
 
   render() {
     const gridClassNames = tw`grid flex-1 grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4`;
@@ -61,12 +65,15 @@ export class CollectionsGrid extends BtrixElement {
       <ul class=${gridClassNames}>
         ${this.collections.map(
           (collection) => html`
-            <li class="relative col-span-1">
+            <li class="group relative col-span-1">
               <a
                 href=${this.navigate.isPublicPage
                   ? `/${RouteNamespace.PublicOrgs}/${this.slug}/collections/${collection.slug}`
                   : `/${RouteNamespace.PrivateOrgs}/${this.slug}/collections/view/${collection.id}`}
-                class="group block h-full rounded-lg"
+                class=${clsx(
+                  tw`block h-full rounded-lg transition-opacity`,
+                  this.collectionRefreshing === collection.id && tw`opacity-50`,
+                )}
                 @click=${this.navigate.link}
               >
                 <div
@@ -98,6 +105,15 @@ export class CollectionsGrid extends BtrixElement {
                 </div>
               </a>
               ${when(showActions, () => this.renderActions(collection))}
+              ${when(
+                this.collectionRefreshing === collection.id,
+                () =>
+                  html`<div
+                    class="absolute inset-x-0 top-0 z-50 grid aspect-video place-items-center"
+                  >
+                    <sl-spinner class="text-4xl"></sl-spinner>
+                  </div>`,
+              )}
             </li>
           `,
         )}
@@ -121,7 +137,7 @@ export class CollectionsGrid extends BtrixElement {
   private readonly renderActions = (collection: PublicCollection) => html`
     <div class="pointer-events-none absolute left-0 right-0 top-0 aspect-video">
       <div class="pointer-events-auto absolute bottom-2 right-2">
-        <btrix-button raised>
+        <btrix-button raised size="small">
           <sl-icon
             label=${msg("Edit Collection")}
             name="pencil"

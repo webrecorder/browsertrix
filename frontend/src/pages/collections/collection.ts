@@ -117,6 +117,7 @@ export class Collection extends BtrixElement {
                 .orgBasePath}/collections/view/${collection.id}"
               size="small"
               variant="text"
+              class="-mx-3"
               @click=${this.navigate.link}
             >
               ${msg("Go to Private Page")}
