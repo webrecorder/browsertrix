@@ -227,9 +227,6 @@ export class CollectionsList extends BtrixElement {
         </div>
       </btrix-dialog>
       <btrix-collection-create-dialog
-        .collection=${
-          this.openDialogName === "create" ? undefined : this.selectedCollection
-        }
         ?open=${this.openDialogName === "create"}
         @sl-hide=${() => (this.openDialogName = undefined)}
         @sl-after-hide=${() => (this.selectedCollection = undefined)}
