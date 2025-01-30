@@ -358,7 +358,7 @@ class RawCrawlConfig(BaseModel):
 
     userAgent: Optional[str] = None
 
-    selectLinks: Union[str, List[str], None] = "a[href]->href"
+    selectLinks: List[str] = ["a[href]->href"]
 
 
 # ============================================================================
