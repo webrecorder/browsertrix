@@ -207,7 +207,7 @@ class UploadOps(BaseCrawlOps):
         return {"id": crawl_id, "added": True, "storageQuotaReached": quota_reached}
 
     async def _add_pages_and_update_collections(
-        crawl_id: str, collections: Optional[List[str]] = None
+        self, crawl_id: str, collections: Optional[List[str]] = None
     ):
         await self.page_ops.add_crawl_pages_to_db_from_wacz(crawl_id)
         if collections:
