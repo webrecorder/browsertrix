@@ -86,7 +86,7 @@ function renderThumbnails(this: CollectionEdit) {
     }
   } else if (this.collection?.thumbnail) {
     selectedImgSrc = this.collection.thumbnail.path;
-  } else if (this.selectedSnapshot) {
+  } else {
     selectedImgSrc = null;
   }
 

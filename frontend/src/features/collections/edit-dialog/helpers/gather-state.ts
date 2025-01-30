@@ -28,7 +28,7 @@ export default async function gatherState(this: CollectionEdit) {
     this.errorTab = null;
   }
 
-  const { access, allowPublicDownload } = this.shareSettings ?? {};
+  const { access, allowPublicDownload } = (await this.shareSettings) ?? {};
 
   const formData = serialize(form) as CollectionUpdate;
 

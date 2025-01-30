@@ -88,8 +88,11 @@ export class CollectionEdit extends BtrixElement {
   name = this.collection?.name;
 
   @state()
-  defaultThumbnailName: `${Thumbnail}` | null = this.collection
-    ?.defaultThumbnailName as `${Thumbnail}` | null;
+  defaultThumbnailName: `${Thumbnail}` | null =
+    (this.collection?.defaultThumbnailName as
+      | `${Thumbnail}`
+      | null
+      | undefined) || null;
 
   @state()
   selectedSnapshot: CollectionThumbnailSource | null = null;
@@ -103,8 +106,8 @@ export class CollectionEdit extends BtrixElement {
   @queryAsync("#collectionEditForm")
   readonly form!: Promise<HTMLFormElement>;
 
-  @query("btrix-collection-share-settings")
-  readonly shareSettings?: CollectionShareSettings;
+  @queryAsync("btrix-collection-share-settings")
+  readonly shareSettings?: Promise<CollectionShareSettings>;
 
   @query("btrix-collection-thumbnail-select")
   readonly thumbnailSelector?: CollectionThumbnailSelect;
@@ -121,9 +124,9 @@ export class CollectionEdit extends BtrixElement {
       this.collection = undefined;
     }
     if (changedProperties.has("collection")) {
-      this.defaultThumbnailName = this.collection?.defaultThumbnailName as
-        | `${Thumbnail}`
-        | null;
+      this.defaultThumbnailName =
+        (this.collection?.defaultThumbnailName as `${Thumbnail}` | null) ||
+        null;
       this.selectedSnapshot = this.collection?.thumbnailSource ?? null;
     }
   }
