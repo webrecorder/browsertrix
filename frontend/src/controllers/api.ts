@@ -191,7 +191,7 @@ export class APIController implements ReactiveController {
       }
       const xhr = new XMLHttpRequest();
 
-      xhr.open("PUT", `/api/${path}`);
+      xhr.open("PUT", `/api${path}`);
       xhr.setRequestHeader("Content-Type", "application/octet-stream");
       Object.entries(auth.headers).forEach(([k, v]) => {
         xhr.setRequestHeader(k, v);
