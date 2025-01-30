@@ -689,8 +689,8 @@ class CollectionOps:
         crawl_coll_ids = crawl.get("collectionIds")
         modified = dt_now()
 
-        for collection_id in crawl_coll_ids:
-            await self.update_collection_counts_and_tags(collection_id)
+        for coll_id in crawl_coll_ids:
+            await self.update_collection_counts_and_tags(coll_id)
             await self.update_collection_dates(coll_id)
             await self.collections.find_one_and_update(
                 {"_id": coll_id},
