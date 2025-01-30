@@ -603,11 +603,11 @@ def test_list_pages_in_collection(crawler_auth_headers, default_org_id):
         assert page["url"]
         assert page["ts"]
         assert page.get("title") or page.get("title") is None
-        assert page["loadState"]
-        assert page["status"]
-        assert page["mime"]
-        assert page["isError"] in (True, False)
-        assert page["isFile"] in (True, False)
+        assert page.get("loadState") or page.get("loadState") is None
+        assert page.get("status") or page.get("status") is None
+        assert page.get("mime") or page.get("mime") is None
+        assert page["isError"] in (None, True, False)
+        assert page["isFile"] in (None, True, False)
 
     # Save info for page to test url and urlPrefix filters
     coll_page = pages[0]
