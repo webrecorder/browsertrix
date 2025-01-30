@@ -2,6 +2,7 @@ import { msg } from "@lit/localize";
 import { type SlInput } from "@shoelace-style/shoelace";
 import clsx from "clsx";
 import { html, nothing } from "lit";
+import { isEqual } from "lodash";
 import queryString from "query-string";
 
 import {
@@ -9,6 +10,7 @@ import {
   validateNameMax,
   type CollectionEdit,
 } from "../collection-edit-dialog";
+import { type BtrixValidateDetails } from "../collection-snapshot-preview";
 import {
   CollectionThumbnail,
   DEFAULT_THUMBNAIL_VARIANT,
@@ -235,15 +237,16 @@ function renderPageThumbnail(
       }}
     >
       <div
-        class="relative flex size-full flex-col items-center justify-center bg-cover"
+        class="relative grid size-full place-items-center bg-cover"
         style="background-image:url('${initialPath}')"
       >
         ${isSelected
           ? html`<sl-icon
-              class="relative z-10 size-10 stroke-black/50 text-white drop-shadow-md [paint-order:stroke]"
+              class="absolute z-10 size-10 stroke-black/50 text-white drop-shadow-md [paint-order:stroke]"
               name="check-lg"
             ></sl-icon>`
           : nothing}
+
         <btrix-collection-snapshot-preview
           class="absolute inset-0"
           id="thumbnailPreview"
@@ -251,6 +254,17 @@ function renderPageThumbnail(
           view="url"
           replaySrc=${`/replay/?${query}#view=pages`}
           .snapshot=${sourceToSnapshot(this.selectedSnapshot)}
+          ?noSpinner=${!!initialPath &&
+          isEqual(this.selectedSnapshot, this.collection?.thumbnailSource)}
+          @btrix-validate=${({
+            detail: { valid },
+          }: CustomEvent<BtrixValidateDetails>) => {
+            if (this.defaultThumbnailName == null && !valid) {
+              this.errorTab = "general";
+            } else {
+              this.errorTab = null;
+            }
+          }}
         >
         </btrix-collection-snapshot-preview>
       </div>

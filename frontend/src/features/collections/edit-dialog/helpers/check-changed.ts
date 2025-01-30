@@ -24,8 +24,10 @@ export default async function checkChanged(this: CollectionEdit) {
       !isEqual(this.collection?.thumbnailSource, thumbnail.selectedSnapshot) &&
       this.blobIsLoaded;
 
+    console.log({ shouldUpload });
     if (shouldUpload) {
       updates.push(["thumbnail", thumbnail]);
+      this.defaultThumbnailName = null;
     }
     if (updates.length > 0) {
       this.dirty = true;

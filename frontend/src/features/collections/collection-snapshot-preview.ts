@@ -3,6 +3,7 @@ import { Task } from "@lit/task";
 import clsx from "clsx";
 import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
+import { isEqual } from "lodash";
 
 import type { SelectSnapshotDetail } from "./select-collection-start-page";
 
@@ -14,6 +15,10 @@ export enum HomeView {
   Pages = "pages",
   URL = "url",
 }
+
+export type BtrixValidateDetails = {
+  valid: boolean;
+};
 
 /**
  * Display preview of page snapshot.
@@ -35,7 +40,10 @@ export class CollectionSnapshotPreview extends TailwindElement {
   @property({ type: Boolean })
   noSpinner = false;
 
-  @property({ type: Object })
+  @property({
+    type: Object,
+    hasChanged: isEqual,
+  })
   snapshot?: Partial<SelectSnapshotDetail["item"]>;
 
   @query("iframe")
@@ -60,33 +68,49 @@ export class CollectionSnapshotPreview extends TailwindElement {
 
   private readonly blobTask = new Task(this, {
     task: async ([collectionId, snapshot], { signal }) => {
-      console.debug("waiting for iframe to load");
-      await this.iframeLoadedPromise;
-      if (
-        !collectionId ||
-        !snapshot?.ts ||
-        !snapshot.url ||
-        !this.iframe?.contentWindow
-      ) {
-        console.debug(
-          "exiting early due to missing props",
-          collectionId,
-          snapshot,
-          this.iframe?.contentWindow,
+      try {
+        console.debug("waiting for iframe to load", { collectionId, snapshot });
+        await this.iframeLoadedPromise;
+        if (
+          !collectionId ||
+          !snapshot?.ts ||
+          !snapshot.url ||
+          !this.iframe?.contentWindow
+        ) {
+          console.debug(
+            "exiting early due to missing props",
+            collectionId,
+            snapshot,
+            this.iframe?.contentWindow,
+          );
+          return;
+        }
+
+        const resp = await this.iframe.contentWindow.fetch(
+          `/replay/w/${this.collectionId}/${formatRwpTimestamp(snapshot.ts)}id_/urn:thumbnail:${snapshot.url}`,
+          { signal },
         );
-        return;
+
+        if (resp.status === 200) {
+          this.dispatchEvent(
+            new CustomEvent<BtrixValidateDetails>("btrix-validate", {
+              detail: { valid: true },
+            }),
+          );
+          return await resp.blob();
+        }
+
+        throw new Error(`couldn't get thumbnail`);
+      } catch (e) {
+        console.error(e);
+        if (signal.aborted) return;
+        this.dispatchEvent(
+          new CustomEvent<BtrixValidateDetails>("btrix-validate", {
+            detail: { valid: false },
+          }),
+        );
+        throw e;
       }
-
-      const resp = await this.iframe.contentWindow.fetch(
-        `/replay/w/${this.collectionId}/${formatRwpTimestamp(snapshot.ts)}id_/urn:thumbnail:${snapshot.url}`,
-        { signal },
-      );
-
-      if (resp.status === 200) {
-        return await resp.blob();
-      }
-
-      throw new Error(`couldn't get thumbnail`);
     },
     args: () => [this.collectionId, this.snapshot] as const,
   });
@@ -162,7 +186,8 @@ export class CollectionSnapshotPreview extends TailwindElement {
     return html`
       <div class="size-full">
         <sl-tooltip hoist>
-          <div class="relative size-full">
+          ${this.objectUrlTask.value ? nothing : this.renderSpinner()}
+          <div class="absolute size-full">
             ${this.prevObjUrl
               ? html`<img
                   class="absolute inset-0 size-full"
@@ -178,7 +203,6 @@ export class CollectionSnapshotPreview extends TailwindElement {
                 />`
               : nothing}
           </div>
-          ${this.objectUrlTask.value ? nothing : this.renderSpinner()}
           <span slot="content" class="break-all">${this.snapshot.url}</span>
         </sl-tooltip>
       </div>
@@ -207,7 +231,7 @@ export class CollectionSnapshotPreview extends TailwindElement {
 
   private readonly renderError = () => html`
     <p
-      class="absolute inset-0 my-auto grid place-content-center text-balance p-3 text-xs text-danger"
+      class="absolute inset-0 z-20 my-auto grid place-content-center text-balance bg-red-50 p-3 text-xs text-danger"
     >
       ${msg("Couldn't load preview. Try another URL or timestamp.")}
     </p>
