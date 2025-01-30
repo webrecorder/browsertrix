@@ -124,6 +124,7 @@ export class CollectionEdit extends BtrixElement {
       this.defaultThumbnailName = this.collection?.defaultThumbnailName as
         | `${Thumbnail}`
         | null;
+      this.selectedSnapshot = this.collection?.thumbnailSource ?? null;
     }
   }
 
@@ -165,6 +166,9 @@ export class CollectionEdit extends BtrixElement {
     void this.hideDialog();
     this.dirty = false;
     this.errorTab = null;
+    this.blobIsLoaded = false;
+    this.selectedSnapshot = null;
+    this.defaultThumbnailName = null;
   }
 
   protected firstUpdated(): void {
