@@ -17,7 +17,6 @@ import renderGeneral from "./edit-dialog/general-section";
 import checkChanged from "./edit-dialog/helpers/check-changed";
 import submitTask from "./edit-dialog/helpers/submit-task";
 import { type CollectionShareSettings } from "./edit-dialog/sharing-section";
-import { type CollectionThumbnailSelect } from "./edit-dialog/thumbnail-select";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
@@ -110,8 +109,8 @@ export class CollectionEdit extends BtrixElement {
   @queryAsync("btrix-collection-share-settings")
   readonly shareSettings?: Promise<CollectionShareSettings>;
 
-  @query("btrix-collection-thumbnail-select")
-  readonly thumbnailSelector?: CollectionThumbnailSelect;
+  // @query("btrix-collection-thumbnail-select")
+  // readonly thumbnailSelector?: CollectionThumbnailSelect;
 
   @query("btrix-collection-snapshot-preview")
   public readonly thumbnailPreview?: CollectionSnapshotPreview | null;
@@ -124,7 +123,10 @@ export class CollectionEdit extends BtrixElement {
       this.onReset();
       this.collection = undefined;
     }
-    if (changedProperties.has("collection")) {
+    if (
+      changedProperties.has("collection") &&
+      changedProperties.get("collection")?.id != this.collection?.id
+    ) {
       this.defaultThumbnailName =
         (this.collection?.defaultThumbnailName as `${Thumbnail}` | null) ||
         null;
@@ -171,6 +173,7 @@ export class CollectionEdit extends BtrixElement {
     this.dirty = false;
     this.errorTab = null;
     this.blobIsLoaded = false;
+    console.log("BBBBB");
     this.selectedSnapshot = this.collection?.thumbnailSource ?? null;
     this.defaultThumbnailName =
       (this.collection?.defaultThumbnailName as

@@ -32,7 +32,7 @@ export default async function gatherState(this: CollectionEdit) {
 
   const formData = serialize(form) as CollectionUpdate;
 
-  const selectedSnapshot = this.thumbnailSelector?.selectedSnapshot;
+  const selectedSnapshot = this.selectedSnapshot;
 
   if (this.defaultThumbnailName == null && !selectedSnapshot) {
     formData.thumbnailSource = null;

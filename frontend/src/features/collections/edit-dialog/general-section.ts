@@ -1,4 +1,5 @@
 import { msg } from "@lit/localize";
+import { TaskStatus } from "@lit/task";
 import { type SlInput } from "@shoelace-style/shoelace";
 import clsx from "clsx";
 import { html, nothing } from "lit";
@@ -16,8 +17,9 @@ import {
   DEFAULT_THUMBNAIL_VARIANT,
   Thumbnail,
 } from "../collection-thumbnail";
+import { type SelectSnapshotDetail } from "../select-collection-start-page";
 
-import { sourceToSnapshot } from "./helpers/snapshots";
+import { snapshotToSource, sourceToSnapshot } from "./helpers/snapshots";
 
 import type { PublicCollection } from "@/types/collection";
 import { tw } from "@/utils/tailwind";
@@ -61,16 +63,44 @@ export default function renderGeneral(this: CollectionEdit) {
       </span>
     </sl-input>
     <div class="mb-7">${renderThumbnails.bind(this)()}</div>
-    <btrix-collection-thumbnail-select
-      .collection=${this.collection}
-      .replayLoaded=${this.replayLoaded}
-      @btrix-change=${async () => {
-        await this.updateComplete;
-        this.selectedSnapshot =
-          this.thumbnailSelector?.selectedSnapshot ?? null;
-      }}
-    >
-    </btrix-collection-thumbnail-select>`;
+    <section>
+      <btrix-select-collection-page
+        mode="thumbnail"
+        .collection=${this.collection}
+        .collectionId=${this.collection.id}
+        .initialSelectedSnapshot=${this.selectedSnapshot
+          ? {
+              pageId: this.selectedSnapshot.urlPageId,
+              ts: this.selectedSnapshot.urlTs,
+              status: 200,
+            }
+          : undefined}
+        @btrix-select=${async (e: CustomEvent<SelectSnapshotDetail>) => {
+          if (!e.detail.item) return;
+          this.dispatchEvent(new CustomEvent("btrix-change"));
+          await this.updateComplete;
+          this.selectedSnapshot = snapshotToSource(e.detail.item);
+        }}
+      >
+        ${this.thumbnailPreview?.blobTask.status === TaskStatus.PENDING
+          ? html`<sl-spinner slot="prefix"></sl-spinner>`
+          : nothing}
+        ${this.thumbnailPreview?.blobTask.status === TaskStatus.ERROR
+          ? html` <sl-tooltip
+              hoist
+              content=${msg(
+                "This page doesn’t have a thumbnail and can’t be used",
+              )}
+              placement="bottom-start"
+            >
+              <sl-icon
+                name="exclamation-lg"
+                class="size-4 text-base text-danger"
+              ></sl-icon>
+            </sl-tooltip>`
+          : nothing}
+      </btrix-select-collection-page>
+    </section> `;
 }
 
 function renderThumbnails(this: CollectionEdit) {
@@ -214,7 +244,7 @@ function renderPageThumbnail(
     (!!this.selectedSnapshot && this.blobIsLoaded) || !!initialPath;
 
   console.log({
-    selectedSnapshot: !!this.selectedSnapshot,
+    selectedSnapshot: this.selectedSnapshot,
     blobIsLoaded: !!this.blobIsLoaded,
     initialPath: !!initialPath,
   });

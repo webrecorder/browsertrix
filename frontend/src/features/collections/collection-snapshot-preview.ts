@@ -66,7 +66,7 @@ export class CollectionSnapshotPreview extends TailwindElement {
     return this.blobTask.taskComplete.then(() => this.blobTask.value);
   }
 
-  private readonly blobTask = new Task(this, {
+  public readonly blobTask = new Task(this, {
     task: async ([collectionId, snapshot], { signal }) => {
       try {
         console.debug("waiting for iframe to load", { collectionId, snapshot });
@@ -231,9 +231,9 @@ export class CollectionSnapshotPreview extends TailwindElement {
 
   private readonly renderError = () => html`
     <p
-      class="absolute inset-0 z-20 my-auto grid place-content-center text-balance bg-red-50 p-3 text-xs text-danger"
+      class="absolute inset-0 z-20 my-auto grid place-content-center text-balance bg-neutral-50 p-3 text-xs text-neutral-500"
     >
-      ${msg("Couldn't load preview. Try another URL or timestamp.")}
+      ${msg("This page doesn’t have a preview. Try another URL or timestamp.")}
     </p>
   `;
 

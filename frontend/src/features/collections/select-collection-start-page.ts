@@ -275,16 +275,18 @@ export class SelectCollectionPage extends BtrixElement {
           @sl-blur=${this.pageUrlOnBlur}
         >
           <div slot="prefix" class="inline-flex items-center">
-            <sl-tooltip
-              hoist
-              content=${prefix.tooltip}
-              placement="bottom-start"
-            >
-              <sl-icon
-                name=${prefix.icon}
-                class=${clsx(tw`size-4 text-base`, prefix.className)}
-              ></sl-icon>
-            </sl-tooltip>
+            <slot name="prefix">
+              <sl-tooltip
+                hoist
+                content=${prefix.tooltip}
+                placement="bottom-start"
+              >
+                <sl-icon
+                  name=${prefix.icon}
+                  class=${clsx(tw`size-4 text-base`, prefix.className)}
+                ></sl-icon>
+              </sl-tooltip>
+            </slot>
           </div>
         </sl-input>
         ${this.renderSearchResults()}
