@@ -68,7 +68,12 @@ export class CollectionSnapshotPreview extends TailwindElement {
   private readonly blobTask = new Task(this, {
     task: async ([collectionId, snapshot], { signal }) => {
       await this.iframeLoadedPromise;
-      if (!collectionId || !snapshot || !this.iframe?.contentWindow) {
+      if (
+        !collectionId ||
+        !snapshot?.ts ||
+        !snapshot.url ||
+        !this.iframe?.contentWindow
+      ) {
         return;
       }
 
