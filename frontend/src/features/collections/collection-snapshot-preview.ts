@@ -146,8 +146,10 @@ export class CollectionSnapshotPreview extends TailwindElement {
     if (!this.snapshot) {
       if (this.noSpinner) return;
       return html`
-        <p class="m-3 text-pretty text-neutral-500">
-          ${msg("Enter a Page URL to preview it")}
+        <p
+          class="absolute inset-0 my-auto grid place-content-center text-pretty p-3 text-neutral-500"
+        >
+          ${msg("Enter a Page URL to preview it.")}
         </p>
       `;
     }
