@@ -19,6 +19,7 @@ describe("needLogin", () => {
     }
 
     const Element = needLogin(
+      // @ts-expect-error not stubbing full BtrixElement
       class TestElement extends LiteElementMock {
         appState = appState;
       } as unknown as {

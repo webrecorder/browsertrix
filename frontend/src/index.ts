@@ -1,5 +1,6 @@
 import "./utils/polyfills";
 
+import { provide } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
 import type {
   SlDialog,
@@ -22,6 +23,7 @@ import "./assets/fonts/Inter/inter.css";
 import "./assets/fonts/Recursive/recursive.css";
 import "./styles.css";
 
+import { viewStateContext } from "./context/view-state";
 import { OrgTab, RouteNamespace, ROUTES } from "./routes";
 import type { UserInfo, UserOrg } from "./types/user";
 import { pageView, type AnalyticsTrackProps } from "./utils/analytics";
@@ -98,6 +100,7 @@ export class App extends BtrixElement {
   @state()
   private translationReady = false;
 
+  @provide({ context: viewStateContext })
   @state()
   private viewState!: ViewState;
 

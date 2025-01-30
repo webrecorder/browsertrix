@@ -14,7 +14,8 @@ import type { SelectNewDialogEvent } from ".";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import { ClipboardController } from "@/controllers/clipboard";
-import type { CollectionSavedEvent } from "@/features/collections/collection-metadata-dialog";
+import type { CollectionSavedEvent } from "@/features/collections/collection-create-dialog";
+import { type EditDialogTab } from "@/features/collections/collection-edit-dialog";
 import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
 import { emptyMessage } from "@/layouts/emptyMessage";
 import { pageHeader } from "@/layouts/pageHeader";
@@ -107,7 +108,10 @@ export class CollectionsList extends BtrixElement {
   private searchResultsOpen = false;
 
   @state()
-  private openDialogName?: "create" | "delete" | "editMetadata";
+  private openDialogName?: "create" | "delete" | "edit";
+
+  @state()
+  private openEditDialogTab?: EditDialogTab;
 
   @state()
   private isDialogVisible = false;
@@ -158,7 +162,9 @@ export class CollectionsList extends BtrixElement {
                 variant="primary"
                 size="small"
                 ?disabled=${!this.org || this.org.readOnly}
-                @click=${() => (this.openDialogName = "create")}
+                @click=${() => {
+                  this.openDialogName = "create";
+                }}
               >
                 <sl-icon slot="prefix" name="plus-lg"></sl-icon>
                 ${msg("New Collection")}
@@ -220,14 +226,8 @@ export class CollectionsList extends BtrixElement {
         )}
         </div>
       </btrix-dialog>
-      <btrix-collection-metadata-dialog
-        .collection=${
-          this.openDialogName === "create" ? undefined : this.selectedCollection
-        }
-        ?open=${
-          this.openDialogName === "create" ||
-          this.openDialogName === "editMetadata"
-        }
+      <btrix-collection-create-dialog
+        ?open=${this.openDialogName === "create"}
         @sl-hide=${() => (this.openDialogName = undefined)}
         @sl-after-hide=${() => (this.selectedCollection = undefined)}
         @btrix-collection-saved=${(e: CollectionSavedEvent) => {
@@ -240,7 +240,21 @@ export class CollectionsList extends BtrixElement {
           }
         }}
       >
-      </btrix-collection-metadata-dialog>
+      </btrix-collection-create-dialog>
+      <btrix-collection-edit-dialog
+            .collection=${this.selectedCollection}
+            ?open=${this.openDialogName === "edit"}
+            .tab=${this.openEditDialogTab ?? "general"}
+            @sl-hide=${() => {
+              this.openDialogName = undefined;
+            }}
+            @sl-after-hide=${() => {
+              this.selectedCollection = undefined;
+            }}
+            @btrix-collection-saved=${() => {
+              void this.fetchCollections();
+            }}
+          ></btrix-collection-edit-dialog>
     `;
   }
 
@@ -572,28 +586,14 @@ export class CollectionsList extends BtrixElement {
     return html`
       <btrix-overflow-dropdown>
         <sl-menu>
-          <sl-menu-item
-            @click=${() => void this.manageCollection(col, "editMetadata")}
-          >
+          <sl-menu-item @click=${() => void this.manageCollection(col, "edit")}>
             <sl-icon name="pencil" slot="prefix"></sl-icon>
-            ${msg("Edit Metadata")}
+            ${msg("Edit Collection")}
           </sl-menu-item>
           <sl-divider></sl-divider>
-          ${col.access === CollectionAccess.Private
+          ${col.access === CollectionAccess.Public ||
+          col.access === CollectionAccess.Unlisted
             ? html`
-                <sl-menu-item
-                  style="--sl-color-neutral-700: var(--success)"
-                  @click=${() =>
-                    void this.updateAccess(col, CollectionAccess.Unlisted)}
-                >
-                  <sl-icon
-                    name=${SelectCollectionAccess.Options.unlisted.icon}
-                    slot="prefix"
-                  ></sl-icon>
-                  ${msg("Enable Share Link")}
-                </sl-menu-item>
-              `
-            : html`
                 <sl-menu-item
                   style="--sl-color-neutral-700: var(--success)"
                   @click=${() => {
@@ -606,50 +606,18 @@ export class CollectionsList extends BtrixElement {
                   <sl-icon name="copy" slot="prefix"></sl-icon>
                   ${msg("Copy Share Link")}
                 </sl-menu-item>
-                ${col.access === CollectionAccess.Public
-                  ? html`
-                      <sl-menu-item
-                        @click=${() =>
-                          void this.updateAccess(
-                            col,
-                            CollectionAccess.Unlisted,
-                          )}
-                      >
-                        <sl-icon
-                          name=${SelectCollectionAccess.Options.unlisted.icon}
-                          slot="prefix"
-                        ></sl-icon>
-                        ${msg("Make Unlisted")}
-                      </sl-menu-item>
-                    `
-                  : this.org?.enablePublicProfile
-                    ? html`
-                        <sl-menu-item
-                          @click=${() =>
-                            void this.updateAccess(
-                              col,
-                              CollectionAccess.Public,
-                            )}
-                        >
-                          <sl-icon
-                            name=${SelectCollectionAccess.Options.public.icon}
-                            slot="prefix"
-                          ></sl-icon>
-                          ${msg("Make Public")}
-                        </sl-menu-item>
-                      `
-                    : nothing}
-                <sl-menu-item
-                  @click=${() =>
-                    void this.updateAccess(col, CollectionAccess.Private)}
-                >
-                  <sl-icon
-                    name=${SelectCollectionAccess.Options.private.icon}
-                    slot="prefix"
-                  ></sl-icon>
-                  ${msg("Make Private")}
-                </sl-menu-item>
-              `}
+              `
+            : nothing}
+          <sl-menu-item
+            style="--sl-color-neutral-700: var(--success)"
+            @click=${() => {
+              this.openEditDialogTab = "sharing";
+              void this.manageCollection(col, "edit");
+            }}
+          >
+            <sl-icon name="box-arrow-up" slot="prefix"></sl-icon>
+            ${msg("Share Collection")}
+          </sl-menu-item>
 
           <btrix-menu-item-link
             href=${`/api/orgs/${this.orgId}/collections/${col.id}/download?auth_bearer=${authToken}`}

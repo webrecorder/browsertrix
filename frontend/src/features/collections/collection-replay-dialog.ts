@@ -242,7 +242,7 @@ export class CollectionStartPageDialog extends BtrixElement {
           () => html`
             <sl-divider></sl-divider>
             <section>
-              <btrix-select-collection-start-page
+              <btrix-select-collection-page
                 .collectionId=${this.collectionId}
                 .collection=${this.collection}
                 @btrix-select=${async (
@@ -250,7 +250,7 @@ export class CollectionStartPageDialog extends BtrixElement {
                 ) => {
                   this.selectedSnapshot = e.detail.item;
                 }}
-              ></btrix-select-collection-start-page>
+              ></btrix-select-collection-page>
 
               <sl-checkbox name="useThumbnail" class="mt-3" checked>
                 ${msg("Update collection thumbnail")}
