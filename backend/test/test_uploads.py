@@ -300,6 +300,9 @@ def test_uploads_collection_updated(
     assert data["pageCount"] > 0
     assert data["uniquePageCount"] > 0
     assert data["totalSize"] > 0
+    assert data["dateEarliest"]
+    assert data["dateLatest"]
+    assert data["modified"] > data["created"]
 
 
 def test_replace_upload(
