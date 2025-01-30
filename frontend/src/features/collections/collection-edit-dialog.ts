@@ -95,7 +95,8 @@ export class CollectionEdit extends BtrixElement {
       | undefined) || null;
 
   @state()
-  selectedSnapshot: CollectionThumbnailSource | null = null;
+  selectedSnapshot: CollectionThumbnailSource | null =
+    this.collection?.thumbnailSource ?? null;
 
   @state()
   blobIsLoaded = false;
@@ -170,8 +171,12 @@ export class CollectionEdit extends BtrixElement {
     this.dirty = false;
     this.errorTab = null;
     this.blobIsLoaded = false;
-    this.selectedSnapshot = null;
-    this.defaultThumbnailName = null;
+    this.selectedSnapshot = this.collection?.thumbnailSource ?? null;
+    this.defaultThumbnailName =
+      (this.collection?.defaultThumbnailName as
+        | `${Thumbnail}`
+        | null
+        | undefined) || null;
   }
 
   protected firstUpdated(): void {
@@ -193,6 +198,10 @@ export class CollectionEdit extends BtrixElement {
           this.tab = "general";
         }}
         @sl-request-close=${(e: SlRequestCloseEvent) => {
+          if (e.detail.source === "close-button") {
+            this.onReset();
+            return;
+          }
           // Prevent accidental closes unless data has been saved
           // Closing via the close buttons is fine though, cause it resets the form first.
           if (this.dirty) e.preventDefault();
