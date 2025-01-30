@@ -1,4 +1,4 @@
-""" entrypoint module for background jobs """
+"""entrypoint module for background jobs"""
 
 import asyncio
 import os

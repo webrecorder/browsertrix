@@ -1,4 +1,4 @@
-""" auth functions for login """
+"""auth functions for login"""
 
 import os
 from uuid import UUID, uuid4

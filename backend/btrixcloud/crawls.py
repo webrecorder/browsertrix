@@ -1,4 +1,4 @@
-""" Crawl API """
+"""Crawl API"""
 
 # pylint: disable=too-many-lines
 

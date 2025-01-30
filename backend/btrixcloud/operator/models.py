@@ -1,4 +1,4 @@
-""" Operator Models """
+"""Operator Models"""
 
 from collections import defaultdict
 from uuid import UUID
