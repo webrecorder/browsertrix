@@ -66,6 +66,7 @@ export const collectionUpdateSchema = z
     access: z.string(),
     defaultThumbnailName: z.string().nullable(),
     allowPublicDownload: z.boolean(),
+    thumbnailSource: collectionThumbnailSourceSchema.nullable(),
   })
   .partial();
 

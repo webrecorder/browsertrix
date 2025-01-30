@@ -14,7 +14,7 @@ export default async function checkChanged(this: CollectionEdit) {
         keyof CollectionUpdate,
         CollectionUpdate[keyof CollectionUpdate],
       ][]
-    ).filter(([name, value]) => this.collection?.[name] !== value) as [
+    ).filter(([name, value]) => isEqual(this.collection?.[name], value)) as [
       keyof CollectionUpdate | "thumbnail",
       CollectionUpdate[keyof CollectionUpdate] | typeof thumbnail,
     ][];

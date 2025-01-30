@@ -1383,6 +1383,7 @@ class UpdateColl(BaseModel):
     access: Optional[CollAccessType] = None
     defaultThumbnailName: Optional[str] = None
     allowPublicDownload: Optional[bool] = None
+    thumbnailSource: Optional[CollectionThumbnailSource] = None
 
 
 # ============================================================================

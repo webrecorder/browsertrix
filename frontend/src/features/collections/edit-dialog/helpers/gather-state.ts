@@ -34,6 +34,10 @@ export default async function gatherState(this: CollectionEdit) {
 
   const selectedSnapshot = this.thumbnailSelector?.selectedSnapshot;
 
+  if (this.defaultThumbnailName == null && !selectedSnapshot) {
+    formData.thumbnailSource = null;
+  }
+
   const data: CollectionUpdate = {
     ...formData,
     access,
