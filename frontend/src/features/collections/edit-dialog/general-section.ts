@@ -15,6 +15,8 @@ import {
   Thumbnail,
 } from "../collection-thumbnail";
 
+import { sourceToSnapshot } from "./helpers/snapshots";
+
 import type { PublicCollection } from "@/types/collection";
 import { tw } from "@/utils/tailwind";
 
@@ -199,8 +201,8 @@ function renderPageThumbnail(
   const isSelected = this.defaultThumbnailName == null;
 
   this.thumbnailPreview?.thumbnailBlob
-    .then(() => {
-      this.blobIsLoaded = true;
+    .then((value) => {
+      this.blobIsLoaded = !!value;
     })
     .catch(() => {
       this.blobIsLoaded = false;
@@ -208,6 +210,12 @@ function renderPageThumbnail(
 
   const enabled =
     (!!this.selectedSnapshot && this.blobIsLoaded) || !!initialPath;
+
+  console.log({
+    selectedSnapshot: !!this.selectedSnapshot,
+    blobIsLoaded: !!this.blobIsLoaded,
+    initialPath: !!initialPath,
+  });
 
   return html`
     <button
@@ -242,8 +250,7 @@ function renderPageThumbnail(
           collectionId=${this.collection!.id || ""}
           view="url"
           replaySrc=${`/replay/?${query}#view=pages`}
-          .snapshot=${this.selectedSnapshot}
-          ?noSpinner=${!!initialPath}
+          .snapshot=${sourceToSnapshot(this.selectedSnapshot)}
         >
         </btrix-collection-snapshot-preview>
       </div>

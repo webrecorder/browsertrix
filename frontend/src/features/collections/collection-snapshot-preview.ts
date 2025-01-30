@@ -58,15 +58,9 @@ export class CollectionSnapshotPreview extends TailwindElement {
     return this.blobTask.taskComplete.then(() => this.blobTask.value);
   }
 
-  // public async getBlob() {
-  //   return (
-  //     this.blobTask.value ??
-  //     this.blobTask.run([this.collectionId, this.snapshot])
-  //   );
-  // }
-
   private readonly blobTask = new Task(this, {
     task: async ([collectionId, snapshot], { signal }) => {
+      console.debug("waiting for iframe to load");
       await this.iframeLoadedPromise;
       if (
         !collectionId ||
@@ -74,6 +68,12 @@ export class CollectionSnapshotPreview extends TailwindElement {
         !snapshot.url ||
         !this.iframe?.contentWindow
       ) {
+        console.debug(
+          "exiting early due to missing props",
+          collectionId,
+          snapshot,
+          this.iframe?.contentWindow,
+        );
         return;
       }
 
@@ -197,6 +197,7 @@ export class CollectionSnapshotPreview extends TailwindElement {
             @load=${() => {
               this.iframeLoaded = true;
               this.iframeLoadComplete();
+              console.debug("iframe loaded");
             }}
           ></iframe>
         </div>

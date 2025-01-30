@@ -4,6 +4,8 @@ import { customElement, property, state } from "lit/decorators.js";
 
 import type { SelectSnapshotDetail } from "../select-collection-start-page";
 
+import { snapshotToSource } from "./helpers/snapshots";
+
 import { BtrixElement } from "@/classes/BtrixElement";
 import {
   type Collection,
@@ -49,8 +51,7 @@ export class CollectionThumbnailSelect extends BtrixElement {
             }),
           );
           if (!e.detail.item) return;
-          const { url, ts, pageId } = e.detail.item;
-          this.selectedSnapshot = { url, urlTs: ts, urlPageId: pageId };
+          this.selectedSnapshot = snapshotToSource(e.detail.item);
         }}
       ></btrix-select-collection-page>
     </section>`;
