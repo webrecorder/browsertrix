@@ -208,23 +208,29 @@ function renderPageThumbnail(
       this.blobIsLoaded = false;
     });
 
-  const disabled =
-    (this.selectedSnapshot == null && !!initialPath) || !this.blobIsLoaded;
+  const enabled =
+    (!!this.selectedSnapshot && this.blobIsLoaded) || !!initialPath;
 
-  console.log({ blobIsLoaded: this.blobIsLoaded });
+  console.log({
+    selectedSnapshot: this.selectedSnapshot,
+    blobIsLoaded: this.blobIsLoaded,
+    initialPath,
+    enabled,
+  });
 
   return html`
     <button
       class=${clsx(
         isSelected ? tw`ring-2 ring-blue-300` : tw`ring-1 ring-stone-600/10`,
         tw`row-start-2 aspect-video flex-1 overflow-hidden rounded transition-all`,
-        !disabled && tw`hover:ring-2 hover:ring-blue-300`,
+        enabled && tw`hover:ring-2 hover:ring-blue-300`,
       )}
-      ?disabled=${disabled}
+      ?disabled=${!enabled}
       role="radio"
       type="button"
       aria-checked=${isSelected}
       @click=${() => {
+        if (!enabled) return;
         this.defaultThumbnailName = null;
         void this.checkChanged.bind(this)();
       }}
