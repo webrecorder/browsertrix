@@ -173,6 +173,17 @@ def test_update_config_invalid_exclude_regex(
     assert r.json()["detail"] == "invalid_regex"
 
 
+def test_verify_default_select_links(
+    crawler_auth_headers, default_org_id, sample_crawl_data
+):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["config"]["selectLinks"] == "a[href]->href"
+
+
 def test_update_config_data(crawler_auth_headers, default_org_id, sample_crawl_data):
     r = requests.patch(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
@@ -181,6 +192,7 @@ def test_update_config_data(crawler_auth_headers, default_org_id, sample_crawl_d
             "config": {
                 "seeds": [{"url": "https://example.com/"}],
                 "scopeType": "domain",
+                "selectLinks": ["a[href]->href", "script[src]->src"],
             }
         },
     )
@@ -195,6 +207,7 @@ def test_update_config_data(crawler_auth_headers, default_org_id, sample_crawl_d
     data = r.json()
 
     assert data["config"]["scopeType"] == "domain"
+    assert data["config"]["selectLinks"] == ["a[href]->href", "script[src]->src"]
 
 
 def test_update_config_no_changes(
@@ -207,6 +220,7 @@ def test_update_config_no_changes(
             "config": {
                 "seeds": [{"url": "https://example.com/"}],
                 "scopeType": "domain",
+                "selectLinks": ["a[href]->href", "script[src]->src"],
             }
         },
     )

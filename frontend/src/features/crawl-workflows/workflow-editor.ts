@@ -88,6 +88,7 @@ type NewCrawlConfigParams = WorkflowParams & {
   runNow: boolean;
   config: WorkflowParams["config"] & {
     seeds: Seed[];
+    selectLinks: string[] | string | null;
   };
 };
 
@@ -1970,6 +1971,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     }
 
     const config = this.parseConfig();
+    console.log(config);
     this.isSubmitting = true;
 
     try {
@@ -2166,6 +2168,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         blockAds: this.formState.blockAds,
         exclude: trimArray(this.formState.exclusions),
         behaviors: this.setBehaviors(),
+        selectLinks: ["a[href]->href", "script[src]->src"],
       },
       crawlerChannel: this.formState.crawlerChannel || "default",
       proxyId: this.formState.proxyId,
