@@ -438,10 +438,11 @@ class CrawlConfigOps:
                 status_code=404, detail=f"Crawl Config '{cid}' not found"
             )
 
+        crawlconfig = CrawlConfig.from_dict(result)
+
         # update in crawl manager to change schedule
         if schedule_changed:
             try:
-                crawlconfig = CrawlConfig.from_dict(result)
                 await self.crawl_manager.update_scheduled_job(crawlconfig, str(user.id))
 
             except Exception as exc:
@@ -461,6 +462,13 @@ class CrawlConfigOps:
         if run_now:
             crawl_id = await self.run_now(cid, org, user)
             ret["started"] = crawl_id
+        elif changed:
+            running_crawl = await self.get_running_crawl(cid)
+            if running_crawl:
+                await self.crawl_manager.update_running_crawl_config(
+                    running_crawl.id, crawlconfig
+                )
+
         return ret
 
     async def update_usernames(self, userid: UUID, updated_name: str) -> None:
