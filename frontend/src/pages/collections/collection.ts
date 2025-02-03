@@ -227,7 +227,7 @@ export class Collection extends BtrixElement {
           </section>
           <section class="flex-1 lg:-mt-8">
             <btrix-section-heading>
-              <h3>${msg("Metadata")}</h3>
+              <h3>${msg("Details")}</h3>
             </btrix-section-heading>
             <div class="mt-5">${metadata}</div>
           </section>
