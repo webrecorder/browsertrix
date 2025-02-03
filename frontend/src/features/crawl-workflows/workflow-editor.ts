@@ -441,6 +441,11 @@ export class WorkflowEditor extends BtrixElement {
             "part-[summary-icon]:text-neutral-400 part-[header]:cursor-default part-[summary-icon]:cursor-not-allowed",
         )}
         ?open=${required || hasError || tabProgress?.completed}
+        @sl-focus=${() => {
+          this.updateProgressState({
+            activeTab: name,
+          });
+        }}
         @sl-show=${() => {
           this.skipIntersectUpdate = true;
           this.updateProgressState({
@@ -468,6 +473,9 @@ export class WorkflowEditor extends BtrixElement {
           }
 
           this.skipIntersectUpdate = true;
+          this.updateProgressState({
+            activeTab: name,
+          });
         }}
         @sl-after-show=${() => {
           this.skipIntersectUpdate = false;
