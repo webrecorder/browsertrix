@@ -686,11 +686,19 @@ class CollectionOps:
         )
 
     async def update_crawl_collections(self, crawl_id: str):
-        """Update counts and tags for all collections in crawl"""
+        """Update counts, dates, and modified for all collections in crawl"""
         crawl = await self.crawls.find_one({"_id": crawl_id})
         crawl_coll_ids = crawl.get("collectionIds")
-        for collection_id in crawl_coll_ids:
-            await self.update_collection_counts_and_tags(collection_id)
+        modified = dt_now()
+
+        for coll_id in crawl_coll_ids:
+            await self.update_collection_counts_and_tags(coll_id)
+            await self.update_collection_dates(coll_id)
+            await self.collections.find_one_and_update(
+                {"_id": coll_id},
+                {"$set": {"modified": modified}},
+                return_document=pymongo.ReturnDocument.AFTER,
+            )
 
     async def add_successful_crawl_to_collections(self, crawl_id: str, cid: UUID):
         """Add successful crawl to its auto-add collections."""

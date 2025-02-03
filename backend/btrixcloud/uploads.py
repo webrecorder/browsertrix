@@ -190,7 +190,9 @@ class UploadOps(BaseCrawlOps):
             self.event_webhook_ops.create_upload_finished_notification(crawl_id, org.id)
         )
 
-        asyncio.create_task(self.page_ops.add_crawl_pages_to_db_from_wacz(crawl_id))
+        asyncio.create_task(
+            self._add_pages_and_update_collections(crawl_id, collections)
+        )
 
         await self.orgs.inc_org_bytes_stored(org.id, file_size, "upload")
 
@@ -203,6 +205,13 @@ class UploadOps(BaseCrawlOps):
                 )
 
         return {"id": crawl_id, "added": True, "storageQuotaReached": quota_reached}
+
+    async def _add_pages_and_update_collections(
+        self, crawl_id: str, collections: Optional[List[str]] = None
+    ):
+        await self.page_ops.add_crawl_pages_to_db_from_wacz(crawl_id)
+        if collections:
+            await self.colls.update_crawl_collections(crawl_id)
 
     async def delete_uploads(
         self,
