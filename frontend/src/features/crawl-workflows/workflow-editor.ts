@@ -228,10 +228,6 @@ export class WorkflowEditor extends BtrixElement {
     rootMargin: "-100px 0px -100px 0px",
   });
 
-  // Use to skip updates on intersect changes, like when scrolling
-  // an element into view on click
-  private skipIntersectUpdate = false;
-
   // For fuzzy search:
   private readonly fuse = new Fuse<string>([], {
     shouldSort: false,
@@ -309,14 +305,12 @@ export class WorkflowEditor extends BtrixElement {
 
     this.addEventListener(
       "btrix-intersect",
-      this.onFormSectionIntersect as UnderlyingFunction<
-        typeof this.onFormSectionIntersect
-      >,
+      this.onPanelIntersect as UnderlyingFunction<typeof this.onPanelIntersect>,
     );
   }
 
   disconnectedCallback(): void {
-    this.onFormSectionIntersect.cancel();
+    this.onPanelIntersect.cancel();
     super.disconnectedCallback();
   }
 
@@ -433,12 +427,12 @@ export class WorkflowEditor extends BtrixElement {
 
       return html`<sl-details
         class=${clsx(
-          "part-[base]:rounded-lg part-[base]:border",
-          "part-[content]:[border-top:solid_1px_var(--sl-panel-border-color)]",
-          "part-[header]:hover:text-blue-400 part-[header]:text-neutral-500",
-          "part-[summary-icon]:[rotate:none]",
+          tw`part-[base]:rounded-lg part-[base]:border part-[base]:transition-shadow part-[base]:focus:shadow`,
+          tw`part-[content]:[border-top:solid_1px_var(--sl-panel-border-color)]`,
+          tw`part-[header]:text-neutral-500 part-[header]:hover:text-blue-400`,
+          tw`part-[summary-icon]:[rotate:none]`,
           hasError &&
-            "part-[summary-icon]:text-neutral-400 part-[header]:cursor-default part-[summary-icon]:cursor-not-allowed",
+            tw`part-[header]:cursor-default part-[summary-icon]:cursor-not-allowed part-[summary-icon]:text-neutral-400`,
         )}
         ?open=${required || hasError || tabProgress?.completed}
         @sl-focus=${() => {
@@ -447,7 +441,7 @@ export class WorkflowEditor extends BtrixElement {
           });
         }}
         @sl-show=${() => {
-          this.skipIntersectUpdate = true;
+          this.pauseObserve();
           this.updateProgressState({
             activeTab: name,
           });
@@ -472,17 +466,13 @@ export class WorkflowEditor extends BtrixElement {
             invalidEl.checkValidity();
           }
 
-          this.skipIntersectUpdate = true;
+          this.pauseObserve();
           this.updateProgressState({
             activeTab: name,
           });
         }}
-        @sl-after-show=${() => {
-          this.skipIntersectUpdate = false;
-        }}
-        @sl-after-hide=${() => {
-          this.skipIntersectUpdate = false;
-        }}
+        @sl-after-show=${this.resumeObserve}
+        @sl-after-hide=${this.resumeObserve}
       >
         <div slot="expand-icon" class="flex items-center">
           <sl-tooltip content=${msg("Show section")} hoist>
@@ -527,7 +517,8 @@ export class WorkflowEditor extends BtrixElement {
         className: clsx(
           `${formName}${panelSuffix}`,
           section.name === this.progressState?.activeTab &&
-            `${formName}${panelSuffix}--active scroll-mt-7`,
+            `${formName}${panelSuffix}--active`,
+          tw`scroll-mt-7`,
         ),
         heading: this.tabLabels[section.name],
         body: panelBody(section),
@@ -556,8 +547,10 @@ export class WorkflowEditor extends BtrixElement {
     return html`
       <footer
         class=${clsx(
-          "flex items-center justify-end gap-2 rounded-lg border bg-white px-6 py-4 mb-7 shadow",
-          (this.configId || this.serverError) && tw`sticky bottom-2 z-50`,
+          "flex items-center justify-end gap-2 rounded-lg border bg-white px-6 py-4 mb-7",
+          this.configId || this.serverError
+            ? tw`sticky bottom-3 z-50 shadow-md`
+            : tw`shadow`,
         )}
       >
         ${this.configId
@@ -569,24 +562,29 @@ export class WorkflowEditor extends BtrixElement {
           : nothing}
         ${when(this.serverError, (error) => this.renderErrorAlert(error))}
 
-        <sl-button
-          size="small"
-          variant="primary"
-          type="submit"
-          ?disabled=${isArchivingDisabled(this.org, true) || this.isSubmitting}
-          ?loading=${this.isSubmitting}
-        >
-          ${msg(html`Save & Run Crawl`)}
-        </sl-button>
-        <sl-button
-          size="small"
-          type="button"
-          ?disabled=${this.isSubmitting}
-          ?loading=${this.isSubmitting}
-          @click=${this.save}
-        >
-          ${msg("Save")}
-        </sl-button>
+        <sl-tooltip content=${msg("Save without running")}>
+          <sl-button
+            size="small"
+            type="button"
+            ?disabled=${this.isSubmitting}
+            ?loading=${this.isSubmitting}
+            @click=${this.save}
+          >
+            ${msg("Save")}
+          </sl-button>
+        </sl-tooltip>
+        <sl-tooltip content=${msg("Save and run with new settings")}>
+          <sl-button
+            size="small"
+            variant="primary"
+            type="submit"
+            ?disabled=${isArchivingDisabled(this.org, true) ||
+            this.isSubmitting}
+            ?loading=${this.isSubmitting}
+          >
+            ${msg(html`Run Crawl`)}
+          </sl-button>
+        </sl-tooltip>
       </footer>
     `;
   }
@@ -1641,7 +1639,25 @@ https://archiveweb.page/images/${"logo.svg"}`}
     this.updateFormState(formState);
   }
 
-  private readonly onFormSectionIntersect = throttle(10)((e: Event) => {
+  // Use to skip updates on intersect changes, like when scrolling
+  // an element into view on click
+  private skipIntersectUpdate = false;
+
+  private pauseObserve() {
+    this.onPanelIntersect.flush();
+    this.skipIntersectUpdate = true;
+  }
+
+  private resumeObserve() {
+    this.skipIntersectUpdate = false;
+  }
+
+  private readonly onPanelIntersect = throttle(10)((e: Event) => {
+    if (this.skipIntersectUpdate) {
+      this.resumeObserve();
+      return;
+    }
+
     const { entries } = (e as IntersectEvent).detail;
     const entry = entries.find((entry) => entry.isIntersecting);
 
@@ -1649,19 +1665,14 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
     const tab = entry.target.id.split(panelSuffix)[0] as StepName;
 
-    if (this.skipIntersectUpdate) {
-      this.onFormSectionIntersect.cancel();
-      this.skipIntersectUpdate = false;
-    } else {
-      const tabIndex = STEPS.indexOf(tab);
+    const tabIndex = STEPS.indexOf(tab);
 
-      if (tabIndex === -1) {
-        console.debug("tab not in steps:", tab);
-        return;
-      }
-
-      this.updateProgressState({ activeTab: tab as StepName });
+    if (tabIndex === -1) {
+      console.debug("tab not in steps:", tab);
+      return;
     }
+
+    this.updateProgressState({ activeTab: tab as StepName });
   });
 
   private hasRequiredFields(): boolean {
@@ -1679,9 +1690,25 @@ https://archiveweb.page/images/${"logo.svg"}`}
       return;
     }
 
-    this.onFormSectionIntersect.cancel();
-    this.skipIntersectUpdate = true;
-    activeTabPanel.scrollIntoView();
+    this.pauseObserve();
+
+    // Focus on focusable element, if found, to highlight the section
+    const summary = activeTabPanel
+      .querySelector("sl-details")
+      ?.shadowRoot?.querySelector<HTMLElement>("summary[aria-controls]");
+
+    if (summary) {
+      summary.focus({
+        // Prevent firefox from applying own focus styles
+        focusVisible: false,
+      } as FocusOptions & {
+        focusVisible: boolean;
+      });
+    } else {
+      console.debug("summary not found in sl-details");
+
+      activeTabPanel.scrollIntoView();
+    }
   }
 
   private async handleRemoveRegex(e: CustomEvent) {
