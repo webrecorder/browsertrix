@@ -36,9 +36,6 @@ export class CopyField extends TailwindElement {
   hoist = false;
 
   @property({ type: Boolean })
-  border = true;
-
-  @property({ type: Boolean })
   monostyle = true;
 
   @property({ type: Boolean })
@@ -68,8 +65,8 @@ export class CopyField extends TailwindElement {
       <div
         role="group"
         class=${clsx(
-          this.border && tw`rounded border`,
-          this.filled && tw`bg-slate-50`,
+          tw`rounded border`,
+          this.filled ? tw`bg-slate-50` : tw`border-neutral-150`,
           this.monostyle && tw`font-monostyle`,
         )}
       >

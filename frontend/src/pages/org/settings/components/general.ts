@@ -1,13 +1,10 @@
 import { localized, msg } from "@lit/localize";
-import type {
-  SlChangeEvent,
-  SlInput,
-  SlSwitch,
-} from "@shoelace-style/shoelace";
+import type { SlInput } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import { html } from "lit";
 import { customElement, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
+import isEqual from "lodash/fp/isEqual";
 
 import { UPDATED_STATUS_TOAST_ID, type UpdateOrgDetail } from "../settings";
 
@@ -22,6 +19,17 @@ import slugifyStrict from "@/utils/slugify";
 import { AppStateService } from "@/utils/state";
 import { formatAPIUser } from "@/utils/user";
 
+type InfoParams = {
+  orgName: string;
+  orgSlug: string;
+};
+
+type ProfileParams = {
+  enablePublicProfile: boolean;
+  publicDescription: string;
+  publicUrl: string;
+};
+
 /**
  * @fires btrix-update-org
  */
@@ -29,7 +37,7 @@ import { formatAPIUser } from "@/utils/user";
 @customElement("btrix-org-settings-general")
 export class OrgSettingsGeneral extends BtrixElement {
   @state()
-  private isSavingOrgName = false;
+  private isSubmitting = false;
 
   @state()
   private slugValue = "";
@@ -46,7 +54,7 @@ export class OrgSettingsGeneral extends BtrixElement {
     const publicGalleryUrl = `${window.location.protocol}//${baseUrl}/${RouteNamespace.PublicOrgs}/${this.orgSlugState}`;
 
     return html`<section class="rounded-lg border">
-      <form @submit=${this.onOrgInfoSubmit}>
+      <form @submit=${this.onSubmit}>
         <div class="p-5">
           ${columns([
             [
@@ -100,15 +108,7 @@ export class OrgSettingsGeneral extends BtrixElement {
                           >/settings
                         </span>
                       </li>
-                      <li>
-                        ${msg("Dashboard")}:
-                        <span class="break-word text-blue-500">
-                          /${RouteNamespace.PrivateOrgs}/<strong
-                            class="font-medium"
-                            >${slugValue}</strong
-                          >/dashboard
-                        </span>
-                      </li>
+
                       ${this.org?.enablePublicProfile
                         ? html`
                             <li>
@@ -121,7 +121,17 @@ export class OrgSettingsGeneral extends BtrixElement {
                               </span>
                             </li>
                           `
-                        : html``}
+                        : html`
+                            <li>
+                              ${msg("Dashboard")}:
+                              <span class="break-word text-blue-500">
+                                /${RouteNamespace.PrivateOrgs}/<strong
+                                  class="font-medium"
+                                  >${slugValue}</strong
+                                >/dashboard
+                              </span>
+                            </li>
+                          `}
                     </ul>
                   </div>
                 </sl-input>
@@ -131,9 +141,9 @@ export class OrgSettingsGeneral extends BtrixElement {
             [
               html`
                 <label for="orgVisibility" class="form-label text-xs">
-                  ${msg("Public Collections Gallery")}
+                  ${msg("Public Gallery")}
                 </label>
-                <div>
+                <div class="mb-3">
                   <sl-switch
                     id="orgVisibility"
                     name="enablePublicProfile"
@@ -144,47 +154,29 @@ export class OrgSettingsGeneral extends BtrixElement {
                     ${msg("Enable public collections gallery")}
                   </sl-switch>
                 </div>
+                <btrix-copy-field
+                  value=${publicGalleryUrl}
+                  .monostyle=${false}
+                  .filled=${false}
+                >
+                  <sl-tooltip
+                    slot="prefix"
+                    content=${msg("Open in New Tab")}
+                    hoist
+                  >
+                    <sl-icon-button
+                      href=${publicGalleryUrl}
+                      name="box-arrow-up-right"
+                      target="_blank"
+                      class="my-x ml-px border-r"
+                    >
+                    </sl-icon-button>
+                  </sl-tooltip>
+                </btrix-copy-field>
               `,
               msg(
-                "If enabled, anyone on the Internet will be able to browse this org's public collections and view general org information.",
+                "If enabled, anyone on the Internet will be able to visit this URL to browse public collections and view general org information.",
               ),
-            ],
-            [
-              html`
-                <div class="mb-2">
-                  <btrix-copy-field
-                    label=${msg("Public Gallery URL")}
-                    value=${publicGalleryUrl}
-                    .border=${false}
-                    .monostyle=${false}
-                    .filled=${false}
-                  >
-                    <sl-tooltip
-                      slot="prefix"
-                      content=${msg("Open in New Tab")}
-                      hoist
-                    >
-                      <sl-icon-button
-                        href=${publicGalleryUrl}
-                        name="box-arrow-up-right"
-                        target="_blank"
-                        class="m-px"
-                      >
-                      </sl-icon-button>
-                    </sl-tooltip>
-                  </btrix-copy-field>
-                </div>
-              `,
-              html`
-                ${msg(
-                  html`To customize this URL,
-                    <a
-                      href=${`${location.pathname}#org-url`}
-                      class="text-cyan-500 underline decoration-cyan-500/30 transition hover:text-cyan-600 hover:decoration-cyan-500/50"
-                      >${msg("update your Org URL in General settings")}</a
-                    >.`,
-                )}
-              `,
             ],
             [
               html`
@@ -202,7 +194,7 @@ export class OrgSettingsGeneral extends BtrixElement {
                 ></sl-textarea>
               `,
               msg(
-                "Write a short description that introduces your org and public collections.",
+                "Write a short description that introduces your org and its public collections.",
               ),
             ],
             [
@@ -221,26 +213,25 @@ export class OrgSettingsGeneral extends BtrixElement {
             ],
           ])}
         </div>
-        <footer class="flex items-center justify-between border-t px-4 py-3">
-          <btrix-link
-            href=${`/${RouteNamespace.PublicOrgs}/${this.orgSlugState}`}
-            target="_blank"
-          >
-            ${when(
-              this.org,
-              (org) =>
-                org.enablePublicProfile
-                  ? msg("View as public")
-                  : msg("Preview how information appears to the public"),
-              () => html` <sl-skeleton class="w-36"></sl-skeleton> `,
-            )}
-          </btrix-link>
+        <footer class="flex items-center justify-end gap-2 border-t px-4 py-3">
+          ${when(
+            this.org?.enablePublicProfile,
+            () => html`
+              <btrix-link
+                class="mr-auto"
+                href=${`/${RouteNamespace.PublicOrgs}/${this.orgSlugState}`}
+                target="_blank"
+              >
+                ${msg("View public gallery")}
+              </btrix-link>
+            `,
+          )}
           <sl-button
             type="submit"
             size="small"
             variant="primary"
-            ?disabled=${this.isSavingOrgName}
-            ?loading=${this.isSavingOrgName}
+            ?disabled=${this.isSubmitting}
+            ?loading=${this.isSubmitting}
           >
             ${msg("Save")}
           </sl-button>
@@ -262,40 +253,61 @@ export class OrgSettingsGeneral extends BtrixElement {
     );
   }
 
-  private readonly onVisibilityChange = async (e: SlChangeEvent) => {
-    const checked = (e.target as SlSwitch).checked;
+  private async onSubmit(e: SubmitEvent) {
+    e.preventDefault();
 
-    if (checked === this.org?.enablePublicProfile) {
-      return;
+    const formEl = e.target as HTMLFormElement;
+    if (!(await this.checkFormValidity(formEl)) || !this.org) return;
+
+    const {
+      orgName,
+      orgSlug,
+      publicDescription,
+      publicUrl,
+      enablePublicProfile,
+    } = serialize(formEl) as InfoParams &
+      ProfileParams & {
+        enablePublicProfile: undefined | "on";
+      };
+
+    // TODO See if backend can combine into one endpoint
+    const requests: Promise<unknown>[] = [];
+
+    const infoParams = {
+      name: orgName,
+      slug: this.slugValue ? slugifyStrict(this.slugValue) : orgSlug,
+    };
+    const infoChanged = !isEqual(infoParams)({
+      name: this.org.name,
+      slug: this.org.slug,
+    });
+
+    if (infoChanged) {
+      requests.push(this.renameOrg(infoParams));
     }
 
+    const profileParams: ProfileParams = {
+      enablePublicProfile: enablePublicProfile === "on",
+      publicDescription,
+      publicUrl,
+    };
+    const profileChanged = !isEqual(profileParams, {
+      enablePublicProfile: this.org.enablePublicProfile,
+      publicDescription: this.org.publicDescription,
+      publicUrl: this.org.publicUrl,
+    });
+
+    if (profileChanged) {
+      requests.push(this.updateProfile(profileParams));
+    }
+
+    this.isSubmitting = true;
+
     try {
-      const data = await this.api.fetch<{ updated: boolean }>(
-        `/orgs/${this.orgId}/public-profile`,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            enablePublicProfile: checked,
-          }),
-        },
-      );
-
-      if (!data.updated) {
-        throw new Error("`data.updated` is not true");
-      }
-
-      this.dispatchEvent(
-        new CustomEvent<UpdateOrgDetail>("btrix-update-org", {
-          detail: {
-            enablePublicProfile: checked,
-          },
-          bubbles: true,
-          composed: true,
-        }),
-      );
+      await Promise.all(requests);
 
       this.notify.toast({
-        message: msg("Updated public collections gallery visibility."),
+        message: alerts.settingsUpdateSuccess,
         variant: "success",
         icon: "check2-circle",
         id: UPDATED_STATUS_TOAST_ID,
@@ -303,94 +315,29 @@ export class OrgSettingsGeneral extends BtrixElement {
     } catch (err) {
       console.debug(err);
 
+      let message = alerts.settingsUpdateFailure;
+
+      if (isApiError(err)) {
+        if (err.details === "duplicate_org_name") {
+          message = msg("This org name is already taken, try another one.");
+        } else if (err.details === "duplicate_org_slug") {
+          message = msg("This org URL is already taken, try another one.");
+        } else if (err.details === "invalid_slug") {
+          message = msg(
+            "This org URL is invalid. Please use alphanumeric characters and dashes (-) only.",
+          );
+        }
+      }
+
       this.notify.toast({
-        message: alerts.settingsUpdateFailure,
+        message,
         variant: "danger",
         icon: "exclamation-octagon",
         id: UPDATED_STATUS_TOAST_ID,
       });
     }
-  };
 
-  private async onOrgInfoSubmit(e: SubmitEvent) {
-    e.preventDefault();
-
-    const formEl = e.target as HTMLFormElement;
-    if (!(await this.checkFormValidity(formEl)) || !this.org) return;
-
-    const { orgName, publicDescription, publicUrl } = serialize(formEl) as {
-      orgName: string;
-      publicDescription: string;
-      publicUrl: string;
-    };
-
-    // TODO See if backend can combine into one endpoint
-    const requests: Promise<unknown>[] = [];
-
-    if (orgName !== this.org.name || this.slugValue) {
-      const params = {
-        name: orgName,
-        slug: this.orgSlugState!,
-      };
-
-      if (this.slugValue) {
-        params.slug = slugifyStrict(this.slugValue);
-      }
-
-      requests.push(this.renameOrg(params));
-    }
-
-    if (
-      publicDescription !== (this.org.publicDescription ?? "") ||
-      publicUrl !== (this.org.publicUrl ?? "")
-    ) {
-      requests.push(
-        this.updateOrgProfile({
-          publicDescription: publicDescription || this.org.publicDescription,
-          publicUrl: publicUrl || this.org.publicUrl,
-        }),
-      );
-    }
-
-    if (requests.length) {
-      this.isSavingOrgName = true;
-
-      try {
-        await Promise.all(requests);
-
-        this.notify.toast({
-          message: alerts.settingsUpdateSuccess,
-          variant: "success",
-          icon: "check2-circle",
-          id: UPDATED_STATUS_TOAST_ID,
-        });
-      } catch (err) {
-        console.debug(err);
-
-        let message = alerts.settingsUpdateFailure;
-
-        if (isApiError(err)) {
-          if (err.details === "duplicate_org_name") {
-            message = msg("This org name is already taken, try another one.");
-          } else if (err.details === "duplicate_org_slug") {
-            message = msg("This org URL is already taken, try another one.");
-          } else if (err.details === "invalid_slug") {
-            message = msg(
-              "This org URL is invalid. Please use alphanumeric characters and dashes (-) only.",
-            );
-          }
-        }
-
-        this.notify.toast({
-          message,
-          variant: "danger",
-          icon: "exclamation-octagon",
-          id: UPDATED_STATUS_TOAST_ID,
-        });
-      }
-
-      this.isSavingOrgName = false;
-    }
+    this.isSubmitting = false;
   }
 
   private async renameOrg({ name, slug }: { name: string; slug: string }) {
@@ -403,21 +350,22 @@ export class OrgSettingsGeneral extends BtrixElement {
 
     AppStateService.updateUser(formatAPIUser(user), slug);
 
+    await this.updateComplete;
+
     this.navigate.to(`${this.navigate.orgBasePath}/settings`);
   }
 
-  private async updateOrgProfile({
+  private async updateProfile({
+    enablePublicProfile,
     publicDescription,
     publicUrl,
-  }: {
-    publicDescription: string | null;
-    publicUrl: string | null;
-  }) {
+  }: ProfileParams) {
     const data = await this.api.fetch<{ updated: boolean }>(
       `/orgs/${this.orgId}/public-profile`,
       {
         method: "POST",
         body: JSON.stringify({
+          enablePublicProfile,
           publicDescription,
           publicUrl,
         }),
