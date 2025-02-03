@@ -181,7 +181,7 @@ def test_verify_default_select_links(
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
-    assert r.json()["config"]["selectLinks"] == "a[href]->href"
+    assert r.json()["config"]["selectLinks"] == ["a[href]->href"]
 
 
 def test_update_config_data(crawler_auth_headers, default_org_id, sample_crawl_data):
