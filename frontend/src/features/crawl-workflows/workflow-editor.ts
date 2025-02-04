@@ -468,11 +468,6 @@ export class WorkflowEditor extends BtrixElement {
             invalidEl.focus();
             invalidEl.checkValidity();
           }
-
-          this.pauseObserve();
-          this.updateProgressState({
-            activeTab: name,
-          });
         }}
         @sl-after-show=${this.resumeObserve}
         @sl-after-hide=${this.resumeObserve}
