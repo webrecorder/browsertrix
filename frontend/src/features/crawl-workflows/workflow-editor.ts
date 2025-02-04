@@ -1,29 +1,25 @@
 import { consume } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
 import type {
-  SlChangeEvent,
   SlCheckbox,
+  SlDetails,
+  SlHideEvent,
   SlInput,
   SlRadio,
   SlRadioGroup,
   SlSelect,
-  SlSwitch,
   SlTextarea,
 } from "@shoelace-style/shoelace";
+import clsx from "clsx";
 import Fuse from "fuse.js";
 import { mergeDeep } from "immutable";
 import type { LanguageCode } from "iso-639-1";
-import {
-  html,
-  nothing,
-  type LitElement,
-  type PropertyValues,
-  type TemplateResult,
-} from "lit";
+import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import {
   customElement,
   property,
   query,
+  queryAll,
   queryAsync,
   state,
 } from "lit/decorators.js";
@@ -33,6 +29,7 @@ import { range } from "lit/directives/range.js";
 import { when } from "lit/directives/when.js";
 import compact from "lodash/fp/compact";
 import flow from "lodash/fp/flow";
+import throttle from "lodash/fp/throttle";
 import uniq from "lodash/fp/uniq";
 
 import { BtrixElement } from "@/classes/BtrixElement";
@@ -41,33 +38,38 @@ import type {
   SelectCrawlerUpdateEvent,
 } from "@/components/ui/select-crawler";
 import type { SelectCrawlerProxyChangeEvent } from "@/components/ui/select-crawler-proxy";
-import type { Tab } from "@/components/ui/tab-list";
+import type { TabListTab } from "@/components/ui/tab-list";
 import type { TagInputEvent, TagsChangeEvent } from "@/components/ui/tag-input";
 import type { TimeInputChangeEvent } from "@/components/ui/time-input";
 import { validURL } from "@/components/ui/url-input";
 import { proxiesContext, type ProxiesContext } from "@/context/org";
+import {
+  ObservableController,
+  type IntersectEvent,
+} from "@/controllers/observable";
 import { type SelectBrowserProfileChangeEvent } from "@/features/browser-profiles/select-browser-profile";
 import type { CollectionsChangeEvent } from "@/features/collections/collections-add";
-import type { QueueExclusionTable } from "@/features/crawl-workflows/queue-exclusion-table";
+import type {
+  ExclusionChangeEvent,
+  QueueExclusionTable,
+} from "@/features/crawl-workflows/queue-exclusion-table";
 import { infoCol, inputCol } from "@/layouts/columns";
+import { pageSectionsWithNav } from "@/layouts/pageSectionsWithNav";
+import { panel } from "@/layouts/panel";
 import infoTextStrings from "@/strings/crawl-workflows/infoText";
 import scopeTypeLabels from "@/strings/crawl-workflows/scopeType";
 import sectionStrings from "@/strings/crawl-workflows/section";
-import {
-  ScopeType,
-  type CrawlConfig,
-  type Seed,
-  type WorkflowParams,
-} from "@/types/crawler";
+import { ScopeType, type Seed, type WorkflowParams } from "@/types/crawler";
+import type { UnderlyingFunction } from "@/types/utils";
 import { NewWorkflowOnlyScopeType } from "@/types/workflow";
-import { isApiError, type Detail } from "@/utils/api";
+import { isApiError } from "@/utils/api";
 import { DEPTH_SUPPORTED_SCOPES, isPageScopeType } from "@/utils/crawler";
 import {
   getUTCSchedule,
   humanizeNextDate,
   humanizeSchedule,
 } from "@/utils/cron";
-import { maxLengthValidator } from "@/utils/form";
+import { formValidator, maxLengthValidator } from "@/utils/form";
 import localize from "@/utils/localize";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { AppStateService } from "@/utils/state";
@@ -97,7 +99,6 @@ const STEPS = [
   "browserSettings",
   "crawlScheduling",
   "crawlMetadata",
-  "confirmSettings",
 ] as const;
 type StepName = (typeof STEPS)[number];
 type TabState = {
@@ -115,6 +116,8 @@ const DEFAULT_BEHAVIORS = [
   "autofetch",
   "siteSpecific",
 ];
+const formName = "newJobConfig" as const;
+const panelSuffix = "--panel" as const;
 
 const getDefaultProgressState = (hasConfigId = false): ProgressState => {
   let activeTab: StepName = "crawlSetup";
@@ -128,6 +131,7 @@ const getDefaultProgressState = (hasConfigId = false): ProgressState => {
 
   return {
     activeTab,
+    // TODO Mark as completed only if form section has data
     tabs: {
       crawlSetup: { error: false, completed: hasConfigId },
       crawlLimits: {
@@ -143,10 +147,6 @@ const getDefaultProgressState = (hasConfigId = false): ProgressState => {
         completed: hasConfigId,
       },
       crawlMetadata: {
-        error: false,
-        completed: hasConfigId,
-      },
-      confirmSettings: {
         error: false,
         completed: hasConfigId,
       },
@@ -222,14 +222,29 @@ export class WorkflowEditor extends BtrixElement {
   @state()
   private serverError?: TemplateResult | string;
 
+  // For observing panel sections position in viewport
+  private readonly observable = new ObservableController(this, {
+    // Add some padding to account for stickied elements
+    rootMargin: "-100px 0px -100px 0px",
+  });
+
   // For fuzzy search:
   private readonly fuse = new Fuse<string>([], {
     shouldSort: false,
     threshold: 0.2, // stricter; default is 0.6
   });
 
+  private readonly checkFormValidity = formValidator(this);
   private readonly validateNameMax = maxLengthValidator(50);
   private readonly validateDescriptionMax = maxLengthValidator(350);
+
+  private readonly tabLabels: Record<StepName, string> = {
+    crawlSetup: sectionStrings.scope,
+    crawlLimits: msg("Limits"),
+    browserSettings: sectionStrings.browserSettings,
+    crawlScheduling: sectionStrings.scheduling,
+    crawlMetadata: msg("Metadata"),
+  };
 
   private get formHasError() {
     return (
@@ -271,25 +286,35 @@ export class WorkflowEditor extends BtrixElement {
     "": "",
   };
 
-  @query('form[name="newJobConfig"]')
-  formElem?: HTMLFormElement;
+  @query(`form[name="${formName}"]`)
+  private readonly formElem?: HTMLFormElement;
 
-  @queryAsync("btrix-tab-panel[aria-hidden=false]")
-  activeTabPanel!: Promise<HTMLElement | null>;
+  @queryAll(`.${formName}${panelSuffix}`)
+  private readonly panels?: NodeListOf<HTMLElement>;
+
+  @state()
+  private readonly visiblePanels = new Set<string>();
+
+  @queryAsync(`.${formName}${panelSuffix}--active`)
+  private readonly activeTabPanel!: Promise<HTMLElement | null>;
+
+  @query("btrix-queue-exclusion-table")
+  private readonly exclusionTable?: QueueExclusionTable | null;
 
   connectedCallback(): void {
     this.initializeEditor();
     super.connectedCallback();
     void this.fetchServerDefaults();
 
-    window.addEventListener("hashchange", () => {
-      const hashValue = window.location.hash.slice(1);
-      if (STEPS.includes(hashValue as (typeof STEPS)[number])) {
-        this.updateProgressState({
-          activeTab: hashValue as StepName,
-        });
-      }
-    });
+    this.addEventListener(
+      "btrix-intersect",
+      this.onPanelIntersect as UnderlyingFunction<typeof this.onPanelIntersect>,
+    );
+  }
+
+  disconnectedCallback(): void {
+    this.onPanelIntersect.cancel();
+    super.disconnectedCallback();
   }
 
   async willUpdate(
@@ -302,54 +327,29 @@ export class WorkflowEditor extends BtrixElement {
         this.initializeEditor();
       }
     }
-    if (changedProperties.get("progressState") && this.progressState) {
-      if (
-        (changedProperties.get("progressState") as ProgressState).activeTab ===
-          "crawlSetup" &&
-        this.progressState.activeTab !== "crawlSetup"
-      ) {
-        // Show that required tab has error even if input hasn't been touched
-        if (
-          !this.hasRequiredFields() &&
-          !this.progressState.tabs.crawlSetup.error
-        ) {
-          this.updateProgressState({
-            tabs: {
-              crawlSetup: { error: true },
-            },
-          });
-        }
-      }
-    }
   }
 
-  async updated(
-    changedProperties: PropertyValues<this> & Map<string, unknown>,
-  ) {
-    if (changedProperties.get("progressState") && this.progressState) {
-      if (
-        (changedProperties.get("progressState") as ProgressState).activeTab !==
-        this.progressState.activeTab
-      ) {
-        void this.scrollToPanelTop();
-
-        // Focus on first field in section
-        (await this.activeTabPanel)
-          ?.querySelector<HTMLElement>(
-            "sl-input, sl-textarea, sl-select, sl-radio-group",
-          )
-          ?.focus();
-      }
+  updated(changedProperties: PropertyValues<this> & Map<string, unknown>) {
+    if (
+      changedProperties.has("progressState") &&
+      this.progressState &&
+      this.progressState.activeTab !==
+        (changedProperties.get("progressState") as ProgressState | undefined)
+          ?.activeTab
+    ) {
+      window.location.hash = this.progressState.activeTab;
     }
   }
 
   async firstUpdated() {
-    // Focus on first field in section
-    (await this.activeTabPanel)
-      ?.querySelector<HTMLElement>(
-        "sl-input, sl-textarea, sl-select, sl-radio-group",
-      )
-      ?.focus();
+    // Observe form sections to get scroll position
+    this.panels?.forEach((panel) => {
+      this.observable.observe(panel);
+    });
+
+    if (this.progressState?.activeTab !== STEPS[0]) {
+      void this.scrollToActivePanel();
+    }
 
     if (this.orgId) {
       void this.fetchTags();
@@ -378,43 +378,150 @@ export class WorkflowEditor extends BtrixElement {
   }
 
   render() {
-    const tabLabels: Record<StepName, string> = {
-      crawlSetup: sectionStrings.scope,
-      crawlLimits: msg("Limits"),
-      browserSettings: sectionStrings.browserSettings,
-      crawlScheduling: sectionStrings.scheduling,
-      crawlMetadata: msg("Metadata"),
-      confirmSettings: msg("Review Settings"),
-    };
-    let orderedTabNames = STEPS as readonly StepName[];
-
-    if (this.configId) {
-      // Remove review tab
-      orderedTabNames = orderedTabNames.slice(0, -1);
-    }
-
     return html`
       <form
-        name="newJobConfig"
+        name="${formName}"
         @reset=${this.onReset}
         @submit=${this.onSubmit}
         @keydown=${this.onKeyDown}
         @sl-blur=${this.validateOnBlur}
         @sl-change=${this.updateFormStateOnChange}
       >
-        <btrix-tab-list
-          activePanel="newJobConfig-${this.progressState!.activeTab}"
-          progressPanel=${ifDefined(
-            this.configId
-              ? undefined
-              : `newJobConfig-${this.progressState!.activeTab}`,
-          )}
+        ${pageSectionsWithNav({
+          nav: this.renderNav(),
+          main: this.renderFormSections(),
+          sticky: true,
+        })}
+        ${this.renderFooter()}
+      </form>
+    `;
+  }
+
+  private renderNav() {
+    const button = (tab: StepName) => {
+      const isActive = tab === this.progressState?.activeTab;
+      return html`
+        <btrix-tab-list-tab
+          name=${tab}
+          .active=${isActive}
+          @click=${this.tabClickHandler(tab)}
         >
-          <header slot="header" class="flex items-baseline justify-between">
-            <h3 class="font-semibold">
-              ${tabLabels[this.progressState!.activeTab]}
-            </h3>
-            <p class="text-xs font-normal text-neutral-500">
+          ${this.tabLabels[tab]}
+        </btrix-tab-list-tab>
+      `;
+    };
+
+    return html`
+      <btrix-tab-list tab=${ifDefined(this.progressState?.activeTab)}>
+        ${STEPS.map(button)}
+      </btrix-tab-list>
+    `;
+  }
+
+  private renderFormSections() {
+    const panelBody = ({
+      name,
+      desc,
+      render,
+      required,
+    }: (typeof this.formSections)[number]) => {
+      const tabProgress = this.progressState?.tabs[name];
+      const hasError = tabProgress?.error;
+
+      return html`<sl-details
+        class=${clsx(
+          tw`part-[base]:rounded-lg part-[base]:border part-[base]:transition-shadow part-[base]:focus:shadow`,
+          tw`part-[content]:[border-top:solid_1px_var(--sl-panel-border-color)]`,
+          tw`part-[header]:text-neutral-500 part-[header]:hover:text-blue-400`,
+          tw`part-[summary-icon]:[rotate:none]`,
+          hasError &&
+            tw`part-[header]:cursor-default part-[summary-icon]:cursor-not-allowed part-[summary-icon]:text-neutral-400`,
+        )}
+        ?open=${required || hasError || tabProgress?.completed}
+        @sl-focus=${() => {
+          this.updateProgressState({
+            activeTab: name,
+          });
+        }}
+        @sl-show=${() => {
+          this.pauseObserve();
+          this.updateProgressState({
+            activeTab: name,
+          });
+        }}
+        @sl-hide=${(e: SlHideEvent) => {
+          const el = e.currentTarget as SlDetails;
+
+          // Check if there's any invalid elements before hiding
+          let invalidEl: SlInput | null = null;
+
+          if (required) {
+            invalidEl = el.querySelector<SlInput>("[required][data-invalid]");
+          }
+
+          invalidEl =
+            invalidEl || el.querySelector<SlInput>("[data-user-invalid]");
+
+          if (invalidEl) {
+            e.preventDefault();
+
+            invalidEl.focus();
+            invalidEl.checkValidity();
+          }
+        }}
+        @sl-after-show=${this.resumeObserve}
+        @sl-after-hide=${this.resumeObserve}
+      >
+        <div slot="expand-icon" class="flex items-center">
+          <sl-tooltip content=${msg("Show section")} hoist>
+            <sl-icon name="chevron-down" class="size-5"></sl-icon>
+          </sl-tooltip>
+        </div>
+        <div slot="collapse-icon" class="flex items-center">
+          ${when(
+            hasError,
+            () => html`
+              <sl-tooltip
+                content=${msg("Please fix all errors in this section")}
+                hoist
+              >
+                <sl-icon
+                  name="exclamation-lg"
+                  class="size-5 text-danger"
+                ></sl-icon>
+              </sl-tooltip>
+            `,
+            () =>
+              !required || this.configId
+                ? html`
+                    <sl-icon
+                      name="chevron-up"
+                      class="size-5"
+                      label=${msg("Collapse section")}
+                    ></sl-icon>
+                  `
+                : nothing,
+          )}
+        </div>
+
+        <p class="text-neutral-700" slot="summary">${desc}</p>
+        <div class="grid grid-cols-5 gap-5">${render.bind(this)()}</div>
+      </sl-details>`;
+    };
+
+    const formSection = (section: (typeof this.formSections)[number]) => html`
+      ${panel({
+        id: `${section.name}${panelSuffix}`,
+        className: clsx(
+          `${formName}${panelSuffix}`,
+          section.name === this.progressState?.activeTab &&
+            `${formName}${panelSuffix}--active`,
+          tw`scroll-mt-7`,
+        ),
+        heading: this.tabLabels[section.name],
+        body: panelBody(section),
+        actions: section.required
+          ? html`<p class="text-xs font-normal text-neutral-500">
               ${msg(
                 html`Fields marked with
                   <span style="color:var(--sl-input-required-content-color)"
@@ -422,261 +529,61 @@ export class WorkflowEditor extends BtrixElement {
                   >
                   are required`,
               )}
-            </p>
-          </header>
-
-          ${orderedTabNames.map((tabName) =>
-            this.renderNavItem(tabName, tabLabels[tabName]),
-          )}
-
-          <btrix-tab-panel name="newJobConfig-crawlSetup" class="scroll-m-3">
-            ${this.renderPanelContent(this.renderScope(), {
-              isFirst: true,
-            })}
-          </btrix-tab-panel>
-          <btrix-tab-panel name="newJobConfig-crawlLimits" class="scroll-m-3">
-            ${this.renderPanelContent(this.renderCrawlLimits())}
-          </btrix-tab-panel>
-          <btrix-tab-panel
-            name="newJobConfig-browserSettings"
-            class="scroll-m-3"
-          >
-            ${this.renderPanelContent(this.renderCrawlBehaviors())}
-          </btrix-tab-panel>
-          <btrix-tab-panel
-            name="newJobConfig-crawlScheduling"
-            class="scroll-m-3"
-          >
-            ${this.renderPanelContent(this.renderJobScheduling())}
-          </btrix-tab-panel>
-          <btrix-tab-panel name="newJobConfig-crawlMetadata" class="scroll-m-3">
-            ${this.renderPanelContent(this.renderJobMetadata())}
-          </btrix-tab-panel>
-          <btrix-tab-panel
-            name="newJobConfig-confirmSettings"
-            class="scroll-m-3"
-          >
-            ${this.renderPanelContent(this.renderConfirmSettings(), {
-              isLast: true,
-            })}
-          </btrix-tab-panel>
-        </btrix-tab-list>
-      </form>
+            </p>`
+          : undefined,
+      })}
     `;
-  }
-
-  private renderNavItem(tabName: StepName, content: TemplateResult | string) {
-    const isActive = tabName === this.progressState!.activeTab;
-    const isConfirmSettings = tabName === "confirmSettings";
-    const { error: isInvalid, completed } = this.progressState!.tabs[tabName];
-    let icon: TemplateResult = html``;
-
-    if (!this.configId) {
-      const iconProps = {
-        name: "circle",
-        library: "default",
-        class: "text-neutral-400",
-      };
-      if (isConfirmSettings) {
-        iconProps.name = "info-circle";
-        iconProps.class = "text-base";
-      } else {
-        if (isInvalid) {
-          iconProps.name = "exclamation-circle";
-          iconProps.class = "text-danger";
-        } else if (isActive) {
-          iconProps.name = "pencil-circle-dashed";
-          iconProps.library = "app";
-          iconProps.class = "text-base";
-        } else if (completed) {
-          iconProps.name = "check-circle";
-        }
-      }
-
-      icon = html`
-        <sl-tooltip
-          content=${msg("Form section contains errors")}
-          ?disabled=${!isInvalid}
-          hoist
-        >
-          <sl-icon
-            name=${iconProps.name}
-            library=${iconProps.library}
-            class="${iconProps.class} mr-1 inline-block align-middle text-base"
-          ></sl-icon>
-        </sl-tooltip>
-      `;
-    }
 
     return html`
-      <btrix-tab
-        slot="nav"
-        name="newJobConfig-${tabName}"
-        class="whitespace-nowrap"
-        @click=${this.tabClickHandler(tabName)}
-      >
-        ${icon}
-        <span
-          class="whitespace-normal${this.configId
-            ? " ml-1"
-            : ""} inline-block align-middle"
-        >
-          ${content}
-        </span>
-      </btrix-tab>
-    `;
-  }
-
-  private renderPanelContent(
-    content: TemplateResult,
-    { isFirst = false, isLast = false } = {},
-  ) {
-    return html`
-      <div class="flex h-full min-h-[21rem] flex-col">
-        <div
-          class="grid flex-1 grid-cols-5 gap-4 rounded-lg rounded-b-none border border-b-0 p-6"
-        >
-          ${content}
-          ${when(this.serverError, () =>
-            this.renderErrorAlert(this.serverError!),
-          )}
-        </div>
-
-        ${this.renderFooter({ isFirst, isLast })}
+      <div class="mb-10 flex flex-col gap-12 px-2">
+        ${this.formSections.map(formSection)}
       </div>
     `;
   }
 
-  private renderFooter({ isFirst = false, isLast = false }) {
-    if (this.configId) {
-      return html`
-        <footer
-          class="sticky bottom-0 z-50 flex items-center justify-end gap-2 rounded-b-lg border bg-white px-6 py-4"
-        >
-          <div class="mr-auto">${this.renderRunNowToggle()}</div>
-          <aside class="text-xs text-neutral-500">
-            ${msg("Changes in all sections will be saved")}
-          </aside>
+  private renderFooter() {
+    return html`
+      <footer
+        class=${clsx(
+          "flex items-center justify-end gap-2 rounded-lg border bg-white px-6 py-4 mb-7",
+          this.configId || this.serverError
+            ? tw`sticky bottom-3 z-50 shadow-md`
+            : tw`shadow`,
+        )}
+      >
+        ${this.configId
+          ? html`
+              <sl-button class="mr-auto" size="small" type="reset">
+                ${msg("Cancel")}
+              </sl-button>
+            `
+          : nothing}
+        ${when(this.serverError, (error) => this.renderErrorAlert(error))}
+
+        <sl-tooltip content=${msg("Save without running")}>
           <sl-button
-            type="submit"
             size="small"
-            variant="primary"
+            type="button"
             ?disabled=${this.isSubmitting}
             ?loading=${this.isSubmitting}
+            @click=${this.save}
           >
-            ${msg("Save Workflow")}
+            ${msg("Save")}
           </sl-button>
-        </footer>
-      `;
-    }
-
-    if (!this.configId) {
-      return html`
-        <footer
-          class="sticky bottom-0 z-50 flex items-center justify-end gap-2 rounded-b-lg border bg-white px-6 py-4"
-        >
-          ${this.renderSteppedFooterButtons({ isFirst, isLast })}
-        </footer>
-      `;
-    }
-
-    return html`
-      <div class="flex items-center justify-end gap-2 border-t px-6 py-4">
-        ${when(
-          this.configId,
-          () => html`
-            <div class="mr-auto">${this.renderRunNowToggle()}</div>
-            <sl-button
-              type="submit"
-              size="small"
-              variant="primary"
-              ?disabled=${this.isSubmitting}
-              ?loading=${this.isSubmitting}
-            >
-              ${msg("Save Changes")}
-            </sl-button>
-          `,
-          () => this.renderSteppedFooterButtons({ isFirst, isLast }),
-        )}
-      </div>
-    `;
-  }
-
-  private renderSteppedFooterButtons({
-    isFirst,
-    isLast,
-  }: {
-    isFirst: boolean;
-    isLast: boolean;
-  }) {
-    if (isLast) {
-      return html`<sl-button
-          class="mr-auto"
-          size="small"
-          @click=${this.backStep}
-        >
-          <sl-icon slot="prefix" name="chevron-left"></sl-icon>
-          ${msg("Previous Step")}
-        </sl-button>
-        ${this.renderRunNowToggle()}
-        <sl-button
-          type="submit"
-          size="small"
-          variant="primary"
-          ?disabled=${this.isSubmitting || this.formHasError}
-          ?loading=${this.isSubmitting}
-        >
-          ${msg("Save Workflow")}
-        </sl-button>`;
-    }
-    return html`
-      ${isFirst
-        ? nothing
-        : html`
-            <sl-button class="mr-auto" size="small" @click=${this.backStep}>
-              <sl-icon slot="prefix" name="chevron-left"></sl-icon>
-              ${msg("Previous Step")}
-            </sl-button>
-          `}
-      <sl-button size="small" variant="primary" @click=${this.nextStep}>
-        <sl-icon slot="suffix" name="chevron-right"></sl-icon>
-        ${msg("Next Step")}
-      </sl-button>
-      <sl-button
-        size="small"
-        @click=${() => {
-          if (this.hasRequiredFields()) {
-            this.updateProgressState({
-              activeTab: "confirmSettings",
-            });
-          } else {
-            this.nextStep();
-          }
-        }}
-      >
-        <sl-icon slot="suffix" name="chevron-double-right"></sl-icon>
-        ${msg(html`Review & Save`)}
-      </sl-button>
-    `;
-  }
-
-  private renderRunNowToggle() {
-    return html`
-      <sl-switch
-        class="mr-1"
-        ?checked=${this.formState.runNow}
-        ?disabled=${isArchivingDisabled(this.org, true)}
-        @sl-change=${(e: SlChangeEvent) => {
-          this.updateFormState(
-            {
-              runNow: (e.target as SlSwitch).checked,
-            },
-            true,
-          );
-        }}
-      >
-        ${msg("Run on Save")}
-      </sl-switch>
+        </sl-tooltip>
+        <sl-tooltip content=${msg("Save and run with new settings")}>
+          <sl-button
+            size="small"
+            variant="primary"
+            type="submit"
+            ?disabled=${isArchivingDisabled(this.org, true) ||
+            this.isSubmitting}
+            ?loading=${this.isSubmitting}
+          >
+            ${msg(html`Run Crawl`)}
+          </sl-button>
+        </sl-tooltip>
+      </footer>
     `;
   }
 
@@ -706,6 +613,7 @@ export class WorkflowEditor extends BtrixElement {
           name="scopeType"
           label=${msg("Crawl Scope")}
           value=${this.formState.scopeType}
+          hoist
           @sl-change=${(e: Event) =>
             this.changeScopeType(
               (e.target as HTMLSelectElement).value as FormState["scopeType"],
@@ -767,11 +675,7 @@ export class WorkflowEditor extends BtrixElement {
                       @btrix-change=${this.handleChangeRegex}
                     ></btrix-queue-exclusion-table>
                   `)}
-                  ${this.renderHelpTextCol(
-                    msg(
-                      `Specify exclusion rules for what pages should not be visited.`,
-                    ),
-                  )}
+                  ${this.renderHelpTextCol(infoTextStrings["exclusions"])}
                 </div>
               </btrix-details>
             </div>
@@ -793,6 +697,7 @@ export class WorkflowEditor extends BtrixElement {
                 autocomplete="off"
                 inputmode="url"
                 value=${this.formState.urlList}
+                autofocus
                 required
                 @sl-input=${async (e: Event) => {
                   const inputEl = e.target as SlInput;
@@ -1659,64 +1564,44 @@ https://archiveweb.page/images/${"logo.svg"}`}
   }
 
   private renderErrorAlert(errorMessage: string | TemplateResult) {
-    return html`
-      <div class="col-span-5">
-        <btrix-alert variant="danger">${errorMessage}</btrix-alert>
-      </div>
-    `;
+    return html` <div class="px-2 text-danger">${errorMessage}</div> `;
   }
 
-  private readonly renderConfirmSettings = () => {
-    const errorAlert = when(this.formHasError, () => {
-      const pageScope = isPageScopeType(this.formState.scopeType);
-      const crawlSetupUrl = `${window.location.href.split("#")[0]}#crawlSetup`;
-      const errorMessage = this.hasRequiredFields()
-        ? msg(
-            "There are issues with this Workflow. Please go through previous steps and fix all issues to continue.",
-          )
-        : html`
-            ${msg("There is an issue with this Crawl Workflow:")}<br /><br />
-            ${msg(
-              html`${pageScope ? msg("Page URL(s)") : msg("Crawl Start URL")}
-                required in
-                <a
-                  href="${crawlSetupUrl}"
-                  class="bold underline hover:no-underline"
-                  >Scope</a
-                >. `,
-            )}
-            <br /><br />
-            ${msg("Please fix to continue.")}
-          `;
-
-      return this.renderErrorAlert(errorMessage);
-    });
-
-    return html`
-      ${errorAlert}
-
-      <div class="col-span-5">
-        ${when(this.progressState!.activeTab === "confirmSettings", () => {
-          // Prevent parsing and rendering tab when not visible
-          const crawlConfig = this.parseConfig();
-          const profileName = this.formState.browserProfile?.name;
-
-          return html`<btrix-config-details
-            .crawlConfig=${{
-              ...crawlConfig,
-              profileName,
-              oid: this.orgId,
-              image: null,
-            } as CrawlConfig}
-            .seeds=${crawlConfig.config.seeds}
-          >
-          </btrix-config-details>`;
-        })}
-      </div>
-
-      ${errorAlert}
-    `;
-  };
+  private readonly formSections: {
+    name: StepName;
+    desc: string;
+    render: () => TemplateResult<1>;
+    required?: boolean;
+  }[] = [
+    {
+      name: "crawlSetup",
+      desc: msg("Specify the range and depth of your crawl."),
+      render: this.renderScope,
+      required: true,
+    },
+    {
+      name: "crawlLimits",
+      desc: msg("Enforce maximum limits on your crawl."),
+      render: this.renderCrawlLimits,
+    },
+    {
+      name: "browserSettings",
+      desc: msg(
+        "Configure the browser that's used to visit URLs during the crawl.",
+      ),
+      render: this.renderCrawlBehaviors,
+    },
+    {
+      name: "crawlScheduling",
+      desc: msg("Schedule recurring crawls."),
+      render: this.renderJobScheduling,
+    },
+    {
+      name: "crawlMetadata",
+      desc: msg("Describe and organize crawls from this workflow."),
+      render: this.renderJobMetadata,
+    },
+  ];
 
   private changeScopeType(value: FormState["scopeType"]) {
     const prevScopeType = this.formState.scopeType;
@@ -1752,6 +1637,48 @@ https://archiveweb.page/images/${"logo.svg"}`}
     this.updateFormState(formState);
   }
 
+  // Use to skip updates on intersect changes, like when scrolling
+  // an element into view on click
+  private skipIntersectUpdate = false;
+
+  private pauseObserve() {
+    this.onPanelIntersect.flush();
+    this.skipIntersectUpdate = true;
+  }
+
+  private resumeObserve() {
+    this.skipIntersectUpdate = false;
+  }
+
+  private readonly onPanelIntersect = throttle(10)((e: Event) => {
+    if (this.skipIntersectUpdate) {
+      this.resumeObserve();
+      return;
+    }
+
+    const { entries } = (e as IntersectEvent).detail;
+
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        this.visiblePanels.add(entry.target.id);
+      } else {
+        this.visiblePanels.delete(entry.target.id);
+      }
+    });
+
+    const panels = [...(this.panels ?? [])];
+    const activeTab = panels
+      .find((panel) => this.visiblePanels.has(panel.id))
+      ?.id.split(panelSuffix)[0] as StepName | undefined;
+
+    if (!STEPS.includes(activeTab!)) {
+      console.debug("tab not in steps:", activeTab, this.visiblePanels);
+      return;
+    }
+
+    this.updateProgressState({ activeTab });
+  });
+
   private hasRequiredFields(): boolean {
     if (isPageScopeType(this.formState.scopeType)) {
       return Boolean(this.formState.urlList);
@@ -1760,17 +1687,36 @@ https://archiveweb.page/images/${"logo.svg"}`}
     return Boolean(this.formState.primarySeedUrl);
   }
 
-  private async scrollToPanelTop() {
+  private async scrollToActivePanel() {
     const activeTabPanel = await this.activeTabPanel;
-    if (activeTabPanel && activeTabPanel.getBoundingClientRect().top < 0) {
-      activeTabPanel.scrollIntoView({
-        behavior: "smooth",
-      });
+    if (!activeTabPanel) {
+      console.debug("no activeTabPanel");
+      return;
     }
+
+    this.pauseObserve();
+
+    // Focus on focusable element, if found, to highlight the section
+    const summary = activeTabPanel
+      .querySelector("sl-details")
+      ?.shadowRoot?.querySelector<HTMLElement>("summary[aria-controls]");
+
+    if (summary) {
+      summary.focus({
+        // Prevent firefox from applying own focus styles
+        focusVisible: false,
+      } as FocusOptions & {
+        focusVisible: boolean;
+      });
+    } else {
+      console.debug("summary not found in sl-details");
+    }
+    activeTabPanel.scrollIntoView({ block: "start" });
   }
 
   private async handleRemoveRegex(e: CustomEvent) {
-    const { exclusions } = e.target as QueueExclusionTable;
+    const table = e.target as QueueExclusionTable;
+    const { exclusions } = table;
 
     if (!this.formState.exclusions) {
       this.updateFormState(
@@ -1783,17 +1729,50 @@ https://archiveweb.page/images/${"logo.svg"}`}
       this.updateFormState({ exclusions }, true);
     }
 
-    // Check if we removed an erroring input
-    const table = e.target as LitElement;
+    this.updateExclusionsValidity();
+
     await this.updateComplete;
-    await table.updateComplete;
-    this.syncTabErrorState(table);
+    await this.exclusionTable?.updateComplete;
+
+    // Update tab error state if an invalid regex was removed
+    if (e.detail.valid === false && table.checkValidity()) {
+      this.syncTabErrorState(table);
+    }
   }
 
-  private handleChangeRegex(e: CustomEvent) {
-    const { exclusions } = e.target as QueueExclusionTable;
+  private async handleChangeRegex(e: ExclusionChangeEvent) {
+    const table = e.target as QueueExclusionTable;
+    const { exclusions } = table;
 
     this.updateFormState({ exclusions }, true);
+    this.updateExclusionsValidity();
+
+    await this.updateComplete;
+    await this.exclusionTable?.updateComplete;
+
+    if (e.detail.valid === false || !table.checkValidity()) {
+      this.updateProgressState({
+        tabs: {
+          crawlSetup: { error: true },
+        },
+      });
+    } else {
+      this.syncTabErrorState(table);
+    }
+  }
+
+  /**
+   * HACK Set data attribute manually so that
+   * exclusions table works with `syncTabErrorState`
+   */
+  private updateExclusionsValidity() {
+    if (this.exclusionTable?.checkValidity() === false) {
+      this.exclusionTable.setAttribute("data-invalid", "true");
+      this.exclusionTable.setAttribute("data-user-invalid", "true");
+    } else {
+      this.exclusionTable?.removeAttribute("data-invalid");
+      this.exclusionTable?.removeAttribute("data-user-invalid");
+    }
   }
 
   private readonly validateOnBlur = async (e: Event) => {
@@ -1807,7 +1786,13 @@ https://archiveweb.page/images/${"logo.svg"}`}
     await el.updateComplete;
     await this.updateComplete;
 
-    const currentTab = this.progressState!.activeTab as StepName;
+    const panelEl = el.closest<HTMLElement>(`.${formName}${panelSuffix}`);
+
+    if (!panelEl) {
+      return;
+    }
+
+    const currentTab = panelEl.id.split(panelSuffix)[0] as StepName;
     // Check [data-user-invalid] to validate only touched inputs
     if ("userInvalid" in el.dataset) {
       if (this.progressState!.tabs[currentTab].error) return;
@@ -1822,10 +1807,14 @@ https://archiveweb.page/images/${"logo.svg"}`}
   };
 
   private syncTabErrorState(el: HTMLElement) {
-    const panelEl = el.closest("btrix-tab-panel")!;
-    const tabName = panelEl
-      .getAttribute("name")!
-      .replace("newJobConfig-", "") as StepName;
+    const panelEl = el.closest<HTMLElement>(`.${formName}${panelSuffix}`);
+
+    if (!panelEl) {
+      console.debug("no panel for element:", el);
+      return;
+    }
+
+    const tabName = panelEl.id.split(panelSuffix)[0] as StepName;
     const hasInvalid = panelEl.querySelector("[data-user-invalid]");
 
     if (!hasInvalid && this.progressState!.tabs[tabName].error) {
@@ -1878,61 +1867,21 @@ https://archiveweb.page/images/${"logo.svg"}`}
     });
   }
 
-  private readonly tabClickHandler = (step: StepName) => (e: MouseEvent) => {
-    const tab = e.currentTarget as Tab;
-    if (tab.disabled || tab.active) {
-      e.preventDefault();
-      e.stopPropagation();
-      return;
-    }
-    window.location.hash = step;
-    this.updateProgressState({ activeTab: step });
-  };
+  private readonly tabClickHandler =
+    (step: StepName) => async (e: MouseEvent) => {
+      const tab = e.currentTarget as TabListTab;
+      if (tab.disabled || tab.active) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
 
-  private backStep() {
-    const targetTabIdx = STEPS.indexOf(this.progressState!.activeTab);
-    if (targetTabIdx) {
-      this.updateProgressState({
-        activeTab: STEPS[targetTabIdx - 1] as StepName,
-      });
-    }
-  }
+      this.updateProgressState({ activeTab: step });
 
-  private nextStep() {
-    const isValid = this.checkCurrentPanelValidity();
+      await this.updateComplete;
 
-    if (isValid) {
-      const { activeTab } = this.progressState!;
-      const nextTab = STEPS[STEPS.indexOf(activeTab) + 1] as StepName;
-      this.updateProgressState({
-        activeTab: nextTab,
-        tabs: {
-          [activeTab]: {
-            completed: true,
-          },
-        },
-      });
-    }
-  }
-
-  private readonly checkCurrentPanelValidity = (): boolean => {
-    if (!this.formElem) return false;
-
-    const currentTab = this.progressState!.activeTab as StepName;
-    const activePanel = this.formElem.querySelector(
-      `btrix-tab-panel[name="newJobConfig-${currentTab}"]`,
-    );
-    const invalidElems = [...activePanel!.querySelectorAll("[data-invalid]")];
-
-    const hasInvalid = Boolean(invalidElems.length);
-    if (hasInvalid) {
-      invalidElems.forEach((el) => {
-        (el as HTMLInputElement).reportValidity();
-      });
-    }
-
-    return !hasInvalid;
-  };
+      void this.scrollToActivePanel();
+    };
 
   private onKeyDown(event: KeyboardEvent) {
     const el = event.target as HTMLElement;
@@ -1962,10 +1911,21 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
   private async onSubmit(event: SubmitEvent) {
     event.preventDefault();
-    const isValid = this.checkCurrentPanelValidity();
-    await this.updateComplete;
+
+    this.updateFormState({
+      runNow: true,
+    });
+
+    void this.save();
+  }
+
+  private async save() {
+    if (!this.formElem) return;
+
+    const isValid = await this.checkFormValidity(this.formElem);
 
     if (!isValid || this.formHasError) {
+      this.formElem.reportValidity();
       return;
     }
 
@@ -2028,16 +1988,32 @@ https://archiveweb.page/images/${"logo.svg"}`}
             id: "workflow-created-status",
           });
         } else {
-          const isConfigError = ({ loc }: Detail) =>
-            loc.some((v: string) => v === "config");
-          if (Array.isArray(e.details) && e.details.some(isConfigError)) {
-            this.serverError = this.formatConfigServerError(e.details);
-          } else {
-            this.serverError = e.message;
+          this.notify.toast({
+            message: msg("Please fix all errors and try again."),
+            variant: "danger",
+            icon: "exclamation-octagon",
+            id: "workflow-created-status",
+          });
+
+          const errorDetail = Array.isArray(e.details)
+            ? e.details[0]
+            : e.details;
+
+          if (typeof errorDetail === "string") {
+            this.serverError = `${msg("Please fix the following issue: ")} ${
+              errorDetail === "invalid_regex"
+                ? msg("Page exclusion contains invalid regex")
+                : errorDetail.replace(/_/, " ")
+            }`;
           }
         }
       } else {
-        this.serverError = msg("Something unexpected went wrong");
+        this.notify.toast({
+          message: msg("Sorry, couldn't save workflow at this time."),
+          variant: "danger",
+          icon: "exclamation-octagon",
+          id: "workflow-created-status",
+        });
       }
     }
 
@@ -2045,35 +2021,10 @@ https://archiveweb.page/images/${"logo.svg"}`}
   }
 
   private async onReset() {
-    this.initializeEditor();
-  }
-
-  /**
-   * Format `config` related API error returned from server
-   */
-  private formatConfigServerError(details: Detail[]): TemplateResult {
-    const detailsWithoutDictError = details.filter(
-      ({ type }) => type !== "type_error.dict",
+    this.navigate.to(
+      `${this.navigate.orgBasePath}/workflows${this.configId ? `/${this.configId}#settings` : ""}`,
     );
-
-    const renderDetail = ({ loc, msg: detailMsg }: Detail) => html`
-      <li>
-        ${loc.some((v: string) => v === "seeds") &&
-        typeof loc[loc.length - 1] === "number"
-          ? msg(str`Seed URL ${loc[loc.length - 1] + 1}: `)
-          : `${loc[loc.length - 1]}: `}
-        ${detailMsg}
-      </li>
-    `;
-
-    return html`
-      ${msg(
-        "Couldn't save Workflow. Please fix the following Workflow issues:",
-      )}
-      <ul class="w-fit list-disc pl-4">
-        ${detailsWithoutDictError.map(renderDetail)}
-      </ul>
-    `;
+    // this.initializeEditor();
   }
 
   private validateUrlList(
