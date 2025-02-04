@@ -290,7 +290,10 @@ export class WorkflowEditor extends BtrixElement {
   private readonly formElem?: HTMLFormElement;
 
   @queryAll(`.${formName}${panelSuffix}`)
-  private readonly panels?: HTMLElement[];
+  private readonly panels?: NodeListOf<HTMLElement>;
+
+  @state()
+  private readonly visiblePanels = new Set<string>();
 
   @queryAsync(`.${formName}${panelSuffix}--active`)
   private readonly activeTabPanel!: Promise<HTMLElement | null>;
@@ -1659,20 +1662,26 @@ https://archiveweb.page/images/${"logo.svg"}`}
     }
 
     const { entries } = (e as IntersectEvent).detail;
-    const entry = entries.find((entry) => entry.isIntersecting);
 
-    if (!entry) return;
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        this.visiblePanels.add(entry.target.id);
+      } else {
+        this.visiblePanels.delete(entry.target.id);
+      }
+    });
 
-    const tab = entry.target.id.split(panelSuffix)[0] as StepName;
+    const panels = [...(this.panels ?? [])];
+    const activeTab = panels
+      .find((panel) => this.visiblePanels.has(panel.id))
+      ?.id.split(panelSuffix)[0] as StepName | undefined;
 
-    const tabIndex = STEPS.indexOf(tab);
-
-    if (tabIndex === -1) {
-      console.debug("tab not in steps:", tab);
+    if (!STEPS.includes(activeTab!)) {
+      console.debug("tab not in steps:", activeTab, this.visiblePanels);
       return;
     }
 
-    this.updateProgressState({ activeTab: tab as StepName });
+    this.updateProgressState({ activeTab });
   });
 
   private hasRequiredFields(): boolean {
