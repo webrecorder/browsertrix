@@ -1715,9 +1715,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
       });
     } else {
       console.debug("summary not found in sl-details");
-
-      activeTabPanel.scrollIntoView();
     }
+    activeTabPanel.scrollIntoView({ block: "start" });
   }
 
   private async handleRemoveRegex(e: CustomEvent) {
