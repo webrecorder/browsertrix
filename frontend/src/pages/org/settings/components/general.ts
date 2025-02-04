@@ -46,12 +46,19 @@ export class OrgSettingsGeneral extends BtrixElement {
   private readonly validateOrgNameMax = maxLengthValidator(40);
   private readonly validateDescriptionMax = maxLengthValidator(150);
 
+  private get baseUrl() {
+    return `${window.location.hostname}${window.location.port ? `:${window.location.port}` : ""}`;
+  }
+
+  private get slugPreview() {
+    return this.slugValue ? slugifyStrict(this.slugValue) : this.userOrg?.slug;
+  }
+
   render() {
     if (!this.userOrg) return;
 
-    const baseUrl = `${window.location.hostname}${window.location.port ? `:${window.location.port}` : ""}`;
-    const slugValue = this.slugValue || this.orgSlugState;
-    const publicGalleryUrl = `${window.location.protocol}//${baseUrl}/${RouteNamespace.PublicOrgs}/${this.orgSlugState}`;
+    const baseUrl = this.baseUrl;
+    const slugPreview = this.slugPreview;
 
     return html`<section class="rounded-lg border">
       <form @submit=${this.onSubmit}>
@@ -104,7 +111,7 @@ export class OrgSettingsGeneral extends BtrixElement {
                         <span class="break-word text-blue-500">
                           /${RouteNamespace.PrivateOrgs}/<strong
                             class="font-medium"
-                            >${slugValue}</strong
+                            >${slugPreview}</strong
                           >/settings
                         </span>
                       </li>
@@ -116,7 +123,7 @@ export class OrgSettingsGeneral extends BtrixElement {
                               <span class="break-word text-blue-500">
                                 /${RouteNamespace.PublicOrgs}/<strong
                                   class="font-medium"
-                                  >${slugValue}</strong
+                                  >${slugPreview}</strong
                                 >
                               </span>
                             </li>
@@ -127,7 +134,7 @@ export class OrgSettingsGeneral extends BtrixElement {
                               <span class="break-word text-blue-500">
                                 /${RouteNamespace.PrivateOrgs}/<strong
                                   class="font-medium"
-                                  >${slugValue}</strong
+                                  >${slugPreview}</strong
                                 >/dashboard
                               </span>
                             </li>
@@ -138,80 +145,9 @@ export class OrgSettingsGeneral extends BtrixElement {
               `,
               msg("Customize your org's Browsertrix URL."),
             ],
-            [
-              html`
-                <label for="orgVisibility" class="form-label text-xs">
-                  ${msg("Public Gallery")}
-                </label>
-                <div class="mb-3">
-                  <sl-switch
-                    id="orgVisibility"
-                    name="enablePublicProfile"
-                    size="small"
-                    ?checked=${this.org?.enablePublicProfile}
-                    ?disabled=${!this.org}
-                  >
-                    ${msg("Enable public collections gallery")}
-                  </sl-switch>
-                </div>
-                <btrix-copy-field
-                  value=${publicGalleryUrl}
-                  .monostyle=${false}
-                  .filled=${false}
-                >
-                  <sl-tooltip
-                    slot="prefix"
-                    content=${msg("Open in New Tab")}
-                    hoist
-                  >
-                    <sl-icon-button
-                      href=${publicGalleryUrl}
-                      name="box-arrow-up-right"
-                      target="_blank"
-                      class="my-x ml-px border-r"
-                    >
-                    </sl-icon-button>
-                  </sl-tooltip>
-                </btrix-copy-field>
-              `,
-              msg(
-                "If enabled, anyone on the Internet will be able to visit this URL to browse public collections and view general org information.",
-              ),
-            ],
-            [
-              html`
-                <sl-textarea
-                  class="with-max-help-text"
-                  name="publicDescription"
-                  size="small"
-                  label=${msg("Public Gallery Description")}
-                  autocomplete="off"
-                  value=${this.org?.publicDescription || ""}
-                  minlength="2"
-                  rows="2"
-                  help-text=${this.validateDescriptionMax.helpText}
-                  @sl-input=${this.validateDescriptionMax.validate}
-                ></sl-textarea>
-              `,
-              msg(
-                "Write a short description that introduces your org and its public collections.",
-              ),
-            ],
-            [
-              html`
-                <btrix-url-input
-                  class="mb-2"
-                  name="publicUrl"
-                  size="small"
-                  label=${msg("Website")}
-                  value=${this.org?.publicUrl || ""}
-                ></btrix-url-input>
-              `,
-              msg(
-                "Link to your organization's (or your personal) website in the public gallery.",
-              ),
-            ],
           ])}
+
+          <div class="mt-5">${this.renderPublicGallerySettings()}</div>
         </div>
         <footer class="flex items-center justify-end gap-2 border-t px-4 py-3">
           ${when(
@@ -238,6 +174,82 @@ export class OrgSettingsGeneral extends BtrixElement {
         </footer>
       </form>
     </section>`;
+  }
+
+  private renderPublicGallerySettings() {
+    const baseUrl = this.baseUrl;
+    const slugPreview = this.slugPreview;
+    const publicGalleryUrl = `${window.location.protocol}//${baseUrl}/${RouteNamespace.PublicOrgs}/${slugPreview}`;
+
+    return html`
+      <btrix-section-heading class="[--margin:var(--sl-spacing-medium)]">
+        ${msg("Public Gallery")}
+      </btrix-section-heading>
+      ${columns([
+        [
+          html`
+            <div class="mb-4">
+              <sl-switch
+                id="orgVisibility"
+                name="enablePublicProfile"
+                size="small"
+                ?checked=${this.org?.enablePublicProfile}
+                ?disabled=${!this.org}
+              >
+                ${msg("Enable public collections gallery")}
+              </sl-switch>
+            </div>
+            <btrix-copy-field value=${publicGalleryUrl} .monostyle=${false}>
+              <sl-tooltip slot="prefix" content=${msg("Open in New Tab")} hoist>
+                <sl-icon-button
+                  href=${publicGalleryUrl}
+                  name="box-arrow-up-right"
+                  target="_blank"
+                  class="my-x ml-px border-r"
+                >
+                </sl-icon-button>
+              </sl-tooltip>
+            </btrix-copy-field>
+          `,
+          msg(
+            "If enabled, anyone on the Internet will be able to visit this URL to browse public collections and view general org information.",
+          ),
+        ],
+        [
+          html`
+            <sl-textarea
+              class="with-max-help-text mt-5"
+              name="publicDescription"
+              size="small"
+              label=${msg("Public Gallery Description")}
+              autocomplete="off"
+              value=${this.org?.publicDescription || ""}
+              minlength="2"
+              rows="2"
+              help-text=${this.validateDescriptionMax.helpText}
+              @sl-input=${this.validateDescriptionMax.validate}
+            ></sl-textarea>
+          `,
+          msg(
+            "Write a short description that introduces your org and its public collections.",
+          ),
+        ],
+        [
+          html`
+            <btrix-url-input
+              class="mb-2"
+              name="publicUrl"
+              size="small"
+              label=${msg("Website")}
+              value=${this.org?.publicUrl || ""}
+            ></btrix-url-input>
+          `,
+          msg(
+            "Link to your organization's (or your personal) website in the public gallery.",
+          ),
+        ],
+      ])}
+    `;
   }
 
   private handleSlugInput(e: InputEvent) {
