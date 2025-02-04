@@ -103,7 +103,7 @@ class PageOps:
             print(f"Error adding pages for crawl {crawl_id} to db: {err}", flush=True)
 
     async def add_crawl_wacz_filename_to_pages(self, crawl_id: str):
-        """Add WACZ filename (and depth) to existing pages in crawl if not already set"""
+        """Add WACZ filename and additional fields to existing pages in crawl if not already set"""
         try:
             crawl = await self.crawl_ops.get_crawl_out(crawl_id)
             if not crawl.resources:
@@ -112,7 +112,6 @@ class PageOps:
             for wacz_file in crawl.resources:
                 # Strip oid directory from filename
                 filename = os.path.basename(wacz_file.name)
-                page_ids_to_update = []
 
                 stream = await self.storage_ops.sync_stream_wacz_pages([wacz_file])
                 for page_dict in stream:
@@ -120,19 +119,28 @@ class PageOps:
                         continue
 
                     page_id = page_dict.get("id")
-                    depth = page_dict.get("depth")
+
+                    if not page_id:
+                        continue
+
                     if page_id:
                         try:
-                            page_ids_to_update.append(UUID(page_id))
+                            page_id = UUID(page_id)
                         # pylint: disable=broad-exception-caught
                         except Exception:
                             continue
 
-                # Update pages in batch per-filename
-                await self.pages.update_many(
-                    {"_id": {"$in": page_ids_to_update}},
-                    {"$set": {"filename": filename, "depth": depth}},
-                )
+                    await self.pages.find_one_and_update(
+                        {"_id": page_id},
+                        {
+                            "$set": {
+                                "filename": filename,
+                                "depth": page_dict.get("depth"),
+                                "seed": page_dict.get("seed"),
+                                "faviconUrl": page_dict.get("faviconUrl"),
+                            }
+                        },
+                    )
         # pylint: disable=broad-exception-caught, raise-missing-from
         except Exception as err:
             traceback.print_exc()
