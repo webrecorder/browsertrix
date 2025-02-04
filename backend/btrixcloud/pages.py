@@ -103,7 +103,7 @@ class PageOps:
             print(f"Error adding pages for crawl {crawl_id} to db: {err}", flush=True)
 
     async def add_crawl_wacz_filename_to_pages(self, crawl_id: str):
-        """Add WACZ filename to existing pages in crawl if not already set"""
+        """Add WACZ filename (and depth) to existing pages in crawl if not already set"""
         try:
             crawl = await self.crawl_ops.get_crawl_out(crawl_id)
             if not crawl.resources:
@@ -120,6 +120,7 @@ class PageOps:
                         continue
 
                     page_id = page_dict.get("id")
+                    depth = page_dict.get("depth")
                     if page_id:
                         try:
                             page_ids_to_update.append(UUID(page_id))
@@ -130,7 +131,7 @@ class PageOps:
                 # Update pages in batch per-filename
                 await self.pages.update_many(
                     {"_id": {"$in": page_ids_to_update}},
-                    {"$set": {"filename": filename}},
+                    {"$set": {"filename": filename, "depth": depth}},
                 )
         # pylint: disable=broad-exception-caught, raise-missing-from
         except Exception as err:
@@ -168,6 +169,7 @@ class PageOps:
             status=status,
             mime=page_dict.get("mime", "text/html"),
             filename=page_dict.get("filename"),
+            depth=page_dict.get("depth"),
             ts=(str_to_date(ts) if ts else dt_now()),
         )
         p.compute_page_type()

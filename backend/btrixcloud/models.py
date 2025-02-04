@@ -2494,6 +2494,7 @@ class Page(BaseMongoModel):
     status: Optional[int] = None
     mime: Optional[str] = None
     filename: Optional[str] = None
+    depth: Optional[int] = None
 
     # manual review
     userid: Optional[UUID] = None

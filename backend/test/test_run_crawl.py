@@ -674,6 +674,7 @@ def test_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
         assert page["status"]
         assert page["mime"]
         assert page["filename"]
+        assert page["depth"] is not None
         assert page["isError"] in (True, False)
         assert page["isFile"] in (True, False)
 
@@ -696,6 +697,7 @@ def test_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
     assert page["loadState"]
     assert page["mime"]
     assert page["filename"]
+    assert page["depth"] is not None
     assert page["isError"] in (True, False)
     assert page["isFile"] in (True, False)
 
@@ -797,6 +799,7 @@ def test_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
     assert page["loadState"]
     assert page["mime"]
     assert page["filename"]
+    assert page["depth"] is not None
     assert page["isError"] in (True, False)
     assert page["isFile"] in (True, False)
 
@@ -880,6 +883,7 @@ def test_re_add_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_
         assert page["status"]
         assert page["mime"]
         assert page["filename"]
+        assert page["depth"] is not None
         assert page["isError"] in (True, False)
         assert page["isFile"] in (True, False)
 
