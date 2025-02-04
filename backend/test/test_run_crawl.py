@@ -682,7 +682,11 @@ def test_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
 
     # Test GET page endpoint
     global page_id
-    page_id = pages[0]["id"]
+    test_page = pages[0]
+    page_id = test_page["id"]
+    test_page_url = test_page["url"]
+    test_page_ts = test_page["ts"]
+
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages/{page_id}",
         headers=crawler_auth_headers,
@@ -710,6 +714,51 @@ def test_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
     assert page.get("modified") is None
     assert page.get("approved") is None
 
+    # Test exact url filter
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages?url={test_page_url}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data["total"] >= 1
+    for matching_page in data["items"]:
+        assert matching_page["url"] == test_page_url
+
+    # Test exact url and ts filters together
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages?url={test_page_url}&ts={test_page_ts}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data["total"] >= 1
+    for matching_page in data["items"]:
+        assert matching_page["url"] == test_page_url
+        assert matching_page["ts"] == test_page_ts
+
+    # Test urlPrefix filter
+    url_prefix = test_page_url[:8]
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages?urlPrefix={url_prefix}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data["total"] >= 1
+
+    found_matching_page = False
+    for page in data["items"]:
+        if page["id"] == page_id and page["url"] == test_page_url:
+            found_matching_page = True
+
+    assert found_matching_page
+
+
+def test_crawl_pages_qa_filters(crawler_auth_headers, default_org_id, crawler_crawl_id):
     # Test reviewed filter (page has no notes or approved so should show up in false)
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages?reviewed=False",

@@ -501,6 +501,9 @@ class PageOps:
         self,
         crawl_id: str,
         org: Optional[Organization] = None,
+        url: Optional[str] = None,
+        url_prefix: Optional[str] = None,
+        ts: Optional[datetime] = None,
         qa_run_id: Optional[str] = None,
         qa_filter_by: Optional[str] = None,
         qa_gte: Optional[float] = None,
@@ -526,6 +529,17 @@ class PageOps:
         }
         if org:
             query["oid"] = org.id
+
+        if url_prefix:
+            url_prefix = urllib.parse.unquote(url_prefix)
+            regex_pattern = f"^{re.escape(url_prefix)}"
+            query["url"] = {"$regex": regex_pattern, "$options": "i"}
+
+        elif url:
+            query["url"] = urllib.parse.unquote(url)
+
+        if ts:
+            query["ts"] = ts
 
         if reviewed:
             query["$or"] = [
@@ -571,7 +585,16 @@ class PageOps:
             # Sorting options to add:
             # - automated heuristics like screenshot_comparison (dict keyed by QA run id)
             # - Ensure notes sorting works okay with notes in list
-            sort_fields = ("url", "title", "notes", "approved")
+            sort_fields = (
+                "url",
+                "title",
+                "notes",
+                "approved",
+                "ts",
+                "status",
+                "mime",
+                "filename",
+            )
             qa_sort_fields = ("screenshotMatch", "textMatch")
             if sort_by not in sort_fields and sort_by not in qa_sort_fields:
                 raise HTTPException(status_code=400, detail="invalid_sort_by")
@@ -1004,6 +1027,9 @@ def init_pages_api(
     async def get_crawl_pages_list(
         crawl_id: str,
         org: Organization = Depends(org_crawl_dep),
+        url: Optional[str] = None,
+        urlPrefix: Optional[str] = None,
+        ts: Optional[datetime] = None,
         reviewed: Optional[bool] = None,
         approved: Optional[str] = None,
         hasNotes: Optional[bool] = None,
@@ -1020,6 +1046,9 @@ def init_pages_api(
         pages, total = await ops.list_pages(
             crawl_id=crawl_id,
             org=org,
+            url=url,
+            url_prefix=urlPrefix,
+            ts=ts,
             reviewed=reviewed,
             approved=formatted_approved,
             has_notes=hasNotes,
