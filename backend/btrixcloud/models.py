@@ -2495,7 +2495,7 @@ class Page(BaseMongoModel):
     mime: Optional[str] = None
     filename: Optional[str] = None
     depth: Optional[int] = None
-    faviconUrl: Optional[AnyHttpUrl] = None
+    favIconUrl: Optional[AnyHttpUrl] = None
     seed: Optional[bool] = None
 
     # manual review
