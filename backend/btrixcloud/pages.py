@@ -178,6 +178,8 @@ class PageOps:
             mime=page_dict.get("mime", "text/html"),
             filename=page_dict.get("filename"),
             depth=page_dict.get("depth"),
+            seed=page_dict.get("seed"),
+            favIconUrl=page_dict.get("favIconUrl"),
             ts=(str_to_date(ts) if ts else dt_now()),
         )
         p.compute_page_type()
