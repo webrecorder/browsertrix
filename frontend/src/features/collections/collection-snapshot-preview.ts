@@ -5,7 +5,7 @@ import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { isEqual } from "lodash";
 
-import type { SelectSnapshotDetail } from "./select-collection-start-page";
+import type { SelectSnapshotDetail } from "./select-collection-page";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import { formatRwpTimestamp } from "@/utils/replay";

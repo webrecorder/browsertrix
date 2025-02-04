@@ -10,7 +10,7 @@ import {
   HomeView,
   type CollectionSnapshotPreview,
 } from "./collection-snapshot-preview";
-import type { SelectSnapshotDetail } from "./select-collection-start-page";
+import type { SelectSnapshotDetail } from "./select-collection-page";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";

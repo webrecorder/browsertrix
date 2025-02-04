@@ -17,7 +17,7 @@ import {
   DEFAULT_THUMBNAIL_VARIANT,
   Thumbnail,
 } from "../collection-thumbnail";
-import { type SelectSnapshotDetail } from "../select-collection-start-page";
+import { type SelectSnapshotDetail } from "../select-collection-page";
 
 import { snapshotToSource, sourceToSnapshot } from "./helpers/snapshots";
 

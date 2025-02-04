@@ -1,4 +1,4 @@
-import { type SnapshotItem } from "../../select-collection-start-page";
+import { type SnapshotItem } from "../../select-collection-page";
 
 import { type CollectionThumbnailSource } from "@/types/collection";
 
