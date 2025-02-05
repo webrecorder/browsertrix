@@ -190,8 +190,8 @@ export class CollectionDetail extends BtrixElement {
             )}
             ${this.collection &&
             html`<sl-icon-button
-              name="pencil"
-              aria-label=${msg("Edit Collection")}
+              name="gear"
+              aria-label=${msg("Collection Settings")}
               @click=${async () => {
                 this.openDialogName = "edit";
                 this.editTab = "general";
@@ -480,8 +480,8 @@ export class CollectionDetail extends BtrixElement {
           this.editTab = "general";
         }}
       >
-        <sl-icon slot="prefix" name="pencil"></sl-icon>
-        ${msg("Edit Collection")}
+        <sl-icon slot="prefix" name="gear"></sl-icon>
+        ${msg("Collection Settings")}
       </sl-button>
       <sl-dropdown distance="4">
         <sl-button slot="trigger" size="small" caret
@@ -503,7 +503,7 @@ export class CollectionDetail extends BtrixElement {
             ?disabled=${!this.collection?.crawlCount}
           >
             <sl-icon name="gear" slot="prefix"></sl-icon>
-            ${msg("Edit Collection")}
+            ${msg("Collection Settings")}
           </sl-menu-item>
           <sl-menu-item @click=${() => (this.openDialogName = "editItems")}>
             <sl-icon name="ui-checks" slot="prefix"></sl-icon>
@@ -637,7 +637,7 @@ export class CollectionDetail extends BtrixElement {
             ${when(
               this.collection?.description && !this.isEditingDescription,
               () => html`
-                <sl-tooltip content=${msg("Edit description")}>
+                <sl-tooltip content=${msg("Edit Description")}>
                   <sl-icon-button
                     class="text-base"
                     name="pencil"

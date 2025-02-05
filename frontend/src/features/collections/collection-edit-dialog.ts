@@ -191,8 +191,10 @@ export class CollectionEdit extends BtrixElement {
   render() {
     return html`<btrix-dialog
         .label=${this.collection
-          ? msg(str`Edit Collection “${this.name || this.collection.name}”`)
-          : msg("Edit Collection")}
+          ? msg(
+              str`Collection Settings for “${this.name || this.collection.name}”`,
+            )
+          : msg("Collection Settings")}
         .open=${this.open}
         @sl-show=${() => (this.isDialogVisible = true)}
         @sl-after-hide=${() => {
