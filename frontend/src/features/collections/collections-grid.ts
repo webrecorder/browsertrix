@@ -144,7 +144,10 @@ export class CollectionsGrid extends BtrixElement {
             this.collectionBeingEdited = collection.id;
           }}
         >
-          <sl-icon label=${msg("Edit Collection")} name="pencil"></sl-icon>
+          <sl-icon
+            label=${msg("Edit Collection Settings")}
+            name="pencil"
+          ></sl-icon>
         </btrix-button>
       </div>
     </div>
