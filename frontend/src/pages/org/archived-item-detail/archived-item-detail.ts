@@ -853,7 +853,7 @@ export class ArchivedItemDetail extends BtrixElement {
                 </btrix-desc-list-item>
               `,
         )}
-        <btrix-desc-list-item label=${msg("Pages Crawled")}>
+        <btrix-desc-list-item label=${msg("Pages")}>
           ${this.item
             ? html`${this.localize.number(this.item.pageCount || 0)}
               ${pluralOf("pages", this.item.pageCount || 0)}`
