@@ -504,15 +504,17 @@ export class WorkflowDetail extends BtrixElement {
     }
     if (this.activePanel === "settings" && this.isCrawler) {
       return html` <h3>${this.tabLabels[this.activePanel]}</h3>
-        <sl-icon-button
-          name="gear"
-          label=${msg("Edit workflow settings")}
-          @click=${() =>
-            this.navigate.to(
-              `/orgs/${this.appState.orgSlug}/workflows/${this.workflow?.id}?edit`,
-            )}
-        >
-        </sl-icon-button>`;
+        <sl-tooltip content=${msg("Edit Workflow Settings")}></sl-tooltip>
+          <sl-icon-button
+            name="pencil"
+            class="text-base"
+            @click=${() =>
+              this.navigate.to(
+                `/orgs/${this.appState.orgSlug}/workflows/${this.workflow?.id}?edit`,
+              )}
+          >
+          </sl-icon-button>
+        </sl-tooltip>`;
     }
     if (this.activePanel === "watch" && this.isCrawler) {
       const enableEditBrowserWindows =
