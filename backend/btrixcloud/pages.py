@@ -137,7 +137,7 @@ class PageOps:
                                 "filename": filename,
                                 "depth": page_dict.get("depth"),
                                 "isSeed": page_dict.get("seed", False),
-                                "faviconUrl": page_dict.get("faviconUrl"),
+                                "favIconUrl": page_dict.get("favIconUrl"),
                             }
                         },
                     )
