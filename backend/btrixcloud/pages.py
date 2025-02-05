@@ -1,6 +1,7 @@
 """crawl pages"""
 
 import asyncio
+import os
 import traceback
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional, Tuple, List, Dict, Any, Union
@@ -83,6 +84,7 @@ class PageOps:
 
                 if len(pages_buffer) > batch_size:
                     await self._add_pages_to_db(crawl_id, pages_buffer)
+                    pages_buffer = []
 
                 pages_buffer.append(
                     self._get_page_from_dict(page_dict, crawl_id, crawl.oid)
@@ -99,6 +101,53 @@ class PageOps:
         except Exception as err:
             traceback.print_exc()
             print(f"Error adding pages for crawl {crawl_id} to db: {err}", flush=True)
+
+    async def add_crawl_wacz_filename_to_pages(self, crawl_id: str):
+        """Add WACZ filename and additional fields to existing pages in crawl if not already set"""
+        try:
+            crawl = await self.crawl_ops.get_crawl_out(crawl_id)
+            if not crawl.resources:
+                return
+
+            for wacz_file in crawl.resources:
+                # Strip oid directory from filename
+                filename = os.path.basename(wacz_file.name)
+
+                stream = await self.storage_ops.sync_stream_wacz_pages([wacz_file])
+                for page_dict in stream:
+                    if not page_dict.get("url"):
+                        continue
+
+                    page_id = page_dict.get("id")
+
+                    if not page_id:
+                        continue
+
+                    if page_id:
+                        try:
+                            page_id = UUID(page_id)
+                        # pylint: disable=broad-exception-caught
+                        except Exception:
+                            continue
+
+                    await self.pages.find_one_and_update(
+                        {"_id": page_id},
+                        {
+                            "$set": {
+                                "filename": filename,
+                                "depth": page_dict.get("depth"),
+                                "isSeed": page_dict.get("seed", False),
+                                "favIconUrl": page_dict.get("favIconUrl"),
+                            }
+                        },
+                    )
+        # pylint: disable=broad-exception-caught, raise-missing-from
+        except Exception as err:
+            traceback.print_exc()
+            print(
+                f"Error adding filename to pages from item {crawl_id} to db: {err}",
+                flush=True,
+            )
 
     def _get_page_from_dict(
         self, page_dict: Dict[str, Any], crawl_id: str, oid: UUID
@@ -127,6 +176,10 @@ class PageOps:
             loadState=page_dict.get("loadState"),
             status=status,
             mime=page_dict.get("mime", "text/html"),
+            filename=page_dict.get("filename"),
+            depth=page_dict.get("depth"),
+            isSeed=page_dict.get("seed", False),
+            favIconUrl=page_dict.get("favIconUrl"),
             ts=(str_to_date(ts) if ts else dt_now()),
         )
         p.compute_page_type()

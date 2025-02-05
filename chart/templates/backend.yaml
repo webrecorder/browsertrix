@@ -123,8 +123,8 @@ spec:
             httpGet:
               path: /healthzStartup
               port: 8000
-            periodSeconds: 5
-            failureThreshold: 60
+            periodSeconds: 10
+            failureThreshold: 8640
             successThreshold: 1
 
           readinessProbe:

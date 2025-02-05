@@ -2493,6 +2493,10 @@ class Page(BaseMongoModel):
     loadState: Optional[int] = None
     status: Optional[int] = None
     mime: Optional[str] = None
+    filename: Optional[str] = None
+    depth: Optional[int] = None
+    favIconUrl: Optional[AnyHttpUrl] = None
+    isSeed: Optional[bool] = False
 
     # manual review
     userid: Optional[UUID] = None
