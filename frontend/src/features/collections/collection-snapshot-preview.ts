@@ -42,7 +42,7 @@ export class CollectionSnapshotPreview extends TailwindElement {
 
   @property({
     type: Object,
-    hasChanged: isEqual,
+    hasChanged: (a, b) => !isEqual(a, b),
   })
   snapshot?: Partial<SelectSnapshotDetail["item"]>;
 
