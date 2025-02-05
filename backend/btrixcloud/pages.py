@@ -504,7 +504,7 @@ class PageOps:
         url: Optional[str] = None,
         url_prefix: Optional[str] = None,
         ts: Optional[datetime] = None,
-        isSeed: Optional[bool] = None,
+        is_seed: Optional[bool] = None,
         depth: Optional[int] = None,
         qa_run_id: Optional[str] = None,
         qa_filter_by: Optional[str] = None,
@@ -543,8 +543,8 @@ class PageOps:
         if ts:
             query["ts"] = ts
 
-        if isSeed in (True, False):
-            query["isSeed"] = isSeed
+        if is_seed in (True, False):
+            query["isSeed"] = is_seed
 
         if depth:
             query["depth"] = depth
@@ -662,7 +662,7 @@ class PageOps:
         url: Optional[str] = None,
         url_prefix: Optional[str] = None,
         ts: Optional[datetime] = None,
-        isSeed: Optional[bool] = None,
+        is_seed: Optional[bool] = None,
         depth: Optional[int] = None,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
@@ -694,8 +694,8 @@ class PageOps:
         if ts:
             query["ts"] = ts
 
-        if isSeed in (True, False):
-            query["isSeed"] = isSeed
+        if is_seed in (True, False):
+            query["isSeed"] = is_seed
 
         if depth:
             query["depth"] = depth
