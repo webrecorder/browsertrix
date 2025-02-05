@@ -124,7 +124,7 @@ spec:
               path: /healthzStartup
               port: 8000
             periodSeconds: 10
-            failureThreshold: 360
+            failureThreshold: 8640
             successThreshold: 1
 
           readinessProbe:
