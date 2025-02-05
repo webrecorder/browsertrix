@@ -658,7 +658,9 @@ def test_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
     )
     assert r.status_code == 200
     data = r.json()
-    assert data["total"] >= 0
+
+    total_pages = data["total"]
+    assert total_pages >= 1
 
     pages = data["items"]
     assert pages
@@ -756,6 +758,59 @@ def test_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
             found_matching_page = True
 
     assert found_matching_page
+
+    # Test isSeed filter
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages?isSeed=true",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == 1
+    for page in data["items"]:
+        assert page["isSeed"]
+        assert page["depth"] == 0
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages?isSeed=false",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == total_pages - 1
+    for page in data["items"]:
+        assert page["isSeed"] is False
+        assert page["depth"] > 0
+
+    # Test depth filter
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages?depth=0",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == 1
+    for page in data["items"]:
+        assert page["isSeed"]
+        assert page["depth"] == 0
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages?depth=1",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == total_pages - 1
+    for page in data["items"]:
+        assert page["isSeed"] is False
+        assert page["depth"] == 1
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages?depth=2",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    assert data["total"] == 0
 
 
 def test_crawl_pages_qa_filters(crawler_auth_headers, default_org_id, crawler_crawl_id):

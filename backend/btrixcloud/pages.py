@@ -504,6 +504,8 @@ class PageOps:
         url: Optional[str] = None,
         url_prefix: Optional[str] = None,
         ts: Optional[datetime] = None,
+        isSeed: Optional[bool] = None,
+        depth: Optional[int] = None,
         qa_run_id: Optional[str] = None,
         qa_filter_by: Optional[str] = None,
         qa_gte: Optional[float] = None,
@@ -540,6 +542,12 @@ class PageOps:
 
         if ts:
             query["ts"] = ts
+
+        if isSeed in (True, False):
+            query["isSeed"] = isSeed
+
+        if depth:
+            query["depth"] = depth
 
         if reviewed:
             query["$or"] = [
@@ -594,6 +602,8 @@ class PageOps:
                 "status",
                 "mime",
                 "filename",
+                "depth",
+                "isSeed",
             )
             qa_sort_fields = ("screenshotMatch", "textMatch")
             if sort_by not in sort_fields and sort_by not in qa_sort_fields:
@@ -652,6 +662,8 @@ class PageOps:
         url: Optional[str] = None,
         url_prefix: Optional[str] = None,
         ts: Optional[datetime] = None,
+        isSeed: Optional[bool] = None,
+        depth: Optional[int] = None,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         sort_by: Optional[str] = None,
@@ -682,13 +694,28 @@ class PageOps:
         if ts:
             query["ts"] = ts
 
+        if isSeed in (True, False):
+            query["isSeed"] = isSeed
+
+        if depth:
+            query["depth"] = depth
+
         aggregate = [{"$match": query}]
 
         if sort_by:
             # Sorting options to add:
             # - automated heuristics like screenshot_comparison (dict keyed by QA run id)
             # - Ensure notes sorting works okay with notes in list
-            sort_fields = ("url", "crawl_id", "ts", "status", "mime", "filename")
+            sort_fields = (
+                "url",
+                "crawl_id",
+                "ts",
+                "status",
+                "mime",
+                "filename",
+                "depth",
+                "isSeed",
+            )
             if sort_by not in sort_fields:
                 raise HTTPException(status_code=400, detail="invalid_sort_by")
             if sort_direction not in (1, -1):
@@ -1030,6 +1057,8 @@ def init_pages_api(
         url: Optional[str] = None,
         urlPrefix: Optional[str] = None,
         ts: Optional[datetime] = None,
+        isSeed: Optional[bool] = None,
+        depth: Optional[int] = None,
         reviewed: Optional[bool] = None,
         approved: Optional[str] = None,
         hasNotes: Optional[bool] = None,
@@ -1049,6 +1078,8 @@ def init_pages_api(
             url=url,
             url_prefix=urlPrefix,
             ts=ts,
+            is_seed=isSeed,
+            depth=depth,
             reviewed=reviewed,
             approved=formatted_approved,
             has_notes=hasNotes,
@@ -1070,6 +1101,8 @@ def init_pages_api(
         url: Optional[str] = None,
         urlPrefix: Optional[str] = None,
         ts: Optional[datetime] = None,
+        isSeed: Optional[bool] = None,
+        depth: Optional[int] = None,
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         sortBy: Optional[str] = None,
@@ -1082,6 +1115,8 @@ def init_pages_api(
             url=url,
             url_prefix=urlPrefix,
             ts=ts,
+            is_seed=isSeed,
+            depth=depth,
             page_size=pageSize,
             page=page,
             sort_by=sortBy,

@@ -658,6 +658,48 @@ def test_list_pages_in_collection(crawler_auth_headers, default_org_id):
 
     assert found_matching_page
 
+    # Test isSeed filter
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/pages?isSeed=true",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    for page in data["items"]:
+        assert page["isSeed"]
+        assert page["depth"] == 0
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/pages?isSeed=false",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    for page in data["items"]:
+        assert page["isSeed"] is False
+        assert page["depth"] > 0
+
+    # Test depth filter
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/pages?depth=0",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    for page in data["items"]:
+        assert page["isSeed"]
+        assert page["depth"] == 0
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages?depth=1",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    for page in data["items"]:
+        assert page["isSeed"] is False
+        assert page["depth"] == 1
+
 
 def test_remove_upload_from_collection(crawler_auth_headers, default_org_id):
     # Remove upload
