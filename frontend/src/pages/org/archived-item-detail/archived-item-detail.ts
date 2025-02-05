@@ -867,7 +867,7 @@ export class ArchivedItemDetail extends BtrixElement {
             : html`<sl-skeleton class="h-[16px] w-24"></sl-skeleton>`}
         </btrix-desc-list-item>
         ${this.renderCrawlChannelVersion()}
-        <btrix-desc-list-item label=${msg("Crawl ID")}>
+        <btrix-desc-list-item label=${msg("Archived Item ID")}>
           ${this.item
             ? html`<btrix-copy-field
                 value="${this.item.id}"
