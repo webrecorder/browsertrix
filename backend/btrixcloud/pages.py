@@ -136,7 +136,7 @@ class PageOps:
                             "$set": {
                                 "filename": filename,
                                 "depth": page_dict.get("depth"),
-                                "seed": page_dict.get("seed"),
+                                "isSeed": page_dict.get("seed", False),
                                 "faviconUrl": page_dict.get("faviconUrl"),
                             }
                         },
@@ -178,7 +178,7 @@ class PageOps:
             mime=page_dict.get("mime", "text/html"),
             filename=page_dict.get("filename"),
             depth=page_dict.get("depth"),
-            seed=page_dict.get("seed"),
+            isSeed=page_dict.get("seed", False),
             favIconUrl=page_dict.get("favIconUrl"),
             ts=(str_to_date(ts) if ts else dt_now()),
         )
