@@ -82,7 +82,7 @@ export class CollectionStartPageDialog extends BtrixElement {
       this.homeView === HomeView.URL && !this.selectedSnapshot;
     return html`
       <btrix-dialog
-        .label=${msg("Configure Replay View")}
+        .label=${msg("Set Initial View")}
         .open=${this.open}
         class="[--width:60rem]"
         @sl-show=${() => (this.showContent = true)}
@@ -198,7 +198,7 @@ export class CollectionStartPageDialog extends BtrixElement {
       <form @submit=${this.onSubmit}>
         <sl-select
           name="homeView"
-          label=${msg("Select Initial View")}
+          label=${msg("Initial View")}
           value=${this.homeView}
           hoist
           ?disabled=${!this.replayLoaded}
