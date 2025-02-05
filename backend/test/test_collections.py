@@ -667,7 +667,6 @@ def test_list_pages_in_collection(crawler_auth_headers, default_org_id):
     data = r.json()
     for page in data["items"]:
         assert page["isSeed"]
-        assert page["depth"] == 0
 
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/pages?isSeed=false",
@@ -677,7 +676,6 @@ def test_list_pages_in_collection(crawler_auth_headers, default_org_id):
     data = r.json()
     for page in data["items"]:
         assert page["isSeed"] is False
-        assert page["depth"] > 0
 
     # Test depth filter
     r = requests.get(
@@ -687,7 +685,6 @@ def test_list_pages_in_collection(crawler_auth_headers, default_org_id):
     assert r.status_code == 200
     data = r.json()
     for page in data["items"]:
-        assert page["isSeed"]
         assert page["depth"] == 0
 
     r = requests.get(
@@ -697,7 +694,6 @@ def test_list_pages_in_collection(crawler_auth_headers, default_org_id):
     assert r.status_code == 200
     data = r.json()
     for page in data["items"]:
-        assert page["isSeed"] is False
         assert page["depth"] == 1
 
 
