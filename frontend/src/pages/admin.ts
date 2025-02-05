@@ -149,7 +149,7 @@ export class Admin extends BtrixElement {
             <div class="mt-2 grow md:mr-2 md:mt-0">
               <sl-input
                 name="crawlId"
-                placeholder=${msg("Enter Crawl ID")}
+                placeholder=${msg("Enter Archived Item ID")}
                 required
               ></sl-input>
             </div>
