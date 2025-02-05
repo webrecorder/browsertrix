@@ -855,15 +855,14 @@ export class ArchivedItemDetail extends BtrixElement {
         )}
         <btrix-desc-list-item label=${msg("Pages Crawled")}>
           ${this.item
-            ? this.renderPageCount(this.item)
+            ? html`${this.localize.number(this.item.pageCount || 0)}
+              ${pluralOf("pages", this.item.pageCount || 0)}`
             : html`<sl-skeleton class="h-[16px] w-24"></sl-skeleton>`}
         </btrix-desc-list-item>
         <btrix-desc-list-item label=${msg("Size")}>
           ${this.item
             ? html`${this.item.fileSize
-                ? this.localize.bytes(this.item.fileSize || 0, {
-                    unitDisplay: "narrow",
-                  })
+                ? this.localize.bytes(this.item.fileSize || 0)
                 : html`<span class="text-0-400">${msg("Unknown")}</span>`}`
             : html`<sl-skeleton class="h-[16px] w-24"></sl-skeleton>`}
         </btrix-desc-list-item>
@@ -876,14 +875,6 @@ export class ArchivedItemDetail extends BtrixElement {
             : html`<sl-skeleton class="mb-[3px] h-[16px] w-24"></sl-skeleton>`}
         </btrix-desc-list-item>
       </btrix-desc-list>
-    `;
-  }
-
-  private renderPageCount(item: ArchivedItem) {
-    const pageCount = item.pageCount ? +item.pageCount : 0;
-
-    return html`
-      ${this.localize.number(pageCount)} ${pluralOf("pages", pageCount)}
     `;
   }
 
