@@ -190,8 +190,8 @@ export class CollectionDetail extends BtrixElement {
             )}
             ${this.collection &&
             html`<sl-icon-button
-              name="gear"
-              aria-label=${msg("Collection Settings")}
+              name="pencil"
+              aria-label=${msg("Edit Collection Name and Description")}
               @click=${async () => {
                 this.openDialogName = "edit";
                 this.editTab = "general";
