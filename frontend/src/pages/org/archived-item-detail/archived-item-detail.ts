@@ -853,38 +853,17 @@ export class ArchivedItemDetail extends BtrixElement {
                 </btrix-desc-list-item>
               `,
         )}
-
+        <btrix-desc-list-item label=${msg("Pages Crawled")}>
+          ${this.item
+            ? this.renderPageCount(this.item)
+            : html`<sl-skeleton class="h-[16px] w-24"></sl-skeleton>`}
+        </btrix-desc-list-item>
         <btrix-desc-list-item label=${msg("Size")}>
           ${this.item
             ? html`${this.item.fileSize
-                ? html`${this.localize.bytes(this.item.fileSize || 0, {
+                ? this.localize.bytes(this.item.fileSize || 0, {
                     unitDisplay: "narrow",
-                  })}${this.item.stats?.done
-                    ? html`<span>,</span
-                        ><span
-                          class="tracking-tighter${this.isActive
-                            ? " text-violet-600"
-                            : ""} font-mono"
-                        >
-                          ${this.localize.number(+this.item.stats.done)}
-                          <span class="text-0-400">/</span>
-                          ${this.localize.number(+this.item.stats.found)}
-                        </span>
-                        <span
-                          >${pluralOf("pages", +this.item.stats.found)}</span
-                        >`
-                    : html`<span>,</span
-                        ><span>
-                          ${this.localize.number(
-                            this.item.pageCount ? +this.item.pageCount : 0,
-                          )}
-                        </span>
-                        <span
-                          >${pluralOf(
-                            "pages",
-                            this.item.pageCount ? +this.item.pageCount : 0,
-                          )}</span
-                        >`}`
+                  })
                 : html`<span class="text-0-400">${msg("Unknown")}</span>`}`
             : html`<sl-skeleton class="h-[16px] w-24"></sl-skeleton>`}
         </btrix-desc-list-item>
@@ -897,6 +876,14 @@ export class ArchivedItemDetail extends BtrixElement {
             : html`<sl-skeleton class="mb-[3px] h-[16px] w-24"></sl-skeleton>`}
         </btrix-desc-list-item>
       </btrix-desc-list>
+    `;
+  }
+
+  private renderPageCount(item: ArchivedItem) {
+    const pageCount = item.pageCount ? +item.pageCount : 0;
+
+    return html`
+      ${this.localize.number(pageCount)} ${pluralOf("pages", pageCount)}
     `;
   }
 
