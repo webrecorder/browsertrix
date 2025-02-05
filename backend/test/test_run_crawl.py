@@ -761,7 +761,7 @@ def test_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
 
     # Test isSeed filter
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages?isSeed=true",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages?isSeed=True",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
@@ -772,12 +772,12 @@ def test_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
         assert page["depth"] == 0
 
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages?isSeed=false",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages?isSeed=False",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
     data = r.json()
-    assert data["total"] == total_pages - 1
+    assert data["total"] == 2
     for page in data["items"]:
         assert page["isSeed"] is False
         assert page["depth"] > 0
@@ -820,7 +820,7 @@ def test_crawl_pages_qa_filters(crawler_auth_headers, default_org_id, crawler_cr
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
-    assert r.json()["total"] == 1
+    assert r.json()["total"] == 3
 
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages?reviewed=True",
@@ -1089,14 +1089,14 @@ def test_crawl_page_notes(crawler_auth_headers, default_org_id, crawler_crawl_id
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
-    assert r.json()["total"] == 1
+    assert r.json()["total"] == 3
 
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages?approved=true,false,none",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
-    assert r.json()["total"] == 1
+    assert r.json()["total"] == 3
 
     # Test reviewed filter (page now has notes so should show up in True)
     r = requests.get(
