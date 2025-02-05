@@ -676,7 +676,7 @@ def test_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
         assert page["filename"]
         assert page["depth"] is not None
         assert page["favIconUrl"]
-        assert page["seed"] in (True, False)
+        assert page["isSeed"] in (True, False)
         assert page["isError"] in (True, False)
         assert page["isFile"] in (True, False)
 
@@ -701,7 +701,7 @@ def test_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
     assert page["filename"]
     assert page["depth"] is not None
     assert page["favIconUrl"]
-    assert page["seed"] in (True, False)
+    assert page["isSeed"] in (True, False)
     assert page["isError"] in (True, False)
     assert page["isFile"] in (True, False)
 
@@ -805,7 +805,7 @@ def test_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
     assert page["filename"]
     assert page["depth"] is not None
     assert page["favIconUrl"]
-    assert page["seed"] in (True, False)
+    assert page["isSeed"] in (True, False)
     assert page["isError"] in (True, False)
     assert page["isFile"] in (True, False)
 
@@ -891,7 +891,7 @@ def test_re_add_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_
         assert page["filename"]
         assert page["depth"] is not None
         assert page["favIconUrl"]
-        assert page["seed"] in (True, False)
+        assert page["isSeed"] in (True, False)
         assert page["isError"] in (True, False)
         assert page["isFile"] in (True, False)
 
