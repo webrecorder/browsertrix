@@ -239,12 +239,12 @@ export class CollectionEdit extends BtrixElement {
                 >
                   ${this.renderTab({
                     panel: "general",
-                    icon: "info-square",
-                    string: msg("About"),
+                    icon: "easel3-fill",
+                    string: msg("Presentation"),
                   })}
                   ${this.renderTab({
                     panel: "sharing",
-                    icon: "box-arrow-up",
+                    icon: "globe2",
                     string: msg("Sharing"),
                   })}
 
