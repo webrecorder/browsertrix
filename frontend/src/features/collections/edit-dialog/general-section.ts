@@ -256,6 +256,9 @@ function renderPageThumbnail(
       this.blobIsLoaded = false;
     });
 
+  const enabled =
+    (!!this.selectedSnapshot && this.blobIsLoaded) || !!initialPath;
+
   console.log({
     selectedSnapshot: this.selectedSnapshot,
     blobIsLoaded: !!this.blobIsLoaded,
@@ -273,6 +276,7 @@ function renderPageThumbnail(
       aria-checked=${isSelected}
       @click=${() => {
         this.thumbnailSelector?.input?.focus();
+        if (!enabled) return;
         this.defaultThumbnailName = null;
         void this.checkChanged.bind(this)();
       }}
@@ -296,7 +300,7 @@ function renderPageThumbnail(
           replaySrc=${`/replay/?${query}#view=pages`}
           .snapshot=${sourceToSnapshot(this.selectedSnapshot)}
           ?noSpinner=${!!initialPath &&
-          !isEqual(this.selectedSnapshot, this.collection?.thumbnailSource)}
+          isEqual(this.selectedSnapshot, this.collection?.thumbnailSource)}
           @btrix-validate=${({
             detail: { valid },
           }: CustomEvent<BtrixValidateDetails>) => {
