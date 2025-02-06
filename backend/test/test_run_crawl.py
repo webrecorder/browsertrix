@@ -953,7 +953,7 @@ def test_crawl_pages_qa_filters(crawler_auth_headers, default_org_id, crawler_cr
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
-    assert r.json()["total"] == 0
+    assert r.json()["total"] == 2
 
 
 def test_re_add_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
