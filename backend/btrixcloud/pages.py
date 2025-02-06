@@ -549,7 +549,7 @@ class PageOps:
         # Check that field matches and value is an int to avoid 0
         # from returning null results
         if depth:
-            query["$and"] = {"field": depth, "type": 16}
+            query["$and"] = [{"depth": depth}, {"depth": {"type": 16}}]
 
         if reviewed:
             query["$or"] = [
@@ -702,7 +702,7 @@ class PageOps:
         # Check that field matches and value is an int to avoid 0
         # from returning null results
         if depth:
-            query["$and"] = {"field": depth, "type": 16}
+            query["$and"] = [{"depth": depth}, {"depth": {"type": 16}}]
 
         aggregate = [{"$match": query}]
 
