@@ -1,53 +1,32 @@
 import { html, LitElement } from "lit";
-import { customElement, query } from "lit/decorators.js";
+import { customElement, property } from "lit/decorators.js";
 
-type IntersectionEventDetail = {
-  entry: IntersectionObserverEntry;
-};
-export type IntersectEvent = CustomEvent<IntersectionEventDetail>;
+import { ObservableController } from "@/controllers/observable";
 
 /**
  * Observe element with Intersection Observer API.
  *
  * @example Usage:
  * ```
- * <btrix-observable @intersect=${console.log}>
+ * <btrix-observable @btrix-intersect=${console.log}>
  *   Observe me!
  * </btrix-observable>
  * ```
  *
- * @event intersect { entry: IntersectionObserverEntry }
+ * @fires btrix-intersect IntersectionEventDetail
  */
 @customElement("btrix-observable")
 export class Observable extends LitElement {
-  @query(".target")
-  private readonly target?: HTMLElement;
+  @property({ type: Object })
+  options?: IntersectionObserverInit;
 
-  private observer?: IntersectionObserver;
-
-  connectedCallback(): void {
-    super.connectedCallback();
-    this.observer = new IntersectionObserver(this.handleIntersect);
-  }
-
-  disconnectedCallback(): void {
-    this.observer?.disconnect();
-    super.disconnectedCallback();
-  }
+  private readonly observable = new ObservableController(this);
 
   firstUpdated() {
-    this.observer?.observe(this.target!);
+    this.observable.observe(this);
   }
 
-  private readonly handleIntersect = ([entry]: IntersectionObserverEntry[]) => {
-    this.dispatchEvent(
-      new CustomEvent<IntersectionEventDetail>("intersect", {
-        detail: { entry },
-      }),
-    );
-  };
-
   render() {
-    return html`<div class="target"><slot></slot></div>`;
+    return html`<slot></slot>`;
   }
 }

@@ -130,6 +130,7 @@ export class WorkflowsNew extends LiteElement {
                   path: `user-guide/workflow-setup/#${this.userGuideHashLink}`,
                 },
                 bubbles: true,
+                composed: true,
               }),
             );
           }}
