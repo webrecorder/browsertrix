@@ -91,6 +91,9 @@ class PageOps:
                 if not page_dict.get("url"):
                     continue
 
+                if not page_dict.get("isSeed"):
+                    page_dict["isSeed"] = False
+
                 if len(pages_buffer) > batch_size:
                     await self._add_pages_to_db(crawl_id, pages_buffer)
                     pages_buffer = []
@@ -219,9 +222,8 @@ class PageOps:
     ):
         """Add page to database"""
         page = self._get_page_from_dict(page_dict, crawl_id, oid)
-        page_to_insert = page.to_dict(
-            exclude_unset=True, exclude_none=True, exclude_defaults=True
-        )
+
+        page_to_insert = page.to_dict(exclude_unset=True, exclude_none=True)
 
         try:
             await self.pages.insert_one(page_to_insert)
