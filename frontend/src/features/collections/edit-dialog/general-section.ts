@@ -129,7 +129,7 @@ function renderThumbnails(this: CollectionEdit) {
     if (!thumbnail)
       return html` <sl-tooltip content=${msg("Select a page thumbnail")}
         ><button
-          class="row-start-2 flex aspect-video min-h-24 items-center justify-center overflow-hidden rounded bg-neutral-50 ring-1 ring-stone-600/10 transition-all hover:ring-2 hover:ring-blue-300"
+          class="row-start-2 flex aspect-video min-w-48 items-center justify-center overflow-hidden rounded bg-neutral-50 ring-1 ring-stone-600/10 transition-all hover:ring-2 hover:ring-blue-300"
           disabled
           role="radio"
           type="button"
@@ -161,7 +161,7 @@ function renderThumbnails(this: CollectionEdit) {
         <button
           class="${isSelected
             ? "ring-blue-300 ring-2"
-            : "ring-stone-600/10 ring-1"} row-start-2 aspect-video min-h-24 flex-1 overflow-hidden rounded transition-all hover:ring-2 hover:ring-blue-300"
+            : "ring-stone-600/10 ring-1"} row-start-2 aspect-video min-w-48 overflow-hidden rounded transition-all hover:ring-2 hover:ring-blue-300"
           role="radio"
           type="button"
           aria-checked=${isSelected}
@@ -206,12 +206,12 @@ function renderThumbnails(this: CollectionEdit) {
         </sl-tooltip>
       </label>
       <div class="-mx-4 -my-2 -mt-1 overflow-x-auto px-4 py-2">
-        <div class="grid w-max auto-cols-max grid-rows-[auto_auto] gap-3">
+        <div class="grid w-max min-w-full grid-rows-[auto_auto] gap-3">
           <div class="row-start-1 text-xs text-neutral-500">
             ${msg("Page Thumbnail")}
           </div>
           ${renderPageThumbnail.bind(this)(this.collection?.thumbnail?.path)}
-          <div class="row-start-1 text-xs text-neutral-600">
+          <div class="sticky left-0 row-start-1 text-xs text-neutral-600">
             ${msg("Placeholder")}
           </div>
           ${thumbnail(Thumbnail.Cyan)} ${thumbnail(Thumbnail.Green)}
@@ -258,10 +258,8 @@ function renderPageThumbnail(
   return html`
     <button
       class=${clsx(
-        isSelected
-          ? tw`ring-2 ring-blue-300`
-          : tw`min-h-24 ring-1 ring-stone-600/10`,
-        tw`row-start-2 aspect-video flex-1 overflow-hidden rounded transition-all`,
+        isSelected ? tw`ring-2 ring-blue-300` : tw` ring-1 ring-stone-600/10`,
+        tw`row-start-2 aspect-video min-w-48 overflow-hidden rounded transition-all`,
         enabled && tw`hover:ring-2 hover:ring-blue-300`,
       )}
       ?disabled=${!enabled}
