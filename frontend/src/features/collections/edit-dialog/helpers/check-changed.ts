@@ -21,18 +21,30 @@ const checkEqual = <K extends keyof CollectionUpdate>(
   return eq;
 };
 
+type KVPairs<T> = {
+  [K in keyof T]-?: readonly [K, T[K]];
+}[keyof T][];
+
 export default async function checkChanged(this: CollectionEdit) {
   try {
-    const { collectionUpdate, thumbnail } = await gatherState.bind(this)();
-    const updates = (
-      Object.entries(collectionUpdate) as [
-        keyof CollectionUpdate,
-        CollectionUpdate[keyof CollectionUpdate],
-      ][]
-    ).filter(([name, value]) => !checkEqual(this.collection!, name, value)) as [
-      keyof CollectionUpdate | "thumbnail",
-      CollectionUpdate[keyof CollectionUpdate] | typeof thumbnail,
-    ][];
+    const { collectionUpdate, thumbnail, setInitialView } =
+      await gatherState.bind(this)();
+
+    const state: CollectionUpdate = {
+      ...collectionUpdate,
+    };
+
+    const pairs = Object.entries(state) as KVPairs<typeof state>;
+
+    // filter out unchanged properties
+    const updates = pairs.filter(
+      ([name, value]) => !checkEqual(this.collection!, name, value),
+    ) as KVPairs<
+      CollectionUpdate & {
+        thumbnail: typeof thumbnail;
+        setInitialView: typeof setInitialView;
+      }
+    >;
 
     const shouldUpload =
       thumbnail.selectedSnapshot &&
@@ -41,6 +53,18 @@ export default async function checkChanged(this: CollectionEdit) {
 
     if (shouldUpload) {
       updates.push(["thumbnail", thumbnail]);
+    }
+    if (setInitialView) {
+      if (
+        this.collection &&
+        thumbnail.selectedSnapshot &&
+        this.collection.homeUrlPageId !== thumbnail.selectedSnapshot.urlPageId
+      ) {
+        console.log("should set initial view", {
+          pageId: thumbnail.selectedSnapshot.urlPageId,
+        });
+        updates.push(["setInitialView", true]);
+      }
     }
     if (updates.length > 0) {
       this.dirty = true;

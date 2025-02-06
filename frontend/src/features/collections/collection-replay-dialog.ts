@@ -252,18 +252,15 @@ export class CollectionStartPageDialog extends BtrixElement {
                 }}
               ></btrix-select-collection-page>
 
-              <sl-checkbox name="useThumbnail" class="mt-3" checked>
+              <sl-checkbox
+                name="useThumbnail"
+                class="mt-3 part-[form-control-help-text]:text-balance"
+                checked
+                help-text=${msg(
+                  "If this collection is public, the preview will be used as the thumbnail for this collection.",
+                )}
+              >
                 ${msg("Update collection thumbnail")}
-                <sl-tooltip
-                  content=${msg(
-                    "If this collection is public, the preview will be used as the thumbnail for this collection.",
-                  )}
-                >
-                  <sl-icon
-                    name="info-circle"
-                    class="[vertical-align:-.175em]"
-                  ></sl-icon>
-                </sl-tooltip>
               </sl-checkbox>
             </section>
           `,

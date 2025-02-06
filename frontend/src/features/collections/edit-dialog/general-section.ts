@@ -77,9 +77,9 @@ export default function renderGeneral(this: CollectionEdit) {
           : undefined}
         @btrix-select=${async (e: CustomEvent<SelectSnapshotDetail>) => {
           if (!e.detail.item) return;
-          this.dispatchEvent(new CustomEvent("btrix-change"));
           await this.updateComplete;
           this.selectedSnapshot = snapshotToSource(e.detail.item);
+          void this.checkChanged();
         }}
       >
         ${this.thumbnailPreview?.blobTask.status === TaskStatus.PENDING
@@ -100,6 +100,17 @@ export default function renderGeneral(this: CollectionEdit) {
             </sl-tooltip>`
           : nothing}
       </btrix-select-collection-page>
+      <sl-checkbox
+        name="setInitialView"
+        class="mt-3 part-[form-control-help-text]:text-balance"
+        checked
+        ?disabled=${!this.selectedSnapshot}
+        help-text=${msg(
+          "Update the first page that you see when replaying this collection",
+        )}
+      >
+        ${msg("Set initial view to this page")}
+      </sl-checkbox>
     </section> `;
 }
 

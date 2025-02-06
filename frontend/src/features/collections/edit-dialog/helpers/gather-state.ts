@@ -30,7 +30,9 @@ export default async function gatherState(this: CollectionEdit) {
 
   const { access, allowPublicDownload } = (await this.shareSettings) ?? {};
 
-  const formData = serialize(form) as CollectionUpdate;
+  const formData = serialize(form) as CollectionUpdate & {
+    setInitialView: boolean;
+  };
 
   const selectedSnapshot = this.selectedSnapshot;
 
@@ -38,6 +40,7 @@ export default async function gatherState(this: CollectionEdit) {
     formData.thumbnailSource = null;
   }
 
+  const { setInitialView } = formData;
   const data: CollectionUpdate = {
     ...formData,
     access,
@@ -50,5 +53,6 @@ export default async function gatherState(this: CollectionEdit) {
     thumbnail: {
       selectedSnapshot,
     },
+    setInitialView,
   };
 }

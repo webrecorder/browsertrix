@@ -21,8 +21,14 @@ export default function submitTask(
         thumbnail?: {
           selectedSnapshot: CollectionThumbnailSource;
         };
+        setInitialView?: boolean;
       };
-      const { thumbnail: { selectedSnapshot } = {}, ...rest } = updateObject;
+      console.log({ updateObject });
+      const {
+        thumbnail: { selectedSnapshot } = {},
+        setInitialView,
+        ...rest
+      } = updateObject;
       const tasks = [];
 
       // TODO get filename from rwp?
@@ -55,7 +61,21 @@ export default function submitTask(
         rest.defaultThumbnailName = null;
       }
 
-      if (Object.keys(rest).length)
+      if (setInitialView) {
+        tasks.push(
+          this.api.fetch(
+            `/orgs/${this.orgId}/collections/${this.collection.id}/home-url`,
+            {
+              method: "POST",
+              body: JSON.stringify({
+                pageId: this.selectedSnapshot?.urlPageId,
+              }),
+            },
+          ),
+        );
+      }
+
+      if (Object.keys(rest).length) {
         tasks.push(
           await this.api.fetch<{ updated: boolean }>(
             `/orgs/${this.orgId}/collections/${this.collection.id}`,
@@ -66,6 +86,7 @@ export default function submitTask(
             },
           ),
         );
+      }
 
       await Promise.all(tasks);
 
@@ -80,6 +101,7 @@ export default function submitTask(
           composed: true,
         }),
       );
+      this.dispatchEvent(new CustomEvent("btrix-change"));
       this.notify.toast({
         message: msg(
           str`Updated collection “${this.name || this.collection.name}”`,
