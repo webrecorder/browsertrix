@@ -688,7 +688,7 @@ def test_list_pages_in_collection(crawler_auth_headers, default_org_id):
         assert page["depth"] == 0
 
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages?depth=1",
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/pages?depth=1",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200

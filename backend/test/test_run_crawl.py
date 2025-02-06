@@ -659,8 +659,7 @@ def test_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
     assert r.status_code == 200
     data = r.json()
 
-    total_pages = data["total"]
-    assert total_pages == 3
+    assert data["total"] == 3
 
     pages = data["items"]
     assert pages
@@ -797,7 +796,7 @@ def test_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
     )
     assert r.status_code == 200
     data = r.json()
-    assert data["total"] == total_pages - 1
+    assert data["total"] == 2
     for page in data["items"]:
         assert page["depth"] == 1
 
