@@ -72,9 +72,12 @@ export default function renderGeneral(this: CollectionEdit) {
         undefined}
         @btrix-select=${async (e: CustomEvent<SelectSnapshotDetail>) => {
           if (!e.detail.item) return;
-          this.thumbnailIsValid = null;
-          await this.updateComplete;
-          this.selectedSnapshot = snapshotToSource(e.detail.item);
+          const newSnapshot = snapshotToSource(e.detail.item);
+          if (!isEqual(newSnapshot, this.selectedSnapshot)) {
+            this.thumbnailIsValid = null;
+            this.selectedSnapshot = newSnapshot;
+          }
+
           void this.checkChanged();
         }}
       >
@@ -302,11 +305,10 @@ function renderPageThumbnail(
           }: CustomEvent<BtrixValidateDetails>) => {
             if (this.defaultThumbnailName == null && !valid) {
               this.errorTab = "general";
-              this.thumbnailIsValid = false;
             } else {
               this.errorTab = null;
-              this.thumbnailIsValid = true;
             }
+            this.thumbnailIsValid = valid;
           }}
         >
         </btrix-collection-snapshot-preview>
