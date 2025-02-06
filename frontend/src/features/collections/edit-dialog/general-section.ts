@@ -91,8 +91,10 @@ export default function renderGeneral(this: CollectionEdit) {
               slot="prefix"
             >
               <sl-icon
-                name="exclamation-lg"
-                class="size-4 text-base text-danger"
+                name="exclamation-circle"
+                class="${this.defaultThumbnailName === null
+                  ? tw`text-danger`
+                  : tw`text-warning`} size-4 text-base"
               ></sl-icon>
             </sl-tooltip>`
           : this.thumbnailPreview?.blobTask.status === TaskStatus.PENDING &&
