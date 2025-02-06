@@ -26,6 +26,7 @@ import { tw } from "@/utils/tailwind";
 
 export default function renderGeneral(this: CollectionEdit) {
   if (!this.collection) return;
+  console.log(this.thumbnailIsValid);
   return html`<sl-input
       class="with-max-help-text"
       name="name"
@@ -72,28 +73,30 @@ export default function renderGeneral(this: CollectionEdit) {
         undefined}
         @btrix-select=${async (e: CustomEvent<SelectSnapshotDetail>) => {
           if (!e.detail.item) return;
+          this.thumbnailIsValid = null;
           await this.updateComplete;
           this.selectedSnapshot = snapshotToSource(e.detail.item);
           void this.checkChanged();
         }}
       >
-        ${this.thumbnailPreview?.blobTask.status === TaskStatus.PENDING
-          ? html`<sl-spinner slot="prefix"></sl-spinner>`
-          : nothing}
-        ${this.thumbnailPreview?.blobTask.status === TaskStatus.ERROR
+        ${this.thumbnailIsValid === false
           ? html` <sl-tooltip
               hoist
               content=${msg(
                 "This page doesn’t have a thumbnail and can’t be used",
               )}
               placement="bottom-start"
+              slot="prefix"
             >
               <sl-icon
                 name="exclamation-lg"
                 class="size-4 text-base text-danger"
               ></sl-icon>
             </sl-tooltip>`
-          : nothing}
+          : this.thumbnailPreview?.blobTask.status === TaskStatus.PENDING &&
+              !this.blobIsLoaded
+            ? html`<sl-spinner slot="prefix"></sl-spinner>`
+            : nothing}
       </btrix-select-collection-page>
       <sl-checkbox
         name="setInitialView"
@@ -306,8 +309,10 @@ function renderPageThumbnail(
           }: CustomEvent<BtrixValidateDetails>) => {
             if (this.defaultThumbnailName == null && !valid) {
               this.errorTab = "general";
+              this.thumbnailIsValid = false;
             } else {
               this.errorTab = null;
+              this.thumbnailIsValid = true;
             }
           }}
         >

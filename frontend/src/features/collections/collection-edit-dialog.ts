@@ -80,6 +80,9 @@ export class CollectionEdit extends BtrixElement {
   errorTab: Tab | null = null;
 
   @state()
+  thumbnailIsValid: boolean | null = null;
+
+  @state()
   dirty = false;
 
   // Separating this out so that we can eagerly respond to name changes in dialog title & toasts
