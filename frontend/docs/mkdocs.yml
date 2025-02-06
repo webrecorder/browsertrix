@@ -63,6 +63,7 @@ nav:
           - user-guide/review.md
       - Collections:
           - user-guide/collection.md
+          - user-guide/presentation-sharing.md
       - Browser Profiles:
           - user-guide/browser-profiles.md
       - Org Settings:

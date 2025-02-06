@@ -17,18 +17,6 @@ Crawls and uploads can be added to a collection after creation by selecting _Sel
 
 A crawl workflow can also be set to [automatically add any completed archived items to a collection](workflow-setup.md#collection-auto-add) in the workflow's settings.
 
-## Collection Description
-
-The description can be formatted with basic [Markdown](https://github.github.com/gfm/#what-is-markdown-) syntax to include headings, bolded and italicized text, lists, and links. The editor is powered by [ink-mde](https://github.com/davidmyersdev/ink-mde), an open source Markdown editor.
-
-## Sharing Collections
-
-Collections are private by default, but can be made public by marking them as sharable in the Metadata step of collection creation, or by toggling the _Collection is Shareable_ switch in the share collection dialogue.
-
-After a collection has been made public, it can be shared with others using the public URL available in the share collection dialogue. The collection can also be embedded into other websites using the provided embed code. Un-sharing the collection will break any previously shared links.
-
-For further resources on embedding archived web content into your own website, see the [ReplayWeb.page docs page on embedding](https://replayweb.page/docs/embedding).
-
 ## Downloading Collections
 
 Downloading a collection will export every archived item within it as a single WACZ file. To download a collection, use the _Download Collection_ option under the collection's _Actions_ dropdown.
