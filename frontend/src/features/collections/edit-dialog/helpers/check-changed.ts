@@ -60,9 +60,6 @@ export default async function checkChanged(this: CollectionEdit) {
         thumbnail.selectedSnapshot &&
         this.collection.homeUrlPageId !== thumbnail.selectedSnapshot.urlPageId
       ) {
-        console.log("should set initial view", {
-          pageId: thumbnail.selectedSnapshot.urlPageId,
-        });
         updates.push(["setInitialView", true]);
       }
     }

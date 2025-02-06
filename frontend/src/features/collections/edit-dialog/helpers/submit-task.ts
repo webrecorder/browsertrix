@@ -23,7 +23,6 @@ export default function submitTask(
         };
         setInitialView?: boolean;
       };
-      console.log({ updateObject });
       const {
         thumbnail: { selectedSnapshot } = {},
         setInitialView,
