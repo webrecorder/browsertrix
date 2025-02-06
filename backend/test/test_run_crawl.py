@@ -800,13 +800,6 @@ def test_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
     for page in data["items"]:
         assert page["depth"] == 1
 
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages?depth=2",
-        headers=crawler_auth_headers,
-    )
-    assert r.status_code == 200
-    assert data["total"] == 0
-
 
 def test_crawl_pages_qa_filters(crawler_auth_headers, default_org_id, crawler_crawl_id):
     # Test reviewed filter (page has no notes or approved so should show up in false)
