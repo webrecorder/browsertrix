@@ -140,7 +140,7 @@ export class ShareCollection extends BtrixElement {
                   <sl-icon-button
                     class="text-base"
                     name="cloud-download"
-                    href=${`/api/public/orgs/${this.orgSlug}/collections/${this.collectionId}/download`}
+                    href=${`/api/public/orgs/${this.orgSlug}/collections/${collection.slug}/download`}
                     download="true"
                     ?disabled=${!this.collection?.totalSize}
                     @click=${() => {
