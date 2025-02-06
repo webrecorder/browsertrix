@@ -15,7 +15,6 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import { ClipboardController } from "@/controllers/clipboard";
 import type { CollectionSavedEvent } from "@/features/collections/collection-create-dialog";
-import { type EditDialogTab } from "@/features/collections/collection-edit-dialog";
 import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
 import { emptyMessage } from "@/layouts/emptyMessage";
 import { pageHeader } from "@/layouts/pageHeader";
@@ -109,9 +108,6 @@ export class CollectionsList extends BtrixElement {
 
   @state()
   private openDialogName?: "create" | "delete" | "edit";
-
-  @state()
-  private openEditDialogTab?: EditDialogTab;
 
   @state()
   private isDialogVisible = false;
@@ -244,7 +240,6 @@ export class CollectionsList extends BtrixElement {
       <btrix-collection-edit-dialog
             .collection=${this.selectedCollection}
             ?open=${this.openDialogName === "edit"}
-            .tab=${this.openEditDialogTab ?? "general"}
             @sl-hide=${() => {
               this.openDialogName = undefined;
             }}
