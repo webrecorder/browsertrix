@@ -29,9 +29,6 @@ export class TabGroup extends TailwindElement {
   @property({ type: String, reflect: false })
   active = "";
 
-  @property({ type: String })
-  overrideTabLayout?: string;
-
   /* Nav placement */
   @property({ type: String })
   placement: "top" | "start" = "top";

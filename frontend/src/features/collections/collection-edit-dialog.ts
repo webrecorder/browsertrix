@@ -27,7 +27,6 @@ import {
 } from "@/types/collection";
 import { maxLengthValidator, type MaxLengthValidator } from "@/utils/form";
 import { formatRwpTimestamp } from "@/utils/replay";
-import { tw } from "@/utils/tailwind";
 
 type Tab = "general" | "sharing";
 
@@ -231,11 +230,12 @@ export class CollectionEdit extends BtrixElement {
               >
                 <btrix-tab-group
                   placement="top"
-                  overrideTabLayout=${tw`mb-4 flex gap-2`}
+                  .sticky=${false}
                   active=${this.tab}
                   @btrix-tab-change=${(e: CustomEvent<Tab>) => {
                     this.tab = e.detail;
                   }}
+                  class="part-[content]:pt-4"
                 >
                   ${this.renderTab({
                     panel: "general",
