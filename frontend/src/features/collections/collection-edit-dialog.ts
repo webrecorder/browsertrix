@@ -176,7 +176,6 @@ export class CollectionEdit extends BtrixElement {
     this.dirty = false;
     this.errorTab = null;
     this.blobIsLoaded = false;
-    console.log("BBBBB");
     this.selectedSnapshot = this.collection?.thumbnailSource ?? null;
     this.defaultThumbnailName =
       (this.collection?.defaultThumbnailName as

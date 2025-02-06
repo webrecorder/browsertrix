@@ -26,7 +26,6 @@ import { tw } from "@/utils/tailwind";
 
 export default function renderGeneral(this: CollectionEdit) {
   if (!this.collection) return;
-  console.log(this.thumbnailIsValid);
   return html`<sl-input
       class="with-max-help-text"
       name="name"
@@ -261,12 +260,6 @@ function renderPageThumbnail(
 
   const enabled =
     (!!this.selectedSnapshot && this.blobIsLoaded) || !!initialPath;
-
-  console.log({
-    selectedSnapshot: this.selectedSnapshot,
-    blobIsLoaded: !!this.blobIsLoaded,
-    initialPath: !!initialPath,
-  });
 
   return html`
     <button
