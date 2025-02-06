@@ -600,6 +600,8 @@ export class CollectionsList extends BtrixElement {
                     ClipboardController.copyToClipboard(this.getShareLink(col));
                     this.notify.toast({
                       message: msg("Link copied"),
+                      variant: "success",
+                      icon: "check2-circle",
                     });
                   }}
                 >
@@ -608,16 +610,6 @@ export class CollectionsList extends BtrixElement {
                 </sl-menu-item>
               `
             : nothing}
-          <sl-menu-item
-            style="--sl-color-neutral-700: var(--success)"
-            @click=${() => {
-              this.openEditDialogTab = "sharing";
-              void this.manageCollection(col, "edit");
-            }}
-          >
-            <sl-icon name="box-arrow-up" slot="prefix"></sl-icon>
-            ${msg("Share Collection")}
-          </sl-menu-item>
 
           <btrix-menu-item-link
             href=${`/api/orgs/${this.orgId}/collections/${col.id}/download?auth_bearer=${authToken}`}
