@@ -546,8 +546,10 @@ class PageOps:
         if is_seed in (True, False):
             query["isSeed"] = is_seed
 
+        # Check that field matches and value is an int to avoid 0
+        # from returning null results
         if depth:
-            query["depth"] = depth
+            query["$and"] = {"field": depth, "type": 16}
 
         if reviewed:
             query["$or"] = [
@@ -697,8 +699,10 @@ class PageOps:
         if is_seed in (True, False):
             query["isSeed"] = is_seed
 
+        # Check that field matches and value is an int to avoid 0
+        # from returning null results
         if depth:
-            query["depth"] = depth
+            query["$and"] = {"field": depth, "type": 16}
 
         aggregate = [{"$match": query}]
 

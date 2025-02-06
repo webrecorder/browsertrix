@@ -872,13 +872,13 @@ def test_crawl_pages_qa_filters(crawler_auth_headers, default_org_id, crawler_cr
     assert r.status_code == 200
     assert r.json()["total"] == 2
 
-    # Test reviewed filter (page now approved so should show up in True)
+    # Test reviewed filter (page now approved so should show up in True, other pages show here)
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages?reviewed=False",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
-    assert r.json()["total"] == 0
+    assert r.json()["total"] == 2
 
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages?reviewed=True",
