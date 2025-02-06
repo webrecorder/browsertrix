@@ -16,12 +16,6 @@ import {
 } from "@/types/collection";
 import { track } from "@/utils/analytics";
 
-function isFullCollection(
-  collection: PublicCollection | Collection | undefined,
-): collection is Collection {
-  return !!collection && "access" in collection;
-}
-
 /**
  * @fires btrix-change
  * @fires btrix-edit-collection {EditCollectionDetail}
@@ -37,6 +31,9 @@ export class ShareCollection extends BtrixElement {
 
   @property({ type: Object })
   collection?: Collection | PublicCollection;
+
+  @property({ type: String })
+  context: "private" | "public" = "public";
 
   @state()
   private showDialog = false;
@@ -76,10 +73,7 @@ export class ShareCollection extends BtrixElement {
       `;
     }
 
-    if (
-      isFullCollection(this.collection) &&
-      this.collection.access === CollectionAccess.Private
-    ) {
+    if (this.collection.access === CollectionAccess.Private) {
       return html`
         <sl-button
           variant=${this.collection.crawlCount ? "primary" : "default"}
@@ -107,7 +101,7 @@ export class ShareCollection extends BtrixElement {
             void this.clipboardController.copy(this.shareLink);
 
             if (
-              isFullCollection(this.collection) &&
+              this.collection &&
               this.collection.access === CollectionAccess.Public
             ) {
               track(AnalyticsTrackEvent.CopyShareCollectionLink, {
@@ -129,7 +123,7 @@ export class ShareCollection extends BtrixElement {
           </sl-icon-button>
         </sl-tooltip>
         ${when(this.orgSlug && this.collection, (collection) =>
-          isFullCollection(collection) &&
+          this.context === "public" &&
           collection.access === CollectionAccess.Public &&
           collection.allowPublicDownload
             ? html`
@@ -215,8 +209,7 @@ export class ShareCollection extends BtrixElement {
 
     return html`
       ${when(
-        isFullCollection(this.collection) &&
-          this.collection.access === CollectionAccess.Private,
+        this.collection?.access === CollectionAccess.Private,
         () => html`
           <btrix-alert variant="warning" class="mb-3">
             ${msg("Change the visibility setting to embed this collection.")}

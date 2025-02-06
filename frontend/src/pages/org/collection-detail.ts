@@ -214,6 +214,7 @@ export class CollectionDetail extends BtrixElement {
             orgSlug=${this.orgSlugState || ""}
             collectionId=${this.collectionId}
             .collection=${this.collection}
+            context="private"
             @btrix-change=${(e: CustomEvent) => {
               e.stopPropagation();
               void this.fetchCollection();

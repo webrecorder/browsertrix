@@ -44,6 +44,7 @@ export const publicCollectionSchema = z.object({
   homeUrl: z.string().url().nullable(),
   homeUrlPageId: z.string().url().nullable(),
   homeUrlTs: z.string().datetime().nullable(),
+  access: z.nativeEnum(CollectionAccess),
 });
 export type PublicCollection = z.infer<typeof publicCollectionSchema>;
 
