@@ -17,6 +17,7 @@ import renderGeneral from "./edit-dialog/general-section";
 import checkChanged from "./edit-dialog/helpers/check-changed";
 import submitTask from "./edit-dialog/helpers/submit-task";
 import { type CollectionShareSettings } from "./edit-dialog/sharing-section";
+import { type SelectCollectionPage } from "./select-collection-page";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
@@ -108,8 +109,8 @@ export class CollectionEdit extends BtrixElement {
   @queryAsync("btrix-collection-share-settings")
   readonly shareSettings?: Promise<CollectionShareSettings>;
 
-  // @query("btrix-collection-thumbnail-select")
-  // readonly thumbnailSelector?: CollectionThumbnailSelect;
+  @query("btrix-select-collection-page")
+  readonly thumbnailSelector?: SelectCollectionPage;
 
   @query("btrix-collection-snapshot-preview")
   public readonly thumbnailPreview?: CollectionSnapshotPreview | null;

@@ -9,6 +9,7 @@ import clsx from "clsx";
 import { html, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
+import { isEqual } from "lodash";
 import debounce from "lodash/fp/debounce";
 import filter from "lodash/fp/filter";
 import flow from "lodash/fp/flow";
@@ -69,11 +70,8 @@ export class SelectCollectionPage extends BtrixElement {
   @state()
   private selectedPage?: Page;
 
-  @property({ type: Object })
-  public initialSelectedSnapshot?: Snapshot;
-
-  @state()
-  public selectedSnapshot?: Snapshot = this.initialSelectedSnapshot;
+  @property({ type: Object, hasChanged: (a, b) => !isEqual(a, b) })
+  public selectedSnapshot?: Snapshot;
 
   @state()
   private pageUrlError?: string;
@@ -82,7 +80,7 @@ export class SelectCollectionPage extends BtrixElement {
   private readonly combobox?: Combobox | null;
 
   @query("#pageUrlInput")
-  private readonly input?: SlInput | null;
+  readonly input?: SlInput | null;
 
   private get url() {
     return this.mode === "homepage"

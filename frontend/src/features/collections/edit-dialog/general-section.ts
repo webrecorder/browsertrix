@@ -68,13 +68,8 @@ export default function renderGeneral(this: CollectionEdit) {
         mode="thumbnail"
         .collection=${this.collection}
         .collectionId=${this.collection.id}
-        .initialSelectedSnapshot=${this.selectedSnapshot
-          ? {
-              pageId: this.selectedSnapshot.urlPageId,
-              ts: this.selectedSnapshot.urlTs,
-              status: 200,
-            }
-          : undefined}
+        .selectedSnapshot=${sourceToSnapshot(this.selectedSnapshot) ??
+        undefined}
         @btrix-select=${async (e: CustomEvent<SelectSnapshotDetail>) => {
           if (!e.detail.item) return;
           await this.updateComplete;
@@ -221,7 +216,11 @@ function renderThumbnails(this: CollectionEdit) {
           <div class="row-start-1 text-xs text-neutral-500">
             ${msg("Page Thumbnail")}
           </div>
-          ${renderPageThumbnail.bind(this)(this.collection?.thumbnail?.path)}
+          ${renderPageThumbnail.bind(this)(
+            this.defaultThumbnailName == null
+              ? this.collection?.thumbnail?.path
+              : null,
+          )}
           <div class="sticky left-0 row-start-1 text-xs text-neutral-600">
             ${msg("Placeholder")}
           </div>
@@ -257,9 +256,6 @@ function renderPageThumbnail(
       this.blobIsLoaded = false;
     });
 
-  const enabled =
-    (!!this.selectedSnapshot && this.blobIsLoaded) || !!initialPath;
-
   console.log({
     selectedSnapshot: this.selectedSnapshot,
     blobIsLoaded: !!this.blobIsLoaded,
@@ -270,15 +266,13 @@ function renderPageThumbnail(
     <button
       class=${clsx(
         isSelected ? tw`ring-2 ring-blue-300` : tw` ring-1 ring-stone-600/10`,
-        tw`row-start-2 aspect-video min-w-48 overflow-hidden rounded transition-all`,
-        enabled && tw`hover:ring-2 hover:ring-blue-300`,
+        tw`row-start-2 aspect-video min-w-48 overflow-hidden rounded transition-all hover:ring-2 hover:ring-blue-300`,
       )}
-      ?disabled=${!enabled}
       role="radio"
       type="button"
       aria-checked=${isSelected}
       @click=${() => {
-        if (!enabled) return;
+        this.thumbnailSelector?.input?.focus();
         this.defaultThumbnailName = null;
         void this.checkChanged.bind(this)();
       }}
@@ -302,7 +296,7 @@ function renderPageThumbnail(
           replaySrc=${`/replay/?${query}#view=pages`}
           .snapshot=${sourceToSnapshot(this.selectedSnapshot)}
           ?noSpinner=${!!initialPath &&
-          isEqual(this.selectedSnapshot, this.collection?.thumbnailSource)}
+          !isEqual(this.selectedSnapshot, this.collection?.thumbnailSource)}
           @btrix-validate=${({
             detail: { valid },
           }: CustomEvent<BtrixValidateDetails>) => {
