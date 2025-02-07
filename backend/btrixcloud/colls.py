@@ -44,6 +44,7 @@ from .models import (
     CollAccessType,
     PageUrlCount,
     PageIdTimestamp,
+    PageOut,
     PaginatedPageUrlCountResponse,
     UpdateCollHomeUrl,
     User,
@@ -59,8 +60,9 @@ if TYPE_CHECKING:
     from .storages import StorageOps
     from .webhooks import EventWebhookOps
     from .crawls import CrawlOps
+    from .pages import PageOps
 else:
-    OrgOps = StorageOps = EventWebhookOps = CrawlOps = object
+    OrgOps = StorageOps = EventWebhookOps = CrawlOps = PageOps = object
 
 
 THUMBNAIL_MAX_SIZE = 2_000_000
@@ -76,6 +78,7 @@ class CollectionOps:
     storage_ops: StorageOps
     event_webhook_ops: EventWebhookOps
     crawl_ops: CrawlOps
+    page_ops: PageOps
 
     def __init__(self, mdb, storage_ops, orgs, event_webhook_ops):
         self.collections = mdb["collections"]
@@ -338,18 +341,24 @@ class CollectionOps:
     ) -> CollOut:
         """Get CollOut by id"""
         result = await self.get_collection_raw(coll_id, public_or_unlisted_only)
+        coll = CollOut.from_dict(result)
 
         if resources:
-            result["resources"] = await self.get_collection_crawl_resources(coll_id)
+            coll.resources = await self.get_collection_crawl_resources(coll_id)
+
+            pages, _ = await self.page_ops.list_collection_pages(
+                coll_id, is_seed=True, page_size=25
+            )
+            coll.pages = cast(List[PageOut], pages)
 
         thumbnail = result.get("thumbnail")
         if thumbnail:
             image_file = ImageFile(**thumbnail)
-            result["thumbnail"] = await image_file.get_image_file_out(
+            coll.thumbnail = await image_file.get_image_file_out(
                 org, self.storage_ops
             )
 
-        return CollOut.from_dict(result)
+        return coll
 
     async def get_public_collection_out(
         self,

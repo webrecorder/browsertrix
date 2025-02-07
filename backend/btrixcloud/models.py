@@ -1224,8 +1224,159 @@ class ImageFilePreparer(FilePreparer):
 
 # ============================================================================
 
-### COLLECTIONS ###
+### PAGES ###
 
+# ============================================================================
+class PageReviewUpdate(BaseModel):
+    """Update model for page manual review/approval"""
+
+    approved: Optional[bool] = None
+
+
+# ============================================================================
+class PageNoteIn(BaseModel):
+    """Input model for adding page notes"""
+
+    text: str
+
+
+# ============================================================================
+class PageNoteEdit(BaseModel):
+    """Input model for editing page notes"""
+
+    id: UUID
+    text: str
+
+
+# ============================================================================
+class PageNoteDelete(BaseModel):
+    """Delete model for page notes"""
+
+    delete_list: List[UUID] = []
+
+
+# ============================================================================
+class PageNote(BaseModel):
+    """Model for page notes, tracking user and time"""
+
+    id: UUID
+    text: str
+    created: datetime
+    userid: UUID
+    userName: str
+
+
+# ============================================================================
+class PageQACompare(BaseModel):
+    """Model for updating pages from QA run"""
+
+    screenshotMatch: Optional[float] = None
+    textMatch: Optional[float] = None
+    resourceCounts: Optional[Dict[str, int]] = None
+
+
+# ============================================================================
+class Page(BaseMongoModel):
+    """Core page data, no QA"""
+
+    id: UUID
+
+    oid: UUID
+    crawl_id: str
+
+    # core page data
+    url: AnyHttpUrl
+    title: Optional[str] = None
+    ts: Optional[datetime] = None
+    loadState: Optional[int] = None
+    status: Optional[int] = None
+    mime: Optional[str] = None
+    filename: Optional[str] = None
+    depth: Optional[int] = None
+    favIconUrl: Optional[AnyHttpUrl] = None
+    isSeed: Optional[bool] = False
+
+    # manual review
+    userid: Optional[UUID] = None
+    modified: Optional[datetime] = None
+    approved: Optional[bool] = None
+    notes: List[PageNote] = []
+
+    isFile: Optional[bool] = False
+    isError: Optional[bool] = False
+
+    def compute_page_type(self):
+        """sets self.isFile or self.isError flags"""
+        self.isFile = False
+        self.isError = False
+        if self.loadState == 2:
+            # pylint: disable=unsupported-membership-test
+            if self.mime and "html" not in self.mime:
+                self.isFile = True
+            elif self.title is None and self.status == 200:
+                self.isFile = True
+
+        elif self.loadState == 0:
+            self.isError = True
+
+
+# ============================================================================
+class PageWithAllQA(Page):
+    """Model for core page data + qa"""
+
+    # automated heuristics, keyed by QA run id
+    qa: Optional[Dict[str, PageQACompare]] = {}
+
+
+# ============================================================================
+class PageOut(Page):
+    """Model for pages output, no QA"""
+
+    status: int = 200
+
+
+# ============================================================================
+class PageOutWithSingleQA(Page):
+    """Page out with single QA entry"""
+
+    qa: Optional[PageQACompare] = None
+
+
+# ============================================================================
+class PageNoteAddedResponse(BaseModel):
+    """Model for response to adding page"""
+
+    added: bool
+    data: PageNote
+
+
+# ============================================================================
+class PageNoteUpdatedResponse(BaseModel):
+    """Model for response to updating page"""
+
+    updated: bool
+    data: PageNote
+
+
+# ============================================================================
+class PageIdTimestamp(BaseModel):
+    """Simplified model for page info to include in PageUrlCount"""
+
+    pageId: UUID
+    ts: Optional[datetime] = None
+    status: int = 200
+
+
+# ============================================================================
+class PageUrlCount(BaseModel):
+    """Model for counting pages by URL"""
+
+    url: AnyHttpUrl
+    count: int = 0
+    snapshots: List[PageIdTimestamp] = []
+# ============================================================================
+
+### COLLECTIONS ###
 
 # ============================================================================
 class CollAccessType(str, Enum):
@@ -1326,6 +1477,8 @@ class CollOut(BaseMongoModel):
     defaultThumbnailName: Optional[str] = None
 
     allowPublicDownload: bool = True
+
+    pages: List[PageOut] = []
 
 
 # ============================================================================
@@ -2421,161 +2574,6 @@ AnyJob = RootModel[
         ReAddOrgPagesJob,
     ]
 ]
-
-
-# ============================================================================
-
-### PAGES ###
-
-
-# ============================================================================
-class PageReviewUpdate(BaseModel):
-    """Update model for page manual review/approval"""
-
-    approved: Optional[bool] = None
-
-
-# ============================================================================
-class PageNoteIn(BaseModel):
-    """Input model for adding page notes"""
-
-    text: str
-
-
-# ============================================================================
-class PageNoteEdit(BaseModel):
-    """Input model for editing page notes"""
-
-    id: UUID
-    text: str
-
-
-# ============================================================================
-class PageNoteDelete(BaseModel):
-    """Delete model for page notes"""
-
-    delete_list: List[UUID] = []
-
-
-# ============================================================================
-class PageNote(BaseModel):
-    """Model for page notes, tracking user and time"""
-
-    id: UUID
-    text: str
-    created: datetime
-    userid: UUID
-    userName: str
-
-
-# ============================================================================
-class PageQACompare(BaseModel):
-    """Model for updating pages from QA run"""
-
-    screenshotMatch: Optional[float] = None
-    textMatch: Optional[float] = None
-    resourceCounts: Optional[Dict[str, int]] = None
-
-
-# ============================================================================
-class Page(BaseMongoModel):
-    """Core page data, no QA"""
-
-    id: UUID
-
-    oid: UUID
-    crawl_id: str
-
-    # core page data
-    url: AnyHttpUrl
-    title: Optional[str] = None
-    ts: Optional[datetime] = None
-    loadState: Optional[int] = None
-    status: Optional[int] = None
-    mime: Optional[str] = None
-    filename: Optional[str] = None
-    depth: Optional[int] = None
-    favIconUrl: Optional[AnyHttpUrl] = None
-    isSeed: Optional[bool] = False
-
-    # manual review
-    userid: Optional[UUID] = None
-    modified: Optional[datetime] = None
-    approved: Optional[bool] = None
-    notes: List[PageNote] = []
-
-    isFile: Optional[bool] = False
-    isError: Optional[bool] = False
-
-    def compute_page_type(self):
-        """sets self.isFile or self.isError flags"""
-        self.isFile = False
-        self.isError = False
-        if self.loadState == 2:
-            # pylint: disable=unsupported-membership-test
-            if self.mime and "html" not in self.mime:
-                self.isFile = True
-            elif self.title is None and self.status == 200:
-                self.isFile = True
-
-        elif self.loadState == 0:
-            self.isError = True
-
-
-# ============================================================================
-class PageWithAllQA(Page):
-    """Model for core page data + qa"""
-
-    # automated heuristics, keyed by QA run id
-    qa: Optional[Dict[str, PageQACompare]] = {}
-
-
-# ============================================================================
-class PageOut(Page):
-    """Model for pages output, no QA"""
-
-    status: int = 200
-
-
-# ============================================================================
-class PageOutWithSingleQA(Page):
-    """Page out with single QA entry"""
-
-    qa: Optional[PageQACompare] = None
-
-
-# ============================================================================
-class PageNoteAddedResponse(BaseModel):
-    """Model for response to adding page"""
-
-    added: bool
-    data: PageNote
-
-
-# ============================================================================
-class PageNoteUpdatedResponse(BaseModel):
-    """Model for response to updating page"""
-
-    updated: bool
-    data: PageNote
-
-
-# ============================================================================
-class PageIdTimestamp(BaseModel):
-    """Simplified model for page info to include in PageUrlCount"""
-
-    pageId: UUID
-    ts: Optional[datetime] = None
-    status: int = 200
-
-
-# ============================================================================
-class PageUrlCount(BaseModel):
-    """Model for counting pages by URL"""
-
-    url: AnyHttpUrl
-    count: int = 0
-    snapshots: List[PageIdTimestamp] = []
 
 
 # ============================================================================
