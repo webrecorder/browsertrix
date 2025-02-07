@@ -11,11 +11,11 @@ Collections are the primary way of organizing and combining archived items into 
 !!! tip "Tip: Combining items from multiple sources"
     If the crawler has not captured every resource or interaction on a webpage, our [ArchiveWeb.page browser extension](https://webrecorder.net/archivewebpage) can be used to manually capture missing content and upload it directly to your org.
 
-    After adding the crawl and the upload to a collection, the content from both will become available in the replay viewer.
+    After adding crawls and uploads to a collection, content from both will become available in the replay viewer.
 
 Crawls and uploads can be added to a collection after creation by selecting _Select Archived Items_ from the collection's actions menu.
 
-A crawl workflow can also be set to [automatically add any completed archived items to a collection](workflow-setup.md#collection-auto-add) in the workflow's settings.
+A crawl workflow can also be set to [automatically add any completed crawls to a collection](workflow-setup.md#collection-auto-add) in the workflow's settings.
 
 ## Downloading Collections
 
