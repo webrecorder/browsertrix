@@ -343,24 +343,23 @@ class CollectionOps:
     ) -> CollOut:
         """Get CollOut by id"""
         result = await self.get_collection_raw(coll_id, public_or_unlisted_only)
-        coll = CollOut.from_dict(result)
 
         if resources:
-            coll.resources = await self.get_collection_crawl_resources(coll_id)
+            result["resources"] = await self.get_collection_crawl_resources(coll_id)
 
             pages, _ = await self.page_ops.list_collection_pages(
                 coll_id, is_seed=True, page_size=25
             )
-            coll.pages = cast(List[PageOut], pages)
+            result["pages"] = pages
 
         thumbnail = result.get("thumbnail")
         if thumbnail:
             image_file = ImageFile(**thumbnail)
-            coll.thumbnail = await image_file.get_image_file_out(
+            result["thumbnail"] = await image_file.get_image_file_out(
                 org, self.storage_ops
             )
 
-        return coll
+        return CollOut.from_dict(result)
 
     async def get_public_collection_out(
         self,
