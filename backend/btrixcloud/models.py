@@ -1226,6 +1226,7 @@ class ImageFilePreparer(FilePreparer):
 
 ### PAGES ###
 
+
 # ============================================================================
 class PageReviewUpdate(BaseModel):
     """Update model for page manual review/approval"""
@@ -1374,9 +1375,12 @@ class PageUrlCount(BaseModel):
     url: AnyHttpUrl
     count: int = 0
     snapshots: List[PageIdTimestamp] = []
+
+
 # ============================================================================
 
 ### COLLECTIONS ###
+
 
 # ============================================================================
 class CollAccessType(str, Enum):
