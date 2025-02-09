@@ -1494,6 +1494,7 @@ class CollOut(BaseMongoModel):
     allowPublicDownload: bool = True
 
     pages: List[PageOut] = []
+    pagesQuery: str = ""
 
 
 # ============================================================================
