@@ -351,8 +351,10 @@ class CollectionOps:
                 coll_id, is_seed=True, page_size=25
             )
             result["pages"] = pages
+            public = "public/" if public_or_unlisted_only else ""
             result["pagesQuery"] = (
-                get_origin(headers) + f"/api/orgs/{org.id}/collections/{coll_id}/pages"
+                get_origin(headers)
+                + f"/api/orgs/{org.id}/collections/{coll_id}/{public}pages"
             )
 
         thumbnail = result.get("thumbnail")
@@ -539,9 +541,17 @@ class CollectionOps:
         names = [name for name in names if name]
         return {"names": names}
 
-    async def get_collection_crawl_ids(self, coll_id: UUID) -> List[str]:
-        """Return list of crawl ids in collection"""
+    async def get_collection_crawl_ids(
+        self, coll_id: UUID, public_or_unlisted_only=False
+    ) -> List[str]:
+        """Return list of crawl ids in collection, including only public collections"""
         crawl_ids = []
+        if public_or_unlisted_only:
+            try:
+                await self.get_collection_raw(coll_id, public_or_unlisted_only)
+            except HTTPException:
+                return []
+
         async for crawl_raw in self.crawls.find(
             {"collectionIds": coll_id}, projection=["_id"]
         ):

@@ -670,6 +670,7 @@ class PageOps:
         page: int = 1,
         sort_by: Optional[str] = None,
         sort_direction: Optional[int] = -1,
+        public_or_unlisted_only=False,
     ) -> Tuple[Union[List[PageOut], List[PageOutWithSingleQA]], int]:
         """List all pages in collection, with optional filtering"""
         # pylint: disable=duplicate-code, too-many-locals, too-many-branches, too-many-statements
@@ -677,7 +678,9 @@ class PageOps:
         page = page - 1
         skip = page_size * page
 
-        crawl_ids = await self.coll_ops.get_collection_crawl_ids(coll_id)
+        crawl_ids = await self.coll_ops.get_collection_crawl_ids(
+            coll_id, public_or_unlisted_only
+        )
 
         query: dict[str, object] = {
             "crawl_id": {"$in": crawl_ids},
@@ -886,6 +889,7 @@ def init_pages_api(
 
     org_viewer_dep = org_ops.org_viewer_dep
     org_crawl_dep = org_ops.org_crawl_dep
+    org_public = org_ops.org_public
 
     @app.post(
         "/orgs/{oid}/crawls/all/pages/reAdd",
@@ -1089,6 +1093,41 @@ def init_pages_api(
             page=page,
             sort_by=sortBy,
             sort_direction=sortDirection,
+        )
+        return paginated_format(pages, total, page, pageSize)
+
+    @app.get(
+        "/orgs/{oid}/collections/{coll_id}/public/pages",
+        tags=["pages", "collections"],
+        response_model=PaginatedPageOutResponse,
+    )
+    async def get_public_collection_pages_list(
+        coll_id: UUID,
+        org: Organization = Depends(org_public),
+        url: Optional[str] = None,
+        urlPrefix: Optional[str] = None,
+        ts: Optional[datetime] = None,
+        isSeed: Optional[bool] = None,
+        depth: Optional[int] = None,
+        pageSize: int = DEFAULT_PAGE_SIZE,
+        page: int = 1,
+        sortBy: Optional[str] = None,
+        sortDirection: Optional[int] = -1,
+    ):
+        """Retrieve paginated list of pages in collection"""
+        pages, total = await ops.list_collection_pages(
+            coll_id=coll_id,
+            org=org,
+            url=url,
+            url_prefix=urlPrefix,
+            ts=ts,
+            is_seed=isSeed,
+            depth=depth,
+            page_size=pageSize,
+            page=page,
+            sort_by=sortBy,
+            sort_direction=sortDirection,
+            public_or_unlisted_only=True,
         )
         return paginated_format(pages, total, page, pageSize)
 
