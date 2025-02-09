@@ -84,6 +84,10 @@ def test_create_collection(
     assert data["pageCount"] > 0
     assert data["uniquePageCount"] > 0
     assert data["totalSize"] > 0
+    assert (
+        data["pagesQuery"]
+        == f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/pages"
+    )
     modified = data["modified"]
     assert modified
     assert modified.endswith("Z")
@@ -412,6 +416,10 @@ def test_collection_public(crawler_auth_headers, default_org_id):
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/public/replay.json",
         headers=crawler_auth_headers,
+    )
+    assert (
+        r.json()["pagesQuery"]
+        == f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/public/pages"
     )
     assert r.status_code == 200
     assert r.headers["Access-Control-Allow-Origin"] == "*"
