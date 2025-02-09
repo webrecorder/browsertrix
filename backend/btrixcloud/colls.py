@@ -46,7 +46,6 @@ from .models import (
     CollAccessType,
     PageUrlCount,
     PageIdTimestamp,
-    PageOut,
     PaginatedPageUrlCountResponse,
     UpdateCollHomeUrl,
     User,
@@ -55,7 +54,7 @@ from .models import (
     MIN_UPLOAD_PART_SIZE,
     PublicCollOut,
 )
-from .utils import dt_now, slug_from_name, get_duplicate_key_error_field
+from .utils import dt_now, slug_from_name, get_duplicate_key_error_field, get_origin
 
 if TYPE_CHECKING:
     from .orgs import OrgOps
@@ -340,6 +339,7 @@ class CollectionOps:
         org: Organization,
         resources=False,
         public_or_unlisted_only=False,
+        headers: Optional[dict] = None,
     ) -> CollOut:
         """Get CollOut by id"""
         result = await self.get_collection_raw(coll_id, public_or_unlisted_only)
@@ -351,6 +351,9 @@ class CollectionOps:
                 coll_id, is_seed=True, page_size=25
             )
             result["pages"] = pages
+            result["pagesQuery"] = (
+                get_origin(headers) + f"/api/orgs/{org.id}/collections/{coll_id}/pages"
+            )
 
         thumbnail = result.get("thumbnail")
         if thumbnail:
@@ -1055,9 +1058,11 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops, user_de
         response_model=CollOut,
     )
     async def get_collection_replay(
-        coll_id: UUID, org: Organization = Depends(org_viewer_dep)
+        request: Request, coll_id: UUID, org: Organization = Depends(org_viewer_dep)
     ):
-        return await colls.get_collection_out(coll_id, org, resources=True)
+        return await colls.get_collection_out(
+            coll_id, org, resources=True, headers=dict(request.headers)
+        )
 
     @app.get(
         "/orgs/{oid}/collections/{coll_id}/public/replay.json",
@@ -1065,12 +1070,17 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops, user_de
         response_model=CollOut,
     )
     async def get_collection_public_replay(
+        request: Request,
         response: Response,
         coll_id: UUID,
         org: Organization = Depends(org_public),
     ):
         coll = await colls.get_collection_out(
-            coll_id, org, resources=True, public_or_unlisted_only=True
+            coll_id,
+            org,
+            resources=True,
+            public_or_unlisted_only=True,
+            headers=dict(request.headers),
         )
         response.headers["Access-Control-Allow-Origin"] = "*"
         response.headers["Access-Control-Allow-Headers"] = "*"
