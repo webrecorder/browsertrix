@@ -174,7 +174,7 @@ export class ConfigDetails extends BtrixElement {
             ),
           )}
           ${this.renderSetting(
-            msg("Auto-Scroll Behavior"),
+            msg("Autoscroll Behavior"),
             crawlConfig?.config.behaviors &&
               !crawlConfig.config.behaviors.includes("autoscroll")
               ? msg("Disabled")
