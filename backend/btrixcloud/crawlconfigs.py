@@ -282,7 +282,7 @@ class CrawlConfigOps:
         )
 
     def ensure_quota_page_limit(self, crawlconfig: CrawlConfig, org: Organization):
-        """ensure page limit is set to smaller or existing limit or quota limit"""
+        """ensure page limit is set to no greater than quota page limit, if any"""
         if org.quotas.maxPagesPerCrawl and org.quotas.maxPagesPerCrawl > 0:
             if crawlconfig.config.limit and crawlconfig.config.limit > 0:
                 crawlconfig.config.limit = min(
