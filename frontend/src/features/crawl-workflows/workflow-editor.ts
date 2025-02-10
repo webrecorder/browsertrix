@@ -280,7 +280,9 @@ export class WorkflowEditor extends BtrixElement {
   connectedCallback(): void {
     this.initializeEditor();
     super.connectedCallback();
-    void this.fetchServerDefaults();
+
+    void this.fetchOrgDefaults();
+    void this.fetchTags();
 
     window.addEventListener("hashchange", () => {
       const hashValue = window.location.hash.slice(1);
@@ -350,15 +352,6 @@ export class WorkflowEditor extends BtrixElement {
         "sl-input, sl-textarea, sl-select, sl-radio-group",
       )
       ?.focus();
-
-    if (this.orgId) {
-      void this.fetchTags();
-      void this.fetchOrgQuotaDefaults();
-    }
-  }
-
-  private async fetchServerDefaults() {
-    this.defaults = await getServerDefaults();
   }
 
   private initializeEditor() {
@@ -2278,18 +2271,28 @@ https://archiveweb.page/images/${"logo.svg"}`}
     }
   }
 
-  private async fetchOrgQuotaDefaults() {
+  private async fetchOrgDefaults() {
     try {
-      const data = await this.api.fetch<{
-        quotas: { maxPagesPerCrawl?: number };
-      }>(`/orgs/${this.orgId}`);
-      const orgDefaults = {
+      const [serverDefaults, { quotas }] = await Promise.all([
+        getServerDefaults(),
+        this.api.fetch<{
+          quotas: { maxPagesPerCrawl?: number };
+        }>(`/orgs/${this.orgId}`),
+      ]);
+
+      const defaults = {
         ...this.defaults,
+        ...serverDefaults,
       };
-      if (data.quotas.maxPagesPerCrawl && data.quotas.maxPagesPerCrawl > 0) {
-        orgDefaults.maxPagesPerCrawl = data.quotas.maxPagesPerCrawl;
+
+      if (defaults.maxPagesPerCrawl && quotas.maxPagesPerCrawl) {
+        defaults.maxPagesPerCrawl = Math.min(
+          defaults.maxPagesPerCrawl,
+          quotas.maxPagesPerCrawl,
+        );
       }
-      this.defaults = orgDefaults;
+
+      this.defaults = defaults;
     } catch (e) {
       console.debug(e);
     }
