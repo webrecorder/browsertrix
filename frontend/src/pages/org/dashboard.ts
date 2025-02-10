@@ -130,18 +130,6 @@ export class Dashboard extends BtrixElement {
           })}
         `,
         actions: html`
-          <sl-tooltip
-            content=${this.org?.enablePublicProfile
-              ? msg("Visit Public Collections Gallery")
-              : msg("Preview Public Collections Gallery")}
-          >
-            <sl-icon-button
-              href=${`/${RouteNamespace.PublicOrgs}/${this.orgSlugState}`}
-              class="size-8 text-base"
-              name="globe2"
-              @click=${this.navigate.link}
-            ></sl-icon-button>
-          </sl-tooltip>
           ${when(
             this.appState.isAdmin,
             () =>
@@ -345,10 +333,10 @@ export class Dashboard extends BtrixElement {
             ${pageHeading({
               content: msg("Public Collections"),
             })}
-            ${when(
-              this.appState.isCrawler,
-              () => html`
-                <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2">
+              ${when(
+                this.appState.isCrawler,
+                () => html`
                   <!-- TODO Refactor clipboard code, get URL in a nicer way? -->
                   ${when(this.org, (org) =>
                     org.enablePublicProfile
@@ -369,9 +357,21 @@ export class Dashboard extends BtrixElement {
                       @click=${this.navigate.link}
                     ></sl-icon-button>
                   </sl-tooltip>
-                </div>
-              `,
-            )}
+                `,
+              )}
+              <sl-tooltip
+                content=${this.org?.enablePublicProfile
+                  ? msg("Visit Public Collections Gallery")
+                  : msg("Preview Public Collections Gallery")}
+              >
+                <sl-icon-button
+                  href=${`/${RouteNamespace.PublicOrgs}/${this.orgSlugState}`}
+                  class="size-8 text-base"
+                  name="globe2"
+                  @click=${this.navigate.link}
+                ></sl-icon-button>
+              </sl-tooltip>
+            </div>
           </header>
           <div class="rounded-lg border p-10">
             <btrix-collections-grid
