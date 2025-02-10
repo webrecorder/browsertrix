@@ -118,6 +118,9 @@ export class CollectionsGrid extends BtrixElement {
           `,
         )}
       </ul>
+      <div class="mt-10 flex justify-center">
+        <slot name="pagination"></slot>
+      </div>
       ${when(
         showActions,
         () =>
