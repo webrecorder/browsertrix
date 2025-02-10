@@ -499,7 +499,7 @@ export class CollectionDetail extends BtrixElement {
                 await this.updateComplete;
               }
 
-              this.openDialogName = "replaySettings";
+              this.openDialogName = "edit";
             }}
             ?disabled=${!this.collection?.crawlCount}
           >
