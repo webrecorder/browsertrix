@@ -12,7 +12,7 @@ import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { Crawl } from "@/types/crawler";
 import type { CrawlState } from "@/types/crawlState";
-import { activeCrawlStates } from "@/utils/crawler";
+import { activeCrawlStates, isActive } from "@/utils/crawler";
 
 type SortField = "started" | "firstSeed" | "fileSize";
 type SortDirection = "asc" | "desc";
@@ -68,22 +68,28 @@ export class Crawls extends BtrixElement {
   // Use to cancel requests
   private getCrawlsController: AbortController | null = null;
 
-  protected async willUpdate(
+  protected willUpdate(
     changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {
     if (changedProperties.has("crawlId") && this.crawlId) {
       // Redirect to org crawl page
-      await this.fetchWorkflowId();
-      const slug = this.slugLookup[this.crawl!.oid];
-      this.navigate.to(
-        `/orgs/${slug}/workflows/${this.crawl?.cid}/crawls/${this.crawlId}`,
-      );
+      void this.fetchWorkflowId();
     } else {
       if (
         changedProperties.has("filterBy") ||
         changedProperties.has("orderBy")
       ) {
         void this.fetchCrawls();
+      }
+    }
+    if (changedProperties.has("crawl") && this.crawl) {
+      const slug = this.slugLookup[this.crawl.oid];
+      if (isActive(this.crawl)) {
+        this.navigate.to(`/orgs/${slug}/workflows/${this.crawl.cid}#cid`);
+      } else {
+        this.navigate.to(
+          `/orgs/${slug}/workflows/${this.crawl.cid}/crawls/${this.crawlId}`,
+        );
       }
     }
   }
