@@ -1,4 +1,4 @@
-# Change Org Settings
+# Edit Org Settings
 
 Settings that apply to the entire organization are found in the **Settings** page. If you're an org admin, you'll see the link to _Settings_ in the org navigation bar.
 

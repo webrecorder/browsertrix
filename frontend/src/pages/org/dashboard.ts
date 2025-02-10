@@ -133,7 +133,7 @@ export class Dashboard extends BtrixElement {
           ${when(
             this.appState.isAdmin,
             () =>
-              html`<sl-tooltip content=${msg("Change Org Settings")}>
+              html`<sl-tooltip content=${msg("Edit Org Settings")}>
                 <sl-icon-button
                   href=${`${this.navigate.orgBasePath}/settings`}
                   class="size-8 text-base"
