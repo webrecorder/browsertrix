@@ -462,17 +462,17 @@ export class CollectionDetail extends BtrixElement {
     const authToken = this.authState?.headers.Authorization.split(" ")[1];
 
     return html`
-      <sl-button
-        size="small"
-        variant="primary"
-        @click=${() => {
-          this.openDialogName = "edit";
-          this.editTab = "general";
-        }}
-      >
-        <sl-icon slot="prefix" name="gear"></sl-icon>
-        ${msg("Collection Settings")}
-      </sl-button>
+      <sl-tooltip content=${msg("Edit Collection Settings")}>
+        <sl-icon-button
+          name="gear"
+          @click=${() => {
+            this.openDialogName = "edit";
+            this.editTab = "general";
+          }}
+        >
+          <sl-icon slot="prefix"></sl-icon>
+        </sl-icon-button>
+      </sl-tooltip>
       <sl-dropdown distance="4">
         <sl-button slot="trigger" size="small" caret
           >${msg("Actions")}</sl-button
