@@ -283,14 +283,14 @@ export class Crawls extends BtrixElement {
   }
 
   private readonly renderCrawlItem = (crawl: Crawl) => {
-    const crawlPath = `/orgs/${this.slugLookup[crawl.oid]}/workflows/${crawl.cid}/crawls/${
-      crawl.id
-    }`;
+    const crawlPath = `/orgs/${this.slugLookup[crawl.oid]}/workflows/${crawl.cid}`;
     return html`
-      <btrix-crawl-list-item href=${crawlPath} .crawl=${crawl}>
+      <btrix-crawl-list-item href=${`${crawlPath}#watch`} .crawl=${crawl}>
         <sl-menu slot="menu">
-          <sl-menu-item @click=${() => this.navigate.to(`${crawlPath}#config`)}>
-            ${msg("View Crawl Settings")}
+          <sl-menu-item
+            @click=${() => this.navigate.to(`${crawlPath}#settings`)}
+          >
+            ${msg("View Workflow Settings")}
           </sl-menu-item>
         </sl-menu>
       </btrix-crawl-list-item>

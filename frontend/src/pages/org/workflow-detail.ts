@@ -918,7 +918,11 @@ export class WorkflowDetail extends BtrixElement {
               this.crawls!.items.map(
                 (crawl: Crawl) =>
                   html` <btrix-crawl-list-item
-                    href=${`${this.navigate.orgBasePath}/workflows/${this.workflowId}/crawls/${crawl.id}`}
+                    href=${ifDefined(
+                      isActive(crawl)
+                        ? undefined
+                        : `${this.navigate.orgBasePath}/workflows/${this.workflowId}/crawls/${crawl.id}`,
+                    )}
                     .crawl=${crawl}
                   >
                     ${when(
