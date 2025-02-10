@@ -19,4 +19,4 @@ A crawl workflow can also be set to [automatically add any completed crawls to a
 
 ## Downloading Collections
 
-Downloading a collection will export every archived item within it as a single WACZ file. To download a collection, use the _Download Collection_ option under the collection's _Actions_ dropdown.
+Downloading a collection will export every archived item in it as a single WACZ file. To download a collection, use the _Download Collection_ option under the collection's _Actions_ dropdown.
