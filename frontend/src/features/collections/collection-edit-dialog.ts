@@ -173,6 +173,7 @@ export class CollectionEdit extends BtrixElement {
 
   private onReset() {
     void this.hideDialog();
+    void this.thumbnailSelector?.resetFormState();
     this.dirty = false;
     this.errorTab = null;
     this.blobIsLoaded = false;

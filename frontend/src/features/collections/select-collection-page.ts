@@ -108,6 +108,11 @@ export class SelectCollectionPage extends BtrixElement {
     }
   }
 
+  public async resetFormState() {
+    if (!this.collection) return;
+    await this.initSelection(this.collection);
+  }
+
   updated(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("selectedSnapshot")) {
       this.dispatchEvent(
