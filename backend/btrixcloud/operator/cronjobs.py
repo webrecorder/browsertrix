@@ -112,6 +112,7 @@ class CronJobOperator(BaseOperator):
                 crawl_id,
                 crawlconfig,
                 user,
+                org,
                 manual=False,
             )
             print("Scheduled Crawl Created: " + crawl_id)
