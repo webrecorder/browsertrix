@@ -42,10 +42,6 @@ import { tw } from "@/utils/tailwind";
 const ABORT_REASON_THROTTLE = "throttled";
 const INITIAL_ITEMS_PAGE_SIZE = 20;
 
-export type EditCollectionDetail = {
-  tab?: EditDialogTab;
-};
-
 export enum Tab {
   Replay = "replay",
   About = "about",
@@ -218,13 +214,6 @@ export class CollectionDetail extends BtrixElement {
             @btrix-change=${(e: CustomEvent) => {
               e.stopPropagation();
               void this.fetchCollection();
-            }}
-            @btrix-edit-collection=${async (
-              e: CustomEvent<EditCollectionDetail>,
-            ) => {
-              this.editTab = e.detail.tab;
-              await this.updateComplete;
-              this.openDialogName = "edit";
             }}
           ></btrix-share-collection>
           ${when(this.isCrawler, this.renderActions)}

@@ -7,7 +7,6 @@ import { collectionShareLink } from "./helpers/share-link";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { ClipboardController } from "@/controllers/clipboard";
-import { type EditCollectionDetail } from "@/pages/org/collection-detail";
 import { AnalyticsTrackEvent } from "@/trackEvents";
 import {
   CollectionAccess,
@@ -18,7 +17,6 @@ import { track } from "@/utils/analytics";
 
 /**
  * @fires btrix-change
- * @fires btrix-edit-collection {EditCollectionDetail}
  */
 @localized()
 @customElement("btrix-share-collection")
@@ -64,33 +62,9 @@ export class ShareCollection extends BtrixElement {
   }
 
   private renderButton() {
-    if (!this.collection) {
-      return html`
-        <sl-skeleton
-          effect="pulse"
-          class="h-[var(--sl-input-height-small)] w-20 [--border-radius:var(--sl-input-border-radius-small)]"
-        ></sl-skeleton>
-      `;
-    }
+    if (!this.collection) return;
 
-    if (this.collection.access === CollectionAccess.Private) {
-      return html`
-        <sl-button
-          variant=${this.collection.crawlCount ? "primary" : "default"}
-          size="small"
-          @click=${() => {
-            this.dispatchEvent(
-              new CustomEvent<EditCollectionDetail>("btrix-edit-collection", {
-                detail: { tab: "sharing" },
-              }),
-            );
-          }}
-        >
-          <sl-icon name="box-arrow-up" slot="prefix"></sl-icon>
-          ${msg("Share")}
-        </sl-button>
-      `;
-    }
+    if (this.collection.access === CollectionAccess.Private) return;
 
     return html`
       <div class="flex items-center gap-2">
