@@ -493,7 +493,40 @@ export class CollectionDetail extends BtrixElement {
             ?disabled=${!this.collection?.crawlCount}
           >
             <sl-icon name="gear" slot="prefix"></sl-icon>
-            ${msg("Collection Settings")}
+            ${msg("Edit Collection Settings")}
+          </sl-menu-item>
+          <sl-tooltip
+            content=${this.collection?.crawlCount
+              ? msg("Choose what page viewers see first in replay")
+              : msg("Add items to select a home page")}
+            ?disabled=${Boolean(this.collection?.crawlCount)}
+          >
+            <sl-menu-item
+              @click=${() => {
+                this.openDialogName = "replaySettings";
+              }}
+              ?disabled=${!this.collection?.crawlCount || !this.isRwpLoaded}
+            >
+              ${!this.collection ||
+              Boolean(this.collection.crawlCount && !this.isRwpLoaded)
+                ? html`<sl-spinner slot="prefix"></sl-spinner>`
+                : html`<sl-icon name="house-fill" slot="prefix"></sl-icon>`}
+              ${msg("Set Initial View")}
+            </sl-menu-item>
+          </sl-tooltip>
+          <sl-menu-item
+            @click=${async () => {
+              this.navigate.to(
+                `${this.navigate.orgBasePath}/collections/view/${this.collectionId}/${Tab.About}`,
+              );
+              this.isEditingDescription = true;
+              await this.updateComplete;
+              await this.descriptionEditor?.updateComplete;
+              void this.descriptionEditor?.focus();
+            }}
+          >
+            <sl-icon name="pencil" slot="prefix"></sl-icon>
+            ${msg("Edit Description")}
           </sl-menu-item>
           <sl-menu-item @click=${() => (this.openDialogName = "editItems")}>
             <sl-icon name="ui-checks" slot="prefix"></sl-icon>
