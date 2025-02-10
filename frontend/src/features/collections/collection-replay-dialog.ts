@@ -298,7 +298,8 @@ export class CollectionStartPageDialog extends BtrixElement {
         homeView === HomeView.URL &&
         useThumbnail === "on" &&
         this.selectedSnapshot &&
-        this.collection?.homeUrlPageId !== this.selectedSnapshot.pageId;
+        this.collection?.thumbnailSource?.urlPageId !==
+          this.selectedSnapshot.pageId;
       // TODO get filename from rwp?
       const fileName = `page-thumbnail_${this.selectedSnapshot?.pageId}.jpeg`;
       let file: File | undefined;
@@ -325,12 +326,22 @@ export class CollectionStartPageDialog extends BtrixElement {
 
       if (shouldUpload) {
         try {
-          if (!file || !fileName) throw new Error("file or fileName missing");
-          await this.api.upload(
-            `/orgs/${this.orgId}/collections/${this.collectionId}/thumbnail?filename=${fileName}`,
-            file,
-          );
-          await this.updateThumbnail({ defaultThumbnailName: null });
+          if (!file || !fileName || !this.selectedSnapshot)
+            throw new Error("file or fileName missing");
+          const searchParams = new URLSearchParams({
+            filename: fileName,
+            sourceUrl: this.selectedSnapshot.url,
+            sourceTs: this.selectedSnapshot.ts,
+            sourcePageId: this.selectedSnapshot.pageId,
+          });
+          const tasks = [
+            this.api.upload(
+              `/orgs/${this.orgId}/collections/${this.collectionId}/thumbnail?${searchParams.toString()}`,
+              file,
+            ),
+            this.updateThumbnail({ defaultThumbnailName: null }),
+          ];
+          await Promise.all(tasks);
 
           this.notify.toast({
             message: msg("Home view and collection thumbnail updated."),
