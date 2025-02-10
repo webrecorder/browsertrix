@@ -119,7 +119,7 @@ export class OrgSettingsGeneral extends BtrixElement {
                       ${this.org?.enablePublicProfile
                         ? html`
                             <li>
-                              ${msg("Public gallery")}:
+                              ${msg("Public collections gallery")}:
                               <span class="break-word text-blue-500">
                                 /${RouteNamespace.PublicOrgs}/<strong
                                   class="font-medium"
@@ -158,7 +158,7 @@ export class OrgSettingsGeneral extends BtrixElement {
                 href=${`/${RouteNamespace.PublicOrgs}/${this.orgSlugState}`}
                 target="_blank"
               >
-                ${msg("View public gallery")}
+                ${msg("View public collections gallery")}
               </btrix-link>
             `,
           )}
@@ -183,7 +183,7 @@ export class OrgSettingsGeneral extends BtrixElement {
 
     return html`
       <btrix-section-heading class="[--margin:var(--sl-spacing-medium)]">
-        ${msg("Public Gallery")}
+        ${msg("Public Collections Gallery")}
       </btrix-section-heading>
       ${columns([
         [
@@ -199,7 +199,11 @@ export class OrgSettingsGeneral extends BtrixElement {
                 ${msg("Enable public collections gallery")}
               </sl-switch>
             </div>
-            <btrix-copy-field value=${publicGalleryUrl} .monostyle=${false}>
+            <btrix-copy-field
+              aria-label=${msg("Public collections gallery URL")}
+              value=${publicGalleryUrl}
+              .monostyle=${false}
+            >
               <sl-tooltip slot="prefix" content=${msg("Open in New Tab")} hoist>
                 <sl-icon-button
                   href=${publicGalleryUrl}
@@ -221,7 +225,7 @@ export class OrgSettingsGeneral extends BtrixElement {
               class="with-max-help-text mt-5"
               name="publicDescription"
               size="small"
-              label=${msg("Public Gallery Description")}
+              label=${msg("Description")}
               autocomplete="off"
               value=${this.org?.publicDescription || ""}
               minlength="2"
@@ -244,9 +248,7 @@ export class OrgSettingsGeneral extends BtrixElement {
               value=${this.org?.publicUrl || ""}
             ></btrix-url-input>
           `,
-          msg(
-            "Link to your organization's (or your personal) website in the public gallery.",
-          ),
+          msg("Link to your organization's (or your personal) website."),
         ],
       ])}
     `;
