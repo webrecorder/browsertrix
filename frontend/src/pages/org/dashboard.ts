@@ -345,7 +345,9 @@ export class Dashboard extends BtrixElement {
                             `/${RouteNamespace.PublicOrgs}/${this.orgSlugState}`,
                             window.location.toString(),
                           ).toString()}
-                          content=${msg("Copy Link to Public Gallery")}
+                          content=${msg(
+                            "Copy Link to Public Collections Gallery",
+                          )}
                         ></btrix-copy-button>`
                       : nothing,
                   )}
