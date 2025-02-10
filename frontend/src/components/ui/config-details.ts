@@ -183,6 +183,15 @@ export class ConfigDetails extends BtrixElement {
                 >`,
           )}
           ${this.renderSetting(
+            msg("Autoclick Behavior"),
+            crawlConfig?.config.behaviors &&
+              crawlConfig.config.behaviors.includes("autoclick")
+              ? msg("Enabled")
+              : html`<span class="text-neutral-400"
+                  >${msg("Disabled (default)")}</span
+                >`,
+          )}
+          ${this.renderSetting(
             msg("Delay Before Next Page"),
             renderTimeLimit(crawlConfig?.config.pageExtraDelay, 0),
           )}
