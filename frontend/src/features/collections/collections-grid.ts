@@ -135,18 +135,17 @@ export class CollectionsGrid extends BtrixElement {
   private readonly renderActions = (collection: PublicCollection) => html`
     <div class="pointer-events-none absolute left-0 right-0 top-0 aspect-video">
       <div class="pointer-events-auto absolute bottom-2 right-2">
-        <btrix-button
-          raised
-          size="small"
-          @click=${() => {
-            this.collectionBeingEdited = collection.id;
-          }}
-        >
-          <sl-icon
-            label=${msg("Edit Collection Settings")}
-            name="pencil"
-          ></sl-icon>
-        </btrix-button>
+        <sl-tooltip content=${msg("Edit Collection Settings")}>
+          <btrix-button
+            raised
+            size="small"
+            @click=${() => {
+              this.collectionBeingEdited = collection.id;
+            }}
+          >
+            <sl-icon name="pencil"></sl-icon>
+          </btrix-button>
+        </sl-tooltip>
       </div>
     </div>
   `;

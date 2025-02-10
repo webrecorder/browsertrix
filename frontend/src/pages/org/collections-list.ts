@@ -583,7 +583,7 @@ export class CollectionsList extends BtrixElement {
         <sl-menu>
           <sl-menu-item @click=${() => void this.manageCollection(col, "edit")}>
             <sl-icon name="gear" slot="prefix"></sl-icon>
-            ${msg("Collection Settings")}
+            ${msg("Edit Collection Settings")}
           </sl-menu-item>
           <sl-divider></sl-divider>
           ${col.access === CollectionAccess.Public ||
