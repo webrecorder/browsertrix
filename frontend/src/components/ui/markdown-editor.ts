@@ -183,7 +183,6 @@ export class MarkdownEditor extends BtrixElement {
               detail: {
                 value: doc,
               },
-              bubbles: true,
             }),
           );
         },

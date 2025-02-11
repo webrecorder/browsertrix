@@ -256,6 +256,13 @@ export class SelectCollectionPage extends BtrixElement {
     return html`
       <btrix-combobox
         @request-close=${() => {
+          // Because there are situations where the input might be blurred and
+          // then immediate refocused (e.g. clicking on the thumbnail preview in
+          // the collection settings dialog), a delay here prevents issues from
+          // the order of events being wrong — for some reason sometimes the
+          // blur event occurs after the focus event. This also prevents the
+          // combobox from disappearing and then appearing again, instead it
+          // just stays open.
           this.timer = setTimeout(() => {
             this.combobox?.hide();
           }, 150);
