@@ -82,6 +82,9 @@ export class SelectCollectionPage extends BtrixElement {
   @query("#pageUrlInput")
   readonly input?: SlInput | null;
 
+  // not actually a nodejs timeout, but since node types are install this is what typescript likes
+  timer?: NodeJS.Timeout;
+
   private get url() {
     return this.mode === "homepage"
       ? this.collection?.homeUrl
@@ -252,7 +255,9 @@ export class SelectCollectionPage extends BtrixElement {
     return html`
       <btrix-combobox
         @request-close=${() => {
-          this.combobox?.hide();
+          this.timer = setTimeout(() => {
+            this.combobox?.hide();
+          }, 150);
         }}
       >
         <sl-input
@@ -261,7 +266,8 @@ export class SelectCollectionPage extends BtrixElement {
           placeholder=${msg("Start typing a URL...")}
           ?clearable=${this.collection && this.collection.pageCount > 1}
           autocomplete="off"
-          @sl-focus=${() => {
+          @sl-focus=${async () => {
+            if (this.timer) clearTimeout(this.timer);
             this.resetInputValidity();
             this.combobox?.show();
           }}
