@@ -1065,7 +1065,7 @@ def test_upload_collection_thumbnail(crawler_auth_headers, default_org_id):
     assert thumbnailSource["urlTs"]
     assert thumbnailSource["urlPageId"]
 
-    assert thumbnailSource["url"] == "https://example.com"
+    assert thumbnailSource["url"] == "https://example.com/"
     assert thumbnailSource["urlTs"] == "2024-08-16T08:00:21.601000Z"
     assert thumbnailSource["urlPageId"] == "1bba4aba-d5be-4943-ad48-d6710633d754"
 
