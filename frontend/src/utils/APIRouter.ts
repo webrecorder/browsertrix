@@ -17,7 +17,7 @@ export type ViewState = {
   // params from URL (:) or query (?)
   // e.g. "/users/:id"
   // e.g. "/redirect?url"
-  params: { slug?: string } & { [key: string]: string };
+  params: { [key: string]: string };
   // arbitrary data to pass between routes
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data?: { [key: string]: any };

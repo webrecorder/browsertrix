@@ -125,6 +125,7 @@ export class ShareCollection extends BtrixElement {
                 track(AnalyticsTrackEvent.CopyShareCollectionLink, {
                   org_slug: this.orgSlug,
                   collection_slug: this.collection.slug,
+                  logged_in: !!this.authState,
                 });
               }
             }}

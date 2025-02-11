@@ -25,13 +25,12 @@ import "./styles.css";
 import { OrgTab, RouteNamespace, ROUTES } from "./routes";
 import type { UserInfo, UserOrg } from "./types/user";
 import { pageView, type AnalyticsTrackProps } from "./utils/analytics";
-import { type ViewState } from "./utils/APIRouter";
+import APIRouter, { type ViewState } from "./utils/APIRouter";
 import AuthService, {
   type AuthEventDetail,
   type LoggedInEventDetail,
   type NeedLoginEventDetail,
 } from "./utils/AuthService";
-import router from "./utils/router";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { NavigateEventDetail } from "@/controllers/navigate";
@@ -93,7 +92,7 @@ export class App extends BtrixElement {
   @property({ type: Object })
   settings?: AppSettings;
 
-  private readonly router = router;
+  private readonly router = new APIRouter(ROUTES);
   authService = new AuthService();
 
   @state()
@@ -312,8 +311,9 @@ export class App extends BtrixElement {
 
   trackPageView() {
     const { slug, collectionSlug } = this.viewState.params;
-    const pageViewProps: Partial<AnalyticsTrackProps> = {
+    const pageViewProps: AnalyticsTrackProps = {
       org_slug: slug || null,
+      logged_in: !!this.authState,
     };
 
     if (collectionSlug) {
@@ -799,7 +799,7 @@ export class App extends BtrixElement {
         return html`<btrix-orgs class="w-full md:bg-neutral-50"></btrix-orgs>`;
 
       case "org": {
-        const slug = this.viewState.params.slug || "";
+        const slug = this.viewState.params.slug;
         const orgPath = this.viewState.pathname;
         const pathname = this.getLocationPathname();
         const orgTab = pathname
@@ -820,7 +820,7 @@ export class App extends BtrixElement {
       case "publicOrg":
         return html`<btrix-public-org
           class="w-full"
-          orgSlug=${this.viewState.params.slug || ""}
+          orgSlug=${this.viewState.params.slug}
         ></btrix-public-org>`;
 
       case "publicCollection": {
@@ -832,7 +832,7 @@ export class App extends BtrixElement {
 
         return html`<btrix-collection
           class="w-full"
-          orgSlug=${this.viewState.params.slug || ""}
+          orgSlug=${this.viewState.params.slug}
           collectionSlug=${collectionSlug}
           tab=${ifDefined(collectionTab || undefined)}
         ></btrix-collection>`;
