@@ -12,6 +12,7 @@ import { TailwindElement } from "@/classes/TailwindElement";
 import { pageSectionsWithNav } from "@/layouts/pageSectionsWithNav";
 
 /**
+ * @fires btrix-tab-change
  * @example Usage:
  * ```ts
  * <btrix-tab-group>
@@ -145,5 +146,11 @@ export class TabGroup extends TailwindElement {
   private onSelectTab(e: CustomEvent<TabClickDetail>) {
     e.stopPropagation();
     this.active = e.detail.panel;
+    this.dispatchEvent(
+      new CustomEvent<string>("btrix-tab-change", {
+        detail: this.active,
+        bubbles: true,
+      }),
+    );
   }
 }

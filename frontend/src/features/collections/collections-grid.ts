@@ -1,6 +1,7 @@
 import { localized, msg } from "@lit/localize";
+import clsx from "clsx";
 import { html, nothing } from "lit";
-import { customElement, property } from "lit/decorators.js";
+import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 
@@ -24,6 +25,12 @@ export class CollectionsGrid extends BtrixElement {
 
   @property({ type: Array })
   collections?: PublicCollection[];
+
+  @state()
+  collectionBeingEdited: string | null = null;
+
+  @property({ type: String })
+  collectionRefreshing: string | null = null;
 
   render() {
     const gridClassNames = tw`grid flex-1 grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4`;
@@ -58,12 +65,15 @@ export class CollectionsGrid extends BtrixElement {
       <ul class=${gridClassNames}>
         ${this.collections.map(
           (collection) => html`
-            <li class="relative col-span-1">
+            <li class="group relative col-span-1">
               <a
                 href=${this.navigate.isPublicPage
                   ? `/${RouteNamespace.PublicOrgs}/${this.slug}/collections/${collection.slug}`
                   : `/${RouteNamespace.PrivateOrgs}/${this.slug}/collections/view/${collection.id}`}
-                class="group block h-full rounded-lg"
+                class=${clsx(
+                  tw`block h-full rounded-lg transition-opacity`,
+                  this.collectionRefreshing === collection.id && tw`opacity-50`,
+                )}
                 @click=${this.navigate.link}
               >
                 <div
@@ -95,26 +105,47 @@ export class CollectionsGrid extends BtrixElement {
                 </div>
               </a>
               ${when(showActions, () => this.renderActions(collection))}
+              ${when(
+                this.collectionRefreshing === collection.id,
+                () =>
+                  html`<div
+                    class="absolute inset-x-0 top-0 z-50 grid aspect-video place-items-center"
+                  >
+                    <sl-spinner class="text-4xl"></sl-spinner>
+                  </div>`,
+              )}
             </li>
           `,
         )}
       </ul>
+      ${when(
+        showActions,
+        () =>
+          html`<btrix-collection-edit-dialog
+            .collectionId=${this.collectionBeingEdited ?? undefined}
+            ?open=${!!this.collectionBeingEdited}
+            @sl-after-hide=${() => {
+              this.collectionBeingEdited = null;
+            }}
+          ></btrix-collection-edit-dialog>`,
+      )}
     `;
   }
 
   private readonly renderActions = (collection: PublicCollection) => html`
     <div class="pointer-events-none absolute left-0 right-0 top-0 aspect-video">
       <div class="pointer-events-auto absolute bottom-2 right-2">
-        <btrix-overflow-dropdown raised>
-          <sl-menu>
-            <btrix-menu-item-link
-              href=${`/${RouteNamespace.PublicOrgs}/${this.orgSlugState}/collections/${collection.slug}`}
-            >
-              <sl-icon slot="prefix" name="globe2"></sl-icon>
-              ${msg("Visit Public Collections Gallery")}
-            </btrix-menu-item-link>
-          </sl-menu>
-        </btrix-overflow-dropdown>
+        <sl-tooltip content=${msg("Edit Collection Settings")}>
+          <btrix-button
+            raised
+            size="small"
+            @click=${() => {
+              this.collectionBeingEdited = collection.id;
+            }}
+          >
+            <sl-icon name="pencil"></sl-icon>
+          </btrix-button>
+        </sl-tooltip>
       </div>
     </div>
   `;
@@ -132,7 +163,7 @@ export class CollectionsGrid extends BtrixElement {
     return html`
       <btrix-badge variant="primary" class="absolute right-3 top-3">
         ${earliestYear}
-        ${latestYear !== earliestYear ? html` - ${latestYear} ` : nothing}
+        ${latestYear !== earliestYear ? html` – ${latestYear} ` : nothing}
       </btrix-badge>
     `;
   }

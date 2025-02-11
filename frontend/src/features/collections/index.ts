@@ -1,10 +1,12 @@
 import("./collections-add");
 import("./collections-grid");
 import("./collection-items-dialog");
-import("./collection-metadata-dialog");
+import("./collection-edit-dialog");
+import("./collection-create-dialog");
 import("./collection-replay-dialog");
 import("./collection-workflow-list");
 import("./select-collection-access");
-import("./select-collection-start-page");
+import("./select-collection-page");
 import("./share-collection");
 import("./collection-thumbnail");
+import("./edit-dialog/sharing-section");

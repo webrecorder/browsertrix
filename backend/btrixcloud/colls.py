@@ -3,7 +3,7 @@ Collections API
 """
 
 # pylint: disable=too-many-lines
-
+from datetime import datetime
 from collections import Counter
 from uuid import UUID, uuid4
 from typing import Optional, List, TYPE_CHECKING, cast, Dict, Tuple, Any, Union
@@ -20,10 +20,12 @@ from starlette.requests import Request
 
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .models import (
+    AnyHttpUrl,
     Collection,
     CollIn,
     CollOut,
     CollIdName,
+    CollectionThumbnailSource,
     UpdateColl,
     AddRemoveCrawlList,
     BaseCrawl,
@@ -843,8 +845,17 @@ class CollectionOps:
 
         return {"updated": True}
 
+    # pylint: disable=too-many-locals
     async def upload_thumbnail_stream(
-        self, stream, filename: str, coll_id: UUID, org: Organization, user: User
+        self,
+        stream,
+        filename: str,
+        coll_id: UUID,
+        org: Organization,
+        user: User,
+        source_url: Optional[AnyHttpUrl] = None,
+        source_ts: Optional[datetime] = None,
+        source_page_id: Optional[UUID] = None,
     ) -> Dict[str, bool]:
         """Upload file as stream to use as collection thumbnail"""
         coll = await self.get_collection(coll_id)
@@ -902,6 +913,13 @@ class CollectionOps:
                 )
 
         coll.thumbnail = thumbnail_file
+
+        if source_url and source_ts and source_page_id:
+            coll.thumbnailSource = CollectionThumbnailSource(
+                url=source_url,
+                urlTs=source_ts,
+                urlPageId=source_page_id,
+            )
 
         # Update entire document to avoid bson.errors.InvalidDocument exception
         await self.collections.find_one_and_update(
@@ -1226,11 +1244,21 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops, user_de
         request: Request,
         filename: str,
         coll_id: UUID,
+        sourceUrl: Optional[AnyHttpUrl],
+        sourceTs: Optional[datetime],
+        sourcePageId: Optional[UUID],
         org: Organization = Depends(org_crawl_dep),
         user: User = Depends(user_dep),
     ):
         return await colls.upload_thumbnail_stream(
-            request.stream(), filename, coll_id, org, user
+            request.stream(),
+            filename,
+            coll_id,
+            org,
+            user,
+            sourceUrl,
+            sourceTs,
+            sourcePageId,
         )
 
     @app.delete(
