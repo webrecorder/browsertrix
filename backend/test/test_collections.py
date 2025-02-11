@@ -382,6 +382,9 @@ def test_get_collection_replay(crawler_auth_headers, default_org_id):
     assert data["dateEarliest"]
     assert data["dateLatest"]
     assert data["defaultThumbnailName"]
+    assert data["pagesQuery"].endswith(
+        f"/orgs/{default_org_id}/collections/{_coll_id}/pages"
+    )
 
     resources = data["resources"]
     assert resources
@@ -413,6 +416,10 @@ def test_collection_public(crawler_auth_headers, default_org_id):
         f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/public/replay.json",
         headers=crawler_auth_headers,
     )
+    assert r.json()["pagesQuery"].endswith(
+        f"/orgs/{default_org_id}/collections/{_coll_id}/public/pages"
+    )
+
     assert r.status_code == 200
     assert r.headers["Access-Control-Allow-Origin"] == "*"
     assert r.headers["Access-Control-Allow-Headers"] == "*"
@@ -580,6 +587,121 @@ def test_list_collections(
     assert second_coll["access"] == "private"
     assert second_coll["dateEarliest"]
     assert second_coll["dateLatest"]
+
+
+def test_list_pages_in_collection(crawler_auth_headers, default_org_id):
+    # Test list endpoint
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/pages",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data["total"] >= 0
+
+    pages = data["items"]
+    assert pages
+
+    for page in pages:
+        assert page["id"]
+        assert page["oid"]
+        assert page["crawl_id"]
+        assert page["url"]
+        assert page["ts"]
+        assert page.get("title") or page.get("title") is None
+        assert page.get("loadState") or page.get("loadState") is None
+        assert page.get("status") or page.get("status") is None
+        assert page.get("mime") or page.get("mime") is None
+        assert page["isError"] in (None, True, False)
+        assert page["isFile"] in (None, True, False)
+
+    # Save info for page to test url and urlPrefix filters
+    coll_page = pages[0]
+    coll_page_id = coll_page["id"]
+    coll_page_url = coll_page["url"]
+    coll_page_ts = coll_page["ts"]
+
+    # Test exact url filter
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/pages?url={coll_page_url}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data["total"] >= 1
+    for matching_page in data["items"]:
+        assert matching_page["url"] == coll_page_url
+
+    # Test exact url and ts filters together
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/pages?url={coll_page_url}&ts={coll_page_ts}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data["total"] >= 1
+    for matching_page in data["items"]:
+        assert matching_page["url"] == coll_page_url
+        assert matching_page["ts"] == coll_page_ts
+
+    # Test urlPrefix filter
+    url_prefix = coll_page_url[:8]
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/pages?urlPrefix={url_prefix}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data["total"] >= 1
+
+    found_matching_page = False
+    for page in data["items"]:
+        if page["id"] == coll_page_id and page["url"] == coll_page_url:
+            found_matching_page = True
+
+    assert found_matching_page
+
+    # Test isSeed filter
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/pages?isSeed=true",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    for page in data["items"]:
+        assert page["isSeed"]
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/pages?isSeed=false",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    for page in data["items"]:
+        assert page["isSeed"] is False
+
+    # Test depth filter
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/pages?depth=0",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    for page in data["items"]:
+        assert page["depth"] == 0
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/pages?depth=1",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    for page in data["items"]:
+        assert page["depth"] == 1
 
 
 def test_remove_upload_from_collection(crawler_auth_headers, default_org_id):
