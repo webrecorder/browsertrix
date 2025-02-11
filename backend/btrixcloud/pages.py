@@ -661,6 +661,7 @@ class PageOps:
         self,
         coll_id: UUID,
         org: Optional[Organization] = None,
+        search: Optional[str] = None,
         url: Optional[str] = None,
         url_prefix: Optional[str] = None,
         ts: Optional[datetime] = None,
@@ -688,7 +689,14 @@ class PageOps:
         if org:
             query["oid"] = org.id
 
-        if url_prefix:
+        if search:
+            search_regex = re.escape(urllib.parse.unquote(search))
+            query["$or"] = [
+                {"url": {"$regex": search_regex, "$options": "i"}},
+                {"title": {"$regex": search_regex, "$options": "i"}},
+            ]
+
+        elif url_prefix:
             url_prefix = urllib.parse.unquote(url_prefix)
             regex_pattern = f"^{re.escape(url_prefix)}"
             query["url"] = {"$regex": regex_pattern, "$options": "i"}
@@ -1104,6 +1112,7 @@ def init_pages_api(
     async def get_public_collection_pages_list(
         coll_id: UUID,
         org: Organization = Depends(org_public),
+        search: Optional[str] = None,
         url: Optional[str] = None,
         urlPrefix: Optional[str] = None,
         ts: Optional[datetime] = None,
@@ -1118,6 +1127,7 @@ def init_pages_api(
         pages, total = await ops.list_collection_pages(
             coll_id=coll_id,
             org=org,
+            search=search,
             url=url,
             url_prefix=urlPrefix,
             ts=ts,
@@ -1139,6 +1149,7 @@ def init_pages_api(
     async def get_collection_pages_list(
         coll_id: UUID,
         org: Organization = Depends(org_viewer_dep),
+        search: Optional[str] = None,
         url: Optional[str] = None,
         urlPrefix: Optional[str] = None,
         ts: Optional[datetime] = None,
@@ -1153,6 +1164,7 @@ def init_pages_api(
         pages, total = await ops.list_collection_pages(
             coll_id=coll_id,
             org=org,
+            search=search,
             url=url,
             url_prefix=urlPrefix,
             ts=ts,
