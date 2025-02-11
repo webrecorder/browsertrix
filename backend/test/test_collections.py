@@ -416,7 +416,7 @@ def test_collection_public(crawler_auth_headers, default_org_id):
         f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/public/replay.json",
         headers=crawler_auth_headers,
     )
-    assert data["pagesQuery"].endswith(
+    assert r.json()["pagesQuery"].endswith(
         f"/orgs/{default_org_id}/collections/{_coll_id}/public/pages"
     )
 
