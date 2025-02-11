@@ -15,9 +15,5 @@ export enum AnalyticsTrackEvent {
   /**
    * Workflows
    */
-  ExpandWorkflowFormScope = 'Expand workflow form "Scope"',
-  ExpandWorkflowFormLimits = 'Expand workflow form "Limits"',
-  ExpandWorkflowFormBrowserSettings = 'Expand workflow form "Browser Settings"',
-  ExpandWorkflowFormScheduling = 'Expand workflow form "Scheduling"',
-  ExpandWorkflowFormMetadata = 'Expand workflow form "Metadata"',
+  ExpandWorkflowFormSection = "Expand workflow form section",
 }

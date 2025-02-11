@@ -12,8 +12,9 @@ import appState from "./state";
 
 export type AnalyticsTrackProps = {
   org_slug: string | null;
-  collection_slug?: string | null;
-  logged_in?: boolean;
+  logged_in: boolean;
+  collection_slug?: string;
+  section?: string;
 };
 
 declare global {
@@ -27,7 +28,7 @@ declare global {
 
 export function track(
   event: `${AnalyticsTrackEvent}`,
-  props?: AnalyticsTrackProps,
+  props?: Partial<AnalyticsTrackProps>,
 ) {
   if (!window.btrixEvent) {
     return;
@@ -49,11 +50,12 @@ export function track(
         ...props,
       },
     });
+    console.debug("btrixEvent tracked:", event, props);
   } catch (err) {
     console.debug(err);
   }
 }
 
-export function pageView(props?: AnalyticsTrackProps) {
+export function pageView(props?: Partial<AnalyticsTrackProps>) {
   track(AnalyticsTrackEvent.PageView, props);
 }
