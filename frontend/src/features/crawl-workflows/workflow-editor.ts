@@ -408,7 +408,10 @@ export class WorkflowEditor extends BtrixElement {
     };
 
     return html`
-      <btrix-tab-list tab=${ifDefined(this.progressState?.activeTab)}>
+      <btrix-tab-list
+        class="hidden lg:block"
+        tab=${ifDefined(this.progressState?.activeTab)}
+      >
         ${STEPS.map(button)}
       </btrix-tab-list>
     `;
@@ -474,7 +477,7 @@ export class WorkflowEditor extends BtrixElement {
       >
         <div slot="expand-icon" class="flex items-center">
           <sl-tooltip
-            content=${msg("Edit section")}
+            content=${msg("Show section")}
             hoist
             @sl-show=${stopProp}
             @sl-hide=${stopProp}
