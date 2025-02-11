@@ -1401,6 +1401,15 @@ class CollectionThumbnailSource(BaseModel):
 
 
 # ============================================================================
+class AlwaysLoadResource(BaseModel):
+    """Resources to always load in RWP"""
+
+    wacz: str
+    itemId: str
+    hasPages: bool
+
+
+# ============================================================================
 class Collection(BaseMongoModel):
     """Org collection structure"""
 
@@ -1495,6 +1504,7 @@ class CollOut(BaseMongoModel):
 
     pages: List[PageOut] = []
     pagesQuery: str = ""
+    alwaysLoad: List[AlwaysLoadResource] = []
 
 
 # ============================================================================

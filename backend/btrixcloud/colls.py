@@ -53,6 +53,7 @@ from .models import (
     ImageFilePreparer,
     MIN_UPLOAD_PART_SIZE,
     PublicCollOut,
+    AlwaysLoadResource,
 )
 from .utils import dt_now, slug_from_name, get_duplicate_key_error_field, get_origin
 
@@ -357,6 +358,24 @@ class CollectionOps:
                 + f"/api/orgs/{org.id}/collections/{coll_id}/{public}pages"
             )
 
+            always_load: List[AlwaysLoadResource] = []
+
+            seed_wacz_filenames = set()
+            for page in pages:
+                if page.isSeed and page.filename not in seed_wacz_filenames:
+                    seed_wacz_filenames.add(page.filename)
+                    always_load.append(
+                        AlwaysLoadResource(
+                            wacz=page.filename, itemId=page.crawl_id, hasPages=True
+                        )
+                    )
+
+            no_page_items = await self.get_collection_resources_with_no_pages(coll_id)
+            for item in no_page_items:
+                always_load.append(item)
+
+            result["alwaysLoad"] = always_load
+
         thumbnail = result.get("thumbnail")
         if thumbnail:
             image_file = ImageFile(**thumbnail)
@@ -522,6 +541,32 @@ class CollectionOps:
                 all_files.extend(crawl.resources)
 
         return all_files
+
+    async def get_collection_resources_with_no_pages(
+        self, coll_id: UUID
+    ) -> List[AlwaysLoadResource]:
+        """Return wacz files in collection that have no pages"""
+        resources_no_pages: List[AlwaysLoadResource] = []
+
+        crawls, _ = await self.crawl_ops.list_all_base_crawls(
+            collection_id=coll_id,
+            states=list(SUCCESSFUL_STATES),
+            page_size=10_000,
+            cls_type=CrawlOutWithResources,
+        )
+        for crawl in crawls:
+            _, page_count = await self.page_ops.list_pages(crawl.id)
+            if page_count == 0 and crawl.resources:
+                for resource in crawl.resources:
+                    resources_no_pages.append(
+                        AlwaysLoadResource(
+                            wacz=os.path.basename(resource.name),
+                            itemId=crawl.id,
+                            hasPages=False,
+                        )
+                    )
+
+        return resources_no_pages
 
     async def get_collection_names(self, uuids: List[UUID]):
         """return object of {_id, names} given list of collection ids"""
