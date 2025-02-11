@@ -198,6 +198,7 @@ export class SelectCollectionPage extends BtrixElement {
           value=${this.selectedSnapshot?.pageId || ""}
           ?required=${this.selectedPage && !this.selectedSnapshot}
           ?disabled=${!this.selectedPage}
+          size=${this.mode === "thumbnail" ? "small" : "medium"}
           hoist
           @sl-change=${async (e: SlChangeEvent) => {
             const { value } = e.currentTarget as SlSelect;
@@ -260,6 +261,8 @@ export class SelectCollectionPage extends BtrixElement {
           label=${msg("Page URL")}
           placeholder=${msg("Start typing a URL...")}
           ?clearable=${this.collection && this.collection.pageCount > 1}
+          ?disabled=${!this.collection?.pageCount}
+          size=${this.mode === "thumbnail" ? "small" : "medium"}
           autocomplete="off"
           @sl-focus=${() => {
             this.resetInputValidity();

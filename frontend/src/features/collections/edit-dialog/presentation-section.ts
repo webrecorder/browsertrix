@@ -3,6 +3,7 @@ import { TaskStatus } from "@lit/task";
 import { type SlInput } from "@shoelace-style/shoelace";
 import clsx from "clsx";
 import { html, nothing } from "lit";
+import { when } from "lit/directives/when.js";
 import { isEqual } from "lodash";
 import queryString from "query-string";
 
@@ -62,7 +63,7 @@ export default function renderPresentation(this: CollectionEdit) {
         </sl-tooltip>
       </span>
     </sl-input>
-    <div class="mb-7">${renderThumbnails.bind(this)()}</div>
+    <div class="mb-3">${renderThumbnails.bind(this)()}</div>
     <section>
       <btrix-select-collection-page
         mode="thumbnail"
@@ -217,6 +218,7 @@ function renderThumbnails(this: CollectionEdit) {
           <sl-icon name="info-circle"></sl-icon>
         </sl-tooltip>
       </label>
+
       <div class="-mx-4 -my-2 -mt-1 overflow-x-auto px-4 py-2">
         <div class="grid w-max min-w-full grid-rows-[auto_auto] gap-3">
           <div class="row-start-1 text-xs text-neutral-500">
@@ -312,6 +314,15 @@ function renderPageThumbnail(
             this.thumbnailIsValid = valid;
           }}
         >
+          ${when(
+            this.collection && !this.collection.pageCount,
+            () => html`
+              <div slot="placeholder" class="flex flex-col items-center gap-2">
+                <sl-icon name="ban"></sl-icon>
+                ${msg("No pages found")}
+              </div>
+            `,
+          )}
         </btrix-collection-snapshot-preview>
       </div>
     </button>

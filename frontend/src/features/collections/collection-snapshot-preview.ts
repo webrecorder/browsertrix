@@ -178,7 +178,9 @@ export class CollectionSnapshotPreview extends TailwindElement {
         <p
           class="absolute inset-0 my-auto grid place-content-center text-balance p-3 text-neutral-500"
         >
-          ${msg("Enter a Page URL to preview it.")}
+          <slot name="placeholder">
+            ${msg("Enter a Page URL to preview it.")}
+          </slot>
         </p>
       `;
     }
