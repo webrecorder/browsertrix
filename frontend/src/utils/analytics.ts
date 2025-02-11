@@ -7,6 +7,9 @@
 
 import { AnalyticsTrackEvent } from "../trackEvents";
 
+import router from "./router";
+import appState from "./state";
+
 export type AnalyticsTrackProps = {
   org_slug: string | null;
   collection_slug?: string | null;
@@ -30,8 +33,22 @@ export function track(
     return;
   }
 
+  const defaultProps: AnalyticsTrackProps = {
+    org_slug:
+      props?.org_slug ??
+      router.match(`${window.location.pathname}${window.location.search}`)
+        .params.slug ??
+      null,
+    logged_in: !!appState.auth,
+  };
+
   try {
-    window.btrixEvent(event, { props });
+    window.btrixEvent(event, {
+      props: {
+        ...defaultProps,
+        ...props,
+      },
+    });
   } catch (err) {
     console.debug(err);
   }
