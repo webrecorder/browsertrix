@@ -361,32 +361,28 @@ export class Dashboard extends BtrixElement {
 
         <section class="mb-16">
           <header class="mb-1.5 flex items-center justify-between">
-            ${pageHeading({
-              content:
-                this.collectionsView === CollectionGridView.Public
-                  ? msg("Public Collections")
-                  : msg("All Collections"),
-            })}
             <div class="flex items-center gap-2">
-              <sl-tooltip
-                content=${this.org?.enablePublicProfile
-                  ? msg("Visit Public Collections Gallery")
-                  : msg("Preview Public Collections Gallery")}
-              >
-                <sl-icon-button
-                  href=${`/${RouteNamespace.PublicOrgs}/${this.orgSlugState}`}
-                  class="size-8 text-base"
-                  name="globe2"
-                  @click=${this.navigate.link}
-                ></sl-icon-button>
-              </sl-tooltip>
-              ${when(
-                this.appState.isCrawler,
-                () => html`
-                  <!-- TODO Refactor clipboard code, get URL in a nicer way? -->
-                  ${when(this.org, (org) =>
-                    org.enablePublicProfile
-                      ? html` <btrix-copy-button
+              ${pageHeading({
+                content:
+                  this.collectionsView === CollectionGridView.Public
+                    ? msg("Public Collections")
+                    : msg("All Collections"),
+              })}
+              ${this.collectionsView === CollectionGridView.Public
+                ? html` <span class="text-sm text-neutral-400"
+                    >—
+                    <a
+                      href=${`/${RouteNamespace.PublicOrgs}/${this.orgSlugState}`}
+                      class="inline-flex h-8 items-center text-sm font-medium text-primary-500 transition hover:text-primary-600"
+                      @click=${this.navigate.link}
+                    >
+                      ${this.org?.enablePublicProfile
+                        ? msg("Visit public collections gallery")
+                        : msg("Preview public collections gallery")}
+                    </a>
+                    <!-- TODO Refactor clipboard code, get URL in a nicer way? -->
+                    ${this.org?.enablePublicProfile
+                      ? html`<btrix-copy-button
                           value=${new URL(
                             `/${RouteNamespace.PublicOrgs}/${this.orgSlugState}`,
                             window.location.toString(),
@@ -394,9 +390,16 @@ export class Dashboard extends BtrixElement {
                           content=${msg(
                             "Copy Link to Public Collections Gallery",
                           )}
+                          class="inline-block"
                         ></btrix-copy-button>`
-                      : nothing,
-                  )}
+                      : nothing}
+                  </span>`
+                : nothing}
+            </div>
+            <div class="flex items-center gap-2">
+              ${when(
+                this.appState.isCrawler,
+                () => html`
                   <sl-tooltip content=${msg("Manage Collections")}>
                     <sl-icon-button
                       href=${`${this.navigate.orgBasePath}/collections`}
@@ -439,6 +442,7 @@ export class Dashboard extends BtrixElement {
               slug=${this.orgSlugState || ""}
               .collections=${this.collections.value?.items}
               .collectionRefreshing=${this.collectionRefreshing}
+              ?showVisibility=${this.collectionsView === CollectionGridView.All}
               @btrix-collection-saved=${async (e: CollectionSavedEvent) => {
                 this.collectionRefreshing = e.detail.id;
                 void this.collections.run([
