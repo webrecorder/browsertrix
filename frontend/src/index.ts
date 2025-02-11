@@ -938,7 +938,7 @@ export class App extends BtrixElement {
                 <sl-input
                   size="small"
                   name="crawlId"
-                  placeholder=${msg("Enter Archived Item ID")}
+                  placeholder=${msg("Enter Crawl ID")}
                   required
                 ></sl-input>
               </div>
