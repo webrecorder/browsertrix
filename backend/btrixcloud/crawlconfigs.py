@@ -707,8 +707,6 @@ class CrawlConfigOps:
 
         crawlconfig.config.seeds = None
 
-        self.ensure_quota_page_limit(crawlconfig, org)
-
         return crawlconfig
 
     async def get_crawl_config_seed_count(self, cid: UUID, org: Organization):
