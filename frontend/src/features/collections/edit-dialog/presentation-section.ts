@@ -24,7 +24,7 @@ import { snapshotToSource, sourceToSnapshot } from "./helpers/snapshots";
 import type { PublicCollection } from "@/types/collection";
 import { tw } from "@/utils/tailwind";
 
-export default function renderGeneral(this: CollectionEdit) {
+export default function renderPresentation(this: CollectionEdit) {
   if (!this.collection) return;
   return html`<sl-input
       class="with-max-help-text"

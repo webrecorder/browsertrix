@@ -13,9 +13,9 @@ import { type Embed } from "replaywebpage";
 
 import { type CollectionSnapshotPreview } from "./collection-snapshot-preview";
 import { type Thumbnail } from "./collection-thumbnail";
-import renderGeneral from "./edit-dialog/general-section";
 import checkChanged from "./edit-dialog/helpers/check-changed";
 import submitTask from "./edit-dialog/helpers/submit-task";
+import renderPresentation from "./edit-dialog/presentation-section";
 import { type CollectionShareSettings } from "./edit-dialog/sharing-section";
 import { type SelectCollectionPage } from "./select-collection-page";
 
@@ -253,7 +253,7 @@ export class CollectionEdit extends BtrixElement {
                   })}
 
                   <btrix-tab-group-panel name="general">
-                    ${renderGeneral.bind(this)()}
+                    ${renderPresentation.bind(this)()}
                   </btrix-tab-group-panel>
 
                   <btrix-tab-group-panel name="sharing">
