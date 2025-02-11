@@ -1188,7 +1188,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           name="autoscrollBehavior"
           ?checked=${this.formState.autoscrollBehavior}
         >
-          ${msg("Auto-scroll behavior")}
+          ${msg("Autoscroll behavior")}
         </sl-checkbox>`,
       )}
       ${this.renderHelpTextCol(
