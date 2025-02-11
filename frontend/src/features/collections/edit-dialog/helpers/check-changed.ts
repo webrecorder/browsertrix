@@ -69,7 +69,7 @@ export default async function checkChanged(this: CollectionEdit) {
     } else {
       this.dirty = false;
     }
-    console.log({ updates });
+
     return updates;
   } catch (e) {
     console.error(e);
