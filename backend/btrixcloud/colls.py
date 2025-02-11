@@ -343,6 +343,7 @@ class CollectionOps:
         headers: Optional[dict] = None,
     ) -> CollOut:
         """Get CollOut by id"""
+        # pylint: disable=too-many-locals
         result = await self.get_collection_raw(coll_id, public_or_unlisted_only)
 
         if resources:
