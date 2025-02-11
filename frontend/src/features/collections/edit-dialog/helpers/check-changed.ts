@@ -11,9 +11,10 @@ const checkEqual = <K extends keyof CollectionUpdate>(
   key: K,
   b: CollectionUpdate[K] | null,
 ) => {
-  const a = collection[key];
-  // caption is null when empty, collection update has empty string instead
+  let a = collection[key] as (typeof collection)[K] | null;
+  // caption is sometimes null when empty, collection update has empty string instead
   if (key === "caption") {
+    a = a || null;
     b = b || null;
   }
   // deeply compare (for objects)
@@ -68,6 +69,7 @@ export default async function checkChanged(this: CollectionEdit) {
     } else {
       this.dirty = false;
     }
+    console.log({ updates });
     return updates;
   } catch (e) {
     console.error(e);
