@@ -1030,9 +1030,10 @@ def test_collection_url_list(crawler_auth_headers, default_org_id):
 
 
 def test_upload_collection_thumbnail(crawler_auth_headers, default_org_id):
+    # https://dev.browsertrix.com/api/orgs/c69247f4-415e-4abc-b449-e85d2f26c626/collections/b764fbe1-baab-4dc5-8dca-2db6f82c250b/thumbnail?filename=page-thumbnail_47fe599e-ed62-4edd-b078-93d4bf281e0f.jpeg&sourceUrl=https%3A%2F%2Fspecs.webrecorder.net%2F&sourceTs=2024-08-16T08%3A00%3A21.601000Z&sourcePageId=47fe599e-ed62-4edd-b078-93d4bf281e0f
     with open(os.path.join(curr_dir, "data", "thumbnail.jpg"), "rb") as fh:
         r = requests.put(
-            f"{API_PREFIX}/orgs/{default_org_id}/collections/{_public_coll_id}/thumbnail?filename=thumbnail.jpg",
+            f"{API_PREFIX}/orgs/{default_org_id}/collections/{_public_coll_id}/thumbnail?filename=thumbnail.jpg&sourceUrl=https%3A%2F%2Fexample.com%2F&sourceTs=2024-08-16T08%3A00%3A21.601000Z&sourcePageId=1bba4aba-d5be-4943-ad48-d6710633d754",
             headers=crawler_auth_headers,
             data=read_in_chunks(fh),
         )
@@ -1044,7 +1045,8 @@ def test_upload_collection_thumbnail(crawler_auth_headers, default_org_id):
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
-    thumbnail = r.json()["thumbnail"]
+    collection = r.json()
+    thumbnail = collection["thumbnail"]
 
     assert thumbnail["name"]
     assert thumbnail["path"]
@@ -1056,6 +1058,16 @@ def test_upload_collection_thumbnail(crawler_auth_headers, default_org_id):
     assert thumbnail["userid"]
     assert thumbnail["userName"]
     assert thumbnail["created"]
+
+    thumbnailSource = collection["thumbnailSource"]
+
+    assert thumbnailSource["url"]
+    assert thumbnailSource["urlTs"]
+    assert thumbnailSource["urlPageId"]
+
+    assert thumbnailSource["url"] == "https://example.com"
+    assert thumbnailSource["urlTs"] == "2024-08-16T08:00:21.601000Z"
+    assert thumbnailSource["urlPageId"] == "1bba4aba-d5be-4943-ad48-d6710633d754"
 
 
 def test_set_collection_default_thumbnail(crawler_auth_headers, default_org_id):
