@@ -214,7 +214,7 @@ export class WorkflowEditor extends BtrixElement {
   private progressState?: ProgressState;
 
   @state()
-  private defaults: WorkflowDefaults = appDefaults;
+  private orgDefaults: WorkflowDefaults = appDefaults;
 
   @state()
   private formState = getDefaultFormState();
@@ -304,7 +304,9 @@ export class WorkflowEditor extends BtrixElement {
   connectedCallback(): void {
     this.initializeEditor();
     super.connectedCallback();
-    void this.fetchServerDefaults();
+
+    void this.fetchOrgDefaults();
+    void this.fetchTags();
 
     this.addEventListener(
       "btrix-intersect",
@@ -350,15 +352,6 @@ export class WorkflowEditor extends BtrixElement {
     if (this.progressState?.activeTab !== STEPS[0]) {
       void this.scrollToActivePanel();
     }
-
-    if (this.orgId) {
-      void this.fetchTags();
-      void this.fetchOrgQuotaDefaults();
-    }
-  }
-
-  private async fetchServerDefaults() {
-    this.defaults = await getServerDefaults();
   }
 
   private initializeEditor() {
@@ -1104,12 +1097,12 @@ https://archiveweb.page/images/${"logo.svg"}`}
             value=${this.formState.pageLimit || ""}
             min=${minPages}
             max=${ifDefined(
-              this.defaults.maxPagesPerCrawl &&
-                this.defaults.maxPagesPerCrawl < Infinity
-                ? this.defaults.maxPagesPerCrawl
+              this.orgDefaults.maxPagesPerCrawl &&
+                this.orgDefaults.maxPagesPerCrawl < Infinity
+                ? this.orgDefaults.maxPagesPerCrawl
                 : undefined,
             )}
-            placeholder=${defaultLabel(this.defaults.maxPagesPerCrawl)}
+            placeholder=${defaultLabel(this.orgDefaults.maxPagesPerCrawl)}
             @sl-input=${onInputMinMax}
           >
             <span slot="suffix">${msg("pages")}</span>
@@ -1152,7 +1145,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           type="number"
           inputmode="numeric"
           label=${msg("Page Load Timeout")}
-          placeholder=${defaultLabel(this.defaults.pageLoadTimeoutSeconds)}
+          placeholder=${defaultLabel(this.orgDefaults.pageLoadTimeoutSeconds)}
           value=${ifDefined(this.formState.pageLoadTimeoutSeconds ?? undefined)}
           min="0"
           @sl-input=${onInputMinMax}
@@ -1181,7 +1174,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           type="number"
           inputmode="numeric"
           label=${msg("Behavior Timeout")}
-          placeholder=${defaultLabel(this.defaults.behaviorTimeoutSeconds)}
+          placeholder=${defaultLabel(this.orgDefaults.behaviorTimeoutSeconds)}
           value=${ifDefined(this.formState.behaviorTimeoutSeconds ?? undefined)}
           min="0"
           @sl-input=${onInputMinMax}
@@ -1278,7 +1271,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         >
           ${when(this.appState.settings?.numBrowsers, (numBrowsers) =>
             map(
-              range(this.defaults.maxScale),
+              range(this.orgDefaults.maxScale),
               (i: number) =>
                 html` <sl-radio-button value="${i + 1}" size="small"
                   >${(i + 1) * numBrowsers}</sl-radio-button
@@ -2229,18 +2222,29 @@ https://archiveweb.page/images/${"logo.svg"}`}
     }
   }
 
-  private async fetchOrgQuotaDefaults() {
+  // TODO Consolidate with config-details
+  private async fetchOrgDefaults() {
     try {
-      const data = await this.api.fetch<{
-        quotas: { maxPagesPerCrawl?: number };
-      }>(`/orgs/${this.orgId}`);
-      const orgDefaults = {
-        ...this.defaults,
+      const [serverDefaults, { quotas }] = await Promise.all([
+        getServerDefaults(),
+        this.api.fetch<{
+          quotas: { maxPagesPerCrawl?: number };
+        }>(`/orgs/${this.orgId}`),
+      ]);
+
+      const defaults = {
+        ...this.orgDefaults,
+        ...serverDefaults,
       };
-      if (data.quotas.maxPagesPerCrawl && data.quotas.maxPagesPerCrawl > 0) {
-        orgDefaults.maxPagesPerCrawl = data.quotas.maxPagesPerCrawl;
+
+      if (defaults.maxPagesPerCrawl && quotas.maxPagesPerCrawl) {
+        defaults.maxPagesPerCrawl = Math.min(
+          defaults.maxPagesPerCrawl,
+          quotas.maxPagesPerCrawl,
+        );
       }
-      this.defaults = orgDefaults;
+
+      this.orgDefaults = defaults;
     } catch (e) {
       console.debug(e);
     }
