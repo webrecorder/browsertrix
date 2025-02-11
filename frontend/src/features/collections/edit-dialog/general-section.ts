@@ -105,7 +105,6 @@ export default function renderGeneral(this: CollectionEdit) {
       <sl-checkbox
         name="setInitialView"
         class="mt-3 part-[form-control-help-text]:text-balance"
-        checked
         ?disabled=${!this.selectedSnapshot}
         help-text=${msg(
           "Update the first page that you see when replaying this collection",
