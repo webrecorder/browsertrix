@@ -1401,10 +1401,10 @@ class CollectionThumbnailSource(BaseModel):
 
 
 # ============================================================================
-class AlwaysLoadResource(BaseModel):
-    """Resources to always load in RWP"""
+class PreloadResource(BaseModel):
+    """Resources that will preloaded in RWP"""
 
-    wacz: str
+    name: str
     crawlId: str
     hasPages: bool
 
@@ -1502,9 +1502,9 @@ class CollOut(BaseMongoModel):
 
     allowPublicDownload: bool = True
 
-    pages: List[PageOut] = []
-    pagesQuery: str = ""
-    alwaysLoad: List[AlwaysLoadResource] = []
+    seedPages: List[PageOut] = []
+    preloadResources: List[PreloadResource] = []
+    pagesQueryUrl: str = ""
 
 
 # ============================================================================

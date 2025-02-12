@@ -382,9 +382,11 @@ def test_get_collection_replay(crawler_auth_headers, default_org_id):
     assert data["dateEarliest"]
     assert data["dateLatest"]
     assert data["defaultThumbnailName"]
-    assert data["pagesQuery"].endswith(
+    assert data["seedPages"]
+    assert data["pagesQueryUrl"].endswith(
         f"/orgs/{default_org_id}/collections/{_coll_id}/pages"
     )
+    assert data["preloadResources"]
 
     resources = data["resources"]
     assert resources
@@ -416,13 +418,26 @@ def test_collection_public(crawler_auth_headers, default_org_id):
         f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/public/replay.json",
         headers=crawler_auth_headers,
     )
-    assert r.json()["pagesQuery"].endswith(
+    data = r.json()
+    assert data["seedPages"]
+    assert data["pagesQueryUrl"].endswith(
         f"/orgs/{default_org_id}/collections/{_coll_id}/public/pages"
     )
+    assert data["preloadResources"]
 
     assert r.status_code == 200
     assert r.headers["Access-Control-Allow-Origin"] == "*"
     assert r.headers["Access-Control-Allow-Headers"] == "*"
+
+    # test public pages endpoint
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/public/pages",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] > 0
+    assert data["items"]
 
     # make unlisted and test replay headers
     r = requests.patch(
@@ -454,6 +469,12 @@ def test_collection_public(crawler_auth_headers, default_org_id):
 
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/public/replay.json",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 404
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/public/pages",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 404
