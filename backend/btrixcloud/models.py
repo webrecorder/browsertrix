@@ -735,7 +735,7 @@ class CrawlFileOut(BaseModel):
     hash: str
     size: int
 
-    crawlId: Optional[str] = None
+    itemId: Optional[str] = None
     numReplicas: int = 0
     expireAt: Optional[str] = None
 
