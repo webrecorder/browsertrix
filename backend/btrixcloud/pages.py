@@ -11,7 +11,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Optional, Tuple, List, Dict, Any, Union
 from uuid import UUID, uuid4
 
-from fastapi import Depends, HTTPException, Request
+from fastapi import Depends, HTTPException, Request, Response
 import pymongo
 
 from .models import (
@@ -1111,6 +1111,7 @@ def init_pages_api(
     )
     async def get_public_collection_pages_list(
         coll_id: UUID,
+        response: Response,
         org: Organization = Depends(org_public),
         search: Optional[str] = None,
         url: Optional[str] = None,
@@ -1139,7 +1140,21 @@ def init_pages_api(
             sort_direction=sortDirection,
             public_or_unlisted_only=True,
         )
+
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Headers"] = "*"
         return paginated_format(pages, total, page, pageSize)
+
+    @app.options(
+        "/orgs/{oid}/collections/{coll_id}/public/pages",
+        tags=["pages", "collections"],
+        response_model=EmptyResponse,
+    )
+    async def get_replay_preflight(response: Response):
+        response.headers["Access-Control-Allow-Methods"] = "GET, HEAD, OPTIONS"
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+        return {}
 
     @app.get(
         "/orgs/{oid}/collections/{coll_id}/pages",
