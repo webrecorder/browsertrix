@@ -75,6 +75,9 @@ export class CollectionDetail extends BtrixElement {
   @state()
   private isRwpLoaded = false;
 
+  @state()
+  private rwpDoFullReload = false;
+
   @consume({ context: viewStateContext })
   viewState?: ViewStateContext;
 
@@ -422,6 +425,8 @@ export class CollectionDetail extends BtrixElement {
       } catch (e) {
         console.warn("Full reload not available in RWP");
       }
+    } else {
+      this.rwpDoFullReload = true;
     }
   }
 
@@ -903,6 +908,10 @@ export class CollectionDetail extends BtrixElement {
           if (!this.isRwpLoaded) {
             this.isRwpLoaded = true;
           }
+          if (this.rwpDoFullReload && this.replayEmbed) {
+            this.replayEmbed.fullReload();
+            this.rwpDoFullReload = false;
+          }
         }}
       ></replay-web-page>
     </section>`;
@@ -1044,6 +1053,7 @@ export class CollectionDetail extends BtrixElement {
         icon: "check2-circle",
         id: "collection-item-remove-status",
       });
+      this.refreshReplay();
       void this.fetchCollection();
       void this.fetchArchivedItems({
         // Update page if last item
