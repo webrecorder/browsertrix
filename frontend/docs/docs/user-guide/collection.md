@@ -6,10 +6,10 @@ You can create a collection from the Collections page, or the  _Create New ..._ 
 
 ### Adding Collection Content
 
-Collections are the primary way of organizing and combining archived items into groups for presentation.
+Collections are the primary way of organizing and combining archived items into groups for presentation. Collections also allow you to view a combined replay of any archived items they contain; if a link is present when viewing a collection but the actual page is missing, and another item with that captured page is added to the collection, the link will now work as expected.
 
-!!! tip "Tip: Combining items from multiple sources"
-    If the crawler has not captured every resource or interaction on a webpage, our [ArchiveWeb.page browser extension](https://webrecorder.net/archivewebpage) can be used to manually capture missing content and upload it directly to your org.
+!!! tip "Tip: Patching a crawl with interactive archiving"
+    If the crawler has not captured every resource or interaction on a webpage, our [ArchiveWeb.page browser extension](https://webrecorder.net/archivewebpage) can be used to interactively capture missing content using your web browser and upload it directly to your org.
 
     After adding crawls and uploads to a collection, content from both will become available in the replay viewer.
 
