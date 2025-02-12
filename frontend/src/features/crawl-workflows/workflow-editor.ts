@@ -71,7 +71,7 @@ import {
   humanizeNextDate,
   humanizeSchedule,
 } from "@/utils/cron";
-import { stopProp } from "@/utils/events";
+import { makeCurrentTargetHandler, stopProp } from "@/utils/events";
 import { formValidator, maxLengthValidator } from "@/utils/form";
 import localize from "@/utils/localize";
 import { isArchivingDisabled } from "@/utils/orgs";
@@ -237,6 +237,7 @@ export class WorkflowEditor extends BtrixElement {
     threshold: 0.2, // stricter; default is 0.6
   });
 
+  private readonly handleCurrentTarget = makeCurrentTargetHandler(this);
   private readonly checkFormValidity = formValidator(this);
   private readonly validateNameMax = maxLengthValidator(50);
   private readonly validateDescriptionMax = maxLengthValidator(350);
@@ -442,7 +443,7 @@ export class WorkflowEditor extends BtrixElement {
             activeTab: name,
           });
         }}
-        @sl-show=${() => {
+        @sl-show=${this.handleCurrentTarget(() => {
           this.pauseObserve();
           this.updateProgressState({
             activeTab: name,
@@ -451,8 +452,8 @@ export class WorkflowEditor extends BtrixElement {
           track(AnalyticsTrackEvent.ExpandWorkflowFormSection, {
             section: name,
           });
-        }}
-        @sl-hide=${(e: SlHideEvent) => {
+        })}
+        @sl-hide=${this.handleCurrentTarget((e: SlHideEvent) => {
           const el = e.currentTarget as SlDetails;
 
           // Check if there's any invalid elements before hiding
@@ -471,9 +472,9 @@ export class WorkflowEditor extends BtrixElement {
             invalidEl.focus();
             invalidEl.checkValidity();
           }
-        }}
-        @sl-after-show=${this.resumeObserve}
-        @sl-after-hide=${this.resumeObserve}
+        })}
+        @sl-after-show=${this.handleCurrentTarget(this.resumeObserve)}
+        @sl-after-hide=${this.handleCurrentTarget(this.resumeObserve)}
       >
         <div slot="expand-icon" class="flex items-center">
           <sl-tooltip
