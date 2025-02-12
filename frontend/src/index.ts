@@ -1,5 +1,6 @@
 import "./utils/polyfills";
 
+import { provide } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
 import type {
   SlDialog,
@@ -22,6 +23,7 @@ import "./assets/fonts/Inter/inter.css";
 import "./assets/fonts/Recursive/recursive.css";
 import "./styles.css";
 
+import { viewStateContext } from "./context/view-state";
 import { OrgTab, RouteNamespace, ROUTES } from "./routes";
 import type { UserInfo, UserOrg } from "./types/user";
 import { pageView, type AnalyticsTrackProps } from "./utils/analytics";
@@ -98,6 +100,7 @@ export class App extends BtrixElement {
   @state()
   private translationReady = false;
 
+  @provide({ context: viewStateContext })
   @state()
   private viewState!: ViewState;
 
@@ -558,7 +561,6 @@ export class App extends BtrixElement {
                     @click=${this.navigate.link}
                     >${msg("Running Crawls")}</a
                   >
-                  <div class="hidden md:block">${this.renderFindCrawl()}</div>
                 </div>
               `
             : nothing}
@@ -902,57 +904,6 @@ export class App extends BtrixElement {
     return html`<btrix-not-found
       class="flex w-full items-center justify-center md:bg-neutral-50"
     ></btrix-not-found>`;
-  }
-
-  private renderFindCrawl() {
-    return html`
-      <sl-dropdown
-        @sl-after-show=${(e: Event) => {
-          (e.target as HTMLElement).querySelector("sl-input")?.focus();
-        }}
-        @sl-after-hide=${(e: Event) => {
-          (e.target as HTMLElement).querySelector("sl-input")!.value = "";
-        }}
-        hoist
-      >
-        <button
-          slot="trigger"
-          class="font-medium text-primary-700 hover:text-primary"
-        >
-          ${msg("Jump to Crawl")}
-        </button>
-
-        <div class="p-2">
-          <form
-            @submit=${(e: SubmitEvent) => {
-              e.preventDefault();
-              const id = new FormData(e.target as HTMLFormElement).get(
-                "crawlId",
-              ) as string;
-              this.routeTo(`/crawls/crawl/${id}#watch`);
-              void (e.target as HTMLFormElement).closest("sl-dropdown")?.hide();
-            }}
-          >
-            <div class="flex flex-wrap items-center">
-              <div class="w-90 mr-2">
-                <sl-input
-                  size="small"
-                  name="crawlId"
-                  placeholder=${msg("Enter Crawl ID")}
-                  required
-                ></sl-input>
-              </div>
-              <div class="grow-0">
-                <sl-button size="small" variant="neutral" type="submit">
-                  <sl-icon slot="prefix" name="arrow-right-circle"></sl-icon>
-                  ${msg("Go")}</sl-button
-                >
-              </div>
-            </div>
-          </form>
-        </div>
-      </sl-dropdown>
-    `;
   }
 
   private showUserGuide(pathName?: string) {

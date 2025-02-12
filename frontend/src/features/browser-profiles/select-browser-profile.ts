@@ -168,7 +168,7 @@ export class SelectBrowserProfile extends BtrixElement {
           >${msg("This org doesn't have any custom profiles yet.")}</span
         >
         <a
-          href=${`${this.navigate.orgBasePath}/browser-profiles?new`}
+          href=${`${this.navigate.orgBasePath}/browser-profiles?new=browser-profile`}
           class="font-medium text-primary hover:text-primary-500"
           target="_blank"
           @click=${(e: Event) => {

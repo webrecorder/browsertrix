@@ -5,7 +5,7 @@ from uuid import UUID
 from typing import Optional, DefaultDict, Literal, Annotated, Any
 from pydantic import BaseModel, Field
 from kubernetes.utils import parse_quantity
-from btrixcloud.models import StorageRef, TYPE_ALL_CRAWL_STATES
+from btrixcloud.models import StorageRef, TYPE_ALL_CRAWL_STATES, Organization
 
 
 BTRIX_API = "btrix.cloud/v1"
@@ -70,6 +70,7 @@ class CrawlSpec(BaseModel):
     id: str
     cid: UUID
     oid: UUID
+    org: Organization
     scale: int = 1
     storage: StorageRef
     started: str

@@ -415,7 +415,7 @@ export class ArchivedItemList extends TailwindElement {
       {
         cssCol: "1fr",
         cell: html`<btrix-table-header-cell>
-          ${msg("Pages Crawled")}
+          ${msg("Pages")}
         </btrix-table-header-cell>`,
       },
       {

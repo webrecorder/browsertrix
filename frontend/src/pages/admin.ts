@@ -132,37 +132,6 @@ export class Admin extends BtrixElement {
 
   private renderAdminOrgs() {
     return html`
-      <section class="mb-5 rounded-lg border bg-white p-4 md:p-6">
-        <form
-          @submit=${(e: SubmitEvent) => {
-            const formData = new FormData(e.target as HTMLFormElement);
-            const id = formData.get("crawlId");
-            this.navigate.to(`/crawls/crawl/${id?.toString()}`);
-          }}
-        >
-          <div class="flex flex-wrap items-center">
-            <div
-              class="mr-8 w-full grow-0 whitespace-nowrap text-lg font-medium md:w-min"
-            >
-              ${msg("Go to Crawl")}
-            </div>
-            <div class="mt-2 grow md:mr-2 md:mt-0">
-              <sl-input
-                name="crawlId"
-                placeholder=${msg("Enter Crawl ID")}
-                required
-              ></sl-input>
-            </div>
-            <div class="mt-2 grow-0 text-right md:mt-0">
-              <sl-button variant="neutral" type="submit">
-                <sl-icon slot="suffix" name="arrow-right"></sl-icon>
-                ${msg("Go")}</sl-button
-              >
-            </div>
-          </div>
-        </form>
-      </section>
-
       <div class="grid grid-cols-3 gap-6">
         <div class="col-span-3 md:col-span-2">
           <section>

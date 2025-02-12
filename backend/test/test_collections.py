@@ -582,6 +582,121 @@ def test_list_collections(
     assert second_coll["dateLatest"]
 
 
+def test_list_pages_in_collection(crawler_auth_headers, default_org_id):
+    # Test list endpoint
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/pages",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data["total"] >= 0
+
+    pages = data["items"]
+    assert pages
+
+    for page in pages:
+        assert page["id"]
+        assert page["oid"]
+        assert page["crawl_id"]
+        assert page["url"]
+        assert page["ts"]
+        assert page.get("title") or page.get("title") is None
+        assert page.get("loadState") or page.get("loadState") is None
+        assert page.get("status") or page.get("status") is None
+        assert page.get("mime") or page.get("mime") is None
+        assert page["isError"] in (None, True, False)
+        assert page["isFile"] in (None, True, False)
+
+    # Save info for page to test url and urlPrefix filters
+    coll_page = pages[0]
+    coll_page_id = coll_page["id"]
+    coll_page_url = coll_page["url"]
+    coll_page_ts = coll_page["ts"]
+
+    # Test exact url filter
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/pages?url={coll_page_url}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data["total"] >= 1
+    for matching_page in data["items"]:
+        assert matching_page["url"] == coll_page_url
+
+    # Test exact url and ts filters together
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/pages?url={coll_page_url}&ts={coll_page_ts}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data["total"] >= 1
+    for matching_page in data["items"]:
+        assert matching_page["url"] == coll_page_url
+        assert matching_page["ts"] == coll_page_ts
+
+    # Test urlPrefix filter
+    url_prefix = coll_page_url[:8]
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/pages?urlPrefix={url_prefix}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data["total"] >= 1
+
+    found_matching_page = False
+    for page in data["items"]:
+        if page["id"] == coll_page_id and page["url"] == coll_page_url:
+            found_matching_page = True
+
+    assert found_matching_page
+
+    # Test isSeed filter
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/pages?isSeed=true",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    for page in data["items"]:
+        assert page["isSeed"]
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/pages?isSeed=false",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    for page in data["items"]:
+        assert page["isSeed"] is False
+
+    # Test depth filter
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/pages?depth=0",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    for page in data["items"]:
+        assert page["depth"] == 0
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/pages?depth=1",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    for page in data["items"]:
+        assert page["depth"] == 1
+
+
 def test_remove_upload_from_collection(crawler_auth_headers, default_org_id):
     # Remove upload
     r = requests.post(
@@ -1030,9 +1145,10 @@ def test_collection_url_list(crawler_auth_headers, default_org_id):
 
 
 def test_upload_collection_thumbnail(crawler_auth_headers, default_org_id):
+    # https://dev.browsertrix.com/api/orgs/c69247f4-415e-4abc-b449-e85d2f26c626/collections/b764fbe1-baab-4dc5-8dca-2db6f82c250b/thumbnail?filename=page-thumbnail_47fe599e-ed62-4edd-b078-93d4bf281e0f.jpeg&sourceUrl=https%3A%2F%2Fspecs.webrecorder.net%2F&sourceTs=2024-08-16T08%3A00%3A21.601000Z&sourcePageId=47fe599e-ed62-4edd-b078-93d4bf281e0f
     with open(os.path.join(curr_dir, "data", "thumbnail.jpg"), "rb") as fh:
         r = requests.put(
-            f"{API_PREFIX}/orgs/{default_org_id}/collections/{_public_coll_id}/thumbnail?filename=thumbnail.jpg",
+            f"{API_PREFIX}/orgs/{default_org_id}/collections/{_public_coll_id}/thumbnail?filename=thumbnail.jpg&sourceUrl=https%3A%2F%2Fexample.com%2F&sourceTs=2024-08-16T08%3A00%3A21.601000Z&sourcePageId=1bba4aba-d5be-4943-ad48-d6710633d754",
             headers=crawler_auth_headers,
             data=read_in_chunks(fh),
         )
@@ -1044,7 +1160,8 @@ def test_upload_collection_thumbnail(crawler_auth_headers, default_org_id):
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
-    thumbnail = r.json()["thumbnail"]
+    collection = r.json()
+    thumbnail = collection["thumbnail"]
 
     assert thumbnail["name"]
     assert thumbnail["path"]
@@ -1056,6 +1173,16 @@ def test_upload_collection_thumbnail(crawler_auth_headers, default_org_id):
     assert thumbnail["userid"]
     assert thumbnail["userName"]
     assert thumbnail["created"]
+
+    thumbnailSource = collection["thumbnailSource"]
+
+    assert thumbnailSource["url"]
+    assert thumbnailSource["urlTs"]
+    assert thumbnailSource["urlPageId"]
+
+    assert thumbnailSource["url"] == "https://example.com/"
+    assert thumbnailSource["urlTs"] == "2024-08-16T08:00:21.601000Z"
+    assert thumbnailSource["urlPageId"] == "1bba4aba-d5be-4943-ad48-d6710633d754"
 
 
 def test_set_collection_default_thumbnail(crawler_auth_headers, default_org_id):

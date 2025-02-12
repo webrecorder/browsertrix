@@ -14,10 +14,10 @@ import sectionStrings from "@/strings/crawl-workflows/section";
 import type { Collection } from "@/types/collection";
 import { WorkflowScopeType } from "@/types/workflow";
 import { isApiError } from "@/utils/api";
-import { getAppSettings } from "@/utils/app";
 import { DEPTH_SUPPORTED_SCOPES, isPageScopeType } from "@/utils/crawler";
 import { humanizeSchedule } from "@/utils/cron";
 import { pluralOf } from "@/utils/pluralize";
+import { getServerDefaults } from "@/utils/workflow";
 
 /**
  * Usage:
@@ -55,7 +55,7 @@ export class ConfigDetails extends BtrixElement {
 
   async connectedCallback() {
     super.connectedCallback();
-    void this.fetchAPIDefaults();
+    void this.fetchOrgDefaults();
     await this.fetchCollections();
   }
 
@@ -137,7 +137,9 @@ export class ConfigDetails extends BtrixElement {
 
               if (this.orgDefaults?.maxPagesPerCrawl) {
                 return html`<span class="text-neutral-400">
-                  ${this.localize.number(this.orgDefaults.maxPagesPerCrawl)}
+                  ${this.orgDefaults.maxPagesPerCrawl === Infinity
+                    ? msg("Unlimited")
+                    : this.localize.number(this.orgDefaults.maxPagesPerCrawl)}
                   ${pluralOf("pages", this.orgDefaults.maxPagesPerCrawl)}
                   ${msg("(default)")}</span
                 >`;
@@ -174,12 +176,21 @@ export class ConfigDetails extends BtrixElement {
             ),
           )}
           ${this.renderSetting(
-            msg("Auto-Scroll Behavior"),
+            msg("Autoscroll Behavior"),
             crawlConfig?.config.behaviors &&
               !crawlConfig.config.behaviors.includes("autoscroll")
               ? msg("Disabled")
               : html`<span class="text-neutral-400"
                   >${msg("Enabled (default)")}</span
+                >`,
+          )}
+          ${this.renderSetting(
+            msg("Autoclick Behavior"),
+            crawlConfig?.config.behaviors &&
+              crawlConfig.config.behaviors.includes("autoclick")
+              ? msg("Enabled")
+              : html`<span class="text-neutral-400"
+                  >${msg("Disabled (default)")}</span
                 >`,
           )}
           ${this.renderSetting(
@@ -510,25 +521,29 @@ export class ConfigDetails extends BtrixElement {
     this.requestUpdate();
   }
 
-  private async fetchAPIDefaults() {
+  // TODO Consolidate with workflow-editor
+  private async fetchOrgDefaults() {
     try {
-      const settings = await getAppSettings();
-      const orgDefaults = {
+      const [serverDefaults, { quotas }] = await Promise.all([
+        getServerDefaults(),
+        this.api.fetch<{
+          quotas: { maxPagesPerCrawl?: number };
+        }>(`/orgs/${this.orgId}`),
+      ]);
+
+      const defaults = {
         ...this.orgDefaults,
+        ...serverDefaults,
       };
 
-      if (settings.defaultBehaviorTimeSeconds > 0) {
-        orgDefaults.behaviorTimeoutSeconds =
-          settings.defaultBehaviorTimeSeconds;
+      if (defaults.maxPagesPerCrawl && quotas.maxPagesPerCrawl) {
+        defaults.maxPagesPerCrawl = Math.min(
+          defaults.maxPagesPerCrawl,
+          quotas.maxPagesPerCrawl,
+        );
       }
-      if (settings.defaultPageLoadTimeSeconds > 0) {
-        orgDefaults.pageLoadTimeoutSeconds =
-          settings.defaultPageLoadTimeSeconds;
-      }
-      if (settings.maxPagesPerCrawl > 0) {
-        orgDefaults.maxPagesPerCrawl = settings.maxPagesPerCrawl;
-      }
-      this.orgDefaults = orgDefaults;
+
+      this.orgDefaults = defaults;
     } catch (e) {
       console.debug(e);
     }

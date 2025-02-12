@@ -27,10 +27,11 @@ export function pageSectionsWithNav({
           sticky && tw`lg:sticky lg:top-2 lg:self-start`,
           placement === "start" ? tw`lg:max-w-[16.5rem]` : tw`lg:flex-row`,
         )}
+        part="tabs"
       >
         ${nav}
       </div>
-      <div class="flex-1">${main}</div>
+      <div class="flex-1" part="content">${main}</div>
     </div>
   `;
 }

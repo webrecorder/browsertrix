@@ -6,6 +6,7 @@ import math
 from pprint import pprint
 from typing import Optional, Any, Sequence
 from datetime import datetime
+from uuid import UUID
 
 import json
 
@@ -29,7 +30,6 @@ from btrixcloud.models import (
     CrawlFile,
     CrawlCompleteIn,
     StorageRef,
-    Organization,
 )
 
 from btrixcloud.utils import str_to_date, date_to_str, dt_now
@@ -145,11 +145,13 @@ class CrawlOperator(BaseOperator):
         params["userid"] = spec.get("userid", "")
 
         pods = data.children[POD]
+        org = await self.org_ops.get_org_by_id(UUID(oid))
 
         crawl = CrawlSpec(
             id=crawl_id,
             cid=cid,
             oid=oid,
+            org=org,
             storage=StorageRef(spec["storageName"]),
             crawler_channel=spec.get("crawlerChannel"),
             proxy_id=spec.get("proxyId"),
@@ -204,8 +206,6 @@ class CrawlOperator(BaseOperator):
             await self.k8s.delete_crawl_job(crawl.id)
             return {"status": status.dict(exclude_none=True), "children": []}
 
-        org = None
-
         # first, check storage quota, and fail immediately if quota reached
         if status.state in (
             "starting",
@@ -215,7 +215,6 @@ class CrawlOperator(BaseOperator):
             # only check on very first run, before any pods/pvcs created
             # for now, allow if crawl has already started (pods/pvcs created)
             if not pods and not data.children[PVC]:
-                org = await self.org_ops.get_org_by_id(crawl.oid)
                 if self.org_ops.storage_quota_reached(org):
                     await self.mark_finished(
                         crawl, status, "skipped_storage_quota_reached"
@@ -229,7 +228,7 @@ class CrawlOperator(BaseOperator):
                     return self._empty_response(status)
 
         if status.state in ("starting", "waiting_org_limit"):
-            if not await self.can_start_new(crawl, data, status, org):
+            if not await self.can_start_new(crawl, data, status):
                 return self._empty_response(status)
 
             await self.set_state(
@@ -382,8 +381,9 @@ class CrawlOperator(BaseOperator):
 
         crawlconfig = await self.crawl_config_ops.get_crawl_config(crawl.cid, crawl.oid)
 
-        raw_config = crawlconfig.get_raw_config()
+        self.crawl_config_ops.ensure_quota_page_limit(crawlconfig, crawl.org)
 
+        raw_config = crawlconfig.get_raw_config()
         raw_config["behaviors"] = self._filter_autoclick_behavior(
             raw_config["behaviors"], params["crawler_image"]
         )
@@ -637,14 +637,10 @@ class CrawlOperator(BaseOperator):
         crawl: CrawlSpec,
         data: MCSyncData,
         status: CrawlStatus,
-        org: Optional[Organization] = None,
     ):
         """return true if crawl can start, otherwise set crawl to 'queued' state
         until more crawls for org finish"""
-        if not org:
-            org = await self.org_ops.get_org_by_id(crawl.oid)
-
-        max_crawls = org.quotas.maxConcurrentCrawls or 0
+        max_crawls = crawl.org.quotas.maxConcurrentCrawls or 0
         if not max_crawls:
             return True
 
@@ -1238,15 +1234,13 @@ class CrawlOperator(BaseOperator):
         }
         return json.dumps(err)
 
-    async def add_file_to_crawl(self, cc_data, crawl, redis):
+    async def add_file_to_crawl(self, cc_data, crawl: CrawlSpec, redis):
         """Handle finished CrawlFile to db"""
 
         filecomplete = CrawlCompleteIn(**cc_data)
 
-        org = await self.org_ops.get_org_by_id(crawl.oid)
-
         filename = self.storage_ops.get_org_relative_path(
-            org, crawl.storage, filecomplete.filename
+            crawl.org, crawl.storage, filecomplete.filename
         )
 
         crawl_file = CrawlFile(
@@ -1299,7 +1293,7 @@ class CrawlOperator(BaseOperator):
             return "size-limit"
 
         # gracefully stop crawl if current running crawl sizes reach storage quota
-        org = await self.org_ops.get_org_by_id(crawl.oid)
+        org = crawl.org
 
         if org.readOnly:
             return "stopped_org_readonly"

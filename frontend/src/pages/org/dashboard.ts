@@ -10,7 +10,7 @@ import queryString from "query-string";
 import type { SelectNewDialogEvent } from ".";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import { ClipboardController } from "@/controllers/clipboard";
+import { type CollectionSavedEvent } from "@/features/collections/collection-edit-dialog";
 import { pageHeading } from "@/layouts/page";
 import { pageHeader } from "@/layouts/pageHeader";
 import { RouteNamespace } from "@/routes";
@@ -49,6 +49,9 @@ export class Dashboard extends BtrixElement {
   @state()
   private metrics?: Metrics;
 
+  @state()
+  collectionRefreshing: string | null = null;
+
   private readonly colors = {
     default: "neutral",
     crawls: "green",
@@ -62,6 +65,7 @@ export class Dashboard extends BtrixElement {
       if (!orgId) throw new Error("orgId required");
 
       const collections = await this.getPublicCollections({ orgId });
+      this.collectionRefreshing = null;
       return collections;
     },
     args: () => [this.orgId] as const,
@@ -89,11 +93,47 @@ export class Dashboard extends BtrixElement {
     return html`
       ${pageHeader({
         title: this.userOrg?.name,
+        secondary: html`
+          ${when(
+            this.org?.publicDescription,
+            (publicDescription) => html`
+              <div class="text-pretty text-stone-600">${publicDescription}</div>
+            `,
+          )}
+          ${when(this.org?.publicUrl, (urlStr) => {
+            let url: URL;
+            try {
+              url = new URL(urlStr);
+            } catch {
+              return nothing;
+            }
+
+            return html`
+              <div
+                class="flex items-center gap-1.5 text-pretty text-neutral-700"
+              >
+                <sl-icon
+                  name="globe2"
+                  class="size-4 text-stone-400"
+                  label=${msg("Website")}
+                ></sl-icon>
+                <a
+                  class="font-medium leading-none text-stone-500 transition-colors hover:text-stone-600"
+                  href="${url.href}"
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                >
+                  ${url.href.split("//")[1].replace(/\/$/, "")}
+                </a>
+              </div>
+            `;
+          })}
+        `,
         actions: html`
           ${when(
             this.appState.isAdmin,
             () =>
-              html`<sl-tooltip content=${msg("Manage org settings")}>
+              html`<sl-tooltip content=${msg("Edit Org Settings")}>
                 <sl-icon-button
                   href=${`${this.navigate.orgBasePath}/settings`}
                   class="size-8 text-base"
@@ -293,67 +333,57 @@ export class Dashboard extends BtrixElement {
             ${pageHeading({
               content: msg("Public Collections"),
             })}
-            ${when(
-              this.appState.isCrawler,
-              () => html`
-                <btrix-overflow-dropdown>
-                  <sl-menu>
-                    <btrix-menu-item-link
+            <div class="flex items-center gap-2">
+              ${when(
+                this.appState.isCrawler,
+                () => html`
+                  <!-- TODO Refactor clipboard code, get URL in a nicer way? -->
+                  ${when(this.org, (org) =>
+                    org.enablePublicProfile
+                      ? html` <btrix-copy-button
+                          value=${new URL(
+                            `/${RouteNamespace.PublicOrgs}/${this.orgSlugState}`,
+                            window.location.toString(),
+                          ).toString()}
+                          content=${msg(
+                            "Copy Link to Public Collections Gallery",
+                          )}
+                        ></btrix-copy-button>`
+                      : nothing,
+                  )}
+                  <sl-tooltip content=${msg("Manage Collections")}>
+                    <sl-icon-button
                       href=${`${this.navigate.orgBasePath}/collections`}
-                    >
-                      <sl-icon slot="prefix" name="collection-fill"></sl-icon>
-                      ${msg("Manage Collections")}
-                    </btrix-menu-item-link>
-                    <btrix-menu-item-link
-                      href=${`/${RouteNamespace.PublicOrgs}/${this.orgSlugState}`}
-                    >
-                      <sl-icon slot="prefix" name="globe2"></sl-icon>
-                      ${this.org?.enablePublicProfile
-                        ? msg("Visit Public Collections Gallery")
-                        : msg("Preview Public Collections Gallery")}
-                    </btrix-menu-item-link>
-                    ${when(this.org, (org) =>
-                      org.enablePublicProfile
-                        ? html`
-                            <sl-menu-item
-                              @click=${() => {
-                                ClipboardController.copyToClipboard(
-                                  `${window.location.protocol}//${window.location.hostname}${
-                                    window.location.port
-                                      ? `:${window.location.port}`
-                                      : ""
-                                  }/${RouteNamespace.PublicOrgs}/${this.orgSlugState}`,
-                                );
-                                this.notify.toast({
-                                  message: msg("Link copied"),
-                                });
-                              }}
-                            >
-                              <sl-icon name="copy" slot="prefix"></sl-icon>
-                              ${msg("Copy Link to Public Gallery")}
-                            </sl-menu-item>
-                          `
-                        : this.appState.isAdmin
-                          ? html`
-                              <sl-divider></sl-divider>
-                              <btrix-menu-item-link
-                                href=${`${this.navigate.orgBasePath}/settings`}
-                              >
-                                <sl-icon slot="prefix" name="gear"></sl-icon>
-                                ${msg("Update Org Profile")}
-                              </btrix-menu-item-link>
-                            `
-                          : nothing,
-                    )}
-                  </sl-menu>
-                </btrix-overflow-dropdown>
-              `,
-            )}
+                      class="size-8 text-base"
+                      name="collection"
+                      @click=${this.navigate.link}
+                    ></sl-icon-button>
+                  </sl-tooltip>
+                `,
+              )}
+              <sl-tooltip
+                content=${this.org?.enablePublicProfile
+                  ? msg("Visit Public Collections Gallery")
+                  : msg("Preview Public Collections Gallery")}
+              >
+                <sl-icon-button
+                  href=${`/${RouteNamespace.PublicOrgs}/${this.orgSlugState}`}
+                  class="size-8 text-base"
+                  name="globe2"
+                  @click=${this.navigate.link}
+                ></sl-icon-button>
+              </sl-tooltip>
+            </div>
           </header>
           <div class="rounded-lg border p-10">
             <btrix-collections-grid
               slug=${this.orgSlugState || ""}
               .collections=${this.publicCollections.value}
+              .collectionRefreshing=${this.collectionRefreshing}
+              @btrix-collection-saved=${async (e: CollectionSavedEvent) => {
+                this.collectionRefreshing = e.detail.id;
+                void this.publicCollections.run([this.orgId]);
+              }}
             >
               ${this.renderNoPublicCollections()}
             </btrix-collections-grid>
