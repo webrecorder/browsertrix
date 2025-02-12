@@ -882,14 +882,6 @@ class CrawlOut(BaseMongoModel):
 
 
 # ============================================================================
-class CrawlOutWithResources(CrawlOut):
-    """Crawl output model including resources"""
-
-    resources: Optional[List[CrawlFileOut]] = []
-    collections: Optional[List[CollIdName]] = []
-
-
-# ============================================================================
 class UpdateCrawl(BaseModel):
     """Update crawl"""
 
@@ -1375,6 +1367,17 @@ class PageUrlCount(BaseModel):
     url: AnyHttpUrl
     count: int = 0
     snapshots: List[PageIdTimestamp] = []
+
+
+# ============================================================================
+class CrawlOutWithResources(CrawlOut):
+    """Crawl output model including resources"""
+
+    resources: Optional[List[CrawlFileOut]] = []
+    collections: Optional[List[CollIdName]] = []
+
+    seedPages: List[PageOut] = []
+    pagesQueryUrl: str = ""
 
 
 # ============================================================================

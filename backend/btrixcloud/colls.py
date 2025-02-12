@@ -348,7 +348,9 @@ class CollectionOps:
 
         if resources:
             result["resources"], result["preloadResources"] = (
-                await self.get_collection_crawl_resources(coll_id)
+                await self.get_collection_crawl_resources(
+                    coll_id, include_preloads=True
+                )
             )
 
             result["seedPages"], _ = await self.page_ops.list_collection_pages(
@@ -386,9 +388,7 @@ class CollectionOps:
         if result.get("access") not in allowed_access:
             raise HTTPException(status_code=404, detail="collection_not_found")
 
-        result["resources"], result["preloadResources"] = (
-            await self.get_collection_crawl_resources(coll_id)
-        )
+        result["resources"], _ = await self.get_collection_crawl_resources(coll_id)
 
         thumbnail = result.get("thumbnail")
         if thumbnail:
@@ -488,7 +488,9 @@ class CollectionOps:
 
         for res in items:
             res["resources"], res["preloadResources"] = (
-                await self.get_collection_crawl_resources(res["_id"])
+                await self.get_collection_crawl_resources(
+                    res["_id"], include_preloads=not public_colls_out
+                )
             )
 
             thumbnail = res.get("thumbnail")
@@ -511,7 +513,9 @@ class CollectionOps:
 
         return collections, total
 
-    async def get_collection_crawl_resources(self, coll_id: UUID):
+    async def get_collection_crawl_resources(
+        self, coll_id: UUID, include_preloads=False
+    ):
         """Return pre-signed resources for all collection crawl files."""
         # Ensure collection exists
         _ = await self.get_collection_raw(coll_id)
@@ -531,9 +535,10 @@ class CollectionOps:
 
         preload_resources: List[PreloadResource] = []
 
-        no_page_items = await self.get_collection_resources_with_no_pages(crawls)
-        for item in no_page_items:
-            preload_resources.append(item)
+        if include_preloads:
+            no_page_items = await self.get_collection_resources_with_no_pages(crawls)
+            for item in no_page_items:
+                preload_resources.append(item)
 
         return resources, preload_resources
 

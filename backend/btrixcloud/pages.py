@@ -504,6 +504,7 @@ class PageOps:
         self,
         crawl_id: str,
         org: Optional[Organization] = None,
+        search: Optional[str] = None,
         url: Optional[str] = None,
         url_prefix: Optional[str] = None,
         ts: Optional[datetime] = None,
@@ -534,6 +535,13 @@ class PageOps:
         }
         if org:
             query["oid"] = org.id
+
+        if search:
+            search_regex = re.escape(urllib.parse.unquote(search))
+            query["$or"] = [
+                {"url": {"$regex": search_regex, "$options": "i"}},
+                {"title": {"$regex": search_regex, "$options": "i"}},
+            ]
 
         if url_prefix:
             url_prefix = urllib.parse.unquote(url_prefix)
@@ -1069,6 +1077,7 @@ def init_pages_api(
     async def get_crawl_pages_list(
         crawl_id: str,
         org: Organization = Depends(org_crawl_dep),
+        search: Optional[str] = None,
         url: Optional[str] = None,
         urlPrefix: Optional[str] = None,
         ts: Optional[datetime] = None,
@@ -1090,6 +1099,7 @@ def init_pages_api(
         pages, total = await ops.list_pages(
             crawl_id=crawl_id,
             org=org,
+            search=search,
             url=url,
             url_prefix=urlPrefix,
             ts=ts,
