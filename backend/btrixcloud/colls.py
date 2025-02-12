@@ -755,7 +755,7 @@ class CollectionOps:
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
     ) -> Tuple[List[PageUrlCount], int]:
-        """List all URLs in collection sorted desc by snapshot count"""
+        """List all URLs in collection sorted desc by snapshot count unless prefix is specified"""
         # pylint: disable=duplicate-code, too-many-locals, too-many-branches, too-many-statements
         # Zero-index page for query
         page = page - 1
@@ -764,13 +764,15 @@ class CollectionOps:
         crawl_ids = await self.get_collection_crawl_ids(coll_id)
 
         match_query: dict[str, object] = {"oid": oid, "crawl_id": {"$in": crawl_ids}}
+        sort_query: dict[str, int] = {"count": -1, "_id": 1}
 
         if url_prefix:
             url_prefix = urllib.parse.unquote(url_prefix)
             regex_pattern = f"^{re.escape(url_prefix)}"
             match_query["url"] = {"$regex": regex_pattern, "$options": "i"}
+            sort_query = {"_id": 1}
 
-        aggregate = [{"$match": match_query}]
+        aggregate: List[Dict[str, Union[int, object]]] = [{"$match": match_query}]
 
         aggregate.extend(
             [
@@ -781,7 +783,7 @@ class CollectionOps:
                         "count": {"$sum": 1},
                     },
                 },
-                {"$sort": {"count": -1}},
+                {"$sort": sort_query},
                 {"$set": {"url": "$_id"}},
                 {
                     "$facet": {

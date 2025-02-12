@@ -357,44 +357,52 @@ export class SelectCollectionPage extends BtrixElement {
 
   private renderSearchResults() {
     return this.searchResults.render({
-      pending: () => html`
-        <sl-menu-item slot="menu-item" disabled>
-          <sl-spinner></sl-spinner>
-        </sl-menu-item>
-      `,
-      complete: ({ items }) => {
-        if (!items.length) {
-          return html`
-            <sl-menu-item slot="menu-item" disabled>
-              ${msg("No matching page found.")}
-            </sl-menu-item>
-          `;
-        }
-
-        return html`
-          ${items.map((item: Page) => {
-            return html`
-              <sl-menu-item
-                slot="menu-item"
-                @click=${async () => {
-                  if (this.input) {
-                    this.input.value = item.url;
-                  }
-
-                  this.selectedPage = this.formatPage(item);
-
-                  this.combobox?.hide();
-
-                  this.selectedSnapshot = this.selectedPage.snapshots[0];
-                }}
-                >${item.url}
-              </sl-menu-item>
-            `;
-          })}
-        `;
-      },
+      pending: () =>
+        this.renderItems(
+          // Render previous value so that dropdown doesn't shift while typing
+          this.searchResults.value,
+        ),
+      complete: this.renderItems,
     });
   }
+
+  private readonly renderItems = (
+    results: SelectCollectionPage["searchResults"]["value"],
+  ) => {
+    if (!results) return;
+
+    const { items } = results;
+
+    if (!items.length) {
+      return html`
+        <sl-menu-item slot="menu-item" disabled>
+          ${msg("No matching page found.")}
+        </sl-menu-item>
+      `;
+    }
+
+    return html`
+      ${items.map((item: Page) => {
+        return html`
+          <sl-menu-item
+            slot="menu-item"
+            @click=${async () => {
+              if (this.input) {
+                this.input.value = item.url;
+              }
+
+              this.selectedPage = this.formatPage(item);
+
+              this.combobox?.hide();
+
+              this.selectedSnapshot = this.selectedPage.snapshots[0];
+            }}
+            >${item.url}
+          </sl-menu-item>
+        `;
+      })}
+    `;
+  };
 
   private readonly onSearchInput = debounce(400)(() => {
     const value = this.input?.value;
