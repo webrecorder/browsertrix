@@ -367,7 +367,7 @@ class CollectionOps:
                     seed_wacz_filenames.add(page.filename)
                     always_load.append(
                         AlwaysLoadResource(
-                            wacz=page.filename, itemId=page.crawl_id, hasPages=True
+                            wacz=page.filename, crawlId=page.crawl_id, hasPages=True
                         )
                     )
 
@@ -562,7 +562,7 @@ class CollectionOps:
                     resources_no_pages.append(
                         AlwaysLoadResource(
                             wacz=os.path.basename(resource.name),
-                            itemId=crawl.id,
+                            crawlId=crawl.id,
                             hasPages=False,
                         )
                     )
