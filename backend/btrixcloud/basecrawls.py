@@ -3,6 +3,7 @@
 from datetime import datetime, timedelta
 from typing import Optional, List, Union, Dict, Any, Type, TYPE_CHECKING, cast, Tuple
 from uuid import UUID
+import os
 import urllib.parse
 
 import asyncio
@@ -497,11 +498,11 @@ class BaseCrawlOps:
 
             out_files.append(
                 CrawlFileOut(
-                    name=file_.filename,
+                    name=os.path.basename(file_.filename),
                     path=presigned_url or "",
                     hash=file_.hash,
                     size=file_.size,
-                    crawlId=crawl_id,
+                    itemId=crawl_id,
                     numReplicas=len(file_.replicas) if file_.replicas else 0,
                     expireAt=expire_at_str,
                 )
