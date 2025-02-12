@@ -259,10 +259,6 @@ Sets the date of the month for which crawls scheduled with a `Monthly` _Frequenc
 
 Sets the time that the scheduled crawl will start according to your current timezone.
 
-### Also Run a Crawl Immediately On Save
-
-When enabled, a crawl will run immediately on save as if the `Run Immediately on Save` _Crawl Schedule Type_ was selected, in addition to scheduling a crawl to run according to the above settings.
-
 ## Metadata
 
 Describe and organize your crawl workflow and the resulting archived items.
@@ -282,7 +278,3 @@ Apply tags to the workflow. Tags applied to the workflow will propagate to every
 ### Collection Auto-Add
 
 Search for and specify [collections](collections.md) that this crawl workflow should automatically add archived items to as soon as crawling finishes. Canceled and Failed crawls will not be added to collections.
-
-## Review Settings
-
-This section lists all the previously entered settings for final review. If there are any errors from the previous form sections, they will be listed at the top. The errors need to be corrected before the crawl workflow can be created.
