@@ -53,7 +53,7 @@ from .models import (
     ImageFilePreparer,
     MIN_UPLOAD_PART_SIZE,
     PublicCollOut,
-    AlwaysLoadResource,
+    PreloadResource,
 )
 from .utils import dt_now, slug_from_name, get_duplicate_key_error_field, get_origin
 
@@ -347,35 +347,19 @@ class CollectionOps:
         result = await self.get_collection_raw(coll_id, public_or_unlisted_only)
 
         if resources:
-            result["resources"] = await self.get_collection_crawl_resources(coll_id)
+            result["resources"], result["preloadResources"] = (
+                await self.get_collection_crawl_resources(coll_id)
+            )
 
-            pages, _ = await self.page_ops.list_collection_pages(
+            result["seedPages"], _ = await self.page_ops.list_collection_pages(
                 coll_id, is_seed=True, page_size=25
             )
-            result["pages"] = pages
+
             public = "public/" if public_or_unlisted_only else ""
-            result["pagesQuery"] = (
+            result["pagesQueryUrl"] = (
                 get_origin(headers)
                 + f"/api/orgs/{org.id}/collections/{coll_id}/{public}pages"
             )
-
-            always_load: List[AlwaysLoadResource] = []
-
-            seed_wacz_filenames = set()
-            for page in pages:
-                if page.isSeed and page.filename not in seed_wacz_filenames:
-                    seed_wacz_filenames.add(page.filename)
-                    always_load.append(
-                        AlwaysLoadResource(
-                            wacz=page.filename, crawlId=page.crawl_id, hasPages=True
-                        )
-                    )
-
-            no_page_items = await self.get_collection_resources_with_no_pages(coll_id)
-            for item in no_page_items:
-                always_load.append(item)
-
-            result["alwaysLoad"] = always_load
 
         thumbnail = result.get("thumbnail")
         if thumbnail:
@@ -402,7 +386,9 @@ class CollectionOps:
         if result.get("access") not in allowed_access:
             raise HTTPException(status_code=404, detail="collection_not_found")
 
-        result["resources"] = await self.get_collection_crawl_resources(coll_id)
+        result["resources"], result["preloadResources"] = (
+            await self.get_collection_crawl_resources(coll_id)
+        )
 
         thumbnail = result.get("thumbnail")
         if thumbnail:
@@ -501,7 +487,9 @@ class CollectionOps:
         collections: List[Union[CollOut, PublicCollOut]] = []
 
         for res in items:
-            res["resources"] = await self.get_collection_crawl_resources(res["_id"])
+            res["resources"], res["preloadResources"] = (
+                await self.get_collection_crawl_resources(res["_id"])
+            )
 
             thumbnail = res.get("thumbnail")
             if thumbnail:
@@ -528,7 +516,7 @@ class CollectionOps:
         # Ensure collection exists
         _ = await self.get_collection_raw(coll_id)
 
-        all_files = []
+        resources = []
 
         crawls, _ = await self.crawl_ops.list_all_base_crawls(
             collection_id=coll_id,
@@ -539,29 +527,29 @@ class CollectionOps:
 
         for crawl in crawls:
             if crawl.resources:
-                all_files.extend(crawl.resources)
+                resources.extend(crawl.resources)
 
-        return all_files
+        preload_resources: List[PreloadResource] = []
+
+        no_page_items = await self.get_collection_resources_with_no_pages(crawls)
+        for item in no_page_items:
+            preload_resources.append(item)
+
+        return resources, preload_resources
 
     async def get_collection_resources_with_no_pages(
-        self, coll_id: UUID
-    ) -> List[AlwaysLoadResource]:
+        self, crawls: List[CrawlOutWithResources]
+    ) -> List[PreloadResource]:
         """Return wacz files in collection that have no pages"""
-        resources_no_pages: List[AlwaysLoadResource] = []
+        resources_no_pages: List[PreloadResource] = []
 
-        crawls, _ = await self.crawl_ops.list_all_base_crawls(
-            collection_id=coll_id,
-            states=list(SUCCESSFUL_STATES),
-            page_size=10_000,
-            cls_type=CrawlOutWithResources,
-        )
         for crawl in crawls:
             _, page_count = await self.page_ops.list_pages(crawl.id)
             if page_count == 0 and crawl.resources:
                 for resource in crawl.resources:
                     resources_no_pages.append(
-                        AlwaysLoadResource(
-                            wacz=os.path.basename(resource.name),
+                        PreloadResource(
+                            name=os.path.basename(resource.name),
                             crawlId=crawl.id,
                             hasPages=False,
                         )
@@ -1077,8 +1065,8 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops, user_de
         try:
             all_collections, _ = await colls.list_collections(org, page_size=10_000)
             for collection in all_collections:
-                results[collection.name] = await colls.get_collection_crawl_resources(
-                    collection.id
+                results[collection.name], _ = (
+                    await colls.get_collection_crawl_resources(collection.id)
                 )
         except Exception as exc:
             # pylint: disable=raise-missing-from
