@@ -277,4 +277,4 @@ Apply tags to the workflow. Tags applied to the workflow will propagate to every
 
 ### Collection Auto-Add
 
-Search for and specify [collections](collections.md) that this crawl workflow should automatically add archived items to as soon as crawling finishes. Canceled and Failed crawls will not be added to collections.
+Search for and specify [collections](collection.md) that this crawl workflow should automatically add archived items to as soon as crawling finishes. Canceled and Failed crawls will not be added to collections.
