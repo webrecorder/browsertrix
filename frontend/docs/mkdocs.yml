@@ -61,9 +61,9 @@ nav:
       - Archived Items:
           - user-guide/archived-items.md
           - user-guide/review.md
-          - user-guide/collections.md
       - Collections:
           - user-guide/collection.md
+          - user-guide/presentation-sharing.md
       - Browser Profiles:
           - user-guide/browser-profiles.md
       - Org Settings:
@@ -134,3 +134,6 @@ copyright: "Creative Commons Attribution 4.0 International (CC BY 4.0)"
 
 plugins:
   - search
+  - redirects:
+      redirect_maps:
+        "user-guide/collections.md": "user-guide/collection.md"
