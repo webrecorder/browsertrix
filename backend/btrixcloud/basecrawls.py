@@ -502,7 +502,7 @@ class BaseCrawlOps:
                     path=presigned_url or "",
                     hash=file_.hash,
                     size=file_.size,
-                    itemId=crawl_id,
+                    crawlId=crawl_id,
                     numReplicas=len(file_.replicas) if file_.replicas else 0,
                     expireAt=expire_at_str,
                 )

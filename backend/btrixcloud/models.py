@@ -735,7 +735,7 @@ class CrawlFileOut(BaseModel):
     hash: str
     size: int
 
-    itemId: Optional[str] = None
+    crawlId: Optional[str] = None
     numReplicas: int = 0
     expireAt: Optional[str] = None
 
@@ -1405,7 +1405,7 @@ class AlwaysLoadResource(BaseModel):
     """Resources to always load in RWP"""
 
     wacz: str
-    itemId: str
+    crawlId: str
     hasPages: bool
 
 
