@@ -35,7 +35,7 @@ jobs:
               - 'frontend/*.json'
               - 'frontend/*.js'
               - 'frontend/*.ts'
-              - 'fromtend/docs/mkdocs.yml'
+              - 'frontend/docs/mkdocs.yml'
               - '.github/workflows/frontend-lint-test-build.yaml'
 
   unit-tests:
