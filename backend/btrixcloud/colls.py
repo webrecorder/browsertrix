@@ -772,7 +772,7 @@ class CollectionOps:
             match_query["url"] = {"$regex": regex_pattern, "$options": "i"}
             sort_query = {"_id": 1}
 
-        aggregate = [{"$match": match_query}]
+        aggregate: List[Dict[str, Union[int, object]]] = [{"$match": match_query}]
 
         aggregate.extend(
             [
