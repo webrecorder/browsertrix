@@ -157,9 +157,15 @@ Waits on the page after initial HTML page load for a set number of seconds prior
 
 Limits amount of elapsed time behaviors have to complete.
 
-### Auto Scroll Behavior
+### Autoscroll Behavior
 
 When enabled, the browser will automatically scroll to the end of the page.
+
+### Autoclick Behavior
+
+When enabled, the browser will automatically click on all links, even if they're empty or don't navigate to another page.
+
+This can be helpful for web applications that use JavaScript to handle navigation and don't link to things properly with `href=""` attributes.
 
 ### Delay Before Next Page
 
