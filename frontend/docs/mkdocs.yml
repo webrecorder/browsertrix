@@ -84,6 +84,7 @@ nav:
           - deploy/ansible/k3s.md
       - Administration:
           - deploy/admin/org-import-export.md
+          - deploy/admin/org-storage.md
   - Development:
       - develop/index.md
       - develop/local-dev-setup.md
