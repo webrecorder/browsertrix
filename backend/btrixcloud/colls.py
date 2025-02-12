@@ -580,11 +580,9 @@ class CollectionOps:
     ) -> List[str]:
         """Return list of crawl ids in collection, including only public collections"""
         crawl_ids = []
+        # ensure collection is public or unlisted, else throw here
         if public_or_unlisted_only:
-            try:
-                await self.get_collection_raw(coll_id, public_or_unlisted_only)
-            except HTTPException:
-                return []
+            await self.get_collection_raw(coll_id, public_or_unlisted_only)
 
         async for crawl_raw in self.crawls.find(
             {"collectionIds": coll_id}, projection=["_id"]
