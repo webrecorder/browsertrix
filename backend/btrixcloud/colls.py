@@ -353,8 +353,8 @@ class CollectionOps:
                 )
             )
 
-            result["seedPages"], _ = await self.page_ops.list_collection_pages(
-                coll_id, is_seed=True, page_size=25
+            result["initialPages"], result["totalPages"] = (
+                await self.page_ops.list_collection_pages(coll_id, page_size=25)
             )
 
             public = "public/" if public_or_unlisted_only else ""

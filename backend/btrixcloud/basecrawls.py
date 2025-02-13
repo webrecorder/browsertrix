@@ -170,7 +170,7 @@ class BaseCrawlOps:
             if coll_ids:
                 res["collections"] = await self.colls.get_collection_names(coll_ids)
 
-            res["seedPages"], _ = await self.page_ops.list_pages(
+            res["initialPages"], _ = await self.page_ops.list_pages(
                 crawlid, is_seed=True, page_size=25
             )
 

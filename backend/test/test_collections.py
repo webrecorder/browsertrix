@@ -382,7 +382,7 @@ def test_get_collection_replay(crawler_auth_headers, default_org_id):
     assert data["dateEarliest"]
     assert data["dateLatest"]
     assert data["defaultThumbnailName"]
-    assert data["seedPages"]
+    assert data["initialPages"]
     assert data["pagesQueryUrl"].endswith(
         f"/orgs/{default_org_id}/collections/{_coll_id}/pages"
     )
@@ -419,7 +419,7 @@ def test_collection_public(crawler_auth_headers, default_org_id):
         headers=crawler_auth_headers,
     )
     data = r.json()
-    assert data["seedPages"]
+    assert data["initialPages"]
     assert data["pagesQueryUrl"].endswith(
         f"/orgs/{default_org_id}/collections/{_coll_id}/public/pages"
     )

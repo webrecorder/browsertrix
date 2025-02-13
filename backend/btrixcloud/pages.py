@@ -744,6 +744,9 @@ class PageOps:
                 raise HTTPException(status_code=400, detail="invalid_sort_direction")
 
             aggregate.extend([{"$sort": {sort_by: sort_direction}}])
+        else:
+            # default sort: seeds first, then by timestamp
+            aggregate.extend([{"$sort": {"isSeed": -1, "ts": 1}}])
 
         aggregate.extend(
             [

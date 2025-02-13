@@ -1376,7 +1376,8 @@ class CrawlOutWithResources(CrawlOut):
     resources: Optional[List[CrawlFileOut]] = []
     collections: Optional[List[CollIdName]] = []
 
-    seedPages: List[PageOut] = []
+    initialPages: List[PageOut] = []
+    totalPages: Optional[int] = None
     pagesQueryUrl: str = ""
 
 
@@ -1505,7 +1506,8 @@ class CollOut(BaseMongoModel):
 
     allowPublicDownload: bool = True
 
-    seedPages: List[PageOut] = []
+    initialPages: List[PageOut] = []
+    totalPages: Optional[int] = None
     preloadResources: List[PreloadResource] = []
     pagesQueryUrl: str = ""
 
