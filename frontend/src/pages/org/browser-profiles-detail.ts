@@ -119,7 +119,7 @@ export class BrowserProfilesDetail extends BtrixElement {
                     date=${this.profile.created}
                     month="2-digit"
                     day="2-digit"
-                    year="2-digit"
+                    year="numeric"
                     hour="numeric"
                     minute="numeric"
                     time-zone-name="short"
@@ -136,7 +136,7 @@ export class BrowserProfilesDetail extends BtrixElement {
                   }
                   month="2-digit"
                   day="2-digit"
-                  year="2-digit"
+                  year="numeric"
                   hour="numeric"
                   minute="numeric"
                   time-zone-name="short"

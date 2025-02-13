@@ -353,7 +353,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
               date=${run.started}
               month="2-digit"
               day="2-digit"
-              year="2-digit"
+              year="numeric"
               hour="2-digit"
               minute="2-digit"
             ></btrix-format-date>
@@ -365,7 +365,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
                     date=${run.finished}
                     month="2-digit"
                     day="2-digit"
-                    year="2-digit"
+                    year="numeric"
                     hour="2-digit"
                     minute="2-digit"
                   ></btrix-format-date>
@@ -433,7 +433,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
               date=${runToBeDeleted.started}
               month="2-digit"
               day="2-digit"
-              year="2-digit"
+              year="numeric"
               hour="2-digit"
               minute="2-digit"
             ></btrix-format-date>

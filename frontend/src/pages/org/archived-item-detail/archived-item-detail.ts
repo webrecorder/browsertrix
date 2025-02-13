@@ -155,7 +155,7 @@ export class ArchivedItemDetail extends BtrixElement {
       date=${this.item.finished!}
       month="2-digit"
       day="2-digit"
-      year="2-digit"
+      year="numeric"
       hour="numeric"
       minute="numeric"
       time-zone-name="short"
@@ -778,7 +778,7 @@ export class ArchivedItemDetail extends BtrixElement {
                     date=${this.item!.started}
                     month="2-digit"
                     day="2-digit"
-                    year="2-digit"
+                    year="numeric"
                     hour="numeric"
                     minute="numeric"
                     time-zone-name="short"
