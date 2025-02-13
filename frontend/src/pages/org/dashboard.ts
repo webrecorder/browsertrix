@@ -72,6 +72,9 @@ export class Dashboard extends BtrixElement {
   @state()
   collectionPage = 1;
 
+  // Used for busting cache when updating visible collection
+  cacheBust = 0;
+
   private readonly colors = {
     default: "neutral",
     crawls: "green",
@@ -99,7 +102,12 @@ export class Dashboard extends BtrixElement {
       { cacheConstructor: timeoutCache(300) },
     ),
     args: () =>
-      [this.orgId, this.collectionsView, this.collectionPage] as const,
+      [
+        this.orgId,
+        this.collectionsView,
+        this.collectionPage,
+        this.cacheBust,
+      ] as const,
   });
 
   willUpdate(changedProperties: PropertyValues<this> & Map<string, unknown>) {
@@ -449,6 +457,7 @@ export class Dashboard extends BtrixElement {
                   this.orgId,
                   this.collectionsView,
                   this.collectionPage,
+                  ++this.cacheBust,
                 ]);
               }}
             >
