@@ -8,6 +8,7 @@ import queryString from "query-string";
 
 import {
   HomeView,
+  type BtrixValidateDetail,
   type CollectionSnapshotPreview,
 } from "./collection-snapshot-preview";
 import type { SelectSnapshotDetail } from "./select-collection-page";
@@ -20,8 +21,8 @@ import type { Collection } from "@/types/collection";
  * @fires btrix-change
  */
 @localized()
-@customElement("btrix-collection-replay-dialog")
-export class CollectionStartPageDialog extends BtrixElement {
+@customElement("btrix-collection-initial-view-dialog")
+export class CollectionInitialViewDialog extends BtrixElement {
   static readonly Options: Record<
     HomeView,
     { label: string; icon: NonNullable<SlIcon["name"]>; detail: string }
@@ -70,6 +71,9 @@ export class CollectionStartPageDialog extends BtrixElement {
 
   @query("#thumbnailPreview")
   private readonly thumbnailPreview?: CollectionSnapshotPreview | null;
+
+  @state()
+  validThumbnail = false;
 
   willUpdate(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("collection") && this.collection) {
@@ -174,6 +178,12 @@ export class CollectionStartPageDialog extends BtrixElement {
           view=${this.homeView}
           replaySrc=${`/replay/?${query}#view=pages`}
           .snapshot=${snapshot}
+          @btrix-validate=${({
+            detail: { valid },
+          }: CustomEvent<BtrixValidateDetail>) => {
+            console.log({ valid });
+            this.validThumbnail = valid;
+          }}
         >
         </btrix-collection-snapshot-preview>
 
@@ -192,7 +202,7 @@ export class CollectionStartPageDialog extends BtrixElement {
   }
 
   private renderForm() {
-    const { icon, detail } = CollectionStartPageDialog.Options[this.homeView];
+    const { icon, detail } = CollectionInitialViewDialog.Options[this.homeView];
 
     return html`
       <form @submit=${this.onSubmit}>
@@ -226,7 +236,7 @@ export class CollectionStartPageDialog extends BtrixElement {
 
           ${Object.values(HomeView).map((homeView) => {
             const { label, icon, detail } =
-              CollectionStartPageDialog.Options[homeView];
+              CollectionInitialViewDialog.Options[homeView];
             return html`
               <sl-option value=${homeView}>
                 <sl-icon slot="prefix" name=${icon}></sl-icon>
@@ -255,7 +265,8 @@ export class CollectionStartPageDialog extends BtrixElement {
               <sl-checkbox
                 name="useThumbnail"
                 class="mt-3 part-[form-control-help-text]:text-balance"
-                checked
+                ?checked=${this.validThumbnail}
+                ?disabled=${!this.validThumbnail || !this.selectedSnapshot}
                 help-text=${msg(
                   "If this collection is public, the preview will be used as the thumbnail for this collection.",
                 )}

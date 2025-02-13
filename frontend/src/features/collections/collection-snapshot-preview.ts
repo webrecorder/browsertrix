@@ -16,7 +16,7 @@ export enum HomeView {
   URL = "url",
 }
 
-export type BtrixValidateDetails = {
+export type BtrixValidateDetail = {
   valid: boolean;
 };
 
@@ -93,7 +93,7 @@ export class CollectionSnapshotPreview extends TailwindElement {
 
         if (resp.status === 200) {
           this.dispatchEvent(
-            new CustomEvent<BtrixValidateDetails>("btrix-validate", {
+            new CustomEvent<BtrixValidateDetail>("btrix-validate", {
               detail: { valid: true },
             }),
           );
@@ -105,7 +105,7 @@ export class CollectionSnapshotPreview extends TailwindElement {
         console.error(e);
         if (signal.aborted) return;
         this.dispatchEvent(
-          new CustomEvent<BtrixValidateDetails>("btrix-validate", {
+          new CustomEvent<BtrixValidateDetail>("btrix-validate", {
             detail: { valid: false },
           }),
         );
