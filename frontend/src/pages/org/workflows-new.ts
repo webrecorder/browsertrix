@@ -84,6 +84,7 @@ export class WorkflowsNew extends LiteElement {
         useSitemap: false,
         failOnFailedSeed: false,
         userAgent: null,
+        selectLinks: ["a[href]->href"],
       },
       tags: [],
       crawlTimeout: null,

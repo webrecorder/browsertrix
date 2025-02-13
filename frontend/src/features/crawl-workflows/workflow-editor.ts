@@ -2110,6 +2110,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         blockAds: this.formState.blockAds,
         exclude: trimArray(this.formState.exclusions),
         behaviors: this.setBehaviors(),
+        selectLinks: ["a[href]->href"],
       },
       crawlerChannel: this.formState.crawlerChannel || "default",
       proxyId: this.formState.proxyId,
