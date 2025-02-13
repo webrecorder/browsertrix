@@ -607,7 +607,9 @@ class StorageOps:
 
         # pylint: disable=too-many-function-args
         def stream_page_lines(
-            pagefile_zipinfo: ZipInfo, wacz_url: str, wacz_filename: str
+            pagefile_zipinfo: ZipInfo,
+            wacz_url: str,
+            wacz_filename: str,
         ) -> Iterator[Dict[Any, Any]]:
             """Pass lines as json objects"""
             filename = pagefile_zipinfo.filename
@@ -621,6 +623,8 @@ class StorageOps:
             for line in line_iter:
                 page_json = _parse_json(line.decode("utf-8", errors="ignore"))
                 page_json["filename"] = os.path.basename(wacz_filename)
+                if filename == "pages/pages.jsonl":
+                    page_json["seed"] = True
                 yield page_json
 
         page_generators: List[Iterator[Dict[Any, Any]]] = []
@@ -637,7 +641,11 @@ class StorageOps:
                 ]
                 for pagefile_zipinfo in page_files:
                     page_generators.append(
-                        stream_page_lines(pagefile_zipinfo, wacz_url, wacz_file.name)
+                        stream_page_lines(
+                            pagefile_zipinfo,
+                            wacz_url,
+                            wacz_file.name,
+                        )
                     )
 
         return chain.from_iterable(page_generators)
