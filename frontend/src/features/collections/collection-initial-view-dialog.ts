@@ -20,8 +20,8 @@ import type { Collection } from "@/types/collection";
  * @fires btrix-change
  */
 @localized()
-@customElement("btrix-collection-replay-dialog")
-export class CollectionStartPageDialog extends BtrixElement {
+@customElement("btrix-collection-initial-view-dialog")
+export class CollectionInitialViewDialog extends BtrixElement {
   static readonly Options: Record<
     HomeView,
     { label: string; icon: NonNullable<SlIcon["name"]>; detail: string }
@@ -192,7 +192,7 @@ export class CollectionStartPageDialog extends BtrixElement {
   }
 
   private renderForm() {
-    const { icon, detail } = CollectionStartPageDialog.Options[this.homeView];
+    const { icon, detail } = CollectionInitialViewDialog.Options[this.homeView];
 
     return html`
       <form @submit=${this.onSubmit}>
@@ -226,7 +226,7 @@ export class CollectionStartPageDialog extends BtrixElement {
 
           ${Object.values(HomeView).map((homeView) => {
             const { label, icon, detail } =
-              CollectionStartPageDialog.Options[homeView];
+              CollectionInitialViewDialog.Options[homeView];
             return html`
               <sl-option value=${homeView}>
                 <sl-icon slot="prefix" name=${icon}></sl-icon>
