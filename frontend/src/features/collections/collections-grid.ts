@@ -1,7 +1,12 @@
 import { localized, msg } from "@lit/localize";
 import clsx from "clsx";
 import { html, nothing } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
+import {
+  customElement,
+  property,
+  queryAssignedNodes,
+  state,
+} from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 
@@ -35,6 +40,9 @@ export class CollectionsGrid extends BtrixElement {
 
   @property({ type: Boolean })
   showVisibility = false;
+
+  @queryAssignedNodes({ slot: "pagination" })
+  pagination!: Node[];
 
   render() {
     const gridClassNames = tw`grid flex-1 grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4`;
@@ -132,9 +140,12 @@ export class CollectionsGrid extends BtrixElement {
           `,
         )}
       </ul>
-      <div class="mt-10 flex justify-center">
-        <slot name="pagination"></slot>
-      </div>
+
+      <slot
+        class=${clsx("justify-center flex", this.pagination.length && "mt-10")}
+        name="pagination"
+      ></slot>
+
       ${when(
         showActions,
         () =>
