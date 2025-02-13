@@ -254,6 +254,7 @@ def test_get_upload_pages(admin_auth_headers, default_org_id, upload_id):
         assert page["ts"]
         assert page["filename"]
         assert page.get("title") or page.get("title") is None
+        assert page["isSeed"]
 
     page_id = pages[0]["id"]
     r = requests.get(
@@ -270,6 +271,7 @@ def test_get_upload_pages(admin_auth_headers, default_org_id, upload_id):
     assert page["ts"]
     assert page["filename"]
     assert page.get("title") or page.get("title") is None
+    assert page["isSeed"]
 
     assert page["notes"] == []
     assert page.get("userid") is None
