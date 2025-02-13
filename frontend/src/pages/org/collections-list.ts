@@ -1,5 +1,10 @@
 import { localized, msg } from "@lit/localize";
-import type { SlInput, SlMenuItem } from "@shoelace-style/shoelace";
+import type {
+  SlChangeEvent,
+  SlInput,
+  SlMenuItem,
+  SlRadioGroup,
+} from "@shoelace-style/shoelace";
 import Fuse from "fuse.js";
 import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
@@ -79,6 +84,11 @@ const sortableFields: Record<
 };
 const MIN_SEARCH_LENGTH = 2;
 
+enum ListView {
+  List = "list",
+  Grid = "grid",
+}
+
 @customElement("btrix-collections-list")
 @localized()
 export class CollectionsList extends BtrixElement {
@@ -96,6 +106,9 @@ export class CollectionsList extends BtrixElement {
     field: "modified",
     direction: sortableFields["modified"].defaultDirection!,
   };
+
+  @state()
+  private listView = ListView.List;
 
   @state()
   private filterBy: Partial<Record<keyof Collection, unknown>> = {};
@@ -178,8 +191,13 @@ export class CollectionsList extends BtrixElement {
               >
                 ${this.renderControls()}
               </div>
-              <div class="overflow-auto px-2 pb-1">
-                ${guard([this.collections], this.renderList)}
+              <div class="-mx-3 overflow-auto px-3 pb-1">
+                ${guard(
+                  [this.collections, this.listView],
+                  this.listView === ListView.List
+                    ? this.renderList
+                    : this.renderGrid,
+                )}
               </div>
             `
           : this.renderLoading(),
@@ -291,17 +309,45 @@ export class CollectionsList extends BtrixElement {
                 `,
               )}
             </sl-select>
-            <sl-icon-button
-              name="arrow-down-up"
-              label=${msg("Reverse sort")}
-              @click=${() => {
-                this.orderBy = {
-                  ...this.orderBy,
-                  direction: -1 * this.orderBy.direction,
-                };
-              }}
-            ></sl-icon-button>
+            <sl-tooltip content=${msg("Reverse sort")}>
+              <sl-icon-button
+                name="arrow-down-up"
+                label=${msg("Reverse sort")}
+                @click=${() => {
+                  this.orderBy = {
+                    ...this.orderBy,
+                    direction: -1 * this.orderBy.direction,
+                  };
+                }}
+              ></sl-icon-button>
+            </sl-tooltip>
           </div>
+          <label for="viewStyle" class="mx-2 whitespace-nowrap text-neutral-500"
+            >${msg("View:")}</label
+          >
+          <sl-radio-group
+            id="viewStyle"
+            value=${this.listView}
+            size="small"
+            @sl-change=${(e: SlChangeEvent) => {
+              this.listView = (e.target as SlRadioGroup).value as ListView;
+            }}
+          >
+            <sl-tooltip content=${msg("View as List")}>
+              <sl-radio-button pill value=${ListView.List}>
+                <sl-icon
+                  name="view-list"
+                  label=${msg("List")}
+                ></sl-icon> </sl-radio-button
+            ></sl-tooltip>
+            <sl-tooltip content=${msg("View as Grid")}>
+              <sl-radio-button pill value=${ListView.Grid}>
+                <sl-icon
+                  name="grid"
+                  label=${msg("Grid")}
+                ></sl-icon> </sl-radio-button
+            ></sl-tooltip>
+          </sl-radio-group>
         </div>
       </div>
     `;
@@ -385,6 +431,35 @@ export class CollectionsList extends BtrixElement {
       )}
     `;
   }
+
+  private readonly renderGrid = () => {
+    return html`<btrix-collections-grid
+      slug=${this.orgSlugState || ""}
+      .collections=${this.collections?.items}
+    >
+      ${this.collections &&
+      this.collections.total > this.collections.items.length
+        ? html`
+            <btrix-pagination
+              page=${this.collections.page}
+              totalCount=${this.collections.total}
+              size=${this.collections.pageSize}
+              @page-change=${async (e: PageChangeEvent) => {
+                await this.fetchCollections({
+                  page: e.detail.page,
+                });
+
+                // Scroll to top of list
+                // TODO once deep-linking is implemented, scroll to top of pushstate
+                this.scrollIntoView({ behavior: "smooth" });
+              }}
+              slot="pagination"
+            >
+            </btrix-pagination>
+          `
+        : nothing}
+    </btrix-collections-grid>`;
+  };
 
   private readonly renderList = () => {
     if (this.collections?.items.length) {
