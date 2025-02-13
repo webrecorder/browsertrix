@@ -12,7 +12,7 @@ import {
   validateNameMax,
   type CollectionEdit,
 } from "../collection-edit-dialog";
-import { type BtrixValidateDetails } from "../collection-snapshot-preview";
+import { type BtrixValidateDetail } from "../collection-snapshot-preview";
 import {
   CollectionThumbnail,
   DEFAULT_THUMBNAIL_VARIANT,
@@ -305,7 +305,7 @@ function renderPageThumbnail(
           isEqual(this.selectedSnapshot, this.collection?.thumbnailSource)}
           @btrix-validate=${({
             detail: { valid },
-          }: CustomEvent<BtrixValidateDetails>) => {
+          }: CustomEvent<BtrixValidateDetail>) => {
             if (this.defaultThumbnailName == null && !valid) {
               this.errorTab = "general";
             } else {

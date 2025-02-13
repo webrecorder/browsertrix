@@ -8,6 +8,7 @@ import queryString from "query-string";
 
 import {
   HomeView,
+  type BtrixValidateDetail,
   type CollectionSnapshotPreview,
 } from "./collection-snapshot-preview";
 import type { SelectSnapshotDetail } from "./select-collection-page";
@@ -70,6 +71,9 @@ export class CollectionInitialViewDialog extends BtrixElement {
 
   @query("#thumbnailPreview")
   private readonly thumbnailPreview?: CollectionSnapshotPreview | null;
+
+  @state()
+  validThumbnail = false;
 
   willUpdate(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("collection") && this.collection) {
@@ -174,6 +178,12 @@ export class CollectionInitialViewDialog extends BtrixElement {
           view=${this.homeView}
           replaySrc=${`/replay/?${query}#view=pages`}
           .snapshot=${snapshot}
+          @btrix-validate=${({
+            detail: { valid },
+          }: CustomEvent<BtrixValidateDetail>) => {
+            console.log({ valid });
+            this.validThumbnail = valid;
+          }}
         >
         </btrix-collection-snapshot-preview>
 
@@ -255,7 +265,8 @@ export class CollectionInitialViewDialog extends BtrixElement {
               <sl-checkbox
                 name="useThumbnail"
                 class="mt-3 part-[form-control-help-text]:text-balance"
-                checked
+                ?checked=${this.validThumbnail}
+                ?disabled=${!this.validThumbnail || !this.selectedSnapshot}
                 help-text=${msg(
                   "If this collection is public, the preview will be used as the thumbnail for this collection.",
                 )}
