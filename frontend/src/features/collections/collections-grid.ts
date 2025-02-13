@@ -7,6 +7,7 @@ import {
   queryAssignedNodes,
   state,
 } from "lit/decorators.js";
+import { choose } from "lit/directives/choose.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 
@@ -16,7 +17,7 @@ import { SelectCollectionAccess } from "./select-collection-access";
 import { BtrixElement } from "@/classes/BtrixElement";
 import { textSeparator } from "@/layouts/separator";
 import { RouteNamespace } from "@/routes";
-import type { PublicCollection } from "@/types/collection";
+import { CollectionAccess, type PublicCollection } from "@/types/collection";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
 
@@ -107,15 +108,68 @@ export class CollectionsGrid extends BtrixElement {
                 </div>
                 <div class="${showActions ? "mr-9" : ""} min-h-9 leading-tight">
                   ${this.showVisibility
-                    ? html`<sl-icon
-                        class="mr-[5px] align-[-1px] text-sm"
-                        name=${SelectCollectionAccess.Options[collection.access]
-                          .icon}
-                        label=${SelectCollectionAccess.Options[
-                          collection.access
-                        ].label}
-                      ></sl-icon>`
-                    : nothing}
+                    ? choose(collection.access, [
+                        [
+                          CollectionAccess.Private,
+                          () => html`
+                            <sl-tooltip
+                              content=${SelectCollectionAccess.Options[
+                                CollectionAccess.Private
+                              ].label}
+                            >
+                              <sl-icon
+                                class="mr-[5px] inline-block align-[-1px] text-neutral-600"
+                                name=${SelectCollectionAccess.Options[
+                                  CollectionAccess.Private
+                                ].icon}
+                              ></sl-icon>
+                            </sl-tooltip>
+                          `,
+                        ],
+                        [
+                          CollectionAccess.Unlisted,
+                          () => html`
+                            <sl-tooltip
+                              content=${SelectCollectionAccess.Options[
+                                CollectionAccess.Unlisted
+                              ].label}
+                            >
+                              <sl-icon
+                                class="mr-[5px] inline-block align-[-1px] text-neutral-600"
+                                name=${SelectCollectionAccess.Options[
+                                  CollectionAccess.Unlisted
+                                ].icon}
+                              ></sl-icon>
+                            </sl-tooltip>
+                          `,
+                        ],
+                        [
+                          CollectionAccess.Public,
+                          () => html`
+                            <sl-tooltip
+                              content=${SelectCollectionAccess.Options[
+                                CollectionAccess.Public
+                              ].label}
+                            >
+                              <sl-icon
+                                class="mr-[5px] inline-block align-[-1px] text-success-600"
+                                name=${SelectCollectionAccess.Options[
+                                  CollectionAccess.Public
+                                ].icon}
+                              ></sl-icon>
+                            </sl-tooltip>
+                          `,
+                        ],
+                      ])
+                    : // ? html`<sl-icon
+                      //     class="mr-[5px] align-[-1px] text-sm"
+                      //     name=${SelectCollectionAccess.Options[collection.access]
+                      //       .icon}
+                      //     label=${SelectCollectionAccess.Options[
+                      //       collection.access
+                      //     ].label}
+                      //   ></sl-icon>`
+                      nothing}
                   <strong
                     class="text-base font-medium leading-tight text-stone-800 transition-colors group-hover:text-cyan-600"
                   >
