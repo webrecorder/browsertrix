@@ -129,6 +129,9 @@ export class CollectionsList extends BtrixElement {
   private selectedCollection?: Collection;
 
   @state()
+  collectionRefreshing: string | null = null;
+
+  @state()
   private fetchErrorStatusCode?: number;
 
   @query("sl-input")
@@ -193,7 +196,7 @@ export class CollectionsList extends BtrixElement {
               </div>
               <div class="-mx-3 overflow-auto px-3 pb-1">
                 ${guard(
-                  [this.collections, this.listView],
+                  [this.collections, this.listView, this.collectionRefreshing],
                   this.listView === ListView.List
                     ? this.renderList
                     : this.renderGrid,
@@ -436,6 +439,14 @@ export class CollectionsList extends BtrixElement {
     return html`<btrix-collections-grid
       slug=${this.orgSlugState || ""}
       .collections=${this.collections?.items}
+      .collectionRefreshing=${this.collectionRefreshing}
+      showVisibility
+      class="mt-8 block"
+      @btrix-collection-saved=${async ({ detail }: CollectionSavedEvent) => {
+        this.collectionRefreshing = detail.id;
+        await this.fetchCollections();
+        this.collectionRefreshing = null;
+      }}
     >
       ${this.collections &&
       this.collections.total > this.collections.items.length
@@ -468,7 +479,7 @@ export class CollectionsList extends BtrixElement {
           class="[--btrix-column-gap:var(--sl-spacing-small)]"
           style="grid-template-columns: min-content [clickable-start] 45em repeat(4, 1fr) [clickable-end] min-content"
         >
-          <btrix-table-head class="mb-2 whitespace-nowrap">
+          <btrix-table-head class="mb-2 mt-1 whitespace-nowrap">
             <btrix-table-header-cell>
               <span class="sr-only">${msg("Collection Access")}</span>
             </btrix-table-header-cell>
