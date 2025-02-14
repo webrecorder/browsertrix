@@ -382,6 +382,11 @@ def test_get_collection_replay(crawler_auth_headers, default_org_id):
     assert data["dateEarliest"]
     assert data["dateLatest"]
     assert data["defaultThumbnailName"]
+    assert data["initialPages"]
+    assert data["pagesQueryUrl"].endswith(
+        f"/orgs/{default_org_id}/collections/{_coll_id}/pages"
+    )
+    assert "preloadResources" in data
 
     resources = data["resources"]
     assert resources
@@ -413,9 +418,26 @@ def test_collection_public(crawler_auth_headers, default_org_id):
         f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/public/replay.json",
         headers=crawler_auth_headers,
     )
+    data = r.json()
+    assert data["initialPages"]
+    assert data["pagesQueryUrl"].endswith(
+        f"/orgs/{default_org_id}/collections/{_coll_id}/public/pages"
+    )
+    assert "preloadResources" in data
+
     assert r.status_code == 200
     assert r.headers["Access-Control-Allow-Origin"] == "*"
     assert r.headers["Access-Control-Allow-Headers"] == "*"
+
+    # test public pages endpoint
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/public/pages",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] > 0
+    assert data["items"]
 
     # make unlisted and test replay headers
     r = requests.patch(
@@ -447,6 +469,12 @@ def test_collection_public(crawler_auth_headers, default_org_id):
 
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/public/replay.json",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 404
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/public/pages",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 404
@@ -614,6 +642,39 @@ def test_list_pages_in_collection(crawler_auth_headers, default_org_id):
     coll_page_id = coll_page["id"]
     coll_page_url = coll_page["url"]
     coll_page_ts = coll_page["ts"]
+    coll_page_title = coll_page["title"]
+
+    # Test search filter
+    partial_title = coll_page_title[:5]
+    partial_url = coll_page_url[:8]
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/pages?search={partial_title}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data["total"] >= 1
+    for matching_page in data["items"]:
+        assert (
+            partial_title in matching_page["title"]
+            or partial_url in matching_page["url"]
+        )
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/pages?search={partial_url}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data["total"] >= 1
+    for matching_page in data["items"]:
+        assert (
+            partial_title in matching_page["title"]
+            or partial_url in matching_page["url"]
+        )
 
     # Test exact url filter
     r = requests.get(
