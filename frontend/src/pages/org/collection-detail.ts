@@ -328,7 +328,7 @@ export class CollectionDetail extends BtrixElement {
       >
       </btrix-collection-items-dialog>
 
-      <btrix-collection-replay-dialog
+      <btrix-collection-initial-view-dialog
         ?open=${this.openDialogName === "replaySettings"}
         @btrix-change=${() => {
           // Don't do full refresh of rwp so that rwp-url-change fires
@@ -341,7 +341,7 @@ export class CollectionDetail extends BtrixElement {
         .collection=${this.collection}
         ?replayLoaded=${this.isRwpLoaded}
       >
-      </btrix-collection-replay-dialog>
+      </btrix-collection-initial-view-dialog>
 
       <btrix-collection-edit-dialog
         .collection=${this.collection}

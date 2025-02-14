@@ -3,7 +3,7 @@ import("./collections-grid");
 import("./collection-items-dialog");
 import("./collection-edit-dialog");
 import("./collection-create-dialog");
-import("./collection-replay-dialog");
+import("./collection-initial-view-dialog");
 import("./collection-workflow-list");
 import("./select-collection-access");
 import("./select-collection-page");
