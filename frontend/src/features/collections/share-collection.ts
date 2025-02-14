@@ -135,9 +135,6 @@ export class ShareCollection extends BtrixElement {
         @sl-hide=${() => {
           this.showDialog = false;
         }}
-        @sl-after-hide=${() => {
-          this.tabGroup?.show(Tab.Link);
-        }}
         class="[--body-spacing:0] [--width:40rem]"
       >
         <div class="p-4">
