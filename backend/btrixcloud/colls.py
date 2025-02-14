@@ -822,13 +822,13 @@ class CollectionOps:
         crawl_ids = await self.get_collection_crawl_ids(coll_id)
 
         match_query: dict[str, object] = {"oid": oid, "crawl_id": {"$in": crawl_ids}}
-        sort_query: dict[str, int] = {"count": -1, "_id": 1}
+        sort_query: dict[str, int] = {"isSeed": -1, "count": -1, "ts": 1}
 
         if url_prefix:
             url_prefix = urllib.parse.unquote(url_prefix)
             regex_pattern = f"^{re.escape(url_prefix)}"
             match_query["url"] = {"$regex": regex_pattern, "$options": "i"}
-            sort_query = {"_id": 1}
+            sort_query = {"isSeed": -1, "ts": 1}
 
         aggregate: List[Dict[str, Union[int, object]]] = [{"$match": match_query}]
 
