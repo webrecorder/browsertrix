@@ -738,7 +738,14 @@ export class OrgsList extends BtrixElement {
           </a>
         </btrix-table-cell>
         <btrix-table-cell class="p-2">
-          ${this.localize.date(org.created, { dateStyle: "short" })}
+          ${org.created
+            ? html` <btrix-format-date
+                date=${org.created}
+                month="2-digit"
+                day="2-digit"
+                year="numeric"
+              ></btrix-format-date>`
+            : none}
         </btrix-table-cell>
         <btrix-table-cell class="p-2">
           ${memberCount ? this.localize.number(memberCount) : none}
@@ -750,7 +757,12 @@ export class OrgsList extends BtrixElement {
         </btrix-table-cell>
         <btrix-table-cell class="p-2">
           ${org.lastCrawlFinished
-            ? this.localize.date(org.lastCrawlFinished, { dateStyle: "short" })
+            ? html`<btrix-format-date
+                date=${org.lastCrawlFinished}
+                month="2-digit"
+                day="2-digit"
+                year="numeric"
+              ></btrix-format-date>`
             : none}
         </btrix-table-cell>
         <btrix-table-cell class="p-1">
