@@ -10,6 +10,7 @@ export const collectionThumbnailSourceSchema = z.object({
   url: z.string().url(),
   urlPageId: z.string().url(),
   urlTs: z.string().datetime(),
+  filename: z.string().optional(),
 });
 
 export type CollectionThumbnailSource = z.infer<

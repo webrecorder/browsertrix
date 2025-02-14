@@ -27,6 +27,7 @@ type Snapshot = {
   pageId: string;
   ts: string;
   status: number;
+  filename?: string;
 };
 
 type Page = {

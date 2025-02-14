@@ -11,6 +11,7 @@ export function sourceToSnapshot(
     status: 200,
     ts: source.urlTs,
     url: source.url,
+    filename: source.filename,
   };
 }
 
@@ -22,5 +23,6 @@ export function snapshotToSource(
     urlPageId: source.pageId,
     urlTs: source.ts,
     url: source.url,
+    filename: source.filename,
   };
 }

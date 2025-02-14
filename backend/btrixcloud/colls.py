@@ -872,7 +872,10 @@ class CollectionOps:
                 count=data.get("count", 0),
                 snapshots=[
                     PageIdTimestamp(
-                        pageId=p["_id"], ts=p.get("ts"), status=p.get("status", 200)
+                        pageId=p["_id"],
+                        ts=p.get("ts"),
+                        status=p.get("status", 200),
+                        filename=os.path.basename(p.get("filename", "")),
                     )
                     for p in data.get("pages", [])
                 ],

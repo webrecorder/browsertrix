@@ -1358,6 +1358,7 @@ class PageIdTimestamp(BaseModel):
     pageId: UUID
     ts: Optional[datetime] = None
     status: int = 200
+    filename: str = ""
 
 
 # ============================================================================

@@ -8,7 +8,7 @@ import { isEqual } from "lodash";
 import type { SelectSnapshotDetail } from "./select-collection-page";
 
 import { TailwindElement } from "@/classes/TailwindElement";
-import { formatRwpTimestamp } from "@/utils/replay";
+import { formatRwpTimestamp, formatRwpWaczHash } from "@/utils/replay";
 import { tw } from "@/utils/tailwind";
 
 export enum HomeView {
@@ -86,8 +86,12 @@ export class CollectionSnapshotPreview extends TailwindElement {
           return;
         }
 
+        const hash = snapshot.filename
+          ? await formatRwpWaczHash(snapshot.filename)
+          : "";
+
         const resp = await this.iframe.contentWindow.fetch(
-          `/replay/w/${this.collectionId}/${formatRwpTimestamp(snapshot.ts)}id_/urn:thumbnail:${snapshot.url}`,
+          `/replay/w/${this.collectionId}/${hash ? ":" + hash + "/" : ""}${formatRwpTimestamp(snapshot.ts)}id_/urn:thumbnail:${snapshot.url}`,
           { signal },
         );
 
