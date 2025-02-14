@@ -257,10 +257,7 @@ export class CollectionDetail extends BtrixElement {
                     ${!this.collection ||
                     Boolean(this.collection.crawlCount && !this.isRwpLoaded)
                       ? html`<sl-spinner slot="prefix"></sl-spinner>`
-                      : html`<sl-icon
-                          name="house-fill"
-                          slot="prefix"
-                        ></sl-icon>`}
+                      : html`<sl-icon name="house" slot="prefix"></sl-icon>`}
                     ${msg("Set Initial View")}
                   </sl-button>
                 </sl-tooltip>
@@ -522,7 +519,7 @@ export class CollectionDetail extends BtrixElement {
               ${!this.collection ||
               Boolean(this.collection.crawlCount && !this.isRwpLoaded)
                 ? html`<sl-spinner slot="prefix"></sl-spinner>`
-                : html`<sl-icon name="house-fill" slot="prefix"></sl-icon>`}
+                : html`<sl-icon name="house" slot="prefix"></sl-icon>`}
               ${msg("Set Initial View")}
             </sl-menu-item>
           </sl-tooltip>

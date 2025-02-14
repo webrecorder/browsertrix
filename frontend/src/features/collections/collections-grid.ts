@@ -1,11 +1,17 @@
 import { localized, msg } from "@lit/localize";
 import clsx from "clsx";
 import { html, nothing } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
+import {
+  customElement,
+  property,
+  queryAssignedNodes,
+  state,
+} from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 
 import { CollectionThumbnail } from "./collection-thumbnail";
+import { SelectCollectionAccess } from "./select-collection-access";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { RouteNamespace } from "@/routes";
@@ -31,6 +37,12 @@ export class CollectionsGrid extends BtrixElement {
 
   @property({ type: String })
   collectionRefreshing: string | null = null;
+
+  @property({ type: Boolean })
+  showVisibility = false;
+
+  @queryAssignedNodes({ slot: "pagination" })
+  pagination!: Node[];
 
   render() {
     const gridClassNames = tw`grid flex-1 grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4`;
@@ -89,6 +101,16 @@ export class CollectionsGrid extends BtrixElement {
                   ${this.renderDateBadge(collection)}
                 </div>
                 <div class="${showActions ? "mr-9" : ""} min-h-9 leading-tight">
+                  ${this.showVisibility
+                    ? html`<sl-icon
+                        class="mr-[5px] align-[-1px] text-sm"
+                        name=${SelectCollectionAccess.Options[collection.access]
+                          .icon}
+                        label=${SelectCollectionAccess.Options[
+                          collection.access
+                        ].label}
+                      ></sl-icon>`
+                    : nothing}
                   <strong
                     class="text-base font-medium leading-tight text-stone-700 transition-colors group-hover:text-cyan-600"
                   >
@@ -118,6 +140,12 @@ export class CollectionsGrid extends BtrixElement {
           `,
         )}
       </ul>
+
+      <slot
+        class=${clsx("justify-center flex", this.pagination.length && "mt-10")}
+        name="pagination"
+      ></slot>
+
       ${when(
         showActions,
         () =>
