@@ -92,7 +92,7 @@ class PageOps:
                 if not page_dict.get("url"):
                     continue
 
-                if not page_dict.get("isSeed"):
+                if not page_dict.get("isSeed") and not page_dict.get("seed"):
                     page_dict["isSeed"] = False
 
                 if len(pages_buffer) > batch_size:
