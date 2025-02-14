@@ -1160,6 +1160,11 @@ def init_pages_api(
         return paginated_format(pages, total, page, pageSize)
 
     @app.options(
+        "/orgs/{oid}/collections/{coll_id}/pages",
+        tags=["pages", "collections"],
+        response_model=EmptyResponse,
+    )
+    @app.options(
         "/orgs/{oid}/collections/{coll_id}/public/pages",
         tags=["pages", "collections"],
         response_model=EmptyResponse,
@@ -1177,6 +1182,7 @@ def init_pages_api(
     )
     async def get_collection_pages_list(
         coll_id: UUID,
+        response: Response,
         org: Organization = Depends(org_viewer_dep),
         search: Optional[str] = None,
         url: Optional[str] = None,
@@ -1204,6 +1210,8 @@ def init_pages_api(
             sort_by=sortBy,
             sort_direction=sortDirection,
         )
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Headers"] = "*"
         return paginated_format(pages, total, page, pageSize)
 
     @app.get(
