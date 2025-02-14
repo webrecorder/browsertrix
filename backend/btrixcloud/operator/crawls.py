@@ -1370,6 +1370,7 @@ class CrawlOperator(BaseOperator):
         )
 
         for key, value in sizes.items():
+            increase_storage = False
             value = int(value)
             if value > 0 and status.podStatus:
                 pod_info = status.podStatus[key]
@@ -1382,15 +1383,21 @@ class CrawlOperator(BaseOperator):
                     and pod_info.used.storage * self.min_avail_storage_ratio
                     > pod_info.allocated.storage
                 ):
-                    new_storage = math.ceil(
-                        pod_info.used.storage
-                        * self.min_avail_storage_ratio
-                        / 1_000_000_000
-                    )
-                    pod_info.newStorage = f"{new_storage}Gi"
-                    print(
-                        f"Attempting to adjust storage to {pod_info.newStorage} for {key}"
-                    )
+                    increase_storage = True
+
+            # out of storage
+            if pod_info.isNewExit and pod_info.exitCode == 3:
+                pod_info.used.storage = pod_info.allocated.storage
+                increase_storage = True
+
+            if increase_storage:
+                new_storage = math.ceil(
+                    pod_info.used.storage * self.min_avail_storage_ratio / 1_000_000_000
+                )
+                pod_info.newStorage = f"{new_storage}Gi"
+                print(
+                    f"Attempting to adjust storage to {pod_info.newStorage} for {key}"
+                )
 
         if not status.stopReason:
             status.stopReason = await self.is_crawl_stopping(crawl, status, data)
