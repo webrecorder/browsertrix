@@ -36,6 +36,7 @@ export type SeedConfig = Expand<
     failOnFailedSeed?: boolean;
     depth?: number | null;
     userAgent?: string | null;
+    selectLinks: string[];
   }
 >;
 
