@@ -449,7 +449,12 @@ class StorageOps:
     ) -> str:
         """generate pre-signed url for crawl file"""
 
-        s3storage = self.get_org_storage_by_ref(org, crawlfile.storage)
+        if crawlfile.replicas:
+            storage_ref = crawlfile.replicas[0]
+        else:
+            storage_ref = crawlfile.storage
+
+        s3storage = self.get_org_storage_by_ref(org, storage_ref)
 
         async with self.get_s3_client(
             s3storage,
