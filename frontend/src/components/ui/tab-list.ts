@@ -5,8 +5,6 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { TailwindElement } from "@/classes/TailwindElement";
 
 const DEFAULT_PANEL_ID = "default-panel";
-// postcss-lit-disable-next-line
-export const TWO_COL_SCREEN_MIN_CSS = css`64.5rem`;
 
 const tabTagName = "btrix-tab-list-tab" as const;
 
@@ -58,12 +56,6 @@ export class TabList extends TailwindElement {
       --track-width: 4px;
     }
 
-    @media only screen and (min-width: ${TWO_COL_SCREEN_MIN_CSS}) {
-      .navWrapper {
-        overflow: initial;
-      }
-    }
-
     .header {
       grid-area: header;
       font-size: var(--sl-font-size-large);
@@ -94,12 +86,6 @@ export class TabList extends TailwindElement {
       margin-left: var(--track-width);
     }
 
-    @media only screen and (min-width: ${TWO_COL_SCREEN_MIN_CSS}) {
-      .tablist {
-        flex-direction: column;
-      }
-    }
-
     .track {
       display: none;
       position: absolute;
@@ -117,13 +103,6 @@ export class TabList extends TailwindElement {
       width: var(--track-width);
       border-radius: var(--track-width);
       background-color: var(--sl-color-primary-500);
-    }
-
-    @media only screen and (min-width: ${TWO_COL_SCREEN_MIN_CSS}) {
-      .show-indicator .track,
-      .show-indicator .indicator {
-        display: block;
-      }
     }
   `;
 
@@ -178,7 +157,9 @@ export class TabList extends TailwindElement {
   }
 
   render() {
-    return html`<div class="navWrapper min-w-0">${this.renderNav()}</div>`;
+    return html`<div class="min-w-0 lg:overflow-hidden">
+      ${this.renderNav()}
+    </div>`;
   }
 
   renderNav() {
@@ -193,11 +174,14 @@ export class TabList extends TailwindElement {
             ? "hide-indicator"
             : "show-indicator"} -mx-3 overflow-x-hidden px-3"
         >
-          <div class="track" role="presentation">
-            <div class="indicator" role="presentation"></div>
+          <div class="track lg:block" role="presentation">
+            <div class="indicator lg:block" role="presentation"></div>
           </div>
 
-          <ul class="tablist -mx-3 overflow-x-auto px-3" role="tablist">
+          <ul
+            class="tablist -mx-3 overflow-x-auto px-3 lg:flex-col"
+            role="tablist"
+          >
             <slot></slot>
           </ul>
         </div>
