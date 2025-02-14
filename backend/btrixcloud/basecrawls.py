@@ -3,6 +3,7 @@
 from datetime import datetime, timedelta
 from typing import Optional, List, Union, Dict, Any, Type, TYPE_CHECKING, cast, Tuple
 from uuid import UUID
+import os
 import urllib.parse
 
 import asyncio
@@ -31,7 +32,7 @@ from .models import (
     PRESIGN_DURATION_SECONDS,
 )
 from .pagination import paginated_format, DEFAULT_PAGE_SIZE
-from .utils import dt_now, date_to_str
+from .utils import dt_now, date_to_str, get_origin
 
 if TYPE_CHECKING:
     from .crawlconfigs import CrawlConfigOps
@@ -156,6 +157,7 @@ class BaseCrawlOps:
         org: Optional[Organization] = None,
         type_: Optional[str] = None,
         skip_resources=False,
+        headers: Optional[dict] = None,
     ) -> CrawlOutWithResources:
         """Get crawl data for api output"""
         res = await self.get_crawl_raw(crawlid, org, type_)
@@ -167,6 +169,16 @@ class BaseCrawlOps:
             coll_ids = res.get("collectionIds")
             if coll_ids:
                 res["collections"] = await self.colls.get_collection_names(coll_ids)
+
+            res["initialPages"], _ = await self.page_ops.list_pages(
+                crawlid, is_seed=True, page_size=25
+            )
+
+            oid = res.get("oid")
+            if oid:
+                res["pagesQueryUrl"] = (
+                    get_origin(headers) + f"/api/orgs/{oid}/crawls/{crawlid}/pages"
+                )
 
         crawl = CrawlOutWithResources.from_dict(res)
 
@@ -497,7 +509,7 @@ class BaseCrawlOps:
 
             out_files.append(
                 CrawlFileOut(
-                    name=file_.filename,
+                    name=os.path.basename(file_.filename),
                     path=presigned_url or "",
                     hash=file_.hash,
                     size=file_.size,

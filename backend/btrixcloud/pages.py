@@ -11,7 +11,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Optional, Tuple, List, Dict, Any, Union
 from uuid import UUID, uuid4
 
-from fastapi import Depends, HTTPException, Request
+from fastapi import Depends, HTTPException, Request, Response
 import pymongo
 
 from .models import (
@@ -35,6 +35,7 @@ from .models import (
     DeletedResponse,
     PageNoteAddedResponse,
     PageNoteUpdatedResponse,
+    EmptyResponse,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import str_to_date, str_list_to_bools, dt_now
@@ -91,7 +92,7 @@ class PageOps:
                 if not page_dict.get("url"):
                     continue
 
-                if not page_dict.get("isSeed"):
+                if not page_dict.get("isSeed") and not page_dict.get("seed"):
                     page_dict["isSeed"] = False
 
                 if len(pages_buffer) > batch_size:
@@ -503,6 +504,7 @@ class PageOps:
         self,
         crawl_id: str,
         org: Optional[Organization] = None,
+        search: Optional[str] = None,
         url: Optional[str] = None,
         url_prefix: Optional[str] = None,
         ts: Optional[datetime] = None,
@@ -533,6 +535,13 @@ class PageOps:
         }
         if org:
             query["oid"] = org.id
+
+        if search:
+            search_regex = re.escape(urllib.parse.unquote(search))
+            query["$or"] = [
+                {"url": {"$regex": search_regex, "$options": "i"}},
+                {"title": {"$regex": search_regex, "$options": "i"}},
+            ]
 
         if url_prefix:
             url_prefix = urllib.parse.unquote(url_prefix)
@@ -661,6 +670,7 @@ class PageOps:
         self,
         coll_id: UUID,
         org: Optional[Organization] = None,
+        search: Optional[str] = None,
         url: Optional[str] = None,
         url_prefix: Optional[str] = None,
         ts: Optional[datetime] = None,
@@ -670,6 +680,7 @@ class PageOps:
         page: int = 1,
         sort_by: Optional[str] = None,
         sort_direction: Optional[int] = -1,
+        public_or_unlisted_only=False,
     ) -> Tuple[Union[List[PageOut], List[PageOutWithSingleQA]], int]:
         """List all pages in collection, with optional filtering"""
         # pylint: disable=duplicate-code, too-many-locals, too-many-branches, too-many-statements
@@ -677,7 +688,9 @@ class PageOps:
         page = page - 1
         skip = page_size * page
 
-        crawl_ids = await self.coll_ops.get_collection_crawl_ids(coll_id)
+        crawl_ids = await self.coll_ops.get_collection_crawl_ids(
+            coll_id, public_or_unlisted_only
+        )
 
         query: dict[str, object] = {
             "crawl_id": {"$in": crawl_ids},
@@ -685,7 +698,14 @@ class PageOps:
         if org:
             query["oid"] = org.id
 
-        if url_prefix:
+        if search:
+            search_regex = re.escape(urllib.parse.unquote(search))
+            query["$or"] = [
+                {"url": {"$regex": search_regex, "$options": "i"}},
+                {"title": {"$regex": search_regex, "$options": "i"}},
+            ]
+
+        elif url_prefix:
             url_prefix = urllib.parse.unquote(url_prefix)
             regex_pattern = f"^{re.escape(url_prefix)}"
             query["url"] = {"$regex": regex_pattern, "$options": "i"}
@@ -724,6 +744,9 @@ class PageOps:
                 raise HTTPException(status_code=400, detail="invalid_sort_direction")
 
             aggregate.extend([{"$sort": {sort_by: sort_direction}}])
+        else:
+            # default sort: seeds first, then by timestamp
+            aggregate.extend([{"$sort": {"isSeed": -1, "ts": 1}}])
 
         aggregate.extend(
             [
@@ -886,6 +909,7 @@ def init_pages_api(
 
     org_viewer_dep = org_ops.org_viewer_dep
     org_crawl_dep = org_ops.org_crawl_dep
+    org_public = org_ops.org_public
 
     @app.post(
         "/orgs/{oid}/crawls/all/pages/reAdd",
@@ -1056,6 +1080,7 @@ def init_pages_api(
     async def get_crawl_pages_list(
         crawl_id: str,
         org: Organization = Depends(org_crawl_dep),
+        search: Optional[str] = None,
         url: Optional[str] = None,
         urlPrefix: Optional[str] = None,
         ts: Optional[datetime] = None,
@@ -1077,6 +1102,7 @@ def init_pages_api(
         pages, total = await ops.list_pages(
             crawl_id=crawl_id,
             org=org,
+            search=search,
             url=url,
             url_prefix=urlPrefix,
             ts=ts,
@@ -1093,13 +1119,15 @@ def init_pages_api(
         return paginated_format(pages, total, page, pageSize)
 
     @app.get(
-        "/orgs/{oid}/collections/{coll_id}/pages",
+        "/orgs/{oid}/collections/{coll_id}/public/pages",
         tags=["pages", "collections"],
         response_model=PaginatedPageOutResponse,
     )
-    async def get_collection_pages_list(
+    async def get_public_collection_pages_list(
         coll_id: UUID,
-        org: Organization = Depends(org_viewer_dep),
+        response: Response,
+        org: Organization = Depends(org_public),
+        search: Optional[str] = None,
         url: Optional[str] = None,
         urlPrefix: Optional[str] = None,
         ts: Optional[datetime] = None,
@@ -1114,6 +1142,64 @@ def init_pages_api(
         pages, total = await ops.list_collection_pages(
             coll_id=coll_id,
             org=org,
+            search=search,
+            url=url,
+            url_prefix=urlPrefix,
+            ts=ts,
+            is_seed=isSeed,
+            depth=depth,
+            page_size=pageSize,
+            page=page,
+            sort_by=sortBy,
+            sort_direction=sortDirection,
+            public_or_unlisted_only=True,
+        )
+
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+        return paginated_format(pages, total, page, pageSize)
+
+    @app.options(
+        "/orgs/{oid}/collections/{coll_id}/pages",
+        tags=["pages", "collections"],
+        response_model=EmptyResponse,
+    )
+    @app.options(
+        "/orgs/{oid}/collections/{coll_id}/public/pages",
+        tags=["pages", "collections"],
+        response_model=EmptyResponse,
+    )
+    async def get_replay_preflight(response: Response):
+        response.headers["Access-Control-Allow-Methods"] = "GET, HEAD, OPTIONS"
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+        return {}
+
+    @app.get(
+        "/orgs/{oid}/collections/{coll_id}/pages",
+        tags=["pages", "collections"],
+        response_model=PaginatedPageOutResponse,
+    )
+    async def get_collection_pages_list(
+        coll_id: UUID,
+        response: Response,
+        org: Organization = Depends(org_viewer_dep),
+        search: Optional[str] = None,
+        url: Optional[str] = None,
+        urlPrefix: Optional[str] = None,
+        ts: Optional[datetime] = None,
+        isSeed: Optional[bool] = None,
+        depth: Optional[int] = None,
+        pageSize: int = DEFAULT_PAGE_SIZE,
+        page: int = 1,
+        sortBy: Optional[str] = None,
+        sortDirection: Optional[int] = -1,
+    ):
+        """Retrieve paginated list of pages in collection"""
+        pages, total = await ops.list_collection_pages(
+            coll_id=coll_id,
+            org=org,
+            search=search,
             url=url,
             url_prefix=urlPrefix,
             ts=ts,
@@ -1124,6 +1210,8 @@ def init_pages_api(
             sort_by=sortBy,
             sort_direction=sortDirection,
         )
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Headers"] = "*"
         return paginated_format(pages, total, page, pageSize)
 
     @app.get(

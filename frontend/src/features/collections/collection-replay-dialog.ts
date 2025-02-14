@@ -10,7 +10,7 @@ import {
   HomeView,
   type CollectionSnapshotPreview,
 } from "./collection-snapshot-preview";
-import type { SelectSnapshotDetail } from "./select-collection-start-page";
+import type { SelectSnapshotDetail } from "./select-collection-page";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
@@ -82,7 +82,7 @@ export class CollectionStartPageDialog extends BtrixElement {
       this.homeView === HomeView.URL && !this.selectedSnapshot;
     return html`
       <btrix-dialog
-        .label=${msg("Configure Replay View")}
+        .label=${msg("Set Initial View")}
         .open=${this.open}
         class="[--width:60rem]"
         @sl-show=${() => (this.showContent = true)}
@@ -198,7 +198,7 @@ export class CollectionStartPageDialog extends BtrixElement {
       <form @submit=${this.onSubmit}>
         <sl-select
           name="homeView"
-          label=${msg("Select Initial View")}
+          label=${msg("Initial View")}
           value=${this.homeView}
           hoist
           ?disabled=${!this.replayLoaded}
@@ -242,7 +242,7 @@ export class CollectionStartPageDialog extends BtrixElement {
           () => html`
             <sl-divider></sl-divider>
             <section>
-              <btrix-select-collection-start-page
+              <btrix-select-collection-page
                 .collectionId=${this.collectionId}
                 .collection=${this.collection}
                 @btrix-select=${async (
@@ -250,20 +250,17 @@ export class CollectionStartPageDialog extends BtrixElement {
                 ) => {
                   this.selectedSnapshot = e.detail.item;
                 }}
-              ></btrix-select-collection-start-page>
+              ></btrix-select-collection-page>
 
-              <sl-checkbox name="useThumbnail" class="mt-3" checked>
+              <sl-checkbox
+                name="useThumbnail"
+                class="mt-3 part-[form-control-help-text]:text-balance"
+                checked
+                help-text=${msg(
+                  "If this collection is public, the preview will be used as the thumbnail for this collection.",
+                )}
+              >
                 ${msg("Update collection thumbnail")}
-                <sl-tooltip
-                  content=${msg(
-                    "If this collection is public, the preview will be used as the thumbnail for this collection.",
-                  )}
-                >
-                  <sl-icon
-                    name="info-circle"
-                    class="[vertical-align:-.175em]"
-                  ></sl-icon>
-                </sl-tooltip>
               </sl-checkbox>
             </section>
           `,
@@ -301,7 +298,8 @@ export class CollectionStartPageDialog extends BtrixElement {
         homeView === HomeView.URL &&
         useThumbnail === "on" &&
         this.selectedSnapshot &&
-        this.collection?.homeUrlPageId !== this.selectedSnapshot.pageId;
+        this.collection?.thumbnailSource?.urlPageId !==
+          this.selectedSnapshot.pageId;
       // TODO get filename from rwp?
       const fileName = `page-thumbnail_${this.selectedSnapshot?.pageId}.jpeg`;
       let file: File | undefined;
@@ -328,12 +326,22 @@ export class CollectionStartPageDialog extends BtrixElement {
 
       if (shouldUpload) {
         try {
-          if (!file || !fileName) throw new Error("file or fileName missing");
-          await this.api.upload(
-            `/orgs/${this.orgId}/collections/${this.collectionId}/thumbnail?filename=${fileName}`,
-            file,
-          );
-          await this.updateThumbnail({ defaultThumbnailName: null });
+          if (!file || !fileName || !this.selectedSnapshot)
+            throw new Error("file or fileName missing");
+          const searchParams = new URLSearchParams({
+            filename: fileName,
+            sourceUrl: this.selectedSnapshot.url,
+            sourceTs: this.selectedSnapshot.ts,
+            sourcePageId: this.selectedSnapshot.pageId,
+          });
+          const tasks = [
+            this.api.upload(
+              `/orgs/${this.orgId}/collections/${this.collectionId}/thumbnail?${searchParams.toString()}`,
+              file,
+            ),
+            this.updateThumbnail({ defaultThumbnailName: null }),
+          ];
+          await Promise.all(tasks);
 
           this.notify.toast({
             message: msg("Home view and collection thumbnail updated."),

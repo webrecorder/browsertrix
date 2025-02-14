@@ -382,6 +382,11 @@ def test_get_collection_replay(crawler_auth_headers, default_org_id):
     assert data["dateEarliest"]
     assert data["dateLatest"]
     assert data["defaultThumbnailName"]
+    assert data["initialPages"]
+    assert data["pagesQueryUrl"].endswith(
+        f"/orgs/{default_org_id}/collections/{_coll_id}/pages"
+    )
+    assert "preloadResources" in data
 
     resources = data["resources"]
     assert resources
@@ -413,9 +418,26 @@ def test_collection_public(crawler_auth_headers, default_org_id):
         f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/public/replay.json",
         headers=crawler_auth_headers,
     )
+    data = r.json()
+    assert data["initialPages"]
+    assert data["pagesQueryUrl"].endswith(
+        f"/orgs/{default_org_id}/collections/{_coll_id}/public/pages"
+    )
+    assert "preloadResources" in data
+
     assert r.status_code == 200
     assert r.headers["Access-Control-Allow-Origin"] == "*"
     assert r.headers["Access-Control-Allow-Headers"] == "*"
+
+    # test public pages endpoint
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/public/pages",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] > 0
+    assert data["items"]
 
     # make unlisted and test replay headers
     r = requests.patch(
@@ -447,6 +469,12 @@ def test_collection_public(crawler_auth_headers, default_org_id):
 
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/public/replay.json",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 404
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/public/pages",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 404
@@ -614,6 +642,39 @@ def test_list_pages_in_collection(crawler_auth_headers, default_org_id):
     coll_page_id = coll_page["id"]
     coll_page_url = coll_page["url"]
     coll_page_ts = coll_page["ts"]
+    coll_page_title = coll_page["title"]
+
+    # Test search filter
+    partial_title = coll_page_title[:5]
+    partial_url = coll_page_url[:8]
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/pages?search={partial_title}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data["total"] >= 1
+    for matching_page in data["items"]:
+        assert (
+            partial_title in matching_page["title"]
+            or partial_url in matching_page["url"]
+        )
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/pages?search={partial_url}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data["total"] >= 1
+    for matching_page in data["items"]:
+        assert (
+            partial_title in matching_page["title"]
+            or partial_url in matching_page["url"]
+        )
 
     # Test exact url filter
     r = requests.get(
@@ -1145,9 +1206,10 @@ def test_collection_url_list(crawler_auth_headers, default_org_id):
 
 
 def test_upload_collection_thumbnail(crawler_auth_headers, default_org_id):
+    # https://dev.browsertrix.com/api/orgs/c69247f4-415e-4abc-b449-e85d2f26c626/collections/b764fbe1-baab-4dc5-8dca-2db6f82c250b/thumbnail?filename=page-thumbnail_47fe599e-ed62-4edd-b078-93d4bf281e0f.jpeg&sourceUrl=https%3A%2F%2Fspecs.webrecorder.net%2F&sourceTs=2024-08-16T08%3A00%3A21.601000Z&sourcePageId=47fe599e-ed62-4edd-b078-93d4bf281e0f
     with open(os.path.join(curr_dir, "data", "thumbnail.jpg"), "rb") as fh:
         r = requests.put(
-            f"{API_PREFIX}/orgs/{default_org_id}/collections/{_public_coll_id}/thumbnail?filename=thumbnail.jpg",
+            f"{API_PREFIX}/orgs/{default_org_id}/collections/{_public_coll_id}/thumbnail?filename=thumbnail.jpg&sourceUrl=https%3A%2F%2Fexample.com%2F&sourceTs=2024-08-16T08%3A00%3A21.601000Z&sourcePageId=1bba4aba-d5be-4943-ad48-d6710633d754",
             headers=crawler_auth_headers,
             data=read_in_chunks(fh),
         )
@@ -1159,7 +1221,8 @@ def test_upload_collection_thumbnail(crawler_auth_headers, default_org_id):
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
-    thumbnail = r.json()["thumbnail"]
+    collection = r.json()
+    thumbnail = collection["thumbnail"]
 
     assert thumbnail["name"]
     assert thumbnail["path"]
@@ -1171,6 +1234,16 @@ def test_upload_collection_thumbnail(crawler_auth_headers, default_org_id):
     assert thumbnail["userid"]
     assert thumbnail["userName"]
     assert thumbnail["created"]
+
+    thumbnailSource = collection["thumbnailSource"]
+
+    assert thumbnailSource["url"]
+    assert thumbnailSource["urlTs"]
+    assert thumbnailSource["urlPageId"]
+
+    assert thumbnailSource["url"] == "https://example.com/"
+    assert thumbnailSource["urlTs"] == "2024-08-16T08:00:21.601000Z"
+    assert thumbnailSource["urlPageId"] == "1bba4aba-d5be-4943-ad48-d6710633d754"
 
 
 def test_set_collection_default_thumbnail(crawler_auth_headers, default_org_id):
