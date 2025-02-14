@@ -70,7 +70,7 @@ describe("Localize", () => {
       const localize = new Localize();
       localize.setLanguage("es");
       expect(localize.date(new Date("2024-01-01T00:00:00.000Z"))).to.equal(
-        "31/12/23, 19:00",
+        "31/12/2023, 19:00",
       );
     });
 
@@ -110,7 +110,7 @@ describe("Localize", () => {
     it("formats with the current language", () => {
       const localize = new Localize("ko");
       expect(localize.date(new Date("2024-01-01T00:00:00.000Z"))).to.equal(
-        "23. 12. 31. 오후 07:00",
+        "2023. 12. 31. 오후 07:00",
       );
     });
 
