@@ -88,6 +88,7 @@ class PageOps:
             stream = await self.storage_ops.sync_stream_wacz_pages(
                 crawl.resources or []
             )
+            new_uuid = crawl.type == "upload"
             for page_dict in stream:
                 if not page_dict.get("url"):
                     continue
@@ -100,7 +101,7 @@ class PageOps:
                     pages_buffer = []
 
                 pages_buffer.append(
-                    self._get_page_from_dict(page_dict, crawl_id, crawl.oid)
+                    self._get_page_from_dict(page_dict, crawl_id, crawl.oid, new_uuid)
                 )
 
             # Add any remaining pages in buffer to db
@@ -163,16 +164,14 @@ class PageOps:
             )
 
     def _get_page_from_dict(
-        self, page_dict: Dict[str, Any], crawl_id: str, oid: UUID
+        self, page_dict: Dict[str, Any], crawl_id: str, oid: UUID, new_uuid: bool
     ) -> Page:
         """Return Page object from dict"""
-        page_id = page_dict.get("id", "")
-        if not page_id:
-            page_id = uuid4()
+        page_id = page_dict.get("id", "") if not new_uuid else None
 
         try:
             UUID(page_id)
-        except ValueError:
+        except (TypeError, ValueError):
             page_id = uuid4()
 
         status = page_dict.get("status")
@@ -222,7 +221,7 @@ class PageOps:
         oid: UUID,
     ):
         """Add page to database"""
-        page = self._get_page_from_dict(page_dict, crawl_id, oid)
+        page = self._get_page_from_dict(page_dict, crawl_id, oid, new_uuid=False)
 
         page_to_insert = page.to_dict(exclude_unset=True, exclude_none=True)
 
