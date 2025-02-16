@@ -24,7 +24,7 @@ from pydantic import (
     BeforeValidator,
     TypeAdapter,
 )
-from slugify import slugify
+from pathvalidate import sanitize_filename
 
 # from fastapi_users import models as fastapi_users_models
 
@@ -1093,7 +1093,7 @@ class FilePreparer:
     def prepare_filename(self, filename):
         """prepare filename by sanitizing and adding extra string
         to avoid duplicates"""
-        name = slugify(filename.rsplit("/", 1)[-1])
+        name = sanitize_filename(filename.rsplit("/", 1)[-1]).replace(" ", "-")
         parts = name.split(".")
         randstr = base64.b32encode(os.urandom(5)).lower()
         parts[0] += "-" + randstr.decode("utf-8")
