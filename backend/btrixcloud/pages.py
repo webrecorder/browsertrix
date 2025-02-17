@@ -38,7 +38,7 @@ from .models import (
     EmptyResponse,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
-from .utils import str_to_date, str_list_to_bools, dt_now, date_to_str
+from .utils import str_to_date, str_list_to_bools, dt_now
 
 if TYPE_CHECKING:
     from .background_jobs import BackgroundJobOps
@@ -791,7 +791,8 @@ class PageOps:
             is_upload = await self.crawl_ops.is_upload(crawl_id)
             print(f"Processing {'upload' if is_upload else 'crawl'} {crawl_id}")
             if not is_upload:
-                qa_temp_db_name = f"pages-qa-temp-{crawl_id}-{date_to_str(dt_now())}"
+                ts_now = dt_now().strftime("%Y%m%d%H%M%S")
+                qa_temp_db_name = f"pages-qa-temp-{crawl_id}-{ts_now}"
                 cursor = self.pages.aggregate(
                     [
                         {
