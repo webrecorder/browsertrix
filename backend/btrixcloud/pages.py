@@ -131,6 +131,7 @@ class PageOps:
         try:
             crawl = await self.crawl_ops.get_crawl_out(crawl_id)
             if not crawl.resources:
+                print(f"skipping {crawl_id} - no crawl resources")
                 return
 
             for wacz_file in crawl.resources:
@@ -140,11 +141,13 @@ class PageOps:
                 stream = await self.storage_ops.sync_stream_wacz_pages([wacz_file])
                 for page_dict in stream:
                     if not page_dict.get("url"):
+                        print(f"skipping {crawl_id} {wacz_file} - no url")
                         continue
 
                     page_id = page_dict.get("id")
 
                     if not page_id:
+                        print(f"skipping {crawl_id} {wacz_file} - no page id")
                         continue
 
                     if page_id:
@@ -152,6 +155,9 @@ class PageOps:
                             page_id = UUID(page_id)
                         # pylint: disable=broad-exception-caught
                         except Exception:
+                            print(
+                                f"skipping {crawl_id} {wacz_file} - invalid page id: {page_id}"
+                            )
                             continue
 
                     await self.pages.find_one_and_update(
