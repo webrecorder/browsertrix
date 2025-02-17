@@ -846,6 +846,7 @@ class PageOps:
                 assert await cursor.to_list() == []
                 await qa_temp_db.drop()
                 print(f"Dropped temp db {qa_temp_db_name}")
+        # pylint: disable=broad-exception-caught
         except Exception as e:
             print(e)
 
