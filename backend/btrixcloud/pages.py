@@ -88,19 +88,26 @@ class PageOps:
             stream = await self.storage_ops.sync_stream_wacz_pages(
                 crawl.resources or []
             )
+            new_uuid = crawl.type == "upload"
+            seed_count = 0
+            non_seed_count = 0
             for page_dict in stream:
                 if not page_dict.get("url"):
                     continue
 
-                if not page_dict.get("isSeed") and not page_dict.get("seed"):
-                    page_dict["isSeed"] = False
+                page_dict["isSeed"] = page_dict.get("isSeed") or page_dict.get("seed")
+
+                if page_dict.get("isSeed"):
+                    seed_count += 1
+                else:
+                    non_seed_count += 1
 
                 if len(pages_buffer) > batch_size:
                     await self._add_pages_to_db(crawl_id, pages_buffer)
                     pages_buffer = []
 
                 pages_buffer.append(
-                    self._get_page_from_dict(page_dict, crawl_id, crawl.oid)
+                    self._get_page_from_dict(page_dict, crawl_id, crawl.oid, new_uuid)
                 )
 
             # Add any remaining pages in buffer to db
@@ -109,7 +116,10 @@ class PageOps:
 
             await self.set_archived_item_page_counts(crawl_id)
 
-            print(f"Added pages for crawl {crawl_id} to db", flush=True)
+            print(
+                f"Added pages for crawl {crawl_id}: {seed_count} Seed, {non_seed_count} Non-Seed",
+                flush=True,
+            )
         # pylint: disable=broad-exception-caught, raise-missing-from
         except Exception as err:
             traceback.print_exc()
@@ -163,16 +173,14 @@ class PageOps:
             )
 
     def _get_page_from_dict(
-        self, page_dict: Dict[str, Any], crawl_id: str, oid: UUID
+        self, page_dict: Dict[str, Any], crawl_id: str, oid: UUID, new_uuid: bool
     ) -> Page:
         """Return Page object from dict"""
-        page_id = page_dict.get("id", "")
-        if not page_id:
-            page_id = uuid4()
+        page_id = page_dict.get("id", "") if not new_uuid else None
 
         try:
             UUID(page_id)
-        except ValueError:
+        except (TypeError, ValueError):
             page_id = uuid4()
 
         status = page_dict.get("status")
@@ -222,7 +230,7 @@ class PageOps:
         oid: UUID,
     ):
         """Add page to database"""
-        page = self._get_page_from_dict(page_dict, crawl_id, oid)
+        page = self._get_page_from_dict(page_dict, crawl_id, oid, new_uuid=False)
 
         page_to_insert = page.to_dict(exclude_unset=True, exclude_none=True)
 
