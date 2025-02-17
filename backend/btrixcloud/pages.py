@@ -89,12 +89,18 @@ class PageOps:
                 crawl.resources or []
             )
             new_uuid = crawl.type == "upload"
+            seed_count = 0
+            non_seed_count = 0
             for page_dict in stream:
                 if not page_dict.get("url"):
                     continue
 
-                if not page_dict.get("isSeed") and not page_dict.get("seed"):
-                    page_dict["isSeed"] = False
+                page_dict["isSeed"] = page_dict.get("isSeed") or page_dict.get("seed")
+
+                if page_dict.get("isSeed"):
+                    seed_count += 1
+                else:
+                    non_seed_count += 1
 
                 if len(pages_buffer) > batch_size:
                     await self._add_pages_to_db(crawl_id, pages_buffer)
@@ -110,7 +116,10 @@ class PageOps:
 
             await self.set_archived_item_page_counts(crawl_id)
 
-            print(f"Added pages for crawl {crawl_id} to db", flush=True)
+            print(
+                f"Added pages for crawl {crawl_id}: {seed_count} Seed, {non_seed_count} Non-Seed",
+                flush=True,
+            )
         # pylint: disable=broad-exception-caught, raise-missing-from
         except Exception as err:
             traceback.print_exc()
