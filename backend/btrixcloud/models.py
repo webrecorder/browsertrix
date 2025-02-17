@@ -5,6 +5,7 @@ Crawl-related models and types
 from datetime import datetime
 from enum import Enum, IntEnum
 from uuid import UUID
+import base64
 import hashlib
 import mimetypes
 import os
@@ -1094,7 +1095,8 @@ class FilePreparer:
         to avoid duplicates"""
         name, ext = os.path.splitext(filename)
         name = slugify(name.rsplit("/", 1)[-1])
-        return name + ext
+        randstr = base64.b32encode(os.urandom(5)).lower()
+        return name + "-" + randstr.decode("utf-8") + ext
 
 
 # ============================================================================

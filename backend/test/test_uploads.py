@@ -112,7 +112,8 @@ def test_get_stream_upload(
     assert uploads_collection_id in result["collectionIds"]
     assert "files" not in result
     upload_dl_path = result["resources"][0]["path"]
-    assert result["resources"][0]["name"].endswith("-test.wacz")
+    assert "test-" in result["resources"][0]["name"]
+    assert result["resources"][0]["name"].endswith(".wacz")
 
     dl_path = urljoin(API_PREFIX, upload_dl_path)
     wacz_resp = requests.get(dl_path)
