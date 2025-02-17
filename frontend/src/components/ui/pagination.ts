@@ -6,6 +6,7 @@ import { classMap } from "lit/directives/class-map.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 
+import { SearchParamsController } from "@/controllers/searchParams";
 import { srOnly } from "@/utils/css";
 import chevronLeft from "~assets/icons/chevron-left.svg";
 import chevronRight from "~assets/icons/chevron-right.svg";
@@ -120,8 +121,13 @@ export class Pagination extends LitElement {
     `,
   ];
 
+  searchParams = new SearchParamsController(this);
+
   @property({ type: Number })
   page = 1;
+
+  @property({ type: String })
+  name = "page";
 
   @property({ type: Number })
   totalCount = 0;
@@ -150,6 +156,32 @@ export class Pagination extends LitElement {
 
     if (changedProperties.get("page") && this.page) {
       this.inputValue = `${this.page}`;
+      this.searchParams.set((prev) => {
+        if (this.page > 1) {
+          prev.set(this.name, `${this.page}`);
+        } else {
+          prev.delete(this.name);
+        }
+        return prev;
+      });
+    }
+
+    if (
+      changedProperties.has("searchParams") &&
+      this.searchParams.searchParams.get(this.name)
+    ) {
+      try {
+        const page = parseInt(
+          this.searchParams.searchParams.get(this.name) ?? "0",
+        );
+        if (Number.isFinite(page)) {
+          this.page = page;
+        } else {
+          throw new Error("couldn't parse page value from search");
+        }
+      } catch (e) {
+        console.error("couldn't set page", e);
+      }
     }
   }
 
