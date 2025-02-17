@@ -856,7 +856,10 @@ class PageOps:
         self, org: Organization, crawl_type: Optional[str] = None
     ):
         """Re-add pages for all crawls and uploads in org"""
-        match_query: Dict[str, object] = {"finished": {"$ne": None}}
+        match_query: Dict[str, Union[object, UUID]] = {
+            "oid": org.id,
+            "finished": {"$ne": None},
+        }
         if crawl_type in ("crawl", "upload"):
             match_query["type"] = crawl_type
 
