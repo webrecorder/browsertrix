@@ -66,6 +66,7 @@ class PageOps:
     ):
         self.pages = mdb["pages"]
         self.crawls = mdb["crawls"]
+        self.mdb = mdb
         self.crawl_ops = crawl_ops
         self.org_ops = org_ops
         self.storage_ops = storage_ops
@@ -785,9 +786,70 @@ class PageOps:
 
     async def re_add_crawl_pages(self, crawl_id: str, oid: UUID):
         """Delete existing pages for crawl and re-add from WACZs."""
-        await self.delete_crawl_pages(crawl_id, oid)
-        print(f"Deleted pages for crawl {crawl_id}", flush=True)
-        await self.add_crawl_pages_to_db_from_wacz(crawl_id)
+
+        try:
+            is_upload = await self.crawl_ops.is_upload(crawl_id)
+            print(f"Processing {'upload' if is_upload else 'crawl'} {crawl_id}")
+            if not is_upload:
+                ts_now = dt_now().strftime("%Y%m%d%H%M%S")
+                qa_temp_db_name = f"pages-qa-temp-{crawl_id}-{ts_now}"
+                cursor = self.pages.aggregate(
+                    [
+                        {
+                            "$match": {
+                                "crawl_id": crawl_id,
+                                "$or": [
+                                    {"qa": {"$nin": [None, {}]}},
+                                    {"modified": {"$ne": None}},
+                                    {"userid": {"$ne": None}},
+                                    {"approved": {"$ne": None}},
+                                    {"notes": {"$ne": None}},
+                                ],
+                            }
+                        },
+                        {
+                            "$project": {
+                                "_id": 1,
+                                "qa": 1,
+                                "modified": 1,
+                                "userid": 1,
+                                "approved": 1,
+                                "notes": 1,
+                            }
+                        },
+                        {"$out": qa_temp_db_name},
+                    ]
+                )
+                print(f"Stored QA data in temp db {qa_temp_db_name}")
+                assert await cursor.to_list() == []
+
+            await self.delete_crawl_pages(crawl_id, oid)
+            print(f"Deleted pages for crawl {crawl_id}", flush=True)
+            await self.add_crawl_pages_to_db_from_wacz(crawl_id)
+
+            if not is_upload:
+                qa_temp_db = self.mdb[qa_temp_db_name]
+                cursor = qa_temp_db.aggregate(
+                    [
+                        {
+                            "$merge": {
+                                "into": "pages",
+                                "on": ["_id"],
+                                "whenNotMatched": "fail",
+                            }
+                        }
+                    ]
+                )
+                print(f"Merged QA data from temp db {qa_temp_db_name}")
+                # async for data in qa_temp_db.find({}):
+                #    print("qa data", data)
+
+                assert await cursor.to_list() == []
+                await qa_temp_db.drop()
+                print(f"Dropped temp db {qa_temp_db_name}")
+        # pylint: disable=broad-exception-caught
+        except Exception as e:
+            print(e)
 
     async def re_add_all_crawl_pages(
         self, org: Organization, crawl_type: Optional[str] = None
