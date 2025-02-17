@@ -1094,7 +1094,7 @@ class FilePreparer:
         """prepare filename by sanitizing and adding extra string
         to avoid duplicates"""
         name, ext = os.path.splitext(filename)
-        name = slugify(filename.rsplit("/", 1)[-1])
+        name = slugify(name.rsplit("/", 1)[-1])
         randstr = base64.b32encode(os.urandom(5)).lower()
         name += "-" + randstr.decode("utf-8")
         return name + ext
