@@ -5,7 +5,6 @@ Crawl-related models and types
 from datetime import datetime
 from enum import Enum, IntEnum
 from uuid import UUID
-import base64
 import hashlib
 import mimetypes
 import os
