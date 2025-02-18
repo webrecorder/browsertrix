@@ -748,7 +748,7 @@
       </trans-unit>
       <trans-unit id="sb600cf68d73b98ca" xml:space="preserve">
         <source>Upload archived items</source>
-        <target state="translated">Télécharger des items archivés</target>
+        <target state="translated">Charger des items archivés</target>
       </trans-unit>
       <trans-unit id="s226f8bd25872aa3e" xml:space="preserve">
         <source>Run QA analysis</source>
@@ -965,11 +965,11 @@
       </trans-unit>
       <trans-unit id="s0fa473f39f7ec911" xml:space="preserve">
         <source>Uploading WACZ</source>
-        <target state="translated">Téléchargement de WACZ</target>
+        <target state="translated">Chargement de WACZ</target>
       </trans-unit>
       <trans-unit id="s33c5166e0c903c2d" xml:space="preserve">
         <source>Uploaded</source>
-        <target state="translated">Téléchargé</target>
+        <target state="translated">Chargé</target>
       </trans-unit>
       <trans-unit id="sdcda09c20b09b522" xml:space="preserve">
         <source>Complete</source>
@@ -1129,7 +1129,7 @@
       </trans-unit>
       <trans-unit id="s09af18496f032668" xml:space="preserve">
         <source>Download Logs</source>
-        <target state="translated">Télécharger les journaux (logs)</target>
+        <target state="translated">Télécharger les journaux de bord (logs)</target>
       </trans-unit>
       <trans-unit id="sd9ad53251f2330a5" xml:space="preserve">
         <source>Stop</source>
@@ -1858,7 +1858,7 @@
       </trans-unit>
       <trans-unit id="s2e46f937929109fd" xml:space="preserve">
         <source>Uploads</source>
-        <target state="translated">Téléchargements</target>
+        <target state="translated">Chargements</target>
       </trans-unit>
       <trans-unit id="sa71de39189a9e9cd" xml:space="preserve">
         <source>Go to Workflow</source>
@@ -2059,7 +2059,7 @@
       </trans-unit>
       <trans-unit id="sd928eb8c36987311" xml:space="preserve">
         <source>Upload WACZ</source>
-        <target state="translated">Télécharger WACZ</target>
+        <target state="translated">Charger WACZ</target>
       </trans-unit>
       <trans-unit id="s5fa99b1acb437428" xml:space="preserve">
         <source>Delete Archived Item?</source>
@@ -2079,7 +2079,7 @@
       </trans-unit>
       <trans-unit id="s96668830629e0dfc" xml:space="preserve">
         <source>Upload</source>
-        <target state="translated">Téléchargé</target>
+        <target state="translated">Chargé</target>
       </trans-unit>
       <trans-unit id="sa783d9004df13b20" xml:space="preserve">
         <source>Crawl</source>
@@ -2095,7 +2095,7 @@
       </trans-unit>
       <trans-unit id="se3bba1b6eb0bcf30" xml:space="preserve">
         <source>Search all uploads by name</source>
-        <target state="translated">Rechercher tous les téléchargements par nom</target>
+        <target state="translated">Rechercher tous les chargements par nom</target>
       </trans-unit>
       <trans-unit id="sffee0bcd6f20d6fd" xml:space="preserve">
         <source>Search all crawls by name or Crawl Start URL</source>
@@ -3151,7 +3151,10 @@
                   <x id="0" equiv-text="&lt;strong class=&quot;font-semibold&quot;&gt;${org.name}&lt;/strong&gt;"/> org?
                   Members will no longer be able to crawl, upload files, create
                   browser profiles, or create collections.</source>
-        <target state="translated">Êtes-vous sûr de vouloir désactiver l'archivage dans <x id="0" equiv-text="&lt;strong class=&quot;font-semibold&quot;&gt;${org.name}&lt;/strong&gt;"/> org ? Les membres ne pourront plus effectuer de collectes, télécharger des fichiers, créer des profils de navigation, ou créer des collections.</target>
+        <target state="translated">Êtes-vous sûr de vouloir désactiver l'archivage dans 
+                  <x id="0" equiv-text="&lt;strong class=&quot;font-semibold&quot;&gt;${org.name}&lt;/strong&gt;"/> org ?
+                  Les membres ne pourront plus effectuer de collectes, charger des fichiers, créer 
+                  des profils de navigation, ou créer des collections.</target>
       </trans-unit>
       <trans-unit id="sdc8e0ecdba53dccc">
         <source>Slug:</source>
@@ -3276,7 +3279,7 @@
       </trans-unit>
       <trans-unit id="s0eb7c300368b2a58" xml:space="preserve">
         <source>Upload: <x id="0" equiv-text="${crawlStatus.label}"/></source>
-        <target state="translated">Téléchargement : <x id="0" equiv-text="${crawlStatus.label}"/></target>
+        <target state="translated">Chargement : <x id="0" equiv-text="${crawlStatus.label}"/></target>
       </trans-unit>
       <trans-unit id="s24761a0cc8d9c0aa" xml:space="preserve">
         <source>Organization</source>
@@ -3468,7 +3471,7 @@
       </trans-unit>
       <trans-unit id="s5db7bd625b7a6a49" xml:space="preserve">
         <source>File to Upload</source>
-        <target state="translated">Fichiers à télécharger</target>
+        <target state="translated">Fichiers à charger</target>
       </trans-unit>
       <trans-unit id="sd784144d0c062bd0" xml:space="preserve">
         <source>Browse Files</source>
@@ -3476,7 +3479,7 @@
       </trans-unit>
       <trans-unit id="s807ea65f0643e257" xml:space="preserve">
         <source>Select a .wacz file to upload</source>
-        <target state="translated">Sélectionner un fichier .wacz à télécharger</target>
+        <target state="translated">Sélectionner un fichier .wacz à charger</target>
       </trans-unit>
       <trans-unit id="sc60cfa93d82aa39c" xml:space="preserve">
         <source>Our Website (example.com)</source>
@@ -3484,27 +3487,27 @@
       </trans-unit>
       <trans-unit id="s962895dbdd4ad0b7" xml:space="preserve">
         <source>Cancel this upload?</source>
-        <target state="translated">Annuler ce téléchargement ?</target>
+        <target state="translated">Annuler ce chargement ?</target>
       </trans-unit>
       <trans-unit id="se7692167f1edeef2" xml:space="preserve">
         <source>Uploading...</source>
-        <target state="translated">Téléchargement en cours...</target>
+        <target state="translated">Chargement en cours...</target>
       </trans-unit>
       <trans-unit id="s1ff918403135632b" xml:space="preserve">
         <source>Keep this window open until your upload finishes.</source>
-        <target state="translated">Gardez cette fenêtre ouverte jusqu'à la fin du téléchargement.</target>
+        <target state="translated">Gardez cette fenêtre ouverte jusqu'à la fin du chargement.</target>
       </trans-unit>
       <trans-unit id="hb8ae169d4ea6d7a3" xml:space="preserve">
         <source>Successfully uploaded <x id="0" equiv-text="&lt;strong&gt;${name}&lt;/strong&gt;"/>.<x id="1" equiv-text="&lt;br&gt;&#10;              &lt;a class=&quot;underline hover:no-underline&quot; href=&quot;${this.navigate.orgBasePath}/items/upload/${data.id}&quot; @click=&quot;${this.navigate.link}&quot;&gt;"/>View Item<x id="2" equiv-text="&lt;/a&gt; "/></source>
-        <target state="translated">Téléchargement effectué avec succès <x id="0" equiv-text="&lt;strong&gt;${name}&lt;/strong&gt;"/>.<x id="1" equiv-text="&lt;br&gt;&#10;              &lt;a class=&quot;underline hover:no-underline&quot; href=&quot;${this.navigate.orgBasePath}/items/upload/${data.id}&quot; @click=&quot;${this.navigate.link}&quot;&gt;"/> Voir l'item<x id="2" equiv-text="&lt;/a&gt; "/></target>
+        <target state="translated">Chargement effectué avec succès <x id="0" equiv-text="&lt;strong&gt;${name}&lt;/strong&gt;"/>.<x id="1" equiv-text="&lt;br&gt;&#10;              &lt;a class=&quot;underline hover:no-underline&quot; href=&quot;${this.navigate.orgBasePath}/items/upload/${data.id}&quot; @click=&quot;${this.navigate.link}&quot;&gt;"/> Voir l'item<x id="2" equiv-text="&lt;/a&gt; "/></target>
       </trans-unit>
       <trans-unit id="scccaadc44687f6bf" xml:space="preserve">
         <source>Sorry, couldn't upload file at this time.</source>
-        <target state="translated">Désolé, le fichier ne peut être téléchargé pour le moment.</target>
+        <target state="translated">Désolé, le fichier ne peut être chargé pour le moment.</target>
       </trans-unit>
       <trans-unit id="s13df06b5e1720f7f" xml:space="preserve">
         <source>Your org does not have enough storage to upload this file.</source>
-        <target state="translated">Votre organisme ne dispose pas d'assez de stockage pour pouvoir télécharger ce fichier.</target>
+        <target state="translated">Votre organisme ne dispose pas d'assez de stockage pour pouvoir charger ce fichier.</target>
       </trans-unit>
       <trans-unit id="s52d81506be796d67" xml:space="preserve">
         <source>Filter by name</source>
@@ -3608,11 +3611,11 @@
       </trans-unit>
       <trans-unit id="sd7d35ab49e07fe79" xml:space="preserve">
         <source>Uploads in Collection (<x id="0" equiv-text="${this.localize.number(this.uploads!.total)}"/>)</source>
-        <target state="translated">Téléchargements dans la collection (<x id="0" equiv-text="${this.localize.number(this.uploads!.total)}"/>)</target>
+        <target state="translated">Chargements dans la collection (<x id="0" equiv-text="${this.localize.number(this.uploads!.total)}"/>)</target>
       </trans-unit>
       <trans-unit id="s84c2e4081c2bf6d7" xml:space="preserve">
         <source>All Uploads (<x id="0" equiv-text="${this.localize.number(this.uploads!.total)}"/>)</source>
-        <target state="translated">Tous les téléchargements (<x id="0" equiv-text="${this.localize.number(this.uploads!.total)}"/>)</target>
+        <target state="translated">Tous les chargements (<x id="0" equiv-text="${this.localize.number(this.uploads!.total)}"/>)</target>
       </trans-unit>
       <trans-unit id="s1e2b42118528e92f" xml:space="preserve">
         <source>In Collection?</source>
@@ -3620,7 +3623,7 @@
       </trans-unit>
       <trans-unit id="sa03a63e319c2f89b" xml:space="preserve">
         <source>No matching uploads found.</source>
-        <target state="translated">Aucun téléchargement correspondant n'a été trouvé.</target>
+        <target state="translated">Aucun chargement correspondant a été trouvé.</target>
       </trans-unit>
       <trans-unit id="s06d6c6dc05578422" xml:space="preserve">
         <source>Only items in Collection</source>
@@ -3974,7 +3977,9 @@
         <source>We suggest downloading your archived items before they
                   are deleted. To keep your plan and data, see
                   <x id="0" equiv-text="${billingTabLink}"/>.</source>
-        <target state="translated">Nous vous conseillons de télécharger vos éléments archivés avant qu'ils ne soient supprimés. Pour conserver votre plan et vos données, voir <x id="0" equiv-text="${billingTabLink}"/>.</target>
+        <target state="translated">Nous vous conseillons de télécharger vos éléments archivés avant qu'ils
+                  ne soient supprimés. Pour conserver votre plan et vos données, voir
+                  <x id="0" equiv-text="${billingTabLink}"/>.</target>
       </trans-unit>
       <trans-unit id="s1f1b3cea8b3a20f3">
         <source>You have <x id="0" equiv-text="${daysDiff}"/> days left of your Browsertrix trial</source>
@@ -3982,9 +3987,10 @@
       <trans-unit id="se4dfda71fd51327d">
         <source>Your trial ends within one day</source>
       </trans-unit>
-      <trans-unit id="se5578c14db3c7b2b">
+      <trans-unit id="se5578c14db3c7b2b" xml:space="preserve">
         <source>Your web archives are always yours — you can download any archived items you'd like to keep
                   before the trial ends!</source>
+        <target state="translated">Les sites Web archivées demeure toujours les vôtres — vous pouvez télécharger tous les items qui ont été collectés avant la fin de la période d'essai !</target>
       </trans-unit>
       <trans-unit id="sc3e0d8cbe688ccd5">
         <source>Archiving will be disabled in <x id="0" equiv-text="${daysDiff}"/> days</source>
@@ -3992,8 +3998,9 @@
       <trans-unit id="sda57befc109a45f6">
         <source>Archiving will be disabled within one day</source>
       </trans-unit>
-      <trans-unit id="s618b35a93b6fd392">
+      <trans-unit id="s618b35a93b6fd392" xml:space="preserve">
         <source>Your subscription ends on <x id="0" equiv-text="${dateStr}"/>. You will no longer be able to run crawls, upload files, create browser profiles, or create collections.</source>
+        <target state="translated">Votre abonnement se termine le  <x id="0" equiv-text="${dateStr}"/>. Vous ne pourrez plus faire des collecte, charger des fichiers, créer des profiles de navigateur, ou créer des collections.</target>
       </trans-unit>
       <trans-unit id="hc4152410e53b56c9" xml:space="preserve">
         <source>To choose a plan and continue using Browsertrix, see
@@ -5080,14 +5087,17 @@
       <trans-unit id="s476ddc7cbb32ffa7">
         <source>Thumbnail</source>
       </trans-unit>
-      <trans-unit id="s175d37c8eb04d73e">
+      <trans-unit id="s175d37c8eb04d73e" xml:space="preserve">
         <source>Downloads</source>
+        <target state="translated">Téléchargements</target>
       </trans-unit>
-      <trans-unit id="seb65dc388069e62f">
+      <trans-unit id="seb65dc388069e62f" xml:space="preserve">
         <source>If enabled, a button to download this collection will be visible in the shareable page. Please note that even if the download button is disabled, anyone determined to download a shared collection can do so through developer tools. If this is a concern, keep your collection private.</source>
+        <target state="translated">Si cette option est activée, un bouton permettant de télécharger cette collection sera visible sur la page partageable. Veuillez noter que même si le bouton de téléchargement est désactivé, toute personne souhaitant télécharger une collection partagée peut le faire à l'aide des outils de développement (developer tools). Si cela vous préoccupe, gardez votre collection privée.</target>
       </trans-unit>
-      <trans-unit id="sdbc2a1377cc1d250">
+      <trans-unit id="sdbc2a1377cc1d250" xml:space="preserve">
         <source>Show download button</source>
+        <target state="translated">Afficher le bouton de téléchargement</target>
       </trans-unit>
       <trans-unit id="sd04b82fd51c30b88">
         <source>Use thumbnail</source>
@@ -5121,14 +5131,17 @@
       <trans-unit id="s7f6e7c70a39bec6b">
         <source>Sorry, couldn't update thumbnail at this time.</source>
       </trans-unit>
-      <trans-unit id="sf5cd9781b7bafc94">
+      <trans-unit id="sf5cd9781b7bafc94" xml:space="preserve">
         <source>Download button enabled.</source>
+        <target state="translated">Bouton de téléchargement activé.</target>
       </trans-unit>
-      <trans-unit id="s2b2cb4cfe88bcb69">
+      <trans-unit id="s2b2cb4cfe88bcb69" xml:space="preserve">
         <source>Download button hidden.</source>
+        <target state="translated">Bouton de téléchargement caché.</target>
       </trans-unit>
-      <trans-unit id="se5594d78d52b0b03">
+      <trans-unit id="se5594d78d52b0b03" xml:space="preserve">
         <source>Sorry, couldn't update download button at this time.</source>
+        <target state="translated">Désolé, nous n'avons pas pu mettre à jour le bouton de téléchargement pour le moment.</target>
       </trans-unit>
       <trans-unit id="sf39becada022c325">
         <source>Choose what page viewers see first in replay</source>
@@ -5210,8 +5223,9 @@
       <trans-unit id="sa96c92e537e246f8">
         <source>Make Public</source>
       </trans-unit>
-      <trans-unit id="sd3386a2ef42e80b9">
+      <trans-unit id="sd3386a2ef42e80b9" xml:space="preserve">
         <source>Download</source>
+        <target state="translated">Télécharger</target>
       </trans-unit>
       <trans-unit id="s5fd20da1d23fe8c5">
         <source>Manage org settings</source>
@@ -5319,14 +5333,17 @@
       <trans-unit id="sa35d8dcb231a2c75">
         <source>Collections let you easily organize, replay, and share multiple crawls.</source>
       </trans-unit>
-      <trans-unit id="sd42ed7f1a573d096">
+      <trans-unit id="sd42ed7f1a573d096" xml:space="preserve">
         <source>Page Uploaded</source>
+        <target state="translated">Page chargée</target>
       </trans-unit>
-      <trans-unit id="s8a3aa1db56f18c55">
+      <trans-unit id="s8a3aa1db56f18c55" xml:space="preserve">
         <source>Pages Uploaded</source>
+        <target state="translated">Pages chargées</target>
       </trans-unit>
-      <trans-unit id="saff358234fee600c">
+      <trans-unit id="saff358234fee600c" xml:space="preserve">
         <source>Page Total</source>
+        <target state="translated">Total de pages</target>
       </trans-unit>
       <trans-unit id="s1fda6e1bbcd65195">
         <source>Pages Total</source>
@@ -5334,8 +5351,9 @@
       <trans-unit id="s271e65e1451601ef">
         <source>Crawls: <x id="0" equiv-text="${this.localize.bytes(org.bytesStoredCrawls)}"/></source>
       </trans-unit>
-      <trans-unit id="s6fc1df91bcc961d3">
+      <trans-unit id="s6fc1df91bcc961d3" xml:space="preserve">
         <source>Uploads: <x id="0" equiv-text="${this.localize.bytes(org.bytesStoredUploads)}"/></source>
+        <target state="translated">Chargements:  <x id="0" equiv-text="${this.localize.bytes(org.bytesStoredUploads)}"/></target>
       </trans-unit>
       <trans-unit id="sbe6bd4a4b8f70dc1">
         <source>Profiles: <x id="0" equiv-text="${this.localize.bytes(org.bytesStoredProfiles)}"/></source>
