@@ -274,12 +274,9 @@ class CrawlOperator(BaseOperator):
         params["storage_path"] = storage_path
         params["storage_secret"] = storage_secret
 
-        # only resolve if not already set
-        # not automatically updating image for existing crawls
-        if not status.crawlerImage:
-            status.crawlerImage = self.crawl_config_ops.get_channel_crawler_image(
-                crawl.crawler_channel
-            )
+        status.crawlerImage = self.crawl_config_ops.get_channel_crawler_image(
+            crawl.crawler_channel
+        )
 
         params["crawler_image"] = status.crawlerImage
 
@@ -306,7 +303,16 @@ class CrawlOperator(BaseOperator):
         else:
             params["force_restart"] = False
 
-        children.extend(await self._load_crawl_configmap(crawl, data.children, params))
+        config_update_needed = (
+            spec.get("lastConfigUpdate", "") != status.lastConfigUpdate
+        )
+        status.lastConfigUpdate = spec.get("lastConfigUpdate", "")
+
+        children.extend(
+            await self._load_crawl_configmap(
+                crawl, data.children, params, config_update_needed
+            )
+        )
 
         if crawl.qa_source_crawl_id:
             params["qa_source_crawl_id"] = crawl.qa_source_crawl_id
@@ -364,11 +370,13 @@ class CrawlOperator(BaseOperator):
 
         return behaviors
 
-    async def _load_crawl_configmap(self, crawl: CrawlSpec, children, params):
+    async def _load_crawl_configmap(
+        self, crawl: CrawlSpec, children, params, config_update_needed: bool
+    ):
         name = f"crawl-config-{crawl.id}"
 
         configmap = children[CMAP].get(name)
-        if configmap:
+        if configmap and not config_update_needed:
             metadata = configmap["metadata"]
             configmap["metadata"] = {
                 "name": metadata["name"],

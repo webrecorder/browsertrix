@@ -220,6 +220,12 @@ class CrawlManager(K8sAPI):
             proxy_id=crawlconfig.proxyId or DEFAULT_PROXY_ID,
         )
 
+    async def reload_running_crawl_config(self, crawl_id: str):
+        """force reload of configmap for crawl"""
+        return await self._patch_job(
+            crawl_id, {"lastConfigUpdate": date_to_str(dt_now())}
+        )
+
     async def create_qa_crawl_job(
         self,
         crawlconfig: CrawlConfig,

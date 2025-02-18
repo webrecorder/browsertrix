@@ -549,6 +549,8 @@ class CrawlOps(BaseCrawlOps):
             {"$set": {"config": new_config.dict()}},
         )
 
+        await self.crawl_manager.reload_running_crawl_config(crawl.id)
+
         return {"success": True}
 
     async def update_crawl_state_if_allowed(
