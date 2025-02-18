@@ -980,29 +980,55 @@ class PageOps:
 
     async def optimize_crawl_pages(self, version: int = 2):
         """Iterate through crawls, optimizing pages"""
-        while True:
-            # Pull new crawl and set isMigrating
-            match_query = {"version": {"$ne": version}, "isMigrating": {"$ne": True}}
 
-            next_crawl = await self.crawls.find_one_and_update(
-                match_query, {"$set": {"isMigrating": True}}
-            )
-            if next_crawl is None:
+        async def process_finished_crawls():
+            while True:
+                # Pull new finished crawl and set isMigrating
+                match_query = {
+                    "version": {"$ne": version},
+                    "isMigrating": {"$ne": True},
+                    "finished": {"$ne": None},
+                }
+
+                next_crawl = await self.crawls.find_one_and_update(
+                    match_query, {"$set": {"isMigrating": True}}
+                )
+                if next_crawl is None:
+                    break
+
+                crawl_id = next_crawl.get("_id")
+
+                # Re-add crawl pages if at least one page doesn't have filename set
+                has_page_no_filename = await self.pages.find_one(
+                    {"crawl_id": crawl_id, "filename": None}
+                )
+                if has_page_no_filename:
+                    await self.re_add_crawl_pages(crawl_id)
+
+                # Update crawl version and unset isMigrating
+                await self.crawls.find_one_and_update(
+                    {"_id": crawl_id},
+                    {"$set": {"version": version, "isMigrating": False}},
+                )
+
+        await process_finished_crawls()
+
+        # Wait for running crawls from before migration to finish, and then process
+        # again when they're done to make sure everything's been handled
+        while True:
+            match_query = {
+                "version": {"$ne": version},
+                "isMigrating": {"$ne": True},
+                "finished": None,
+            }
+            running_crawl = await self.crawls.find_one(match_query)
+
+            if not running_crawl:
                 break
 
-            crawl_id = next_crawl.get("_id")
+            time.sleep(30)
 
-            # Re-add crawl pages if at least one page doesn't have filename set
-            has_page_no_filename = await self.pages.find_one(
-                {"crawl_id": crawl_id, "filename": None}
-            )
-            if has_page_no_filename:
-                await self.re_add_crawl_pages(crawl_id)
-
-            # Update crawl version and unset isMigrating
-            await self.crawls.find_one_and_update(
-                {"_id": crawl_id}, {"$set": {"version": version, "isMigrating": False}}
-            )
+        await process_finished_crawls()
 
         # Wait until all pods are fully done before returning. For k8s job
         # parallelism to work as expected, pods must only return exit code 0
