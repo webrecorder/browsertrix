@@ -638,10 +638,10 @@ class BackgroundJobOps:
             raise HTTPException(status_code=404, detail="file_not_found")
 
     async def retry_background_job(
-        self, job_id: str, org: Optional[Organization] = None
+        self, job_id: str, org: Organization
     ) -> Dict[str, Union[bool, Optional[str]]]:
         """Retry background job"""
-        job = await self.get_background_job(job_id, org.id)
+        job = await self.get_background_job(job_id)
         if not job:
             raise HTTPException(status_code=404, detail="job_not_found")
 
@@ -733,9 +733,11 @@ class BackgroundJobOps:
         """
         bg_tasks = set()
         async for job in self.jobs.find({"success": False}):
-            org = None
             if job["oid"]:
                 org = await self.org_ops.get_org_by_id(job["oid"])
+            else:
+                # Hacky workaround until we rework retry_background_job
+                org = await self.org_ops.get_default_org()
             task = asyncio.create_task(self.retry_background_job(job["_id"], org))
             bg_tasks.add(task)
             task.add_done_callback(bg_tasks.discard)
@@ -786,7 +788,18 @@ def init_background_jobs_api(
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
-        return await ops.retry_background_job(job_id)
+        job = await ops.get_background_job(job_id)
+
+        if job.oid:
+            org = await ops.org_ops.get_org_by_id(job.oid)
+        # Use default org for org-less jobs without oid for now, until we
+        # can rework retry_background_job
+        elif job.type == BgJobType.OPTIMIZE_PAGES:
+            org = await ops.org_ops.get_default_org()
+        else:
+            return HTTPException(status_code=404, detail="job_not_found")
+
+        return await ops.retry_background_job(job_id, org)
 
     @router.post("/{job_id}/retry", response_model=SuccessResponse, tags=["jobs"])
     async def retry_background_job(
