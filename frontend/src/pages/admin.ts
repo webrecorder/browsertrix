@@ -156,6 +156,9 @@ export class Admin extends BtrixElement {
           </section>
         </div>
         <div class="col-span-3 md:col-span-1">
+          <btrix-instance-stats
+            .orgList=${this.orgList ?? []}
+          ></btrix-instance-stats>
           <section class="p-3 md:rounded-lg md:border md:bg-white md:p-8">
             <h2 class="mb-3 text-lg font-medium">
               ${msg("Invite User to Org")}
