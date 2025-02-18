@@ -10,6 +10,7 @@ import type {
 import { html, nothing, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
+import { until } from "lit/directives/until.js";
 import { when } from "lit/directives/when.js";
 import isEqual from "lodash/fp/isEqual";
 
@@ -817,8 +818,20 @@ export class App extends BtrixElement {
           .viewState=${this.viewState}
         ></btrix-reset-password>`;
 
-      case "home":
-        return html`<btrix-home class="w-full md:bg-neutral-50"></btrix-home>`;
+      case "admin": {
+        if (this.userInfo?.isSuperAdmin) {
+          // Dynamically import admin pages
+          return until(
+            import("@/pages/admin/index").then(
+              () => html`
+                <btrix-admin class="w-full md:bg-neutral-50"></btrix-admin>
+              `,
+            ),
+          );
+        }
+
+        return this.renderNotFoundPage();
+      }
 
       case "orgs":
         return html`<btrix-orgs class="w-full md:bg-neutral-50"></btrix-orgs>`;
