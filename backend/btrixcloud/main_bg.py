@@ -33,7 +33,7 @@ async def main():
     # Run job (generic)
     if job_type == BgJobType.OPTIMIZE_PAGES:
         try:
-            await page_ops.optimize_crawl_pages(version=2, crawl_type=crawl_type)
+            await page_ops.optimize_crawl_pages(version=2)
             return 0
         # pylint: disable=broad-exception-caught
         except Exception:

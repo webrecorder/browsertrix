@@ -427,14 +427,12 @@ class BackgroundJobOps:
 
     async def create_optimize_crawl_pages_job(
         self,
-        crawl_type: Optional[str] = None,
         existing_job_id: Optional[str] = None,
     ):
         """Create job to optimize crawl pages"""
 
         try:
             job_id = await self.crawl_manager.run_optimize_pages_job(
-                crawl_type=crawl_type,
                 existing_job_id=existing_job_id,
             )
             if existing_job_id:
@@ -453,7 +451,6 @@ class BackgroundJobOps:
             else:
                 optimize_pages_job = OptimizePagesJob(
                     id=job_id,
-                    crawl_type=crawl_type,
                     started=dt_now(),
                 )
 
@@ -661,7 +658,6 @@ class BackgroundJobOps:
 
         if job.type == BgJobType.OPTIMIZE_PAGES:
             await self.create_optimize_crawl_pages_job(
-                job.crawl_type,
                 existing_job_id=job_id,
             )
             return {"success": True}

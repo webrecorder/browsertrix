@@ -978,15 +978,11 @@ class PageOps:
             {"$set": {"uniquePageCount": unique_page_count, "pageCount": page_count}},
         )
 
-    async def optimize_crawl_pages(
-        self, version: int = 2, crawl_type: Optional[str] = None
-    ):
+    async def optimize_crawl_pages(self, version: int = 2):
         """Iterate through crawls, optimizing pages"""
         while True:
             # Pull new crawl and set isMigrating
             match_query = {"version": {"$ne": version}, "isMigrating": {"$ne": True}}
-            if crawl_type in ("crawl", "upload"):
-                match_query["type"] = crawl_type
 
             next_crawl = await self.crawls.find_one_and_update(
                 match_query, {"$set": {"isMigrating": True}}

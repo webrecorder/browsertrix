@@ -31,9 +31,7 @@ class Migration(BaseMigration):
             return
 
         try:
-            await self.background_job_ops.create_optimize_crawl_pages_job(
-                crawl_type="crawl"
-            )
+            await self.background_job_ops.create_optimize_crawl_pages_job()
         # pylint: disable=broad-exception-caught
         except Exception as err:
             print(

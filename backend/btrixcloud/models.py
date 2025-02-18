@@ -2607,7 +2607,6 @@ class OptimizePagesJob(BackgroundJob):
     """Model for tracking jobs to optimize pages across all orgs"""
 
     type: Literal[BgJobType.OPTIMIZE_PAGES] = BgJobType.OPTIMIZE_PAGES
-    crawl_type: Optional[str] = None
 
 
 # ============================================================================
