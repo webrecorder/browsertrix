@@ -669,6 +669,7 @@ class BackgroundJobOps:
     ) -> Dict[str, Union[bool, Optional[str]]]:
         """Retry background job specific to one org"""
         if job.type == BgJobType.CREATE_REPLICA:
+            job = cast(CreateReplicaJob, job)
             file = await self.get_replica_job_file(job, org)
             primary_storage = self.storage_ops.get_org_storage_by_ref(org, file.storage)
             primary_endpoint, bucket_suffix = self.strip_bucket(
@@ -688,6 +689,7 @@ class BackgroundJobOps:
             return {"success": True}
 
         if job.type == BgJobType.DELETE_REPLICA:
+            job = cast(DeleteReplicaJob, job)
             file = await self.get_replica_job_file(job, org)
             await self.create_delete_replica_job(
                 org,
@@ -701,6 +703,7 @@ class BackgroundJobOps:
             return {"success": True}
 
         if job.type == BgJobType.DELETE_ORG:
+            job = cast(DeleteOrgJob, job)
             await self.create_delete_org_job(
                 org,
                 existing_job_id=job.id,
@@ -708,6 +711,7 @@ class BackgroundJobOps:
             return {"success": True}
 
         if job.type == BgJobType.RECALCULATE_ORG_STATS:
+            job = cast(RecalculateOrgStatsJob, job)
             await self.create_recalculate_org_stats_job(
                 org,
                 existing_job_id=job.id,
@@ -715,6 +719,7 @@ class BackgroundJobOps:
             return {"success": True}
 
         if job.type == BgJobType.READD_ORG_PAGES:
+            job = cast(ReAddOrgPagesJob, job)
             await self.create_re_add_org_pages_job(
                 org.id,
                 job.crawl_type,
