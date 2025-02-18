@@ -961,7 +961,7 @@ class PageOps:
         cursor = self.pages.aggregate(
             [{"$match": {"crawl_id": {"$in": crawl_ids}}}, {"$group": {"_id": "$url"}}]
         )
-        async for res in cursor:
+        async for _res in cursor:
             count += 1
 
         return count
