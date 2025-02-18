@@ -5,3 +5,5 @@ import "./collections";
 import "./crawl-workflows";
 import "./org";
 import "./qa";
+
+import("./admin");
