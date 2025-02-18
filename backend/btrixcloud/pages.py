@@ -945,7 +945,7 @@ class PageOps:
                     match_query, {"$set": {"isMigrating": True}}
                 )
                 if next_crawl is None:
-                    print("No more done crawls to migrate")
+                    print("No more finished crawls to migrate")
                     break
 
                 crawl_id = next_crawl.get("_id")
@@ -979,6 +979,7 @@ class PageOps:
             running_crawl = await self.crawls.find_one(match_query)
 
             if not running_crawl:
+                print("No running crawls remain")
                 break
 
             print("Running crawls remain, waiting for them to finish")
