@@ -784,7 +784,7 @@ class PageOps:
 
         return [PageOut.from_dict(data) for data in items], total
 
-    async def re_add_crawl_pages(self, crawl_id: str, oid: UUID):
+    async def re_add_crawl_pages(self, crawl_id: str, oid: Optional[UUID] = None):
         """Delete existing pages for crawl and re-add from WACZs."""
 
         try:

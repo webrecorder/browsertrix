@@ -55,7 +55,8 @@ class Migration(BaseMigration):
             crawl_id = crawl.get("_id")
             print(f"Migrating archived item {current_index}/{crawl_count}", flush=True)
             try:
-                await self.page_ops.add_crawl_wacz_filename_to_pages(crawl_id)
+                await self.page_ops.re_add_crawl_pages(crawl_id)
+                # await self.page_ops.add_crawl_wacz_filename_to_pages(crawl_id)
             # pylint: disable=broad-exception-caught
             except Exception as err:
                 print(
