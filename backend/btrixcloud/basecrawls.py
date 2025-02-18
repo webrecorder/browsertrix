@@ -170,15 +170,16 @@ class BaseCrawlOps:
             if coll_ids:
                 res["collections"] = await self.colls.get_collection_names(coll_ids)
 
-            res["initialPages"], _ = await self.page_ops.list_pages(
-                crawlid, is_seed=True, page_size=25
-            )
-
-            oid = res.get("oid")
-            if oid:
-                res["pagesQueryUrl"] = (
-                    get_origin(headers) + f"/api/orgs/{oid}/crawls/{crawlid}/pages"
+            if res.get("version", 1) == 2:
+                res["initialPages"], _ = await self.page_ops.list_pages(
+                    crawlid, is_seed=True, page_size=25
                 )
+
+                oid = res.get("oid")
+                if oid:
+                    res["pagesQueryUrl"] = (
+                        get_origin(headers) + f"/api/orgs/{oid}/crawls/{crawlid}/pages"
+                    )
 
         crawl = CrawlOutWithResources.from_dict(res)
 
