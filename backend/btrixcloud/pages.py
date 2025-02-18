@@ -945,16 +945,21 @@ class PageOps:
                     match_query, {"$set": {"isMigrating": True}}
                 )
                 if next_crawl is None:
+                    print("No more done crawls to migrate")
                     break
 
                 crawl_id = next_crawl.get("_id")
+                print("Processing crawl: " + crawl_id)
 
                 # Re-add crawl pages if at least one page doesn't have filename set
                 has_page_no_filename = await self.pages.find_one(
                     {"crawl_id": crawl_id, "filename": None}
                 )
                 if has_page_no_filename:
+                    print("Re-importing pages to migrate to v2")
                     await self.re_add_crawl_pages(crawl_id)
+                else:
+                    print("Pages already have filename, set to v2")
 
                 # Update crawl version and unset isMigrating
                 await self.crawls.find_one_and_update(
@@ -976,6 +981,7 @@ class PageOps:
             if not running_crawl:
                 break
 
+            print("Running crawls remain, waiting for them to finish")
             time.sleep(30)
 
         await process_finished_crawls()
@@ -987,6 +993,7 @@ class PageOps:
             in_progress = await self.crawls.find_one({"isMigrating": True})
             if in_progress is None:
                 break
+            print("Unmigrated crawls remain, finishing job")
             time.sleep(5)
 
 
