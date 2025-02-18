@@ -2540,6 +2540,7 @@ class BgJobType(str, Enum):
     DELETE_ORG = "delete-org"
     RECALCULATE_ORG_STATS = "recalculate-org-stats"
     READD_ORG_PAGES = "readd-org-pages"
+    OPTIMIZE_PAGES = "optimize-pages"
 
 
 # ============================================================================
@@ -2548,7 +2549,7 @@ class BackgroundJob(BaseMongoModel):
 
     id: str
     type: BgJobType
-    oid: UUID
+    oid: Optional[UUID] = None
     success: Optional[bool] = None
     started: datetime
     finished: Optional[datetime] = None
@@ -2602,6 +2603,14 @@ class ReAddOrgPagesJob(BackgroundJob):
 
 
 # ============================================================================
+class OptimizePagesJob(BackgroundJob):
+    """Model for tracking jobs to optimize pages across all orgs"""
+
+    type: Literal[BgJobType.OPTIMIZE_PAGES] = BgJobType.OPTIMIZE_PAGES
+    crawl_type: Optional[str] = None
+
+
+# ============================================================================
 # Union of all job types, for response model
 
 AnyJob = RootModel[
@@ -2612,6 +2621,7 @@ AnyJob = RootModel[
         DeleteOrgJob,
         RecalculateOrgStatsJob,
         ReAddOrgPagesJob,
+        OptimizePagesJob,
     ]
 ]
 

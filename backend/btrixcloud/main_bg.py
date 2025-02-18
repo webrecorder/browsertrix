@@ -30,6 +30,17 @@ async def main():
 
     (org_ops, _, _, _, _, page_ops, coll_ops, _, _, _, _, user_manager) = init_ops()
 
+    # Run job (generic)
+    if job_type == BgJobType.OPTIMIZE_PAGES:
+        try:
+            await page_ops.optimize_crawl_pages(version=2, crawl_type=crawl_type)
+            return 0
+        # pylint: disable=broad-exception-caught
+        except Exception:
+            traceback.print_exc()
+            return 1
+
+    # Run job (org-specific)
     if not oid:
         print("Org id missing, quitting")
         return 1
@@ -39,7 +50,6 @@ async def main():
         print("Org id invalid, quitting")
         return 1
 
-    # Run job
     if job_type == BgJobType.DELETE_ORG:
         try:
             await org_ops.delete_org_and_data(org, user_manager)

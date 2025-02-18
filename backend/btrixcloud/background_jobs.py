@@ -23,6 +23,7 @@ from .models import (
     DeleteOrgJob,
     RecalculateOrgStatsJob,
     ReAddOrgPagesJob,
+    OptimizePagesJob,
     PaginatedBackgroundJobResponse,
     AnyJob,
     StorageRef,
@@ -424,6 +425,49 @@ class BackgroundJobOps:
             print(f"warning: re-add org pages job could not be started: {exc}")
             return None
 
+    async def create_optimize_crawl_pages_job(
+        self,
+        crawl_type: Optional[str] = None,
+        existing_job_id: Optional[str] = None,
+    ):
+        """Create job to optimize crawl pages"""
+
+        try:
+            job_id = await self.crawl_manager.run_optimize_pages_job(
+                crawl_type=crawl_type,
+                existing_job_id=existing_job_id,
+            )
+            if existing_job_id:
+                optimize_pages_job = await self.get_background_job(existing_job_id)
+                previous_attempt = {
+                    "started": optimize_pages_job.started,
+                    "finished": optimize_pages_job.finished,
+                }
+                if optimize_pages_job.previousAttempts:
+                    optimize_pages_job.previousAttempts.append(previous_attempt)
+                else:
+                    optimize_pages_job.previousAttempts = [previous_attempt]
+                optimize_pages_job.started = dt_now()
+                optimize_pages_job.finished = None
+                optimize_pages_job.success = None
+            else:
+                optimize_pages_job = OptimizePagesJob(
+                    id=job_id,
+                    crawl_type=crawl_type,
+                    started=dt_now(),
+                )
+
+            await self.jobs.find_one_and_update(
+                {"_id": job_id}, {"$set": optimize_pages_job.to_dict()}, upsert=True
+            )
+
+            return job_id
+        # pylint: disable=broad-exception-caught
+        except Exception as exc:
+            # pylint: disable=raise-missing-from
+            print(f"warning: optimize pages job could not be started: {exc}")
+            return None
+
     async def job_finished(
         self,
         job_id: str,
@@ -478,6 +522,7 @@ class BackgroundJobOps:
         DeleteOrgJob,
         RecalculateOrgStatsJob,
         ReAddOrgPagesJob,
+        OptimizePagesJob,
     ]:
         """Get background job"""
         query: dict[str, object] = {"_id": job_id}
@@ -503,6 +548,9 @@ class BackgroundJobOps:
 
         if data["type"] == BgJobType.READD_ORG_PAGES:
             return ReAddOrgPagesJob.from_dict(data)
+
+        if data["type"] == BgJobType.OPTIMIZE_PAGES:
+            return OptimizePagesJob.from_dict(data)
 
         return DeleteOrgJob.from_dict(data)
 
@@ -590,7 +638,7 @@ class BackgroundJobOps:
             raise HTTPException(status_code=404, detail="file_not_found")
 
     async def retry_background_job(
-        self, job_id: str, org: Organization
+        self, job_id: str, org: Optional[Organization] = None
     ) -> Dict[str, Union[bool, Optional[str]]]:
         """Retry background job"""
         job = await self.get_background_job(job_id, org.id)
@@ -652,6 +700,12 @@ class BackgroundJobOps:
                 existing_job_id=job_id,
             )
 
+        if job.type == BgJobType.OPTIMIZE_PAGES:
+            await self.create_optimize_crawl_pages_job(
+                job.crawl_type,
+                existing_job_id=job_id,
+            )
+
         return {"success": True}
 
     async def retry_failed_background_jobs(
@@ -679,7 +733,9 @@ class BackgroundJobOps:
         """
         bg_tasks = set()
         async for job in self.jobs.find({"success": False}):
-            org = await self.org_ops.get_org_by_id(job["oid"])
+            org = None
+            if job["oid"]:
+                org = await self.org_ops.get_org_by_id(job["oid"])
             task = asyncio.create_task(self.retry_background_job(job["_id"], org))
             bg_tasks.add(task)
             task.add_done_callback(bg_tasks.discard)
@@ -722,7 +778,17 @@ def init_background_jobs_api(
 
         return await ops.get_background_job(job_id)
 
-    @router.post("/{job_id}/retry", response_model=SuccessResponse)
+    @app.post(
+        "/orgs/all/jobs/{job_id}/retry", response_model=SuccessResponse, tags=["jobs"]
+    )
+    async def retry_background_job_no_org(job_id: str, user: User = Depends(user_dep)):
+        """Retry backgound migration job"""
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+
+        return await ops.retry_background_job(job_id)
+
+    @router.post("/{job_id}/retry", response_model=SuccessResponse, tags=["jobs"])
     async def retry_background_job(
         job_id: str,
         org: Organization = Depends(org_crawl_dep),
