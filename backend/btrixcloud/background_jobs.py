@@ -817,7 +817,7 @@ def init_background_jobs_api(
         return await ops.retry_background_job(job_id, org)
 
     @app.post(
-        "/orgs/all/jobs/migrateCrawls", response_model=SuccessResponse, tags=["jobs"]
+        "/orgs/all/jobs/migrateCrawls", response_model=SuccessResponseId, tags=["jobs"]
     )
     async def create_migrate_crawls_job(job_id: str, user: User = Depends(user_dep)):
         """Launch background job to migrate all crawls to v2 with optimized pages"""
