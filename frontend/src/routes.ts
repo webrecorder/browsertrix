@@ -10,9 +10,11 @@ export enum OrgTab {
 export enum RouteNamespace {
   PrivateOrgs = "orgs",
   PublicOrgs = "explore",
+  Superadmin = "admin",
 }
 
 export const ROUTES = {
+  admin: `/${RouteNamespace.Superadmin}`,
   home: "/",
   join: "/join/:token",
   signUp: "/sign-up",
