@@ -954,10 +954,17 @@ class PageOps:
 
     async def get_unique_page_count(self, crawl_ids: List[str]) -> int:
         """Get count of unique page URLs across list of archived items"""
-        unique_pages = await self.pages.distinct(
-            "url", {"crawl_id": {"$in": crawl_ids}}
+        # unique_pages = await self.pages.distinct(
+        #    "url", {"crawl_id": {"$in": crawl_ids}}
+        # )
+        count = 0
+        cursor = self.pages.aggregate(
+            [{"$match": {"crawl_id": {"$in": crawl_ids}}}, {"$group": {"_id": "$url"}}]
         )
-        return len(unique_pages) or 0
+        async for res in cursor:
+            count += 1
+
+        return count
 
     async def set_archived_item_page_counts(self, crawl_id: str):
         """Store archived item page and unique page counts in crawl document"""

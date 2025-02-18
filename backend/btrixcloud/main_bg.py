@@ -61,8 +61,7 @@ async def main():
     if job_type == BgJobType.READD_ORG_PAGES:
         try:
             await page_ops.re_add_all_crawl_pages(org, crawl_type=crawl_type)
-            await coll_ops.recalculate_org_collection_dates(org)
-            await coll_ops.recalculate_org_collection_counts_tags(org)
+            await coll_ops.recalculate_org_collection_stats(org)
             return 0
         # pylint: disable=broad-exception-caught
         except Exception:

@@ -32,12 +32,27 @@ class Migration(BaseMigration):
             )
             return
 
-        crawl_ids_to_update = await pages_mdb.distinct("crawl_id", {"filename": None})
+        # crawl_ids_to_update = await pages_mdb.distinct("crawl_id", {"filename": None})
+        # crawl_count = len(crawl_ids_to_update)
+        aggregate = [
+            {"$match": {"filename": None}},
+            {"$group": {"_id": "$crawl_id"}},
+        ]
+        total_agg = aggregate.copy()
+        total_agg.append({"$count": "count"})
 
-        crawl_count = len(crawl_ids_to_update)
+        res = pages_mdb.aggregate(total_agg)
+        res = await res.to_list(1)
+        crawl_count = res[0].get("count")
+
+        print(f"Total crawls to update pages for: {crawl_count}")
+
+        cursor = pages_mdb.aggregate(aggregate)
+
         current_index = 1
 
-        for crawl_id in crawl_ids_to_update:
+        async for crawl in cursor:
+            crawl_id = crawl.get("_id")
             print(f"Migrating archived item {current_index}/{crawl_count}", flush=True)
             try:
                 await self.page_ops.add_crawl_wacz_filename_to_pages(crawl_id)
