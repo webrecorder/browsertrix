@@ -841,8 +841,6 @@ class PageOps:
                     ]
                 )
                 print(f"Merged QA data from temp db {qa_temp_db_name}")
-                # async for data in qa_temp_db.find({}):
-                #    print("qa data", data)
 
                 assert await cursor.to_list() == []
                 await qa_temp_db.drop()
@@ -855,13 +853,19 @@ class PageOps:
         self, org: Organization, crawl_type: Optional[str] = None
     ):
         """Re-add pages for all crawls and uploads in org"""
-        match_query: Dict[str, object] = {"finished": {"$ne": None}}
+        match_query: Dict[str, Union[object, UUID]] = {
+            "oid": org.id,
+            "finished": {"$ne": None},
+        }
         if crawl_type in ("crawl", "upload"):
             match_query["type"] = crawl_type
 
-        crawl_ids = await self.crawls.distinct("_id", match_query)
-        for crawl_id in crawl_ids:
-            await self.re_add_crawl_pages(crawl_id, org.id)
+        count = 1
+        total = await self.crawls.count_documents(match_query)
+        async for crawl in self.crawls.find(match_query, projection={"_id": 1}):
+            print(f"Processing crawl {count} of {total}")
+            await self.re_add_crawl_pages(crawl.get("_id"), org.id)
+            count += 1
 
     async def get_qa_run_aggregate_counts(
         self,
