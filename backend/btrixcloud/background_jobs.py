@@ -683,7 +683,7 @@ class BackgroundJobOps:
                 job.replica_storage,
                 primary_file_path,
                 primary_endpoint,
-                existing_job_id=job_id,
+                existing_job_id=job.id,
             )
             return {"success": True}
 
@@ -696,21 +696,21 @@ class BackgroundJobOps:
                 job.object_type,
                 job.replica_storage,
                 force_start_immediately=True,
-                existing_job_id=job_id,
+                existing_job_id=job.id,
             )
             return {"success": True}
 
         if job.type == BgJobType.DELETE_ORG:
             await self.create_delete_org_job(
                 org,
-                existing_job_id=job_id,
+                existing_job_id=job.id,
             )
             return {"success": True}
 
         if job.type == BgJobType.RECALCULATE_ORG_STATS:
             await self.create_recalculate_org_stats_job(
                 org,
-                existing_job_id=job_id,
+                existing_job_id=job.id,
             )
             return {"success": True}
 
@@ -718,7 +718,7 @@ class BackgroundJobOps:
             await self.create_re_add_org_pages_job(
                 org.id,
                 job.crawl_type,
-                existing_job_id=job_id,
+                existing_job_id=job.id,
             )
             return {"success": True}
 
