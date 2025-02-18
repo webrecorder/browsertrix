@@ -805,6 +805,9 @@ class BaseCrawl(CoreCrawlable, BaseMongoModel):
     filePageCount: Optional[int] = 0
     errorPageCount: Optional[int] = 0
 
+    isMigrating: Optional[bool] = None
+    version: Optional[int] = None
+
 
 # ============================================================================
 class CollIdName(BaseModel):
@@ -881,6 +884,10 @@ class CrawlOut(BaseMongoModel):
     uniquePageCount: Optional[int] = 0
     filePageCount: Optional[int] = 0
     errorPageCount: Optional[int] = 0
+
+    # Set to older version by default, crawls with optimized
+    # pages will have this explicitly set to 2
+    version: Optional[int] = 1
 
 
 # ============================================================================
