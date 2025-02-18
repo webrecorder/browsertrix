@@ -72,7 +72,7 @@ spec:
               - --worker-class
               - uvicorn.workers.UvicornWorker
               - --timeout
-              - {{ .Values.backend_worker_timeout }}
+              - "{{ .Values.backend_worker_timeout }}"
 
           envFrom:
             - configMapRef:
