@@ -631,14 +631,11 @@ class CollectionOps:
             resp, headers=headers, media_type="application/wacz+zip"
         )
 
-    async def recalculate_org_collection_counts_tags(self, org: Organization):
-        """Recalculate counts and tags for collections in org"""
-        collections, _ = await self.list_collections(
-            org,
-            page_size=100_000,
-        )
-        for coll in collections:
-            await self.update_collection_counts_and_tags(coll.id)
+    async def recalculate_org_collection_stats(self, org: Organization):
+        """recalculate counts, tags and dates for all collections in an org"""
+        async for coll in self.collections.find({"oid": org.id}, projection={"_id": 1}):
+            await self.update_collection_counts_and_tags(coll.get("_id"))
+            await self.update_collection_dates(coll.get("_id"))
 
     async def update_collection_counts_and_tags(self, collection_id: UUID):
         """Set current crawl info in config when crawl begins"""
@@ -692,15 +689,6 @@ class CollectionOps:
                 }
             },
         )
-
-    async def recalculate_org_collection_dates(self, org: Organization):
-        """Recalculate earliest and latest dates for collections in org"""
-        collections, _ = await self.list_collections(
-            org,
-            page_size=100_000,
-        )
-        for coll in collections:
-            await self.update_collection_dates(coll.id)
 
     async def update_collection_dates(self, coll_id: UUID):
         """Update collection earliest and latest dates from page timestamps"""
