@@ -10,9 +10,11 @@ export enum OrgTab {
 export enum RouteNamespace {
   PrivateOrgs = "orgs",
   PublicOrgs = "explore",
+  Superadmin = "admin",
 }
 
 export const ROUTES = {
+  admin: `/${RouteNamespace.Superadmin}`,
   home: "/",
   join: "/join/:token",
   signUp: "/sign-up",
@@ -37,8 +39,8 @@ export const ROUTES = {
   publicOrgs: `/${RouteNamespace.PublicOrgs}(/)`,
   publicOrg: `/${RouteNamespace.PublicOrgs}/:slug(/)`,
   publicCollection: `/${RouteNamespace.PublicOrgs}/:slug/collections/:collectionSlug(/:collectionTab)`,
-  users: "/users",
-  usersInvite: "/users/invite",
+  users: `/${RouteNamespace.Superadmin}/users`,
+  usersInvite: `/${RouteNamespace.Superadmin}/users/invite`,
   crawls: "/crawls",
   crawl: "/crawls/crawl/:crawlId",
   // Redirect for https://github.com/webrecorder/browsertrix-cloud/issues/935
