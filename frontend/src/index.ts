@@ -899,9 +899,15 @@ export class App extends BtrixElement {
       case "usersInvite": {
         if (this.userInfo) {
           if (this.userInfo.isSuperAdmin) {
-            return html`<btrix-users-invite
-              class="mx-auto box-border w-full max-w-screen-desktop p-2 md:py-8"
-            ></btrix-users-invite>`;
+            // Dynamically import admin pages
+            return until(
+              import("@/pages/admin/index").then(
+                () =>
+                  html`<btrix-users-invite
+                    class="mx-auto box-border w-full max-w-screen-desktop p-2 md:py-8"
+                  ></btrix-users-invite>`,
+              ),
+            );
           } else {
             return this.renderNotFoundPage();
           }

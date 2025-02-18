@@ -39,8 +39,8 @@ export const ROUTES = {
   publicOrgs: `/${RouteNamespace.PublicOrgs}(/)`,
   publicOrg: `/${RouteNamespace.PublicOrgs}/:slug(/)`,
   publicCollection: `/${RouteNamespace.PublicOrgs}/:slug/collections/:collectionSlug(/:collectionTab)`,
-  users: "/users",
-  usersInvite: "/users/invite",
+  users: `/${RouteNamespace.Superadmin}/users`,
+  usersInvite: `/${RouteNamespace.Superadmin}/users/invite`,
   crawls: "/crawls",
   crawl: "/crawls/crawl/:crawlId",
   // Redirect for https://github.com/webrecorder/browsertrix-cloud/issues/935
