@@ -29,6 +29,7 @@ from .models import (
     StorageRef,
     User,
     SuccessResponse,
+    SuccessResponseId,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import dt_now
@@ -814,6 +815,18 @@ def init_background_jobs_api(
             org = await ops.org_ops.get_org_by_id(job.oid)
 
         return await ops.retry_background_job(job_id, org)
+
+    @app.post(
+        "/orgs/all/jobs/migrateCrawls", response_model=SuccessResponse, tags=["jobs"]
+    )
+    async def create_migrate_crawls_job(job_id: str, user: User = Depends(user_dep)):
+        """Launch background job to migrate all crawls to v2 with optimized pages"""
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+
+        job_id = await ops.create_optimize_crawl_pages_job()
+
+        return {"sucess": True, "id": job_id}
 
     @router.post("/{job_id}/retry", response_model=SuccessResponse, tags=["jobs"])
     async def retry_org_background_job(
