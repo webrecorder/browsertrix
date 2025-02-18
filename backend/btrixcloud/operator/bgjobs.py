@@ -50,8 +50,14 @@ class BgJobOperator(BaseOperator):
             finished = dt_now()
 
         try:
+            oid = UUID(oid)
+        # pylint: disable=broad-except
+        except Exception:
+            oid = None
+
+        try:
             await self.background_job_ops.job_finished(
-                job_id, job_type, UUID(oid), success=success, finished=finished
+                job_id, job_type, success=success, finished=finished, oid=oid
             )
             # print(
             #    f"{job_type} background job completed: success: {success}, {job_id}",

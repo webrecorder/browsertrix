@@ -2,8 +2,9 @@ Failed Background Job
 ~~~
 Failed Background Job
 ---------------------
-
+{% if org %}
 Organization: {{ org.name }} ({{ job.oid }})
+{% endif %}
 Job type: {{ job.type }}
 
 Job ID: {{ job.id }}
