@@ -489,7 +489,7 @@ export class App extends BtrixElement {
                       ></div>
                       <a
                         class="flex items-center gap-2 font-medium text-primary-700 transition-colors hover:text-primary"
-                        href="/admin"
+                        href="/${RouteNamespace.Superadmin}"
                         @click=${(e: MouseEvent) => {
                           this.clearSelectedOrg();
                           this.navigate.link(e);
