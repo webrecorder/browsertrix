@@ -56,7 +56,6 @@ export class SearchCombobox<T> extends LitElement {
 
   private fuse = new Fuse<T>([], {
     keys: [],
-    shouldSort: false,
     threshold: 0.2, // stricter; default is 0.6
     includeMatches: true,
   });

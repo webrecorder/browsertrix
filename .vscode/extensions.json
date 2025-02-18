@@ -6,6 +6,7 @@
     "bradlc.vscode-tailwindcss",
     "redhat.vscode-yaml",
     "streetsidesoftware.code-spell-checker",
-    "ms-python.black-formatter"
+    "ms-python.black-formatter",
+    "ms-python.pylint"
   ]
 }

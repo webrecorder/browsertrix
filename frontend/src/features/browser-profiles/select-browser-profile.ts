@@ -88,7 +88,7 @@ export class SelectBrowserProfile extends BtrixElement {
                     .date=${profile.modified}
                     month="2-digit"
                     day="2-digit"
-                    year="2-digit"
+                    year="numeric"
                   ></btrix-format-date>
                 </div></div
             ></sl-option>
@@ -106,7 +106,7 @@ export class SelectBrowserProfile extends BtrixElement {
                     .date=${this.selectedProfile.modified}
                     month="2-digit"
                     day="2-digit"
-                    year="2-digit"
+                    year="numeric"
                     hour="2-digit"
                     minute="2-digit"
                   ></btrix-format-date>
@@ -168,7 +168,7 @@ export class SelectBrowserProfile extends BtrixElement {
           >${msg("This org doesn't have any custom profiles yet.")}</span
         >
         <a
-          href=${`${this.navigate.orgBasePath}/browser-profiles?new`}
+          href=${`${this.navigate.orgBasePath}/browser-profiles?new=browser-profile`}
           class="font-medium text-primary hover:text-primary-500"
           target="_blank"
           @click=${(e: Event) => {

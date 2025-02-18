@@ -1,4 +1,4 @@
-""" shared helper to initialize ops classes """
+"""shared helper to initialize ops classes"""
 
 from typing import Tuple
 
@@ -70,7 +70,7 @@ def init_ops() -> Tuple[
         profile_ops,
     )
 
-    coll_ops = CollectionOps(mdb, crawl_manager, org_ops, event_webhook_ops)
+    coll_ops = CollectionOps(mdb, storage_ops, org_ops, event_webhook_ops)
 
     base_crawl_init = (
         mdb,
@@ -89,7 +89,9 @@ def init_ops() -> Tuple[
 
     upload_ops = UploadOps(*base_crawl_init)
 
-    page_ops = PageOps(mdb, crawl_ops, org_ops, storage_ops, background_job_ops)
+    page_ops = PageOps(
+        mdb, crawl_ops, org_ops, storage_ops, background_job_ops, coll_ops
+    )
 
     base_crawl_ops.set_page_ops(page_ops)
     crawl_ops.set_page_ops(page_ops)

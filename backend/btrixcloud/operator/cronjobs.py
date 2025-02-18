@@ -1,4 +1,4 @@
-""" Operator handler for crawl CronJobs """
+"""Operator handler for crawl CronJobs"""
 
 from uuid import UUID
 from typing import Optional
@@ -112,6 +112,7 @@ class CronJobOperator(BaseOperator):
                 crawl_id,
                 crawlconfig,
                 user,
+                org,
                 manual=False,
             )
             print("Scheduled Crawl Created: " + crawl_id)

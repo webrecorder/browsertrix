@@ -9,6 +9,7 @@ import clsx from "clsx";
 import { html, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
+import { isEqual } from "lodash";
 import debounce from "lodash/fp/debounce";
 import filter from "lodash/fp/filter";
 import flow from "lodash/fp/flow";
@@ -34,7 +35,7 @@ type Page = {
   snapshots: Snapshot[];
 };
 
-type SnapshotItem = Snapshot & { url: string };
+export type SnapshotItem = Snapshot & { url: string };
 
 export type SelectSnapshotDetail = {
   item: SnapshotItem | null;
@@ -52,13 +53,16 @@ const sortByTs = flow(
  * @fires btrix-select
  */
 @localized()
-@customElement("btrix-select-collection-start-page")
-export class SelectCollectionStartPage extends BtrixElement {
+@customElement("btrix-select-collection-page")
+export class SelectCollectionPage extends BtrixElement {
   @property({ type: String })
   collectionId?: string;
 
   @property({ type: Object })
   collection?: Collection;
+
+  @property({ type: String })
+  mode: "homepage" | "thumbnail" = "homepage";
 
   @state()
   private searchQuery = "";
@@ -66,7 +70,7 @@ export class SelectCollectionStartPage extends BtrixElement {
   @state()
   private selectedPage?: Page;
 
-  @state()
+  @property({ type: Object, hasChanged: (a, b) => !isEqual(a, b) })
   public selectedSnapshot?: Snapshot;
 
   @state()
@@ -76,7 +80,22 @@ export class SelectCollectionStartPage extends BtrixElement {
   private readonly combobox?: Combobox | null;
 
   @query("#pageUrlInput")
-  private readonly input?: SlInput | null;
+  readonly input?: SlInput | null;
+
+  // not actually a nodejs timeout, but since node types are install this is what typescript likes
+  timer?: NodeJS.Timeout;
+
+  private get url() {
+    return this.mode === "homepage"
+      ? this.collection?.homeUrl
+      : this.collection?.thumbnailSource?.url;
+  }
+
+  private get ts() {
+    return this.mode === "homepage"
+      ? this.collection?.homeUrlTs
+      : this.collection?.thumbnailSource?.urlTs;
+  }
 
   public get page() {
     return this.selectedPage;
@@ -90,6 +109,11 @@ export class SelectCollectionStartPage extends BtrixElement {
     if (changedProperties.has("collection") && this.collection) {
       void this.initSelection(this.collection);
     }
+  }
+
+  public async resetFormState() {
+    if (!this.collection) return;
+    await this.initSelection(this.collection);
   }
 
   updated(changedProperties: PropertyValues<this>) {
@@ -110,13 +134,13 @@ export class SelectCollectionStartPage extends BtrixElement {
   }
 
   private async initSelection(collection: Collection) {
-    if (!collection.homeUrl && collection.pageCount !== 1) {
+    if (!this.url && collection.pageCount !== 1) {
       return;
     }
 
     const pageUrls = await this.getPageUrls({
       id: collection.id,
-      urlPrefix: collection.homeUrl || "",
+      urlPrefix: this.url || "",
       pageSize: 1,
     });
 
@@ -127,12 +151,12 @@ export class SelectCollectionStartPage extends BtrixElement {
     const startPage = pageUrls.items[0];
 
     if (this.input) {
-      this.input.value = startPage.url;
+      this.input.value = this.url ?? startPage.url;
     }
 
     this.selectedPage = this.formatPage(startPage);
 
-    const homeTs = collection.homeUrlTs;
+    const homeTs = this.ts;
 
     this.selectedSnapshot = homeTs
       ? this.selectedPage.snapshots.find(({ ts }) => ts === homeTs)
@@ -177,6 +201,7 @@ export class SelectCollectionStartPage extends BtrixElement {
           value=${this.selectedSnapshot?.pageId || ""}
           ?required=${this.selectedPage && !this.selectedSnapshot}
           ?disabled=${!this.selectedPage}
+          size=${this.mode === "thumbnail" ? "small" : "medium"}
           hoist
           @sl-change=${async (e: SlChangeEvent) => {
             const { value } = e.currentTarget as SlSelect;
@@ -231,7 +256,16 @@ export class SelectCollectionStartPage extends BtrixElement {
     return html`
       <btrix-combobox
         @request-close=${() => {
-          this.combobox?.hide();
+          // Because there are situations where the input might be blurred and
+          // then immediate refocused (e.g. clicking on the thumbnail preview in
+          // the collection settings dialog), a delay here prevents issues from
+          // the order of events being wrong — for some reason sometimes the
+          // blur event occurs after the focus event. This also prevents the
+          // combobox from disappearing and then appearing again, instead it
+          // just stays open.
+          this.timer = setTimeout(() => {
+            this.combobox?.hide();
+          }, 150);
         }}
       >
         <sl-input
@@ -239,7 +273,11 @@ export class SelectCollectionStartPage extends BtrixElement {
           label=${msg("Page URL")}
           placeholder=${msg("Start typing a URL...")}
           ?clearable=${this.collection && this.collection.pageCount > 1}
-          @sl-focus=${() => {
+          ?disabled=${!this.collection?.pageCount}
+          size=${this.mode === "thumbnail" ? "small" : "medium"}
+          autocomplete="off"
+          @sl-focus=${async () => {
+            if (this.timer) clearTimeout(this.timer);
             this.resetInputValidity();
             this.combobox?.show();
           }}
@@ -256,16 +294,18 @@ export class SelectCollectionStartPage extends BtrixElement {
           @sl-blur=${this.pageUrlOnBlur}
         >
           <div slot="prefix" class="inline-flex items-center">
-            <sl-tooltip
-              hoist
-              content=${prefix.tooltip}
-              placement="bottom-start"
-            >
-              <sl-icon
-                name=${prefix.icon}
-                class=${clsx(tw`size-4 text-base`, prefix.className)}
-              ></sl-icon>
-            </sl-tooltip>
+            <slot name="prefix">
+              <sl-tooltip
+                hoist
+                content=${prefix.tooltip}
+                placement="bottom-start"
+              >
+                <sl-icon
+                  name=${prefix.icon}
+                  class=${clsx(tw`size-4 text-base`, prefix.className)}
+                ></sl-icon>
+              </sl-tooltip>
+            </slot>
           </div>
         </sl-input>
         ${this.renderSearchResults()}
@@ -317,44 +357,52 @@ export class SelectCollectionStartPage extends BtrixElement {
 
   private renderSearchResults() {
     return this.searchResults.render({
-      pending: () => html`
-        <sl-menu-item slot="menu-item" disabled>
-          <sl-spinner></sl-spinner>
-        </sl-menu-item>
-      `,
-      complete: ({ items }) => {
-        if (!items.length) {
-          return html`
-            <sl-menu-item slot="menu-item" disabled>
-              ${msg("No matching page found.")}
-            </sl-menu-item>
-          `;
-        }
-
-        return html`
-          ${items.map((item: Page) => {
-            return html`
-              <sl-menu-item
-                slot="menu-item"
-                @click=${async () => {
-                  if (this.input) {
-                    this.input.value = item.url;
-                  }
-
-                  this.selectedPage = this.formatPage(item);
-
-                  this.combobox?.hide();
-
-                  this.selectedSnapshot = this.selectedPage.snapshots[0];
-                }}
-                >${item.url}
-              </sl-menu-item>
-            `;
-          })}
-        `;
-      },
+      pending: () =>
+        this.renderItems(
+          // Render previous value so that dropdown doesn't shift while typing
+          this.searchResults.value,
+        ),
+      complete: this.renderItems,
     });
   }
+
+  private readonly renderItems = (
+    results: SelectCollectionPage["searchResults"]["value"],
+  ) => {
+    if (!results) return;
+
+    const { items } = results;
+
+    if (!items.length) {
+      return html`
+        <sl-menu-item slot="menu-item" disabled>
+          ${msg("No matching page found.")}
+        </sl-menu-item>
+      `;
+    }
+
+    return html`
+      ${items.map((item: Page) => {
+        return html`
+          <sl-menu-item
+            slot="menu-item"
+            @click=${async () => {
+              if (this.input) {
+                this.input.value = item.url;
+              }
+
+              this.selectedPage = this.formatPage(item);
+
+              this.combobox?.hide();
+
+              this.selectedSnapshot = this.selectedPage.snapshots[0];
+            }}
+            >${item.url}
+          </sl-menu-item>
+        `;
+      })}
+    `;
+  };
 
   private readonly onSearchInput = debounce(400)(() => {
     const value = this.input?.value;

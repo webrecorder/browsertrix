@@ -7,7 +7,7 @@ import localize from "./localize";
 
 export type MaxLengthValidator = {
   helpText: string;
-  validate: (e: CustomEvent) => void;
+  validate: (e: CustomEvent) => boolean;
 };
 
 export function getHelpText(maxLength: number, currentLength: number) {
@@ -58,6 +58,7 @@ export function maxLengthValidator(maxLength: number): MaxLengthValidator {
     );
 
     el.helpText = isInvalid ? validityText : origHelpText || validityHelpText;
+    return !isInvalid;
   };
 
   return { helpText: validityHelpText, validate };

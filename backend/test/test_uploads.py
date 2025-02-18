@@ -252,7 +252,9 @@ def test_get_upload_pages(admin_auth_headers, default_org_id, upload_id):
         assert page["crawl_id"] == upload_id
         assert page["url"]
         assert page["ts"]
+        assert page["filename"]
         assert page.get("title") or page.get("title") is None
+        assert page["isSeed"]
 
     page_id = pages[0]["id"]
     r = requests.get(
@@ -267,7 +269,9 @@ def test_get_upload_pages(admin_auth_headers, default_org_id, upload_id):
     assert page["crawl_id"]
     assert page["url"]
     assert page["ts"]
+    assert page["filename"]
     assert page.get("title") or page.get("title") is None
+    assert page["isSeed"]
 
     assert page["notes"] == []
     assert page.get("userid") is None
@@ -283,6 +287,26 @@ def test_get_upload_pages(admin_auth_headers, default_org_id, upload_id):
     data = r.json()
     assert data["pageCount"] > 0
     assert data["uniquePageCount"] > 0
+
+
+def test_uploads_collection_updated(
+    admin_auth_headers, default_org_id, uploads_collection_id, upload_id
+):
+    # Verify that collection is updated when WACZ is added on upload
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{uploads_collection_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data["crawlCount"] > 0
+    assert data["pageCount"] > 0
+    assert data["uniquePageCount"] > 0
+    assert data["totalSize"] > 0
+    assert data["dateEarliest"]
+    assert data["dateLatest"]
+    assert data["modified"] > data["created"]
 
 
 def test_replace_upload(
@@ -1096,7 +1120,9 @@ def test_delete_form_upload_and_crawls_from_all_crawls(
             break
 
         if count + 1 == MAX_ATTEMPTS:
-            assert False
+            assert data["storageUsedBytes"] == org_bytes - total_size
+            assert data["storageUsedCrawls"] == org_crawl_bytes - combined_crawl_size
+            assert data["storageUsedUploads"] == org_upload_bytes - upload_size
 
         time.sleep(5)
         count += 1

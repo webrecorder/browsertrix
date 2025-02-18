@@ -251,11 +251,6 @@ class CrawlConfigOps:
             crawlconfig.lastStartedBy = user.id
             crawlconfig.lastStartedByName = user.name
 
-        # Ensure page limit is below org maxPagesPerCall if set
-        max_pages = org.quotas.maxPagesPerCrawl or 0
-        if max_pages > 0:
-            crawlconfig.config.limit = max_pages
-
         # add  CrawlConfig to DB here
         result = await self.crawl_configs.insert_one(crawlconfig.to_dict())
 
@@ -286,12 +281,29 @@ class CrawlConfigOps:
             execMinutesQuotaReached=exec_mins_quota_reached,
         )
 
+    def ensure_quota_page_limit(self, crawlconfig: CrawlConfig, org: Organization):
+        """ensure page limit is set to no greater than quota page limit, if any"""
+        if org.quotas.maxPagesPerCrawl and org.quotas.maxPagesPerCrawl > 0:
+            if crawlconfig.config.limit and crawlconfig.config.limit > 0:
+                crawlconfig.config.limit = min(
+                    org.quotas.maxPagesPerCrawl, crawlconfig.config.limit
+                )
+            else:
+                crawlconfig.config.limit = org.quotas.maxPagesPerCrawl
+
     async def add_new_crawl(
-        self, crawl_id: str, crawlconfig: CrawlConfig, user: User, manual: bool
+        self,
+        crawl_id: str,
+        crawlconfig: CrawlConfig,
+        user: User,
+        org: Organization,
+        manual: bool,
     ) -> None:
         """increments crawl count for this config and adds new crawl"""
 
         started = dt_now()
+
+        self.ensure_quota_page_limit(crawlconfig, org)
 
         inc = self.inc_crawl_count(crawlconfig.id)
         add = self.crawl_ops.add_new_crawl(
@@ -892,7 +904,7 @@ class CrawlConfigOps:
                 storage_filename=storage_filename,
                 profile_filename=profile_filename or "",
             )
-            await self.add_new_crawl(crawl_id, crawlconfig, user, manual=True)
+            await self.add_new_crawl(crawl_id, crawlconfig, user, org, manual=True)
             return crawl_id
 
         except Exception as exc:

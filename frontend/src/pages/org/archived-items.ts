@@ -619,7 +619,7 @@ export class CrawlsList extends BtrixElement {
               @click=${() => ClipboardController.copyToClipboard(item.id)}
             >
               <sl-icon name="copy" slot="prefix"></sl-icon>
-              ${msg("Copy Crawl ID")}
+              ${msg("Copy Archived Item ID")}
             </sl-menu-item>
           `
         : nothing}

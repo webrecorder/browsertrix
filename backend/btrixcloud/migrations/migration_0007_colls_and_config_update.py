@@ -1,7 +1,7 @@
 """
 Migration 0007 - Workflows changes
 
-- Rename colls to autoAddCollections 
+- Rename colls to autoAddCollections
 - Re-calculate workflow crawl stats to populate crawlSuccessfulCount
 """
 

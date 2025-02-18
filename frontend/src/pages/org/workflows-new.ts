@@ -84,6 +84,7 @@ export class WorkflowsNew extends LiteElement {
         useSitemap: false,
         failOnFailedSeed: false,
         userAgent: null,
+        selectLinks: ["a[href]->href"],
       },
       tags: [],
       crawlTimeout: null,
@@ -130,6 +131,7 @@ export class WorkflowsNew extends LiteElement {
                   path: `user-guide/workflow-setup/#${this.userGuideHashLink}`,
                 },
                 bubbles: true,
+                composed: true,
               }),
             );
           }}

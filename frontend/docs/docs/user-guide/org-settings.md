@@ -1,4 +1,4 @@
-# Change Org Settings
+# Edit Org Settings
 
 Settings that apply to the entire organization are found in the **Settings** page. If you're an org admin, you'll see the link to _Settings_ in the org navigation bar.
 
@@ -13,7 +13,7 @@ The org URL is where you and other org members will go to view the dashboard, co
 Org name and URLs are unique to each Browsertrix instance (for example, on `app.browsertrix.com`) and you may be prompted to change the org name or URL if either are already in use by another org.
 
 ??? info "What information will be visible to the public?"
-    All org information is private until you make the org visible. Once your org is made visible to the public, the org name, description, and website will appear on the org's public gallery page. You can preview how information appears to the public by clicking **View as public**.
+    All org information is private until you make the org visible. Once your org is made visible to the public, the org name, description, and website will appear on the org's public collections gallery page. You can preview how information appears to the public by visiting the linked public collections gallery page.
 
 ### Public Collections Gallery
 

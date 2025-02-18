@@ -1,12 +1,17 @@
 """crawl pages"""
 
+# pylint: disable=too-many-lines
+
 import asyncio
+import os
+import re
 import traceback
+import urllib.parse
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional, Tuple, List, Dict, Any, Union
 from uuid import UUID, uuid4
 
-from fastapi import Depends, HTTPException, Request
+from fastapi import Depends, HTTPException, Request, Response
 import pymongo
 
 from .models import (
@@ -30,17 +35,19 @@ from .models import (
     DeletedResponse,
     PageNoteAddedResponse,
     PageNoteUpdatedResponse,
+    EmptyResponse,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import str_to_date, str_list_to_bools, dt_now
 
 if TYPE_CHECKING:
     from .background_jobs import BackgroundJobOps
+    from .colls import CollectionOps
     from .crawls import CrawlOps
     from .orgs import OrgOps
     from .storages import StorageOps
 else:
-    CrawlOps = StorageOps = OrgOps = BackgroundJobOps = object
+    CrawlOps = StorageOps = OrgOps = BackgroundJobOps = CollectionOps = object
 
 
 # ============================================================================
@@ -52,14 +59,19 @@ class PageOps:
     org_ops: OrgOps
     storage_ops: StorageOps
     background_job_ops: BackgroundJobOps
+    coll_ops: CollectionOps
 
-    def __init__(self, mdb, crawl_ops, org_ops, storage_ops, background_job_ops):
+    def __init__(
+        self, mdb, crawl_ops, org_ops, storage_ops, background_job_ops, coll_ops
+    ):
         self.pages = mdb["pages"]
         self.crawls = mdb["crawls"]
+        self.mdb = mdb
         self.crawl_ops = crawl_ops
         self.org_ops = org_ops
         self.storage_ops = storage_ops
         self.background_job_ops = background_job_ops
+        self.coll_ops = coll_ops
 
     async def init_index(self):
         """init index for pages db collection"""
@@ -77,15 +89,26 @@ class PageOps:
             stream = await self.storage_ops.sync_stream_wacz_pages(
                 crawl.resources or []
             )
+            new_uuid = crawl.type == "upload"
+            seed_count = 0
+            non_seed_count = 0
             for page_dict in stream:
                 if not page_dict.get("url"):
                     continue
 
+                page_dict["isSeed"] = page_dict.get("isSeed") or page_dict.get("seed")
+
+                if page_dict.get("isSeed"):
+                    seed_count += 1
+                else:
+                    non_seed_count += 1
+
                 if len(pages_buffer) > batch_size:
                     await self._add_pages_to_db(crawl_id, pages_buffer)
+                    pages_buffer = []
 
                 pages_buffer.append(
-                    self._get_page_from_dict(page_dict, crawl_id, crawl.oid)
+                    self._get_page_from_dict(page_dict, crawl_id, crawl.oid, new_uuid)
                 )
 
             # Add any remaining pages in buffer to db
@@ -94,23 +117,71 @@ class PageOps:
 
             await self.set_archived_item_page_counts(crawl_id)
 
-            print(f"Added pages for crawl {crawl_id} to db", flush=True)
+            print(
+                f"Added pages for crawl {crawl_id}: {seed_count} Seed, {non_seed_count} Non-Seed",
+                flush=True,
+            )
         # pylint: disable=broad-exception-caught, raise-missing-from
         except Exception as err:
             traceback.print_exc()
             print(f"Error adding pages for crawl {crawl_id} to db: {err}", flush=True)
 
+    async def add_crawl_wacz_filename_to_pages(self, crawl_id: str):
+        """Add WACZ filename and additional fields to existing pages in crawl if not already set"""
+        try:
+            crawl = await self.crawl_ops.get_crawl_out(crawl_id)
+            if not crawl.resources:
+                return
+
+            for wacz_file in crawl.resources:
+                # Strip oid directory from filename
+                filename = os.path.basename(wacz_file.name)
+
+                stream = await self.storage_ops.sync_stream_wacz_pages([wacz_file])
+                for page_dict in stream:
+                    if not page_dict.get("url"):
+                        continue
+
+                    page_id = page_dict.get("id")
+
+                    if not page_id:
+                        continue
+
+                    if page_id:
+                        try:
+                            page_id = UUID(page_id)
+                        # pylint: disable=broad-exception-caught
+                        except Exception:
+                            continue
+
+                    await self.pages.find_one_and_update(
+                        {"_id": page_id},
+                        {
+                            "$set": {
+                                "filename": filename,
+                                "depth": page_dict.get("depth"),
+                                "isSeed": page_dict.get("seed", False),
+                                "favIconUrl": page_dict.get("favIconUrl"),
+                            }
+                        },
+                    )
+        # pylint: disable=broad-exception-caught, raise-missing-from
+        except Exception as err:
+            traceback.print_exc()
+            print(
+                f"Error adding filename to pages from item {crawl_id} to db: {err}",
+                flush=True,
+            )
+
     def _get_page_from_dict(
-        self, page_dict: Dict[str, Any], crawl_id: str, oid: UUID
+        self, page_dict: Dict[str, Any], crawl_id: str, oid: UUID, new_uuid: bool
     ) -> Page:
         """Return Page object from dict"""
-        page_id = page_dict.get("id", "")
-        if not page_id:
-            page_id = uuid4()
+        page_id = page_dict.get("id", "") if not new_uuid else None
 
         try:
             UUID(page_id)
-        except ValueError:
+        except (TypeError, ValueError):
             page_id = uuid4()
 
         status = page_dict.get("status")
@@ -127,6 +198,10 @@ class PageOps:
             loadState=page_dict.get("loadState"),
             status=status,
             mime=page_dict.get("mime", "text/html"),
+            filename=page_dict.get("filename"),
+            depth=page_dict.get("depth"),
+            isSeed=page_dict.get("seed", False),
+            favIconUrl=page_dict.get("favIconUrl"),
             ts=(str_to_date(ts) if ts else dt_now()),
         )
         p.compute_page_type()
@@ -156,10 +231,9 @@ class PageOps:
         oid: UUID,
     ):
         """Add page to database"""
-        page = self._get_page_from_dict(page_dict, crawl_id, oid)
-        page_to_insert = page.to_dict(
-            exclude_unset=True, exclude_none=True, exclude_defaults=True
-        )
+        page = self._get_page_from_dict(page_dict, crawl_id, oid, new_uuid=False)
+
+        page_to_insert = page.to_dict(exclude_unset=True, exclude_none=True)
 
         try:
             await self.pages.insert_one(page_to_insert)
@@ -439,6 +513,12 @@ class PageOps:
         self,
         crawl_id: str,
         org: Optional[Organization] = None,
+        search: Optional[str] = None,
+        url: Optional[str] = None,
+        url_prefix: Optional[str] = None,
+        ts: Optional[datetime] = None,
+        is_seed: Optional[bool] = None,
+        depth: Optional[int] = None,
         qa_run_id: Optional[str] = None,
         qa_filter_by: Optional[str] = None,
         qa_gte: Optional[float] = None,
@@ -464,6 +544,30 @@ class PageOps:
         }
         if org:
             query["oid"] = org.id
+
+        if search:
+            search_regex = re.escape(urllib.parse.unquote(search))
+            query["$or"] = [
+                {"url": {"$regex": search_regex, "$options": "i"}},
+                {"title": {"$regex": search_regex, "$options": "i"}},
+            ]
+
+        if url_prefix:
+            url_prefix = urllib.parse.unquote(url_prefix)
+            regex_pattern = f"^{re.escape(url_prefix)}"
+            query["url"] = {"$regex": regex_pattern, "$options": "i"}
+
+        elif url:
+            query["url"] = urllib.parse.unquote(url)
+
+        if ts:
+            query["ts"] = ts
+
+        if is_seed in (True, False):
+            query["isSeed"] = is_seed
+
+        if isinstance(depth, int):
+            query["depth"] = depth
 
         if reviewed:
             query["$or"] = [
@@ -509,7 +613,18 @@ class PageOps:
             # Sorting options to add:
             # - automated heuristics like screenshot_comparison (dict keyed by QA run id)
             # - Ensure notes sorting works okay with notes in list
-            sort_fields = ("url", "title", "notes", "approved")
+            sort_fields = (
+                "url",
+                "title",
+                "notes",
+                "approved",
+                "ts",
+                "status",
+                "mime",
+                "filename",
+                "depth",
+                "isSeed",
+            )
             qa_sort_fields = ("screenshotMatch", "textMatch")
             if sort_by not in sort_fields and sort_by not in qa_sort_fields:
                 raise HTTPException(status_code=400, detail="invalid_sort_by")
@@ -560,23 +675,197 @@ class PageOps:
 
         return [PageOut.from_dict(data) for data in items], total
 
+    async def list_collection_pages(
+        self,
+        coll_id: UUID,
+        org: Optional[Organization] = None,
+        search: Optional[str] = None,
+        url: Optional[str] = None,
+        url_prefix: Optional[str] = None,
+        ts: Optional[datetime] = None,
+        is_seed: Optional[bool] = None,
+        depth: Optional[int] = None,
+        page_size: int = DEFAULT_PAGE_SIZE,
+        page: int = 1,
+        sort_by: Optional[str] = None,
+        sort_direction: Optional[int] = -1,
+        public_or_unlisted_only=False,
+    ) -> Tuple[Union[List[PageOut], List[PageOutWithSingleQA]], int]:
+        """List all pages in collection, with optional filtering"""
+        # pylint: disable=duplicate-code, too-many-locals, too-many-branches, too-many-statements
+        # Zero-index page for query
+        page = page - 1
+        skip = page_size * page
+
+        crawl_ids = await self.coll_ops.get_collection_crawl_ids(
+            coll_id, public_or_unlisted_only
+        )
+
+        query: dict[str, object] = {
+            "crawl_id": {"$in": crawl_ids},
+        }
+        if org:
+            query["oid"] = org.id
+
+        if search:
+            search_regex = re.escape(urllib.parse.unquote(search))
+            query["$or"] = [
+                {"url": {"$regex": search_regex, "$options": "i"}},
+                {"title": {"$regex": search_regex, "$options": "i"}},
+            ]
+
+        elif url_prefix:
+            url_prefix = urllib.parse.unquote(url_prefix)
+            regex_pattern = f"^{re.escape(url_prefix)}"
+            query["url"] = {"$regex": regex_pattern, "$options": "i"}
+
+        elif url:
+            query["url"] = urllib.parse.unquote(url)
+
+        if ts:
+            query["ts"] = ts
+
+        if is_seed in (True, False):
+            query["isSeed"] = is_seed
+
+        if isinstance(depth, int):
+            query["depth"] = depth
+
+        aggregate = [{"$match": query}]
+
+        if sort_by:
+            # Sorting options to add:
+            # - automated heuristics like screenshot_comparison (dict keyed by QA run id)
+            # - Ensure notes sorting works okay with notes in list
+            sort_fields = (
+                "url",
+                "crawl_id",
+                "ts",
+                "status",
+                "mime",
+                "filename",
+                "depth",
+                "isSeed",
+            )
+            if sort_by not in sort_fields:
+                raise HTTPException(status_code=400, detail="invalid_sort_by")
+            if sort_direction not in (1, -1):
+                raise HTTPException(status_code=400, detail="invalid_sort_direction")
+
+            aggregate.extend([{"$sort": {sort_by: sort_direction}}])
+        else:
+            # default sort: seeds first, then by timestamp
+            aggregate.extend([{"$sort": {"isSeed": -1, "ts": 1}}])
+
+        aggregate.extend(
+            [
+                {
+                    "$facet": {
+                        "items": [
+                            {"$skip": skip},
+                            {"$limit": page_size},
+                        ],
+                        "total": [{"$count": "count"}],
+                    }
+                },
+            ]
+        )
+
+        # Get total
+        cursor = self.pages.aggregate(aggregate)
+        results = await cursor.to_list(length=1)
+        result = results[0]
+        items = result["items"]
+
+        try:
+            total = int(result["total"][0]["count"])
+        except (IndexError, ValueError):
+            total = 0
+
+        return [PageOut.from_dict(data) for data in items], total
+
     async def re_add_crawl_pages(self, crawl_id: str, oid: UUID):
         """Delete existing pages for crawl and re-add from WACZs."""
-        await self.delete_crawl_pages(crawl_id, oid)
-        print(f"Deleted pages for crawl {crawl_id}", flush=True)
-        await self.add_crawl_pages_to_db_from_wacz(crawl_id)
+
+        try:
+            is_upload = await self.crawl_ops.is_upload(crawl_id)
+            print(f"Processing {'upload' if is_upload else 'crawl'} {crawl_id}")
+            if not is_upload:
+                ts_now = dt_now().strftime("%Y%m%d%H%M%S")
+                qa_temp_db_name = f"pages-qa-temp-{crawl_id}-{ts_now}"
+                cursor = self.pages.aggregate(
+                    [
+                        {
+                            "$match": {
+                                "crawl_id": crawl_id,
+                                "$or": [
+                                    {"qa": {"$nin": [None, {}]}},
+                                    {"modified": {"$ne": None}},
+                                    {"userid": {"$ne": None}},
+                                    {"approved": {"$ne": None}},
+                                    {"notes": {"$ne": None}},
+                                ],
+                            }
+                        },
+                        {
+                            "$project": {
+                                "_id": 1,
+                                "qa": 1,
+                                "modified": 1,
+                                "userid": 1,
+                                "approved": 1,
+                                "notes": 1,
+                            }
+                        },
+                        {"$out": qa_temp_db_name},
+                    ]
+                )
+                print(f"Stored QA data in temp db {qa_temp_db_name}")
+                assert await cursor.to_list() == []
+
+            await self.delete_crawl_pages(crawl_id, oid)
+            print(f"Deleted pages for crawl {crawl_id}", flush=True)
+            await self.add_crawl_pages_to_db_from_wacz(crawl_id)
+
+            if not is_upload:
+                qa_temp_db = self.mdb[qa_temp_db_name]
+                cursor = qa_temp_db.aggregate(
+                    [
+                        {
+                            "$merge": {
+                                "into": "pages",
+                                "on": ["_id"],
+                                "whenNotMatched": "fail",
+                            }
+                        }
+                    ]
+                )
+                print(f"Merged QA data from temp db {qa_temp_db_name}")
+
+                assert await cursor.to_list() == []
+                await qa_temp_db.drop()
+                print(f"Dropped temp db {qa_temp_db_name}")
+        # pylint: disable=broad-exception-caught
+        except Exception as e:
+            print(e)
 
     async def re_add_all_crawl_pages(
         self, org: Organization, crawl_type: Optional[str] = None
     ):
         """Re-add pages for all crawls and uploads in org"""
-        match_query: Dict[str, object] = {"finished": {"$ne": None}}
+        match_query: Dict[str, Union[object, UUID]] = {
+            "oid": org.id,
+            "finished": {"$ne": None},
+        }
         if crawl_type in ("crawl", "upload"):
             match_query["type"] = crawl_type
 
-        crawl_ids = await self.crawls.distinct("_id", match_query)
-        for crawl_id in crawl_ids:
-            await self.re_add_crawl_pages(crawl_id, org.id)
+        count = 1
+        total = await self.crawls.count_documents(match_query)
+        async for crawl in self.crawls.find(match_query, projection={"_id": 1}):
+            print(f"Processing crawl {count} of {total}")
+            await self.re_add_crawl_pages(crawl.get("_id"), org.id)
+            count += 1
 
     async def get_qa_run_aggregate_counts(
         self,
@@ -685,14 +974,16 @@ class PageOps:
 # ============================================================================
 # pylint: disable=too-many-arguments, too-many-locals, invalid-name, fixme
 def init_pages_api(
-    app, mdb, crawl_ops, org_ops, storage_ops, background_job_ops, user_dep
+    app, mdb, crawl_ops, org_ops, storage_ops, background_job_ops, coll_ops, user_dep
 ):
     """init pages API"""
     # pylint: disable=invalid-name
 
-    ops = PageOps(mdb, crawl_ops, org_ops, storage_ops, background_job_ops)
+    ops = PageOps(mdb, crawl_ops, org_ops, storage_ops, background_job_ops, coll_ops)
 
+    org_viewer_dep = org_ops.org_viewer_dep
     org_crawl_dep = org_ops.org_crawl_dep
+    org_public = org_ops.org_public
 
     @app.post(
         "/orgs/{oid}/crawls/all/pages/reAdd",
@@ -860,9 +1151,15 @@ def init_pages_api(
         tags=["pages", "all-crawls"],
         response_model=PaginatedPageOutResponse,
     )
-    async def get_pages_list(
+    async def get_crawl_pages_list(
         crawl_id: str,
         org: Organization = Depends(org_crawl_dep),
+        search: Optional[str] = None,
+        url: Optional[str] = None,
+        urlPrefix: Optional[str] = None,
+        ts: Optional[datetime] = None,
+        isSeed: Optional[bool] = None,
+        depth: Optional[int] = None,
         reviewed: Optional[bool] = None,
         approved: Optional[str] = None,
         hasNotes: Optional[bool] = None,
@@ -879,6 +1176,12 @@ def init_pages_api(
         pages, total = await ops.list_pages(
             crawl_id=crawl_id,
             org=org,
+            search=search,
+            url=url,
+            url_prefix=urlPrefix,
+            ts=ts,
+            is_seed=isSeed,
+            depth=depth,
             reviewed=reviewed,
             approved=formatted_approved,
             has_notes=hasNotes,
@@ -887,6 +1190,102 @@ def init_pages_api(
             sort_by=sortBy,
             sort_direction=sortDirection,
         )
+        return paginated_format(pages, total, page, pageSize)
+
+    @app.get(
+        "/orgs/{oid}/collections/{coll_id}/public/pages",
+        tags=["pages", "collections"],
+        response_model=PaginatedPageOutResponse,
+    )
+    async def get_public_collection_pages_list(
+        coll_id: UUID,
+        response: Response,
+        org: Organization = Depends(org_public),
+        search: Optional[str] = None,
+        url: Optional[str] = None,
+        urlPrefix: Optional[str] = None,
+        ts: Optional[datetime] = None,
+        isSeed: Optional[bool] = None,
+        depth: Optional[int] = None,
+        pageSize: int = DEFAULT_PAGE_SIZE,
+        page: int = 1,
+        sortBy: Optional[str] = None,
+        sortDirection: Optional[int] = -1,
+    ):
+        """Retrieve paginated list of pages in collection"""
+        pages, total = await ops.list_collection_pages(
+            coll_id=coll_id,
+            org=org,
+            search=search,
+            url=url,
+            url_prefix=urlPrefix,
+            ts=ts,
+            is_seed=isSeed,
+            depth=depth,
+            page_size=pageSize,
+            page=page,
+            sort_by=sortBy,
+            sort_direction=sortDirection,
+            public_or_unlisted_only=True,
+        )
+
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+        return paginated_format(pages, total, page, pageSize)
+
+    @app.options(
+        "/orgs/{oid}/collections/{coll_id}/pages",
+        tags=["pages", "collections"],
+        response_model=EmptyResponse,
+    )
+    @app.options(
+        "/orgs/{oid}/collections/{coll_id}/public/pages",
+        tags=["pages", "collections"],
+        response_model=EmptyResponse,
+    )
+    async def get_replay_preflight(response: Response):
+        response.headers["Access-Control-Allow-Methods"] = "GET, HEAD, OPTIONS"
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+        return {}
+
+    @app.get(
+        "/orgs/{oid}/collections/{coll_id}/pages",
+        tags=["pages", "collections"],
+        response_model=PaginatedPageOutResponse,
+    )
+    async def get_collection_pages_list(
+        coll_id: UUID,
+        response: Response,
+        org: Organization = Depends(org_viewer_dep),
+        search: Optional[str] = None,
+        url: Optional[str] = None,
+        urlPrefix: Optional[str] = None,
+        ts: Optional[datetime] = None,
+        isSeed: Optional[bool] = None,
+        depth: Optional[int] = None,
+        pageSize: int = DEFAULT_PAGE_SIZE,
+        page: int = 1,
+        sortBy: Optional[str] = None,
+        sortDirection: Optional[int] = -1,
+    ):
+        """Retrieve paginated list of pages in collection"""
+        pages, total = await ops.list_collection_pages(
+            coll_id=coll_id,
+            org=org,
+            search=search,
+            url=url,
+            url_prefix=urlPrefix,
+            ts=ts,
+            is_seed=isSeed,
+            depth=depth,
+            page_size=pageSize,
+            page=page,
+            sort_by=sortBy,
+            sort_direction=sortDirection,
+        )
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Headers"] = "*"
         return paginated_format(pages, total, page, pageSize)
 
     @app.get(

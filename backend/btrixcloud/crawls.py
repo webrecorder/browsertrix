@@ -1,4 +1,4 @@
-""" Crawl API """
+"""Crawl API"""
 
 # pylint: disable=too-many-lines
 
@@ -645,6 +645,13 @@ class CrawlOps(BaseCrawlOps):
         if not res:
             return None, None
         return res.get("state"), res.get("finished")
+
+    async def is_upload(self, crawl_id: str):
+        """return true if archived item with this id is an upload"""
+        res = await self.crawls.find_one({"_id": crawl_id}, projection={"type": 1})
+        if not res:
+            return False
+        return res.get("type") == "upload"
 
     async def add_crawl_error(
         self,

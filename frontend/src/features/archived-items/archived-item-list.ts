@@ -231,7 +231,7 @@ export class ArchivedItemListItem extends BtrixElement {
               .date=${this.item.finished}
               month="2-digit"
               day="2-digit"
-              year="2-digit"
+              year="numeric"
             ></btrix-format-date>
           </sl-tooltip>
         </btrix-table-cell>
@@ -415,7 +415,7 @@ export class ArchivedItemList extends TailwindElement {
       {
         cssCol: "1fr",
         cell: html`<btrix-table-header-cell>
-          ${msg("Pages Crawled")}
+          ${msg("Pages")}
         </btrix-table-header-cell>`,
       },
       {

@@ -1,4 +1,4 @@
-""" Invite system management """
+"""Invite system management"""
 
 from typing import Optional, Any
 import os

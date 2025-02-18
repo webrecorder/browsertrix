@@ -40,7 +40,7 @@ FROM --platform=$BUILDPLATFORM docker.io/library/python:3.12-slim as build_docs
 
 WORKDIR /docs
 
-RUN pip install mkdocs-material
+RUN pip install mkdocs-material mkdocs-redirects
 
 COPY --link ./docs/mkdocs.yml .
 COPY --link ./docs/docs ./docs

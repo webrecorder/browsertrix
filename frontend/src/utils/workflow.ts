@@ -155,9 +155,6 @@ export function getInitialFormState(params: {
   org?: OrgData | null;
 }): FormState {
   const defaultFormState = getDefaultFormState();
-  if (!params.configId) {
-    defaultFormState.runNow = true;
-  }
   if (!params.initialWorkflow) return defaultFormState;
   const formState: Partial<FormState> = {};
   const seedsConfig = params.initialWorkflow.config;

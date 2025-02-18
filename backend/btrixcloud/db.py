@@ -17,7 +17,7 @@ from pymongo.errors import InvalidName
 from .migrations import BaseMigration
 
 
-CURR_DB_VERSION = "0041"
+CURR_DB_VERSION = "0042"
 
 
 # ============================================================================

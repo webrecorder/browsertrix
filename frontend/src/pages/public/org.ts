@@ -129,15 +129,24 @@ export class PublicOrg extends BtrixElement {
             : nothing,
           actions: when(
             this.canEditOrg,
-            () =>
-              html`<sl-tooltip content=${msg("Change org settings")}>
+            () => html`
+              <sl-tooltip content=${msg("Go to Dashboard")}>
+                <sl-icon-button
+                  href="${this.navigate.orgBasePath}/dashboard"
+                  class="size-8 text-base"
+                  name="speedometer"
+                  @click=${this.navigate.link}
+                ></sl-icon-button>
+              </sl-tooltip>
+              <sl-tooltip content=${msg("Edit Org Settings")}>
                 <sl-icon-button
                   href="${this.navigate.orgBasePath}/settings"
                   class="size-8 text-base"
                   name="gear"
                   @click=${this.navigate.link}
                 ></sl-icon-button>
-              </sl-tooltip>`,
+              </sl-tooltip>
+            `,
           ),
           secondary: html`
             ${when(
@@ -190,11 +199,11 @@ export class PublicOrg extends BtrixElement {
         ${when(
           this.canEditOrg,
           () =>
-            html`<sl-tooltip content=${msg("Manage collections")}>
+            html`<sl-tooltip content=${msg("Manage Collections")}>
               <sl-icon-button
                 href=${`${this.navigate.orgBasePath}/collections`}
                 class="size-8 text-base"
-                name="gear"
+                name="collection"
                 @click=${this.navigate.link}
               ></sl-icon-button>
             </sl-tooltip>`,

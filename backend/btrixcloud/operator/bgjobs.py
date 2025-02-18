@@ -1,4 +1,4 @@
-""" Operator handler for BackgroundJobs """
+"""Operator handler for BackgroundJobs"""
 
 from uuid import UUID
 import traceback

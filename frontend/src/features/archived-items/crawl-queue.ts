@@ -10,6 +10,7 @@ import { when } from "lit/directives/when.js";
 import throttle from "lodash/fp/throttle";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import type { IntersectEvent } from "@/controllers/observable";
 
 type Pages = string[];
 type ResponseData = {
@@ -201,7 +202,7 @@ export class CrawlQueue extends BtrixElement {
               ${msg("End of queue")}
             </div>`,
           () => html`
-            <btrix-observable @intersect=${this.onLoadMoreIntersect}>
+            <btrix-observable @btrix-intersect=${this.onLoadMoreIntersect}>
               <div class="py-3">
                 <sl-icon-button
                   name="three-dots"
@@ -232,8 +233,8 @@ export class CrawlQueue extends BtrixElement {
     `;
   }
 
-  private readonly onLoadMoreIntersect = throttle(50)((e: CustomEvent) => {
-    if (!e.detail.entry.isIntersecting) return;
+  private readonly onLoadMoreIntersect = throttle(50)((e: IntersectEvent) => {
+    if (!e.detail.entries[0].isIntersecting) return;
     this.loadMore();
   }) as (e: CustomEvent) => void;
 

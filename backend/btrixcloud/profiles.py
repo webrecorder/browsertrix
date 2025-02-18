@@ -1,4 +1,4 @@
-""" Profile Management """
+"""Profile Management"""
 
 from typing import Optional, TYPE_CHECKING, Any, cast, Dict, List, Tuple
 from uuid import UUID, uuid4

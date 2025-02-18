@@ -1,4 +1,4 @@
-""" entrypoint module for operator """
+"""entrypoint module for operator"""
 
 import os
 import sys

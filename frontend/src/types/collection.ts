@@ -6,6 +6,16 @@ export enum CollectionAccess {
   Unlisted = "unlisted",
 }
 
+export const collectionThumbnailSourceSchema = z.object({
+  url: z.string().url(),
+  urlPageId: z.string().url(),
+  urlTs: z.string().datetime(),
+});
+
+export type CollectionThumbnailSource = z.infer<
+  typeof collectionThumbnailSourceSchema
+>;
+
 export const publicCollectionSchema = z.object({
   id: z.string(),
   slug: z.string(),
@@ -24,6 +34,7 @@ export const publicCollectionSchema = z.object({
       path: z.string().url(),
     })
     .nullable(),
+  thumbnailSource: collectionThumbnailSourceSchema.nullable(),
   defaultThumbnailName: z.string().nullable(),
   crawlCount: z.number(),
   uniquePageCount: z.number(),
@@ -33,6 +44,7 @@ export const publicCollectionSchema = z.object({
   homeUrl: z.string().url().nullable(),
   homeUrlPageId: z.string().url().nullable(),
   homeUrlTs: z.string().datetime().nullable(),
+  access: z.nativeEnum(CollectionAccess),
 });
 export type PublicCollection = z.infer<typeof publicCollectionSchema>;
 
@@ -45,3 +57,18 @@ export type Collection = z.infer<typeof collectionSchema>;
 export type CollectionSearchValues = {
   names: string[];
 };
+
+export const collectionUpdateSchema = z
+  .object({
+    slug: z.string(),
+    name: z.string(),
+    description: z.string(),
+    caption: z.string(),
+    access: z.string(),
+    defaultThumbnailName: z.string().nullable(),
+    allowPublicDownload: z.boolean(),
+    thumbnailSource: collectionThumbnailSourceSchema.nullable(),
+  })
+  .partial();
+
+export type CollectionUpdate = z.infer<typeof collectionUpdateSchema>;

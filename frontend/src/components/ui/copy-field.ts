@@ -66,7 +66,7 @@ export class CopyField extends TailwindElement {
         role="group"
         class=${clsx(
           tw`rounded border`,
-          this.filled && tw`bg-slate-50`,
+          this.filled ? tw`bg-slate-50` : tw`border-neutral-150`,
           this.monostyle && tw`font-monostyle`,
         )}
       >

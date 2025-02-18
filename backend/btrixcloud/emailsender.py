@@ -1,4 +1,4 @@
-""" Basic Email Sending Support"""
+"""Basic Email Sending Support"""
 
 from datetime import datetime
 import os
