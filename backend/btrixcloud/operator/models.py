@@ -209,6 +209,7 @@ class CrawlStatus(BaseModel):
     stopReason: Optional[StopReason] = None
     initRedis: bool = False
     crawlerImage: Optional[str] = None
+    lastConfigUpdate: str = ""
 
     lastActiveTime: str = ""
     podStatus: DefaultDict[str, Annotated[PodInfo, Field(default_factory=PodInfo)]] = (
