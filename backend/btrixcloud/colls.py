@@ -347,21 +347,24 @@ class CollectionOps:
         result = await self.get_collection_raw(coll_id, public_or_unlisted_only)
 
         if resources:
-            result["resources"], result["preloadResources"] = (
+            result["resources"], result["preloadResources"], pages_optimized = (
                 await self.get_collection_crawl_resources(
                     coll_id, include_preloads=True
                 )
             )
 
-            result["initialPages"], result["totalPages"] = (
+            initial_pages, result["totalPages"] = (
                 await self.page_ops.list_collection_pages(coll_id, page_size=25)
             )
 
             public = "public/" if public_or_unlisted_only else ""
-            result["pagesQueryUrl"] = (
-                get_origin(headers)
-                + f"/api/orgs/{org.id}/collections/{coll_id}/{public}pages"
-            )
+
+            if pages_optimized:
+                result["initialPages"] = initial_pages
+                result["pagesQueryUrl"] = (
+                    get_origin(headers)
+                    + f"/api/orgs/{org.id}/collections/{coll_id}/{public}pages"
+                )
 
         thumbnail = result.get("thumbnail")
         if thumbnail:
@@ -388,7 +391,7 @@ class CollectionOps:
         if result.get("access") not in allowed_access:
             raise HTTPException(status_code=404, detail="collection_not_found")
 
-        result["resources"], _ = await self.get_collection_crawl_resources(coll_id)
+        result["resources"], _, _ = await self.get_collection_crawl_resources(coll_id)
 
         thumbnail = result.get("thumbnail")
         if thumbnail:
@@ -487,7 +490,7 @@ class CollectionOps:
         collections: List[Union[CollOut, PublicCollOut]] = []
 
         for res in items:
-            res["resources"], res["preloadResources"] = (
+            res["resources"], res["preloadResources"], _ = (
                 await self.get_collection_crawl_resources(
                     res["_id"], include_preloads=not public_colls_out
                 )
@@ -521,6 +524,8 @@ class CollectionOps:
         _ = await self.get_collection_raw(coll_id)
 
         resources = []
+        preload_resources: List[PreloadResource] = []
+        pages_optimized = True
 
         crawls, _ = await self.crawl_ops.list_all_base_crawls(
             collection_id=coll_id,
@@ -532,15 +537,16 @@ class CollectionOps:
         for crawl in crawls:
             if crawl.resources:
                 resources.extend(crawl.resources)
-
-        preload_resources: List[PreloadResource] = []
+            if crawl.version != 2:
+                include_preloads = False
+                pages_optimized = False
 
         if include_preloads:
             no_page_items = await self.get_collection_resources_with_no_pages(crawls)
             for item in no_page_items:
                 preload_resources.append(item)
 
-        return resources, preload_resources
+        return resources, preload_resources, pages_optimized
 
     async def get_collection_resources_with_no_pages(
         self, crawls: List[CrawlOutWithResources]
@@ -1056,7 +1062,7 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops, user_de
         try:
             all_collections, _ = await colls.list_collections(org, page_size=10_000)
             for collection in all_collections:
-                results[collection.name], _ = (
+                results[collection.name], _, _ = (
                     await colls.get_collection_crawl_resources(collection.id)
                 )
         except Exception as exc:
