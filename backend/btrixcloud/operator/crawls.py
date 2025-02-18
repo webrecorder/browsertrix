@@ -398,6 +398,9 @@ class CrawlOperator(BaseOperator):
 
         params["config"] = json.dumps(raw_config)
 
+        if config_update_needed:
+            print(f"Updating config for {crawl.id}")
+
         return self.load_from_yaml("crawl_configmap.yaml", params)
 
     async def _load_qa_configmap(self, params, children):
