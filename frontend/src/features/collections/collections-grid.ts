@@ -64,7 +64,9 @@ export class CollectionsGrid extends BtrixElement {
       return html`
         <div class="flex flex-col items-center justify-center gap-3 px-3 py-10">
           <p class="text-base text-neutral-500">
-            ${msg("No public collections yet.")}
+            <slot name="empty-text">
+              ${msg("No public collections yet.")}
+            </slot>
           </p>
           <slot name="empty-actions"></slot>
         </div>
