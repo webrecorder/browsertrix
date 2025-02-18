@@ -3,7 +3,6 @@
 # pylint: disable=too-many-lines
 
 import asyncio
-import os
 import re
 import time
 import traceback
@@ -126,53 +125,6 @@ class PageOps:
         except Exception as err:
             traceback.print_exc()
             print(f"Error adding pages for crawl {crawl_id} to db: {err}", flush=True)
-
-    async def add_crawl_wacz_filename_to_pages(self, crawl_id: str):
-        """Add WACZ filename and additional fields to existing pages in crawl if not already set"""
-        try:
-            crawl = await self.crawl_ops.get_crawl_out(crawl_id)
-            if not crawl.resources:
-                return
-
-            for wacz_file in crawl.resources:
-                # Strip oid directory from filename
-                filename = os.path.basename(wacz_file.name)
-
-                stream = await self.storage_ops.sync_stream_wacz_pages([wacz_file])
-                for page_dict in stream:
-                    if not page_dict.get("url"):
-                        continue
-
-                    page_id = page_dict.get("id")
-
-                    if not page_id:
-                        continue
-
-                    if page_id:
-                        try:
-                            page_id = UUID(page_id)
-                        # pylint: disable=broad-exception-caught
-                        except Exception:
-                            continue
-
-                    await self.pages.find_one_and_update(
-                        {"_id": page_id},
-                        {
-                            "$set": {
-                                "filename": filename,
-                                "depth": page_dict.get("depth"),
-                                "isSeed": page_dict.get("seed", False),
-                                "favIconUrl": page_dict.get("favIconUrl"),
-                            }
-                        },
-                    )
-        # pylint: disable=broad-exception-caught, raise-missing-from
-        except Exception as err:
-            traceback.print_exc()
-            print(
-                f"Error adding filename to pages from item {crawl_id} to db: {err}",
-                flush=True,
-            )
 
     def _get_page_from_dict(
         self, page_dict: Dict[str, Any], crawl_id: str, oid: UUID, new_uuid: bool
@@ -955,17 +907,16 @@ class PageOps:
 
     async def get_unique_page_count(self, crawl_ids: List[str]) -> int:
         """Get count of unique page URLs across list of archived items"""
-        # unique_pages = await self.pages.distinct(
-        #    "url", {"crawl_id": {"$in": crawl_ids}}
-        # )
-        count = 0
         cursor = self.pages.aggregate(
-            [{"$match": {"crawl_id": {"$in": crawl_ids}}}, {"$group": {"_id": "$url"}}]
+            [
+                {"$match": {"crawl_id": {"$in": crawl_ids}}},
+                {"$group": {"_id": "$url"}},
+                {"$count": "urls"},
+            ]
         )
-        async for _res in cursor:
-            count += 1
+        res = await cursor.to_list(1)
 
-        return count
+        return res[0].get("urls")
 
     async def set_archived_item_page_counts(self, crawl_id: str):
         """Store archived item page and unique page counts in crawl document"""

@@ -756,7 +756,7 @@ class BackgroundJobOps:
         bg_tasks = set()
         async for job in self.jobs.find({"success": False}):
             org = None
-            if job["oid"]:
+            if job.get("oid"):
                 org = await self.org_ops.get_org_by_id(job["oid"])
             task = asyncio.create_task(self.retry_background_job(job["_id"], org))
             bg_tasks.add(task)
