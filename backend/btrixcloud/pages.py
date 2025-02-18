@@ -154,7 +154,7 @@ class PageOps:
                         except Exception:
                             continue
 
-                    res = await self.pages.find_one_and_update(
+                    await self.pages.find_one_and_update(
                         {"_id": page_id},
                         {
                             "$set": {
@@ -165,7 +165,6 @@ class PageOps:
                             }
                         },
                     )
-                    print(res)
         # pylint: disable=broad-exception-caught, raise-missing-from
         except Exception as err:
             traceback.print_exc()
