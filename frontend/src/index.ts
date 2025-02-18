@@ -121,6 +121,20 @@ export class App extends BtrixElement {
     return this.viewState.params.slug || "";
   }
 
+  private get homePath() {
+    let path = "/log-in";
+    if (this.authState) {
+      if (this.appState.orgSlug) {
+        path = `${this.navigate.orgBasePath}/${OrgTab.Dashboard}`;
+      } else if (this.userInfo?.orgs[0]) {
+        path = `/${RouteNamespace.PrivateOrgs}/${this.userInfo.orgs[0].slug}/${OrgTab.Dashboard}`;
+      } else {
+        path = "/account/settings";
+      }
+    }
+    return path;
+  }
+
   get isUserInCurrentOrg(): boolean {
     const slug = this.orgSlugInPath;
     if (!this.userInfo || !slug) return false;
@@ -202,6 +216,10 @@ export class App extends BtrixElement {
         }
         break;
       }
+      case "home":
+        // Redirect base URL
+        this.routeTo(this.homePath);
+        break;
       default:
         break;
     }
@@ -430,10 +448,6 @@ export class App extends BtrixElement {
 
   private renderNavBar() {
     const isSuperAdmin = this.userInfo?.isSuperAdmin;
-    let homeHref = "/";
-    if (!isSuperAdmin && this.appState.orgSlug && this.authState) {
-      homeHref = `${this.navigate.orgBasePath}/${OrgTab.Dashboard}`;
-    }
 
     const showFullLogo =
       this.viewState.route === "login" || !this.authService.authState;
@@ -447,7 +461,7 @@ export class App extends BtrixElement {
             <a
               class="items-between flex gap-2"
               aria-label="home"
-              href=${homeHref}
+              href=${this.homePath}
               @click=${(e: MouseEvent) => {
                 if (isSuperAdmin) {
                   this.clearSelectedOrg();
@@ -475,7 +489,7 @@ export class App extends BtrixElement {
                       ></div>
                       <a
                         class="flex items-center gap-2 font-medium text-primary-700 transition-colors hover:text-primary"
-                        href="/"
+                        href="/admin"
                         @click=${(e: MouseEvent) => {
                           this.clearSelectedOrg();
                           this.navigate.link(e);
