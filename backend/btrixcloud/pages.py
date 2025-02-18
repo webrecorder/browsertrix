@@ -1018,7 +1018,6 @@ class PageOps:
         while True:
             match_query = {
                 "version": {"$ne": version},
-                "isMigrating": {"$ne": True},
                 "finished": None,
             }
             running_crawl = await self.crawls.find_one(match_query)
