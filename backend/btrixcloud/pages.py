@@ -983,31 +983,27 @@ class PageOps:
     ):
         """Iterate through crawls, optimizing pages"""
         while True:
-            # Pull new crawl
+            # Pull new crawl and set isMigrating
             match_query = {"version": {"$ne": version}, "isMigrating": {"$ne": True}}
             if crawl_type in ("crawl", "upload"):
                 match_query["type"] = crawl_type
 
-            next_crawl = await self.crawls.find_one(match_query)
+            next_crawl = await self.crawls.find_one_and_update(
+                match_query, {"$set": {"isMigrating": True}}
+            )
             if next_crawl is None:
                 break
 
             crawl_id = next_crawl.get("_id")
 
-            # Set isMigrating
-            await self.crawls.find_one_and_update(
-                {"_id": crawl_id}, {"$set": {"isMigrating": True}}
-            )
-
             # Re-add crawl pages if at least one page doesn't have filename set
             has_page_no_filename = await self.pages.find_one(
                 {"crawl_id": crawl_id, "filename": None}
             )
-
             if has_page_no_filename:
                 await self.re_add_crawl_pages(crawl_id)
 
-            # Update crawl status
+            # Update crawl version and unset isMigrating
             await self.crawls.find_one_and_update(
                 {"_id": crawl_id}, {"$set": {"version": version, "isMigrating": False}}
             )
