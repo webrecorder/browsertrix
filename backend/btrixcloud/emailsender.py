@@ -154,9 +154,9 @@ class EmailSender:
     def send_background_job_failed(
         self,
         job: Union[CreateReplicaJob, DeleteReplicaJob],
-        org: Organization,
         finished: datetime,
         receiver_email: str,
+        org: Optional[Organization] = None,
     ):
         """Send background job failed email to superuser"""
         self._send_encrypted(

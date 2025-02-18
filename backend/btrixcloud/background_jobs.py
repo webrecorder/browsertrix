@@ -472,14 +472,14 @@ class BackgroundJobOps:
         self,
         job_id: str,
         job_type: str,
-        oid: UUID,
         success: bool,
         finished: datetime,
+        oid: Optional[UUID] = None,
     ) -> None:
         """Update job as finished, including
         job-specific task handling"""
 
-        job = await self.get_background_job(job_id, oid)
+        job = await self.get_background_job(job_id)
         if job.finished:
             return
 
@@ -499,14 +499,16 @@ class BackgroundJobOps:
                 flush=True,
             )
             superuser = await self.user_manager.get_superuser()
-            org = await self.org_ops.get_org_by_id(job.oid)
+            org = None
+            if job.oid:
+                org = await self.org_ops.get_org_by_id(job.oid)
             await asyncio.get_event_loop().run_in_executor(
                 None,
                 self.email.send_background_job_failed,
                 job,
-                org,
                 finished,
                 superuser.email,
+                org,
             )
 
         await self.jobs.find_one_and_update(
