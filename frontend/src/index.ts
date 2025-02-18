@@ -124,7 +124,9 @@ export class App extends BtrixElement {
   private get homePath() {
     let path = "/log-in";
     if (this.authState) {
-      if (this.appState.orgSlug) {
+      if (this.userInfo?.isSuperAdmin) {
+        path = `/${RouteNamespace.Superadmin}`;
+      } else if (this.appState.orgSlug) {
         path = `${this.navigate.orgBasePath}/${OrgTab.Dashboard}`;
       } else if (this.userInfo?.orgs[0]) {
         path = `/${RouteNamespace.PrivateOrgs}/${this.userInfo.orgs[0].slug}/${OrgTab.Dashboard}`;
@@ -1009,10 +1011,7 @@ export class App extends BtrixElement {
     });
 
     if (!detail.api) {
-      this.routeTo(
-        detail.redirectUrl ||
-          `${this.navigate.orgBasePath}/${OrgTab.Dashboard}`,
-      );
+      this.routeTo(detail.redirectUrl || this.homePath);
     }
 
     if (detail.firstLogin) {

@@ -5,7 +5,6 @@ import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import { RouteNamespace } from "@/routes";
 import { isApiError } from "@/utils/api";
 import type { ViewState } from "@/utils/APIRouter";
 import AuthService from "@/utils/AuthService";
@@ -402,11 +401,7 @@ export class LogInPage extends BtrixElement {
       this.dispatchEvent(
         AuthService.createLoggedInEvent({
           ...data,
-          redirectUrl:
-            this.redirectUrl ||
-            (data.user.is_superuser
-              ? `/${RouteNamespace.Superadmin}`
-              : undefined),
+          redirectUrl: this.redirectUrl,
         }),
       );
 
