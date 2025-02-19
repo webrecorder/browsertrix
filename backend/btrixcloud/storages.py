@@ -18,6 +18,7 @@ from contextlib import asynccontextmanager
 from itertools import chain
 
 import asyncio
+import time
 import heapq
 import zlib
 import json
@@ -495,12 +496,14 @@ class StorageOps:
         return status_code == 204
 
     async def sync_stream_wacz_pages(
-        self, wacz_files: List[CrawlFileOut]
+        self, wacz_files: List[CrawlFileOut], num_retries=5
     ) -> Iterator[Dict[Any, Any]]:
         """Return stream of pages specified WACZ"""
         loop = asyncio.get_event_loop()
 
-        resp = await loop.run_in_executor(None, self._sync_get_pages, wacz_files)
+        resp = await loop.run_in_executor(
+            None, self._sync_get_pages, wacz_files, num_retries
+        )
 
         return resp
 
@@ -600,8 +603,7 @@ class StorageOps:
         return stream_json_lines(heap_iter, log_levels, contexts)
 
     def _sync_get_pages(
-        self,
-        wacz_files: List[CrawlFileOut],
+        self, wacz_files: List[CrawlFileOut], num_retries=5
     ) -> Iterator[Dict[Any, Any]]:
         """Generate stream of page dicts from specified WACZs"""
 
@@ -631,22 +633,39 @@ class StorageOps:
 
         for wacz_file in wacz_files:
             wacz_url = self.resolve_internal_access_path(wacz_file.path)
-            with RemoteZip(wacz_url) as remote_zip:
-                page_files: List[ZipInfo] = [
-                    f
-                    for f in remote_zip.infolist()
-                    if f.filename.startswith("pages/")
-                    and f.filename.endswith(".jsonl")
-                    and not f.is_dir()
-                ]
-                for pagefile_zipinfo in page_files:
-                    page_generators.append(
-                        stream_page_lines(
-                            pagefile_zipinfo,
-                            wacz_url,
-                            wacz_file.name,
-                        )
-                    )
+
+            retry = 0
+
+            while True:
+                try:
+                    with RemoteZip(wacz_url) as remote_zip:
+                        page_files: List[ZipInfo] = [
+                            f
+                            for f in remote_zip.infolist()
+                            if f.filename.startswith("pages/")
+                            and f.filename.endswith(".jsonl")
+                            and not f.is_dir()
+                        ]
+                        for pagefile_zipinfo in page_files:
+                            page_generators.append(
+                                stream_page_lines(
+                                    pagefile_zipinfo,
+                                    wacz_url,
+                                    wacz_file.name,
+                                )
+                            )
+                except Exception as exc:
+                    msg = str(exc)
+                    if msg.startswith("503") or msg.startswith("429"):
+                        if retry < num_retries:
+                            retry += 1
+                            print(f"Retrying, {retry} of {num_retries}, {msg}")
+                            time.sleep(30)
+                            continue
+
+                    print(f"No more retries for error: {msg}, skipping {wacz_url}")
+
+                break
 
         return chain.from_iterable(page_generators)
 

@@ -10,8 +10,6 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Optional, Tuple, List, Dict, Any, Union
 from uuid import UUID, uuid4
 
-from remotezip import RemoteIOError
-
 from fastapi import Depends, HTTPException, Request, Response
 import pymongo
 
@@ -87,70 +85,49 @@ class PageOps:
     ):
         """Add pages to database from WACZ files"""
         pages_buffer: List[Page] = []
-        retry = 0
-        while True:
-            try:
-                crawl = await self.crawl_ops.get_crawl_out(crawl_id)
-                stream = await self.storage_ops.sync_stream_wacz_pages(
-                    crawl.resources or []
-                )
-                new_uuid = crawl.type == "upload"
-                seed_count = 0
-                non_seed_count = 0
-                for page_dict in stream:
-                    if not page_dict.get("url"):
-                        continue
+        crawl = await self.crawl_ops.get_crawl_out(crawl_id)
+        try:
+            stream = await self.storage_ops.sync_stream_wacz_pages(
+                crawl.resources or [], num_retries
+            )
+            new_uuid = crawl.type == "upload"
+            seed_count = 0
+            non_seed_count = 0
+            for page_dict in stream:
+                if not page_dict.get("url"):
+                    continue
 
-                    page_dict["isSeed"] = page_dict.get("isSeed") or page_dict.get(
-                        "seed"
-                    )
+                page_dict["isSeed"] = page_dict.get("isSeed") or page_dict.get("seed")
 
-                    if page_dict.get("isSeed"):
-                        seed_count += 1
-                    else:
-                        non_seed_count += 1
+                if page_dict.get("isSeed"):
+                    seed_count += 1
+                else:
+                    non_seed_count += 1
 
-                    if len(pages_buffer) > batch_size:
-                        await self._add_pages_to_db(crawl_id, pages_buffer)
-                        pages_buffer = []
-
-                    pages_buffer.append(
-                        self._get_page_from_dict(
-                            page_dict, crawl_id, crawl.oid, new_uuid
-                        )
-                    )
-
-                # Add any remaining pages in buffer to db
-                if pages_buffer:
+                if len(pages_buffer) > batch_size:
                     await self._add_pages_to_db(crawl_id, pages_buffer)
+                    pages_buffer = []
 
-                await self.set_archived_item_page_counts(crawl_id)
-
-                print(
-                    f"Added pages for crawl {crawl_id}: "
-                    + f"{seed_count} Seed, {non_seed_count} Non-Seed",
-                    flush=True,
+                pages_buffer.append(
+                    self._get_page_from_dict(page_dict, crawl_id, crawl.oid, new_uuid)
                 )
 
-            except RemoteIOError as rio:
-                msg = str(rio)
-                if msg.startswith("503") or msg.startswith("429"):
-                    if retry < num_retries:
-                        retry += 1
-                        print(f"Retrying, {retry} of {num_retries}, {msg}")
-                        await asyncio.sleep(5)
-                        continue
+            # Add any remaining pages in buffer to db
+            if pages_buffer:
+                await self._add_pages_to_db(crawl_id, pages_buffer)
 
-                print(f"No more retries, {msg}")
+            await self.set_archived_item_page_counts(crawl_id)
 
-            # pylint: disable=broad-exception-caught, raise-missing-from
-            except Exception as err:
-                traceback.print_exc()
-                print(
-                    f"Error adding pages for crawl {crawl_id} to db: {err}", flush=True
-                )
+            print(
+                f"Added pages for crawl {crawl_id}: "
+                + f"{seed_count} Seed, {non_seed_count} Non-Seed",
+                flush=True,
+            )
 
-            break
+        # pylint: disable=broad-exception-caught, raise-missing-from
+        except Exception as err:
+            traceback.print_exc()
+            print(f"Error adding pages for crawl {crawl_id} to db: {err}", flush=True)
 
     def _get_page_from_dict(
         self, page_dict: Dict[str, Any], crawl_id: str, oid: UUID, new_uuid: bool
