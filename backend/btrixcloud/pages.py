@@ -915,8 +915,7 @@ class PageOps:
             ]
         )
         res = await cursor.to_list(1)
-
-        return res[0].get("urls")
+        return res[0].get("urls") if res else 0
 
     async def set_archived_item_page_counts(self, crawl_id: str):
         """Store archived item page and unique page counts in crawl document"""
