@@ -104,7 +104,7 @@ class PageOps:
                     non_seed_count += 1
 
                 if len(pages_buffer) > batch_size:
-                    await self._add_pages_to_db(crawl_id, pages_buffer)
+                    await self._add_pages_to_db(crawl_id, pages_buffer, ordered=False)
                     pages_buffer = []
 
                 pages_buffer.append(
@@ -113,7 +113,7 @@ class PageOps:
 
             # Add any remaining pages in buffer to db
             if pages_buffer:
-                await self._add_pages_to_db(crawl_id, pages_buffer)
+                await self._add_pages_to_db(crawl_id, pages_buffer, ordered=False)
 
             await self.set_archived_item_page_counts(crawl_id)
 
@@ -162,7 +162,7 @@ class PageOps:
         p.compute_page_type()
         return p
 
-    async def _add_pages_to_db(self, crawl_id: str, pages: List[Page]):
+    async def _add_pages_to_db(self, crawl_id: str, pages: List[Page], ordered=True):
         """Add batch of pages to db in one insert"""
         result = await self.pages.insert_many(
             [
@@ -170,7 +170,8 @@ class PageOps:
                     exclude_unset=True, exclude_none=True, exclude_defaults=True
                 )
                 for page in pages
-            ]
+            ],
+            ordered=ordered,
         )
         if not result.inserted_ids:
             # pylint: disable=broad-exception-raised
