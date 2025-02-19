@@ -943,7 +943,9 @@ class PageOps:
                 }
 
                 next_crawl = await self.crawls.find_one_and_update(
-                    match_query, {"$set": {"isMigrating": True}}
+                    match_query,
+                    {"$set": {"isMigrating": True}},
+                    sort=[("finished", -1)],
                 )
                 if next_crawl is None:
                     print("No more finished crawls to migrate")
