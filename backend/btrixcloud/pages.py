@@ -74,6 +74,9 @@ class PageOps:
     async def init_index(self):
         """init index for pages db collection"""
         await self.pages.create_index([("crawl_id", pymongo.HASHED)])
+        await self.pages.create_index(
+            [("crawl_id", pymongo.HASHED), ("url", pymongo.ASCENDING)]
+        )
 
     async def set_ops(self, background_job_ops: BackgroundJobOps):
         """Set ops classes as needed"""

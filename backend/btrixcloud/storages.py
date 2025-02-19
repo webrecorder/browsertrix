@@ -629,12 +629,16 @@ class StorageOps:
                     page_json["seed"] = True
                 yield page_json
 
+        count = 0
+        total = len(wacz_files)
+
         for wacz_file in wacz_files:
             wacz_url = self.resolve_internal_access_path(wacz_file.path)
 
             retry = 0
+            count += 1
 
-            print(f"  Processing WACZ {wacz_url}")
+            print(f"  Processing {count} of {total} WACZ {wacz_url}")
 
             while True:
                 try:
