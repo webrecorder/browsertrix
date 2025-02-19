@@ -29,7 +29,6 @@ from .models import (
     PageNoteDelete,
     QARunBucketStats,
     StartedResponse,
-    StartedResponseBool,
     UpdatedResponse,
     DeletedResponse,
     PageNoteAddedResponse,
@@ -1047,25 +1046,27 @@ def init_pages_api(
     @app.post(
         "/orgs/{oid}/crawls/{crawl_id}/pages/reAdd",
         tags=["pages", "crawls"],
-        response_model=StartedResponseBool,
+        response_model=StartedResponse,
     )
     @app.post(
         "/orgs/{oid}/uploads/{crawl_id}/pages/reAdd",
         tags=["pages", "uploads"],
-        response_model=StartedResponseBool,
+        response_model=StartedResponse,
     )
     @app.post(
         "/orgs/{oid}/all-crawls/{crawl_id}/pages/reAdd",
         tags=["pages", "all-crawls"],
-        response_model=StartedResponseBool,
+        response_model=StartedResponse,
     )
     async def re_add_crawl_pages(
         crawl_id: str,
         org: Organization = Depends(org_crawl_dep),
     ):
         """Re-add pages for crawl (may delete page QA data!)"""
-        asyncio.create_task(ops.re_add_crawl_pages(crawl_id, org.id))
-        return {"started": True}
+        job_id = await ops.background_job_ops.create_re_add_org_pages_job(
+            org.id, crawl_id=crawl_id
+        )
+        return {"started": job_id or ""}
 
     @app.get(
         "/orgs/{oid}/crawls/{crawl_id}/pages/{page_id}",

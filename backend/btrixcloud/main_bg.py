@@ -13,10 +13,12 @@ from .ops import init_ops
 job_type = os.environ.get("BG_JOB_TYPE")
 oid = os.environ.get("OID")
 crawl_type = os.environ.get("CRAWL_TYPE")
+crawl_id = os.environ.get("CRAWL_ID")
 
 
 # ============================================================================
 # pylint: disable=too-many-function-args, duplicate-code, too-many-locals, too-many-return-statements
+# pylint: disable=too-many-branches
 async def main():
     """run background job with access to ops classes"""
 
@@ -70,7 +72,11 @@ async def main():
 
     if job_type == BgJobType.READD_ORG_PAGES:
         try:
-            await page_ops.re_add_all_crawl_pages(org, crawl_type=crawl_type)
+            if not crawl_id:
+                await page_ops.re_add_all_crawl_pages(org, crawl_type=crawl_type)
+            else:
+                await page_ops.add_crawl_pages_to_db_from_wacz(crawl_id=crawl_id)
+
             await coll_ops.recalculate_org_collection_stats(org)
             return 0
         # pylint: disable=broad-exception-caught

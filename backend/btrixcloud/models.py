@@ -2596,10 +2596,11 @@ class RecalculateOrgStatsJob(BackgroundJob):
 
 # ============================================================================
 class ReAddOrgPagesJob(BackgroundJob):
-    """Model for tracking jobs to readd an org's pages"""
+    """Model for tracking jobs to readd pages for an org or single crawl"""
 
     type: Literal[BgJobType.READD_ORG_PAGES] = BgJobType.READD_ORG_PAGES
     crawl_type: Optional[str] = None
+    crawl_id: Optional[str] = None
 
 
 # ============================================================================

@@ -47,6 +47,11 @@ spec:
           - name: CRAWL_TYPE
             value: {{ crawl_type }}
 
+{% if crawl_id %}
+          - name: CRAWL_ID
+            value: {{ crawl_id }}
+{% endif %}
+
           envFrom:
             - configMapRef:
                 name: backend-env-config

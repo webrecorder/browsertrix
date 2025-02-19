@@ -384,6 +384,7 @@ class BackgroundJobOps:
         self,
         oid: UUID,
         crawl_type: Optional[str] = None,
+        crawl_id: Optional[str] = None,
         existing_job_id: Optional[str] = None,
     ):
         """Create job to (re)add all pages in an org, optionally filtered by crawl type"""
@@ -392,6 +393,7 @@ class BackgroundJobOps:
             job_id = await self.crawl_manager.run_re_add_org_pages_job(
                 oid=str(oid),
                 crawl_type=crawl_type,
+                crawl_id=crawl_id,
                 existing_job_id=existing_job_id,
             )
             if existing_job_id:
@@ -412,6 +414,7 @@ class BackgroundJobOps:
                     id=job_id,
                     oid=oid,
                     crawl_type=crawl_type,
+                    crawl_id=crawl_id,
                     started=dt_now(),
                 )
 
@@ -724,6 +727,7 @@ class BackgroundJobOps:
             await self.create_re_add_org_pages_job(
                 org.id,
                 job.crawl_type,
+                job.crawl_id,
                 existing_job_id=job.id,
             )
             return {"success": True}

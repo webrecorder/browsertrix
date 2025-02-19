@@ -151,6 +151,7 @@ class CrawlManager(K8sAPI):
         self,
         oid: str,
         crawl_type: Optional[str] = None,
+        crawl_id: Optional[str] = None,
         existing_job_id: Optional[str] = None,
     ) -> str:
         """run job to recalculate storage stats for the org"""
@@ -165,6 +166,7 @@ class CrawlManager(K8sAPI):
             job_type=BgJobType.READD_ORG_PAGES.value,
             oid=oid,
             crawl_type=crawl_type,
+            crawl_id=crawl_id,
         )
 
     async def run_optimize_pages_job(

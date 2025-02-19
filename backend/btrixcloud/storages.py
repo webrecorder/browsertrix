@@ -656,12 +656,11 @@ class StorageOps:
                             )
                 except Exception as exc:
                     msg = str(exc)
-                    if msg.startswith("503") or msg.startswith("429"):
-                        if retry < num_retries:
-                            retry += 1
-                            print(f"Retrying, {retry} of {num_retries}, {msg}")
-                            time.sleep(30)
-                            continue
+                    if retry < num_retries:
+                        retry += 1
+                        print(f"Retrying, {retry} of {num_retries}, {msg}")
+                        time.sleep(30)
+                        continue
 
                     print(f"No more retries for error: {msg}, skipping {wacz_url}")
 
