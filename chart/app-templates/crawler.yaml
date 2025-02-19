@@ -127,7 +127,7 @@ spec:
       command:
         - {{ "crawl" if not qa_source_crawl_id else "qa" }}
         - --config
-        - /tmp/crawl-config.json
+        - /tmp/config/crawl-config.json
         - --workers
         - "{{ workers }}"
         - --redisStoreUrl
@@ -153,8 +153,7 @@ spec:
       {% endif %}
       volumeMounts:
         - name: crawl-config
-          mountPath: /tmp/crawl-config.json
-          subPath: crawl-config.json
+          mountPath: /tmp/config/
           readOnly: True
 
       {% if qa_source_crawl_id %}

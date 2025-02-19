@@ -544,6 +544,8 @@ class CrawlOps(BaseCrawlOps):
             regex, cid, org, user, add
         )
 
+        await self.crawl_manager.reload_running_crawl_config(crawl.id)
+
         await self.crawls.find_one_and_update(
             {"_id": crawl_id, "type": "crawl", "oid": org.id},
             {"$set": {"config": new_config.dict()}},
