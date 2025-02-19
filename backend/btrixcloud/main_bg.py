@@ -75,7 +75,7 @@ async def main():
             if not crawl_id:
                 await page_ops.re_add_all_crawl_pages(org, crawl_type=crawl_type)
             else:
-                await page_ops.add_crawl_pages_to_db_from_wacz(crawl_id=crawl_id)
+                await page_ops.re_add_crawl_pages(crawl_id=crawl_id, oid=org.id)
 
             await coll_ops.recalculate_org_collection_stats(org)
             return 0
