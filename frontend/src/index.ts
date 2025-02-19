@@ -28,7 +28,7 @@ import { viewStateContext } from "./context/view-state";
 import { OrgTab, RouteNamespace, ROUTES } from "./routes";
 import type { UserInfo, UserOrg } from "./types/user";
 import { pageView, type AnalyticsTrackProps } from "./utils/analytics";
-import APIRouter, { type ViewState } from "./utils/APIRouter";
+import { type ViewState } from "./utils/APIRouter";
 import AuthService, {
   type AuthEventDetail,
   type LoggedInEventDetail,
@@ -48,6 +48,7 @@ import { type AppSettings } from "@/utils/app";
 import { DEFAULT_MAX_SCALE } from "@/utils/crawler";
 import localize from "@/utils/localize";
 import { toast } from "@/utils/notify";
+import router, { urlForName } from "@/utils/router";
 import { AppStateService } from "@/utils/state";
 import { formatAPIUser } from "@/utils/user";
 import brandLockupColor from "~assets/brand/browsertrix-lockup-color.svg";
@@ -95,7 +96,9 @@ export class App extends BtrixElement {
   @property({ type: Object })
   settings?: AppSettings;
 
-  private readonly router = new APIRouter(ROUTES);
+  // TODO Refactor into context
+  private readonly router = router;
+
   authService = new AuthService();
 
   @state()
@@ -597,7 +600,7 @@ export class App extends BtrixElement {
                 >
                   <a
                     class="font-medium text-neutral-500 hover:text-primary"
-                    href="/crawls"
+                    href=${urlForName("crawls")}
                     @click=${this.navigate.link}
                     >${msg("Running Crawls")}</a
                   >

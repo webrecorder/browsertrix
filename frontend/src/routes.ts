@@ -14,7 +14,6 @@ export enum RouteNamespace {
 }
 
 export const ROUTES = {
-  admin: `/${RouteNamespace.Superadmin}`,
   home: "/",
   join: "/join/:token",
   signUp: "/sign-up",
@@ -39,10 +38,12 @@ export const ROUTES = {
   publicOrgs: `/${RouteNamespace.PublicOrgs}(/)`,
   publicOrg: `/${RouteNamespace.PublicOrgs}/:slug(/)`,
   publicCollection: `/${RouteNamespace.PublicOrgs}/:slug/collections/:collectionSlug(/:collectionTab)`,
-  users: `/${RouteNamespace.Superadmin}/users`,
+  // Superadmin routes
+  admin: `/${RouteNamespace.Superadmin}(/)`,
+  users: `/${RouteNamespace.Superadmin}/users(/)`,
   usersInvite: `/${RouteNamespace.Superadmin}/users/invite`,
-  crawls: "/crawls",
-  crawl: "/crawls/crawl/:crawlId",
+  crawls: `/${RouteNamespace.Superadmin}/crawls(/)`,
+  crawl: `/${RouteNamespace.Superadmin}/crawls/crawl/:crawlId`,
   // Redirect for https://github.com/webrecorder/browsertrix-cloud/issues/935
   awpUploadRedirect: `/${RouteNamespace.PrivateOrgs}/:orgId/artifacts/upload/:uploadId`,
 } as const;
