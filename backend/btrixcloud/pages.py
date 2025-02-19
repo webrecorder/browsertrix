@@ -675,7 +675,9 @@ class PageOps:
         skip = page_size * page
 
         if crawl_ids is None and coll_id is None:
-            raise Exception("either crawl_ids or coll_id must be provided")
+            raise HTTPException(
+                status_code=400, detail="either crawl_ids or coll_id must be provided"
+            )
 
         if coll_id and crawl_ids is None:
             crawl_ids = await self.coll_ops.get_collection_crawl_ids(
@@ -1014,7 +1016,7 @@ class PageOps:
 # pylint: disable=too-many-arguments, too-many-locals, invalid-name, fixme
 def init_pages_api(
     app, mdb, crawl_ops, org_ops, storage_ops, background_job_ops, coll_ops, user_dep
-):
+) -> PageOps:
     """init pages API"""
     # pylint: disable=invalid-name
 
@@ -1254,7 +1256,7 @@ def init_pages_api(
         sortDirection: Optional[int] = -1,
     ) -> List[PageOut]:
         """Retrieve paginated list of pages in collection"""
-        pages = await ops.list_collection_pages(
+        pages = await ops.list_replay_query_pages(
             coll_id=coll_id,
             org=org,
             search=search,
@@ -1311,7 +1313,7 @@ def init_pages_api(
         sortDirection: Optional[int] = -1,
     ) -> List[PageOut]:
         """Retrieve paginated list of pages in collection"""
-        pages = await ops.list_collection_pages(
+        pages = await ops.list_replay_query_pages(
             coll_id=coll_id,
             org=org,
             search=search,

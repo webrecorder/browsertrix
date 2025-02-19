@@ -6,7 +6,7 @@ Collections API
 from datetime import datetime
 from collections import Counter
 from uuid import UUID, uuid4
-from typing import Optional, List, TYPE_CHECKING, cast, Dict, Tuple, Any, Union
+from typing import Optional, List, TYPE_CHECKING, cast, Dict, Any, Union
 import os
 import re
 import urllib.parse
@@ -47,7 +47,6 @@ from .models import (
     PageUrlCount,
     PageOut,
     PageIdTimestamp,
-    PaginatedPageUrlCountResponse,
     UpdateCollHomeUrl,
     User,
     ImageFile,
@@ -788,7 +787,8 @@ class CollectionOps:
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
     ) -> List[PageUrlCount]:
-        """List all page URLs in collection sorted desc by snapshot count unless prefix is specified"""
+        """List all page URLs in collection sorted desc by snapshot count
+        unless prefix is specified"""
         # pylint: disable=duplicate-code, too-many-locals, too-many-branches, too-many-statements
         # Zero-index page for query
         page = page - 1
