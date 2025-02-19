@@ -77,6 +77,13 @@ class PageOps:
         await self.pages.create_index(
             [("crawl_id", pymongo.HASHED), ("url", pymongo.ASCENDING)]
         )
+        await self.pages.create_index(
+            [
+                ("crawl_id", pymongo.HASHED),
+                ("isSeed", pymongo.DESCENDING),
+                ("ts", pymongo.ASCENDING),
+            ]
+        )
 
     async def set_ops(self, background_job_ops: BackgroundJobOps):
         """Set ops classes as needed"""
@@ -739,7 +746,9 @@ class PageOps:
         #        },
         #    ]
         # )
-        aggregate.extend([{"$skip": skip}, {"$limit": page_size}])
+        if skip:
+            aggregate.append({"$skip": skip})
+        aggregate.append({"$limit": page_size})
 
         # Get total
         cursor = self.pages.aggregate(aggregate)
