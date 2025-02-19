@@ -782,6 +782,61 @@ class CollectionOps:
     async def list_page_snapshots_in_collection(
         self,
         coll_id: UUID,
+        url_prefix: Optional[str] = None,
+        page_size: int = DEFAULT_PAGE_SIZE,
+    ) -> List[PageUrlCount]:
+        """List all page URLs in collection sorted desc by snapshot count
+        unless prefix is specified"""
+        # pylint: disable=duplicate-code, too-many-locals, too-many-branches, too-many-statements
+        # Zero-index page for query
+
+        crawl_ids = await self.get_collection_crawl_ids(coll_id)
+
+        match_query: dict[str, object] = {"crawl_id": {"$in": crawl_ids}}
+        sort_query: dict[str, int] = {"isSeed": -1, "url": 1, "ts": 1}
+
+        if url_prefix:
+            url_prefix = urllib.parse.unquote(url_prefix)
+            regex_pattern = f"^{re.escape(url_prefix)}"
+            match_query["url"] = {"$regex": regex_pattern, "$options": "i"}
+            # sort_query = {"ts": 1}
+
+        aggregate: List[Dict[str, Union[int, object]]] = [
+            {"$match": match_query},
+            {"$sort": sort_query},
+        ]
+
+        aggregate.append({"$limit": page_size * len(crawl_ids)})
+
+        # Get total
+        print(aggregate)
+        cursor = self.pages.aggregate(aggregate)
+        results = await cursor.to_list(length=page_size * len(crawl_ids))
+
+        url_counts: dict[str, PageUrlCount] = {}
+        for result in results:
+            url = result.get("url")
+            count = url_counts.get(url)
+            if not count:
+                count = PageUrlCount(url=url, snapshots=[], count=0)
+                url_counts[url] = count
+            count.snapshots.append(
+                PageIdTimestamp(
+                    pageId=result.get("_id"),
+                    ts=result.get("ts"),
+                    status=result.get("status", 200),
+                )
+            )
+            count.count += 1
+
+            if len(url_counts) >= page_size:
+                break
+
+        return list(url_counts.values())
+
+    async def list_page_snapshots_in_collection_old(
+        self,
+        coll_id: UUID,
         oid: UUID,
         url_prefix: Optional[str] = None,
         page_size: int = DEFAULT_PAGE_SIZE,
@@ -1248,10 +1303,8 @@ def init_collections_api(
         """Retrieve paginated list of urls in collection sorted by snapshot count"""
         pages = await colls.list_page_snapshots_in_collection(
             coll_id=coll_id,
-            oid=oid,
             url_prefix=urlPrefix,
             page_size=pageSize,
-            page=page,
         )
         return pages
 
