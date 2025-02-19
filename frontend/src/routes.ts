@@ -40,10 +40,10 @@ export const ROUTES = {
   publicCollection: `/${RouteNamespace.PublicOrgs}/:slug/collections/:collectionSlug(/:collectionTab)`,
   // Superadmin routes
   admin: `/${RouteNamespace.Superadmin}(/)`,
-  users: `/${RouteNamespace.Superadmin}/users(/)`,
-  usersInvite: `/${RouteNamespace.Superadmin}/users/invite`,
-  crawls: `/${RouteNamespace.Superadmin}/crawls(/)`,
-  crawl: `/${RouteNamespace.Superadmin}/crawls/crawl/:crawlId`,
+  adminUsers: `/${RouteNamespace.Superadmin}/users(/)`,
+  adminUsersInvite: `/${RouteNamespace.Superadmin}/users/invite`,
+  adminCrawls: `/${RouteNamespace.Superadmin}/crawls(/)`,
+  adminCrawl: `/${RouteNamespace.Superadmin}/crawls/crawl/:crawlId`,
   // Redirect for https://github.com/webrecorder/browsertrix-cloud/issues/935
   awpUploadRedirect: `/${RouteNamespace.PrivateOrgs}/:orgId/artifacts/upload/:uploadId`,
 } as const;

@@ -25,7 +25,7 @@ import "./assets/fonts/Recursive/recursive.css";
 import "./styles.css";
 
 import { viewStateContext } from "./context/view-state";
-import { OrgTab, RouteNamespace, ROUTES } from "./routes";
+import { OrgTab, RouteNamespace } from "./routes";
 import type { UserInfo, UserOrg } from "./types/user";
 import { pageView, type AnalyticsTrackProps } from "./utils/analytics";
 import { type ViewState } from "./utils/APIRouter";
@@ -292,7 +292,7 @@ export class App extends BtrixElement {
           this.authService.authState,
         );
         this.clearUser();
-        this.routeTo(ROUTES.login);
+        this.routeTo(urlForName("login"));
       }
     }
   }
@@ -558,7 +558,8 @@ export class App extends BtrixElement {
                       </sl-menu-item>
                       ${this.userInfo?.isSuperAdmin
                         ? html` <sl-menu-item
-                            @click=${() => this.routeTo(ROUTES.usersInvite)}
+                            @click=${() =>
+                              this.routeTo(urlForName("adminUsersInvite"))}
                           >
                             <sl-icon slot="prefix" name="person-plus"></sl-icon>
                             ${msg("Invite Users")}
@@ -600,7 +601,7 @@ export class App extends BtrixElement {
                 >
                   <a
                     class="font-medium text-neutral-500 hover:text-primary"
-                    href=${urlForName("crawls")}
+                    href=${urlForName("adminCrawls")}
                     @click=${this.navigate.link}
                     >${msg("Running Crawls")}</a
                   >
@@ -837,20 +838,12 @@ export class App extends BtrixElement {
           .viewState=${this.viewState}
         ></btrix-reset-password>`;
 
-      case "admin": {
-        if (this.userInfo?.isSuperAdmin) {
-          // Dynamically import admin pages
-          return until(
-            import("@/pages/admin/index").then(
-              () => html`
-                <btrix-admin class="w-full md:bg-neutral-50"></btrix-admin>
-              `,
-            ),
-          );
-        }
-
-        return this.renderNotFoundPage();
-      }
+      case "admin":
+        return this.renderAdminPage(
+          () => html`
+            <btrix-admin class="w-full md:bg-neutral-50"></btrix-admin>
+          `,
+        );
 
       case "orgs":
         return html`<btrix-orgs class="w-full md:bg-neutral-50"></btrix-orgs>`;
@@ -901,42 +894,25 @@ export class App extends BtrixElement {
           tab=${this.viewState.params.settingsTab}
         ></btrix-account-settings>`;
 
-      case "usersInvite": {
-        if (this.userInfo) {
-          if (this.userInfo.isSuperAdmin) {
-            // Dynamically import admin pages
-            return until(
-              import("@/pages/admin/index").then(
-                () =>
-                  html`<btrix-users-invite
-                    class="mx-auto box-border w-full max-w-screen-desktop p-2 md:py-8"
-                  ></btrix-users-invite>`,
-              ),
-            );
-          } else {
-            return this.renderNotFoundPage();
-          }
-        } else {
-          return this.renderSpinner();
-        }
-      }
+      case "adminUsers":
+      case "adminUsersInvite":
+        return this.renderAdminPage(
+          () =>
+            html`<btrix-users-invite
+              class="mx-auto box-border w-full max-w-screen-desktop p-2 md:py-8"
+            ></btrix-users-invite>`,
+        );
 
-      case "crawls":
-      case "crawl": {
-        if (this.userInfo) {
-          if (this.userInfo.isSuperAdmin) {
-            return html`<btrix-crawls
+      case "adminCrawls":
+      case "adminCrawl":
+        return this.renderAdminPage(
+          () =>
+            html`<btrix-crawls
               class="w-full"
               @notify=${this.onNotify}
               crawlId=${this.viewState.params.crawlId}
-            ></btrix-crawls>`;
-          } else {
-            return this.renderNotFoundPage();
-          }
-        } else {
-          return this.renderSpinner();
-        }
-      }
+            ></btrix-crawls>`,
+        );
 
       case "awpUploadRedirect": {
         const { orgId, uploadId } = this.viewState.params;
@@ -951,6 +927,21 @@ export class App extends BtrixElement {
       default:
         return this.renderNotFoundPage();
     }
+  }
+
+  private renderAdminPage(renderer: () => TemplateResult) {
+    // if (!this.userInfo) return this.renderSpinner();
+
+    if (this.userInfo?.isSuperAdmin) {
+      // Dynamically import admin pages
+      return until(
+        import(/* webpackChunkName: "admin" */ "@/pages/admin/index").then(
+          renderer,
+        ),
+      );
+    }
+
+    return this.renderNotFoundPage();
   }
 
   private renderSpinner() {
@@ -1000,7 +991,7 @@ export class App extends BtrixElement {
     this.clearUser();
 
     if (redirect) {
-      this.routeTo(ROUTES.login);
+      this.routeTo(urlForName("login"));
     }
   }
 
@@ -1035,7 +1026,7 @@ export class App extends BtrixElement {
 
     this.clearUser();
     const redirectUrl = e.detail.redirectUrl;
-    this.routeTo(ROUTES.login, {
+    this.routeTo(urlForName("login"), {
       redirectUrl,
     });
     if (redirectUrl && redirectUrl !== "/") {
@@ -1140,7 +1131,7 @@ export class App extends BtrixElement {
               this.syncViewState();
             } else {
               this.clearUser();
-              this.routeTo(ROUTES.login);
+              this.routeTo(urlForName("login"));
             }
           }
         }

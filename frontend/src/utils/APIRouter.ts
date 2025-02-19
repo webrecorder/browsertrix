@@ -2,7 +2,6 @@ import queryString from "query-string";
 import UrlPattern from "url-pattern";
 
 import type { ROUTES } from "@/routes";
-import { cached } from "@/utils/weakCache";
 
 type RouteName = keyof typeof ROUTES;
 type Routes = Record<RouteName, UrlPattern>;
@@ -62,9 +61,10 @@ export default class APIRouter {
   /**
    * Get URL for a route name, with optional parameters
    */
-  public readonly urlForName = cached(
-    (name: RouteName, params?: { [key: string]: unknown }) => {
-      return this.routes[name].stringify(params);
-    },
-  );
+  public readonly urlForName = (
+    name: RouteName,
+    params?: { [key: string]: unknown },
+  ) => {
+    return this.routes[name].stringify(params);
+  };
 }
