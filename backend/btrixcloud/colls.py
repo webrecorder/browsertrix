@@ -780,15 +780,15 @@ class CollectionOps:
 
         return OrgPublicCollections(org=public_org_details, collections=collections)
 
-    async def list_urls_in_collection(
+    async def list_page_snapshots_in_collection(
         self,
         coll_id: UUID,
         oid: UUID,
         url_prefix: Optional[str] = None,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
-    ) -> Tuple[List[PageUrlCount], int]:
-        """List all URLs in collection sorted desc by snapshot count unless prefix is specified"""
+    ) -> List[PageUrlCount]:
+        """List all page URLs in collection sorted desc by snapshot count unless prefix is specified"""
         # pylint: disable=duplicate-code, too-many-locals, too-many-branches, too-many-statements
         # Zero-index page for query
         page = page - 1
@@ -797,13 +797,13 @@ class CollectionOps:
         crawl_ids = await self.get_collection_crawl_ids(coll_id)
 
         match_query: dict[str, object] = {"oid": oid, "crawl_id": {"$in": crawl_ids}}
-        sort_query: dict[str, int] = {"count": -1, "_id": 1}
+        sort_query: dict[str, int] = {"count": -1, "ts": 1}
 
         if url_prefix:
             url_prefix = urllib.parse.unquote(url_prefix)
             regex_pattern = f"^{re.escape(url_prefix)}"
             match_query["url"] = {"$regex": regex_pattern, "$options": "i"}
-            sort_query = {"_id": 1}
+            sort_query = {"ts": 1}
 
         aggregate: List[Dict[str, Union[int, object]]] = [{"$match": match_query}]
 
@@ -818,28 +818,15 @@ class CollectionOps:
                 },
                 {"$sort": sort_query},
                 {"$set": {"url": "$_id"}},
-                {
-                    "$facet": {
-                        "items": [
-                            {"$skip": skip},
-                            {"$limit": page_size},
-                        ],
-                        "total": [{"$count": "count"}],
-                    }
-                },
             ]
         )
+        if skip:
+            aggregate.append({"$skip": skip})
+        aggregate.append({"$limit": page_size})
 
         # Get total
         cursor = self.pages.aggregate(aggregate)
-        results = await cursor.to_list(length=1)
-        result = results[0]
-        items = result["items"]
-
-        try:
-            total = int(result["total"][0]["count"])
-        except (IndexError, ValueError):
-            total = 0
+        results = await cursor.to_list(length=page_size)
 
         return [
             PageUrlCount(
@@ -852,8 +839,8 @@ class CollectionOps:
                     for p in data.get("pages", [])
                 ],
             )
-            for data in items
-        ], total
+            for data in results
+        ]
 
     async def set_home_url(
         self, coll_id: UUID, update: UpdateCollHomeUrl, org: Organization
@@ -986,11 +973,11 @@ class CollectionOps:
 
 # ============================================================================
 # pylint: disable=too-many-locals
-def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops, user_dep):
+def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops, user_dep) -> CollectionOps:
     """init collections api"""
     # pylint: disable=invalid-name, unused-argument, too-many-arguments
 
-    colls = CollectionOps(mdb, storage_ops, orgs, event_webhook_ops)
+    colls : CollectionOps = CollectionOps(mdb, storage_ops, orgs, event_webhook_ops)
 
     org_crawl_dep = orgs.org_crawl_dep
     org_viewer_dep = orgs.org_viewer_dep
@@ -1043,7 +1030,7 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops, user_de
         try:
             all_collections, _ = await colls.list_collections(org, page_size=10_000)
             for collection in all_collections:
-                results[collection.name], _ = (
+                results[collection.name], _, _ = (
                     await colls.get_collection_crawl_resources(collection.id)
                 )
         except Exception as exc:
@@ -1244,9 +1231,9 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops, user_de
         return await colls.download_collection(coll.id, org)
 
     @app.get(
-        "/orgs/{oid}/collections/{coll_id}/urls",
+        "/orgs/{oid}/collections/{coll_id}/pageSnapshots",
         tags=["collections"],
-        response_model=PaginatedPageUrlCountResponse,
+        response_model=List[PageUrlCount]
     )
     async def get_collection_url_list(
         coll_id: UUID,
@@ -1254,16 +1241,16 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops, user_de
         urlPrefix: Optional[str] = None,
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
-    ):
+    ) -> List[PageUrlCount]:
         """Retrieve paginated list of urls in collection sorted by snapshot count"""
-        pages, total = await colls.list_urls_in_collection(
+        pages = await colls.list_page_snapshots_in_collection(
             coll_id=coll_id,
             oid=oid,
             url_prefix=urlPrefix,
             page_size=pageSize,
             page=page,
         )
-        return paginated_format(pages, total, page, pageSize)
+        return pages
 
     @app.post(
         "/orgs/{oid}/collections/{coll_id}/home-url",
