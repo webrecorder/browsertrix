@@ -4,12 +4,13 @@
 
 import asyncio
 import re
-import time
 import traceback
 import urllib.parse
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional, Tuple, List, Dict, Any, Union
 from uuid import UUID, uuid4
+
+from remotezip import RemoteIOError
 
 from fastapi import Depends, HTTPException, Request, Response
 import pymongo
@@ -81,50 +82,75 @@ class PageOps:
         """Set ops classes as needed"""
         self.background_job_ops = background_job_ops
 
-    async def add_crawl_pages_to_db_from_wacz(self, crawl_id: str, batch_size=100):
+    async def add_crawl_pages_to_db_from_wacz(
+        self, crawl_id: str, batch_size=100, num_retries=5
+    ):
         """Add pages to database from WACZ files"""
         pages_buffer: List[Page] = []
-        try:
-            crawl = await self.crawl_ops.get_crawl_out(crawl_id)
-            stream = await self.storage_ops.sync_stream_wacz_pages(
-                crawl.resources or []
-            )
-            new_uuid = crawl.type == "upload"
-            seed_count = 0
-            non_seed_count = 0
-            for page_dict in stream:
-                if not page_dict.get("url"):
-                    continue
+        retry = 0
+        while True:
+            try:
+                crawl = await self.crawl_ops.get_crawl_out(crawl_id)
+                stream = await self.storage_ops.sync_stream_wacz_pages(
+                    crawl.resources or []
+                )
+                new_uuid = crawl.type == "upload"
+                seed_count = 0
+                non_seed_count = 0
+                for page_dict in stream:
+                    if not page_dict.get("url"):
+                        continue
 
-                page_dict["isSeed"] = page_dict.get("isSeed") or page_dict.get("seed")
+                    page_dict["isSeed"] = page_dict.get("isSeed") or page_dict.get(
+                        "seed"
+                    )
 
-                if page_dict.get("isSeed"):
-                    seed_count += 1
-                else:
-                    non_seed_count += 1
+                    if page_dict.get("isSeed"):
+                        seed_count += 1
+                    else:
+                        non_seed_count += 1
 
-                if len(pages_buffer) > batch_size:
+                    if len(pages_buffer) > batch_size:
+                        await self._add_pages_to_db(crawl_id, pages_buffer)
+                        pages_buffer = []
+
+                    pages_buffer.append(
+                        self._get_page_from_dict(
+                            page_dict, crawl_id, crawl.oid, new_uuid
+                        )
+                    )
+
+                # Add any remaining pages in buffer to db
+                if pages_buffer:
                     await self._add_pages_to_db(crawl_id, pages_buffer)
-                    pages_buffer = []
 
-                pages_buffer.append(
-                    self._get_page_from_dict(page_dict, crawl_id, crawl.oid, new_uuid)
+                await self.set_archived_item_page_counts(crawl_id)
+
+                print(
+                    f"Added pages for crawl {crawl_id}: "
+                    + f"{seed_count} Seed, {non_seed_count} Non-Seed",
+                    flush=True,
                 )
 
-            # Add any remaining pages in buffer to db
-            if pages_buffer:
-                await self._add_pages_to_db(crawl_id, pages_buffer)
+            except RemoteIOError as rio:
+                msg = str(rio)
+                if msg.startswith("503") or msg.startswith("429"):
+                    if retry < num_retries:
+                        retry += 1
+                        print(f"Retrying, {retry} of {num_retries}, {msg}")
+                        await asyncio.sleep(5)
+                        continue
 
-            await self.set_archived_item_page_counts(crawl_id)
+                print(f"No more retries, {msg}")
 
-            print(
-                f"Added pages for crawl {crawl_id}: {seed_count} Seed, {non_seed_count} Non-Seed",
-                flush=True,
-            )
-        # pylint: disable=broad-exception-caught, raise-missing-from
-        except Exception as err:
-            traceback.print_exc()
-            print(f"Error adding pages for crawl {crawl_id} to db: {err}", flush=True)
+            # pylint: disable=broad-exception-caught, raise-missing-from
+            except Exception as err:
+                traceback.print_exc()
+                print(
+                    f"Error adding pages for crawl {crawl_id} to db: {err}", flush=True
+                )
+
+            break
 
     def _get_page_from_dict(
         self, page_dict: Dict[str, Any], crawl_id: str, oid: UUID, new_uuid: bool
@@ -982,7 +1008,7 @@ class PageOps:
                 break
 
             print("Running crawls remain, waiting for them to finish")
-            time.sleep(30)
+            await asyncio.sleep(30)
 
         await process_finished_crawls()
 
@@ -994,7 +1020,7 @@ class PageOps:
             if in_progress is None:
                 break
             print("Unmigrated crawls remain, finishing job")
-            time.sleep(5)
+            await asyncio.sleep(5)
 
 
 # ============================================================================

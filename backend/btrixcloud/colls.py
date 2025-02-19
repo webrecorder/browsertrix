@@ -518,7 +518,7 @@ class CollectionOps:
 
     async def get_collection_crawl_resources(
         self, coll_id: UUID, include_preloads=False
-    ):
+    ) -> tuple[List[CrawlFileOut], List[PreloadResource], bool]:
         """Return pre-signed resources for all collection crawl files."""
         # Ensure collection exists
         _ = await self.get_collection_raw(coll_id)
