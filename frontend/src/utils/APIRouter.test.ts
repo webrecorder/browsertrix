@@ -86,4 +86,27 @@ describe("APIRouter", () => {
       });
     });
   });
+
+  describe("urlForName", () => {
+    it("returns the correct path for home", () => {
+      const apiRouter = new APIRouter(ROUTES);
+      const path = apiRouter.urlForName("home");
+
+      expect(path).to.equal("/");
+    });
+
+    it("returns the correct path for orgs", () => {
+      const apiRouter = new APIRouter(ROUTES);
+      const path = apiRouter.urlForName("orgs");
+
+      expect(path).to.equal("/orgs");
+    });
+
+    it("returns the correct path for org", () => {
+      const apiRouter = new APIRouter(ROUTES);
+      const path = apiRouter.urlForName("org", { slug: "_fake_org_id_" });
+
+      expect(path).to.equal("/orgs/_fake_org_id_");
+    });
+  });
 });
