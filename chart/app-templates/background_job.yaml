@@ -12,11 +12,11 @@ metadata:
 spec:
   ttlSecondsAfterFinished: 90
   backoffLimit: 3
+  {% if scale %}
+  parallelism: {{ scale }}
+  {% endif %}
   template:
     spec:
-  {% if scale %}
-      parallelism: {{ scale }}
-  {% endif %}
       restartPolicy: Never
       priorityClassName: bg-job
       podFailurePolicy:
