@@ -31,7 +31,7 @@ spec:
   tls:
     - hosts:
       - {{ .Values.ingress.host }}
-      secretName: cert-main
+      secretName: {{ .Values.ingress.secretName | default "cert-main" }}
   {{- end }}
 
   rules:
