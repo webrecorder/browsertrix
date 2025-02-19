@@ -654,6 +654,7 @@ class PageOps:
     async def list_collection_pages(
         self,
         coll_id: UUID,
+        crawl_ids=None,
         org: Optional[Organization] = None,
         search: Optional[str] = None,
         url: Optional[str] = None,
@@ -666,16 +667,17 @@ class PageOps:
         sort_by: Optional[str] = None,
         sort_direction: Optional[int] = -1,
         public_or_unlisted_only=False,
-    ) -> Tuple[Union[List[PageOut], List[PageOutWithSingleQA]], int]:
-        """List all pages in collection, with optional filtering"""
+    ) -> List[PageOut]:
+        """Query pages in collection, with filtering sorting. No total returned for optimization"""
         # pylint: disable=duplicate-code, too-many-locals, too-many-branches, too-many-statements
         # Zero-index page for query
         page = page - 1
         skip = page_size * page
 
-        crawl_ids = await self.coll_ops.get_collection_crawl_ids(
-            coll_id, public_or_unlisted_only
-        )
+        if crawl_ids is not None:
+            crawl_ids = await self.coll_ops.get_collection_crawl_ids(
+                coll_id, public_or_unlisted_only
+            )
 
         query: dict[str, object] = {
             "crawl_id": {"$in": crawl_ids},
@@ -733,38 +735,15 @@ class PageOps:
             # default sort: seeds first, then by timestamp
             aggregate.extend([{"$sort": {"isSeed": -1, "ts": 1}}])
 
-        # aggregate.extend(
-        #    [
-        #        {
-        #            "$facet": {
-        #                "items": [
-        #                    {"$skip": skip},
-        #                    {"$limit": page_size},
-        #                ],
-        #                "total": [{"$count": "count"}],
-        #            }
-        #        },
-        #    ]
-        # )
         if skip:
             aggregate.append({"$skip": skip})
         aggregate.append({"$limit": page_size})
 
-        # Get total
         cursor = self.pages.aggregate(aggregate)
+
         results = await cursor.to_list(length=page_size)
-        items = results
-        # result = results[0]
-        # items = result["items"]
 
-        # try:
-        # total = int(result["total"][0]["count"])
-        # except (IndexError, ValueError):
-        #    total = 0
-
-        total = await self.pages.estimated_document_count()
-
-        return [PageOut.from_dict(data) for data in items], total
+        return [PageOut.from_dict(data) for data in results]
 
     async def re_add_crawl_pages(self, crawl_id: str, oid: Optional[UUID] = None):
         """Delete existing pages for crawl and re-add from WACZs."""
@@ -1254,7 +1233,7 @@ def init_pages_api(
     @app.get(
         "/orgs/{oid}/collections/{coll_id}/public/pages",
         tags=["pages", "collections"],
-        response_model=PaginatedPageOutResponse,
+        response_model=List[PageOut],
     )
     async def get_public_collection_pages_list(
         coll_id: UUID,
@@ -1270,9 +1249,9 @@ def init_pages_api(
         page: int = 1,
         sortBy: Optional[str] = None,
         sortDirection: Optional[int] = -1,
-    ):
+    ) -> List[PageOut]:
         """Retrieve paginated list of pages in collection"""
-        pages, total = await ops.list_collection_pages(
+        pages = await ops.list_collection_pages(
             coll_id=coll_id,
             org=org,
             search=search,
@@ -1290,7 +1269,7 @@ def init_pages_api(
 
         response.headers["Access-Control-Allow-Origin"] = "*"
         response.headers["Access-Control-Allow-Headers"] = "*"
-        return paginated_format(pages, total, page, pageSize)
+        return pages
 
     @app.options(
         "/orgs/{oid}/collections/{coll_id}/pages",
@@ -1311,7 +1290,7 @@ def init_pages_api(
     @app.get(
         "/orgs/{oid}/collections/{coll_id}/pages",
         tags=["pages", "collections"],
-        response_model=PaginatedPageOutResponse,
+        response_model=List[PageOut],
     )
     async def get_collection_pages_list(
         coll_id: UUID,
@@ -1327,9 +1306,9 @@ def init_pages_api(
         page: int = 1,
         sortBy: Optional[str] = None,
         sortDirection: Optional[int] = -1,
-    ):
+    ) -> List[PageOut]:
         """Retrieve paginated list of pages in collection"""
-        pages, total = await ops.list_collection_pages(
+        pages = await ops.list_collection_pages(
             coll_id=coll_id,
             org=org,
             search=search,
@@ -1345,7 +1324,7 @@ def init_pages_api(
         )
         response.headers["Access-Control-Allow-Origin"] = "*"
         response.headers["Access-Control-Allow-Headers"] = "*"
-        return paginated_format(pages, total, page, pageSize)
+        return pages
 
     @app.get(
         "/orgs/{oid}/crawls/{crawl_id}/qa/{qa_run_id}/pages",

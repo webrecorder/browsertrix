@@ -1418,7 +1418,6 @@ class PreloadResource(BaseModel):
 
     name: str
     crawlId: str
-    hasPages: bool
 
 
 # ============================================================================

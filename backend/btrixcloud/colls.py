@@ -45,6 +45,7 @@ from .models import (
     PublicOrgDetails,
     CollAccessType,
     PageUrlCount,
+    PageOut,
     PageIdTimestamp,
     PaginatedPageUrlCountResponse,
     UpdateCollHomeUrl,
@@ -53,7 +54,6 @@ from .models import (
     ImageFilePreparer,
     MIN_UPLOAD_PART_SIZE,
     PublicCollOut,
-    PreloadResource,
 )
 from .utils import dt_now, slug_from_name, get_duplicate_key_error_field, get_origin
 
@@ -347,14 +347,14 @@ class CollectionOps:
         result = await self.get_collection_raw(coll_id, public_or_unlisted_only)
 
         if resources:
-            result["resources"], result["preloadResources"], pages_optimized = (
-                await self.get_collection_crawl_resources(
-                    coll_id, include_preloads=True
-                )
+            result["resources"], crawl_ids, pages_optimized = (
+                await self.get_collection_crawl_resources(coll_id)
             )
 
-            initial_pages, result["totalPages"] = (
-                await self.page_ops.list_collection_pages(coll_id, page_size=25)
+            initial_pages: List[PageOut] = await self.page_ops.list_collection_pages(
+                coll_id,
+                crawl_ids=crawl_ids,
+                page_size=25,
             )
 
             public = "public/" if public_or_unlisted_only else ""
@@ -511,14 +511,13 @@ class CollectionOps:
         return collections, total
 
     async def get_collection_crawl_resources(
-        self, coll_id: UUID, include_preloads=False
-    ) -> tuple[List[CrawlFileOut], List[PreloadResource], bool]:
+        self, coll_id: UUID
+    ) -> tuple[List[CrawlFileOut], List[str], bool]:
         """Return pre-signed resources for all collection crawl files."""
         # Ensure collection exists
         _ = await self.get_collection_raw(coll_id)
 
         resources = []
-        preload_resources: List[PreloadResource] = []
         pages_optimized = True
 
         crawls, _ = await self.crawl_ops.list_all_base_crawls(
@@ -528,39 +527,16 @@ class CollectionOps:
             cls_type=CrawlOutWithResources,
         )
 
+        crawl_ids = []
+
         for crawl in crawls:
+            crawl_ids.append(crawl.id)
             if crawl.resources:
                 resources.extend(crawl.resources)
             if crawl.version != 2:
-                include_preloads = False
                 pages_optimized = False
 
-        if include_preloads:
-            no_page_items = await self.get_collection_resources_with_no_pages(crawls)
-            for item in no_page_items:
-                preload_resources.append(item)
-
-        return resources, preload_resources, pages_optimized
-
-    async def get_collection_resources_with_no_pages(
-        self, crawls: List[CrawlOutWithResources]
-    ) -> List[PreloadResource]:
-        """Return wacz files in collection that have no pages"""
-        resources_no_pages: List[PreloadResource] = []
-
-        for crawl in crawls:
-            _, page_count = await self.page_ops.list_pages(crawl.id)
-            if page_count == 0 and crawl.resources:
-                for resource in crawl.resources:
-                    resources_no_pages.append(
-                        PreloadResource(
-                            name=os.path.basename(resource.name),
-                            crawlId=crawl.id,
-                            hasPages=False,
-                        )
-                    )
-
-        return resources_no_pages
+        return resources, crawl_ids, pages_optimized
 
     async def get_collection_names(self, uuids: List[UUID]):
         """return object of {_id, names} given list of collection ids"""
@@ -646,6 +622,7 @@ class CollectionOps:
         tags = []
 
         crawl_ids = []
+        preload_resources = []
 
         coll = await self.get_collection(collection_id)
         org = await self.orgs.get_org_by_id(coll.oid)
@@ -663,7 +640,16 @@ class CollectionOps:
                 _, crawl_page_count = await self.page_ops.list_pages(
                     crawl.id, org, page_size=1_000_000
                 )
-                page_count += crawl_page_count
+                if crawl_page_count == 0:
+                    for file in files:
+                        preload_resources.append(
+                            {
+                                "name": os.path.basename(file.filename),
+                                "crawlId": crawl.id,
+                            }
+                        )
+                else:
+                    page_count += crawl_page_count
             # pylint: disable=broad-exception-caught
             except Exception:
                 pass
@@ -686,6 +672,7 @@ class CollectionOps:
                     "uniquePageCount": unique_page_count,
                     "totalSize": total_size,
                     "tags": sorted_tags,
+                    "preloadResources": preload_resources,
                 }
             },
         )
@@ -1056,7 +1043,7 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops, user_de
         try:
             all_collections, _ = await colls.list_collections(org, page_size=10_000)
             for collection in all_collections:
-                results[collection.name], _, _ = (
+                results[collection.name], _ = (
                     await colls.get_collection_crawl_resources(collection.id)
                 )
         except Exception as exc:
