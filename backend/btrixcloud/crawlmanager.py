@@ -168,8 +168,7 @@ class CrawlManager(K8sAPI):
         )
 
     async def run_optimize_pages_job(
-        self,
-        existing_job_id: Optional[str] = None,
+        self, existing_job_id: Optional[str] = None, scale=3
     ) -> str:
         """run job to recalculate storage stats for the org"""
 
@@ -179,9 +178,7 @@ class CrawlManager(K8sAPI):
             job_id = f"optimize-pages-{secrets.token_hex(5)}"
 
         return await self._run_bg_job_with_ops_classes(
-            job_id,
-            job_type=BgJobType.OPTIMIZE_PAGES.value,
-            migration_job=True,
+            job_id, job_type=BgJobType.OPTIMIZE_PAGES.value, scale=scale
         )
 
     async def _run_bg_job_with_ops_classes(
@@ -189,7 +186,6 @@ class CrawlManager(K8sAPI):
         job_id: str,
         job_type: str,
         oid: Optional[str] = None,
-        migration_job: bool = False,
         **kwargs,
     ) -> str:
         """run background job with access to ops classes"""
@@ -204,9 +200,7 @@ class CrawlManager(K8sAPI):
         if oid:
             params["oid"] = oid
 
-        template = "migration_job.yaml" if migration_job else "background_job.yaml"
-
-        data = self.templates.env.get_template(template).render(params)
+        data = self.templates.env.get_template("background_job.yaml").render(params)
 
         await self.create_from_yaml(data, namespace=DEFAULT_NAMESPACE)
 

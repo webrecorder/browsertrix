@@ -5,13 +5,18 @@ metadata:
   labels:
     role: "background-job"
     job_type: {{ job_type }}
+{% if oid %}
     btrix.org: {{ oid }}
+{% endif %}
 
 spec:
   ttlSecondsAfterFinished: 90
   backoffLimit: 3
   template:
     spec:
+  {% if scale %}
+      parallelism: {{ scale }}
+  {% endif %}
       restartPolicy: Never
       priorityClassName: bg-job
       podFailurePolicy:
@@ -35,9 +40,10 @@ spec:
           - name: BG_JOB_TYPE
             value: {{ job_type }}
 
+{% if oid %}
           - name: OID
             value: {{ oid }}
-
+{% endif %}
           - name: CRAWL_TYPE
             value: {{ crawl_type }}
 
