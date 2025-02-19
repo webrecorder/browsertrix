@@ -111,6 +111,7 @@ class PageOps:
                         await self._add_pages_to_db(
                             crawl_id, pages_buffer, ordered=False
                         )
+                    # pylint: disable=broad-exception-caught
                     except Exception as e:
                         print("Error inserting, probably dupe", e)
                     pages_buffer = []
@@ -123,6 +124,7 @@ class PageOps:
             if pages_buffer:
                 try:
                     await self._add_pages_to_db(crawl_id, pages_buffer, ordered=False)
+                # pylint: disable=broad-exception-caught
                 except Exception as e:
                     print("Error inserting, probably dupe", e)
 
