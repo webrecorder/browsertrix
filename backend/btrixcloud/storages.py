@@ -629,8 +629,6 @@ class StorageOps:
                     page_json["seed"] = True
                 yield page_json
 
-        page_generators: List[Iterator[Dict[Any, Any]]] = []
-
         for wacz_file in wacz_files:
             wacz_url = self.resolve_internal_access_path(wacz_file.path)
 
@@ -649,12 +647,10 @@ class StorageOps:
                             and not f.is_dir()
                         ]
                         for pagefile_zipinfo in page_files:
-                            page_generators.append(
-                                stream_page_lines(
-                                    pagefile_zipinfo,
-                                    wacz_url,
-                                    wacz_file.name,
-                                )
+                            yield from stream_page_lines(
+                                pagefile_zipinfo,
+                                wacz_url,
+                                wacz_file.name,
                             )
                 except Exception as exc:
                     msg = str(exc)
@@ -667,8 +663,6 @@ class StorageOps:
                     print(f"No more retries for error: {msg}, skipping {wacz_url}")
 
                 break
-
-        return chain.from_iterable(page_generators)
 
     def _sync_get_filestream(self, wacz_url: str, filename: str) -> Iterator[bytes]:
         """Return iterator of lines in remote file as bytes"""
