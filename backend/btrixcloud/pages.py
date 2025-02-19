@@ -700,7 +700,7 @@ class PageOps:
         if isinstance(depth, int):
             query["depth"] = depth
 
-        aggregate = [{"$match": query}]
+        aggregate: list[dict[str, object]] = [{"$match": query}]
 
         if sort_by:
             # Sorting options to add:
@@ -726,30 +726,34 @@ class PageOps:
             # default sort: seeds first, then by timestamp
             aggregate.extend([{"$sort": {"isSeed": -1, "ts": 1}}])
 
-        aggregate.extend(
-            [
-                {
-                    "$facet": {
-                        "items": [
-                            {"$skip": skip},
-                            {"$limit": page_size},
-                        ],
-                        "total": [{"$count": "count"}],
-                    }
-                },
-            ]
-        )
+        # aggregate.extend(
+        #    [
+        #        {
+        #            "$facet": {
+        #                "items": [
+        #                    {"$skip": skip},
+        #                    {"$limit": page_size},
+        #                ],
+        #                "total": [{"$count": "count"}],
+        #            }
+        #        },
+        #    ]
+        # )
+        aggregate.extend([{"$skip": skip}, {"$limit": page_size}])
 
         # Get total
         cursor = self.pages.aggregate(aggregate)
-        results = await cursor.to_list(length=1)
-        result = results[0]
-        items = result["items"]
+        results = await cursor.to_list(length=page_size)
+        items = results
+        # result = results[0]
+        # items = result["items"]
 
-        try:
-            total = int(result["total"][0]["count"])
-        except (IndexError, ValueError):
-            total = 0
+        # try:
+        # total = int(result["total"][0]["count"])
+        # except (IndexError, ValueError):
+        #    total = 0
+
+        total = await self.pages.estimated_document_count()
 
         return [PageOut.from_dict(data) for data in items], total
 
