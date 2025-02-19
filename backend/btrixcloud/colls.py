@@ -351,7 +351,7 @@ class CollectionOps:
                 await self.get_collection_crawl_resources(coll_id)
             )
 
-            initial_pages: List[PageOut] = await self.page_ops.list_collection_pages(
+            initial_pages: List[PageOut] = await self.page_ops.list_replay_query_pages(
                 coll_id,
                 crawl_ids=crawl_ids,
                 page_size=25,
@@ -973,11 +973,13 @@ class CollectionOps:
 
 # ============================================================================
 # pylint: disable=too-many-locals
-def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops, user_dep) -> CollectionOps:
+def init_collections_api(
+    app, mdb, orgs, storage_ops, event_webhook_ops, user_dep
+) -> CollectionOps:
     """init collections api"""
     # pylint: disable=invalid-name, unused-argument, too-many-arguments
 
-    colls : CollectionOps = CollectionOps(mdb, storage_ops, orgs, event_webhook_ops)
+    colls: CollectionOps = CollectionOps(mdb, storage_ops, orgs, event_webhook_ops)
 
     org_crawl_dep = orgs.org_crawl_dep
     org_viewer_dep = orgs.org_viewer_dep
@@ -1233,7 +1235,7 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops, user_de
     @app.get(
         "/orgs/{oid}/collections/{coll_id}/pageSnapshots",
         tags=["collections"],
-        response_model=List[PageUrlCount]
+        response_model=List[PageUrlCount],
     )
     async def get_collection_url_list(
         coll_id: UUID,

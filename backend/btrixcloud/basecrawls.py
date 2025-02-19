@@ -171,8 +171,8 @@ class BaseCrawlOps:
                 res["collections"] = await self.colls.get_collection_names(coll_ids)
 
             if res.get("version", 1) == 2:
-                res["initialPages"], _ = await self.page_ops.list_pages(
-                    crawlid, is_seed=True, page_size=25
+                res["initialPages"], _ = await self.page_ops.list_replay_query_pages(
+                    crawl_ids=[crawlid], is_seed=True, page_size=25
                 )
 
                 oid = res.get("oid")

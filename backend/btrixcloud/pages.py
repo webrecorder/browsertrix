@@ -651,10 +651,10 @@ class PageOps:
 
         return [PageOut.from_dict(data) for data in items], total
 
-    async def list_collection_pages(
+    async def list_replay_query_pages(
         self,
-        coll_id: UUID,
-        crawl_ids=None,
+        coll_id: Optional[UUID] = None,
+        crawl_ids: Optional[List[str]] = None,
         org: Optional[Organization] = None,
         search: Optional[str] = None,
         url: Optional[str] = None,
@@ -674,7 +674,10 @@ class PageOps:
         page = page - 1
         skip = page_size * page
 
-        if crawl_ids is not None:
+        if crawl_ids is None and coll_id is None:
+            raise Exception("either crawl_ids or coll_id must be provided")
+
+        if coll_id and crawl_ids is None:
             crawl_ids = await self.coll_ops.get_collection_crawl_ids(
                 coll_id, public_or_unlisted_only
             )
