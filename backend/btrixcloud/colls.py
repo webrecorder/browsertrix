@@ -822,6 +822,7 @@ class CollectionOps:
         )
         if skip:
             aggregate.append({"$skip": skip})
+
         aggregate.append({"$limit": page_size})
 
         # Get total
