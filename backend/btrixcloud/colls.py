@@ -490,12 +490,6 @@ class CollectionOps:
         collections: List[Union[CollOut, PublicCollOut]] = []
 
         for res in items:
-            res["resources"], res["preloadResources"], _ = (
-                await self.get_collection_crawl_resources(
-                    res["_id"], include_preloads=not public_colls_out
-                )
-            )
-
             thumbnail = res.get("thumbnail")
             if thumbnail:
                 image_file = ImageFile(**thumbnail)
