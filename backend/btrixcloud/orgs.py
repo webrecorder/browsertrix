@@ -968,12 +968,6 @@ class OrgOps:
 
         all_archived_item_ids = crawl_ids + upload_ids
 
-        unique_page_count = await self.page_ops.get_unique_page_count(
-            all_archived_item_ids
-        )
-        crawl_unique_page_count = await self.page_ops.get_unique_page_count(crawl_ids)
-        upload_unique_page_count = await self.page_ops.get_unique_page_count(upload_ids)
-
         profile_count = await self.profiles_db.count_documents({"oid": org.id})
         workflows_running_count = await self.crawls_db.count_documents(
             {"oid": org.id, "state": {"$in": RUNNING_STATES}}
@@ -998,9 +992,6 @@ class OrgOps:
             "pageCount": page_count,
             "crawlPageCount": crawl_page_count,
             "uploadPageCount": upload_page_count,
-            "uniquePageCount": unique_page_count,
-            "crawlUniquePageCount": crawl_unique_page_count,
-            "uploadUniquePageCount": upload_unique_page_count,
             "profileCount": profile_count,
             "workflowsRunningCount": workflows_running_count,
             "maxConcurrentCrawls": max_concurrent_crawls,
