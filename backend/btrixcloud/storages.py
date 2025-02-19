@@ -622,9 +622,20 @@ class StorageOps:
             )
 
             line_iter: Iterator[bytes] = self._sync_get_filestream(wacz_url, filename)
+
+            dupe_set = set()
+
             for line in line_iter:
                 page_json = _parse_json(line.decode("utf-8", errors="ignore"))
+
+                _id = page_json.get("id")
+                if _id and _id in dupe_set:
+                    continue
+
+                dupe_set.add(_id)
+
                 page_json["filename"] = os.path.basename(wacz_filename)
+
                 if filename == "pages/pages.jsonl":
                     page_json["seed"] = True
                 yield page_json
