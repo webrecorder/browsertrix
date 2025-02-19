@@ -104,7 +104,12 @@ class PageOps:
                     non_seed_count += 1
 
                 if len(pages_buffer) > batch_size:
-                    await self._add_pages_to_db(crawl_id, pages_buffer, ordered=False)
+                    try:
+                        await self._add_pages_to_db(
+                            crawl_id, pages_buffer, ordered=False
+                        )
+                    except Exception as e:
+                        print("Error inserting, probably dupe", e)
                     pages_buffer = []
 
                 pages_buffer.append(
@@ -113,7 +118,10 @@ class PageOps:
 
             # Add any remaining pages in buffer to db
             if pages_buffer:
-                await self._add_pages_to_db(crawl_id, pages_buffer, ordered=False)
+                try:
+                    await self._add_pages_to_db(crawl_id, pages_buffer, ordered=False)
+                except Exception as e:
+                    print("Error inserting, probably dupe", e)
 
             await self.set_archived_item_page_counts(crawl_id)
 
