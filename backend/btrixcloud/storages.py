@@ -636,6 +636,8 @@ class StorageOps:
 
             retry = 0
 
+            print(f"  Processing WACZ {wacz_url}")
+
             while True:
                 try:
                     with RemoteZip(wacz_url) as remote_zip:
