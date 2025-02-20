@@ -171,7 +171,7 @@ class CrawlManager(K8sAPI):
         )
 
     async def run_optimize_pages_job(
-        self, existing_job_id: Optional[str] = None, scale=3
+        self, existing_job_id: Optional[str] = None, scale=1
     ) -> str:
         """run job to optimize crawl pages"""
 

@@ -54,6 +54,8 @@ class BackgroundJobOps:
     base_crawl_ops: BaseCrawlOps
     profile_ops: ProfileOps
 
+    migration_jobs_scale: int
+
     # pylint: disable=too-many-locals, too-many-arguments, invalid-name
 
     def __init__(self, mdb, email, user_manager, org_ops, crawl_manager, storage_ops):
@@ -68,6 +70,8 @@ class BackgroundJobOps:
 
         self.base_crawl_ops = cast(BaseCrawlOps, None)
         self.profile_ops = cast(ProfileOps, None)
+
+        self.migration_jobs_scale = int(os.environ.get("MIGRATION_JOBS_SCALE", 1))
 
         self.router = APIRouter(
             prefix="/jobs",
@@ -437,7 +441,7 @@ class BackgroundJobOps:
 
         try:
             job_id = await self.crawl_manager.run_optimize_pages_job(
-                existing_job_id=existing_job_id,
+                existing_job_id=existing_job_id, scale=self.migration_jobs_scale
             )
             if existing_job_id:
                 optimize_pages_job = await self.get_background_job(existing_job_id)

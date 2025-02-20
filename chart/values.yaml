@@ -467,7 +467,6 @@ ingress_class: nginx
 # This runs as a blocking script on the frontend, so usually you'll want to have it just add a single script tag to the page with the `defer` attribute. Useful for things like analytics and bug tracking.
 # inject_extra: // your front-end injected script
 
-
 # Signing Options
 # =========================================
 # optionally enable signer
@@ -483,6 +482,19 @@ signer_cpu: "5m"
 
 signer_memory: "50Mi"
 
+
+# Migration Options (Advanced)
+# =========================================
+
+# enable to force rerun from specific migration
+# see backend/btrixcloud/migrations/ for list of available migrations
+# rerun_from_migration:
+
+# scale for certain migration background jobs
+# migration_jobs_scale: 1
+
+# Other Settings
+# =========================================
 
 # Optional: configure load balancing annotations
 # service:
