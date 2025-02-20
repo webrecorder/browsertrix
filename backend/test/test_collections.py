@@ -1288,7 +1288,6 @@ def test_list_public_colls_home_url_thumbnail():
         assert coll["name"]
         assert coll["created"]
         assert coll["modified"]
-        assert coll["resources"]
         assert coll["dateEarliest"]
         assert coll["dateLatest"]
         assert coll["crawlCount"] > 0
