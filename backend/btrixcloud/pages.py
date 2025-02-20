@@ -525,14 +525,21 @@ class PageOps:
         skip = page_size * page
 
         # Crawl or Collection Selection
-        if crawl_ids is None and coll_id is None:
-            raise HTTPException(
-                status_code=400, detail="either crawl_ids or coll_id must be provided"
-            )
+        if coll_id:
+            if crawl_ids:
+                # both coll_id and crawll_ids, error
+                raise HTTPException(
+                    status_code=400,
+                    detail="only one of crawl_ids or coll_id can be provided",
+                )
 
-        if coll_id and crawl_ids is None:
             crawl_ids = await self.coll_ops.get_collection_crawl_ids(
                 coll_id, public_or_unlisted_only
+            )
+        elif not crawl_ids:
+            # neither coll_id nor crawl_id, error
+            raise HTTPException(
+                status_code=400, detail="either crawl_ids or coll_id must be provided"
             )
 
         query: dict[str, object] = {

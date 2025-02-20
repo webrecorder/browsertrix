@@ -346,7 +346,6 @@ class CollectionOps:
             )
 
             initial_pages, _ = await self.page_ops.list_pages(
-                coll_id,
                 crawl_ids=crawl_ids,
                 page_size=25,
             )
