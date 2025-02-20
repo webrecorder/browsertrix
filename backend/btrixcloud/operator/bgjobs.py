@@ -39,7 +39,9 @@ class BgJobOperator(BaseOperator):
 
         status = data.object["status"]
         spec = data.object["spec"]
-        success = status.get("succeeded") >= spec.get("parallelism")
+        success = status.get("succeeded") == spec.get("parallelism")
+        if not success:
+            print("Succeeded: {status.get('succeeded')}, Num Pods: {spec.get('parallelism')}")
         completion_time = status.get("completionTime")
 
         finalized = True
