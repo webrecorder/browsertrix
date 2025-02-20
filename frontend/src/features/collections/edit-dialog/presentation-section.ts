@@ -100,7 +100,7 @@ export default function renderPresentation(this: CollectionEdit) {
             </sl-tooltip>`
           : this.thumbnailPreview?.blobTask.status === TaskStatus.PENDING &&
               !this.blobIsLoaded
-            ? html`<sl-spinner slot="prefix"></sl-spinner>`
+            ? html`<sl-spinner class="size-4" slot="prefix"></sl-spinner>`
             : nothing}
       </btrix-select-collection-page>
       <sl-checkbox
