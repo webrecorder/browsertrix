@@ -818,7 +818,9 @@ class CollectionOps:
             url = result.get("url")
             count = url_counts.get(url)
             if not count:
-                count = PageUrlCount(url=url, snapshots=[], count=0)
+                count = PageUrlCount(
+                    url=url, title=result.get("title"), snapshots=[], count=0
+                )
                 url_counts[url] = count
             count.snapshots.append(
                 PageIdTimestamp(

@@ -1,5 +1,6 @@
+import { consume } from "@lit/context";
 import type { SlMenu, SlMenuItem, SlPopup } from "@shoelace-style/shoelace";
-import { css, html, LitElement, type PropertyValues } from "lit";
+import { css, html, type PropertyValues } from "lit";
 import {
   customElement,
   property,
@@ -8,6 +9,8 @@ import {
   state,
 } from "lit/decorators.js";
 
+import { TailwindElement } from "@/classes/TailwindElement";
+import { popupBoundary } from "@/context/popup-boundary";
 import { dropdown } from "@/utils/css";
 
 /**
@@ -20,7 +23,7 @@ import { dropdown } from "@/utils/css";
  * @event request-close
  */
 @customElement("btrix-combobox")
-export class Combobox extends LitElement {
+export class Combobox extends TailwindElement {
   static styles = [
     dropdown,
     css`
@@ -33,6 +36,13 @@ export class Combobox extends LitElement {
 
   @property({ type: Boolean })
   open = false;
+
+  @property({ type: Boolean })
+  loading = false;
+
+  @consume({ context: popupBoundary })
+  @state()
+  autoSizeBoundary?: Element | Element[] | undefined;
 
   @state()
   isActive = true;
@@ -69,22 +79,25 @@ export class Combobox extends LitElement {
   }
 
   render() {
+    console.log(this.autoSizeBoundary);
     return html`
       <sl-popup
         placement="bottom-start"
         shift
         strategy="fixed"
+        autoSize="both"
+        .autoSizeBoundary=${this.autoSizeBoundary}
         ?active=${this.isActive}
         @keydown=${this.onKeydown}
         @keyup=${this.onKeyup}
         @focusout=${this.onFocusout}
       >
-        <div slot="anchor">
+        <div slot="anchor" class="relative z-20">
           <slot></slot>
         </div>
         <div
           id="dropdown"
-          class="dropdown hidden"
+          class="dropdown z-10 -mt-2 hidden"
           @animationend=${(e: AnimationEvent) => {
             const el = e.target as HTMLDivElement;
             if (e.animationName === "dropdownShow") {
@@ -97,7 +110,10 @@ export class Combobox extends LitElement {
             }
           }}
         >
-          <sl-menu role="listbox">
+          <sl-menu role="listbox" class="border-t-0 pt-4">
+            <!-- <div class="fixed inset-0 bg-neutral-50 opacity-25">
+              <sl-spinner></sl-spinner>
+            </div> -->
             <slot name="menu-item"></slot>
           </sl-menu>
         </div>

@@ -1373,6 +1373,7 @@ class PageUrlCount(BaseModel):
     """Model for counting pages by URL"""
 
     url: AnyHttpUrl
+    title: Optional[str] = None
     count: int = 0
     snapshots: List[PageIdTimestamp] = []
 

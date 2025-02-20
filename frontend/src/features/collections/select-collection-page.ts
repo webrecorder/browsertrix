@@ -22,6 +22,8 @@ import type { APIPaginationQuery } from "@/types/api";
 import type { Collection } from "@/types/collection";
 import type { UnderlyingFunction } from "@/types/utils";
 import { tw } from "@/utils/tailwind";
+import { timeoutCache } from "@/utils/timeoutCache";
+import { cached } from "@/utils/weakCache";
 
 type Snapshot = {
   pageId: string;
@@ -31,6 +33,7 @@ type Snapshot = {
 
 type Page = {
   url: string;
+  title?: string;
   count: number;
   snapshots: Snapshot[];
 };
@@ -175,17 +178,20 @@ export class SelectCollectionPage extends BtrixElement {
   }
 
   private readonly searchResults = new Task(this, {
-    task: async ([searchValue], { signal }) => {
-      const pageUrls = await this.getPageUrls(
-        {
-          id: this.collectionId!,
-          urlPrefix: searchValue,
-        },
-        signal,
-      );
+    task: cached(
+      async ([searchValue], { signal }) => {
+        const pageUrls = await this.getPageUrls(
+          {
+            id: this.collectionId!,
+            urlPrefix: searchValue,
+          },
+          signal,
+        );
 
-      return pageUrls;
-    },
+        return pageUrls;
+      },
+      { cacheConstructor: timeoutCache(300) },
+    ),
     args: () => [this.searchQuery] as const,
   });
 
@@ -361,6 +367,7 @@ export class SelectCollectionPage extends BtrixElement {
         this.renderItems(
           // Render previous value so that dropdown doesn't shift while typing
           this.searchResults.value,
+          true,
         ),
       complete: this.renderItems,
     });
@@ -368,10 +375,11 @@ export class SelectCollectionPage extends BtrixElement {
 
   private readonly renderItems = (
     results: SelectCollectionPage["searchResults"]["value"],
+    loading = false,
   ) => {
     if (!results) return;
 
-    if (!results.length) {
+    if (!loading && !results.length) {
       return html`
         <sl-menu-item slot="menu-item" disabled>
           ${msg("No matching page found.")}
@@ -382,7 +390,7 @@ export class SelectCollectionPage extends BtrixElement {
     return html`
       ${results.map((item: Page) => {
         return html`
-          <sl-menu-item
+          <btrix-menu-item
             slot="menu-item"
             @click=${async () => {
               if (this.input) {
@@ -395,8 +403,18 @@ export class SelectCollectionPage extends BtrixElement {
 
               this.selectedSnapshot = this.selectedPage.snapshots[0];
             }}
-            >${item.url}
-          </sl-menu-item>
+            >${item.title
+              ? html`<div class="text-sm font-semibold">${item.title}</div>
+                  <div class="text-xs leading-4 text-blue-600">
+                    ${item.url}
+                  </div>`
+              : html`<div class="text-sm font-semibold opacity-50">
+                    ${msg("No page title")}
+                  </div>
+                  <div class="text-xs leading-4 text-blue-600">
+                    ${item.url}
+                  </div>`}
+          </btrix-menu-item>
         `;
       })}
     `;

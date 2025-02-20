@@ -1,3 +1,4 @@
+import { provide } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
 import { Task, TaskStatus } from "@lit/task";
 import { type SlRequestCloseEvent } from "@shoelace-style/shoelace";
@@ -22,6 +23,7 @@ import { type SelectCollectionPage } from "./select-collection-page";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
 import { type TabGroupPanel } from "@/components/ui/tab-group/tab-panel";
+import { popupBoundary } from "@/context/popup-boundary";
 import {
   type Collection,
   type CollectionThumbnailSource,
@@ -118,6 +120,9 @@ export class CollectionEdit extends BtrixElement {
   @query("btrix-collection-snapshot-preview")
   public readonly thumbnailPreview?: CollectionSnapshotPreview | null;
 
+  @provide({ context: popupBoundary })
+  private popupBoundary: Element | Element[] | undefined;
+
   protected willUpdate(changedProperties: PropertyValues<this>): void {
     if (changedProperties.has("collectionId") && this.collectionId) {
       void this.fetchCollection(this.collectionId);
@@ -135,6 +140,7 @@ export class CollectionEdit extends BtrixElement {
         null;
       this.selectedSnapshot = this.collection?.thumbnailSource ?? null;
     }
+    this.popupBoundary = this.dialog;
   }
 
   readonly checkChanged = checkChanged.bind(this);
