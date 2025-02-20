@@ -38,7 +38,8 @@ class BgJobOperator(BaseOperator):
         job_id: str = labels.get("job_id") or metadata.get("name")
 
         status = data.object["status"]
-        success = status.get("succeeded") == 1
+        spec = data.object["spec"]
+        success = status.get("succeeded") >= spec.get("parallelism")
         completion_time = status.get("completionTime")
 
         finalized = True
