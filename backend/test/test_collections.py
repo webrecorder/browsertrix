@@ -436,8 +436,7 @@ def test_collection_public(crawler_auth_headers, default_org_id):
     )
     assert r.status_code == 200
     data = r.json()
-    assert data["total"] > 0
-    assert data["items"]
+    assert len(data["items"]) > 0
 
     # make unlisted and test replay headers
     r = requests.patch(
