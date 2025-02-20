@@ -102,7 +102,6 @@ export const animatePulse = css`
 export const dropdown = css`
   .dropdown {
     contain: content;
-    transform-origin: top left;
     box-shadow: var(--sl-shadow-medium);
   }
 
@@ -111,34 +110,34 @@ export const dropdown = css`
   }
 
   .animateShow {
-    animation: dropdownShow 100ms ease forwards;
+    animation: dropdownShow 150ms cubic-bezier(0, 0, 0.2, 1) forwards;
   }
 
   .animateHide {
-    animation: dropdownHide 100ms ease forwards;
+    animation: dropdownHide 150ms cubic-bezier(0.4, 0, 1, 1) forwards;
   }
 
   @keyframes dropdownShow {
     from {
       opacity: 0;
-      transform: scale(0.9);
+      transform: translateY(-8px);
     }
 
     to {
       opacity: 1;
-      transform: scale(1);
+      transform: translateY(0);
     }
   }
 
   @keyframes dropdownHide {
     from {
       opacity: 1;
-      transform: scale(1);
+      transform: translateY(0);
     }
 
     to {
       opacity: 0;
-      transform: scale(0.9);
+      transform: translateY(-8px);
     }
   }
 `;

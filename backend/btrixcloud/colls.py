@@ -341,9 +341,11 @@ class CollectionOps:
         result = await self.get_collection_raw(coll_id, public_or_unlisted_only)
 
         if resources:
-            result["resources"], crawl_ids, pages_optimized = (
-                await self.get_collection_crawl_resources(coll_id)
-            )
+            (
+                result["resources"],
+                crawl_ids,
+                pages_optimized,
+            ) = await self.get_collection_crawl_resources(coll_id)
 
             initial_pages, _ = await self.page_ops.list_pages(
                 crawl_ids=crawl_ids,
@@ -965,9 +967,11 @@ def init_collections_api(
         try:
             all_collections, _ = await colls.list_collections(org, page_size=10_000)
             for collection in all_collections:
-                results[collection.name], _, _ = (
-                    await colls.get_collection_crawl_resources(collection.id)
-                )
+                (
+                    results[collection.name],
+                    _,
+                    _,
+                ) = await colls.get_collection_crawl_resources(collection.id)
         except Exception as exc:
             # pylint: disable=raise-missing-from
             raise HTTPException(

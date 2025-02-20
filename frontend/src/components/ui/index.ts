@@ -39,3 +39,4 @@ import("./tag-input");
 import("./tag");
 import("./time-input");
 import("./user-language-select");
+import("./menu-item-without-focus");
