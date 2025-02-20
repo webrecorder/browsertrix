@@ -42,7 +42,6 @@ from .models import (
     OrgPublicCollections,
     PublicOrgDetails,
     CollAccessType,
-    PageOut,
     UpdateCollHomeUrl,
     User,
     ImageFile,
@@ -346,7 +345,7 @@ class CollectionOps:
                 await self.get_collection_crawl_resources(coll_id)
             )
 
-            initial_pages: List[PageOut] = await self.page_ops.list_replay_query_pages(
+            initial_pages, _ = await self.page_ops.list_pages(
                 coll_id,
                 crawl_ids=crawl_ids,
                 page_size=25,
