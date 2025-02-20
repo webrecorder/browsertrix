@@ -830,7 +830,7 @@ def init_background_jobs_api(
 
         job_id = await ops.create_optimize_crawl_pages_job()
 
-        return {"sucess": True, "id": job_id}
+        return {"success": True, "id": job_id}
 
     @router.post("/{job_id}/retry", response_model=SuccessResponse, tags=["jobs"])
     async def retry_org_background_job(
