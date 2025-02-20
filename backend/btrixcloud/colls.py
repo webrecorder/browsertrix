@@ -817,6 +817,9 @@ class CollectionOps:
             url = result.get("url")
             count = url_counts.get(url)
             if not count:
+                # if already at max pages, this would add a new page, so we're done
+                if len(url_counts) >= page_size:
+                    break
                 count = PageUrlCount(url=url, snapshots=[], count=0)
                 url_counts[url] = count
             count.snapshots.append(
@@ -827,9 +830,6 @@ class CollectionOps:
                 )
             )
             count.count += 1
-
-            if len(url_counts) >= page_size:
-                break
 
         return list(url_counts.values())
 
