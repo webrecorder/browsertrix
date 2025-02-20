@@ -91,13 +91,6 @@ class PageOps:
                 ("url", pymongo.ASCENDING),
             ]
         )
-        await self.pages.create_index(
-            [
-                ("crawl_id", pymongo.HASHED),
-                ("isSeed", pymongo.DESCENDING),
-                ("ts", pymongo.ASCENDING),
-            ]
-        )
         await self.pages.create_index([("title", "text")])
 
     async def set_ops(self, background_job_ops: BackgroundJobOps):
