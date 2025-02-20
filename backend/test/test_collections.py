@@ -643,12 +643,13 @@ def test_list_pages_in_collection(crawler_auth_headers, default_org_id):
     coll_page_ts = coll_page["ts"]
     coll_page_title = coll_page["title"]
 
-    # Test search filter
-    partial_title = coll_page_title[:5]
+    # Test search filter, make sure text search isn't case sensitive
+    partial_title = "Archiving"
+    partial_title_lower = lower(partial_title)
     partial_url = coll_page_url[:8]
 
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/pages?search={partial_title}",
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/pages?search={partial_title_lower}",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
