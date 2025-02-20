@@ -880,8 +880,12 @@ export class ArchivedItemDetailQA extends BtrixElement {
   }
 
   private async getPages(
-    params?: APIPaginationQuery & APISortQuery & { reviewed?: boolean },
+    params?: APIPaginationQuery &
+      APISortQuery & { reviewed?: boolean; includeTotal?: boolean },
   ): Promise<APIPaginatedList<ArchivedItemPage>> {
+    if (params) {
+      params.includeTotal = true;
+    }
     const query = queryString.stringify(
       {
         ...params,
