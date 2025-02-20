@@ -1185,7 +1185,6 @@ def init_pages_api(
         page: int = 1,
         sortBy: Optional[str] = None,
         sortDirection: Optional[int] = -1,
-        includeTotal=False,
     ):
         """Retrieve paginated list of pages"""
         formatted_approved: Optional[List[Union[bool, None]]] = None
@@ -1202,9 +1201,40 @@ def init_pages_api(
             page=page,
             sort_by=sortBy,
             sort_direction=sortDirection,
-            include_total=includeTotal,
+            include_total=True,
         )
         return paginated_format(pages, total, page, pageSize)
+
+    @app.get(
+        "/orgs/{oid}/crawls/{crawl_id}/pagesSearch",
+        tags=["pages", "crawls"],
+        response_model=PageOutItemsResponse,
+    )
+    async def get_search_pages_list(
+        crawl_id: str,
+        org: Organization = Depends(org_crawl_dep),
+        search: Optional[str] = None,
+        url: Optional[str] = None,
+        ts: Optional[datetime] = None,
+        isSeed: Optional[bool] = None,
+        depth: Optional[int] = None,
+        pageSize: int = DEFAULT_PAGE_SIZE,
+        page: int = 1,
+    ):
+        """Retrieve paginated list of pages"""
+        pages, _ = await ops.list_pages(
+            crawl_ids=[crawl_id],
+            search=search,
+            url=url,
+            ts=ts,
+            is_seed=isSeed,
+            depth=depth,
+            org=org,
+            page_size=pageSize,
+            page=page,
+            include_total=False,
+        )
+        return {"items": pages}
 
     @app.get(
         "/orgs/{oid}/collections/{coll_id}/public/pages",
