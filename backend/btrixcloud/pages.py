@@ -768,11 +768,6 @@ class PageOps:
             else:
                 query["$text"] = {"$search": search}
                 is_text_search = True
-            # search_regex = re.escape(search)
-            # query["$or"] = [
-            #    {"url": {"$regex": search_regex, "$options": "i"}},
-            #    {"title": {"$regex": search_regex, "$options": "i"}},
-            # ]
 
         elif url_prefix:
             url_prefix = urllib.parse.unquote(url_prefix)
