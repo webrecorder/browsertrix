@@ -178,7 +178,8 @@ class BaseCrawlOps:
                 oid = res.get("oid")
                 if oid:
                     res["pagesQueryUrl"] = (
-                        get_origin(headers) + f"/api/orgs/{oid}/crawls/{crawlid}/pages"
+                        get_origin(headers)
+                        + f"/api/orgs/{oid}/crawls/{crawlid}/pagesSearch"
                     )
 
         crawl = CrawlOutWithResources.from_dict(res)
