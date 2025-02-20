@@ -636,9 +636,10 @@ class CollectionOps:
                 total_size += file.size
 
             try:
-                _, crawl_page_count = await self.page_ops.list_pages(
-                    crawl.id, org, page_size=1_000_000
+                crawl_page_count = await self.pages.count_documents(
+                    {"crawl_id": crawl.id}
                 )
+
                 if crawl_page_count == 0:
                     for file in files:
                         preload_resources.append(
