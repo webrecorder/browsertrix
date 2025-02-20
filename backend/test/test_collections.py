@@ -645,7 +645,7 @@ def test_list_pages_in_collection(crawler_auth_headers, default_org_id):
 
     # Test search filter, make sure text search isn't case sensitive
     partial_title = "Archiving"
-    partial_title_lower = lower(partial_title)
+    partial_title_lower = partial_title.lower()
     partial_url = coll_page_url[:8]
 
     r = requests.get(
