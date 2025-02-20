@@ -382,6 +382,7 @@ class CrawlOps(BaseCrawlOps):
             crawlerChannel=crawlconfig.crawlerChannel,
             proxyId=crawlconfig.proxyId,
             image=image,
+            version=2,
         )
 
         try:

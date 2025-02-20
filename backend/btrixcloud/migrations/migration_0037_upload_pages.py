@@ -59,8 +59,7 @@ class Migration(BaseMigration):
         async for org_dict in mdb_orgs.find({}):
             org = Organization.from_dict(org_dict)
             try:
-                await self.coll_ops.recalculate_org_collection_dates(org)
-                await self.coll_ops.recalculate_org_collection_counts_tags(org)
+                await self.coll_ops.recalculate_org_collection_stats(org)
             # pylint: disable=broad-exception-caught
             except Exception as err:
                 print(

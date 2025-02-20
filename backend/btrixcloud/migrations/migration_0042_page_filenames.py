@@ -15,36 +15,26 @@ class Migration(BaseMigration):
     def __init__(self, mdb, **kwargs):
         super().__init__(mdb, migration_version=MIGRATION_VERSION)
 
-        self.page_ops = kwargs.get("page_ops")
+        self.background_job_ops = kwargs.get("background_job_ops")
 
     async def migrate_up(self):
         """Perform migration up.
 
-        Add filename to all pages that don't currently have it stored,
-        iterating through each archived item and its WACZ files as necessary
+        Optimize crawl pages for optimized replay in background job by adding
+        filename, isSeed, depth, and favIconUrl as needed.
         """
-        pages_mdb = self.mdb["pages"]
-
-        if self.page_ops is None:
+        if self.background_job_ops is None:
             print(
-                "Unable to add filename and other fields to pages, missing page_ops",
+                "Unable to start background job to optimize pages, ops class missing",
                 flush=True,
             )
             return
 
-        crawl_ids_to_update = await pages_mdb.distinct("crawl_id", {"filename": None})
-
-        crawl_count = len(crawl_ids_to_update)
-        current_index = 1
-
-        for crawl_id in crawl_ids_to_update:
-            print(f"Migrating archived item {current_index}/{crawl_count}", flush=True)
-            try:
-                await self.page_ops.add_crawl_wacz_filename_to_pages(crawl_id)
-            # pylint: disable=broad-exception-caught
-            except Exception as err:
-                print(
-                    f"Error adding filename and other fields to pages in item {crawl_id}: {err}",
-                    flush=True,
-                )
-            current_index += 1
+        try:
+            await self.background_job_ops.create_optimize_crawl_pages_job()
+        # pylint: disable=broad-exception-caught
+        except Exception as err:
+            print(
+                f"Unable to start background job to optimize pages: {err}",
+                flush=True,
+            )
