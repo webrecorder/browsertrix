@@ -623,9 +623,6 @@ class CollectionOps:
         crawl_ids = []
         preload_resources = []
 
-        coll = await self.get_collection(collection_id)
-        org = await self.orgs.get_org_by_id(coll.oid)
-
         async for crawl_raw in self.crawls.find({"collectionIds": collection_id}):
             crawl = BaseCrawl.from_dict(crawl_raw)
             if crawl.state not in SUCCESSFUL_STATES:
