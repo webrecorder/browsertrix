@@ -50,10 +50,6 @@
         <source>Private</source>
         <target state="translated">Privado</target>
       </trans-unit>
-      <trans-unit xml:space="preserve" id="s2df075aface0dab8">
-        <source>Share</source>
-        <target state="translated">Compartir archivos</target>
-      </trans-unit>
       <trans-unit xml:space="preserve" id="s833f0d71eaa06739">
         <source>Select Items</source>
         <target state="translated">Seleccionar elementos</target>
@@ -75,10 +71,6 @@
       <trans-unit xml:space="preserve" id="s317006269d0d1476">
         <source>Delete Collection</source>
         <target state="translated">Eliminar colección</target>
-      </trans-unit>
-      <trans-unit xml:space="preserve" id="s41203abb9f802a84">
-        <source>Share Collection</source>
-        <target state="translated">Compartir colección</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s0379fc73608ab971">
         <source>Done</source>
@@ -115,10 +107,6 @@
       <trans-unit id="s8975026acabb194d" xml:space="preserve">
         <source>Select Archived Items</source>
         <target state="translated">Seleccionar elementos archivados</target>
-      </trans-unit>
-      <trans-unit xml:space="preserve" id="s7e5bf5d1b7f08ba4">
-        <source>Make Private</source>
-        <target state="translated">Hacer privado</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s2fe988430f978df3">
         <source>Download Collection</source>
@@ -354,9 +342,6 @@
         <source>Please enter <x id="0" equiv-text="${MIN_LENGTH}"/> or more characters</source>
         <target state="translated">Por favor, introduzca <x id="0" equiv-text="${MIN_LENGTH}"/> o más caracteres</target>
       </trans-unit>
-      <trans-unit id="s74abf58e08f32710">
-        <source>Please enter a valid Regular Expression constructor pattern</source>
-      </trans-unit>
       <trans-unit xml:space="preserve" id="s3c6391ad20986b33">
         <source>Tags separated by comma</source>
         <target state="translated">Etiquetas separadas por comas</target>
@@ -402,11 +387,6 @@
       <trans-unit xml:space="preserve" id="sf21761e7f8e0550e">
         <source>Default: <x id="0" equiv-text="${localize.number(value)}"/></source>
         <target state="translated">Predeterminado: <x id="0" equiv-text="${localize.number(value)}"/></target>
-      </trans-unit>
-      <trans-unit xml:space="preserve" id="s5ae0226079b4d5fc">
-        <source>Specify exclusion rules for what pages should not be visited.
-  Exclusions apply to all URLs.</source>
-        <target state="translated">Especificar las reglas de exclusión para las páginas que no deben visitarse. Las exclusiones se aplican a todas las direcciones URL.</target>
       </trans-unit>
       <trans-unit id="sa663117885b91a78">
         <source>Adds a hard limit on the number of pages that will be crawled.</source>
@@ -567,10 +547,6 @@
       </trans-unit>
       <trans-unit id="s719552bdda1832f6">
         <source>Org ID</source>
-      </trans-unit>
-      <trans-unit xml:space="preserve" id="s68a8a3c2dd867ac9">
-        <source>URL Identifier too short</source>
-        <target state="translated">Identificador de URL demasiado corto</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="sef49aec68fd1dc66">
         <source>Name</source>
@@ -937,9 +913,6 @@
       <trans-unit xml:space="preserve" id="s4d80f6e1da39d26e">
         <source>Edit Settings</source>
         <target state="translated">Editar ajustes</target>
-      </trans-unit>
-      <trans-unit id="s7824618ab2f5160b">
-        <source>Edit workflow settings</source>
       </trans-unit>
       <trans-unit xml:space="preserve" id="sf0c8f0ef20e0dba2">
         <source>Increase or decrease</source>
@@ -1522,9 +1495,6 @@
         <source>Metadata</source>
         <target state="translated">Metadatos</target>
       </trans-unit>
-      <trans-unit id="sdd5f4eba5c1d833c">
-        <source>Metadata cannot be edited while crawl is running.</source>
-      </trans-unit>
       <trans-unit xml:space="preserve" id="sa7eea45fe1e4d231">
         <source>Collection</source>
         <target state="translated">Colección</target>
@@ -1544,10 +1514,6 @@
       </trans-unit>
       <trans-unit id="s5ce3f4567e31397d">
         <source>Delete Item</source>
-      </trans-unit>
-      <trans-unit xml:space="preserve" id="s535e3ddaa2c43693">
-        <source>No files yet.</source>
-        <target state="translated">Aún no hay archivos.</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="sb1ccb7808e51e5c1">
         <source>No files to replay.</source>
@@ -1592,9 +1558,6 @@
       <trans-unit xml:space="preserve" id="sc592307ea80f16b9">
         <source>Unknown</source>
         <target state="translated">Desconocido</target>
-      </trans-unit>
-      <trans-unit id="s622fb421a67fa33d">
-        <source>Crawl ID</source>
       </trans-unit>
       <trans-unit id="sec7059aaa0633ca2">
         <source>Crawler Channel (Exact Crawler Version)</source>
@@ -1743,9 +1706,6 @@
       </trans-unit>
       <trans-unit id="sd18fd6a192ab09f9">
         <source>Search all items by name or Crawl Start URL</source>
-      </trans-unit>
-      <trans-unit id="s3cc68dd968072be8">
-        <source>Copy Crawl ID</source>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s4a0475dbb07f0f0d">
         <source>No matching items found.</source>
@@ -2450,9 +2410,6 @@
       <trans-unit id="s4ab09f62524380b9">
         <source>Max Pages</source>
       </trans-unit>
-      <trans-unit id="sa6c0603a4209dcfa">
-        <source>Auto-Scroll Behavior</source>
-      </trans-unit>
       <trans-unit xml:space="preserve" id="s66722bc2ea775e05">
         <source>Disabled</source>
         <target state="translated">Deshabilitado</target>
@@ -3046,37 +3003,11 @@
         <source>Limits</source>
         <target state="translated">Límites</target>
       </trans-unit>
-      <trans-unit id="s980b48ea42f59abe">
-        <source>Review Settings</source>
-      </trans-unit>
       <trans-unit xml:space="preserve" id="hf77ba6b1d74e2cdb">
         <source>Fields marked with
                   <x id="0" equiv-text="&lt;span style=&quot;color:var(--sl-input-required-content-color)&quot;&gt;"/>*<x id="1" equiv-text="&lt;/span&gt;"/>
                   are required</source>
         <target state="translated">Los campos marcados con <x id="0" equiv-text="&lt;span style=&quot;color:var(--sl-input-required-content-color)&quot;&gt;"/>*<x id="1" equiv-text="&lt;/span&gt;"/> son obligatorios</target>
-      </trans-unit>
-      <trans-unit xml:space="preserve" id="s5f94c84437a8594c">
-        <source>Form section contains errors</source>
-        <target state="translated">La sección del formulario contiene errores</target>
-      </trans-unit>
-      <trans-unit xml:space="preserve" id="sf39dc9c47c9ff82c">
-        <source>Changes in all sections will be saved</source>
-        <target state="translated">Se guardarán los cambios en todas las secciones</target>
-      </trans-unit>
-      <trans-unit id="s814a0cb8f2908f75">
-        <source>Save Workflow</source>
-      </trans-unit>
-      <trans-unit xml:space="preserve" id="s74e4c44c09eaa53a">
-        <source>Previous Step</source>
-        <target state="translated">Paso anterior</target>
-      </trans-unit>
-      <trans-unit xml:space="preserve" id="sc2c5b518e1f5c85a">
-        <source>Next Step</source>
-        <target state="translated">Siguiente paso</target>
-      </trans-unit>
-      <trans-unit xml:space="preserve" id="s9645fd859ac5dbd8">
-        <source>Run on Save</source>
-        <target state="translated">Ejecutar al guardar</target>
       </trans-unit>
       <trans-unit xml:space="preserve" id="s0cd2df7d9d95ae68">
         <source>At least 1 URL is required.</source>
@@ -3136,9 +3067,6 @@
       <trans-unit xml:space="preserve" id="sa4f9d4099c408ae6">
         <source>Must be less than maximum of <x id="0" equiv-text="${this.localize.number(+max)}"/></source>
         <target state="translated">Debe ser menos que el máximo de <x id="0" equiv-text="${this.localize.number(+max)}"/></target>
-      </trans-unit>
-      <trans-unit id="s9d84cf47af31a3ba">
-        <source>Auto-scroll behavior</source>
       </trans-unit>
       <trans-unit xml:space="preserve" id="sd412fd49fb930199">
         <source>When enabled the browser will automatically scroll to the end of the page.</source>
@@ -3210,9 +3138,6 @@
           as soon as they complete.
           Individual crawls can be selected from within the collection later.</source>
       </trans-unit>
-      <trans-unit id="s0e598010b73d1398">
-        <source>There are issues with this Workflow. Please go through previous steps and fix all issues to continue.</source>
-      </trans-unit>
       <trans-unit id="s265a8f6e25a8c5f2">
         <source>Workflow created.</source>
       </trans-unit>
@@ -3227,12 +3152,6 @@
       </trans-unit>
       <trans-unit id="s429899b1dcafcad4">
         <source>Could not run crawl with new workflow settings due to already running crawl.</source>
-      </trans-unit>
-      <trans-unit id="s286331d9358fc509">
-        <source>Seed URL <x id="0" equiv-text="${loc[loc.length - 1] + 1}"/>: </source>
-      </trans-unit>
-      <trans-unit id="s08dd397493a013b1">
-        <source>Couldn't save Workflow. Please fix the following Workflow issues:</source>
       </trans-unit>
       <trans-unit xml:space="preserve" id="sea5eee53e296f33b">
         <source><x id="0" equiv-text="${this.localize.number(urlList.length)}"/> URL entered</source>
@@ -3372,16 +3291,6 @@
         <source>Welcome</source>
         <target state="translated">Bienvenido</target>
       </trans-unit>
-      <trans-unit id="s98a92b0ff61e893b">
-        <source>Go to Crawl</source>
-      </trans-unit>
-      <trans-unit id="s2cf63ec9357621f3">
-        <source>Enter Crawl ID</source>
-      </trans-unit>
-      <trans-unit xml:space="preserve" id="s09023907b59c38eb">
-        <source>Go</source>
-        <target state="translated">Ir</target>
-      </trans-unit>
       <trans-unit id="sb8e7753cf636ad38">
         <source>All Organizations</source>
       </trans-unit>
@@ -3479,9 +3388,6 @@
       </trans-unit>
       <trans-unit id="sa8d4790d89fbcb7d">
         <source>Any Active Status</source>
-      </trans-unit>
-      <trans-unit id="sf777c154340d04b4">
-        <source>View Crawl Settings</source>
       </trans-unit>
       <trans-unit id="sbf18806bc43052fa">
         <source>Sorry, couldn't retrieve crawls at this time.</source>
@@ -3784,9 +3690,6 @@
         <source>Copy Browsertrix Version</source>
         <target state="translated">Copiar la versión de Browsertrix</target>
       </trans-unit>
-      <trans-unit id="s90a0fdd47ac39d59">
-        <source>Jump to Crawl</source>
-      </trans-unit>
       <trans-unit xml:space="preserve" id="sa1bc28260e4221a8">
         <source>Please log in to continue.</source>
         <target state="translated">Por favor, inicie sesión para continuar.</target>
@@ -4034,9 +3937,6 @@
       <trans-unit id="sd813c96a1d891cdc">
         <source>Select Analysis Run</source>
       </trans-unit>
-      <trans-unit id="sdd3e1b91cb27a4d5">
-        <source>Page URL(s)</source>
-      </trans-unit>
       <trans-unit id="s4201222224dff23c">
         <source>Crawl: <x id="0" equiv-text="${crawlStatus.label}"/></source>
       </trans-unit>
@@ -4131,17 +4031,6 @@
       <trans-unit xml:space="preserve" id="s2279075e18f7dd74">
         <source>Additional Pages</source>
         <target state="translated">Páginas adicionales</target>
-      </trans-unit>
-      <trans-unit id="s0a81f678a90d8133">
-        <source>There is an issue with this Crawl Workflow:</source>
-      </trans-unit>
-      <trans-unit id="h94a6d35ca79705c4">
-        <source><x id="0" equiv-text="${pageScope ? msg(&quot;Page URL(s)&quot;) : msg(&quot;Crawl Start URL&quot;)}"/>
-                required in
-                <x id="1" equiv-text="&lt;a href=&quot;${crawlSetupUrl}&quot; class=&quot;bold underline hover:no-underline&quot;&gt;"/>Scope<x id="2" equiv-text="&lt;/a&gt;"/>. </source>
-      </trans-unit>
-      <trans-unit id="s67b76d03e88b5990">
-        <source>Please fix to continue.</source>
       </trans-unit>
       <trans-unit id="s083f85625c5d739f">
         <source>In-Page Links</source>
@@ -4287,10 +4176,6 @@
         <source><x id="0" equiv-text="${storageBytesText}"/> of disk space</source>
         <target state="translated"><x id="0" equiv-text="${storageBytesText}"/> de espacio en disco</target>
       </trans-unit>
-      <trans-unit xml:space="preserve" id="hf4626f0918c0d6a0">
-        <source>Review &amp; Save</source>
-        <target state="translated">Revisar &amp; guardar</target>
-      </trans-unit>
       <trans-unit id="h7047060377c6217c">
         <source>Cancel &amp; Discard Crawl</source>
       </trans-unit>
@@ -4401,9 +4286,6 @@
       <trans-unit id="s58cbb77b29a98292">
         <source>No public collections yet.</source>
       </trans-unit>
-      <trans-unit id="s198f9d12552a9134">
-        <source>Visit Public Page</source>
-      </trans-unit>
       <trans-unit id="sd42dca30d5e7c463">
         <source>Archived item selection updated.</source>
       </trans-unit>
@@ -4449,9 +4331,6 @@
       <trans-unit id="sd27c7f88dd56a528">
         <source>Open org settings</source>
       </trans-unit>
-      <trans-unit id="sd82f616578d2b33d">
-        <source>"<x id="0" equiv-text="${data.name || name}"/>" metadata updated</source>
-      </trans-unit>
       <trans-unit id="secbc28fc1f3d93ff">
         <source>Created "<x id="0" equiv-text="${data.name || name}"/>" collection</source>
       </trans-unit>
@@ -4469,12 +4348,6 @@
       </trans-unit>
       <trans-unit id="s417b90913e05bc17">
         <source>Preview</source>
-      </trans-unit>
-      <trans-unit id="sba95a48e4f04034a">
-        <source>Enter a Page URL to preview it</source>
-      </trans-unit>
-      <trans-unit id="sb6462847faa30cda">
-        <source>Select Initial View</source>
       </trans-unit>
       <trans-unit id="s6a4c947594f2381c">
         <source>Update collection thumbnail</source>
@@ -4494,29 +4367,14 @@
       <trans-unit id="sea308a8fee0cb2e3">
         <source>Sorry, couldn't update home view at this time.</source>
       </trans-unit>
-      <trans-unit id="s61af106a9ca3fc0d">
-        <source>Copy shareable link</source>
-      </trans-unit>
       <trans-unit id="s9a2a2fda9cfa1ddc">
         <source>Copy Link</source>
       </trans-unit>
       <trans-unit id="sfa31fe37b0f5159e">
         <source>View Embed Code</source>
       </trans-unit>
-      <trans-unit id="s4b51add4ad998a51">
-        <source>Visit Unlisted Page</source>
-      </trans-unit>
-      <trans-unit id="sd256b73f9f213896">
-        <source>Link Settings</source>
-      </trans-unit>
       <trans-unit id="s8f80709597e4b1a1">
         <source>Share “<x id="0" equiv-text="${this.collection?.name}"/>”</source>
-      </trans-unit>
-      <trans-unit id="s3cf89cb47fdde7e9">
-        <source>Link</source>
-      </trans-unit>
-      <trans-unit id="scace301a88231cce">
-        <source>Embed</source>
       </trans-unit>
       <trans-unit id="s476ddc7cbb32ffa7">
         <source>Thumbnail</source>
@@ -4550,35 +4408,11 @@
               our embedding guide<x id="1" equiv-text="&lt;/a&gt;"/>
             for more details.</source>
       </trans-unit>
-      <trans-unit id="s47517309258c9bfa">
-        <source>Collection visibility updated.</source>
-      </trans-unit>
-      <trans-unit id="se1e88c4395c9c391">
-        <source>Sorry, couldn't update visibility at this time.</source>
-      </trans-unit>
-      <trans-unit id="scc462370fbf7699a">
-        <source>Thumbnail updated.</source>
-      </trans-unit>
-      <trans-unit id="s7f6e7c70a39bec6b">
-        <source>Sorry, couldn't update thumbnail at this time.</source>
-      </trans-unit>
-      <trans-unit id="sf5cd9781b7bafc94">
-        <source>Download button enabled.</source>
-      </trans-unit>
-      <trans-unit id="s2b2cb4cfe88bcb69">
-        <source>Download button hidden.</source>
-      </trans-unit>
-      <trans-unit id="se5594d78d52b0b03">
-        <source>Sorry, couldn't update download button at this time.</source>
-      </trans-unit>
       <trans-unit id="sf39becada022c325">
         <source>Choose what page viewers see first in replay</source>
       </trans-unit>
       <trans-unit id="s1cb226f223599f56">
         <source>Add items to select a home page</source>
-      </trans-unit>
-      <trans-unit id="s1f45d250722817c7">
-        <source>Edit About Section</source>
       </trans-unit>
       <trans-unit id="s3f65af47b6c8cdff">
         <source>No description provided.</source>
@@ -4601,21 +4435,11 @@
       <trans-unit id="s4d61bc76df7560ab">
         <source>Sorry, couldn't save collection description at this time.</source>
       </trans-unit>
-      <trans-unit id="s3e4aa3f8d6f45a57">
-        <source>Write a short description to introduce your organization.</source>
-      </trans-unit>
       <trans-unit id="s82665b2ffabc9c0a">
         <source>Website</source>
       </trans-unit>
       <trans-unit id="sc75a8ddcb729c2a6">
         <source>Link to your organization's (or your personal) website.</source>
-      </trans-unit>
-      <trans-unit id="h4077380edd0a56a4">
-        <source>To customize this URL,
-              <x id="0" equiv-text="&lt;a href=&quot;${`${location.pathname}#org-url`}&quot; class=&quot;text-cyan-500 underline decoration-cyan-500/30 transition hover:text-cyan-600 hover:decoration-cyan-500/50&quot;&gt;${msg(&quot;update your Org URL in General settings&quot;)}&lt;/a&gt;"/>.</source>
-      </trans-unit>
-      <trans-unit id="s117475fa47155b08">
-        <source>update your Org URL in General settings</source>
       </trans-unit>
       <trans-unit id="s3a081663dfc1a779">
         <source>Sorry, couldn't update org at this time.</source>
@@ -4636,26 +4460,14 @@
       <trans-unit id="s30ed673daca7e44b">
         <source>Use this ID to reference your org in the Browsertrix API.</source>
       </trans-unit>
-      <trans-unit id="s2bad581c2ce4d1d7">
-        <source>Enable Share Link</source>
-      </trans-unit>
       <trans-unit id="s1f224cf8b88cb893">
         <source>Link copied</source>
       </trans-unit>
       <trans-unit id="s0337805916bf0549">
         <source>Copy Share Link</source>
       </trans-unit>
-      <trans-unit id="s270a5ff2d45dad7f">
-        <source>Make Unlisted</source>
-      </trans-unit>
-      <trans-unit id="sa96c92e537e246f8">
-        <source>Make Public</source>
-      </trans-unit>
       <trans-unit id="sd3386a2ef42e80b9">
         <source>Download</source>
-      </trans-unit>
-      <trans-unit id="s5fd20da1d23fe8c5">
-        <source>Manage org settings</source>
       </trans-unit>
       <trans-unit id="s15c412aa2f2d4d3d">
         <source>Public Collections</source>
@@ -4668,9 +4480,6 @@
       </trans-unit>
       <trans-unit id="s0d5c241bca67f37d">
         <source>Go to Settings</source>
-      </trans-unit>
-      <trans-unit id="sbc163672f44598f3">
-        <source>Manage collections</source>
       </trans-unit>
       <trans-unit id="se87b7534b82892ab">
         <source><x id="0" equiv-text="${org.name}"/> is web archiving with Browsertrix.</source>
@@ -4698,9 +4507,6 @@
       </trans-unit>
       <trans-unit id="sf2dbd171f2672a76">
         <source>About This Collection</source>
-      </trans-unit>
-      <trans-unit id="sc7dec6fac2707f7b">
-        <source>Edit collection</source>
       </trans-unit>
       <trans-unit id="s5e94738a2eeb8943">
         <source>Sign In</source>
@@ -4742,17 +4548,8 @@
       <trans-unit id="sd632247a75e16736">
         <source>No matching page found.</source>
       </trans-unit>
-      <trans-unit id="s6bea976384dcc959">
-        <source>Couldn't load preview. Try another snapshot</source>
-      </trans-unit>
-      <trans-unit id="s1b5466748e5d9733">
-        <source>Configure Replay View</source>
-      </trans-unit>
       <trans-unit id="s8df0435252529c62">
         <source>Choose a page snapshot</source>
-      </trans-unit>
-      <trans-unit id="s7239e04f3953266c">
-        <source>Configure View</source>
       </trans-unit>
       <trans-unit id="s9b649a5c57384213">
         <source>Your org doesn’t have any collections yet.</source>
@@ -4781,9 +4578,6 @@
       <trans-unit id="sbe6bd4a4b8f70dc1">
         <source>Profiles: <x id="0" equiv-text="${this.localize.bytes(org.bytesStoredProfiles)}"/></source>
       </trans-unit>
-      <trans-unit id="s79eada3541c04902">
-        <source>Visit Public Collections Gallery</source>
-      </trans-unit>
       <trans-unit id="s9f0d2cd0850b47df">
         <source>Unique Pages in Collection</source>
       </trans-unit>
@@ -4799,10 +4593,6 @@
       <trans-unit id="s7834e4ac05eb381a">
         <source>Write a short description that summarizes this collection. If the collection is shareable, this will appear next to the collection name.</source>
       </trans-unit>
-      <trans-unit id="h842eab6f58bd30b6">
-        <source>You can add a longer description in the “About”
-                      section after creating the collection.</source>
-      </trans-unit>
       <trans-unit id="sa6c663d28c4eeb33">
         <source>This collection will be visible in the org public collection gallery, even without archived items. You may want to set visibility to 'Unlisted' until archived items have been added.</source>
       </trans-unit>
@@ -4814,9 +4604,6 @@
       </trans-unit>
       <trans-unit id="sf160136cfa00f822">
         <source>Enter a page URL to choose timestamp</source>
-      </trans-unit>
-      <trans-unit id="sa78fe8d21978bf72">
-        <source>Choose a thumbnail to represent this collection.</source>
       </trans-unit>
       <trans-unit id="s2892cf7cbbdf4424">
         <source>Autoclick behavior</source>
@@ -4836,32 +4623,11 @@
       <trans-unit id="s492c3c47283fe263">
         <source>Updated org settings.</source>
       </trans-unit>
-      <trans-unit id="s03e7aeb29699eda3">
-        <source>Gallery Visibility</source>
-      </trans-unit>
-      <trans-unit id="saa4273ec1218f017">
-        <source>Enable gallery of public collections</source>
-      </trans-unit>
-      <trans-unit id="sf3009f5b3aeaa198">
-        <source>If enabled, anyone on the Internet will be able to browse this org's public collections and view general org information.</source>
-      </trans-unit>
-      <trans-unit id="s40ec8928bedb7be3">
-        <source>Public Gallery URL</source>
-      </trans-unit>
       <trans-unit id="s8283503fb503486b">
         <source>Public Collections Gallery</source>
       </trans-unit>
-      <trans-unit id="s7af5c9ef29b322ac">
-        <source>Updated public collections gallery visibility.</source>
-      </trans-unit>
       <trans-unit id="s7bcbd0fafce2565d">
         <source>Customize your org's Browsertrix URL.</source>
-      </trans-unit>
-      <trans-unit id="s9837b3ec388e7929">
-        <source>View as public</source>
-      </trans-unit>
-      <trans-unit id="sf4cf567dd8cffff6">
-        <source>Preview how information appears to the public</source>
       </trans-unit>
       <trans-unit id="s9826534c5f9f250d">
         <source>This org URL is already taken, try another one.</source>
@@ -4872,23 +4638,231 @@
       <trans-unit id="h33ab0b911e13ad09">
         <source>Name &amp; Collection Period</source>
       </trans-unit>
-      <trans-unit id="s79c808f60cabe77b">
-        <source>Preview Public Collections Gallery</source>
-      </trans-unit>
-      <trans-unit id="scd7bdf8f40a096f8">
-        <source>Copy Link to Public Gallery</source>
-      </trans-unit>
-      <trans-unit id="s4bb49d6b8c58db7b">
-        <source>Update Org Profile</source>
-      </trans-unit>
       <trans-unit id="sd1aa96c20f885a8f">
         <source>This is a private preview of the public collections gallery</source>
       </trans-unit>
       <trans-unit id="s949a92849e4dadd0">
         <source>Update your org's public collections gallery settings to make this page visible to anyone on the internet.</source>
       </trans-unit>
-      <trans-unit id="s188114adebc9330c">
-        <source>Change org settings</source>
+      <trans-unit id="s378e60a37da39c87">
+        <source>Autoscroll Behavior</source>
+      </trans-unit>
+      <trans-unit id="s7411baab8649ad44">
+        <source>Autoclick Behavior</source>
+      </trans-unit>
+      <trans-unit id="s965c503c3e42fdfe">
+        <source>Enabled</source>
+      </trans-unit>
+      <trans-unit id="s534f3a25ad3b4ba5">
+        <source>Disabled (default)</source>
+      </trans-unit>
+      <trans-unit id="s0f451bba9522bdac">
+        <source>Edit Collection Settings</source>
+      </trans-unit>
+      <trans-unit id="s104a01d043d1c2ec">
+        <source>Enter a Page URL to preview it.</source>
+      </trans-unit>
+      <trans-unit id="s096c1b61ea986d13">
+        <source>This page doesn’t have a preview. Try another URL or timestamp.</source>
+      </trans-unit>
+      <trans-unit id="s04ef8441ea7dbb8d">
+        <source>Updated collection “<x id="0" equiv-text="${this.name || this.collection.name}"/>”</source>
+      </trans-unit>
+      <trans-unit id="sbfd09e27f1cd27f5">
+        <source>Please review issues with your changes.</source>
+      </trans-unit>
+      <trans-unit id="s6a05ad3f740ad8d8">
+        <source>Write a short description that summarizes this collection. If the collection is public, this description will be visible next to the collection name.</source>
+      </trans-unit>
+      <trans-unit id="s39eb292469e3d38d">
+        <source>This page doesn’t have a thumbnail and can’t be used</source>
+      </trans-unit>
+      <trans-unit id="s98ece6ee399d3d86">
+        <source>Update the first page that you see when replaying this collection</source>
+      </trans-unit>
+      <trans-unit id="sa658d103bf1d0232">
+        <source>Set initial view to this page</source>
+      </trans-unit>
+      <trans-unit id="s2d45624f142e92ad">
+        <source>Select a page thumbnail</source>
+      </trans-unit>
+      <trans-unit id="s602cfd34f602d6f9">
+        <source>Choose a thumbnail to represent this collection in the org dashboard and profile page.</source>
+      </trans-unit>
+      <trans-unit id="s73a16b098b2be4ca">
+        <source>Page Thumbnail</source>
+      </trans-unit>
+      <trans-unit id="sf90be97cb08f3d5a">
+        <source>Placeholder</source>
+      </trans-unit>
+      <trans-unit id="sdf8ebd85a3d45c62">
+        <source>No pages found</source>
+      </trans-unit>
+      <trans-unit id="s7d4ca6f5d4394185">
+        <source>The org profile page isn't public yet. To make the org profile and this collection visible to the public, update profile visibility in org settings.</source>
+      </trans-unit>
+      <trans-unit id="s93cdf6aa403725d4">
+        <source>Collection Settings for “<x id="0" equiv-text="${this.name || this.collection.name}"/>”</source>
+      </trans-unit>
+      <trans-unit id="s58d345165b96e68e">
+        <source>Collection Settings</source>
+      </trans-unit>
+      <trans-unit id="s5c1ecf88259b79f9">
+        <source>Presentation</source>
+      </trans-unit>
+      <trans-unit id="s827bbc2fb2917a33">
+        <source>Sharing</source>
+      </trans-unit>
+      <trans-unit id="s6b138c631a7d2a2c">
+        <source>Discard Changes</source>
+      </trans-unit>
+      <trans-unit id="s4cdd05ea66832a9e">
+        <source>Unsaved changes.</source>
+      </trans-unit>
+      <trans-unit id="h2c3943473fbe11e2">
+        <source>You can add a longer description in the “About” section
+                  after creating the collection.</source>
+      </trans-unit>
+      <trans-unit id="s9b60514119bff158">
+        <source>Set Initial View</source>
+      </trans-unit>
+      <trans-unit id="s1535d4e96dccfba4">
+        <source>Initial View</source>
+      </trans-unit>
+      <trans-unit id="sdc999ebffd912691">
+        <source>Download Collection: </source>
+      </trans-unit>
+      <trans-unit id="s02d4af030afd821a">
+        <source>Please enter a valid regular expression</source>
+      </trans-unit>
+      <trans-unit id="s2b9f200fda08e4d3">
+        <source>Show section</source>
+      </trans-unit>
+      <trans-unit id="sbe9de7b29b1d1224">
+        <source>Please fix all errors in this section</source>
+      </trans-unit>
+      <trans-unit id="sb48b074e5871a395">
+        <source>Collapse section</source>
+      </trans-unit>
+      <trans-unit id="s31065c17df35aa6b">
+        <source>Save without running</source>
+      </trans-unit>
+      <trans-unit id="s09625da767d1ec6b">
+        <source>Save and run with new settings</source>
+      </trans-unit>
+      <trans-unit id="h3e80c83387cea4f1">
+        <source>Run Crawl</source>
+      </trans-unit>
+      <trans-unit id="s35424380fd3348a7">
+        <source>Autoscroll behavior</source>
+      </trans-unit>
+      <trans-unit id="sb0caa86199d0e901">
+        <source>Specify the range and depth of your crawl.</source>
+      </trans-unit>
+      <trans-unit id="sc19a3a2ee5d51584">
+        <source>Enforce maximum limits on your crawl.</source>
+      </trans-unit>
+      <trans-unit id="s980f8fdc5f70bd71">
+        <source>Configure the browser that's used to visit URLs during the crawl.</source>
+      </trans-unit>
+      <trans-unit id="s954a81b79f2ebf71">
+        <source>Schedule recurring crawls.</source>
+      </trans-unit>
+      <trans-unit id="s63a4601cb5188ebf">
+        <source>Describe and organize crawls from this workflow.</source>
+      </trans-unit>
+      <trans-unit id="sa8c19d13eb3e7f98">
+        <source>Please fix all errors and try again.</source>
+      </trans-unit>
+      <trans-unit id="s77aee0d8cdd77b61">
+        <source>Please fix the following issue: </source>
+      </trans-unit>
+      <trans-unit id="sdc12eb8d90714683">
+        <source>Page exclusion contains invalid regex</source>
+      </trans-unit>
+      <trans-unit id="sac43920f91e495d4">
+        <source>Sorry, couldn't save workflow at this time.</source>
+      </trans-unit>
+      <trans-unit id="s0ff179117ed54be5">
+        <source>Go to Unlisted Page</source>
+      </trans-unit>
+      <trans-unit id="sa4e272fd9de28ce8">
+        <source>Go to Public Page</source>
+      </trans-unit>
+      <trans-unit id="s6810fc90cd4096f9">
+        <source>Edit Collection Name and Description</source>
+      </trans-unit>
+      <trans-unit id="s26ee1eaa2a764aff">
+        <source>Add a summary...</source>
+      </trans-unit>
+      <trans-unit id="sd720fd983f132077">
+        <source>Edit Description</source>
+      </trans-unit>
+      <trans-unit id="s355b21b89ce5d9c5">
+        <source>Details</source>
+      </trans-unit>
+      <trans-unit id="s953263baa32573a4">
+        <source>Examples of org URL in use</source>
+      </trans-unit>
+      <trans-unit id="s1054e433631d255e">
+        <source>(current page)</source>
+      </trans-unit>
+      <trans-unit id="s1bba576ea20a31eb">
+        <source>Public collections gallery</source>
+      </trans-unit>
+      <trans-unit id="s6b8d97ac7f07a31e">
+        <source>View public collections gallery</source>
+      </trans-unit>
+      <trans-unit id="sd078aa97afe211c0">
+        <source>Enable public collections gallery</source>
+      </trans-unit>
+      <trans-unit id="sd63898d64c83d7a2">
+        <source>Public collections gallery URL</source>
+      </trans-unit>
+      <trans-unit id="sc4f5408bc1baceed">
+        <source>If enabled, anyone on the Internet will be able to visit this URL to browse public collections and view general org information.</source>
+      </trans-unit>
+      <trans-unit id="s01ed812b28148f86">
+        <source>Write a short description that introduces your org and its public collections.</source>
+      </trans-unit>
+      <trans-unit id="sc5b45b865c279ec2">
+        <source>URL too short</source>
+      </trans-unit>
+      <trans-unit id="s477de1736ec27e5b">
+        <source>Archived Item ID</source>
+      </trans-unit>
+      <trans-unit id="sb125a28ef8acea72">
+        <source>Copy Archived Item ID</source>
+      </trans-unit>
+      <trans-unit id="s6068dcdfcdbe3ab0">
+        <source>Edit Org Settings</source>
+      </trans-unit>
+      <trans-unit id="s37811fcfe2741679">
+        <source>All Collections</source>
+      </trans-unit>
+      <trans-unit id="s96b9bb1be9e4b3e2">
+        <source>Visit public collections gallery</source>
+      </trans-unit>
+      <trans-unit id="sd3f3f33e50bd1f9b">
+        <source>Preview public collections gallery</source>
+      </trans-unit>
+      <trans-unit id="s002fe7077f0249cd">
+        <source>Copy Link to Public Collections Gallery</source>
+      </trans-unit>
+      <trans-unit id="s047b237f640217b9">
+        <source>No collections yet.</source>
+      </trans-unit>
+      <trans-unit id="sbec67d1ecfe03df2">
+        <source>View Workflow Settings</source>
+      </trans-unit>
+      <trans-unit id="s396dfbe7951a9482">
+        <source>Go to Private Page</source>
+      </trans-unit>
+      <trans-unit id="s21f49eaae01fc8f0">
+        <source>You are logged in as a superadmin</source>
+      </trans-unit>
+      <trans-unit id="sbb7c17d62505d40a">
+        <source>please be careful.</source>
       </trans-unit>
     </body>
   </file>
