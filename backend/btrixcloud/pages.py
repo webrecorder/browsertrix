@@ -98,6 +98,7 @@ class PageOps:
                 ("ts", pymongo.ASCENDING),
             ]
         )
+        await self.pages.create_index([("title", "text")])
 
     async def set_ops(self, background_job_ops: BackgroundJobOps):
         """Set ops classes as needed"""
@@ -759,12 +760,19 @@ class PageOps:
         if org:
             query["oid"] = org.id
 
+        is_text_search = False
         if search:
-            search_regex = re.escape(urllib.parse.unquote(search))
-            query["$or"] = [
-                {"url": {"$regex": search_regex, "$options": "i"}},
-                {"title": {"$regex": search_regex, "$options": "i"}},
-            ]
+            search = urllib.parse.unquote(search)
+            if search.startswith("http:") or search.startswith("https:"):
+                query["url"] = {"$gte": search}
+            else:
+                query["$text"] = {"$search": search}
+                is_text_search = True
+            # search_regex = re.escape(search)
+            # query["$or"] = [
+            #    {"url": {"$regex": search_regex, "$options": "i"}},
+            #    {"title": {"$regex": search_regex, "$options": "i"}},
+            # ]
 
         elif url_prefix:
             url_prefix = urllib.parse.unquote(url_prefix)
@@ -805,6 +813,15 @@ class PageOps:
                 raise HTTPException(status_code=400, detail="invalid_sort_direction")
 
             aggregate.extend([{"$sort": {sort_by: sort_direction}}])
+        elif search:
+            if is_text_search:
+                aggregate.extend(
+                    [
+                        {"$sort": {"score": {"$meta": "textScore"}}},
+                    ]
+                )
+            else:
+                aggregate.extend([{"$sort": {"url": 1}}])
         else:
             # default sort: seeds first, then by timestamp
             aggregate.extend([{"$sort": {"isSeed": -1, "ts": 1}}])
