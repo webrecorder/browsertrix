@@ -6,10 +6,8 @@ Collections API
 from datetime import datetime
 from collections import Counter
 from uuid import UUID, uuid4
-from typing import Optional, List, TYPE_CHECKING, cast, Dict, Tuple, Any, Union
+from typing import Optional, List, TYPE_CHECKING, cast, Dict, Any, Union
 import os
-import re
-import urllib.parse
 
 import asyncio
 import pymongo
@@ -44,16 +42,13 @@ from .models import (
     OrgPublicCollections,
     PublicOrgDetails,
     CollAccessType,
-    PageUrlCount,
-    PageIdTimestamp,
-    PaginatedPageUrlCountResponse,
+    PageOut,
     UpdateCollHomeUrl,
     User,
     ImageFile,
     ImageFilePreparer,
     MIN_UPLOAD_PART_SIZE,
     PublicCollOut,
-    PreloadResource,
 )
 from .utils import dt_now, slug_from_name, get_duplicate_key_error_field, get_origin
 
@@ -347,21 +342,24 @@ class CollectionOps:
         result = await self.get_collection_raw(coll_id, public_or_unlisted_only)
 
         if resources:
-            result["resources"], result["preloadResources"] = (
-                await self.get_collection_crawl_resources(
-                    coll_id, include_preloads=True
-                )
+            result["resources"], crawl_ids, pages_optimized = (
+                await self.get_collection_crawl_resources(coll_id)
             )
 
-            result["initialPages"], result["totalPages"] = (
-                await self.page_ops.list_collection_pages(coll_id, page_size=25)
+            initial_pages: List[PageOut] = await self.page_ops.list_replay_query_pages(
+                coll_id,
+                crawl_ids=crawl_ids,
+                page_size=25,
             )
 
             public = "public/" if public_or_unlisted_only else ""
-            result["pagesQueryUrl"] = (
-                get_origin(headers)
-                + f"/api/orgs/{org.id}/collections/{coll_id}/{public}pages"
-            )
+
+            if pages_optimized:
+                result["initialPages"] = initial_pages
+                result["pagesQueryUrl"] = (
+                    get_origin(headers)
+                    + f"/api/orgs/{org.id}/collections/{coll_id}/{public}pages"
+                )
 
         thumbnail = result.get("thumbnail")
         if thumbnail:
@@ -388,7 +386,7 @@ class CollectionOps:
         if result.get("access") not in allowed_access:
             raise HTTPException(status_code=404, detail="collection_not_found")
 
-        result["resources"], _ = await self.get_collection_crawl_resources(coll_id)
+        result["resources"], _, _ = await self.get_collection_crawl_resources(coll_id)
 
         thumbnail = result.get("thumbnail")
         if thumbnail:
@@ -487,12 +485,6 @@ class CollectionOps:
         collections: List[Union[CollOut, PublicCollOut]] = []
 
         for res in items:
-            res["resources"], res["preloadResources"] = (
-                await self.get_collection_crawl_resources(
-                    res["_id"], include_preloads=not public_colls_out
-                )
-            )
-
             thumbnail = res.get("thumbnail")
             if thumbnail:
                 image_file = ImageFile(**thumbnail)
@@ -514,13 +506,14 @@ class CollectionOps:
         return collections, total
 
     async def get_collection_crawl_resources(
-        self, coll_id: UUID, include_preloads=False
-    ):
+        self, coll_id: UUID
+    ) -> tuple[List[CrawlFileOut], List[str], bool]:
         """Return pre-signed resources for all collection crawl files."""
         # Ensure collection exists
         _ = await self.get_collection_raw(coll_id)
 
         resources = []
+        pages_optimized = True
 
         crawls, _ = await self.crawl_ops.list_all_base_crawls(
             collection_id=coll_id,
@@ -529,38 +522,16 @@ class CollectionOps:
             cls_type=CrawlOutWithResources,
         )
 
+        crawl_ids = []
+
         for crawl in crawls:
+            crawl_ids.append(crawl.id)
             if crawl.resources:
                 resources.extend(crawl.resources)
+            if crawl.version != 2:
+                pages_optimized = False
 
-        preload_resources: List[PreloadResource] = []
-
-        if include_preloads:
-            no_page_items = await self.get_collection_resources_with_no_pages(crawls)
-            for item in no_page_items:
-                preload_resources.append(item)
-
-        return resources, preload_resources
-
-    async def get_collection_resources_with_no_pages(
-        self, crawls: List[CrawlOutWithResources]
-    ) -> List[PreloadResource]:
-        """Return wacz files in collection that have no pages"""
-        resources_no_pages: List[PreloadResource] = []
-
-        for crawl in crawls:
-            _, page_count = await self.page_ops.list_pages(crawl.id)
-            if page_count == 0 and crawl.resources:
-                for resource in crawl.resources:
-                    resources_no_pages.append(
-                        PreloadResource(
-                            name=os.path.basename(resource.name),
-                            crawlId=crawl.id,
-                            hasPages=False,
-                        )
-                    )
-
-        return resources_no_pages
+        return resources, crawl_ids, pages_optimized
 
     async def get_collection_names(self, uuids: List[UUID]):
         """return object of {_id, names} given list of collection ids"""
@@ -631,14 +602,11 @@ class CollectionOps:
             resp, headers=headers, media_type="application/wacz+zip"
         )
 
-    async def recalculate_org_collection_counts_tags(self, org: Organization):
-        """Recalculate counts and tags for collections in org"""
-        collections, _ = await self.list_collections(
-            org,
-            page_size=100_000,
-        )
-        for coll in collections:
-            await self.update_collection_counts_and_tags(coll.id)
+    async def recalculate_org_collection_stats(self, org: Organization):
+        """recalculate counts, tags and dates for all collections in an org"""
+        async for coll in self.collections.find({"oid": org.id}, projection={"_id": 1}):
+            await self.update_collection_counts_and_tags(coll.get("_id"))
+            await self.update_collection_dates(coll.get("_id"))
 
     async def update_collection_counts_and_tags(self, collection_id: UUID):
         """Set current crawl info in config when crawl begins"""
@@ -649,9 +617,7 @@ class CollectionOps:
         tags = []
 
         crawl_ids = []
-
-        coll = await self.get_collection(collection_id)
-        org = await self.orgs.get_org_by_id(coll.oid)
+        preload_resources = []
 
         async for crawl_raw in self.crawls.find({"collectionIds": collection_id}):
             crawl = BaseCrawl.from_dict(crawl_raw)
@@ -663,10 +629,20 @@ class CollectionOps:
                 total_size += file.size
 
             try:
-                _, crawl_page_count = await self.page_ops.list_pages(
-                    crawl.id, org, page_size=1_000_000
+                crawl_page_count = await self.pages.count_documents(
+                    {"crawl_id": crawl.id}
                 )
-                page_count += crawl_page_count
+
+                if crawl_page_count == 0:
+                    for file in files:
+                        preload_resources.append(
+                            {
+                                "name": os.path.basename(file.filename),
+                                "crawlId": crawl.id,
+                            }
+                        )
+                else:
+                    page_count += crawl_page_count
             # pylint: disable=broad-exception-caught
             except Exception:
                 pass
@@ -689,18 +665,10 @@ class CollectionOps:
                     "uniquePageCount": unique_page_count,
                     "totalSize": total_size,
                     "tags": sorted_tags,
+                    "preloadResources": preload_resources,
                 }
             },
         )
-
-    async def recalculate_org_collection_dates(self, org: Organization):
-        """Recalculate earliest and latest dates for collections in org"""
-        collections, _ = await self.list_collections(
-            org,
-            page_size=100_000,
-        )
-        for coll in collections:
-            await self.update_collection_dates(coll.id)
 
     async def update_collection_dates(self, coll_id: UUID):
         """Update collection earliest and latest dates from page timestamps"""
@@ -804,81 +772,6 @@ class CollectionOps:
         )
 
         return OrgPublicCollections(org=public_org_details, collections=collections)
-
-    async def list_urls_in_collection(
-        self,
-        coll_id: UUID,
-        oid: UUID,
-        url_prefix: Optional[str] = None,
-        page_size: int = DEFAULT_PAGE_SIZE,
-        page: int = 1,
-    ) -> Tuple[List[PageUrlCount], int]:
-        """List all URLs in collection sorted desc by snapshot count unless prefix is specified"""
-        # pylint: disable=duplicate-code, too-many-locals, too-many-branches, too-many-statements
-        # Zero-index page for query
-        page = page - 1
-        skip = page_size * page
-
-        crawl_ids = await self.get_collection_crawl_ids(coll_id)
-
-        match_query: dict[str, object] = {"oid": oid, "crawl_id": {"$in": crawl_ids}}
-        sort_query: dict[str, int] = {"count": -1, "_id": 1}
-
-        if url_prefix:
-            url_prefix = urllib.parse.unquote(url_prefix)
-            regex_pattern = f"^{re.escape(url_prefix)}"
-            match_query["url"] = {"$regex": regex_pattern, "$options": "i"}
-            sort_query = {"_id": 1}
-
-        aggregate: List[Dict[str, Union[int, object]]] = [{"$match": match_query}]
-
-        aggregate.extend(
-            [
-                {
-                    "$group": {
-                        "_id": "$url",
-                        "pages": {"$push": "$$ROOT"},
-                        "count": {"$sum": 1},
-                    },
-                },
-                {"$sort": sort_query},
-                {"$set": {"url": "$_id"}},
-                {
-                    "$facet": {
-                        "items": [
-                            {"$skip": skip},
-                            {"$limit": page_size},
-                        ],
-                        "total": [{"$count": "count"}],
-                    }
-                },
-            ]
-        )
-
-        # Get total
-        cursor = self.pages.aggregate(aggregate)
-        results = await cursor.to_list(length=1)
-        result = results[0]
-        items = result["items"]
-
-        try:
-            total = int(result["total"][0]["count"])
-        except (IndexError, ValueError):
-            total = 0
-
-        return [
-            PageUrlCount(
-                url=data.get("url", ""),
-                count=data.get("count", 0),
-                snapshots=[
-                    PageIdTimestamp(
-                        pageId=p["_id"], ts=p.get("ts"), status=p.get("status", 200)
-                    )
-                    for p in data.get("pages", [])
-                ],
-            )
-            for data in items
-        ], total
 
     async def set_home_url(
         self, coll_id: UUID, update: UpdateCollHomeUrl, org: Organization
@@ -1011,11 +904,13 @@ class CollectionOps:
 
 # ============================================================================
 # pylint: disable=too-many-locals
-def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops, user_dep):
+def init_collections_api(
+    app, mdb, orgs, storage_ops, event_webhook_ops, user_dep
+) -> CollectionOps:
     """init collections api"""
     # pylint: disable=invalid-name, unused-argument, too-many-arguments
 
-    colls = CollectionOps(mdb, storage_ops, orgs, event_webhook_ops)
+    colls: CollectionOps = CollectionOps(mdb, storage_ops, orgs, event_webhook_ops)
 
     org_crawl_dep = orgs.org_crawl_dep
     org_viewer_dep = orgs.org_viewer_dep
@@ -1068,7 +963,7 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops, user_de
         try:
             all_collections, _ = await colls.list_collections(org, page_size=10_000)
             for collection in all_collections:
-                results[collection.name], _ = (
+                results[collection.name], _, _ = (
                     await colls.get_collection_crawl_resources(collection.id)
                 )
         except Exception as exc:
@@ -1267,28 +1162,6 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops, user_de
             raise HTTPException(status_code=403, detail="not_allowed")
 
         return await colls.download_collection(coll.id, org)
-
-    @app.get(
-        "/orgs/{oid}/collections/{coll_id}/urls",
-        tags=["collections"],
-        response_model=PaginatedPageUrlCountResponse,
-    )
-    async def get_collection_url_list(
-        coll_id: UUID,
-        oid: UUID,
-        urlPrefix: Optional[str] = None,
-        pageSize: int = DEFAULT_PAGE_SIZE,
-        page: int = 1,
-    ):
-        """Retrieve paginated list of urls in collection sorted by snapshot count"""
-        pages, total = await colls.list_urls_in_collection(
-            coll_id=coll_id,
-            oid=oid,
-            url_prefix=urlPrefix,
-            page_size=pageSize,
-            page=page,
-        )
-        return paginated_format(pages, total, page, pageSize)
 
     @app.post(
         "/orgs/{oid}/collections/{coll_id}/home-url",

@@ -5,11 +5,16 @@ metadata:
   labels:
     role: "background-job"
     job_type: {{ job_type }}
+{% if oid %}
     btrix.org: {{ oid }}
+{% endif %}
 
 spec:
   ttlSecondsAfterFinished: 90
   backoffLimit: 3
+  {% if scale %}
+  parallelism: {{ scale }}
+  {% endif %}
   template:
     spec:
       restartPolicy: Never
@@ -35,11 +40,17 @@ spec:
           - name: BG_JOB_TYPE
             value: {{ job_type }}
 
+{% if oid %}
           - name: OID
             value: {{ oid }}
-
+{% endif %}
           - name: CRAWL_TYPE
             value: {{ crawl_type }}
+
+{% if crawl_id %}
+          - name: CRAWL_ID
+            value: {{ crawl_id }}
+{% endif %}
 
           envFrom:
             - configMapRef:

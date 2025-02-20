@@ -21,6 +21,7 @@ DEFAULT_NAMESPACE: str = os.environ.get("DEFAULT_NAMESPACE", "default")
 
 
 # ============================================================================
+# pylint: disable=too-many-public-methods
 class CrawlManager(K8sAPI):
     """abstract crawl manager"""
 
@@ -128,7 +129,7 @@ class CrawlManager(K8sAPI):
             job_id = f"delete-org-{oid}-{secrets.token_hex(5)}"
 
         return await self._run_bg_job_with_ops_classes(
-            oid, job_id, job_type=BgJobType.DELETE_ORG.value
+            job_id, job_type=BgJobType.DELETE_ORG.value, oid=oid
         )
 
     async def run_recalculate_org_stats_job(
@@ -144,15 +145,14 @@ class CrawlManager(K8sAPI):
             job_id = f"org-stats-{oid}-{secrets.token_hex(5)}"
 
         return await self._run_bg_job_with_ops_classes(
-            oid,
-            job_id,
-            job_type=BgJobType.RECALCULATE_ORG_STATS.value,
+            job_id, job_type=BgJobType.RECALCULATE_ORG_STATS.value, oid=oid
         )
 
     async def run_re_add_org_pages_job(
         self,
         oid: str,
         crawl_type: Optional[str] = None,
+        crawl_id: Optional[str] = None,
         existing_job_id: Optional[str] = None,
     ) -> str:
         """run job to recalculate storage stats for the org"""
@@ -163,25 +163,45 @@ class CrawlManager(K8sAPI):
             job_id = f"org-pages-{oid}-{secrets.token_hex(5)}"
 
         return await self._run_bg_job_with_ops_classes(
-            oid,
             job_id,
             job_type=BgJobType.READD_ORG_PAGES.value,
+            oid=oid,
             crawl_type=crawl_type,
+            crawl_id=crawl_id,
+        )
+
+    async def run_optimize_pages_job(
+        self, existing_job_id: Optional[str] = None, scale=1
+    ) -> str:
+        """run job to optimize crawl pages"""
+
+        if existing_job_id:
+            job_id = existing_job_id
+        else:
+            job_id = f"optimize-pages-{secrets.token_hex(5)}"
+
+        return await self._run_bg_job_with_ops_classes(
+            job_id, job_type=BgJobType.OPTIMIZE_PAGES.value, scale=scale
         )
 
     async def _run_bg_job_with_ops_classes(
-        self, oid: str, job_id: str, job_type: str, **kwargs
+        self,
+        job_id: str,
+        job_type: str,
+        oid: Optional[str] = None,
+        **kwargs,
     ) -> str:
         """run background job with access to ops classes"""
 
         params = {
             "id": job_id,
-            "oid": oid,
             "job_type": job_type,
             "backend_image": os.environ.get("BACKEND_IMAGE", ""),
             "pull_policy": os.environ.get("BACKEND_IMAGE_PULL_POLICY", ""),
             **kwargs,
         }
+        if oid:
+            params["oid"] = oid
 
         data = self.templates.env.get_template("background_job.yaml").render(params)
 

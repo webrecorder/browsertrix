@@ -215,101 +215,106 @@ export class CollectionEdit extends BtrixElement {
           if (this.dirty) e.preventDefault();
         }}
         class="h-full [--width:var(--btrix-screen-desktop)]"
-      >
-        ${this.collection
+        >${this.isDialogVisible
           ? html`
-              <form
-                id="collectionEditForm"
-                @reset=${this.onReset}
-                @submit=${this.onSubmit}
-                @btrix-change=${() => {
-                  void this.checkChanged();
-                }}
-                @sl-input=${() => {
-                  void this.checkChanged();
-                }}
-                @sl-change=${() => {
-                  void this.checkChanged();
-                }}
-              >
-                <btrix-tab-group
-                  placement="top"
-                  .sticky=${false}
-                  active=${this.tab}
-                  @btrix-tab-change=${(e: CustomEvent<Tab>) => {
-                    this.tab = e.detail;
+              ${this.collection
+                ? html`
+                    <form
+                      id="collectionEditForm"
+                      @reset=${this.onReset}
+                      @submit=${this.onSubmit}
+                      @btrix-change=${() => {
+                        void this.checkChanged();
+                      }}
+                      @sl-input=${() => {
+                        void this.checkChanged();
+                      }}
+                      @sl-change=${() => {
+                        void this.checkChanged();
+                      }}
+                    >
+                      <btrix-tab-group
+                        placement="top"
+                        .sticky=${false}
+                        active=${this.tab}
+                        @btrix-tab-change=${(e: CustomEvent<Tab>) => {
+                          this.tab = e.detail;
+                        }}
+                        class="part-[content]:pt-4"
+                      >
+                        ${this.renderTab({
+                          panel: "general",
+                          icon: "easel3-fill",
+                          string: msg("Presentation"),
+                        })}
+                        ${this.renderTab({
+                          panel: "sharing",
+                          icon: "globe2",
+                          string: msg("Sharing"),
+                        })}
+
+                        <btrix-tab-group-panel name="general">
+                          ${renderPresentation.bind(this)()}
+                        </btrix-tab-group-panel>
+
+                        <btrix-tab-group-panel name="sharing">
+                          <btrix-collection-share-settings
+                            .collection=${this.collection}
+                          ></btrix-collection-share-settings>
+                        </btrix-tab-group-panel>
+                      </btrix-tab-group>
+                      <input class="offscreen" type="submit" />
+                    </form>
+                  `
+                : html`
+                    <div class="grid h-max min-h-[50svh] place-items-center">
+                      <sl-spinner class="text-3xl"></sl-spinner>
+                    </div>
+                  `}
+              <div slot="footer" class="flex items-center justify-end gap-3">
+                <sl-button
+                  class="mr-auto"
+                  size="small"
+                  @click=${async () => {
+                    // Using reset method instead of type="reset" fixes
+                    // incorrect getRootNode in Chrome
+                    (await this.form).reset();
                   }}
-                  class="part-[content]:pt-4"
+                  >${this.dirty
+                    ? msg("Discard Changes")
+                    : msg("Cancel")}</sl-button
                 >
-                  ${this.renderTab({
-                    panel: "general",
-                    icon: "easel3-fill",
-                    string: msg("Presentation"),
-                  })}
-                  ${this.renderTab({
-                    panel: "sharing",
-                    icon: "globe2",
-                    string: msg("Sharing"),
-                  })}
-
-                  <btrix-tab-group-panel name="general">
-                    ${renderPresentation.bind(this)()}
-                  </btrix-tab-group-panel>
-
-                  <btrix-tab-group-panel name="sharing">
-                    <btrix-collection-share-settings
-                      .collection=${this.collection}
-                    ></btrix-collection-share-settings>
-                  </btrix-tab-group-panel>
-                </btrix-tab-group>
-                <input class="offscreen" type="submit" />
-              </form>
-            `
-          : html`
-              <div class="grid h-max min-h-[50svh] place-items-center">
-                <sl-spinner class="text-3xl"></sl-spinner>
+                ${this.dirty
+                  ? html`<span class="text-sm text-warning"
+                      >${msg("Unsaved changes.")}</span
+                    >`
+                  : nothing}
+                ${this.errorTab !== null
+                  ? html`<span class="text-sm text-danger"
+                      >${msg("Please review issues with your changes.")}</span
+                    >`
+                  : nothing}
+                <sl-button
+                  variant="primary"
+                  size="small"
+                  ?loading=${this.submitTask.status === TaskStatus.PENDING}
+                  ?disabled=${this.submitTask.status === TaskStatus.PENDING ||
+                  !this.dirty ||
+                  this.errorTab !== null}
+                  @click=${async () => {
+                    // Using submit method instead of type="submit" fixes
+                    // incorrect getRootNode in Chrome
+                    const form = await this.form;
+                    const submitInput = form.querySelector<HTMLInputElement>(
+                      'input[type="submit"]',
+                    );
+                    form.requestSubmit(submitInput);
+                  }}
+                  >${msg("Save")}</sl-button
+                >
               </div>
-            `}
-        <div slot="footer" class="flex items-center justify-end gap-3">
-          <sl-button
-            class="mr-auto"
-            size="small"
-            @click=${async () => {
-              // Using reset method instead of type="reset" fixes
-              // incorrect getRootNode in Chrome
-              (await this.form).reset();
-            }}
-            >${this.dirty ? msg("Discard Changes") : msg("Cancel")}</sl-button
-          >
-          ${this.dirty
-            ? html`<span class="text-sm text-warning"
-                >${msg("Unsaved changes.")}</span
-              >`
-            : nothing}
-          ${this.errorTab !== null
-            ? html`<span class="text-sm text-danger"
-                >${msg("Please review issues with your changes.")}</span
-              >`
-            : nothing}
-          <sl-button
-            variant="primary"
-            size="small"
-            ?loading=${this.submitTask.status === TaskStatus.PENDING}
-            ?disabled=${this.submitTask.status === TaskStatus.PENDING ||
-            !this.dirty ||
-            this.errorTab !== null}
-            @click=${async () => {
-              // Using submit method instead of type="submit" fixes
-              // incorrect getRootNode in Chrome
-              const form = await this.form;
-              const submitInput = form.querySelector<HTMLInputElement>(
-                'input[type="submit"]',
-              );
-              form.requestSubmit(submitInput);
-            }}
-            >${msg("Save")}</sl-button
-          >
-        </div>
+            `
+          : nothing}
       </btrix-dialog>
       ${this.renderReplay()}`;
   }
@@ -317,6 +322,7 @@ export class CollectionEdit extends BtrixElement {
   private renderReplay() {
     if (this.replayWebPage) return;
     if (!this.collection) return;
+    if (!this.isDialogVisible) return;
     if (!this.collection.crawlCount) return;
 
     const replaySource = `/api/orgs/${this.orgId}/collections/${this.collectionId}/replay.json`;

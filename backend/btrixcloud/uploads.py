@@ -178,6 +178,7 @@ class UploadOps(BaseCrawlOps):
             fileSize=file_size,
             started=now,
             finished=now,
+            version=2,
         )
 
         # result = await self.crawls.insert_one(uploaded.to_dict())

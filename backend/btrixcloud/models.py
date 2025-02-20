@@ -805,6 +805,9 @@ class BaseCrawl(CoreCrawlable, BaseMongoModel):
     filePageCount: Optional[int] = 0
     errorPageCount: Optional[int] = 0
 
+    isMigrating: Optional[bool] = None
+    version: Optional[int] = None
+
 
 # ============================================================================
 class CollIdName(BaseModel):
@@ -881,6 +884,10 @@ class CrawlOut(BaseMongoModel):
     uniquePageCount: Optional[int] = 0
     filePageCount: Optional[int] = 0
     errorPageCount: Optional[int] = 0
+
+    # Set to older version by default, crawls with optimized
+    # pages will have this explicitly set to 2
+    version: Optional[int] = 1
 
 
 # ============================================================================
@@ -1378,7 +1385,6 @@ class CrawlOutWithResources(CrawlOut):
     collections: Optional[List[CollIdName]] = []
 
     initialPages: List[PageOut] = []
-    totalPages: Optional[int] = None
     pagesQueryUrl: str = ""
 
 
@@ -1411,7 +1417,6 @@ class PreloadResource(BaseModel):
 
     name: str
     crawlId: str
-    hasPages: bool
 
 
 # ============================================================================
@@ -1508,7 +1513,6 @@ class CollOut(BaseMongoModel):
     allowPublicDownload: bool = True
 
     initialPages: List[PageOut] = []
-    totalPages: Optional[int] = None
     preloadResources: List[PreloadResource] = []
     pagesQueryUrl: str = ""
 
@@ -2110,9 +2114,6 @@ class OrgMetrics(BaseModel):
     pageCount: int
     crawlPageCount: int
     uploadPageCount: int
-    uniquePageCount: int
-    crawlUniquePageCount: int
-    uploadUniquePageCount: int
     profileCount: int
     workflowsRunningCount: int
     maxConcurrentCrawls: int
@@ -2533,6 +2534,7 @@ class BgJobType(str, Enum):
     DELETE_ORG = "delete-org"
     RECALCULATE_ORG_STATS = "recalculate-org-stats"
     READD_ORG_PAGES = "readd-org-pages"
+    OPTIMIZE_PAGES = "optimize-pages"
 
 
 # ============================================================================
@@ -2541,7 +2543,7 @@ class BackgroundJob(BaseMongoModel):
 
     id: str
     type: BgJobType
-    oid: UUID
+    oid: Optional[UUID] = None
     success: Optional[bool] = None
     started: datetime
     finished: Optional[datetime] = None
@@ -2588,10 +2590,18 @@ class RecalculateOrgStatsJob(BackgroundJob):
 
 # ============================================================================
 class ReAddOrgPagesJob(BackgroundJob):
-    """Model for tracking jobs to readd an org's pages"""
+    """Model for tracking jobs to readd pages for an org or single crawl"""
 
     type: Literal[BgJobType.READD_ORG_PAGES] = BgJobType.READD_ORG_PAGES
     crawl_type: Optional[str] = None
+    crawl_id: Optional[str] = None
+
+
+# ============================================================================
+class OptimizePagesJob(BackgroundJob):
+    """Model for tracking jobs to optimize pages across all orgs"""
+
+    type: Literal[BgJobType.OPTIMIZE_PAGES] = BgJobType.OPTIMIZE_PAGES
 
 
 # ============================================================================
@@ -2605,6 +2615,7 @@ AnyJob = RootModel[
         DeleteOrgJob,
         RecalculateOrgStatsJob,
         ReAddOrgPagesJob,
+        OptimizePagesJob,
     ]
 ]
 
@@ -2809,6 +2820,13 @@ class PaginatedPageOutResponse(PaginatedResponse):
 
 
 # ============================================================================
+class PageOutItemsResponse(BaseModel):
+    """Response model for pages without total"""
+
+    items: List[PageOut]
+
+
+# ============================================================================
 class PaginatedPageOutWithQAResponse(PaginatedResponse):
     """Response model for paginated pages with single QA info"""
 
@@ -2858,7 +2876,7 @@ class PaginatedUserEmailsResponse(PaginatedResponse):
 
 
 # ============================================================================
-class PaginatedPageUrlCountResponse(PaginatedResponse):
+class PageUrlCountResponse(BaseModel):
     """Response model for page count by url"""
 
     items: List[PageUrlCount]

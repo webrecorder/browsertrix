@@ -18,7 +18,7 @@ import queryString from "query-string";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Combobox } from "@/components/ui/combobox";
-import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
+import type { APIPaginationQuery } from "@/types/api";
 import type { Collection } from "@/types/collection";
 import type { UnderlyingFunction } from "@/types/utils";
 import { tw } from "@/utils/tailwind";
@@ -39,6 +39,10 @@ export type SnapshotItem = Snapshot & { url: string };
 
 export type SelectSnapshotDetail = {
   item: SnapshotItem | null;
+};
+
+type PageUrlCountList = {
+  items: Page[];
 };
 
 const DEFAULT_PROTOCOL = "http";
@@ -144,7 +148,7 @@ export class SelectCollectionPage extends BtrixElement {
       pageSize: 1,
     });
 
-    if (!pageUrls.total) {
+    if (!pageUrls.items.length) {
       return;
     }
 
@@ -337,7 +341,7 @@ export class SelectCollectionPage extends BtrixElement {
 
     if (!results) return;
 
-    if (results.total === 0) {
+    if (results.items.length === 0) {
       if (this.input) {
         this.pageUrlError = msg(
           "Page not found in collection. Please check the URL and try again",
@@ -348,7 +352,7 @@ export class SelectCollectionPage extends BtrixElement {
       // Clear selection
       this.selectedPage = undefined;
       this.selectedSnapshot = undefined;
-    } else if (results.total === 1) {
+    } else if (results.items.length === 1) {
       // Choose only option, e.g. for copy-paste
       this.selectedPage = this.formatPage(this.searchResults.value.items[0]);
       this.selectedSnapshot = this.selectedPage.snapshots[0];
@@ -441,8 +445,8 @@ export class SelectCollectionPage extends BtrixElement {
       pageSize,
       urlPrefix: urlPrefix ? window.encodeURIComponent(urlPrefix) : undefined,
     });
-    return this.api.fetch<APIPaginatedList<Page>>(
-      `/orgs/${this.orgId}/collections/${id}/urls?${query}`,
+    return this.api.fetch<PageUrlCountList>(
+      `/orgs/${this.orgId}/collections/${id}/pageUrlCounts?${query}`,
       { signal },
     );
   }

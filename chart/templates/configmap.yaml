@@ -39,6 +39,7 @@ data:
   IDLE_TIMEOUT: "{{ .Values.profile_browser_idle_seconds | default 60 }}"
 
   RERUN_FROM_MIGRATION: "{{ .Values.rerun_from_migration }}"
+  MIGRATION_JOBS_SCALE: "{{ .Values.migration_jobs_scale | default 1 }}"
 
   PRESIGN_DURATION_MINUTES: "{{ .Values.storage_presign_duration_minutes }}"
 
