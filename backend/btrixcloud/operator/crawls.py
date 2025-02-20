@@ -274,12 +274,9 @@ class CrawlOperator(BaseOperator):
         params["storage_path"] = storage_path
         params["storage_secret"] = storage_secret
 
-        # only resolve if not already set
-        # not automatically updating image for existing crawls
-        if not status.crawlerImage:
-            status.crawlerImage = self.crawl_config_ops.get_channel_crawler_image(
-                crawl.crawler_channel
-            )
+        status.crawlerImage = self.crawl_config_ops.get_channel_crawler_image(
+            crawl.crawler_channel
+        )
 
         params["crawler_image"] = status.crawlerImage
 
@@ -306,7 +303,16 @@ class CrawlOperator(BaseOperator):
         else:
             params["force_restart"] = False
 
-        children.extend(await self._load_crawl_configmap(crawl, data.children, params))
+        config_update_needed = (
+            spec.get("lastConfigUpdate", "") != status.lastConfigUpdate
+        )
+        status.lastConfigUpdate = spec.get("lastConfigUpdate", "")
+
+        children.extend(
+            await self._load_crawl_configmap(
+                crawl, data.children, params, config_update_needed
+            )
+        )
 
         if crawl.qa_source_crawl_id:
             params["qa_source_crawl_id"] = crawl.qa_source_crawl_id
@@ -364,11 +370,13 @@ class CrawlOperator(BaseOperator):
 
         return behaviors
 
-    async def _load_crawl_configmap(self, crawl: CrawlSpec, children, params):
+    async def _load_crawl_configmap(
+        self, crawl: CrawlSpec, children, params, config_update_needed: bool
+    ):
         name = f"crawl-config-{crawl.id}"
 
         configmap = children[CMAP].get(name)
-        if configmap:
+        if configmap and not config_update_needed:
             metadata = configmap["metadata"]
             configmap["metadata"] = {
                 "name": metadata["name"],
@@ -389,6 +397,9 @@ class CrawlOperator(BaseOperator):
         )
 
         params["config"] = json.dumps(raw_config)
+
+        if config_update_needed:
+            print(f"Updating config for {crawl.id}")
 
         return self.load_from_yaml("crawl_configmap.yaml", params)
 
@@ -1370,6 +1381,7 @@ class CrawlOperator(BaseOperator):
         )
 
         for key, value in sizes.items():
+            increase_storage = False
             value = int(value)
             if value > 0 and status.podStatus:
                 pod_info = status.podStatus[key]
@@ -1382,15 +1394,21 @@ class CrawlOperator(BaseOperator):
                     and pod_info.used.storage * self.min_avail_storage_ratio
                     > pod_info.allocated.storage
                 ):
-                    new_storage = math.ceil(
-                        pod_info.used.storage
-                        * self.min_avail_storage_ratio
-                        / 1_000_000_000
-                    )
-                    pod_info.newStorage = f"{new_storage}Gi"
-                    print(
-                        f"Attempting to adjust storage to {pod_info.newStorage} for {key}"
-                    )
+                    increase_storage = True
+
+            # out of storage
+            if pod_info.isNewExit and pod_info.exitCode == 3:
+                pod_info.used.storage = pod_info.allocated.storage
+                increase_storage = True
+
+            if increase_storage:
+                new_storage = math.ceil(
+                    pod_info.used.storage * self.min_avail_storage_ratio / 1_000_000_000
+                )
+                pod_info.newStorage = f"{new_storage}Gi"
+                print(
+                    f"Attempting to adjust storage to {pod_info.newStorage} for {key}"
+                )
 
         if not status.stopReason:
             status.stopReason = await self.is_crawl_stopping(crawl, status, data)

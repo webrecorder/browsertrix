@@ -262,7 +262,7 @@ export class WorkflowListItem extends BtrixElement {
                   date="${workflow.lastRun.toString()}"
                   month="2-digit"
                   day="2-digit"
-                  year="2-digit"
+                  year="numeric"
                   hour="2-digit"
                   minute="2-digit"
                 ></btrix-format-date>
@@ -350,7 +350,7 @@ export class WorkflowListItem extends BtrixElement {
                 date="${workflow.modified}"
                 month="2-digit"
                 day="2-digit"
-                year="2-digit"
+                year="numeric"
                 hour="2-digit"
                 minute="2-digit"
               ></btrix-format-date>

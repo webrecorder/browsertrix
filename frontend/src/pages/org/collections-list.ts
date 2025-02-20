@@ -566,7 +566,7 @@ export class CollectionsList extends BtrixElement {
           date=${col.modified}
           month="2-digit"
           day="2-digit"
-          year="2-digit"
+          year="numeric"
         ></btrix-format-date>
       </btrix-table-cell>
       <btrix-table-cell class="p-0">
