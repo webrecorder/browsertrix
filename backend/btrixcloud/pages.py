@@ -78,8 +78,8 @@ class PageOps:
             [
                 ("crawl_id", pymongo.HASHED),
                 ("isSeed", pymongo.DESCENDING),
-                ("url", pymongo.ASCENDING),
                 ("ts", pymongo.ASCENDING),
+                ("url", pymongo.ASCENDING),
             ]
         )
         await self.pages.create_index(
