@@ -173,7 +173,7 @@ class CrawlManager(K8sAPI):
     async def run_optimize_pages_job(
         self, existing_job_id: Optional[str] = None, scale=3
     ) -> str:
-        """run job to recalculate storage stats for the org"""
+        """run job to optimize crawl pages"""
 
         if existing_job_id:
             job_id = existing_job_id
