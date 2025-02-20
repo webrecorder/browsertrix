@@ -19,8 +19,12 @@ from .models import (
     PageOutWithSingleQA,
     PageReviewUpdate,
     PageQACompare,
+    PageIdTimestamp,
+    PageUrlCount,
+    PageUrlCountResponse,
     Organization,
     PaginatedPageOutResponse,
+    PageOutItemsResponse,
     PaginatedPageOutWithQAResponse,
     User,
     PageNote,
@@ -661,6 +665,61 @@ class PageOps:
 
         return [PageOut.from_dict(data) for data in items], total
 
+    async def list_page_url_counts(
+        self,
+        coll_id: UUID,
+        url_prefix: Optional[str] = None,
+        page_size: int = DEFAULT_PAGE_SIZE,
+    ) -> List[PageUrlCount]:
+        """List all page URLs in collection sorted desc by snapshot count
+        unless prefix is specified"""
+        # pylint: disable=duplicate-code, too-many-locals, too-many-branches, too-many-statements
+        # Zero-index page for query
+
+        crawl_ids = await self.coll_ops.get_collection_crawl_ids(coll_id)
+
+        match_query: dict[str, object] = {"crawl_id": {"$in": crawl_ids}}
+        sort_query: dict[str, int] = {"isSeed": -1, "ts": 1}
+
+        if url_prefix:
+            url_prefix = urllib.parse.unquote(url_prefix)
+            # regex_pattern = f"^{re.escape(url_prefix)}"
+            # match_query["url"] = {"$regex": regex_pattern, "$options": "i"}
+            match_query["url"] = {"$gte": url_prefix}
+            sort_query = {"url": 1}
+
+        aggregate: List[Dict[str, Union[int, object]]] = [
+            {"$match": match_query},
+            {"$sort": sort_query},
+        ]
+
+        aggregate.append({"$limit": page_size * len(crawl_ids)})
+
+        cursor = self.pages.aggregate(aggregate)
+        results = await cursor.to_list(length=page_size * len(crawl_ids))
+
+        url_counts: dict[str, PageUrlCount] = {}
+
+        for result in results:
+            url = result.get("url")
+            count = url_counts.get(url)
+            if not count:
+                # if already at max pages, this would add a new page, so we're done
+                if len(url_counts) >= page_size:
+                    break
+                count = PageUrlCount(url=url, snapshots=[], count=0)
+                url_counts[url] = count
+            count.snapshots.append(
+                PageIdTimestamp(
+                    pageId=result.get("_id"),
+                    ts=result.get("ts"),
+                    status=result.get("status", 200),
+                )
+            )
+            count.count += 1
+
+        return list(url_counts.values())
+
     async def list_replay_query_pages(
         self,
         coll_id: Optional[UUID] = None,
@@ -1248,7 +1307,7 @@ def init_pages_api(
     @app.get(
         "/orgs/{oid}/collections/{coll_id}/public/pages",
         tags=["pages", "collections"],
-        response_model=List[PageOut],
+        response_model=PageOutItemsResponse,
     )
     async def get_public_collection_pages_list(
         coll_id: UUID,
@@ -1264,7 +1323,7 @@ def init_pages_api(
         page: int = 1,
         sortBy: Optional[str] = None,
         sortDirection: Optional[int] = -1,
-    ) -> List[PageOut]:
+    ):
         """Retrieve paginated list of pages in collection"""
         pages = await ops.list_replay_query_pages(
             coll_id=coll_id,
@@ -1284,7 +1343,7 @@ def init_pages_api(
 
         response.headers["Access-Control-Allow-Origin"] = "*"
         response.headers["Access-Control-Allow-Headers"] = "*"
-        return pages
+        return {"items": pages}
 
     @app.options(
         "/orgs/{oid}/collections/{coll_id}/pages",
@@ -1305,7 +1364,7 @@ def init_pages_api(
     @app.get(
         "/orgs/{oid}/collections/{coll_id}/pages",
         tags=["pages", "collections"],
-        response_model=List[PageOut],
+        response_model=PageOutItemsResponse,
     )
     async def get_collection_pages_list(
         coll_id: UUID,
@@ -1321,7 +1380,7 @@ def init_pages_api(
         page: int = 1,
         sortBy: Optional[str] = None,
         sortDirection: Optional[int] = -1,
-    ) -> List[PageOut]:
+    ):
         """Retrieve paginated list of pages in collection"""
         pages = await ops.list_replay_query_pages(
             coll_id=coll_id,
@@ -1339,7 +1398,7 @@ def init_pages_api(
         )
         response.headers["Access-Control-Allow-Origin"] = "*"
         response.headers["Access-Control-Allow-Headers"] = "*"
-        return pages
+        return {"items": pages}
 
     @app.get(
         "/orgs/{oid}/crawls/{crawl_id}/qa/{qa_run_id}/pages",
@@ -1386,5 +1445,25 @@ def init_pages_api(
             sort_direction=sortDirection,
         )
         return paginated_format(pages, total, page, pageSize)
+
+    @app.get(
+        "/orgs/{oid}/collections/{coll_id}/pageUrlCounts",
+        tags=["collections"],
+        response_model=PageUrlCountResponse,
+    )
+    async def get_collection_url_list(
+        coll_id: UUID,
+        # oid: UUID,
+        urlPrefix: Optional[str] = None,
+        pageSize: int = DEFAULT_PAGE_SIZE,
+        # page: int = 1,
+    ):
+        """Retrieve paginated list of urls in collection sorted by snapshot count"""
+        pages = await ops.list_page_url_counts(
+            coll_id=coll_id,
+            url_prefix=urlPrefix,
+            page_size=pageSize,
+        )
+        return {"items": pages}
 
     return ops

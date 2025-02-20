@@ -2820,6 +2820,13 @@ class PaginatedPageOutResponse(PaginatedResponse):
 
 
 # ============================================================================
+class PageOutItemsResponse(BaseModel):
+    """Response model for pages without total"""
+
+    items: List[PageOut]
+
+
+# ============================================================================
 class PaginatedPageOutWithQAResponse(PaginatedResponse):
     """Response model for paginated pages with single QA info"""
 
@@ -2869,7 +2876,7 @@ class PaginatedUserEmailsResponse(PaginatedResponse):
 
 
 # ============================================================================
-class PaginatedPageUrlCountResponse(PaginatedResponse):
+class PageUrlCountResponse(BaseModel):
     """Response model for page count by url"""
 
     items: List[PageUrlCount]

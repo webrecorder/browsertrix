@@ -619,7 +619,7 @@ def test_list_pages_in_collection(crawler_auth_headers, default_org_id):
     assert r.status_code == 200
     data = r.json()
 
-    assert data["total"] >= 0
+    assert len(data["items"]) >= 0
 
     pages = data["items"]
     assert pages
@@ -655,7 +655,7 @@ def test_list_pages_in_collection(crawler_auth_headers, default_org_id):
     assert r.status_code == 200
     data = r.json()
 
-    assert data["total"] >= 1
+    assert len(data["items"]) >= 1
     for matching_page in data["items"]:
         assert (
             partial_title in matching_page["title"]
@@ -669,7 +669,7 @@ def test_list_pages_in_collection(crawler_auth_headers, default_org_id):
     assert r.status_code == 200
     data = r.json()
 
-    assert data["total"] >= 1
+    assert len(data["items"]) >= 1
     for matching_page in data["items"]:
         assert (
             partial_title in matching_page["title"]
@@ -684,7 +684,7 @@ def test_list_pages_in_collection(crawler_auth_headers, default_org_id):
     assert r.status_code == 200
     data = r.json()
 
-    assert data["total"] >= 1
+    assert len(data["items"]) >= 1
     for matching_page in data["items"]:
         assert matching_page["url"] == coll_page_url
 
@@ -696,7 +696,7 @@ def test_list_pages_in_collection(crawler_auth_headers, default_org_id):
     assert r.status_code == 200
     data = r.json()
 
-    assert data["total"] >= 1
+    assert len(data["items"]) >= 1
     for matching_page in data["items"]:
         assert matching_page["url"] == coll_page_url
         assert matching_page["ts"] == coll_page_ts
@@ -710,7 +710,7 @@ def test_list_pages_in_collection(crawler_auth_headers, default_org_id):
     assert r.status_code == 200
     data = r.json()
 
-    assert data["total"] >= 1
+    assert len(data["items"]) >= 1
 
     found_matching_page = False
     for page in data["items"]:
@@ -1182,13 +1182,13 @@ def test_set_collection_home_url(
 
 def test_collection_url_list(crawler_auth_headers, default_org_id):
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_public_coll_id}/urls",
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_public_coll_id}/pageUrlCounts",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
     data = r.json()
 
-    assert data["total"] >= 1
+    assert len(data["items"]) >= 1
     urls = data["items"]
     assert urls
 

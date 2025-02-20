@@ -41,6 +41,10 @@ export type SelectSnapshotDetail = {
   item: SnapshotItem | null;
 };
 
+type PageUrlCountList = {
+  items: Page[];
+};
+
 const DEFAULT_PROTOCOL = "http";
 
 // TODO Check if backend can sort and filter snapshots instead
@@ -144,11 +148,11 @@ export class SelectCollectionPage extends BtrixElement {
       pageSize: 1,
     });
 
-    if (!pageUrls.length) {
+    if (!pageUrls.items.length) {
       return;
     }
 
-    const startPage = pageUrls[0];
+    const startPage = pageUrls.items[0];
 
     if (this.input) {
       this.input.value = this.url ?? startPage.url;
@@ -337,7 +341,7 @@ export class SelectCollectionPage extends BtrixElement {
 
     if (!results) return;
 
-    if (results.length === 0) {
+    if (results.items.length === 0) {
       if (this.input) {
         this.pageUrlError = msg(
           "Page not found in collection. Please check the URL and try again",
@@ -348,9 +352,9 @@ export class SelectCollectionPage extends BtrixElement {
       // Clear selection
       this.selectedPage = undefined;
       this.selectedSnapshot = undefined;
-    } else if (results.length === 1) {
+    } else if (results.items.length === 1) {
       // Choose only option, e.g. for copy-paste
-      this.selectedPage = this.formatPage(this.searchResults.value[0]);
+      this.selectedPage = this.formatPage(this.searchResults.value.items[0]);
       this.selectedSnapshot = this.selectedPage.snapshots[0];
     }
   };
@@ -371,7 +375,9 @@ export class SelectCollectionPage extends BtrixElement {
   ) => {
     if (!results) return;
 
-    if (!results.length) {
+    const { items } = results;
+
+    if (!items.length) {
       return html`
         <sl-menu-item slot="menu-item" disabled>
           ${msg("No matching page found.")}
@@ -380,7 +386,7 @@ export class SelectCollectionPage extends BtrixElement {
     }
 
     return html`
-      ${results.map((item: Page) => {
+      ${items.map((item: Page) => {
         return html`
           <sl-menu-item
             slot="menu-item"
@@ -439,8 +445,8 @@ export class SelectCollectionPage extends BtrixElement {
       pageSize,
       urlPrefix: urlPrefix ? window.encodeURIComponent(urlPrefix) : undefined,
     });
-    return this.api.fetch<Page[]>(
-      `/orgs/${this.orgId}/collections/${id}/pageSnapshots?${query}`,
+    return this.api.fetch<PageUrlCountList>(
+      `/orgs/${this.orgId}/collections/${id}/pageUrlCounts?${query}`,
       { signal },
     );
   }

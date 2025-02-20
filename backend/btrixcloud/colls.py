@@ -8,8 +8,6 @@ from collections import Counter
 from uuid import UUID, uuid4
 from typing import Optional, List, TYPE_CHECKING, cast, Dict, Any, Union
 import os
-import re
-import urllib.parse
 
 import asyncio
 import pymongo
@@ -44,9 +42,7 @@ from .models import (
     OrgPublicCollections,
     PublicOrgDetails,
     CollAccessType,
-    PageUrlCount,
     PageOut,
-    PageIdTimestamp,
     UpdateCollHomeUrl,
     User,
     ImageFile,
@@ -777,126 +773,6 @@ class CollectionOps:
 
         return OrgPublicCollections(org=public_org_details, collections=collections)
 
-    async def list_page_snapshots_in_collection(
-        self,
-        coll_id: UUID,
-        url_prefix: Optional[str] = None,
-        page_size: int = DEFAULT_PAGE_SIZE,
-    ) -> List[PageUrlCount]:
-        """List all page URLs in collection sorted desc by snapshot count
-        unless prefix is specified"""
-        # pylint: disable=duplicate-code, too-many-locals, too-many-branches, too-many-statements
-        # Zero-index page for query
-
-        crawl_ids = await self.get_collection_crawl_ids(coll_id)
-
-        match_query: dict[str, object] = {"crawl_id": {"$in": crawl_ids}}
-        sort_query: dict[str, int] = {"isSeed": -1, "ts": 1}
-
-        if url_prefix:
-            url_prefix = urllib.parse.unquote(url_prefix)
-            # regex_pattern = f"^{re.escape(url_prefix)}"
-            # match_query["url"] = {"$regex": regex_pattern, "$options": "i"}
-            match_query["url"] = {"$gte": url_prefix}
-            sort_query = {"url": 1}
-
-        aggregate: List[Dict[str, Union[int, object]]] = [
-            {"$match": match_query},
-            {"$sort": sort_query},
-        ]
-
-        aggregate.append({"$limit": page_size * len(crawl_ids)})
-
-        # Get total
-        print(aggregate)
-        cursor = self.pages.aggregate(aggregate)
-        results = await cursor.to_list(length=page_size * len(crawl_ids))
-
-        url_counts: dict[str, PageUrlCount] = {}
-        for result in results:
-            url = result.get("url")
-            count = url_counts.get(url)
-            if not count:
-                # if already at max pages, this would add a new page, so we're done
-                if len(url_counts) >= page_size:
-                    break
-                count = PageUrlCount(url=url, snapshots=[], count=0)
-                url_counts[url] = count
-            count.snapshots.append(
-                PageIdTimestamp(
-                    pageId=result.get("_id"),
-                    ts=result.get("ts"),
-                    status=result.get("status", 200),
-                )
-            )
-            count.count += 1
-
-        return list(url_counts.values())
-
-    async def list_page_snapshots_in_collection_old(
-        self,
-        coll_id: UUID,
-        oid: UUID,
-        url_prefix: Optional[str] = None,
-        page_size: int = DEFAULT_PAGE_SIZE,
-        page: int = 1,
-    ) -> List[PageUrlCount]:
-        """List all page URLs in collection sorted desc by snapshot count
-        unless prefix is specified"""
-        # pylint: disable=duplicate-code, too-many-locals, too-many-branches, too-many-statements
-        # Zero-index page for query
-        page = page - 1
-        skip = page_size * page
-
-        crawl_ids = await self.get_collection_crawl_ids(coll_id)
-
-        match_query: dict[str, object] = {"oid": oid, "crawl_id": {"$in": crawl_ids}}
-        sort_query: dict[str, int] = {"count": -1, "ts": 1}
-
-        if url_prefix:
-            url_prefix = urllib.parse.unquote(url_prefix)
-            regex_pattern = f"^{re.escape(url_prefix)}"
-            match_query["url"] = {"$regex": regex_pattern, "$options": "i"}
-            sort_query = {"ts": 1}
-
-        aggregate: List[Dict[str, Union[int, object]]] = [{"$match": match_query}]
-
-        aggregate.extend(
-            [
-                {
-                    "$group": {
-                        "_id": "$url",
-                        "pages": {"$push": "$$ROOT"},
-                        "count": {"$sum": 1},
-                    },
-                },
-                {"$sort": sort_query},
-                {"$set": {"url": "$_id"}},
-            ]
-        )
-        if skip:
-            aggregate.append({"$skip": skip})
-
-        aggregate.append({"$limit": page_size})
-
-        # Get total
-        cursor = self.pages.aggregate(aggregate)
-        results = await cursor.to_list(length=page_size)
-
-        return [
-            PageUrlCount(
-                url=data.get("url", ""),
-                count=data.get("count", 0),
-                snapshots=[
-                    PageIdTimestamp(
-                        pageId=p["_id"], ts=p.get("ts"), status=p.get("status", 200)
-                    )
-                    for p in data.get("pages", [])
-                ],
-            )
-            for data in results
-        ]
-
     async def set_home_url(
         self, coll_id: UUID, update: UpdateCollHomeUrl, org: Organization
     ) -> Dict[str, bool]:
@@ -1286,26 +1162,6 @@ def init_collections_api(
             raise HTTPException(status_code=403, detail="not_allowed")
 
         return await colls.download_collection(coll.id, org)
-
-    @app.get(
-        "/orgs/{oid}/collections/{coll_id}/pageSnapshots",
-        tags=["collections"],
-        response_model=List[PageUrlCount],
-    )
-    async def get_collection_url_list(
-        coll_id: UUID,
-        oid: UUID,
-        urlPrefix: Optional[str] = None,
-        pageSize: int = DEFAULT_PAGE_SIZE,
-        page: int = 1,
-    ) -> List[PageUrlCount]:
-        """Retrieve paginated list of urls in collection sorted by snapshot count"""
-        pages = await colls.list_page_snapshots_in_collection(
-            coll_id=coll_id,
-            url_prefix=urlPrefix,
-            page_size=pageSize,
-        )
-        return pages
 
     @app.post(
         "/orgs/{oid}/collections/{coll_id}/home-url",
