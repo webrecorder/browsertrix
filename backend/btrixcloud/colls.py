@@ -797,7 +797,7 @@ class CollectionOps:
         sort_query: dict[str, int] = {"isSeed": -1, "ts": 1}
 
         if url_prefix:
-            # url_prefix = urllib.parse.unquote(url_prefix)
+            url_prefix = urllib.parse.unquote(url_prefix)
             # regex_pattern = f"^{re.escape(url_prefix)}"
             # match_query["url"] = {"$regex": regex_pattern, "$options": "i"}
             match_query["url"] = {"$gte": url_prefix}
