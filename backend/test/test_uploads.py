@@ -207,6 +207,7 @@ def test_get_upload_replay_json(
     assert data["resources"][0]["hash"]
     assert data["errors"] == []
     assert "files" not in data
+    assert data["version"] == 2
 
 
 def test_get_upload_replay_json_admin(
@@ -230,6 +231,7 @@ def test_get_upload_replay_json_admin(
     assert data["resources"][0]["hash"]
     assert data["errors"] == []
     assert "files" not in data
+    assert data["version"] == 2
 
 
 def test_get_upload_pages(admin_auth_headers, default_org_id, upload_id):
@@ -518,6 +520,7 @@ def test_list_all_crawls(
         assert item["started"]
         assert item["finished"]
         assert item["state"]
+        assert item["version"] == 2
 
     # Test that all-crawls lastQAState and lastQAStarted sorts always puts crawls before uploads
     r = requests.get(
@@ -923,6 +926,7 @@ def test_get_upload_replay_json_from_all_crawls(
     assert data["resources"][0]["hash"]
     assert data["errors"] == []
     assert "files" not in data
+    assert data["version"] == 2
 
 
 def test_get_upload_replay_json_admin_from_all_crawls(
@@ -944,6 +948,7 @@ def test_get_upload_replay_json_admin_from_all_crawls(
     assert data["resources"][0]["hash"]
     assert data["errors"] == []
     assert "files" not in data
+    assert data["version"] == 2
 
 
 def test_update_upload_metadata_all_crawls(
