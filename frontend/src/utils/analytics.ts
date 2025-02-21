@@ -8,9 +8,10 @@
 import { AnalyticsTrackEvent } from "../trackEvents";
 
 export type AnalyticsTrackProps = {
-  org_slug: string | null;
-  collection_slug?: string | null;
+  org_slug?: string | null;
   logged_in?: boolean;
+  collection_slug?: string;
+  section?: string;
 };
 
 declare global {

@@ -59,9 +59,11 @@ import { panel } from "@/layouts/panel";
 import infoTextStrings from "@/strings/crawl-workflows/infoText";
 import scopeTypeLabels from "@/strings/crawl-workflows/scopeType";
 import sectionStrings from "@/strings/crawl-workflows/section";
+import { AnalyticsTrackEvent } from "@/trackEvents";
 import { ScopeType, type Seed, type WorkflowParams } from "@/types/crawler";
 import type { UnderlyingFunction } from "@/types/utils";
 import { NewWorkflowOnlyScopeType } from "@/types/workflow";
+import { track } from "@/utils/analytics";
 import { isApiError } from "@/utils/api";
 import { DEPTH_SUPPORTED_SCOPES, isPageScopeType } from "@/utils/crawler";
 import {
@@ -69,6 +71,7 @@ import {
   humanizeNextDate,
   humanizeSchedule,
 } from "@/utils/cron";
+import { makeCurrentTargetHandler, stopProp } from "@/utils/events";
 import { formValidator, maxLengthValidator } from "@/utils/form";
 import localize from "@/utils/localize";
 import { isArchivingDisabled } from "@/utils/orgs";
@@ -234,6 +237,7 @@ export class WorkflowEditor extends BtrixElement {
     threshold: 0.2, // stricter; default is 0.6
   });
 
+  private readonly handleCurrentTarget = makeCurrentTargetHandler(this);
   private readonly checkFormValidity = formValidator(this);
   private readonly validateNameMax = maxLengthValidator(50);
   private readonly validateDescriptionMax = maxLengthValidator(350);
@@ -405,7 +409,10 @@ export class WorkflowEditor extends BtrixElement {
     };
 
     return html`
-      <btrix-tab-list tab=${ifDefined(this.progressState?.activeTab)}>
+      <btrix-tab-list
+        class="hidden lg:block"
+        tab=${ifDefined(this.progressState?.activeTab)}
+      >
         ${STEPS.map(button)}
       </btrix-tab-list>
     `;
@@ -436,13 +443,17 @@ export class WorkflowEditor extends BtrixElement {
             activeTab: name,
           });
         }}
-        @sl-show=${() => {
+        @sl-show=${this.handleCurrentTarget(() => {
           this.pauseObserve();
           this.updateProgressState({
             activeTab: name,
           });
-        }}
-        @sl-hide=${(e: SlHideEvent) => {
+
+          track(AnalyticsTrackEvent.ExpandWorkflowFormSection, {
+            section: name,
+          });
+        })}
+        @sl-hide=${this.handleCurrentTarget((e: SlHideEvent) => {
           const el = e.currentTarget as SlDetails;
 
           // Check if there's any invalid elements before hiding
@@ -461,12 +472,19 @@ export class WorkflowEditor extends BtrixElement {
             invalidEl.focus();
             invalidEl.checkValidity();
           }
-        }}
-        @sl-after-show=${this.resumeObserve}
-        @sl-after-hide=${this.resumeObserve}
+        })}
+        @sl-after-show=${this.handleCurrentTarget(this.resumeObserve)}
+        @sl-after-hide=${this.handleCurrentTarget(this.resumeObserve)}
       >
         <div slot="expand-icon" class="flex items-center">
-          <sl-tooltip content=${msg("Show section")} hoist>
+          <sl-tooltip
+            content=${msg("Show section")}
+            hoist
+            @sl-show=${stopProp}
+            @sl-hide=${stopProp}
+            @sl-after-show=${stopProp}
+            @sl-after-hide=${stopProp}
+          >
             <sl-icon name="chevron-down" class="size-5"></sl-icon>
           </sl-tooltip>
         </div>
@@ -477,6 +495,10 @@ export class WorkflowEditor extends BtrixElement {
               <sl-tooltip
                 content=${msg("Please fix all errors in this section")}
                 hoist
+                @sl-show=${stopProp}
+                @sl-hide=${stopProp}
+                @sl-after-show=${stopProp}
+                @sl-after-hide=${stopProp}
               >
                 <sl-icon
                   name="exclamation-lg"
