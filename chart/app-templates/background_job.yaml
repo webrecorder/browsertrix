@@ -72,11 +72,11 @@ spec:
             requests:
               memory: "500Mi"
               cpu: "200m"
-{ % else %}
+{% else %}
             limits:
               memory: "200Mi"
 
             requests:
               memory: "200Mi"
               cpu: "50m"
-{ % endif %}
+{% endif %}
