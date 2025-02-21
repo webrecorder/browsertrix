@@ -1,13 +1,13 @@
 import { localized, msg, str } from "@lit/localize";
 import type { SlInput, SlInputEvent } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
-import { html, type PropertyValues } from "lit";
+import { html } from "lit";
 import { customElement, state } from "lit/decorators.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import needLogin from "@/decorators/needLogin";
 import type { InviteSuccessDetail } from "@/features/accounts/invite-form";
 import type { APIUser } from "@/index";
-import { OrgTab, RouteNamespace } from "@/routes";
 import type { APIPaginatedList } from "@/types/api";
 import { isApiError } from "@/utils/api";
 import { maxLengthValidator } from "@/utils/form";
@@ -17,16 +17,11 @@ import { AppStateService } from "@/utils/state";
 import { formatAPIUser } from "@/utils/user";
 
 /**
- * Home page when org is not selected.
- *
- * Uses custom redirect instead of needLogin decorator to suppress "need login"
- * message when accessing root URL.
- *
- * Only accessed by superadmins. Regular users will be redirected their org.
- * See https://github.com/webrecorder/browsertrix/issues/1972
+ * Browsertrix superadmin dashboard
  */
-@customElement("btrix-home")
+@customElement("btrix-admin")
 @localized()
+@needLogin
 export class Admin extends BtrixElement {
   @state()
   private orgList?: OrgData[];
@@ -52,38 +47,12 @@ export class Admin extends BtrixElement {
 
   private readonly validateOrgNameMax = maxLengthValidator(40);
 
-  connectedCallback() {
-    if (this.authState) {
-      if (this.slug) {
-        this.navigate.to(`/orgs/${this.slug}`);
-      } else {
-        super.connectedCallback();
-      }
-    } else {
-      this.navigate.to("/log-in");
-    }
-  }
-
-  willUpdate(changedProperties: PropertyValues) {
-    if (changedProperties.has("appState.userInfo") && this.userInfo) {
-      if (this.userInfo.isSuperAdmin) {
-        this.initSuperAdmin();
-      } else if (this.userInfo.orgs.length) {
-        this.navigate.to(
-          `/${RouteNamespace.PrivateOrgs}/${this.userInfo.orgs[0].slug}/${OrgTab.Dashboard}`,
-        );
-      } else {
-        this.navigate.to(`/account/settings`);
-      }
-    }
-  }
-
   protected firstUpdated(): void {
     this.initSuperAdmin();
   }
 
   private initSuperAdmin() {
-    if (this.userInfo?.isSuperAdmin && !this.orgList) {
+    if (this.userInfo?.isSuperAdmin) {
       if (this.userInfo.orgs.length) {
         void this.fetchOrgs();
       } else {
@@ -94,7 +63,7 @@ export class Admin extends BtrixElement {
   }
 
   render() {
-    if (!this.userInfo || !this.userInfo.isSuperAdmin) {
+    if (!this.userInfo?.isSuperAdmin) {
       return;
     }
 

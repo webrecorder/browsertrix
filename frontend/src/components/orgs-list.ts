@@ -725,7 +725,7 @@ export class OrgsList extends BtrixElement {
         <btrix-table-cell class="p-2" rowClickTarget="a">
           <a
             class=${org.readOnly ? "text-neutral-500" : "text-neutral-900"}
-            href="/orgs/${org.slug}"
+            href="/orgs/${org.slug}/dashboard"
             @click=${this.navigate.link}
             aria-disabled="${!isUserOrg}"
           >

@@ -10,6 +10,7 @@ export enum OrgTab {
 export enum RouteNamespace {
   PrivateOrgs = "orgs",
   PublicOrgs = "explore",
+  Superadmin = "admin",
 }
 
 export const ROUTES = {
@@ -37,10 +38,12 @@ export const ROUTES = {
   publicOrgs: `/${RouteNamespace.PublicOrgs}(/)`,
   publicOrg: `/${RouteNamespace.PublicOrgs}/:slug(/)`,
   publicCollection: `/${RouteNamespace.PublicOrgs}/:slug/collections/:collectionSlug(/:collectionTab)`,
-  users: "/users",
-  usersInvite: "/users/invite",
-  crawls: "/crawls",
-  crawl: "/crawls/crawl/:crawlId",
+  // Superadmin routes
+  admin: `/${RouteNamespace.Superadmin}(/)`,
+  adminUsers: `/${RouteNamespace.Superadmin}/users(/)`,
+  adminUsersInvite: `/${RouteNamespace.Superadmin}/users/invite`,
+  adminCrawls: `/${RouteNamespace.Superadmin}/crawls(/)`,
+  adminCrawl: `/${RouteNamespace.Superadmin}/crawls/crawl/:crawlId`,
   // Redirect for https://github.com/webrecorder/browsertrix-cloud/issues/935
   awpUploadRedirect: `/${RouteNamespace.PrivateOrgs}/:orgId/artifacts/upload/:uploadId`,
 } as const;

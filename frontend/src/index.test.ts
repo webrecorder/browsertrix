@@ -79,7 +79,7 @@ describe("browsertrix-app", () => {
     expect(el.shadowRoot?.childElementCount).to.equal(0);
   });
 
-  it("renders home when authenticated", async () => {
+  it("renders org when authenticated", async () => {
     stub(AuthService, "initSessionStorage").returns(
       Promise.resolve({
         headers: { Authorization: "_fake_headers_" },
@@ -89,14 +89,15 @@ describe("browsertrix-app", () => {
     );
     // @ts-expect-error checkFreshness is private
     stub(AuthService.prototype, "checkFreshness");
+    AppStateService.updateOrgSlug("fake-org");
     const el = await fixture<App>(
       html` <browsertrix-app .settings=${mockAppSettings}></browsertrix-app>`,
     );
     await el.updateComplete;
-    expect(el.shadowRoot?.querySelector("btrix-home")).to.exist;
+    expect(el.shadowRoot?.querySelector("btrix-org")).to.exist;
   });
 
-  it("renders home when not authenticated", async () => {
+  it("renders log in when not authenticated", async () => {
     stub(AuthService, "initSessionStorage").returns(Promise.resolve(null));
     // @ts-expect-error checkFreshness is private
     stub(AuthService.prototype, "checkFreshness");
@@ -110,7 +111,7 @@ describe("browsertrix-app", () => {
     const el = await fixture<App>(
       html` <browsertrix-app .settings=${mockAppSettings}></browsertrix-app>`,
     );
-    expect(el.shadowRoot?.querySelector("btrix-home")).to.exist;
+    expect(el.shadowRoot?.querySelector("btrix-log-in")).to.exist;
   });
 
   // TODO move tests to AuthService

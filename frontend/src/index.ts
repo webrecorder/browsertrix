@@ -10,6 +10,7 @@ import type {
 import { html, nothing, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
+import { until } from "lit/directives/until.js";
 import { when } from "lit/directives/when.js";
 import isEqual from "lodash/fp/isEqual";
 
@@ -24,10 +25,10 @@ import "./assets/fonts/Recursive/recursive.css";
 import "./styles.css";
 
 import { viewStateContext } from "./context/view-state";
-import { OrgTab, RouteNamespace, ROUTES } from "./routes";
+import { OrgTab, RouteNamespace } from "./routes";
 import type { UserInfo, UserOrg } from "./types/user";
 import { pageView, type AnalyticsTrackProps } from "./utils/analytics";
-import APIRouter, { type ViewState } from "./utils/APIRouter";
+import { type ViewState } from "./utils/APIRouter";
 import AuthService, {
   type AuthEventDetail,
   type LoggedInEventDetail,
@@ -47,6 +48,7 @@ import { type AppSettings } from "@/utils/app";
 import { DEFAULT_MAX_SCALE } from "@/utils/crawler";
 import localize from "@/utils/localize";
 import { toast } from "@/utils/notify";
+import router, { urlForName } from "@/utils/router";
 import { AppStateService } from "@/utils/state";
 import { formatAPIUser } from "@/utils/user";
 import brandLockupColor from "~assets/brand/browsertrix-lockup-color.svg";
@@ -94,7 +96,9 @@ export class App extends BtrixElement {
   @property({ type: Object })
   settings?: AppSettings;
 
-  private readonly router = new APIRouter(ROUTES);
+  // TODO Refactor into context
+  private readonly router = router;
+
   authService = new AuthService();
 
   @state()
@@ -118,6 +122,22 @@ export class App extends BtrixElement {
 
   get orgSlugInPath() {
     return this.viewState.params.slug || "";
+  }
+
+  private get homePath() {
+    let path = "/log-in";
+    if (this.authState) {
+      if (this.userInfo?.isSuperAdmin) {
+        path = `/${RouteNamespace.Superadmin}`;
+      } else if (this.appState.orgSlug) {
+        path = `${this.navigate.orgBasePath}/${OrgTab.Dashboard}`;
+      } else if (this.userInfo?.orgs[0]) {
+        path = `/${RouteNamespace.PrivateOrgs}/${this.userInfo.orgs[0].slug}/${OrgTab.Dashboard}`;
+      } else {
+        path = "/account/settings";
+      }
+    }
+    return path;
   }
 
   get isUserInCurrentOrg(): boolean {
@@ -201,6 +221,10 @@ export class App extends BtrixElement {
         }
         break;
       }
+      case "home":
+        // Redirect base URL
+        this.routeTo(this.homePath);
+        break;
       default:
         break;
     }
@@ -268,7 +292,7 @@ export class App extends BtrixElement {
           this.authService.authState,
         );
         this.clearUser();
-        this.routeTo(ROUTES.login);
+        this.routeTo(urlForName("login"));
       }
     }
   }
@@ -429,10 +453,6 @@ export class App extends BtrixElement {
 
   private renderNavBar() {
     const isSuperAdmin = this.userInfo?.isSuperAdmin;
-    let homeHref = "/";
-    if (!isSuperAdmin && this.appState.orgSlug && this.authState) {
-      homeHref = `${this.navigate.orgBasePath}/${OrgTab.Dashboard}`;
-    }
 
     const showFullLogo =
       this.viewState.route === "login" || !this.authService.authState;
@@ -446,7 +466,7 @@ export class App extends BtrixElement {
             <a
               class="items-between flex gap-2"
               aria-label="home"
-              href=${homeHref}
+              href=${this.homePath}
               @click=${(e: MouseEvent) => {
                 if (isSuperAdmin) {
                   this.clearSelectedOrg();
@@ -474,7 +494,7 @@ export class App extends BtrixElement {
                       ></div>
                       <a
                         class="flex items-center gap-2 font-medium text-primary-700 transition-colors hover:text-primary"
-                        href="/"
+                        href="/${RouteNamespace.Superadmin}"
                         @click=${(e: MouseEvent) => {
                           this.clearSelectedOrg();
                           this.navigate.link(e);
@@ -538,7 +558,8 @@ export class App extends BtrixElement {
                       </sl-menu-item>
                       ${this.userInfo?.isSuperAdmin
                         ? html` <sl-menu-item
-                            @click=${() => this.routeTo(ROUTES.usersInvite)}
+                            @click=${() =>
+                              this.routeTo(urlForName("adminUsersInvite"))}
                           >
                             <sl-icon slot="prefix" name="person-plus"></sl-icon>
                             ${msg("Invite Users")}
@@ -580,7 +601,7 @@ export class App extends BtrixElement {
                 >
                   <a
                     class="font-medium text-neutral-500 hover:text-primary"
-                    href="/crawls"
+                    href=${urlForName("adminCrawls")}
                     @click=${this.navigate.link}
                     >${msg("Running Crawls")}</a
                   >
@@ -817,8 +838,12 @@ export class App extends BtrixElement {
           .viewState=${this.viewState}
         ></btrix-reset-password>`;
 
-      case "home":
-        return html`<btrix-home class="w-full md:bg-neutral-50"></btrix-home>`;
+      case "admin":
+        return this.renderAdminPage(
+          () => html`
+            <btrix-admin class="w-full md:bg-neutral-50"></btrix-admin>
+          `,
+        );
 
       case "orgs":
         return html`<btrix-orgs class="w-full md:bg-neutral-50"></btrix-orgs>`;
@@ -869,36 +894,25 @@ export class App extends BtrixElement {
           tab=${this.viewState.params.settingsTab}
         ></btrix-account-settings>`;
 
-      case "usersInvite": {
-        if (this.userInfo) {
-          if (this.userInfo.isSuperAdmin) {
-            return html`<btrix-users-invite
+      case "adminUsers":
+      case "adminUsersInvite":
+        return this.renderAdminPage(
+          () =>
+            html`<btrix-users-invite
               class="mx-auto box-border w-full max-w-screen-desktop p-2 md:py-8"
-            ></btrix-users-invite>`;
-          } else {
-            return this.renderNotFoundPage();
-          }
-        } else {
-          return this.renderSpinner();
-        }
-      }
+            ></btrix-users-invite>`,
+        );
 
-      case "crawls":
-      case "crawl": {
-        if (this.userInfo) {
-          if (this.userInfo.isSuperAdmin) {
-            return html`<btrix-crawls
+      case "adminCrawls":
+      case "adminCrawl":
+        return this.renderAdminPage(
+          () =>
+            html`<btrix-crawls
               class="w-full"
               @notify=${this.onNotify}
               crawlId=${this.viewState.params.crawlId}
-            ></btrix-crawls>`;
-          } else {
-            return this.renderNotFoundPage();
-          }
-        } else {
-          return this.renderSpinner();
-        }
-      }
+            ></btrix-crawls>`,
+        );
 
       case "awpUploadRedirect": {
         const { orgId, uploadId } = this.viewState.params;
@@ -913,6 +927,21 @@ export class App extends BtrixElement {
       default:
         return this.renderNotFoundPage();
     }
+  }
+
+  private renderAdminPage(renderer: () => TemplateResult) {
+    // if (!this.userInfo) return this.renderSpinner();
+
+    if (this.userInfo?.isSuperAdmin) {
+      // Dynamically import admin pages
+      return until(
+        import(/* webpackChunkName: "admin" */ "@/pages/admin/index").then(
+          renderer,
+        ),
+      );
+    }
+
+    return this.renderNotFoundPage();
   }
 
   private renderSpinner() {
@@ -962,7 +991,7 @@ export class App extends BtrixElement {
     this.clearUser();
 
     if (redirect) {
-      this.routeTo(ROUTES.login);
+      this.routeTo(urlForName("login"));
     }
   }
 
@@ -976,10 +1005,7 @@ export class App extends BtrixElement {
     });
 
     if (!detail.api) {
-      this.routeTo(
-        detail.redirectUrl ||
-          `${this.navigate.orgBasePath}/${OrgTab.Dashboard}`,
-      );
+      this.routeTo(detail.redirectUrl || this.homePath);
     }
 
     if (detail.firstLogin) {
@@ -1000,7 +1026,7 @@ export class App extends BtrixElement {
 
     this.clearUser();
     const redirectUrl = e.detail.redirectUrl;
-    this.routeTo(ROUTES.login, {
+    this.routeTo(urlForName("login"), {
       redirectUrl,
     });
     if (redirectUrl && redirectUrl !== "/") {
@@ -1105,7 +1131,7 @@ export class App extends BtrixElement {
               this.syncViewState();
             } else {
               this.clearUser();
-              this.routeTo(ROUTES.login);
+              this.routeTo(urlForName("login"));
             }
           }
         }

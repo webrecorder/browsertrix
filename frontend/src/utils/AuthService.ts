@@ -1,8 +1,8 @@
 import { APIError } from "./api";
+import { urlForName } from "./router";
 import appState, { AppStateService } from "./state";
 
 import type { APIUser } from "@/index";
-import { ROUTES } from "@/routes";
 import type { Auth } from "@/types/auth";
 
 type AuthState = Auth | null;
@@ -351,7 +351,7 @@ export default class AuthService {
         this.logout();
         const { pathname, search, hash } = window.location;
         const redirectUrl =
-          pathname !== ROUTES.login && pathname !== "/"
+          pathname !== urlForName("login") && pathname !== "/"
             ? `${pathname}${search}${hash}`
             : "";
         window.dispatchEvent(AuthService.createNeedLoginEvent({ redirectUrl }));

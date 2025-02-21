@@ -57,4 +57,14 @@ export default class APIRouter {
 
     return { route: null, pathname: relativePath, params: {} };
   }
+
+  /**
+   * Get URL for a route name, with optional parameters
+   */
+  public readonly urlForName = (
+    name: RouteName,
+    params?: { [key: string]: unknown },
+  ) => {
+    return this.routes[name].stringify(params);
+  };
 }
