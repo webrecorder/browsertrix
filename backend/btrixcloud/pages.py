@@ -660,7 +660,7 @@ class PageOps:
             aggregate.extend([{"$sort": {sort_by: sort_direction}}])
 
         # default sort with search
-        elif search:
+        elif search or url_prefix:
             if is_text_search:
                 aggregate.extend(
                     [
@@ -697,33 +697,18 @@ class PageOps:
     ) -> List[PageUrlCount]:
         """List all page URLs in collection sorted desc by snapshot count
         unless prefix is specified"""
-        # pylint: disable=duplicate-code, too-many-locals, too-many-branches, too-many-statements
-        # Zero-index page for query
-
         crawl_ids = await self.coll_ops.get_collection_crawl_ids(coll_id)
 
-        match_query: dict[str, object] = {"crawl_id": {"$in": crawl_ids}}
-        sort_query: dict[str, int] = {"isSeed": -1, "ts": 1}
-
-        if url_prefix:
-            url_prefix = urllib.parse.unquote(url_prefix)
-            match_query["url"] = {"$gte": url_prefix}
-            sort_query = {"url": 1}
-
-        aggregate: List[Dict[str, Union[int, object]]] = [
-            {"$match": match_query},
-            {"$sort": sort_query},
-        ]
-
-        aggregate.append({"$limit": page_size * len(crawl_ids)})
-
-        cursor = self.pages.aggregate(aggregate)
-        results = await cursor.to_list(length=page_size * len(crawl_ids))
+        pages, _ = await self.list_pages(
+            crawl_ids=crawl_ids,
+            url_prefix=url_prefix,
+            page_size=page_size * len(crawl_ids),
+        )
 
         url_counts: dict[str, PageUrlCount] = {}
 
-        for result in results:
-            url = result.get("url")
+        for page in pages:
+            url = page.url
             count = url_counts.get(url)
             if not count:
                 # if already at max pages, this would add a new page, so we're done
@@ -733,9 +718,9 @@ class PageOps:
                 url_counts[url] = count
             count.snapshots.append(
                 PageIdTimestamp(
-                    pageId=result.get("_id"),
-                    ts=result.get("ts"),
-                    status=result.get("status", 200),
+                    pageId=page.id,
+                    ts=page.ts,
+                    status=page.status or 200,
                 )
             )
             count.count += 1
