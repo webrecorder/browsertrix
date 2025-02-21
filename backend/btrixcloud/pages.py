@@ -668,26 +668,36 @@ class PageOps:
             # default sort: seeds first, then by timestamp
             aggregate.extend([{"$sort": {"isSeed": -1, "ts": 1}}])
 
-        facet_query: dict[str, object] = {
-            "items": [
-                {"$skip": skip},
-                {"$limit": page_size},
-            ],
-        }
-
         if include_total:
-            facet_query["total"] = [{"$count": "count"}]
+            aggregate.extend(
+                [
+                    {
+                        "$facet": {
+                            "items": [
+                                {"$skip": skip},
+                                {"$limit": page_size},
+                            ],
+                            "total": [{"$count": "count"}],
+                        }
+                    }
+                ]
+            )
 
-        aggregate.extend([{"$facet": facet_query}])
+            cursor = self.pages.aggregate(aggregate)
+            results = await cursor.to_list(length=1)
+            result = results[0]
+            items = result["items"]
 
-        cursor = self.pages.aggregate(aggregate)
-        results = await cursor.to_list(length=1)
-        result = results[0]
-        items = result["items"]
+            try:
+                total = int(result["total"][0]["count"])
+            except (IndexError, ValueError, KeyError):
+                total = 0
 
-        try:
-            total = int(result["total"][0]["count"])
-        except (IndexError, ValueError, KeyError):
+        else:
+            if skip:
+                aggregate.extend([{"$skip": skip}])
+
+            aggregate.extend([{"$limit": page_size}])
             total = 0
 
         if qa_run_id:
