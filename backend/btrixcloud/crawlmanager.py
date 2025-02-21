@@ -198,6 +198,7 @@ class CrawlManager(K8sAPI):
             "job_type": job_type,
             "backend_image": os.environ.get("BACKEND_IMAGE", ""),
             "pull_policy": os.environ.get("BACKEND_IMAGE_PULL_POLICY", ""),
+            "larger_resources": True,
             **kwargs,
         }
         if oid:

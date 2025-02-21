@@ -65,9 +65,18 @@ spec:
           command: ["python3", "-m", "btrixcloud.main_bg"]
 
           resources:
+{% if larger_resources %}
             limits:
-              memory: "500Mi"
+              memory: "1200Mi"
 
             requests:
-              memory: "250Mi"
+              memory: "500Mi"
               cpu: "200m"
+{% else %}
+            limits:
+              memory: "200Mi"
+
+            requests:
+              memory: "200Mi"
+              cpu: "50m"
+{% endif %}

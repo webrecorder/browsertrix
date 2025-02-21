@@ -703,7 +703,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
             class="label-same-line"
             label=${msg("Sort by:")}
             size="small"
-            value=${this.qaRunId ? "approved.-1" : "url.1"}
+            value=${this.qaRunId ? "approved.-1" : ".1"}
             pill
             @sl-change=${(e: SlChangeEvent) => {
               const { value } = e.target as SlSelect;
@@ -717,6 +717,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
               });
             }}
           >
+            <sl-option value=".1">${msg("Crawl Order")}</sl-option>
             <sl-option value="title.1">${msg("Title")}</sl-option>
             <sl-option value="url.1">${msg("URL")}</sl-option>
             <sl-option value="notes.-1" ?disabled=${!this.qaRunId}
