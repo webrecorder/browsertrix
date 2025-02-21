@@ -746,10 +746,10 @@ def test_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
         assert matching_page["url"] == test_page_url
         assert matching_page["ts"] == test_page_ts
 
-    # Test url prefix via search filter
+    # Test urlPrefix filter
     url_prefix = test_page_url[:8]
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages?search={url_prefix}",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages?urlPrefix={url_prefix}",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200

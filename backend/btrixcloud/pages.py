@@ -500,6 +500,7 @@ class PageOps:
         org: Optional[Organization] = None,
         search: Optional[str] = None,
         url: Optional[str] = None,
+        url_prefix: Optional[str] = None,
         ts: Optional[datetime] = None,
         is_seed: Optional[bool] = None,
         depth: Optional[int] = None,
@@ -559,8 +560,10 @@ class PageOps:
                 is_text_search = True
 
         # Seed Settings
-        elif url:
+        if url:
             query["url"] = urllib.parse.unquote(url)
+        elif url_prefix:
+            query["url"] = {"$gte": urllib.parse.unquote(url_prefix)}
 
         if ts:
             query["ts"] = ts
@@ -1185,12 +1188,15 @@ def init_pages_api(
     async def get_crawl_pages_list(
         crawl_id: str,
         org: Organization = Depends(org_crawl_dep),
+        search: Optional[str] = None,
+        url: Optional[str] = None,
+        urlPrefix: Optional[str] = None,
+        ts: Optional[datetime] = None,
+        isSeed: Optional[bool] = None,
+        depth: Optional[int] = None,
         reviewed: Optional[bool] = None,
         approved: Optional[str] = None,
         hasNotes: Optional[bool] = None,
-        url: Optional[str] = None,
-        ts: Optional[str] = None,
-        search: Optional[str] = None
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         sortBy: Optional[str] = None,
@@ -1204,12 +1210,15 @@ def init_pages_api(
         pages, total = await ops.list_pages(
             crawl_ids=[crawl_id],
             org=org,
+            search=search,
+            url=url,
+            url_prefix=urlPrefix,
+            ts=ts,
+            is_seed=isSeed,
+            depth=depth,
             reviewed=reviewed,
             approved=formatted_approved,
             has_notes=hasNotes,
-            url=url,
-            ts=ts,
-            search=search,
             page_size=pageSize,
             page=page,
             sort_by=sortBy,
