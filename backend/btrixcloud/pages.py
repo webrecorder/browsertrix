@@ -698,6 +698,8 @@ class PageOps:
                 aggregate.extend([{"$skip": skip}])
 
             aggregate.extend([{"$limit": page_size}])
+            cursor = self.pages.aggregate(aggregate)
+            items = await cursor.to_list(page_size)
             total = 0
 
         if qa_run_id:
