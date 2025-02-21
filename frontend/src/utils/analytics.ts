@@ -33,7 +33,6 @@ export function track(
 
   try {
     window.btrixEvent(event, { props });
-    console.debug("btrixEvent tracked:", event, props);
   } catch (err) {
     console.debug(err);
   }
