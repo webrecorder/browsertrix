@@ -1189,6 +1189,8 @@ def init_pages_api(
         approved: Optional[str] = None,
         hasNotes: Optional[bool] = None,
         url: Optional[str] = None,
+        ts: Optional[str] = None,
+        search: Optional[str] = None
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         sortBy: Optional[str] = None,
@@ -1206,6 +1208,8 @@ def init_pages_api(
             approved=formatted_approved,
             has_notes=hasNotes,
             url=url,
+            ts=ts,
+            search=search,
             page_size=pageSize,
             page=page,
             sort_by=sortBy,
