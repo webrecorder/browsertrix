@@ -497,6 +497,7 @@ class PageOps:
         coll_id: Optional[UUID] = None,
         crawl_ids: Optional[List[str]] = None,
         public_or_unlisted_only=False,
+        # pylint: disable=unused-argument
         org: Optional[Organization] = None,
         search: Optional[str] = None,
         url: Optional[str] = None,
@@ -678,8 +679,6 @@ class PageOps:
             facet_query["total"] = [{"$count": "count"}]
 
         aggregate.extend([{"$facet": facet_query}])
-
-        print(aggregate)
 
         cursor = self.pages.aggregate(aggregate)
         results = await cursor.to_list(length=1)
@@ -940,6 +939,7 @@ class PageOps:
                     match_query,
                     {"$set": {"isMigrating": True}},
                     sort=[("finished", -1)],
+                    projection={"_id": 1, "pageCount": 1, "stats": 1, "state": 1},
                 )
                 if next_crawl is None:
                     print("No more finished crawls to migrate")
@@ -954,6 +954,13 @@ class PageOps:
                 )
                 if has_page_no_filename:
                     print("Re-importing pages to migrate to v2")
+                    await self.re_add_crawl_pages(crawl_id)
+                elif (
+                    next_crawl.get("pageCount") == 0
+                    and next_crawl.get("stats", {}).get("done", 0) > 0
+                    and next_crawl.get("state") not in ["canceled", "failed"]
+                ):
+                    print("Pages likely missing, importing pages to migrate to v2")
                     await self.re_add_crawl_pages(crawl_id)
                 else:
                     print("Pages already have filename, set to v2")
