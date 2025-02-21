@@ -1120,7 +1120,7 @@ def init_pages_api(
         org: Organization = Depends(org_crawl_dep),
         user: User = Depends(user_dep),
     ):
-        """Re-add pages for all crawls in org (superuser only, may delete page QA data!)"""
+        """Re-add pages for all crawls in org (superuser only)"""
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
@@ -1149,9 +1149,39 @@ def init_pages_api(
         crawl_id: str,
         org: Organization = Depends(org_crawl_dep),
     ):
-        """Re-add pages for crawl (may delete page QA data!)"""
+        """Re-add pages for crawl"""
         job_id = await ops.background_job_ops.create_re_add_org_pages_job(
             org.id, crawl_id=crawl_id
+        )
+        return {"started": job_id or ""}
+
+    @app.post(
+        "/orgs/all/crawls/{crawl_id}/pages/reAdd",
+        tags=["pages", "crawls"],
+        response_model=StartedResponse,
+    )
+    @app.post(
+        "/orgs/all/uploads/{crawl_id}/pages/reAdd",
+        tags=["pages", "uploads"],
+        response_model=StartedResponse,
+    )
+    @app.post(
+        "/orgs/all/all-crawls/{crawl_id}/pages/reAdd",
+        tags=["pages", "all-crawls"],
+        response_model=StartedResponse,
+    )
+    async def re_add_crawl_pages_superadmin(
+        crawl_id: str,
+        user: User = Depends(user_dep),
+    ):
+        """Re-add pages for crawl (superuser only)"""
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+
+        crawl = await ops.crawl_ops.get_crawl_raw(crawl_id)
+
+        job_id = await ops.background_job_ops.create_re_add_org_pages_job(
+            oid=crawl["oid"], crawl_id=crawl_id
         )
         return {"started": job_id or ""}
 
