@@ -546,8 +546,8 @@ class PageOps:
         query: dict[str, object] = {
             "crawl_id": {"$in": crawl_ids},
         }
-        if org:
-            query["oid"] = org.id
+        # if org:
+        #    query["oid"] = org.id
 
         # Text Search
         is_text_search = False
@@ -615,12 +615,6 @@ class PageOps:
 
         aggregate: List[Dict[str, Union[int, object]]] = [{"$match": query}]
 
-        # If total, compute here first
-        if include_total:
-            total = await self.pages.count_documents(query)
-        else:
-            total = 0
-
         # Extra QA Set
         if qa_run_id:
             aggregate.extend([{"$set": {"qa": f"$qa.{qa_run_id}"}}])
@@ -673,21 +667,34 @@ class PageOps:
             # default sort: seeds first, then by timestamp
             aggregate.extend([{"$sort": {"isSeed": -1, "ts": 1}}])
 
-        # Skip
-        if skip:
-            aggregate.append({"$skip": skip})
+        facet_query: dict[str, object] = {
+            "items": [
+                {"$skip": skip},
+                {"$limit": page_size},
+            ],
+        }
 
-        # Limit
-        aggregate.append({"$limit": page_size})
+        if include_total:
+            facet_query["total"] = [{"$count": "count"}]
+
+        aggregate.extend([{"$facet": facet_query}])
+
+        print(aggregate)
 
         cursor = self.pages.aggregate(aggregate)
+        results = await cursor.to_list(length=1)
+        result = results[0]
+        items = result["items"]
 
-        results = await cursor.to_list(length=page_size)
+        try:
+            total = int(result["total"][0]["count"])
+        except (IndexError, ValueError, KeyError):
+            total = 0
 
         if qa_run_id:
-            return [PageOutWithSingleQA.from_dict(data) for data in results], total
+            return [PageOutWithSingleQA.from_dict(data) for data in items], total
 
-        return [PageOut.from_dict(data) for data in results], total
+        return [PageOut.from_dict(data) for data in items], total
 
     async def list_page_url_counts(
         self,
