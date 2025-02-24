@@ -78,7 +78,7 @@ MEM_LIMIT_PADDING = 1.2
 
 
 # pylint: disable=too-many-public-methods, too-many-locals, too-many-branches, too-many-statements
-# pylint: disable=invalid-name, too-many-lines, too-many-return-statements
+# pylint: disable=invalid-name, too-many-lines, too-many-return-statements, too-many-positional-arguments
 # ============================================================================
 class CrawlOperator(BaseOperator):
     """CrawlOperator Handler"""

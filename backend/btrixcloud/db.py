@@ -72,7 +72,7 @@ async def ping_db(mdb):
 
 # ============================================================================
 async def update_and_prepare_db(
-    # pylint: disable=R0913
+    # pylint: disable=R0913, too-many-positional-arguments
     mdb,
     user_manager,
     org_ops,
@@ -117,7 +117,7 @@ async def update_and_prepare_db(
 
 
 # ============================================================================
-# pylint: disable=too-many-locals, too-many-arguments
+# pylint: disable=too-many-locals, too-many-arguments, too-many-positional-arguments
 async def run_db_migrations(
     mdb, user_manager, page_ops, org_ops, background_job_ops, coll_ops
 ):
@@ -209,7 +209,7 @@ async def drop_indexes(mdb):
 
 
 # ============================================================================
-# pylint: disable=too-many-arguments
+# pylint: disable=too-many-arguments, too-many-positional-arguments
 async def create_indexes(
     org_ops, crawl_ops, crawl_config_ops, coll_ops, invite_ops, user_manager, page_ops
 ):

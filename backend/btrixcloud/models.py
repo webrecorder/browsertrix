@@ -701,11 +701,8 @@ class StorageRef(BaseModel):
         return f"storage-cs-{self.name}-{oid[:12]}"
 
     def get_storage_extra_path(self, oid: str) -> str:
-        """return extra path added to the endpoint
-        using oid for default storages, no extra path for custom"""
-        if not self.custom:
-            return oid + "/"
-        return ""
+        """return extra oid path added to the endpoint"""
+        return oid + "/"
 
 
 # ============================================================================
@@ -1632,12 +1629,33 @@ class OrgPublicCollections(BaseModel):
 
 
 # ============================================================================
+class OrgStorageRef(BaseModel):
+    """Input model for setting primary storage"""
+
+    storage: StorageRef
+
+
+# ============================================================================
+class OrgStorageReplicaRefs(BaseModel):
+    """Input model for setting replica storages"""
+
+    storageReplicas: List[StorageRef]
+
+
+# ============================================================================
 class OrgStorageRefs(BaseModel):
-    """Input model for setting primary storage + optional replicas"""
+    """Model for org storage references"""
 
     storage: StorageRef
 
     storageReplicas: List[StorageRef] = []
+
+
+# ============================================================================
+class OrgAllStorages(BaseModel):
+    """Response model for listing all available storages"""
+
+    allStorages: List[StorageRef]
 
 
 # ============================================================================
@@ -1654,6 +1672,7 @@ class S3StorageIn(BaseModel):
     bucket: str
     access_endpoint_url: Optional[str] = None
     region: str = ""
+    provider: str = "Other"
 
 
 # ============================================================================
@@ -1668,6 +1687,7 @@ class S3Storage(BaseModel):
     secret_key: str
     access_endpoint_url: str
     region: str = ""
+    provider: str = "Other"
 
 
 # ============================================================================
@@ -2535,6 +2555,7 @@ class BgJobType(str, Enum):
     RECALCULATE_ORG_STATS = "recalculate-org-stats"
     READD_ORG_PAGES = "readd-org-pages"
     OPTIMIZE_PAGES = "optimize-pages"
+    COPY_BUCKET = "copy-bucket"
 
 
 # ============================================================================
@@ -2553,7 +2574,7 @@ class BackgroundJob(BaseMongoModel):
 
 # ============================================================================
 class CreateReplicaJob(BackgroundJob):
-    """Model for tracking create of replica jobs"""
+    """Model for tracking creation of replica jobs"""
 
     type: Literal[BgJobType.CREATE_REPLICA] = BgJobType.CREATE_REPLICA
     file_path: str
@@ -2605,19 +2626,37 @@ class OptimizePagesJob(BackgroundJob):
 
 
 # ============================================================================
+class CopyBucketJob(BackgroundJob):
+    """Model for tracking job to copy entire s3 bucket"""
+
+    type: Literal[BgJobType.COPY_BUCKET] = BgJobType.COPY_BUCKET
+    prev_storage: StorageRef
+    new_storage: StorageRef
+
+
+# ============================================================================
 # Union of all job types, for response model
 
 AnyJob = RootModel[
     Union[
+        BackgroundJob,
         CreateReplicaJob,
         DeleteReplicaJob,
-        BackgroundJob,
         DeleteOrgJob,
+        CopyBucketJob,
         RecalculateOrgStatsJob,
         ReAddOrgPagesJob,
         OptimizePagesJob,
     ]
 ]
+
+
+# ============================================================================
+class JobProgress(BaseModel):
+    """Model for reporting background job progress"""
+
+    percentage: float
+    eta: Optional[str] = None
 
 
 # ============================================================================
@@ -2630,6 +2669,13 @@ class UpdatedResponse(BaseModel):
     """Response for update API endpoints"""
 
     updated: bool
+
+
+# ============================================================================
+class UpdatedResponseId(UpdatedResponse):
+    """Response for API endpoints that return updated + id"""
+
+    id: Optional[str] = None
 
 
 # ============================================================================
