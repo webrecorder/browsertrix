@@ -207,6 +207,7 @@ export class Collection extends BtrixElement {
           replayBase="/replay/"
           noSandbox="true"
           noCache="true"
+          deepLink
         ></replay-web-page>
       </section>
     `;
