@@ -870,6 +870,7 @@ class BackgroundJobOps:
             return {"success": True}
 
         if job.type == BgJobType.COPY_BUCKET:
+            job = cast(CopyBucketJob, job)
             await self.create_copy_bucket_job(
                 org,
                 job.prev_storage,
