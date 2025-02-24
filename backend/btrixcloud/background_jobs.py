@@ -31,6 +31,7 @@ from .models import (
     SuccessResponse,
     SuccessResponseId,
     JobProgress,
+    BackgroundJob,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import dt_now
@@ -44,7 +45,7 @@ else:
 
 
 # ============================================================================
-# pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-instance-attributes, too-many-lines, too-many-return-statements, too-many-public-methods
 class BackgroundJobOps:
     """k8s background job management"""
 
@@ -807,6 +808,7 @@ class BackgroundJobOps:
         self, job: BackgroundJob, org: Organization
     ) -> Dict[str, Union[bool, Optional[str]]]:
         """Retry background job specific to one org"""
+        # pylint: disable=too-many-return-statements
         if job.type == BgJobType.CREATE_REPLICA:
             job = cast(CreateReplicaJob, job)
             file = await self.get_replica_job_file(job, org)
@@ -872,7 +874,7 @@ class BackgroundJobOps:
                 org,
                 job.prev_storage,
                 job.new_storage,
-                existing_job_id=job_id,
+                existing_job_id=job.id,
             )
             return {"success": True}
 
