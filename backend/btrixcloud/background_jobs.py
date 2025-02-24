@@ -567,8 +567,8 @@ class BackgroundJobOps:
                 await self.handle_delete_replica_job_finished(
                     cast(DeleteReplicaJob, job)
                 )
-            if job_type == BgJobType.COPY_BUCKET:
-                org = await self.org_ops.get_org_by_id(oid)
+            if job_type == BgJobType.COPY_BUCKET and job.oid:
+                org = await self.org_ops.get_org_by_id(job.oid)
                 await self.org_ops.update_read_only(org, False)
         else:
             print(
