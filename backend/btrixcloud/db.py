@@ -195,6 +195,11 @@ async def drop_indexes(mdb):
     print("Dropping database indexes", flush=True)
     collection_names = await mdb.list_collection_names()
     for collection in collection_names:
+        # Don't drop pages automatically, as these are large
+        # indices and slow to recreate
+        if collection == "pages":
+            continue
+
         try:
             current_coll = mdb[collection]
             await current_coll.drop_indexes()
