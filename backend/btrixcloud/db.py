@@ -107,6 +107,7 @@ async def update_and_prepare_db(
         coll_ops,
         invite_ops,
         user_manager,
+        page_ops,
     )
     await user_manager.create_super_user()
     await org_ops.create_default_org()
@@ -194,6 +195,11 @@ async def drop_indexes(mdb):
     print("Dropping database indexes", flush=True)
     collection_names = await mdb.list_collection_names()
     for collection in collection_names:
+        # Don't drop pages automatically, as these are large
+        # indices and slow to recreate
+        if collection == "pages":
+            continue
+
         try:
             current_coll = mdb[collection]
             await current_coll.drop_indexes()
@@ -205,7 +211,7 @@ async def drop_indexes(mdb):
 # ============================================================================
 # pylint: disable=too-many-arguments
 async def create_indexes(
-    org_ops, crawl_ops, crawl_config_ops, coll_ops, invite_ops, user_manager
+    org_ops, crawl_ops, crawl_config_ops, coll_ops, invite_ops, user_manager, page_ops
 ):
     """Create database indexes."""
     print("Creating database indexes", flush=True)
@@ -215,6 +221,7 @@ async def create_indexes(
     await coll_ops.init_index()
     await invite_ops.init_index()
     await user_manager.init_index()
+    await page_ops.init_index()
 
 
 # ============================================================================
