@@ -938,6 +938,7 @@ export class WorkflowDetail extends BtrixElement {
                           </sl-menu-item>
                         `,
                       )}
+                      <sl-divider></sl-divider>
                       <sl-menu-item
                         @click=${() =>
                           ClipboardController.copyToClipboard(crawl.id)}
