@@ -635,6 +635,13 @@ export class CrawlsList extends BtrixElement {
           >
             <sl-icon name="cloud-download" slot="prefix"></sl-icon>
             ${msg("Download Item")}
+            ${item.fileSize
+              ? html` <btrix-badge
+                  slot="suffix"
+                  class="font-monostyle text-xs text-neutral-500"
+                  >${this.localize.bytes(item.fileSize)}</btrix-badge
+                >`
+              : nothing}
           </btrix-menu-item-link>
         `,
       )}

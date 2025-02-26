@@ -669,6 +669,13 @@ export class ArchivedItemDetail extends BtrixElement {
               >
                 <sl-icon name="cloud-download" slot="prefix"></sl-icon>
                 ${msg("Download Item")}
+                ${this.item?.fileSize
+                  ? html` <btrix-badge
+                      slot="suffix"
+                      class="font-monostyle text-xs text-neutral-500"
+                      >${this.localize.bytes(this.item.fileSize)}</btrix-badge
+                    >`
+                  : nothing}
               </btrix-menu-item-link>
             `,
           )}
