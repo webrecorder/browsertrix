@@ -925,10 +925,10 @@ export class WorkflowDetail extends BtrixElement {
                     )}
                     .crawl=${crawl}
                   >
-                    ${when(
-                      this.isCrawler,
-                      () =>
-                        html` <sl-menu slot="menu">
+                    <sl-menu slot="menu">
+                      ${when(
+                        this.isCrawler,
+                        () => html`
                           <sl-menu-item
                             style="--sl-color-neutral-700: var(--danger)"
                             @click=${() => this.confirmDeleteCrawl(crawl)}
@@ -936,9 +936,17 @@ export class WorkflowDetail extends BtrixElement {
                             <sl-icon name="trash3" slot="prefix"></sl-icon>
                             ${msg("Delete Crawl")}
                           </sl-menu-item>
-                        </sl-menu>`,
-                    )}</btrix-crawl-list-item
-                  >`,
+                        `,
+                      )}
+                      <sl-menu-item
+                        @click=${() =>
+                          ClipboardController.copyToClipboard(crawl.id)}
+                      >
+                        <sl-icon name="copy" slot="prefix"></sl-icon>
+                        ${msg("Copy Crawl ID")}
+                      </sl-menu-item>
+                    </sl-menu>
+                  </btrix-crawl-list-item>`,
               ),
             )}
           </btrix-crawl-list>
