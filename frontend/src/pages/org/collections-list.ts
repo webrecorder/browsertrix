@@ -590,7 +590,6 @@ export class CollectionsList extends BtrixElement {
           col.access === CollectionAccess.Unlisted
             ? html`
                 <sl-menu-item
-                  style="--sl-color-neutral-700: var(--success)"
                   @click=${() => {
                     ClipboardController.copyToClipboard(this.getShareLink(col));
                     this.notify.toast({
@@ -606,26 +605,25 @@ export class CollectionsList extends BtrixElement {
               `
             : nothing}
 
-          <btrix-menu-item-link
-            href=${`/api/orgs/${this.orgId}/collections/${col.id}/download?auth_bearer=${authToken}`}
-            download
-            ?disabled=${!col.totalSize}
-          >
-            <sl-icon name="cloud-download" slot="prefix"></sl-icon>
-            ${msg("Download")}
-            <btrix-badge
-              slot="suffix"
-              class="font-monostyle text-xs text-neutral-500"
-              >${this.localize.bytes(col.totalSize)}</btrix-badge
-            >
-          </btrix-menu-item-link>
-          <sl-divider></sl-divider>
           <sl-menu-item
             @click=${() => ClipboardController.copyToClipboard(col.id)}
           >
             <sl-icon name="copy" slot="prefix"></sl-icon>
             ${msg("Copy Collection ID")}
           </sl-menu-item>
+          <btrix-menu-item-link
+            href=${`/api/orgs/${this.orgId}/collections/${col.id}/download?auth_bearer=${authToken}`}
+            download
+            ?disabled=${!col.totalSize}
+          >
+            <sl-icon name="cloud-download" slot="prefix"></sl-icon>
+            ${msg("Download Collection")}
+            <btrix-badge
+              slot="suffix"
+              class="font-monostyle text-xs text-neutral-500"
+              >${this.localize.bytes(col.totalSize)}</btrix-badge
+            >
+          </btrix-menu-item-link>
           <sl-divider></sl-divider>
           <sl-menu-item
             style="--sl-color-neutral-700: var(--danger)"

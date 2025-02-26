@@ -873,18 +873,18 @@ export class CollectionDetail extends BtrixElement {
               >
                 <sl-menu>
                   <sl-menu-item
+                    @click=${() => ClipboardController.copyToClipboard(item.id)}
+                  >
+                    <sl-icon name="copy" slot="prefix"></sl-icon>
+                    ${msg("Copy Item ID")}
+                  </sl-menu-item>
+                  <sl-divider></sl-divider>
+                  <sl-menu-item
                     style="--sl-color-neutral-700: var(--warning)"
                     @click=${() => void this.removeArchivedItem(item.id, idx)}
                   >
                     <sl-icon name="folder-minus" slot="prefix"></sl-icon>
                     ${msg("Remove from Collection")}
-                  </sl-menu-item>
-                  <sl-divider></sl-divider>
-                  <sl-menu-item
-                    @click=${() => ClipboardController.copyToClipboard(item.id)}
-                  >
-                    <sl-icon name="copy" slot="prefix"></sl-icon>
-                    ${msg("Copy Item ID")}
                   </sl-menu-item>
                 </sl-menu>
               </btrix-overflow-dropdown>
