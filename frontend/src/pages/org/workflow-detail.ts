@@ -772,6 +772,13 @@ export class WorkflowDetail extends BtrixElement {
               </sl-menu-item>
             `,
           )}
+          <sl-divider></sl-divider>
+          <sl-menu-item
+            @click=${() => ClipboardController.copyToClipboard(workflow.id)}
+          >
+            <sl-icon name="copy" slot="prefix"></sl-icon>
+            ${msg("Copy Workflow ID")}
+          </sl-menu-item>
         </sl-menu>
       </sl-dropdown>
     `;

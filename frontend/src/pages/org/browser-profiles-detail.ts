@@ -10,6 +10,7 @@ import type { Profile, ProfileWorkflow } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
+import { ClipboardController } from "@/controllers/clipboard";
 import type { BrowserConnectionChange } from "@/features/browser-profiles/profile-browser";
 import { pageNav } from "@/layouts/pageHeader";
 import { isApiError } from "@/utils/api";
@@ -437,7 +438,14 @@ export class BrowserProfilesDetail extends BtrixElement {
             @click=${() => void this.deleteProfile()}
           >
             <sl-icon slot="prefix" name="trash3"></sl-icon>
-            ${msg("Delete")}
+            ${msg("Delete Profile")}
+          </sl-menu-item>
+          <sl-divider></sl-divider>
+          <sl-menu-item
+            @click=${() => ClipboardController.copyToClipboard(this.profileId)}
+          >
+            <sl-icon name="copy" slot="prefix"></sl-icon>
+            ${msg("Copy Profile ID")}
           </sl-menu-item>
         </sl-menu>
       </sl-dropdown>

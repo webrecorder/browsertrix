@@ -685,6 +685,16 @@ export class ArchivedItemDetail extends BtrixElement {
               </sl-menu-item>
             `,
           )}
+          <sl-divider></sl-divider>
+          <sl-menu-item
+            @click=${() =>
+              ClipboardController.copyToClipboard(
+                this.item?.id ?? this.itemId ?? "",
+              )}
+          >
+            <sl-icon name="copy" slot="prefix"></sl-icon>
+            ${msg("Copy Item ID")}
+          </sl-menu-item>
         </sl-menu>
       </sl-dropdown>
     `;
