@@ -598,6 +598,26 @@ export class CrawlsList extends BtrixElement {
           <sl-divider></sl-divider>
         `,
       )}
+      ${when(
+        isSuccessfullyFinished(item),
+        () => html`
+          <btrix-menu-item-link
+            href=${`/api/orgs/${this.orgId}/all-crawls/${item.id}/download?auth_bearer=${authToken}`}
+            download
+          >
+            <sl-icon name="cloud-download" slot="prefix"></sl-icon>
+            ${msg("Download Item")}
+            ${item.fileSize
+              ? html` <btrix-badge
+                  slot="suffix"
+                  class="font-monostyle text-xs text-neutral-500"
+                  >${this.localize.bytes(item.fileSize)}</btrix-badge
+                >`
+              : nothing}
+          </btrix-menu-item-link>
+          <sl-divider></sl-divider>
+        `,
+      )}
       ${item.type === "crawl"
         ? html`
             <sl-menu-item
@@ -615,14 +635,9 @@ export class CrawlsList extends BtrixElement {
               <sl-icon name="copy" slot="prefix"></sl-icon>
               ${msg("Copy Workflow ID")}
             </sl-menu-item>
-            <sl-menu-item
-              @click=${() => ClipboardController.copyToClipboard(item.id)}
-            >
-              <sl-icon name="copy" slot="prefix"></sl-icon>
-              ${msg("Copy Archived Item ID")}
-            </sl-menu-item>
           `
         : nothing}
+
       <sl-menu-item
         @click=${() =>
           ClipboardController.copyToClipboard(item.tags.join(", "))}
@@ -631,19 +646,12 @@ export class CrawlsList extends BtrixElement {
         <sl-icon name="tags" slot="prefix"></sl-icon>
         ${msg("Copy Tags")}
       </sl-menu-item>
-      ${when(
-        isSuccessfullyFinished(item),
-        () => html`
-          <sl-divider></sl-divider>
-          <btrix-menu-item-link
-            href=${`/api/orgs/${this.orgId}/all-crawls/${item.id}/download?auth_bearer=${authToken}`}
-            download
-          >
-            <sl-icon name="cloud-download" slot="prefix"></sl-icon>
-            ${msg("Download Item")}
-          </btrix-menu-item-link>
-        `,
-      )}
+      <sl-menu-item
+        @click=${() => ClipboardController.copyToClipboard(item.id)}
+      >
+        <sl-icon name="copy" slot="prefix"></sl-icon>
+        ${msg("Copy Item ID")}
+      </sl-menu-item>
       ${when(
         this.isCrawler && (item.type !== "crawl" || !isActive(item)),
         () => html`

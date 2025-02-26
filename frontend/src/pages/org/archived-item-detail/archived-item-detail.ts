@@ -631,6 +631,26 @@ export class ArchivedItemDetail extends BtrixElement {
             `,
           )}
           ${when(
+            isSuccessfullyFinished(this.item),
+            () => html`
+              <btrix-menu-item-link
+                href=${`/api/orgs/${this.orgId}/all-crawls/${this.itemId}/download?auth_bearer=${authToken}`}
+                download
+              >
+                <sl-icon name="cloud-download" slot="prefix"></sl-icon>
+                ${msg("Download Item")}
+                ${this.item?.fileSize
+                  ? html` <btrix-badge
+                      slot="suffix"
+                      class="font-monostyle text-xs text-neutral-500"
+                      >${this.localize.bytes(this.item.fileSize)}</btrix-badge
+                    >`
+                  : nothing}
+              </btrix-menu-item-link>
+              <sl-divider></sl-divider>
+            `,
+          )}
+          ${when(
             this.itemType === "crawl",
             () => html`
               <sl-menu-item
@@ -659,19 +679,15 @@ export class ArchivedItemDetail extends BtrixElement {
             <sl-icon name="tags" slot="prefix"></sl-icon>
             ${msg("Copy Tags")}
           </sl-menu-item>
-          ${when(
-            isSuccessfullyFinished(this.item),
-            () => html`
-              <sl-divider></sl-divider>
-              <btrix-menu-item-link
-                href=${`/api/orgs/${this.orgId}/all-crawls/${this.itemId}/download?auth_bearer=${authToken}`}
-                download
-              >
-                <sl-icon name="cloud-download" slot="prefix"></sl-icon>
-                ${msg("Download Item")}
-              </btrix-menu-item-link>
-            `,
-          )}
+          <sl-menu-item
+            @click=${() =>
+              ClipboardController.copyToClipboard(
+                this.item?.id ?? this.itemId ?? "",
+              )}
+          >
+            <sl-icon name="copy" slot="prefix"></sl-icon>
+            ${msg("Copy Item ID")}
+          </sl-menu-item>
           ${when(
             this.isCrawler,
             () => html`

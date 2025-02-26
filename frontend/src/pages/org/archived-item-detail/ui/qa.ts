@@ -16,6 +16,7 @@ import queryString from "query-string";
 import { BtrixElement } from "@/classes/BtrixElement";
 import { type Dialog } from "@/components/ui/dialog";
 import type { PageChangeEvent } from "@/components/ui/pagination";
+import { ClipboardController } from "@/controllers/clipboard";
 import { iconFor as iconForPageReview } from "@/features/qa/page-list/helpers";
 import * as pageApproval from "@/features/qa/page-list/helpers/approval";
 import type { SelectDetail } from "@/features/qa/qa-run-dropdown";
@@ -393,6 +394,13 @@ export class ArchivedItemDetailQA extends BtrixElement {
                         <sl-divider></sl-divider>
                       `}
                   <sl-menu-item
+                    @click=${() => ClipboardController.copyToClipboard(run.id)}
+                  >
+                    <sl-icon name="copy" slot="prefix"></sl-icon>
+                    ${msg("Copy Run ID")}
+                  </sl-menu-item>
+                  <sl-divider></sl-divider>
+                  <sl-menu-item
                     @click=${() => {
                       this.deleting = run.id;
                       void this.deleteQADialog?.show();
@@ -750,12 +758,16 @@ export class ArchivedItemDetailQA extends BtrixElement {
           "[clickable-start] minmax(12rem, auto)",
           "minmax(min-content, 12rem)",
           "minmax(min-content, 12rem) [clickable-end]",
+          "min-content",
         ].join(" ")}"
       >
         <btrix-table-head>
           <btrix-table-header-cell>${msg("Page")}</btrix-table-header-cell>
           <btrix-table-header-cell>${msg("Approval")}</btrix-table-header-cell>
           <btrix-table-header-cell>${msg("Comments")}</btrix-table-header-cell>
+          <btrix-table-header-cell class="px-0">
+            <span class="sr-only">${msg("Row actions")}</span>
+          </btrix-table-header-cell>
         </btrix-table-head>
         <btrix-table-body class="rounded border">
           ${this.pages?.items.map(
@@ -808,6 +820,21 @@ export class ArchivedItemDetailQA extends BtrixElement {
                     : html`<span class="text-neutral-400">
                         ${msg("None")}
                       </span>`}
+                </btrix-table-cell>
+                <btrix-table-cell class="p-0">
+                  <div class="col action">
+                    <btrix-overflow-dropdown>
+                      <sl-menu>
+                        <sl-menu-item
+                          @click=${() =>
+                            ClipboardController.copyToClipboard(page.id)}
+                        >
+                          <sl-icon name="copy" slot="prefix"></sl-icon>
+                          ${msg("Copy Page ID")}
+                        </sl-menu-item>
+                      </sl-menu>
+                    </btrix-overflow-dropdown>
+                  </div>
                 </btrix-table-cell>
               </btrix-table-row>
             `,

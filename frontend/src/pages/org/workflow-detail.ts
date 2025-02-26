@@ -745,6 +745,14 @@ export class WorkflowDetail extends BtrixElement {
             ${msg("Edit Workflow Settings")}
           </sl-menu-item>
           <sl-menu-item
+            ?disabled=${archivingDisabled}
+            @click=${() => void this.duplicateConfig()}
+          >
+            <sl-icon name="files" slot="prefix"></sl-icon>
+            ${msg("Duplicate Workflow")}
+          </sl-menu-item>
+          <sl-divider></sl-divider>
+          <sl-menu-item
             @click=${() =>
               ClipboardController.copyToClipboard(workflow.tags.join(", "))}
             ?disabled=${!workflow.tags.length}
@@ -753,11 +761,10 @@ export class WorkflowDetail extends BtrixElement {
             ${msg("Copy Tags")}
           </sl-menu-item>
           <sl-menu-item
-            ?disabled=${archivingDisabled}
-            @click=${() => void this.duplicateConfig()}
+            @click=${() => ClipboardController.copyToClipboard(workflow.id)}
           >
-            <sl-icon name="files" slot="prefix"></sl-icon>
-            ${msg("Duplicate Workflow")}
+            <sl-icon name="copy" slot="prefix"></sl-icon>
+            ${msg("Copy Workflow ID")}
           </sl-menu-item>
           ${when(
             !workflow.crawlCount,
@@ -925,10 +932,18 @@ export class WorkflowDetail extends BtrixElement {
                     )}
                     .crawl=${crawl}
                   >
-                    ${when(
-                      this.isCrawler,
-                      () =>
-                        html` <sl-menu slot="menu">
+                    <sl-menu slot="menu">
+                      <sl-menu-item
+                        @click=${() =>
+                          ClipboardController.copyToClipboard(crawl.id)}
+                      >
+                        <sl-icon name="copy" slot="prefix"></sl-icon>
+                        ${msg("Copy Crawl ID")}
+                      </sl-menu-item>
+                      ${when(
+                        this.isCrawler,
+                        () => html`
+                          <sl-divider></sl-divider>
                           <sl-menu-item
                             style="--sl-color-neutral-700: var(--danger)"
                             @click=${() => this.confirmDeleteCrawl(crawl)}
@@ -936,9 +951,10 @@ export class WorkflowDetail extends BtrixElement {
                             <sl-icon name="trash3" slot="prefix"></sl-icon>
                             ${msg("Delete Crawl")}
                           </sl-menu-item>
-                        </sl-menu>`,
-                    )}</btrix-crawl-list-item
-                  >`,
+                        `,
+                      )}
+                    </sl-menu>
+                  </btrix-crawl-list-item>`,
               ),
             )}
           </btrix-crawl-list>
