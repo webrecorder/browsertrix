@@ -892,7 +892,10 @@ export class ArchivedItemDetailQA extends BtrixElement {
       }
 
       this.pages = await this.getPages({
-        page: params?.page ?? this.pages?.page ?? 1,
+        page:
+          params?.page ??
+          this.pages?.page ??
+          parseInt(new URLSearchParams(location.search).get("page") ?? "1"),
         pageSize: params?.pageSize ?? this.pages?.pageSize ?? 10,
         sortBy,
         sortDirection,

@@ -70,7 +70,9 @@ export class Dashboard extends BtrixElement {
   collectionsView = CollectionGridView.Public;
 
   @state()
-  collectionPage = 1;
+  collectionPage = parseInt(
+    new URLSearchParams(location.search).get("page") ?? "1",
+  );
 
   // Used for busting cache when updating visible collection
   cacheBust = 0;

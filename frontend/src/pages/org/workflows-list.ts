@@ -178,7 +178,10 @@ export class WorkflowsList extends BtrixElement {
     } catch (e) {
       if (isApiError(e)) {
         this.fetchErrorStatusCode = e.statusCode;
-      } else if ((e as Error).name === "AbortError") {
+      } else if (
+        (e as Error).name === "AbortError" ||
+        e === ABORT_REASON_THROTTLE
+      ) {
         console.debug("Fetch archived items aborted to throttle");
       } else {
         this.notify.toast({
@@ -748,7 +751,10 @@ export class WorkflowsList extends BtrixElement {
     const query = queryString.stringify(
       {
         ...this.filterBy,
-        page: queryParams?.page || this.workflows?.page || 1,
+        page:
+          queryParams?.page ||
+          this.workflows?.page ||
+          parseInt(new URLSearchParams(location.search).get("page") ?? "1"),
         pageSize:
           queryParams?.pageSize ||
           this.workflows?.pageSize ||

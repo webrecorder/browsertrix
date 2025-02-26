@@ -92,7 +92,7 @@ export class CrawlsList extends BtrixElement {
 
   @state()
   private pagination: Required<APIPaginationQuery> = {
-    page: 1,
+    page: parseInt(new URLSearchParams(location.search).get("page") ?? "1"),
     pageSize: INITIAL_PAGE_SIZE,
   };
 

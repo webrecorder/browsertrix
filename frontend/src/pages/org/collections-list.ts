@@ -757,7 +757,10 @@ export class CollectionsList extends BtrixElement {
     const query = queryString.stringify(
       {
         ...this.filterBy,
-        page: queryParams?.page || this.collections?.page || 1,
+        page:
+          queryParams?.page ||
+          this.collections?.page ||
+          parseInt(new URLSearchParams(location.search).get("page") ?? "1"),
         pageSize:
           queryParams?.pageSize ||
           this.collections?.pageSize ||

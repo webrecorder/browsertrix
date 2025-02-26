@@ -694,18 +694,24 @@ export class CollectionItemsDialog extends BtrixElement {
   }
 
   private async initSelection() {
-    void this.fetchCrawls({ page: 1, pageSize: DEFAULT_PAGE_SIZE });
-    void this.fetchUploads({ page: 1, pageSize: DEFAULT_PAGE_SIZE });
+    void this.fetchCrawls({
+      page: parseInt(new URLSearchParams(location.search).get("page") ?? "1"),
+      pageSize: DEFAULT_PAGE_SIZE,
+    });
+    void this.fetchUploads({
+      page: parseInt(new URLSearchParams(location.search).get("page") ?? "1"),
+      pageSize: DEFAULT_PAGE_SIZE,
+    });
     void this.fetchSearchValues();
 
     const [crawls, uploads] = await Promise.all([
       this.getCrawls({
-        page: 1,
+        page: parseInt(new URLSearchParams(location.search).get("page") ?? "1"),
         pageSize: COLLECTION_ITEMS_MAX,
         collectionId: this.collectionId,
       }).then(({ items }) => items),
       this.getUploads({
-        page: 1,
+        page: parseInt(new URLSearchParams(location.search).get("page") ?? "1"),
         pageSize: COLLECTION_ITEMS_MAX,
         collectionId: this.collectionId,
       }).then(({ items }) => items),

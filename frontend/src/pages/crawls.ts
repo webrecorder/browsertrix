@@ -354,7 +354,10 @@ export class Crawls extends BtrixElement {
       {
         ...this.filterBy,
         ...queryParams,
-        page: queryParams?.page || this.crawls?.page || 1,
+        page:
+          queryParams?.page ||
+          this.crawls?.page ||
+          parseInt(new URLSearchParams(location.search).get("page") ?? "1"),
         pageSize: queryParams?.pageSize || this.crawls?.pageSize || 100,
         sortBy: this.orderBy.field,
         sortDirection: this.orderBy.direction === "desc" ? -1 : 1,

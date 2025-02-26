@@ -441,7 +441,10 @@ export class BrowserProfilesList extends BtrixElement {
     try {
       this.isLoading = true;
       const data = await this.getProfiles({
-        page: params?.page || this.browserProfiles?.page || 1,
+        page:
+          params?.page ||
+          this.browserProfiles?.page ||
+          parseInt(new URLSearchParams(location.search).get("page") ?? "1"),
         pageSize:
           params?.pageSize ||
           this.browserProfiles?.pageSize ||

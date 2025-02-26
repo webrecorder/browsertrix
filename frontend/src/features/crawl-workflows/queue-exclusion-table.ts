@@ -90,7 +90,9 @@ export class QueueExclusionTable extends TailwindElement {
   private results: Exclusion[] = [];
 
   @state()
-  private page = 1;
+  private page = parseInt(
+    new URLSearchParams(location.search).get("page") ?? "1",
+  );
 
   @state()
   private exclusionToRemove?: string;

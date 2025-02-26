@@ -121,7 +121,22 @@ export class Pagination extends LitElement {
     `,
   ];
 
-  searchParams = new SearchParamsController(this);
+  searchParams = new SearchParamsController(this, (params) => {
+    console.log("maybe page change");
+    if (`${this.page}` !== params.get(this.name)) {
+      try {
+        const page = parseInt(
+          this.searchParams.searchParams.get(this.name) ?? "1",
+        );
+        if (!Number.isFinite(page)) {
+          throw new Error("couldn't parse page value from search");
+        }
+        this.onPageChange(page);
+      } catch (e) {
+        console.error("couldn't set page", e);
+      }
+    }
+  });
 
   @property({ type: Number })
   page = 1;
@@ -156,6 +171,7 @@ export class Pagination extends LitElement {
 
     if (changedProperties.get("page") && this.page) {
       this.inputValue = `${this.page}`;
+      console.log("changed page", this.page, changedProperties.get("page"));
       this.searchParams.set((prev) => {
         if (this.page > 1) {
           prev.set(this.name, `${this.page}`);
@@ -166,22 +182,18 @@ export class Pagination extends LitElement {
       });
     }
 
-    if (
-      changedProperties.has("searchParams") &&
-      this.searchParams.searchParams.get(this.name)
-    ) {
-      try {
-        const page = parseInt(
-          this.searchParams.searchParams.get(this.name) ?? "0",
-        );
-        if (Number.isFinite(page)) {
-          this.page = page;
-        } else {
-          throw new Error("couldn't parse page value from search");
-        }
-      } catch (e) {
-        console.error("couldn't set page", e);
+    try {
+      const page = parseInt(
+        this.searchParams.searchParams.get(this.name) ?? "0",
+      );
+      if (!Number.isFinite(page)) {
+        throw new Error("couldn't parse page value from search");
       }
+      if (this.page !== page) {
+        this.onPageChange(page);
+      }
+    } catch (e) {
+      console.error("couldn't set page", e);
     }
   }
 

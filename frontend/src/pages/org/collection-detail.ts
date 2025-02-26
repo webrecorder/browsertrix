@@ -129,7 +129,9 @@ export class CollectionDetail extends BtrixElement {
   ) {
     if (changedProperties.has("collectionId")) {
       void this.fetchCollection();
-      void this.fetchArchivedItems({ page: 1 });
+      void this.fetchArchivedItems({
+        page: parseInt(new URLSearchParams(location.search).get("page") ?? "1"),
+      });
     }
     if (changedProperties.has("collectionTab") && this.collectionTab === null) {
       this.collectionTab = Tab.Replay;
@@ -1033,7 +1035,10 @@ export class CollectionDetail extends BtrixElement {
     const query = queryString.stringify(
       {
         ...params,
-        page: params?.page || this.archivedItems?.page || 1,
+        page:
+          params?.page ||
+          this.archivedItems?.page ||
+          parseInt(new URLSearchParams(location.search).get("page") ?? "1"),
         pageSize:
           params?.pageSize ||
           this.archivedItems?.pageSize ||

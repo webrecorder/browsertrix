@@ -24,7 +24,9 @@ export class CrawlPendingExclusions extends BtrixElement {
   matchedURLs: URLs | null = null;
 
   @state()
-  private page = 1;
+  private page = parseInt(
+    new URLSearchParams(location.search).get("page") ?? "1",
+  );
 
   private get pageSize() {
     return 10;

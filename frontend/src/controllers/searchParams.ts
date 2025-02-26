@@ -1,23 +1,16 @@
 import type { ReactiveController, ReactiveControllerHost } from "lit";
 
 export class SearchParamsController implements ReactiveController {
-  private _host!: ReactiveControllerHost;
+  private readonly host: ReactiveControllerHost;
+  private readonly changeHandler?: (searchParams: URLSearchParams) => void;
 
-  private set host(host: ReactiveControllerHost) {
-    console.log("host set", host);
-    this._host = host;
+  public get searchParams() {
+    return new URLSearchParams(location.search);
   }
-
-  private get host() {
-    console.log("host get", this._host);
-    return this._host;
-  }
-
-  public searchParams = new URLSearchParams(location.search);
 
   public set(
     update: URLSearchParams | ((prev: URLSearchParams) => URLSearchParams),
-    options: { replace?: boolean; data?: unknown } = { replace: false },
+    options: { replace?: boolean; data?: unknown } = { replace: true },
   ) {
     const url = new URL(location.toString());
     if (typeof update === "function") {
@@ -34,9 +27,13 @@ export class SearchParamsController implements ReactiveController {
     }
   }
 
-  constructor(host: ReactiveControllerHost) {
+  constructor(
+    host: ReactiveControllerHost,
+    onChange?: (searchParams: URLSearchParams) => void,
+  ) {
     this.host = host;
     host.addController(this);
+    this.changeHandler = onChange;
   }
 
   hostConnected(): void {
@@ -47,8 +44,8 @@ export class SearchParamsController implements ReactiveController {
     window.removeEventListener("popstate", this.onPopState);
   }
 
-  private onPopState(_e: PopStateEvent) {
-    this.searchParams = new URLSearchParams(location.search);
+  private readonly onPopState = (_e: PopStateEvent) => {
     this.host.requestUpdate();
-  }
+    this.changeHandler?.(this.searchParams);
+  };
 }
