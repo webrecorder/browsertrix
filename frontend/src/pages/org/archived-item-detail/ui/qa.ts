@@ -16,6 +16,7 @@ import queryString from "query-string";
 import { BtrixElement } from "@/classes/BtrixElement";
 import { type Dialog } from "@/components/ui/dialog";
 import type { PageChangeEvent } from "@/components/ui/pagination";
+import { ClipboardController } from "@/controllers/clipboard";
 import { iconFor as iconForPageReview } from "@/features/qa/page-list/helpers";
 import * as pageApproval from "@/features/qa/page-list/helpers/approval";
 import type { SelectDetail } from "@/features/qa/qa-run-dropdown";
@@ -401,6 +402,13 @@ export class ArchivedItemDetailQA extends BtrixElement {
                   >
                     <sl-icon name="trash3" slot="prefix"></sl-icon>
                     ${msg("Delete Analysis Run")}
+                  </sl-menu-item>
+                  <sl-divider></sl-divider>
+                  <sl-menu-item
+                    @click=${() => ClipboardController.copyToClipboard(run.id)}
+                  >
+                    <sl-icon name="copy" slot="prefix"></sl-icon>
+                    ${msg("Copy Run ID")}
                   </sl-menu-item>
                 </sl-menu>
               </btrix-overflow-dropdown>
