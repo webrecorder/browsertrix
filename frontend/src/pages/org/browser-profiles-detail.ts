@@ -434,18 +434,18 @@ export class BrowserProfilesDetail extends BtrixElement {
           </sl-menu-item>
           <sl-divider></sl-divider>
           <sl-menu-item
+            @click=${() => ClipboardController.copyToClipboard(this.profileId)}
+          >
+            <sl-icon name="copy" slot="prefix"></sl-icon>
+            ${msg("Copy Profile ID")}
+          </sl-menu-item>
+          <sl-divider></sl-divider>
+          <sl-menu-item
             style="--sl-color-neutral-700: var(--danger)"
             @click=${() => void this.deleteProfile()}
           >
             <sl-icon slot="prefix" name="trash3"></sl-icon>
             ${msg("Delete Profile")}
-          </sl-menu-item>
-          <sl-divider></sl-divider>
-          <sl-menu-item
-            @click=${() => ClipboardController.copyToClipboard(this.profileId)}
-          >
-            <sl-icon name="copy" slot="prefix"></sl-icon>
-            ${msg("Copy Profile ID")}
           </sl-menu-item>
         </sl-menu>
       </sl-dropdown>

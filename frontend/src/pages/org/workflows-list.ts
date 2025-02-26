@@ -641,6 +641,13 @@ export class WorkflowsList extends BtrixElement {
             <sl-icon name="files" slot="prefix"></sl-icon>
             ${msg("Duplicate Workflow")}
           </sl-menu-item>
+          <sl-divider></sl-divider>
+          <sl-menu-item
+            @click=${() => ClipboardController.copyToClipboard(workflow.id)}
+          >
+            <sl-icon name="copy" slot="prefix"></sl-icon>
+            ${msg("Copy Workflow ID")}
+          </sl-menu-item>
           ${when(
             !workflow.crawlCount,
             () => html`
@@ -660,13 +667,6 @@ export class WorkflowsList extends BtrixElement {
           )}
         `,
       )}
-      <sl-divider></sl-divider>
-      <sl-menu-item
-        @click=${() => ClipboardController.copyToClipboard(workflow.id)}
-      >
-        <sl-icon name="copy" slot="prefix"></sl-icon>
-        ${msg("Copy Workflow ID")}
-      </sl-menu-item>
     `;
   }
 

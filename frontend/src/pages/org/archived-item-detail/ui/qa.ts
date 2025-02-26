@@ -394,6 +394,13 @@ export class ArchivedItemDetailQA extends BtrixElement {
                         <sl-divider></sl-divider>
                       `}
                   <sl-menu-item
+                    @click=${() => ClipboardController.copyToClipboard(run.id)}
+                  >
+                    <sl-icon name="copy" slot="prefix"></sl-icon>
+                    ${msg("Copy Run ID")}
+                  </sl-menu-item>
+                  <sl-divider></sl-divider>
+                  <sl-menu-item
                     @click=${() => {
                       this.deleting = run.id;
                       void this.deleteQADialog?.show();
@@ -402,13 +409,6 @@ export class ArchivedItemDetailQA extends BtrixElement {
                   >
                     <sl-icon name="trash3" slot="prefix"></sl-icon>
                     ${msg("Delete Analysis Run")}
-                  </sl-menu-item>
-                  <sl-divider></sl-divider>
-                  <sl-menu-item
-                    @click=${() => ClipboardController.copyToClipboard(run.id)}
-                  >
-                    <sl-icon name="copy" slot="prefix"></sl-icon>
-                    ${msg("Copy Run ID")}
                   </sl-menu-item>
                 </sl-menu>
               </btrix-overflow-dropdown>

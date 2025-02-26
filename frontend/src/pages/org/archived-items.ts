@@ -638,6 +638,13 @@ export class CrawlsList extends BtrixElement {
           </btrix-menu-item-link>
         `,
       )}
+      <sl-divider></sl-divider>
+      <sl-menu-item
+        @click=${() => ClipboardController.copyToClipboard(item.id)}
+      >
+        <sl-icon name="copy" slot="prefix"></sl-icon>
+        ${msg("Copy Item ID")}
+      </sl-menu-item>
       ${when(
         this.isCrawler && (item.type !== "crawl" || !isActive(item)),
         () => html`
@@ -651,13 +658,6 @@ export class CrawlsList extends BtrixElement {
           </sl-menu-item>
         `,
       )}
-      <sl-divider></sl-divider>
-      <sl-menu-item
-        @click=${() => ClipboardController.copyToClipboard(item.id)}
-      >
-        <sl-icon name="copy" slot="prefix"></sl-icon>
-        ${msg("Copy Item ID")}
-      </sl-menu-item>
     `;
   };
 

@@ -565,14 +565,6 @@ export class CollectionDetail extends BtrixElement {
           </btrix-menu-item-link>
           <sl-divider></sl-divider>
           <sl-menu-item
-            style="--sl-color-neutral-700: var(--danger)"
-            @click=${this.confirmDelete}
-          >
-            <sl-icon name="trash3" slot="prefix"></sl-icon>
-            ${msg("Delete Collection")}
-          </sl-menu-item>
-          <sl-divider></sl-divider>
-          <sl-menu-item
             @click=${() =>
               ClipboardController.copyToClipboard(
                 this.collection?.id ?? this.collectionId,
@@ -580,6 +572,14 @@ export class CollectionDetail extends BtrixElement {
           >
             <sl-icon name="copy" slot="prefix"></sl-icon>
             ${msg("Copy Collection ID")}
+          </sl-menu-item>
+          <sl-divider></sl-divider>
+          <sl-menu-item
+            style="--sl-color-neutral-700: var(--danger)"
+            @click=${this.confirmDelete}
+          >
+            <sl-icon name="trash3" slot="prefix"></sl-icon>
+            ${msg("Delete Collection")}
           </sl-menu-item>
         </sl-menu>
       </sl-dropdown>
