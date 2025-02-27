@@ -1071,6 +1071,18 @@ def init_base_crawls_api(app, user_dep, *args):
         return await ops.delete_crawls_all_types(delete_list, org, user)
 
     @app.post(
+        "/orgs/all/all-crawls/clear-presigned-urls",
+        tags=["all-crawls"],
+        response_model=SuccessResponse,
+    )
+    async def clear_all_presigned_urls(user: User = Depends(user_dep)):
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+
+        asyncio.create_task(ops.clear_presigned_urls(org=None))
+        return {"success": True}
+
+    @app.post(
         "/orgs/{oid}/all-crawls/clear-presigned-urls",
         tags=["all-crawls"],
         response_model=SuccessResponse,
@@ -1082,18 +1094,6 @@ def init_base_crawls_api(app, user_dep, *args):
             raise HTTPException(status_code=403, detail="Not Allowed")
 
         asyncio.create_task(ops.clear_presigned_urls(org=org))
-        return {"success": True}
-
-    @app.post(
-        "/orgs/all/all-crawls/clear-presigned-urls",
-        tags=["all-crawls"],
-        response_model=SuccessResponse,
-    )
-    async def clear_all_presigned_urls(user: User = Depends(user_dep)):
-        if not user.is_superuser:
-            raise HTTPException(status_code=403, detail="Not Allowed")
-
-        asyncio.create_task(ops.clear_presigned_urls(org=None))
         return {"success": True}
 
     return ops
