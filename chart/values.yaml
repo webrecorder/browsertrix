@@ -423,8 +423,8 @@ storages:
 # max value = 10079 (one week minus one minute)
 # storage_presign_duration_minutes: 10079
 
-# if truthy, will attempt to replay from first replica
-# replay_from_replica: true
+# if set, will replay from particular replica, instead of default storage
+# replay_from_replica: default
 
 # Email Options
 # =========================================
