@@ -895,11 +895,15 @@ class BaseCrawlOps:
 
         return last_crawl_finished
 
-    async def clear_all_presigned_urls(self):
+    async def clear_presigned_urls(self, org: Optional[Organization] = None):
         """Clear presigned URLs for all crawl/upload files"""
         # Clear presign for crawl files
+        match_query = {}
+        if org:
+            match_query["oid"] = org.id
+
         await self.crawls.update_many(
-            {},
+            match_query,
             {
                 "$set": {
                     "files.$[].presignedUrl": None,
@@ -910,6 +914,9 @@ class BaseCrawlOps:
 
         # Clear presign for QA crawl files
         match_query = {"type": "crawl", "qaFinished": {"$nin": [None, {}]}}
+        if org:
+            match_query["oid"] = org.id
+
         async for crawl_with_qa in self.crawls.find(match_query):
             crawl = Crawl.from_dict(crawl_with_qa)
             if not crawl.qaFinished:
@@ -1061,6 +1068,20 @@ def init_base_crawls_api(app, user_dep, *args):
         return await ops.delete_crawls_all_types(delete_list, org, user)
 
     @app.post(
+        "/orgs/{oid}/all-crawls/clear-presigned-urls",
+        tags=["all-crawls"],
+        response_model=SuccessResponse,
+    )
+    async def clear_org_presigned_urls(
+        org: Organization = Depends(org_crawl_dep), user: User = Depends(user_dep)
+    ):
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+
+        asyncio.create_task(ops.clear_presigned_urls(org=org))
+        return {"success": True}
+
+    @app.post(
         "/orgs/all/all-crawls/clear-presigned-urls",
         tags=["all-crawls"],
         response_model=SuccessResponse,
@@ -1069,7 +1090,7 @@ def init_base_crawls_api(app, user_dep, *args):
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
-        asyncio.create_task(ops.clear_all_presigned_urls())
+        asyncio.create_task(ops.clear_presigned_urls(org=None))
         return {"success": True}
 
     return ops
