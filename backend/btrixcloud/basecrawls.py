@@ -912,7 +912,7 @@ class BaseCrawlOps:
         match_query = {"type": "crawl", "qaFinished": {"$nin": [None, {}]}}
         async for crawl_with_qa in self.crawls.find(match_query):
             crawl = Crawl.from_dict(crawl_with_qa)
-            for qa_run_id in crawl.qaFinished.keys():
+            for qa_run_id in crawl.qaFinished:
                 await self.crawls.find_one_and_update(
                     {"_id": crawl.id},
                     {
