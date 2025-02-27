@@ -1404,6 +1404,7 @@ def init_pages_api(
             page=page,
             sort_by=sortBy,
             sort_direction=sortDirection,
+            include_total=True,
         )
         return paginated_format(pages, total, page, pageSize)
 
