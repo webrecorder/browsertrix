@@ -913,7 +913,10 @@ class BaseCrawlOps:
         )
 
         # Clear presign for QA crawl files
-        match_query = {"type": "crawl", "qaFinished": {"$nin": [None, {}]}}
+        match_query: Dict[str, Union[object, str, UUID]] = {
+            "type": "crawl",
+            "qaFinished": {"$nin": [None, {}]},
+        }
         if org:
             match_query["oid"] = org.id
 
