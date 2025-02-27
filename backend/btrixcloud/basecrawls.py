@@ -898,12 +898,12 @@ class BaseCrawlOps:
     async def clear_presigned_urls(self, org: Optional[Organization] = None):
         """Clear presigned URLs for all crawl/upload files"""
         # Clear presign for crawl files
-        match_query = {}
+        crawl_query = {}
         if org:
-            match_query["oid"] = org.id
+            crawl_query["oid"] = org.id
 
         await self.crawls.update_many(
-            match_query,
+            crawl_query,
             {
                 "$set": {
                     "files.$[].presignedUrl": None,
@@ -913,14 +913,14 @@ class BaseCrawlOps:
         )
 
         # Clear presign for QA crawl files
-        match_query: Dict[str, Union[object, str, UUID]] = {
+        qa_query: Dict[str, Union[object, str, UUID]] = {
             "type": "crawl",
             "qaFinished": {"$nin": [None, {}]},
         }
         if org:
-            match_query["oid"] = org.id
+            qa_query["oid"] = org.id
 
-        async for crawl_with_qa in self.crawls.find(match_query):
+        async for crawl_with_qa in self.crawls.find(qa_query):
             crawl = Crawl.from_dict(crawl_with_qa)
             if not crawl.qaFinished:
                 continue
