@@ -1030,6 +1030,22 @@ def test_update_upload_metadata_all_crawls(
     assert data["collectionIds"] == []
 
 
+def test_clear_all_presigned_urls(admin_auth_headers, crawler_auth_headers):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/all/all-crawls/clear-presigned-urls",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 403
+    assert r.json()["detail"] == "Not Allowed"
+
+    r = requests.post(
+        f"{API_PREFIX}/orgs/all/all-crawls/clear-presigned-urls",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["success"]
+
+
 def test_delete_form_upload_and_crawls_from_all_crawls(
     admin_auth_headers,
     crawler_auth_headers,

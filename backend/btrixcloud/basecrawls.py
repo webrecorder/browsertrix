@@ -30,6 +30,7 @@ from .models import (
     DeletedResponseQuota,
     CrawlSearchValuesResponse,
     PRESIGN_DURATION_SECONDS,
+    SuccessResponse,
 )
 from .pagination import paginated_format, DEFAULT_PAGE_SIZE
 from .utils import dt_now, date_to_str, get_origin
@@ -893,6 +894,12 @@ class BaseCrawlOps:
 
         return last_crawl_finished
 
+    async def clear_all_presigned_urls(self):
+        """Clear presigned URLs for all crawl/upload files"""
+        await self.crawls.update_many(
+            {}, {"$set": {"files.$[].presignedUrl": None, "files.$[].expireAt": None}}
+        )
+
 
 # ============================================================================
 def init_base_crawls_api(app, user_dep, *args):
@@ -1027,5 +1034,17 @@ def init_base_crawls_api(app, user_dep, *args):
         org: Organization = Depends(org_crawl_dep),
     ):
         return await ops.delete_crawls_all_types(delete_list, org, user)
+
+    @app.post(
+        "/orgs/all/all-crawls/clear-presigned-urls",
+        tags=["all-crawls"],
+        response_model=SuccessResponse,
+    )
+    async def clear_all_presigned_urls(user: User = Depends(user_dep)):
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+
+        asyncio.create_task(ops.clear_all_presigned_urls())
+        return {"success": True}
 
     return ops
