@@ -120,6 +120,11 @@ CONTEXT=$(cat ~/.kube/config | grep "current-context:" | sed "s/current-context:
 MICROK8S="-microk8s"
 WAIT="-wait"
 
+if [ $CONTEXT != "docker-desktop" ]; then
+    echo "Attempting to modify context other than docker-desktop not supported. Quitting."
+    exit 1
+fi
+
 if [[ $1 = "setup" ]]; then
     setupLocalConfig
 fi
