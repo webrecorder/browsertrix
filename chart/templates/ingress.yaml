@@ -15,9 +15,9 @@ metadata:
     # for larger uploads to not timeout
     nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
     nginx.ingress.kubernetes.io/proxy-buffering: "off"
+    nginx.ingress.kubernetes.io/upstream-vhost: "{{ .Values.ingress.host }}"
     {{- if .Values.ingress.tls }}
     cert-manager.io/cluster-issuer: {{ .Values.ingress.custom_cluster_issuer | default "cert-main" }}
-    nginx.ingress.kubernetes.io/upstream-vhost: "{{ .Values.ingress.host }}"
     nginx.ingress.kubernetes.io/configuration-snippet: |
       proxy_set_header X-Forwarded-Proto {{ .Values.ingress.tls | ternary "https" "http" }};
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
