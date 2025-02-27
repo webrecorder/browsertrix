@@ -52,7 +52,7 @@ from .models import (
     AddedResponseName,
 )
 
-from .utils import slug_from_name
+from .utils import slug_from_name, is_bool
 from .version import __version__
 
 
@@ -81,6 +81,8 @@ class StorageOps:
 
     frontend_origin: str
 
+    replay_from_replica: bool
+
     def __init__(self, org_ops, crawl_manager) -> None:
         self.org_ops = org_ops
         self.crawl_manager = crawl_manager
@@ -90,6 +92,8 @@ class StorageOps:
         )
         default_namespace = os.environ.get("DEFAULT_NAMESPACE", "default")
         self.frontend_origin = f"{frontend_origin}.{default_namespace}"
+
+        self.replay_from_replica = is_bool(os.environ.get("REPLAY_FROM_REPLICA", "0"))
 
         with open(os.environ["STORAGES_JSON"], encoding="utf-8") as fh:
             storage_list = json.loads(fh.read())
@@ -449,7 +453,7 @@ class StorageOps:
     ) -> str:
         """generate pre-signed url for crawl file"""
 
-        if crawlfile.replicas:
+        if self.replay_from_replica and crawlfile.replicas:
             storage_ref = crawlfile.replicas[0]
         else:
             storage_ref = crawlfile.storage

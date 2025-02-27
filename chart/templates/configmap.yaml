@@ -90,6 +90,7 @@ data:
 
   REPLICA_DELETION_DELAY_DAYS: "{{ .Values.replica_deletion_delay_days | default 0 }}"
 
+  REPLAY_FROM_REPLICA: "{{ .Values.replay_from_replica | default 0 }}"
 
 ---
 apiVersion: v1
