@@ -15,6 +15,7 @@ from .models import (
     CrawlFile,
     CrawlFileOut,
     BaseCrawl,
+    Crawl,
     CrawlOut,
     CrawlOutWithResources,
     UpdateCrawl,
@@ -896,9 +897,31 @@ class BaseCrawlOps:
 
     async def clear_all_presigned_urls(self):
         """Clear presigned URLs for all crawl/upload files"""
+        # Clear presign for crawl files
         await self.crawls.update_many(
-            {}, {"$set": {"files.$[].presignedUrl": None, "files.$[].expireAt": None}}
+            {},
+            {
+                "$set": {
+                    "files.$[].presignedUrl": None,
+                    "files.$[].expireAt": None,
+                }
+            },
         )
+
+        # Clear presign for QA crawl files
+        match_query = {"type": "crawl", "qaFinished": {"$nin": [None, {}]}}
+        async for crawl_with_qa in self.crawls.find(match_query):
+            crawl = Crawl.from_dict(crawl_with_qa)
+            for qa_run_id in crawl.qaFinished.keys():
+                await self.crawls.find_one_and_update(
+                    {"_id": crawl.id},
+                    {
+                        "$set": {
+                            f"qaFinished.{qa_run_id}.files.$[].presignedUrl": None,
+                            f"qaFinished.{qa_run_id}.files.$[].expireAt": None,
+                        }
+                    },
+                )
 
 
 # ============================================================================
