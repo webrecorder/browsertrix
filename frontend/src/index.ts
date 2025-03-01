@@ -192,9 +192,6 @@ export class App extends BtrixElement {
     if (changedProperties.has("settings")) {
       AppStateService.updateSettings(this.settings || null);
 
-      // if (this.settings && !changedProperties.get("settings")) {
-      //   void this.initTranslation();
-      // }
     }
     if (changedProperties.has("viewState")) {
       this.handleViewStateChange(
@@ -232,7 +229,6 @@ export class App extends BtrixElement {
     await localize.initLanguage();
     // TODO We might want to set this in a lit-localize-status event listener
     // see https://lit.dev/docs/localization/runtime-mode/#example-of-using-the-status-event
-    //this.translationReady = true;
   }
 
   getLocationPathname() {
