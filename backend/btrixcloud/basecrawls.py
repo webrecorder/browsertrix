@@ -1,6 +1,6 @@
 """base crawl type"""
 
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Optional, List, Union, Dict, Any, Type, TYPE_CHECKING, cast, Tuple
 from uuid import UUID
 import os
@@ -29,10 +29,9 @@ from .models import (
     UpdatedResponse,
     DeletedResponseQuota,
     CrawlSearchValuesResponse,
-    PRESIGN_DURATION_SECONDS,
 )
 from .pagination import paginated_format, DEFAULT_PAGE_SIZE
-from .utils import dt_now, date_to_str, get_origin
+from .utils import dt_now, get_origin
 
 if TYPE_CHECKING:
     from .crawlconfigs import CrawlConfigOps
@@ -65,9 +64,6 @@ class BaseCrawlOps:
     background_job_ops: BackgroundJobOps
     page_ops: PageOps
 
-    presign_duration_seconds: int
-    expire_at_duration_seconds: int
-
     def __init__(
         self,
         mdb,
@@ -88,9 +84,6 @@ class BaseCrawlOps:
         self.event_webhook_ops = event_webhook_ops
         self.background_job_ops = background_job_ops
         self.page_ops = cast(PageOps, None)
-
-        # renew when <25% of time remaining
-        self.expire_at_duration_seconds = int(PRESIGN_DURATION_SECONDS * 0.75)
 
     def set_page_ops(self, page_ops):
         """set page ops reference"""
@@ -124,13 +117,12 @@ class BaseCrawlOps:
         files: List[Dict],
         org: Organization,
         crawlid: str,
-        qa_run_id: Optional[str] = None,
     ) -> List[CrawlFileOut]:
         if not files:
             return []
 
         crawl_files = [CrawlFile(**data) for data in files]
-        return await self.resolve_signed_urls(crawl_files, org, crawlid, qa_run_id)
+        return await self.resolve_signed_urls(crawl_files, org, crawlid)
 
     async def get_wacz_files(self, crawl_id: str, org: Organization):
         """Return list of WACZ files associated with crawl."""
@@ -464,50 +456,19 @@ class BaseCrawlOps:
         files: List[CrawlFile],
         org: Organization,
         crawl_id: Optional[str] = None,
-        qa_run_id: Optional[str] = None,
-        update_presigned_url: bool = False,
+        force_update=False,
     ) -> List[CrawlFileOut]:
         """Regenerate presigned URLs for files as necessary"""
         if not files:
             print("no files")
             return []
 
-        delta = timedelta(seconds=self.expire_at_duration_seconds)
-
         out_files = []
 
         for file_ in files:
-            presigned_url = file_.presignedUrl
-            now = dt_now()
-
-            if (
-                update_presigned_url
-                or not presigned_url
-                or (file_.expireAt and now >= file_.expireAt)
-            ):
-                exp = now + delta
-                presigned_url = await self.storage_ops.get_presigned_url(
-                    org, file_, PRESIGN_DURATION_SECONDS
-                )
-
-                prefix = "files"
-                if qa_run_id:
-                    prefix = f"qaFinished.{qa_run_id}.{prefix}"
-
-                await self.crawls.find_one_and_update(
-                    {f"{prefix}.filename": file_.filename},
-                    {
-                        "$set": {
-                            f"{prefix}.$.presignedUrl": presigned_url,
-                            f"{prefix}.$.expireAt": exp,
-                        }
-                    },
-                )
-                file_.expireAt = exp
-
-            expire_at_str = ""
-            if file_.expireAt:
-                expire_at_str = date_to_str(file_.expireAt)
+            presigned_url = await self.storage_ops.get_presigned_url(
+                org, file_, force_update=force_update
+            )
 
             out_files.append(
                 CrawlFileOut(
@@ -517,7 +478,6 @@ class BaseCrawlOps:
                     size=file_.size,
                     crawlId=crawl_id,
                     numReplicas=len(file_.replicas) if file_.replicas else 0,
-                    expireAt=expire_at_str,
                 )
             )
 

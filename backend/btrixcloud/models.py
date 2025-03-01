@@ -709,6 +709,15 @@ class StorageRef(BaseModel):
 
 
 # ============================================================================
+class PresignedUrl(BaseMongoModel):
+    """Base model for presigned url"""
+
+    id: str
+    url: str
+    signedAt: datetime
+
+
+# ============================================================================
 class BaseFile(BaseModel):
     """Base model for crawl and profile files"""
 
@@ -724,9 +733,6 @@ class BaseFile(BaseModel):
 class CrawlFile(BaseFile):
     """file from a crawl"""
 
-    presignedUrl: Optional[str] = None
-    expireAt: Optional[datetime] = None
-
 
 # ============================================================================
 class CrawlFileOut(BaseModel):
@@ -739,7 +745,6 @@ class CrawlFileOut(BaseModel):
 
     crawlId: Optional[str] = None
     numReplicas: int = 0
-    expireAt: Optional[str] = None
 
 
 # ============================================================================
@@ -1151,9 +1156,7 @@ class ImageFile(BaseFile):
 
     async def get_image_file_out(self, org, storage_ops) -> ImageFileOut:
         """Get ImageFileOut with new presigned url"""
-        presigned_url = await storage_ops.get_presigned_url(
-            org, self, PRESIGN_DURATION_SECONDS
-        )
+        presigned_url = await storage_ops.get_presigned_url(org, self)
 
         return ImageFileOut(
             name=self.filename,
@@ -1169,9 +1172,7 @@ class ImageFile(BaseFile):
 
     async def get_public_image_file_out(self, org, storage_ops) -> PublicImageFileOut:
         """Get PublicImageFileOut with new presigned url"""
-        presigned_url = await storage_ops.get_presigned_url(
-            org, self, PRESIGN_DURATION_SECONDS
-        )
+        presigned_url = await storage_ops.get_presigned_url(org, self)
 
         return PublicImageFileOut(
             name=self.filename,

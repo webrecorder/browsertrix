@@ -108,6 +108,7 @@ async def update_and_prepare_db(
         invite_ops,
         user_manager,
         page_ops,
+        storage_ops,
     )
     await user_manager.create_super_user()
     await org_ops.create_default_org()
@@ -211,7 +212,14 @@ async def drop_indexes(mdb):
 # ============================================================================
 # pylint: disable=too-many-arguments
 async def create_indexes(
-    org_ops, crawl_ops, crawl_config_ops, coll_ops, invite_ops, user_manager, page_ops
+    org_ops,
+    crawl_ops,
+    crawl_config_ops,
+    coll_ops,
+    invite_ops,
+    user_manager,
+    page_ops,
+    storage_ops,
 ):
     """Create database indexes."""
     print("Creating database indexes", flush=True)
@@ -222,6 +230,7 @@ async def create_indexes(
     await invite_ops.init_index()
     await user_manager.init_index()
     await page_ops.init_index()
+    await storage_ops.init_index()
 
 
 # ============================================================================

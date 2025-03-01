@@ -50,9 +50,11 @@ from .models import (
     DeletedResponse,
     UpdatedResponse,
     AddedResponseName,
+    PRESIGN_DURATION_SECONDS,
+    PresignedUrl,
 )
 
-from .utils import slug_from_name
+from .utils import slug_from_name, dt_now
 from .version import __version__
 
 
@@ -81,9 +83,16 @@ class StorageOps:
 
     frontend_origin: str
 
-    def __init__(self, org_ops, crawl_manager) -> None:
+    expire_at_duration_seconds: int
+
+    def __init__(self, org_ops, crawl_manager, mdb) -> None:
         self.org_ops = org_ops
         self.crawl_manager = crawl_manager
+
+        self.presigned_urls = mdb["presigned_urls"]
+
+        # renew when <25% of time remaining
+        self.expire_at_duration_seconds = int(PRESIGN_DURATION_SECONDS * 0.75)
 
         frontend_origin = os.environ.get(
             "FRONTEND_ORIGIN", "http://browsertrix-cloud-frontend"
@@ -128,6 +137,12 @@ class StorageOps:
                 )
 
         self.org_ops.set_default_primary_storage(self.default_primary)
+
+    async def init_index(self):
+        """init index for storages"""
+        await self.presigned_urls.create_index(
+            "signedAt", expireAfterSeconds=self.expire_at_duration_seconds
+        )
 
     def _create_s3_storage(self, storage: dict[str, str]) -> S3Storage:
         """create S3Storage object"""
@@ -445,9 +460,17 @@ class StorageOps:
                 return False
 
     async def get_presigned_url(
-        self, org: Organization, crawlfile: CrawlFile, duration=3600
+        self, org: Organization, crawlfile: CrawlFile, force_update=False
     ) -> str:
         """generate pre-signed url for crawl file"""
+
+        res = None
+        if not force_update:
+            res = await self.presigned_urls.find_one({"_id": crawlfile.filename})
+            if res:
+                url = res.get("url")
+                if url:
+                    return url
 
         s3storage = self.get_org_storage_by_ref(org, crawlfile.storage)
 
@@ -459,7 +482,9 @@ class StorageOps:
             key += crawlfile.filename
 
             presigned_url = await client.generate_presigned_url(
-                "get_object", Params={"Bucket": bucket, "Key": key}, ExpiresIn=duration
+                "get_object",
+                Params={"Bucket": bucket, "Key": key},
+                ExpiresIn=PRESIGN_DURATION_SECONDS,
             )
 
             if (
@@ -473,6 +498,17 @@ class StorageOps:
                 presigned_url = presigned_url.replace(
                     host_endpoint_url, s3storage.access_endpoint_url
                 )
+
+        presigned = PresignedUrl(
+            id=crawlfile.filename, url=presigned_url, signedAt=dt_now()
+        )
+        await self.presigned_urls.find_one_and_update(
+            {"_id": crawlfile.filename},
+            {
+                "$set": presigned.to_dict(),
+            },
+            upsert=True,
+        )
 
         return presigned_url
 
@@ -753,10 +789,10 @@ def _parse_json(line) -> dict:
 
 
 # ============================================================================
-def init_storages_api(org_ops, crawl_manager):
+def init_storages_api(org_ops: OrgOps, crawl_manager: CrawlManager, mdb) -> StorageOps:
     """API for updating storage for an org"""
 
-    storage_ops = StorageOps(org_ops, crawl_manager)
+    storage_ops = StorageOps(org_ops, crawl_manager, mdb)
 
     if not org_ops.router:
         return storage_ops
