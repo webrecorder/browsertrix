@@ -16,7 +16,7 @@ from fastapi.openapi.utils import get_openapi
 from fastapi.openapi.docs import get_swagger_ui_html, get_redoc_html
 from pydantic import BaseModel
 
-from .db import init_db, await_db_and_migrations, update_and_prepare_db
+from .db import init_db, await_db_and_migrations
 
 from .emailsender import EmailSender
 from .invites import init_invites
@@ -38,7 +38,7 @@ from .pages import init_pages_api
 from .subs import init_subs_api
 
 from .crawlmanager import CrawlManager
-from .utils import run_once_lock, register_exit_handler, is_bool
+from .utils import register_exit_handler, is_bool
 from .version import __version__
 
 API_PREFIX = "/api"

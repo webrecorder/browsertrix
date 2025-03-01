@@ -10,7 +10,7 @@ from .db import update_and_prepare_db
 
 # ============================================================================
 # pylint: disable=too-many-function-args, duplicate-code
-async def main() -> None:
+async def main() -> int:
     """init migrations"""
 
     # pylint: disable=import-outside-toplevel
@@ -19,7 +19,7 @@ async def main() -> None:
             "Sorry, the Browsertrix Backend must be run inside a Kubernetes environment.\
              Kubernetes not detected (KUBERNETES_SERVICE_HOST is not set), Exiting"
         )
-        sys.exit(1)
+        return 1
 
     (
         org_ops,
@@ -54,6 +54,7 @@ async def main() -> None:
     )
 
     return 0
+
 
 # # ============================================================================
 if __name__ == "__main__":
