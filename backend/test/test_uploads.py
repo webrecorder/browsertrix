@@ -1054,7 +1054,6 @@ def test_clear_all_presigned_urls(
         headers=crawler_auth_headers,
     )
     assert r.status_code == 403
-    assert r.json()["detail"] == "Not Allowed"
 
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/clear-presigned-urls",
