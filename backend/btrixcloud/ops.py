@@ -1,6 +1,7 @@
 """shared helper to initialize ops classes"""
 
 from typing import Tuple
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 
 from .crawlmanager import CrawlManager
 from .db import init_db
@@ -35,6 +36,9 @@ def init_ops() -> Tuple[
     BackgroundJobOps,
     EventWebhookOps,
     UserManager,
+    InviteOps,
+    AsyncIOMotorClient,
+    AsyncIOMotorDatabase,
 ]:
     """Initialize and return ops classes"""
     email = EmailSender()
@@ -122,4 +126,7 @@ def init_ops() -> Tuple[
         background_job_ops,
         event_webhook_ops,
         user_manager,
+        invite_ops,
+        dbclient,
+        mdb,
     )

@@ -272,25 +272,8 @@ def main() -> None:
 
     coll_ops.set_page_ops(page_ops)
 
-    # run only in first worker
-    if run_once_lock("btrix-init-db"):
-        asyncio.create_task(
-            update_and_prepare_db(
-                mdb,
-                user_manager,
-                org_ops,
-                crawls,
-                crawl_config_ops,
-                coll_ops,
-                invites,
-                storage_ops,
-                page_ops,
-                background_job_ops,
-                db_inited,
-            )
-        )
-    else:
-        asyncio.create_task(await_db_and_migrations(mdb, db_inited))
+    # await db init, migrations should have already completed in init containers
+    asyncio.create_task(await_db_and_migrations(mdb, db_inited))
 
     app.include_router(org_ops.router)
 

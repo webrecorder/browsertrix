@@ -39,6 +39,9 @@ def main():
         background_job_ops,
         event_webhook_ops,
         _,
+        _,
+        _,
+        _,
     ) = init_ops()
 
     return init_operator_api(
