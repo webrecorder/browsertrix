@@ -27,7 +27,7 @@ import os
 from datetime import datetime
 from zipfile import ZipInfo
 
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, APIRouter
 from stream_zip import stream_zip, NO_COMPRESSION_64, Method
 from remotezip import RemoteZip
 from aiobotocore.config import AioConfig
@@ -52,6 +52,8 @@ from .models import (
     AddedResponseName,
     PRESIGN_DURATION_SECONDS,
     PresignedUrl,
+    SuccessResponse,
+    User,
 )
 
 from .utils import slug_from_name, dt_now
@@ -500,7 +502,7 @@ class StorageOps:
                 )
 
         presigned = PresignedUrl(
-            id=crawlfile.filename, url=presigned_url, signedAt=dt_now()
+            id=crawlfile.filename, url=presigned_url, signedAt=dt_now(), oid=org.id
         )
         await self.presigned_urls.find_one_and_update(
             {"_id": crawlfile.filename},
@@ -789,7 +791,9 @@ def _parse_json(line) -> dict:
 
 
 # ============================================================================
-def init_storages_api(org_ops: OrgOps, crawl_manager: CrawlManager, mdb) -> StorageOps:
+def init_storages_api(
+    org_ops: OrgOps, crawl_manager: CrawlManager, app: APIRouter, mdb, user_dep
+) -> StorageOps:
     """API for updating storage for an org"""
 
     storage_ops = StorageOps(org_ops, crawl_manager, mdb)
@@ -810,6 +814,29 @@ def init_storages_api(org_ops: OrgOps, crawl_manager: CrawlManager, mdb) -> Stor
     @router.get("/allStorages", tags=["organizations"], response_model=List[StorageRef])
     def get_available_storages(org: Organization = Depends(org_owner_dep)):
         return storage_ops.get_available_storages(org)
+
+    @router.post(
+        "/clear-presigned-urls",
+        tags=["organizations"],
+        response_model=SuccessResponse,
+    )
+    async def clear_presigned_url(org: Organization = Depends(org_owner_dep)):
+        await storage_ops.presigned_urls.delete_many({"oid": org.id})
+
+        return {"success": True}
+
+    @app.post(
+        "/orgs/clear-presigned-urls",
+        tags=["organizations"],
+        response_model=SuccessResponse,
+    )
+    async def clear_all_presigned_urls(user: User = Depends(user_dep)):
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+
+        await storage_ops.presigned_urls.delete_many({})
+
+        return {"success": True}
 
     # pylint: disable=unreachable, fixme
     # todo: enable when ready to support custom storage

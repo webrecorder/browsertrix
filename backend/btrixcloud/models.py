@@ -714,6 +714,7 @@ class PresignedUrl(BaseMongoModel):
 
     id: str
     url: str
+    oid: UUID
     signedAt: datetime
 
 
