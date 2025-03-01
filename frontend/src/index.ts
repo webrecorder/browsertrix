@@ -101,9 +101,6 @@ export class App extends BtrixElement {
 
   authService = new AuthService();
 
-  @state()
-  private translationReady = false;
-
   @provide({ context: viewStateContext })
   @state()
   private viewState!: ViewState;
@@ -187,6 +184,7 @@ export class App extends BtrixElement {
   }
 
   firstUpdated() {
+    void this.initTranslation();
     this.trackPageView();
   }
 
@@ -194,9 +192,9 @@ export class App extends BtrixElement {
     if (changedProperties.has("settings")) {
       AppStateService.updateSettings(this.settings || null);
 
-      if (this.settings && !changedProperties.get("settings")) {
-        void this.initTranslation();
-      }
+      // if (this.settings && !changedProperties.get("settings")) {
+      //   void this.initTranslation();
+      // }
     }
     if (changedProperties.has("viewState")) {
       this.handleViewStateChange(
@@ -234,7 +232,7 @@ export class App extends BtrixElement {
     await localize.initLanguage();
     // TODO We might want to set this in a lit-localize-status event listener
     // see https://lit.dev/docs/localization/runtime-mode/#example-of-using-the-status-event
-    this.translationReady = true;
+    //this.translationReady = true;
   }
 
   getLocationPathname() {
@@ -351,8 +349,6 @@ export class App extends BtrixElement {
   }
 
   render() {
-    if (!this.translationReady) return;
-
     return html`
       <div class="min-w-screen flex min-h-screen flex-col">
         ${this.renderSuperadminBanner()} ${this.renderNavBar()}
