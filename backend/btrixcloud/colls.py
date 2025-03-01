@@ -377,6 +377,8 @@ class CollectionOps:
         """Get PublicCollOut by id"""
         result = await self.get_collection_raw(coll_id)
 
+        result["orgName"] = org.name
+
         allowed_access = [CollAccessType.PUBLIC]
         if allow_unlisted:
             allowed_access.append(CollAccessType.UNLISTED)
