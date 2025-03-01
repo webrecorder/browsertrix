@@ -155,6 +155,28 @@ def test_create_collection_empty_name(
     assert r.status_code == 422
 
 
+def test_create_empty_collection(
+    crawler_auth_headers, default_org_id, crawler_crawl_id, admin_crawl_id
+):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections",
+        headers=crawler_auth_headers,
+        json={
+            "name": "Empty Collection",
+        },
+    )
+    assert r.status_code == 200
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/replay.json",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["crawlCount"] == 0
+    assert data["pageCount"] == 0
+    assert len(data["resources"]) == 0
+
 def test_update_collection(
     crawler_auth_headers, default_org_id, crawler_crawl_id, admin_crawl_id
 ):
@@ -569,10 +591,10 @@ def test_list_collections(
     )
     assert r.status_code == 200
     data = r.json()
-    assert data["total"] == 3
+    assert data["total"] == 4
 
     items = data["items"]
-    assert len(items) == 3
+    assert len(items) == 4
 
     first_coll = [coll for coll in items if coll["name"] == UPDATED_NAME][0]
     assert first_coll["id"] == _coll_id
