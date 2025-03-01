@@ -498,6 +498,8 @@ class CollectionOps:
                         org, self.storage_ops
                     )
 
+            res["orgName"] = org.name
+
             if public_colls_out:
                 collections.append(PublicCollOut.from_dict(res))
             else:
