@@ -31,7 +31,7 @@
         <target state="translated">Próximo</target>
       </trans-unit>
       <trans-unit id="h7ee8a6e551e702ba">
-        <source><x id="0" equiv-text="${this.renderInput()}"/> of <x id="1" equiv-text="${this.pages} "/></source>
+        <source> <x id="0" equiv-text="${this.renderInput()}"/> of <x id="1" equiv-text="${this.pages} "/></source>
       </trans-unit>
       <trans-unit id="s5697808ce744d508" xml:space="preserve">
         <source>Current page, page <x id="0" equiv-text="${this.page}"/></source>
@@ -66,7 +66,8 @@
         <target state="translated">Deletar a Coleção?</target>
       </trans-unit>
       <trans-unit id="h05165b87bf66fe02" xml:space="preserve">
-        <source>Are you sure you want to delete <x id="0" equiv-text="&lt;strong&gt;${this.collection?.name}&lt;/strong&gt;"/>?</source>
+        <source>Are you sure you want to delete
+            <x id="0" equiv-text="&lt;strong&gt;${this.collection?.name}&lt;/strong&gt;"/>?</source>
         <target state="translated">Tem certeza que quer deletar<x id="0" equiv-text="&lt;strong&gt;${this.collection?.name}&lt;/strong&gt;"/>?</target>
       </trans-unit>
       <trans-unit id="s2ceb11be2290bb1b" xml:space="preserve">
@@ -238,7 +239,8 @@
         <source>You can view plan details, update payment methods, and update billing information by clicking “<x id="0" equiv-text="${this.portalUrlLabel}"/>”.</source>
       </trans-unit>
       <trans-unit id="h1abcffb9335ebc6d">
-        <source>To upgrade to Pro, contact us at <x id="0" equiv-text="&lt;a class=&quot;${linkClassList}&quot; href=&quot;${`mailto:${this.salesEmail}?subject=${msg(str `Upgrade Browsertrix plan (${this.userOrg?.name})`)}`}&quot; rel=&quot;noopener noreferrer nofollow&quot;&gt;${this.salesEmail}&lt;/a&gt;"/>.</source>
+        <source>To upgrade to Pro, contact us at
+                                <x id="0" equiv-text="&lt;a class=&quot;${linkClassList}&quot; href=&quot;${`mailto:${this.salesEmail}?subject=${msg(str `Upgrade Browsertrix plan (${this.userOrg?.name})`)}`}&quot; rel=&quot;noopener noreferrer nofollow&quot;&gt;${this.salesEmail}&lt;/a&gt;"/>.</source>
       </trans-unit>
       <trans-unit id="s7ec899c7c6213c52">
         <source>Upgrade Browsertrix plan (<x id="0" equiv-text="${this.userOrg?.name}"/>)</source>
@@ -322,10 +324,13 @@
         <source>Regex</source>
       </trans-unit>
       <trans-unit id="h8c21d04827e5cb19">
-        <source>Regular Expression syntax error: <x id="0" equiv-text="&lt;code&gt;${this.fieldErrorMessage}&lt;/code&gt;"/></source>
+        <source>Regular Expression syntax error:
+                                    <x id="0" equiv-text="&lt;code&gt;${this.fieldErrorMessage}&lt;/code&gt;"/></source>
       </trans-unit>
       <trans-unit id="h1a1f28e6632c15d0">
-        <source>Please enter a valid constructor string pattern. See <x id="0" equiv-text="&lt;a class=&quot;underline hover:no-underline&quot; href=&quot;https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp&quot; target=&quot;_blank&quot; rel=&quot;noopener noreferrer nofollow&quot;&gt;&lt;code&gt;"/>RegExp<x id="1" equiv-text="&lt;/code&gt;"/> docs<x id="2" equiv-text="&lt;/a&gt;"/>.</source>
+        <source>Please enter a valid constructor string
+                                    pattern. See
+                                    <x id="0" equiv-text="&lt;a class=&quot;underline hover:no-underline&quot; href=&quot;https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp&quot; target=&quot;_blank&quot; rel=&quot;noopener noreferrer nofollow&quot;&gt;&lt;code&gt;"/>RegExp<x id="1" equiv-text="&lt;/code&gt;"/> docs<x id="2" equiv-text="&lt;/a&gt;"/>.</source>
       </trans-unit>
       <trans-unit id="s312a6fda81078718">
         <source>Exclusions</source>
@@ -373,7 +378,8 @@
         <source>Every day at <x id="0" equiv-text="${formattedTime}"/></source>
       </trans-unit>
       <trans-unit id="s3fc21c0b1ae61eb7">
-        <source>Every <x id="0" equiv-text="${formattedWeekDay}"/> at <x id="1" equiv-text="${formattedTime}"/></source>
+        <source>Every <x id="0" equiv-text="${formattedWeekDay}"/>
+            at <x id="1" equiv-text="${formattedTime}"/></source>
       </trans-unit>
       <trans-unit id="s478f33dea36e1d3f">
         <source>On day <x id="0" equiv-text="${nextDate.getDate()}"/> of the month at <x id="1" equiv-text="${formattedTime}"/></source>
@@ -406,19 +412,24 @@
         <source>Waits on the page after behaviors are complete before moving onto the next page. Can be helpful for rate limiting.</source>
       </trans-unit>
       <trans-unit id="s750a2fea733037cb">
-        <source>Choose a custom profile to make use of saved cookies and logged-in accounts. Note that websites may log profiles out after a period of time.</source>
+        <source>Choose a custom profile to make use of saved cookies and logged-in
+  accounts. Note that websites may log profiles out after a period of time.</source>
       </trans-unit>
       <trans-unit id="scd15181280405de6">
         <source>Choose a Browsertrix Crawler Release Channel. If available, other versions may provide new/experimental crawling features.</source>
       </trans-unit>
       <trans-unit id="h1a88ca035802fcd0">
-        <source>Blocks advertising content from being loaded. Uses <x id="0" equiv-text="&lt;a href=&quot;https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts&quot; class=&quot;text-blue-600 hover:text-blue-500&quot; target=&quot;_blank&quot; rel=&quot;noopener noreferrer nofollow&quot;&gt;"/>Steven Black’s Hosts file<x id="1" equiv-text="&lt;/a&gt;"/>.</source>
+        <source>Blocks advertising content from being loaded. Uses
+      <x id="0" equiv-text="&lt;a href=&quot;https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts&quot; class=&quot;text-blue-600 hover:text-blue-500&quot; target=&quot;_blank&quot; rel=&quot;noopener noreferrer nofollow&quot;&gt;"/>Steven Black’s Hosts file<x id="1" equiv-text="&lt;/a&gt;"/>.</source>
       </trans-unit>
       <trans-unit id="h63182e63349f17de">
-        <source>Set custom user agent for crawler browsers to use in requests. For common user agents see <x id="0" equiv-text="&lt;a href=&quot;https://www.useragents.me/&quot; class=&quot;text-blue-600 hover:text-blue-500&quot; target=&quot;_blank&quot; rel=&quot;noopener noreferrer nofollow&quot;&gt;"/>Useragents.me<x id="1" equiv-text="&lt;/a&gt;"/>.</source>
+        <source>Set custom user agent for crawler browsers to use in requests. For
+      common user agents see
+      <x id="0" equiv-text="&lt;a href=&quot;https://www.useragents.me/&quot; class=&quot;text-blue-600 hover:text-blue-500&quot; target=&quot;_blank&quot; rel=&quot;noopener noreferrer nofollow&quot;&gt;"/>Useragents.me<x id="1" equiv-text="&lt;/a&gt;"/>.</source>
       </trans-unit>
       <trans-unit id="s49e094325ac57142">
-        <source>Websites that observe the browser’s language setting may serve content in that language if available.</source>
+        <source>Websites that observe the browser’s language setting may serve
+  content in that language if available.</source>
       </trans-unit>
       <trans-unit id="sd5aac2757a442b2a">
         <source>Choose a proxy to crawl through</source>
@@ -658,7 +669,8 @@
         <source>This org URL identifier is invalid. Please use alphanumeric characters and dashes (-) only.</source>
       </trans-unit>
       <trans-unit id="h58a74834f0ef0fcb">
-        <source>Supports <x id="0" equiv-text="&lt;a class=&quot;text-blue-500 hover:text-blue-600&quot; href=&quot;https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax&quot; target=&quot;_blank&quot; rel=&quot;noopener noreferrer nofollow&quot;&gt;"/>GitHub Flavored Markdown<x id="1" equiv-text="&lt;/a&gt;"/>.</source>
+        <source>Supports
+                <x id="0" equiv-text="&lt;a class=&quot;text-blue-500 hover:text-blue-600&quot; href=&quot;https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax&quot; target=&quot;_blank&quot; rel=&quot;noopener noreferrer nofollow&quot;&gt;"/>GitHub Flavored Markdown<x id="1" equiv-text="&lt;/a&gt;"/>.</source>
       </trans-unit>
       <trans-unit id="s7a89a316efd4e9c0">
         <source>Please shorten the description to <x id="0" equiv-text="${this.localize.number(this.maxlength)}"/> or fewer characters.</source>
@@ -916,10 +928,10 @@
         <source><x id="0" equiv-text="${workflow.createdByName}"/> on <x id="1" equiv-text="${this.localize.date(new Date(workflow.created), {&#10;    year: &quot;numeric&quot;,&#10;    month: &quot;numeric&quot;,&#10;    day: &quot;numeric&quot;,&#10;})}"/></source>
       </trans-unit>
       <trans-unit id="hcb76d3d062f4fe97">
-        <source><x id="0" equiv-text="&lt;span class=&quot;truncate&quot;&gt;${firstSeed}&lt;/span&gt;&#10;          &lt;span class=&quot;whitespace-nowrap text-neutral-500&quot;&gt;"/>+<x id="1" equiv-text="${remainderCount}"/> URL<x id="2" equiv-text="&lt;/span&gt;"/></source>
+        <source> <x id="0" equiv-text="&lt;span class=&quot;truncate&quot;&gt;${firstSeed}&lt;/span&gt;&#10;          &lt;span class=&quot;whitespace-nowrap text-neutral-500&quot;&gt;"/>+<x id="1" equiv-text="${remainderCount}"/> URL<x id="2" equiv-text="&lt;/span&gt;"/></source>
       </trans-unit>
       <trans-unit id="h0f472740ba5c3c86">
-        <source><x id="0" equiv-text="&lt;span class=&quot;truncate&quot;&gt;${firstSeed}&lt;/span&gt;&#10;        &lt;span class=&quot;whitespace-nowrap text-neutral-500&quot;&gt;"/>+<x id="1" equiv-text="${remainderCount}"/> URLs<x id="2" equiv-text="&lt;/span&gt;"/></source>
+        <source> <x id="0" equiv-text="&lt;span class=&quot;truncate&quot;&gt;${firstSeed}&lt;/span&gt;&#10;        &lt;span class=&quot;whitespace-nowrap text-neutral-500&quot;&gt;"/>+<x id="1" equiv-text="${remainderCount}"/> URLs<x id="2" equiv-text="&lt;/span&gt;"/></source>
       </trans-unit>
       <trans-unit id="s900a5e61e7ade066">
         <source>View:</source>
@@ -928,7 +940,8 @@
         <source>All Crawls</source>
       </trans-unit>
       <trans-unit id="he775de5878ab0942">
-        <source>Crawl is currently running. <x id="0" equiv-text="&lt;a href=&quot;${`${window.location.pathname}#watch`}&quot; class=&quot;underline hover:no-underline&quot;&gt;"/>Watch Crawl Progress<x id="1" equiv-text="&lt;/a&gt;"/></source>
+        <source>Crawl is currently running.
+                    <x id="0" equiv-text="&lt;a href=&quot;${`${window.location.pathname}#watch`}&quot; class=&quot;underline hover:no-underline&quot;&gt;"/>Watch Crawl Progress<x id="1" equiv-text="&lt;/a&gt;"/></source>
       </trans-unit>
       <trans-unit id="s76d9944af031bdb3">
         <source>No matching crawls found.</source>
@@ -976,7 +989,8 @@
         <source>Crawl is not running.</source>
       </trans-unit>
       <trans-unit id="h27573a6e2ed7211d">
-        <source>Viewing error logs for currently running crawl. <x id="0" equiv-text="&lt;a href=&quot;${`${window.location.pathname}#watch`}&quot; class=&quot;underline hover:no-underline&quot;&gt;"/>Watch Crawl Progress<x id="1" equiv-text="&lt;/a&gt;"/></source>
+        <source>Viewing error logs for currently running crawl.
+                    <x id="0" equiv-text="&lt;a href=&quot;${`${window.location.pathname}#watch`}&quot; class=&quot;underline hover:no-underline&quot;&gt;"/>Watch Crawl Progress<x id="1" equiv-text="&lt;/a&gt;"/></source>
       </trans-unit>
       <trans-unit id="s31b57d50c6a992ba">
         <source>Error logs currently not available.</source>
@@ -1177,7 +1191,8 @@
         <source>Are you sure you want to stop the crawl?</source>
       </trans-unit>
       <trans-unit id="ha60886587b96e32c">
-        <source>Started crawl from <x id="0" equiv-text="&lt;strong&gt;${this.renderName(workflow)}&lt;/strong&gt;"/>. <x id="1" equiv-text="&lt;br&gt;&#10;            &lt;a class=&quot;underline hover:no-underline&quot; href=&quot;${this.navigate.orgBasePath}/workflows/${workflow.id}#watch&quot; @click=&quot;${this.navigate.link.bind(this)}&quot;&gt;"/>Watch crawl<x id="2" equiv-text="&lt;/a&gt;"/></source>
+        <source>Started crawl from <x id="0" equiv-text="&lt;strong&gt;${this.renderName(workflow)}&lt;/strong&gt;"/>.
+            <x id="1" equiv-text="&lt;br&gt;&#10;            &lt;a class=&quot;underline hover:no-underline&quot; href=&quot;${this.navigate.orgBasePath}/workflows/${workflow.id}#watch&quot; @click=&quot;${this.navigate.link.bind(this)}&quot;&gt;"/>Watch crawl<x id="2" equiv-text="&lt;/a&gt;"/></source>
       </trans-unit>
       <trans-unit id="sfecdd5e13f68c9ba">
         <source>Approved</source>
@@ -1216,7 +1231,9 @@
         <source>Analysis Progress</source>
       </trans-unit>
       <trans-unit id="s984a5e18d85b6d57">
-        <source><x id="0" equiv-text="${this.mostRecentNonFailedQARun.stats.found === 0&#10;    ? msg(&quot;Loading&quot;)&#10;    : `${this.mostRecentNonFailedQARun.stats.done}/${this.mostRecentNonFailedQARun.stats.found}`} ${pluralOf(&quot;pages&quot;, this.mostRecentNonFailedQARun.stats.found)}"/> </source>
+        <source>
+          <x id="0" equiv-text="${this.mostRecentNonFailedQARun.stats.found === 0&#10;    ? msg(&quot;Loading&quot;)&#10;    : `${this.mostRecentNonFailedQARun.stats.done}/${this.mostRecentNonFailedQARun.stats.found}`} ${pluralOf(&quot;pages&quot;, this.mostRecentNonFailedQARun.stats.found)}"/>
+        </source>
       </trans-unit>
       <trans-unit id="sb59d68ed12d46377">
         <source>Loading</source>
@@ -1240,13 +1257,19 @@
         <source>Non-HTML files captured as pages are known good files that the crawler found as clickable links on a page and don't need to be analyzed. Failed pages did not respond when the crawler tried to visit them.</source>
       </trans-unit>
       <trans-unit id="h8309b5706a9a85ba">
-        <source><x id="0" equiv-text="&lt;span class=&quot;text-primary&quot;&gt;${htmlCount}&lt;/span&gt;"/> HTML <x id="1" equiv-text="${pluralOf(&quot;pages&quot;, htmlCount)}&#10;                    "/></source>
+        <source>
+                      <x id="0" equiv-text="&lt;span class=&quot;text-primary&quot;&gt;${htmlCount}&lt;/span&gt;"/>
+                      HTML <x id="1" equiv-text="${pluralOf(&quot;pages&quot;, htmlCount)}&#10;                    "/></source>
       </trans-unit>
       <trans-unit id="h7d8f1533bbc700e1">
-        <source><x id="0" equiv-text="&lt;span class=&quot;text-neutral-600&quot;&gt;${fileCount}&lt;/span&gt;"/> Non-HTML files captured as <x id="1" equiv-text="${pluralOf(&quot;pages&quot;, fileCount)}&#10;                    "/></source>
+        <source>
+                      <x id="0" equiv-text="&lt;span class=&quot;text-neutral-600&quot;&gt;${fileCount}&lt;/span&gt;"/>
+                      Non-HTML files captured as <x id="1" equiv-text="${pluralOf(&quot;pages&quot;, fileCount)}&#10;                    "/></source>
       </trans-unit>
       <trans-unit id="ha312818a16d5146b">
-        <source><x id="0" equiv-text="&lt;span class=&quot;text-danger&quot;&gt;${errorCount}&lt;/span&gt;"/> Failed <x id="1" equiv-text="${pluralOf(&quot;pages&quot;, errorCount)}&#10;                    "/></source>
+        <source>
+                      <x id="0" equiv-text="&lt;span class=&quot;text-danger&quot;&gt;${errorCount}&lt;/span&gt;"/>
+                      Failed <x id="1" equiv-text="${pluralOf(&quot;pages&quot;, errorCount)}&#10;                    "/></source>
       </trans-unit>
       <trans-unit id="s3fd6bd99e3f6a5be">
         <source>Started</source>
@@ -1429,7 +1452,8 @@
         <source>Initiator</source>
       </trans-unit>
       <trans-unit id="h1dc2f6235d169989">
-        <source>Manual start by <x id="0" equiv-text="&lt;span&gt;${this.item!.userName || this.item!.userid}&lt;/span&gt;"/></source>
+        <source>Manual start by
+                          <x id="0" equiv-text="&lt;span&gt;${this.item!.userName || this.item!.userid}&lt;/span&gt;"/></source>
       </trans-unit>
       <trans-unit id="hdfcda45e7d5c5ab4">
         <source>Scheduled start</source>
@@ -1588,7 +1612,8 @@
         <source>New Collection</source>
       </trans-unit>
       <trans-unit id="h21e623f674123fc2">
-        <source>Are you sure you want to delete <x id="0" equiv-text="&lt;strong&gt;${this.selectedCollection?.name}&lt;/strong&gt;"/>?</source>
+        <source>Are you sure you want to delete
+                <x id="0" equiv-text="&lt;strong&gt;${this.selectedCollection?.name}&lt;/strong&gt;"/>?</source>
       </trans-unit>
       <trans-unit id="s7be481b712fcb089">
         <source>Search by Name</source>
@@ -1714,7 +1739,8 @@
         <source>Sorry, couldn't create browser profile at this time.</source>
       </trans-unit>
       <trans-unit id="h132d0ccd2402fb33">
-        <source>Could not delete <x id="0" equiv-text="&lt;strong&gt;${profileName}&lt;/strong&gt;"/>, in use by <x id="1" equiv-text="&lt;strong&gt;${data.crawlconfigs.map(({ name }) =&gt; name).join(&quot;, &quot;)}&lt;/strong&gt;"/>. Please remove browser profile from Workflow to continue.</source>
+        <source>Could not delete <x id="0" equiv-text="&lt;strong&gt;${profileName}&lt;/strong&gt;"/>, in use by
+              <x id="1" equiv-text="&lt;strong&gt;${data.crawlconfigs.map(({ name }) =&gt; name).join(&quot;, &quot;)}&lt;/strong&gt;"/>. Please remove browser profile from Workflow to continue.</source>
       </trans-unit>
       <trans-unit id="ha6f8533fba325287">
         <source>Deleted <x id="0" equiv-text="&lt;strong&gt;${profileName}&lt;/strong&gt;"/>.</source>
@@ -2125,7 +2151,11 @@
         <source>Workflows that use this browser profile will behave as if they have logged into the same websites and have the same web cookies.</source>
       </trans-unit>
       <trans-unit id="h594aac845e847983">
-        <source>It is highly recommended to create dedicated accounts to use when crawling. For details, refer to <x id="0" equiv-text="&lt;a class=&quot;text-primary hover:text-primary-400&quot; href=&quot;/docs/user-guide/browser-profiles/&quot; target=&quot;_blank&quot;&gt;&#10;            ${msg(&quot;browser profile best practices&quot;)}&lt;/a&gt;"/>. </source>
+        <source>
+          It is highly recommended to create dedicated accounts to use when
+          crawling. For details, refer to
+          <x id="0" equiv-text="&lt;a class=&quot;text-primary hover:text-primary-400&quot; href=&quot;/docs/user-guide/browser-profiles/&quot; target=&quot;_blank&quot;&gt;&#10;            ${msg(&quot;browser profile best practices&quot;)}&lt;/a&gt;"/>.
+        </source>
       </trans-unit>
       <trans-unit id="se058d83e4b3bad9e">
         <source>browser profile best practices</source>
@@ -2347,7 +2377,10 @@
         <source>Disable Archiving?</source>
       </trans-unit>
       <trans-unit id="h66cb67cd841f4beb">
-        <source>Are you sure you want to disable archiving in <x id="0" equiv-text="&lt;strong class=&quot;font-semibold&quot;&gt;${org.name}&lt;/strong&gt;"/> org? Members will no longer be able to crawl, upload files, create browser profiles, or create collections.</source>
+        <source>Are you sure you want to disable archiving in
+                  <x id="0" equiv-text="&lt;strong class=&quot;font-semibold&quot;&gt;${org.name}&lt;/strong&gt;"/> org?
+                  Members will no longer be able to crawl, upload files, create
+                  browser profiles, or create collections.</source>
       </trans-unit>
       <trans-unit id="sdc8e0ecdba53dccc">
         <source>Slug:</source>
@@ -2368,7 +2401,9 @@
         <source>Confirm Org Deletion: <x id="0" equiv-text="${this.currOrg?.name || &quot;&quot;}"/></source>
       </trans-unit>
       <trans-unit id="hbc605ddee9667ea5">
-        <source>Are you sure you want to delete <x id="0" equiv-text="&lt;strong class=&quot;font-semibold&quot;&gt;${org.name}&lt;/strong&gt;"/>? This cannot be undone.</source>
+        <source>Are you sure you want to delete
+                  <x id="0" equiv-text="&lt;strong class=&quot;font-semibold&quot;&gt;${org.name}&lt;/strong&gt;"/>? This
+                  cannot be undone.</source>
       </trans-unit>
       <trans-unit id="se49bbaeabfd85d48">
         <source>Type "<x id="0" equiv-text="${confirmationStr}"/>" to confirm</source>
@@ -2635,7 +2670,7 @@
         <source>Last updated</source>
       </trans-unit>
       <trans-unit id="sadfb54de733655c9">
-        <source>Using proxy:</source>
+        <source>Using proxy: </source>
       </trans-unit>
       <trans-unit id="s1ee610c805b33e8e">
         <source>Check Profile</source>
@@ -2743,7 +2778,9 @@
         <source>Limits</source>
       </trans-unit>
       <trans-unit id="hf77ba6b1d74e2cdb">
-        <source>Fields marked with <x id="0" equiv-text="&lt;span style=&quot;color:var(--sl-input-required-content-color)&quot;&gt;"/>*<x id="1" equiv-text="&lt;/span&gt;"/> are required</source>
+        <source>Fields marked with
+                  <x id="0" equiv-text="&lt;span style=&quot;color:var(--sl-input-required-content-color)&quot;&gt;"/>*<x id="1" equiv-text="&lt;/span&gt;"/>
+                  are required</source>
       </trans-unit>
       <trans-unit id="s7af85d601db244a7">
         <source>Tells the crawler which pages it can visit.</source>
@@ -2773,25 +2810,36 @@
         <source>If checked, the crawler will visit pages one link away.</source>
       </trans-unit>
       <trans-unit id="hef8020bab2159211">
-        <source>Will crawl all pages and paths in the same directory, e.g. <x id="0" equiv-text="&lt;span class=&quot;break-word break-word text-blue-500&quot;&gt;${exampleDomain}&lt;/span&gt;&lt;span class=&quot;break-word font-medium text-blue-500&quot;&gt;${examplePathname.slice(0, examplePathname.lastIndexOf(&quot;/&quot;))}"/>/<x id="1" equiv-text="&lt;/span&gt;"/></source>
+        <source>Will crawl all pages and paths in the same directory, e.g.
+            <x id="0" equiv-text="&lt;span class=&quot;break-word break-word text-blue-500&quot;&gt;${exampleDomain}&lt;/span&gt;&lt;span class=&quot;break-word font-medium text-blue-500&quot;&gt;${examplePathname.slice(0, examplePathname.lastIndexOf(&quot;/&quot;))}"/>/<x id="1" equiv-text="&lt;/span&gt;"/></source>
       </trans-unit>
       <trans-unit id="hed4c39f98af5c58f">
-        <source>Will crawl all pages on <x id="0" equiv-text="&lt;span class=&quot;text-blue-500&quot;&gt;${exampleHost}&lt;/span&gt;"/> and ignore pages on any subdomains.</source>
+        <source>Will crawl all pages on
+            <x id="0" equiv-text="&lt;span class=&quot;text-blue-500&quot;&gt;${exampleHost}&lt;/span&gt;"/> and ignore pages
+            on any subdomains.</source>
       </trans-unit>
       <trans-unit id="ha8f0ffdb034da2d1">
-        <source>Will crawl all pages on <x id="0" equiv-text="&lt;span class=&quot;text-blue-500&quot;&gt;${exampleHost}&lt;/span&gt;"/> and <x id="1" equiv-text="&lt;span class=&quot;text-blue-500&quot;&gt;"/>subdomain.<x id="2" equiv-text="${exampleHost}&lt;/span&gt;"/>.</source>
+        <source>Will crawl all pages on
+            <x id="0" equiv-text="&lt;span class=&quot;text-blue-500&quot;&gt;${exampleHost}&lt;/span&gt;"/> and
+            <x id="1" equiv-text="&lt;span class=&quot;text-blue-500&quot;&gt;"/>subdomain.<x id="2" equiv-text="${exampleHost}&lt;/span&gt;"/>.</source>
       </trans-unit>
       <trans-unit id="hba1eb91e4626e056">
-        <source>Will crawl hash anchor links as pages. For example, <x id="0" equiv-text="&lt;span class=&quot;break-word text-blue-500&quot;&gt;${exampleDomain}${examplePathname}&lt;/span&gt;&lt;span class=&quot;break-word font-medium text-blue-500&quot;&gt;"/>#example-page<x id="1" equiv-text="&lt;/span&gt;"/> will be treated as a separate page.</source>
+        <source>Will crawl hash anchor links as pages. For example,
+            <x id="0" equiv-text="&lt;span class=&quot;break-word text-blue-500&quot;&gt;${exampleDomain}${examplePathname}&lt;/span&gt;&lt;span class=&quot;break-word font-medium text-blue-500&quot;&gt;"/>#example-page<x id="1" equiv-text="&lt;/span&gt;"/>
+            will be treated as a separate page.</source>
       </trans-unit>
       <trans-unit id="h2303b42f0dff5ee4">
-        <source>Will crawl all page URLs that begin with <x id="0" equiv-text="&lt;span class=&quot;break-word text-blue-500&quot;&gt;${exampleDomain}${examplePathname}&lt;/span&gt;"/> or any URL that begins with those specified in <x id="1" equiv-text="&lt;em&gt;"/>Extra URL Prefixes in Scope<x id="2" equiv-text="&lt;/em&gt;"/></source>
+        <source>Will crawl all page URLs that begin with
+            <x id="0" equiv-text="&lt;span class=&quot;break-word text-blue-500&quot;&gt;${exampleDomain}${examplePathname}&lt;/span&gt;"/>
+            or any URL that begins with those specified in
+            <x id="1" equiv-text="&lt;em&gt;"/>Extra URL Prefixes in Scope<x id="2" equiv-text="&lt;/em&gt;"/></source>
       </trans-unit>
       <trans-unit id="s285f35c68ab11461">
         <source>The starting point of your crawl.</source>
       </trans-unit>
       <trans-unit id="s09a8c053783eafa0">
-        <source>If the crawler finds pages outside of the Crawl Scope they will only be saved if they begin with URLs listed here.</source>
+        <source>If the crawler finds pages outside of the Crawl Scope they
+            will only be saved if they begin with URLs listed here.</source>
       </trans-unit>
       <trans-unit id="s406e05cc7ea70f01">
         <source>hops</source>
@@ -2800,7 +2848,8 @@
         <source>Limits how many hops away the crawler can visit while staying within the Crawl Scope.</source>
       </trans-unit>
       <trans-unit id="sba156796788dc6c2">
-        <source>If checked, the crawler will visit pages one link away outside of Crawl Scope.</source>
+        <source>If checked, the crawler will visit pages one link away outside of
+        Crawl Scope.</source>
       </trans-unit>
       <trans-unit id="sf092ad58edfa163b">
         <source>Check for sitemap</source>
@@ -2854,31 +2903,37 @@
         <source>What day of the month should a crawl run on?</source>
       </trans-unit>
       <trans-unit id="h8c7c3a6e07d7c512">
-        <source>Schedule: <x id="0" equiv-text="&lt;span class=&quot;text-blue-500&quot;&gt;${utcSchedule&#10;    ? humanizeSchedule(utcSchedule)&#10;    : msg(&quot;Invalid date&quot;)}&lt;/span&gt;"/>.</source>
+        <source>Schedule:
+                <x id="0" equiv-text="&lt;span class=&quot;text-blue-500&quot;&gt;${utcSchedule&#10;    ? humanizeSchedule(utcSchedule)&#10;    : msg(&quot;Invalid date&quot;)}&lt;/span&gt;"/>.</source>
       </trans-unit>
       <trans-unit id="se0baa9b7fb0768e4">
         <source>Invalid date</source>
       </trans-unit>
       <trans-unit id="h30728ea4302f7fe9">
-        <source>Next scheduled run: <x id="0" equiv-text="&lt;span&gt;${utcSchedule&#10;    ? humanizeNextDate(utcSchedule)&#10;    : msg(&quot;Invalid date&quot;)}&lt;/span&gt;"/>.</source>
+        <source>Next scheduled run:
+                <x id="0" equiv-text="&lt;span&gt;${utcSchedule&#10;    ? humanizeNextDate(utcSchedule)&#10;    : msg(&quot;Invalid date&quot;)}&lt;/span&gt;"/>.</source>
       </trans-unit>
       <trans-unit id="s4174899261b8b308">
         <source>A crawl will run at this time in your current timezone.</source>
       </trans-unit>
       <trans-unit id="s0d56a24ca72b8e48">
-        <source>Customize this Workflow's name. Workflows are named after the first Crawl URL by default.</source>
+        <source>Customize this Workflow's name. Workflows are named after
+        the first Crawl URL by default.</source>
       </trans-unit>
       <trans-unit id="sa8e78592c1db6c3a">
         <source>Provide details about this Workflow.</source>
       </trans-unit>
       <trans-unit id="s163480f4b18e39c0">
-        <source>Create or assign this crawl (and its outputs) to one or more tags to help organize your archived items.</source>
+        <source>Create or assign this crawl (and its outputs) to one or more tags
+        to help organize your archived items.</source>
       </trans-unit>
       <trans-unit id="s68f29315fcc19b3b">
         <source>Search for a Collection to auto-add crawls</source>
       </trans-unit>
       <trans-unit id="s54100e0807a1e40d">
-        <source>Automatically add crawls from this workflow to one or more collections as soon as they complete. Individual crawls can be selected from within the collection later.</source>
+        <source>Automatically add crawls from this workflow to one or more collections
+          as soon as they complete.
+          Individual crawls can be selected from within the collection later.</source>
       </trans-unit>
       <trans-unit id="s265a8f6e25a8c5f2">
         <source>Workflow created.</source>
@@ -2908,7 +2963,9 @@
         <source>Please remove or fix the following invalid URL: <x id="0" equiv-text="${invalidUrl}"/></source>
       </trans-unit>
       <trans-unit id="saf63d34c8601dd41">
-        <source><x id="0" equiv-text="${this.localize.number(this.item.pageCount ? +this.item.pageCount : 0)}"/> </source>
+        <source>
+          <x id="0" equiv-text="${this.localize.number(this.item.pageCount ? +this.item.pageCount : 0)}"/>
+        </source>
       </trans-unit>
       <trans-unit id="s136b21dec9a221bd">
         <source>Manual run by <x id="0" equiv-text="${workflow.lastStartedByName}"/></source>
@@ -2926,7 +2983,9 @@
         <source>Your subscription ends on <x id="0" equiv-text="${dateStr}"/>. Your user account, org, and all associated data will be deleted.</source>
       </trans-unit>
       <trans-unit id="h16be212de6638b6c">
-        <source>We suggest downloading your archived items before they are deleted. To keep your plan and data, see <x id="0" equiv-text="${billingTabLink}"/>.</source>
+        <source>We suggest downloading your archived items before they
+                  are deleted. To keep your plan and data, see
+                  <x id="0" equiv-text="${billingTabLink}"/>.</source>
       </trans-unit>
       <trans-unit id="s1f1b3cea8b3a20f3">
         <source>You have <x id="0" equiv-text="${daysDiff}"/> days left of your Browsertrix trial</source>
@@ -2935,7 +2994,8 @@
         <source>Your trial ends within one day</source>
       </trans-unit>
       <trans-unit id="se5578c14db3c7b2b">
-        <source>Your web archives are always yours — you can download any archived items you'd like to keep before the trial ends!</source>
+        <source>Your web archives are always yours — you can download any archived items you'd like to keep
+                  before the trial ends!</source>
       </trans-unit>
       <trans-unit id="sc3e0d8cbe688ccd5">
         <source>Archiving will be disabled in <x id="0" equiv-text="${daysDiff}"/> days</source>
@@ -2947,13 +3007,15 @@
         <source>Your subscription ends on <x id="0" equiv-text="${dateStr}"/>. You will no longer be able to run crawls, upload files, create browser profiles, or create collections.</source>
       </trans-unit>
       <trans-unit id="hc4152410e53b56c9">
-        <source>To choose a plan and continue using Browsertrix, see <x id="0" equiv-text="${billingTabLink}"/>.</source>
+        <source>To choose a plan and continue using Browsertrix, see
+                  <x id="0" equiv-text="${billingTabLink}"/>.</source>
       </trans-unit>
       <trans-unit id="sfb85ab2a166e4c99">
         <source>Archiving is disabled for this org</source>
       </trans-unit>
       <trans-unit id="habd962339c5b3e55">
-        <source>Your subscription has been paused due to payment failure. Please go to <x id="0" equiv-text="${billingTabLink}"/> to update your payment method.</source>
+        <source>Your subscription has been paused due to payment failure.
+            Please go to <x id="0" equiv-text="${billingTabLink}"/> to update your payment method.</source>
       </trans-unit>
       <trans-unit id="s4e6c7f0a1e774fea">
         <source>Your subscription has been canceled. Please contact Browsertrix support to renew your plan.</source>
@@ -3109,10 +3171,16 @@
         <source>Finish setting up your Browsertrix account to start crawling.</source>
       </trans-unit>
       <trans-unit id="h22769969c5066f85">
-        <source>You’ve been invited by <x id="0" equiv-text="&lt;strong class=&quot;font-medium&quot;&gt;${inviterName}&lt;/strong&gt;"/> to join the organization <x id="1" equiv-text="&lt;span class=&quot;font-medium text-primary&quot;&gt;${orgName}&lt;/span&gt;"/> on Browsertrix.</source>
+        <source>You’ve been invited by
+          <x id="0" equiv-text="&lt;strong class=&quot;font-medium&quot;&gt;${inviterName}&lt;/strong&gt;"/>
+          to join the organization
+          <x id="1" equiv-text="&lt;span class=&quot;font-medium text-primary&quot;&gt;${orgName}&lt;/span&gt;"/>
+          on Browsertrix.</source>
       </trans-unit>
       <trans-unit id="h406ea2eff53edcfb">
-        <source>You’ve been invited to join the organization <x id="0" equiv-text="&lt;span class=&quot;font-medium text-primary&quot;&gt;${orgName}&lt;/span&gt;"/> on Browsertrix.</source>
+        <source>You’ve been invited to join the organization
+          <x id="0" equiv-text="&lt;span class=&quot;font-medium text-primary&quot;&gt;${orgName}&lt;/span&gt;"/>
+          on Browsertrix.</source>
       </trans-unit>
       <trans-unit id="s07cee0cdf942df03">
         <source>Step 1 complete</source>
@@ -3139,10 +3207,13 @@
         <source>An org, or organization, is your workspace for web archiving. If you’re archiving collaboratively, an org workspace can be shared between team members.</source>
       </trans-unit>
       <trans-unit id="hda7aa624404fc0ed">
-        <source>Refer to our user guide on <x id="0" equiv-text="&lt;a class=&quot;text-neutral-500 underline hover:text-primary&quot; href=&quot;/docs/user-guide/org-settings/&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;&gt;"/>org settings<x id="1" equiv-text="&lt;/a&gt;"/> for details.</source>
+        <source>Refer to our user guide on
+                <x id="0" equiv-text="&lt;a class=&quot;text-neutral-500 underline hover:text-primary&quot; href=&quot;/docs/user-guide/org-settings/&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;&gt;"/>org settings<x id="1" equiv-text="&lt;/a&gt;"/>
+                for details.</source>
       </trans-unit>
       <trans-unit id="s8ae1873b610b92d6">
-        <source>Your org dashboard will be <x id="0" equiv-text="${window.location.protocol}"/>//<x id="1" equiv-text="${window.location.hostname}"/>/orgs/<x id="2" equiv-text="${slug || &quot;&quot;}"/></source>
+        <source>Your org dashboard will be
+        <x id="0" equiv-text="${window.location.protocol}"/>//<x id="1" equiv-text="${window.location.hostname}"/>/orgs/<x id="2" equiv-text="${slug || &quot;&quot;}"/></source>
       </trans-unit>
       <trans-unit id="s0d5ee4ffcb9c2c65">
         <source>You can change this in your org settings later.</source>
@@ -3579,10 +3650,14 @@
         <source>Monthly on the <x id="0" equiv-text="${localize.number(days[0])}"/>th</source>
       </trans-unit>
       <trans-unit id="h30ddaf03878f27b9">
-        <source>Deleting an org will delete all <x id="0" equiv-text="&lt;strong class=&quot;font-semibold&quot;&gt;&#10;                    ${this.localize.bytes(org.bytesStored)}&#10;                  &lt;/strong&gt;"/> of data associated with the org.</source>
+        <source>Deleting an org will delete all
+                  <x id="0" equiv-text="&lt;strong class=&quot;font-semibold&quot;&gt;&#10;                    ${this.localize.bytes(org.bytesStored)}&#10;                  &lt;/strong&gt;"/>
+                  of data associated with the org.</source>
       </trans-unit>
       <trans-unit id="h737a03dd2c6c5d2a">
-        <source>Your free trial ends on <x id="0" equiv-text="${dateStr}"/>. To continue using Browsertrix, select <x id="1" equiv-text="&lt;strong&gt;"/>Subscribe Now<x id="2" equiv-text="&lt;/strong&gt;"/> in <x id="3" equiv-text="${billingTabLink}"/>.</source>
+        <source>Your free trial ends on <x id="0" equiv-text="${dateStr}"/>. To continue using
+                    Browsertrix, select <x id="1" equiv-text="&lt;strong&gt;"/>Subscribe Now<x id="2" equiv-text="&lt;/strong&gt;"/> in
+                    <x id="3" equiv-text="${billingTabLink}"/>.</source>
       </trans-unit>
       <trans-unit id="saf8636a6d65b1842">
         <source>Your browser’s language settings will take precedence over the language chosen above when formatting numbers, dates, and durations.</source>
@@ -3600,7 +3675,10 @@
         <source>Search all orgs by name, id, slug, users, and subscriptions</source>
       </trans-unit>
       <trans-unit id="h19d357f5b1d2fafe">
-        <source>Are you sure you want to delete <x id="0" equiv-text="&lt;strong class=&quot;font-semibold&quot;&gt;${name}&lt;/strong&gt;"/>? </source>
+        <source>
+    Are you sure you want to delete
+    <x id="0" equiv-text="&lt;strong class=&quot;font-semibold&quot;&gt;${name}&lt;/strong&gt;"/>?
+  </source>
       </trans-unit>
       <trans-unit id="s537a1aeb41fca7c0">
         <source>Delete Workflow?</source>
@@ -3744,13 +3822,18 @@
         <source>Change the visibility setting to embed this collection.</source>
       </trans-unit>
       <trans-unit id="h3a14a39406b82931">
-        <source>To embed this collection into an existing webpage, add the following embed code:</source>
+        <source>To embed this collection into an existing webpage, add the
+          following embed code:</source>
       </trans-unit>
       <trans-unit id="hacc9b91be8da34c8">
-        <source>Add the following JavaScript to your <x id="0" equiv-text="&lt;code class=&quot;text-[0.9em]&quot;&gt;"/>/replay/sw.js<x id="1" equiv-text="&lt;/code&gt;"/>:</source>
+        <source>Add the following JavaScript to your
+            <x id="0" equiv-text="&lt;code class=&quot;text-[0.9em]&quot;&gt;"/>/replay/sw.js<x id="1" equiv-text="&lt;/code&gt;"/>:</source>
       </trans-unit>
       <trans-unit id="h654faf8fb38c80f3">
-        <source>See <x id="0" equiv-text="&lt;a class=&quot;text-primary&quot; href=&quot;https://replayweb.page/docs/embedding&quot; target=&quot;_blank&quot;&gt;"/> our embedding guide<x id="1" equiv-text="&lt;/a&gt;"/> for more details.</source>
+        <source>See
+            <x id="0" equiv-text="&lt;a class=&quot;text-primary&quot; href=&quot;https://replayweb.page/docs/embedding&quot; target=&quot;_blank&quot;&gt;"/>
+              our embedding guide<x id="1" equiv-text="&lt;/a&gt;"/>
+            for more details.</source>
       </trans-unit>
       <trans-unit id="sf39becada022c325">
         <source>Choose what page viewers see first in replay</source>
@@ -3789,7 +3872,8 @@
         <source>Sorry, couldn't update org at this time.</source>
       </trans-unit>
       <trans-unit id="he6324c47251f0727">
-        <source>Viewing <x id="0" equiv-text="&lt;strong class=&quot;font-medium&quot;&gt;${this.userOrg.name}&lt;/strong&gt;"/></source>
+        <source>Viewing
+                      <x id="0" equiv-text="&lt;strong class=&quot;font-medium&quot;&gt;${this.userOrg.name}&lt;/strong&gt;"/></source>
       </trans-unit>
       <trans-unit id="s2ccab3f1e005dbc4">
         <source>Choose a name that represents your organization, your team, or your personal web archive.</source>
@@ -3955,10 +4039,13 @@
         <source>When enabled the browser will automatically click on links that don't navigate to other pages.</source>
       </trans-unit>
       <trans-unit id="hb4d7d27dcde87b24">
-        <source>Describe your collection in long-form rich text (e.g. <x id="0" equiv-text="&lt;strong&gt;"/>bold<x id="1" equiv-text="&lt;/strong&gt;"/> and <x id="2" equiv-text="&lt;em&gt;"/>italicized<x id="3" equiv-text="&lt;/em&gt;"/> text.)</source>
+        <source>Describe your collection in long-form rich text (e.g.
+                        <x id="0" equiv-text="&lt;strong&gt;"/>bold<x id="1" equiv-text="&lt;/strong&gt;"/> and <x id="2" equiv-text="&lt;em&gt;"/>italicized<x id="3" equiv-text="&lt;/em&gt;"/> text.)</source>
       </trans-unit>
       <trans-unit id="h46ac9a2331d608e2">
-        <source>If this collection is shareable, this will appear in the “About This Collection” section of the shared collection.</source>
+        <source>If this collection is shareable, this will appear in
+                      the “About This Collection” section of the shared
+                      collection.</source>
       </trans-unit>
       <trans-unit id="s492c3c47283fe263">
         <source>Updated org settings.</source>
@@ -4060,7 +4147,8 @@
         <source>Unsaved changes.</source>
       </trans-unit>
       <trans-unit id="h2c3943473fbe11e2">
-        <source>You can add a longer description in the “About” section after creating the collection.</source>
+        <source>You can add a longer description in the “About” section
+                  after creating the collection.</source>
       </trans-unit>
       <trans-unit id="s9b60514119bff158">
         <source>Set Initial View</source>
@@ -4069,7 +4157,7 @@
         <source>Initial View</source>
       </trans-unit>
       <trans-unit id="sdc999ebffd912691">
-        <source>Download Collection:</source>
+        <source>Download Collection: </source>
       </trans-unit>
       <trans-unit id="s02d4af030afd821a">
         <source>Please enter a valid regular expression</source>
@@ -4114,7 +4202,7 @@
         <source>Please fix all errors and try again.</source>
       </trans-unit>
       <trans-unit id="s77aee0d8cdd77b61">
-        <source>Please fix the following issue:</source>
+        <source>Please fix the following issue: </source>
       </trans-unit>
       <trans-unit id="sdc12eb8d90714683">
         <source>Page exclusion contains invalid regex</source>
