@@ -1,7 +1,6 @@
 """k8s utils"""
 
 import asyncio
-import atexit
 import csv
 import io
 import json
@@ -56,26 +55,6 @@ def date_to_str(dt_val: datetime) -> str:
 def dt_now() -> datetime:
     """get current ts"""
     return datetime.now(timezone.utc).replace(microsecond=0)
-
-
-def run_once_lock(name) -> bool:
-    """run once lock via temp directory
-    - if dir doesn't exist, return true
-    - if exists, return false"""
-    lock_dir = "/tmp/." + name
-    try:
-        os.mkdir(lock_dir)
-    # pylint: disable=bare-except
-    except:
-        return False
-
-    # just in case, delete dir on exit
-    def del_dir():
-        print("release lock: " + lock_dir, flush=True)
-        os.rmdir(lock_dir)
-
-    atexit.register(del_dir)
-    return True
 
 
 def register_exit_handler() -> None:
