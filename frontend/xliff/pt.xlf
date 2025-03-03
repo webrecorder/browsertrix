@@ -1,166 +1,218 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" version="1.2">
   <file target-language="pt" source-language="en" original="lit-localize-inputs" datatype="plaintext">
     <body>
-      <trans-unit id="s598446c4063cc093">
+      <trans-unit id="s598446c4063cc093" xml:space="preserve">
         <source>Unknown API error</source>
+        <target state="translated">Erro de API desconhecido</target>
       </trans-unit>
-      <trans-unit id="scbeafb2ef469257c">
+      <trans-unit id="scbeafb2ef469257c" xml:space="preserve">
         <source>Need login</source>
+        <target state="translated">Login necessário</target>
       </trans-unit>
-      <trans-unit id="sa3ce85ea4e96897c">
+      <trans-unit id="sa3ce85ea4e96897c" xml:space="preserve">
         <source>Storage quota reached</source>
+        <target state="translated">Quota de armazenamento atingida</target>
       </trans-unit>
-      <trans-unit id="s07018373ca29dfcb">
+      <trans-unit id="s07018373ca29dfcb" xml:space="preserve">
         <source>Monthly execution minutes quota reached</source>
+        <target state="translated">Quota mensal de minutos de execução atingida</target>
       </trans-unit>
-      <trans-unit id="s0a11c2ffb8309d1a">
+      <trans-unit id="s0a11c2ffb8309d1a" xml:space="preserve">
         <source>Not found</source>
+        <target state="translated">Não encontrado</target>
       </trans-unit>
-      <trans-unit id="sf3ff78cc329d3528">
+      <trans-unit id="sf3ff78cc329d3528" xml:space="preserve">
         <source>Previous</source>
+        <target state="translated">Anterior</target>
       </trans-unit>
-      <trans-unit id="s0fbf6dc6a1966408">
+      <trans-unit id="s0fbf6dc6a1966408" xml:space="preserve">
         <source>Next</source>
+        <target state="translated">Próximo</target>
       </trans-unit>
       <trans-unit id="h7ee8a6e551e702ba">
         <source> <x id="0" equiv-text="${this.renderInput()}"/> of <x id="1" equiv-text="${this.pages} "/></source>
       </trans-unit>
-      <trans-unit id="s5697808ce744d508">
+      <trans-unit id="s5697808ce744d508" xml:space="preserve">
         <source>Current page, page <x id="0" equiv-text="${this.page}"/></source>
+        <target state="translated">Página atual, página<x id="0" equiv-text="${this.page}"/></target>
       </trans-unit>
-      <trans-unit id="s24a06fd949e2d65b">
+      <trans-unit id="s24a06fd949e2d65b" xml:space="preserve">
         <source>Back to</source>
+        <target state="translated">Voltar à</target>
       </trans-unit>
-      <trans-unit id="sc16e00a7a8b2fde2">
+      <trans-unit id="sc16e00a7a8b2fde2" xml:space="preserve">
         <source>Back</source>
+        <target state="translated">Retornar</target>
       </trans-unit>
-      <trans-unit id="s81a19821f3e4a3d2">
+      <trans-unit id="s81a19821f3e4a3d2" xml:space="preserve">
         <source>Replay</source>
+        <target state="translated">Reproduzir</target>
       </trans-unit>
-      <trans-unit id="s2099d599ac75e503">
+      <trans-unit id="s2099d599ac75e503" xml:space="preserve">
         <source>Archived Items</source>
+        <target state="translated">Itens arquivados</target>
       </trans-unit>
-      <trans-unit id="se7bee6e9a9b5394c">
+      <trans-unit id="se7bee6e9a9b5394c" xml:space="preserve">
         <source>Private</source>
+        <target state="translated">Privado</target>
       </trans-unit>
-      <trans-unit id="s833f0d71eaa06739">
+      <trans-unit id="s833f0d71eaa06739" xml:space="preserve">
         <source>Select Items</source>
+        <target state="translated">Selecionar itens</target>
       </trans-unit>
-      <trans-unit id="s0e6ebc9cdd39780b">
+      <trans-unit id="s0e6ebc9cdd39780b" xml:space="preserve">
         <source>Delete Collection?</source>
+        <target state="translated">Deletar a Coleção?</target>
       </trans-unit>
-      <trans-unit id="h05165b87bf66fe02">
+      <trans-unit id="h05165b87bf66fe02" xml:space="preserve">
         <source>Are you sure you want to delete
             <x id="0" equiv-text="&lt;strong&gt;${this.collection?.name}&lt;/strong&gt;"/>?</source>
+        <target state="translated">Tem certeza que quer deletar<x id="0" equiv-text="&lt;strong&gt;${this.collection?.name}&lt;/strong&gt;"/>?</target>
       </trans-unit>
-      <trans-unit id="s2ceb11be2290bb1b">
+      <trans-unit id="s2ceb11be2290bb1b" xml:space="preserve">
         <source>Cancel</source>
+        <target state="translated">Cancelar</target>
       </trans-unit>
-      <trans-unit id="s317006269d0d1476">
+      <trans-unit id="s317006269d0d1476" xml:space="preserve">
         <source>Delete Collection</source>
+        <target state="translated">Deletar Coleção</target>
       </trans-unit>
-      <trans-unit id="s0379fc73608ab971">
+      <trans-unit id="s0379fc73608ab971" xml:space="preserve">
         <source>Done</source>
+        <target state="translated">Finalizado</target>
       </trans-unit>
-      <trans-unit id="s11161fdebb62dcc9">
+      <trans-unit id="s11161fdebb62dcc9" xml:space="preserve">
         <source>Link to Share</source>
+        <target state="translated">Link para compartilhar</target>
       </trans-unit>
-      <trans-unit id="s0921b07ddda1f1b1">
+      <trans-unit id="s0921b07ddda1f1b1" xml:space="preserve">
         <source>Open in New Tab</source>
+        <target state="translated">Abrir em nova aba</target>
       </trans-unit>
-      <trans-unit id="sdbf249ab40dc18fa">
+      <trans-unit id="sdbf249ab40dc18fa" xml:space="preserve">
         <source>Copy Embed Code</source>
+        <target state="translated">Copiar código incorporado</target>
       </trans-unit>
-      <trans-unit id="s4f0cf5a844f978f3">
+      <trans-unit id="s4f0cf5a844f978f3" xml:space="preserve">
         <source>Copy JS</source>
+        <target state="translated">Copiar JS</target>
       </trans-unit>
-      <trans-unit id="s3f5390ecd7d14626">
+      <trans-unit id="s3f5390ecd7d14626" xml:space="preserve">
         <source>Collections</source>
+        <target state="translated">Coleções</target>
       </trans-unit>
-      <trans-unit id="s8af61807443f32a4">
+      <trans-unit id="s8af61807443f32a4" xml:space="preserve">
         <source>Actions</source>
+        <target state="translated">Ações</target>
       </trans-unit>
-      <trans-unit id="s10f3845975a0351e">
+      <trans-unit id="s10f3845975a0351e" xml:space="preserve">
         <source>Edit Metadata</source>
+        <target state="translated">Editar Metadados</target>
       </trans-unit>
-      <trans-unit id="s8975026acabb194d">
+      <trans-unit id="s8975026acabb194d" xml:space="preserve">
         <source>Select Archived Items</source>
+        <target state="translated">Selecionar itens arquivados</target>
       </trans-unit>
-      <trans-unit id="s2fe988430f978df3">
+      <trans-unit id="s2fe988430f978df3" xml:space="preserve">
         <source>Download Collection</source>
+        <target state="translated">Baixar Coleção</target>
       </trans-unit>
-      <trans-unit id="s88f9e7f4ecc07ede">
+      <trans-unit id="s88f9e7f4ecc07ede" xml:space="preserve">
         <source>Total Size</source>
+        <target state="translated">Tamanho total</target>
       </trans-unit>
-      <trans-unit id="sabe8b8c669e05b8d">
+      <trans-unit id="sabe8b8c669e05b8d" xml:space="preserve">
         <source>Total Pages</source>
+        <target state="translated">Total de páginas</target>
       </trans-unit>
-      <trans-unit id="s3512b3c95c7a5c3a">
+      <trans-unit id="s3512b3c95c7a5c3a" xml:space="preserve">
         <source>Last Updated</source>
+        <target state="translated">Última atualização</target>
       </trans-unit>
-      <trans-unit id="s63d894b1ddb06289">
+      <trans-unit id="s63d894b1ddb06289" xml:space="preserve">
         <source>Description</source>
+        <target state="translated">Descrição</target>
       </trans-unit>
-      <trans-unit id="s80b0d32b285ce4d7">
+      <trans-unit id="s80b0d32b285ce4d7" xml:space="preserve">
         <source>Edit description</source>
+        <target state="translated">Editar descrição</target>
       </trans-unit>
-      <trans-unit id="s6b33dfbbaf6a2014">
+      <trans-unit id="s6b33dfbbaf6a2014" xml:space="preserve">
         <source>No description added.</source>
+        <target state="translated">Nenhuma descrição foi adicionada.</target>
       </trans-unit>
-      <trans-unit id="s21c76a0f6cae7920">
+      <trans-unit id="s21c76a0f6cae7920" xml:space="preserve">
         <source>Row actions</source>
+        <target state="translated">Ações em linha (Row actions)</target>
       </trans-unit>
-      <trans-unit id="s27914822b37139fb">
+      <trans-unit id="s27914822b37139fb" xml:space="preserve">
         <source>Page not found.</source>
+        <target state="translated">Página não encontrada.</target>
       </trans-unit>
-      <trans-unit id="s6f6715b26a9dd225">
+      <trans-unit id="s6f6715b26a9dd225" xml:space="preserve">
         <source>This Collection doesn’t have any archived items, yet.</source>
+        <target state="translated">Esta Coleção ainda não possui itens arquivados.</target>
       </trans-unit>
-      <trans-unit id="sf3f1aa4156bb5055">
+      <trans-unit id="sf3f1aa4156bb5055" xml:space="preserve">
         <source>Remove from Collection</source>
+        <target state="translated">Remover da Coleção</target>
       </trans-unit>
-      <trans-unit id="h2962269031cae049">
+      <trans-unit id="h2962269031cae049" xml:space="preserve">
         <source>Deleted <x id="0" equiv-text="&lt;strong&gt;${name}&lt;/strong&gt;"/> Collection.</source>
+        <target state="translated">Coleção <x id="0" equiv-text="&lt;strong&gt;${name}&lt;/strong&gt;"/> deletada.</target>
       </trans-unit>
-      <trans-unit id="s1a223f3372970867">
+      <trans-unit id="s1a223f3372970867" xml:space="preserve">
         <source>Sorry, couldn't delete Collection at this time.</source>
+        <target state="translated">Desculpe, não foi possível excluir a Coleção no momento.</target>
       </trans-unit>
-      <trans-unit id="s26c61deb65da8736">
+      <trans-unit id="s26c61deb65da8736" xml:space="preserve">
         <source>Sorry, couldn't retrieve Collection at this time.</source>
+        <target state="translated">Desculpe, não foi possível recuperar a Coleção no momento.</target>
       </trans-unit>
-      <trans-unit id="saccd6920c9253eaf">
+      <trans-unit id="saccd6920c9253eaf" xml:space="preserve">
         <source>Sorry, couldn't retrieve web captures at this time.</source>
+        <target state="translated">Desculpe, não foi possível recuperar as capturas da web no momento.</target>
       </trans-unit>
-      <trans-unit id="sa56f8f1bd9aa64d3">
+      <trans-unit id="sa56f8f1bd9aa64d3" xml:space="preserve">
         <source>Successfully removed item from Collection.</source>
+        <target state="translated">Item removido da Coleção com sucesso.</target>
       </trans-unit>
-      <trans-unit id="s0df6dbe466eb9399">
+      <trans-unit id="s0df6dbe466eb9399" xml:space="preserve">
         <source>Sorry, couldn't remove item from Collection at this time.</source>
+        <target state="translated">Desculpe, não foi possível remover o item da Coleção no momento.</target>
       </trans-unit>
-      <trans-unit id="sd77c5f8da91d0729">
+      <trans-unit id="sd77c5f8da91d0729" xml:space="preserve">
         <source>Maximum <x id="0" equiv-text="${localize.number(maxLength)}"/> characters</source>
+        <target state="translated">Máximo <x id="0" equiv-text="${localize.number(maxLength)}"/> de caracteres</target>
       </trans-unit>
-      <trans-unit id="sa1c466807a6fdfb7">
+      <trans-unit id="sa1c466807a6fdfb7" xml:space="preserve">
         <source><x id="0" equiv-text="${localize.number(overMax)}"/> character over limit</source>
+        <target state="translated"><x id="0" equiv-text="${localize.number(overMax)}"/> limite de caracteres excedido</target>
       </trans-unit>
-      <trans-unit id="s8b6894f4bfec27c0">
+      <trans-unit id="s8b6894f4bfec27c0" xml:space="preserve">
         <source><x id="0" equiv-text="${localize.number(overMax)}"/> characters over limit</source>
+        <target state="translated"><x id="0" equiv-text="${localize.number(overMax)}"/> caracteres excedem o limite</target>
       </trans-unit>
-      <trans-unit id="se1f5b61904654dba">
+      <trans-unit id="se1f5b61904654dba" xml:space="preserve">
         <source>Please shorten this text to <x id="0" equiv-text="${maxLength}"/> or fewer characters.</source>
+        <target state="translated">Por favor, abrevie este texto a <x id="0" equiv-text="${maxLength}"/> ou menos caracteres.</target>
       </trans-unit>
-      <trans-unit id="s9f8c17b4d595bb2d">
+      <trans-unit id="s9f8c17b4d595bb2d" xml:space="preserve">
         <source>Manage Billing</source>
+        <target state="translated">Gerenciar o faturamento</target>
       </trans-unit>
-      <trans-unit id="s02e734a81b23d11b">
+      <trans-unit id="s02e734a81b23d11b" xml:space="preserve">
         <source>Subscribe Now</source>
+        <target state="translated">Se inscrever agora</target>
       </trans-unit>
-      <trans-unit id="s5a38b8a21f9d9ab7">
+      <trans-unit id="s5a38b8a21f9d9ab7" xml:space="preserve">
         <source>Update Billing</source>
+        <target state="translated">Atualizar faturamento</target>
       </trans-unit>
-      <trans-unit id="s0e65fdd42d12acb3">
+      <trans-unit id="s0e65fdd42d12acb3" xml:space="preserve">
         <source>Choose Plan</source>
+        <target state="translated">Escolher um Plano</target>
       </trans-unit>
       <trans-unit id="sbf7e4b6a4db03e2a">
         <source>Sorry, couldn't retrieve current plan at this time.</source>
