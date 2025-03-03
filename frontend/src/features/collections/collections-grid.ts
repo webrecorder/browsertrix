@@ -16,6 +16,7 @@ import { SelectCollectionAccess } from "./select-collection-access";
 import { BtrixElement } from "@/classes/BtrixElement";
 import { RouteNamespace } from "@/routes";
 import type { PublicCollection } from "@/types/collection";
+import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
 
 /**
@@ -45,7 +46,7 @@ export class CollectionsGrid extends BtrixElement {
   pagination!: Node[];
 
   render() {
-    const gridClassNames = tw`grid flex-1 grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4`;
+    const gridClassNames = tw`grid flex-1 grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3`;
 
     if (!this.collections || !this.slug) {
       const thumb = html`
@@ -118,10 +119,19 @@ export class CollectionsGrid extends BtrixElement {
                   >
                     ${collection.name}
                   </strong>
+                  <div
+                    class="mt-1 flex justify-between gap-2 leading-tight text-stone-500 transition-colors group-hover:text-cyan-600"
+                  >
+                    <div>
+                      ${this.localize.number(collection.pageCount)}
+                      ${pluralOf("pages", collection.pageCount)}
+                    </div>
+                    <div>${this.localize.bytes(collection.totalSize)}</div>
+                  </div>
                   ${collection.caption &&
                   html`
                     <p
-                      class="mt-1.5 text-pretty leading-relaxed text-stone-500 transition-colors group-hover:text-cyan-600"
+                      class="mt-1.5 text-pretty leading-relaxed text-stone-600 transition-colors"
                     >
                       ${collection.caption}
                     </p>
