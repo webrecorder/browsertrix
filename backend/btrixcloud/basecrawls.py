@@ -31,7 +31,7 @@ from .models import (
     CrawlSearchValuesResponse,
 )
 from .pagination import paginated_format, DEFAULT_PAGE_SIZE
-from .utils import dt_now, get_origin
+from .utils import dt_now, get_origin, date_to_str
 
 if TYPE_CHECKING:
     from .crawlconfigs import CrawlConfigOps
@@ -478,7 +478,7 @@ class BaseCrawlOps:
                     size=file_.size,
                     crawlId=crawl_id,
                     numReplicas=len(file_.replicas) if file_.replicas else 0,
-                    expireAt=expire_at,
+                    expireAt=date_to_str(expire_at),
                 )
             )
 
