@@ -14,8 +14,10 @@ import { CollectionThumbnail } from "./collection-thumbnail";
 import { SelectCollectionAccess } from "./select-collection-access";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import { textSeparator } from "@/layouts/separator";
 import { RouteNamespace } from "@/routes";
 import type { PublicCollection } from "@/types/collection";
+import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
 
 /**
@@ -45,7 +47,7 @@ export class CollectionsGrid extends BtrixElement {
   pagination!: Node[];
 
   render() {
-    const gridClassNames = tw`grid flex-1 grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4`;
+    const gridClassNames = tw`grid flex-1 grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-3`;
 
     if (!this.collections || !this.slug) {
       const thumb = html`
@@ -114,14 +116,22 @@ export class CollectionsGrid extends BtrixElement {
                       ></sl-icon>`
                     : nothing}
                   <strong
-                    class="text-base font-medium leading-tight text-stone-700 transition-colors group-hover:text-cyan-600"
+                    class="text-base font-medium leading-tight text-stone-800 transition-colors group-hover:text-cyan-600"
                   >
                     ${collection.name}
                   </strong>
+                  <div class="mt-1.5 flex gap-2 leading-tight text-stone-400">
+                    <div>
+                      ${this.localize.number(collection.pageCount)}
+                      ${pluralOf("pages", collection.pageCount)}
+                    </div>
+                    ${textSeparator()}
+                    <div>${this.localize.bytes(collection.totalSize)}</div>
+                  </div>
                   ${collection.caption &&
                   html`
                     <p
-                      class="mt-1.5 text-pretty leading-relaxed text-stone-500 transition-colors group-hover:text-cyan-600"
+                      class="mt-1.5 text-pretty leading-relaxed text-stone-500"
                     >
                       ${collection.caption}
                     </p>
@@ -180,7 +190,7 @@ export class CollectionsGrid extends BtrixElement {
     </div>
   `;
 
-  private renderDateBadge(collection: PublicCollection) {
+  renderDateBadge(collection: PublicCollection) {
     if (!collection.dateEarliest || !collection.dateLatest) return;
 
     const earliestYear = this.localize.date(collection.dateEarliest, {
@@ -190,10 +200,32 @@ export class CollectionsGrid extends BtrixElement {
       year: "numeric",
     });
 
+    let date = "";
+
+    if (earliestYear === latestYear) {
+      const earliestMonth = new Date(collection.dateEarliest).getMonth();
+      const latestMonth = new Date(collection.dateLatest).getMonth();
+
+      if (earliestMonth === latestMonth) {
+        date = this.localize.date(collection.dateEarliest, {
+          month: "long",
+          year: "numeric",
+        });
+      } else {
+        date = `${this.localize.date(collection.dateEarliest, {
+          month: "short",
+        })} – ${this.localize.date(collection.dateLatest, {
+          month: "short",
+          year: "numeric",
+        })}`;
+      }
+    } else {
+      date = `${earliestYear} – ${latestYear} `;
+    }
+
     return html`
       <btrix-badge variant="primary" class="absolute right-3 top-3">
-        ${earliestYear}
-        ${latestYear !== earliestYear ? html` – ${latestYear} ` : nothing}
+        ${date}
       </btrix-badge>
     `;
   }
