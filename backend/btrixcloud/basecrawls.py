@@ -178,13 +178,12 @@ class BaseCrawlOps:
                 oid = res.get("oid")
                 if oid:
                     origin = get_origin(headers)
-                    res["pagesQueryUrl"] = (origin
-                        + f"/api/orgs/{oid}/crawls/{crawlid}/pagesSearch"
+                    res["pagesQueryUrl"] = (
+                        origin + f"/api/orgs/{oid}/crawls/{crawlid}/pagesSearch"
                     )
 
                     # this will now disable the downloadUrl in RWP
                     res["downloadUrl"] = None
-
 
         crawl = CrawlOutWithResources.from_dict(res)
 
