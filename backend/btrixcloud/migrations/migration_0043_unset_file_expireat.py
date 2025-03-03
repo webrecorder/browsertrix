@@ -20,6 +20,7 @@ class Migration(BaseMigration):
     async def migrate_up(self) -> None:
         """Perform migration up."""
 
+        print("Clearing crawl file WACZ presigned URLs", flush=True)
         await self.crawls.update_many(
             {},
             {
@@ -36,7 +37,13 @@ class Migration(BaseMigration):
             "qaFinished": {"$nin": [None, {}]},
         }
 
+        total = await self.crawls.count_documents(qa_query)
+        index = 1
+
         async for crawl_with_qa in self.crawls.find(qa_query):
+            print(f"Clearing QA WACZ presigned URLs, crawl {index}/{total}", flush=True)
+            index += 1
+
             qa_finished = crawl_with_qa.get("qaFinished")
             if not qa_finished:
                 continue
