@@ -92,7 +92,7 @@ nav:
       - develop/localization.md
       - develop/docs.md
       - Design:
-        - develop/design-actions-menu.md
+        - develop/design-action-menus.md
 
   - API Reference: !ENV [ API_DOCS_URL, "/api/" ]
 
