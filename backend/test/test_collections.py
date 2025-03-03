@@ -155,6 +155,38 @@ def test_create_collection_empty_name(
     assert r.status_code == 422
 
 
+def test_create_empty_collection(
+    crawler_auth_headers, default_org_id, crawler_crawl_id, admin_crawl_id
+):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections",
+        headers=crawler_auth_headers,
+        json={
+            "name": "Empty Collection",
+        },
+    )
+    assert r.status_code == 200
+    coll_id = r.json()["id"]
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{coll_id}/replay.json",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["crawlCount"] == 0
+    assert data["pageCount"] == 0
+    assert len(data["resources"]) == 0
+
+    # Delete the empty collection
+    r = requests.delete(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{coll_id}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["success"]
+
+
 def test_update_collection(
     crawler_auth_headers, default_org_id, crawler_crawl_id, admin_crawl_id
 ):

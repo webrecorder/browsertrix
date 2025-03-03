@@ -538,11 +538,9 @@ class PageOps:
             crawl_ids = await self.coll_ops.get_collection_crawl_ids(
                 coll_id, public_or_unlisted_only
             )
-        elif not crawl_ids:
-            # neither coll_id nor crawl_id, error
-            raise HTTPException(
-                status_code=400, detail="either crawl_ids or coll_id must be provided"
-            )
+
+        if not crawl_ids:
+            return [], 0
 
         query: dict[str, object] = {
             "crawl_id": {"$in": crawl_ids},
