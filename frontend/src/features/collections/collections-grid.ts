@@ -190,10 +190,20 @@ export class CollectionsGrid extends BtrixElement {
       year: "numeric",
     });
 
+    let date = "";
+
+    if (earliestYear === latestYear) {
+      date = this.localize.date(collection.dateEarliest, {
+        month: "long",
+        year: "numeric",
+      });
+    } else {
+      date = `${earliestYear} – ${latestYear} `;
+    }
+
     return html`
       <btrix-badge variant="primary" class="absolute right-3 top-3">
-        ${earliestYear}
-        ${latestYear !== earliestYear ? html` – ${latestYear} ` : nothing}
+        ${date}
       </btrix-badge>
     `;
   }
