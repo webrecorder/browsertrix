@@ -746,6 +746,7 @@ class CrawlFileOut(BaseModel):
 
     crawlId: Optional[str] = None
     numReplicas: int = 0
+    expireAt: Optional[str] = None
 
 
 # ============================================================================
@@ -1157,7 +1158,7 @@ class ImageFile(BaseFile):
 
     async def get_image_file_out(self, org, storage_ops) -> ImageFileOut:
         """Get ImageFileOut with new presigned url"""
-        presigned_url = await storage_ops.get_presigned_url(org, self)
+        presigned_url, _ = await storage_ops.get_presigned_url(org, self)
 
         return ImageFileOut(
             name=self.filename,
@@ -1173,7 +1174,7 @@ class ImageFile(BaseFile):
 
     async def get_public_image_file_out(self, org, storage_ops) -> PublicImageFileOut:
         """Get PublicImageFileOut with new presigned url"""
-        presigned_url = await storage_ops.get_presigned_url(org, self)
+        presigned_url, _ = await storage_ops.get_presigned_url(org, self)
 
         return PublicImageFileOut(
             name=self.filename,

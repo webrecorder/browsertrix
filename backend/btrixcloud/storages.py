@@ -24,7 +24,7 @@ import zlib
 import json
 import os
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from zipfile import ZipInfo
 
 from fastapi import Depends, HTTPException, APIRouter
@@ -86,6 +86,7 @@ class StorageOps:
     frontend_origin: str
 
     expire_at_duration_seconds: int
+    signed_duration_delta: timedelta
 
     def __init__(self, org_ops, crawl_manager, mdb) -> None:
         self.org_ops = org_ops
@@ -95,6 +96,7 @@ class StorageOps:
 
         # renew when <25% of time remaining
         self.expire_at_duration_seconds = int(PRESIGN_DURATION_SECONDS * 0.75)
+        self.signed_duration_delta = timedelta(seconds=self.expire_at_duration_seconds)
 
         frontend_origin = os.environ.get(
             "FRONTEND_ORIGIN", "http://browsertrix-cloud-frontend"
@@ -463,16 +465,15 @@ class StorageOps:
 
     async def get_presigned_url(
         self, org: Organization, crawlfile: CrawlFile, force_update=False
-    ) -> str:
+    ) -> tuple[str, datetime]:
         """generate pre-signed url for crawl file"""
 
         res = None
         if not force_update:
             res = await self.presigned_urls.find_one({"_id": crawlfile.filename})
             if res:
-                url = res.get("url")
-                if url:
-                    return url
+                presigned = PresignedUrl.from_dict(**res)
+                return presigned.url, presigned.signedAt + self.signed_duration_delta
 
         s3storage = self.get_org_storage_by_ref(org, crawlfile.storage)
 
@@ -501,6 +502,8 @@ class StorageOps:
                     host_endpoint_url, s3storage.access_endpoint_url
                 )
 
+        now = dt_now()
+
         presigned = PresignedUrl(
             id=crawlfile.filename, url=presigned_url, signedAt=dt_now(), oid=org.id
         )
@@ -512,7 +515,7 @@ class StorageOps:
             upsert=True,
         )
 
-        return presigned_url
+        return presigned_url, now + self.signed_duration_delta
 
     async def delete_file_object(self, org: Organization, crawlfile: BaseFile) -> bool:
         """delete crawl file from storage."""

@@ -466,7 +466,7 @@ class BaseCrawlOps:
         out_files = []
 
         for file_ in files:
-            presigned_url = await self.storage_ops.get_presigned_url(
+            presigned_url, expire_at = await self.storage_ops.get_presigned_url(
                 org, file_, force_update=force_update
             )
 
@@ -478,6 +478,7 @@ class BaseCrawlOps:
                     size=file_.size,
                     crawlId=crawl_id,
                     numReplicas=len(file_.replicas) if file_.replicas else 0,
+                    expireAt=expire_at,
                 )
             )
 
