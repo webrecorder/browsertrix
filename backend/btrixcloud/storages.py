@@ -472,7 +472,7 @@ class StorageOps:
         if not force_update:
             res = await self.presigned_urls.find_one({"_id": crawlfile.filename})
             if res:
-                presigned = PresignedUrl.from_dict(**res)
+                presigned = PresignedUrl.from_dict(res)
                 return presigned.url, presigned.signedAt + self.signed_duration_delta
 
         s3storage = self.get_org_storage_by_ref(org, crawlfile.storage)
