@@ -145,7 +145,7 @@ export class Screencast extends BtrixElement {
   // Multiply by scale to get available browser window count
   private browsersCount = 1;
   private screenWidth = 640;
-  private screenHeight = 480;
+  private screenHeight = 360;
   private readonly timerIds: number[] = [];
 
   protected firstUpdated() {
