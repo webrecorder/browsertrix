@@ -1,22 +1,17 @@
-"""entrypoint module for operator"""
+"""entrypoint module for init_container, handles db migration"""
 
 import os
 import sys
+import asyncio
 
-from fastapi import FastAPI
-
-from .operator import init_operator_api
 from .ops import init_ops
-from .utils import register_exit_handler
-
-
-app_root = FastAPI()
+from .db import update_and_prepare_db
 
 
 # ============================================================================
 # pylint: disable=too-many-function-args, duplicate-code
-def main():
-    """init operator"""
+async def main() -> int:
+    """init migrations"""
 
     # pylint: disable=import-outside-toplevel
     if not os.environ.get("KUBERNETES_SERVICE_HOST"):
@@ -24,7 +19,7 @@ def main():
             "Sorry, the Browsertrix Backend must be run inside a Kubernetes environment.\
              Kubernetes not detected (KUBERNETES_SERVICE_HOST is not set), Exiting"
         )
-        sys.exit(1)
+        return 1
 
     (
         org_ops,
@@ -37,30 +32,30 @@ def main():
         _,
         storage_ops,
         background_job_ops,
-        event_webhook_ops,
         _,
+        user_manager,
+        invite_ops,
         _,
-        _,
-        _,
+        mdb,
     ) = init_ops()
 
-    return init_operator_api(
-        app_root,
-        crawl_config_ops,
-        crawl_ops,
+    await update_and_prepare_db(
+        mdb,
+        user_manager,
         org_ops,
+        crawl_ops,
+        crawl_config_ops,
         coll_ops,
+        invite_ops,
         storage_ops,
-        event_webhook_ops,
-        background_job_ops,
         page_ops,
+        background_job_ops,
     )
 
+    return 0
 
-# ============================================================================
-@app_root.on_event("startup")
-async def startup():
-    """init on startup"""
-    register_exit_handler()
-    settings = main()
-    await settings.async_init()
+
+# # ============================================================================
+if __name__ == "__main__":
+    return_code = asyncio.run(main())
+    sys.exit(return_code)

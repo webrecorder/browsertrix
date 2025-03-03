@@ -16,7 +16,7 @@ from fastapi.openapi.utils import get_openapi
 from fastapi.openapi.docs import get_swagger_ui_html, get_redoc_html
 from pydantic import BaseModel
 
-from .db import init_db, await_db_and_migrations, update_and_prepare_db
+from .db import init_db, await_db_and_migrations
 
 from .emailsender import EmailSender
 from .invites import init_invites
@@ -38,7 +38,7 @@ from .pages import init_pages_api
 from .subs import init_subs_api
 
 from .crawlmanager import CrawlManager
-from .utils import run_once_lock, register_exit_handler, is_bool
+from .utils import register_exit_handler, is_bool
 from .version import __version__
 
 API_PREFIX = "/api"
@@ -274,25 +274,8 @@ def main() -> None:
 
     coll_ops.set_page_ops(page_ops)
 
-    # run only in first worker
-    if run_once_lock("btrix-init-db"):
-        asyncio.create_task(
-            update_and_prepare_db(
-                mdb,
-                user_manager,
-                org_ops,
-                crawls,
-                crawl_config_ops,
-                coll_ops,
-                invites,
-                storage_ops,
-                page_ops,
-                background_job_ops,
-                db_inited,
-            )
-        )
-    else:
-        asyncio.create_task(await_db_and_migrations(mdb, db_inited))
+    # await db init, migrations should have already completed in init containers
+    asyncio.create_task(await_db_and_migrations(mdb, db_inited))
 
     app.include_router(org_ops.router)
 
