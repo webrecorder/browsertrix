@@ -352,11 +352,21 @@ class CollectionOps:
 
             public = "public/" if public_or_unlisted_only else ""
 
+            origin = get_origin(headers)
+
+            if public_or_unlisted_only:
+                slug = result.get("slug")
+                result["downloadUrl"] = (
+                    origin + f"/api/{public}orgs/{org.slug}/collections/{slug}/download"
+                )
+            else:
+                # disable download link, as not public without auth
+                result["downloadUrl"] = None
+
             if pages_optimized:
                 result["initialPages"] = initial_pages
                 result["pagesQueryUrl"] = (
-                    get_origin(headers)
-                    + f"/api/orgs/{org.id}/collections/{coll_id}/{public}pages"
+                    origin + f"/api/orgs/{org.id}/collections/{coll_id}/{public}pages"
                 )
 
         thumbnail = result.get("thumbnail")
