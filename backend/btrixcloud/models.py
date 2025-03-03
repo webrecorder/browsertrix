@@ -1525,6 +1525,7 @@ class PublicCollOut(BaseMongoModel):
     name: str
     slug: str
     oid: UUID
+    orgName: str
     description: Optional[str] = None
     caption: Optional[str] = None
     created: Optional[datetime] = None
