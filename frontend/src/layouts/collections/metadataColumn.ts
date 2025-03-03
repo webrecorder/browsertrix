@@ -52,6 +52,10 @@ export function metadataColumn(collection?: Collection | PublicCollection) {
         render: (col) =>
           `${localize.number(col.pageCount)} ${pluralOf("pages", col.pageCount)}`,
       })}
+      ${metadataItem({
+        label: metadata.totalSize,
+        render: (col) => `${localize.bytes(col.totalSize)}`,
+      })}
     </btrix-desc-list>
   `;
 }
