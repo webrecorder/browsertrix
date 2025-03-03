@@ -190,7 +190,9 @@ def main() -> None:
 
     crawl_manager = CrawlManager()
 
-    storage_ops = init_storages_api(org_ops, crawl_manager)
+    storage_ops = init_storages_api(
+        org_ops, crawl_manager, app, mdb, current_active_user
+    )
 
     background_job_ops = init_background_jobs_api(
         app,

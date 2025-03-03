@@ -51,7 +51,7 @@ def init_ops() -> Tuple[
 
     crawl_manager = CrawlManager()
 
-    storage_ops = StorageOps(org_ops, crawl_manager)
+    storage_ops = StorageOps(org_ops, crawl_manager, mdb)
 
     background_job_ops = BackgroundJobOps(
         mdb, email, user_manager, org_ops, crawl_manager, storage_ops
