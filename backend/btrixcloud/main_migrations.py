@@ -50,7 +50,6 @@ async def main() -> int:
         storage_ops,
         page_ops,
         background_job_ops,
-        {},
     )
 
     return 0

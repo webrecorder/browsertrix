@@ -98,7 +98,6 @@ async def update_and_prepare_db(
     storage_ops: StorageOps,
     page_ops: PageOps,
     background_job_ops: BackgroundJobOps,
-    db_inited: dict[str, bool],
 ) -> None:
     """Prepare database for application.
 
@@ -127,7 +126,6 @@ async def update_and_prepare_db(
     await user_manager.create_super_user()
     await org_ops.create_default_org()
     await org_ops.check_all_org_default_storages(storage_ops)
-    db_inited["inited"] = True
     print("Database updated and ready", flush=True)
 
 
