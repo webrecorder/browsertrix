@@ -182,8 +182,8 @@ class BaseCrawlOps:
                         origin + f"/api/orgs/{oid}/crawls/{crawlid}/pagesSearch"
                     )
 
-                    # this will now disable the downloadUrl in RWP
-                    res["downloadUrl"] = None
+                # this will now disable the downloadUrl in RWP
+                res["downloadUrl"] = None
 
         crawl = CrawlOutWithResources.from_dict(res)
 
