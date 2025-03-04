@@ -85,6 +85,7 @@ import {
   getDefaultFormState,
   getInitialFormState,
   getServerDefaults,
+  SECTIONS,
   type FormState,
   type WorkflowDefaults,
 } from "@/utils/workflow";
@@ -96,13 +97,7 @@ type NewCrawlConfigParams = WorkflowParams & {
   };
 };
 
-const STEPS = [
-  "crawlSetup",
-  "crawlLimits",
-  "browserSettings",
-  "crawlScheduling",
-  "crawlMetadata",
-] as const;
+const STEPS = SECTIONS;
 type StepName = (typeof STEPS)[number];
 type TabState = {
   completed: boolean;
@@ -123,7 +118,7 @@ const formName = "newJobConfig" as const;
 const panelSuffix = "--panel" as const;
 
 const getDefaultProgressState = (hasConfigId = false): ProgressState => {
-  let activeTab: StepName = "crawlSetup";
+  let activeTab: StepName = "scope";
   if (window.location.hash) {
     const hashValue = window.location.hash.slice(1);
 
@@ -136,8 +131,12 @@ const getDefaultProgressState = (hasConfigId = false): ProgressState => {
     activeTab,
     // TODO Mark as completed only if form section has data
     tabs: {
-      crawlSetup: { error: false, completed: hasConfigId },
-      crawlLimits: {
+      scope: { error: false, completed: hasConfigId },
+      limits: {
+        error: false,
+        completed: hasConfigId,
+      },
+      behaviors: {
         error: false,
         completed: hasConfigId,
       },
@@ -145,11 +144,11 @@ const getDefaultProgressState = (hasConfigId = false): ProgressState => {
         error: false,
         completed: hasConfigId,
       },
-      crawlScheduling: {
+      scheduling: {
         error: false,
         completed: hasConfigId,
       },
-      crawlMetadata: {
+      metadata: {
         error: false,
         completed: hasConfigId,
       },
@@ -242,13 +241,7 @@ export class WorkflowEditor extends BtrixElement {
   private readonly validateNameMax = maxLengthValidator(50);
   private readonly validateDescriptionMax = maxLengthValidator(350);
 
-  private readonly tabLabels: Record<StepName, string> = {
-    crawlSetup: sectionStrings.scope,
-    crawlLimits: msg("Limits"),
-    browserSettings: sectionStrings.browserSettings,
-    crawlScheduling: sectionStrings.scheduling,
-    crawlMetadata: msg("Metadata"),
-  };
+  private readonly tabLabels = sectionStrings;
 
   private get formHasError() {
     return (
@@ -1107,7 +1100,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       inputEl.helpText = helpText;
     };
     return html`
-      ${this.renderSectionHeading(sectionStrings.perCrawlLimits)}
+      ${this.renderSectionHeading(sectionStrings.limits)}
       ${inputCol(html`
         <sl-mutation-observer
           attr="min"
@@ -1172,7 +1165,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         </sl-input>
       `)}
       ${this.renderHelpTextCol(infoTextStrings["maxCrawlSizeGB"])}
-      ${this.renderSectionHeading(sectionStrings.perPageLimits)}
+      ${this.renderSectionHeading(sectionStrings.behaviors)}
       ${inputCol(html`
         <sl-input
           name="pageLoadTimeoutSeconds"
@@ -1601,13 +1594,13 @@ https://archiveweb.page/images/${"logo.svg"}`}
     required?: boolean;
   }[] = [
     {
-      name: "crawlSetup",
+      name: "scope",
       desc: msg("Specify the range and depth of your crawl."),
       render: this.renderScope,
       required: true,
     },
     {
-      name: "crawlLimits",
+      name: "limits",
       desc: msg("Enforce maximum limits on your crawl."),
       render: this.renderCrawlLimits,
     },
@@ -1619,12 +1612,12 @@ https://archiveweb.page/images/${"logo.svg"}`}
       render: this.renderCrawlBehaviors,
     },
     {
-      name: "crawlScheduling",
+      name: "scheduling",
       desc: msg("Schedule recurring crawls."),
       render: this.renderJobScheduling,
     },
     {
-      name: "crawlMetadata",
+      name: "metadata",
       desc: msg("Describe and organize crawls from this workflow."),
       render: this.renderJobMetadata,
     },
@@ -1799,7 +1792,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     if (e.detail.valid === false || !table.checkValidity()) {
       this.updateProgressState({
         tabs: {
-          crawlSetup: { error: true },
+          scope: { error: true },
         },
       });
     } else {

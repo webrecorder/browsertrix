@@ -4,10 +4,11 @@ import { type SectionsEnum } from "@/utils/workflow";
 
 const section: Record<SectionsEnum, string> = {
   scope: msg("Scope"),
-  perCrawlLimits: msg("Per-Crawl Limits"),
-  perPageLimits: msg("Per-Page Limits"),
+  limits: msg("Limits"),
+  behaviors: msg("Behaviors"),
   browserSettings: msg("Browser Settings"),
   scheduling: msg("Scheduling"),
+  metadata: msg("Metadata"),
 };
 
 export default section;
