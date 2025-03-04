@@ -1079,28 +1079,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
       urlListToArray(this.formState.urlList).length +
         (isPageScopeType(this.formState.scopeType) ? 0 : 1),
     );
-    const onInputMinMax = async (e: CustomEvent) => {
-      const inputEl = e.target as SlInput;
-      await inputEl.updateComplete;
-      let helpText = "";
-      if (!inputEl.checkValidity()) {
-        const value = +inputEl.value;
-        const min = inputEl.min;
-        const max = inputEl.max;
-        if (min && value < +min) {
-          helpText = msg(
-            str`Must be more than minimum of ${this.localize.number(+min)}`,
-          );
-        } else if (max && value > +max) {
-          helpText = msg(
-            str`Must be less than maximum of ${this.localize.number(+max)}`,
-          );
-        }
-      }
-      inputEl.helpText = helpText;
-    };
+
     return html`
-      ${this.renderSectionHeading(sectionStrings.limits)}
       ${inputCol(html`
         <sl-mutation-observer
           attr="min"
@@ -1130,7 +1110,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
                 : undefined,
             )}
             placeholder=${defaultLabel(this.orgDefaults.maxPagesPerCrawl)}
-            @sl-input=${onInputMinMax}
+            @sl-input=${this.onInputMinMax}
           >
             <span slot="suffix">${msg("pages")}</span>
           </sl-input>
@@ -1165,17 +1145,47 @@ https://archiveweb.page/images/${"logo.svg"}`}
         </sl-input>
       `)}
       ${this.renderHelpTextCol(infoTextStrings["maxCrawlSizeGB"])}
-      ${this.renderSectionHeading(sectionStrings.behaviors)}
+    `;
+  }
+
+  private renderBehaviors() {
+    return html`
+      ${this.renderSectionHeading(msg("Built-in Behaviors"))}
+      ${inputCol(
+        html`<sl-checkbox
+          name="autoscrollBehavior"
+          ?checked=${this.formState.autoscrollBehavior}
+        >
+          ${msg("Auto-scroll")}
+        </sl-checkbox>`,
+      )}
+      ${this.renderHelpTextCol(
+        msg(`Automatically scroll to the end of the page.`),
+        false,
+      )}
+      ${inputCol(
+        html`<sl-checkbox
+          name="autoclickBehavior"
+          ?checked=${this.formState.autoclickBehavior}
+        >
+          ${msg("Auto-click")}
+        </sl-checkbox>`,
+      )}
+      ${this.renderHelpTextCol(
+        msg(`Automatically click on links that don't navigate to other pages.`),
+        false,
+      )}
+      ${this.renderSectionHeading(msg("Page Timing"))}
       ${inputCol(html`
         <sl-input
           name="pageLoadTimeoutSeconds"
           type="number"
           inputmode="numeric"
-          label=${msg("Page Load Timeout")}
+          label=${msg("Page Load Limit")}
           placeholder=${defaultLabel(this.orgDefaults.pageLoadTimeoutSeconds)}
           value=${ifDefined(this.formState.pageLoadTimeoutSeconds ?? undefined)}
           min="0"
-          @sl-input=${onInputMinMax}
+          @sl-input=${this.onInputMinMax}
         >
           <span slot="suffix">${msg("seconds")}</span>
         </sl-input>
@@ -1200,50 +1210,22 @@ https://archiveweb.page/images/${"logo.svg"}`}
           name="behaviorTimeoutSeconds"
           type="number"
           inputmode="numeric"
-          label=${msg("Behavior Timeout")}
+          label=${msg("Behavior Limit")}
           placeholder=${defaultLabel(this.orgDefaults.behaviorTimeoutSeconds)}
           value=${ifDefined(this.formState.behaviorTimeoutSeconds ?? undefined)}
           min="0"
-          @sl-input=${onInputMinMax}
+          @sl-input=${this.onInputMinMax}
         >
           <span slot="suffix">${msg("seconds")}</span>
         </sl-input>
       `)}
       ${this.renderHelpTextCol(infoTextStrings["behaviorTimeoutSeconds"])}
-      ${inputCol(
-        html`<sl-checkbox
-          name="autoscrollBehavior"
-          ?checked=${this.formState.autoscrollBehavior}
-        >
-          ${msg("Autoscroll behavior")}
-        </sl-checkbox>`,
-      )}
-      ${this.renderHelpTextCol(
-        msg(
-          `When enabled the browser will automatically scroll to the end of the page.`,
-        ),
-        false,
-      )}
-      ${inputCol(
-        html`<sl-checkbox
-          name="autoclickBehavior"
-          ?checked=${this.formState.autoclickBehavior}
-        >
-          ${msg("Autoclick behavior")}
-        </sl-checkbox>`,
-      )}
-      ${this.renderHelpTextCol(
-        msg(
-          `When enabled the browser will automatically click on links that don't navigate to other pages.`,
-        ),
-        false,
-      )}
       ${inputCol(html`
         <sl-input
           name="pageExtraDelaySeconds"
           type="number"
           inputmode="numeric"
-          label=${msg("Delay Before Next Page")}
+          label=${msg("Delay After Behaviors")}
           placeholder=${defaultLabel(0)}
           value=${ifDefined(this.formState.pageExtraDelaySeconds ?? undefined)}
           min="0"
@@ -1255,7 +1237,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     `;
   }
 
-  private renderCrawlBehaviors() {
+  private renderBrowserSettings() {
     if (!this.formState.lang) throw new Error("missing formstate.lang");
     return html`
       ${inputCol(html`
@@ -1601,15 +1583,18 @@ https://archiveweb.page/images/${"logo.svg"}`}
     },
     {
       name: "limits",
-      desc: msg("Enforce maximum limits on your crawl."),
+      desc: msg("Limit the size and duration of the crawl."),
       render: this.renderCrawlLimits,
     },
     {
+      name: "behaviors",
+      desc: msg("Customize how the browser loads and interacts with a page."),
+      render: this.renderBehaviors,
+    },
+    {
       name: "browserSettings",
-      desc: msg(
-        "Configure the browser that's used to visit URLs during the crawl.",
-      ),
-      render: this.renderCrawlBehaviors,
+      desc: msg("Configure the browser used to crawl."),
+      render: this.renderBrowserSettings,
     },
     {
       name: "scheduling",
@@ -1622,6 +1607,27 @@ https://archiveweb.page/images/${"logo.svg"}`}
       render: this.renderJobMetadata,
     },
   ];
+
+  private readonly onInputMinMax = async (e: CustomEvent) => {
+    const inputEl = e.target as SlInput;
+    await inputEl.updateComplete;
+    let helpText = "";
+    if (!inputEl.checkValidity()) {
+      const value = +inputEl.value;
+      const min = inputEl.min;
+      const max = inputEl.max;
+      if (min && value < +min) {
+        helpText = msg(
+          str`Must be more than minimum of ${this.localize.number(+min)}`,
+        );
+      } else if (max && value > +max) {
+        helpText = msg(
+          str`Must be less than maximum of ${this.localize.number(+max)}`,
+        );
+      }
+    }
+    inputEl.helpText = helpText;
+  };
 
   private changeScopeType(value: FormState["scopeType"]) {
     const prevScopeType = this.formState.scopeType;

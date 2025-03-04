@@ -5,7 +5,7 @@ import { type SectionsEnum } from "@/utils/workflow";
 const section: Record<SectionsEnum, string> = {
   scope: msg("Scope"),
   limits: msg("Crawl Limits"),
-  behaviors: msg("Page Behaviors"),
+  behaviors: msg("Page Behavior"),
   browserSettings: msg("Browser Settings"),
   scheduling: msg("Scheduling"),
   metadata: msg("Metadata"),
