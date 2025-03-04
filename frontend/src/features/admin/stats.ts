@@ -22,6 +22,7 @@ export function computeStats(orgData: OrgData[] = []) {
     trialing: 0,
     trialingCancelled: 0,
     pausedPaymentFailed: 0,
+    paymentNeverMade: 0,
     cancelled: 0,
   };
 
@@ -36,6 +37,7 @@ export function computeStats(orgData: OrgData[] = []) {
       storage.active += org.bytesStored;
     }
     if (org.subscription) {
+      console.log("org subscription", org.subscription);
       subscriptions.total++;
       switch (org.subscription.status) {
         case SubscriptionStatus.Active:
@@ -49,6 +51,9 @@ export function computeStats(orgData: OrgData[] = []) {
           break;
         case SubscriptionStatus.PausedPaymentFailed:
           subscriptions.pausedPaymentFailed++;
+          break;
+        case SubscriptionStatus.PaymentNeverMade:
+          subscriptions.paymentNeverMade++;
           break;
         case SubscriptionStatus.Cancelled:
           subscriptions.cancelled++;
@@ -162,6 +167,12 @@ export class Component extends BtrixElement {
               <span class="text-left font-bold text-white"
                 >${html`${this.localize.number(
                   subscriptions.pausedPaymentFailed,
+                )}`}</span
+              >
+              ${msg("Payment never made")}:
+              <span class="text-left font-bold text-white"
+                >${html`${this.localize.number(
+                  subscriptions.paymentNeverMade,
                 )}`}</span
               >
               ${msg("Cancelled subscriptions")}:
