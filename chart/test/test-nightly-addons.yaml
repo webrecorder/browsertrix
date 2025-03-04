@@ -8,6 +8,8 @@ max_pages_per_crawl: 300
 # enable to allow access to minio directly
 minio_local_access_port: 30090
 
+minio_local_bucket_name: &local_bucket_name "btrix-test-data"
+
 # for checking registration
 registration_enabled: "1"
 
@@ -16,7 +18,7 @@ storages:
     type: "s3"
     access_key: "ADMIN"
     secret_key: "PASSW0RD"
-    bucket_name: "btrix-test-data"
+    bucket_name: *local_bucket_name
 
     endpoint_url: "http://local-minio.default:9000/"
     is_default_primary: true
