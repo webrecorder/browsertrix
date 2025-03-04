@@ -4,12 +4,29 @@ on:
   schedule:
     # Run daily at 8am UTC
     - cron:  '0 8 * * *'
+  push:
+    branches:
+      - 'nightly-test-fix'
 
   workflow_dispatch:
 
 jobs:
-  btrix-k3d-nightly-test:
+  collect-test-modules:
     runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v3
+      - id: set-matrix
+        run: echo "::set-output name=matrix::$(ls ./backend/test_nightly/ | grep -o "^test_.*" | jq -R -s -c 'split("\n")[:-1]')"
+
+  btrix-k3d-nightly-test:
+    name: ${{ matrix.module }}
+    needs: collect-test-modules
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        module: ${{fromJSON(needs.collect-test-modules.outputs.matrix)}}
     steps:
       - name: Create k3d Cluster
         uses: AbsaOSS/k3d-action@v2
@@ -82,7 +99,7 @@ jobs:
         run:  kubectl exec -i deployment/local-minio -c minio -- mkdir /data/replica-0
 
       - name: Run Tests
-        run: pytest -vv ./backend/test_nightly/test_*.py
+        run: pytest -vv ./backend/test_nightly/${{ matrix.module }}
 
       - name: Print Backend Logs (API)
         if: ${{ failure() }}
