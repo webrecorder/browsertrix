@@ -123,7 +123,7 @@ export class ConfigDetails extends BtrixElement {
             `,
           )}
           <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
-            <h4>${sectionStrings.perCrawlLimits}</h4>
+            <h4>${sectionStrings.limits}</h4>
           </btrix-section-heading>
           ${this.renderSetting(
             msg("Max Pages"),
@@ -155,7 +155,7 @@ export class ConfigDetails extends BtrixElement {
             renderSize(crawlConfig?.maxCrawlSize),
           )}
           <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
-            <h4>${sectionStrings.perPageLimits}</h4>
+            <h4>${sectionStrings.behaviors}</h4>
           </btrix-section-heading>
           ${this.renderSetting(
             msg("Page Load Timeout"),
