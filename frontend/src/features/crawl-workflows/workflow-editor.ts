@@ -355,6 +355,7 @@ export class WorkflowEditor extends BtrixElement {
 
     if (this.progressState?.activeTab !== STEPS[0]) {
       void this.scrollToActivePanel();
+      void (await this.activeTabPanel)?.querySelector("sl-details")?.show();
     }
   }
 
@@ -1686,8 +1687,11 @@ https://archiveweb.page/images/${"logo.svg"}`}
       .find((panel) => this.visiblePanels.has(panel.id))
       ?.id.split(panelSuffix)[0] as StepName | undefined;
 
-    if (!STEPS.includes(activeTab!)) {
-      console.debug("tab not in steps:", activeTab, this.visiblePanels);
+    if (!activeTab || !STEPS.includes(activeTab)) {
+      if (activeTab) {
+        console.debug("tab not in steps:", activeTab, this.visiblePanels);
+      }
+
       return;
     }
 
