@@ -25,10 +25,10 @@ Downloading a collection will export every archived item in it as a single WACZ 
 
 Collections can be set to one of the one following access modes.
 
-- Private - Collections only accessible to logged in users
-- Unlisted - Collections can be shared with others, given the link to the collection.
-- Public - Collections can be shared with others, and also listed in the [public collections gallery](org-settings.md#public-collections-gallery), if enabled.
+- Private — Collections only accessible to logged in users
+- Unlisted — Collections can be shared with others, given the link to the collection.
+- Public — Collections can be shared with others, and also listed in the [public collections gallery](org-settings.md#public-collections-gallery), if enabled.
 
-If the public collections gallery page is not enabled, the public collections are treated the same as unlisted.
+If the public collections gallery page is not enabled, any existing public collections are treated the same as unlisted collections.
 
-Check out [enabling public collection gallery](../public-collections-gallery) for info on how to enable this page.
+Check out [enabling public collection gallery](../public-collections-gallery) for a guide on how to enable this page.
