@@ -1,6 +1,7 @@
-# HOW TO: Enabling Public Collections Gallery
+# Enabling Public Collections Gallery
 
-Browsertrix now provides an optional Public Collections Gallery for all organizations, which can be enabled as follows:
+The following walkthrough provides steps-by-step instructions for enabling the Public Collections Gallery
+for your organization. (This feature is available in Browsertrix 1.14 and later).
 
 1.  Log in to your Browsertrix account
 
@@ -8,19 +9,20 @@ Browsertrix now provides an optional Public Collections Gallery for all organiza
 
 3.  Back on your **dashboard**, scroll down to find the **Public Collections** section
     
-    If you don’t have any public collections yet, click the asterisk icon{" "} on the right side to see all your collections
+    If you don’t have any public collections yet, click the asterisk icon :octicons-key-asterisk-16: on the right side to see all your collections
     
-    1.  Click the edit button{" "} on a collection, then in the \*\*Sharing\*\* tab change its visibility to \*\*Public\*\* and save
+    1.  Click the edit button :octicons-pencil-16: on a collection, then in the **Sharing** tab change its visibility to **Public** and save
         
     2.  Repeat as needed
         
-    3.  Press the globe icon on the right side{" "} to see all your public collections
+    3.  Press the globe icon on the right side :octicons-globe-16: to see all your public collections
         
 4.  Click on “**Visit Public Collections Gallery**”, and now you can share your gallery with the world!
     
 
-<video autoplay muted playsinline loop disablepictureinpicture disableremoteplayback className="lazy aspect-\[3024/1886\] w-full rounded-md border border-brand-green/30 bg-white">
-    <source data-src="https://webrecorder.net/assets/video/collections-full-walkthrough-av1.mp4" type={'video/mp4; codecs="av01.0.12M.08.0"'} />
+<video autoplay muted playsinline loop disablepictureinpicture disableremoteplayback>
+  <source src="https://webrecorder.net/assets/video/collections-full-walkthrough-av1.mp4"/>
+  <source src="https://webrecorder.net/assets/video/collections-full-walkthrough-h264.mp4"/>
 </video>
 
 ## Make It Your Own
@@ -34,8 +36,11 @@ You can customize and curate how your public collections appear directly in your
 *   Choose the **initial view** for your collection
     
 
-<video autoplay muted playsinline loop disablepictureinpicture disableremoteplayback className="lazy aspect-\[3024/1886\] w-full rounded-md border border-brand-green/30 bg-white">
-    <source data-src="https://webrecorder.net/assets/video/collection-editing-av1.mp4" type={'video/mp4; codecs="av01.0.12M.08.0"'} />
+<video autoplay muted playsinline loop disablepictureinpicture disableremoteplayback>
+  <source src="https://webrecorder.net/assets/video/collection-editing-av1.mp4"/>
+  <source src="https://webrecorder.net/assets/video/collection-editing-h264.mp4"/>
 </video>
 
 Public Collections are live and ready for you to explore on Browsertrix now — dive in and create your own gallery!
+
+The [Presentation and Sharing](../presentation-sharing) page provides additional options for sharing collections.

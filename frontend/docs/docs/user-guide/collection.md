@@ -20,3 +20,9 @@ A crawl workflow can also be set to [automatically add any completed crawls to a
 ## Downloading Collections
 
 Downloading a collection will export every archived item in it as a single WACZ file. To download a collection, use the _Download Collection_ option under the collection's _Actions_ dropdown.
+
+## Browsing and Sharing Collections
+
+Collections can be accessed by anyone within the organization and can also be shared with others externally.
+
+The next page covers the steps needed to create a [public collection gallery](../public-collections-gallery).
