@@ -1156,7 +1156,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           name="autoscrollBehavior"
           ?checked=${this.formState.autoscrollBehavior}
         >
-          ${msg("Auto-scroll")}
+          ${msg("Autoscroll")}
         </sl-checkbox>`,
       )}
       ${this.renderHelpTextCol(
@@ -1168,11 +1168,11 @@ https://archiveweb.page/images/${"logo.svg"}`}
           name="autoclickBehavior"
           ?checked=${this.formState.autoclickBehavior}
         >
-          ${msg("Auto-click")}
+          ${msg("Autoclick")}
         </sl-checkbox>`,
       )}
       ${this.renderHelpTextCol(
-        msg(`Automatically click on links that don't navigate to other pages.`),
+        msg(`Automatically click on all link-like elements.`),
         false,
       )}
       ${this.renderSectionHeading(msg("Page Timing"))}
