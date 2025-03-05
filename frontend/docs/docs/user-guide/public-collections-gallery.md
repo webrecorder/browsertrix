@@ -1,6 +1,8 @@
 # Enabling Public Collections Gallery
 
-The following walkthrough provides steps-by-step instructions for enabling the Public Collections Gallery
+The public collections gallery provides a page that lists all public collections in one place.
+
+You can take the following steps to enable the Public Collections Gallery
 for your organization. (This feature is available in Browsertrix 1.14 and later).
 
 1.  Log in to your Browsertrix account
@@ -43,4 +45,4 @@ You can customize and curate how your public collections appear directly in your
 
 Public Collections are live and ready for you to explore on Browsertrix now — dive in and create your own gallery!
 
-The [Presentation and Sharing](../presentation-sharing) page provides additional options for sharing collections.
+The [Presentation and Sharing](../presentation-sharing) page provides further details for options on sharing collections.

@@ -21,8 +21,14 @@ A crawl workflow can also be set to [automatically add any completed crawls to a
 
 Downloading a collection will export every archived item in it as a single WACZ file. To download a collection, use the _Download Collection_ option under the collection's _Actions_ dropdown.
 
-## Browsing and Sharing Collections
+## Collection Access
 
-Collections can be accessed by anyone within the organization and can also be shared with others externally.
+Collections can be set to one of the one following access modes.
 
-The next page covers the steps needed to create a [public collection gallery](../public-collections-gallery).
+- Private - Collections only accessible to logged in users
+- Unlisted - Collections can be shared with others, given the link to the collection.
+- Public - Collections can be shared with others, and also listed in the [public collections gallery](org-settings.md#public-collections-gallery), if enabled.
+
+If the public collections gallery page is not enabled, the public collections are treated the same as unlisted.
+
+Check out [enabling public collection gallery](../public-collections-gallery) for info on how to enable this page.
