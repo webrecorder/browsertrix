@@ -355,7 +355,6 @@ export class WorkflowEditor extends BtrixElement {
 
     if (this.progressState?.activeTab !== STEPS[0]) {
       void this.scrollToActivePanel();
-      void (await this.activeTabPanel)?.querySelector("sl-details")?.show();
     }
   }
 
@@ -420,6 +419,8 @@ export class WorkflowEditor extends BtrixElement {
   }
 
   private renderFormSections() {
+    const activeTab = this.progressState?.activeTab;
+
     const panelBody = ({
       name,
       desc,
@@ -440,21 +441,27 @@ export class WorkflowEditor extends BtrixElement {
         )}
         ?open=${required || hasError || tabProgress?.completed}
         @sl-focus=${() => {
-          this.updateProgressState({
-            activeTab: name,
-          });
+          if (activeTab !== name) {
+            this.updateProgressState({
+              activeTab: name,
+            });
+          }
         }}
         @sl-show=${this.handleCurrentTarget(() => {
-          this.pauseObserve();
-          this.updateProgressState({
-            activeTab: name,
-          });
+          if (activeTab !== name) {
+            this.pauseHandlePanelIntersect(name);
+            this.updateProgressState({
+              activeTab: name,
+            });
+          }
 
           track(AnalyticsTrackEvent.ExpandWorkflowFormSection, {
             section: name,
           });
         })}
         @sl-hide=${this.handleCurrentTarget((e: SlHideEvent) => {
+          this.pauseHandlePanelIntersect(name);
+
           const el = e.currentTarget as SlDetails;
 
           // Check if there's any invalid elements before hiding
@@ -474,8 +481,12 @@ export class WorkflowEditor extends BtrixElement {
             invalidEl.checkValidity();
           }
         })}
-        @sl-after-show=${this.handleCurrentTarget(this.resumeObserve)}
-        @sl-after-hide=${this.handleCurrentTarget(this.resumeObserve)}
+        @sl-after-show=${this.handleCurrentTarget(
+          this.resumeHandlePanelIntersect,
+        )}
+        @sl-after-hide=${this.handleCurrentTarget(
+          this.resumeHandlePanelIntersect,
+        )}
       >
         <div slot="expand-icon" class="flex items-center">
           <sl-tooltip
@@ -1653,25 +1664,22 @@ https://archiveweb.page/images/${"logo.svg"}`}
     this.updateFormState(formState);
   }
 
-  // Use to skip updates on intersect changes, like when scrolling
-  // an element into view on click
-  private skipIntersectUpdate = false;
+  // Store the panel to focus or scroll to temporarily
+  // so that the intersection observer doesn't update
+  // the active tab on scroll
+  private scrollTargetTab: StepName | null = null;
 
-  private pauseObserve() {
+  private pauseHandlePanelIntersect(targetActiveTab: StepName) {
     this.onPanelIntersect.flush();
-    this.skipIntersectUpdate = true;
+    this.scrollTargetTab = targetActiveTab;
   }
 
-  private resumeObserve() {
-    this.skipIntersectUpdate = false;
+  private resumeHandlePanelIntersect() {
+    // Reset scroll target tab to indicate that scroll handling should continue
+    this.scrollTargetTab = null;
   }
 
   private readonly onPanelIntersect = throttle(10)((e: Event) => {
-    if (this.skipIntersectUpdate) {
-      this.resumeObserve();
-      return;
-    }
-
     const { entries } = (e as IntersectEvent).detail;
 
     entries.forEach((entry) => {
@@ -1682,20 +1690,27 @@ https://archiveweb.page/images/${"logo.svg"}`}
       }
     });
 
-    const panels = [...(this.panels ?? [])];
-    const activeTab = panels
-      .find((panel) => this.visiblePanels.has(panel.id))
-      ?.id.split(panelSuffix)[0] as StepName | undefined;
+    if (!this.scrollTargetTab) {
+      // Make first visible tab active
+      const panels = [...(this.panels ?? [])];
+      const targetActiveTab = panels
+        .find((panel) => this.visiblePanels.has(panel.id))
+        ?.id.split(panelSuffix)[0] as StepName | undefined;
 
-    if (!activeTab || !STEPS.includes(activeTab)) {
-      if (activeTab) {
-        console.debug("tab not in steps:", activeTab, this.visiblePanels);
+      if (!targetActiveTab || !STEPS.includes(targetActiveTab)) {
+        if (targetActiveTab) {
+          console.debug(
+            "tab not in steps:",
+            targetActiveTab,
+            this.visiblePanels,
+          );
+        }
+
+        return;
       }
 
-      return;
+      this.updateProgressState({ activeTab: targetActiveTab });
     }
-
-    this.updateProgressState({ activeTab });
   });
 
   private hasRequiredFields(): boolean {
@@ -1713,15 +1728,22 @@ https://archiveweb.page/images/${"logo.svg"}`}
       return;
     }
 
-    this.pauseObserve();
+    if (this.progressState?.activeTab) {
+      this.pauseHandlePanelIntersect(this.progressState.activeTab);
+    }
 
     // Focus on focusable element, if found, to highlight the section
-    const summary = activeTabPanel
-      .querySelector("sl-details")
-      ?.shadowRoot?.querySelector<HTMLElement>("summary[aria-controls]");
+    const details = activeTabPanel.querySelector("sl-details")!;
+    const summary = details.shadowRoot?.querySelector<HTMLElement>(
+      "summary[aria-controls]",
+    );
+
+    activeTabPanel.scrollIntoView({ block: "start" });
 
     if (summary) {
       summary.focus({
+        // Handle scrolling into view separately
+        preventScroll: true,
         // Prevent firefox from applying own focus styles
         focusVisible: false,
       } as FocusOptions & {
@@ -1730,7 +1752,12 @@ https://archiveweb.page/images/${"logo.svg"}`}
     } else {
       console.debug("summary not found in sl-details");
     }
-    activeTabPanel.scrollIntoView({ block: "start" });
+
+    if (details.open) {
+      this.resumeHandlePanelIntersect();
+    } else {
+      void details.show();
+    }
   }
 
   private async handleRemoveRegex(e: CustomEvent) {
