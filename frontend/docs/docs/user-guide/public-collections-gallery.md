@@ -20,7 +20,7 @@ Browsertrix now provides an optional Public Collections Gallery for all organiza
     
 
 <video autoplay muted playsinline loop disablepictureinpicture disableremoteplayback className="lazy aspect-\[3024/1886\] w-full rounded-md border border-brand-green/30 bg-white">
-    <source data-src="/assets/video/collections-full-walkthrough-av1.mp4" type={'video/mp4; codecs="av01.0.12M.08.0"'} />
+    <source data-src="https://webrecorder.net/assets/video/collections-full-walkthrough-av1.mp4" type={'video/mp4; codecs="av01.0.12M.08.0"'} />
 </video>
 
 ## Make It Your Own
@@ -35,7 +35,7 @@ You can customize and curate how your public collections appear directly in your
     
 
 <video autoplay muted playsinline loop disablepictureinpicture disableremoteplayback className="lazy aspect-\[3024/1886\] w-full rounded-md border border-brand-green/30 bg-white">
-    <source data-src="/assets/video/collection-editing-av1.mp4" type={'video/mp4; codecs="av01.0.12M.08.0"'} />
+    <source data-src="https://webrecorder.net/assets/video/collection-editing-av1.mp4" type={'video/mp4; codecs="av01.0.12M.08.0"'} />
 </video>
 
 Public Collections are live and ready for you to explore on Browsertrix now — dive in and create your own gallery!
