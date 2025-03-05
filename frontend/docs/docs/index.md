@@ -15,7 +15,7 @@ Docs are organized into the following sections:
 - [User Guide](./user-guide/index.md) — Instructions on how to use Browsertrix to create and share web archives.
 - [Self-Hosting](./deploy/index.md) — Instructions on how to install, set up, and deploy self-hosted Browsertrix.
 - [Development](./develop/index.md) — Contribute to the open source development of Browsertrix software.
-- [API Reference](/api) - Full API reference for interacting with the Browsertrix backend.
+- [API Reference](/api) — Full API reference for interacting with the Browsertrix backend.
 
 If you have feedback on the docs, please feel free to [reach out to us](mailto:docs-feedback@webrecorder.net).
 
