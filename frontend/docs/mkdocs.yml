@@ -64,6 +64,7 @@ nav:
       - Collections:
           - user-guide/collection.md
           - user-guide/presentation-sharing.md
+          - user-guide/public-collections-gallery.md
       - Browser Profiles:
           - user-guide/browser-profiles.md
       - Org Settings:
