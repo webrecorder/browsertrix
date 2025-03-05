@@ -1172,7 +1172,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
         </sl-checkbox>`,
       )}
       ${this.renderHelpTextCol(
-        msg(`Automatically click on all link-like elements.`),
+        msg(
+          `Automatically click on all link-like elements. Useful for capturing in-page interactions or for clicking links without navigating away from the page.`,
+        ),
         false,
       )}
       ${this.renderSectionHeading(msg("Page Timing"))}
