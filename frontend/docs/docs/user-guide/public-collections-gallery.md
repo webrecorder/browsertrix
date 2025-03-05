@@ -10,13 +10,13 @@ You can take the following steps to enable the Public Collections Gallery for yo
 
 3. Back on your **dashboard**, scroll down to find the **Public Collections** section
    
-    If you don’t have any public collections yet, click the asterisk icon :octicons-key-asterisk-16: on the right side to see all your collections
+    If you don’t have any public collections yet, click the asterisk icon :bootstrap-asterisk: on the right side to see all your collections
     
-    1. Click the edit button :octicons-pencil-16: on a collection, then in the **Sharing** tab change its visibility to **Public** and save
+    1. Click the edit button :bootstrap-pencil: on a collection, then in the **Sharing** tab change its visibility to **Public** and save
         
     2. Repeat as needed
         
-    3. Press the globe icon on the right side :octicons-globe-16: to see all your public collections
+    3. Press the globe icon :bootstrap-globe2: on the right side to see all your public collections
         
 4.  Click on “**Visit Public Collections Gallery**”, and now you can share your gallery with the world!
 
