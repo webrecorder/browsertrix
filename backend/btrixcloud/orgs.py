@@ -1305,7 +1305,7 @@ class OrgOps:
 
             # Regenerate presigned URLs
             await self.base_crawl_ops.resolve_signed_urls(
-                item_obj.files, org, update_presigned_url=True, crawl_id=item_id
+                item_obj.files, org, crawl_id=item_id, force_update=True
             )
 
         # pages

@@ -8,20 +8,35 @@ import urllib
 import asyncio
 from uuid import UUID, uuid4
 
-from typing import Optional, Union, TypeVar, Type
+from typing import Optional, Union, TypeVar, Type, TYPE_CHECKING
 
-import motor.motor_asyncio
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from pydantic import BaseModel
 from pymongo.errors import InvalidName
 
 from .migrations import BaseMigration
 
+if TYPE_CHECKING:
+    from .users import UserManager
+    from .orgs import OrgOps
+    from .crawlconfigs import CrawlConfigOps
+    from .crawls import CrawlOps
+    from .colls import CollectionOps
+    from .invites import InviteOps
+    from .storages import StorageOps
+    from .pages import PageOps
+    from .background_jobs import BackgroundJobOps
+else:
+    UserManager = OrgOps = CrawlConfigOps = CrawlOps = CollectionOps = InviteOps = (
+        StorageOps
+    ) = PageOps = BackgroundJobOps = object
 
-CURR_DB_VERSION = "0042"
+
+CURR_DB_VERSION = "0043"
 
 
 # ============================================================================
-def resolve_db_url():
+def resolve_db_url() -> str:
     """get the mongo db url, either from MONGO_DB_URL or
     from separate username, password and host settings"""
     db_url = os.environ.get("MONGO_DB_URL")
@@ -36,12 +51,12 @@ def resolve_db_url():
 
 
 # ============================================================================
-def init_db():
+def init_db() -> tuple[AsyncIOMotorClient, AsyncIOMotorDatabase]:
     """initialize the mongodb connector"""
 
     db_url = resolve_db_url()
 
-    client = motor.motor_asyncio.AsyncIOMotorClient(
+    client = AsyncIOMotorClient(
         db_url,
         tz_aware=True,
         uuidRepresentation="standard",
@@ -55,7 +70,7 @@ def init_db():
 
 
 # ============================================================================
-async def ping_db(mdb):
+async def ping_db(mdb) -> None:
     """run in loop until db is up, set db_inited['inited'] property to true"""
     print("Waiting DB", flush=True)
     while True:
@@ -73,18 +88,17 @@ async def ping_db(mdb):
 # ============================================================================
 async def update_and_prepare_db(
     # pylint: disable=R0913
-    mdb,
-    user_manager,
-    org_ops,
-    crawl_ops,
-    crawl_config_ops,
-    coll_ops,
-    invite_ops,
-    storage_ops,
-    page_ops,
-    background_job_ops,
-    db_inited,
-):
+    mdb: AsyncIOMotorDatabase,
+    user_manager: UserManager,
+    org_ops: OrgOps,
+    crawl_ops: CrawlOps,
+    crawl_config_ops: CrawlConfigOps,
+    coll_ops: CollectionOps,
+    invite_ops: InviteOps,
+    storage_ops: StorageOps,
+    page_ops: PageOps,
+    background_job_ops: BackgroundJobOps,
+) -> None:
     """Prepare database for application.
 
     - Run database migrations
@@ -108,11 +122,11 @@ async def update_and_prepare_db(
         invite_ops,
         user_manager,
         page_ops,
+        storage_ops,
     )
     await user_manager.create_super_user()
     await org_ops.create_default_org()
     await org_ops.check_all_org_default_storages(storage_ops)
-    db_inited["inited"] = True
     print("Database updated and ready", flush=True)
 
 
@@ -211,7 +225,14 @@ async def drop_indexes(mdb):
 # ============================================================================
 # pylint: disable=too-many-arguments
 async def create_indexes(
-    org_ops, crawl_ops, crawl_config_ops, coll_ops, invite_ops, user_manager, page_ops
+    org_ops,
+    crawl_ops,
+    crawl_config_ops,
+    coll_ops,
+    invite_ops,
+    user_manager,
+    page_ops,
+    storage_ops,
 ):
     """Create database indexes."""
     print("Creating database indexes", flush=True)
@@ -222,6 +243,7 @@ async def create_indexes(
     await invite_ops.init_index()
     await user_manager.init_index()
     await page_ops.init_index()
+    await storage_ops.init_index()
 
 
 # ============================================================================

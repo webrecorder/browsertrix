@@ -254,6 +254,7 @@ def test_qa_page_data(
         headers=crawler_auth_headers,
     )
     data = r.json()
+    assert data["total"] == 1
     assert len(data["items"]) == 1
     page = data["items"][0]
 
