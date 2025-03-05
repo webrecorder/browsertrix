@@ -57,6 +57,7 @@ import { infoCol, inputCol } from "@/layouts/columns";
 import { pageSectionsWithNav } from "@/layouts/pageSectionsWithNav";
 import { panel } from "@/layouts/panel";
 import infoTextStrings from "@/strings/crawl-workflows/infoText";
+import { labelFor } from "@/strings/crawl-workflows/labels";
 import scopeTypeLabels from "@/strings/crawl-workflows/scopeType";
 import sectionStrings from "@/strings/crawl-workflows/section";
 import { AnalyticsTrackEvent } from "@/trackEvents";
@@ -1156,7 +1157,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           name="autoscrollBehavior"
           ?checked=${this.formState.autoscrollBehavior}
         >
-          ${msg("Autoscroll")}
+          ${labelFor.autoscrollBehavior}
         </sl-checkbox>`,
       )}
       ${this.renderHelpTextCol(
@@ -1168,7 +1169,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           name="autoclickBehavior"
           ?checked=${this.formState.autoclickBehavior}
         >
-          ${msg("Autoclick")}
+          ${labelFor.autoclickBehavior}
         </sl-checkbox>`,
       )}
       ${this.renderHelpTextCol(
@@ -1183,7 +1184,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           name="pageLoadTimeoutSeconds"
           type="number"
           inputmode="numeric"
-          label=${msg("Page Load Limit")}
+          label=${labelFor.pageLoadTimeoutSeconds}
           placeholder=${defaultLabel(this.orgDefaults.pageLoadTimeoutSeconds)}
           value=${ifDefined(this.formState.pageLoadTimeoutSeconds ?? undefined)}
           min="0"
@@ -1198,7 +1199,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           name="postLoadDelaySeconds"
           type="number"
           inputmode="numeric"
-          label=${msg("Delay After Page Load")}
+          label=${labelFor.postLoadDelaySeconds}
           placeholder=${defaultLabel(0)}
           value=${ifDefined(this.formState.postLoadDelaySeconds ?? undefined)}
           min="0"
@@ -1212,7 +1213,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           name="behaviorTimeoutSeconds"
           type="number"
           inputmode="numeric"
-          label=${msg("Behavior Limit")}
+          label=${labelFor.behaviorTimeoutSeconds}
           placeholder=${defaultLabel(this.orgDefaults.behaviorTimeoutSeconds)}
           value=${ifDefined(this.formState.behaviorTimeoutSeconds ?? undefined)}
           min="0"
@@ -1227,7 +1228,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           name="pageExtraDelaySeconds"
           type="number"
           inputmode="numeric"
-          label=${msg("Delay After Behaviors")}
+          label=${labelFor.pageExtraDelaySeconds}
           placeholder=${defaultLabel(0)}
           value=${ifDefined(this.formState.pageExtraDelaySeconds ?? undefined)}
           min="0"
