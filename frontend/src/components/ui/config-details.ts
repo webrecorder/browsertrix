@@ -9,6 +9,7 @@ import RegexColorize from "regex-colorize";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { CrawlConfig, Seed, SeedConfig } from "@/pages/org/types";
+import { labelFor } from "@/strings/crawl-workflows/labels";
 import scopeTypeLabel from "@/strings/crawl-workflows/scopeType";
 import sectionStrings from "@/strings/crawl-workflows/section";
 import type { Collection } from "@/types/collection";
@@ -161,25 +162,7 @@ export class ConfigDetails extends BtrixElement {
         heading: sectionStrings.behaviors,
         renderDescItems: (seedsConfig) => html`
           ${this.renderSetting(
-            msg("Page Load Timeout"),
-            renderTimeLimit(
-              seedsConfig?.pageLoadTimeout,
-              this.orgDefaults?.pageLoadTimeoutSeconds ?? Infinity,
-            ),
-          )}
-          ${this.renderSetting(
-            msg("Delay After Page Load"),
-            renderTimeLimit(seedsConfig?.postLoadDelay, 0),
-          )}
-          ${this.renderSetting(
-            msg("Behavior Timeout"),
-            renderTimeLimit(
-              seedsConfig?.behaviorTimeout,
-              this.orgDefaults?.behaviorTimeoutSeconds ?? Infinity,
-            ),
-          )}
-          ${this.renderSetting(
-            msg("Autoscroll Behavior"),
+            labelFor.autoscrollBehavior,
             seedsConfig?.behaviors &&
               !seedsConfig.behaviors.includes("autoscroll")
               ? msg("Disabled")
@@ -188,7 +171,7 @@ export class ConfigDetails extends BtrixElement {
                 >`,
           )}
           ${this.renderSetting(
-            msg("Autoclick Behavior"),
+            labelFor.autoclickBehavior,
             seedsConfig?.behaviors &&
               seedsConfig.behaviors.includes("autoclick")
               ? msg("Enabled")
@@ -197,7 +180,25 @@ export class ConfigDetails extends BtrixElement {
                 >`,
           )}
           ${this.renderSetting(
-            msg("Delay Before Next Page"),
+            labelFor.pageLoadTimeoutSeconds,
+            renderTimeLimit(
+              seedsConfig?.pageLoadTimeout,
+              this.orgDefaults?.pageLoadTimeoutSeconds ?? Infinity,
+            ),
+          )}
+          ${this.renderSetting(
+            labelFor.pageLoadTimeoutSeconds,
+            renderTimeLimit(seedsConfig?.postLoadDelay, 0),
+          )}
+          ${this.renderSetting(
+            labelFor.behaviorTimeoutSeconds,
+            renderTimeLimit(
+              seedsConfig?.behaviorTimeout,
+              this.orgDefaults?.behaviorTimeoutSeconds ?? Infinity,
+            ),
+          )}
+          ${this.renderSetting(
+            labelFor.pageExtraDelaySeconds,
             renderTimeLimit(seedsConfig?.pageExtraDelay, 0),
           )}
         `,
