@@ -22,7 +22,7 @@ From the Collections tab:
 
 1. Click the Collections tab from your account
 
-2. Click the kebab icon (vertical ellipsis) for options
+2. Click the kebab icon :bootstrap-three-dots-vertical: for options
 
 3. Click Edit Collection Settings
 
