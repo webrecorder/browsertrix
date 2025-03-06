@@ -2,19 +2,23 @@
 
 ## Share a Collection
 
-A Collection is private by default, but can be made sharable either with an unlisted link, or displayed in your org's public gallery for everyone to discover. Sharing settings can be found within the **Sharing** tab of the Collection Settings dialog.
+A Collection is private by default, but can be made sharable either with an unlisted link, or displayed in your org's public gallery for everyone to discover. Sharing settings can be found within the **Sharing** tab of the Collection.
 
 1. Click the edit button :bootstrap-pencil: on the specific Collection you want to share
 
 2. In that Collection's **Sharing** tab, change its visibility from the default **Private** to **Public** and save
 
-3. Click on the edit button :bootstrap-pencil: again, and now in the Collection's **Sharing** tab, there will be a **Link to Share** that you can share and circulate to your community
+3. Click on the edit button :bootstrap-pencil: again, and now in the Collection's **Sharing** tab, there will be a new section, **Link to Share**, with a URL for this specific Collection that you can share and circulate to your community
 
-4. Optional: If you want to allow other viewers to download the collection, confirm that the **Show download button** is enabled. If not, toggle it so that others would not be able to download it and only view.
+4. Optional: If you want to allow other viewers to download the Collection, confirm that the **Show download button** is enabled. If not, toggle it so that others would not be able to download it and only view.
 
 ## Customize a Collection
 
-Click on the edit button :bootstrap-pencil: to customize how your Collection appears to the public by making edits within the **Presentation** tab of the Collection Settings dialog.
+Customize how your Collection appears to the public by making edits within the **Presentation** tab of Collection.
+
+1. Click on the edit button :bootstrap-pencil: of the Collection you want to edit
+
+2. Update any of the following information:
 
 ### Name
 
@@ -62,7 +66,11 @@ Note: This feature is available in Browsertrix 1.14 and later.
 
 2. In your org's **settings**, click **enable public collections gallery** and save
 
+3. You can share the link to your Public Collections Page from either copying from the org's **settings**, or by clicking on the copy button next to "**Visit public collections gallery**" from your dashboard.
+
 ## Customize Public Collection Gallery
+
+The Public Collection Gallery page will automatically have the title of your org. You can customize this page by including a **Description** and your org's **Website** by ading them from your org's **settings** of your account.
 
 ### Description
 
@@ -72,7 +80,7 @@ You can edit the **Description** as long as its within 150 characters, which is 
 
 ### Website
 
-Link to your organization's (or your personal) website from your Public Collections Gallery page.
+Link to your org's (or your personal) website so viewers can visit from your Public Collections Gallery page.
 
 <video autoplay muted playsinline loop disablepictureinpicture disableremoteplayback>
   <source src="https://webrecorder.net/assets/video/collections-full-walkthrough-av1.mp4"/>
