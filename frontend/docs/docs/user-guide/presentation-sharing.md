@@ -14,11 +14,25 @@ A Collection is private by default, but can be made sharable either with an unli
 
 ## Customize a Collection
 
-Customize how your Collection appears to the public by making edits within the **Presentation** tab of Collection.
+You can customize how your Collection appears to the public by making edits within the **Presentation** tab of Collection.
+
+You can access this tab via the edit button :bootstrap-pencil: of a Collection from the Public Collection Gallery or via the kebab icon of a Collection from your account's Collections tab.
+
+From the Collections tab:
+
+1. Click the Collections tab from your account
+
+2. Click the kebab icon (vertical ellipsis) for options
+
+3. Click Edit Collection Settings
+
+4. Edit any of the following information from the **Presentation** tab: Name, Summary, Thumbnail, and set Initial View
+
+From the Public Collection Gallery. When Public Collection Gallery is enabled, you can view Collections from your dashboard. To customize the Collection:
 
 1. Click on the edit button :bootstrap-pencil: of the Collection you want to edit
 
-2. Update any of the following information:
+2. Edit any of the following information from the **Presentation** tab: Name, Summary, Thumbnail, and set Initial View
 
 ### Name
 
