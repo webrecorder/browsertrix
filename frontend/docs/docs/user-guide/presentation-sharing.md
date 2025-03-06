@@ -1,26 +1,80 @@
-# Collection Presentation & Sharing
+# Presentation & Sharing
 
-## Sharing Collections
+## Share a Collection
 
-Collections are private by default, but can be made sharable either with an unlisted link, or displayed in your org's public gallery for everyone to discover. Sharing settings can be found within the **Sharing** tab of the Collection Settings dialog. Public collections will not be visible unless your org has enabled its [public collections gallery](org-settings.md#public-collections-gallery).
+A Collection is private by default, but can be made sharable either with an unlisted link, or displayed in your org's public gallery for everyone to discover. Sharing settings can be found within the **Sharing** tab of the Collection Settings dialog.
 
-Public collections can also be embedded into other websites using the provided embed code. Making a collection private after it is public or unlisted will break any previously shared links and remove it from your gallery.
+1. Click the edit button :bootstrap-pencil: on the specific Collection you want to share
 
-For further resources on embedding archived web content into your own website, see the [ReplayWeb.page docs page on embedding](https://replayweb.page/docs/embedding).
+2. In that Collection's **Sharing** tab, change its visibility from the default **Private** to **Public** and save
 
-## Initial View
+3. Click on the edit button :bootstrap-pencil: again, and now in the Collection's **Sharing** tab, there will be a **Link to Share** that you can share and circulate to your community
 
-Set the **Initial View** to control what visitors see first when viewing a collection. The initial view can either be a list of pages (ReplayWeb.page's default), or a single page from your collection such as a crawl start URL or index page.
+4. Optional: If you want to allow other viewers to download the collection, confirm that the **Show download button** is enabled. If not, toggle it so that others would not be able to download it and only view.
 
-## Thumbnails
+## Customize a Collection
 
-Choose a thumbnail image to represent the collection in your org's public collections gallery and org dashboard. This thumbnail can be edited from the **Presentation** tab of the Collection Settings dialog. Thumbnails can either be a screenshot of a page from the collection, or a placeholder image designed by Webrecorder.
+Click on the edit button :bootstrap-pencil: to customize how your Collection appears to the public by making edits within the **Presentation** tab of the Collection Settings dialog.
+
+### Name
+
+A **Name** is always required, so by default, your Collection's name is determined by the Metadata section from your crawl workflow — either a custom name you had set or the first Crawl URL from your workflow.
+
+You can edit the **Name** as long as its within 50 characters, which is roughly between 7 words and 13 words with spaces included in the character count.
+
+### Summary
+
+A **Summary** describing your Collection is not required, but it is useful information to others to summarize the Collection and caption collection thumbnails.
+
+You can edit the **Summary** as long as its within 150 characters, which is roughly between 90 words and 150 words with spaces included in the character count.
+
+### Thumbnail
+
+Choose a thumbnail image to represent this collection in your org's dashboard and public collections gallery page. Thumbnails can either be a placeholder image designed by Webrecorder, or a screenshot of a page from the collection. 
+
+To choose a screenshot:
+
+1. Click the _Enter a Page URL to preview it_ for a Page URL dropdown to appear
+
+2. Select one of the URLs or search for a specific URL from the Collection
+
+3. Optional: You can choose a specific captured URL based on its Page Timestamp.
 
 ??? question "Why isn't there a thumbnail preview for my page?"
     If you have uploaded archived items captured with tools other than Browsertrix, some of the pages in your collection may not have screenshots available to use as thumbnails. To fix this, either re-crawl a page you wish to use as a thumbnail with Browsertrix and add it to the collection, or choose a placeholder thumbnail.
 
-## Description
+### Initial View
 
-Share additional context and details of your collection with your org team members or the public by writing a description. Whereas **Summary** is used to summarize the collection and caption collection thumbnails, the **About** section offers a space to write out a longer, more detailed description of the collection. The description supports basic text formatting like headings, bold and italicized text, lists, and links.
+The **Initial View** is the first view visitors see first when viewing a Collection. The initial view can either be a list of pages, which is the default when replaying using ReplayWeb.page, or a single page from your collection such as a crawl start URL or index page.
 
-The editor is powered by [ink-mde](https://github.com/davidmyersdev/ink-mde), an open source [Markdown](https://github.github.com/gfm/#what-is-markdown-) editor.
+<video autoplay muted playsinline loop disablepictureinpicture disableremoteplayback>
+  <source src="https://webrecorder.net/assets/video/collection-editing-av1.mp4"/>
+  <source src="https://webrecorder.net/assets/video/collection-editing-h264.mp4"/>
+</video>
+
+## Sharing Public Collection Gallery
+
+Public Collections Gallery will not be visible unless your org has enabled its [public collections gallery](../public-collections-gallery/#enable-public-collections-gallery). The _enable public collections gallery_ button can be found within the org's **Settings** tab from your account.
+
+Note: This feature is available in Browsertrix 1.14 and later.
+
+1. Log in to your Browsertrix account
+
+2. In your org's **settings**, click **enable public collections gallery** and save
+
+## Customize Public Collection Gallery
+
+### Description
+
+A **Description** about your Collection is not required, but it is useful information to share additional context and details of your collection with your org team members or the public by writing a description.
+
+You can edit the **Description** as long as its within 150 characters, which is roughly between 90 words and 150 words with spaces included in the character count. The **Description** supports basic text formatting like headings, bold and italicized text, lists, and links.
+
+### Website
+
+Link to your organization's (or your personal) website from your Public Collections Gallery page.
+
+<video autoplay muted playsinline loop disablepictureinpicture disableremoteplayback>
+  <source src="https://webrecorder.net/assets/video/collections-full-walkthrough-av1.mp4"/>
+  <source src="https://webrecorder.net/assets/video/collections-full-walkthrough-h264.mp4"/>
+</video>
