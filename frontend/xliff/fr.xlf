@@ -5495,6 +5495,12 @@
       <trans-unit id="saac5b44792ba9c43">
         <source>Delete Profile</source>
       </trans-unit>
+      <trans-unit id="s1dcc85070a5be808">
+        <source>Payment Never Made</source>
+      </trans-unit>
+      <trans-unit id="s585d9e9cc7eea6c8">
+        <source>Payment never made</source>
+      </trans-unit>
     </body>
   </file>
 </xliff>
