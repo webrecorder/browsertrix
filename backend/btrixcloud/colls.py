@@ -11,6 +11,7 @@ import os
 
 import asyncio
 import pymongo
+import aiohttp
 from pymongo.collation import Collation
 from fastapi import Depends, HTTPException, Response
 from fastapi.responses import StreamingResponse
@@ -352,11 +353,21 @@ class CollectionOps:
 
             public = "public/" if public_or_unlisted_only else ""
 
+            origin = get_origin(headers)
+
+            if public_or_unlisted_only:
+                slug = result.get("slug")
+                result["downloadUrl"] = (
+                    origin + f"/api/{public}orgs/{org.slug}/collections/{slug}/download"
+                )
+            else:
+                # disable download link, as not public without auth
+                result["downloadUrl"] = None
+
             if pages_optimized:
                 result["initialPages"] = initial_pages
                 result["pagesQueryUrl"] = (
-                    get_origin(headers)
-                    + f"/api/orgs/{org.id}/collections/{coll_id}/{public}pages"
+                    origin + f"/api/orgs/{org.id}/collections/{coll_id}/{public}pages"
                 )
 
         thumbnail = result.get("thumbnail")
@@ -377,6 +388,8 @@ class CollectionOps:
         """Get PublicCollOut by id"""
         result = await self.get_collection_raw(coll_id)
 
+        result["orgName"] = org.name
+
         allowed_access = [CollAccessType.PUBLIC]
         if allow_unlisted:
             allowed_access.append(CollAccessType.UNLISTED)
@@ -394,6 +407,34 @@ class CollectionOps:
             )
 
         return PublicCollOut.from_dict(result)
+
+    async def get_public_thumbnail(
+        self, slug: str, org: Organization
+    ) -> StreamingResponse:
+        """return thumbnail of public collection, if any"""
+        result = await self.get_collection_raw_by_slug(
+            slug, public_or_unlisted_only=True
+        )
+
+        thumbnail = result.get("thumbnail")
+        if not thumbnail:
+            raise HTTPException(status_code=404, detail="thumbnail_not_found")
+
+        image_file = ImageFile(**thumbnail)
+        image_file_out = await image_file.get_public_image_file_out(
+            org, self.storage_ops
+        )
+
+        path = self.storage_ops.resolve_internal_access_path(image_file_out.path)
+
+        async def reader():
+            async with aiohttp.ClientSession() as session:
+                async with session.get(path) as resp:
+                    async for chunk in resp.content.iter_chunked(4096):
+                        yield chunk
+
+        headers = {"Cache-Control": "max-age=3600, stale-while-revalidate=86400"}
+        return StreamingResponse(reader(), media_type=image_file.mime, headers=headers)
 
     async def list_collections(
         self,
@@ -495,6 +536,8 @@ class CollectionOps:
                     res["thumbnail"] = await image_file.get_image_file_out(
                         org, self.storage_ops
                     )
+
+            res["orgName"] = org.name
 
             if public_colls_out:
                 collections.append(PublicCollOut.from_dict(res))
@@ -838,6 +881,7 @@ class CollectionOps:
             file_prep.upload_name,
             stream_iter(),
             MIN_UPLOAD_PART_SIZE,
+            mime=file_prep.mime,
         ):
             print("Collection thumbnail stream upload failed", flush=True)
             raise HTTPException(status_code=400, detail="upload_failed")
@@ -1160,6 +1204,24 @@ def init_collections_api(
             raise HTTPException(status_code=403, detail="not_allowed")
 
         return await colls.download_collection(coll.id, org)
+
+    @app.get(
+        "/public/orgs/{org_slug}/collections/{coll_slug}/thumbnail",
+        tags=["collections", "public"],
+        response_class=StreamingResponse,
+    )
+    async def get_public_thumbnail(
+        org_slug: str,
+        coll_slug: str,
+    ):
+        try:
+            org = await colls.orgs.get_org_by_slug(org_slug)
+        # pylint: disable=broad-exception-caught
+        except Exception:
+            # pylint: disable=raise-missing-from
+            raise HTTPException(status_code=404, detail="collection_not_found")
+
+        return await colls.get_public_thumbnail(coll_slug, org)
 
     @app.post(
         "/orgs/{oid}/collections/{coll_id}/home-url",

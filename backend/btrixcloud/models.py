@@ -709,6 +709,16 @@ class StorageRef(BaseModel):
 
 
 # ============================================================================
+class PresignedUrl(BaseMongoModel):
+    """Base model for presigned url"""
+
+    id: str
+    url: str
+    oid: UUID
+    signedAt: datetime
+
+
+# ============================================================================
 class BaseFile(BaseModel):
     """Base model for crawl and profile files"""
 
@@ -723,9 +733,6 @@ class BaseFile(BaseModel):
 # ============================================================================
 class CrawlFile(BaseFile):
     """file from a crawl"""
-
-    presignedUrl: Optional[str] = None
-    expireAt: Optional[datetime] = None
 
 
 # ============================================================================
@@ -1151,9 +1158,7 @@ class ImageFile(BaseFile):
 
     async def get_image_file_out(self, org, storage_ops) -> ImageFileOut:
         """Get ImageFileOut with new presigned url"""
-        presigned_url = await storage_ops.get_presigned_url(
-            org, self, PRESIGN_DURATION_SECONDS
-        )
+        presigned_url, _ = await storage_ops.get_presigned_url(org, self)
 
         return ImageFileOut(
             name=self.filename,
@@ -1169,9 +1174,7 @@ class ImageFile(BaseFile):
 
     async def get_public_image_file_out(self, org, storage_ops) -> PublicImageFileOut:
         """Get PublicImageFileOut with new presigned url"""
-        presigned_url = await storage_ops.get_presigned_url(
-            org, self, PRESIGN_DURATION_SECONDS
-        )
+        presigned_url, _ = await storage_ops.get_presigned_url(org, self)
 
         return PublicImageFileOut(
             name=self.filename,
@@ -1386,6 +1389,7 @@ class CrawlOutWithResources(CrawlOut):
 
     initialPages: List[PageOut] = []
     pagesQueryUrl: str = ""
+    downloadUrl: Optional[str] = None
 
 
 # ============================================================================
@@ -1515,6 +1519,7 @@ class CollOut(BaseMongoModel):
     initialPages: List[PageOut] = []
     preloadResources: List[PreloadResource] = []
     pagesQueryUrl: str = ""
+    downloadUrl: Optional[str] = None
 
 
 # ============================================================================
@@ -1525,6 +1530,7 @@ class PublicCollOut(BaseMongoModel):
     name: str
     slug: str
     oid: UUID
+    orgName: str
     description: Optional[str] = None
     caption: Optional[str] = None
     created: Optional[datetime] = None

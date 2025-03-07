@@ -30,7 +30,9 @@ async def main():
         )
         return 1
 
-    (org_ops, _, _, _, _, page_ops, coll_ops, _, _, _, _, user_manager) = init_ops()
+    (org_ops, _, _, _, _, page_ops, coll_ops, _, _, _, _, user_manager, _, _, _) = (
+        init_ops()
+    )
 
     # Run job (generic)
     if job_type == BgJobType.OPTIMIZE_PAGES:
