@@ -409,7 +409,7 @@ class StorageOps:
                 ACL="bucket-owner-full-control",
                 Bucket=bucket,
                 Key=key,
-                ContentType=cast(str, mime),
+                ContentType=mime or "",
             )
 
             upload_id = mup_resp["UploadId"]
