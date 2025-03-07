@@ -433,7 +433,8 @@ class CollectionOps:
                     async for chunk in resp.content.iter_chunked(4096):
                         yield chunk
 
-        return StreamingResponse(reader(), media_type=image_file.mime)
+        headers = {"Cache-Control": "max-age=3600, stale-while-revalidate=86400"}
+        return StreamingResponse(reader(), media_type=image_file.mime, headers=headers)
 
     async def list_collections(
         self,
