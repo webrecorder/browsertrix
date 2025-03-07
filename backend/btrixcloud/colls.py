@@ -427,18 +427,13 @@ class CollectionOps:
 
         path = self.storage_ops.resolve_internal_access_path(image_file_out.path)
 
-        print(path)
-
         async def reader():
             async with aiohttp.ClientSession() as session:
                 async with session.get(path) as resp:
                     async for chunk in resp.content.iter_chunked(4096):
-                        print("chunk", chunk)
                         yield chunk
 
         return StreamingResponse(reader(), media_type=image_file.mime)
-
-        # return RedirectResponse(image_file_out.path)
 
     async def list_collections(
         self,
