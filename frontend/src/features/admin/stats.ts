@@ -37,7 +37,6 @@ export function computeStats(orgData: OrgData[] = []) {
       storage.active += org.bytesStored;
     }
     if (org.subscription) {
-      console.log("org subscription", org.subscription);
       subscriptions.total++;
       switch (org.subscription.status) {
         case SubscriptionStatus.Active:
