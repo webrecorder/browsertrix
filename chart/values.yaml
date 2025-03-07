@@ -83,7 +83,7 @@ allow_dupe_invites: "0"
 invite_expire_seconds: 604800
 
 # base url for replayweb.page
-rwp_base_url: "https://cdn.jsdelivr.net/npm/replaywebpage@2.2.4/"
+rwp_base_url: "https://cdn.jsdelivr.net/npm/replaywebpage@2.3.3/"
 
 superuser:
   # set this to enable a superuser admin
