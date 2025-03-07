@@ -382,6 +382,7 @@ class StorageOps:
         filename: str,
         file_: AsyncIterator,
         min_size: int,
+        mime: Optional[str] = None,
     ) -> bool:
         """do upload to specified key using multipart chunking"""
         s3storage = self.get_org_primary_storage(org)
@@ -405,7 +406,10 @@ class StorageOps:
             key += filename
 
             mup_resp = await client.create_multipart_upload(
-                ACL="bucket-owner-full-control", Bucket=bucket, Key=key
+                ACL="bucket-owner-full-control",
+                Bucket=bucket,
+                Key=key,
+                ContentType=mime or "",
             )
 
             upload_id = mup_resp["UploadId"]
