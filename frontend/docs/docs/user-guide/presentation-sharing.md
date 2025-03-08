@@ -1,5 +1,10 @@
 # Presentation & Sharing
 
+<video autoplay muted playsinline loop disablepictureinpicture disableremoteplayback>
+  <source src="https://webrecorder.net/assets/video/collection-editing-av1.mp4"/>
+  <source src="https://webrecorder.net/assets/video/collection-editing-h264.mp4"/>
+</video>
+
 ## Share a Collection
 
 A Collection is private by default, but can be made sharable either with an unlisted link, or displayed in your org's public gallery for everyone to discover. Sharing settings can be found within the **Sharing** tab of the Collection.
@@ -65,14 +70,9 @@ To choose a screenshot:
 
 The **Initial View** is the first view visitors see first when viewing a Collection. The initial view can either be a list of pages, which is the default when replaying using ReplayWeb.page, or a single page from your collection such as a crawl start URL or index page.
 
-<video autoplay muted playsinline loop disablepictureinpicture disableremoteplayback>
-  <source src="https://webrecorder.net/assets/video/collection-editing-av1.mp4"/>
-  <source src="https://webrecorder.net/assets/video/collection-editing-h264.mp4"/>
-</video>
-
 ## Sharing Public Collection Gallery
 
-Public Collections Gallery will not be visible unless your org has enabled its [public collections gallery](../public-collections-gallery/#enable-public-collections-gallery). The _enable public collections gallery_ button can be found within the org's **Settings** tab from your account.
+The _enable public collections gallery_ toggle is located in the org's **Settings** tab within your account. Follow these steps to activate the Public Collections Gallery. You will not be able to curate or share your Public Collections Gallery page until it is enabled for your org.
 
 Note: This feature is available in Browsertrix 1.14 and later.
 
@@ -95,8 +95,3 @@ You can edit the **Description** as long as its within 150 characters, which is 
 ### Website
 
 Link to your org's (or your personal) website so viewers can visit from your Public Collections Gallery page.
-
-<video autoplay muted playsinline loop disablepictureinpicture disableremoteplayback>
-  <source src="https://webrecorder.net/assets/video/collections-full-walkthrough-av1.mp4"/>
-  <source src="https://webrecorder.net/assets/video/collections-full-walkthrough-h264.mp4"/>
-</video>

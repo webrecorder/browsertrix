@@ -4,15 +4,14 @@ Collections provide a way to dynamically combine and group multiple individual c
 
 With Public Collections Gallery, you can create a dedicated page that showcases all public Collections in one place, allowing you to personalize, curate, and share your web archives with the world!
 
+<video autoplay muted playsinline loop disablepictureinpicture disableremoteplayback>
+  <source src="https://webrecorder.net/assets/video/collections-full-walkthrough-av1.mp4"/>
+  <source src="https://webrecorder.net/assets/video/collections-full-walkthrough-h264.mp4"/>
+</video>
+
 ## Enable Public Collections Gallery
 
-You can take the following steps to enable the Public Collections Gallery for your organization. Note: This feature is available in Browsertrix 1.14 and later.
-
-1. Log in to your Browsertrix account
-
-2. In your org's **settings**, click **enable public collections gallery** and save
-
-3. Back on your **dashboard**, you should see the **Public Collections** section.
+Public Collections Gallery will not be visible unless your org has enabled. You can [enable your org's Public Collections Gallery](../presentation-sharing#sharing-public-collection-gallery) from your account's settings. Note: This feature is available in Browsertrix 1.14 and later.
 
 ## Make It Your Own
 
