@@ -53,7 +53,7 @@ You can edit the **Summary** as long as its within 150 characters, which is roug
 
 ### Thumbnail
 
-Choose a thumbnail image to represent this collection in your org's dashboard and public collections gallery page. Thumbnails can either be a placeholder image designed by Webrecorder, or a screenshot of a page from the collection. 
+Choose a thumbnail image to represent this collection in your org's dashboard and public collections gallery page. Thumbnails can either be a placeholder image designed by Webrecorder, or a screenshot of a page from the collection.
 
 To choose a screenshot:
 
@@ -69,29 +69,3 @@ To choose a screenshot:
 ### Initial View
 
 The **Initial View** is the first view visitors see first when viewing a Collection. The initial view can either be a list of pages, which is the default when replaying using ReplayWeb.page, or a single page from your collection such as a crawl start URL or index page.
-
-## Sharing Public Collection Gallery
-
-The _enable public collections gallery_ toggle is located in the org's **Settings** tab within your account. Follow these steps to activate the Public Collections Gallery. You will not be able to curate or share your Public Collections Gallery page until it is enabled for your org.
-
-Note: This feature is available in Browsertrix 1.14 and later.
-
-1. Log in to your Browsertrix account
-
-2. In your org's **settings**, click **enable public collections gallery** and save
-
-3. You can share the link to your Public Collections Page from either copying from the org's **settings**, or by clicking on the copy button next to "**Visit public collections gallery**" from your dashboard.
-
-## Customize Public Collection Gallery
-
-The Public Collection Gallery page will automatically have the title of your org. You can customize this page by including a **Description** and your org's **Website** by ading them from your org's **settings** of your account.
-
-### Description
-
-A **Description** about your Collection is not required, but it is useful information to share additional context and details of your collection with your org team members or the public by writing a description.
-
-You can edit the **Description** as long as its within 150 characters, which is roughly between 90 words and 150 words with spaces included in the character count. The **Description** supports basic text formatting like headings, bold and italicized text, lists, and links.
-
-### Website
-
-Link to your org's (or your personal) website so viewers can visit from your Public Collections Gallery page.

@@ -11,7 +11,15 @@ With Public Collections Gallery, you can create a dedicated page that showcases 
 
 ## Enable Public Collections Gallery
 
-Public Collections Gallery will not be visible unless your org has enabled. You can [enable your org's Public Collections Gallery](../presentation-sharing#sharing-public-collection-gallery) from your account's settings. Note: This feature is available in Browsertrix 1.14 and later.
+Public Collections Gallery will not be visible unless your org has it enabled in your org's **Settings** tab within your account. You will not be able to curate or share your Public Collections Gallery page until it is enabled for your org. Note: This feature is available in Browsertrix 1.14 and later.
+
+Follow these steps to activate the Public Collections Gallery:
+
+1. Log in to your Browsertrix account
+
+2. In your org's **settings**, click **enable public collections gallery** and save
+
+3. You can share the link to your Public Collections Page from either copying from the org's **Settings**, or by clicking on the copy button next to "**Visit public collections gallery**" from your dashboard.
 
 ## Make It Your Own
 
@@ -43,10 +51,22 @@ You'll take similar steps from [Add Collections](../public-collections-gallery/#
 
 ### Customize Collections
 
-The [Presentation and Sharing](../presentation-sharing) page provides further details for options on how to present and share Collections. You can customize how your Collection appears to the public by clicking the edit button :bootstrap-pencil: in each collection to:
+The [Presentation and Sharing](../presentation-sharing) page provides further details for options on how to present and share Collections in your Public Collections Gallery. Your Public Collection Gallery page will automatically have the title of your org. You can customize this page by including a **Description** and your org's **Website** by adding them from your org's **Settings** of your account.
+
+### Description
+
+A **Description** about your Collection is not required, but it is useful information to share additional context and details of your collection with your org team members or the public by writing a description.
+
+You can edit the **Description** as long as its within 150 characters, which is roughly between 90 words and 150 words with spaces included in the character count. The **Description** supports basic text formatting like headings, bold and italicized text, lists, and links.
+
+### Website
+
+Link to your org's (or your personal) website so viewers can visit from your Public Collections Gallery page.
+
+how your Collection appears to the public by clicking the edit button :bootstrap-pencil: in each collection to:
 
 - **Name** it and add a **description** — include emojis if that’s your style 😉
 
 - Select a **thumbnail** to represent it: Choose between a page screenshot and a placeholder
 
-- Choose the **initial view** for your collection
+- Choose the **initial view** for your collection.
