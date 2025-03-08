@@ -11,26 +11,17 @@ With Public Collections Gallery, you can create a dedicated page that showcases 
 
 ## Enable Public Collections Gallery
 
-Public Collections Gallery will not be visible unless your org has it enabled in your org's **Settings** tab within your account. You will not be able to curate or share your Public Collections Gallery page until it is enabled for your org. Note: This feature is available in Browsertrix 1.14 and later.
-
-Follow these steps to activate the Public Collections Gallery:
-
-1. Log in to your Browsertrix account
-
-2. In your org's **settings**, click **enable public collections gallery** and save
-
-3. You can share the link to your Public Collections Page from either copying from the org's **Settings**, or by clicking on the copy button next to "**Visit public collections gallery**" from your dashboard.
-
 The _enable public collections gallery_ toggle is located in the org's **Settings** tab within your account. Follow these steps to activate the Public Collections Gallery.
-You will not be able to curate or share your Public Collections Gallery page until it is enabled for your org.
-
-Note: This feature is available in Browsertrix 1.14 and later.
 
 1. Log in to your Browsertrix account
 
 2. In your org's **settings**, click **enable public collections gallery** and save
 
 3. You can share the link to your Public Collections Page from either copying from the org's **settings**, or by clicking on the copy button next to "**Visit public collections gallery**" from your dashboard.
+
+Note: If you choose to hide the gallery later, you can go back to the setting and set the toggle to off at any time.
+The gallery will still be available for logged in users to preview, but the public page will be hidden.
+Public Collections will be treated the same as *Unlisted* when the public gallery is turned off.
 
 ### Customizing the Gallery
 
