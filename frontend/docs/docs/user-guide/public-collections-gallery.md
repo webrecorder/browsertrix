@@ -1,4 +1,4 @@
-# Intro to Public Collections Gallery
+# Public Collections Gallery
 
 Collections provide a way to dynamically combine and group multiple individual crawls and uploads into a contextual, unified archive replay experience.
 
@@ -21,9 +21,22 @@ Follow these steps to activate the Public Collections Gallery:
 
 3. You can share the link to your Public Collections Page from either copying from the org's **Settings**, or by clicking on the copy button next to "**Visit public collections gallery**" from your dashboard.
 
-## Make It Your Own
+The _enable public collections gallery_ toggle is located in the org's **Settings** tab within your account. Follow these steps to activate the Public Collections Gallery.
+You will not be able to curate or share your Public Collections Gallery page until it is enabled for your org.
 
-When Public Collections Gallery is live, you can customize and curate how your public Collections appear directly in your dashboard, and even personalize your Public Collections Gallery URL within your org's **settings**. The [Presentation and Sharing](../presentation-sharing) page provides further details for options on sharing collections.
+Note: This feature is available in Browsertrix 1.14 and later.
+
+1. Log in to your Browsertrix account
+
+2. In your org's **settings**, click **enable public collections gallery** and save
+
+3. You can share the link to your Public Collections Page from either copying from the org's **settings**, or by clicking on the copy button next to "**Visit public collections gallery**" from your dashboard.
+
+### Customizing the Gallery
+
+The Public Collection Gallery page will automatically have the title of your Org. You can customize this page by including a **Description** and your org's **Website** by adding them from your org's **Settings** of your account. The Gallery URL is always based on the Org URL, if you change one, the other changes as well.
+
+For example, if your org URL ends with `/my-org`, than the Public Collections Gallery will be made available at `/explore/my-org`.
 
 ### Add Collections
 
@@ -48,6 +61,7 @@ You'll take similar steps from [Add Collections](../public-collections-gallery/#
 1. Within the Public Collections Gallery, click the edit button :bootstrap-pencil: on the specific Collection you want to remove
 
 2. In that Collection's **Sharing** tab, change its visibility from the default **Public** to **Private**, save, and that Collection should be removed from the Public Collections Gallery!
+
 
 ### Customize Collections
 
