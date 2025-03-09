@@ -92,6 +92,8 @@ nav:
       - develop/frontend-dev.md
       - develop/localization.md
       - develop/docs.md
+      - Design:
+        - develop/design-action-menus.md
 
   - API Reference: !ENV [ API_DOCS_URL, "/api/" ]
 
