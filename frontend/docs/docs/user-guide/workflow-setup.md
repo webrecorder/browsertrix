@@ -166,7 +166,7 @@ When clicking a link-like element that would normally result in navigation, auto
 ??? Info "Autoclick use cases"
     This behavior can be helpful for:
 
-    - Websites that utilize anchor links (`<a>`) in non-standard ways, such as by using JavaScript in place of the standard `href` attribute to create a hyperlink.
+    - Websites that use anchor links (`<a>`) in non-standard ways, such as by using JavaScript in place of the standard `href` attribute to create a hyperlink.
     
     - Websites that use `<a>` in place of a `<button>` to reveal in-page content.
 
