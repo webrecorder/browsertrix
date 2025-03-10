@@ -6,5 +6,5 @@ export const labelFor = {
   pageLoadTimeoutSeconds: msg("Page Load Limit"),
   postLoadDelaySeconds: msg("Delay After Page Load"),
   behaviorTimeoutSeconds: "Behavior Limit",
-  pageExtraDelaySeconds: msg("Delay After Behaviors"),
+  pageExtraDelaySeconds: msg("Delay Before Next Page"),
 };

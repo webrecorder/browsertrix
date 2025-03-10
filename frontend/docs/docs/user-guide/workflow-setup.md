@@ -186,9 +186,9 @@ Waits on the page after initial HTML page load for a set number of seconds prior
 
 Limits amount of elapsed time behaviors have to complete.
 
-### Delay After Behaviors
+### Delay Before Next Page
 
-Waits on the page for a set period of elapsed time after any behaviors have finished running. This can be helpful to avoid rate limiting however it will slow down your crawl.
+Waits on the page for a set number of seconds before unloading the current page. If any [behaviors](#autoscroll) are enabled, this delay will take place after all behaviors have finished running. This can be helpful to avoid rate limiting.
 
 ## Browser Settings
 
