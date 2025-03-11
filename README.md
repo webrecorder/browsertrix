@@ -50,7 +50,7 @@ See [Code of Conduct](https://github.com/webrecorder/browsertrix?tab=coc-ov-file
 
 ### Translating
 
-Translations are managed through Weblate, a web-based and open source translation tool. View translations in progress and register to contribute here: https://hosted.weblate.org/engage/browsertrix/
+Translations are managed through Weblate, a web-based and open source translation tool. View translations in progress and register to contribute at [our Weblate project](https://hosted.weblate.org/engage/browsertrix/).
 
 <img src="https://hosted.weblate.org/widget/browsertrix/browsertrix-ui/multi-auto.svg" alt="Translation status" />
 
