@@ -188,6 +188,7 @@ def test_wait_for_complete(admin_auth_headers, default_org_id):
     assert data["pagesQueryUrl"].endswith(
         f"/orgs/{default_org_id}/crawls/{admin_crawl_id}/pagesSearch"
     )
+    assert data["downloadUrl"] is None
 
     # ensure filename matches specified pattern
     # set in default_crawl_filename_template

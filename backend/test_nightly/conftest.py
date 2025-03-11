@@ -320,3 +320,67 @@ def org_with_quotas(admin_auth_headers):
     data = r.json()
 
     return data["id"]
+
+
+@pytest.fixture(scope="session")
+def deleted_crawl_id(admin_auth_headers, default_org_id):
+    # Start crawl.
+    crawl_data = {
+        "runNow": True,
+        "name": "Test crawl",
+        "config": {
+            "seeds": [{"url": "https://webrecorder.net/"}],
+            "limit": 1,
+        },
+    }
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        headers=admin_auth_headers,
+        json=crawl_data,
+    )
+    data = r.json()
+
+    crawl_id = data["run_now_job"]
+
+    # Wait for it to complete
+    while True:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawl_id}/replay.json",
+            headers=admin_auth_headers,
+        )
+        data = r.json()
+        if data["state"] == "complete":
+            break
+        time.sleep(5)
+
+    # Wait until replica background job completes
+    while True:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/jobs/?jobType=create-replica&success=True",
+            headers=admin_auth_headers,
+        )
+        assert r.status_code == 200
+        if r.json()["total"] == 1:
+            break
+        time.sleep(5)
+
+    # Delete crawl
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/delete",
+        headers=admin_auth_headers,
+        json={"crawl_ids": [crawl_id]},
+    )
+    assert r.status_code == 200
+
+    # Wait until delete replica background job completes
+    while True:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/jobs/?jobType=delete-replica&success=True",
+            headers=admin_auth_headers,
+        )
+        assert r.status_code == 200
+        if r.json()["total"] == 1:
+            break
+        time.sleep(5)
+
+    return crawl_id

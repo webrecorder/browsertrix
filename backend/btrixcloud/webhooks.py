@@ -282,7 +282,7 @@ class EventWebhookOps:
         # know for certain what state the crawl will be in at this point
         try:
             qa_resources = await self.crawl_ops.resolve_signed_urls(
-                qa_run.files, org, crawl_id, qa_run.id
+                qa_run.files, org, crawl_id
             )
 
         # pylint: disable=broad-exception-caught

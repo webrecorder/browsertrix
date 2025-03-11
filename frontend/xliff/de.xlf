@@ -3841,9 +3841,6 @@
       <trans-unit id="s0337805916bf0549">
         <source>Copy Share Link</source>
       </trans-unit>
-      <trans-unit id="sd3386a2ef42e80b9">
-        <source>Download</source>
-      </trans-unit>
       <trans-unit id="s15c412aa2f2d4d3d">
         <source>Public Collections</source>
       </trans-unit>
@@ -4206,9 +4203,6 @@
       <trans-unit id="s477de1736ec27e5b">
         <source>Archived Item ID</source>
       </trans-unit>
-      <trans-unit id="sb125a28ef8acea72">
-        <source>Copy Archived Item ID</source>
-      </trans-unit>
       <trans-unit id="s6068dcdfcdbe3ab0">
         <source>Edit Org Settings</source>
       </trans-unit>
@@ -4238,6 +4232,90 @@
       </trans-unit>
       <trans-unit id="sbb7c17d62505d40a">
         <source>please be careful.</source>
+      </trans-unit>
+      <trans-unit id="s21da89886d0c73b8">
+        <source>Total orgs</source>
+      </trans-unit>
+      <trans-unit id="s4a0f931a850222df">
+        <source>Inactive orgs</source>
+      </trans-unit>
+      <trans-unit id="s261f2e08c89dece6">
+        <source>Active Orgs</source>
+      </trans-unit>
+      <trans-unit id="s0b03b8c444c373e9">
+        <source>Orgs that are not read-only</source>
+      </trans-unit>
+      <trans-unit id="s306cff612d8e8e65">
+        <source>Total users</source>
+      </trans-unit>
+      <trans-unit id="s80207f49fb5f26a8">
+        <source>Inactive users</source>
+      </trans-unit>
+      <trans-unit id="s558cdc6efe186f7b">
+        <source>Active Users</source>
+      </trans-unit>
+      <trans-unit id="s4c98dbe8884a3dcc">
+        <source>Users in orgs that are not read-only</source>
+      </trans-unit>
+      <trans-unit id="sa07bba7701542d0d">
+        <source>Active subscriptions</source>
+      </trans-unit>
+      <trans-unit id="s6b5c3050c90ece43">
+        <source>Trialing subscriptions</source>
+      </trans-unit>
+      <trans-unit id="sfdf2d73d03fe731e">
+        <source>Cancelled trialing subscriptions</source>
+      </trans-unit>
+      <trans-unit id="s523871359f60a83d">
+        <source>Paused (payment failed) subscriptions</source>
+      </trans-unit>
+      <trans-unit id="s7fba441fb0a5972a">
+        <source>Cancelled subscriptions</source>
+      </trans-unit>
+      <trans-unit id="sb90b622dc6071497">
+        <source>Total subscriptions (all states)</source>
+      </trans-unit>
+      <trans-unit id="s24dfa237462238ad">
+        <source>Active Subscriptions</source>
+      </trans-unit>
+      <trans-unit id="s8d97b7a88c9621c7">
+        <source>Orgs with active subscriptions (including with future cancellation dates)</source>
+      </trans-unit>
+      <trans-unit id="sa2c62ba7db4dbd6c">
+        <source>Storage in active orgs</source>
+      </trans-unit>
+      <trans-unit id="sbd011fc7327ccac9">
+        <source>Storage in inactive orgs</source>
+      </trans-unit>
+      <trans-unit id="s6cae37d86300e894">
+        <source>Data Stored</source>
+      </trans-unit>
+      <trans-unit id="sf49a7f2288bec44e">
+        <source>Across all orgs</source>
+      </trans-unit>
+      <trans-unit id="se2c236173dfb73cd">
+        <source>Copy Collection ID</source>
+      </trans-unit>
+      <trans-unit id="s0f4661824df32bbc">
+        <source>Copy Item ID</source>
+      </trans-unit>
+      <trans-unit id="s3cc68dd968072be8">
+        <source>Copy Crawl ID</source>
+      </trans-unit>
+      <trans-unit id="s60736d4d708a24c6">
+        <source>Copy Run ID</source>
+      </trans-unit>
+      <trans-unit id="sfa656dc4be663ad8">
+        <source>Crawl Order</source>
+      </trans-unit>
+      <trans-unit id="sea0ad07286153280">
+        <source>Copy Page ID</source>
+      </trans-unit>
+      <trans-unit id="sbb4576dabfa47076">
+        <source>Copy Profile ID</source>
+      </trans-unit>
+      <trans-unit id="saac5b44792ba9c43">
+        <source>Delete Profile</source>
       </trans-unit>
     </body>
   </file>

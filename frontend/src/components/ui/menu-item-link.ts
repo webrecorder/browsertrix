@@ -47,7 +47,10 @@ export class MenuItemLink extends TailwindElement {
       download=${this.download}
       aria-disabled=${this.disabled}
       @click=${(e: MouseEvent) => {
-        if (this.disabled || this.loading) return;
+        if (this.disabled || this.loading) {
+          e.preventDefault();
+          return;
+        }
 
         if (this.download) {
           const dropdown = this.shadowRoot!.host.closest<

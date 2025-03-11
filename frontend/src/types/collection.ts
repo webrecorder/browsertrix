@@ -20,6 +20,8 @@ export const publicCollectionSchema = z.object({
   id: z.string(),
   slug: z.string(),
   oid: z.string(),
+  orgName: z.string(),
+  orgPublicProfile: z.boolean(),
   name: z.string(),
   created: z.string().datetime(),
   modified: z.string().datetime(),

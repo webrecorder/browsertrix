@@ -15,6 +15,7 @@ import {
   SortDirection,
   type SortValues,
 } from "@/components/ui/table/table-header-cell";
+import { ClipboardController } from "@/controllers/clipboard";
 import { pageHeader } from "@/layouts/pageHeader";
 import type {
   APIPaginatedList,
@@ -325,6 +326,14 @@ export class BrowserProfilesList extends BtrixElement {
             <sl-icon slot="prefix" name="files"></sl-icon>
             ${msg("Duplicate Profile")}
           </sl-menu-item>
+          <sl-divider></sl-divider>
+          <sl-menu-item
+            @click=${() => ClipboardController.copyToClipboard(data.id)}
+          >
+            <sl-icon name="copy" slot="prefix"></sl-icon>
+            ${msg("Copy Profile ID")}
+          </sl-menu-item>
+          <sl-divider></sl-divider>
           <sl-menu-item
             style="--sl-color-neutral-700: var(--danger)"
             @click=${() => {
@@ -332,7 +341,7 @@ export class BrowserProfilesList extends BtrixElement {
             }}
           >
             <sl-icon slot="prefix" name="trash3"></sl-icon>
-            ${msg("Delete")}
+            ${msg("Delete Profile")}
           </sl-menu-item>
         </sl-menu>
       </btrix-overflow-dropdown>

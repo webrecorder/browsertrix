@@ -613,16 +613,15 @@ export class WorkflowsList extends BtrixElement {
       ${when(
         this.appState.isCrawler,
         () =>
-          html` <sl-divider></sl-divider>
-            <sl-menu-item
-              @click=${() =>
-                this.navigate.to(
-                  `${this.navigate.orgBasePath}/workflows/${workflow.id}?edit`,
-                )}
-            >
-              <sl-icon name="gear" slot="prefix"></sl-icon>
-              ${msg("Edit Workflow Settings")}
-            </sl-menu-item>`,
+          html`<sl-menu-item
+            @click=${() =>
+              this.navigate.to(
+                `${this.navigate.orgBasePath}/workflows/${workflow.id}?edit`,
+              )}
+          >
+            <sl-icon name="gear" slot="prefix"></sl-icon>
+            ${msg("Edit Workflow Settings")}
+          </sl-menu-item>`,
       )}
       <sl-menu-item
         @click=${() =>
@@ -641,6 +640,13 @@ export class WorkflowsList extends BtrixElement {
           >
             <sl-icon name="files" slot="prefix"></sl-icon>
             ${msg("Duplicate Workflow")}
+          </sl-menu-item>
+          <sl-divider></sl-divider>
+          <sl-menu-item
+            @click=${() => ClipboardController.copyToClipboard(workflow.id)}
+          >
+            <sl-icon name="copy" slot="prefix"></sl-icon>
+            ${msg("Copy Workflow ID")}
           </sl-menu-item>
           ${when(
             !workflow.crawlCount,

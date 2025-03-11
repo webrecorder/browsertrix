@@ -14,6 +14,7 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import type { MarkdownEditor } from "@/components/ui/markdown-editor";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import { viewStateContext, type ViewStateContext } from "@/context/view-state";
+import { ClipboardController } from "@/controllers/clipboard";
 import type { EditDialogTab } from "@/features/collections/collection-edit-dialog";
 import { collectionShareLink } from "@/features/collections/helpers/share-link";
 import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
@@ -564,6 +565,16 @@ export class CollectionDetail extends BtrixElement {
           </btrix-menu-item-link>
           <sl-divider></sl-divider>
           <sl-menu-item
+            @click=${() =>
+              ClipboardController.copyToClipboard(
+                this.collection?.id ?? this.collectionId,
+              )}
+          >
+            <sl-icon name="copy" slot="prefix"></sl-icon>
+            ${msg("Copy Collection ID")}
+          </sl-menu-item>
+          <sl-divider></sl-divider>
+          <sl-menu-item
             style="--sl-color-neutral-700: var(--danger)"
             @click=${this.confirmDelete}
           >
@@ -867,6 +878,13 @@ export class CollectionDetail extends BtrixElement {
                   >
                     <sl-icon name="folder-minus" slot="prefix"></sl-icon>
                     ${msg("Remove from Collection")}
+                  </sl-menu-item>
+                  <sl-divider></sl-divider>
+                  <sl-menu-item
+                    @click=${() => ClipboardController.copyToClipboard(item.id)}
+                  >
+                    <sl-icon name="copy" slot="prefix"></sl-icon>
+                    ${msg("Copy Item ID")}
                   </sl-menu-item>
                 </sl-menu>
               </btrix-overflow-dropdown>

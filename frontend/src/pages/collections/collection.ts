@@ -1,5 +1,5 @@
 import { localized, msg } from "@lit/localize";
-import { Task, TaskStatus } from "@lit/task";
+import { Task } from "@lit/task";
 import { html, type TemplateResult } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -10,7 +10,6 @@ import { metadataColumn } from "@/layouts/collections/metadataColumn";
 import { page } from "@/layouts/page";
 import { RouteNamespace } from "@/routes";
 import type { PublicCollection } from "@/types/collection";
-import type { PublicOrgCollections } from "@/types/org";
 import { formatRwpTimestamp } from "@/utils/replay";
 
 enum Tab {
@@ -48,15 +47,6 @@ export class Collection extends BtrixElement {
     },
   };
 
-  private readonly orgCollections = new Task(this, {
-    task: async ([orgSlug]) => {
-      if (!orgSlug) throw new Error("orgSlug required");
-      const org = await this.fetchCollections({ orgSlug });
-      return org;
-    },
-    args: () => [this.orgSlug] as const,
-  });
-
   private readonly collection = new Task(this, {
     task: async ([orgSlug, collectionSlug]) => {
       if (!orgSlug || !collectionSlug)
@@ -89,19 +79,16 @@ export class Collection extends BtrixElement {
   }
 
   private readonly renderComplete = (collection: PublicCollection) => {
-    const org = this.orgCollections.value?.org;
     const header: Parameters<typeof page>[0] = {
       breadcrumbs:
-        this.orgCollections.status > TaskStatus.PENDING
-          ? org
-            ? [
-                {
-                  href: `/${RouteNamespace.PublicOrgs}/${this.orgSlug}`,
-                  content: org.name,
-                },
-              ]
-            : undefined
-          : [],
+        collection.orgPublicProfile || collection.oid === this.orgId
+          ? [
+              {
+                href: `/${RouteNamespace.PublicOrgs}/${this.orgSlug}`,
+                content: collection.orgName,
+              },
+            ]
+          : undefined,
       title: collection.name || "",
       actions: html`
         <btrix-share-collection
@@ -207,6 +194,7 @@ export class Collection extends BtrixElement {
           replayBase="/replay/"
           noSandbox="true"
           noCache="true"
+          deepLink
         ></replay-web-page>
       </section>
     `;
@@ -236,23 +224,6 @@ export class Collection extends BtrixElement {
     }
 
     return html`<div class="rounded-lg border p-6">${metadata}</div>`;
-  }
-
-  private async fetchCollections({
-    orgSlug,
-  }: {
-    orgSlug: string;
-  }): Promise<PublicOrgCollections> {
-    const resp = await fetch(`/api/public/orgs/${orgSlug}/collections`, {
-      headers: { "Content-Type": "application/json" },
-    });
-
-    switch (resp.status) {
-      case 200:
-        return (await resp.json()) as PublicOrgCollections;
-      default:
-        throw resp.status;
-    }
   }
 
   private async fetchCollection({

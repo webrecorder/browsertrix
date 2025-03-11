@@ -365,15 +365,21 @@ export class LogInPage extends BtrixElement {
       return;
     }
 
-    const resp = await fetch("/api/settings");
-    if (resp.status === 200) {
-      this.formStateService.send("BACKEND_INITIALIZED");
-    } else {
-      this.formStateService.send("BACKEND_NOT_INITIALIZED");
-      this.timerId = window.setTimeout(() => {
-        void this.checkBackendInitialized();
-      }, 5000);
+    try {
+      const resp = await fetch("/api/settings");
+      if (resp.status === 200) {
+        this.formStateService.send("BACKEND_INITIALIZED");
+        return;
+      }
+    } catch (e) {
+      // assume backend not available if exception thrown
     }
+
+    // mark as not initialized
+    this.formStateService.send("BACKEND_NOT_INITIALIZED");
+    this.timerId = window.setTimeout(() => {
+      void this.checkBackendInitialized();
+    }, 5000);
   }
 
   async onSubmitLogIn(event: SubmitEvent) {

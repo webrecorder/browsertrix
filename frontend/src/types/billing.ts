@@ -7,6 +7,7 @@ export enum SubscriptionStatus {
   Trialing = "trialing",
   TrialingCanceled = "trialing_canceled",
   PausedPaymentFailed = "paused_payment_failed",
+  PaymentNeverMade = "payment_never_made",
   Cancelled = "cancelled",
 }
 export const subscriptionStatusSchema = z.nativeEnum(SubscriptionStatus);

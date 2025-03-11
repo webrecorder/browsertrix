@@ -97,9 +97,7 @@ export class ShareCollection extends BtrixElement {
           </sl-icon-button>
         </sl-tooltip>
         ${when(this.orgSlug && this.collection, (collection) =>
-          this.context === "public" &&
-          collection.access === CollectionAccess.Public &&
-          collection.allowPublicDownload
+          this.context === "public" && collection.allowPublicDownload
             ? html`
                 <sl-tooltip
                   content=${msg("Download Collection: ") +

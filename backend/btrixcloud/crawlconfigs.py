@@ -36,6 +36,7 @@ from .models import (
     CrawlerChannel,
     CrawlerChannels,
     StartedResponse,
+    SuccessResponse,
     CrawlConfigAddedResponse,
     CrawlConfigSearchValues,
     CrawlConfigUpdateResponse,
@@ -1036,6 +1037,21 @@ class CrawlConfigOps:
         prefix = org.slug + "-" + name
         return prefix[:80]
 
+    async def re_add_all_scheduled_cron_jobs(self):
+        """Re-add all scheduled workflow cronjobs"""
+        match_query = {"schedule": {"$nin": ["", None]}, "inactive": {"$ne": True}}
+        async for config_dict in self.crawl_configs.find(match_query):
+            config = CrawlConfig.from_dict(config_dict)
+            try:
+                await self.crawl_manager.update_scheduled_job(config)
+                print(f"Updated cronjob for scheduled workflow {config.id}", flush=True)
+            # pylint: disable=broad-except
+            except Exception as err:
+                print(
+                    f"Error updating cronjob for scheduled workflow {config.id}: {err}",
+                    flush=True,
+                )
+
 
 # ============================================================================
 # pylint: disable=too-many-locals
@@ -1271,6 +1287,16 @@ def init_crawl_config_api(
         crawlconfig = await ops.get_crawl_config(cid, org.id)
 
         return await ops.do_make_inactive(crawlconfig)
+
+    @app.post("/orgs/all/crawlconfigs/reAddCronjobs", response_model=SuccessResponse)
+    async def re_add_all_scheduled_cron_jobs(
+        user: User = Depends(user_dep),
+    ):
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+
+        asyncio.create_task(ops.re_add_all_scheduled_cron_jobs())
+        return {"success": True}
 
     org_ops.router.include_router(router)
 

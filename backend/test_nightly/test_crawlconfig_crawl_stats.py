@@ -71,17 +71,25 @@ def test_crawlconfig_crawl_stats(admin_auth_headers, default_org_id, crawl_confi
     data = r.json()
     assert data["deleted"]
 
-    time.sleep(10)
-
     # Verify crawl stats from /crawlconfigs
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawl_config_id}",
-        headers=admin_auth_headers,
-    )
-    assert r.status_code == 200
-    data = r.json()
-    assert data["crawlAttemptCount"] == 2
-    assert data["crawlCount"] == 0
-    assert not data["lastCrawlId"]
-    assert not data["lastCrawlState"]
-    assert not data["lastCrawlTime"]
+    max_attempts = 18
+    attempts = 1
+    while True:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawl_config_id}",
+            headers=admin_auth_headers,
+        )
+        assert r.status_code == 200
+        data = r.json()
+
+        if data["crawlAttemptCount"] == 2 and data["crawlCount"] == 0:
+            assert not data["lastCrawlId"]
+            assert not data["lastCrawlState"]
+            assert not data["lastCrawlTime"]
+            break
+
+        if attempts >= max_attempts:
+            assert False
+
+        time.sleep(10)
+        attempts += 1

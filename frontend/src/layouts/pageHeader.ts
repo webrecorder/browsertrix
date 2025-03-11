@@ -4,6 +4,8 @@ import clsx from "clsx";
 import { html, nothing, type TemplateResult } from "lit";
 import { ifDefined } from "lit/directives/if-defined.js";
 
+import { textSeparator } from "./separator";
+
 import { NavigateController } from "@/controllers/navigate";
 import { tw } from "@/utils/tailwind";
 
@@ -26,15 +28,7 @@ function navigateBreadcrumb(e: MouseEvent, href: string) {
   el.dispatchEvent(evt);
 }
 
-export function breadcrumbSeparator() {
-  return html`<span
-    class="font-mono font-thin text-neutral-400"
-    role="separator"
-    >/</span
-  > `;
-}
-
-const separator = breadcrumbSeparator();
+const breadcrumbSeparator = textSeparator();
 const skeleton = html`<sl-skeleton class="w-48"></sl-skeleton>`;
 
 function breadcrumbLink({ href, content }: Breadcrumb, classNames?: string) {
@@ -65,11 +59,11 @@ function pageBreadcrumbs(breadcrumbs: Breadcrumb[]) {
       ${breadcrumbs.length
         ? breadcrumbs.map(
             (breadcrumb, i) => html`
-              ${i !== 0 ? separator : nothing}
+              ${i !== 0 ? breadcrumbSeparator : nothing}
               ${breadcrumbLink(breadcrumb, tw`max-w-[30ch]`)}
             `,
           )
-        : html`${skeleton} ${separator} ${skeleton}`}
+        : html`${skeleton} ${breadcrumbSeparator} ${skeleton}`}
     </nav>
   `;
 }

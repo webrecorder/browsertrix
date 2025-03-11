@@ -1,26 +1,71 @@
-# Collection Presentation & Sharing
+# Presentation & Sharing
 
-## Sharing Collections
+<video autoplay muted playsinline loop disablepictureinpicture disableremoteplayback>
+  <source src="https://webrecorder.net/assets/video/collection-editing-av1.mp4"/>
+  <source src="https://webrecorder.net/assets/video/collection-editing-h264.mp4"/>
+</video>
 
-Collections are private by default, but can be made sharable either with an unlisted link, or displayed in your org's public gallery for everyone to discover. Sharing settings can be found within the **Sharing** tab of the Collection Settings dialog. Public collections will not be visible unless your org has enabled its [public collections gallery](org-settings.md#public-collections-gallery).
+## Share a Collection
 
-Public collections can also be embedded into other websites using the provided embed code. Making a collection private after it is public or unlisted will break any previously shared links and remove it from your gallery.
+A Collection is private by default, but can be made sharable either with an unlisted link, or displayed in your org's public gallery for everyone to discover. Sharing settings can be found within the **Sharing** tab of the Collection.
 
-For further resources on embedding archived web content into your own website, see the [ReplayWeb.page docs page on embedding](https://replayweb.page/docs/embedding).
+1. Click the edit button :bootstrap-pencil: on the specific Collection you want to share
 
-## Initial View
+2. In that Collection's **Sharing** tab, change its visibility from the default **Private** to **Public** and save
 
-Set the **Initial View** to control what visitors see first when viewing a collection. The initial view can either be a list of pages (ReplayWeb.page's default), or a single page from your collection such as a crawl start URL or index page.
+3. Click on the edit button :bootstrap-pencil: again, and now in the Collection's **Sharing** tab, there will be a new section, **Link to Share**, with a URL for this specific Collection that you can share and circulate to your community
 
-## Thumbnails
+4. Optional: If you want to allow other viewers to download the Collection, confirm that the **Show download button** is enabled. If not, toggle it so that others would not be able to download it and only view.
 
-Choose a thumbnail image to represent the collection in your org's public collections gallery and org dashboard. This thumbnail can be edited from the **Presentation** tab of the Collection Settings dialog. Thumbnails can either be a screenshot of a page from the collection, or a placeholder image designed by Webrecorder.
+## Customize a Collection
+
+You can customize how your Collection appears to the public by making edits within the **Presentation** tab of Collection.
+
+You can access this tab via the edit button :bootstrap-pencil: of a Collection from the Public Collection Gallery or via the kebab icon of a Collection from your account's Collections tab.
+
+From the Collections tab:
+
+1. Click the Collections tab from your account
+
+2. Click the kebab icon :bootstrap-three-dots-vertical: for options
+
+3. Click Edit Collection Settings
+
+4. Edit any of the following information from the **Presentation** tab: Name, Summary, Thumbnail, and set Initial View
+
+From the Public Collection Gallery. When Public Collection Gallery is enabled, you can view Collections from your dashboard. To customize the Collection:
+
+1. Click on the edit button :bootstrap-pencil: of the Collection you want to edit
+
+2. Edit any of the following information from the **Presentation** tab: Name, Summary, Thumbnail, and set Initial View
+
+### Name
+
+A **Name** is always required, so by default, your Collection's name is determined by the Metadata section from your crawl workflow — either a custom name you had set or the first Crawl URL from your workflow.
+
+You can edit the **Name** as long as its within 50 characters, which is roughly between 7 words and 13 words with spaces included in the character count.
+
+### Summary
+
+A **Summary** describing your Collection is not required, but it is useful information to others to summarize the Collection and caption collection thumbnails.
+
+You can edit the **Summary** as long as its within 150 characters, which is roughly between 90 words and 150 words with spaces included in the character count.
+
+### Thumbnail
+
+Choose a thumbnail image to represent this collection in your org's dashboard and public collections gallery page. Thumbnails can either be a placeholder image designed by Webrecorder, or a screenshot of a page from the collection.
+
+To choose a screenshot:
+
+1. Click the _Enter a Page URL to preview it_ for a Page URL dropdown to appear
+
+2. Select one of the URLs or search for a specific URL from the Collection
+
+3. Optional: You can choose a specific captured URL based on its Page Timestamp.
 
 ??? question "Why isn't there a thumbnail preview for my page?"
     If you have uploaded archived items captured with tools other than Browsertrix, some of the pages in your collection may not have screenshots available to use as thumbnails. To fix this, either re-crawl a page you wish to use as a thumbnail with Browsertrix and add it to the collection, or choose a placeholder thumbnail.
 
-## Description
+### Initial View
 
-Share additional context and details of your collection with your org team members or the public by writing a description. Whereas **Summary** is used to summarize the collection and caption collection thumbnails, the **About** section offers a space to write out a longer, more detailed description of the collection. The description supports basic text formatting like headings, bold and italicized text, lists, and links.
-
-The editor is powered by [ink-mde](https://github.com/davidmyersdev/ink-mde), an open source [Markdown](https://github.github.com/gfm/#what-is-markdown-) editor.
+The **Initial View** is the first view visitors see first when viewing a Collection. The initial view can either be a list of pages, which is the default when replaying using ReplayWeb.page, or a single page from your collection such as a crawl start URL or index page.

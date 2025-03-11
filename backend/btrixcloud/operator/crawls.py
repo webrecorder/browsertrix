@@ -153,7 +153,7 @@ class CrawlOperator(BaseOperator):
             oid=oid,
             org=org,
             storage=StorageRef(spec["storageName"]),
-            crawler_channel=spec.get("crawlerChannel"),
+            crawler_channel=spec.get("crawlerChannel", "default"),
             proxy_id=spec.get("proxyId"),
             scale=spec.get("scale", 1),
             started=data.parent["metadata"]["creationTimestamp"],

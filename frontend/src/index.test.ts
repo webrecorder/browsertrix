@@ -63,7 +63,7 @@ describe("browsertrix-app", () => {
     expect(el).instanceOf(App);
   });
 
-  it("blocks render if settings aren't defined", async () => {
+  it("don't block render if settings aren't defined", async () => {
     stub(AuthService, "initSessionStorage").returns(
       Promise.resolve({
         headers: { Authorization: "_fake_headers_" },
@@ -76,7 +76,7 @@ describe("browsertrix-app", () => {
     const el = await fixture<App>(html` <browsertrix-app></browsertrix-app>`);
     await el.updateComplete;
 
-    expect(el.shadowRoot?.childElementCount).to.equal(0);
+    expect(el.shadowRoot?.childElementCount).to.not.equal(0);
   });
 
   it("renders org when authenticated", async () => {
