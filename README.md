@@ -56,6 +56,6 @@ Translations are managed through Weblate, a web-based and open source translatio
 
 ## License
 
-Browsertrix is made available under the [AGPLv3 License](https://github.com/webrecorder/browsertrix?tab=AGPL-3.0-1-ov-file).
+Browsertrix is made available under the [AGPLv3 License](https://github.com/webrecorder/browsertrix?tab=AGPL-3.0-1-ov-file#readme).
 
 Documentation is made available under the Creative Commons Attribution 4.0 International License.
