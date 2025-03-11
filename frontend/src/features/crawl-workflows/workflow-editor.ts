@@ -580,6 +580,7 @@ export class WorkflowEditor extends BtrixElement {
             `
           : nothing}
         ${when(this.serverError, (error) => this.renderErrorAlert(error))}
+        ${when(this.configId, this.renderCrawlStatus)}
 
         <sl-tooltip content=${msg("Save without running")}>
           <sl-button
@@ -607,6 +608,17 @@ export class WorkflowEditor extends BtrixElement {
       </footer>
     `;
   }
+
+  private readonly renderCrawlStatus = (workflowId: string) => {
+    if (!workflowId) return;
+
+    return html`
+      <btrix-live-workflow-status
+        class="mx-2"
+        workflowId=${workflowId}
+      ></btrix-live-workflow-status>
+    `;
+  };
 
   private renderSectionHeading(content: TemplateResult | string) {
     return html`
