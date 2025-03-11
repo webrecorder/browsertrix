@@ -44,7 +44,7 @@ First, change your working directory to `frontend/docs`. Then, to run the docs l
     uvx --with mkdocs-material mkdocs serve
     ```
 
-You can now view a local version of the docs from [localhost:8000](http://localhost:8000).
+You can now view a local version of the docs at [localhost:8000](http://localhost:8000).
 
 ??? "Differences between self-hosted and Webrecorder hosted docs"
     The docs available online at [docs.browsertrix.com](https://docs.browsertrix.com) may differ from the main branch of [github.com/webrecorder/browsertrix](https://github.com/webrecorder/browsertrix). The online documentation corresponds to the latest hosted Browsertrix production release.

@@ -21,7 +21,7 @@ A crawl workflow can also be set to [automatically add any completed crawls to a
 
 ### Customize a Collection
 
-The [Presentation and Sharing](../presentation-sharing) page provides further details for options on how to present and share Collections. You can customize how your Collection appears to the public by clicking the edit button :bootstrap-pencil: in each collection to:
+The [Presentation and Sharing](./presentation-sharing.md) page provides further details for options on how to present and share Collections. You can customize how your Collection appears to the public by clicking the edit button :bootstrap-pencil: in each collection to:
 
 - **Name** it and add a **description** — include emojis if that’s your style 😉
 
@@ -42,4 +42,4 @@ Collections can be set to one of the one following access modes.
 - Public — Collections can be shared with others, and when enabled, collections can also be listed in the [public collections gallery](org-settings.md#public-collections-gallery).
 
 !!! tip "Note: About Public Collections Gallery"
-    If the public collections gallery page is not enabled, any existing public collections are treated the same as unlisted collections. Check out [enabling public collection gallery](../public-collections-gallery) for a guide on how to enable this page.
+    If the public collections gallery page is not enabled, any existing public collections are treated the same as unlisted collections. Check out [enabling public collection gallery](./public-collections-gallery.md) for a guide on how to enable this page.
