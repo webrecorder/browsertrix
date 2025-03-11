@@ -20,9 +20,9 @@ Documentation for using, deploying, and developing Browsertrix is available at [
 
 See `frontend/docs` for instructions on how to run the docs locally.
 
-## Deployment
+## Installation
 
-The latest deployment documentation is available at [docs.browsertrix.com/deploy](https://docs.browsertrix.com/deploy).
+Instructions for setting up Browsertrix is available at [docs.browsertrix.com/deploy](https://docs.browsertrix.com/deploy).
 
 The docs cover deploying Browsertrix in different environments using Kubernetes, from a single-node setup to scalable clusters in the cloud.
 
@@ -36,6 +36,10 @@ Dedicated professional support is available with a custom subscription. For deta
 
 For bug reports or feature requests, please open a [GitHub issue](https://github.com/webrecorder/browsertrix/issues/new/choose).
 
+## Changelog
+
+See [release notes](https://github.com/webrecorder/browsertrix/releases).
+
 ## Contributing
 
 ### Developing
@@ -46,7 +50,7 @@ See [Code of Conduct](https://github.com/webrecorder/browsertrix?tab=coc-ov-file
 
 ### Translating
 
-Translations are managed through Weblate, a web-based and open source translation tool. View the translation progress and register to contribute here: https://hosted.weblate.org/engage/browsertrix/
+Translations are managed through Weblate, a web-based and open source translation tool. View translations in progress and register to contribute here: https://hosted.weblate.org/engage/browsertrix/
 
 <img src="https://hosted.weblate.org/widget/browsertrix/browsertrix-ui/multi-auto.svg" alt="Translation status" />
 
