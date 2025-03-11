@@ -80,12 +80,15 @@ export class Collection extends BtrixElement {
 
   private readonly renderComplete = (collection: PublicCollection) => {
     const header: Parameters<typeof page>[0] = {
-      breadcrumbs: [
-        {
-          href: `/${RouteNamespace.PublicOrgs}/${this.orgSlug}`,
-          content: collection.orgName,
-        },
-      ],
+      breadcrumbs:
+        collection.orgPublicProfile || collection.oid === this.orgId
+          ? [
+              {
+                href: `/${RouteNamespace.PublicOrgs}/${this.orgSlug}`,
+                content: collection.orgName,
+              },
+            ]
+          : undefined,
       title: collection.name || "",
       actions: html`
         <btrix-share-collection
