@@ -18,7 +18,7 @@ See [webrecorder.net/browsertrix](https://webrecorder.net/browsertrix/) for a fu
 
 Documentation for using, deploying, and developing Browsertrix is available at [docs.browsertrix.com](https://docs.browsertrix.com).
 
-See `frontend/docs` for instructions on how to run the docs locally.
+See instructions in [frontend/docs](./frontend/docs/docs/develop/docs.md#installation) to run the docs locally.
 
 ## Installation
 

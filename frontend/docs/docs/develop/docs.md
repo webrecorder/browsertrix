@@ -2,35 +2,52 @@
 
 Our documentation is built with [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/) and configured via `mkdocs.yml` in the project root.
 
-The docs can be found in the `./docs` subdirectory.
+The docs can be found in the `frontend/docs` subdirectory.
 
-To build the docs locally, install Material for MkDocs with pip, pipx, or uvx:
+## Installation
+
+First, change your working directory to `frontend/docs`. Then, to run the docs locally:
 
 === "pip"
+
+    Install Material for MkDocs:
 
     ```sh
     pip install mkdocs-material
     ```
 
-    Then, in `frontend/docs` run `mkdocs serve` to run a local version of the documentation site.
+    Start the docs development server:
+    
+    ```sh
+    mkdocs serve
+    ```
 
 === "pipx"
+
+    Install Material for MkDocs:
 
     ```sh
     pipx install mkdocs-material --include-deps
     ```
 
-    Then, in `frontend/docs` run `mkdocs serve` to run a local version of the documentation site.
+    Start the docs development server:
+    
+    ```sh
+    mkdocs serve
+    ```
 
 === "uvx"
 
-    From `frontend/docs`:
+    Install and start the docs development server:
 
     ```sh
     uvx --with mkdocs-material mkdocs serve
     ```
 
-The docs hosted on [docs.browsertrix.com](https://docs.browsertrix.com) may be different from the main branch of [github.com/webrecorder/browsertrix](https://github.com/webrecorder/browsertrix). They are updated by running the [publish docs GitHub workflow](https://github.com/webrecorder/browsertrix/actions/workflows/docs-publish.yaml), typically alongside a release.
+You can now view a local version of the docs from [localhost:8000](http://localhost:8000).
+
+??? "Differences between self-hosted and Webrecorder hosted docs"
+    The docs available online at [docs.browsertrix.com](https://docs.browsertrix.com) may differ from the main branch of [github.com/webrecorder/browsertrix](https://github.com/webrecorder/browsertrix). The online documentation corresponds to the latest hosted Browsertrix production release.
 
 ## Adding New Pages
 
