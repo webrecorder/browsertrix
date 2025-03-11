@@ -7,10 +7,17 @@ import { guard } from "lit/directives/guard.js";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Workflow } from "@/types/crawler";
 
+export type CrawlStatusChangedEventDetail = {
+  isCrawlRunning: Workflow["isCrawlRunning"];
+  state: Workflow["lastCrawlState"];
+};
+
 const POLL_INTERVAL_SECONDS = 5;
 
 /**
  * Current workflow status, displayed "live" by polling
+ *
+ * @fires btrix-crawl-status-changed
  */
 @customElement("btrix-live-workflow-status")
 @localized()
@@ -23,7 +30,27 @@ export class LiveWorkflowStatus extends BtrixElement {
       if (!workflowId) throw new Error("required `workflowId` missing");
 
       try {
-        return this.getWorkflow(workflowId, signal);
+        const workflow = await this.getWorkflow(workflowId, signal);
+
+        if (this.workflowTask.value) {
+          if (
+            this.workflowTask.value.lastCrawlState !== workflow.lastCrawlState
+          ) {
+            this.dispatchEvent(
+              new CustomEvent<CrawlStatusChangedEventDetail>(
+                "btrix-crawl-status-changed",
+                {
+                  detail: {
+                    isCrawlRunning: workflow.isCrawlRunning,
+                    state: workflow.lastCrawlState,
+                  },
+                },
+              ),
+            );
+          }
+        }
+
+        return workflow;
       } catch (e) {
         if ((e as Error).name === "AbortError") {
           console.debug("Fetch archived items aborted to throttle");
@@ -57,14 +84,11 @@ export class LiveWorkflowStatus extends BtrixElement {
 
   render() {
     const workflow = this.workflowTask.value;
+    const lastCrawlState = workflow?.lastCrawlState;
 
-    if (!workflow?.lastCrawlState) return;
+    if (!workflow?.isCrawlRunning || !lastCrawlState) return;
 
-    const { lastCrawlId, lastCrawlState } = workflow;
-
-    return guard([lastCrawlId, lastCrawlState], () => {
-      console.log("re-render!");
-
+    return guard([lastCrawlState], () => {
       return html`
         <btrix-crawl-status
           class="block"

@@ -49,6 +49,7 @@ import {
 } from "@/controllers/observable";
 import { type SelectBrowserProfileChangeEvent } from "@/features/browser-profiles/select-browser-profile";
 import type { CollectionsChangeEvent } from "@/features/collections/collections-add";
+import type { CrawlStatusChangedEventDetail } from "@/features/crawl-workflows/live-workflow-status";
 import type {
   ExclusionChangeEvent,
   QueueExclusionTable,
@@ -224,6 +225,9 @@ export class WorkflowEditor extends BtrixElement {
 
   @state()
   private serverError?: TemplateResult | string;
+
+  @state()
+  private isCrawlRunning: boolean | null = null;
 
   // For observing panel sections position in viewport
   private readonly observable = new ObservableController(this, {
@@ -593,13 +597,18 @@ export class WorkflowEditor extends BtrixElement {
             ${msg("Save")}
           </sl-button>
         </sl-tooltip>
-        <sl-tooltip content=${msg("Save and run with new settings")}>
+        <sl-tooltip
+          content=${this.isCrawlRunning
+            ? msg("Crawl is already running")
+            : msg("Save and run with new settings")}
+        >
           <sl-button
             size="small"
             variant="primary"
             type="submit"
             ?disabled=${isArchivingDisabled(this.org, true) ||
-            this.isSubmitting}
+            this.isSubmitting ||
+            this.isCrawlRunning}
             ?loading=${this.isSubmitting}
           >
             ${msg(html`Run Crawl`)}
@@ -616,6 +625,11 @@ export class WorkflowEditor extends BtrixElement {
       <btrix-live-workflow-status
         class="mx-2"
         workflowId=${workflowId}
+        @btrix-crawl-status-changed=${(
+          e: CustomEvent<CrawlStatusChangedEventDetail>,
+        ) => {
+          this.isCrawlRunning = e.detail.isCrawlRunning;
+        }}
       ></btrix-live-workflow-status>
     `;
   };
