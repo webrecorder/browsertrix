@@ -89,6 +89,7 @@ export type FormState = {
   userAgent: string | null;
   crawlerChannel: string;
   proxyId: string | null;
+  selectLinks: string[];
 };
 
 export type FormStateField = keyof FormState;
@@ -144,6 +145,7 @@ export const getDefaultFormState = (): FormState => ({
   userAgent: null,
   crawlerChannel: "default",
   proxyId: null,
+  selectLinks: ["a[href]->href"],
 });
 
 export const mapSeedToUrl = (arr: Seed[]) =>

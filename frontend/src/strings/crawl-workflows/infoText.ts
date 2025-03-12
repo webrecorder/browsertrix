@@ -59,7 +59,8 @@ const infoText: Partial<Record<Field, string | TemplateResult>> = {
   ),
   lang: msg(`Websites that observe the browser’s language setting may serve
   content in that language if available.`),
-  proxyId: msg(`Choose a proxy to crawl through`),
+  proxyId: msg(`Choose a proxy to crawl through.`),
+  selectLinks: msg(`TODO`),
 };
 
 export default infoText;
