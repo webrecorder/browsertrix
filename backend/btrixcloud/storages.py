@@ -78,6 +78,7 @@ CHUNK_SIZE = 1024 * 256
 
 # ============================================================================
 # pylint: disable=broad-except,raise-missing-from,too-many-public-methods, too-many-positional-arguments
+# pylint: disable=too-many-lines,too-many-instance-attributes,too-many-locals
 class StorageOps:
     """All storage handling, download/upload operations"""
 
@@ -933,7 +934,11 @@ def _parse_json(line) -> dict:
 
 # ============================================================================
 def init_storages_api(
-    org_ops: OrgOps, crawl_manager: CrawlManager, app: APIRouter, mdb, user_dep
+    org_ops: OrgOps,
+    crawl_manager: CrawlManager,
+    app: APIRouter,
+    mdb,
+    user_dep: Callable,
 ) -> StorageOps:
     """API for updating storage for an org"""
 

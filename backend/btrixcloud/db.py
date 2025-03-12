@@ -87,7 +87,7 @@ async def ping_db(mdb) -> None:
 
 # ============================================================================
 async def update_and_prepare_db(
-    # pylint: disable=R0913
+    # pylint: disable=too-many-positional-arguments, too-many-arguments
     mdb: AsyncIOMotorDatabase,
     user_manager: UserManager,
     org_ops: OrgOps,
