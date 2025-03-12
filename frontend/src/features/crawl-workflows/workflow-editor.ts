@@ -733,7 +733,10 @@ export class WorkflowEditor extends BtrixElement {
                       @btrix-change=${this.handleChangeRegex}
                     ></btrix-queue-exclusion-table>
                   `)}
-                  ${this.renderHelpTextCol(infoTextStrings["exclusions"])}
+                  ${this.renderHelpTextCol(
+                    infoTextStrings["exclusions"],
+                    false,
+                  )}
                 </div>
               </btrix-details>
             </div>
@@ -1116,7 +1119,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
   private renderLinkSelectors() {
     const selectors = this.formState.selectLinks;
-    const isCustom = !isEqual(defaultFormState.selectLinks, selectors);
+    const isCustom = isEqual(defaultFormState.selectLinks, selectors);
 
     return html`
       <div class="col-span-5">
@@ -1128,8 +1131,12 @@ https://archiveweb.page/images/${"logo.svg"}`}
               : ""}</span
           >
           <div class="grid grid-cols-5 gap-5 py-2">
-            ${inputCol(html` TODO `)}
-            ${this.renderHelpTextCol(infoTextStrings["selectLinks"])}
+            ${inputCol(
+              html`<btrix-link-selector-table
+                .selectors=${selectors}
+              ></btrix-link-selector-table>`,
+            )}
+            ${this.renderHelpTextCol(infoTextStrings["selectLinks"], false)}
           </div>
         </btrix-details>
       </div>
