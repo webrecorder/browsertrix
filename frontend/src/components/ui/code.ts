@@ -1,6 +1,7 @@
 import hljs from "highlight.js/lib/core";
-import javascript from "highlight.js/lib/languages/javascript";
-import xml from "highlight.js/lib/languages/xml";
+import hljsCss from "highlight.js/lib/languages/css";
+import hljsJavascript from "highlight.js/lib/languages/javascript";
+import hljsXml from "highlight.js/lib/languages/xml";
 import { css, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { html as staticHtml, unsafeStatic } from "lit/static-html.js";
@@ -8,17 +9,20 @@ import { html as staticHtml, unsafeStatic } from "lit/static-html.js";
 import { TailwindElement } from "@/classes/TailwindElement";
 
 /**
- * Syntax highlighting for javascript and HTML (XML)
+ * Syntax highlighting for javascript, HTML (XML), and CSS
  */
 @customElement("btrix-code")
 export class Code extends TailwindElement {
   static styles = css`
-    .hljs-name {
-      color: #22863a;
+    .hljs-name,
+    .hljs-selector-tag {
+      color: var(--sl-color-lime-600);
     }
 
-    .hljs-attr {
-      color: #6f42c1;
+    .hljs-attr,
+    .hljs-selector-attr,
+    .hljs-selector-class {
+      color: var(--sl-color-violet-500);
     }
 
     .hljs-string {
@@ -30,20 +34,22 @@ export class Code extends TailwindElement {
   value = "";
 
   @property({ type: String })
-  language: "javascript" | "xml" = "xml";
+  language: "javascript" | "xml" | "css" = "xml";
 
   constructor() {
     super();
-    hljs.registerLanguage("javascript", javascript);
-    hljs.registerLanguage("xml", xml);
+    hljs.registerLanguage("css", hljsCss);
+    hljs.registerLanguage("javascript", hljsJavascript);
+    hljs.registerLanguage("xml", hljsXml);
   }
 
   render() {
     const htmlStr = hljs.highlight(this.value, {
       language: this.language,
     }).value;
+
     return html`<pre
-      class="font-monospace m-0 whitespace-pre-wrap text-neutral-800"
+      class="font-monospace m-0 whitespace-pre-wrap text-neutral-600"
     ><code>${staticHtml`${unsafeStatic(htmlStr)}`}</code></pre>`;
   }
 }
