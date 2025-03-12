@@ -47,7 +47,7 @@ If you don’t have any public Collections yet, on the right side of the section
 
 ### Remove Collections
 
-You'll take similar steps from [Add Collections](../public-collections-gallery/#add-collections) to also remove Collections from the Public Collections Gallery
+You'll take similar steps from [Add Collections](./public-collections-gallery.md#add-collections) to also remove Collections from the Public Collections Gallery
 
 1. Within the Public Collections Gallery, click the edit button :bootstrap-pencil: on the specific Collection you want to remove
 
@@ -56,7 +56,7 @@ You'll take similar steps from [Add Collections](../public-collections-gallery/#
 
 ### Customize Collections
 
-The [Presentation and Sharing](../presentation-sharing) page provides further details for options on how to present and share Collections in your Public Collections Gallery. Your Public Collection Gallery page will automatically have the title of your org. You can customize this page by including a **Description** and your org's **Website** by adding them from your org's **Settings** of your account.
+The [Presentation and Sharing](./presentation-sharing.md) page provides further details for options on how to present and share Collections in your Public Collections Gallery. Your Public Collection Gallery page will automatically have the title of your org. You can customize this page by including a **Description** and your org's **Website** by adding them from your org's **Settings** of your account.
 
 ### Description
 
