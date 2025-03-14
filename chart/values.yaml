@@ -198,7 +198,7 @@ frontend_avg_memory_threshold: 95
 # =========================================
 mongo_local: true
 
-mongo_host: "local-mongo.default"
+mongo_host: "local-mongo"
 
 mongo_image: "docker.io/library/mongo:6.0.5"
 mongo_pull_policy: "IfNotPresent"
@@ -219,12 +219,8 @@ mongo_auth:
 
 # Redis Image
 # =========================================
-redis_local: true
-
 redis_image: "redis"
 redis_pull_policy: "IfNotPresent"
-
-redis_url: "redis://local-redis.default:6379/1"
 
 redis_cpu: "10m"
 
