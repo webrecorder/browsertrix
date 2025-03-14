@@ -923,6 +923,30 @@ class PageOps:
         res = await cursor.to_list(1)
         return res[0].get("urls") if res else 0
 
+    async def get_top_page_origins(
+        self, crawl_ids: List[str]
+    ) -> List[dict[str, str | int]]:
+        """Get count of top page origins across all archived items"""
+        cursor = self.pages.aggregate(
+            [
+                {"$match": {"crawl_id": {"$in": crawl_ids}}},
+                {
+                    "$addFields": {
+                        "origin": {
+                            "$regexFind": {
+                                "input": "$url",
+                                "regex": "^https?://([^/])+",
+                            }
+                        }
+                    }
+                },
+                {"$group": {"_id": "$origin.match", "count": {"$count": {}}}},
+                {"$sort": {"count": -1}},
+            ]
+        )
+        res = await cursor.to_list(10)
+        return [{"origin": x.get("_id"), "count": x.get("count")} for x in res]
+
     async def set_archived_item_page_counts(self, crawl_id: str):
         """Store archived item page and unique page counts in crawl document"""
         page_count = await self.pages.count_documents({"crawl_id": crawl_id})
