@@ -935,7 +935,7 @@ class PageOps:
                         "origin": {
                             "$regexFind": {
                                 "input": "$url",
-                                "regex": "^https?://([^/])+",
+                                "regex": "^https?://([^/]+)",
                             }
                         }
                     }
