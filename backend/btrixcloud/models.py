@@ -1424,6 +1424,14 @@ class PreloadResource(BaseModel):
 
 
 # ============================================================================
+class OriginCount(BaseModel):
+    """Origin Count"""
+
+    origin: str
+    count: int
+
+
+# ============================================================================
 class Collection(BaseMongoModel):
     """Org collection structure"""
 
@@ -1520,6 +1528,8 @@ class CollOut(BaseMongoModel):
     preloadResources: List[PreloadResource] = []
     pagesQueryUrl: str = ""
     downloadUrl: Optional[str] = None
+
+    topPageOrigins: List[OriginCount] = []
 
 
 # ============================================================================
