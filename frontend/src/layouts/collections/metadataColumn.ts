@@ -56,6 +56,20 @@ export function metadataColumn(collection?: Collection | PublicCollection) {
         label: metadata.totalSize,
         render: (col) => `${localize.bytes(col.totalSize)}`,
       })}
+      ${metadataItem({
+        label: metadata.topPageDomains,
+        render: (col) =>
+          html` <table>
+            ${col.topPageOrigins.map(
+              (x) => html`
+                <tr>
+                  <td>${x.origin}</td>
+                  <td class="pl-4">${x.count}</td>
+                </tr>
+              `,
+            )}
+          </table>`,
+      })}
     </btrix-desc-list>
   `;
 }

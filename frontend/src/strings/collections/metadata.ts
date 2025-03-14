@@ -5,4 +5,5 @@ export const metadata = {
   uniquePageCount: msg("Unique Pages in Collection"),
   pageCount: msg("Total Pages Crawled"),
   totalSize: msg("Collection Size"),
+  topPageDomains: msg("Top Page Domains"),
 };
