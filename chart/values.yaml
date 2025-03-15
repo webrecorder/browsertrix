@@ -387,7 +387,7 @@ minio_local: true
 # minio_local_console_port: 30091
 
 minio_scheme: "http"
-minio_host: "local-minio.default:9000"
+minio_host: "local-minio:9000"
 
 minio_image: docker.io/minio/minio:RELEASE.2022-10-24T18-35-07Z
 minio_mc_image: minio/mc
