@@ -1899,7 +1899,7 @@ class OrgOut(BaseMongoModel):
     id: UUID
     name: str
     slug: str
-    users: Dict[str, Any] = {}
+    users: Dict[str, str | int] = {}
 
     created: Optional[datetime] = None
 
@@ -2063,10 +2063,14 @@ class Organization(BaseMongoModel):
                 if not role:
                     continue
 
-                result["users"][id_] = {
+                email = org_user.get("email")
+                if not email:
+                    continue
+
+                result["users"][email] = {
                     "role": role,
                     "name": org_user.get("name", ""),
-                    "email": org_user.get("email", ""),
+                    "email": email,
                 }
 
         return OrgOut.from_dict(result)
