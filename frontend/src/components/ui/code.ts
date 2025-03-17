@@ -1,3 +1,4 @@
+import clsx from "clsx";
 import hljs from "highlight.js/lib/core";
 import hljsCss from "highlight.js/lib/languages/css";
 import hljsJavascript from "highlight.js/lib/languages/javascript";
@@ -7,6 +8,7 @@ import { customElement, property } from "lit/decorators.js";
 import { html as staticHtml, unsafeStatic } from "lit/static-html.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
+import { tw } from "@/utils/tailwind";
 
 /**
  * Syntax highlighting for javascript, HTML (XML), and CSS
@@ -36,6 +38,9 @@ export class Code extends TailwindElement {
   @property({ type: String })
   language: "javascript" | "xml" | "css" = "xml";
 
+  @property({ type: Boolean })
+  wrap = true;
+
   constructor() {
     super();
     hljs.registerLanguage("css", hljsCss);
@@ -49,7 +54,10 @@ export class Code extends TailwindElement {
     }).value;
 
     return html`<pre
-      class="font-monospace m-0 whitespace-pre-wrap text-neutral-600"
+      class=${clsx(
+        tw`font-monospace m-0 text-neutral-600`,
+        this.wrap ? tw`whitespace-pre-wrap` : tw`whitespace-nowrap`,
+      )}
     ><code>${staticHtml`${unsafeStatic(htmlStr)}`}</code></pre>`;
   }
 }

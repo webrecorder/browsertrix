@@ -77,6 +77,8 @@
     --sl-input-font-size-medium: var(--sl-font-size-small);
     --sl-input-font-size-large: var(--sl-font-size-medium);
 
+    --sl-input-placeholder-color: var(--sl-color-neutral-400);
+
     /* From GitHub Primer https://github.com/primer/primitives/blob/8b767947e35a79db17b9d7970836f03c904c8afe/data/colors/vars/global_light.ts#L47 */
     /* TODO replace hardcoded color */
     --sl-input-required-content-color: #9a6700;
@@ -383,6 +385,11 @@
   sl-input[filled]::part(base) {
     border: 1px solid theme(colors.gray.200);
     border-radius: var(--sl-input-border-radius-small);
+  }
+
+  sl-textarea::part(textarea)::placeholder,
+  sl-input::part(input)::placeholder {
+    font-weight: var(--sl-font-weight-light);
   }
 
   sl-drawer::part(header) {

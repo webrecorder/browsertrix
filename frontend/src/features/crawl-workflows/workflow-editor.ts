@@ -1134,6 +1134,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
             ${inputCol(
               html`<btrix-link-selector-table
                 .selectors=${selectors}
+                @btrix-change=${(e: CustomEvent) => {
+                  console.log(e.detail.value);
+                }}
               ></btrix-link-selector-table>`,
             )}
             ${this.renderHelpTextCol(infoTextStrings["selectLinks"], false)}
