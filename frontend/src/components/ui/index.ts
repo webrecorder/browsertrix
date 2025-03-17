@@ -34,6 +34,7 @@ import("./search-combobox");
 import("./section-heading");
 import("./select-crawler-proxy");
 import("./select-crawler");
+import("./syntax-input");
 import("./table");
 import("./tag-input");
 import("./tag");
