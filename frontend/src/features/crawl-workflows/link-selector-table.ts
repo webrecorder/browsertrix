@@ -75,10 +75,18 @@ export class LinkSelectorTable extends BtrixElement {
           @btrix-change=${(e: CustomEvent<SyntaxInputChangeEventDetail>) => {
             e.stopPropagation();
 
-            this.updateRows(
-              row.map((v, i) => (i === cellIdx ? e.detail.value : v)),
-              rowIdx,
-            );
+            const value = e.detail.value;
+            const valid =
+              cellIdx === 0
+                ? this.validateSelector(value)
+                : this.validateAttribute(value);
+
+            if (valid) {
+              this.updateRows(
+                row.map((v, i) => (i === cellIdx ? value : v)),
+                rowIdx,
+              );
+            }
           }}
         >
         </btrix-syntax-input>
@@ -103,6 +111,30 @@ export class LinkSelectorTable extends BtrixElement {
       (cell) => html` <btrix-code value=${cell} language="css"></btrix-code> `,
     );
   };
+
+  private validateSelector(value: string) {
+    try {
+      document.createDocumentFragment().querySelector(value);
+
+      return true;
+    } catch (e) {
+      console.debug(e);
+    }
+
+    return false;
+  }
+
+  private validateAttribute(value: string) {
+    try {
+      document.createDocumentFragment().querySelector(value);
+
+      return true;
+    } catch (e) {
+      console.debug(e);
+    }
+
+    return false;
+  }
 
   private updateRows(
     row: LinkSelectorTable["rows"][0] | undefined,
