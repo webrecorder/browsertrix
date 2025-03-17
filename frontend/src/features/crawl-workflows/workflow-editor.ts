@@ -29,6 +29,7 @@ import { range } from "lit/directives/range.js";
 import { when } from "lit/directives/when.js";
 import compact from "lodash/fp/compact";
 import flow from "lodash/fp/flow";
+import isEqual from "lodash/fp/isEqual";
 import throttle from "lodash/fp/throttle";
 import uniq from "lodash/fp/uniq";
 
@@ -117,6 +118,7 @@ const DEFAULT_BEHAVIORS = [
 ];
 const formName = "newJobConfig" as const;
 const panelSuffix = "--panel" as const;
+const defaultFormState = getDefaultFormState();
 
 const getDefaultProgressState = (hasConfigId = false): ProgressState => {
   let activeTab: StepName = "scope";
@@ -220,7 +222,7 @@ export class WorkflowEditor extends BtrixElement {
   private orgDefaults: WorkflowDefaults = appDefaults;
 
   @state()
-  private formState = getDefaultFormState();
+  private formState = defaultFormState;
 
   @state()
   private serverError?: TemplateResult | string;
@@ -696,7 +698,10 @@ export class WorkflowEditor extends BtrixElement {
                       @btrix-change=${this.handleChangeRegex}
                     ></btrix-queue-exclusion-table>
                   `)}
-                  ${this.renderHelpTextCol(infoTextStrings["exclusions"])}
+                  ${this.renderHelpTextCol(
+                    infoTextStrings["exclusions"],
+                    false,
+                  )}
                 </div>
               </btrix-details>
             </div>
@@ -808,6 +813,9 @@ https://archiveweb.page/guide`}
       ${this.renderHelpTextCol(
         msg(`If checked, the crawler will visit pages one link away.`),
         false,
+      )}
+      ${when(this.formState.includeLinkedPages, () =>
+        this.renderLinkSelectors(),
       )}
     `;
   };
@@ -1007,6 +1015,7 @@ https://example.net`}
         ),
         false,
       )}
+      ${this.renderLinkSelectors()}
 
       <div class="col-span-5">
         <btrix-details>
@@ -1071,6 +1080,35 @@ https://archiveweb.page/images/${"logo.svg"}`}
     } else {
       inputEl.setCustomValidity(helpText);
     }
+  }
+
+  private renderLinkSelectors() {
+    const selectors = this.formState.selectLinks;
+    const isCustom = isEqual(defaultFormState.selectLinks, selectors);
+
+    return html`
+      <div class="col-span-5">
+        <btrix-details ?open=${isCustom}>
+          <span slot="title"
+            >${msg("Link Selectors")}
+            ${isCustom
+              ? html`<btrix-badge>${selectors.length}</btrix-badge>`
+              : ""}</span
+          >
+          <div class="grid grid-cols-5 gap-5 py-2">
+            ${inputCol(
+              html`<btrix-link-selector-table
+                .selectors=${selectors}
+                @btrix-change=${(e: CustomEvent) => {
+                  console.log(e.detail.value);
+                }}
+              ></btrix-link-selector-table>`,
+            )}
+            ${this.renderHelpTextCol(infoTextStrings["selectLinks"], false)}
+          </div>
+        </btrix-details>
+      </div>
+    `;
   }
 
   private renderCrawlLimits() {
