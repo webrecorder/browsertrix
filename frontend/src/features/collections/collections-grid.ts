@@ -101,6 +101,7 @@ export class CollectionsGrid extends BtrixElement {
                         ([name]) => name === collection.defaultThumbnailName,
                       )?.[1].path || collection.thumbnail?.path,
                     )}
+                    collectionName=${collection.name}
                   ></btrix-collection-thumbnail>
                   ${this.renderDateBadge(collection)}
                 </div>

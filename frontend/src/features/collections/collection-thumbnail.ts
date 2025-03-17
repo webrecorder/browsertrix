@@ -1,4 +1,4 @@
-import { localized } from "@lit/localize";
+import { localized, msg, str } from "@lit/localize";
 import { html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
@@ -38,10 +38,16 @@ export class CollectionThumbnail extends BtrixElement {
   @property({ type: String })
   src?: string;
 
+  @property({ type: String })
+  collectionName?: string;
+
   render() {
     return html`
       <img
         class="aspect-video size-full rounded-lg bg-slate-50 object-cover"
+        alt=${this.collectionName
+          ? msg(str`Thumbnail image for “${this.collectionName}” collection`)
+          : msg("Thumbnail image")}
         src=${this.src || DEFAULT_THUMBNAIL_VARIANT.path}
       />
     `;
