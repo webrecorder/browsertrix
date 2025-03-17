@@ -48,6 +48,19 @@ export class LiveWorkflowStatus extends BtrixElement {
               ),
             );
           }
+        } else {
+          // dispatch status event on first run
+          this.dispatchEvent(
+            new CustomEvent<CrawlStatusChangedEventDetail>(
+              "btrix-crawl-status-changed",
+              {
+                detail: {
+                  isCrawlRunning: workflow.isCrawlRunning,
+                  state: workflow.lastCrawlState,
+                },
+              },
+            ),
+          );
         }
 
         return workflow;

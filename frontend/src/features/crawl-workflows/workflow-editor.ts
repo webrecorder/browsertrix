@@ -601,6 +601,7 @@ export class WorkflowEditor extends BtrixElement {
           content=${this.isCrawlRunning
             ? msg("Crawl is already running")
             : msg("Save and run with new settings")}
+          ?disabled=${this.isCrawlRunning === null}
         >
           <sl-button
             size="small"
@@ -608,8 +609,9 @@ export class WorkflowEditor extends BtrixElement {
             type="submit"
             ?disabled=${isArchivingDisabled(this.org, true) ||
             this.isSubmitting ||
-            this.isCrawlRunning}
-            ?loading=${this.isSubmitting}
+            this.isCrawlRunning ||
+            this.isCrawlRunning === null}
+            ?loading=${this.isSubmitting || this.isCrawlRunning === null}
           >
             ${msg(html`Run Crawl`)}
           </sl-button>
