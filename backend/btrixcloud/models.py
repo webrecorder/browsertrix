@@ -1899,7 +1899,7 @@ class OrgOut(BaseMongoModel):
     id: UUID
     name: str
     slug: str
-    users: Dict[str, str | int] = {}
+    users: Dict[str, Any] = {}
 
     created: Optional[datetime] = None
 
