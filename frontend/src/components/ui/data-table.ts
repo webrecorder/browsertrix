@@ -25,28 +25,12 @@ type CellContent = string | TemplateResult<1>;
 export class DataTable extends TailwindElement {
   // postcss-lit-disable-next-line
   static styles = css`
-    :host {
-      --btrix-cell-padding: var(--sl-spacing-x-small);
-    }
-
     btrix-table {
       --btrix-cell-gap: var(--sl-spacing-x-small);
-    }
-
-    btrix-table-head {
-      --padding: var(--sl-spacing-x-small);
-
-      --btrix-cell-padding-top: var(--padding);
-      --btrix-cell-padding-bottom: var(--padding);
-      --btrix-cell-padding-left: var(--padding);
-      --btrix-cell-padding-right: var(--padding);
-    }
-
-    btrix-table-body {
-      --btrix-cell-padding-top: var(--btrix-cell-spacing);
-      --btrix-cell-padding-bottom: var(--btrix-cell-spacing);
-      --btrix-cell-padding-left: var(--btrix-cell-spacing);
-      --btrix-cell-padding-right: var(--btrix-cell-spacing);
+      --btrix-cell-padding-top: var(--sl-spacing-x-small);
+      --btrix-cell-padding-bottom: var(--sl-spacing-x-small);
+      --btrix-cell-padding-left: var(--sl-spacing-x-small);
+      --btrix-cell-padding-right: var(--sl-spacing-x-small);
     }
   `;
 
@@ -81,7 +65,7 @@ export class DataTable extends TailwindElement {
         style=${gridAutoColumnsStyle}
       >
         <btrix-table-head
-          class="sticky top-0 z-10 rounded-t-[0.1875rem] border-b bg-slate-50"
+          class="sticky top-0 z-10 rounded-t-[0.1875rem] border-b bg-neutral-50"
         >
           ${this.columns.map(
             (content, i) => html`

@@ -1,20 +1,24 @@
 import { localized, msg } from "@lit/localize";
+import clsx from "clsx";
 import { html, type PropertyValues } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
+import { customElement, property, queryAll, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import type { SyntaxInputChangeEventDetail } from "@/components/ui/syntax-input";
+import type {
+  SyntaxInput,
+  SyntaxInputChangeEventDetail,
+} from "@/components/ui/syntax-input";
+import type { TableRow } from "@/components/ui/table/table-row";
 import type { SeedConfig } from "@/types/crawler";
+import { tw } from "@/utils/tailwind";
 
 const SELECTOR_DELIMITER = "->" as const;
-const HEADER_CELLS = [
-  msg("CSS Selector"),
-  msg("Link Attribute"),
-  html`<span class="sr-only">${msg("Row actions")}</span>`,
-] as const;
-const COLUMN_WIDTHS = ["20em", "1fr", "min-content"] as const;
+// const COLUMN_WIDTHS = ["20em", "1fr", "min-content"] as const;
 const emptyRow = ["", ""];
+
+const selName = "selector" as const;
+const attrName = "attribute" as const;
 
 @customElement("btrix-link-selector-table")
 @localized()
@@ -26,35 +30,55 @@ export class LinkSelectorTable extends BtrixElement {
   editable = true;
 
   @state()
-  private rows: string[][] = [];
+  private values: string[][] = [];
+
+  @queryAll("btrix-table-row")
+  private readonly rows!: NodeListOf<TableRow>;
 
   public get value(): SeedConfig["selectLinks"] {
-    return this.rows.map((row) => {
+    return this.values.map((row) => {
       return row.join("->");
     });
   }
 
   protected willUpdate(changedProperties: PropertyValues): void {
     if (changedProperties.has("selectors")) {
-      this.rows = this.selectors.map((str) => str.split(SELECTOR_DELIMITER));
+      this.values = this.selectors.map((str) => str.split(SELECTOR_DELIMITER));
     }
   }
 
   render() {
     return html`
-      <btrix-data-table
-        class="leading-none text-neutral-600 [--btrix-cell-padding:0]"
-        .columns=${HEADER_CELLS}
-        .columnWidths=${COLUMN_WIDTHS}
-        .rows=${this.rows.map(this.row)}
-      >
-      </btrix-data-table>
+      <btrix-table class="relative h-full w-full rounded border">
+        <btrix-table-head
+          class="sticky top-0 z-10 rounded-t-[0.1875rem] border-b bg-slate-50"
+        >
+          <btrix-table-header-cell>
+            ${msg("CSS Selector")}
+          </btrix-table-header-cell>
+          <btrix-table-header-cell class="border-l">
+            ${msg("Link Attribute")}
+          </btrix-table-header-cell>
+          ${when(
+            this.editable,
+            () => html`
+              <btrix-table-header-cell class="border-l">
+                <span class="sr-only">${msg("Row actions")}</span>
+              </btrix-table-header-cell>
+            `,
+          )}
+        </btrix-table-head>
+        <btrix-table-body class="overflow-auto [--btrix-cell-padding:0]">
+          ${this.values.map(this.row)}
+        </btrix-table-body>
+      </btrix-table>
+
       ${when(
         this.editable,
         () => html`
           <sl-button
             class="mt-1 w-full"
-            @click=${() => this.updateRows(emptyRow, this.rows.length)}
+            @click=${() => this.updateRows(emptyRow, this.values.length)}
           >
             <sl-icon slot="prefix" name="plus-lg"></sl-icon>
             <span class="text-neutral-600">${msg("Add More")}</span>
@@ -64,91 +88,116 @@ export class LinkSelectorTable extends BtrixElement {
     `;
   }
 
-  private readonly row = (row: string[], rowIdx: number) => {
-    const editableCell = (value: string, cellIdx: number) => {
-      return html`<div class="size-full">
-        <btrix-syntax-input
-          class="size-full"
-          value=${value}
-          language="css"
-          placeholder=${cellIdx === 0 ? "button.custom-link" : "data-href"}
-          @btrix-change=${(e: CustomEvent<SyntaxInputChangeEventDetail>) => {
-            e.stopPropagation();
+  private readonly row = (cells: string[], i: number) => {
+    const onSelChange = (value: string) => {
+      const input = this.rows[i].querySelector<SyntaxInput>(
+        `btrix-syntax-input.${selName}`,
+      )!;
 
-            const value = e.detail.value;
-            const valid =
-              cellIdx === 0
-                ? this.validateSelector(value)
-                : this.validateAttribute(value);
+      input.error = "";
 
-            if (valid) {
-              this.updateRows(
-                row.map((v, i) => (i === cellIdx ? value : v)),
-                rowIdx,
-              );
-            }
-          }}
-        >
-        </btrix-syntax-input>
-      </div>`;
+      try {
+        // Validate selector
+        document.createDocumentFragment().querySelector(value);
+
+        this.updateRows([value, cells[1]], i);
+      } catch {
+        input.error = msg("Please enter a valid CSS selector");
+      }
     };
+    const onAttrChange = (value: string) => {
+      const input = this.rows[i].querySelector<SyntaxInput>(
+        `btrix-syntax-input.${attrName}`,
+      )!;
 
-    if (this.editable) {
-      return [
-        ...row.map(editableCell),
-        html`
-          <sl-icon-button
-            label=${msg("Remove exclusion")}
-            class="text-base hover:text-danger"
-            name="trash3"
-            @click=${() => this.updateRows(undefined, rowIdx)}
-          ></sl-icon-button>
-        `,
-      ];
-    }
+      input.error = "";
 
-    return row.map(
-      (cell) => html` <btrix-code value=${cell} language="css"></btrix-code> `,
-    );
+      try {
+        new HTMLElement().getAttribute(value);
+
+        this.updateRows([cells[0], value], i);
+      } catch {
+        input.error = msg("Please enter a valid HTML attribute");
+      }
+    };
+    return html`
+      <btrix-table-row class=${i > 0 ? "border-t" : ""}>
+        <btrix-table-cell>
+          ${this.cell({
+            name: selName,
+            value: cells[0],
+            placeholder: "button.custom-link",
+            onChange: onSelChange,
+          })}
+        </btrix-table-cell>
+        <btrix-table-cell class="border-l">
+          ${this.cell({
+            name: attrName,
+            value: cells[1],
+            placeholder: "button.custom-link",
+            onChange: onAttrChange,
+          })}
+        </btrix-table-cell>
+        ${when(
+          this.editable,
+          () => html`
+            <btrix-table-cell class="border-l">
+              <sl-icon-button
+                label=${msg("Remove exclusion")}
+                class="text-base hover:text-danger"
+                name="trash3"
+                @click=${() => this.updateRows(undefined, i)}
+              ></sl-icon-button>
+            </btrix-table-cell>
+          `,
+        )}
+      </btrix-table-row>
+    `;
   };
 
-  private validateSelector(value: string) {
-    try {
-      document.createDocumentFragment().querySelector(value);
-
-      return true;
-    } catch (e) {
-      console.debug(e);
+  private readonly cell = ({
+    name,
+    value,
+    placeholder,
+    onChange,
+  }: {
+    name: string;
+    value: string;
+    placeholder: string;
+    onChange: (value: string) => void;
+  }) => {
+    if (!this.editable) {
+      return html`<btrix-code value=${value} language="css"></btrix-code>`;
     }
 
-    return false;
-  }
-
-  private validateAttribute(value: string) {
-    try {
-      document.createDocumentFragment().querySelector(value);
-
-      return true;
-    } catch (e) {
-      console.debug(e);
-    }
-
-    return false;
-  }
+    return html`
+      <btrix-syntax-input
+        class=${clsx(name, tw`size-full`)}
+        value=${value}
+        language="css"
+        placeholder=${placeholder}
+        @btrix-change=${(e: CustomEvent<SyntaxInputChangeEventDetail>) => {
+          e.stopPropagation();
+          onChange(e.detail.value);
+        }}
+      >
+      </btrix-syntax-input>
+    `;
+  };
 
   private updateRows(
-    row: LinkSelectorTable["rows"][0] | undefined,
+    row: LinkSelectorTable["values"][0] | undefined,
     idx: number,
   ) {
-    const pre = this.rows.slice(0, idx);
-    const ap = this.rows.slice(idx + 1);
+    const pre = this.values.slice(0, idx);
+    const ap = this.values.slice(idx + 1);
 
     const rows = row ? [...pre, row, ...ap] : [...pre, ...ap];
 
     if (rows.length) {
-      this.rows = rows;
+      this.values = rows;
     } else {
-      this.rows = [emptyRow];
+      this.values = [emptyRow];
     }
   }
 }
