@@ -281,7 +281,7 @@ class K8sAPI:
             return {"error": str(exc)}
 
     async def unsuspend_k8s_job(self, name) -> dict:
-        """ unsuspend k8s Job """
+        """unsuspend k8s Job"""
         try:
             await self.batch_api.patch_namespaced_job(
                 name=name, namespace=self.namespace, body={"spec": {"suspend": False}}
