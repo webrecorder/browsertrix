@@ -24,7 +24,7 @@ spec:
         role: "scheduled-crawljob"
 
     spec:
-      suspend: True
+      suspend: true
       template:
         spec:
           restartPolicy: Never
