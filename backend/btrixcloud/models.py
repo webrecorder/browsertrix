@@ -2063,10 +2063,14 @@ class Organization(BaseMongoModel):
                 if not role:
                     continue
 
-                result["users"][id_] = {
+                email = org_user.get("email")
+                if not email:
+                    continue
+
+                result["users"][email] = {
                     "role": role,
                     "name": org_user.get("name", ""),
-                    "email": org_user.get("email", ""),
+                    "email": email,
                 }
 
         return OrgOut.from_dict(result)
