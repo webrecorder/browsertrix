@@ -53,6 +53,6 @@
       "});",
       ""
     ],
-    "description": ""
+    "description": "Unit test for custom component that extends `BtrixComponent`"
   }
 }
