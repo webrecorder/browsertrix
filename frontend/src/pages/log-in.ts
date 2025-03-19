@@ -398,9 +398,13 @@ export class LogInPage extends BtrixElement {
         this.orgSlugState &&
         data.user.orgs.some((org) => org.slug === this.orgSlugState)
           ? this.orgSlugState
-          : data.user.orgs[0].slug;
+          : data.user.orgs.length
+            ? data.user.orgs[0].slug
+            : "";
 
-      AppStateService.updateUser(formatAPIUser(data.user), slug);
+      if (slug) {
+        AppStateService.updateUser(formatAPIUser(data.user), slug);
+      }
 
       await this.updateComplete;
 
