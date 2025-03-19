@@ -14,7 +14,6 @@ import type { SeedConfig } from "@/types/crawler";
 import { tw } from "@/utils/tailwind";
 
 const SELECTOR_DELIMITER = "->" as const;
-// const COLUMN_WIDTHS = ["20em", "1fr", "min-content"] as const;
 const emptyRow = ["", ""];
 
 const selName = "selector" as const;
@@ -49,9 +48,15 @@ export class LinkSelectorTable extends BtrixElement {
 
   render() {
     return html`
-      <btrix-table class="relative h-full w-full rounded border">
+      <btrix-table
+        class="relative h-full w-full grid-cols-[20em_1fr_min-content] rounded border"
+      >
         <btrix-table-head
-          class="sticky top-0 z-10 rounded-t-[0.1875rem] border-b bg-slate-50"
+          class=${clsx(
+            tw`rounded-t-[0.1875rem] border-b bg-slate-50`,
+            // TODO Refactor padding config https://github.com/webrecorder/browsertrix/issues/2497
+            tw`[--btrix-cell-padding-bottom:var(--sl-spacing-x-small)] [--btrix-cell-padding-left:var(--sl-spacing-x-small)] [--btrix-cell-padding-right:var(--sl-spacing-x-small)] [--btrix-cell-padding-top:var(--sl-spacing-x-small)]`,
+          )}
         >
           <btrix-table-header-cell>
             ${msg("CSS Selector")}
@@ -68,7 +73,7 @@ export class LinkSelectorTable extends BtrixElement {
             `,
           )}
         </btrix-table-head>
-        <btrix-table-body class="overflow-auto [--btrix-cell-padding:0]">
+        <btrix-table-body class="overflow-auto">
           ${this.values.map(this.row)}
         </btrix-table-body>
       </btrix-table>
