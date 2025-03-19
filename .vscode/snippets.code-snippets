@@ -2,6 +2,7 @@
   "Btrix Component": {
     "scope": "javascript,typescript",
     "prefix": ["component", "@customElement"],
+    "isFileTemplate": true,
     "body": [
       "import { localized } from \"@lit/localize\";",
       "import { html } from \"lit\";",
@@ -18,5 +19,40 @@
       "}",
       ""
     ]
+  },
+  "Btrix Component Test": {
+    "scope": "javascript,typescript",
+    "prefix": ["test","describe"],
+    "isFileTemplate": true,
+    "body": [
+      "import { expect, fixture } from \"@open-wc/testing\";",
+      "import { html } from \"lit/static-html.js\";",
+      "import { restore, stub } from \"sinon\";",
+      "",
+      "import { ${1:Component} } from \"./${2:component}\";",
+      "",
+      "import { AppStateService } from \"@/utils/state\";",
+      "",
+      "describe(\"<btrix-${2:component}>\", () => {",
+      "  beforeEach(() => {",
+      "    AppStateService.resetAll();",
+      "    stub(window.history, \"pushState\");",
+      "  });",
+      "",
+      "  afterEach(() => {",
+      "    restore();",
+      "  });",
+      "",
+      "  it(\"is defined\", async () => {",
+      "    const el = await fixture<${1:Component}>(",
+      "      html`<btrix-${2:component}></btrix-${2:component}>`,",
+      "    );",
+      "",
+      "    expect(el).instanceOf(${1:Component});",
+      "  });",
+      "});",
+      ""
+    ],
+    "description": ""
   }
 }
