@@ -42,6 +42,8 @@ class CronJobOperator(BaseOperator):
                 "completionTime": finished,
             }
 
+        self.run_task(self.k8s.unsuspend_k8s_job(metadata.get("name")))
+
         return MCDecoratorSyncResponse(
             attachments=[],
             # set on job to match default behavior when job finishes
