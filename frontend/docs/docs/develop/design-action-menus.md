@@ -6,18 +6,12 @@ We try to avoid surfacing navigation options in action menus as they are not tag
 
 ## Implementation
 
-Action menus should generally contain a consistent set of actions for a given object. Whereas `---` symbolizes a horizontal separator, these actions should be ordered as follows:
+Action menus should generally contain a consistent set of actions for a given object. Whereas new table rows symbolize horizontal separators, these actions should be ordered as follows:
 
-```txt
-Actions related only to the current page (eg: remove archived item from collection)
----
-Actions related to editing the object (eg: edit workflow config, edit item metadata)
-Other actions related to the current object (eg: run crawl)
----
-Actions related to exporting/downloading (eg: download archived item)
----
-Copy information to clipboard (eg: copy share link)
-Copy IDs to clipboard (eg: copy item ID)
----
-Destructive actions (eg: delete item)
-```
+| Dropdown Actions                                                                                                                          |
+| ----------------------------------------------------------------------------------------------------------------------------------------- |
+| • Actions related only to the current page (eg: remove archived item from collection) |
+| • Actions related to editing the object (eg: edit workflow config, edit item metadata)<br>• Other actions related to the current object (eg: run crawl) |
+| • Actions related to exporting/downloading (eg: download archived item) |
+| • Copy information to clipboard (eg: copy share link)<br>• Copy IDs to clipboard (eg: copy item ID) |
+| • Destructive actions (eg: delete item) |
