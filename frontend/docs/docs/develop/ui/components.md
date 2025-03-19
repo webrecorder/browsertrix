@@ -21,7 +21,7 @@ Component files should be created under `frontend/src` in the relevant folder:
 
 ### Naming Convention
 
-Web components names are written are in kebab case (ex: `my-custom-component`). The component file is named after the component (ex: `my-custom-component.ts`.)
+Web components names are written are in kebab case (ex: `my-custom-component`). The component file is named after the component (ex: `my-custom-component.ts`).
 
 When defining a custom web component tag in Browsertrix, the `btrix-` prefix is added to distinguish Browsertrix components from third-party web components. Using the `my-custom-component` example, the component would appear in markup as such:
 
@@ -35,6 +35,6 @@ If developing with [Visual Studio Code](https://code.visualstudio.com/), you can
 
 ### Unit Testing
 
-Unit test files live next to the component file and are suffixed with `.test` (ex: `my-custom-component.test.ts`.)
+Unit test files live next to the component file and are suffixed with `.test` (ex: `my-custom-component.test.ts`).
 
 You can also generate boilerplate for a component test in VS Code by creating a new `.test.ts` file, then typing `test` and selecting "Btrix Component Test".
