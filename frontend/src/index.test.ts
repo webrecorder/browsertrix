@@ -5,7 +5,7 @@ import { restore, stub } from "sinon";
 import { NavigateController } from "./controllers/navigate";
 import { NotifyController } from "./controllers/notify";
 import { type AppSettings } from "./utils/app";
-import AuthService from "./utils/AuthService";
+import AuthService, { LoggedInEventDetail } from "./utils/AuthService";
 import { AppStateService } from "./utils/state";
 import { formatAPIUser } from "./utils/user";
 
@@ -27,6 +27,12 @@ const mockAPIUser: APIUser = {
   ],
 };
 const mockUserInfo = formatAPIUser(mockAPIUser);
+const mockAuth = {
+  headers: { Authorization: self.crypto.randomUUID() },
+  tokenExpiresAt: Date.now(),
+  username: "test-auth@example.com",
+  user: mockAPIUser,
+};
 
 const mockAppSettings: AppSettings = {
   registrationEnabled: false,
@@ -202,5 +208,42 @@ describe("browsertrix-app", () => {
     const el = await fixture<App>("<browsertrix-app></browsertrix-app>");
 
     expect(el.appState.orgSlug).to.equal(id);
+  });
+
+  describe(".onLoggedIn()", () => {
+    describe("routing", () => {
+      it("routes to redirect URL if specified", async () => {
+        stub(App.prototype, "routeTo");
+
+        const event = new CustomEvent<LoggedInEventDetail>("btrix-logged-in", {
+          detail: {
+            ...mockAuth,
+            redirectUrl: "/fake-page",
+          },
+        });
+
+        const el = await fixture<App>("<browsertrix-app></browsertrix-app>");
+
+        el.onLoggedIn(event);
+
+        expect(el.routeTo).to.have.been.calledWith("/fake-page");
+      });
+
+      it("falls back to account settings", async () => {
+        stub(App.prototype, "routeTo");
+
+        const event = new CustomEvent<LoggedInEventDetail>("btrix-logged-in", {
+          detail: {
+            ...mockAuth,
+          },
+        });
+
+        const el = await fixture<App>("<browsertrix-app></browsertrix-app>");
+
+        el.onLoggedIn(event);
+
+        expect(el.routeTo).to.have.been.calledWith("/account/settings");
+      });
+    });
   });
 });
