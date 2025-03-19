@@ -5,7 +5,7 @@ import { restore, stub } from "sinon";
 import { NavigateController } from "./controllers/navigate";
 import { NotifyController } from "./controllers/notify";
 import { type AppSettings } from "./utils/app";
-import AuthService, { LoggedInEventDetail } from "./utils/AuthService";
+import AuthService, { type LoggedInEventDetail } from "./utils/AuthService";
 import { AppStateService } from "./utils/state";
 import { formatAPIUser } from "./utils/user";
 
