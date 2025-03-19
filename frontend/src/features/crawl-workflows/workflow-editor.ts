@@ -227,7 +227,7 @@ export class WorkflowEditor extends BtrixElement {
   private serverError?: TemplateResult | string;
 
   @state()
-  private isCrawlRunning: boolean | null = null;
+  private isCrawlRunning: boolean | null = this.configId ? null : false;
 
   // For observing panel sections position in viewport
   private readonly observable = new ObservableController(this, {
@@ -330,6 +330,9 @@ export class WorkflowEditor extends BtrixElement {
       } else {
         this.initializeEditor();
       }
+    }
+    if (changedProperties.has("configId")) {
+      this.isCrawlRunning = this.configId ? null : false;
     }
   }
 
