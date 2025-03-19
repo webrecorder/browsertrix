@@ -6,7 +6,7 @@ import os
 from uuid import UUID, uuid4
 import asyncio
 
-from typing import Optional, List, TYPE_CHECKING, cast, Callable, Tuple
+from typing import Optional, List, TYPE_CHECKING, cast, Callable, Tuple, Type
 
 from fastapi import (
     Request,
@@ -26,6 +26,7 @@ from .models import (
     UserUpdatePassword,
     User,
     UserOrgInfoOut,
+    UserOrgInfoOutWithSubs,
     UserOut,
     UserRole,
     InvitePending,
@@ -164,7 +165,9 @@ class UserManager:
 
         return user
 
-    async def get_user_info_with_orgs(self, user: User) -> UserOut:
+    async def get_user_info_with_orgs(
+        self, user: User, info_out_cls: Type[UserOrgInfoOut] = UserOrgInfoOut
+    ) -> UserOut:
         """return User info"""
         user_orgs, _ = await self.org_ops.get_orgs_for_user(
             user,
@@ -174,7 +177,7 @@ class UserManager:
 
         if user_orgs:
             orgs = [
-                UserOrgInfoOut(
+                info_out_cls(
                     id=org.id,
                     name=org.name,
                     slug=org.slug,
@@ -184,6 +187,9 @@ class UserManager:
                         if user.is_superuser
                         else org.users.get(str(user.id))
                     ),
+                    readOnly=org.readOnly,
+                    readOnlyReason=org.readOnlyReason,
+                    subscription=org.subscription,
                 )
                 for org in user_orgs
             ]
@@ -565,7 +571,7 @@ class UserManager:
             {"is_superuser": False}, skip=skip, limit=page_size
         ):
             user = User(**res)
-            user_out = await self.get_user_info_with_orgs(user)
+            user_out = await self.get_user_info_with_orgs(user, UserOrgInfoOutWithSubs)
             emails.append(
                 UserEmailWithOrgInfo(email=user_out.email, orgs=user_out.orgs)
             )

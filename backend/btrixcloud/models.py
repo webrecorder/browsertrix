@@ -1834,6 +1834,16 @@ class SubscriptionCanceledResponse(BaseModel):
 
 
 # ============================================================================
+class UserOrgInfoOutWithSubs(UserOrgInfoOut):
+    """org per user with sub info"""
+
+    readOnly: bool
+    readOnlyReason: Optional[str] = None
+
+    subscription: Optional[Subscription] = None
+
+
+# ============================================================================
 # ORGS
 # ============================================================================
 class OrgReadOnlyOnCancel(BaseModel):
