@@ -1531,6 +1531,7 @@ class PublicCollOut(BaseMongoModel):
     slug: str
     oid: UUID
     orgName: str
+    orgPublicProfile: bool
     description: Optional[str] = None
     caption: Optional[str] = None
     created: Optional[datetime] = None
@@ -2062,10 +2063,14 @@ class Organization(BaseMongoModel):
                 if not role:
                     continue
 
-                result["users"][id_] = {
+                email = org_user.get("email")
+                if not email:
+                    continue
+
+                result["users"][email] = {
                     "role": role,
                     "name": org_user.get("name", ""),
-                    "email": org_user.get("email", ""),
+                    "email": email,
                 }
 
         return OrgOut.from_dict(result)

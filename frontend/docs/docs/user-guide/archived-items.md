@@ -12,7 +12,7 @@ The status of an archived item depends on its type. Uploads will always have the
 
 | Status | Description |
 | ---- | ---- |
-| <span class="status-success">:bootstrap-check-circle-fill: Complete</span>     | The crawl completed according to the workflow's settings. Workflows with [limits](workflow-setup.md#limits) set may stop running before they capture every queued page, but the resulting archived item will still be marked as "Complete". |
+| <span class="status-success">:bootstrap-check-circle-fill: Complete</span>     | The crawl completed according to the workflow's settings. Workflows with [crawl limits](workflow-setup.md#crawl-limits) set may stop running before they capture every queued page, but the resulting archived item will still be marked as "Complete". |
 | <span class="status-neutral">:bootstrap-dash-square-fill: Stopped</span>       | The crawl workflow was _stopped_ gracefully by a user and data is saved. |
 | <span class="status-neutral">:bootstrap-exclamation-square-fill: Stopped: Reason</span> | A workflow limit (listed as the reason) was reached and data is saved. |
 | <span class="status-warning">:bootstrap-x-octagon-fill: Canceled</span>        | The crawl workflow was _canceled_ by a user, no data is saved. |
@@ -62,7 +62,7 @@ The **WACZ Files** tab lists the individually downloadable WACZ files that make 
 
 To download an entire archived item as a single WACZ file, click the _Download Item_ button at the top of the **WACZ Files** tab or the _Download Item_ entry in the crawl's _Actions_ menu.
 
-To combine multiple archived items and download them all as a single WACZ file, add them to a collection and [download the collection](collection.md#downloading-collections).
+To combine multiple archived items and download them all as a single WACZ file, add them to a collection and [download the collection](collection.md#download-a-collection).
 
 ### Error Logs
 

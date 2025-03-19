@@ -8,42 +8,54 @@
 
 Browsertrix is a cloud-native, high-fidelity, browser-based crawling service designed to make web archiving easier and more accessible for everyone.
 
-The service provides an API and UI for scheduling crawls and viewing results, and managing all aspects of crawling process. This system provides the orchestration and management around crawling, while the actual crawling is performed using [Browsertrix Crawler](https://github.com/webrecorder/browsertrix-crawler) containers, which are launched for each crawl.
+The service provides an API and UI for starting, scheduling, sharing, and managing crawls. This repo includes the orchestration and management tools around crawling, while the actual crawling is performed using [browsertrix-crawler](https://github.com/webrecorder/browsertrix-crawler) containers.
 
-See [webrecorder.net/browsertrix](https://webrecorder.net/browsertrix) for a feature overview and information about how to sign up for Webrecorder's hosted Browsertrix service.
+Install Browsertrix to self host, or access hosted Browsertrix from [app.browsertrix.com](https://app.browsertrix.com).
+
+See [webrecorder.net/browsertrix](https://webrecorder.net/browsertrix/) for a full overview of features.
 
 ## Documentation
 
-The full docs for using, deploying, and developing Browsertrix are available at [docs.browsertrix.com](https://docs.browsertrix.com).
+Documentation for using, deploying, and developing Browsertrix is available at [docs.browsertrix.com](https://docs.browsertrix.com).
 
-Our docs are created with [Material for MKDocs](https://squidfunk.github.io/mkdocs-material/).
+See instructions in [frontend/docs](./frontend/docs/docs/develop/docs.md#installation) to run the docs locally.
 
-## Deployment
+## Installation
 
-The latest deployment documentation is available at [docs.browsertrix.com/deploy](https://docs.browsertrix.com/deploy).
+Instructions for setting up Browsertrix is available at [docs.browsertrix.com/deploy](https://docs.browsertrix.com/deploy).
 
 The docs cover deploying Browsertrix in different environments using Kubernetes, from a single-node setup to scalable clusters in the cloud.
 
-Early on, Browsertrix also supported Docker Compose and podman-based deployment. This was deprecated due to the complexity of maintaining feature parity across different setups, and with various Kubernetes deployment options being available and easy to deploy, even on a single machine.
+## Support
 
-Making deployment of Browsertrix as easy as possible remains a key goal, and we welcome suggestions for how we can further improve our Kubernetes deployment options.
+Ask us your questions about Browsertrix and web archiving in the [community help forum](https://forum.webrecorder.net/c/help/5).
 
-If you are looking to just try running a single crawl, you may want to try [Browsertrix Crawler](https://github.com/webrecorder/browsertrix-crawler) first to test out the crawling capabilities.
+Dedicated professional support is available with a custom subscription. For details, see [hosted Browsertrix plans](https://webrecorder.net/browsertrix/#get-started).
+
+## Bugs
+
+For bug reports or feature requests, please open a [GitHub issue](https://github.com/webrecorder/browsertrix/issues/new/choose).
+
+## Changelog
+
+See [release notes](https://github.com/webrecorder/browsertrix/releases).
 
 ## Contributing
 
-Though the system and backend API is fairly stable, we are working on many additional features. Please see the GitHub issues and [this GitHub Project](https://github.com/orgs/webrecorder/projects/9) for our current project plan and tasks.
+### Developing
 
-Guides for getting started with local development are available at [docs.browsertrix.com/develop](https://docs.browsertrix.com/develop/).
+Guides for getting started with local development are available at [docs.browsertrix.com/develop](https://docs.browsertrix.com/develop).
 
-### Translation
+See [Code of Conduct](https://github.com/webrecorder/browsertrix?tab=coc-ov-file#contributor-covenant-code-of-conduct).
 
-We use [Weblate](https://hosted.weblate.org/engage/browsertrix/) to manage translation contributions.
+### Translating
+
+Translations are managed through Weblate, a web-based and open source translation tool. View translations in progress and register to contribute at [our Weblate project](https://hosted.weblate.org/engage/browsertrix/).
 
 <img src="https://hosted.weblate.org/widget/browsertrix/browsertrix-ui/multi-auto.svg" alt="Translation status" />
 
 ## License
 
-Browsertrix is made available under the AGPLv3 License.
+Browsertrix is made available under the [AGPLv3 License](https://github.com/webrecorder/browsertrix?tab=AGPL-3.0-1-ov-file#readme).
 
-Documentation is made available under the Creative Commons Attribution 4.0 International License
+Documentation is made available under the Creative Commons Attribution 4.0 International License.

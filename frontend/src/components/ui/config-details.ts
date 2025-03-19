@@ -1,6 +1,6 @@
 import { localized, msg, str } from "@lit/localize";
 import ISO6391 from "iso-639-1";
-import { html, nothing } from "lit";
+import { html, nothing, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import { html as staticHtml, unsafeStatic } from "lit/static-html.js";
@@ -9,6 +9,7 @@ import RegexColorize from "regex-colorize";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { CrawlConfig, Seed, SeedConfig } from "@/pages/org/types";
+import { labelFor } from "@/strings/crawl-workflows/labels";
 import scopeTypeLabel from "@/strings/crawl-workflows/scopeType";
 import sectionStrings from "@/strings/crawl-workflows/section";
 import type { Collection } from "@/types/collection";
@@ -61,7 +62,6 @@ export class ConfigDetails extends BtrixElement {
 
   render() {
     const crawlConfig = this.crawlConfig;
-    const seedsConfig = crawlConfig?.config;
     const renderTimeLimit = (
       valueSeconds?: number | null,
       fallbackValue?: number,
@@ -99,12 +99,11 @@ export class ConfigDetails extends BtrixElement {
     };
 
     return html`
-      <section id="crawler-settings" class="mb-8">
-        <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
-          <h4>${sectionStrings.scope}</h4>
-        </btrix-section-heading>
-        <btrix-desc-list>
-          ${when(
+      ${this.renderSection({
+        id: "crawler-settings",
+        heading: sectionStrings.scope,
+        renderDescItems: (seedsConfig) =>
+          when(
             seedsConfig,
             (config) => html`
               ${this.renderSetting(
@@ -121,10 +120,12 @@ export class ConfigDetails extends BtrixElement {
                 ? this.renderConfirmUrlListSettings(config)
                 : this.renderConfirmSeededSettings(config)}
             `,
-          )}
-          <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
-            <h4>${sectionStrings.perCrawlLimits}</h4>
-          </btrix-section-heading>
+          ),
+      })}
+      ${this.renderSection({
+        id: "crawl-limits",
+        heading: sectionStrings.limits,
+        renderDescItems: (seedsConfig) => html`
           ${this.renderSetting(
             msg("Max Pages"),
             when(seedsConfig && this.seeds, (seeds) => {
@@ -148,62 +149,64 @@ export class ConfigDetails extends BtrixElement {
           )}
           ${this.renderSetting(
             msg("Crawl Time Limit"),
-            renderTimeLimit(crawlConfig?.crawlTimeout, Infinity),
+            renderTimeLimit(this.crawlConfig?.crawlTimeout, Infinity),
           )}
           ${this.renderSetting(
             msg("Crawl Size Limit"),
-            renderSize(crawlConfig?.maxCrawlSize),
+            renderSize(this.crawlConfig?.maxCrawlSize),
           )}
-          <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
-            <h4>${sectionStrings.perPageLimits}</h4>
-          </btrix-section-heading>
+        `,
+      })}
+      ${this.renderSection({
+        id: "browser-behaviors",
+        heading: sectionStrings.behaviors,
+        renderDescItems: (seedsConfig) => html`
           ${this.renderSetting(
-            msg("Page Load Timeout"),
-            renderTimeLimit(
-              crawlConfig?.config.pageLoadTimeout,
-              this.orgDefaults?.pageLoadTimeoutSeconds ?? Infinity,
-            ),
-          )}
-          ${this.renderSetting(
-            msg("Delay After Page Load"),
-            renderTimeLimit(crawlConfig?.config.postLoadDelay, 0),
-          )}
-          ${this.renderSetting(
-            msg("Behavior Timeout"),
-            renderTimeLimit(
-              crawlConfig?.config.behaviorTimeout,
-              this.orgDefaults?.behaviorTimeoutSeconds ?? Infinity,
-            ),
-          )}
-          ${this.renderSetting(
-            msg("Autoscroll Behavior"),
-            crawlConfig?.config.behaviors &&
-              !crawlConfig.config.behaviors.includes("autoscroll")
+            labelFor.autoscrollBehavior,
+            seedsConfig?.behaviors &&
+              !seedsConfig.behaviors.includes("autoscroll")
               ? msg("Disabled")
               : html`<span class="text-neutral-400"
                   >${msg("Enabled (default)")}</span
                 >`,
           )}
           ${this.renderSetting(
-            msg("Autoclick Behavior"),
-            crawlConfig?.config.behaviors &&
-              crawlConfig.config.behaviors.includes("autoclick")
+            labelFor.autoclickBehavior,
+            seedsConfig?.behaviors &&
+              seedsConfig.behaviors.includes("autoclick")
               ? msg("Enabled")
               : html`<span class="text-neutral-400"
                   >${msg("Disabled (default)")}</span
                 >`,
           )}
           ${this.renderSetting(
-            msg("Delay Before Next Page"),
-            renderTimeLimit(crawlConfig?.config.pageExtraDelay, 0),
+            labelFor.pageLoadTimeoutSeconds,
+            renderTimeLimit(
+              seedsConfig?.pageLoadTimeout,
+              this.orgDefaults?.pageLoadTimeoutSeconds ?? Infinity,
+            ),
           )}
-        </btrix-desc-list>
-      </section>
-      <section id="browser-settings" class="mb-8">
-        <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
-          <h4>${sectionStrings.browserSettings}</h4>
-        </btrix-section-heading>
-        <btrix-desc-list>
+          ${this.renderSetting(
+            labelFor.pageLoadTimeoutSeconds,
+            renderTimeLimit(seedsConfig?.postLoadDelay, 0),
+          )}
+          ${this.renderSetting(
+            labelFor.behaviorTimeoutSeconds,
+            renderTimeLimit(
+              seedsConfig?.behaviorTimeout,
+              this.orgDefaults?.behaviorTimeoutSeconds ?? Infinity,
+            ),
+          )}
+          ${this.renderSetting(
+            labelFor.pageExtraDelaySeconds,
+            renderTimeLimit(seedsConfig?.pageExtraDelay, 0),
+          )}
+        `,
+      })}
+      ${this.renderSection({
+        id: "browser-settings",
+        heading: sectionStrings.browserSettings,
+        renderDescItems: (seedsConfig) => html`
           ${this.renderSetting(
             msg("Browser Profile"),
             when(
@@ -238,32 +241,31 @@ export class ConfigDetails extends BtrixElement {
           )}
           ${this.renderSetting(
             msg("Block Ads by Domain"),
-            crawlConfig?.config.blockAds,
+            seedsConfig?.blockAds,
           )}
           ${this.renderSetting(
             msg("User Agent"),
-            crawlConfig?.config.userAgent
-              ? crawlConfig.config.userAgent
+            seedsConfig?.userAgent
+              ? seedsConfig.userAgent
               : html`<span class="text-neutral-400"
                   >${msg("Browser User Agent (default)")}</span
                 >`,
           )}
-          ${crawlConfig?.config.lang
+          ${seedsConfig?.lang
             ? this.renderSetting(
                 msg("Language"),
-                ISO6391.getName(crawlConfig.config.lang),
+                ISO6391.getName(seedsConfig.lang),
               )
             : nothing}
           ${crawlConfig?.proxyId
             ? this.renderSetting(msg("Proxy"), capitalize(crawlConfig.proxyId))
             : nothing}
-        </btrix-desc-list>
-      </section>
-      <section id="crawl-scheduling" class="mb-8">
-        <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
-          <h4>${sectionStrings.scheduling}</h4>
-        </btrix-section-heading>
-        <btrix-desc-list>
+        `,
+      })}
+      ${this.renderSection({
+        id: "crawl-scheduling",
+        heading: sectionStrings.scheduling,
+        renderDescItems: () => html`
           ${this.renderSetting(
             msg("Crawl Schedule Type"),
             crawlConfig?.schedule
@@ -278,54 +280,72 @@ export class ConfigDetails extends BtrixElement {
                 : undefined,
             ),
           )}
+        `,
+      })}
+      ${when(!this.hideMetadata, () =>
+        this.renderSection({
+          id: "crawl-metadata",
+          heading: sectionStrings.metadata,
+          renderDescItems: () => html`
+            ${this.renderSetting(msg("Name"), crawlConfig?.name)}
+            ${this.renderSetting(
+              msg("Description"),
+              crawlConfig?.description
+                ? html`
+                    <p class="max-w-prose font-sans">
+                      ${crawlConfig.description}
+                    </p>
+                  `
+                : undefined,
+            )}
+            ${this.renderSetting(
+              msg("Tags"),
+              crawlConfig?.tags.length
+                ? crawlConfig.tags.map(
+                    (tag) =>
+                      html`<btrix-tag class="mr-2 mt-1">${tag}</btrix-tag>`,
+                  )
+                : [],
+            )}
+            ${this.renderSetting(
+              msg("Collections"),
+              this.collections.length
+                ? this.collections.map(
+                    (coll) =>
+                      html`<sl-tag class="mr-2 mt-1" variant="neutral">
+                        ${coll.name}
+                        <span class="font-monostyle pl-1 text-xs">
+                          (${this.localize.number(coll.crawlCount)}
+                          ${pluralOf("items", coll.crawlCount)})
+                        </span>
+                      </sl-tag>`,
+                  )
+                : undefined,
+            )}
+          `,
+        }),
+      )}
+    `;
+  }
+
+  private renderSection({
+    id,
+    heading,
+    renderDescItems,
+  }: {
+    id: string;
+    heading: string;
+    renderDescItems: (seedsConfig?: CrawlConfig["config"]) => TemplateResult;
+  }) {
+    return html`
+      <section id=${id} class="mb-8">
+        <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
+          <h4>${heading}</h4>
+        </btrix-section-heading>
+        <btrix-desc-list>
+          ${renderDescItems(this.crawlConfig?.config)}
         </btrix-desc-list>
       </section>
-      ${this.hideMetadata
-        ? nothing
-        : html`
-            <section id="crawl-metadata" class="mb-8">
-              <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
-                <h4>${msg("Metadata")}</h4>
-              </btrix-section-heading>
-              <btrix-desc-list>
-                ${this.renderSetting(msg("Name"), crawlConfig?.name)}
-                ${this.renderSetting(
-                  msg("Description"),
-                  crawlConfig?.description
-                    ? html`
-                        <p class="max-w-prose font-sans">
-                          ${crawlConfig.description}
-                        </p>
-                      `
-                    : undefined,
-                )}
-                ${this.renderSetting(
-                  msg("Tags"),
-                  crawlConfig?.tags.length
-                    ? crawlConfig.tags.map(
-                        (tag) =>
-                          html`<btrix-tag class="mr-2 mt-1">${tag}</btrix-tag>`,
-                      )
-                    : [],
-                )}
-                ${this.renderSetting(
-                  msg("Collections"),
-                  this.collections.length
-                    ? this.collections.map(
-                        (coll) =>
-                          html`<sl-tag class="mr-2 mt-1" variant="neutral">
-                            ${coll.name}
-                            <span class="font-monostyle pl-1 text-xs">
-                              (${this.localize.number(coll.crawlCount)}
-                              ${pluralOf("items", coll.crawlCount)})
-                            </span>
-                          </sl-tag>`,
-                      )
-                    : undefined,
-                )}
-              </btrix-desc-list>
-            </section>
-          `}
     `;
   }
 

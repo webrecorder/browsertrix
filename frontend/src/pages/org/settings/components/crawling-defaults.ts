@@ -101,7 +101,7 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
         ></btrix-queue-exclusion-table>
       `,
     };
-    const perCrawlLimits = {
+    const limits = {
       crawlTimeoutMinutes: html`
         <sl-input
           size="small"
@@ -139,7 +139,7 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
         </sl-input>
       `,
     };
-    const perPageLimits = {
+    const behaviors = {
       pageLoadTimeoutSeconds: html`
         <sl-input
           size="small"
@@ -255,8 +255,8 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
 
     return {
       scope,
-      perCrawlLimits,
-      perPageLimits,
+      limits,
+      behaviors,
       browserSettings,
     };
   }

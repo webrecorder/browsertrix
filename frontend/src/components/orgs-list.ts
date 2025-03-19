@@ -703,6 +703,17 @@ export class OrgsList extends BtrixElement {
             description: msg("Canceled"),
           };
           break;
+        case SubscriptionStatus.PaymentNeverMade:
+          subscription = {
+            icon: html`<sl-icon
+              class="text-base text-neutral-400"
+              name="dash-square-fill"
+              label=${msg("Payment Never Made")}
+            >
+            </sl-icon>`,
+            description: msg("Payment Never Made"),
+          };
+          break;
         default:
           break;
       }

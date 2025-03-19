@@ -49,6 +49,7 @@ import {
 } from "@/controllers/observable";
 import { type SelectBrowserProfileChangeEvent } from "@/features/browser-profiles/select-browser-profile";
 import type { CollectionsChangeEvent } from "@/features/collections/collections-add";
+import type { CrawlStatusChangedEventDetail } from "@/features/crawl-workflows/live-workflow-status";
 import type {
   ExclusionChangeEvent,
   QueueExclusionTable,
@@ -57,6 +58,7 @@ import { infoCol, inputCol } from "@/layouts/columns";
 import { pageSectionsWithNav } from "@/layouts/pageSectionsWithNav";
 import { panel } from "@/layouts/panel";
 import infoTextStrings from "@/strings/crawl-workflows/infoText";
+import { labelFor } from "@/strings/crawl-workflows/labels";
 import scopeTypeLabels from "@/strings/crawl-workflows/scopeType";
 import sectionStrings from "@/strings/crawl-workflows/section";
 import { AnalyticsTrackEvent } from "@/trackEvents";
@@ -85,6 +87,7 @@ import {
   getDefaultFormState,
   getInitialFormState,
   getServerDefaults,
+  SECTIONS,
   type FormState,
   type WorkflowDefaults,
 } from "@/utils/workflow";
@@ -96,13 +99,7 @@ type NewCrawlConfigParams = WorkflowParams & {
   };
 };
 
-const STEPS = [
-  "crawlSetup",
-  "crawlLimits",
-  "browserSettings",
-  "crawlScheduling",
-  "crawlMetadata",
-] as const;
+const STEPS = SECTIONS;
 type StepName = (typeof STEPS)[number];
 type TabState = {
   completed: boolean;
@@ -123,7 +120,7 @@ const formName = "newJobConfig" as const;
 const panelSuffix = "--panel" as const;
 
 const getDefaultProgressState = (hasConfigId = false): ProgressState => {
-  let activeTab: StepName = "crawlSetup";
+  let activeTab: StepName = "scope";
   if (window.location.hash) {
     const hashValue = window.location.hash.slice(1);
 
@@ -136,8 +133,12 @@ const getDefaultProgressState = (hasConfigId = false): ProgressState => {
     activeTab,
     // TODO Mark as completed only if form section has data
     tabs: {
-      crawlSetup: { error: false, completed: hasConfigId },
-      crawlLimits: {
+      scope: { error: false, completed: hasConfigId },
+      limits: {
+        error: false,
+        completed: hasConfigId,
+      },
+      behaviors: {
         error: false,
         completed: hasConfigId,
       },
@@ -145,11 +146,11 @@ const getDefaultProgressState = (hasConfigId = false): ProgressState => {
         error: false,
         completed: hasConfigId,
       },
-      crawlScheduling: {
+      scheduling: {
         error: false,
         completed: hasConfigId,
       },
-      crawlMetadata: {
+      metadata: {
         error: false,
         completed: hasConfigId,
       },
@@ -225,6 +226,9 @@ export class WorkflowEditor extends BtrixElement {
   @state()
   private serverError?: TemplateResult | string;
 
+  @state()
+  private isCrawlRunning: boolean | null = this.configId ? null : false;
+
   // For observing panel sections position in viewport
   private readonly observable = new ObservableController(this, {
     // Add some padding to account for stickied elements
@@ -242,13 +246,7 @@ export class WorkflowEditor extends BtrixElement {
   private readonly validateNameMax = maxLengthValidator(50);
   private readonly validateDescriptionMax = maxLengthValidator(350);
 
-  private readonly tabLabels: Record<StepName, string> = {
-    crawlSetup: sectionStrings.scope,
-    crawlLimits: msg("Limits"),
-    browserSettings: sectionStrings.browserSettings,
-    crawlScheduling: sectionStrings.scheduling,
-    crawlMetadata: msg("Metadata"),
-  };
+  private readonly tabLabels = sectionStrings;
 
   private get formHasError() {
     return (
@@ -332,6 +330,9 @@ export class WorkflowEditor extends BtrixElement {
       } else {
         this.initializeEditor();
       }
+    }
+    if (changedProperties.has("configId")) {
+      this.isCrawlRunning = this.configId ? null : false;
     }
   }
 
@@ -419,6 +420,8 @@ export class WorkflowEditor extends BtrixElement {
   }
 
   private renderFormSections() {
+    const activeTab = this.progressState?.activeTab;
+
     const panelBody = ({
       name,
       desc,
@@ -439,21 +442,27 @@ export class WorkflowEditor extends BtrixElement {
         )}
         ?open=${required || hasError || tabProgress?.completed}
         @sl-focus=${() => {
-          this.updateProgressState({
-            activeTab: name,
-          });
+          if (activeTab !== name) {
+            this.updateProgressState({
+              activeTab: name,
+            });
+          }
         }}
         @sl-show=${this.handleCurrentTarget(() => {
-          this.pauseObserve();
-          this.updateProgressState({
-            activeTab: name,
-          });
+          if (activeTab !== name) {
+            this.pauseHandlePanelIntersect(name);
+            this.updateProgressState({
+              activeTab: name,
+            });
+          }
 
           track(AnalyticsTrackEvent.ExpandWorkflowFormSection, {
             section: name,
           });
         })}
         @sl-hide=${this.handleCurrentTarget((e: SlHideEvent) => {
+          this.pauseHandlePanelIntersect(name);
+
           const el = e.currentTarget as SlDetails;
 
           // Check if there's any invalid elements before hiding
@@ -473,8 +482,12 @@ export class WorkflowEditor extends BtrixElement {
             invalidEl.checkValidity();
           }
         })}
-        @sl-after-show=${this.handleCurrentTarget(this.resumeObserve)}
-        @sl-after-hide=${this.handleCurrentTarget(this.resumeObserve)}
+        @sl-after-show=${this.handleCurrentTarget(
+          this.resumeHandlePanelIntersect,
+        )}
+        @sl-after-hide=${this.handleCurrentTarget(
+          this.resumeHandlePanelIntersect,
+        )}
       >
         <div slot="expand-icon" class="flex items-center">
           <sl-tooltip
@@ -574,6 +587,7 @@ export class WorkflowEditor extends BtrixElement {
             `
           : nothing}
         ${when(this.serverError, (error) => this.renderErrorAlert(error))}
+        ${when(this.configId, this.renderCrawlStatus)}
 
         <sl-tooltip content=${msg("Save without running")}>
           <sl-button
@@ -586,14 +600,21 @@ export class WorkflowEditor extends BtrixElement {
             ${msg("Save")}
           </sl-button>
         </sl-tooltip>
-        <sl-tooltip content=${msg("Save and run with new settings")}>
+        <sl-tooltip
+          content=${this.isCrawlRunning
+            ? msg("Crawl is already running")
+            : msg("Save and run with new settings")}
+          ?disabled=${this.isCrawlRunning === null}
+        >
           <sl-button
             size="small"
             variant="primary"
             type="submit"
             ?disabled=${isArchivingDisabled(this.org, true) ||
-            this.isSubmitting}
-            ?loading=${this.isSubmitting}
+            this.isSubmitting ||
+            this.isCrawlRunning ||
+            this.isCrawlRunning === null}
+            ?loading=${this.isSubmitting || this.isCrawlRunning === null}
           >
             ${msg(html`Run Crawl`)}
           </sl-button>
@@ -601,6 +622,22 @@ export class WorkflowEditor extends BtrixElement {
       </footer>
     `;
   }
+
+  private readonly renderCrawlStatus = (workflowId: string) => {
+    if (!workflowId) return;
+
+    return html`
+      <btrix-live-workflow-status
+        class="mx-2"
+        workflowId=${workflowId}
+        @btrix-crawl-status-changed=${(
+          e: CustomEvent<CrawlStatusChangedEventDetail>,
+        ) => {
+          this.isCrawlRunning = e.detail.isCrawlRunning;
+        }}
+      ></btrix-live-workflow-status>
+    `;
+  };
 
   private renderSectionHeading(content: TemplateResult | string) {
     return html`
@@ -1074,28 +1111,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
       urlListToArray(this.formState.urlList).length +
         (isPageScopeType(this.formState.scopeType) ? 0 : 1),
     );
-    const onInputMinMax = async (e: CustomEvent) => {
-      const inputEl = e.target as SlInput;
-      await inputEl.updateComplete;
-      let helpText = "";
-      if (!inputEl.checkValidity()) {
-        const value = +inputEl.value;
-        const min = inputEl.min;
-        const max = inputEl.max;
-        if (min && value < +min) {
-          helpText = msg(
-            str`Must be more than minimum of ${this.localize.number(+min)}`,
-          );
-        } else if (max && value > +max) {
-          helpText = msg(
-            str`Must be less than maximum of ${this.localize.number(+max)}`,
-          );
-        }
-      }
-      inputEl.helpText = helpText;
-    };
+
     return html`
-      ${this.renderSectionHeading(sectionStrings.perCrawlLimits)}
       ${inputCol(html`
         <sl-mutation-observer
           attr="min"
@@ -1125,7 +1142,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
                 : undefined,
             )}
             placeholder=${defaultLabel(this.orgDefaults.maxPagesPerCrawl)}
-            @sl-input=${onInputMinMax}
+            @sl-input=${this.onInputMinMax}
           >
             <span slot="suffix">${msg("pages")}</span>
           </sl-input>
@@ -1160,17 +1177,49 @@ https://archiveweb.page/images/${"logo.svg"}`}
         </sl-input>
       `)}
       ${this.renderHelpTextCol(infoTextStrings["maxCrawlSizeGB"])}
-      ${this.renderSectionHeading(sectionStrings.perPageLimits)}
+    `;
+  }
+
+  private renderBehaviors() {
+    return html`
+      ${this.renderSectionHeading(msg("Built-in Behaviors"))}
+      ${inputCol(
+        html`<sl-checkbox
+          name="autoscrollBehavior"
+          ?checked=${this.formState.autoscrollBehavior}
+        >
+          ${labelFor.autoscrollBehavior}
+        </sl-checkbox>`,
+      )}
+      ${this.renderHelpTextCol(
+        msg(`Automatically scroll to the end of the page.`),
+        false,
+      )}
+      ${inputCol(
+        html`<sl-checkbox
+          name="autoclickBehavior"
+          ?checked=${this.formState.autoclickBehavior}
+        >
+          ${labelFor.autoclickBehavior}
+        </sl-checkbox>`,
+      )}
+      ${this.renderHelpTextCol(
+        msg(
+          `Automatically click on all link-like elements. Useful for capturing in-page interactions or for clicking links without navigating away from the page.`,
+        ),
+        false,
+      )}
+      ${this.renderSectionHeading(msg("Page Timing"))}
       ${inputCol(html`
         <sl-input
           name="pageLoadTimeoutSeconds"
           type="number"
           inputmode="numeric"
-          label=${msg("Page Load Timeout")}
+          label=${labelFor.pageLoadTimeoutSeconds}
           placeholder=${defaultLabel(this.orgDefaults.pageLoadTimeoutSeconds)}
           value=${ifDefined(this.formState.pageLoadTimeoutSeconds ?? undefined)}
           min="0"
-          @sl-input=${onInputMinMax}
+          @sl-input=${this.onInputMinMax}
         >
           <span slot="suffix">${msg("seconds")}</span>
         </sl-input>
@@ -1181,7 +1230,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           name="postLoadDelaySeconds"
           type="number"
           inputmode="numeric"
-          label=${msg("Delay After Page Load")}
+          label=${labelFor.postLoadDelaySeconds}
           placeholder=${defaultLabel(0)}
           value=${ifDefined(this.formState.postLoadDelaySeconds ?? undefined)}
           min="0"
@@ -1195,50 +1244,22 @@ https://archiveweb.page/images/${"logo.svg"}`}
           name="behaviorTimeoutSeconds"
           type="number"
           inputmode="numeric"
-          label=${msg("Behavior Timeout")}
+          label=${labelFor.behaviorTimeoutSeconds}
           placeholder=${defaultLabel(this.orgDefaults.behaviorTimeoutSeconds)}
           value=${ifDefined(this.formState.behaviorTimeoutSeconds ?? undefined)}
           min="0"
-          @sl-input=${onInputMinMax}
+          @sl-input=${this.onInputMinMax}
         >
           <span slot="suffix">${msg("seconds")}</span>
         </sl-input>
       `)}
       ${this.renderHelpTextCol(infoTextStrings["behaviorTimeoutSeconds"])}
-      ${inputCol(
-        html`<sl-checkbox
-          name="autoscrollBehavior"
-          ?checked=${this.formState.autoscrollBehavior}
-        >
-          ${msg("Autoscroll behavior")}
-        </sl-checkbox>`,
-      )}
-      ${this.renderHelpTextCol(
-        msg(
-          `When enabled the browser will automatically scroll to the end of the page.`,
-        ),
-        false,
-      )}
-      ${inputCol(
-        html`<sl-checkbox
-          name="autoclickBehavior"
-          ?checked=${this.formState.autoclickBehavior}
-        >
-          ${msg("Autoclick behavior")}
-        </sl-checkbox>`,
-      )}
-      ${this.renderHelpTextCol(
-        msg(
-          `When enabled the browser will automatically click on links that don't navigate to other pages.`,
-        ),
-        false,
-      )}
       ${inputCol(html`
         <sl-input
           name="pageExtraDelaySeconds"
           type="number"
           inputmode="numeric"
-          label=${msg("Delay Before Next Page")}
+          label=${labelFor.pageExtraDelaySeconds}
           placeholder=${defaultLabel(0)}
           value=${ifDefined(this.formState.pageExtraDelaySeconds ?? undefined)}
           min="0"
@@ -1250,7 +1271,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     `;
   }
 
-  private renderCrawlBehaviors() {
+  private renderBrowserSettings() {
     if (!this.formState.lang) throw new Error("missing formstate.lang");
     return html`
       ${inputCol(html`
@@ -1589,34 +1610,58 @@ https://archiveweb.page/images/${"logo.svg"}`}
     required?: boolean;
   }[] = [
     {
-      name: "crawlSetup",
+      name: "scope",
       desc: msg("Specify the range and depth of your crawl."),
       render: this.renderScope,
       required: true,
     },
     {
-      name: "crawlLimits",
-      desc: msg("Enforce maximum limits on your crawl."),
+      name: "limits",
+      desc: msg("Limit the size and duration of the crawl."),
       render: this.renderCrawlLimits,
     },
     {
-      name: "browserSettings",
-      desc: msg(
-        "Configure the browser that's used to visit URLs during the crawl.",
-      ),
-      render: this.renderCrawlBehaviors,
+      name: "behaviors",
+      desc: msg("Customize how the browser loads and interacts with a page."),
+      render: this.renderBehaviors,
     },
     {
-      name: "crawlScheduling",
+      name: "browserSettings",
+      desc: msg("Configure the browser used to crawl."),
+      render: this.renderBrowserSettings,
+    },
+    {
+      name: "scheduling",
       desc: msg("Schedule recurring crawls."),
       render: this.renderJobScheduling,
     },
     {
-      name: "crawlMetadata",
+      name: "metadata",
       desc: msg("Describe and organize crawls from this workflow."),
       render: this.renderJobMetadata,
     },
   ];
+
+  private readonly onInputMinMax = async (e: CustomEvent) => {
+    const inputEl = e.target as SlInput;
+    await inputEl.updateComplete;
+    let helpText = "";
+    if (!inputEl.checkValidity()) {
+      const value = +inputEl.value;
+      const min = inputEl.min;
+      const max = inputEl.max;
+      if (min && value < +min) {
+        helpText = msg(
+          str`Must be more than minimum of ${this.localize.number(+min)}`,
+        );
+      } else if (max && value > +max) {
+        helpText = msg(
+          str`Must be less than maximum of ${this.localize.number(+max)}`,
+        );
+      }
+    }
+    inputEl.helpText = helpText;
+  };
 
   private changeScopeType(value: FormState["scopeType"]) {
     const prevScopeType = this.formState.scopeType;
@@ -1652,25 +1697,22 @@ https://archiveweb.page/images/${"logo.svg"}`}
     this.updateFormState(formState);
   }
 
-  // Use to skip updates on intersect changes, like when scrolling
-  // an element into view on click
-  private skipIntersectUpdate = false;
+  // Store the panel to focus or scroll to temporarily
+  // so that the intersection observer doesn't update
+  // the active tab on scroll
+  private scrollTargetTab: StepName | null = null;
 
-  private pauseObserve() {
+  private pauseHandlePanelIntersect(targetActiveTab: StepName) {
     this.onPanelIntersect.flush();
-    this.skipIntersectUpdate = true;
+    this.scrollTargetTab = targetActiveTab;
   }
 
-  private resumeObserve() {
-    this.skipIntersectUpdate = false;
+  private resumeHandlePanelIntersect() {
+    // Reset scroll target tab to indicate that scroll handling should continue
+    this.scrollTargetTab = null;
   }
 
   private readonly onPanelIntersect = throttle(10)((e: Event) => {
-    if (this.skipIntersectUpdate) {
-      this.resumeObserve();
-      return;
-    }
-
     const { entries } = (e as IntersectEvent).detail;
 
     entries.forEach((entry) => {
@@ -1681,17 +1723,27 @@ https://archiveweb.page/images/${"logo.svg"}`}
       }
     });
 
-    const panels = [...(this.panels ?? [])];
-    const activeTab = panels
-      .find((panel) => this.visiblePanels.has(panel.id))
-      ?.id.split(panelSuffix)[0] as StepName | undefined;
+    if (!this.scrollTargetTab) {
+      // Make first visible tab active
+      const panels = [...(this.panels ?? [])];
+      const targetActiveTab = panels
+        .find((panel) => this.visiblePanels.has(panel.id))
+        ?.id.split(panelSuffix)[0] as StepName | undefined;
 
-    if (!STEPS.includes(activeTab!)) {
-      console.debug("tab not in steps:", activeTab, this.visiblePanels);
-      return;
+      if (!targetActiveTab || !STEPS.includes(targetActiveTab)) {
+        if (targetActiveTab) {
+          console.debug(
+            "tab not in steps:",
+            targetActiveTab,
+            this.visiblePanels,
+          );
+        }
+
+        return;
+      }
+
+      this.updateProgressState({ activeTab: targetActiveTab });
     }
-
-    this.updateProgressState({ activeTab });
   });
 
   private hasRequiredFields(): boolean {
@@ -1709,15 +1761,22 @@ https://archiveweb.page/images/${"logo.svg"}`}
       return;
     }
 
-    this.pauseObserve();
+    if (this.progressState?.activeTab) {
+      this.pauseHandlePanelIntersect(this.progressState.activeTab);
+    }
 
     // Focus on focusable element, if found, to highlight the section
-    const summary = activeTabPanel
-      .querySelector("sl-details")
-      ?.shadowRoot?.querySelector<HTMLElement>("summary[aria-controls]");
+    const details = activeTabPanel.querySelector("sl-details")!;
+    const summary = details.shadowRoot?.querySelector<HTMLElement>(
+      "summary[aria-controls]",
+    );
+
+    activeTabPanel.scrollIntoView({ block: "start" });
 
     if (summary) {
       summary.focus({
+        // Handle scrolling into view separately
+        preventScroll: true,
         // Prevent firefox from applying own focus styles
         focusVisible: false,
       } as FocusOptions & {
@@ -1726,7 +1785,12 @@ https://archiveweb.page/images/${"logo.svg"}`}
     } else {
       console.debug("summary not found in sl-details");
     }
-    activeTabPanel.scrollIntoView({ block: "start" });
+
+    if (details.open) {
+      this.resumeHandlePanelIntersect();
+    } else {
+      void details.show();
+    }
   }
 
   private async handleRemoveRegex(e: CustomEvent) {
@@ -1768,7 +1832,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     if (e.detail.valid === false || !table.checkValidity()) {
       this.updateProgressState({
         tabs: {
-          crawlSetup: { error: true },
+          scope: { error: true },
         },
       });
     } else {

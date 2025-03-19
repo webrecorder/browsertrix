@@ -25,10 +25,11 @@ export const BYTES_PER_GB = 1e9;
 
 export const SECTIONS = [
   "scope",
-  "perCrawlLimits",
-  "perPageLimits",
+  "limits",
+  "behaviors",
   "browserSettings",
   "scheduling",
+  "metadata",
 ] as const;
 export const sectionsEnum = z.enum(SECTIONS);
 export type SectionsEnum = z.infer<typeof sectionsEnum>;

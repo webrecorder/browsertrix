@@ -280,6 +280,18 @@ class K8sAPI:
             traceback.print_exc()
             return {"error": str(exc)}
 
+    async def unsuspend_k8s_job(self, name) -> dict:
+        """unsuspend k8s Job"""
+        try:
+            await self.batch_api.patch_namespaced_job(
+                name=name, namespace=self.namespace, body={"spec": {"suspend": False}}
+            )
+            return {"success": True}
+        # pylint: disable=broad-except
+        except Exception as exc:
+            traceback.print_exc()
+            return {"error": str(exc)}
+
     async def print_pod_logs(self, pod_names, lines=100):
         """print pod logs"""
         for pod in pod_names:

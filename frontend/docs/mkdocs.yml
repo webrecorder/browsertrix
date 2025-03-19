@@ -63,6 +63,7 @@ nav:
           - user-guide/review.md
       - Collections:
           - user-guide/collection.md
+          - user-guide/public-collections-gallery.md
           - user-guide/presentation-sharing.md
       - Browser Profiles:
           - user-guide/browser-profiles.md
@@ -88,11 +89,14 @@ nav:
   - Development:
       - develop/index.md
       - develop/local-dev-setup.md
-      - develop/frontend-dev.md
-      - develop/localization.md
       - develop/docs.md
-      - Design:
-        - develop/design-action-menus.md
+
+      - UI Development:
+        - develop/frontend-dev.md
+        - develop/ui/components.md
+        - develop/localization.md
+        - Design:
+          - develop/design-action-menus.md
 
   - API Reference: !ENV [ API_DOCS_URL, "/api/" ]
 
