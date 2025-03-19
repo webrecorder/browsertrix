@@ -5,10 +5,7 @@ import { customElement, property, queryAll, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import type {
-  SyntaxInput,
-  SyntaxInputChangeEventDetail,
-} from "@/components/ui/syntax-input";
+import type { SyntaxInput } from "@/components/ui/syntax-input";
 import type { TableRow } from "@/components/ui/table/table-row";
 import type { SeedConfig } from "@/types/crawler";
 import { tw } from "@/utils/tailwind";
@@ -49,7 +46,7 @@ export class LinkSelectorTable extends BtrixElement {
   render() {
     return html`
       <btrix-table
-        class="relative h-full w-full grid-cols-[20em_1fr_min-content] rounded border"
+        class="relative h-full w-full grid-cols-[1fr_1fr_min-content] rounded border"
       >
         <btrix-table-head
           class=${clsx(
@@ -94,54 +91,81 @@ export class LinkSelectorTable extends BtrixElement {
   }
 
   private readonly row = (cells: string[], i: number) => {
-    const onSelChange = (value: string) => {
-      const input = this.rows[i].querySelector<SyntaxInput>(
-        `btrix-syntax-input.${selName}`,
-      )!;
+    const [sel, attr] = cells;
 
-      input.error = "";
-
-      try {
-        // Validate selector
-        document.createDocumentFragment().querySelector(value);
-
-        this.updateRows([value, cells[1]], i);
-      } catch {
-        input.error = msg("Please enter a valid CSS selector");
-      }
-    };
-    const onAttrChange = (value: string) => {
-      const input = this.rows[i].querySelector<SyntaxInput>(
-        `btrix-syntax-input.${attrName}`,
-      )!;
-
-      input.error = "";
-
-      try {
-        new HTMLElement().getAttribute(value);
-
-        this.updateRows([cells[0], value], i);
-      } catch {
-        input.error = msg("Please enter a valid HTML attribute");
-      }
-    };
     return html`
       <btrix-table-row class=${i > 0 ? "border-t" : ""}>
         <btrix-table-cell>
-          ${this.cell({
-            name: selName,
-            value: cells[0],
-            placeholder: "button.custom-link",
-            onChange: onSelChange,
-          })}
+          ${when(
+            this.editable,
+            () => html`
+              <btrix-syntax-input
+                class=${clsx(selName, tw`flex-1`)}
+                value=${sel}
+                language="css"
+                placeholder="button.custom-link"
+                maxlength="24"
+                @sl-input=${async (e: CustomEvent) => {
+                  const el = e.currentTarget as SyntaxInput;
+
+                  await el.input?.updateComplete;
+                }}
+                @sl-change=${(e: CustomEvent) => {
+                  const el = e.currentTarget as SyntaxInput;
+                  const value = el.input?.value || "";
+
+                  try {
+                    // Validate selector
+                    document.createDocumentFragment().querySelector(value);
+
+                    this.updateRows([value, attr], i);
+                  } catch {
+                    el.setCustomValidity(
+                      msg("Please enter a valid CSS selector"),
+                    );
+                  }
+                }}
+              >
+              </btrix-syntax-input>
+            `,
+            () => html`<btrix-code value=${sel} language="css"></btrix-code>`,
+          )}
         </btrix-table-cell>
         <btrix-table-cell class="border-l">
-          ${this.cell({
-            name: attrName,
-            value: cells[1],
-            placeholder: "button.custom-link",
-            onChange: onAttrChange,
-          })}
+          ${when(
+            this.editable,
+            () => html`
+              <btrix-syntax-input
+                class=${clsx(attrName, tw`flex-1`)}
+                value=${attr}
+                language="css"
+                placeholder="data-href"
+                maxlength="24"
+                @sl-input=${async (e: CustomEvent) => {
+                  const el = e.currentTarget as SyntaxInput;
+
+                  await el.input?.updateComplete;
+                }}
+                @sl-change=${(e: CustomEvent) => {
+                  const el = e.currentTarget as SyntaxInput;
+                  const value = el.input?.value || "";
+
+                  try {
+                    // Validate attribute
+                    document.createElement("a").setAttribute(value, "x-test");
+
+                    this.updateRows([sel, value], i);
+                  } catch {
+                    el.setCustomValidity(
+                      msg("Please enter a valid HTML attribute"),
+                    );
+                  }
+                }}
+              >
+              </btrix-syntax-input>
+            `,
+            () => html`<btrix-code value=${attr} language="css"></btrix-code>`,
+          )}
         </btrix-table-cell>
         ${when(
           this.editable,
@@ -157,36 +181,6 @@ export class LinkSelectorTable extends BtrixElement {
           `,
         )}
       </btrix-table-row>
-    `;
-  };
-
-  private readonly cell = ({
-    name,
-    value,
-    placeholder,
-    onChange,
-  }: {
-    name: string;
-    value: string;
-    placeholder: string;
-    onChange: (value: string) => void;
-  }) => {
-    if (!this.editable) {
-      return html`<btrix-code value=${value} language="css"></btrix-code>`;
-    }
-
-    return html`
-      <btrix-syntax-input
-        class=${clsx(name, tw`size-full`)}
-        value=${value}
-        language="css"
-        placeholder=${placeholder}
-        @btrix-change=${(e: CustomEvent<SyntaxInputChangeEventDetail>) => {
-          e.stopPropagation();
-          onChange(e.detail.value);
-        }}
-      >
-      </btrix-syntax-input>
     `;
   };
 

@@ -1,17 +1,13 @@
 import { localized } from "@lit/localize";
+import type { SlInput, SlInputEvent } from "@shoelace-style/shoelace";
 import clsx from "clsx";
 import { html } from "lit";
-import { customElement, property, query } from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
-import { live } from "lit/directives/live.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import type { Code } from "@/components/ui/code";
 import { tw } from "@/utils/tailwind";
-
-export type SyntaxInputChangeEventDetail = {
-  value: string;
-};
 
 /**
  * Basic text input with code syntax highlighting
@@ -24,8 +20,11 @@ export class SyntaxInput extends TailwindElement {
   @property({ type: String })
   value = "";
 
-  @property({ type: String })
-  error = "";
+  @property({ type: Number })
+  minlength = 1;
+
+  @property({ type: Number })
+  maxlength?: number;
 
   @property({ type: String })
   language?: Code["language"];
@@ -33,62 +32,73 @@ export class SyntaxInput extends TailwindElement {
   @property({ type: String })
   placeholder?: string;
 
+  @state()
+  private error = "";
+
+  @query("sl-input")
+  public readonly input?: SlInput;
+
   @query("btrix-code")
   private readonly code?: Code;
 
-  render() {
-    const classes = tw`px-3 leading-[var(--sl-input-height-medium)]`;
+  private scrollSyncedOnInput = true;
 
-    return html` <sl-tooltip
+  public setCustomValidity(message: string) {
+    this.input?.setCustomValidity(message);
+    this.error = message;
+  }
+
+  render() {
+    return html`<sl-tooltip
       content=${this.error}
       ?disabled=${!this.error}
       hoist
       placement="bottom"
     >
-      <div
-        class=${clsx(
-          tw`relative h-[var(--sl-input-height-medium)] w-full overflow-x-auto overflow-y-hidden transition-colors focus-within:bg-cyan-50/40`,
-          this.error &&
-            tw`outline outline-1 -outline-offset-1 outline-danger-400`,
-        )}
-      >
-        <div
+      <div class=${clsx(tw`relative overflow-hidden p-px`)}>
+        <sl-input
           class=${clsx(
-            tw`font-monospace relative z-10 whitespace-nowrap text-black/0 caret-black focus:outline-none`,
-            tw`before:font-light before:text-[var(--sl-input-placeholder-color)] empty:before:inline-block empty:before:content-[attr(data-placeholder)]`,
-            classes,
+            tw`relative z-10 block`,
+            tw`[--sl-input-border-color:transparent] [--sl-input-border-radius-medium:0] [--sl-input-font-family:var(--sl-font-mono)] [--sl-input-spacing-medium:var(--sl-spacing-small)]`,
+            tw`caret-black part-[base]:bg-transparent part-[input]:text-transparent`,
           )}
-          data-placeholder=${this.placeholder || ""}
-          contenteditable="plaintext-only"
-          autocapitalize="off"
           spellcheck="false"
-          aria-autocomplete="none"
-          .innerText=${live(this.value)}
-          @keydown=${(e: KeyboardEvent) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
+          value=${this.value}
+          minlength=${ifDefined(this.minlength)}
+          placeholder=${ifDefined(this.placeholder)}
+          @sl-input=${async (e: SlInputEvent) => {
+            const value = (e.target as SlInput).value;
+
+            this.setCustomValidity("");
+
+            this.scrollSyncedOnInput = true;
+
+            if (this.code) {
+              this.code.value = value;
+
+              await this.code.updateComplete;
+
+              this.scrollSync({ pad: true });
             }
           }}
-          @input=${(e: InputEvent) => {
-            const el = e.target as HTMLDivElement;
-            const value = el.textContent ? el.textContent.trim() : "";
-
-            this.code!.value = value;
+          @focus=${this.scrollSync}
+          @keydown=${() => {
+            this.scrollSyncedOnInput = false;
           }}
-          @focusout=${async () => {
-            await this.updateComplete;
-
-            if (this.code && this.code.value !== this.value) {
-              this.dispatchEvent(
-                new CustomEvent<SyntaxInputChangeEventDetail>("btrix-change", {
-                  detail: { value: this.code.value },
-                }),
-              );
+          @keyup=${() => {
+            // TODO Could maybe select and selectionchange events instead?
+            if (!this.scrollSyncedOnInput) {
+              this.scrollSync();
             }
           }}
-        ></div>
+          @mousedown=${this.scrollSync}
+          @mouseup=${this.scrollSync}
+        ></sl-input>
+
         <btrix-code
-          class=${clsx(tw`absolute inset-0`, classes)}
+          class=${clsx(
+            tw`absolute inset-0.5 flex items-center overflow-auto px-3 [scrollbar-width:none]`,
+          )}
           value=${this.value}
           language=${ifDefined(this.language)}
           .wrap=${false}
@@ -97,4 +107,20 @@ export class SyntaxInput extends TailwindElement {
       </div>
     </sl-tooltip>`;
   }
+
+  private readonly scrollSync = (opts?: { pad: boolean }) => {
+    const innerInput = this.input?.input;
+
+    if (!innerInput || !this.code) return;
+
+    // TODO Calculate single character width from actual font
+    const ch = 8;
+
+    // Pad scroll left when moving forward to prevent
+    // delay in cursor moving to the correct position
+
+    this.code.scrollLeft =
+      innerInput.scrollLeft +
+      (opts?.pad && innerInput.selectionDirection === "forward" ? ch : 0);
+  };
 }
