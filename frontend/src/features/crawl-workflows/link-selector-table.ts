@@ -13,9 +13,9 @@ import { tw } from "@/utils/tailwind";
 const SELECTOR_DELIMITER = "->" as const;
 const emptyRow = ["", ""];
 
-const selName = "selector" as const;
-const attrName = "attribute" as const;
-
+/**
+ * @fires btrix-change
+ */
 @customElement("btrix-link-selector-table")
 @localized()
 export class LinkSelectorTable extends BtrixElement {
@@ -31,10 +31,41 @@ export class LinkSelectorTable extends BtrixElement {
   @queryAll("btrix-table-row")
   private readonly rows!: NodeListOf<TableRow>;
 
+  @queryAll("btrix-syntax-input")
+  private readonly syntaxInputs!: NodeListOf<SyntaxInput>;
+
   public get value(): SeedConfig["selectLinks"] {
     return this.values
       .filter((cells) => cells[0] && cells[1])
       .map((cells) => cells.join(SELECTOR_DELIMITER));
+  }
+
+  public reportValidity() {
+    let tableValid = true;
+
+    this.syntaxInputs.forEach((input) => {
+      const valid = input.reportValidity();
+
+      if (!valid) {
+        tableValid = valid;
+      }
+    });
+
+    return tableValid;
+  }
+
+  public checkValidity() {
+    let tableValid = true;
+
+    this.syntaxInputs.forEach((input) => {
+      const valid = input.checkValidity();
+
+      if (!valid) {
+        tableValid = valid;
+      }
+    });
+
+    return tableValid;
   }
 
   protected willUpdate(changedProperties: PropertyValues): void {
@@ -80,7 +111,7 @@ export class LinkSelectorTable extends BtrixElement {
         () => html`
           <sl-button
             class="mt-1 w-full"
-            @click=${() => this.updateRows(emptyRow, this.values.length)}
+            @click=${() => void this.updateRows(emptyRow, this.values.length)}
           >
             <sl-icon slot="prefix" name="plus-lg"></sl-icon>
             <span class="text-neutral-600">${msg("Add More")}</span>
@@ -100,7 +131,7 @@ export class LinkSelectorTable extends BtrixElement {
             this.editable,
             () => html`
               <btrix-syntax-input
-                class=${clsx(selName, tw`flex-1`)}
+                class="flex-1"
                 value=${sel}
                 language="css"
                 placeholder="button.custom-link"
@@ -113,11 +144,11 @@ export class LinkSelectorTable extends BtrixElement {
                   const el = e.currentTarget as SyntaxInput;
                   const value = el.input?.value || "";
 
+                  void this.updateRows([value, attr], i);
+
                   try {
                     // Validate selector
                     document.createDocumentFragment().querySelector(value);
-
-                    this.updateRows([value, attr], i);
                   } catch {
                     el.setCustomValidity(
                       msg("Please enter a valid CSS selector"),
@@ -140,7 +171,7 @@ export class LinkSelectorTable extends BtrixElement {
             this.editable,
             () => html`
               <btrix-syntax-input
-                class=${clsx(attrName, tw`flex-1`)}
+                class="flex-1"
                 value=${attr}
                 language="css"
                 placeholder="data-href"
@@ -153,11 +184,11 @@ export class LinkSelectorTable extends BtrixElement {
                   const el = e.currentTarget as SyntaxInput;
                   const value = el.input?.value || "";
 
+                  void this.updateRows([sel, value], i);
+
                   try {
                     // Validate attribute
                     document.createElement("a").setAttribute(value, "x-test");
-
-                    this.updateRows([sel, value], i);
                   } catch {
                     el.setCustomValidity(
                       msg("Please enter a valid HTML attribute"),
@@ -183,7 +214,7 @@ export class LinkSelectorTable extends BtrixElement {
                 label=${msg("Remove exclusion")}
                 class="text-base hover:text-danger"
                 name="trash3"
-                @click=${() => this.updateRows(undefined, i)}
+                @click=${() => void this.updateRows(undefined, i)}
               ></sl-icon-button>
             </btrix-table-cell>
           `,
@@ -192,7 +223,7 @@ export class LinkSelectorTable extends BtrixElement {
     `;
   };
 
-  private updateRows(
+  private async updateRows(
     row: LinkSelectorTable["values"][0] | undefined,
     idx: number,
   ) {
@@ -206,5 +237,15 @@ export class LinkSelectorTable extends BtrixElement {
     } else {
       this.values = [emptyRow];
     }
+
+    await this.updateComplete;
+
+    this.dispatchEvent(
+      new CustomEvent("btrix-change", {
+        detail: {
+          value: this.value,
+        },
+      }),
+    );
   }
 }
