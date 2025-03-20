@@ -33,6 +33,8 @@ import isEqual from "lodash/fp/isEqual";
 import throttle from "lodash/fp/throttle";
 import uniq from "lodash/fp/uniq";
 
+import type { LinkSelectorTable } from "./link-selector-table";
+
 import { BtrixElement } from "@/classes/BtrixElement";
 import type {
   SelectCrawlerChangeEvent,
@@ -83,6 +85,7 @@ import { tw } from "@/utils/tailwind";
 import {
   appDefaults,
   BYTES_PER_GB,
+  DEFAULT_SELECT_LINKS,
   defaultLabel,
   getDefaultFormState,
   getInitialFormState,
@@ -300,6 +303,9 @@ export class WorkflowEditor extends BtrixElement {
 
   @query("btrix-queue-exclusion-table")
   private readonly exclusionTable?: QueueExclusionTable | null;
+
+  @query("btrix-link-selector-table")
+  private readonly linkSelectorTable?: LinkSelectorTable | null;
 
   connectedCallback(): void {
     this.initializeEditor();
@@ -1084,7 +1090,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
   private renderLinkSelectors() {
     const selectors = this.formState.selectLinks;
-    const isCustom = isEqual(defaultFormState.selectLinks, selectors);
+    const isCustom = !isEqual(defaultFormState.selectLinks, selectors);
 
     return html`
       <div class="col-span-5">
@@ -1099,9 +1105,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
             ${inputCol(
               html`<btrix-link-selector-table
                 .selectors=${selectors}
-                @btrix-change=${(e: CustomEvent) => {
-                  console.log(e.detail.value);
-                }}
+                editable
               ></btrix-link-selector-table>`,
             )}
             ${this.renderHelpTextCol(infoTextStrings["selectLinks"], false)}
@@ -2203,7 +2207,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         blockAds: this.formState.blockAds,
         exclude: trimArray(this.formState.exclusions),
         behaviors: this.setBehaviors(),
-        selectLinks: ["a[href]->href"],
+        selectLinks: this.linkSelectorTable?.value || DEFAULT_SELECT_LINKS,
       },
       crawlerChannel: this.formState.crawlerChannel || "default",
       proxyId: this.formState.proxyId,

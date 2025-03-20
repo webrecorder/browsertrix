@@ -22,6 +22,7 @@ import localize, { getDefaultLang } from "@/utils/localize";
 import { regexUnescape } from "@/utils/string";
 
 export const BYTES_PER_GB = 1e9;
+export const DEFAULT_SELECT_LINKS = ["a[href]->href" as const];
 
 export const SECTIONS = [
   "scope",
@@ -145,7 +146,7 @@ export const getDefaultFormState = (): FormState => ({
   userAgent: null,
   crawlerChannel: "default",
   proxyId: null,
-  selectLinks: ["a[href]->href"],
+  selectLinks: DEFAULT_SELECT_LINKS,
 });
 
 export const mapSeedToUrl = (arr: Seed[]) =>
@@ -291,6 +292,7 @@ export function getInitialFormState(params: {
     autoclickBehavior: params.initialWorkflow.config.behaviors
       ? params.initialWorkflow.config.behaviors.includes("autoclick")
       : defaultFormState.autoclickBehavior,
+    selectLinks: params.initialWorkflow.config.selectLinks,
     userAgent:
       params.initialWorkflow.config.userAgent ?? defaultFormState.userAgent,
     crawlerChannel:
