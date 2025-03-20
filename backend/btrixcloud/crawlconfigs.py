@@ -6,7 +6,6 @@ Crawl Config API handling
 
 from typing import List, Union, Optional, TYPE_CHECKING, cast
 
-import aiohttp
 import asyncio
 import json
 import re
@@ -16,8 +15,9 @@ from datetime import datetime
 from uuid import UUID, uuid4
 import urllib.parse
 
-import pymongo
+import aiohttp
 from fastapi import APIRouter, Depends, HTTPException, Query
+import pymongo
 
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .models import (
