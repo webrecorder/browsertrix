@@ -11,7 +11,8 @@ When used without labels, status icons should include tooltips to provider furth
 | Status | Description |
 | ---- | ---- |
 | <span class="status-empty">:bootstrap-slash-circle-fill: Empty</span> | Used for empty states where no data is present |
-| <span class="status-waiting">:bootstrap-hourglass-split: Waiting</span> | Used when a task is queued but has not started |
+| <span class="status-waiting">:bootstrap-hourglass-split: Waiting</span> | Used when a process is queued but has not started |
+| <span class="status-success">:btrix-status-dot: Running</span> | Used when a process is actively running, should always be animated |
 | <span class="status-success">:bootstrap-check-circle-fill: Success</span> | Used for positive / successful states |
 | <span class="status-neutral">:bootstrap-dash-square-fill: Neutral</span> | Used for ambiguous states, generally good but could be better  |
 | <span class="status-neutral">:bootstrap-exclamation-square-fill: Less Neutral</span> | Same as neutral but with more caveats |
