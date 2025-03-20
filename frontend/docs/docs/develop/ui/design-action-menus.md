@@ -8,7 +8,7 @@ We try to avoid surfacing navigation options in action menus as they are not tag
 
 Action menus should generally contain a consistent set of actions for a given object. Whereas new table rows symbolize horizontal separators, these actions should be ordered as follows:
 
-| Dropdown Actions                                                                                                                          |
+| Dropdown Action Order                                                                                                                          |
 | ----------------------------------------------------------------------------------------------------------------------------------------- |
 | • Actions related only to the current page (eg: remove archived item from collection) |
 | • Actions related to editing the object (eg: edit workflow config, edit item metadata)<br>• Other actions related to the current object (eg: run crawl) |
