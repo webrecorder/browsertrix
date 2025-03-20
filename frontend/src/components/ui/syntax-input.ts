@@ -1,5 +1,9 @@
 import { localized } from "@lit/localize";
-import type { SlInput, SlInputEvent } from "@shoelace-style/shoelace";
+import type {
+  SlInput,
+  SlInputEvent,
+  SlTooltip,
+} from "@shoelace-style/shoelace";
 import clsx from "clsx";
 import { html } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
@@ -36,16 +40,41 @@ export class SyntaxInput extends TailwindElement {
   private error = "";
 
   @query("sl-input")
-  public readonly input?: SlInput;
+  public readonly input?: SlInput | null;
+
+  @query("sl-tooltip")
+  public readonly tooltip?: SlTooltip | null;
 
   @query("btrix-code")
-  private readonly code?: Code;
+  private readonly code?: Code | null;
 
   private scrollSyncedOnInput = true;
 
   public setCustomValidity(message: string) {
     this.input?.setCustomValidity(message);
     this.error = message;
+  }
+
+  public reportValidity() {
+    const valid = this.checkValidity();
+
+    if (!valid) {
+      if (this.error) {
+        void this.tooltip?.show();
+      } else if (this.input?.input) {
+        this.input.input.reportValidity();
+      }
+    }
+
+    return valid;
+  }
+
+  public checkValidity() {
+    if (this.input?.input) {
+      return this.input.checkValidity();
+    }
+
+    return false;
   }
 
   render() {

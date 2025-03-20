@@ -1141,6 +1141,10 @@ https://archiveweb.page/images/${"logo.svg"}`}
               html`<btrix-link-selector-table
                 .selectors=${selectors}
                 editable
+                @btrix-change=${() => {
+                  console.log("change");
+                  this.updateSelectorsValidity();
+                }}
               ></btrix-link-selector-table>`,
             )}
             ${this.renderHelpTextCol(infoTextStrings["selectLinks"], false)}
@@ -1897,6 +1901,20 @@ https://archiveweb.page/images/${"logo.svg"}`}
     } else {
       this.exclusionTable?.removeAttribute("data-invalid");
       this.exclusionTable?.removeAttribute("data-user-invalid");
+    }
+  }
+
+  /**
+   * HACK Set data attribute manually so that
+   * selectors table works with `syncTabErrorState`
+   */
+  private updateSelectorsValidity() {
+    if (this.linkSelectorTable?.checkValidity() === false) {
+      this.linkSelectorTable.setAttribute("data-invalid", "true");
+      this.linkSelectorTable.setAttribute("data-user-invalid", "true");
+    } else {
+      this.linkSelectorTable?.removeAttribute("data-invalid");
+      this.linkSelectorTable?.removeAttribute("data-user-invalid");
     }
   }
 
