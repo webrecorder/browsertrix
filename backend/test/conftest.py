@@ -326,7 +326,7 @@ def crawler_config_id_only(_crawler_create_config_only):
     return _crawler_config_id
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def sample_crawl_data():
     return {
         "runNow": False,
