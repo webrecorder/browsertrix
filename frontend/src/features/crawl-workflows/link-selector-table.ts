@@ -228,12 +228,14 @@ export class LinkSelectorTable extends BtrixElement {
           this.editable,
           () => html`
             <btrix-table-cell class="border-l">
-              <sl-icon-button
-                label=${msg("Remove exclusion")}
-                class="text-base hover:text-danger"
-                name="trash3"
-                @click=${() => void this.updateRows(undefined, i)}
-              ></sl-icon-button>
+              <sl-tooltip content=${msg("Remove")} hoist placement="bottom">
+                <sl-icon-button
+                  label=${msg("Remove exclusion")}
+                  class="text-base hover:text-danger"
+                  name="trash3"
+                  @click=${() => void this.updateRows(undefined, i)}
+                ></sl-icon-button>
+              </sl-tooltip>
             </btrix-table-cell>
           `,
         )}
