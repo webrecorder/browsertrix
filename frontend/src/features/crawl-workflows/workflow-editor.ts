@@ -1142,7 +1142,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
                 .selectors=${selectors}
                 editable
                 @btrix-change=${() => {
-                  console.log("change");
                   this.updateSelectorsValidity();
                 }}
               ></btrix-link-selector-table>`,
