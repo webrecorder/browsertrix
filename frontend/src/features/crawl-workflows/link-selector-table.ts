@@ -135,11 +135,6 @@ export class LinkSelectorTable extends BtrixElement {
                 value=${sel}
                 language="css"
                 placeholder="button.custom-link"
-                @sl-input=${async (e: CustomEvent) => {
-                  const el = e.currentTarget as SyntaxInput;
-
-                  await el.input?.updateComplete;
-                }}
                 @sl-change=${(e: CustomEvent) => {
                   const el = e.currentTarget as SyntaxInput;
                   const value = el.input?.value || "";
@@ -173,13 +168,8 @@ export class LinkSelectorTable extends BtrixElement {
               <btrix-syntax-input
                 class="flex-1"
                 value=${attr}
-                language="css"
+                language="xml"
                 placeholder="data-href"
-                @sl-input=${async (e: CustomEvent) => {
-                  const el = e.currentTarget as SyntaxInput;
-
-                  await el.input?.updateComplete;
-                }}
                 @sl-change=${(e: CustomEvent) => {
                   const el = e.currentTarget as SyntaxInput;
                   const value = el.input?.value || "";

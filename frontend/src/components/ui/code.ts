@@ -58,13 +58,12 @@ export class Code extends TailwindElement {
   wrap = true;
 
   async connectedCallback() {
+    const languageFn = (await langaugeFiles[this.language]).default;
+
     const registeredLanguages = hljs.listLanguages();
 
     if (!registeredLanguages.includes(this.language)) {
-      hljs.registerLanguage(
-        this.language,
-        (await langaugeFiles[this.language]).default,
-      );
+      hljs.registerLanguage(this.language, languageFn);
     }
 
     super.connectedCallback();
