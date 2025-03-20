@@ -30,11 +30,14 @@ export class SyntaxInput extends TailwindElement {
   @property({ type: Number })
   maxlength?: number;
 
-  @property({ type: String })
-  language?: Code["language"];
+  @property({ type: Boolean })
+  required?: boolean;
 
   @property({ type: String })
   placeholder?: string;
+
+  @property({ type: String })
+  language?: Code["language"];
 
   @state()
   private error = "";
@@ -61,8 +64,8 @@ export class SyntaxInput extends TailwindElement {
     if (!valid) {
       if (this.error) {
         void this.tooltip?.show();
-      } else if (this.input?.input) {
-        this.input.input.reportValidity();
+      } else {
+        this.input?.reportValidity();
       }
     }
 
@@ -70,11 +73,15 @@ export class SyntaxInput extends TailwindElement {
   }
 
   public checkValidity() {
-    if (this.input?.input) {
-      return this.input.checkValidity();
+    if (!this.input?.input) {
+      if (this.required) {
+        return false;
+      }
+
+      return true;
     }
 
-    return false;
+    return this.input.checkValidity();
   }
 
   render() {
@@ -96,7 +103,7 @@ export class SyntaxInput extends TailwindElement {
           minlength=${ifDefined(this.minlength)}
           maxlength=${ifDefined(this.maxlength)}
           placeholder=${ifDefined(this.placeholder)}
-          required
+          ?required=${this.required}
           @sl-input=${async (e: SlInputEvent) => {
             const value = (e.target as SlInput).value;
 

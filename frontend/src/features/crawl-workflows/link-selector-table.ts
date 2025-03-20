@@ -2,16 +2,17 @@ import { localized, msg } from "@lit/localize";
 import clsx from "clsx";
 import { html, type PropertyValues } from "lit";
 import { customElement, property, queryAll, state } from "lit/decorators.js";
+import { repeat } from "lit/directives/repeat.js";
 import { when } from "lit/directives/when.js";
+import { nanoid } from "nanoid";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { SyntaxInput } from "@/components/ui/syntax-input";
-import type { TableRow } from "@/components/ui/table/table-row";
 import type { SeedConfig } from "@/types/crawler";
 import { tw } from "@/utils/tailwind";
 
 const SELECTOR_DELIMITER = "->" as const;
-const emptyRow = ["", ""];
+const emptyCells = ["", ""];
 
 /**
  * @fires btrix-change
@@ -26,18 +27,18 @@ export class LinkSelectorTable extends BtrixElement {
   editable = false;
 
   @state()
-  private values: string[][] = [];
-
-  @queryAll("btrix-table-row")
-  private readonly rows!: NodeListOf<TableRow>;
+  private rows: {
+    id: string;
+    cells: string[];
+  }[] = [];
 
   @queryAll("btrix-syntax-input")
   private readonly syntaxInputs!: NodeListOf<SyntaxInput>;
 
   public get value(): SeedConfig["selectLinks"] {
-    return this.values
-      .filter((cells) => cells[0] && cells[1])
-      .map((cells) => cells.join(SELECTOR_DELIMITER));
+    return this.rows
+      .filter(({ cells }) => cells[0] || cells[1])
+      .map(({ cells }) => cells.join(SELECTOR_DELIMITER));
   }
 
   public reportValidity() {
@@ -70,7 +71,10 @@ export class LinkSelectorTable extends BtrixElement {
 
   protected willUpdate(changedProperties: PropertyValues): void {
     if (changedProperties.has("selectors")) {
-      this.values = this.selectors.map((str) => str.split(SELECTOR_DELIMITER));
+      this.rows = this.selectors.map((str) => ({
+        id: nanoid(),
+        cells: str.split(SELECTOR_DELIMITER),
+      }));
     }
   }
 
@@ -102,7 +106,7 @@ export class LinkSelectorTable extends BtrixElement {
           )}
         </btrix-table-head>
         <btrix-table-body class="overflow-auto">
-          ${this.values.map(this.row)}
+          ${repeat(this.rows, (row) => row.id, this.row)}
         </btrix-table-body>
       </btrix-table>
 
@@ -111,7 +115,14 @@ export class LinkSelectorTable extends BtrixElement {
         () => html`
           <sl-button
             class="mt-1 w-full"
-            @click=${() => void this.updateRows(emptyRow, this.values.length)}
+            @click=${() =>
+              void this.updateRows(
+                {
+                  id: nanoid(),
+                  cells: emptyCells,
+                },
+                this.rows.length,
+              )}
           >
             <sl-icon slot="prefix" name="plus-lg"></sl-icon>
             <span class="text-neutral-600">${msg("Add More")}</span>
@@ -121,7 +132,10 @@ export class LinkSelectorTable extends BtrixElement {
     `;
   }
 
-  private readonly row = (cells: string[], i: number) => {
+  private readonly row = (
+    { id, cells }: LinkSelectorTable["rows"][0],
+    i: number,
+  ) => {
     const [sel, attr] = cells;
 
     return html`
@@ -135,11 +149,18 @@ export class LinkSelectorTable extends BtrixElement {
                 value=${sel}
                 language="css"
                 placeholder="button.custom-link"
+                required
                 @sl-change=${(e: CustomEvent) => {
                   const el = e.currentTarget as SyntaxInput;
                   const value = el.input?.value || "";
 
-                  void this.updateRows([value, attr], i);
+                  void this.updateRows(
+                    {
+                      id,
+                      cells: [value, attr],
+                    },
+                    i,
+                  );
 
                   try {
                     // Validate selector
@@ -170,11 +191,18 @@ export class LinkSelectorTable extends BtrixElement {
                 value=${attr}
                 language="xml"
                 placeholder="data-href"
+                required
                 @sl-change=${(e: CustomEvent) => {
                   const el = e.currentTarget as SyntaxInput;
                   const value = el.input?.value || "";
 
-                  void this.updateRows([sel, value], i);
+                  void this.updateRows(
+                    {
+                      id,
+                      cells: [sel, value],
+                    },
+                    i,
+                  );
 
                   try {
                     // Validate attribute
@@ -214,18 +242,23 @@ export class LinkSelectorTable extends BtrixElement {
   };
 
   private async updateRows(
-    row: LinkSelectorTable["values"][0] | undefined,
+    row: LinkSelectorTable["rows"][0] | undefined,
     idx: number,
   ) {
-    const pre = this.values.slice(0, idx);
-    const ap = this.values.slice(idx + 1);
+    const pre = this.rows.slice(0, idx);
+    const ap = this.rows.slice(idx + 1);
 
     const rows = row ? [...pre, row, ...ap] : [...pre, ...ap];
 
     if (rows.length) {
-      this.values = rows;
+      this.rows = rows;
     } else {
-      this.values = [emptyRow];
+      this.rows = [
+        {
+          id: nanoid(),
+          cells: emptyCells,
+        },
+      ];
     }
 
     await this.updateComplete;
