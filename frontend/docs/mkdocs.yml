@@ -96,7 +96,8 @@ nav:
         - develop/ui/components.md
         - develop/localization.md
         - Design:
-          - develop/design-action-menus.md
+          - develop/ui/design-action-menus.md
+          - develop/ui/design-status-icons.md
 
   - API Reference: !ENV [ API_DOCS_URL, "/api/" ]
 
