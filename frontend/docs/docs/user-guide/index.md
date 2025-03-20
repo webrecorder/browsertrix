@@ -1,6 +1,6 @@
 # Welcome
 
-Browsertrix is an intuitive, automated web archiving system. Archive, replay, and share websites exactly as they were at a certain point in time.
+Browsertrix is an intuitive, automated web archiving platform designed to allow you to archive, replay, and share websites exactly as they were at a certain point in time.
 
 Browsertrix is built and hosted by [Webrecorder](https://webrecorder.net/), a leading expert in web archiving. Our goal is to make web archiving easier and more accessible to everyone through open source tools, easy-to-use interfaces, and community building.
 
