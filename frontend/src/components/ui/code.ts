@@ -1,14 +1,30 @@
 import clsx from "clsx";
+import type { LanguageFn } from "highlight.js";
 import hljs from "highlight.js/lib/core";
-import hljsCss from "highlight.js/lib/languages/css";
-import hljsJavascript from "highlight.js/lib/languages/javascript";
-import hljsXml from "highlight.js/lib/languages/xml";
 import { css, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { html as staticHtml, unsafeStatic } from "lit/static-html.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import { tw } from "@/utils/tailwind";
+
+enum Language {
+  Javascript = "javascript",
+  XML = "xml",
+  CSS = "css",
+}
+
+const langaugeFiles: Record<Language, Promise<{ default: LanguageFn }>> = {
+  [Language.Javascript]: import(
+    /* webpackChunkName: "highlight.js" */ "highlight.js/lib/languages/javascript"
+  ),
+  [Language.XML]: import(
+    /* webpackChunkName: "highlight.js" */ "highlight.js/lib/languages/xml"
+  ),
+  [Language.CSS]: import(
+    /* webpackChunkName: "highlight.js" */ "highlight.js/lib/languages/css"
+  ),
+};
 
 /**
  * Syntax highlighting for javascript, HTML (XML), and CSS
@@ -36,16 +52,22 @@ export class Code extends TailwindElement {
   value = "";
 
   @property({ type: String })
-  language: "javascript" | "xml" | "css" = "xml";
+  language = Language.XML;
 
   @property({ type: Boolean })
   wrap = true;
 
-  constructor() {
-    super();
-    hljs.registerLanguage("css", hljsCss);
-    hljs.registerLanguage("javascript", hljsJavascript);
-    hljs.registerLanguage("xml", hljsXml);
+  async connectedCallback() {
+    const registeredLanguages = hljs.listLanguages();
+
+    if (!registeredLanguages.includes(this.language)) {
+      hljs.registerLanguage(
+        this.language,
+        (await langaugeFiles[this.language]).default,
+      );
+    }
+
+    super.connectedCallback();
   }
 
   render() {

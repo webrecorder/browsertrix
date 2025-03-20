@@ -23,7 +23,7 @@ export class LinkSelectorTable extends BtrixElement {
   selectors: SeedConfig["selectLinks"] = [];
 
   @property({ type: Boolean })
-  editable = true;
+  editable = false;
 
   @state()
   private values: string[][] = [];
@@ -32,9 +32,9 @@ export class LinkSelectorTable extends BtrixElement {
   private readonly rows!: NodeListOf<TableRow>;
 
   public get value(): SeedConfig["selectLinks"] {
-    return this.values.map((row) => {
-      return row.join("->");
-    });
+    return this.values
+      .filter((cells) => cells[0] && cells[1])
+      .map((cells) => cells.join(SELECTOR_DELIMITER));
   }
 
   protected willUpdate(changedProperties: PropertyValues): void {
@@ -104,7 +104,6 @@ export class LinkSelectorTable extends BtrixElement {
                 value=${sel}
                 language="css"
                 placeholder="button.custom-link"
-                maxlength="24"
                 @sl-input=${async (e: CustomEvent) => {
                   const el = e.currentTarget as SyntaxInput;
 
@@ -128,7 +127,12 @@ export class LinkSelectorTable extends BtrixElement {
               >
               </btrix-syntax-input>
             `,
-            () => html`<btrix-code value=${sel} language="css"></btrix-code>`,
+            () =>
+              html`<btrix-code
+                class="m-2"
+                value=${sel}
+                language="css"
+              ></btrix-code>`,
           )}
         </btrix-table-cell>
         <btrix-table-cell class="border-l">
@@ -140,7 +144,6 @@ export class LinkSelectorTable extends BtrixElement {
                 value=${attr}
                 language="css"
                 placeholder="data-href"
-                maxlength="24"
                 @sl-input=${async (e: CustomEvent) => {
                   const el = e.currentTarget as SyntaxInput;
 
@@ -164,7 +167,12 @@ export class LinkSelectorTable extends BtrixElement {
               >
               </btrix-syntax-input>
             `,
-            () => html`<btrix-code value=${attr} language="css"></btrix-code>`,
+            () =>
+              html`<btrix-code
+                class="m-2"
+                value=${attr}
+                language="css"
+              ></btrix-code>`,
           )}
         </btrix-table-cell>
         ${when(

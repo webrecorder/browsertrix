@@ -65,7 +65,9 @@ export class SyntaxInput extends TailwindElement {
           spellcheck="false"
           value=${this.value}
           minlength=${ifDefined(this.minlength)}
+          maxlength=${ifDefined(this.maxlength)}
           placeholder=${ifDefined(this.placeholder)}
+          required
           @sl-input=${async (e: SlInputEvent) => {
             const value = (e.target as SlInput).value;
 
