@@ -6,6 +6,7 @@ Crawl Config API handling
 
 from typing import List, Union, Optional, TYPE_CHECKING, cast
 
+import aiohttp
 import asyncio
 import json
 import re
@@ -222,6 +223,9 @@ class CrawlConfigOps:
                 exclude = [exclude]
             validate_regexes(exclude)
 
+        if config_in.config.customBehaviors:
+            await self._validate_custom_behaviors(config_in.config.customBehaviors)
+
         now = dt_now()
         crawlconfig = CrawlConfig(
             id=uuid4(),
@@ -281,6 +285,28 @@ class CrawlConfigOps:
             storageQuotaReached=storage_quota_reached,
             execMinutesQuotaReached=exec_mins_quota_reached,
         )
+
+    async def _validate_custom_behaviors(self, custom_behaviors: List[str]):
+        """Validate custom behaviors
+
+        For now, we just ensure all URLs passed resolve (after removing the
+        git+ prefix and query params for git repo URLs). More proper validation
+        of git repos to follow.
+        """
+        git_prefix = "git+"
+        for behavior in custom_behaviors:
+            url = behavior
+
+            if url.startswith(git_prefix):
+                url = url[len(git_prefix) :]
+                url = url.split("?")[0]
+
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url) as resp:
+                    if resp.status >= 400:
+                        raise HTTPException(
+                            status_code=400, detail="invalid_custom_behavior"
+                        )
 
     def ensure_quota_page_limit(self, crawlconfig: CrawlConfig, org: Organization):
         """ensure page limit is set to no greater than quota page limit, if any"""
@@ -346,6 +372,9 @@ class CrawlConfigOps:
             if isinstance(exclude, str):
                 exclude = [exclude]
             validate_regexes(exclude)
+
+        if update.config and update.config.customBehaviors:
+            await self._validate_custom_behaviors(update.config.customBehaviors)
 
         # indicates if any k8s crawl config settings changed
         changed = False

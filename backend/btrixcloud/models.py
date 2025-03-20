@@ -355,6 +355,7 @@ class RawCrawlConfig(BaseModel):
 
     logging: Optional[str] = None
     behaviors: Optional[str] = "autoscroll,autoplay,autofetch,siteSpecific"
+    customBehaviors: List[str] = []
 
     userAgent: Optional[str] = None
 

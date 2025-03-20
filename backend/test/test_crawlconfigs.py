@@ -10,6 +10,8 @@ UPDATED_NAME = "Updated name"
 UPDATED_DESCRIPTION = "Updated description"
 UPDATED_TAGS = ["tag3", "tag4"]
 
+INVALID_BEHAVIOR_URL = "https://example.com/path/to/nonexistent/behavior.js"
+
 _coll_id = None
 _admin_crawl_cid = None
 
@@ -543,3 +545,118 @@ def test_add_crawl_config_invalid_exclude_regex(
     )
     assert r.status_code == 400
     assert r.json()["detail"] == "invalid_regex"
+
+
+def test_add_crawl_config_custom_behaviors_invalid_url(
+    crawler_auth_headers, default_org_id, sample_crawl_data
+):
+    sample_crawl_data["config"]["customBehaviors"] = [INVALID_BEHAVIOR_URL]
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        headers=crawler_auth_headers,
+        json=sample_crawl_data,
+    )
+    assert r.status_code == 400
+    assert r.json()["detail"] == "invalid_custom_behavior"
+
+
+def test_add_crawl_config_custom_behaviors_valid_url(
+    crawler_auth_headers, default_org_id, sample_crawl_data
+):
+    url = "https://raw.githubusercontent.com/webrecorder/custom-behaviors/refs/heads/main/behaviors/fulcrum.js"
+    sample_crawl_data["config"]["customBehaviors"] = [url]
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        headers=crawler_auth_headers,
+        json=sample_crawl_data,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    config_id = data["id"]
+    assert config_id
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{config_id}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data["id"] == config_id
+    assert data["config"]["customBehaviors"] == [url]
+
+
+def test_add_update_crawl_config_custom_behaviors_git_url(
+    crawler_auth_headers, default_org_id, sample_crawl_data
+):
+    git_url = "git+https://github.com/webrecorder/custom-behaviors"
+    git_url_with_params = (
+        "git+https://github.com/webrecorder/custom-behaviors?branch=main&path=behaviors"
+    )
+
+    # Create workflow and validate it looks like we expect
+    sample_crawl_data["config"]["customBehaviors"] = [git_url]
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        headers=crawler_auth_headers,
+        json=sample_crawl_data,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    config_id = data["id"]
+    assert config_id
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{config_id}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data["id"] == config_id
+    assert data["config"]["customBehaviors"] == [git_url]
+
+    # Try to update custom behaviors with invalid url, validate unchanged
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{config_id}/",
+        headers=crawler_auth_headers,
+        json={
+            "config": {
+                "customBehaviors": [git_url, INVALID_BEHAVIOR_URL],
+            }
+        },
+    )
+    assert r.status_code == 400
+    assert r.json()["detail"] == "invalid_custom_behavior"
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{config_id}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data["id"] == config_id
+    assert data["config"]["customBehaviors"] == [git_url]
+
+    # Update custom behaviors with valid url, validate changed
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{config_id}/",
+        headers=crawler_auth_headers,
+        json={
+            "config": {
+                "customBehaviors": [git_url_with_params],
+            }
+        },
+    )
+    assert r.status_code == 200
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{config_id}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data["id"] == config_id
+    assert data["config"]["customBehaviors"] == [git_url_with_params]
