@@ -807,7 +807,7 @@ def test_user_emails_endpoint_superuser(admin_auth_headers, default_org_id):
             continue
 
         for org in orgs:
-            assert org["id"]
+            assert "id" not in org
             assert org["name"]
             assert org["slug"]
             assert org["default"] in (True, False)

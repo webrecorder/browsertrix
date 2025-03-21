@@ -28,6 +28,7 @@ from .models import (
     UserOrgInfoOut,
     UserOrgInfoOutWithSubs,
     UserOut,
+    UserOutNoId,
     UserRole,
     InvitePending,
     InviteOut,
@@ -168,7 +169,8 @@ class UserManager:
         self,
         user: User,
         info_out_cls: Type[UserOrgInfoOut | UserOrgInfoOutWithSubs] = UserOrgInfoOut,
-    ) -> UserOut:
+        user_out_cls: Type[UserOut | UserOutNoId] = UserOut,
+    ) -> UserOut | UserOutNoId:
         """return User info"""
         user_orgs, _ = await self.org_ops.get_orgs_for_user(
             user,
@@ -197,7 +199,7 @@ class UserManager:
         else:
             orgs = []
 
-        return UserOut(
+        return user_out_cls(
             id=user.id,
             email=user.email,
             name=user.name,
@@ -559,20 +561,22 @@ class UserManager:
         self,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
-    ) -> Tuple[List[UserOut], int]:
+    ) -> Tuple[List[UserOutNoId], int]:
         """Get user emails with org info for each for paginated endpoint"""
         # Zero-index page for query
         page = page - 1
         skip = page_size * page
 
-        emails: List[UserOut] = []
+        emails: List[UserOutNoId] = []
 
         total = await self.users.count_documents({"is_superuser": False})
         async for res in self.users.find(
             {"is_superuser": False}, skip=skip, limit=page_size
         ):
             user = User(**res)
-            user_out = await self.get_user_info_with_orgs(user, UserOrgInfoOutWithSubs)
+            user_out = await self.get_user_info_with_orgs(
+                user, UserOrgInfoOutWithSubs, UserOutNoId
+            )
             emails.append(user_out)
 
         return emails, total

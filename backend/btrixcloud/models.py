@@ -1824,16 +1824,22 @@ class UserOrgInfoOutWithSubs(UserOrgInfoOut):
 
 
 # ============================================================================
-class UserOut(BaseModel):
-    """Output User model"""
+class UserOutNoId(BaseModel):
+    """Output User Model, no ID"""
 
-    id: str
     name: str = ""
     email: EmailStr
     orgs: List[UserOrgInfoOut | UserOrgInfoOutWithSubs]
 
     is_superuser: bool = False
     is_verified: bool = False
+
+
+# ============================================================================
+class UserOut(UserOutNoId):
+    """Output User Model"""
+
+    id: UUID
 
 
 # ============================================================================
@@ -2886,7 +2892,7 @@ class PaginatedCrawlErrorResponse(PaginatedResponse):
 class PaginatedUserOutResponse(PaginatedResponse):
     """Response model for user emails with org info"""
 
-    items: List[UserOut]
+    items: List[UserOutNoId]
 
 
 # ============================================================================
