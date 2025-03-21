@@ -1830,8 +1830,6 @@ class UserOutNoId(BaseModel):
     name: str = ""
     email: EmailStr
     orgs: List[UserOrgInfoOut | UserOrgInfoOutWithSubs]
-
-    is_superuser: bool = False
     is_verified: bool = False
 
 
@@ -1840,6 +1838,7 @@ class UserOut(UserOutNoId):
     """Output User Model"""
 
     id: UUID
+    is_superuser: bool = False
 
 
 # ============================================================================
