@@ -1011,7 +1011,7 @@ def init_base_crawls_api(app, user_dep, *args):
         if oid != auth_oid or crawl_id != auth_crawl_id:
             raise HTTPException(status_code=403, detail="not_allowed")
 
-        crawl = await ops.get_crawl_raw(crawl_id)
+        crawl = await ops.get_crawl_raw(crawl_id, project={"files": 1})
         filename = oid + "/" + name
 
         the_file = None
@@ -1032,6 +1032,6 @@ def init_base_crawls_api(app, user_dep, *args):
         headers = {
             "Cache-Control": "max-age=3600, stale-while-revalidate=86400",
         }
-        return RedirectResponse(presigned_url, headers=headers)
+        return RedirectResponse(presigned_url, headers=headers, status_code=308)
 
     return ops
