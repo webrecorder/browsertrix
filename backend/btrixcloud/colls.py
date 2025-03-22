@@ -618,11 +618,18 @@ class CollectionOps:
                     del mapping[presigned["_id"]]
 
             # need to sign the remainder
+            futures = []
+
             for file in mapping.values():
                 # force update as we know its not already presigned, skip extra check
-                url, expire_at = await self.storage_ops.get_presigned_url(
-                    org, CrawlFile(**file), force_update=True
+                futures.append(
+                    self.storage_ops.get_presigned_url(
+                        org, CrawlFile(**file), force_update=True
+                    )
                 )
+
+            results = await asyncio.gather(*futures)
+            for (url, expire_at), file in zip(results, mapping.values()):
                 resources.append(
                     CrawlFileOut(
                         name=os.path.basename(file["filename"]),
