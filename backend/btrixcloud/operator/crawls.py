@@ -892,12 +892,11 @@ class CrawlOperator(BaseOperator):
                 )
                 page_crawled = await redis.lpop(f"{crawl.id}:{self.pages_key}")
 
-            crawl_error = await redis.lpop(f"{crawl.id}:{self.errors_key}")
-            while crawl_error:
-                await self.crawl_ops.add_crawl_error(
-                    crawl.db_crawl_id, crawl.is_qa, crawl_error
-                )
+            if not crawl.is_qa:
                 crawl_error = await redis.lpop(f"{crawl.id}:{self.errors_key}")
+                while crawl_error:
+                    await self.crawl_ops.add_crawl_error(crawl.db_crawl_id, crawl_error)
+                    crawl_error = await redis.lpop(f"{crawl.id}:{self.errors_key}")
 
             # ensure filesAdded and filesAddedSize always set
             status.filesAdded = int(await redis.get("filesAdded") or 0)

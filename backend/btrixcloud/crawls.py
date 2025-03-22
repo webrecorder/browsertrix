@@ -87,6 +87,9 @@ class CrawlOps(BaseCrawlOps):
 
         self.min_qa_crawler_image = os.environ.get("MIN_QA_CRAWLER_IMAGE")
 
+        mdb = args[0]
+        self.crawl_errors = mdb["crawls_errors"]
+
     async def init_index(self):
         """init index for crawls db collection"""
         await self.crawls.create_index([("type", pymongo.HASHED)])
@@ -186,7 +189,7 @@ class CrawlOps(BaseCrawlOps):
             {"$match": query},
             {"$set": {"firstSeedObject": {"$arrayElemAt": ["$config.seeds", 0]}}},
             {"$set": {"firstSeed": "$firstSeedObject.url"}},
-            {"$unset": ["firstSeedObject", "errors", "config"]},
+            {"$unset": ["firstSeedObject", "config"]},
             {"$set": {"activeQAStats": "$qa.stats"}},
             {
                 "$set": {
@@ -659,16 +662,20 @@ class CrawlOps(BaseCrawlOps):
     async def add_crawl_error(
         self,
         crawl_id: str,
-        is_qa: bool,
         error: str,
     ) -> bool:
         """add crawl error from redis to mongodb errors field"""
-        prefix = "" if not is_qa else "qa."
+        # prefix = "" if not is_qa else "qa."
 
-        res = await self.crawls.find_one_and_update(
-            {"_id": crawl_id}, {"$push": {f"{prefix}errors": error}}
+        res = await self.crawl_errors.find_one_and_update(
+            {"_id": crawl_id}, {"$push": {f"errors": error}}, upsert=True
         )
         return res is not None
+
+    async def get_crawl_errors(self, crawl_id: str) -> list[str]:
+        """get crawl errors"""
+        res = await self.crawl_errors.find_one({"_id": crawl_id})
+        return res.get("errors") or [] if res else []
 
     async def add_crawl_file(
         self, crawl_id: str, is_qa: bool, crawl_file: CrawlFile, size: int
@@ -1603,13 +1610,13 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
         page: int = 1,
         org: Organization = Depends(org_viewer_dep),
     ):
-        crawl = await ops.get_crawl(crawl_id, org)
+        errors = await ops.get_crawl_errors(crawl_id)
 
         skip = (page - 1) * pageSize
         upper_bound = skip + pageSize
 
-        errors = crawl.errors[skip:upper_bound] if crawl.errors else []
+        errors = errors[skip:upper_bound] if errors else []
         parsed_errors = parse_jsonl_error_messages(errors)
-        return paginated_format(parsed_errors, len(crawl.errors or []), page, pageSize)
+        return paginated_format(parsed_errors, len(errors or []), page, pageSize)
 
     return ops

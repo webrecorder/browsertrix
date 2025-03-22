@@ -784,8 +784,6 @@ class CoreCrawlable(BaseModel):
     fileSize: int = 0
     fileCount: int = 0
 
-    errors: Optional[List[str]] = []
-
 
 # ============================================================================
 class BaseCrawl(CoreCrawlable, BaseMongoModel):
@@ -854,8 +852,6 @@ class CrawlOut(BaseMongoModel):
     fileCount: int = 0
 
     tags: Optional[List[str]] = []
-
-    errors: Optional[List[str]] = []
 
     collectionIds: Optional[List[UUID]] = []
 
