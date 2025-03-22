@@ -21,7 +21,7 @@ from fastapi import (
 
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
-from .models import User, UserOut
+from .models import User, UserOut, PRESIGN_DURATION_MINUTES
 from .utils import dt_now
 
 
@@ -42,6 +42,7 @@ PWD_CONTEXT = CryptContext(schemes=["bcrypt"], deprecated="auto")
 AUTH_AUD = "btrix:auth"
 RESET_AUD = "btrix:reset"
 VERIFY_AUD = "btrix:verify"
+DL_AUD = "btrix:dl"
 
 # include fastapi-users audiences for backwards compatibility
 AUTH_ALLOW_AUD = [AUTH_AUD, "fastapi-users:auth"]
@@ -142,10 +143,31 @@ def generate_password() -> str:
 
 
 # ============================================================================
+oauth2_scheme = OA2BearerOrQuery(tokenUrl="/api/auth/jwt/login", auto_error=False)
+
+
+# ============================================================================
+def create_dl_token(oid: UUID, crawl_id: str) -> str:
+    return generate_jwt(
+        {"oid": str(oid), "crawl_id": crawl_id, "aud": DL_AUD}, PRESIGN_DURATION_MINUTES
+    )
+
+
+# ============================================================================
+def decode_dl_token(
+    token: str = Depends(oauth2_scheme),
+) -> tuple[Optional[str], Optional[str]]:
+    try:
+        payload = decode_jwt(token, [DL_AUD])
+        return payload.get("oid"), payload.get("crawl_id")
+    except:
+        raise HTTPException(status_code=401, detail="invalid_credentials")
+
+
+# ============================================================================
 # pylint: disable=raise-missing-from
 def init_jwt_auth(user_manager):
     """init jwt auth router + current_active_user dependency"""
-    oauth2_scheme = OA2BearerOrQuery(tokenUrl="/api/auth/jwt/login", auto_error=False)
 
     async def get_current_user(
         token: str = Depends(oauth2_scheme),

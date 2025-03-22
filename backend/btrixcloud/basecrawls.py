@@ -8,7 +8,7 @@ import urllib.parse
 
 import asyncio
 from fastapi import HTTPException, Depends
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, RedirectResponse
 import pymongo
 
 from .models import (
@@ -30,6 +30,7 @@ from .models import (
     DeletedResponseQuota,
     CrawlSearchValuesResponse,
 )
+from .auth import create_dl_token, decode_dl_token
 from .pagination import paginated_format, DEFAULT_PAGE_SIZE
 from .utils import dt_now, get_origin, date_to_str
 
@@ -468,20 +469,27 @@ class BaseCrawlOps:
 
         out_files = []
 
+        token = create_dl_token(org.id, crawl_id or "")
+
         for file_ in files:
-            presigned_url, expire_at = await self.storage_ops.get_presigned_url(
-                org, file_, force_update=force_update
+            # presigned_url, expire_at = await self.storage_ops.get_presigned_url(
+            #    org, file_, force_update=force_update
+            # )
+            name = os.path.basename(file_.filename)
+            out_url = (
+                get_origin({})
+                + f"/api/orgs/{org.id}/all-crawls/{crawl_id}/files/{name}?auth_bearer={token}"
             )
 
             out_files.append(
                 CrawlFileOut(
-                    name=os.path.basename(file_.filename),
-                    path=presigned_url or "",
+                    name=name,
+                    path=out_url,
                     hash=file_.hash,
                     size=file_.size,
                     crawlId=crawl_id,
                     numReplicas=len(file_.replicas) if file_.replicas else 0,
-                    expireAt=date_to_str(expire_at),
+                    # expireAt=date_to_str(expire_at),
                 )
             )
 
@@ -991,5 +999,39 @@ def init_base_crawls_api(app, user_dep, *args):
         org: Organization = Depends(org_crawl_dep),
     ):
         return await ops.delete_crawls_all_types(delete_list, org, user)
+
+    @app.get(
+        "/orgs/{oid}/all-crawls/{crawl_id}/files/{name}",
+        tags=["files"],
+    )
+    async def get_file_redir(
+        crawl_id: str, oid: str, name: str, dl_auth=Depends(decode_dl_token)
+    ):
+        auth_oid, auth_crawl_id = dl_auth
+        if oid != auth_oid or crawl_id != auth_crawl_id:
+            raise HTTPException(status_code=403, detail="not_allowed")
+
+        crawl = await ops.get_crawl_raw(crawl_id)
+        filename = oid + "/" + name
+
+        the_file = None
+        for file in crawl.get("files"):
+            if filename == file.get("filename"):
+                the_file = CrawlFile(**file)
+                break
+
+        if not the_file:
+            raise HTTPException(status_code=404, detail="file_not_found")
+
+        org = await ops.orgs.get_org_by_id(UUID(oid))
+
+        presigned_url, _ = await ops.storage_ops.get_presigned_url(
+            org, the_file, force_update=False
+        )
+
+        headers = {
+            "Cache-Control": "max-age=3600, stale-while-revalidate=86400",
+        }
+        return RedirectResponse(presigned_url, headers=headers)
 
     return ops
