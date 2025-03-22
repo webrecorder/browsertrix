@@ -28,7 +28,7 @@ from .models import (
     UpdateColl,
     AddRemoveCrawlList,
     BaseCrawl,
-    CrawlOutWithResources,
+    CrawlFile,
     CrawlFileOut,
     Organization,
     PaginatedCollOutResponse,
@@ -50,7 +50,13 @@ from .models import (
     MIN_UPLOAD_PART_SIZE,
     PublicCollOut,
 )
-from .utils import dt_now, slug_from_name, get_duplicate_key_error_field, get_origin
+from .utils import (
+    dt_now,
+    slug_from_name,
+    get_duplicate_key_error_field,
+    get_origin,
+    date_to_str,
+)
 
 if TYPE_CHECKING:
     from .orgs import OrgOps
@@ -346,7 +352,7 @@ class CollectionOps:
                 result["resources"],
                 crawl_ids,
                 pages_optimized,
-            ) = await self.get_collection_crawl_resources(coll_id)
+            ) = await self.get_collection_crawl_resources(coll_id, org)
 
             initial_pages, _ = await self.page_ops.list_pages(
                 crawl_ids=crawl_ids,
@@ -400,7 +406,9 @@ class CollectionOps:
         if result.get("access") not in allowed_access:
             raise HTTPException(status_code=404, detail="collection_not_found")
 
-        result["resources"], _, _ = await self.get_collection_crawl_resources(coll_id)
+        result["resources"], _, _ = await self.get_collection_crawl_resources(
+            coll_id, org
+        )
 
         thumbnail = result.get("thumbnail")
         if thumbnail:
@@ -555,30 +563,79 @@ class CollectionOps:
         return collections, total
 
     async def get_collection_crawl_resources(
-        self, coll_id: UUID
+        self, coll_id: UUID, org: Organization
     ) -> tuple[List[CrawlFileOut], List[str], bool]:
         """Return pre-signed resources for all collection crawl files."""
-        # Ensure collection exists
-        _ = await self.get_collection_raw(coll_id)
-
         resources = []
         pages_optimized = True
 
-        crawls, _ = await self.crawl_ops.list_all_base_crawls(
-            collection_id=coll_id,
-            states=list(SUCCESSFUL_STATES),
-            page_size=10_000,
-            cls_type=CrawlOutWithResources,
+        crawl_ids = await self.get_collection_crawl_ids(coll_id)
+
+        cursor = self.crawls.aggregate(
+            [
+                {"$match": {"_id": {"$in": crawl_ids}}},
+                {"$project": {"files": "$files", "version": 1}},
+                {
+                    "$lookup": {
+                        "from": "presigned_urls",
+                        "localField": "files.filename",
+                        "foreignField": "_id",
+                        "as": "presigned",
+                    }
+                },
+            ]
         )
 
-        crawl_ids = []
+        resources = []
 
-        for crawl in crawls:
-            crawl_ids.append(crawl.id)
-            if crawl.resources:
-                resources.extend(crawl.resources)
-            if crawl.version != 2:
-                pages_optimized = False
+        async for result in cursor:
+            mapping = {}
+            # create mapping of filename -> file data
+            for file in result["files"]:
+                mapping[file["filename"]] = file
+
+            # add already presigned resources
+            for presigned in result["presigned"]:
+                file = mapping.get(presigned["_id"])
+                if file:
+                    file["signedAt"] = presigned["signedAt"]
+                    file["path"] = presigned["url"]
+                    resources.append(
+                        CrawlFileOut(
+                            name=os.path.basename(file["filename"]),
+                            path=presigned["url"],
+                            hash=file["hash"],
+                            size=file["size"],
+                            crawlId=result.get("_id"),
+                            numReplicas=len(file.get("replicas") or []),
+                            expireAt=date_to_str(
+                                presigned["signedAt"]
+                                + self.storage_ops.signed_duration_delta
+                            ),
+                        )
+                    )
+
+                    del mapping[presigned["_id"]]
+
+            # need to sign the remainder
+            for file in mapping.values():
+                # force update as we know its not already presigned, skip extra check
+                url, expire_at = await self.storage_ops.get_presigned_url(
+                    org, CrawlFile(**file), force_update=True
+                )
+                resources.append(
+                    CrawlFileOut(
+                        name=os.path.basename(file["filename"]),
+                        path=url,
+                        hash=file["hash"],
+                        size=file["size"],
+                        crawlId=result.get("_id"),
+                        numReplicas=len(file.get("replicas") or []),
+                        expireAt=date_to_str(expire_at),
+                    )
+                )
+
+            pages_optimized = result.get("version") == 2
 
         return resources, crawl_ids, pages_optimized
 
@@ -1020,7 +1077,7 @@ def init_collections_api(
                     results[collection.name],
                     _,
                     _,
-                ) = await colls.get_collection_crawl_resources(collection.id)
+                ) = await colls.get_collection_crawl_resources(collection.id, org)
         except Exception as exc:
             # pylint: disable=raise-missing-from
             raise HTTPException(
