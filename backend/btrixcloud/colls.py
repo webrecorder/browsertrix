@@ -588,6 +588,8 @@ class CollectionOps:
 
         resources = []
 
+        sign_files = []
+
         async for result in cursor:
             mapping = {}
             # create mapping of filename -> file data
@@ -617,19 +619,21 @@ class CollectionOps:
 
                     del mapping[presigned["_id"]]
 
-            # need to sign the remainder
-            futures = []
+            pages_optimized = result.get("version") == 2
 
-            for file in mapping.values():
-                # force update as we know its not already presigned, skip extra check
-                futures.append(
-                    self.storage_ops.get_presigned_url(
-                        org, CrawlFile(**file), force_update=True
-                    )
-                )
+            sign_files.extend(list(mapping.values()))
 
-            results = await asyncio.gather(*futures)
-            for (url, expire_at), file in zip(results, mapping.values()):
+        if sign_files:
+            names = [file["filename"] for file in sign_files]
+
+            first_file = CrawlFile(**sign_files[0])
+            s3storage = self.storage_ops.get_org_storage_by_ref(org, first_file.storage)
+
+            signed_urls, expire_at = await self.storage_ops.get_presigned_urls_bulk(
+                org, s3storage, names
+            )
+
+            for url, file in zip(signed_urls, sign_files):
                 resources.append(
                     CrawlFileOut(
                         name=os.path.basename(file["filename"]),
@@ -641,8 +645,6 @@ class CollectionOps:
                         expireAt=date_to_str(expire_at),
                     )
                 )
-
-            pages_optimized = result.get("version") == 2
 
         return resources, crawl_ids, pages_optimized
 
@@ -1073,7 +1075,6 @@ def init_collections_api(
     @app.get(
         "/orgs/{oid}/collections/$all",
         tags=["collections"],
-        response_model=Dict[str, List[CrawlFileOut]],
     )
     async def get_collection_all(org: Organization = Depends(org_viewer_dep)):
         results = {}
