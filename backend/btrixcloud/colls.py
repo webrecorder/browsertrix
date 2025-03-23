@@ -562,6 +562,7 @@ class CollectionOps:
 
         return collections, total
 
+    # pylint: disable=too-many-locals
     async def get_collection_crawl_resources(
         self, coll_id: Optional[UUID], org: Organization
     ) -> tuple[List[CrawlFileOut], List[str], bool]:
@@ -596,10 +597,13 @@ class CollectionOps:
 
         sign_files = []
 
+        crawl_id = None
+
         async for result in cursor:
             mapping = {}
             # create mapping of filename -> file data
             for file in result["files"]:
+                file["crawl_id"] = result.get("_id")
                 mapping[file["filename"]] = file
 
             # add already presigned resources
@@ -614,7 +618,7 @@ class CollectionOps:
                             path=presigned["url"],
                             hash=file["hash"],
                             size=file["size"],
-                            crawlId=result.get("_id"),
+                            crawlId=file["crawl_id"],
                             numReplicas=len(file.get("replicas") or []),
                             expireAt=date_to_str(
                                 presigned["signedAt"]
@@ -646,7 +650,7 @@ class CollectionOps:
                         path=url,
                         hash=file["hash"],
                         size=file["size"],
-                        crawlId=result.get("_id"),
+                        crawlId=file["crawl_id"],
                         numReplicas=len(file.get("replicas") or []),
                         expireAt=date_to_str(expire_at),
                     )
