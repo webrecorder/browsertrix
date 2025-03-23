@@ -105,6 +105,7 @@ class StorageOps:
         self.frontend_origin = f"{frontend_origin}.{default_namespace}"
 
         self.local_minio_access_path = os.environ.get("LOCAL_MINIO_ACCESS_PATH")
+        self.presign_batch_size = int(os.environ.get("PRESIGN_BATCH_SIZE", 8))
 
         with open(os.environ["STORAGES_JSON"], encoding="utf-8") as fh:
             storage_list = json.loads(fh.read())
@@ -541,7 +542,7 @@ class StorageOps:
         urls = []
 
         futures = []
-        num_batch = 16
+        num_batch = self.presign_batch_size
 
         now = dt_now()
 
