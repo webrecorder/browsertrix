@@ -597,8 +597,6 @@ class CollectionOps:
 
         sign_files = []
 
-        crawl_id = None
-
         async for result in cursor:
             mapping = {}
             # create mapping of filename -> file data
