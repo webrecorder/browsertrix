@@ -535,6 +535,67 @@ class StorageOps:
 
         return presigned_url, now + self.signed_duration_delta
 
+    async def get_presigned_urls_bulk(
+        self, org: Organization, s3storage: S3Storage, filenames: list[str]
+    ) -> tuple[list[str], datetime]:
+        """generate pre-signed url for crawl file"""
+
+        urls = []
+
+        futures = []
+        num_batch = 8
+
+        now = dt_now()
+
+        async with self.get_s3_client(
+            s3storage,
+            for_presign=True,
+        ) as (client, bucket, key):
+
+            for filename in filenames:
+                orig_key = key
+                key += filename
+
+                futures.append(
+                    client.generate_presigned_url(
+                        "get_object",
+                        Params={"Bucket": bucket, "Key": key},
+                        ExpiresIn=PRESIGN_DURATION_SECONDS,
+                    )
+                )
+
+            for i in range(0, len(futures), num_batch):
+                batch = futures[i : i + num_batch]
+                results = await asyncio.gather(*batch)
+
+                presigned_obj = []
+
+                for presigned_url, filename in zip(
+                    results, filenames[i : i + num_batch]
+                ):
+                    if (
+                        s3storage.access_endpoint_url
+                        and s3storage.access_endpoint_url != s3storage.endpoint_url
+                    ):
+                        parts = urlsplit(s3storage.endpoint_url)
+                        host_endpoint_url = (
+                            f"{parts.scheme}://{bucket}.{parts.netloc}/{orig_key}"
+                        )
+                        presigned_url = presigned_url.replace(
+                            host_endpoint_url, s3storage.access_endpoint_url
+                        )
+
+                    urls.append(presigned_url)
+                    presigned_obj.append(
+                        PresignedUrl(
+                            id=filename, url=presigned_url, signedAt=now, oid=org.id
+                        ).dict()
+                    )
+
+                await self.presigned_urls.insert_many(presigned_obj, ordered=False)
+
+        return urls, now + self.signed_duration_delta
+
     async def delete_file_object(self, org: Organization, crawlfile: BaseFile) -> bool:
         """delete crawl file from storage."""
         return await self._delete_file(org, crawlfile.filename, crawlfile.storage)
