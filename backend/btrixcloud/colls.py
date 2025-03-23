@@ -563,17 +563,23 @@ class CollectionOps:
         return collections, total
 
     async def get_collection_crawl_resources(
-        self, coll_id: UUID, org: Organization
+        self, coll_id: Optional[UUID], org: Organization
     ) -> tuple[List[CrawlFileOut], List[str], bool]:
         """Return pre-signed resources for all collection crawl files."""
         resources = []
         pages_optimized = True
+        match: dict[str, Any]
 
-        crawl_ids = await self.get_collection_crawl_ids(coll_id)
+        if coll_id:
+            crawl_ids = await self.get_collection_crawl_ids(coll_id)
+            match = {"_id": {"$in": crawl_ids}}
+        else:
+            crawl_ids = []
+            match = {"oid": org.id}
 
         cursor = self.crawls.aggregate(
             [
-                {"$match": {"_id": {"$in": crawl_ids}}},
+                {"$match": match},
                 {"$project": {"files": "$files", "version": 1}},
                 {
                     "$lookup": {
@@ -1078,20 +1084,7 @@ def init_collections_api(
     )
     async def get_collection_all(org: Organization = Depends(org_viewer_dep)):
         results = {}
-        try:
-            all_collections, _ = await colls.list_collections(org, page_size=10_000)
-            for collection in all_collections:
-                (
-                    results[collection.name],
-                    _,
-                    _,
-                ) = await colls.get_collection_crawl_resources(collection.id, org)
-        except Exception as exc:
-            # pylint: disable=raise-missing-from
-            raise HTTPException(
-                status_code=400, detail="Error Listing All Crawled Files: " + str(exc)
-            )
-
+        results["resources"] = colls.get_collection_crawl_resources(None, org)
         return results
 
     @app.get(
