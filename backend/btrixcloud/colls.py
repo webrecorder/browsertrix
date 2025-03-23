@@ -1084,7 +1084,7 @@ def init_collections_api(
     )
     async def get_collection_all(org: Organization = Depends(org_viewer_dep)):
         results = {}
-        results["resources"] = colls.get_collection_crawl_resources(None, org)
+        results["resources"] = await colls.get_collection_crawl_resources(None, org)
         return results
 
     @app.get(
