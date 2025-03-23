@@ -70,7 +70,7 @@ CHUNK_SIZE = 1024 * 256
 
 
 # ============================================================================
-# pylint: disable=broad-except,raise-missing-from
+# pylint: disable=broad-except,raise-missing-from,too-many-instance-attributes
 class StorageOps:
     """All storage handling, download/upload operations"""
 
@@ -103,6 +103,8 @@ class StorageOps:
         )
         default_namespace = os.environ.get("DEFAULT_NAMESPACE", "default")
         self.frontend_origin = f"{frontend_origin}.{default_namespace}"
+
+        self.presign_batch_size = int(os.environ.get("PRESIGN_BATCH_SIZE", 8))
 
         with open(os.environ["STORAGES_JSON"], encoding="utf-8") as fh:
             storage_list = json.loads(fh.read())
@@ -524,7 +526,7 @@ class StorageOps:
         urls = []
 
         futures = []
-        num_batch = 16
+        num_batch = self.presign_batch_size
 
         now = dt_now()
 
