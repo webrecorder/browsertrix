@@ -524,7 +524,7 @@ class StorageOps:
         urls = []
 
         futures = []
-        num_batch = 8
+        num_batch = 16
 
         now = dt_now()
 
