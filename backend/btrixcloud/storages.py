@@ -587,7 +587,7 @@ class StorageOps:
                     presigned_obj.append(
                         PresignedUrl(
                             id=filename, url=presigned_url, signedAt=now, oid=org.id
-                        ).dict()
+                        ).to_dict()
                     )
 
                 await self.presigned_urls.insert_many(presigned_obj, ordered=False)
