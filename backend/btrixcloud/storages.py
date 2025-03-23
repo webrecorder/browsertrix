@@ -496,12 +496,9 @@ class StorageOps:
             s3storage,
             for_presign=True,
         ) as (client, bucket, key):
-            orig_key = key
-            key += crawlfile.filename
-
             presigned_url = await client.generate_presigned_url(
                 "get_object",
-                Params={"Bucket": bucket, "Key": key},
+                Params={"Bucket": bucket, "Key": key + crawlfile.filename},
                 ExpiresIn=PRESIGN_DURATION_SECONDS,
             )
 
@@ -516,6 +513,7 @@ class StorageOps:
                     if virtual
                     else f"{parts.scheme}://{parts.netloc}/{bucket}/{orig_key}"
                 )
+                host_endpoint_url = f"{parts.scheme}://{bucket}.{parts.netloc}/{key}"
                 presigned_url = presigned_url.replace(
                     host_endpoint_url, s3storage.access_endpoint_url
                 )
@@ -552,14 +550,20 @@ class StorageOps:
             for_presign=True,
         ) as (client, bucket, key):
 
-            for filename in filenames:
-                orig_key = key
-                key += filename
+            if (
+                s3storage.access_endpoint_url
+                and s3storage.access_endpoint_url != s3storage.endpoint_url
+            ):
+                parts = urlsplit(s3storage.endpoint_url)
+                host_endpoint_url = f"{parts.scheme}://{bucket}.{parts.netloc}/{key}"
+            else:
+                host_endpoint_url = None
 
+            for filename in filenames:
                 futures.append(
                     client.generate_presigned_url(
                         "get_object",
-                        Params={"Bucket": bucket, "Key": key},
+                        Params={"Bucket": bucket, "Key": key + filename},
                         ExpiresIn=PRESIGN_DURATION_SECONDS,
                     )
                 )
@@ -573,19 +577,13 @@ class StorageOps:
                 for presigned_url, filename in zip(
                     results, filenames[i : i + num_batch]
                 ):
-                    if (
-                        s3storage.access_endpoint_url
-                        and s3storage.access_endpoint_url != s3storage.endpoint_url
-                    ):
-                        parts = urlsplit(s3storage.endpoint_url)
-                        host_endpoint_url = (
-                            f"{parts.scheme}://{bucket}.{parts.netloc}/{orig_key}"
-                        )
+                    if host_endpoint_url:
                         presigned_url = presigned_url.replace(
                             host_endpoint_url, s3storage.access_endpoint_url
                         )
 
                     urls.append(presigned_url)
+
                     presigned_obj.append(
                         PresignedUrl(
                             id=filename, url=presigned_url, signedAt=now, oid=org.id
