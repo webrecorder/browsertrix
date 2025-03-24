@@ -800,9 +800,9 @@ def test_user_emails_endpoint_superuser(admin_auth_headers, default_org_id):
 
     for user in user_emails:
         assert user["email"]
-        assert "id" not in data
-        assert "is_superuser" not in data
-        assert data["is_verified"] == True
+        assert "id" not in user
+        assert "is_superuser" not in user
+        assert user["is_verified"] == True
         orgs = user.get("orgs")
         if orgs == []:
             continue
