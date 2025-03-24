@@ -81,7 +81,6 @@ export type FormState = {
     minute: number;
     period: "AM" | "PM";
   };
-  runNow: boolean;
   jobName: WorkflowParams["name"];
   browserProfile: Profile | null;
   tags: Tags;
@@ -139,7 +138,6 @@ export const getDefaultFormState = (): FormState => ({
     minute: 0,
     period: "AM",
   },
-  runNow: false,
   jobName: "",
   browserProfile: null,
   tags: [],
@@ -275,10 +273,6 @@ export function getInitialFormState(params: {
     lang: params.initialWorkflow.config.lang ?? defaultFormState.lang,
     scheduleType: defaultFormState.scheduleType,
     scheduleFrequency: defaultFormState.scheduleFrequency,
-    runNow:
-      params.org?.storageQuotaReached || params.org?.execMinutesQuotaReached
-        ? false
-        : defaultFormState.runNow,
     tags: params.initialWorkflow.tags,
     autoAddCollections: params.initialWorkflow.autoAddCollections,
     jobName: params.initialWorkflow.name || defaultFormState.jobName,
