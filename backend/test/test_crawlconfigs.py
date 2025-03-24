@@ -173,6 +173,26 @@ def test_update_config_invalid_exclude_regex(
     assert r.json()["detail"] == "invalid_regex"
 
 
+def test_update_config_invalid_link_selector(
+    crawler_auth_headers, default_org_id, sample_crawl_data
+):
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
+        headers=crawler_auth_headers,
+        json={"config": {"selectLinks": []}},
+    )
+    assert r.status_code == 400
+    assert r.json()["detail"] == "invalid_link_selector"
+
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
+        headers=crawler_auth_headers,
+        json={"config": {"selectLinks": ["a[href]->href", "->href"]}},
+    )
+    assert r.status_code == 400
+    assert r.json()["detail"] == "invalid_link_selector"
+
+
 def test_verify_default_select_links(
     crawler_auth_headers, default_org_id, sample_crawl_data
 ):
@@ -543,3 +563,25 @@ def test_add_crawl_config_invalid_exclude_regex(
     )
     assert r.status_code == 400
     assert r.json()["detail"] == "invalid_regex"
+
+
+def test_add_crawl_config_invalid_link_selectors(
+    crawler_auth_headers, default_org_id, sample_crawl_data
+):
+    sample_crawl_data["config"]["selectLinks"] = []
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        headers=crawler_auth_headers,
+        json=sample_crawl_data,
+    )
+    assert r.status_code == 400
+    assert r.json()["detail"] == "invalid_link_selector"
+
+    sample_crawl_data["config"]["selectLinks"] = ["a[href]->href", "->href"]
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        headers=crawler_auth_headers,
+        json=sample_crawl_data,
+    )
+    assert r.status_code == 400
+    assert r.json()["detail"] == "invalid_link_selector"
