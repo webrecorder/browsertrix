@@ -2277,7 +2277,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
         blockAds: this.formState.blockAds,
         exclude: trimArray(this.formState.exclusions),
         behaviors: this.setBehaviors(),
-        selectLinks: this.linkSelectorTable?.value || DEFAULT_SELECT_LINKS,
+        selectLinks: this.linkSelectorTable?.value.length
+          ? this.linkSelectorTable.value
+          : DEFAULT_SELECT_LINKS,
       },
       crawlerChannel: this.formState.crawlerChannel || "default",
       proxyId: this.formState.proxyId,
