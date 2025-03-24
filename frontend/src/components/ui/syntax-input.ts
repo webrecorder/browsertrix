@@ -51,8 +51,6 @@ export class SyntaxInput extends TailwindElement {
   @query("btrix-code")
   private readonly code?: Code | null;
 
-  private scrollSyncedOnInput = true;
-
   public setCustomValidity(message: string) {
     this.input?.setCustomValidity(message);
     this.error = message;
@@ -93,6 +91,11 @@ export class SyntaxInput extends TailwindElement {
     return this.input.checkValidity();
   }
 
+  disconnectedCallback(): void {
+    super.disconnectedCallback();
+    document.removeEventListener("selectionchange", this.onSelectionChange);
+  }
+
   render() {
     return html`<sl-tooltip
       content=${this.error}
@@ -118,28 +121,38 @@ export class SyntaxInput extends TailwindElement {
 
             this.setCustomValidity("");
 
-            this.scrollSyncedOnInput = true;
-
             if (this.code) {
               this.code.value = value;
 
               await this.code.updateComplete;
 
-              this.scrollSync({ pad: true });
+              void this.scrollSync({ pad: true });
             }
           }}
-          @focus=${this.scrollSync}
-          @keydown=${() => {
-            this.scrollSyncedOnInput = false;
+          @sl-focus=${() => {
+            if (!this.input?.input) return;
+
+            // For Firefox
+            this.input.input.addEventListener(
+              "selectionchange",
+              this.onSelectionChange,
+            );
+            // Non-Firefox
+            document.addEventListener(
+              "selectionchange",
+              this.onSelectionChange,
+            );
           }}
-          @keyup=${() => {
-            // TODO Could maybe select and selectionchange events instead?
-            if (!this.scrollSyncedOnInput) {
-              this.scrollSync();
-            }
+          @sl-blur=${() => {
+            this.input?.input.removeEventListener(
+              "selectionchange",
+              this.onSelectionChange,
+            );
+            document.removeEventListener(
+              "selectionchange",
+              this.onSelectionChange,
+            );
           }}
-          @mousedown=${this.scrollSync}
-          @mouseup=${this.scrollSync}
         ></sl-input>
 
         <btrix-code
@@ -155,7 +168,14 @@ export class SyntaxInput extends TailwindElement {
     </sl-tooltip>`;
   }
 
-  private readonly scrollSync = (opts?: { pad: boolean }) => {
+  private readonly onSelectionChange = () => {
+    console.log("sel");
+    void this.scrollSync();
+  };
+
+  private readonly scrollSync = async (opts?: { pad: boolean }) => {
+    await this.input?.updateComplete;
+
     const innerInput = this.input?.input;
 
     if (!innerInput || !this.code) return;
@@ -165,9 +185,6 @@ export class SyntaxInput extends TailwindElement {
 
     // Pad scroll left when moving forward to prevent
     // delay in cursor moving to the correct position
-
-    this.code.scrollLeft =
-      innerInput.scrollLeft +
-      (opts?.pad && innerInput.selectionDirection === "forward" ? ch : 0);
+    this.code.scrollLeft = innerInput.scrollLeft + (opts?.pad ? ch : 0);
   };
 }

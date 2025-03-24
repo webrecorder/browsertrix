@@ -148,7 +148,7 @@ export class LinkSelectorTable extends BtrixElement {
                 class="flex-1"
                 value=${sel}
                 language="css"
-                placeholder="button[data-href]"
+                placeholder="Enter selector"
                 required
                 @sl-change=${(e: CustomEvent) => {
                   const el = e.currentTarget as SyntaxInput;
@@ -192,7 +192,7 @@ export class LinkSelectorTable extends BtrixElement {
                 class="flex-1"
                 value=${attr}
                 language="xml"
-                placeholder="data-href"
+                placeholder="Enter attribute"
                 required
                 @sl-change=${(e: CustomEvent) => {
                   const el = e.currentTarget as SyntaxInput;
