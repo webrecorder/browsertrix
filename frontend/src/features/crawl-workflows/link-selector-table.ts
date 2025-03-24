@@ -152,7 +152,7 @@ export class LinkSelectorTable extends BtrixElement {
                 required
                 @sl-change=${(e: CustomEvent) => {
                   const el = e.currentTarget as SyntaxInput;
-                  const value = el.input?.value || "";
+                  const value = el.input?.value.trim() || "";
 
                   void this.updateRows(
                     {
@@ -162,13 +162,15 @@ export class LinkSelectorTable extends BtrixElement {
                     i,
                   );
 
-                  try {
-                    // Validate selector
-                    document.createDocumentFragment().querySelector(value);
-                  } catch {
-                    el.setCustomValidity(
-                      msg("Please enter a valid CSS selector"),
-                    );
+                  if (value) {
+                    try {
+                      // Validate selector
+                      document.createDocumentFragment().querySelector(value);
+                    } catch {
+                      el.setCustomValidity(
+                        msg("Please enter a valid CSS selector"),
+                      );
+                    }
                   }
                 }}
               >
@@ -194,7 +196,7 @@ export class LinkSelectorTable extends BtrixElement {
                 required
                 @sl-change=${(e: CustomEvent) => {
                   const el = e.currentTarget as SyntaxInput;
-                  const value = el.input?.value || "";
+                  const value = el.input?.value.trim() || "";
 
                   void this.updateRows(
                     {
@@ -204,13 +206,15 @@ export class LinkSelectorTable extends BtrixElement {
                     i,
                   );
 
-                  try {
-                    // Validate attribute
-                    document.createElement("a").setAttribute(value, "x-test");
-                  } catch {
-                    el.setCustomValidity(
-                      msg("Please enter a valid HTML attribute"),
-                    );
+                  if (value) {
+                    try {
+                      // Validate attribute
+                      document.createElement("a").setAttribute(value, "x-test");
+                    } catch {
+                      el.setCustomValidity(
+                        msg("Please enter a valid HTML attribute"),
+                      );
+                    }
                   }
                 }}
               >

@@ -61,12 +61,21 @@ export class SyntaxInput extends TailwindElement {
   public reportValidity() {
     const valid = this.checkValidity();
 
-    if (!valid) {
-      if (this.error) {
-        void this.tooltip?.show();
-      } else {
-        this.input?.reportValidity();
-      }
+    if (this.input && this.tooltip) {
+      this.tooltip.disabled = true;
+
+      // Suppress tooltip validation from showing on focus
+      this.input.addEventListener(
+        "focus",
+        async () => {
+          await this.updateComplete;
+          await this.input!.updateComplete;
+          this.tooltip!.disabled = !this.error;
+        },
+        { once: true },
+      );
+
+      this.input.reportValidity();
     }
 
     return valid;
