@@ -1132,7 +1132,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       <div class="col-span-5">
         <btrix-details ?open=${isCustom}>
           <span slot="title"
-            >${msg("Link Selectors")}
+            >${msg("Custom Link Selectors")}
             ${isCustom
               ? html`<btrix-badge>${selectors.length}</btrix-badge>`
               : ""}</span
