@@ -184,7 +184,7 @@ def test_wait_for_complete(admin_auth_headers, default_org_id):
     assert len(data["resources"]) == 1
     assert data["resources"][0]["path"]
 
-    assert len(data["initialPages"]) == 1
+    assert len(data["initialPages"]) == 4
     assert data["pagesQueryUrl"].endswith(
         f"/orgs/{default_org_id}/crawls/{admin_crawl_id}/pagesSearch"
     )

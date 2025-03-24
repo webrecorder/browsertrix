@@ -213,28 +213,6 @@ class UserOrgInfoOut(BaseModel):
 
 
 # ============================================================================
-class UserOut(BaseModel):
-    """Output User model"""
-
-    id: UUID
-
-    name: str = ""
-    email: EmailStr
-    is_superuser: bool = False
-    is_verified: bool = False
-
-    orgs: List[UserOrgInfoOut]
-
-
-# ============================================================================
-class UserEmailWithOrgInfo(BaseModel):
-    """Output model for getting user email list with org info for each"""
-
-    email: EmailStr
-    orgs: List[UserOrgInfoOut]
-
-
-# ============================================================================
 
 ### CRAWL STATES
 
@@ -1834,6 +1812,36 @@ class SubscriptionCanceledResponse(BaseModel):
 
 
 # ============================================================================
+# User Org Info With Subs
+# ============================================================================
+class UserOrgInfoOutWithSubs(UserOrgInfoOut):
+    """org per user with sub info"""
+
+    readOnly: bool
+    readOnlyReason: Optional[str] = None
+
+    subscription: Optional[Subscription] = None
+
+
+# ============================================================================
+class UserOutNoId(BaseModel):
+    """Output User Model, no ID"""
+
+    name: str = ""
+    email: EmailStr
+    orgs: List[UserOrgInfoOut | UserOrgInfoOutWithSubs]
+    is_verified: bool = False
+
+
+# ============================================================================
+class UserOut(UserOutNoId):
+    """Output User Model"""
+
+    id: UUID
+    is_superuser: bool = False
+
+
+# ============================================================================
 # ORGS
 # ============================================================================
 class OrgReadOnlyOnCancel(BaseModel):
@@ -2063,10 +2071,14 @@ class Organization(BaseMongoModel):
                 if not role:
                     continue
 
-                result["users"][id_] = {
+                email = org_user.get("email")
+                if not email:
+                    continue
+
+                result["users"][email] = {
                     "role": role,
                     "name": org_user.get("name", ""),
-                    "email": org_user.get("email", ""),
+                    "email": email,
                 }
 
         return OrgOut.from_dict(result)
@@ -2876,10 +2888,10 @@ class PaginatedCrawlErrorResponse(PaginatedResponse):
 
 
 # ============================================================================
-class PaginatedUserEmailsResponse(PaginatedResponse):
+class PaginatedUserOutResponse(PaginatedResponse):
     """Response model for user emails with org info"""
 
-    items: List[UserEmailWithOrgInfo]
+    items: List[UserOutNoId]
 
 
 # ============================================================================

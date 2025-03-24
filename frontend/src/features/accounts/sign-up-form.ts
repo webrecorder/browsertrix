@@ -86,6 +86,23 @@ export class SignUpForm extends LiteElement {
         ${serverError}
 
         <div class="mb-5">
+          <sl-input
+            id="name"
+            name="name"
+            label=${msg("Your name")}
+            autocomplete="nickname"
+            minlength="2"
+            class="hide-required-content"
+            required
+          >
+          </sl-input>
+          <p class="mt-2 text-xs text-neutral-500">
+            ${msg(
+              "Your full name, nickname, or another name that org collaborators can see.",
+            )}
+          </p>
+        </div>
+        <div class="mb-5">
           ${this.email
             ? html`
                 <div style="font-size: var(--sl-input-label-font-size-medium)">
@@ -135,23 +152,6 @@ export class SignUpForm extends LiteElement {
             )}
           </p>
           ${when(this.pwStrengthResults, this.renderPasswordStrength)}
-        </div>
-        <div class="mb-5">
-          <sl-input
-            id="name"
-            name="name"
-            label=${msg("Your name")}
-            autocomplete="nickname"
-            minlength="2"
-            class="hide-required-content"
-            required
-          >
-          </sl-input>
-          <p class="mt-2 text-xs text-neutral-500">
-            ${msg(
-              "Your full name, nickname, or another name that org collaborators can see.",
-            )}
-          </p>
         </div>
 
         <sl-button

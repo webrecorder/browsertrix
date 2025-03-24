@@ -52,6 +52,7 @@ import {
 } from "@/controllers/observable";
 import { type SelectBrowserProfileChangeEvent } from "@/features/browser-profiles/select-browser-profile";
 import type { CollectionsChangeEvent } from "@/features/collections/collections-add";
+import type { CrawlStatusChangedEventDetail } from "@/features/crawl-workflows/live-workflow-status";
 import type {
   ExclusionChangeEvent,
   QueueExclusionTable,
@@ -231,6 +232,9 @@ export class WorkflowEditor extends BtrixElement {
   @state()
   private serverError?: TemplateResult | string;
 
+  @state()
+  private isCrawlRunning: boolean | null = this.configId ? null : false;
+
   // For observing panel sections position in viewport
   private readonly observable = new ObservableController(this, {
     // Add some padding to account for stickied elements
@@ -335,6 +339,9 @@ export class WorkflowEditor extends BtrixElement {
       } else {
         this.initializeEditor();
       }
+    }
+    if (changedProperties.has("configId")) {
+      this.isCrawlRunning = this.configId ? null : false;
     }
   }
 
@@ -589,6 +596,7 @@ export class WorkflowEditor extends BtrixElement {
             `
           : nothing}
         ${when(this.serverError, (error) => this.renderErrorAlert(error))}
+        ${when(this.configId, this.renderCrawlStatus)}
 
         <sl-tooltip content=${msg("Save without running")}>
           <sl-button
@@ -601,14 +609,21 @@ export class WorkflowEditor extends BtrixElement {
             ${msg("Save")}
           </sl-button>
         </sl-tooltip>
-        <sl-tooltip content=${msg("Save and run with new settings")}>
+        <sl-tooltip
+          content=${this.isCrawlRunning
+            ? msg("Crawl is already running")
+            : msg("Save and run with new settings")}
+          ?disabled=${this.isCrawlRunning === null}
+        >
           <sl-button
             size="small"
             variant="primary"
             type="submit"
             ?disabled=${isArchivingDisabled(this.org, true) ||
-            this.isSubmitting}
-            ?loading=${this.isSubmitting}
+            this.isSubmitting ||
+            this.isCrawlRunning ||
+            this.isCrawlRunning === null}
+            ?loading=${this.isSubmitting || this.isCrawlRunning === null}
           >
             ${msg(html`Run Crawl`)}
           </sl-button>
@@ -616,6 +631,22 @@ export class WorkflowEditor extends BtrixElement {
       </footer>
     `;
   }
+
+  private readonly renderCrawlStatus = (workflowId: string) => {
+    if (!workflowId) return;
+
+    return html`
+      <btrix-live-workflow-status
+        class="mx-2"
+        workflowId=${workflowId}
+        @btrix-crawl-status-changed=${(
+          e: CustomEvent<CrawlStatusChangedEventDetail>,
+        ) => {
+          this.isCrawlRunning = e.detail.isCrawlRunning;
+        }}
+      ></btrix-live-workflow-status>
+    `;
+  };
 
   private renderSectionHeading(content: TemplateResult | string) {
     return html`

@@ -103,7 +103,7 @@ replica_deletion_delay_days: 0
 
 # API Image
 # =========================================
-backend_image: "docker.io/webrecorder/browsertrix-backend:1.14.4"
+backend_image: "docker.io/webrecorder/browsertrix-backend:1.14.6"
 backend_pull_policy: "Always"
 
 backend_password_secret: "PASSWORD!"
@@ -161,7 +161,7 @@ backend_avg_memory_threshold: 95
 
 # Nginx Image
 # =========================================
-frontend_image: "docker.io/webrecorder/browsertrix-frontend:1.14.4"
+frontend_image: "docker.io/webrecorder/browsertrix-frontend:1.14.6"
 frontend_pull_policy: "Always"
 
 frontend_cpu: "10m"
@@ -198,7 +198,7 @@ frontend_avg_memory_threshold: 95
 # =========================================
 mongo_local: true
 
-mongo_host: "local-mongo.default"
+mongo_host: "local-mongo"
 
 mongo_image: "docker.io/library/mongo:6.0.5"
 mongo_pull_policy: "IfNotPresent"
@@ -219,12 +219,8 @@ mongo_auth:
 
 # Redis Image
 # =========================================
-redis_local: true
-
 redis_image: "redis"
 redis_pull_policy: "IfNotPresent"
-
-redis_url: "redis://local-redis.default:6379/1"
 
 redis_cpu: "10m"
 
@@ -391,7 +387,7 @@ minio_local: true
 # minio_local_console_port: 30091
 
 minio_scheme: "http"
-minio_host: "local-minio.default:9000"
+minio_host: "local-minio:9000"
 
 minio_image: docker.io/minio/minio:RELEASE.2022-10-24T18-35-07Z
 minio_mc_image: minio/mc

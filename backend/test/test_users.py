@@ -59,7 +59,6 @@ def test_me_with_orgs(crawler_auth_headers, default_org_id):
     data = r.json()
     assert data["email"] == CRAWLER_USERNAME_LOWERCASE
     assert data["id"]
-    # assert data["is_active"]
     assert data["is_superuser"] is False
     assert data["is_verified"] is True
     assert data["name"] == "new-crawler"
@@ -801,6 +800,9 @@ def test_user_emails_endpoint_superuser(admin_auth_headers, default_org_id):
 
     for user in user_emails:
         assert user["email"]
+        assert "id" not in user
+        assert "is_superuser" not in user
+        assert user["is_verified"] == True
         orgs = user.get("orgs")
         if orgs == []:
             continue
@@ -810,6 +812,9 @@ def test_user_emails_endpoint_superuser(admin_auth_headers, default_org_id):
             assert org["name"]
             assert org["slug"]
             assert org["default"] in (True, False)
+            assert "readOnly" in org
+            assert "readOnlyReason" in org
+            assert "subscription" in org
             role = org["role"]
             assert role
             assert isinstance(role, int)

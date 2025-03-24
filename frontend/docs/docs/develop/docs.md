@@ -41,7 +41,7 @@ First, change your working directory to `frontend/docs`. Then, to run the docs l
     Install and start the docs development server:
 
     ```sh
-    uvx --with mkdocs-material mkdocs serve
+    uvx --with mkdocs-material --with mkdocs-redirects mkdocs serve
     ```
 
 You can now view a local version of the docs at [localhost:8000](http://localhost:8000).

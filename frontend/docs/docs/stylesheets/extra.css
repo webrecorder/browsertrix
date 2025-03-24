@@ -158,6 +158,15 @@ h3 {
 
 /* Status Styling */
 
+.status-empty {
+  font-family: var(--md-code-font);
+  font-weight: 500;
+  white-space: nowrap;
+  & svg {
+    color: rgb(119, 134, 145);
+  }
+}
+
 .status-success {
   font-family: var(--md-code-font);
   font-weight: 500;
