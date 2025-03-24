@@ -148,7 +148,7 @@ export class LinkSelectorTable extends BtrixElement {
                 class="flex-1"
                 value=${sel}
                 language="css"
-                placeholder="button.custom-link"
+                placeholder="button[data-href]"
                 required
                 @sl-change=${(e: CustomEvent) => {
                   const el = e.currentTarget as SyntaxInput;
