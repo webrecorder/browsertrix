@@ -28,7 +28,6 @@ from .models import (
     UpdateColl,
     AddRemoveCrawlList,
     BaseCrawl,
-    CrawlFile,
     CrawlFileOut,
     Organization,
     PaginatedCollOutResponse,
@@ -55,7 +54,6 @@ from .utils import (
     slug_from_name,
     get_duplicate_key_error_field,
     get_origin,
-    date_to_str,
 )
 
 if TYPE_CHECKING:
@@ -567,8 +565,6 @@ class CollectionOps:
         self, coll_id: Optional[UUID], org: Organization
     ) -> tuple[List[CrawlFileOut], List[str], bool]:
         """Return pre-signed resources for all collection crawl files."""
-        resources = []
-        pages_optimized = True
         match: dict[str, Any]
 
         if coll_id:
@@ -578,81 +574,9 @@ class CollectionOps:
             crawl_ids = []
             match = {"oid": org.id}
 
-        cursor = self.crawls.aggregate(
-            [
-                {"$match": match},
-                {"$project": {"files": "$files", "version": 1}},
-                {
-                    "$lookup": {
-                        "from": "presigned_urls",
-                        "localField": "files.filename",
-                        "foreignField": "_id",
-                        "as": "presigned",
-                    }
-                },
-            ]
+        resources, pages_optimized = await self.crawl_ops.get_presigned_files(
+            match, org
         )
-
-        resources = []
-
-        sign_files = []
-
-        async for result in cursor:
-            mapping = {}
-            # create mapping of filename -> file data
-            for file in result["files"]:
-                file["crawl_id"] = result.get("_id")
-                mapping[file["filename"]] = file
-
-            # add already presigned resources
-            for presigned in result["presigned"]:
-                file = mapping.get(presigned["_id"])
-                if file:
-                    file["signedAt"] = presigned["signedAt"]
-                    file["path"] = presigned["url"]
-                    resources.append(
-                        CrawlFileOut(
-                            name=os.path.basename(file["filename"]),
-                            path=presigned["url"],
-                            hash=file["hash"],
-                            size=file["size"],
-                            crawlId=file["crawl_id"],
-                            numReplicas=len(file.get("replicas") or []),
-                            expireAt=date_to_str(
-                                presigned["signedAt"]
-                                + self.storage_ops.signed_duration_delta
-                            ),
-                        )
-                    )
-
-                    del mapping[presigned["_id"]]
-
-            pages_optimized = result.get("version") == 2
-
-            sign_files.extend(list(mapping.values()))
-
-        if sign_files:
-            names = [file["filename"] for file in sign_files]
-
-            first_file = CrawlFile(**sign_files[0])
-            s3storage = self.storage_ops.get_org_storage_by_ref(org, first_file.storage)
-
-            signed_urls, expire_at = await self.storage_ops.get_presigned_urls_bulk(
-                org, s3storage, names
-            )
-
-            for url, file in zip(signed_urls, sign_files):
-                resources.append(
-                    CrawlFileOut(
-                        name=os.path.basename(file["filename"]),
-                        path=url,
-                        hash=file["hash"],
-                        size=file["size"],
-                        crawlId=file["crawl_id"],
-                        numReplicas=len(file.get("replicas") or []),
-                        expireAt=date_to_str(expire_at),
-                    )
-                )
 
         return resources, crawl_ids, pages_optimized
 
