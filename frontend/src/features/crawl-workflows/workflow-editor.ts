@@ -65,6 +65,7 @@ import { labelFor } from "@/strings/crawl-workflows/labels";
 import scopeTypeLabels from "@/strings/crawl-workflows/scopeType";
 import sectionStrings from "@/strings/crawl-workflows/section";
 import { AnalyticsTrackEvent } from "@/trackEvents";
+import { APIErrorDetail } from "@/types/api";
 import {
   Behavior,
   ScopeType,
@@ -74,7 +75,7 @@ import {
 import type { UnderlyingFunction } from "@/types/utils";
 import { NewWorkflowOnlyScopeType } from "@/types/workflow";
 import { track } from "@/utils/analytics";
-import { isApiError } from "@/utils/api";
+import { isApiError, isApiErrorDetail } from "@/utils/api";
 import { DEPTH_SUPPORTED_SCOPES, isPageScopeType } from "@/utils/crawler";
 import {
   getUTCSchedule,
@@ -2130,6 +2131,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
             id: "workflow-created-status",
           });
         } else {
+          // TODO Handle field errors more consistently
+          // https://github.com/webrecorder/browsertrix/issues/2512
           this.notify.toast({
             message: msg("Please fix all errors and try again."),
             variant: "danger",
@@ -2142,11 +2145,26 @@ https://archiveweb.page/images/${"logo.svg"}`}
             : e.details;
 
           if (typeof errorDetail === "string") {
-            this.serverError = `${msg("Please fix the following issue: ")} ${
-              errorDetail === "invalid_regex"
-                ? msg("Page exclusion contains invalid regex")
-                : errorDetail.replace(/_/, " ")
-            }`;
+            let errorDetailMessage = errorDetail.replace(/_/, " ");
+
+            if (isApiErrorDetail(errorDetail)) {
+              switch (errorDetail) {
+                case APIErrorDetail.WorkflowInvalidLinkSelector:
+                  errorDetailMessage = msg(
+                    "Page link selectors contain invalid selector or attribute",
+                  );
+                  break;
+                case APIErrorDetail.WorkflowInvalidRegex:
+                  errorDetailMessage = msg(
+                    "Page exclusion contains invalid regex",
+                  );
+                  break;
+                default:
+                  break;
+              }
+            }
+
+            this.serverError = `${msg("Please fix the following issue: ")} ${errorDetailMessage}`;
           }
         }
       } else {
