@@ -582,7 +582,7 @@ class CrawlConfigUpdateResponse(BaseModel):
     updated: bool = True
     settings_changed: bool
     metadata_changed: bool
-    updated_running: bool = False
+    updatedRunning: bool = False
 
     storageQuotaReached: Optional[bool] = False
     execMinutesQuotaReached: Optional[bool] = False
