@@ -115,7 +115,7 @@ type CrawlConfigParams = WorkflowParams & {
     seeds: Seed[];
   };
 };
-type WorkflowRunParams = { runNow: boolean; updateRunning: boolean };
+type WorkflowRunParams = { runNow: boolean; updateRunning?: boolean };
 
 const STEPS = SECTIONS;
 type StepName = (typeof STEPS)[number];
@@ -2237,8 +2237,11 @@ https://archiveweb.page/images/${"logo.svg"}`}
     const config: CrawlConfigParams & WorkflowRunParams = {
       ...this.parseConfig(),
       runNow: Boolean(opts?.runNow),
-      updateRunning: Boolean(opts?.updateRunning),
     };
+
+    if (this.configId) {
+      config.updateRunning = Boolean(opts?.updateRunning);
+    }
 
     this.isSubmitting = true;
 
