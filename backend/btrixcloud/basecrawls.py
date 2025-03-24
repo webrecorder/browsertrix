@@ -492,9 +492,7 @@ class BaseCrawlOps:
         async def async_gen():
             yield {"presigned": presigned, "files": files_dict, "_id": crawl_id}
 
-        out_files, _ = await self.process_presigned_files(
-            async_gen(), org, force_update
-        )
+        out_files, _ = await self.bulk_presigned_files(async_gen(), org, force_update)
 
         return out_files
 
@@ -517,9 +515,9 @@ class BaseCrawlOps:
             ]
         )
 
-        return await self.process_presigned_files(cursor, org)
+        return await self.bulk_presigned_files(cursor, org)
 
-    async def process_presigned_files(
+    async def bulk_presigned_files(
         self,
         cursor: AsyncIterable[dict[str, Any]],
         org: Organization,
