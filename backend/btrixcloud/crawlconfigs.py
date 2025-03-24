@@ -467,7 +467,7 @@ class CrawlConfigOps:
                 await self.crawl_manager.update_running_crawl_config(
                     running_crawl.id, crawlconfig
                 )
-                ret.updated_running = True
+                ret.updatedRunning = True
 
         return ret
 
