@@ -176,7 +176,7 @@ export class ConfigDetails extends BtrixElement {
                 labelFor.autoclickBehavior,
             ]
               .filter((v) => v)
-              .reduce((a, b) => (a ? `${a}, ${b}` : b), "") || none,
+              .join(", ") || none,
           )}
           ${this.renderSetting(
             labelFor.pageLoadTimeoutSeconds,
