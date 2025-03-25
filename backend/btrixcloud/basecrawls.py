@@ -475,7 +475,6 @@ class BaseCrawlOps:
     ) -> List[CrawlFileOut]:
         """Regenerate presigned URLs for files as necessary"""
         if not files:
-            print("no files")
             return []
 
         out_files = []
@@ -488,6 +487,7 @@ class BaseCrawlOps:
 
         files_dict = [file.dict() for file in files]
 
+        # need an async generator to call bulk_presigned_files
         async def async_gen():
             yield {"presigned": presigned, "files": files_dict, "_id": crawl_id}
 
