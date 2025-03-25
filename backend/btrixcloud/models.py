@@ -564,6 +564,8 @@ class CrawlConfigDefaults(BaseModel):
 
     exclude: Optional[List[str]] = None
 
+    customBehaviors: List[str] = []
+
 
 # ============================================================================
 class CrawlConfigAddedResponse(BaseModel):
