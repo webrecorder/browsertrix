@@ -62,7 +62,12 @@ import { labelFor } from "@/strings/crawl-workflows/labels";
 import scopeTypeLabels from "@/strings/crawl-workflows/scopeType";
 import sectionStrings from "@/strings/crawl-workflows/section";
 import { AnalyticsTrackEvent } from "@/trackEvents";
-import { ScopeType, type Seed, type WorkflowParams } from "@/types/crawler";
+import {
+  Behavior,
+  ScopeType,
+  type Seed,
+  type WorkflowParams,
+} from "@/types/crawler";
 import type { UnderlyingFunction } from "@/types/utils";
 import { NewWorkflowOnlyScopeType } from "@/types/workflow";
 import { track } from "@/utils/analytics";
@@ -111,11 +116,10 @@ type ProgressState = {
   tabs: Tabs;
 };
 const DEFAULT_BEHAVIORS = [
-  "autoscroll",
-  "autoplay",
-  "autofetch",
-  "siteSpecific",
-];
+  Behavior.AutoPlay,
+  Behavior.AutoFetch,
+  Behavior.SiteSpecific,
+] as const;
 const formName = "newJobConfig" as const;
 const panelSuffix = "--panel" as const;
 
@@ -2206,17 +2210,17 @@ https://archiveweb.page/images/${"logo.svg"}`}
   }
 
   private setBehaviors(): string {
-    let behaviors = (
-      this.formState.autoscrollBehavior
-        ? DEFAULT_BEHAVIORS
-        : DEFAULT_BEHAVIORS.slice(1)
-    ).join(",");
+    const behaviors: Behavior[] = [...DEFAULT_BEHAVIORS];
 
-    if (this.formState.autoclickBehavior) {
-      behaviors += ",autoclick";
+    if (this.formState.autoscrollBehavior) {
+      behaviors.unshift(Behavior.AutoScroll);
     }
 
-    return behaviors;
+    if (this.formState.autoclickBehavior) {
+      behaviors.push(Behavior.AutoClick);
+    }
+
+    return behaviors.join(",");
   }
 
   private parseUrlListConfig(): Pick<

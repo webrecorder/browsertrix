@@ -8,7 +8,12 @@ import capitalize from "lodash/fp/capitalize";
 import RegexColorize from "regex-colorize";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import type { CrawlConfig, Seed, SeedConfig } from "@/pages/org/types";
+import {
+  Behavior,
+  type CrawlConfig,
+  type Seed,
+  type SeedConfig,
+} from "@/pages/org/types";
 import { labelFor } from "@/strings/crawl-workflows/labels";
 import scopeTypeLabel from "@/strings/crawl-workflows/scopeType";
 import sectionStrings from "@/strings/crawl-workflows/section";
@@ -164,7 +169,7 @@ export class ConfigDetails extends BtrixElement {
           ${this.renderSetting(
             labelFor.autoscrollBehavior,
             seedsConfig?.behaviors &&
-              !seedsConfig.behaviors.includes("autoscroll")
+              !seedsConfig.behaviors.includes(Behavior.AutoScroll)
               ? msg("Disabled")
               : html`<span class="text-neutral-400"
                   >${msg("Enabled (default)")}</span
@@ -173,7 +178,7 @@ export class ConfigDetails extends BtrixElement {
           ${this.renderSetting(
             labelFor.autoclickBehavior,
             seedsConfig?.behaviors &&
-              seedsConfig.behaviors.includes("autoclick")
+              seedsConfig.behaviors.includes(Behavior.AutoClick)
               ? msg("Enabled")
               : html`<span class="text-neutral-400"
                   >${msg("Disabled (default)")}</span
