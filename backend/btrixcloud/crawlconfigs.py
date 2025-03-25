@@ -301,7 +301,8 @@ class CrawlConfigOps:
                 url = url[len(git_prefix) :]
                 url = url.split("?")[0]
 
-            async with aiohttp.ClientSession() as session:
+            timeout = aiohttp.ClientTimeout(total=10)
+            async with aiohttp.ClientSession(timeout=timeout) as session:
                 async with session.get(url) as resp:
                     if resp.status >= 400:
                         raise HTTPException(
