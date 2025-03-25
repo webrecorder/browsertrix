@@ -687,7 +687,7 @@ def test_validate_custom_behavior(crawler_auth_headers, default_org_id):
 
     # Malformed url
     r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/validate/custom-behaviors",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/validate/custom-behavior",
         headers=crawler_auth_headers,
         json={"customBehavior": malformed_url},
     )
