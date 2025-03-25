@@ -618,10 +618,10 @@ class CrawlConfigDeletedResponse(BaseModel):
 
 
 # ============================================================================
-class ValidateCustomBehaviors(BaseModel):
-    """Input model for validating custom behaviors"""
+class ValidateCustomBehavior(BaseModel):
+    """Input model for validating custom behavior URL/Git reference"""
 
-    customBehaviors: List[str]
+    customBehavior: str
 
 
 # ============================================================================

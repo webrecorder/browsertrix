@@ -44,7 +44,7 @@ from .models import (
     CrawlConfigDeletedResponse,
     CrawlerProxy,
     CrawlerProxies,
-    ValidateCustomBehaviors,
+    ValidateCustomBehavior,
 )
 from .utils import dt_now, slug_from_name, validate_regexes, is_url
 
@@ -70,6 +70,8 @@ ALLOWED_SORT_KEYS = (
 )
 
 DEFAULT_PROXY_ID: str | None = os.environ.get("DEFAULT_PROXY_ID")
+
+GIT_PREFIX = "git+"
 
 
 # ============================================================================
@@ -291,12 +293,11 @@ class CrawlConfigOps:
 
     async def _validate_custom_behaviors_url_syntax(self, custom_behaviors: List[str]):
         """Validate custom behaviors are valid URLs after removing custom git syntax"""
-        git_prefix = "git+"
         for behavior in custom_behaviors:
             url = behavior
 
-            if url.startswith(git_prefix):
-                url = url[len(git_prefix) :]
+            if url.startswith(GIT_PREFIX):
+                url = url[len(GIT_PREFIX) :]
                 url = url.split("?")[0]
 
             if not is_url(url):
@@ -1077,45 +1078,34 @@ class CrawlConfigOps:
                     flush=True,
                 )
 
-    async def validate_custom_behaviors(
-        self, custom_behaviors: List[str]
-    ) -> Dict[str, bool]:
-        """Validate custom behavior URLs
+    async def validate_custom_behavior(self, custom_behavior: str) -> Dict[str, bool]:
+        """Validate custom behavior URL
 
         Implemented:
-        - Ensure all URLs (after removing custom git prefix and syntax) are valid
-        - Ensure URLs return status code < 400
+        - Ensure all URL is valid (after removing custom git prefix and syntax)
+        - Ensure URL returns status code < 400
 
         To implement next:
-        - Ensure Git repositories are actually Git repositories and can be reached
+        - Ensure Git repository is actually Git repositories and can be reached,
+        has branch and path if provided
         """
-        git_prefix = "git+"
-        for index, behavior in enumerate(custom_behaviors):
-            url = behavior
+        url = custom_behavior
 
-            if url.startswith(git_prefix):
-                url = url[len(git_prefix) :]
-                url = url.split("?")[0]
+        if url.startswith(GIT_PREFIX):
+            url = url[len(GIT_PREFIX) :]
+            url = url.split("?")[0]
 
-            if not is_url(url):
-                raise HTTPException(
-                    status_code=400, detail=f"Error at list index {index}: Invalid URL"
-                )
+        if not is_url(url):
+            raise HTTPException(status_code=400, detail="invalid_custom_behavior")
 
-            timeout = aiohttp.ClientTimeout(total=10)
-            async with aiohttp.ClientSession(timeout=timeout) as session:
-                async with session.get(url) as resp:
-                    if resp.status == 404:
-                        raise HTTPException(
-                            status_code=404,
-                            detail=f"Error at list index {index}: Behavior not found",
-                        )
-                    if resp.status >= 400:
-                        raise HTTPException(
-                            status_code=400,
-                            # pylint: disable=line-too-long
-                            detail=f"Error at list index {index}: URL unreachable, status code {resp.status}",
-                        )
+        timeout = aiohttp.ClientTimeout(total=10)
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with session.get(url) as resp:
+                if resp.status >= 400:
+                    raise HTTPException(
+                        status_code=404,
+                        detail="custom_behavior_not_found",
+                    )
 
         return {"success": True}
 
@@ -1365,13 +1355,13 @@ def init_crawl_config_api(
         asyncio.create_task(ops.re_add_all_scheduled_cron_jobs())
         return {"success": True}
 
-    @router.post("/validate/custom-behaviors", response_model=SuccessResponse)
-    async def validate_custom_behaviors(
-        behaviors: ValidateCustomBehaviors,
+    @router.post("/validate/custom-behavior", response_model=SuccessResponse)
+    async def validate_custom_behavior(
+        behavior: ValidateCustomBehavior,
         # pylint: disable=unused-argument
         org: Organization = Depends(org_crawl_dep),
     ):
-        return await ops.validate_custom_behaviors(behaviors.customBehaviors)
+        return await ops.validate_custom_behavior(behavior.customBehavior)
 
     org_ops.router.include_router(router)
 
