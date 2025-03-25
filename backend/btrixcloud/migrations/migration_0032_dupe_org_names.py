@@ -54,7 +54,7 @@ class Migration(BaseMigration):
                     orgs_db, org_name_set, org_slug_set, name, org_dict.get("_id")
                 )
 
-    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-arguments, too-many-positional-arguments
     async def update_org_name_and_slug(
         self,
         orgs_db,

@@ -16,7 +16,6 @@ from .crawlmanager import CrawlManager
 from .models import (
     BaseFile,
     Organization,
-    BackgroundJob,
     BgJobType,
     CreateReplicaJob,
     DeleteReplicaJob,
@@ -24,12 +23,15 @@ from .models import (
     RecalculateOrgStatsJob,
     ReAddOrgPagesJob,
     OptimizePagesJob,
+    CopyBucketJob,
     PaginatedBackgroundJobResponse,
     AnyJob,
     StorageRef,
     User,
     SuccessResponse,
     SuccessResponseId,
+    JobProgress,
+    BackgroundJob,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import dt_now
@@ -43,7 +45,7 @@ else:
 
 
 # ============================================================================
-# pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-instance-attributes, too-many-lines, too-many-return-statements, too-many-public-methods
 class BackgroundJobOps:
     """k8s background job management"""
 
@@ -56,7 +58,7 @@ class BackgroundJobOps:
 
     migration_jobs_scale: int
 
-    # pylint: disable=too-many-locals, too-many-arguments, invalid-name
+    # pylint: disable=too-many-locals, too-many-arguments, too-many-positional-arguments, invalid-name
 
     def __init__(self, mdb, email, user_manager, org_ops, crawl_manager, storage_ops):
         self.jobs = mdb["jobs"]
@@ -302,7 +304,7 @@ class BackgroundJobOps:
         self,
         org: Organization,
         existing_job_id: Optional[str] = None,
-    ) -> Optional[str]:
+    ) -> str:
         """Create background job to delete org and its data"""
 
         try:
@@ -339,7 +341,7 @@ class BackgroundJobOps:
         except Exception as exc:
             # pylint: disable=raise-missing-from
             print(f"warning: delete org job could not be started: {exc}")
-            return None
+            return ""
 
     async def create_recalculate_org_stats_job(
         self,
@@ -473,6 +475,73 @@ class BackgroundJobOps:
             print(f"warning: optimize pages job could not be started: {exc}")
             return None
 
+    async def create_copy_bucket_job(
+        self,
+        org: Organization,
+        prev_storage_ref: StorageRef,
+        new_storage_ref: StorageRef,
+        existing_job_id: Optional[str] = None,
+    ) -> str:
+        """Start background job to copy entire s3 bucket and return job id"""
+        prev_storage = self.storage_ops.get_org_storage_by_ref(org, prev_storage_ref)
+        prev_endpoint, prev_bucket = self.strip_bucket(prev_storage.endpoint_url)
+
+        new_storage = self.storage_ops.get_org_storage_by_ref(org, new_storage_ref)
+        new_endpoint, new_bucket = self.strip_bucket(new_storage.endpoint_url)
+
+        # Ensure buckets terminate with trailing slash
+        prev_bucket = os.path.join(prev_bucket, "")
+        new_bucket = os.path.join(new_bucket, "")
+
+        job_type = BgJobType.COPY_BUCKET.value
+
+        try:
+            job_id = await self.crawl_manager.run_copy_bucket_job(
+                oid=str(org.id),
+                job_type=job_type,
+                prev_storage=prev_storage_ref,
+                prev_endpoint=prev_endpoint,
+                prev_bucket=prev_bucket,
+                new_storage=new_storage_ref,
+                new_endpoint=new_endpoint,
+                new_bucket=new_bucket,
+                job_id_prefix=f"{job_type}-{org.id}",
+                existing_job_id=existing_job_id,
+            )
+            if existing_job_id:
+                copy_job = await self.get_background_job(existing_job_id, org.id)
+                previous_attempt = {
+                    "started": copy_job.started,
+                    "finished": copy_job.finished,
+                }
+                if copy_job.previousAttempts:
+                    copy_job.previousAttempts.append(previous_attempt)
+                else:
+                    copy_job.previousAttempts = [previous_attempt]
+                copy_job.started = dt_now()
+                copy_job.finished = None
+                copy_job.success = None
+            else:
+                copy_job = CopyBucketJob(
+                    id=job_id,
+                    oid=org.id,
+                    started=dt_now(),
+                    prev_storage=prev_storage_ref,
+                    new_storage=new_storage_ref,
+                )
+
+            await self.jobs.find_one_and_update(
+                {"_id": job_id}, {"$set": copy_job.to_dict()}, upsert=True
+            )
+
+            return job_id
+        # pylint: disable=broad-exception-caught
+        except Exception as exc:
+            print(
+                f"warning: copy bucket job could not be started for org {org.id}: {exc}"
+            )
+            return ""
+
     async def job_finished(
         self,
         job_id: str,
@@ -498,6 +567,9 @@ class BackgroundJobOps:
                 await self.handle_delete_replica_job_finished(
                     cast(DeleteReplicaJob, job)
                 )
+            if job_type == BgJobType.COPY_BUCKET and job.oid:
+                org = await self.org_ops.get_org_by_id(job.oid)
+                await self.org_ops.update_read_only(org, False)
         else:
             print(
                 f"Background job {job.id} failed, sending email to superuser",
@@ -528,6 +600,9 @@ class BackgroundJobOps:
         DeleteReplicaJob,
         DeleteOrgJob,
         RecalculateOrgStatsJob,
+        CopyBucketJob,
+        DeleteOrgJob,
+        RecalculateOrgStatsJob,
         ReAddOrgPagesJob,
         OptimizePagesJob,
     ]:
@@ -544,22 +619,72 @@ class BackgroundJobOps:
 
     def _get_job_by_type_from_data(self, data: dict[str, object]):
         """convert dict to propert background job type"""
-        if data["type"] == BgJobType.CREATE_REPLICA:
+        if data["type"] == BgJobType.CREATE_REPLICA.value:
             return CreateReplicaJob.from_dict(data)
 
-        if data["type"] == BgJobType.DELETE_REPLICA:
+        if data["type"] == BgJobType.DELETE_REPLICA.value:
             return DeleteReplicaJob.from_dict(data)
 
-        if data["type"] == BgJobType.RECALCULATE_ORG_STATS:
+        if data["type"] == BgJobType.RECALCULATE_ORG_STATS.value:
             return RecalculateOrgStatsJob.from_dict(data)
 
-        if data["type"] == BgJobType.READD_ORG_PAGES:
+        if data["type"] == BgJobType.READD_ORG_PAGES.value:
             return ReAddOrgPagesJob.from_dict(data)
 
-        if data["type"] == BgJobType.OPTIMIZE_PAGES:
+        if data["type"] == BgJobType.OPTIMIZE_PAGES.value:
             return OptimizePagesJob.from_dict(data)
 
+        if data["type"] == BgJobType.COPY_BUCKET.value:
+            return CopyBucketJob.from_dict(data)
+
         return DeleteOrgJob.from_dict(data)
+
+    async def get_job_progress(self, job_id: str) -> JobProgress:
+        """Return progress of background job for supported types"""
+        job = await self.get_background_job(job_id)
+
+        if job.type != BgJobType.COPY_BUCKET:
+            raise HTTPException(status_code=403, detail="job_type_not_supported")
+
+        if job.success is False:
+            raise HTTPException(status_code=400, detail="job_failed")
+
+        if job.finished:
+            return JobProgress(percentage=1.0)
+
+        log_tail = await self.crawl_manager.tail_background_job(job_id)
+        if not log_tail:
+            raise HTTPException(status_code=400, detail="job_log_not_available")
+
+        lines = log_tail.splitlines()
+        reversed_lines = list(reversed(lines))
+
+        progress = JobProgress(percentage=0.0)
+
+        # Parse lines in reverse order until we find one with latest stats
+        for line in reversed_lines:
+            try:
+                if "ETA" not in line:
+                    continue
+
+                stats_groups = line.split(",")
+                for group in stats_groups:
+                    group = group.strip()
+                    if "%" in group:
+                        progress.percentage = float(group.strip("%")) / 100
+                    if "ETA" in group:
+                        eta_str = group.strip("ETA ")
+                        # Split on white space to remove byte mark rclone sometimes
+                        # adds to end of stats line
+                        eta_list = eta_str.split(" ")
+                        progress.eta = eta_list[0]
+
+                break
+            # pylint: disable=bare-except
+            except:
+                continue
+
+        return progress
 
     async def list_background_jobs(
         self,
@@ -567,10 +692,11 @@ class BackgroundJobOps:
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         success: Optional[bool] = None,
+        running: Optional[bool] = None,
         job_type: Optional[str] = None,
         sort_by: Optional[str] = None,
         sort_direction: Optional[int] = -1,
-    ) -> Tuple[List[BackgroundJob], int]:
+    ) -> Tuple[List[Union[CreateReplicaJob, DeleteReplicaJob, CopyBucketJob]], int]:
         """List all background jobs"""
         # pylint: disable=duplicate-code
         # Zero-index page for query
@@ -584,6 +710,12 @@ class BackgroundJobOps:
 
         if success in (True, False):
             query["success"] = success
+
+        if running:
+            query["success"] = None
+
+        if running is False:
+            query["success"] = {"$in": [True, False]}
 
         if job_type:
             query["type"] = job_type
@@ -676,6 +808,7 @@ class BackgroundJobOps:
         self, job: BackgroundJob, org: Organization
     ) -> Dict[str, Union[bool, Optional[str]]]:
         """Retry background job specific to one org"""
+        # pylint: disable=too-many-return-statements
         if job.type == BgJobType.CREATE_REPLICA:
             job = cast(CreateReplicaJob, job)
             file = await self.get_replica_job_file(job, org)
@@ -736,6 +869,16 @@ class BackgroundJobOps:
             )
             return {"success": True}
 
+        if job.type == BgJobType.COPY_BUCKET:
+            job = cast(CopyBucketJob, job)
+            await self.create_copy_bucket_job(
+                org,
+                job.prev_storage,
+                job.new_storage,
+                existing_job_id=job.id,
+            )
+            return {"success": True}
+
         return {"success": False}
 
     async def retry_failed_org_background_jobs(
@@ -773,7 +916,7 @@ class BackgroundJobOps:
 
 
 # ============================================================================
-# pylint: disable=too-many-arguments, too-many-locals, invalid-name, fixme
+# pylint: disable=too-many-arguments, too-many-locals, invalid-name, fixme, too-many-positional-arguments
 def init_background_jobs_api(
     app, mdb, email, user_manager, org_ops, crawl_manager, storage_ops, user_dep
 ):
@@ -799,6 +942,18 @@ def init_background_jobs_api(
     ):
         """Retrieve information for background job"""
         return await ops.get_background_job(job_id, org.id)
+
+    @router.get(
+        "/{job_id}/progress",
+        response_model=JobProgress,
+    )
+    async def get_job_progress(
+        job_id: str,
+        # pylint: disable=unused-argument
+        org: Organization = Depends(org_crawl_dep),
+    ):
+        """Return progress information for background job"""
+        return await ops.get_job_progress(job_id)
 
     @app.get("/orgs/all/jobs/{job_id}", response_model=AnyJob, tags=["jobs"])
     async def get_background_job_all_orgs(job_id: str, user: User = Depends(user_dep)):
@@ -894,6 +1049,7 @@ def init_background_jobs_api(
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         success: Optional[bool] = None,
+        running: Optional[bool] = None,
         jobType: Optional[str] = None,
         sortBy: Optional[str] = None,
         sortDirection: Optional[int] = -1,
@@ -904,6 +1060,7 @@ def init_background_jobs_api(
             page_size=pageSize,
             page=page,
             success=success,
+            running=running,
             job_type=jobType,
             sort_by=sortBy,
             sort_direction=sortDirection,

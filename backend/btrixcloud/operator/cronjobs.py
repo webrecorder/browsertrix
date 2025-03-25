@@ -51,7 +51,7 @@ class CronJobOperator(BaseOperator):
             status=status,
         )
 
-    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-arguments, too-many-positional-arguments
     async def make_new_crawljob(
         self,
         cid: UUID,
