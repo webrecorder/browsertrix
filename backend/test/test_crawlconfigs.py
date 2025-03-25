@@ -10,7 +10,7 @@ UPDATED_NAME = "Updated name"
 UPDATED_DESCRIPTION = "Updated description"
 UPDATED_TAGS = ["tag3", "tag4"]
 
-INVALID_BEHAVIOR_URL = "https://example.com/path/to/nonexistent/behavior.js"
+INVALID_BEHAVIOR_URL = "https://webrecorder.net/nonexistent/behavior.js"
 
 _coll_id = None
 _admin_crawl_cid = None
