@@ -8,6 +8,7 @@ import capitalize from "lodash/fp/capitalize";
 import RegexColorize from "regex-colorize";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import { none, notSpecified } from "@/layouts/empty";
 import {
   Behavior,
   type CrawlConfig,
@@ -175,7 +176,7 @@ export class ConfigDetails extends BtrixElement {
                 labelFor.autoclickBehavior,
             ]
               .filter((v) => v)
-              .reduce((a, b) => (a ? `${a}, ${b}` : b), ""),
+              .reduce((a, b) => (a ? `${a}, ${b}` : b), "") || none,
           )}
           ${this.renderSetting(
             labelFor.pageLoadTimeoutSeconds,
@@ -422,7 +423,7 @@ export class ConfigDetails extends BtrixElement {
                   )}
                 </ul>
               `
-            : msg("None"),
+            : none,
           true,
         ),
       )}
@@ -461,7 +462,7 @@ export class ConfigDetails extends BtrixElement {
                 })}
               </ul>
             `
-          : msg("None"),
+          : none,
         true,
       )}
       ${when(
@@ -475,7 +476,7 @@ export class ConfigDetails extends BtrixElement {
             </btrix-queue-exclusion-table>
           </div>
         `,
-        () => this.renderSetting(msg("Exclusions"), msg("None")),
+        () => this.renderSetting(msg("Exclusions"), none),
       )}
     `;
   };
@@ -488,11 +489,9 @@ export class ConfigDetails extends BtrixElement {
     } else if (typeof value === "boolean") {
       content = value ? msg("Yes") : msg("No");
     } else if (Array.isArray(value) && !value.length) {
-      content = html`<span class="text-neutral-400">${msg("None")}</span>`;
+      content = none;
     } else if (typeof value !== "number" && !value) {
-      content = html`<span class="text-neutral-400"
-        >${msg("Not specified")}</span
-      >`;
+      content = notSpecified;
     }
     return html`
       <btrix-desc-list-item label=${label} class=${breakAll ? "break-all" : ""}>
