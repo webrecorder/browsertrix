@@ -662,6 +662,7 @@ def test_add_update_crawl_config_custom_behaviors_git_url(
 
 def test_validate_custom_behaviors(crawler_auth_headers, default_org_id):
     valid_url = "https://raw.githubusercontent.com/webrecorder/custom-behaviors/refs/heads/main/behaviors/fulcrum.js"
+    git_url = "git+https://github.com/webrecorder/custom-behaviors"
     invalid_url_404 = "https://webrecorder.net/nonexistent/behavior.js"
     malformed_url = "http"
 
@@ -691,3 +692,12 @@ def test_validate_custom_behaviors(crawler_auth_headers, default_org_id):
     )
     assert r.status_code == 400
     assert r.json()["detail"] == "Error at list index 1: Invalid URL"
+
+    # No issues
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/validate/custom-behaviors",
+        headers=crawler_auth_headers,
+        json={"customBehaviors": [valid_url, git_url]},
+    )
+    assert r.status_code == 200
+    assert r.json()["success"]
