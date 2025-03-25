@@ -4,7 +4,7 @@ Crawl Config API handling
 
 # pylint: disable=too-many-lines
 
-from typing import List, Union, Optional, TYPE_CHECKING, cast
+from typing import List, Union, Optional, TYPE_CHECKING, cast, Dict
 
 import asyncio
 import json
@@ -44,8 +44,9 @@ from .models import (
     CrawlConfigDeletedResponse,
     CrawlerProxy,
     CrawlerProxies,
+    ValidateCustomBehaviors,
 )
-from .utils import dt_now, slug_from_name, validate_regexes
+from .utils import dt_now, slug_from_name, validate_regexes, is_url
 
 if TYPE_CHECKING:
     from .orgs import OrgOps
@@ -224,7 +225,9 @@ class CrawlConfigOps:
             validate_regexes(exclude)
 
         if config_in.config.customBehaviors:
-            await self._validate_custom_behaviors(config_in.config.customBehaviors)
+            await self._validate_custom_behaviors_url_syntax(
+                config_in.config.customBehaviors
+            )
 
         now = dt_now()
         crawlconfig = CrawlConfig(
@@ -286,13 +289,8 @@ class CrawlConfigOps:
             execMinutesQuotaReached=exec_mins_quota_reached,
         )
 
-    async def _validate_custom_behaviors(self, custom_behaviors: List[str]):
-        """Validate custom behaviors
-
-        For now, we just ensure all URLs passed resolve (after removing the
-        git+ prefix and query params for git repo URLs). More proper validation
-        of git repos to follow.
-        """
+    async def _validate_custom_behaviors_url_syntax(self, custom_behaviors: List[str]):
+        """Validate custom behaviors are valid URLs after removing custom git syntax"""
         git_prefix = "git+"
         for behavior in custom_behaviors:
             url = behavior
@@ -301,13 +299,8 @@ class CrawlConfigOps:
                 url = url[len(git_prefix) :]
                 url = url.split("?")[0]
 
-            timeout = aiohttp.ClientTimeout(total=10)
-            async with aiohttp.ClientSession(timeout=timeout) as session:
-                async with session.get(url) as resp:
-                    if resp.status >= 400:
-                        raise HTTPException(
-                            status_code=400, detail="invalid_custom_behavior"
-                        )
+            if not is_url(url):
+                raise HTTPException(status_code=400, detail="invalid_custom_behavior")
 
     def ensure_quota_page_limit(self, crawlconfig: CrawlConfig, org: Organization):
         """ensure page limit is set to no greater than quota page limit, if any"""
@@ -375,7 +368,9 @@ class CrawlConfigOps:
             validate_regexes(exclude)
 
         if update.config and update.config.customBehaviors:
-            await self._validate_custom_behaviors(update.config.customBehaviors)
+            await self._validate_custom_behaviors_url_syntax(
+                update.config.customBehaviors
+            )
 
         # indicates if any k8s crawl config settings changed
         changed = False
@@ -1082,6 +1077,48 @@ class CrawlConfigOps:
                     flush=True,
                 )
 
+    async def validate_custom_behaviors(
+        self, custom_behaviors: List[str]
+    ) -> Dict[str, bool]:
+        """Validate custom behavior URLs
+
+        Implemented:
+        - Ensure all URLs (after removing custom git prefix and syntax) are valid
+        - Ensure URLs return status code < 400
+
+        To implement next:
+        - Ensure Git repositories are actually Git repositories and can be reached
+        """
+        git_prefix = "git+"
+        for index, behavior in enumerate(custom_behaviors):
+            url = behavior
+
+            if url.startswith(git_prefix):
+                url = url[len(git_prefix) :]
+                url = url.split("?")[0]
+
+            if not is_url(url):
+                raise HTTPException(
+                    status_code=400, detail=f"Error at list index {index}: Invalid URL"
+                )
+
+            timeout = aiohttp.ClientTimeout(total=10)
+            async with aiohttp.ClientSession(timeout=timeout) as session:
+                async with session.get(url) as resp:
+                    if resp.status == 404:
+                        raise HTTPException(
+                            status_code=404,
+                            detail=f"Error at list index {index}: Behavior not found",
+                        )
+                    if resp.status >= 400:
+                        raise HTTPException(
+                            status_code=400,
+                            # pylint: disable=line-too-long
+                            detail=f"Error at list index {index}: URL unreachable, status code {resp.status}",
+                        )
+
+        return {"success": True}
+
 
 # ============================================================================
 # pylint: disable=too-many-locals
@@ -1327,6 +1364,14 @@ def init_crawl_config_api(
 
         asyncio.create_task(ops.re_add_all_scheduled_cron_jobs())
         return {"success": True}
+
+    @router.post("/validate/custom-behaviors", response_model=SuccessResponse)
+    async def validate_custom_behaviors(
+        behaviors: ValidateCustomBehaviors,
+        # pylint: disable=unused-argument
+        org: Organization = Depends(org_crawl_dep),
+    ):
+        return await ops.validate_custom_behaviors(behaviors.customBehaviors)
 
     org_ops.router.include_router(router)
 

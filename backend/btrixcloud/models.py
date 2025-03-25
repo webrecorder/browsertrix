@@ -618,6 +618,13 @@ class CrawlConfigDeletedResponse(BaseModel):
 
 
 # ============================================================================
+class ValidateCustomBehaviors(BaseModel):
+    """Input model for validating custom behaviors"""
+
+    customBehaviors: List[str]
+
+
+# ============================================================================
 
 ### CRAWLER VERSIONS ###
 

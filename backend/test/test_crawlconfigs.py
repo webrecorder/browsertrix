@@ -10,8 +10,6 @@ UPDATED_NAME = "Updated name"
 UPDATED_DESCRIPTION = "Updated description"
 UPDATED_TAGS = ["tag3", "tag4"]
 
-INVALID_BEHAVIOR_URL = "https://webrecorder.net/nonexistent/behavior.js"
-
 _coll_id = None
 _admin_crawl_cid = None
 
@@ -550,7 +548,7 @@ def test_add_crawl_config_invalid_exclude_regex(
 def test_add_crawl_config_custom_behaviors_invalid_url(
     crawler_auth_headers, default_org_id, sample_crawl_data
 ):
-    sample_crawl_data["config"]["customBehaviors"] = [INVALID_BEHAVIOR_URL]
+    sample_crawl_data["config"]["customBehaviors"] = ["http"]
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
         headers=crawler_auth_headers,
@@ -622,7 +620,7 @@ def test_add_update_crawl_config_custom_behaviors_git_url(
         headers=crawler_auth_headers,
         json={
             "config": {
-                "customBehaviors": [git_url, INVALID_BEHAVIOR_URL],
+                "customBehaviors": [git_url, "not-a-url"],
             }
         },
     )
@@ -660,3 +658,36 @@ def test_add_update_crawl_config_custom_behaviors_git_url(
 
     assert data["id"] == config_id
     assert data["config"]["customBehaviors"] == [git_url_with_params]
+
+
+def test_validate_custom_behaviors(crawler_auth_headers, default_org_id):
+    valid_url = "https://raw.githubusercontent.com/webrecorder/custom-behaviors/refs/heads/main/behaviors/fulcrum.js"
+    invalid_url_404 = "https://webrecorder.net/nonexistent/behavior.js"
+    malformed_url = "http"
+
+    # Behavior 404s
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/validate/custom-behaviors",
+        headers=crawler_auth_headers,
+        json={"customBehaviors": [invalid_url_404]},
+    )
+    assert r.status_code == 404
+    assert r.json()["detail"] == "Error at list index 0: Behavior not found"
+
+    # Second behavior 404s
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/validate/custom-behaviors",
+        headers=crawler_auth_headers,
+        json={"customBehaviors": [valid_url, invalid_url_404]},
+    )
+    assert r.status_code == 404
+    assert r.json()["detail"] == "Error at list index 1: Behavior not found"
+
+    # Malformed "url"
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/validate/custom-behaviors",
+        headers=crawler_auth_headers,
+        json={"customBehaviors": [valid_url, malformed_url]},
+    )
+    assert r.status_code == 400
+    assert r.json()["detail"] == "Error at list index 1: Invalid URL"
