@@ -4142,6 +4142,11 @@ css-select@^4.1.3:
     domutils "^2.8.0"
     nth-check "^2.0.1"
 
+css-selector-parser@^3.0.5:
+  version "3.1.1"
+  resolved "https://registry.yarnpkg.com/css-selector-parser/-/css-selector-parser-3.1.1.tgz#d6635dad07e54d0985884c148d8c35e404b0a2a6"
+  integrity sha512-Y+DuvJ7JAjpL1f4DeILe5sXCC3kRXMl0DxM4lAWbS8/jEZ29o3V0L5TL6zIifj4Csmj6c+jiF2ENjida2OVOGA==
+
 css-what@^6.0.1:
   version "6.1.0"
   resolved "https://registry.yarnpkg.com/css-what/-/css-what-6.1.0.tgz#fb5effcf76f1ddea2c81bdfaa4de44e79bac70f4"

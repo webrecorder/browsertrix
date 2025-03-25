@@ -1,5 +1,6 @@
 import { localized, msg } from "@lit/localize";
 import clsx from "clsx";
+import { createParser } from "css-selector-parser";
 import { html, type PropertyValues } from "lit";
 import { customElement, property, queryAll, state } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
@@ -34,6 +35,10 @@ export class LinkSelectorTable extends BtrixElement {
 
   @queryAll("btrix-syntax-input")
   private readonly syntaxInputs!: NodeListOf<SyntaxInput>;
+
+  // CSS parser should ideally match the parser used in browsertrix-crawler.
+  // https://github.com/webrecorder/browsertrix-crawler/blob/v1.5.8/package.json#L23
+  private readonly cssParser = createParser();
 
   public get value(): SeedConfig["selectLinks"] {
     return this.rows
@@ -165,7 +170,7 @@ export class LinkSelectorTable extends BtrixElement {
                   if (value) {
                     try {
                       // Validate selector
-                      document.createDocumentFragment().querySelector(value);
+                      this.cssParser(value);
                     } catch {
                       el.setCustomValidity(
                         msg("Please enter a valid CSS selector"),
