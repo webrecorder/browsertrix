@@ -1186,7 +1186,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
   private renderBehaviors() {
     return html`
-      ${this.renderSectionHeading(msg("Built-in Behaviors"))}
+      ${this.renderSectionHeading(labelFor.behaviors)}
       ${inputCol(
         html`<sl-checkbox
           name="autoscrollBehavior"

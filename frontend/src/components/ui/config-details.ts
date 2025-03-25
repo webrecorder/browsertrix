@@ -167,22 +167,15 @@ export class ConfigDetails extends BtrixElement {
         heading: sectionStrings.behaviors,
         renderDescItems: (seedsConfig) => html`
           ${this.renderSetting(
-            labelFor.autoscrollBehavior,
-            seedsConfig?.behaviors &&
-              !seedsConfig.behaviors.includes(Behavior.AutoScroll)
-              ? msg("Disabled")
-              : html`<span class="text-neutral-400"
-                  >${msg("Enabled (default)")}</span
-                >`,
-          )}
-          ${this.renderSetting(
-            labelFor.autoclickBehavior,
-            seedsConfig?.behaviors &&
-              seedsConfig.behaviors.includes(Behavior.AutoClick)
-              ? msg("Enabled")
-              : html`<span class="text-neutral-400"
-                  >${msg("Disabled (default)")}</span
-                >`,
+            labelFor.behaviors,
+            [
+              seedsConfig?.behaviors?.includes(Behavior.AutoScroll) &&
+                labelFor.autoscrollBehavior,
+              seedsConfig?.behaviors?.includes(Behavior.AutoClick) &&
+                labelFor.autoclickBehavior,
+            ]
+              .filter((v) => v)
+              .reduce((a, b) => (a ? `${a}, ${b}` : b), ""),
           )}
           ${this.renderSetting(
             labelFor.pageLoadTimeoutSeconds,
