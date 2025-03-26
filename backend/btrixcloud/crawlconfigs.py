@@ -10,6 +10,7 @@ import asyncio
 import json
 import re
 import os
+import subprocess
 import traceback
 from datetime import datetime
 from uuid import UUID, uuid4
@@ -1082,30 +1083,40 @@ class CrawlConfigOps:
         """Validate custom behavior URL
 
         Implemented:
-        - Ensure all URL is valid (after removing custom git prefix and syntax)
+        - Ensure URL is valid (after removing custom git prefix and syntax)
         - Ensure URL returns status code < 400
-
-        To implement next:
-        - Ensure Git repository is actually Git repositories and can be reached,
-        has branch and path if provided
+        - Ensure git repository can be reached by git ls-remote
         """
         url = custom_behavior
+        is_git_repo = False
 
         if url.startswith(GIT_PREFIX):
+            is_git_repo = True
             url = url[len(GIT_PREFIX) :]
             url = url.split("?")[0]
 
         if not is_url(url):
             raise HTTPException(status_code=400, detail="invalid_custom_behavior")
 
-        timeout = aiohttp.ClientTimeout(total=10)
-        async with aiohttp.ClientSession(timeout=timeout) as session:
-            async with session.get(url) as resp:
-                if resp.status >= 400:
-                    raise HTTPException(
-                        status_code=404,
-                        detail="custom_behavior_not_found",
-                    )
+        if is_git_repo:
+            git_remote_cmd = ["git", "ls-remote", url, "HEAD"]
+            try:
+                subprocess.run(git_remote_cmd, check=True)
+            # Raises on non-zero exit code (repo doesn't exist or isn't reachable)
+            except subprocess.CalledProcessError:
+                raise HTTPException(
+                    status_code=404,
+                    detail="custom_behavior_not_found",
+                )
+        else:
+            timeout = aiohttp.ClientTimeout(total=10)
+            async with aiohttp.ClientSession(timeout=timeout) as session:
+                async with session.get(url) as resp:
+                    if resp.status >= 400:
+                        raise HTTPException(
+                            status_code=404,
+                            detail="custom_behavior_not_found",
+                        )
 
         return {"success": True}
 
