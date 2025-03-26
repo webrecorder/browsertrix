@@ -8,7 +8,7 @@ on:
       - 'backend/**'
       - 'chart/**'
       - '.github/workflows/microk8s-ci.yaml'
-    workflow_dispatch:
+  workflow_dispatch:
 
 env:
   ECHO_SERVER_HOST_URL: http://10.0.1.1:18080
