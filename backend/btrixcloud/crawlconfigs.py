@@ -1103,6 +1103,7 @@ class CrawlConfigOps:
             try:
                 subprocess.run(git_remote_cmd, check=True)
             # Raises on non-zero exit code (repo doesn't exist or isn't reachable)
+            # pylint: disable=raise-missing-from
             except subprocess.CalledProcessError:
                 raise HTTPException(
                     status_code=404,
