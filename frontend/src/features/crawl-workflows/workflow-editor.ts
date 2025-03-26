@@ -1259,6 +1259,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         ),
         false,
       )}
+      ${this.renderCustomBehaviors()}
       ${this.renderSectionHeading(msg("Page Timing"))}
       ${inputCol(html`
         <sl-input
@@ -1318,6 +1319,26 @@ https://archiveweb.page/images/${"logo.svg"}`}
         </sl-input>
       `)}
       ${this.renderHelpTextCol(infoTextStrings["pageExtraDelaySeconds"])}
+    `;
+  }
+
+  private renderCustomBehaviors() {
+    return html`
+      ${this.renderSectionHeading(msg("Custom Behaviors"))}
+      ${inputCol(
+        html`<btrix-custom-behaviors-table
+          .customBehaviors=${[
+            "https://example.com/script.js",
+            "git+https://git.example.com/custom-behaviors?branch=dev&path=path/to/behaviors",
+          ]}
+        ></btrix-custom-behaviors-table>`,
+      )}
+      ${this.renderHelpTextCol(
+        msg(
+          `Enable custom page actions with behavior scripts. You can specify any publicly accessible URL or public Git repository.`,
+        ),
+        false,
+      )}
     `;
   }
 
