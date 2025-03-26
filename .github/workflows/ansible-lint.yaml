@@ -46,9 +46,9 @@ jobs:
           fetch-depth: 0 # needed for progressive mode to work
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.x'
 
       - name: Install dependencies
         run: |
