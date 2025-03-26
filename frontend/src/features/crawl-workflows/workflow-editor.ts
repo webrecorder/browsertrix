@@ -1285,6 +1285,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
             "https://example.com/script.js",
             "git+https://git.example.com/custom-behaviors?branch=dev&path=path/to/behaviors",
           ]}
+          editable
         ></btrix-custom-behaviors-table>`,
       )}
       ${this.renderHelpTextCol(
