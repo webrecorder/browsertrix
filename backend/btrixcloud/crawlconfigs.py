@@ -11,6 +11,7 @@ import json
 import re
 import os
 import subprocess
+import time
 import traceback
 from datetime import datetime
 from uuid import UUID, uuid4
@@ -1079,45 +1080,84 @@ class CrawlConfigOps:
                     flush=True,
                 )
 
-    async def validate_custom_behavior(self, custom_behavior: str) -> Dict[str, bool]:
+    async def _validate_behavior_git_repo(self, repo_url: str, branch: str = ""):
+        """Validate git repository and branch, if specified, exist and are reachable"""
+        git_remote_cmd = ["git", "ls-remote", repo_url, "HEAD"]
+        try:
+            subprocess.run(git_remote_cmd, check=True)
+        # Raises on non-zero exit code (repo doesn't exist or isn't reachable)
+        # pylint: disable=raise-missing-from
+        except subprocess.CalledProcessError:
+            raise HTTPException(
+                status_code=404,
+                detail="custom_behavior_not_found",
+            )
+
+        if branch:
+            time.sleep(2)
+
+            git_remote_cmd = [
+                "git",
+                "ls-remote",
+                "--exit-code",
+                "--heads",
+                repo_url,
+                f"refs/heads/{branch}",
+            ]
+            try:
+                subprocess.run(git_remote_cmd, check=True)
+            # Raises on non-zero exit code (branch ref doesn't exist)
+            # pylint: disable=raise-missing-from
+            except subprocess.CalledProcessError:
+                raise HTTPException(
+                    status_code=404,
+                    detail="custom_behavior_branch_not_found",
+                )
+
+    async def _validate_behavior_url(self, url: str):
+        """Validate behavior file exists at url"""
+        timeout = aiohttp.ClientTimeout(total=10)
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with session.get(url) as resp:
+                if resp.status >= 400:
+                    raise HTTPException(
+                        status_code=404,
+                        detail="custom_behavior_not_found",
+                    )
+
+    async def validate_custom_behavior(self, url: str) -> Dict[str, bool]:
         """Validate custom behavior URL
 
         Implemented:
         - Ensure URL is valid (after removing custom git prefix and syntax)
         - Ensure URL returns status code < 400
-        - Ensure git repository can be reached by git ls-remote
+        - Ensure git repository can be reached by git ls-remote and that branch
+        exists, if provided
         """
-        url = custom_behavior
         is_git_repo = False
+        git_branch = ""
 
         if url.startswith(GIT_PREFIX):
             is_git_repo = True
             url = url[len(GIT_PREFIX) :]
-            url = url.split("?")[0]
+
+            url_parts = url.split("?")
+            url = url_parts[0]
+            if len(url_parts) > 1:
+                query_str = url_parts[1]
+                try:
+                    git_branch = urllib.parse.parse_qs(query_str)["branch"][0]
+                # pylint: disable=broad-exception-caught
+                except (KeyError, IndexError):
+                    pass
 
         if not is_url(url):
             raise HTTPException(status_code=400, detail="invalid_custom_behavior")
 
         if is_git_repo:
-            git_remote_cmd = ["git", "ls-remote", url, "HEAD"]
-            try:
-                subprocess.run(git_remote_cmd, check=True)
-            # Raises on non-zero exit code (repo doesn't exist or isn't reachable)
-            # pylint: disable=raise-missing-from
-            except subprocess.CalledProcessError:
-                raise HTTPException(
-                    status_code=404,
-                    detail="custom_behavior_not_found",
-                )
+            self._validate_behavior_git_repo(url, branch=git_branch)
         else:
-            timeout = aiohttp.ClientTimeout(total=10)
-            async with aiohttp.ClientSession(timeout=timeout) as session:
-                async with session.get(url) as resp:
-                    if resp.status >= 400:
-                        raise HTTPException(
-                            status_code=404,
-                            detail="custom_behavior_not_found",
-                        )
+            await self._validate_behavior_url(url)
 
         return {"success": True}
 

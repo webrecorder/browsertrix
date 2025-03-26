@@ -669,8 +669,15 @@ def test_validate_custom_behavior(crawler_auth_headers, default_org_id):
     invalid_git_url = "git+https://github.com/webrecorder/doesntexist"
     private_git_url = "git+https://github.com/webrecorder/website"
 
+    git_url_with_params = (
+        "git+https://github.com/webrecorder/custom-behaviors?branch=main&path=behaviors"
+    )
+    git_url_invalid_branch = (
+        "git+https://github.com/webrecorder/custom-behaviors?branch=doesntexist"
+    )
+
     # Success
-    for url in (valid_url, git_url):
+    for url in (valid_url, git_url, git_url_with_params):
         r = requests.post(
             f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/validate/custom-behavior",
             headers=crawler_auth_headers,
@@ -714,3 +721,12 @@ def test_validate_custom_behavior(crawler_auth_headers, default_org_id):
     )
     assert r.status_code == 404
     assert r.json()["detail"] == "custom_behavior_not_found"
+
+    # Git branch doesn't exist
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/validate/custom-behavior",
+        headers=crawler_auth_headers,
+        json={"customBehavior": git_url_invalid_branch},
+    )
+    assert r.status_code == 404
+    assert r.json()["detail"] == "custom_behavior_branch_not_found"
