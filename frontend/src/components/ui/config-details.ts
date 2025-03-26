@@ -478,7 +478,7 @@ export class ConfigDetails extends BtrixElement {
     const selectors = this.crawlConfig?.config.selectLinks || [];
 
     return this.renderSetting(
-      msg("Selectors"),
+      labelFor.selectLink,
       selectors.length
         ? html`
             <div class="mb-2">
