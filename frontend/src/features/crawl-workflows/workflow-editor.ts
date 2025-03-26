@@ -1131,12 +1131,12 @@ https://archiveweb.page/images/${"logo.svg"}`}
     return html`
       <div class="col-span-5">
         <btrix-details ?open=${isCustom}>
-          <span slot="title"
-            >${msg("Custom Link Selectors")}
+          <span slot="title">
+            ${labelFor.selectLink}
             ${isCustom
               ? html`<btrix-badge>${selectors.length}</btrix-badge>`
-              : ""}</span
-          >
+              : ""}
+          </span>
           <div class="grid grid-cols-5 gap-5 py-2">
             ${inputCol(
               html`<btrix-link-selector-table

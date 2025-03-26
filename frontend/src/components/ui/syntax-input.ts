@@ -169,7 +169,6 @@ export class SyntaxInput extends TailwindElement {
   }
 
   private readonly onSelectionChange = () => {
-    console.log("sel");
     void this.scrollSync();
   };
 
