@@ -7,6 +7,7 @@ on:
     paths:
       - 'backend/**'
       - 'chart/**'
+    workflow_dispatch:
 
 env:
   ECHO_SERVER_HOST_URL: http://10.0.1.1:18080
