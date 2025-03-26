@@ -1080,7 +1080,7 @@ class CrawlConfigOps:
                     flush=True,
                 )
 
-    async def _validate_behavior_git_repo(self, repo_url: str, branch: str = ""):
+    def _validate_behavior_git_repo(self, repo_url: str, branch: str = ""):
         """Validate git repository and branch, if specified, exist and are reachable"""
         git_remote_cmd = ["git", "ls-remote", repo_url, "HEAD"]
         try:
