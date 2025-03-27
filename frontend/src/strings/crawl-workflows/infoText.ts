@@ -59,7 +59,19 @@ const infoText: Partial<Record<Field, string | TemplateResult>> = {
   ),
   lang: msg(`Websites that observe the browser’s language setting may serve
   content in that language if available.`),
-  proxyId: msg(`Choose a proxy to crawl through`),
+  proxyId: msg(`Choose a proxy to crawl through.`),
+  selectLinks: msg(
+    html`Customize how URLs are extracted from a page. The crawler will use the
+      specified
+      <a
+        href="https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics/Basic_selectors"
+        class="text-blue-600 hover:text-blue-500"
+        target="_blank"
+        rel="noopener noreferrer nofollow"
+        >CSS selectors</a
+      >
+      to find URLs that are defined in custom HTML attributes.`,
+  ),
 };
 
 export default infoText;

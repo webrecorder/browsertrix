@@ -109,6 +109,23 @@ When enabled, the crawler will check for a sitemap at /sitemap.xml and use it to
 
 This can be useful for discovering and capturing pages on a website that aren't linked to from the seed and which might not otherwise be captured.
 
+### Link Selectors
+
+Instructs the crawler which HTML elements should be used to extract URLs, i.e. considered a “link.” By default, the crawler checks the `href` value of all anchor (`<a>`) elements on a page.
+
+Specifying a custom link selector can be useful for websites that hyperlink to pages using an element other than the standard `<a>` tag, or use an attribute other than `href` to specify the URL.
+
+For example, for a page with the given HTML markup:
+
+```html
+<button class="link" data-href="/blog">Blog</button>
+<button class="link" data-href="/about">About</button>
+```
+
+The _CSS Selector_ for a custom link selector could be `button.link` and its _Link Attribute_ would be `data-href`.
+
+See [Basic CSS selectors (MDN)](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics/Basic_selectors) for examples of valid CSS selectors.
+
 ### Additional Pages
 
 A list of page URLs outside of the _Crawl Scope_ to include in the crawl.

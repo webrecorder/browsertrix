@@ -382,6 +382,10 @@ export class ConfigDetails extends BtrixElement {
         msg("Include Any Linked Page (“one hop out”)"),
         Boolean(config.extraHops),
       )}
+      ${when(
+        config.extraHops,
+        () => html`${this.renderLinkSelectors()}${this.renderExclusions()}`,
+      )}
     `;
   };
 
@@ -393,7 +397,6 @@ export class ConfigDetails extends BtrixElement {
     const primarySeedConfig = this.seeds[0] as SeedConfig | Seed | undefined;
     const primarySeedUrl = (primarySeedConfig as Seed | undefined)?.url;
     const includeUrlList = primarySeedConfig?.include || config.include || [];
-    const exclusions = config.exclude || [];
     const scopeType = config.scopeType!;
 
     return html`
@@ -444,6 +447,7 @@ export class ConfigDetails extends BtrixElement {
         msg("Check For Sitemap"),
         Boolean(config.useSitemap),
       )}
+      ${this.renderLinkSelectors()}
       ${this.renderSetting(
         msg("Additional Page URLs"),
         additionalUrlList.length
@@ -466,21 +470,43 @@ export class ConfigDetails extends BtrixElement {
           : msg("None"),
         true,
       )}
-      ${when(
-        exclusions.length,
-        () => html`
-          <div class="mb-2">
-            <btrix-queue-exclusion-table
-              .exclusions=${exclusions}
-              labelClassName="text-xs text-neutral-500"
-            >
-            </btrix-queue-exclusion-table>
-          </div>
-        `,
-        () => this.renderSetting(msg("Exclusions"), msg("None")),
-      )}
+      ${this.renderExclusions()}
     `;
   };
+
+  private renderLinkSelectors() {
+    const selectors = this.crawlConfig?.config.selectLinks || [];
+
+    return this.renderSetting(
+      labelFor.selectLink,
+      selectors.length
+        ? html`
+            <div class="mb-2">
+              <btrix-link-selector-table .selectors=${selectors}>
+              </btrix-link-selector-table>
+            </div>
+          `
+        : msg("None"),
+    );
+  }
+
+  private renderExclusions() {
+    const exclusions = this.crawlConfig?.config.exclude || [];
+
+    return when(
+      exclusions.length,
+      () => html`
+        <div class="mb-2">
+          <btrix-queue-exclusion-table
+            .exclusions=${exclusions}
+            labelClassName="text-xs text-neutral-500"
+          >
+          </btrix-queue-exclusion-table>
+        </div>
+      `,
+      () => this.renderSetting(msg("Exclusions"), msg("None")),
+    );
+  }
 
   private renderSetting(label: string, value: unknown, breakAll?: boolean) {
     let content = value;
