@@ -40,6 +40,8 @@ export type APISortQuery<T = Record<string, unknown>> = {
 export enum APIErrorDetail {
   WorkflowInvalidLinkSelector = "invalid_link_selector",
   WorkflowInvalidRegex = "invalid_regex",
+  WorkflowCustomBehaviorNotFound = "custom_behavior_not_found",
+  WorkflowCustomBehaviorBranchNotFound = "custom_behavior_branch_not_found",
 }
 export const APIErrorDetailEnum = z.nativeEnum(APIErrorDetail);
 export type APIErrorDetailEnum = z.infer<typeof APIErrorDetailEnum>;

@@ -1,42 +1,66 @@
 import { localized, msg } from "@lit/localize";
-import type { SlChangeEvent, SlSelect } from "@shoelace-style/shoelace";
+import type {
+  SlChangeEvent,
+  SlInput,
+  SlSelect,
+} from "@shoelace-style/shoelace";
 import clsx from "clsx";
 import { html, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
 import { when } from "lit/directives/when.js";
 import { nanoid } from "nanoid";
+import { z } from "zod";
 
-import { TailwindElement } from "@/classes/TailwindElement";
+import { BtrixElement } from "@/classes/BtrixElement";
+import { APIErrorDetail } from "@/types/api";
+import { APIError } from "@/utils/api";
 import { tw } from "@/utils/tailwind";
 
 enum BehaviorType {
-  URL = "url",
+  FileURL = "fileUrl",
   GitRepo = "gitRepo",
 }
 
+const rowIdSchema = z.string().nanoid();
+type RowId = z.infer<typeof rowIdSchema>;
+type ValidityErrorCodes =
+  | APIErrorDetail.WorkflowCustomBehaviorBranchNotFound
+  | APIErrorDetail.WorkflowCustomBehaviorNotFound;
+type RowValidity = { valid: true } | { error: ValidityErrorCodes };
+
 type BehaviorBase = {
-  id: string;
+  id: RowId;
   type: BehaviorType;
   url: string;
+  path?: string;
+  branch?: string;
 };
 
-type BehaviorURL = BehaviorBase & {
-  type: BehaviorType.URL;
+type BehaviorFileURL = BehaviorBase & {
+  type: BehaviorType.FileURL;
 };
 
-type BehaviorGitRepo = BehaviorBase & {
+type BehaviorGitRepo = Required<BehaviorBase> & {
   type: BehaviorType.GitRepo;
-  path: string;
-  branch: string;
 };
 
-type Behavior = BehaviorURL | BehaviorGitRepo;
+type Behavior = BehaviorFileURL | BehaviorGitRepo;
+
+const GIT_PREFIX = "git+" as const;
+const EMPTY_ROW: Omit<BehaviorGitRepo, "id"> = {
+  type: BehaviorType.GitRepo,
+  url: "",
+  path: "",
+  branch: "",
+} as const;
 
 const isGitRepo = (url: string) => url.startsWith(GIT_PREFIX);
 
-const parseGitUrl = (fullUrl: string): Omit<BehaviorGitRepo, "id" | "type"> => {
-  const url = new URL(fullUrl.slice(GIT_PREFIX.length));
+const parseGitRepo = (
+  repoUrl: string,
+): Omit<BehaviorGitRepo, "id" | "type"> => {
+  const url = new URL(repoUrl.slice(GIT_PREFIX.length));
 
   return {
     url: `${url.origin}${url.pathname}`,
@@ -45,13 +69,17 @@ const parseGitUrl = (fullUrl: string): Omit<BehaviorGitRepo, "id" | "type"> => {
   };
 };
 
+const stringifyGitRepo = (behavior: BehaviorGitRepo): string => {
+  return `${GIT_PREFIX}${behavior.url}?branch=${behavior.branch}&path=${behavior.path}`;
+};
+
 const urlToBehavior = (url: string): Behavior | null => {
   if (isGitRepo(url)) {
     try {
       return {
         id: nanoid(),
         type: BehaviorType.GitRepo,
-        ...parseGitUrl(url),
+        ...parseGitRepo(url),
       };
     } catch {
       return null;
@@ -60,23 +88,35 @@ const urlToBehavior = (url: string): Behavior | null => {
 
   return {
     id: nanoid(),
-    type: BehaviorType.URL,
+    type: BehaviorType.FileURL,
     url,
   };
 };
 
 const labelFor: Record<BehaviorType, string> = {
-  [BehaviorType.URL]: msg("URL"),
+  [BehaviorType.FileURL]: msg("URL"),
   [BehaviorType.GitRepo]: msg("Git Repo"),
 };
 
-const inputCellStyles = tw`[--sl-input-background-color:transparent] [--sl-input-border-color-hover:transparent] [--sl-input-border-color:transparent] [--sl-input-border-radius-medium:0] [--sl-input-spacing-medium:var(--sl-spacing-small)]`;
+const errorFor: Record<ValidityErrorCodes, string> = {
+  [APIErrorDetail.WorkflowCustomBehaviorBranchNotFound]: msg(
+    "Please enter a valid branch",
+  ),
+  [APIErrorDetail.WorkflowCustomBehaviorNotFound]: msg(
+    "Please enter an existing URL",
+  ),
+};
+const errorForUnexpected = msg("Please enter a valid URL");
 
-const GIT_PREFIX = "git+" as const;
+const inputStyle = [
+  tw`[--sl-input-background-color:transparent] [--sl-input-border-color-hover:transparent] [--sl-input-border-radius-medium:0] [--sl-input-spacing-medium:var(--sl-spacing-small)]`,
+  tw`data-[valid]:[--sl-input-border-color:transparent]`,
+  tw`part-[form-control-help-text]:mx-1 part-[form-control-help-text]:mb-1`,
+];
 
 @customElement("btrix-custom-behaviors-table")
 @localized()
-export class CustomBehaviorsTable extends TailwindElement {
+export class CustomBehaviorsTable extends BtrixElement {
   @property({ type: Array })
   customBehaviors: string[] = [];
 
@@ -84,16 +124,50 @@ export class CustomBehaviorsTable extends TailwindElement {
   editable = false;
 
   @state()
-  private rows = new Map<string, Behavior>();
+  private rows = new Map<RowId, Behavior>();
+
+  @state()
+  private validity = new Map<RowId, RowValidity>();
+
+  public get value(): string[] {
+    const values: string[] = [];
+
+    this.rows.forEach((item) => {
+      if (!item.url) return;
+
+      if (item.type === BehaviorType.GitRepo) {
+        values.push(stringifyGitRepo(item));
+      } else {
+        values.push(item.url);
+      }
+    });
+
+    return values;
+  }
 
   protected willUpdate(changedProperties: PropertyValues): void {
     if (changedProperties.has("customBehaviors")) {
-      this.rows = new Map(
-        this.customBehaviors
-          .map(urlToBehavior)
-          .filter((item): item is Behavior => item !== null)
-          .map((item) => [item.id, item]),
-      );
+      this.validity = new Map();
+
+      if (!this.customBehaviors.length) {
+        const id = nanoid();
+        this.rows = new Map([
+          [
+            id,
+            {
+              ...EMPTY_ROW,
+              id,
+            },
+          ],
+        ]);
+      } else {
+        this.rows = new Map(
+          this.customBehaviors
+            .map(urlToBehavior)
+            .filter((item): item is Behavior => item !== null)
+            .map((item) => [item.id, item]),
+        );
+      }
     }
   }
 
@@ -161,7 +235,7 @@ export class CustomBehaviorsTable extends TailwindElement {
         >
           ${row.type === BehaviorType.GitRepo
             ? this.renderGitRepoCell(row)
-            : this.renderUrlCell(row)}
+            : this.renderFileUrlCell(row)}
         </btrix-table-cell>
         ${when(
           this.editable,
@@ -193,25 +267,13 @@ export class CustomBehaviorsTable extends TailwindElement {
         @sl-change=${(e: SlChangeEvent) => {
           const el = e.target as SlSelect;
 
-          const { id, url } = row;
-
           this.rows = new Map(
-            this.rows.set(
-              row.id,
-              el.value === BehaviorType.GitRepo
-                ? {
-                    id,
-                    url,
-                    type: BehaviorType.GitRepo,
-                    path: "",
-                    branch: "",
-                  }
-                : {
-                    id,
-                    url,
-                    type: BehaviorType.URL,
-                  },
-            ),
+            this.rows.set(row.id, {
+              ...row,
+              type: el.value as BehaviorType,
+              path: row.path || "",
+              branch: row.branch || "",
+            }),
           );
         }}
       >
@@ -228,13 +290,13 @@ export class CustomBehaviorsTable extends TailwindElement {
 
   private renderGitRepoCell(row: BehaviorGitRepo) {
     const subgridStyle = tw`grid grid-cols-[max-content_1fr] border-t`;
-    const labelStyle = tw`fle inline-flex items-center justify-end border-r bg-neutral-50 p-2 text-xs leading-none text-neutral-700`;
+    const labelStyle = tw`flex inline-flex items-center justify-end border-r bg-neutral-50 p-2 text-xs leading-none text-neutral-700`;
     const pathLabel = msg("Path");
     const branchLabel = msg("Branch");
 
     if (!this.editable) {
       return html`
-        <div class="break-all p-2">${row.url}</div>
+        ${this.renderReadonlyUrl(row)}
         <dl class=${subgridStyle}>
           <dt class=${clsx(labelStyle, tw`border-b`)}>${pathLabel}</dt>
           <dd class="border-b p-2">${row.path}</dd>
@@ -244,61 +306,193 @@ export class CustomBehaviorsTable extends TailwindElement {
       `;
     }
 
-    return html`<btrix-url-input
-        placeholder=${msg("Enter URL to Git repository")}
-        class=${clsx(inputCellStyles)}
-        value=${row.url}
-      ></btrix-url-input>
+    return html`${this.renderUrlInput(row, {
+        placeholder: msg("Enter URL to Git repository"),
+      })}
       <div class=${subgridStyle}>
         <label class=${clsx(labelStyle, tw`border-b`)}>${pathLabel}</label>
         <div class="border-b">
-          <sl-input
-            class=${clsx(inputCellStyles)}
-            size="small"
-            value=${row.path}
-            placeholder=${msg("Optional path")}
-            spellcheck="false"
-          ></sl-input>
+          ${this.renderGitDetailInput(row, {
+            placeholder: msg("Optional path"),
+            key: "path",
+          })}
         </div>
         <label class=${labelStyle}>${branchLabel}</label>
         <div>
-          <sl-input
-            class=${clsx(inputCellStyles)}
-            size="small"
-            value=${row.branch}
-            placeholder=${msg("Optional branch")}
-            spellcheck="false"
-          ></sl-input>
+          ${this.renderGitDetailInput(row, {
+            placeholder: msg("Optional branch"),
+            key: "branch",
+          })}
         </div>
       </div> `;
   }
 
-  private renderUrlCell(row: BehaviorURL) {
+  private renderFileUrlCell(row: BehaviorFileURL) {
     if (!this.editable) {
-      return html`${row.url}`;
+      return this.renderReadonlyUrl(row);
     }
 
-    return html`<btrix-url-input
-      placeholder=${msg("Enter URL to JavaScript file")}
-      class=${clsx(inputCellStyles)}
-      value=${row.url}
-    ></btrix-url-input>`;
+    return this.renderUrlInput(row, {
+      placeholder: msg("Enter URL to JavaScript file"),
+    });
   }
+
+  private renderReadonlyUrl(row: Behavior) {
+    return html`<div class="break-all p-2">${row.url}</div>`;
+  }
+
+  private renderUrlInput(
+    row: Behavior,
+    { placeholder }: { placeholder: string },
+  ) {
+    let prefix: {
+      icon: string;
+      tooltip: string;
+      className: string;
+    } | null = null;
+
+    const validity = this.validity.get(row.id) || {};
+
+    if ("error" in validity) {
+      prefix = {
+        icon: "exclamation-lg",
+        tooltip:
+          errorFor[validity.error as ValidityErrorCodes] || errorForUnexpected,
+        className: tw`text-danger`,
+      };
+    } else if ("valid" in validity) {
+      prefix = {
+        icon: "check-lg",
+        tooltip: msg("URL is valid"),
+        className: tw`text-success`,
+      };
+    }
+
+    return html`
+      <btrix-url-input
+        placeholder=${placeholder}
+        class=${clsx(inputStyle)}
+        value=${row.url}
+        @sl-change=${this.onGitInputChangeForKey(row, "url")}
+      >
+        ${when(
+          prefix,
+          ({ tooltip, icon, className }) => html`
+            <div slot="suffix" class="inline-flex items-center">
+              <sl-tooltip hoist content=${tooltip} placement="bottom-end">
+                <sl-icon
+                  name=${icon}
+                  class=${clsx(tw`size-4 text-base`, className)}
+                ></sl-icon>
+              </sl-tooltip>
+            </div>
+          `,
+        )}
+      </btrix-url-input>
+    `;
+  }
+
+  private renderGitDetailInput(
+    row: BehaviorGitRepo,
+    { placeholder, key }: { placeholder: string; key: "path" | "branch" },
+  ) {
+    return html`
+      <sl-input
+        class=${clsx(inputStyle)}
+        size="small"
+        value=${row[key]}
+        placeholder=${placeholder}
+        spellcheck="false"
+        @sl-change=${this.onGitInputChangeForKey(row, key)}
+      ></sl-input>
+    `;
+  }
+
+  private readonly onGitInputChangeForKey =
+    (row: Behavior, key: string) => async (e: SlChangeEvent) => {
+      const el = e.target as SlInput;
+      const value = el.value.trim();
+
+      if (value && (el.checkValidity() || this.validity.get(row.id))) {
+        const behavior = {
+          ...row,
+          [key]: value,
+        };
+
+        const validity = await this.validateAndUpdateRow(behavior);
+
+        if (validity && "error" in validity) {
+          el.setCustomValidity(errorFor[validity.error] || errorForUnexpected);
+        } else {
+          el.setCustomValidity("");
+        }
+      }
+    };
 
   private addRow() {
     const id = nanoid();
 
     this.rows = new Map(
       this.rows.set(id, {
+        ...EMPTY_ROW,
         id,
-        type: BehaviorType.URL,
-        url: "",
       }),
     );
   }
 
   private removeRow(id: string) {
     this.rows.delete(id);
+    this.validity.delete(id);
+
     this.rows = new Map(this.rows);
+    this.validity = new Map(this.validity);
+  }
+
+  private async validateAndUpdateRow(
+    behavior: Behavior,
+  ): Promise<RowValidity | undefined> {
+    try {
+      await this.validateUrl(
+        behavior.type === BehaviorType.GitRepo
+          ? stringifyGitRepo(behavior)
+          : behavior.url,
+      );
+
+      this.rows = new Map(this.rows.set(behavior.id, behavior));
+      this.validity = new Map(this.validity.set(behavior.id, { valid: true }));
+
+      return { valid: true };
+    } catch (err) {
+      if (err instanceof APIError) {
+        console.log("detail:", err.details);
+
+        // TODO switch to error code
+        // https://github.com/webrecorder/browsertrix/issues/2512
+        switch (err.details) {
+          case APIErrorDetail.WorkflowCustomBehaviorNotFound:
+          case APIErrorDetail.WorkflowCustomBehaviorBranchNotFound:
+            this.validity = new Map(
+              this.validity.set(behavior.id, { error: err.details }),
+            );
+            break;
+          default:
+            break;
+        }
+      }
+    }
+
+    return this.validity.get(behavior.id);
+  }
+
+  private async validateUrl(url: string) {
+    return await this.api.fetch<{ success: true }>(
+      `/orgs/${this.orgId}/crawlconfigs/validate/custom-behavior`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          customBehavior: url,
+        }),
+      },
+    );
   }
 }
