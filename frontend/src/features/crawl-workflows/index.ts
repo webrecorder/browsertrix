@@ -1,3 +1,4 @@
+import("./custom-behaviors-table");
 import("./exclusion-editor");
 import("./live-workflow-status");
 import("./new-workflow-dialog");
