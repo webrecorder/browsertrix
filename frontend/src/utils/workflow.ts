@@ -5,6 +5,7 @@ import { getAppSettings } from "./app";
 
 import type { Tags } from "@/components/ui/tag-input";
 import {
+  Behavior,
   ScopeType,
   type Profile,
   type Seed,
@@ -284,10 +285,10 @@ export function getInitialFormState(params: {
     pageLimit:
       params.initialWorkflow.config.limit ?? defaultFormState.pageLimit,
     autoscrollBehavior: params.initialWorkflow.config.behaviors
-      ? params.initialWorkflow.config.behaviors.includes("autoscroll")
+      ? params.initialWorkflow.config.behaviors.includes(Behavior.AutoScroll)
       : defaultFormState.autoscrollBehavior,
     autoclickBehavior: params.initialWorkflow.config.behaviors
-      ? params.initialWorkflow.config.behaviors.includes("autoclick")
+      ? params.initialWorkflow.config.behaviors.includes(Behavior.AutoClick)
       : defaultFormState.autoclickBehavior,
     userAgent:
       params.initialWorkflow.config.userAgent ?? defaultFormState.userAgent,

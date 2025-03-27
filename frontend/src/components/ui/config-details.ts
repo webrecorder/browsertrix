@@ -8,7 +8,13 @@ import capitalize from "lodash/fp/capitalize";
 import RegexColorize from "regex-colorize";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import type { CrawlConfig, Seed, SeedConfig } from "@/pages/org/types";
+import { none, notSpecified } from "@/layouts/empty";
+import {
+  Behavior,
+  type CrawlConfig,
+  type Seed,
+  type SeedConfig,
+} from "@/pages/org/types";
 import { labelFor } from "@/strings/crawl-workflows/labels";
 import scopeTypeLabel from "@/strings/crawl-workflows/scopeType";
 import sectionStrings from "@/strings/crawl-workflows/section";
@@ -162,22 +168,15 @@ export class ConfigDetails extends BtrixElement {
         heading: sectionStrings.behaviors,
         renderDescItems: (seedsConfig) => html`
           ${this.renderSetting(
-            labelFor.autoscrollBehavior,
-            seedsConfig?.behaviors &&
-              !seedsConfig.behaviors.includes("autoscroll")
-              ? msg("Disabled")
-              : html`<span class="text-neutral-400"
-                  >${msg("Enabled (default)")}</span
-                >`,
-          )}
-          ${this.renderSetting(
-            labelFor.autoclickBehavior,
-            seedsConfig?.behaviors &&
-              seedsConfig.behaviors.includes("autoclick")
-              ? msg("Enabled")
-              : html`<span class="text-neutral-400"
-                  >${msg("Disabled (default)")}</span
-                >`,
+            labelFor.behaviors,
+            [
+              seedsConfig?.behaviors?.includes(Behavior.AutoScroll) &&
+                labelFor.autoscrollBehavior,
+              seedsConfig?.behaviors?.includes(Behavior.AutoClick) &&
+                labelFor.autoclickBehavior,
+            ]
+              .filter((v) => v)
+              .join(", ") || none,
           )}
           ${this.renderSetting(
             labelFor.pageLoadTimeoutSeconds,
@@ -424,7 +423,7 @@ export class ConfigDetails extends BtrixElement {
                   )}
                 </ul>
               `
-            : msg("None"),
+            : none,
           true,
         ),
       )}
@@ -463,7 +462,7 @@ export class ConfigDetails extends BtrixElement {
                 })}
               </ul>
             `
-          : msg("None"),
+          : none,
         true,
       )}
       ${when(
@@ -477,7 +476,7 @@ export class ConfigDetails extends BtrixElement {
             </btrix-queue-exclusion-table>
           </div>
         `,
-        () => this.renderSetting(msg("Exclusions"), msg("None")),
+        () => this.renderSetting(msg("Exclusions"), none),
       )}
     `;
   };
@@ -490,11 +489,9 @@ export class ConfigDetails extends BtrixElement {
     } else if (typeof value === "boolean") {
       content = value ? msg("Yes") : msg("No");
     } else if (Array.isArray(value) && !value.length) {
-      content = html`<span class="text-neutral-400">${msg("None")}</span>`;
+      content = none;
     } else if (typeof value !== "number" && !value) {
-      content = html`<span class="text-neutral-400"
-        >${msg("Not specified")}</span
-      >`;
+      content = notSpecified;
     }
     return html`
       <btrix-desc-list-item label=${label} class=${breakAll ? "break-all" : ""}>
