@@ -7,5 +7,5 @@ export const labelFor = {
   postLoadDelaySeconds: msg("Delay After Page Load"),
   behaviorTimeoutSeconds: "Behavior Limit",
   pageExtraDelaySeconds: msg("Delay Before Next Page"),
-  selectLink: msg("Custom Link Selectors"),
+  selectLink: msg("Link Selectors"),
 };
