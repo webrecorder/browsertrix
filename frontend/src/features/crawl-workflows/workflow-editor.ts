@@ -49,6 +49,7 @@ import {
 } from "@/controllers/observable";
 import { type SelectBrowserProfileChangeEvent } from "@/features/browser-profiles/select-browser-profile";
 import type { CollectionsChangeEvent } from "@/features/collections/collections-add";
+import type { CustomBehaviorsTable } from "@/features/crawl-workflows/custom-behaviors-table";
 import type { CrawlStatusChangedEventDetail } from "@/features/crawl-workflows/live-workflow-status";
 import type {
   ExclusionChangeEvent,
@@ -306,6 +307,9 @@ export class WorkflowEditor extends BtrixElement {
 
   @query("btrix-queue-exclusion-table")
   private readonly exclusionTable?: QueueExclusionTable | null;
+
+  @query("btrix-custom-behaviors-table")
+  private readonly customBehaviorsTable?: CustomBehaviorsTable | null;
 
   connectedCallback(): void {
     this.initializeEditor();
@@ -1281,10 +1285,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       ${this.renderSectionHeading(msg("Custom Behaviors"))}
       ${inputCol(
         html`<btrix-custom-behaviors-table
-          .customBehaviors=${[
-            "https://example.com/script.js",
-            "git+https://git.example.com/custom-behaviors?branch=dev&path=path/to/behaviors",
-          ]}
+          .customBehaviors=${this.initialWorkflow?.config.customBehaviors || []}
           editable
         ></btrix-custom-behaviors-table>`,
       )}
@@ -2223,6 +2224,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         exclude: trimArray(this.formState.exclusions),
         behaviors: this.setBehaviors(),
         selectLinks: ["a[href]->href"],
+        customBehaviors: this.customBehaviorsTable?.value || [],
       },
       crawlerChannel: this.formState.crawlerChannel || "default",
       proxyId: this.formState.proxyId,
