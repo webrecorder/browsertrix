@@ -60,7 +60,11 @@ def test_update_org_crawling_defaults(admin_auth_headers, default_org_id):
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/defaults/crawling",
         headers=admin_auth_headers,
-        json={"maxCrawlSize": 200000, "lang": "fr"},
+        json={
+            "maxCrawlSize": 200000,
+            "lang": "fr",
+            "customBehaviors": ["git+https://github.com/webrecorder/custom-behaviors"],
+        },
     )
 
     assert r.status_code == 200
@@ -72,6 +76,9 @@ def test_update_org_crawling_defaults(admin_auth_headers, default_org_id):
     assert data["crawlingDefaults"]
     assert data["crawlingDefaults"]["maxCrawlSize"] == 200000
     assert data["crawlingDefaults"]["lang"] == "fr"
+    assert data["crawlingDefaults"]["customBehaviors"] == [
+        "git+https://github.com/webrecorder/custom-behaviors"
+    ]
 
 
 def test_rename_org(admin_auth_headers, default_org_id):

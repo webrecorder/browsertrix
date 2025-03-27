@@ -543,3 +543,192 @@ def test_add_crawl_config_invalid_exclude_regex(
     )
     assert r.status_code == 400
     assert r.json()["detail"] == "invalid_regex"
+
+
+def test_add_crawl_config_custom_behaviors_invalid_url(
+    crawler_auth_headers, default_org_id, sample_crawl_data
+):
+    sample_crawl_data["config"]["customBehaviors"] = ["http"]
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        headers=crawler_auth_headers,
+        json=sample_crawl_data,
+    )
+    assert r.status_code == 400
+    assert r.json()["detail"] == "invalid_custom_behavior"
+
+
+def test_add_crawl_config_custom_behaviors_valid_url(
+    crawler_auth_headers, default_org_id, sample_crawl_data
+):
+    url = "https://raw.githubusercontent.com/webrecorder/custom-behaviors/refs/heads/main/behaviors/fulcrum.js"
+    sample_crawl_data["config"]["customBehaviors"] = [url]
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        headers=crawler_auth_headers,
+        json=sample_crawl_data,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    config_id = data["id"]
+    assert config_id
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{config_id}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data["id"] == config_id
+    assert data["config"]["customBehaviors"] == [url]
+
+
+def test_add_update_crawl_config_custom_behaviors_git_url(
+    crawler_auth_headers, default_org_id, sample_crawl_data
+):
+    git_url = "git+https://github.com/webrecorder/custom-behaviors"
+    git_url_with_params = (
+        "git+https://github.com/webrecorder/custom-behaviors?branch=main&path=behaviors"
+    )
+
+    # Create workflow and validate it looks like we expect
+    sample_crawl_data["config"]["customBehaviors"] = [git_url]
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        headers=crawler_auth_headers,
+        json=sample_crawl_data,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    config_id = data["id"]
+    assert config_id
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{config_id}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data["id"] == config_id
+    assert data["config"]["customBehaviors"] == [git_url]
+
+    # Try to update custom behaviors with invalid url, validate unchanged
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{config_id}/",
+        headers=crawler_auth_headers,
+        json={
+            "config": {
+                "customBehaviors": [git_url, "not-a-url"],
+            }
+        },
+    )
+    assert r.status_code == 400
+    assert r.json()["detail"] == "invalid_custom_behavior"
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{config_id}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data["id"] == config_id
+    assert data["config"]["customBehaviors"] == [git_url]
+
+    # Update custom behaviors with valid url, validate changed
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{config_id}/",
+        headers=crawler_auth_headers,
+        json={
+            "config": {
+                "customBehaviors": [git_url_with_params],
+            }
+        },
+    )
+    assert r.status_code == 200
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{config_id}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data["id"] == config_id
+    assert data["config"]["customBehaviors"] == [git_url_with_params]
+
+
+def test_validate_custom_behavior(crawler_auth_headers, default_org_id):
+    valid_url = "https://raw.githubusercontent.com/webrecorder/custom-behaviors/refs/heads/main/behaviors/fulcrum.js"
+    invalid_url_404 = "https://webrecorder.net/nonexistent/behavior.js"
+    doesnt_resolve_url = "https://nonexistenturl-for-testing-browsertrix.com"
+    malformed_url = "http"
+
+    git_url = "git+https://github.com/webrecorder/custom-behaviors"
+    invalid_git_url = "git+https://github.com/webrecorder/doesntexist"
+    private_git_url = "git+https://github.com/webrecorder/website"
+
+    git_url_with_params = (
+        "git+https://github.com/webrecorder/custom-behaviors?branch=main&path=behaviors"
+    )
+    git_url_invalid_branch = (
+        "git+https://github.com/webrecorder/custom-behaviors?branch=doesntexist"
+    )
+
+    # Success
+    for url in (valid_url, git_url, git_url_with_params):
+        r = requests.post(
+            f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/validate/custom-behavior",
+            headers=crawler_auth_headers,
+            json={"customBehavior": url},
+        )
+        assert r.status_code == 200
+        assert r.json()["success"]
+
+    # Behavior 404s
+    for url in (invalid_url_404, doesnt_resolve_url):
+        r = requests.post(
+            f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/validate/custom-behavior",
+            headers=crawler_auth_headers,
+            json={"customBehavior": url},
+        )
+        assert r.status_code == 404
+        assert r.json()["detail"] == "custom_behavior_not_found"
+
+    # Malformed url
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/validate/custom-behavior",
+        headers=crawler_auth_headers,
+        json={"customBehavior": malformed_url},
+    )
+    assert r.status_code == 400
+    assert r.json()["detail"] == "invalid_custom_behavior"
+
+    # Git repo doesn't exist
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/validate/custom-behavior",
+        headers=crawler_auth_headers,
+        json={"customBehavior": invalid_git_url},
+    )
+    assert r.status_code == 404
+    assert r.json()["detail"] == "custom_behavior_not_found"
+
+    # Git repo isn't public
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/validate/custom-behavior",
+        headers=crawler_auth_headers,
+        json={"customBehavior": private_git_url},
+    )
+    assert r.status_code == 404
+    assert r.json()["detail"] == "custom_behavior_not_found"
+
+    # Git branch doesn't exist
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/validate/custom-behavior",
+        headers=crawler_auth_headers,
+        json={"customBehavior": git_url_invalid_branch},
+    )
+    assert r.status_code == 404
+    assert r.json()["detail"] == "custom_behavior_branch_not_found"

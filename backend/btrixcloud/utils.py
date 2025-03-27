@@ -11,6 +11,7 @@ import re
 
 from datetime import datetime, timezone
 from typing import Optional, Dict, Union, List, Any
+from urllib.parse import urlparse
 from uuid import UUID
 
 from fastapi import HTTPException
@@ -98,6 +99,15 @@ def is_falsy_bool(stri: Optional[str]) -> bool:
     if stri:
         return stri.lower() in ("false", "0", "no", "off")
     return False
+
+
+def is_url(url: str) -> bool:
+    """Check if string is ad valid URL"""
+    try:
+        result = urlparse(url)
+        return all([result.scheme, result.netloc])
+    except ValueError:
+        return False
 
 
 def str_list_to_bools(str_list: List[str], allow_none=True) -> List[Union[bool, None]]:
