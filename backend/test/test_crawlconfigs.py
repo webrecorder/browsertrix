@@ -663,6 +663,7 @@ def test_add_update_crawl_config_custom_behaviors_git_url(
 def test_validate_custom_behavior(crawler_auth_headers, default_org_id):
     valid_url = "https://raw.githubusercontent.com/webrecorder/custom-behaviors/refs/heads/main/behaviors/fulcrum.js"
     invalid_url_404 = "https://webrecorder.net/nonexistent/behavior.js"
+    doesnt_resolve_url = "https://nonexistenturl-for-testing-browsertrix.com"
     malformed_url = "http"
 
     git_url = "git+https://github.com/webrecorder/custom-behaviors"
@@ -687,13 +688,14 @@ def test_validate_custom_behavior(crawler_auth_headers, default_org_id):
         assert r.json()["success"]
 
     # Behavior 404s
-    r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/validate/custom-behavior",
-        headers=crawler_auth_headers,
-        json={"customBehavior": invalid_url_404},
-    )
-    assert r.status_code == 404
-    assert r.json()["detail"] == "custom_behavior_not_found"
+    for url in (invalid_url_404, doesnt_resolve_url):
+        r = requests.post(
+            f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/validate/custom-behavior",
+            headers=crawler_auth_headers,
+            json={"customBehavior": url},
+        )
+        assert r.status_code == 404
+        assert r.json()["detail"] == "custom_behavior_not_found"
 
     # Malformed url
     r = requests.post(

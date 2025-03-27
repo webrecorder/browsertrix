@@ -1116,14 +1116,21 @@ class CrawlConfigOps:
 
     async def _validate_behavior_url(self, url: str):
         """Validate behavior file exists at url"""
-        timeout = aiohttp.ClientTimeout(total=10)
-        async with aiohttp.ClientSession(timeout=timeout) as session:
-            async with session.get(url) as resp:
-                if resp.status >= 400:
-                    raise HTTPException(
-                        status_code=404,
-                        detail="custom_behavior_not_found",
-                    )
+        try:
+            timeout = aiohttp.ClientTimeout(total=10)
+            async with aiohttp.ClientSession(timeout=timeout) as session:
+                async with session.get(url) as resp:
+                    if resp.status >= 400:
+                        raise HTTPException(
+                            status_code=404,
+                            detail="custom_behavior_not_found",
+                        )
+        # pylint: disable=raise-missing-from
+        except aiohttp.ClientError:
+            raise HTTPException(
+                status_code=404,
+                detail="custom_behavior_not_found",
+            )
 
     async def validate_custom_behavior(self, url: str) -> Dict[str, bool]:
         """Validate custom behavior URL
