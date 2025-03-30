@@ -68,6 +68,11 @@ jobs:
       - name: Wait for all pods to be ready
         run: sudo microk8s kubectl wait --for=condition=ready pod --all --timeout=240s
 
+      - name: Create Extra Test Buckets
+        run: |
+          kubectl exec -i deployment/local-minio -c minio -- mkdir /data/custom-primary &&
+          kubectl exec -i deployment/local-minio -c minio -- mkdir /data/custom-replica
+
       - name: Run Tests
         run: pytest -vv ./backend/test/test_*.py
 
