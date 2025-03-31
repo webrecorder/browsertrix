@@ -73,9 +73,7 @@ export class CopyField extends TailwindElement {
           this.monostyle && tw`font-monostyle`,
         )}
       >
-        <div
-          class="relative inline-flex w-full items-stretch justify-start break-all"
-        >
+        <div class="relative inline-flex w-full items-stretch justify-start">
           <slot name="prefix"></slot>
           <span
             aria-hidden=${this.hideContentFromScreenReaders}
