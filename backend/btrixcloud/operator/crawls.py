@@ -279,6 +279,11 @@ class CrawlOperator(BaseOperator):
         )
 
         params["crawler_image"] = status.crawlerImage
+        pull_policy = self.crawl_config_ops.get_channel_crawler_image_pull_policy(
+            crawl.crawler_channel
+        )
+        if pull_policy:
+            params["crawler_image_pull_policy"] = pull_policy
 
         if crawl.proxy_id and not crawl.is_qa:
             proxy = self.crawl_config_ops.get_crawler_proxy(crawl.proxy_id)

@@ -110,6 +110,10 @@ class ProfileOps:
         if not crawler_image:
             raise HTTPException(status_code=404, detail="crawler_not_found")
 
+        image_pull_policy = self.crawlconfigs.get_channel_crawler_image_pull_policy(
+            profile_launch.crawlerChannel
+        )
+
         # use either specified proxyId or if none, use proxyId from existing profile
         proxy_id = profile_launch.proxyId or prev_proxy_id
 
@@ -122,6 +126,7 @@ class ProfileOps:
             url=str(profile_launch.url),
             storage=org.storage,
             crawler_image=crawler_image,
+            image_pull_policy=image_pull_policy or "",
             baseprofile=prev_profile_id,
             profile_filename=prev_profile_path,
             proxy_id=proxy_id,
