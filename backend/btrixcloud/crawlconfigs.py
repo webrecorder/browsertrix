@@ -109,9 +109,9 @@ class CrawlConfigOps:
         self.coll_ops = cast(CollectionOps, None)
 
         self.default_filename_template = os.environ["DEFAULT_CRAWL_FILENAME_TEMPLATE"]
-        self.default_crawler_image_pull_policy = os.environ[
-            "DEFAULT_CRAWLER_IMAGE_PULL_POLICY"
-        ]
+        self.default_crawler_image_pull_policy = os.environ.get(
+            "DEFAULT_CRAWLER_IMAGE_PULL_POLICY", "IfNotPresent"
+        )
 
         self.router = APIRouter(
             prefix="/crawlconfigs",
