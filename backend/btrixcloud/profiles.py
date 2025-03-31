@@ -126,7 +126,7 @@ class ProfileOps:
             url=str(profile_launch.url),
             storage=org.storage,
             crawler_image=crawler_image,
-            image_pull_policy=image_pull_policy or "",
+            image_pull_policy=image_pull_policy,
             baseprofile=prev_profile_id,
             profile_filename=prev_profile_path,
             proxy_id=proxy_id,

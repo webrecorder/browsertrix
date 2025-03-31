@@ -58,7 +58,7 @@ class CrawlManager(K8sAPI):
             "vnc_password": secrets.token_hex(16),
             "expire_time": date_to_str(dt_now() + timedelta(seconds=30)),
             "crawler_image": crawler_image,
-            "image_pull_poilcy": image_pull_policy,
+            "image_pull_policy": image_pull_policy,
             "proxy_id": proxy_id or DEFAULT_PROXY_ID,
         }
 
