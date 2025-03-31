@@ -179,6 +179,16 @@ export class ConfigDetails extends BtrixElement {
               .join(", ") || none,
           )}
           ${this.renderSetting(
+            labelFor.customBehaviors,
+            seedsConfig?.customBehaviors.length
+              ? html`
+                  <btrix-custom-behaviors-table
+                    .customBehaviors=${seedsConfig.customBehaviors}
+                  ></btrix-custom-behaviors-table>
+                `
+              : none,
+          )}
+          ${this.renderSetting(
             labelFor.pageLoadTimeoutSeconds,
             renderTimeLimit(
               seedsConfig?.pageLoadTimeout,

@@ -16,6 +16,7 @@ import { z } from "zod";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { TableRow } from "@/components/ui/table/table-row";
 import type { UrlInput } from "@/components/ui/url-input";
+import { notSpecified } from "@/layouts/empty";
 import { APIErrorDetail } from "@/types/api";
 import type { SeedConfig } from "@/types/crawler";
 import { APIError } from "@/utils/api";
@@ -272,10 +273,7 @@ export class CustomBehaviorsTable extends BtrixElement {
           ${this.renderType(row)}
         </btrix-table-cell>
         <btrix-table-cell
-          class=${clsx(
-            tw`block break-all border-l`,
-            (row.type === BehaviorType.GitRepo || this.editable) && tw`p-0`,
-          )}
+          class=${clsx(tw`block overflow-auto break-all border-l p-0`)}
         >
           ${row.type === BehaviorType.GitRepo
             ? this.renderGitRepoCell(row)
@@ -343,9 +341,9 @@ export class CustomBehaviorsTable extends BtrixElement {
         ${this.renderReadonlyUrl(row)}
         <dl class=${subgridStyle}>
           <dt class=${clsx(labelStyle, tw`border-b`)}>${pathLabel}</dt>
-          <dd class="border-b p-2">${row.path}</dd>
+          <dd class="border-b p-2">${row.path || notSpecified}</dd>
           <dt class=${labelStyle}>${branchLabel}</dt>
-          <dd class="p-2">${row.branch}</dd>
+          <dd class="p-2">${row.branch || notSpecified}</dd>
         </dl>
       `;
     }
@@ -382,7 +380,26 @@ export class CustomBehaviorsTable extends BtrixElement {
   }
 
   private renderReadonlyUrl(row: Behavior) {
-    return html`<div class="break-all p-2">${row.url}</div>`;
+    return html`
+      <btrix-copy-field
+        class="mt-0.5"
+        .value=${row.url}
+        .monostyle=${false}
+        .border=${false}
+        .filled=${false}
+      >
+        <sl-tooltip slot="prefix" content=${msg("Open in New Tab")} hoist>
+          <sl-icon-button
+            href=${row.url}
+            name="box-arrow-up-right"
+            target="_blank"
+            rel="noopener noreferrer nofollow"
+            class="m-px"
+          >
+          </sl-icon-button>
+        </sl-tooltip>
+      </btrix-copy-field>
+    `;
   }
 
   private renderUrlInput(
@@ -473,14 +490,14 @@ export class CustomBehaviorsTable extends BtrixElement {
       const el = e.target as SlInput;
       const value = el.value.trim();
 
-      if (value && (el.checkValidity() || this.validity.get(row.id))) {
-        const behavior = {
-          ...row,
-          [key]: value,
-        };
+      const behavior = {
+        ...row,
+        [key]: value,
+      };
 
-        this.rows = new Map(this.rows.set(behavior.id, behavior));
+      this.rows = new Map(this.rows.set(behavior.id, behavior));
 
+      if (el.checkValidity() || this.validity.get(row.id)) {
         const rowEl = el.closest<TableRow>("btrix-table-row");
         const rowInputs = rowEl?.querySelectorAll<SlInput>(
           `.${INPUT_CLASSNAME}`,

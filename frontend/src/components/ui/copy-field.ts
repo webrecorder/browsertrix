@@ -36,6 +36,9 @@ export class CopyField extends TailwindElement {
   hoist = false;
 
   @property({ type: Boolean })
+  border = true;
+
+  @property({ type: Boolean })
   monostyle = true;
 
   @property({ type: Boolean })
@@ -65,12 +68,14 @@ export class CopyField extends TailwindElement {
       <div
         role="group"
         class=${clsx(
-          tw`rounded border`,
+          this.border && tw`rounded border`,
           this.filled ? tw`bg-slate-50` : tw`border-neutral-150`,
           this.monostyle && tw`font-monostyle`,
         )}
       >
-        <div class="relative inline-flex w-full items-stretch justify-start">
+        <div
+          class="relative inline-flex w-full items-stretch justify-start break-all"
+        >
           <slot name="prefix"></slot>
           <span
             aria-hidden=${this.hideContentFromScreenReaders}

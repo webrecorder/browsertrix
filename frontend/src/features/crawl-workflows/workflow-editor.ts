@@ -1328,7 +1328,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
   private renderCustomBehaviors() {
     return html`
-      ${this.renderSectionHeading(msg("Custom Behaviors"))}
+      ${this.renderSectionHeading(labelFor.customBehaviors)}
       ${inputCol(
         html`<btrix-custom-behaviors-table
           .customBehaviors=${this.initialWorkflow?.config.customBehaviors || []}
