@@ -603,7 +603,7 @@ class CrawlerChannel(BaseModel):
 
     id: str
     image: str
-    imagePullPolicy: Optional[str]
+    imagePullPolicy: Optional[str] = None
 
 
 # ============================================================================
