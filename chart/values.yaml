@@ -237,12 +237,15 @@ redis_storage: "3Gi"
 crawler_channels:
   - id: default
     image: "docker.io/webrecorder/browsertrix-crawler:latest"
+    imagePullPolicy: Always
 
   # Add, remove, or edit additional crawler versions below, for example:
   # - id: custom_version
   #   image: "<DOCKER IMAGE>"
+  #   imagePullPolicy: Always|IfNotPresent|Never (optional, defaults to crawler_pull_policy)
 
-crawler_pull_policy: "Always"
+# default crawler pull policy if not set per channel
+crawler_pull_policy: "IfNotPresent"
 
 crawler_namespace: "crawlers"
 
