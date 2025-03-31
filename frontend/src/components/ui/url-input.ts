@@ -22,7 +22,7 @@ export function validURL(url: string) {
  * @attr {Boolean} required
  */
 @customElement("btrix-url-input")
-export class Component extends SlInput {
+export class UrlInput extends SlInput {
   @property({ type: Number, reflect: true })
   minlength = 4;
 

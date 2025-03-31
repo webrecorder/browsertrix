@@ -2,20 +2,29 @@ import { localized, msg } from "@lit/localize";
 import type {
   SlChangeEvent,
   SlInput,
+  SlInputEvent,
   SlSelect,
 } from "@shoelace-style/shoelace";
 import clsx from "clsx";
 import { html, type PropertyValues } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
+import { customElement, property, queryAll, state } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
 import { when } from "lit/directives/when.js";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import type { TableRow } from "@/components/ui/table/table-row";
+import type { UrlInput } from "@/components/ui/url-input";
 import { APIErrorDetail } from "@/types/api";
+import type { SeedConfig } from "@/types/crawler";
 import { APIError } from "@/utils/api";
 import { tw } from "@/utils/tailwind";
+
+type CustomBehaviorValue = SeedConfig["customBehaviors"];
+type ChangeEventDetail = {
+  value: CustomBehaviorValue;
+};
 
 enum BehaviorType {
   FileURL = "fileUrl",
@@ -24,9 +33,12 @@ enum BehaviorType {
 
 const rowIdSchema = z.string().nanoid();
 type RowId = z.infer<typeof rowIdSchema>;
+
+const UnknownErrorCode = "UNKNOWN_ERROR" as const;
 type ValidityErrorCodes =
   | APIErrorDetail.WorkflowCustomBehaviorBranchNotFound
-  | APIErrorDetail.WorkflowCustomBehaviorNotFound;
+  | APIErrorDetail.WorkflowCustomBehaviorNotFound
+  | typeof UnknownErrorCode;
 type RowValidity = { valid: true } | { error: ValidityErrorCodes };
 
 type BehaviorBase = {
@@ -54,6 +66,7 @@ const EMPTY_ROW: Omit<BehaviorGitRepo, "id"> = {
   path: "",
   branch: "",
 } as const;
+const INPUT_CLASSNAME = "input" as const;
 
 const isGitRepo = (url: string) => url.startsWith(GIT_PREFIX);
 
@@ -93,6 +106,22 @@ const urlToBehavior = (url: string): Behavior | null => {
   };
 };
 
+const valueFromRows = (rows: Map<RowId, Behavior>): CustomBehaviorValue => {
+  const values: CustomBehaviorValue = [];
+
+  rows.forEach((item) => {
+    if (!item.url) return;
+
+    if (item.type === BehaviorType.GitRepo) {
+      values.push(stringifyGitRepo(item));
+    } else {
+      values.push(item.url);
+    }
+  });
+
+  return values;
+};
+
 const labelFor: Record<BehaviorType, string> = {
   [BehaviorType.FileURL]: msg("URL"),
   [BehaviorType.GitRepo]: msg("Git Repo"),
@@ -105,8 +134,8 @@ const errorFor: Record<ValidityErrorCodes, string> = {
   [APIErrorDetail.WorkflowCustomBehaviorNotFound]: msg(
     "Please enter an existing URL",
   ),
+  [UnknownErrorCode]: msg("Please enter a valid custom behavior"),
 };
-const errorForUnexpected = msg("Please enter a valid URL");
 
 const inputStyle = [
   tw`[--sl-input-background-color:transparent] [--sl-input-border-color-hover:transparent] [--sl-input-border-radius-medium:0] [--sl-input-spacing-medium:var(--sl-spacing-small)]`,
@@ -114,11 +143,15 @@ const inputStyle = [
   tw`part-[form-control-help-text]:mx-1 part-[form-control-help-text]:mb-1`,
 ];
 
+/**
+ * @fires btrix-change
+ * @fires btrix-invalid
+ */
 @customElement("btrix-custom-behaviors-table")
 @localized()
 export class CustomBehaviorsTable extends BtrixElement {
   @property({ type: Array })
-  customBehaviors: string[] = [];
+  customBehaviors: CustomBehaviorValue = [];
 
   @property({ type: Boolean })
   editable = false;
@@ -129,20 +162,19 @@ export class CustomBehaviorsTable extends BtrixElement {
   @state()
   private validity = new Map<RowId, RowValidity>();
 
-  public get value(): string[] {
-    const values: string[] = [];
+  @queryAll(`.${INPUT_CLASSNAME}`)
+  private readonly inputs!: NodeListOf<SlInput | UrlInput>;
 
-    this.rows.forEach((item) => {
-      if (!item.url) return;
+  public get value(): CustomBehaviorValue {
+    return valueFromRows(this.rows);
+  }
 
-      if (item.type === BehaviorType.GitRepo) {
-        values.push(stringifyGitRepo(item));
-      } else {
-        values.push(item.url);
-      }
-    });
+  public checkValidity(): boolean {
+    return ![...this.inputs].some((input) => !input.checkValidity());
+  }
 
-    return values;
+  public reportValidity(): boolean {
+    return ![...this.inputs].some((input) => !input.reportValidity());
   }
 
   protected willUpdate(changedProperties: PropertyValues): void {
@@ -168,6 +200,18 @@ export class CustomBehaviorsTable extends BtrixElement {
             .map((item) => [item.id, item]),
         );
       }
+    }
+  }
+
+  protected updated(changedProperties: PropertyValues): void {
+    if (changedProperties.get("rows")) {
+      this.dispatchEvent(
+        new CustomEvent<ChangeEventDetail>("btrix-change", {
+          detail: {
+            value: this.value,
+          },
+        }),
+      );
     }
   }
 
@@ -356,8 +400,7 @@ export class CustomBehaviorsTable extends BtrixElement {
     if ("error" in validity) {
       prefix = {
         icon: "exclamation-lg",
-        tooltip:
-          errorFor[validity.error as ValidityErrorCodes] || errorForUnexpected,
+        tooltip: errorFor[validity.error as ValidityErrorCodes],
         className: tw`text-danger`,
       };
     } else if ("valid" in validity) {
@@ -371,9 +414,12 @@ export class CustomBehaviorsTable extends BtrixElement {
     return html`
       <btrix-url-input
         placeholder=${placeholder}
-        class=${clsx(inputStyle)}
+        class=${clsx(inputStyle, INPUT_CLASSNAME)}
         value=${row.url}
-        @sl-change=${this.onGitInputChangeForKey(row, "url")}
+        @sl-input=${this.onInputForRow(row)}
+        @sl-change=${this.onInputChangeForKey(row, "url")}
+        @sl-invalid=${() =>
+          this.dispatchEvent(new CustomEvent("btrix-invalid"))}
       >
         ${when(
           prefix,
@@ -398,17 +444,31 @@ export class CustomBehaviorsTable extends BtrixElement {
   ) {
     return html`
       <sl-input
-        class=${clsx(inputStyle)}
+        class=${clsx(inputStyle, INPUT_CLASSNAME, key)}
         size="small"
         value=${row[key]}
         placeholder=${placeholder}
         spellcheck="false"
-        @sl-change=${this.onGitInputChangeForKey(row, key)}
+        @sl-input=${this.onInputForRow(row)}
+        @sl-change=${this.onInputChangeForKey(row, key)}
+        @sl-invalid=${() =>
+          this.dispatchEvent(new CustomEvent("btrix-invalid"))}
       ></sl-input>
     `;
   }
 
-  private readonly onGitInputChangeForKey =
+  private readonly onInputForRow = (row: Behavior) => (e: SlInputEvent) => {
+    const el = e.target as SlInput;
+
+    el.setCustomValidity("");
+
+    if (this.validity.get(row.id)) {
+      this.validity.delete(row.id);
+      this.validity = new Map(this.validity);
+    }
+  };
+
+  private readonly onInputChangeForKey =
     (row: Behavior, key: string) => async (e: SlChangeEvent) => {
       const el = e.target as SlInput;
       const value = el.value.trim();
@@ -419,13 +479,36 @@ export class CustomBehaviorsTable extends BtrixElement {
           [key]: value,
         };
 
-        const validity = await this.validateAndUpdateRow(behavior);
+        this.rows = new Map(this.rows.set(behavior.id, behavior));
+
+        const rowEl = el.closest<TableRow>("btrix-table-row");
+        const rowInputs = rowEl?.querySelectorAll<SlInput>(
+          `.${INPUT_CLASSNAME}`,
+        );
+
+        const validity = await this.validateBehavior(behavior);
+
+        let invalidInput = el;
 
         if (validity && "error" in validity) {
-          el.setCustomValidity(errorFor[validity.error] || errorForUnexpected);
-        } else {
-          el.setCustomValidity("");
+          if (
+            validity.error ===
+            APIErrorDetail.WorkflowCustomBehaviorBranchNotFound
+          ) {
+            invalidInput =
+              rowEl?.querySelector<SlInput>(`.${INPUT_CLASSNAME}.branch`) || el;
+          }
+
+          rowInputs?.forEach((input) => {
+            if (input === invalidInput) {
+              input.setCustomValidity(errorFor[validity.error]);
+            } else {
+              input.setCustomValidity("");
+            }
+          });
         }
+
+        invalidInput.checkValidity();
       }
     };
 
@@ -448,7 +531,7 @@ export class CustomBehaviorsTable extends BtrixElement {
     this.validity = new Map(this.validity);
   }
 
-  private async validateAndUpdateRow(
+  private async validateBehavior(
     behavior: Behavior,
   ): Promise<RowValidity | undefined> {
     try {
@@ -458,27 +541,27 @@ export class CustomBehaviorsTable extends BtrixElement {
           : behavior.url,
       );
 
-      this.rows = new Map(this.rows.set(behavior.id, behavior));
       this.validity = new Map(this.validity.set(behavior.id, { valid: true }));
-
-      return { valid: true };
     } catch (err) {
-      if (err instanceof APIError) {
-        console.log("detail:", err.details);
+      let errorCode: ValidityErrorCodes = UnknownErrorCode;
 
+      if (err instanceof APIError) {
         // TODO switch to error code
         // https://github.com/webrecorder/browsertrix/issues/2512
         switch (err.details) {
           case APIErrorDetail.WorkflowCustomBehaviorNotFound:
           case APIErrorDetail.WorkflowCustomBehaviorBranchNotFound:
-            this.validity = new Map(
-              this.validity.set(behavior.id, { error: err.details }),
-            );
+            errorCode = err.details;
             break;
           default:
+            console.debug("unexpected API error:", err);
             break;
         }
       }
+
+      this.validity = new Map(
+        this.validity.set(behavior.id, { error: errorCode }),
+      );
     }
 
     return this.validity.get(behavior.id);

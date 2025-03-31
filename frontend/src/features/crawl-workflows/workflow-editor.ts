@@ -1333,6 +1333,24 @@ https://archiveweb.page/images/${"logo.svg"}`}
         html`<btrix-custom-behaviors-table
           .customBehaviors=${this.initialWorkflow?.config.customBehaviors || []}
           editable
+          @btrix-change=${() => {
+            this.customBehaviorsTable?.removeAttribute("data-invalid");
+            this.customBehaviorsTable?.removeAttribute("data-user-invalid");
+          }}
+          @btrix-invalid=${() => {
+            /**
+             * HACK Set data attribute manually so that
+             * table works with `syncTabErrorState`
+             *
+             * FIXME Should be fixed with
+             * https://github.com/webrecorder/browsertrix/issues/2497
+             */
+            this.customBehaviorsTable?.setAttribute("data-invalid", "true");
+            this.customBehaviorsTable?.setAttribute(
+              "data-user-invalid",
+              "true",
+            );
+          }}
         ></btrix-custom-behaviors-table>`,
       )}
       ${this.renderHelpTextCol(
@@ -1916,6 +1934,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
   /**
    * HACK Set data attribute manually so that
    * exclusions table works with `syncTabErrorState`
+   *
+   * FIXME Should be fixed with
+   * https://github.com/webrecorder/browsertrix/issues/2497
    */
   private updateExclusionsValidity() {
     if (this.exclusionTable?.checkValidity() === false) {
