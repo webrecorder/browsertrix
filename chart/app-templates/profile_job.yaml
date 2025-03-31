@@ -23,6 +23,7 @@ spec:
 
   storageName: "{{ storage_name }}"
   crawlerImage: "{{ crawler_image }}"
+  imagePullPolicy: "{{ image_pull_policy }}"
 
   startUrl: "{{ url }}"
   profileFilename: "{{ profile_filename }}"

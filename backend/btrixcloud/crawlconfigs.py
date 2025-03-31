@@ -85,6 +85,7 @@ class CrawlConfigOps:
 
     crawler_channels: CrawlerChannels
     crawler_images_map: dict[str, str]
+    crawler_image_pull_policy_map: dict[str, str]
 
     def __init__(
         self,
@@ -108,6 +109,9 @@ class CrawlConfigOps:
         self.coll_ops = cast(CollectionOps, None)
 
         self.default_filename_template = os.environ["DEFAULT_CRAWL_FILENAME_TEMPLATE"]
+        self.default_crawler_image_pull_policy = os.environ.get(
+            "DEFAULT_CRAWLER_IMAGE_PULL_POLICY", "IfNotPresent"
+        )
 
         self.router = APIRouter(
             prefix="/crawlconfigs",
@@ -118,6 +122,7 @@ class CrawlConfigOps:
         self._file_rx = re.compile("\\W+")
 
         self.crawler_images_map = {}
+        self.crawler_image_pull_policy_map = {}
         channels = []
         with open(os.environ["CRAWLER_CHANNELS_JSON"], encoding="utf-8") as fh:
             crawler_list = json.loads(fh.read())
@@ -125,6 +130,10 @@ class CrawlConfigOps:
                 channel = CrawlerChannel(**channel_data)
                 channels.append(channel)
                 self.crawler_images_map[channel.id] = channel.image
+                if channel.imagePullPolicy:
+                    self.crawler_image_pull_policy_map[channel.id] = (
+                        channel.imagePullPolicy
+                    )
 
             self.crawler_channels = CrawlerChannels(channels=channels)
 
@@ -959,6 +968,15 @@ class CrawlConfigOps:
     ) -> Optional[str]:
         """Get crawler image name by id"""
         return self.crawler_images_map.get(crawler_channel or "")
+
+    def get_channel_crawler_image_pull_policy(
+        self, crawler_channel: Optional[str]
+    ) -> str:
+        """Get crawler image name by id"""
+        return (
+            self.crawler_image_pull_policy_map.get(crawler_channel or "")
+            or self.default_crawler_image_pull_policy
+        )
 
     def get_crawler_proxies_map(self) -> dict[str, CrawlerProxy]:
         """Load CrawlerProxy mapping from config"""

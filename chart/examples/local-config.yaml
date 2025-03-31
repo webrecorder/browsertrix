@@ -22,10 +22,12 @@
 # crawler_channels:
 #   - id: default
 #     image: "docker.io/webrecorder/browsertrix-crawler:latest"
+#     imagePullPolicy: Always
 #
 #   # Add, remove, or edit additional crawler release channels for example:
 #   - id: custom_version
 #     image: "<DOCKER IMAGE>"
+#     imagePullPolicy: IfNotPresent  # optional
 
 # overrides to use existing images in local Docker, otherwise will pull from repository
 # backend_pull_policy: "Never"
