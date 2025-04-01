@@ -272,9 +272,7 @@ export class CustomBehaviorsTable extends BtrixElement {
         >
           ${this.renderType(row)}
         </btrix-table-cell>
-        <btrix-table-cell
-          class=${clsx(tw`block overflow-auto break-all border-l p-0`)}
-        >
+        <btrix-table-cell class="block overflow-visible break-all border-l p-0">
           ${row.type === BehaviorType.GitRepo
             ? this.renderGitRepoCell(row)
             : this.renderFileUrlCell(row)}
