@@ -139,7 +139,7 @@ const errorFor: Record<ValidityErrorCodes, string> = {
 };
 
 const inputStyle = [
-  tw`[--sl-input-background-color:transparent] [--sl-input-border-color-hover:transparent] [--sl-input-border-radius-medium:0] [--sl-input-spacing-medium:var(--sl-spacing-small)]`,
+  tw`[--sl-input-background-color-hover:transparent] [--sl-input-background-color:transparent] [--sl-input-border-color-hover:transparent] [--sl-input-border-radius-medium:0] [--sl-input-spacing-medium:var(--sl-spacing-small)]`,
   tw`data-[valid]:[--sl-input-border-color:transparent]`,
   tw`part-[form-control-help-text]:mx-1 part-[form-control-help-text]:mb-1`,
 ];
