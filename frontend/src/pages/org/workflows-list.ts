@@ -1,4 +1,5 @@
 import { localized, msg, str } from "@lit/localize";
+import { Task, TaskStatus } from "@lit/task";
 import type {
   SlCheckbox,
   SlDialog,
@@ -26,7 +27,7 @@ import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow
 import { pageHeader } from "@/layouts/pageHeader";
 import scopeTypeLabels from "@/strings/crawl-workflows/scopeType";
 import { deleteConfirmation } from "@/strings/ui";
-import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
+import type { APIPaginatedList } from "@/types/api";
 import { NewWorkflowOnlyScopeType } from "@/types/workflow";
 import { isApiError } from "@/utils/api";
 import { isArchivingDisabled } from "@/utils/orgs";
@@ -38,11 +39,21 @@ type SortDirection = "asc" | "desc";
 
 const FILTER_BY_CURRENT_USER_STORAGE_KEY =
   "btrix.filterByCurrentUser.crawlConfigs";
-const INITIAL_PAGE_SIZE = 10;
-const POLL_INTERVAL_SECONDS = 10;
-const ABORT_REASON_THROTTLE = "throttled";
+const INITIAL_PAGE_SIZE = 1;
+const POLL_INTERVAL_SECONDS = 1;
+// const ABORT_REASON_THROTTLE = "throttled";
 // NOTE Backend pagination max is 1000
 const SEEDS_MAX = 1000;
+
+enum WorkflowGroup {
+  ALL = "all",
+  RUNNING = "running",
+}
+
+const stringifyQuery = (query: {}) =>
+  queryString.stringify(query, {
+    arrayFormat: "comma",
+  });
 
 const sortableFields: Record<
   SortField,
@@ -84,17 +95,17 @@ export class WorkflowsList extends BtrixElement {
     firstSeed: msg("Crawl Start URL"),
   };
 
-  @state()
-  private workflows?: APIPaginatedList<ListWorkflow>;
+  // @state()
+  // private workflows?: APIPaginatedList<ListWorkflow>;
 
   @state()
   private searchOptions: { [x: string]: string }[] = [];
 
-  @state()
-  private isFetching = false;
+  // @state()
+  // private isFetching = false;
 
-  @state()
-  private fetchErrorStatusCode?: number;
+  // @state()
+  // private fetchErrorStatusCode?: number;
 
   @state()
   private workflowToDelete?: ListWorkflow;
@@ -114,15 +125,145 @@ export class WorkflowsList extends BtrixElement {
   @state()
   private filterByCurrentUser = false;
 
+  @state()
+  private showRunningFirst = true;
+
+  @state()
+  private page = {
+    [WorkflowGroup.ALL]: 1,
+    [WorkflowGroup.RUNNING]: 1,
+  };
+
   @query("#deleteDialog")
   private readonly deleteDialog?: SlDialog | null;
 
   // For fuzzy search:
   private readonly searchKeys = ["name", "firstSeed"];
 
-  // Use to cancel requests
-  private getWorkflowsController: AbortController | null = null;
-  private timerId?: number;
+  // // Use to cancel requests
+  // private getWorkflowsController: AbortController | null = null;
+  private runningIntervalId?: number;
+  private allIntervalId?: number;
+
+  private readonly runningWorkflowsTask = new Task(this, {
+    task: async (
+      [showRunningFirst, filterBy, orderBy, page, filterByCurrentUser],
+      { signal },
+    ) => {
+      if (!showRunningFirst) {
+        return;
+      }
+      const queryParams = {
+        ...filterBy,
+        page: page || 1,
+        pageSize:
+          this.runningWorkflowsTask.value?.pageSize || INITIAL_PAGE_SIZE,
+        userid: filterByCurrentUser ? this.userInfo?.id : undefined,
+        sortBy: orderBy.field,
+        sortDirection: orderBy.direction === "desc" ? -1 : 1,
+        running: true,
+      };
+
+      const query = stringifyQuery(queryParams);
+
+      const workflows = await this.api.fetch<APIPaginatedList<Workflow>>(
+        `/orgs/${this.orgId}/crawlconfigs?${query}`,
+        {
+          signal: signal,
+        },
+      );
+
+      signal.addEventListener("abort", () => {
+        clearTimeout(this.runningIntervalId);
+        this.runningIntervalId = undefined;
+      });
+
+      clearTimeout(this.allIntervalId);
+
+      this.runningIntervalId = window.setTimeout(() => {
+        void this.runningWorkflowsTask.run();
+      }, 1000 * POLL_INTERVAL_SECONDS);
+
+      return workflows;
+    },
+    args: () =>
+      [
+        this.showRunningFirst,
+        this.filterBy,
+        this.orderBy,
+        this.page[WorkflowGroup.RUNNING],
+        this.filterByCurrentUser,
+      ] as const,
+  });
+
+  private readonly allWorkflowsTask = new Task(this, {
+    task: async (
+      [showRunningFirst, filterBy, orderBy, page, filterByCurrentUser],
+      { signal },
+    ) => {
+      const queryParams = {
+        ...filterBy,
+        page: page || 1,
+        pageSize: this.allWorkflowsTask.value?.pageSize || INITIAL_PAGE_SIZE,
+        userid: filterByCurrentUser ? this.userInfo?.id : undefined,
+        sortBy: orderBy.field,
+        sortDirection: orderBy.direction === "desc" ? -1 : 1,
+        running: showRunningFirst ? false : undefined,
+      };
+
+      const query = stringifyQuery(queryParams);
+
+      const workflows = await this.api.fetch<APIPaginatedList<Workflow>>(
+        `/orgs/${this.orgId}/crawlconfigs?${query}`,
+        {
+          signal: signal,
+        },
+      );
+
+      // When refreshing, sometimes enough workflows might move from one group to another that the current page might not exist anymore, so we go back enough pages to see content again
+      console.log({ page, workflows });
+      if (page * workflows.pageSize > workflows.total) {
+        this.page[WorkflowGroup.ALL] = Math.ceil(
+          workflows.total / workflows.pageSize,
+        );
+      }
+
+      // await new Promise((resolve) => setTimeout(resolve, 500));
+
+      signal.addEventListener("abort", () => {
+        clearInterval(this.allIntervalId);
+        this.allIntervalId = undefined;
+      });
+
+      clearTimeout(this.allIntervalId);
+
+      this.allIntervalId ||= window.setInterval(() => {
+        void this.allWorkflowsTask.run();
+      }, 1000 * POLL_INTERVAL_SECONDS);
+
+      return workflows;
+    },
+    args: () =>
+      [
+        this.showRunningFirst,
+        this.filterBy,
+        this.orderBy,
+        this.page[WorkflowGroup.ALL],
+        this.filterByCurrentUser,
+      ] as const,
+  });
+
+  private taskForGroup(group: WorkflowGroup) {
+    switch (group) {
+      case WorkflowGroup.ALL:
+        return this.allWorkflowsTask;
+      case WorkflowGroup.RUNNING:
+        return this.runningWorkflowsTask;
+      default:
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+        throw new Error(`Unknown workflow group: ${group}`);
+    }
+  }
 
   private get selectedSearchFilterKey() {
     return Object.keys(WorkflowsList.FieldLabels).find((key) =>
@@ -146,9 +287,10 @@ export class WorkflowsList extends BtrixElement {
       changedProperties.has("filterByScheduled") ||
       changedProperties.has("filterBy")
     ) {
-      void this.fetchWorkflows({
-        page: 1,
-      });
+      this.page = {
+        [WorkflowGroup.ALL]: 1,
+        [WorkflowGroup.RUNNING]: 1,
+      };
     }
     if (changedProperties.has("filterByCurrentUser")) {
       window.sessionStorage.setItem(
@@ -162,48 +304,48 @@ export class WorkflowsList extends BtrixElement {
     void this.fetchConfigSearchValues();
   }
 
-  disconnectedCallback(): void {
-    this.cancelInProgressGetWorkflows();
-    super.disconnectedCallback();
-  }
+  // disconnectedCallback(): void {
+  //   this.cancelInProgressGetWorkflows();
+  //   super.disconnectedCallback();
+  // }
 
-  private async fetchWorkflows(params?: APIPaginationQuery) {
-    this.fetchErrorStatusCode = undefined;
+  // private async fetchWorkflows(params?: APIPaginationQuery) {
+  //   this.fetchErrorStatusCode = undefined;
 
-    this.cancelInProgressGetWorkflows();
-    this.isFetching = true;
-    try {
-      const workflows = await this.getWorkflows(params);
-      this.workflows = workflows;
-    } catch (e) {
-      if (isApiError(e)) {
-        this.fetchErrorStatusCode = e.statusCode;
-      } else if ((e as Error).name === "AbortError") {
-        console.debug("Fetch archived items aborted to throttle");
-      } else {
-        this.notify.toast({
-          message: msg("Sorry, couldn't retrieve Workflows at this time."),
-          variant: "danger",
-          icon: "exclamation-octagon",
-          id: "workflow-retrieve-error",
-        });
-      }
-    }
-    this.isFetching = false;
+  //   this.cancelInProgressGetWorkflows();
+  //   this.isFetching = true;
+  //   try {
+  //     const workflows = await this.getWorkflows(params);
+  //     this.workflows = workflows;
+  //   } catch (e) {
+  //     if (isApiError(e)) {
+  //       this.fetchErrorStatusCode = e.statusCode;
+  //     } else if ((e as Error).name === "AbortError") {
+  //       console.debug("Fetch archived items aborted to throttle");
+  //     } else {
+  //       this.notify.toast({
+  //         message: msg("Sorry, couldn't retrieve Workflows at this time."),
+  //         variant: "danger",
+  //         icon: "exclamation-octagon",
+  //         id: "workflow-retrieve-error",
+  //       });
+  //     }
+  //   }
+  //   this.isFetching = false;
 
-    // Restart timer for next poll
-    this.timerId = window.setTimeout(() => {
-      void this.fetchWorkflows();
-    }, 1000 * POLL_INTERVAL_SECONDS);
-  }
+  //   // Restart timer for next poll
+  //   this.timerId = window.setTimeout(() => {
+  //     void this.runningWorkflowsTask.run();
+  //   }, 1000 * POLL_INTERVAL_SECONDS);
+  // }
 
-  private cancelInProgressGetWorkflows() {
-    window.clearTimeout(this.timerId);
-    if (this.getWorkflowsController) {
-      this.getWorkflowsController.abort(ABORT_REASON_THROTTLE);
-      this.getWorkflowsController = null;
-    }
-  }
+  // private cancelInProgressGetWorkflows() {
+  //   window.clearTimeout(this.timerId);
+  //   if (this.getWorkflowsController) {
+  //     this.getWorkflowsController.abort(ABORT_REASON_THROTTLE);
+  //     this.getWorkflowsController = null;
+  //   }
+  // }
 
   render() {
     return html`
@@ -311,8 +453,38 @@ export class WorkflowsList extends BtrixElement {
         </div>
       </div>
 
+      ${when(this.showRunningFirst, () =>
+        when(
+          this.runningWorkflowsTask.error,
+          () => html`
+            <div>
+              <btrix-alert variant="danger">
+                ${msg(
+                  `Something unexpected went wrong while retrieving running Workflows.`,
+                )}
+              </btrix-alert>
+            </div>
+          `,
+          () => html`
+            <h2 class="mb-4 ml-1 flex items-center gap-2 font-bold">
+              ${msg("Running Workflows")}
+              ${when(
+                this.runningWorkflowsTask.status === TaskStatus.PENDING,
+                () => html`<sl-spinner></sl-spinner>`,
+              )}
+            </h2>
+            <div class="pb-10">
+              ${this.runningWorkflowsTask.value
+                ? this.runningWorkflowsTask.value.total
+                  ? this.renderWorkflowList(WorkflowGroup.RUNNING)
+                  : this.renderEmptyState(WorkflowGroup.RUNNING)
+                : this.renderLoading()}
+            </div>
+          `,
+        ),
+      )}
       ${when(
-        this.fetchErrorStatusCode,
+        this.allWorkflowsTask.error,
         () => html`
           <div>
             <btrix-alert variant="danger">
@@ -323,11 +495,22 @@ export class WorkflowsList extends BtrixElement {
           </div>
         `,
         () => html`
+          ${when(
+            this.showRunningFirst,
+            () =>
+              html`<h2 class="mb-4 ml-1 flex items-center gap-2 font-bold">
+                ${msg("All Workflows")}
+                ${when(
+                  this.allWorkflowsTask.status === TaskStatus.PENDING,
+                  () => html`<sl-spinner></sl-spinner>`,
+                )}
+              </h2>`,
+          )}
           <div class="pb-10">
-            ${this.workflows
-              ? this.workflows.total
-                ? this.renderWorkflowList()
-                : this.renderEmptyState()
+            ${this.allWorkflowsTask.value
+              ? this.allWorkflowsTask.value.total
+                ? this.renderWorkflowList(WorkflowGroup.ALL)
+                : this.renderEmptyState(WorkflowGroup.ALL)
               : this.renderLoading()}
           </div>
         `,
@@ -468,6 +651,16 @@ export class WorkflowsList extends BtrixElement {
               ?checked=${this.filterByCurrentUser}
             ></sl-switch>
           </label>
+          <label>
+            <span class="mr-1 text-xs text-neutral-500"
+              >${msg("Show Running Crawls First")}</span
+            >
+            <sl-switch
+              @sl-change=${(e: CustomEvent) =>
+                (this.showRunningFirst = (e.target as SlCheckbox).checked)}
+              ?checked=${this.showRunningFirst}
+            ></sl-switch>
+          </label>
         </div>
       </div>
     `;
@@ -501,12 +694,13 @@ export class WorkflowsList extends BtrixElement {
     `;
   }
 
-  private renderWorkflowList() {
-    if (!this.workflows) return;
-    const { page, total, pageSize } = this.workflows;
+  private renderWorkflowList(group: WorkflowGroup) {
+    const task = this.taskForGroup(group);
+    if (!task.value) return;
+    const { page, total, pageSize } = task.value;
     return html`
       <btrix-workflow-list>
-        ${this.workflows.items.map(this.renderWorkflowItem)}
+        ${task.value.items.map(this.renderWorkflowItem)}
       </btrix-workflow-list>
       ${when(
         total > pageSize,
@@ -517,12 +711,13 @@ export class WorkflowsList extends BtrixElement {
               totalCount=${total}
               size=${pageSize}
               @page-change=${async (e: PageChangeEvent) => {
-                await this.fetchWorkflows({
-                  page: e.detail.page,
-                });
+                this.page[group] = e.detail.page;
+                void task.run();
 
                 // Scroll to top of list
                 // TODO once deep-linking is implemented, scroll to top of pushstate
+                await this.updateComplete;
+                await task.taskComplete;
                 this.scrollIntoView({ behavior: "smooth" });
               }}
             ></btrix-pagination>
@@ -689,7 +884,8 @@ export class WorkflowsList extends BtrixElement {
     );
   }
 
-  private renderEmptyState() {
+  private renderEmptyState(group: WorkflowGroup) {
+    const task = this.taskForGroup(group);
     if (Object.keys(this.filterBy).length) {
       return html`
         <div class="rounded-lg border bg-neutral-50 p-4">
@@ -710,7 +906,7 @@ export class WorkflowsList extends BtrixElement {
       `;
     }
 
-    if (this.workflows?.page && this.workflows.page > 1) {
+    if (task.value?.page && task.value.page > 1) {
       return html`
         <div class="border-b border-t py-5">
           <p class="text-center text-neutral-500">
@@ -720,7 +916,7 @@ export class WorkflowsList extends BtrixElement {
       `;
     }
 
-    if (this.isFetching) {
+    if (!task.value && task.status === TaskStatus.PENDING) {
       return this.renderLoading();
     }
 
@@ -739,40 +935,40 @@ export class WorkflowsList extends BtrixElement {
     </div>`;
   }
 
-  /**
-   * Fetch Workflows and update state
-   **/
-  private async getWorkflows(
-    queryParams?: APIPaginationQuery & Record<string, unknown>,
-  ) {
-    const query = queryString.stringify(
-      {
-        ...this.filterBy,
-        page: queryParams?.page || this.workflows?.page || 1,
-        pageSize:
-          queryParams?.pageSize ||
-          this.workflows?.pageSize ||
-          INITIAL_PAGE_SIZE,
-        userid: this.filterByCurrentUser ? this.userInfo?.id : undefined,
-        sortBy: this.orderBy.field,
-        sortDirection: this.orderBy.direction === "desc" ? -1 : 1,
-      },
-      {
-        arrayFormat: "comma",
-      },
-    );
+  // /**
+  //  * Fetch Workflows and update state
+  //  **/
+  // private async getWorkflows(
+  //   queryParams?: APIPaginationQuery & Record<string, unknown>,
+  // ) {
+  //   const query = queryString.stringify(
+  //     {
+  //       ...this.filterBy,
+  //       page: queryParams?.page || this.workflows?.page || 1,
+  //       pageSize:
+  //         queryParams?.pageSize ||
+  //         this.workflows?.pageSize ||
+  //         INITIAL_PAGE_SIZE,
+  //       userid: this.filterByCurrentUser ? this.userInfo?.id : undefined,
+  //       sortBy: this.orderBy.field,
+  //       sortDirection: this.orderBy.direction === "desc" ? -1 : 1,
+  //     },
+  //     {
+  //       arrayFormat: "comma",
+  //     },
+  //   );
 
-    this.getWorkflowsController = new AbortController();
-    const data = await this.api.fetch<APIPaginatedList<Workflow>>(
-      `/orgs/${this.orgId}/crawlconfigs?${query}`,
-      {
-        signal: this.getWorkflowsController.signal,
-      },
-    );
-    this.getWorkflowsController = null;
+  //   this.getWorkflowsController = new AbortController();
+  //   const data = await this.api.fetch<APIPaginatedList<Workflow>>(
+  //     `/orgs/${this.orgId}/crawlconfigs?${query}`,
+  //     {
+  //       signal: this.getWorkflowsController.signal,
+  //     },
+  //   );
+  //   this.getWorkflowsController = null;
 
-    return data;
-  }
+  //   return data;
+  // }
 
   /**
    * Create a new template using existing template data
@@ -819,7 +1015,8 @@ export class WorkflowsList extends BtrixElement {
         method: "DELETE",
       });
 
-      void this.fetchWorkflows();
+      void this.allWorkflowsTask.run();
+      void this.runningWorkflowsTask.run();
       this.notify.toast({
         message: msg(
           html`Deleted <strong>${this.renderName(workflow)}</strong> Workflow.`,
@@ -848,7 +1045,8 @@ export class WorkflowsList extends BtrixElement {
         },
       );
       if (data.success) {
-        void this.fetchWorkflows();
+        void this.allWorkflowsTask.run();
+        void this.runningWorkflowsTask.run();
       } else {
         this.notify.toast({
           message: msg("Something went wrong, couldn't cancel crawl."),
@@ -870,7 +1068,8 @@ export class WorkflowsList extends BtrixElement {
         },
       );
       if (data.success) {
-        void this.fetchWorkflows();
+        void this.allWorkflowsTask.run();
+        void this.runningWorkflowsTask.run();
       } else {
         this.notify.toast({
           message: msg("Something went wrong, couldn't stop crawl."),
@@ -907,7 +1106,8 @@ export class WorkflowsList extends BtrixElement {
         duration: 8000,
       });
 
-      await this.fetchWorkflows();
+      void this.allWorkflowsTask.run();
+      void this.runningWorkflowsTask.run();
       // Scroll to top of list
       this.scrollIntoView({ behavior: "smooth" });
     } catch (e) {
