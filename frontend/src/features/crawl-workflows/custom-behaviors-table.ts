@@ -36,11 +36,14 @@ const rowIdSchema = z.string().nanoid();
 type RowId = z.infer<typeof rowIdSchema>;
 
 const UnknownErrorCode = "UNKNOWN_ERROR" as const;
-type ValidityErrorCodes =
-  | APIErrorDetail.WorkflowCustomBehaviorBranchNotFound
-  | APIErrorDetail.WorkflowCustomBehaviorNotFound
-  | typeof UnknownErrorCode;
-type RowValidity = { valid: true } | { error: ValidityErrorCodes };
+const ValidityErrorCodes = [
+  APIErrorDetail.InvalidCustomBehavior,
+  APIErrorDetail.CustomBehaviorBranchNotFound,
+  APIErrorDetail.CustomBehaviorNotFound,
+  UnknownErrorCode,
+] as const;
+type ValidityErrorCode = (typeof ValidityErrorCodes)[number];
+type RowValidity = { valid: true } | { error: ValidityErrorCode };
 
 type BehaviorBase = {
   id: RowId;
@@ -128,13 +131,12 @@ const labelFor: Record<BehaviorType, string> = {
   [BehaviorType.GitRepo]: msg("Git Repo"),
 };
 
-const errorFor: Record<ValidityErrorCodes, string> = {
-  [APIErrorDetail.WorkflowCustomBehaviorBranchNotFound]: msg(
+const errorFor: Record<ValidityErrorCode, string> = {
+  [APIErrorDetail.InvalidCustomBehavior]: msg("Please enter a valid URL"),
+  [APIErrorDetail.CustomBehaviorBranchNotFound]: msg(
     "Please enter a valid branch",
   ),
-  [APIErrorDetail.WorkflowCustomBehaviorNotFound]: msg(
-    "Please enter an existing URL",
-  ),
+  [APIErrorDetail.CustomBehaviorNotFound]: msg("Please enter an existing URL"),
   [UnknownErrorCode]: msg("Please enter a valid custom behavior"),
 };
 
@@ -415,7 +417,7 @@ export class CustomBehaviorsTable extends BtrixElement {
     if ("error" in validity) {
       prefix = {
         icon: "exclamation-lg",
-        tooltip: errorFor[validity.error as ValidityErrorCodes],
+        tooltip: errorFor[validity.error as ValidityErrorCode],
         className: tw`text-danger`,
       };
     } else if ("valid" in validity) {
@@ -506,10 +508,7 @@ export class CustomBehaviorsTable extends BtrixElement {
         let invalidInput = el;
 
         if (validity && "error" in validity) {
-          if (
-            validity.error ===
-            APIErrorDetail.WorkflowCustomBehaviorBranchNotFound
-          ) {
+          if (validity.error === APIErrorDetail.CustomBehaviorBranchNotFound) {
             invalidInput =
               rowEl?.querySelector<SlInput>(`.${INPUT_CLASSNAME}.branch`) || el;
           }
@@ -558,25 +557,18 @@ export class CustomBehaviorsTable extends BtrixElement {
 
       this.validity = new Map(this.validity.set(behavior.id, { valid: true }));
     } catch (err) {
-      let errorCode: ValidityErrorCodes = UnknownErrorCode;
+      let error: ValidityErrorCode = UnknownErrorCode;
 
       if (err instanceof APIError) {
         // TODO switch to error code
         // https://github.com/webrecorder/browsertrix/issues/2512
-        switch (err.details) {
-          case APIErrorDetail.WorkflowCustomBehaviorNotFound:
-          case APIErrorDetail.WorkflowCustomBehaviorBranchNotFound:
-            errorCode = err.details;
-            break;
-          default:
-            console.debug("unexpected API error:", err);
-            break;
+        const errorCode = err.details as ValidityErrorCode;
+        if (ValidityErrorCodes.includes(errorCode)) {
+          error = errorCode;
         }
       }
 
-      this.validity = new Map(
-        this.validity.set(behavior.id, { error: errorCode }),
-      );
+      this.validity = new Map(this.validity.set(behavior.id, { error }));
     }
 
     return this.validity.get(behavior.id);
