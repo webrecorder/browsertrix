@@ -357,14 +357,16 @@ export class CustomBehaviorsTable extends BtrixElement {
         placeholder: msg("Enter URL to Git repository"),
       })}
       <div class=${subgridStyle}>
-        <label class=${clsx(labelStyle, tw`border-b`)}>${pathLabel}</label>
+        <label for="path-${row.id}" class=${clsx(labelStyle, tw`border-b`)}
+          >${pathLabel}</label
+        >
         <div class="border-b">
           ${this.renderGitDetailInput(row, {
             placeholder: msg("Optional path"),
             key: "path",
           })}
         </div>
-        <label class=${labelStyle}>${branchLabel}</label>
+        <label for="branch-${row.id}" class=${labelStyle}>${branchLabel}</label>
         <div>
           ${this.renderGitDetailInput(row, {
             placeholder: msg("Optional branch"),
@@ -466,6 +468,7 @@ export class CustomBehaviorsTable extends BtrixElement {
   ) {
     return html`
       <sl-input
+        id="${key}-${row.id}"
         class=${clsx(inputStyle, INPUT_CLASSNAME, key)}
         size="small"
         value=${row[key]}
