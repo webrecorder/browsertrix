@@ -2109,6 +2109,14 @@ https://archiveweb.page/images/${"logo.svg"}`}
   private async save() {
     if (!this.formElem) return;
 
+    // Wait for custom behaviors validation to finish
+    try {
+      await this.customBehaviorsTable?.taskComplete;
+    } catch {
+      this.customBehaviorsTable?.reportValidity();
+      return;
+    }
+
     const isValid = await this.checkFormValidity(this.formElem);
 
     if (!isValid || this.formHasError) {

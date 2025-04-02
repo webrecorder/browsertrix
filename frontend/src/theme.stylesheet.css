@@ -189,12 +189,14 @@
    * FIXME Use [data-user-invalid] selector once following is fixed
    * https://github.com/webrecorder/browsertrix/issues/2497
    */
+  .invalid[data-invalid]:not([disabled])::part(base),
   btrix-url-input[data-user-invalid]:not([disabled])::part(base),
   sl-input[data-user-invalid]:not([disabled])::part(base),
   sl-textarea[data-user-invalid]:not([disabled])::part(base) {
     border-color: var(--sl-color-danger-400);
   }
 
+  .invalid[data-invalid]:focus-within::part(base),
   btrix-url-input[data-user-invalid]:focus-within::part(base),
   sl-input[data-user-invalid]:focus-within::part(base),
   sl-textarea[data-user-invalid]:focus-within::part(base) {
