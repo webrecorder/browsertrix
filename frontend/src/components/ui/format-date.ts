@@ -31,9 +31,7 @@ export class FormatDate extends LitElement {
   @property() era?: "narrow" | "short" | "long";
 
   /** The format for displaying the year. */
-  // Technically "2-digit" is a valid option here too, but we've chosen not to
-  // use it, because it's sometimes ambiguous
-  @property() year?: "numeric";
+  @property() year?: "numeric" | "2-digit";
 
   /** The format for displaying the month. */
   @property() month?: "numeric" | "2-digit" | "narrow" | "short" | "long";
