@@ -1079,7 +1079,7 @@ class CrawlConfigOps:
                     flush=True,
                 )
 
-    def _validate_behavior_git_repo(self, repo_url: str, branch: str = ""):
+    async def _validate_behavior_git_repo(self, repo_url: str, branch: str = ""):
         """Validate git repository and branch, if specified, exist and are reachable"""
         git_remote_cmd = f"git ls-remote {repo_url} HEAD"
         proc = await asyncio.create_subprocess_shell(cmd)
@@ -1149,7 +1149,7 @@ class CrawlConfigOps:
             raise HTTPException(status_code=400, detail="invalid_custom_behavior")
 
         if is_git_repo:
-            self._validate_behavior_git_repo(url, branch=git_branch)
+            await self._validate_behavior_git_repo(url, branch=git_branch)
         else:
             await self._validate_behavior_url(url)
 
