@@ -64,11 +64,11 @@ To download an entire archived item as a single WACZ file, click the _Download I
 
 To combine multiple archived items and download them all as a single WACZ file, add them to a collection and [download the collection](collection.md#download-a-collection).
 
-### Error Logs
+### Logs
 
-View a list of errors that may have been encountered during crawling. Clicking an error in the list will reveal additional information.
+View a list of errors and behavior logs that may have been encountered during crawling. Clicking a log in the list will reveal additional information.
 
-All log entries with that were recorded in the creation of the archived item can be downloaded in JSONL format by pressing the _Download Logs_ button.
+All log entries with that were recorded in the creation of the archived item can be downloaded in JSONL format by pressing the _Download All Logs_ button.
 
 ### Crawl Settings
 

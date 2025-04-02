@@ -126,7 +126,7 @@ export class WorkflowDetail extends BtrixElement {
   private readonly tabLabels: Record<Tab, string> = {
     crawls: msg("Crawls"),
     watch: msg("Watch Crawl"),
-    logs: msg("Error Logs"),
+    logs: msg("Logs"),
     settings: msg("Settings"),
   };
 
@@ -549,7 +549,17 @@ export class WorkflowDetail extends BtrixElement {
           this.workflow?.lastCrawlId &&
           !this.workflow.isCrawlRunning,
       );
-      return html` <h3>${this.tabLabels[this.activePanel]}</h3>
+      return html` <h3>
+          ${msg(html`Error & Behavior Logs`)}
+          ${when(
+            this.logs,
+            (logs) => html`
+              <span class="text-neutral-500">
+                (${this.localize.number(logs.total)})
+              </span>
+            `,
+          )}
+        </h3>
         <sl-tooltip
           content=${msg(
             "Downloading will be enabled when this crawl is finished.",
@@ -563,7 +573,7 @@ export class WorkflowDetail extends BtrixElement {
             ?disabled=${!isDownloadEnabled}
           >
             <sl-icon slot="prefix" name="cloud-download"></sl-icon>
-            ${msg("Download Logs")}
+            ${msg("Download All Logs")}
           </sl-button>
         </sl-tooltip>`;
     }
@@ -1149,7 +1159,7 @@ export class WorkflowDetail extends BtrixElement {
             html`<div class="mb-4">
               <btrix-alert variant="success" class="text-sm">
                 ${msg(
-                  html`Viewing error logs for currently running crawl.
+                  html`Viewing logs for currently running crawl.
                     <a
                       href="${`${window.location.pathname}#watch`}"
                       class="underline hover:no-underline"
@@ -1179,8 +1189,8 @@ export class WorkflowDetail extends BtrixElement {
                   >
                     <p class="text-center text-neutral-400">
                       ${this.workflow?.lastCrawlState === "waiting_capacity"
-                        ? msg("Error logs currently not available.")
-                        : msg("No error logs found yet for latest crawl.")}
+                        ? msg("Logs currently not available.")
+                        : msg("No logs found yet for latest crawl.")}
                     </p>
                   </div>
                 `,
@@ -1229,7 +1239,7 @@ export class WorkflowDetail extends BtrixElement {
           slot="summary"
           class="text flex items-center gap-2 font-semibold leading-none"
         >
-          ${msg("Error Logs")}
+          ${msg(html`Error & Behavior Logs`)}
           <btrix-badge variant=${this.logs?.total ? "danger" : "neutral"}
             >${this.logs?.total
               ? this.localize.number(this.logs.total)
@@ -1741,9 +1751,7 @@ export class WorkflowDetail extends BtrixElement {
         // do nothing, keep logs if previously loaded
       } else {
         this.notify.toast({
-          message: msg(
-            "Sorry, couldn't retrieve crawl error logs at this time.",
-          ),
+          message: msg("Sorry, couldn't retrieve logs at this time."),
           variant: "danger",
           icon: "exclamation-octagon",
           id: "archived-item-retrieve-error",
