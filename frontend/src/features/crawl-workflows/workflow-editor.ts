@@ -96,6 +96,7 @@ import { tw } from "@/utils/tailwind";
 import {
   appDefaults,
   BYTES_PER_GB,
+  DEFAULT_AUTOCLICK_SELECTOR,
   DEFAULT_SELECT_LINKS,
   defaultLabel,
   getDefaultFormState,
@@ -2355,6 +2356,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           ? this.linkSelectorTable.value
           : DEFAULT_SELECT_LINKS,
         customBehaviors: this.customBehaviorsTable?.value || [],
+        clickSelector: DEFAULT_AUTOCLICK_SELECTOR, // TODO
       },
       crawlerChannel: this.formState.crawlerChannel || "default",
       proxyId: this.formState.proxyId,
