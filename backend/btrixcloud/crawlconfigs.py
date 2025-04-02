@@ -1091,7 +1091,9 @@ class CrawlConfigOps:
 
         if branch:
             time.sleep(2)
-            git_remote_cmd = f"git ls-remote --exit-code --heads {repo_url} refs/heads/{branch}"
+            git_remote_cmd = (
+                f"git ls-remote --exit-code --heads {repo_url} refs/heads/{branch}"
+            )
             proc = await asyncio.create_subprocess_shell(git_remote_cmd)
             if await proc.wait() > 0:
                 raise HTTPException(
