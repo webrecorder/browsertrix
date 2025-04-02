@@ -1,13 +1,20 @@
 import { localized, msg } from "@lit/localize";
-import { css, html, LitElement } from "lit";
+import clsx from "clsx";
+import { css, html } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
+import { TailwindElement } from "@/classes/TailwindElement";
 import type { APIPaginatedList } from "@/types/api";
 import { truncate } from "@/utils/css";
+import { tw } from "@/utils/tailwind";
+
+enum LogLevel {
+  Error = "error",
+}
 
 export type CrawlLog = {
   timestamp: string;
-  logLevel: "error";
+  logLevel: LogLevel;
   details: Record<string, unknown>;
   context: string;
   message: string;
@@ -15,60 +22,10 @@ export type CrawlLog = {
 
 @customElement("btrix-crawl-logs")
 @localized()
-export class CrawlLogs extends LitElement {
+export class CrawlLogs extends TailwindElement {
   static styles = [
     truncate,
     css`
-      btrix-numbered-list {
-        font-size: var(--sl-font-size-x-small);
-      }
-
-      .row {
-        display: grid;
-        grid-template-columns: 9rem 4rem 15rem 1fr;
-        line-height: 1.3;
-      }
-
-      .cell {
-        padding-left: var(--sl-spacing-x-small);
-        padding-right: var(--sl-spacing-x-small);
-      }
-
-      .tag {
-        display: inline-block;
-        border-radius: var(--sl-border-radius-small);
-        padding: var(--sl-spacing-3x-small) var(--sl-spacing-2x-small);
-        text-transform: capitalize;
-        /* TODO handle non-errors */
-        background-color: var(--danger);
-        color: var(--sl-color-neutral-0);
-      }
-
-      footer {
-        display: flex;
-        justify-content: center;
-        margin-top: var(--sl-spacing-large);
-        margin-bottom: var(--sl-spacing-x-large);
-      }
-
-      .message {
-        white-space: pre-wrap;
-      }
-
-      .url {
-        text-overflow: ellipsis;
-        overflow: hidden;
-        white-space: nowrap;
-      }
-
-      a {
-        color: inherit;
-      }
-
-      a:hover {
-        text-decoration: none;
-      }
-
       pre {
         white-space: pre-wrap;
         font-family: var(--sl-font-mono);
@@ -96,13 +53,16 @@ export class CrawlLogs extends LitElement {
 
   render() {
     if (!this.logs) return;
-    return html`<btrix-numbered-list>
+
+    const rowClasses = tw`grid grid-cols-[10rem_4rem_20rem_1fr] leading-[1.3]`;
+
+    return html`<btrix-numbered-list class="le text-xs">
         <btrix-numbered-list-header slot="header">
-          <div class="row">
-            <div class="cell">${msg("Date")}</div>
-            <div class="cell">${msg("Level")}</div>
-            <div class="cell">${msg("Message")}</div>
-            <div class="cell">${msg("Page URL")}</div>
+          <div class=${rowClasses}>
+            <div class="px-2">${msg("Timestamp")}</div>
+            <div class="px-2">${msg("Severity")}</div>
+            <div class="px-2">${msg("Message")}</div>
+            <div class="px-2">${msg("Page URL")}</div>
           </div>
         </btrix-numbered-list-header>
         ${this.logs.items.map((log: CrawlLog, idx) => {
@@ -120,7 +80,7 @@ export class CrawlLogs extends LitElement {
               }}
             >
               <div slot="marker">${idx + 1}.</div>
-              <div class="row">
+              <div class=${rowClasses}>
                 <div>
                   <btrix-format-date
                     date=${log.timestamp}
@@ -134,11 +94,9 @@ export class CrawlLogs extends LitElement {
                   >
                   </btrix-format-date>
                 </div>
-                <div>
-                  <span class="tag">${log.logLevel}</span>
-                </div>
-                <div class="message">${log.message}</div>
-                <div class="url" title="${log.details.page as string}">
+                <div>${this.renderSeverity(log.logLevel)}</div>
+                <div class="whitespace-pre-wrap">${log.message}</div>
+                <div class="truncate" title="${log.details.page as string}">
                   <a target="_blank" href="${log.details.page as string}"
                     >${log.details.page}</a
                   >
@@ -149,7 +107,7 @@ export class CrawlLogs extends LitElement {
         })}
       </btrix-numbered-list>
       ${this.paginate
-        ? html`<footer>
+        ? html`<footer class="my-4 flex justify-center">
             <btrix-pagination
               page=${this.logs.page}
               totalCount=${this.logs.total}
@@ -166,6 +124,21 @@ export class CrawlLogs extends LitElement {
         @sl-after-hide=${() => (this.selectedLog = null)}
         >${this.renderLogDetails()}</btrix-dialog
       > `;
+  }
+
+  private renderSeverity(level: LogLevel) {
+    const baseClasses = tw`size-4`;
+    switch (level) {
+      case LogLevel.Error:
+        return html`
+          <sl-icon
+            name="exclamation-triangle-fill"
+            class=${clsx(tw`text-danger-500`, baseClasses)}
+          ></sl-icon>
+        `;
+      default:
+        break;
+    }
   }
 
   private renderLogDetails() {
