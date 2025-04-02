@@ -102,7 +102,7 @@ def is_falsy_bool(stri: Optional[str]) -> bool:
 
 
 def is_url(url: str) -> bool:
-    """Check if string is ad valid URL"""
+    """Check if string is a valid URL"""
     try:
         result = urlparse(url)
         return all([result.scheme, result.netloc])
