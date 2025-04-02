@@ -101,7 +101,7 @@ export class CrawlLogs extends LitElement {
           <div class="row">
             <div class="cell">${msg("Date")}</div>
             <div class="cell">${msg("Level")}</div>
-            <div class="cell">${msg("Error Message")}</div>
+            <div class="cell">${msg("Message")}</div>
             <div class="cell">${msg("Page URL")}</div>
           </div>
         </btrix-numbered-list-header>
