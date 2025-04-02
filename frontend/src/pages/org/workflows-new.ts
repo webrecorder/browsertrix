@@ -11,6 +11,7 @@ import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
 import { WorkflowScopeType } from "@/types/workflow";
 import LiteElement, { html } from "@/utils/LiteElement";
 import {
+  DEFAULT_AUTOCLICK_SELECTOR,
   DEFAULT_SELECT_LINKS,
   type FormState as WorkflowFormState,
 } from "@/utils/workflow";
@@ -88,6 +89,7 @@ export class WorkflowsNew extends LiteElement {
         failOnFailedSeed: false,
         userAgent: null,
         selectLinks: DEFAULT_SELECT_LINKS,
+        clickSelector: DEFAULT_AUTOCLICK_SELECTOR,
       },
       tags: [],
       crawlTimeout: null,
