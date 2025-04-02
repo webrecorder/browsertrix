@@ -10,7 +10,6 @@ import asyncio
 import json
 import re
 import os
-import time
 import traceback
 from datetime import datetime
 from uuid import UUID, uuid4
@@ -1091,7 +1090,7 @@ class CrawlConfigOps:
             )
 
         if branch:
-            time.sleep(2)
+            await asyncio.sleep(0.5)
             git_remote_cmd = (
                 f"git ls-remote --exit-code --heads {repo_url} refs/heads/{branch}"
             )
