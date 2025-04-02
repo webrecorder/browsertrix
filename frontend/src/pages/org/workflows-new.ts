@@ -10,7 +10,10 @@ import type { UserGuideEventMap } from "@/index";
 import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
 import { WorkflowScopeType } from "@/types/workflow";
 import LiteElement, { html } from "@/utils/LiteElement";
-import type { FormState as WorkflowFormState } from "@/utils/workflow";
+import {
+  DEFAULT_SELECT_LINKS,
+  type FormState as WorkflowFormState,
+} from "@/utils/workflow";
 
 type GuideHash =
   | "scope"
@@ -84,7 +87,7 @@ export class WorkflowsNew extends LiteElement {
         useSitemap: false,
         failOnFailedSeed: false,
         userAgent: null,
-        selectLinks: ["a[href]->href"],
+        selectLinks: DEFAULT_SELECT_LINKS,
       },
       tags: [],
       crawlTimeout: null,

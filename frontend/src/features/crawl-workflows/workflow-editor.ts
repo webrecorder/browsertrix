@@ -29,8 +29,11 @@ import { range } from "lit/directives/range.js";
 import { when } from "lit/directives/when.js";
 import compact from "lodash/fp/compact";
 import flow from "lodash/fp/flow";
+import isEqual from "lodash/fp/isEqual";
 import throttle from "lodash/fp/throttle";
 import uniq from "lodash/fp/uniq";
+
+import type { LinkSelectorTable } from "./link-selector-table";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type {
@@ -62,6 +65,7 @@ import { labelFor } from "@/strings/crawl-workflows/labels";
 import scopeTypeLabels from "@/strings/crawl-workflows/scopeType";
 import sectionStrings from "@/strings/crawl-workflows/section";
 import { AnalyticsTrackEvent } from "@/trackEvents";
+import { APIErrorDetail } from "@/types/api";
 import {
   Behavior,
   ScopeType,
@@ -71,7 +75,7 @@ import {
 import type { UnderlyingFunction } from "@/types/utils";
 import { NewWorkflowOnlyScopeType } from "@/types/workflow";
 import { track } from "@/utils/analytics";
-import { isApiError } from "@/utils/api";
+import { isApiError, isApiErrorDetail } from "@/utils/api";
 import { DEPTH_SUPPORTED_SCOPES, isPageScopeType } from "@/utils/crawler";
 import {
   getUTCSchedule,
@@ -88,6 +92,7 @@ import { tw } from "@/utils/tailwind";
 import {
   appDefaults,
   BYTES_PER_GB,
+  DEFAULT_SELECT_LINKS,
   defaultLabel,
   getDefaultFormState,
   getInitialFormState,
@@ -122,6 +127,7 @@ const DEFAULT_BEHAVIORS = [
 ] as const;
 const formName = "newJobConfig" as const;
 const panelSuffix = "--panel" as const;
+const defaultFormState = getDefaultFormState();
 
 const getDefaultProgressState = (hasConfigId = false): ProgressState => {
   let activeTab: StepName = "scope";
@@ -225,7 +231,7 @@ export class WorkflowEditor extends BtrixElement {
   private orgDefaults: WorkflowDefaults = appDefaults;
 
   @state()
-  private formState = getDefaultFormState();
+  private formState = defaultFormState;
 
   @state()
   private serverError?: TemplateResult | string;
@@ -306,6 +312,9 @@ export class WorkflowEditor extends BtrixElement {
 
   @query("btrix-queue-exclusion-table")
   private readonly exclusionTable?: QueueExclusionTable | null;
+
+  @query("btrix-link-selector-table")
+  private readonly linkSelectorTable?: LinkSelectorTable | null;
 
   connectedCallback(): void {
     this.initializeEditor();
@@ -731,7 +740,10 @@ export class WorkflowEditor extends BtrixElement {
                       @btrix-change=${this.handleChangeRegex}
                     ></btrix-queue-exclusion-table>
                   `)}
-                  ${this.renderHelpTextCol(infoTextStrings["exclusions"])}
+                  ${this.renderHelpTextCol(
+                    infoTextStrings["exclusions"],
+                    false,
+                  )}
                 </div>
               </btrix-details>
             </div>
@@ -843,6 +855,9 @@ https://archiveweb.page/guide`}
       ${this.renderHelpTextCol(
         msg(`If checked, the crawler will visit pages one link away.`),
         false,
+      )}
+      ${when(this.formState.includeLinkedPages, () =>
+        this.renderLinkSelectors(),
       )}
     `;
   };
@@ -1042,6 +1057,7 @@ https://example.net`}
         ),
         false,
       )}
+      ${this.renderLinkSelectors()}
 
       <div class="col-span-5">
         <btrix-details>
@@ -1106,6 +1122,36 @@ https://archiveweb.page/images/${"logo.svg"}`}
     } else {
       inputEl.setCustomValidity(helpText);
     }
+  }
+
+  private renderLinkSelectors() {
+    const selectors = this.formState.selectLinks;
+    const isCustom = !isEqual(defaultFormState.selectLinks, selectors);
+
+    return html`
+      <div class="col-span-5">
+        <btrix-details ?open=${isCustom}>
+          <span slot="title">
+            ${labelFor.selectLink}
+            ${isCustom
+              ? html`<btrix-badge>${selectors.length}</btrix-badge>`
+              : ""}
+          </span>
+          <div class="grid grid-cols-5 gap-5 py-2">
+            ${inputCol(
+              html`<btrix-link-selector-table
+                .selectors=${selectors}
+                editable
+                @btrix-change=${() => {
+                  this.updateSelectorsValidity();
+                }}
+              ></btrix-link-selector-table>`,
+            )}
+            ${this.renderHelpTextCol(infoTextStrings["selectLinks"], false)}
+          </div>
+        </btrix-details>
+      </div>
+    `;
   }
 
   private renderCrawlLimits() {
@@ -1858,6 +1904,20 @@ https://archiveweb.page/images/${"logo.svg"}`}
     }
   }
 
+  /**
+   * HACK Set data attribute manually so that
+   * selectors table works with `syncTabErrorState`
+   */
+  private updateSelectorsValidity() {
+    if (this.linkSelectorTable?.checkValidity() === false) {
+      this.linkSelectorTable.setAttribute("data-invalid", "true");
+      this.linkSelectorTable.setAttribute("data-user-invalid", "true");
+    } else {
+      this.linkSelectorTable?.removeAttribute("data-invalid");
+      this.linkSelectorTable?.removeAttribute("data-user-invalid");
+    }
+  }
+
   private readonly validateOnBlur = async (e: Event) => {
     const el = e.target as SlInput | SlTextarea | SlSelect | SlCheckbox;
     const tagName = el.tagName.toLowerCase();
@@ -2071,6 +2131,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
             id: "workflow-created-status",
           });
         } else {
+          // TODO Handle field errors more consistently
+          // https://github.com/webrecorder/browsertrix/issues/2512
           this.notify.toast({
             message: msg("Please fix all errors and try again."),
             variant: "danger",
@@ -2083,11 +2145,26 @@ https://archiveweb.page/images/${"logo.svg"}`}
             : e.details;
 
           if (typeof errorDetail === "string") {
-            this.serverError = `${msg("Please fix the following issue: ")} ${
-              errorDetail === "invalid_regex"
-                ? msg("Page exclusion contains invalid regex")
-                : errorDetail.replace(/_/, " ")
-            }`;
+            let errorDetailMessage = errorDetail.replace(/_/, " ");
+
+            if (isApiErrorDetail(errorDetail)) {
+              switch (errorDetail) {
+                case APIErrorDetail.WorkflowInvalidLinkSelector:
+                  errorDetailMessage = msg(
+                    "Page link selectors contain invalid selector or attribute",
+                  );
+                  break;
+                case APIErrorDetail.WorkflowInvalidRegex:
+                  errorDetailMessage = msg(
+                    "Page exclusion contains invalid regex",
+                  );
+                  break;
+                default:
+                  break;
+              }
+            }
+
+            this.serverError = `${msg("Please fix the following issue: ")} ${errorDetailMessage}`;
           }
         }
       } else {
@@ -2200,7 +2277,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
         blockAds: this.formState.blockAds,
         exclude: trimArray(this.formState.exclusions),
         behaviors: this.setBehaviors(),
-        selectLinks: ["a[href]->href"],
+        selectLinks: this.linkSelectorTable?.value.length
+          ? this.linkSelectorTable.value
+          : DEFAULT_SELECT_LINKS,
       },
       crawlerChannel: this.formState.crawlerChannel || "default",
       proxyId: this.formState.proxyId,

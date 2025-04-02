@@ -186,7 +186,7 @@ export class QueueExclusionTable extends TailwindElement {
         class="w-full border-separate leading-none"
         style="border-spacing: 0;"
       >
-        <thead class="font-mono text-xs uppercase text-neutral-600">
+        <thead class="text-xs text-neutral-600">
           <tr class="h-10 text-left">
             <th class="${typeColClass} w-40 bg-slate-50 px-2 font-normal">
               ${msg("Exclusion Type")}

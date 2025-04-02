@@ -34,3 +34,12 @@ export type APISortQuery<T = Record<string, unknown>> = {
   sortBy?: keyof T;
   sortDirection?: SortDirection;
 };
+
+// TODO Add all error codes
+// https://github.com/webrecorder/browsertrix/issues/2512
+export enum APIErrorDetail {
+  WorkflowInvalidLinkSelector = "invalid_link_selector",
+  WorkflowInvalidRegex = "invalid_regex",
+}
+export const APIErrorDetailEnum = z.nativeEnum(APIErrorDetail);
+export type APIErrorDetailEnum = z.infer<typeof APIErrorDetailEnum>;
