@@ -10,7 +10,6 @@ import asyncio
 import json
 import re
 import os
-import subprocess
 import time
 import traceback
 from datetime import datetime
@@ -1082,12 +1081,9 @@ class CrawlConfigOps:
 
     def _validate_behavior_git_repo(self, repo_url: str, branch: str = ""):
         """Validate git repository and branch, if specified, exist and are reachable"""
-        git_remote_cmd = ["git", "ls-remote", repo_url, "HEAD"]
-        try:
-            subprocess.run(git_remote_cmd, check=True)
-        # Raises on non-zero exit code (repo doesn't exist or isn't reachable)
-        # pylint: disable=raise-missing-from
-        except subprocess.CalledProcessError:
+        git_remote_cmd = f"git ls-remote {repo_url} HEAD"
+        proc = await asyncio.create_subprocess_shell(cmd)
+        if await proc.wait() > 0:
             raise HTTPException(
                 status_code=404,
                 detail="custom_behavior_not_found",
@@ -1095,20 +1091,9 @@ class CrawlConfigOps:
 
         if branch:
             time.sleep(2)
-
-            git_remote_cmd = [
-                "git",
-                "ls-remote",
-                "--exit-code",
-                "--heads",
-                repo_url,
-                f"refs/heads/{branch}",
-            ]
-            try:
-                subprocess.run(git_remote_cmd, check=True)
-            # Raises on non-zero exit code (branch ref doesn't exist)
-            # pylint: disable=raise-missing-from
-            except subprocess.CalledProcessError:
+            git_remote_cmd = f"git ls-remote --exit-code --heads {repo_url} refs/heads/{branch}"
+            proc = await asyncio.create_subprocess_shell(git_remote_cmd)
+            if await proc.wait() > 0:
                 raise HTTPException(
                     status_code=404,
                     detail="custom_behavior_branch_not_found",
