@@ -333,6 +333,7 @@ class RawCrawlConfig(BaseModel):
 
     logging: Optional[str] = None
     behaviors: Optional[str] = "autoscroll,autoplay,autofetch,siteSpecific"
+    customBehaviors: List[str] = []
 
     userAgent: Optional[str] = None
 
@@ -541,6 +542,8 @@ class CrawlConfigDefaults(BaseModel):
 
     exclude: Optional[List[str]] = None
 
+    customBehaviors: List[str] = []
+
 
 # ============================================================================
 class CrawlConfigAddedResponse(BaseModel):
@@ -590,6 +593,13 @@ class CrawlConfigDeletedResponse(BaseModel):
 
     success: bool
     status: str
+
+
+# ============================================================================
+class ValidateCustomBehavior(BaseModel):
+    """Input model for validating custom behavior URL/Git reference"""
+
+    customBehavior: str
 
 
 # ============================================================================

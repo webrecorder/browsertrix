@@ -4,7 +4,7 @@ Crawl Config API handling
 
 # pylint: disable=too-many-lines
 
-from typing import List, Union, Optional, TYPE_CHECKING, cast
+from typing import List, Union, Optional, TYPE_CHECKING, cast, Dict, Tuple
 
 import asyncio
 import json
@@ -15,8 +15,9 @@ from datetime import datetime
 from uuid import UUID, uuid4
 import urllib.parse
 
-import pymongo
+import aiohttp
 from fastapi import APIRouter, Depends, HTTPException, Query
+import pymongo
 
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .models import (
@@ -43,8 +44,9 @@ from .models import (
     CrawlConfigDeletedResponse,
     CrawlerProxy,
     CrawlerProxies,
+    ValidateCustomBehavior,
 )
-from .utils import dt_now, slug_from_name, validate_regexes
+from .utils import dt_now, slug_from_name, validate_regexes, is_url
 
 if TYPE_CHECKING:
     from .orgs import OrgOps
@@ -231,6 +233,10 @@ class CrawlConfigOps:
                 exclude = [exclude]
             validate_regexes(exclude)
 
+        if config_in.config.customBehaviors:
+            for url in config_in.config.customBehaviors:
+                self._validate_custom_behavior_url_syntax(url)
+
         now = dt_now()
         crawlconfig = CrawlConfig(
             id=uuid4(),
@@ -290,6 +296,23 @@ class CrawlConfigOps:
             storageQuotaReached=storage_quota_reached,
             execMinutesQuotaReached=exec_mins_quota_reached,
         )
+
+    def _validate_custom_behavior_url_syntax(self, url: str) -> Tuple[bool, List[str]]:
+        """Validate custom behaviors are valid URLs after removing custom git syntax"""
+        git_prefix = "git+"
+        is_git_repo = False
+
+        if url.startswith(git_prefix):
+            is_git_repo = True
+            url = url[len(git_prefix) :]
+
+        parts = url.split("?")
+        url = parts[0]
+
+        if not is_url(url):
+            raise HTTPException(status_code=400, detail="invalid_custom_behavior")
+
+        return is_git_repo, parts
 
     def ensure_quota_page_limit(self, crawlconfig: CrawlConfig, org: Organization):
         """ensure page limit is set to no greater than quota page limit, if any"""
@@ -355,6 +378,10 @@ class CrawlConfigOps:
             if isinstance(exclude, str):
                 exclude = [exclude]
             validate_regexes(exclude)
+
+        if update.config and update.config.customBehaviors:
+            for url in update.config.customBehaviors:
+                self._validate_custom_behavior_url_syntax(url)
 
         # indicates if any k8s crawl config settings changed
         changed = False
@@ -1070,6 +1097,75 @@ class CrawlConfigOps:
                     flush=True,
                 )
 
+    async def _validate_behavior_git_repo(self, repo_url: str, branch: str = ""):
+        """Validate git repository and branch, if specified, exist and are reachable"""
+        cmd = f"git ls-remote {repo_url} HEAD"
+        proc = await asyncio.create_subprocess_shell(cmd)
+        if await proc.wait() > 0:
+            raise HTTPException(
+                status_code=404,
+                detail="custom_behavior_not_found",
+            )
+
+        if branch:
+            await asyncio.sleep(0.5)
+            git_remote_cmd = (
+                f"git ls-remote --exit-code --heads {repo_url} refs/heads/{branch}"
+            )
+            proc = await asyncio.create_subprocess_shell(git_remote_cmd)
+            if await proc.wait() > 0:
+                raise HTTPException(
+                    status_code=404,
+                    detail="custom_behavior_branch_not_found",
+                )
+
+    async def _validate_behavior_url(self, url: str):
+        """Validate behavior file exists at url"""
+        try:
+            timeout = aiohttp.ClientTimeout(total=10)
+            async with aiohttp.ClientSession(timeout=timeout) as session:
+                async with session.get(url) as resp:
+                    if resp.status >= 400:
+                        raise HTTPException(
+                            status_code=404,
+                            detail="custom_behavior_not_found",
+                        )
+        # pylint: disable=raise-missing-from
+        except aiohttp.ClientError:
+            raise HTTPException(
+                status_code=404,
+                detail="custom_behavior_not_found",
+            )
+
+    async def validate_custom_behavior(self, url: str) -> Dict[str, bool]:
+        """Validate custom behavior URL
+
+        Implemented:
+        - Ensure URL is valid (after removing custom git prefix and syntax)
+        - Ensure URL returns status code < 400
+        - Ensure git repository can be reached by git ls-remote and that branch
+        exists, if provided
+        """
+        git_branch = ""
+
+        is_git_repo, url_parts = self._validate_custom_behavior_url_syntax(url)
+        url = url_parts[0]
+
+        if is_git_repo and len(url_parts) > 1:
+            query_str = url_parts[1]
+            try:
+                git_branch = urllib.parse.parse_qs(query_str)["branch"][0]
+            # pylint: disable=broad-exception-caught
+            except (KeyError, IndexError):
+                pass
+
+        if is_git_repo:
+            await self._validate_behavior_git_repo(url, branch=git_branch)
+        else:
+            await self._validate_behavior_url(url)
+
+        return {"success": True}
+
 
 # ============================================================================
 # pylint: disable=too-many-locals
@@ -1315,6 +1411,14 @@ def init_crawl_config_api(
 
         asyncio.create_task(ops.re_add_all_scheduled_cron_jobs())
         return {"success": True}
+
+    @router.post("/validate/custom-behavior", response_model=SuccessResponse)
+    async def validate_custom_behavior(
+        behavior: ValidateCustomBehavior,
+        # pylint: disable=unused-argument
+        org: Organization = Depends(org_crawl_dep),
+    ):
+        return await ops.validate_custom_behavior(behavior.customBehavior)
 
     org_ops.router.include_router(router)
 
