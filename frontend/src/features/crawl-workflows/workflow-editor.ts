@@ -2201,12 +2201,12 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
             if (isApiErrorDetail(errorDetail)) {
               switch (errorDetail) {
-                case APIErrorDetail.WorkflowInvalidLinkSelector:
+                case APIErrorDetail.InvalidLinkSelector:
                   errorDetailMessage = msg(
                     "Page link selectors contain invalid selector or attribute",
                   );
                   break;
-                case APIErrorDetail.WorkflowInvalidRegex:
+                case APIErrorDetail.InvalidRegex:
                   errorDetailMessage = msg(
                     "Page exclusion contains invalid regex",
                   );
