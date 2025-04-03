@@ -103,12 +103,12 @@ import {
   type WorkflowDefaults,
 } from "@/utils/workflow";
 
-type NewCrawlConfigParams = WorkflowParams & {
-  runNow: boolean;
+type CrawlConfigParams = WorkflowParams & {
   config: WorkflowParams["config"] & {
     seeds: Seed[];
   };
 };
+type WorkflowRunParams = { runNow: boolean; updateRunning?: boolean };
 
 const STEPS = SECTIONS;
 type StepName = (typeof STEPS)[number];
@@ -612,14 +612,14 @@ export class WorkflowEditor extends BtrixElement {
             type="button"
             ?disabled=${this.isSubmitting}
             ?loading=${this.isSubmitting}
-            @click=${this.save}
+            @click=${() => void this.save()}
           >
             ${msg("Save")}
           </sl-button>
         </sl-tooltip>
         <sl-tooltip
           content=${this.isCrawlRunning
-            ? msg("Crawl is already running")
+            ? msg("Save and apply settings to current crawl")
             : msg("Save and run with new settings")}
           ?disabled=${this.isCrawlRunning === null}
         >
@@ -627,13 +627,13 @@ export class WorkflowEditor extends BtrixElement {
             size="small"
             variant="primary"
             type="submit"
-            ?disabled=${isArchivingDisabled(this.org, true) ||
+            ?disabled=${(!this.isCrawlRunning &&
+              isArchivingDisabled(this.org, true)) ||
             this.isSubmitting ||
-            this.isCrawlRunning ||
             this.isCrawlRunning === null}
             ?loading=${this.isSubmitting || this.isCrawlRunning === null}
           >
-            ${msg(html`Run Crawl`)}
+            ${msg(this.isCrawlRunning ? "Update Crawl" : "Run Crawl")}
           </sl-button>
         </sl-tooltip>
       </footer>
@@ -2099,14 +2099,13 @@ https://archiveweb.page/images/${"logo.svg"}`}
   private async onSubmit(event: SubmitEvent) {
     event.preventDefault();
 
-    this.updateFormState({
-      runNow: true,
+    void this.save({
+      runNow: !this.isCrawlRunning,
+      updateRunning: Boolean(this.isCrawlRunning),
     });
-
-    void this.save();
   }
 
-  private async save() {
+  private async save(opts?: WorkflowRunParams) {
     if (!this.formElem) return;
 
     // Wait for custom behaviors validation to finish
@@ -2124,7 +2123,15 @@ https://archiveweb.page/images/${"logo.svg"}`}
       return;
     }
 
-    const config = this.parseConfig();
+    const config: CrawlConfigParams & WorkflowRunParams = {
+      ...this.parseConfig(),
+      runNow: Boolean(opts?.runNow),
+    };
+
+    if (this.configId) {
+      config.updateRunning = Boolean(opts?.updateRunning);
+    }
+
     this.isSubmitting = true;
 
     try {
@@ -2301,15 +2308,14 @@ https://archiveweb.page/images/${"logo.svg"}`}
     }
   }
 
-  private parseConfig(): NewCrawlConfigParams {
-    const config: NewCrawlConfigParams = {
+  private parseConfig(): CrawlConfigParams {
+    const config: CrawlConfigParams = {
       // Job types are now merged into a single type
       jobType: "custom",
       name: this.formState.jobName || "",
       description: this.formState.description,
       scale: this.formState.scale,
       profileid: this.formState.browserProfile?.id || "",
-      runNow: this.formState.runNow,
       schedule: this.formState.scheduleType === "cron" ? this.utcSchedule : "",
       crawlTimeout: this.formState.crawlTimeoutMinutes * 60,
       maxCrawlSize: this.formState.maxCrawlSizeGB * BYTES_PER_GB,
@@ -2356,7 +2362,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
   }
 
   private parseUrlListConfig(): Pick<
-    NewCrawlConfigParams["config"],
+    CrawlConfigParams["config"],
     "seeds" | "scopeType" | "extraHops" | "useSitemap" | "failOnFailedSeed"
   > {
     const config = {
@@ -2374,7 +2380,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
   }
 
   private parseSeededConfig(): Pick<
-    NewCrawlConfigParams["config"],
+    CrawlConfigParams["config"],
     "seeds" | "scopeType" | "useSitemap" | "failOnFailedSeed"
   > {
     const primarySeedUrl = this.formState.primarySeedUrl;

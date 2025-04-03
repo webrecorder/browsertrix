@@ -505,6 +505,7 @@ class UpdateCrawlConfig(BaseModel):
     description: Optional[str] = None
     autoAddCollections: Optional[List[UUID]] = None
     runNow: bool = False
+    updateRunning: bool = False
 
     # crawl data: revision tracked
     schedule: Optional[str] = None
@@ -577,9 +578,10 @@ class CrawlConfigSearchValues(BaseModel):
 class CrawlConfigUpdateResponse(BaseModel):
     """Response model for updating crawlconfigs"""
 
-    updated: bool
+    updated: bool = True
     settings_changed: bool
     metadata_changed: bool
+    updatedRunning: bool = False
 
     storageQuotaReached: Optional[bool] = False
     execMinutesQuotaReached: Optional[bool] = False
