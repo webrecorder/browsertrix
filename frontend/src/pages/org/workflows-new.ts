@@ -88,6 +88,7 @@ export class WorkflowsNew extends LiteElement {
         failOnFailedSeed: false,
         userAgent: null,
         selectLinks: DEFAULT_SELECT_LINKS,
+        customBehaviors: [],
       },
       tags: [],
       crawlTimeout: null,

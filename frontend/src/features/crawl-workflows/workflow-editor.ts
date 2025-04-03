@@ -52,6 +52,7 @@ import {
 } from "@/controllers/observable";
 import { type SelectBrowserProfileChangeEvent } from "@/features/browser-profiles/select-browser-profile";
 import type { CollectionsChangeEvent } from "@/features/collections/collections-add";
+import type { CustomBehaviorsTable } from "@/features/crawl-workflows/custom-behaviors-table";
 import type { CrawlStatusChangedEventDetail } from "@/features/crawl-workflows/live-workflow-status";
 import type {
   ExclusionChangeEvent,
@@ -315,6 +316,9 @@ export class WorkflowEditor extends BtrixElement {
 
   @query("btrix-link-selector-table")
   private readonly linkSelectorTable?: LinkSelectorTable | null;
+
+  @query("btrix-custom-behaviors-table")
+  private readonly customBehaviorsTable?: CustomBehaviorsTable | null;
 
   connectedCallback(): void {
     this.initializeEditor();
@@ -1259,6 +1263,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         ),
         false,
       )}
+      ${this.renderCustomBehaviors()}
       ${this.renderSectionHeading(msg("Page Timing"))}
       ${inputCol(html`
         <sl-input
@@ -1318,6 +1323,42 @@ https://archiveweb.page/images/${"logo.svg"}`}
         </sl-input>
       `)}
       ${this.renderHelpTextCol(infoTextStrings["pageExtraDelaySeconds"])}
+    `;
+  }
+
+  private renderCustomBehaviors() {
+    return html`
+      ${this.renderSectionHeading(labelFor.customBehaviors)}
+      ${inputCol(
+        html`<btrix-custom-behaviors-table
+          .customBehaviors=${this.initialWorkflow?.config.customBehaviors || []}
+          editable
+          @btrix-change=${() => {
+            this.customBehaviorsTable?.removeAttribute("data-invalid");
+            this.customBehaviorsTable?.removeAttribute("data-user-invalid");
+          }}
+          @btrix-invalid=${() => {
+            /**
+             * HACK Set data attribute manually so that
+             * table works with `syncTabErrorState`
+             *
+             * FIXME Should be fixed with
+             * https://github.com/webrecorder/browsertrix/issues/2497
+             */
+            this.customBehaviorsTable?.setAttribute("data-invalid", "true");
+            this.customBehaviorsTable?.setAttribute(
+              "data-user-invalid",
+              "true",
+            );
+          }}
+        ></btrix-custom-behaviors-table>`,
+      )}
+      ${this.renderHelpTextCol(
+        msg(
+          `Enable custom page actions with behavior scripts. You can specify any publicly accessible URL or public Git repository.`,
+        ),
+        false,
+      )}
     `;
   }
 
@@ -1893,6 +1934,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
   /**
    * HACK Set data attribute manually so that
    * exclusions table works with `syncTabErrorState`
+   *
+   * FIXME Should be fixed with
+   * https://github.com/webrecorder/browsertrix/issues/2497
    */
   private updateExclusionsValidity() {
     if (this.exclusionTable?.checkValidity() === false) {
@@ -2065,6 +2109,14 @@ https://archiveweb.page/images/${"logo.svg"}`}
   private async save() {
     if (!this.formElem) return;
 
+    // Wait for custom behaviors validation to finish
+    try {
+      await this.customBehaviorsTable?.taskComplete;
+    } catch {
+      this.customBehaviorsTable?.reportValidity();
+      return;
+    }
+
     const isValid = await this.checkFormValidity(this.formElem);
 
     if (!isValid || this.formHasError) {
@@ -2149,12 +2201,12 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
             if (isApiErrorDetail(errorDetail)) {
               switch (errorDetail) {
-                case APIErrorDetail.WorkflowInvalidLinkSelector:
+                case APIErrorDetail.InvalidLinkSelector:
                   errorDetailMessage = msg(
                     "Page link selectors contain invalid selector or attribute",
                   );
                   break;
-                case APIErrorDetail.WorkflowInvalidRegex:
+                case APIErrorDetail.InvalidRegex:
                   errorDetailMessage = msg(
                     "Page exclusion contains invalid regex",
                   );
@@ -2280,6 +2332,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         selectLinks: this.linkSelectorTable?.value.length
           ? this.linkSelectorTable.value
           : DEFAULT_SELECT_LINKS,
+        customBehaviors: this.customBehaviorsTable?.value || [],
       },
       crawlerChannel: this.formState.crawlerChannel || "default",
       proxyId: this.formState.proxyId,

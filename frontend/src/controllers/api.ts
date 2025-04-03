@@ -170,6 +170,7 @@ export class APIController implements ReactiveController {
       message: errorMessage,
       status: resp.status,
       details: errorDetails,
+      errorCode: errorDetail,
     });
   }
 

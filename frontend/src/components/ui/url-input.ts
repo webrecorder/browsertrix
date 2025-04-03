@@ -1,4 +1,3 @@
-// import type { SlInputEvent } from "@shoelace-style/shoelace";
 import { msg } from "@lit/localize";
 import SlInput from "@shoelace-style/shoelace/dist/components/input/input.js";
 import { customElement, property } from "lit/decorators.js";
@@ -20,45 +19,41 @@ export function validURL(url: string) {
  * @attr {String} name
  * @attr {String} label
  * @attr {String} value
+ * @attr {Boolean} required
  */
 @customElement("btrix-url-input")
-export class Component extends SlInput {
+export class UrlInput extends SlInput {
   @property({ type: Number, reflect: true })
   minlength = 4;
 
   @property({ type: String, reflect: true })
   placeholder = "https://example.com";
 
-  connectedCallback(): void {
+  constructor() {
+    super();
+
     this.inputmode = "url";
 
-    super.connectedCallback();
-
     this.addEventListener("sl-input", this.onInput);
-    this.addEventListener("sl-blur", this.onBlur);
+    this.addEventListener("sl-change", this.onChange);
   }
 
   disconnectedCallback(): void {
     super.disconnectedCallback();
 
     this.removeEventListener("sl-input", this.onInput);
-    this.removeEventListener("sl-blur", this.onBlur);
+    this.removeEventListener("sl-change", this.onChange);
   }
 
-  private readonly onInput = async () => {
-    console.log("input 1");
-    await this.updateComplete;
-
+  private readonly onInput = () => {
     if (!this.checkValidity() && validURL(this.value)) {
       this.setCustomValidity("");
       this.helpText = "";
     }
   };
 
-  private readonly onBlur = async () => {
-    await this.updateComplete;
-
-    const value = this.value;
+  private readonly onChange = () => {
+    const value = this.value.trim();
 
     if (value && !validURL(value)) {
       const text = msg("Please enter a valid URL.");
