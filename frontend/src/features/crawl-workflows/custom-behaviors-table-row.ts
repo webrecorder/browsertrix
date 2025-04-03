@@ -203,7 +203,11 @@ export class CustomBehaviorsTableRow extends BtrixElement {
           throw err;
         }
 
-        console.error(err);
+        if (err instanceof Error && err.name === "AbortError") {
+          console.debug(err);
+        } else {
+          console.error(err);
+        }
       }
     },
     args: () => [this.behaviorSource] as const,
@@ -545,7 +549,7 @@ export class CustomBehaviorsTableRow extends BtrixElement {
       );
     } catch (err) {
       if (err instanceof APIError) {
-        throw err.details;
+        throw err.errorCode;
       }
 
       throw err;
