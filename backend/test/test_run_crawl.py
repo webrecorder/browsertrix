@@ -1283,3 +1283,32 @@ def test_delete_crawls_org_owner(
         headers=admin_auth_headers,
     )
     assert r.status_code == 404
+
+
+def test_custom_behavior_logs(
+    custom_behaviors_crawl_id, crawler_auth_headers, default_org_id
+):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{custom_behaviors_crawl_id}/behaviorLogs",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    custom_log_line_count = 0
+
+    assert data["total"] > 0
+    for behavior_log in data["items"]:
+        log = json.decodes(behavior_log)
+
+        assert log["timestamp"]
+        assert log["context"] in ("behavior", "behaviorScript", "behaviorScriptCustom")
+
+        if log["context"] == "behaviorScriptCustom":
+            assert log["message"] in ("test-stat", "done!")
+            assert log["details"]["behavior"] == "TestBehavior"
+            assert log["details"]["page"] == "https://specs.webrecorder.net/"
+
+            custom_log_line_count += 1
+
+    assert custom_log_line_count == 2
