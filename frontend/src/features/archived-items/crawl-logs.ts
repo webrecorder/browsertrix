@@ -1,12 +1,18 @@
-import { localized, msg } from "@lit/localize";
+import { localized, msg, str } from "@lit/localize";
 import clsx from "clsx";
 import { css, html } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import type { APIPaginatedList } from "@/types/api";
 import { truncate } from "@/utils/css";
 import { tw } from "@/utils/tailwind";
+
+enum LogType {
+  Error = "error",
+  Behavior = "behavior",
+}
 
 enum LogLevel {
   Error = "error",
@@ -21,6 +27,11 @@ export type CrawlLog = {
   details: Record<string, unknown>;
   context: string;
   message: string;
+};
+
+const labelFor: Record<LogType, string> = {
+  [LogType.Error]: "Errors",
+  [LogType.Behavior]: "Behaviors",
 };
 
 @customElement("btrix-crawl-logs")
@@ -54,12 +65,17 @@ export class CrawlLogs extends TailwindElement {
       })
     | null = null;
 
+  @state()
+  private filter: false | LogType = false;
+
   render() {
     if (!this.logs) return;
 
     const rowClasses = tw`grid grid-cols-[9rem_3rem_20rem_1fr] leading-[1.3]`;
 
-    return html`<btrix-numbered-list class="text-xs">
+    return html`${this.renderControls()}
+
+      <btrix-numbered-list class="text-xs">
         <btrix-numbered-list-header slot="header">
           <div class=${rowClasses}>
             <div class="px-2">${msg("Timestamp")}</div>
@@ -147,6 +163,48 @@ export class CrawlLogs extends TailwindElement {
         >${this.renderLogDetails()}</btrix-dialog
       > `;
   }
+
+  private renderControls() {
+    const displayCount = this.logs?.items.length || 0;
+    const totalCount = this.logs?.total || 0;
+
+    return html`
+      <div
+        class="mb-3 flex items-center justify-between gap-3 rounded-lg border bg-neutral-50 p-3"
+      >
+        <p class="text-neutral-500">
+          ${msg(str`Displaying ${displayCount} of ${totalCount} logs`)}
+        </p>
+        <div class="flex items-center gap-2">
+          <div class="text-neutral-500">${msg("View:")}</div>
+          <sl-button-group>
+            <sl-button
+              size="small"
+              pill
+              variant=${ifDefined(this.filter ? undefined : "neutral")}
+              @click=${() => (this.filter = false)}
+            >
+              ${msg("Any Type")}
+            </sl-button>
+            ${Object.values(LogType).map(this.renderFilter)}
+          </sl-button-group>
+        </div>
+      </div>
+    `;
+  }
+
+  private readonly renderFilter = (logType: LogType) => {
+    return html`
+      <sl-button
+        variant=${ifDefined(this.filter === logType ? "neutral" : undefined)}
+        size="small"
+        pill
+        @click=${() => (this.filter = logType)}
+      >
+        ${labelFor[logType]}
+      </sl-button>
+    `;
+  };
 
   private renderSeverity(level: LogLevel) {
     const baseClasses = tw`size-4 group-hover:text-inherit`;

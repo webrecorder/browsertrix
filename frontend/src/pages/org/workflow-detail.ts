@@ -550,15 +550,13 @@ export class WorkflowDetail extends BtrixElement {
           !this.workflow.isCrawlRunning,
       );
       return html` <h3>
-          ${msg(html`Error & Behavior Logs`)}
-          ${when(
-            this.logs,
-            (logs) => html`
-              <span class="text-neutral-500">
-                (${this.localize.number(logs.total)})
-              </span>
-            `,
-          )}
+          ${this.tabLabels.logs}
+          <sl-tooltip content=${"TODO"}>
+            <sl-icon
+              class="text-base text-neutral-500"
+              name="info-circle"
+            ></sl-icon>
+          </sl-tooltip>
         </h3>
         <sl-tooltip
           content=${msg(
@@ -885,7 +883,7 @@ export class WorkflowDetail extends BtrixElement {
     return html`
       <section>
         <div
-          class="mb-3 flex items-center justify-end rounded-lg border bg-neutral-50 p-4"
+          class="mb-3 flex items-center justify-end rounded-lg border bg-neutral-50 p-3"
         >
           <div class="flex items-center">
             <div class="mx-2 text-neutral-500">${msg("View:")}</div>
