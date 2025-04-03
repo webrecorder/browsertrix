@@ -8,7 +8,13 @@ import capitalize from "lodash/fp/capitalize";
 import RegexColorize from "regex-colorize";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import type { CrawlConfig, Seed, SeedConfig } from "@/pages/org/types";
+import { none, notSpecified } from "@/layouts/empty";
+import {
+  Behavior,
+  type CrawlConfig,
+  type Seed,
+  type SeedConfig,
+} from "@/pages/org/types";
 import { labelFor } from "@/strings/crawl-workflows/labels";
 import scopeTypeLabel from "@/strings/crawl-workflows/scopeType";
 import sectionStrings from "@/strings/crawl-workflows/section";
@@ -162,22 +168,25 @@ export class ConfigDetails extends BtrixElement {
         heading: sectionStrings.behaviors,
         renderDescItems: (seedsConfig) => html`
           ${this.renderSetting(
-            labelFor.autoscrollBehavior,
-            seedsConfig?.behaviors &&
-              !seedsConfig.behaviors.includes("autoscroll")
-              ? msg("Disabled")
-              : html`<span class="text-neutral-400"
-                  >${msg("Enabled (default)")}</span
-                >`,
+            labelFor.behaviors,
+            [
+              seedsConfig?.behaviors?.includes(Behavior.AutoScroll) &&
+                labelFor.autoscrollBehavior,
+              seedsConfig?.behaviors?.includes(Behavior.AutoClick) &&
+                labelFor.autoclickBehavior,
+            ]
+              .filter((v) => v)
+              .join(", ") || none,
           )}
           ${this.renderSetting(
-            labelFor.autoclickBehavior,
-            seedsConfig?.behaviors &&
-              seedsConfig.behaviors.includes("autoclick")
-              ? msg("Enabled")
-              : html`<span class="text-neutral-400"
-                  >${msg("Disabled (default)")}</span
-                >`,
+            labelFor.customBehaviors,
+            seedsConfig?.customBehaviors.length
+              ? html`
+                  <btrix-custom-behaviors-table
+                    .customBehaviors=${seedsConfig.customBehaviors}
+                  ></btrix-custom-behaviors-table>
+                `
+              : none,
           )}
           ${this.renderSetting(
             labelFor.pageLoadTimeoutSeconds,
@@ -382,6 +391,10 @@ export class ConfigDetails extends BtrixElement {
         msg("Include Any Linked Page (“one hop out”)"),
         Boolean(config.extraHops),
       )}
+      ${when(
+        config.extraHops,
+        () => html`${this.renderLinkSelectors()}${this.renderExclusions()}`,
+      )}
     `;
   };
 
@@ -393,7 +406,6 @@ export class ConfigDetails extends BtrixElement {
     const primarySeedConfig = this.seeds[0] as SeedConfig | Seed | undefined;
     const primarySeedUrl = (primarySeedConfig as Seed | undefined)?.url;
     const includeUrlList = primarySeedConfig?.include || config.include || [];
-    const exclusions = config.exclude || [];
     const scopeType = config.scopeType!;
 
     return html`
@@ -424,7 +436,7 @@ export class ConfigDetails extends BtrixElement {
                   )}
                 </ul>
               `
-            : msg("None"),
+            : none,
           true,
         ),
       )}
@@ -444,6 +456,7 @@ export class ConfigDetails extends BtrixElement {
         msg("Check For Sitemap"),
         Boolean(config.useSitemap),
       )}
+      ${this.renderLinkSelectors()}
       ${this.renderSetting(
         msg("Additional Page URLs"),
         additionalUrlList.length
@@ -463,24 +476,46 @@ export class ConfigDetails extends BtrixElement {
                 })}
               </ul>
             `
-          : msg("None"),
+          : none,
         true,
       )}
-      ${when(
-        exclusions.length,
-        () => html`
-          <div class="mb-2">
-            <btrix-queue-exclusion-table
-              .exclusions=${exclusions}
-              labelClassName="text-xs text-neutral-500"
-            >
-            </btrix-queue-exclusion-table>
-          </div>
-        `,
-        () => this.renderSetting(msg("Exclusions"), msg("None")),
-      )}
+      ${this.renderExclusions()}
     `;
   };
+
+  private renderLinkSelectors() {
+    const selectors = this.crawlConfig?.config.selectLinks || [];
+
+    return this.renderSetting(
+      labelFor.selectLink,
+      selectors.length
+        ? html`
+            <div class="mb-2">
+              <btrix-link-selector-table .selectors=${selectors}>
+              </btrix-link-selector-table>
+            </div>
+          `
+        : msg("None"),
+    );
+  }
+
+  private renderExclusions() {
+    const exclusions = this.crawlConfig?.config.exclude || [];
+
+    return when(
+      exclusions.length,
+      () => html`
+        <div class="mb-2">
+          <btrix-queue-exclusion-table
+            .exclusions=${exclusions}
+            labelClassName="text-xs text-neutral-500"
+          >
+          </btrix-queue-exclusion-table>
+        </div>
+      `,
+      () => this.renderSetting(msg("Exclusions"), none),
+    );
+  }
 
   private renderSetting(label: string, value: unknown, breakAll?: boolean) {
     let content = value;
@@ -490,11 +525,9 @@ export class ConfigDetails extends BtrixElement {
     } else if (typeof value === "boolean") {
       content = value ? msg("Yes") : msg("No");
     } else if (Array.isArray(value) && !value.length) {
-      content = html`<span class="text-neutral-400">${msg("None")}</span>`;
+      content = none;
     } else if (typeof value !== "number" && !value) {
-      content = html`<span class="text-neutral-400"
-        >${msg("Not specified")}</span
-      >`;
+      content = notSpecified;
     }
     return html`
       <btrix-desc-list-item label=${label} class=${breakAll ? "break-all" : ""}>

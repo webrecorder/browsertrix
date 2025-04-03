@@ -29,8 +29,11 @@ import { range } from "lit/directives/range.js";
 import { when } from "lit/directives/when.js";
 import compact from "lodash/fp/compact";
 import flow from "lodash/fp/flow";
+import isEqual from "lodash/fp/isEqual";
 import throttle from "lodash/fp/throttle";
 import uniq from "lodash/fp/uniq";
+
+import type { LinkSelectorTable } from "./link-selector-table";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type {
@@ -49,6 +52,7 @@ import {
 } from "@/controllers/observable";
 import { type SelectBrowserProfileChangeEvent } from "@/features/browser-profiles/select-browser-profile";
 import type { CollectionsChangeEvent } from "@/features/collections/collections-add";
+import type { CustomBehaviorsTable } from "@/features/crawl-workflows/custom-behaviors-table";
 import type { CrawlStatusChangedEventDetail } from "@/features/crawl-workflows/live-workflow-status";
 import type {
   ExclusionChangeEvent,
@@ -62,11 +66,17 @@ import { labelFor } from "@/strings/crawl-workflows/labels";
 import scopeTypeLabels from "@/strings/crawl-workflows/scopeType";
 import sectionStrings from "@/strings/crawl-workflows/section";
 import { AnalyticsTrackEvent } from "@/trackEvents";
-import { ScopeType, type Seed, type WorkflowParams } from "@/types/crawler";
+import { APIErrorDetail } from "@/types/api";
+import {
+  Behavior,
+  ScopeType,
+  type Seed,
+  type WorkflowParams,
+} from "@/types/crawler";
 import type { UnderlyingFunction } from "@/types/utils";
 import { NewWorkflowOnlyScopeType } from "@/types/workflow";
 import { track } from "@/utils/analytics";
-import { isApiError } from "@/utils/api";
+import { isApiError, isApiErrorDetail } from "@/utils/api";
 import { DEPTH_SUPPORTED_SCOPES, isPageScopeType } from "@/utils/crawler";
 import {
   getUTCSchedule,
@@ -83,6 +93,7 @@ import { tw } from "@/utils/tailwind";
 import {
   appDefaults,
   BYTES_PER_GB,
+  DEFAULT_SELECT_LINKS,
   defaultLabel,
   getDefaultFormState,
   getInitialFormState,
@@ -111,13 +122,13 @@ type ProgressState = {
   tabs: Tabs;
 };
 const DEFAULT_BEHAVIORS = [
-  "autoscroll",
-  "autoplay",
-  "autofetch",
-  "siteSpecific",
-];
+  Behavior.AutoPlay,
+  Behavior.AutoFetch,
+  Behavior.SiteSpecific,
+] as const;
 const formName = "newJobConfig" as const;
 const panelSuffix = "--panel" as const;
+const defaultFormState = getDefaultFormState();
 
 const getDefaultProgressState = (hasConfigId = false): ProgressState => {
   let activeTab: StepName = "scope";
@@ -221,7 +232,7 @@ export class WorkflowEditor extends BtrixElement {
   private orgDefaults: WorkflowDefaults = appDefaults;
 
   @state()
-  private formState = getDefaultFormState();
+  private formState = defaultFormState;
 
   @state()
   private serverError?: TemplateResult | string;
@@ -302,6 +313,12 @@ export class WorkflowEditor extends BtrixElement {
 
   @query("btrix-queue-exclusion-table")
   private readonly exclusionTable?: QueueExclusionTable | null;
+
+  @query("btrix-link-selector-table")
+  private readonly linkSelectorTable?: LinkSelectorTable | null;
+
+  @query("btrix-custom-behaviors-table")
+  private readonly customBehaviorsTable?: CustomBehaviorsTable | null;
 
   connectedCallback(): void {
     this.initializeEditor();
@@ -727,7 +744,10 @@ export class WorkflowEditor extends BtrixElement {
                       @btrix-change=${this.handleChangeRegex}
                     ></btrix-queue-exclusion-table>
                   `)}
-                  ${this.renderHelpTextCol(infoTextStrings["exclusions"])}
+                  ${this.renderHelpTextCol(
+                    infoTextStrings["exclusions"],
+                    false,
+                  )}
                 </div>
               </btrix-details>
             </div>
@@ -839,6 +859,9 @@ https://archiveweb.page/guide`}
       ${this.renderHelpTextCol(
         msg(`If checked, the crawler will visit pages one link away.`),
         false,
+      )}
+      ${when(this.formState.includeLinkedPages, () =>
+        this.renderLinkSelectors(),
       )}
     `;
   };
@@ -1038,6 +1061,7 @@ https://example.net`}
         ),
         false,
       )}
+      ${this.renderLinkSelectors()}
 
       <div class="col-span-5">
         <btrix-details>
@@ -1102,6 +1126,36 @@ https://archiveweb.page/images/${"logo.svg"}`}
     } else {
       inputEl.setCustomValidity(helpText);
     }
+  }
+
+  private renderLinkSelectors() {
+    const selectors = this.formState.selectLinks;
+    const isCustom = !isEqual(defaultFormState.selectLinks, selectors);
+
+    return html`
+      <div class="col-span-5">
+        <btrix-details ?open=${isCustom}>
+          <span slot="title">
+            ${labelFor.selectLink}
+            ${isCustom
+              ? html`<btrix-badge>${selectors.length}</btrix-badge>`
+              : ""}
+          </span>
+          <div class="grid grid-cols-5 gap-5 py-2">
+            ${inputCol(
+              html`<btrix-link-selector-table
+                .selectors=${selectors}
+                editable
+                @btrix-change=${() => {
+                  this.updateSelectorsValidity();
+                }}
+              ></btrix-link-selector-table>`,
+            )}
+            ${this.renderHelpTextCol(infoTextStrings["selectLinks"], false)}
+          </div>
+        </btrix-details>
+      </div>
+    `;
   }
 
   private renderCrawlLimits() {
@@ -1182,7 +1236,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
   private renderBehaviors() {
     return html`
-      ${this.renderSectionHeading(msg("Built-in Behaviors"))}
+      ${this.renderSectionHeading(labelFor.behaviors)}
       ${inputCol(
         html`<sl-checkbox
           name="autoscrollBehavior"
@@ -1209,6 +1263,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         ),
         false,
       )}
+      ${this.renderCustomBehaviors()}
       ${this.renderSectionHeading(msg("Page Timing"))}
       ${inputCol(html`
         <sl-input
@@ -1268,6 +1323,42 @@ https://archiveweb.page/images/${"logo.svg"}`}
         </sl-input>
       `)}
       ${this.renderHelpTextCol(infoTextStrings["pageExtraDelaySeconds"])}
+    `;
+  }
+
+  private renderCustomBehaviors() {
+    return html`
+      ${this.renderSectionHeading(labelFor.customBehaviors)}
+      ${inputCol(
+        html`<btrix-custom-behaviors-table
+          .customBehaviors=${this.initialWorkflow?.config.customBehaviors || []}
+          editable
+          @btrix-change=${() => {
+            this.customBehaviorsTable?.removeAttribute("data-invalid");
+            this.customBehaviorsTable?.removeAttribute("data-user-invalid");
+          }}
+          @btrix-invalid=${() => {
+            /**
+             * HACK Set data attribute manually so that
+             * table works with `syncTabErrorState`
+             *
+             * FIXME Should be fixed with
+             * https://github.com/webrecorder/browsertrix/issues/2497
+             */
+            this.customBehaviorsTable?.setAttribute("data-invalid", "true");
+            this.customBehaviorsTable?.setAttribute(
+              "data-user-invalid",
+              "true",
+            );
+          }}
+        ></btrix-custom-behaviors-table>`,
+      )}
+      ${this.renderHelpTextCol(
+        msg(
+          `Enable custom page actions with behavior scripts. You can specify any publicly accessible URL or public Git repository.`,
+        ),
+        false,
+      )}
     `;
   }
 
@@ -1843,6 +1934,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
   /**
    * HACK Set data attribute manually so that
    * exclusions table works with `syncTabErrorState`
+   *
+   * FIXME Should be fixed with
+   * https://github.com/webrecorder/browsertrix/issues/2497
    */
   private updateExclusionsValidity() {
     if (this.exclusionTable?.checkValidity() === false) {
@@ -1851,6 +1945,20 @@ https://archiveweb.page/images/${"logo.svg"}`}
     } else {
       this.exclusionTable?.removeAttribute("data-invalid");
       this.exclusionTable?.removeAttribute("data-user-invalid");
+    }
+  }
+
+  /**
+   * HACK Set data attribute manually so that
+   * selectors table works with `syncTabErrorState`
+   */
+  private updateSelectorsValidity() {
+    if (this.linkSelectorTable?.checkValidity() === false) {
+      this.linkSelectorTable.setAttribute("data-invalid", "true");
+      this.linkSelectorTable.setAttribute("data-user-invalid", "true");
+    } else {
+      this.linkSelectorTable?.removeAttribute("data-invalid");
+      this.linkSelectorTable?.removeAttribute("data-user-invalid");
     }
   }
 
@@ -2001,6 +2109,14 @@ https://archiveweb.page/images/${"logo.svg"}`}
   private async save() {
     if (!this.formElem) return;
 
+    // Wait for custom behaviors validation to finish
+    try {
+      await this.customBehaviorsTable?.taskComplete;
+    } catch {
+      this.customBehaviorsTable?.reportValidity();
+      return;
+    }
+
     const isValid = await this.checkFormValidity(this.formElem);
 
     if (!isValid || this.formHasError) {
@@ -2067,6 +2183,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
             id: "workflow-created-status",
           });
         } else {
+          // TODO Handle field errors more consistently
+          // https://github.com/webrecorder/browsertrix/issues/2512
           this.notify.toast({
             message: msg("Please fix all errors and try again."),
             variant: "danger",
@@ -2079,11 +2197,26 @@ https://archiveweb.page/images/${"logo.svg"}`}
             : e.details;
 
           if (typeof errorDetail === "string") {
-            this.serverError = `${msg("Please fix the following issue: ")} ${
-              errorDetail === "invalid_regex"
-                ? msg("Page exclusion contains invalid regex")
-                : errorDetail.replace(/_/, " ")
-            }`;
+            let errorDetailMessage = errorDetail.replace(/_/, " ");
+
+            if (isApiErrorDetail(errorDetail)) {
+              switch (errorDetail) {
+                case APIErrorDetail.InvalidLinkSelector:
+                  errorDetailMessage = msg(
+                    "Page link selectors contain invalid selector or attribute",
+                  );
+                  break;
+                case APIErrorDetail.InvalidRegex:
+                  errorDetailMessage = msg(
+                    "Page exclusion contains invalid regex",
+                  );
+                  break;
+                default:
+                  break;
+              }
+            }
+
+            this.serverError = `${msg("Please fix the following issue: ")} ${errorDetailMessage}`;
           }
         }
       } else {
@@ -2196,7 +2329,10 @@ https://archiveweb.page/images/${"logo.svg"}`}
         blockAds: this.formState.blockAds,
         exclude: trimArray(this.formState.exclusions),
         behaviors: this.setBehaviors(),
-        selectLinks: ["a[href]->href"],
+        selectLinks: this.linkSelectorTable?.value.length
+          ? this.linkSelectorTable.value
+          : DEFAULT_SELECT_LINKS,
+        customBehaviors: this.customBehaviorsTable?.value || [],
       },
       crawlerChannel: this.formState.crawlerChannel || "default",
       proxyId: this.formState.proxyId,
@@ -2206,17 +2342,17 @@ https://archiveweb.page/images/${"logo.svg"}`}
   }
 
   private setBehaviors(): string {
-    let behaviors = (
-      this.formState.autoscrollBehavior
-        ? DEFAULT_BEHAVIORS
-        : DEFAULT_BEHAVIORS.slice(1)
-    ).join(",");
+    const behaviors: Behavior[] = [...DEFAULT_BEHAVIORS];
 
-    if (this.formState.autoclickBehavior) {
-      behaviors += ",autoclick";
+    if (this.formState.autoscrollBehavior) {
+      behaviors.unshift(Behavior.AutoScroll);
     }
 
-    return behaviors;
+    if (this.formState.autoclickBehavior) {
+      behaviors.push(Behavior.AutoClick);
+    }
+
+    return behaviors.join(",");
   }
 
   private parseUrlListConfig(): Pick<

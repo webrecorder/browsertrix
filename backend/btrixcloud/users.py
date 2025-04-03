@@ -28,6 +28,7 @@ from .models import (
     UserOrgInfoOut,
     UserOrgInfoOutWithSubs,
     UserOut,
+    UserOutNoId,
     UserRole,
     InvitePending,
     InviteOut,
@@ -35,8 +36,7 @@ from .models import (
     FailedLogin,
     UpdatedResponse,
     SuccessResponse,
-    UserEmailWithOrgInfo,
-    PaginatedUserEmailsResponse,
+    PaginatedUserOutResponse,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import is_bool, dt_now
@@ -166,8 +166,11 @@ class UserManager:
         return user
 
     async def get_user_info_with_orgs(
-        self, user: User, info_out_cls: Type[UserOrgInfoOut] = UserOrgInfoOut
-    ) -> UserOut:
+        self,
+        user: User,
+        info_out_cls: Type[UserOrgInfoOut | UserOrgInfoOutWithSubs] = UserOrgInfoOut,
+        user_out_cls: Type[UserOut | UserOutNoId] = UserOut,
+    ) -> UserOut | UserOutNoId:
         """return User info"""
         user_orgs, _ = await self.org_ops.get_orgs_for_user(
             user,
@@ -196,7 +199,7 @@ class UserManager:
         else:
             orgs = []
 
-        return UserOut(
+        return user_out_cls(
             id=user.id,
             email=user.email,
             name=user.name,
@@ -558,23 +561,23 @@ class UserManager:
         self,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
-    ) -> Tuple[List[UserEmailWithOrgInfo], int]:
+    ) -> Tuple[List[UserOutNoId], int]:
         """Get user emails with org info for each for paginated endpoint"""
         # Zero-index page for query
         page = page - 1
         skip = page_size * page
 
-        emails: List[UserEmailWithOrgInfo] = []
+        emails: List[UserOutNoId] = []
 
         total = await self.users.count_documents({"is_superuser": False})
         async for res in self.users.find(
             {"is_superuser": False}, skip=skip, limit=page_size
         ):
             user = User(**res)
-            user_out = await self.get_user_info_with_orgs(user, UserOrgInfoOutWithSubs)
-            emails.append(
-                UserEmailWithOrgInfo(email=user_out.email, orgs=user_out.orgs)
+            user_out = await self.get_user_info_with_orgs(
+                user, UserOrgInfoOutWithSubs, UserOutNoId
             )
+            emails.append(user_out)
 
         return emails, total
 
@@ -739,7 +742,7 @@ def init_users_router(
         return paginated_format(pending_invites, total, page, pageSize)
 
     @users_router.get(
-        "/emails", tags=["users"], response_model=PaginatedUserEmailsResponse
+        "/emails", tags=["users"], response_model=PaginatedUserOutResponse
     )
     async def get_user_emails(
         user: User = Depends(current_active_user),

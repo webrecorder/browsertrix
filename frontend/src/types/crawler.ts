@@ -10,6 +10,14 @@ export enum ScopeType {
   Any = "any",
 }
 
+export enum Behavior {
+  AutoScroll = "autoscroll",
+  AutoClick = "autoclick",
+  AutoPlay = "autoplay",
+  AutoFetch = "autofetch",
+  SiteSpecific = "siteSpecific",
+}
+
 export type Seed = {
   url: string;
   scopeType: ScopeType | undefined;
@@ -37,6 +45,7 @@ export type SeedConfig = Expand<
     depth?: number | null;
     userAgent?: string | null;
     selectLinks: string[];
+    customBehaviors: string[];
   }
 >;
 

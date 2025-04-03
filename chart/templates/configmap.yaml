@@ -34,6 +34,8 @@ data:
 
   DEFAULT_CRAWL_FILENAME_TEMPLATE: "{{ .Values.default_crawl_filename_template }}"
 
+  DEFAULT_CRAWLER_IMAGE_PULL_POLICY: "{{ .Values.crawler_pull_policy }}"
+
   MAX_PAGES_PER_CRAWL: "{{ .Values.max_pages_per_crawl | default 0 }}"
 
   IDLE_TIMEOUT: "{{ .Values.profile_browser_idle_seconds | default 60 }}"

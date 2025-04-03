@@ -18,6 +18,7 @@ The `crawler_channels` setting is used to specify the [_Crawler Release Channel_
 crawler_channels:
   - id: default
     image: "docker.io/webrecorder/browsertrix-crawler:latest"
+    imagePullPolicy: Always # optional
 ```
 
 This can be extended with additional channels. For example, here is what the value would look like adding a new x.y.z release of Browsertrix Crawler with the id `testing`:
@@ -28,7 +29,10 @@ crawler_channels:
     image: "docker.io/webrecorder/browsertrix-crawler:latest"
   - id: testing
     image: "docker.io/webrecorder/browsertrix-crawler:x.y.z"
+    imagePullPolicy: IfNotPresent
 ```
+
+The `imagePullPolicy` per channel is optional. If not set, the value set in `crawler_pull_policy` is used as the default.
 
 ## Storage
 

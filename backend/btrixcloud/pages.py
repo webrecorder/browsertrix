@@ -647,8 +647,8 @@ class PageOps:
                     raise HTTPException(
                         status_code=400, detail="qa_run_id_missing_for_qa_sort"
                     )
-
-                sort_by = f"qa.{qa_run_id}.{sort_by}"
+                # note: not using qa.{qa_run_id} because $set above means qa = qa.{qa_run_id}
+                sort_by = f"qa.{sort_by}"
 
             aggregate.extend([{"$sort": {sort_by: sort_direction}}])
 
