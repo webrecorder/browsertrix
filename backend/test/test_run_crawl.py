@@ -1299,7 +1299,7 @@ def test_custom_behavior_logs(
 
     assert data["total"] > 0
     for behavior_log in data["items"]:
-        log = json.decodes(behavior_log)
+        log = json.loads(behavior_log)
 
         assert log["timestamp"]
         assert log["context"] in ("behavior", "behaviorScript", "behaviorScriptCustom")
