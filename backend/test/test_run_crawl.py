@@ -1312,3 +1312,35 @@ def test_custom_behavior_logs(
             custom_log_line_count += 1
 
     assert custom_log_line_count == 2
+
+
+def test_crawls_exclude_behavior_logs(
+    custom_behaviors_crawl_id, admin_auth_headers, default_org_id
+):
+    # Get endpoint
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{custom_behaviors_crawl_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data.get("behaviorLogs") == []
+
+    # replay.json endpoint
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{custom_behaviors_crawl_id}/replay.json",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data.get("behaviorLogs") == []
+
+    # List endpoint
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    crawls = r.json()["items"]
+    for crawl in crawls:
+        assert data.get("behaviorLogs") == []
