@@ -520,6 +520,7 @@ class CrawlConfigOps:
         description: Optional[str] = None,
         tags: Optional[List[str]] = None,
         schedule: Optional[bool] = None,
+        running: Optional[bool] = None,
         sort_by: str = "lastRun",
         sort_direction: int = -1,
     ) -> tuple[list[CrawlConfigOut], int]:
@@ -545,6 +546,9 @@ class CrawlConfigOps:
 
         if description:
             match_query["description"] = description
+
+        if running is not None:
+            match_query["isCrawlRunning"] = running
 
         if schedule is not None:
             if schedule:
@@ -1271,6 +1275,7 @@ def init_crawl_config_api(
         schedule: Optional[bool] = None,
         sortBy: str = "",
         sortDirection: int = -1,
+        running: Optional[bool] = None,
     ):
         # pylint: disable=duplicate-code
         if firstSeed:
@@ -1291,6 +1296,7 @@ def init_crawl_config_api(
             description=description,
             tags=tag,
             schedule=schedule,
+            running=running,
             page_size=pageSize,
             page=page,
             sort_by=sortBy,
