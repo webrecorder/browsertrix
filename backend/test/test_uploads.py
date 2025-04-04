@@ -607,7 +607,7 @@ def test_get_all_crawls_by_type(
     )
     assert r.status_code == 200
     data = r.json()
-    assert data["total"] == 5
+    assert data["total"] == 6
     for item in data["items"]:
         assert item["type"] == "crawl"
 
@@ -639,7 +639,7 @@ def test_get_all_crawls_by_user(
     )
     assert r.status_code == 200
     data = r.json()
-    assert data["total"] == 5
+    assert data["total"] == 6
     for item in data["items"]:
         assert item["userid"] == crawler_userid
 
@@ -823,9 +823,10 @@ def test_all_crawls_search_values(
     assert r.status_code == 200
     data = r.json()
 
-    assert len(data["names"]) == 7
+    assert len(data["names"]) == 8
     expected_names = [
         "Crawler User Test Crawl",
+        "Custom Behavior Logs Test Workflow",
         "My Upload Updated",
         "test2.wacz",
         "All Crawls Test Crawl",
@@ -848,12 +849,13 @@ def test_all_crawls_search_values(
     assert r.status_code == 200
     data = r.json()
 
-    assert len(data["names"]) == 4
+    assert len(data["names"]) == 5
     expected_names = [
         "Admin Test Crawl",
         "All Crawls Test Crawl",
         "Crawler User Crawl for Testing QA",
         "Crawler User Test Crawl",
+        "Custom Behavior Logs Test Workflow",
     ]
     for expected_name in expected_names:
         assert expected_name in data["names"]
