@@ -1298,20 +1298,23 @@ def test_custom_behavior_logs(
     custom_log_line_count = 0
 
     assert data["total"] > 0
-    for behavior_log in data["items"]:
-        log = json.loads(behavior_log)
-
+    for log in data["items"]:
         assert log["timestamp"]
         assert log["context"] in ("behavior", "behaviorScript", "behaviorScriptCustom")
 
         if log["context"] == "behaviorScriptCustom":
-            assert log["message"] in ("test-stat", "done!")
-            assert log["details"]["behavior"] == "TestBehavior"
+            assert log["message"] in (
+                "test-stat",
+                "done!",
+                "Using Site-Specific Behavior: TestBehavior",
+            )
+            if log["message"] in ("test-stat", "done!"):
+                assert log["details"]["behavior"] == "TestBehavior"
             assert log["details"]["page"] == "https://specs.webrecorder.net/"
 
             custom_log_line_count += 1
 
-    assert custom_log_line_count == 2
+    assert custom_log_line_count == 3
 
 
 def test_crawls_exclude_behavior_logs(

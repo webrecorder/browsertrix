@@ -838,6 +838,7 @@ def test_all_crawls_search_values(
     assert sorted(data["descriptions"]) == ["Lorem ipsum"]
     assert sorted(data["firstSeeds"]) == [
         "https://old.webrecorder.net/",
+        "https://specs.webrecorder.net/",
         "https://webrecorder.net/",
     ]
 
@@ -863,6 +864,7 @@ def test_all_crawls_search_values(
     assert sorted(data["descriptions"]) == ["Lorem ipsum"]
     assert sorted(data["firstSeeds"]) == [
         "https://old.webrecorder.net/",
+        "https://specs.webrecorder.net/",
         "https://webrecorder.net/",
     ]
 
