@@ -521,6 +521,7 @@ def custom_behaviors_crawl_id(admin_auth_headers, default_org_id):
             "customBehaviors": [
                 "https://raw.githubusercontent.com/webrecorder/browsertrix-crawler/refs/heads/main/tests/custom-behaviors/custom.js"
             ],
+            "limit": 1,
         },
     }
     r = requests.post(

@@ -639,7 +639,7 @@ def test_get_all_crawls_by_user(
     )
     assert r.status_code == 200
     data = r.json()
-    assert data["total"] == 6
+    assert data["total"] == 5
     for item in data["items"]:
         assert item["userid"] == crawler_userid
 
