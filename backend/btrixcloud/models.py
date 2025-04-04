@@ -774,6 +774,7 @@ class CoreCrawlable(BaseModel):
     fileCount: int = 0
 
     errors: Optional[List[str]] = []
+    behaviorLogs: Optional[List[str]] = []
 
 
 # ============================================================================
@@ -845,6 +846,7 @@ class CrawlOut(BaseMongoModel):
     tags: Optional[List[str]] = []
 
     errors: Optional[List[str]] = []
+    behaviorLogs: Optional[List[str]] = []
 
     collectionIds: Optional[List[UUID]] = []
 
@@ -1042,8 +1044,8 @@ class CrawlScaleResponse(BaseModel):
 
 
 # ============================================================================
-class CrawlError(BaseModel):
-    """Crawl error"""
+class CrawlLogMessage(BaseModel):
+    """Crawl log message"""
 
     timestamp: str
     logLevel: str
@@ -2892,10 +2894,10 @@ class PaginatedWebhookNotificationResponse(PaginatedResponse):
 
 
 # ============================================================================
-class PaginatedCrawlErrorResponse(PaginatedResponse):
-    """Response model for crawl errors"""
+class PaginatedCrawlLogResponse(PaginatedResponse):
+    """Response model for crawl logs"""
 
-    items: List[CrawlError]
+    items: List[CrawlLogMessage]
 
 
 # ============================================================================

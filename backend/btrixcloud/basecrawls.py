@@ -156,6 +156,7 @@ class BaseCrawlOps:
 
         files = res.pop("files", None)
         res.pop("errors", None)
+        res.pop("behaviorLogs", None)
 
         if not skip_resources:
             coll_ids = res.get("collectionIds")
@@ -568,7 +569,7 @@ class BaseCrawlOps:
             {"$match": query},
             {"$set": {"firstSeedObject": {"$arrayElemAt": ["$config.seeds", 0]}}},
             {"$set": {"firstSeed": "$firstSeedObject.url"}},
-            {"$unset": ["firstSeedObject", "errors", "config"]},
+            {"$unset": ["firstSeedObject", "errors", "behaviorLogs", "config"]},
             {"$set": {"activeQAStats": "$qa.stats"}},
             {
                 "$set": {
