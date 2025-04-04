@@ -66,7 +66,7 @@ export class CrawlLogs extends TailwindElement {
     | null = null;
 
   @state()
-  private filter: false | LogType = false;
+  private filter = LogType.Error;
 
   render() {
     if (!this.logs) return;
@@ -178,14 +178,6 @@ export class CrawlLogs extends TailwindElement {
         <div class="flex items-center gap-2">
           <div class="text-neutral-500">${msg("View:")}</div>
           <sl-button-group>
-            <sl-button
-              size="small"
-              pill
-              variant=${ifDefined(this.filter ? undefined : "neutral")}
-              @click=${() => (this.filter = false)}
-            >
-              ${msg("Any Type")}
-            </sl-button>
             ${Object.values(LogType).map(this.renderFilter)}
           </sl-button-group>
         </div>
