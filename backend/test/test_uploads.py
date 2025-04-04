@@ -826,7 +826,7 @@ def test_all_crawls_search_values(
     assert len(data["names"]) == 8
     expected_names = [
         "Crawler User Test Crawl",
-        "Custom Behavior Logs Test Workflow",
+        "Custom Behavior Logs",
         "My Upload Updated",
         "test2.wacz",
         "All Crawls Test Crawl",
@@ -855,7 +855,7 @@ def test_all_crawls_search_values(
         "All Crawls Test Crawl",
         "Crawler User Crawl for Testing QA",
         "Crawler User Test Crawl",
-        "Custom Behavior Logs Test Workflow",
+        "Custom Behavior Logs",
     ]
     for expected_name in expected_names:
         assert expected_name in data["names"]

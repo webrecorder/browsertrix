@@ -515,7 +515,7 @@ def all_crawls_delete_config_id(admin_crawl_id):
 def custom_behaviors_crawl_id(admin_auth_headers, default_org_id):
     crawl_data = {
         "runNow": True,
-        "name": "Custom Behavior Logs Test Workflow",
+        "name": "Custom Behavior Logs",
         "config": {
             "seeds": [{"url": "https://specs.webrecorder.net/"}],
             "customBehaviors": [
