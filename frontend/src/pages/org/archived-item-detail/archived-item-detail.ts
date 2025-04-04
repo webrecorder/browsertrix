@@ -121,7 +121,7 @@ export class ArchivedItemDetail extends BtrixElement {
     qa: msg("Quality Assurance"),
     replay: msg("Replay"),
     files: msg("WACZ Files"),
-    logs: msg("Error Logs"),
+    logs: msg("Logs"),
     config: msg("Crawl Settings"),
   };
 
@@ -336,7 +336,7 @@ export class ArchivedItemDetail extends BtrixElement {
         break;
       case "logs":
         sectionContent = this.renderPanel(
-          html` ${this.renderTitle(this.tabLabels.logs)}
+          html` ${this.renderTitle(msg(html`Error & Behavior Logs`))}
             <sl-button
               href=${`/api/orgs/${this.orgId}/crawls/${this.itemId}/logs?auth_bearer=${authToken}`}
               download=${`btrix-${this.itemId}-logs.txt`}
@@ -344,7 +344,7 @@ export class ArchivedItemDetail extends BtrixElement {
               variant="primary"
             >
               <sl-icon slot="prefix" name="cloud-download"></sl-icon>
-              ${msg("Download Logs")}
+              ${msg("Download All Logs")}
             </sl-button>`,
           this.renderLogs(),
         );
@@ -706,7 +706,7 @@ export class ArchivedItemDetail extends BtrixElement {
     `;
   }
 
-  private renderTitle(title: string | TemplateResult<1>) {
+  private renderTitle(title: string | TemplateResult) {
     return html`<h2
       class="flex items-center gap-2 text-lg font-medium leading-8"
     >
@@ -1023,7 +1023,7 @@ ${this.item?.description}
               `
             : html`<div class="rounded-lg border p-4">
                 <p class="text-sm text-neutral-400">
-                  ${msg("No error logs to display.")}
+                  ${msg("No logs to display.")}
                 </p>
               </div>`,
         )}
