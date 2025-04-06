@@ -25,7 +25,7 @@ export type PageChangeEvent = CustomEvent<PageChangeDetail>;
  * </btrix-pagination>
  * ```
  *
- * @event page-change {PageChangeEvent}
+ * @fires page-change {PageChangeEvent}
  */
 @customElement("btrix-pagination")
 @localized()
