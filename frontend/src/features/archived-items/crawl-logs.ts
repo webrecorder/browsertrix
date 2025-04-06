@@ -1,6 +1,7 @@
 import { localized, msg, str } from "@lit/localize";
 import { Task } from "@lit/task";
-import { html } from "lit";
+import clsx from "clsx";
+import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
@@ -10,7 +11,8 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import { emptyMessage } from "@/layouts/emptyMessage";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
-import { type CrawlLog } from "@/types/crawler";
+import { Workflow, type CrawlLog } from "@/types/crawler";
+import { tw } from "@/utils/tailwind";
 
 enum LogType {
   Error = "error",
@@ -43,7 +45,10 @@ const emptyMessageFor: Record<LogType, string> = {
 };
 
 /**
- * Logs and associated controls in workflow and archived item "Logs" tab
+ * Logs and associated controls in workflow "Watch Crawl"/"Logs"
+ * and archived item "Logs" tabs.
+ *
+ * To render "live" workflow logs, pass in a changing value as `liveKey`
  */
 @customElement("btrix-crawl-logs")
 @localized()
@@ -51,10 +56,28 @@ export class CrawlLogs extends BtrixElement {
   @property({ type: String })
   crawlId?: string;
 
+  @property({ type: Boolean })
+  collapsible = false;
+
+  @property({ type: String })
+  liveKey?: string;
+
   @state()
   private filter = LogType.Error;
 
+  @state()
+  private open = false;
+
   private page = DEFAULT_PAGE_PARAMS.page;
+
+  // TODO Check if API can provide this value
+  public get errorLogsTotal() {
+    return this.errorLogs.value?.total;
+  }
+
+  public get behaviorLogsTotal() {
+    return this.behaviorLogs.value?.total;
+  }
 
   private readonly errorLogs = new Task(this, {
     task: async ([crawlId], { signal }) => {
@@ -65,7 +88,7 @@ export class CrawlLogs extends BtrixElement {
       );
       return errorLogs;
     },
-    args: () => [this.crawlId] as const,
+    args: () => [this.crawlId, this.liveKey] as const,
   });
 
   private readonly behaviorLogs = new Task(this, {
@@ -77,7 +100,7 @@ export class CrawlLogs extends BtrixElement {
       );
       return behaviorLogs;
     },
-    args: () => [this.crawlId] as const,
+    args: () => [this.crawlId, this.liveKey] as const,
   });
 
   render() {
@@ -85,8 +108,62 @@ export class CrawlLogs extends BtrixElement {
       this.filter === LogType.Error ? this.errorLogs : this.behaviorLogs
     ).value;
 
+    if (this.collapsible) {
+      return html`
+        <sl-details
+          class="part-[content]:pt-0"
+          ?open=${this.open}
+          @sl-show=${() => (this.open = true)}
+          @sl-hide=${() => (this.open = false)}
+        >
+          <h3
+            slot="summary"
+            class="text flex flex-1 items-center justify-between gap-2 font-semibold leading-none"
+          >
+            ${msg("Logs")} ${this.renderBadges()}
+          </h3>
+
+          ${logs ? this.renderLogs(logs) : nothing}
+        </sl-details>
+      `;
+    }
+
     if (!logs) return;
 
+    return this.renderLogs(logs);
+  }
+
+  private renderBadges() {
+    return html`
+      <div
+        class=${clsx(
+          tw`mx-3 transition-opacity`,
+          this.open ? tw`opacity-0` : tw`opacity-100`,
+        )}
+      >
+        ${when(
+          this.errorLogs.value?.total,
+          (total) => html`
+            <btrix-badge variant="danger"
+              >${this.localize.number(total)}
+              ${labelFor[LogType.Error]}</btrix-badge
+            >
+          `,
+        )}
+        ${when(
+          this.behaviorLogs.value?.total,
+          (total) => html`
+            <btrix-badge variant="blue"
+              >${this.localize.number(total)}
+              ${labelFor[LogType.Behavior]}</btrix-badge
+            >
+          `,
+        )}
+      </div>
+    `;
+  }
+
+  private renderLogs(logs: APIPaginatedList<CrawlLog>) {
     return html`${this.renderControls(logs)}
     ${when(
       logs.total,
@@ -154,16 +231,24 @@ export class CrawlLogs extends BtrixElement {
 
   private readonly renderFilter = (logType: LogType) => {
     const logs = logType === LogType.Error ? this.errorLogs : this.behaviorLogs;
+    const selected = this.filter === logType;
 
     return html`
       <sl-button
-        variant=${ifDefined(this.filter === logType ? "neutral" : undefined)}
+        variant=${ifDefined(selected ? "neutral" : undefined)}
         size="small"
         pill
         @click=${() => (this.filter = logType)}
       >
         ${labelFor[logType]}
-        <btrix-badge slot="suffix">
+        <btrix-badge
+          slot="suffix"
+          variant=${selected
+            ? "neutral"
+            : logType === LogType.Error
+              ? "danger"
+              : "blue"}
+        >
           ${this.localize.number(logs.value?.total || 0)}
         </btrix-badge>
       </sl-button>

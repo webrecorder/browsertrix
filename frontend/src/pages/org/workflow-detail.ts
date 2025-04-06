@@ -1132,29 +1132,30 @@ export class WorkflowDetail extends BtrixElement {
     return html`
       <div aria-live="polite" aria-busy=${this.isLoading}>
         ${when(
-          this.workflow?.isCrawlRunning,
-          () =>
-            html`<div class="mb-4">
-                <btrix-alert variant="success" class="text-sm">
-                  ${msg(
-                    "You are viewing error and behavior logs for the currently running crawl.",
-                  )}
-                  <a
-                    href="${`${window.location.pathname}#watch`}"
-                    class="underline hover:no-underline"
-                  >
-                    ${msg("Watch Crawl")}
-                  </a>
-                </btrix-alert>
-              </div>
-              TODO watch `,
-          () =>
-            when(
-              this.lastCrawlId || this.workflow?.lastCrawlId,
-              (crawlId) =>
-                html`<btrix-crawl-logs crawlId=${crawlId}></btrix-crawl-logs>`,
-              () => this.renderNoCrawlLogs(),
-            ),
+          this.lastCrawlId || this.workflow?.lastCrawlId,
+          (crawlId) =>
+            this.workflow?.isCrawlRunning
+              ? html`
+                  <div class="mb-4">
+                    <btrix-alert variant="success" class="text-sm">
+                      ${msg(
+                        "You are viewing error and behavior logs for the currently running crawl.",
+                      )}
+                      <a
+                        href="${`${window.location.pathname}#watch`}"
+                        class="underline hover:no-underline"
+                      >
+                        ${msg("Watch Crawl")}
+                      </a>
+                    </btrix-alert>
+                  </div>
+                  <btrix-crawl-logs
+                    crawlId=${crawlId}
+                    liveKey=${ifDefined(this.timerId)}
+                  ></btrix-crawl-logs>
+                `
+              : html`<btrix-crawl-logs crawlId=${crawlId}></btrix-crawl-logs>`,
+          () => this.renderNoCrawlLogs(),
         )}
       </div>
     `;
@@ -1193,33 +1194,15 @@ export class WorkflowDetail extends BtrixElement {
   }
 
   private renderCrawlErrors() {
-    return html`TODO`;
-    // return html`
-    //   <sl-details>
-    //     <h3
-    //       slot="summary"
-    //       class="text flex items-center gap-2 font-semibold leading-none"
-    //     >
-    //       ${msg(html`Error & Behavior Logs`)}
-    //       <btrix-badge variant=${this.logs?.total ? "danger" : "neutral"}
-    //         >${this.logs?.total
-    //           ? this.localize.number(this.logs.total)
-    //           : 0}</btrix-badge
-    //       >
-    //     </h3>
-    //     <btrix-crawl-logs .logs=${this.logs}></btrix-crawl-logs>
-    //     ${when(
-    //       this.logs?.total && this.logs.total > LOGS_PAGE_SIZE,
-    //       () => html`
-    //         <p class="my-4 text-xs text-neutral-500">
-    //           ${msg(
-    //             str`Displaying latest ${this.localize.number(LOGS_PAGE_SIZE)} errors of ${this.localize.number(this.logs!.total)}.`,
-    //           )}
-    //         </p>
-    //       `,
-    //     )}
-    //   </sl-details>
-    // `;
+    if (!this.lastCrawlId) return;
+
+    return html`
+      <btrix-crawl-logs
+        crawlId=${this.lastCrawlId}
+        liveKey=${ifDefined(this.timerId)}
+        collapsible
+      ></btrix-crawl-logs>
+    `;
   }
 
   private renderExclusions() {
