@@ -49,13 +49,13 @@ export class CrawlLogTable extends TailwindElement {
   render() {
     if (!this.logs) return;
 
-    const rowClasses = tw`grid grid-cols-[9rem_3rem_20rem_1fr] leading-[1.3]`;
+    const rowClasses = tw`grid grid-cols-[9rem_2.5rem_20rem_1fr] leading-[1.3]`;
 
     return html`<btrix-numbered-list class="text-xs">
         <btrix-numbered-list-header slot="header">
           <div class=${rowClasses}>
             <div class="px-2">${msg("Timestamp")}</div>
-            <div>${msg("Severity")}</div>
+            <div>${msg("Level")}</div>
             <div class="px-2">${msg("Message")}</div>
             <div class="px-2">${msg("Page URL")}</div>
           </div>

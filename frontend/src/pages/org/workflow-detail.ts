@@ -1057,7 +1057,7 @@ export class WorkflowDetail extends BtrixElement {
             ></btrix-screencast>
           </div>
 
-          <section class="mt-4">${this.renderCrawlErrors()}</section>
+          <section class="mt-4">${this.renderWatchLogs()}</section>
           <section class="mt-8">${this.renderExclusions()}</section>
         `,
         () =>
@@ -1193,14 +1193,14 @@ export class WorkflowDetail extends BtrixElement {
     `;
   }
 
-  private renderCrawlErrors() {
+  private renderWatchLogs() {
     if (!this.lastCrawlId) return;
 
     return html`
       <btrix-crawl-logs
         crawlId=${this.lastCrawlId}
         liveKey=${ifDefined(this.timerId)}
-        pageSize="100"
+        pageSize=${1000}
         collapsible
       ></btrix-crawl-logs>
     `;
