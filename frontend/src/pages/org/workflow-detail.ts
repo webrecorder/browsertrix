@@ -1200,6 +1200,7 @@ export class WorkflowDetail extends BtrixElement {
       <btrix-crawl-logs
         crawlId=${this.lastCrawlId}
         liveKey=${ifDefined(this.timerId)}
+        pageSize="100"
         collapsible
       ></btrix-crawl-logs>
     `;

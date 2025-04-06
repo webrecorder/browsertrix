@@ -11,7 +11,8 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import { emptyMessage } from "@/layouts/emptyMessage";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
-import { Workflow, type CrawlLog } from "@/types/crawler";
+import { type CrawlLog } from "@/types/crawler";
+import { stopProp } from "@/utils/events";
 import { tw } from "@/utils/tailwind";
 
 enum LogType {
@@ -19,14 +20,13 @@ enum LogType {
   Behavior = "behavior",
 }
 
-const DEFAULT_PAGE_PARAMS: Partial<APIPaginationQuery> = {
+const DEFAULT_PAGE_PARAMS: Required<APIPaginationQuery> = {
   page: 1,
   pageSize: 50,
 } as const;
 
 const queryFor =
-  (logs?: APIPaginatedList<CrawlLog>) =>
-  (params?: Partial<APIPaginationQuery>) => {
+  (logs?: APIPaginatedList<CrawlLog>) => (params?: APIPaginationQuery) => {
     return queryString.stringify({
       page: params?.page ?? logs?.page ?? DEFAULT_PAGE_PARAMS.page,
       pageSize:
@@ -59,6 +59,9 @@ export class CrawlLogs extends BtrixElement {
   @property({ type: Boolean })
   collapsible = false;
 
+  @property({ type: Number })
+  pageSize = DEFAULT_PAGE_PARAMS.pageSize;
+
   @property({ type: String })
   liveKey?: string;
 
@@ -82,8 +85,9 @@ export class CrawlLogs extends BtrixElement {
   private readonly errorLogs = new Task(this, {
     task: async ([crawlId], { signal }) => {
       if (!crawlId) return;
+
       const errorLogs = await this.getErrorLogs(
-        { crawlId, page: this.page },
+        { crawlId, page: this.page, pageSize: this.pageSize },
         signal,
       );
       return errorLogs;
@@ -94,8 +98,9 @@ export class CrawlLogs extends BtrixElement {
   private readonly behaviorLogs = new Task(this, {
     task: async ([crawlId], { signal }) => {
       if (!crawlId) return;
+
       const behaviorLogs = await this.getBehaviorLogs(
-        { crawlId, page: this.page },
+        { crawlId, page: this.page, pageSize: this.pageSize },
         signal,
       );
       return behaviorLogs;
@@ -144,7 +149,7 @@ export class CrawlLogs extends BtrixElement {
         ${when(
           this.errorLogs.value?.total,
           (total) => html`
-            <btrix-badge variant="danger"
+            <btrix-badge variant=${"danger"}
               >${this.localize.number(total)}
               ${labelFor[LogType.Error]}</btrix-badge
             >
@@ -184,6 +189,8 @@ export class CrawlLogs extends BtrixElement {
               void (this.filter === LogType.Error
                 ? this.errorLogs.run()
                 : this.behaviorLogs.run());
+
+              this.scrollIntoView({ behavior: "smooth", block: "start" });
             }}
           >
           </btrix-pagination>
@@ -212,6 +219,10 @@ export class CrawlLogs extends BtrixElement {
             content=${msg(
               "This is a selection of the most relevant behaviors and errors logged during the crawl. Download all logs to view additional warning, info, and debug logs.",
             )}
+            @sl-show=${stopProp}
+            @sl-after-show=${stopProp}
+            @sl-hide=${stopProp}
+            @sl-after-hide=${stopProp}
           >
             <sl-icon
               class="mx-0.5 align-[-.175em]"
@@ -231,6 +242,7 @@ export class CrawlLogs extends BtrixElement {
 
   private readonly renderFilter = (logType: LogType) => {
     const logs = logType === LogType.Error ? this.errorLogs : this.behaviorLogs;
+    const total = logs.value?.total || 0;
     const selected = this.filter === logType;
 
     return html`
@@ -243,13 +255,13 @@ export class CrawlLogs extends BtrixElement {
         ${labelFor[logType]}
         <btrix-badge
           slot="suffix"
-          variant=${selected
+          variant=${selected || !total
             ? "neutral"
             : logType === LogType.Error
               ? "danger"
               : "blue"}
         >
-          ${this.localize.number(logs.value?.total || 0)}
+          ${this.localize.number(total)}
         </btrix-badge>
       </sl-button>
     `;
