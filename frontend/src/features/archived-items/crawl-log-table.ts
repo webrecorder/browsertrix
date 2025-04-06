@@ -6,6 +6,7 @@ import { customElement, property, state } from "lit/decorators.js";
 import { TailwindElement } from "@/classes/TailwindElement";
 import { CrawlLogLevel, type CrawlLog } from "@/types/crawler";
 import { truncate } from "@/utils/css";
+import { stopProp } from "@/utils/events";
 import { tw } from "@/utils/tailwind";
 
 /**
@@ -116,9 +117,7 @@ export class CrawlLogTable extends TailwindElement {
                 </div>
                 <div class="whitespace-pre-wrap">${log.message}</div>
                 <div class="truncate" title="${log.details.page as string}">
-                  <a target="_blank" href="${log.details.page as string}"
-                    >${log.details.page}</a
-                  >
+                  ${log.details.page}
                 </div>
               </div>
             </btrix-numbered-list-item>
@@ -129,8 +128,14 @@ export class CrawlLogTable extends TailwindElement {
       <btrix-dialog
         .label=${msg("Log Details")}
         .open=${!!this.selectedLog}
-        style="--width: 40rem"
-        @sl-after-hide=${() => (this.selectedLog = null)}
+        class="--width:40rem"
+        @sl-show=${stopProp}
+        @sl-after-show=${stopProp}
+        @sl-hide=${stopProp}
+        @sl-after-hide=${(e: CustomEvent) => {
+          stopProp(e);
+          this.selectedLog = null;
+        }}
         >${this.renderLogDetails()}</btrix-dialog
       > `;
   }
@@ -201,11 +206,27 @@ export class CrawlLogTable extends TailwindElement {
               ${key === "stack" ||
               (typeof value !== "string" && typeof value !== "number")
                 ? this.renderPre(value)
-                : value || "--"}
+                : key === "page"
+                  ? this.renderPage(value as string)
+                  : value || "--"}
             </btrix-desc-list-item>
           `,
         )}
       </btrix-desc-list>
+    `;
+  }
+
+  private renderPage(page: string) {
+    return html`
+      <sl-tooltip content=${msg("Open live page in new tab")}>
+        <a
+          class="truncate text-blue-500 hover:text-blue-400"
+          href=${page}
+          target="_blank"
+          rel="noopener noreferrer nofollow"
+          >${page}</a
+        >
+      </sl-tooltip>
     `;
   }
 
