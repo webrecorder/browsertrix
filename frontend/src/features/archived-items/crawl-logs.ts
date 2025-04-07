@@ -133,7 +133,17 @@ export class CrawlLogs extends BtrixElement {
         <sl-details
           class="part-[content]:pt-0"
           ?open=${this.open}
-          @sl-show=${() => (this.open = true)}
+          @sl-show=${() => {
+            if (
+              this.filter === LogType.Error &&
+              !this.errorLogsTotal &&
+              this.behaviorLogsTotal
+            ) {
+              this.filter = LogType.Behavior;
+            }
+
+            this.open = true;
+          }}
           @sl-hide=${() => (this.open = false)}
         >
           <h3
