@@ -243,7 +243,6 @@ export class CrawlLogTable extends TailwindElement {
     const { context, details } = this.selectedLog;
     const { page, stack, ...unknownDetails } = details;
 
-    console.log(details);
     return html`
       <btrix-desc-list>
         <btrix-desc-list-item label=${msg("TIMESTAMP")}>
