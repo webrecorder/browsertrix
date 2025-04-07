@@ -269,7 +269,6 @@ export type CrawlLog = {
   details: Record<string, unknown> & {
     behavior?: string;
     page?: string;
-    frameUrl?: string;
     stack?: string;
   };
   context: CrawlLogContext | string;

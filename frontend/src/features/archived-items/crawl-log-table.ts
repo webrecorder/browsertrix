@@ -19,6 +19,15 @@ const labelFor: Record<CrawlLogContext, string> = {
   [CrawlLogContext.BehaviorScriptCustom]: msg("Custom Behavior Script"),
 };
 
+const contextLevelFor: Record<CrawlLogContext, number> = {
+  [CrawlLogContext.Behavior]: 1,
+  [CrawlLogContext.BehaviorScript]: 2,
+  [CrawlLogContext.General]: 3,
+  [CrawlLogContext.BehaviorScriptCustom]: 4,
+};
+// Minimum context level to highlight
+const MIN_CONTEXT_LEVEL = 3 as const;
+
 /**
  * Tabular list of logs
  */
@@ -88,7 +97,14 @@ export class CrawlLogTable extends TailwindElement {
               <div slot="marker" class="min-w-[3ch]">
                 ${idx + 1 + this.offset}.
               </div>
-              <div class=${rowClasses}>
+              <div
+                class=${clsx(
+                  rowClasses,
+                  (contextLevelFor[log.context as unknown as CrawlLogContext] ||
+                    0) < MIN_CONTEXT_LEVEL && tw`text-neutral-500`,
+                  tw`group-hover:text-inherit`,
+                )}
+              >
                 <div>
                   <sl-tooltip
                     placement="bottom"
@@ -128,7 +144,7 @@ export class CrawlLogTable extends TailwindElement {
                     @sl-hide=${stopProp}
                     @sl-after-hide=${stopProp}
                   >
-                    ${this.renderSeverity(log.logLevel)}
+                    ${this.renderLevel(log)}
                   </sl-tooltip>
                 </div>
                 <div class="whitespace-pre-wrap">${log.message}</div>
@@ -162,9 +178,13 @@ export class CrawlLogTable extends TailwindElement {
       > `;
   }
 
-  private renderSeverity(level: CrawlLogLevel) {
+  private renderLevel(log: CrawlLog) {
+    const logLevel = log.logLevel;
+    const contextLevel =
+      contextLevelFor[log.context as unknown as CrawlLogContext] || 0;
     const baseClasses = tw`size-4 group-hover:text-inherit`;
-    switch (level) {
+
+    switch (logLevel) {
       case CrawlLogLevel.Fatal:
         return html`
           <sl-icon
@@ -190,7 +210,12 @@ export class CrawlLogTable extends TailwindElement {
         return html`
           <sl-icon
             name="info-square"
-            class=${clsx(tw`text-blue-500`, baseClasses)}
+            class=${clsx(
+              contextLevel < MIN_CONTEXT_LEVEL
+                ? tw`text-neutral-400`
+                : tw`text-blue-500`,
+              baseClasses,
+            )}
           ></sl-icon>
         `;
       case CrawlLogLevel.Debug:
