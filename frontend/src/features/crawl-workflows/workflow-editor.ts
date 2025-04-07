@@ -1252,38 +1252,42 @@ https://archiveweb.page/images/${"logo.svg"}`}
       )}
       ${inputCol(
         html`<sl-checkbox
-            name="autoclickBehavior"
-            ?checked=${this.formState.autoclickBehavior}
-          >
-            ${labelFor.autoclickBehavior}
-          </sl-checkbox>
-          ${when(
-            this.formState.autoclickBehavior,
-            () => html`
-              <div class="mt-4">
-                <btrix-syntax-input
-                  label=${labelFor.clickSelector}
-                  language="css"
-                  value=${this.formState.clickSelector}
-                  placeholder="${msg("Default:")} ${DEFAULT_AUTOCLICK_SELECTOR}"
-                  @btrix-change=${(e: CustomEvent) => {
-                    this.updateFormState(
-                      {
-                        clickSelector: e.detail.value,
-                      },
-                      true,
-                    );
-                  }}
-                ></btrix-syntax-input>
-              </div>
-            `,
-          )} `,
+          name="autoclickBehavior"
+          ?checked=${this.formState.autoclickBehavior}
+        >
+          ${labelFor.autoclickBehavior}
+        </sl-checkbox>`,
       )}
       ${this.renderHelpTextCol(
         msg(
-          `Automatically click on all link-like elements. Useful for capturing in-page interactions or for clicking links without navigating away from the page.`,
+          `Automatically click on all link-like elements without navigating away from the page.`,
         ),
         false,
+      )}
+      ${when(
+        this.formState.autoclickBehavior,
+        () => html`
+          ${inputCol(
+            html`<btrix-syntax-input
+              label=${labelFor.clickSelector}
+              language="css"
+              value=${this.formState.clickSelector}
+              placeholder="${msg("Default:")} ${DEFAULT_AUTOCLICK_SELECTOR}"
+              @btrix-change=${(e: CustomEvent) => {
+                this.updateFormState(
+                  {
+                    clickSelector: e.detail.value,
+                  },
+                  true,
+                );
+              }}
+            ></btrix-syntax-input>`,
+          )}
+          ${this.renderHelpTextCol(
+            msg(`Customize the CSS selector used to autoclick elements.`),
+            false,
+          )}
+        `,
       )}
       ${this.renderCustomBehaviors()}
       ${this.renderSectionHeading(msg("Page Timing"))}
