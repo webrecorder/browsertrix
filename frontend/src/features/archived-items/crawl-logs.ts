@@ -1,4 +1,4 @@
-import { localized, msg, str } from "@lit/localize";
+import { localized, msg } from "@lit/localize";
 import { Task } from "@lit/task";
 import clsx from "clsx";
 import { html, nothing } from "lit";
@@ -66,7 +66,7 @@ export class CrawlLogs extends BtrixElement {
   liveKey?: string;
 
   @state()
-  private filter = LogType.Error;
+  private filter: LogType | null = null;
 
   @state()
   private open = false;
@@ -90,6 +90,14 @@ export class CrawlLogs extends BtrixElement {
         { crawlId, page: this.page, pageSize: this.pageSize },
         signal,
       );
+
+      if (!errorLogs.total) {
+        await this.behaviorLogs.taskComplete;
+
+        if (this.behaviorLogsTotal) {
+          this.filter = LogType.Behavior;
+        }
+      }
       return errorLogs;
     },
     args: () => [this.crawlId, this.liveKey] as const,
@@ -109,9 +117,10 @@ export class CrawlLogs extends BtrixElement {
   });
 
   render() {
-    const logs = (
-      this.filter === LogType.Error ? this.errorLogs : this.behaviorLogs
-    ).value;
+    const logs = this.filter
+      ? (this.filter === LogType.Error ? this.errorLogs : this.behaviorLogs)
+          .value
+      : undefined;
 
     if (this.collapsible) {
       return html`
@@ -128,14 +137,12 @@ export class CrawlLogs extends BtrixElement {
             ${msg("Logs")} ${this.renderBadges()}
           </h3>
 
-          ${logs ? this.renderLogs(logs) : nothing}
+          ${this.renderControls(logs)} ${when(logs, this.renderLogs)}
         </sl-details>
       `;
     }
 
-    if (!logs) return;
-
-    return this.renderLogs(logs);
+    return html`${this.renderControls(logs)} ${when(logs, this.renderLogs)}`;
   }
 
   private renderBadges() {
@@ -168,51 +175,57 @@ export class CrawlLogs extends BtrixElement {
     `;
   }
 
-  private renderLogs(logs: APIPaginatedList<CrawlLog>) {
-    return html`${this.renderControls(logs)}
-    ${when(
-      logs.total,
-      () => html`
-        <btrix-crawl-log-table
-          .logs=${logs.items}
-          offset=${(logs.page - 1) * logs.pageSize}
-        ></btrix-crawl-log-table>
+  private readonly renderLogs = (logs: APIPaginatedList<CrawlLog>) => {
+    return html`
+      ${when(
+        this.filter && logs.total,
+        () => html`
+          <btrix-crawl-log-table
+            .logs=${logs.items}
+            offset=${(logs.page - 1) * logs.pageSize}
+          ></btrix-crawl-log-table>
 
-        <footer class="my-4 flex justify-center">
-          <btrix-pagination
-            page=${logs.page}
-            totalCount=${logs.total}
-            size=${logs.pageSize}
-            @page-change=${(e: PageChangeEvent) => {
-              this.page = e.detail.page;
+          <footer class="my-4 flex justify-center">
+            <btrix-pagination
+              page=${logs.page}
+              totalCount=${logs.total}
+              size=${logs.pageSize}
+              @page-change=${(e: PageChangeEvent) => {
+                this.page = e.detail.page;
 
-              void (this.filter === LogType.Error
-                ? this.errorLogs.run()
-                : this.behaviorLogs.run());
+                void (this.filter === LogType.Error
+                  ? this.errorLogs.run()
+                  : this.behaviorLogs.run());
 
-              this.scrollIntoView({ behavior: "smooth", block: "start" });
-            }}
-          >
-          </btrix-pagination>
-        </footer>
-      `,
-      () => emptyMessage({ message: emptyMessageFor[this.filter] }),
-    )} `;
-  }
+                this.scrollIntoView({ behavior: "smooth", block: "start" });
+              }}
+            >
+            </btrix-pagination>
+          </footer>
+        `,
+        () =>
+          this.filter
+            ? emptyMessage({ message: emptyMessageFor[this.filter] })
+            : nothing,
+      )}
+    `;
+  };
 
-  private renderControls(logs: APIPaginatedList<CrawlLog>) {
-    const displayCount = logs.items.length || 0;
-    const totalCount =
-      (this.errorLogs.value?.total || 0) +
-      (this.behaviorLogs.value?.total || 0);
+  private renderControls(logs?: APIPaginatedList<CrawlLog>) {
+    const placeholder = html`<sl-skeleton class="w-4"></sl-skeleton>`;
+    const displayCount = logs ? logs.items.length || 0 : placeholder;
+    const totalCount = logs
+      ? (this.errorLogs.value?.total || 0) +
+        (this.behaviorLogs.value?.total || 0)
+      : placeholder;
 
     return html`
       <div
         class="mb-3 flex items-center justify-between gap-3 rounded-lg border bg-neutral-50 p-3"
       >
-        <p class="text-neutral-500">
+        <p class="flex items-center gap-1.5 text-neutral-500">
           ${msg(
-            str`Viewing ${displayCount} of ${totalCount} most relevant logs`,
+            html`Viewing ${displayCount} of ${totalCount} most relevant logs`,
           )}
           <sl-tooltip
             placement="right"
@@ -224,10 +237,7 @@ export class CrawlLogs extends BtrixElement {
             @sl-hide=${stopProp}
             @sl-after-hide=${stopProp}
           >
-            <sl-icon
-              class="mx-0.5 align-[-.175em]"
-              name="info-circle"
-            ></sl-icon>
+            <sl-icon class="align-[-.175em]" name="info-circle"></sl-icon>
           </sl-tooltip>
         </p>
         <div class="flex items-center gap-2">
@@ -242,7 +252,7 @@ export class CrawlLogs extends BtrixElement {
 
   private readonly renderFilter = (logType: LogType) => {
     const logs = logType === LogType.Error ? this.errorLogs : this.behaviorLogs;
-    const total = logs.value?.total || 0;
+
     const selected = this.filter === logType;
 
     return html`
@@ -253,16 +263,21 @@ export class CrawlLogs extends BtrixElement {
         @click=${() => (this.filter = logType)}
       >
         ${labelFor[logType]}
-        <btrix-badge
-          slot="suffix"
-          variant=${selected || !total
-            ? "neutral"
-            : logType === LogType.Error
-              ? "danger"
-              : "blue"}
-        >
-          ${this.localize.number(total)}
-        </btrix-badge>
+        ${when(logs, (logs) => {
+          const total = logs.value?.total || 0;
+          return html`
+            <btrix-badge
+              slot="suffix"
+              variant=${selected || !total
+                ? "neutral"
+                : logType === LogType.Error
+                  ? "danger"
+                  : "blue"}
+            >
+              ${this.localize.number(total)}
+            </btrix-badge>
+          `;
+        })}
       </sl-button>
     `;
   };
