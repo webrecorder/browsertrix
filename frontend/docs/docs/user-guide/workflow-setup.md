@@ -187,6 +187,12 @@ When clicking a link-like element that would normally result in navigation, auto
     
     - Websites that use `<a>` in place of a `<button>` to reveal in-page content.
 
+### Click Selector
+
+When autoclick is enabled, you can customize which element is automatically clicked by specifying a CSS selector.
+
+See [Basic CSS selectors (MDN)](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics/Basic_selectors) for examples of valid CSS selectors.
+
 **Page Timing**
 
 Page timing gives you more granular control over how long the browser should stay on a page and when behaviors should run on a page. Add limits to decrease the amount of time the browser spends on a page, and add delays to increase the amount of time the browser waits on a page. Adding delays will increase the total amount of time spent on a crawl and may impact your overall crawl minutes.
