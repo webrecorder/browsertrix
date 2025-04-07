@@ -33,8 +33,17 @@ export class SyntaxInput extends TailwindElement {
   @property({ type: Boolean })
   required?: boolean;
 
+  @property({ type: Boolean })
+  disabled?: boolean;
+
   @property({ type: String })
   placeholder?: string;
+
+  @property({ type: String })
+  name?: string;
+
+  @property({ type: String })
+  label?: string;
 
   @property({ type: String })
   language?: Code["language"];
@@ -103,19 +112,22 @@ export class SyntaxInput extends TailwindElement {
       hoist
       placement="bottom"
     >
-      <div class=${clsx(tw`relative overflow-hidden p-px`)}>
+      <div class=${clsx(tw`relative`)} part="base">
         <sl-input
           class=${clsx(
             tw`relative z-10 block`,
-            tw`[--sl-input-border-color:transparent] [--sl-input-border-radius-medium:0] [--sl-input-font-family:var(--sl-font-mono)] [--sl-input-spacing-medium:var(--sl-spacing-small)]`,
+            tw`[--sl-input-font-family:var(--sl-font-mono)] [--sl-input-spacing-medium:var(--sl-spacing-small)]`,
             tw`caret-black part-[base]:bg-transparent part-[input]:text-transparent`,
           )}
           spellcheck="false"
           value=${this.value}
+          name=${ifDefined(this.name)}
+          label=${ifDefined(this.label)}
           minlength=${ifDefined(this.minlength)}
           maxlength=${ifDefined(this.maxlength)}
           placeholder=${ifDefined(this.placeholder)}
           ?required=${this.required}
+          ?disabled=${this.disabled}
           @sl-input=${async (e: SlInputEvent) => {
             const value = (e.target as SlInput).value;
 
@@ -125,6 +137,12 @@ export class SyntaxInput extends TailwindElement {
               this.code.value = value;
 
               await this.code.updateComplete;
+
+              this.dispatchEvent(
+                new CustomEvent("btrix-change", {
+                  detail: { value },
+                }),
+              );
 
               void this.scrollSync({ pad: true });
             }
@@ -157,11 +175,11 @@ export class SyntaxInput extends TailwindElement {
 
         <btrix-code
           class=${clsx(
-            tw`absolute inset-0.5 flex items-center overflow-auto px-3 [scrollbar-width:none]`,
+            tw`absolute inset-x-px bottom-0 flex h-[var(--sl-input-height-medium)] items-center overflow-auto px-3 [scrollbar-width:none]`,
+            tw`part-[base]:whitespace-pre`,
           )}
           value=${this.value}
           language=${ifDefined(this.language)}
-          .wrap=${false}
           aria-hidden="true"
         ></btrix-code>
       </div>

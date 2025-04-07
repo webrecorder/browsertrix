@@ -14,6 +14,7 @@ import { tw } from "@/utils/tailwind";
 
 const SELECTOR_DELIMITER = "->" as const;
 const emptyCells = ["", ""];
+const syntaxInputClasses = tw`flex-1 [--sl-input-border-color:transparent] [--sl-input-border-radius-medium:0]`;
 
 /**
  * @fires btrix-change
@@ -145,12 +146,12 @@ export class LinkSelectorTable extends BtrixElement {
 
     return html`
       <btrix-table-row class=${i > 0 ? "border-t" : ""}>
-        <btrix-table-cell>
+        <btrix-table-cell class=${clsx(this.editable && tw`p-0.5`)}>
           ${when(
             this.editable,
             () => html`
               <btrix-syntax-input
-                class="flex-1"
+                class=${syntaxInputClasses}
                 value=${sel}
                 language="css"
                 placeholder="Enter selector"
@@ -189,12 +190,14 @@ export class LinkSelectorTable extends BtrixElement {
               ></btrix-code>`,
           )}
         </btrix-table-cell>
-        <btrix-table-cell class="border-l">
+        <btrix-table-cell
+          class=${clsx(tw`border-l`, this.editable && tw`p-0.5`)}
+        >
           ${when(
             this.editable,
             () => html`
               <btrix-syntax-input
-                class="flex-1"
+                class=${syntaxInputClasses}
                 value=${attr}
                 language="xml"
                 placeholder="Enter attribute"
