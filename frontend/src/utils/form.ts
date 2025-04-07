@@ -73,6 +73,10 @@ export function formValidator(el: LitElement) {
   return async function checkFormValidity(form: HTMLFormElement) {
     await el.updateComplete;
 
+    const valid = form.checkValidity();
+
+    if (!valid) return false;
+
     const formControls = getFormControls(form);
 
     return (

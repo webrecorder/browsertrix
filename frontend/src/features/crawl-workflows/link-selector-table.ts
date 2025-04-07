@@ -9,6 +9,7 @@ import { nanoid } from "nanoid";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { SyntaxInput } from "@/components/ui/syntax-input";
+import type { BtrixChangeEvent } from "@/events/btrix-change";
 import type { SeedConfig } from "@/types/crawler";
 import { tw } from "@/utils/tailwind";
 
@@ -156,9 +157,9 @@ export class LinkSelectorTable extends BtrixElement {
                 language="css"
                 placeholder="Enter selector"
                 required
-                @sl-change=${(e: CustomEvent) => {
-                  const el = e.currentTarget as SyntaxInput;
-                  const value = el.input?.value.trim() || "";
+                @btrix-change=${(e: BtrixChangeEvent<typeof sel>) => {
+                  const el = e.target as SyntaxInput;
+                  const value = e.detail.value.trim();
 
                   void this.updateRows(
                     {
@@ -202,9 +203,9 @@ export class LinkSelectorTable extends BtrixElement {
                 language="xml"
                 placeholder="Enter attribute"
                 required
-                @sl-change=${(e: CustomEvent) => {
-                  const el = e.currentTarget as SyntaxInput;
-                  const value = el.input?.value.trim() || "";
+                @btrix-change=${(e: BtrixChangeEvent<typeof attr>) => {
+                  const el = e.target as SyntaxInput;
+                  const value = e.detail.value.trim();
 
                   void this.updateRows(
                     {
