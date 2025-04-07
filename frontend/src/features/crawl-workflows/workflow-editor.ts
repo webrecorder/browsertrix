@@ -2214,7 +2214,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         `${this.navigate.orgBasePath}/workflows/${this.configId || data.id}${
           crawlId && !storageQuotaReached && !executionMinutesQuotaReached
             ? "#watch"
-            : "#settings"
+            : ""
         }`,
       );
     } catch (e) {
