@@ -80,7 +80,11 @@ export class CrawlLogTable extends TailwindElement {
               </div>
               <div class=${rowClasses}>
                 <div>
-                  <sl-tooltip placement="bottom">
+                  <sl-tooltip
+                    placement="bottom"
+                    @sl-hide=${stopProp}
+                    @sl-after-hide=${stopProp}
+                  >
                     <btrix-format-date
                       date=${log.timestamp}
                       month="2-digit"
@@ -111,6 +115,8 @@ export class CrawlLogTable extends TailwindElement {
                     class="capitalize"
                     content=${log.logLevel}
                     placement="bottom"
+                    @sl-hide=${stopProp}
+                    @sl-after-hide=${stopProp}
                   >
                     ${this.renderSeverity(log.logLevel)}
                   </sl-tooltip>
@@ -218,7 +224,11 @@ export class CrawlLogTable extends TailwindElement {
 
   private renderPage(page: string) {
     return html`
-      <sl-tooltip content=${msg("Open live page in new tab")}>
+      <sl-tooltip
+        content=${msg("Open live page in new tab")}
+        @sl-hide=${stopProp}
+        @sl-after-hide=${stopProp}
+      >
         <a
           class="truncate text-blue-500 hover:text-blue-400"
           href=${page}
