@@ -1274,11 +1274,32 @@ https://archiveweb.page/images/${"logo.svg"}`}
       )}
       ${inputCol(
         html`<sl-checkbox
-          name="autoclickBehavior"
-          ?checked=${this.formState.autoclickBehavior}
-        >
-          ${labelFor.autoclickBehavior}
-        </sl-checkbox>`,
+            name="autoclickBehavior"
+            ?checked=${this.formState.autoclickBehavior}
+          >
+            ${labelFor.autoclickBehavior}
+          </sl-checkbox>
+          ${when(
+            this.formState.autoclickBehavior,
+            () => html`
+              <div class="mt-4">
+                <btrix-syntax-input
+                  label=${labelFor.clickSelector}
+                  language="css"
+                  value=${this.formState.clickSelector}
+                  placeholder="${msg("Default:")} ${DEFAULT_AUTOCLICK_SELECTOR}"
+                  @btrix-change=${(e: CustomEvent) => {
+                    this.updateFormState(
+                      {
+                        clickSelector: e.detail.value,
+                      },
+                      true,
+                    );
+                  }}
+                ></btrix-syntax-input>
+              </div>
+            `,
+          )} `,
       )}
       ${this.renderHelpTextCol(
         msg(
@@ -2189,7 +2210,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         `${this.navigate.orgBasePath}/workflows/${this.configId || data.id}${
           crawlId && !storageQuotaReached && !executionMinutesQuotaReached
             ? "#watch"
-            : ""
+            : "#settings"
         }`,
       );
     } catch (e) {
@@ -2356,7 +2377,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
           ? this.linkSelectorTable.value
           : DEFAULT_SELECT_LINKS,
         customBehaviors: this.customBehaviorsTable?.value || [],
-        clickSelector: DEFAULT_AUTOCLICK_SELECTOR, // TODO
+        clickSelector:
+          this.formState.clickSelector.trim() || DEFAULT_AUTOCLICK_SELECTOR,
       },
       crawlerChannel: this.formState.crawlerChannel || "default",
       proxyId: this.formState.proxyId,

@@ -297,6 +297,7 @@ export function getInitialFormState(params: {
       ? params.initialWorkflow.config.behaviors.includes(Behavior.AutoClick)
       : defaultFormState.autoclickBehavior,
     selectLinks: params.initialWorkflow.config.selectLinks,
+    clickSelector: params.initialWorkflow.config.clickSelector,
     userAgent:
       params.initialWorkflow.config.userAgent ?? defaultFormState.userAgent,
     crawlerChannel:
