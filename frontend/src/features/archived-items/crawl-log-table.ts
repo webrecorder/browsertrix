@@ -101,7 +101,9 @@ export class CrawlLogTable extends TailwindElement {
                 class=${clsx(
                   rowClasses,
                   (contextLevelFor[log.context as unknown as CrawlLogContext] ||
-                    0) < MIN_CONTEXT_LEVEL && tw`text-neutral-500`,
+                    0) < MIN_CONTEXT_LEVEL
+                    ? tw`text-stone-400`
+                    : tw`text-stone-800`,
                   tw`group-hover:text-inherit`,
                 )}
               >
