@@ -12,7 +12,7 @@ import type { SyntaxInput } from "@/components/ui/syntax-input";
 import type { SeedConfig } from "@/types/crawler";
 import { tw } from "@/utils/tailwind";
 
-const SELECTOR_DELIMITER = "->" as const;
+export const SELECTOR_DELIMITER = "->" as const;
 const emptyCells = ["", ""];
 
 /**
@@ -153,8 +153,8 @@ export class LinkSelectorTable extends BtrixElement {
                 class="flex-1"
                 value=${sel}
                 language="css"
-                placeholder="Enter selector"
-                required
+                placeholder=${msg("Enter selector")}
+                ?required=${Boolean(attr)}
                 @sl-change=${(e: CustomEvent) => {
                   const el = e.currentTarget as SyntaxInput;
                   const value = el.input?.value.trim() || "";
@@ -197,8 +197,8 @@ export class LinkSelectorTable extends BtrixElement {
                 class="flex-1"
                 value=${attr}
                 language="xml"
-                placeholder="Enter attribute"
-                required
+                placeholder=${msg("Enter attribute")}
+                ?required=${Boolean(sel)}
                 @sl-change=${(e: CustomEvent) => {
                   const el = e.currentTarget as SyntaxInput;
                   const value = el.input?.value.trim() || "";
