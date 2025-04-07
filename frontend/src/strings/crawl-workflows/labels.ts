@@ -10,4 +10,5 @@ export const labelFor = {
   behaviorTimeoutSeconds: "Behavior Limit",
   pageExtraDelaySeconds: msg("Delay Before Next Page"),
   selectLink: msg("Link Selectors"),
+  clickSelector: msg("Click Selector"),
 };
