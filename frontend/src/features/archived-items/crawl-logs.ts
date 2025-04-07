@@ -91,11 +91,17 @@ export class CrawlLogs extends BtrixElement {
         signal,
       );
 
-      if (!errorLogs.total) {
-        await this.behaviorLogs.taskComplete;
+      if (!this.filter) {
+        if (errorLogs.total) {
+          this.filter = LogType.Error;
+        } else {
+          await this.behaviorLogs.taskComplete;
 
-        if (this.behaviorLogsTotal) {
-          this.filter = LogType.Behavior;
+          if (this.behaviorLogsTotal) {
+            this.filter = LogType.Behavior;
+          } else {
+            this.filter = LogType.Error;
+          }
         }
       }
       return errorLogs;

@@ -256,10 +256,22 @@ export enum CrawlLogLevel {
   Debug = "debug",
 }
 
+export enum CrawlLogContext {
+  General = "general",
+  Behavior = "behavior",
+  BehaviorScript = "behaviorScript",
+  BehaviorScriptCustom = "behaviorScriptCustom",
+}
+
 export type CrawlLog = {
   timestamp: string;
   logLevel: CrawlLogLevel;
-  details: Record<string, unknown>;
-  context: string;
+  details: Record<string, unknown> & {
+    behavior?: string;
+    page?: string;
+    frameUrl?: string;
+    stack?: string;
+  };
+  context: CrawlLogContext | string;
   message: string;
 };

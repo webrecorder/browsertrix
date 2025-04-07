@@ -1,13 +1,23 @@
 import { localized, msg } from "@lit/localize";
 import clsx from "clsx";
-import { css, html } from "lit";
+import { css, html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
-import { CrawlLogLevel, type CrawlLog } from "@/types/crawler";
+import { noData } from "@/strings/ui";
+import { CrawlLogContext, CrawlLogLevel, type CrawlLog } from "@/types/crawler";
 import { truncate } from "@/utils/css";
 import { stopProp } from "@/utils/events";
 import { tw } from "@/utils/tailwind";
+
+const labelFor: Record<CrawlLogContext, string> = {
+  [CrawlLogContext.General]: msg("General", {
+    desc: "'General' crawl log context type",
+  }),
+  [CrawlLogContext.Behavior]: msg("Page Behavior"),
+  [CrawlLogContext.BehaviorScript]: msg("Built-in Behavior"),
+  [CrawlLogContext.BehaviorScriptCustom]: msg("Custom Behavior Script"),
+};
 
 /**
  * Tabular list of logs
@@ -55,7 +65,7 @@ export class CrawlLogTable extends TailwindElement {
         <btrix-numbered-list-header slot="header">
           <div class=${rowClasses}>
             <div class="px-2">${msg("Timestamp")}</div>
-            <div>${msg("Level")}</div>
+            <div class="text-center">${msg("Level")}</div>
             <div class="px-2">${msg("Message")}</div>
             <div class="px-2">${msg("Page URL")}</div>
           </div>
@@ -122,9 +132,15 @@ export class CrawlLogTable extends TailwindElement {
                   </sl-tooltip>
                 </div>
                 <div class="whitespace-pre-wrap">${log.message}</div>
-                <div class="truncate" title="${log.details.page as string}">
-                  ${log.details.page}
-                </div>
+                ${log.details.page
+                  ? html`
+                      <div class="truncate" title="${log.details.page}">
+                        ${log.details.page}
+                      </div>
+                    `
+                  : html`<div class="text-neutral-400 group-hover:text-inherit">
+                      ${noData}
+                    </div>`}
               </div>
             </btrix-numbered-list-item>
           `;
@@ -134,7 +150,7 @@ export class CrawlLogTable extends TailwindElement {
       <btrix-dialog
         .label=${msg("Log Details")}
         .open=${!!this.selectedLog}
-        class="--width:40rem"
+        class="[--width:40rem]"
         @sl-show=${stopProp}
         @sl-after-show=${stopProp}
         @sl-hide=${stopProp}
@@ -197,24 +213,43 @@ export class CrawlLogTable extends TailwindElement {
 
   private renderLogDetails() {
     if (!this.selectedLog) return;
-    const { details } = this.selectedLog;
+    const { context, details } = this.selectedLog;
+    const { page, stack, ...unknownDetails } = details;
+
+    console.log(details);
     return html`
       <btrix-desc-list>
-        <btrix-desc-list-item label=${msg("Timestamp").toUpperCase()}>
+        <btrix-desc-list-item label=${msg("TIMESTAMP")}>
           ${this.selectedLog.timestamp}
         </btrix-desc-list-item>
-        <btrix-desc-list-item label=${msg("Message").toUpperCase()}>
+        <btrix-desc-list-item label=${msg("CONTEXT")}>
+          ${Object.values(CrawlLogContext).includes(
+            context as unknown as CrawlLogContext,
+          )
+            ? labelFor[context as CrawlLogContext]
+            : html`<span class="capitalize">${context}</span>`}
+        </btrix-desc-list-item>
+        <btrix-desc-list-item label=${msg("MESSAGE")}>
           ${this.selectedLog.message}
         </btrix-desc-list-item>
-        ${Object.entries(details).map(
+        ${page
+          ? html`<btrix-desc-list-item label=${msg("PAGE")}>
+              ${this.renderPage(page)}
+            </btrix-desc-list-item>`
+          : nothing}
+        ${stack
+          ? html`<btrix-desc-list-item label=${msg("STACK")}>
+              ${this.renderPre(stack)}
+            </btrix-desc-list-item>`
+          : nothing}
+        ${Object.entries(unknownDetails).map(
           ([key, value]) => html`
             <btrix-desc-list-item label=${key.toUpperCase()}>
-              ${key === "stack" ||
-              (typeof value !== "string" && typeof value !== "number")
+              ${typeof value !== "string" && typeof value !== "number"
                 ? this.renderPre(value)
-                : key === "page"
-                  ? this.renderPage(value as string)
-                  : value || "--"}
+                : value
+                  ? html`<span class="break-all">${value}</span>`
+                  : noData}
             </btrix-desc-list-item>
           `,
         )}
@@ -230,7 +265,7 @@ export class CrawlLogTable extends TailwindElement {
         @sl-after-hide=${stopProp}
       >
         <a
-          class="truncate text-blue-500 hover:text-blue-400"
+          class="break-all text-blue-500 hover:text-blue-400"
           href=${page}
           target="_blank"
           rel="noopener noreferrer nofollow"
@@ -245,6 +280,8 @@ export class CrawlLogTable extends TailwindElement {
     if (typeof value !== "string") {
       str = JSON.stringify(value, null, 2);
     }
-    return html`<pre><code>${str}</code></pre>`;
+    return html`<pre
+      class="overflow-auto whitespace-pre"
+    ><code>${str}</code></pre>`;
   }
 }
