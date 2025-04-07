@@ -233,6 +233,8 @@ class CrawlConfigOps:
                 exclude = [exclude]
             validate_regexes(exclude)
 
+        self._validate_link_selectors(config_in.config.selectLinks)
+
         if config_in.config.customBehaviors:
             for url in config_in.config.customBehaviors:
                 self._validate_custom_behavior_url_syntax(url)
@@ -296,6 +298,24 @@ class CrawlConfigOps:
             storageQuotaReached=storage_quota_reached,
             execMinutesQuotaReached=exec_mins_quota_reached,
         )
+
+    def _validate_link_selectors(self, link_selectors: List[str]):
+        """Validate link selectors
+
+        Ensure at least one link selector is set and that all the link slectors passed
+        follow expected syntax: selector->attribute/property.
+
+        We don't yet check the validity of the CSS selector itself.
+        """
+        if not link_selectors:
+            raise HTTPException(status_code=400, detail="invalid_link_selector")
+
+        for link_selector in link_selectors:
+            parts = link_selector.split("->")
+            if not len(parts) == 2:
+                raise HTTPException(status_code=400, detail="invalid_link_selector")
+            if not parts[0] or not parts[1]:
+                raise HTTPException(status_code=400, detail="invalid_link_selector")
 
     def _validate_custom_behavior_url_syntax(self, url: str) -> Tuple[bool, List[str]]:
         """Validate custom behaviors are valid URLs after removing custom git syntax"""
@@ -378,6 +398,9 @@ class CrawlConfigOps:
             if isinstance(exclude, str):
                 exclude = [exclude]
             validate_regexes(exclude)
+
+        if update.config and update.config.selectLinks is not None:
+            self._validate_link_selectors(update.config.selectLinks)
 
         if update.config and update.config.customBehaviors:
             for url in update.config.customBehaviors:
