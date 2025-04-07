@@ -163,8 +163,7 @@ export class CrawlLogs extends BtrixElement {
           this.errorLogs.value?.total,
           (total) => html`
             <btrix-badge variant=${"danger"}
-              >${this.localize.number(total)}
-              ${labelFor[LogType.Error]}</btrix-badge
+              >${this.localize.number(total)} ${msg("Error Logs")}</btrix-badge
             >
           `,
         )}
@@ -173,7 +172,7 @@ export class CrawlLogs extends BtrixElement {
           (total) => html`
             <btrix-badge variant="blue"
               >${this.localize.number(total)}
-              ${labelFor[LogType.Behavior]}</btrix-badge
+              ${msg("Behavior Logs")}</btrix-badge
             >
           `,
         )}
