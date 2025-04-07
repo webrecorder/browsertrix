@@ -39,8 +39,8 @@ type SortDirection = "asc" | "desc";
 
 const FILTER_BY_CURRENT_USER_STORAGE_KEY =
   "btrix.filterByCurrentUser.crawlConfigs";
-const INITIAL_PAGE_SIZE = 1;
-const POLL_INTERVAL_SECONDS = 1;
+const INITIAL_PAGE_SIZE = 10;
+const POLL_INTERVAL_SECONDS = 10;
 // const ABORT_REASON_THROTTLE = "throttled";
 // NOTE Backend pagination max is 1000
 const SEEDS_MAX = 1000;
