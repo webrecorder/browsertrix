@@ -28,9 +28,19 @@ export type PageChangeEvent = CustomEvent<PageChangeDetail>;
 /**
  * Pagination
  *
+ * Persists via a search param in the URL. Defaults to `page`, but can be set with the `name` attribute.
+ *
  * Usage example:
  * ```ts
- * <btrix-pagination totalCount="11" @page-change=${this.console.log}>
+ * <btrix-pagination totalCount="11" @page-change=${console.log}>
+ * </btrix-pagination>
+ * ```
+ *
+ * You can have multiple paginations on one page by setting different names:
+ * ```ts
+ * <btrix-pagination name="page-a" totalCount="11" @page-change=${console.log}>
+ * </btrix-pagination>
+ * <btrix-pagination name="page-b" totalCount="2" @page-change=${console.log}>
  * </btrix-pagination>
  * ```
  *
@@ -139,7 +149,13 @@ export class Pagination extends LitElement {
 
   @state()
   public get page() {
-    return parsePage(this.searchParams.searchParams.get(this.name));
+    return Math.min(
+      1,
+      Math.max(
+        this.totalCount,
+        parsePage(this.searchParams.searchParams.get(this.name)),
+      ),
+    );
   }
 
   @property({ type: String })
