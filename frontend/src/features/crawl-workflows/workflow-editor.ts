@@ -2206,7 +2206,10 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
     // TODO Move away from manual validation check
     // See https://github.com/webrecorder/browsertrix/issues/2536
-    if (!this.clickSelector?.checkValidity()) {
+    if (
+      this.formState.autoclickBehavior &&
+      !this.clickSelector?.checkValidity()
+    ) {
       this.clickSelector?.reportValidity();
       return;
     }
