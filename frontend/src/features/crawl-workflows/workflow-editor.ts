@@ -1265,14 +1265,29 @@ https://archiveweb.page/images/${"logo.svg"}`}
   }
 
   private renderPageBehavior() {
+    const behaviorOverrideWarning = html`
+      <span slot="help-text" class="text-warning-600">
+        <sl-icon
+          name="exclamation-triangle"
+          class="align-[-.175em] text-sm"
+        ></sl-icon>
+        ${msg("May be overridden by custom behaviors.")}
+      </span>
+    `;
+
     return html`
       ${this.renderSectionHeading(labelFor.behaviors)}
       ${inputCol(
         html`<sl-checkbox
           name="autoscrollBehavior"
+          class="part-[form-control-help-text]:mt-1.5"
           ?checked=${this.formState.autoscrollBehavior}
         >
           ${labelFor.autoscrollBehavior}
+          ${when(
+            this.formState.autoscrollBehavior && this.formState.customBehavior,
+            () => behaviorOverrideWarning,
+          )}
         </sl-checkbox>`,
       )}
       ${this.renderHelpTextCol(
@@ -1282,9 +1297,14 @@ https://archiveweb.page/images/${"logo.svg"}`}
       ${inputCol(
         html`<sl-checkbox
             name="autoclickBehavior"
+            class="part-[form-control-help-text]:mt-1.5"
             ?checked=${this.formState.autoclickBehavior}
           >
             ${labelFor.autoclickBehavior}
+            ${when(
+              this.formState.autoclickBehavior && this.formState.customBehavior,
+              () => behaviorOverrideWarning,
+            )}
           </sl-checkbox>
 
           ${when(
@@ -2423,7 +2443,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
         selectLinks: this.linkSelectorTable?.value.length
           ? this.linkSelectorTable.value
           : DEFAULT_SELECT_LINKS,
-        customBehaviors: this.customBehaviorsTable?.value || [],
+        customBehaviors:
+          (this.formState.customBehavior && this.customBehaviorsTable?.value) ||
+          [],
         clickSelector:
           this.formState.clickSelector || DEFAULT_AUTOCLICK_SELECTOR,
       },
