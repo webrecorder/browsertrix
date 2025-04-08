@@ -11,6 +11,7 @@ import type {
   SlTextarea,
 } from "@shoelace-style/shoelace";
 import clsx from "clsx";
+import { createParser } from "css-selector-parser";
 import Fuse from "fuse.js";
 import { mergeDeep } from "immutable";
 import type { LanguageCode } from "iso-639-1";
@@ -44,6 +45,7 @@ import type {
   SelectCrawlerUpdateEvent,
 } from "@/components/ui/select-crawler";
 import type { SelectCrawlerProxyChangeEvent } from "@/components/ui/select-crawler-proxy";
+import type { SyntaxInput } from "@/components/ui/syntax-input";
 import type { TabListTab } from "@/components/ui/tab-list";
 import type { TagInputEvent, TagsChangeEvent } from "@/components/ui/tag-input";
 import type { TimeInputChangeEvent } from "@/components/ui/time-input";
@@ -53,6 +55,7 @@ import {
   ObservableController,
   type IntersectEvent,
 } from "@/controllers/observable";
+import type { BtrixChangeEvent } from "@/events/btrix-change";
 import { type SelectBrowserProfileChangeEvent } from "@/features/browser-profiles/select-browser-profile";
 import type { CollectionsChangeEvent } from "@/features/collections/collections-add";
 import type { CustomBehaviorsTable } from "@/features/crawl-workflows/custom-behaviors-table";
@@ -96,6 +99,7 @@ import { tw } from "@/utils/tailwind";
 import {
   appDefaults,
   BYTES_PER_GB,
+  DEFAULT_AUTOCLICK_SELECTOR,
   DEFAULT_SELECT_LINKS,
   defaultLabel,
   getDefaultFormState,
@@ -322,6 +326,13 @@ export class WorkflowEditor extends BtrixElement {
 
   @query("btrix-custom-behaviors-table")
   private readonly customBehaviorsTable?: CustomBehaviorsTable | null;
+
+  @query("btrix-syntax-input[name='clickSelector']")
+  private readonly clickSelector?: SyntaxInput | null;
+
+  // CSS parser should ideally match the parser used in browsertrix-crawler.
+  // https://github.com/webrecorder/browsertrix-crawler/blob/v1.5.8/package.json#L23
+  private readonly cssParser = createParser();
 
   connectedCallback(): void {
     this.initializeEditor();
@@ -1281,9 +1292,69 @@ https://archiveweb.page/images/${"logo.svg"}`}
       )}
       ${this.renderHelpTextCol(
         msg(
-          `Automatically click on all link-like elements. Useful for capturing in-page interactions or for clicking links without navigating away from the page.`,
+          `Automatically click on all link-like elements without navigating away from the page.`,
         ),
         false,
+      )}
+      ${when(
+        this.formState.autoclickBehavior,
+        () => html`
+          ${inputCol(
+            html`<btrix-syntax-input
+              name="clickSelector"
+              label=${labelFor.clickSelector}
+              language="css"
+              value=${this.formState.clickSelector}
+              placeholder="${msg("Default:")} ${DEFAULT_AUTOCLICK_SELECTOR}"
+              disableTooltip
+              @btrix-change=${(
+                e: BtrixChangeEvent<typeof this.formState.clickSelector>,
+              ) => {
+                const el = e.target as SyntaxInput;
+                const value = e.detail.value.trim();
+
+                if (value) {
+                  try {
+                    // Validate selector
+                    this.cssParser(value);
+
+                    this.updateFormState(
+                      {
+                        clickSelector: e.detail.value,
+                      },
+                      true,
+                    );
+
+                    this.clickSelector?.removeAttribute("data-invalid");
+                    this.clickSelector?.removeAttribute("data-user-invalid");
+                  } catch {
+                    el.setCustomValidity(
+                      msg("Please enter a valid CSS selector"),
+                    );
+                  }
+                }
+              }}
+              @btrix-invalid=${() => {
+                /**
+                 * HACK Set data attribute manually so that
+                 * table works with `syncTabErrorState`
+                 *
+                 * FIXME Should be fixed with
+                 * https://github.com/webrecorder/browsertrix/issues/2497
+                 * or
+                 * https://github.com/webrecorder/browsertrix/issues/2536
+                 */
+                this.clickSelector?.setAttribute("data-invalid", "true");
+                this.clickSelector?.setAttribute("data-user-invalid", "true");
+              }}
+            ></btrix-syntax-input>`,
+          )}
+          ${this.renderHelpTextCol(
+            html`${msg(
+                `Customize the CSS selector used to autoclick elements.`,
+              )} <span class="sr-only">${msg('Defaults to "a".')}</span>`,
+          )}
+        `,
       )}
       ${this.renderCustomBehaviors()}
       ${this.renderSectionHeading(msg("Page Timing"))}
@@ -1366,6 +1437,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
              *
              * FIXME Should be fixed with
              * https://github.com/webrecorder/browsertrix/issues/2497
+             * or
+             * https://github.com/webrecorder/browsertrix/issues/2536
              */
             this.customBehaviorsTable?.setAttribute("data-invalid", "true");
             this.customBehaviorsTable?.setAttribute(
@@ -2131,7 +2204,16 @@ https://archiveweb.page/images/${"logo.svg"}`}
   private async save() {
     if (!this.formElem) return;
 
+    // TODO Move away from manual validation check
+    // See https://github.com/webrecorder/browsertrix/issues/2536
+    if (!this.clickSelector?.checkValidity()) {
+      this.clickSelector?.reportValidity();
+      return;
+    }
+
     // Wait for custom behaviors validation to finish
+    // TODO Move away from manual validation check
+    // See https://github.com/webrecorder/browsertrix/issues/2536
     try {
       await this.customBehaviorsTable?.taskComplete;
     } catch {
@@ -2355,6 +2437,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
           ? this.linkSelectorTable.value
           : DEFAULT_SELECT_LINKS,
         customBehaviors: this.customBehaviorsTable?.value || [],
+        clickSelector:
+          this.formState.clickSelector || DEFAULT_AUTOCLICK_SELECTOR,
       },
       crawlerChannel: this.formState.crawlerChannel || "default",
       proxyId: this.formState.proxyId,
