@@ -191,7 +191,6 @@ export class App extends BtrixElement {
   willUpdate(changedProperties: Map<string, unknown>) {
     if (changedProperties.has("settings")) {
       AppStateService.updateSettings(this.settings || null);
-
     }
     if (changedProperties.has("viewState")) {
       this.handleViewStateChange(
@@ -245,7 +244,6 @@ export class App extends BtrixElement {
       // Redirect to logged in home page
       this.viewState = this.router.match(this.navigate.orgBasePath);
       window.history.replaceState(this.viewState, "", this.viewState.pathname);
-      console.log("replace state");
     } else {
       const nextViewState = this.router.match(
         `${pathname}${window.location.search}`,
@@ -257,7 +255,6 @@ export class App extends BtrixElement {
       ) {
         this.viewState = nextViewState;
         this.updateOrgSlugIfNeeded();
-        console.log("next view state", nextViewState);
       }
     }
   }
@@ -324,10 +321,8 @@ export class App extends BtrixElement {
     }`;
 
     if (replace) {
-      console.log("new state replaced");
       window.history.replaceState(this.viewState, "", urlStr);
     } else {
-      console.log("new state pushed");
       window.history.pushState(this.viewState, "", urlStr);
     }
 
