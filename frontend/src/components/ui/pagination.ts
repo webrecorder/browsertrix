@@ -11,6 +11,14 @@ import { srOnly } from "@/utils/css";
 import chevronLeft from "~assets/icons/chevron-left.svg";
 import chevronRight from "~assets/icons/chevron-right.svg";
 
+const parsePage = (value: string | undefined | null) => {
+  const page = parseInt(value || "1");
+  if (!Number.isFinite(page)) {
+    throw new Error("couldn't parse page value from search");
+  }
+  return page;
+};
+
 type PageChangeDetail = {
   page: number;
   pages: number;
@@ -122,24 +130,17 @@ export class Pagination extends LitElement {
   ];
 
   searchParams = new SearchParamsController(this, (params) => {
-    console.log("maybe page change");
-    if (`${this.page}` !== params.get(this.name)) {
-      try {
-        const page = parseInt(
-          this.searchParams.searchParams.get(this.name) ?? "1",
-        );
-        if (!Number.isFinite(page)) {
-          throw new Error("couldn't parse page value from search");
-        }
-        this.onPageChange(page);
-      } catch (e) {
-        console.error("couldn't set page", e);
-      }
-    }
+    const page = parsePage(params.get(this.name));
+
+    // TODO: figure out why previous params aren't working here
+    // in the meantime, 0 works okay — we do an inequality check in `onPageChange` anyways
+    this.onPageChange(page, 0);
   });
 
-  @property({ type: Number })
-  page = 1;
+  @state()
+  public get page() {
+    return parsePage(this.searchParams.searchParams.get(this.name));
+  }
 
   @property({ type: String })
   name = "page";
@@ -171,29 +172,6 @@ export class Pagination extends LitElement {
 
     if (changedProperties.get("page") && this.page) {
       this.inputValue = `${this.page}`;
-      console.log("changed page", this.page, changedProperties.get("page"));
-      this.searchParams.set((prev) => {
-        if (this.page > 1) {
-          prev.set(this.name, `${this.page}`);
-        } else {
-          prev.delete(this.name);
-        }
-        return prev;
-      });
-    }
-
-    try {
-      const page = parseInt(
-        this.searchParams.searchParams.get(this.name) ?? "0",
-      );
-      if (!Number.isFinite(page)) {
-        throw new Error("couldn't parse page value from search");
-      }
-      if (this.page !== page) {
-        this.onPageChange(page);
-      }
-    } catch (e) {
-      console.error("couldn't set page", e);
     }
   }
 
@@ -353,13 +331,24 @@ export class Pagination extends LitElement {
     this.onPageChange(this.page < this.pages ? this.page + 1 : this.pages);
   }
 
-  private onPageChange(page: number) {
-    this.dispatchEvent(
-      new CustomEvent<PageChangeDetail>("page-change", {
-        detail: { page: page, pages: this.pages },
-        composed: true,
-      }),
-    );
+  private onPageChange(page: number, prevPage = this.page) {
+    if (prevPage !== page) {
+      this.searchParams.set((params) => {
+        if (page === 1) {
+          params.delete(this.name);
+        } else {
+          params.set(this.name, page.toString());
+        }
+        return params;
+      });
+      this.requestUpdate("page", prevPage);
+      this.dispatchEvent(
+        new CustomEvent<PageChangeDetail>("page-change", {
+          detail: { page: page, pages: this.pages },
+          composed: true,
+        }),
+      );
+    }
   }
 
   private calculatePages() {

@@ -2,7 +2,11 @@ import type { ReactiveController, ReactiveControllerHost } from "lit";
 
 export class SearchParamsController implements ReactiveController {
   private readonly host: ReactiveControllerHost;
-  private readonly changeHandler?: (searchParams: URLSearchParams) => void;
+  private readonly changeHandler?: (
+    searchParams: URLSearchParams,
+    prevParams: URLSearchParams,
+  ) => void;
+  private prevParams = new URLSearchParams(location.search);
 
   public get searchParams() {
     return new URLSearchParams(location.search);
@@ -10,16 +14,15 @@ export class SearchParamsController implements ReactiveController {
 
   public set(
     update: URLSearchParams | ((prev: URLSearchParams) => URLSearchParams),
-    options: { replace?: boolean; data?: unknown } = { replace: true },
+    options: { replace?: boolean; data?: unknown } = { replace: false },
   ) {
+    this.prevParams = new URLSearchParams(this.searchParams);
     const url = new URL(location.toString());
-    if (typeof update === "function") {
-      const val = update(this.searchParams);
-      console.log(val);
-      url.search = val.toString();
-    } else {
-      url.search = update.toString();
-    }
+    url.search =
+      typeof update === "function"
+        ? update(this.searchParams).toString()
+        : update.toString();
+
     if (options.replace) {
       history.replaceState(options.data, "", url);
     } else {
@@ -29,7 +32,10 @@ export class SearchParamsController implements ReactiveController {
 
   constructor(
     host: ReactiveControllerHost,
-    onChange?: (searchParams: URLSearchParams) => void,
+    onChange?: (
+      searchParams: URLSearchParams,
+      prevParams: URLSearchParams,
+    ) => void,
   ) {
     this.host = host;
     host.addController(this);
@@ -45,7 +51,7 @@ export class SearchParamsController implements ReactiveController {
   }
 
   private readonly onPopState = (_e: PopStateEvent) => {
-    this.host.requestUpdate();
-    this.changeHandler?.(this.searchParams);
+    this.changeHandler?.(this.searchParams, this.prevParams);
+    this.prevParams = new URLSearchParams(this.searchParams);
   };
 }
