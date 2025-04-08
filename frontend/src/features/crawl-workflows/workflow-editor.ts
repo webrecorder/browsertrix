@@ -1350,7 +1350,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
             ></btrix-syntax-input>`,
           )}
           ${this.renderHelpTextCol(
-            msg(`Customize the CSS selector used to autoclick elements.`),
+            html`${msg(
+                `Customize the CSS selector used to autoclick elements.`,
+              )} <span class="sr-only">${msg('Defaults to "a".')}</span>`,
           )}
         `,
       )}
