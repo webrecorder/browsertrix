@@ -147,15 +147,14 @@ export class Pagination extends LitElement {
     this.onPageChange(page, 0);
   });
 
-  @state()
+  // @property({ type: Number })
+  // public set page(page: number) {
+  //   this.onPageChange(page);
+  // }
+
   public get page() {
-    return Math.min(
-      1,
-      Math.max(
-        this.totalCount,
-        parsePage(this.searchParams.searchParams.get(this.name)),
-      ),
-    );
+    const page = parsePage(this.searchParams.searchParams.get(this.name));
+    return Math.max(1, Math.min(this.pages, page));
   }
 
   @property({ type: String })
@@ -184,6 +183,14 @@ export class Pagination extends LitElement {
   async willUpdate(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("totalCount") || changedProperties.has("size")) {
       this.calculatePages();
+    }
+
+    const parsedPage = parseFloat(
+      this.searchParams.searchParams.get(this.name) ?? "1",
+    );
+    if (parsedPage > this.pages || parsedPage < 1 || parsedPage % 1 !== 0) {
+      this.onPageChange(this.page, parsedPage);
+      this.requestUpdate("page", parsedPage);
     }
 
     if (changedProperties.get("page") && this.page) {
