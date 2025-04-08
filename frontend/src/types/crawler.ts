@@ -248,3 +248,30 @@ export type ArchivedItemPage = {
   approved?: boolean | null;
   notes?: ArchivedItemPageComment[];
 };
+
+export enum CrawlLogLevel {
+  Fatal = "fatal",
+  Error = "error",
+  Warning = "warn",
+  Info = "info",
+  Debug = "debug",
+}
+
+export enum CrawlLogContext {
+  General = "general",
+  Behavior = "behavior",
+  BehaviorScript = "behaviorScript",
+  BehaviorScriptCustom = "behaviorScriptCustom",
+}
+
+export type CrawlLog = {
+  timestamp: string;
+  logLevel: CrawlLogLevel;
+  details: Record<string, unknown> & {
+    behavior?: string;
+    page?: string;
+    stack?: string;
+  };
+  context: CrawlLogContext | string;
+  message: string;
+};

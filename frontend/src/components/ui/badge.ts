@@ -10,6 +10,7 @@ export type BadgeVariant =
   | "danger"
   | "neutral"
   | "primary"
+  | "blue"
   | "high-contrast";
 
 /**
@@ -44,6 +45,7 @@ export class Badge extends TailwindElement {
           neutral: tw`bg-neutral-100 text-neutral-600`,
           "high-contrast": tw`bg-neutral-600 text-neutral-0`,
           primary: tw`bg-primary text-neutral-0`,
+          blue: tw`bg-cyan-50 text-neutral-600`,
         }[
           this.variant
         ]} inline-flex items-center justify-center rounded-sm px-2 align-[1px] text-xs"

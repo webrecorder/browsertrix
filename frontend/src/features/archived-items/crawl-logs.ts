@@ -1,200 +1,320 @@
 import { localized, msg } from "@lit/localize";
-import { css, html, LitElement } from "lit";
+import { Task } from "@lit/task";
+import clsx from "clsx";
+import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
+import { when } from "lit/directives/when.js";
+import queryString from "query-string";
 
-import type { APIPaginatedList } from "@/types/api";
-import { truncate } from "@/utils/css";
+import { BtrixElement } from "@/classes/BtrixElement";
+import type { PageChangeEvent } from "@/components/ui/pagination";
+import { emptyMessage } from "@/layouts/emptyMessage";
+import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
+import { type CrawlLog } from "@/types/crawler";
+import { stopProp } from "@/utils/events";
+import { tw } from "@/utils/tailwind";
 
-export type CrawlLog = {
-  timestamp: string;
-  logLevel: "error";
-  details: Record<string, unknown>;
-  context: string;
-  message: string;
+enum LogType {
+  Error = "error",
+  Behavior = "behavior",
+}
+
+const DEFAULT_PAGE_PARAMS: Required<APIPaginationQuery> = {
+  page: 1,
+  pageSize: 50,
+} as const;
+
+const queryFor =
+  (logs?: APIPaginatedList<CrawlLog>) => (params?: APIPaginationQuery) => {
+    return queryString.stringify({
+      page: params?.page ?? logs?.page ?? DEFAULT_PAGE_PARAMS.page,
+      pageSize:
+        params?.pageSize ?? logs?.pageSize ?? DEFAULT_PAGE_PARAMS.pageSize,
+    });
+  };
+
+const labelFor: Record<LogType, string> = {
+  [LogType.Error]: msg("Errors"),
+  [LogType.Behavior]: msg("Behaviors"),
 };
 
+const emptyMessageFor: Record<LogType, string> = {
+  [LogType.Error]: msg("No errors logged."),
+  [LogType.Behavior]: msg("No behaviors logged."),
+};
+
+/**
+ * Logs and associated controls in workflow "Watch Crawl"/"Logs"
+ * and archived item "Logs" tabs.
+ *
+ * To render "live" workflow logs, pass in a changing value as `liveKey`
+ */
 @customElement("btrix-crawl-logs")
 @localized()
-export class CrawlLogs extends LitElement {
-  static styles = [
-    truncate,
-    css`
-      btrix-numbered-list {
-        font-size: var(--sl-font-size-x-small);
-      }
-
-      .row {
-        display: grid;
-        grid-template-columns: 9rem 4rem 15rem 1fr;
-        line-height: 1.3;
-      }
-
-      .cell {
-        padding-left: var(--sl-spacing-x-small);
-        padding-right: var(--sl-spacing-x-small);
-      }
-
-      .tag {
-        display: inline-block;
-        border-radius: var(--sl-border-radius-small);
-        padding: var(--sl-spacing-3x-small) var(--sl-spacing-2x-small);
-        text-transform: capitalize;
-        /* TODO handle non-errors */
-        background-color: var(--danger);
-        color: var(--sl-color-neutral-0);
-      }
-
-      footer {
-        display: flex;
-        justify-content: center;
-        margin-top: var(--sl-spacing-large);
-        margin-bottom: var(--sl-spacing-x-large);
-      }
-
-      .message {
-        white-space: pre-wrap;
-      }
-
-      .url {
-        text-overflow: ellipsis;
-        overflow: hidden;
-        white-space: nowrap;
-      }
-
-      a {
-        color: inherit;
-      }
-
-      a:hover {
-        text-decoration: none;
-      }
-
-      pre {
-        white-space: pre-wrap;
-        font-family: var(--sl-font-mono);
-        font-size: var(--sl-font-size-x-small);
-        margin: 0;
-        padding: var(--sl-spacing-small);
-        border: 1px solid var(--sl-panel-border-color);
-        border-radius: var(--sl-border-radius-medium);
-      }
-    `,
-  ];
-
-  @property({ type: Object })
-  logs?: APIPaginatedList<CrawlLog>;
+export class CrawlLogs extends BtrixElement {
+  @property({ type: String })
+  crawlId?: string;
 
   @property({ type: Boolean })
-  paginate = false;
+  collapsible = false;
+
+  @property({ type: Number })
+  pageSize = DEFAULT_PAGE_PARAMS.pageSize;
+
+  @property({ type: String })
+  liveKey?: string;
 
   @state()
-  private selectedLog:
-    | (CrawlLog & {
-        index: number;
-      })
-    | null = null;
+  private filter: LogType | null = null;
 
-  render() {
-    if (!this.logs) return;
-    return html`<btrix-numbered-list>
-        <btrix-numbered-list-header slot="header">
-          <div class="row">
-            <div class="cell">${msg("Date")}</div>
-            <div class="cell">${msg("Level")}</div>
-            <div class="cell">${msg("Error Message")}</div>
-            <div class="cell">${msg("Page URL")}</div>
-          </div>
-        </btrix-numbered-list-header>
-        ${this.logs.items.map((log: CrawlLog, idx) => {
-          const selected = this.selectedLog?.index === idx;
-          return html`
-            <btrix-numbered-list-item
-              hoverable
-              ?selected=${selected}
-              aria-selected="${selected}"
-              @click=${() => {
-                this.selectedLog = {
-                  index: idx,
-                  ...log,
-                };
-              }}
-            >
-              <div slot="marker">${idx + 1}.</div>
-              <div class="row">
-                <div>
-                  <btrix-format-date
-                    date=${log.timestamp}
-                    month="2-digit"
-                    day="2-digit"
-                    year="numeric"
-                    hour="2-digit"
-                    minute="2-digit"
-                    second="2-digit"
-                    hour-format="24"
-                  >
-                  </btrix-format-date>
-                </div>
-                <div>
-                  <span class="tag">${log.logLevel}</span>
-                </div>
-                <div class="message">${log.message}</div>
-                <div class="url" title="${log.details.page as string}">
-                  <a target="_blank" href="${log.details.page as string}"
-                    >${log.details.page}</a
-                  >
-                </div>
-              </div>
-            </btrix-numbered-list-item>
-          `;
-        })}
-      </btrix-numbered-list>
-      ${this.paginate
-        ? html`<footer>
-            <btrix-pagination
-              page=${this.logs.page}
-              totalCount=${this.logs.total}
-              size=${this.logs.pageSize}
-            >
-            </btrix-pagination>
-          </footer>`
-        : ""}
+  @state()
+  private open = false;
 
-      <btrix-dialog
-        .label=${msg("Log Details")}
-        .open=${!!this.selectedLog}
-        style="--width: 40rem"
-        @sl-after-hide=${() => (this.selectedLog = null)}
-        >${this.renderLogDetails()}</btrix-dialog
-      > `;
+  private page = DEFAULT_PAGE_PARAMS.page;
+
+  // TODO Check if API can provide this value
+  public get errorLogsTotal() {
+    return this.errorLogs.value?.total;
   }
 
-  private renderLogDetails() {
-    if (!this.selectedLog) return;
-    const { details } = this.selectedLog;
+  public get behaviorLogsTotal() {
+    return this.behaviorLogs.value?.total;
+  }
+
+  private readonly errorLogs = new Task(this, {
+    task: async ([crawlId], { signal }) => {
+      if (!crawlId) return;
+
+      const errorLogs = await this.getErrorLogs(
+        { crawlId, page: this.page, pageSize: this.pageSize },
+        signal,
+      );
+
+      if (!this.filter) {
+        if (errorLogs.total) {
+          this.filter = LogType.Error;
+        } else {
+          await this.behaviorLogs.taskComplete;
+
+          if (this.behaviorLogsTotal) {
+            this.filter = LogType.Behavior;
+          } else {
+            this.filter = LogType.Error;
+          }
+        }
+      }
+      return errorLogs;
+    },
+    args: () => [this.crawlId, this.liveKey] as const,
+  });
+
+  private readonly behaviorLogs = new Task(this, {
+    task: async ([crawlId], { signal }) => {
+      if (!crawlId) return;
+
+      const behaviorLogs = await this.getBehaviorLogs(
+        { crawlId, page: this.page, pageSize: this.pageSize },
+        signal,
+      );
+      return behaviorLogs;
+    },
+    args: () => [this.crawlId, this.liveKey] as const,
+  });
+
+  render() {
+    const logs = this.filter
+      ? (this.filter === LogType.Error ? this.errorLogs : this.behaviorLogs)
+          .value
+      : undefined;
+
+    if (this.collapsible) {
+      return html`
+        <sl-details
+          class="part-[content]:pt-0"
+          ?open=${this.open}
+          @sl-show=${() => {
+            if (
+              this.filter === LogType.Error &&
+              !this.errorLogsTotal &&
+              this.behaviorLogsTotal
+            ) {
+              this.filter = LogType.Behavior;
+            }
+
+            this.open = true;
+          }}
+          @sl-hide=${() => (this.open = false)}
+        >
+          <h3
+            slot="summary"
+            class="text flex flex-1 items-center justify-between gap-2 font-semibold leading-none"
+          >
+            ${msg("Logs")} ${this.renderBadges()}
+          </h3>
+
+          ${this.renderControls(logs)} ${when(logs, this.renderLogs)}
+        </sl-details>
+      `;
+    }
+
+    return html`${this.renderControls(logs)} ${when(logs, this.renderLogs)}`;
+  }
+
+  private renderBadges() {
     return html`
-      <btrix-desc-list>
-        <btrix-desc-list-item label=${msg("Timestamp").toUpperCase()}>
-          ${this.selectedLog.timestamp}
-        </btrix-desc-list-item>
-        ${Object.entries(details).map(
-          ([key, value]) => html`
-            <btrix-desc-list-item label=${key.toUpperCase()}>
-              ${key === "stack" ||
-              (typeof value !== "string" && typeof value !== "number")
-                ? this.renderPre(value)
-                : value || "--"}
-            </btrix-desc-list-item>
+      <div
+        class=${clsx(
+          tw`mx-3 transition-opacity`,
+          this.open ? tw`opacity-0` : tw`opacity-100`,
+        )}
+      >
+        ${when(
+          this.errorLogs.value?.total,
+          (total) => html`
+            <btrix-badge variant=${"danger"}
+              >${this.localize.number(total)} ${msg("Error Logs")}</btrix-badge
+            >
           `,
         )}
-      </btrix-desc-list>
+        ${when(
+          this.behaviorLogs.value?.total,
+          (total) => html`
+            <btrix-badge variant="blue"
+              >${this.localize.number(total)}
+              ${msg("Behavior Logs")}</btrix-badge
+            >
+          `,
+        )}
+      </div>
     `;
   }
 
-  private renderPre(value: unknown) {
-    let str = value;
-    if (typeof value !== "string") {
-      str = JSON.stringify(value, null, 2);
-    }
-    return html`<pre><code>${str}</code></pre>`;
+  private readonly renderLogs = (logs: APIPaginatedList<CrawlLog>) => {
+    return html`
+      ${when(
+        this.filter && logs.total,
+        () => html`
+          <btrix-crawl-log-table
+            .logs=${logs.items}
+            offset=${(logs.page - 1) * logs.pageSize}
+          ></btrix-crawl-log-table>
+
+          <footer class="my-4 flex justify-center">
+            <btrix-pagination
+              page=${logs.page}
+              totalCount=${logs.total}
+              size=${logs.pageSize}
+              @page-change=${(e: PageChangeEvent) => {
+                this.page = e.detail.page;
+
+                void (this.filter === LogType.Error
+                  ? this.errorLogs.run()
+                  : this.behaviorLogs.run());
+
+                this.scrollIntoView({ behavior: "smooth", block: "start" });
+              }}
+            >
+            </btrix-pagination>
+          </footer>
+        `,
+        () =>
+          this.filter
+            ? emptyMessage({ message: emptyMessageFor[this.filter] })
+            : nothing,
+      )}
+    `;
+  };
+
+  private renderControls(logs?: APIPaginatedList<CrawlLog>) {
+    const placeholder = html`<sl-skeleton class="w-4"></sl-skeleton>`;
+    const displayCount = logs ? logs.items.length || 0 : placeholder;
+    const totalCount = logs
+      ? (this.errorLogs.value?.total || 0) +
+        (this.behaviorLogs.value?.total || 0)
+      : placeholder;
+
+    return html`
+      <div
+        class="mb-3 flex items-center justify-between gap-3 rounded-lg border bg-neutral-50 p-3"
+      >
+        <p class="flex items-center gap-1.5 text-neutral-500">
+          ${msg(
+            html`Viewing ${displayCount} of ${totalCount} most relevant logs`,
+          )}
+          <sl-tooltip
+            placement="right"
+            content=${msg(
+              "This is a selection of the most relevant behaviors and errors logged during the crawl. Download all logs to view additional warning, info, and debug logs.",
+            )}
+            @sl-show=${stopProp}
+            @sl-after-show=${stopProp}
+            @sl-hide=${stopProp}
+            @sl-after-hide=${stopProp}
+          >
+            <sl-icon class="align-[-.175em]" name="info-circle"></sl-icon>
+          </sl-tooltip>
+        </p>
+        <div class="flex items-center gap-2">
+          <div class="text-neutral-500">${msg("View:")}</div>
+          <sl-button-group>
+            ${Object.values(LogType).map(this.renderFilter)}
+          </sl-button-group>
+        </div>
+      </div>
+    `;
+  }
+
+  private readonly renderFilter = (logType: LogType) => {
+    const logs = logType === LogType.Error ? this.errorLogs : this.behaviorLogs;
+
+    const selected = this.filter === logType;
+
+    return html`
+      <sl-button
+        variant=${ifDefined(selected ? "neutral" : undefined)}
+        size="small"
+        pill
+        @click=${() => (this.filter = logType)}
+      >
+        ${labelFor[logType]}
+        ${when(logs, (logs) => {
+          const total = logs.value?.total || 0;
+          return html`
+            <btrix-badge slot="suffix" variant="blue">
+              ${this.localize.number(total)}
+            </btrix-badge>
+          `;
+        })}
+      </sl-button>
+    `;
+  };
+
+  private async getErrorLogs(
+    { crawlId, ...params }: { crawlId: string } & Partial<APIPaginationQuery>,
+    signal?: AbortSignal,
+  ): Promise<APIPaginatedList<CrawlLog>> {
+    const query = queryFor(this.errorLogs.value)(params);
+
+    const data = await this.api.fetch<APIPaginatedList<CrawlLog>>(
+      `/orgs/${this.orgId}/crawls/${crawlId}/errors?${query}`,
+      { signal },
+    );
+
+    return data;
+  }
+
+  private async getBehaviorLogs(
+    { crawlId, ...params }: { crawlId: string } & Partial<APIPaginationQuery>,
+    signal?: AbortSignal,
+  ): Promise<APIPaginatedList<CrawlLog>> {
+    const query = queryFor(this.behaviorLogs.value)(params);
+
+    const data = await this.api.fetch<APIPaginatedList<CrawlLog>>(
+      `/orgs/${this.orgId}/crawls/${crawlId}/behaviorLogs?${query}`,
+      { signal },
+    );
+
+    return data;
   }
 }

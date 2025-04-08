@@ -8,9 +8,7 @@ import capitalize from "lodash/fp/capitalize";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { type Dialog } from "@/components/ui/dialog";
-import type { PageChangeEvent } from "@/components/ui/pagination";
 import { ClipboardController } from "@/controllers/clipboard";
-import type { CrawlLog } from "@/features/archived-items/crawl-logs";
 import { pageBack, pageNav, type Breadcrumb } from "@/layouts/pageHeader";
 import type { APIPaginatedList } from "@/types/api";
 import type {
@@ -96,9 +94,6 @@ export class ArchivedItemDetail extends BtrixElement {
   private seeds?: APIPaginatedList<Seed>;
 
   @state()
-  private logs?: APIPaginatedList<CrawlLog>;
-
-  @state()
   activeTab: SectionName = "overview";
 
   @state()
@@ -121,7 +116,7 @@ export class ArchivedItemDetail extends BtrixElement {
     qa: msg("Quality Assurance"),
     replay: msg("Replay"),
     files: msg("WACZ Files"),
-    logs: msg("Error Logs"),
+    logs: msg("Logs"),
     config: msg("Crawl Settings"),
   };
 
@@ -165,7 +160,6 @@ export class ArchivedItemDetail extends BtrixElement {
   willUpdate(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("itemId") && this.itemId) {
       void this.fetchCrawl();
-      void this.fetchCrawlLogs();
       if (this.itemType === "crawl") {
         void this.fetchSeeds();
         void this.fetchQARuns();
@@ -337,15 +331,21 @@ export class ArchivedItemDetail extends BtrixElement {
       case "logs":
         sectionContent = this.renderPanel(
           html` ${this.renderTitle(this.tabLabels.logs)}
-            <sl-button
-              href=${`/api/orgs/${this.orgId}/crawls/${this.itemId}/logs?auth_bearer=${authToken}`}
-              download=${`btrix-${this.itemId}-logs.txt`}
-              size="small"
-              variant="primary"
+            <sl-tooltip
+              content=${msg(
+                "Download entire log, including verbose logging levels",
+              )}
             >
-              <sl-icon slot="prefix" name="cloud-download"></sl-icon>
-              ${msg("Download Logs")}
-            </sl-button>`,
+              <sl-button
+                href=${`/api/orgs/${this.orgId}/crawls/${this.itemId}/logs?auth_bearer=${authToken}`}
+                download=${`btrix-${this.itemId}-logs.txt`}
+                size="small"
+                variant="primary"
+              >
+                <sl-icon slot="prefix" name="cloud-download"></sl-icon>
+                ${msg("Download All Logs")}
+              </sl-button>
+            </sl-tooltip>`,
           this.renderLogs(),
         );
         break;
@@ -358,7 +358,7 @@ export class ArchivedItemDetail extends BtrixElement {
                 content=${msg("Workflow settings used to run this crawl")}
               >
                 <sl-icon
-                  class="text-base text-neutral-500"
+                  class="align-[-.175em] text-base text-neutral-500"
                   name="info-circle"
                 ></sl-icon>
               </sl-tooltip>
@@ -706,7 +706,7 @@ export class ArchivedItemDetail extends BtrixElement {
     `;
   }
 
-  private renderTitle(title: string | TemplateResult<1>) {
+  private renderTitle(title: string | TemplateResult) {
     return html`<h2
       class="flex items-center gap-2 text-lg font-medium leading-8"
     >
@@ -1004,31 +1004,9 @@ ${this.item?.description}
   }
 
   private renderLogs() {
-    return html`
-      <div aria-live="polite" aria-busy=${!this.logs}>
-        ${when(this.logs, () =>
-          this.logs!.total
-            ? html`
-                <btrix-crawl-logs
-                  .logs=${this.logs}
-                  paginate
-                  @page-change=${async (e: PageChangeEvent) => {
-                    await this.fetchCrawlLogs({
-                      page: e.detail.page,
-                    });
-                    // Scroll to top of list
-                    this.scrollIntoView();
-                  }}
-                ></btrix-crawl-logs>
-              `
-            : html`<div class="rounded-lg border p-4">
-                <p class="text-sm text-neutral-400">
-                  ${msg("No error logs to display.")}
-                </p>
-              </div>`,
-        )}
-      </div>
-    `;
+    if (!this.itemId) return;
+
+    return html` <btrix-crawl-logs crawlId=${this.itemId}></btrix-crawl-logs> `;
   }
 
   private renderConfig() {
@@ -1244,37 +1222,6 @@ ${this.item?.description}
 
   private async getWorkflow(id: string): Promise<Workflow> {
     return this.api.fetch<Workflow>(`/orgs/${this.orgId}/crawlconfigs/${id}`);
-  }
-
-  private async fetchCrawlLogs(
-    params: Partial<APIPaginatedList> = {},
-  ): Promise<void> {
-    if (this.itemType !== "crawl") {
-      return;
-    }
-    try {
-      this.logs = await this.getCrawlErrors(params);
-    } catch (e: unknown) {
-      console.debug(e);
-
-      this.notify.toast({
-        message: msg("Sorry, couldn't retrieve crawl logs at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-        id: "archived-item-retrieve-error",
-      });
-    }
-  }
-
-  private async getCrawlErrors(params: Partial<APIPaginatedList>) {
-    const page = params.page || this.logs?.page || 1;
-    const pageSize = params.pageSize || this.logs?.pageSize || 50;
-
-    const data = (await this.api.fetch)<APIPaginatedList<CrawlLog>>(
-      `/orgs/${this.orgId}/crawls/${this.itemId}/errors?page=${page}&pageSize=${pageSize}`,
-    );
-
-    return data;
   }
 
   private async cancel() {
