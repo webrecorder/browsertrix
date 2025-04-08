@@ -70,21 +70,21 @@ def register_exit_handler() -> None:
     loop.add_signal_handler(signal.SIGTERM, exit_handler)
 
 
-def parse_jsonl_error_messages(errors: list[str]) -> list[dict]:
+def parse_jsonl_log_messages(log_lines: list[str]) -> list[dict]:
     """parse json-l error strings from redis/db into json"""
-    parsed_errors = []
-    for error_line in errors:
-        if not error_line:
+    parsed_log_lines = []
+    for log_line in log_lines:
+        if not log_line:
             continue
         try:
-            result = json.loads(error_line)
-            parsed_errors.append(result)
+            result = json.loads(log_line)
+            parsed_log_lines.append(result)
         except json.JSONDecodeError as err:
             print(
-                f"Error decoding json-l error line: {error_line}. Error: {err}",
+                f"Error decoding json-l log line: {log_line}. Error: {err}",
                 flush=True,
             )
-    return parsed_errors
+    return parsed_log_lines
 
 
 def is_bool(stri: Optional[str]) -> bool:

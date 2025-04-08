@@ -22,7 +22,7 @@ from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import (
     dt_now,
     date_to_str,
-    parse_jsonl_error_messages,
+    parse_jsonl_log_messages,
     stream_dict_list_as_csv,
     validate_regexes,
 )
@@ -49,7 +49,7 @@ from .models import (
     Seed,
     PaginatedCrawlOutResponse,
     PaginatedSeedResponse,
-    PaginatedCrawlErrorResponse,
+    PaginatedCrawlLogResponse,
     RUNNING_AND_WAITING_STATES,
     SUCCESSFUL_STATES,
     NON_RUNNING_STATES,
@@ -186,7 +186,7 @@ class CrawlOps(BaseCrawlOps):
             {"$match": query},
             {"$set": {"firstSeedObject": {"$arrayElemAt": ["$config.seeds", 0]}}},
             {"$set": {"firstSeed": "$firstSeedObject.url"}},
-            {"$unset": ["firstSeedObject", "errors", "config"]},
+            {"$unset": ["firstSeedObject", "errors", "behaviorLogs", "config"]},
             {"$set": {"activeQAStats": "$qa.stats"}},
             {
                 "$set": {
@@ -667,6 +667,17 @@ class CrawlOps(BaseCrawlOps):
 
         res = await self.crawls.find_one_and_update(
             {"_id": crawl_id}, {"$push": {f"{prefix}errors": error}}
+        )
+        return res is not None
+
+    async def add_crawl_behavior_log(
+        self,
+        crawl_id: str,
+        log_line: str,
+    ) -> bool:
+        """add crawl behavior log from redis to mongodb behaviorLogs field"""
+        res = await self.crawls.find_one_and_update(
+            {"_id": crawl_id}, {"$push": {"behaviorLogs": log_line}}
         )
         return res is not None
 
@@ -1595,7 +1606,7 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
     @app.get(
         "/orgs/{oid}/crawls/{crawl_id}/errors",
         tags=["crawls"],
-        response_model=PaginatedCrawlErrorResponse,
+        response_model=PaginatedCrawlLogResponse,
     )
     async def get_crawl_errors(
         crawl_id: str,
@@ -1609,7 +1620,31 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
         upper_bound = skip + pageSize
 
         errors = crawl.errors[skip:upper_bound] if crawl.errors else []
-        parsed_errors = parse_jsonl_error_messages(errors)
+        parsed_errors = parse_jsonl_log_messages(errors)
         return paginated_format(parsed_errors, len(crawl.errors or []), page, pageSize)
+
+    @app.get(
+        "/orgs/{oid}/crawls/{crawl_id}/behaviorLogs",
+        tags=["crawls"],
+        response_model=PaginatedCrawlLogResponse,
+    )
+    async def get_crawl_behavior_logs(
+        crawl_id: str,
+        pageSize: int = DEFAULT_PAGE_SIZE,
+        page: int = 1,
+        org: Organization = Depends(org_viewer_dep),
+    ):
+        crawl = await ops.get_crawl(crawl_id, org)
+
+        skip = (page - 1) * pageSize
+        upper_bound = skip + pageSize
+
+        behavior_logs = (
+            crawl.behaviorLogs[skip:upper_bound] if crawl.behaviorLogs else []
+        )
+        parsed_logs = parse_jsonl_log_messages(behavior_logs)
+        return paginated_format(
+            parsed_logs, len(crawl.behaviorLogs or []), page, pageSize
+        )
 
     return ops

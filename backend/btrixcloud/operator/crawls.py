@@ -86,6 +86,7 @@ class CrawlOperator(BaseOperator):
     done_key: str
     pages_key: str
     errors_key: str
+    behavior_logs_key: str
 
     fast_retry_secs: int
     log_failed_crawl_lines: int
@@ -98,6 +99,7 @@ class CrawlOperator(BaseOperator):
         self.done_key = "crawls-done"
         self.pages_key = "pages"
         self.errors_key = "e"
+        self.behavior_logs_key = "b"
 
         self.fast_retry_secs = int(os.environ.get("FAST_RETRY_SECS") or 0)
 
@@ -903,6 +905,13 @@ class CrawlOperator(BaseOperator):
                     crawl.db_crawl_id, crawl.is_qa, crawl_error
                 )
                 crawl_error = await redis.lpop(f"{crawl.id}:{self.errors_key}")
+
+            behavior_log = await redis.lpop(f"{crawl.id}:{self.behavior_logs_key}")
+            while behavior_log:
+                await self.crawl_ops.add_crawl_behavior_log(
+                    crawl.db_crawl_id, behavior_log
+                )
+                behavior_log = await redis.lpop(f"{crawl.id}:{self.behavior_logs_key}")
 
             # ensure filesAdded and filesAddedSize always set
             status.filesAdded = int(await redis.get("filesAdded") or 0)
