@@ -88,6 +88,7 @@ const numberFormatter = cached(
       mergeLocales(lang, useNavigatorLocales, navigatorLocales),
       options,
     ),
+  { cacheConstructor: Map },
 );
 
 /**
@@ -108,6 +109,7 @@ const dateFormatter = cached(
       mergeLocales(lang, useNavigatorLocales, navigatorLocales),
       options,
     ),
+  { cacheConstructor: Map },
 );
 
 /**
@@ -128,6 +130,7 @@ const durationFormatter = cached(
       mergeLocales(lang, useNavigatorLocales, navigatorLocales),
       options,
     ),
+  { cacheConstructor: Map },
 );
 
 const pluralFormatter = cached(
@@ -141,6 +144,7 @@ const pluralFormatter = cached(
       mergeLocales(lang, useNavigatorLocales, navigatorLocales),
       options,
     ),
+  { cacheConstructor: Map },
 );
 
 export class Localize {
