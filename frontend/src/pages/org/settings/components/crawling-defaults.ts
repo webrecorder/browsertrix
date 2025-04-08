@@ -14,7 +14,7 @@ import type { SelectCrawlerProxy } from "@/components/ui/select-crawler-proxy";
 import { proxiesContext, type ProxiesContext } from "@/context/org";
 import type { QueueExclusionTable } from "@/features/crawl-workflows/queue-exclusion-table";
 import { columns, type Cols } from "@/layouts/columns";
-import infoTextStrings from "@/strings/crawl-workflows/infoText";
+import { infoTextFor } from "@/strings/crawl-workflows/infoText";
 import sectionStrings from "@/strings/crawl-workflows/section";
 import { crawlingDefaultsSchema, type CrawlingDefaults } from "@/types/org";
 import {
@@ -273,7 +273,7 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
                   .filter(([, field]) => field as unknown)
                   .map(([fieldName, field]) => [
                     field,
-                    infoTextStrings[fieldName as FieldName],
+                    infoTextFor[fieldName as FieldName],
                   ]),
               ),
             ),
