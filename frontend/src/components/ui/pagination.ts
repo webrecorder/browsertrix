@@ -141,21 +141,11 @@ export class Pagination extends LitElement {
 
   searchParams = new SearchParamsController(this, (params) => {
     const page = parsePage(params.get(this.name));
-
-    // TODO: figure out why previous params aren't working here
-    // in the meantime, 0 works okay — we do an inequality check in `onPageChange` anyways
-    this.onPageChange(page, 0);
+    this.onPageChange(page);
   });
 
-  // @property({ type: Number })
-  // public set page(page: number) {
-  //   this.onPageChange(page);
-  // }
-
-  public get page() {
-    const page = parsePage(this.searchParams.searchParams.get(this.name));
-    return Math.max(1, Math.min(this.pages, page));
-  }
+  @state()
+  page = 1;
 
   @property({ type: String })
   name = "page";
@@ -188,9 +178,10 @@ export class Pagination extends LitElement {
     const parsedPage = parseFloat(
       this.searchParams.searchParams.get(this.name) ?? "1",
     );
-    if (parsedPage > this.pages || parsedPage < 1 || parsedPage % 1 !== 0) {
-      this.onPageChange(this.page, parsedPage);
-      this.requestUpdate("page", parsedPage);
+    if (parsedPage != this.page) {
+      const page = parsePage(this.searchParams.searchParams.get(this.name));
+      const constrainedPage = Math.max(1, Math.min(this.pages, page));
+      this.onPageChange(constrainedPage);
     }
 
     if (changedProperties.get("page") && this.page) {
@@ -354,8 +345,8 @@ export class Pagination extends LitElement {
     this.onPageChange(this.page < this.pages ? this.page + 1 : this.pages);
   }
 
-  private onPageChange(page: number, prevPage = this.page) {
-    if (prevPage !== page) {
+  private onPageChange(page: number) {
+    if (this.page !== page) {
       this.searchParams.set((params) => {
         if (page === 1) {
           params.delete(this.name);
@@ -364,7 +355,6 @@ export class Pagination extends LitElement {
         }
         return params;
       });
-      this.requestUpdate("page", prevPage);
       this.dispatchEvent(
         new CustomEvent<PageChangeDetail>("page-change", {
           detail: { page: page, pages: this.pages },
@@ -372,6 +362,7 @@ export class Pagination extends LitElement {
         }),
       );
     }
+    this.page = page;
   }
 
   private calculatePages() {
