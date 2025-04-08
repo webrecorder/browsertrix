@@ -12,9 +12,11 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import type { LanguageSelect } from "@/components/ui/language-select";
 import type { SelectCrawlerProxy } from "@/components/ui/select-crawler-proxy";
 import { proxiesContext, type ProxiesContext } from "@/context/org";
+import type { CustomBehaviorsTable } from "@/features/crawl-workflows/custom-behaviors-table";
 import type { QueueExclusionTable } from "@/features/crawl-workflows/queue-exclusion-table";
 import { columns, type Cols } from "@/layouts/columns";
 import { infoTextFor } from "@/strings/crawl-workflows/infoText";
+import { labelFor } from "@/strings/crawl-workflows/labels";
 import sectionStrings from "@/strings/crawl-workflows/section";
 import { crawlingDefaultsSchema, type CrawlingDefaults } from "@/types/org";
 import {
@@ -32,14 +34,10 @@ type Field = Record<FieldName, TemplateResult<1> | undefined>;
 
 const PLACEHOLDER_EXCLUSIONS = [""]; // Add empty slot
 
-function section(section: SectionsEnum | "exclusions", cols: Cols) {
+function section(section: SectionsEnum, cols: Cols) {
   return html`
     <section class="p-5">
-      <btrix-section-heading
-        >${section === "exclusions"
-          ? msg("Exclusions")
-          : sectionStrings[section]}</btrix-section-heading
-      >
+      <btrix-section-heading>${sectionStrings[section]}</btrix-section-heading>
       ${columns(cols)}
     </section>
   `;
@@ -62,6 +60,9 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
 
   @query("btrix-queue-exclusion-table")
   exclusionTable?: QueueExclusionTable | null;
+
+  @query("custom-behaviors-table")
+  customBehaviorsTable?: CustomBehaviorsTable | null;
 
   @query("btrix-language-select")
   languageSelect?: LanguageSelect | null;
@@ -140,6 +141,13 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
       `,
     };
     const behaviors = {
+      customBehavior: html`
+        <label class="form-label text-xs">${labelFor.customBehaviors}</label>
+        <btrix-custom-behaviors-table
+          .customBehaviors=${orgDefaults.customBehaviors || []}
+          editable
+        ></btrix-custom-behaviors-table>
+      `,
       pageLoadTimeoutSeconds: html`
         <sl-input
           size="small"
@@ -312,6 +320,7 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
       userAgent: values.userAgent,
       lang: this.languageSelect?.value || undefined,
       exclude: this.exclusionTable?.exclusions?.filter((v) => v) || [],
+      customBehaviors: [],
     };
 
     // Set null or empty strings to undefined
