@@ -33,7 +33,10 @@ import isEqual from "lodash/fp/isEqual";
 import throttle from "lodash/fp/throttle";
 import uniq from "lodash/fp/uniq";
 
-import type { LinkSelectorTable } from "./link-selector-table";
+import {
+  SELECTOR_DELIMITER,
+  type LinkSelectorTable,
+} from "./link-selector-table";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type {
@@ -1131,6 +1134,15 @@ https://archiveweb.page/images/${"logo.svg"}`}
   private renderLinkSelectors() {
     const selectors = this.formState.selectLinks;
     const isCustom = !isEqual(defaultFormState.selectLinks, selectors);
+    const [defaultSel, defaultAttr] =
+      DEFAULT_SELECT_LINKS[0].split(SELECTOR_DELIMITER);
+    const defaultValue = html`<span
+      class="inline-flex items-center gap-0.5 rounded border px-1"
+    >
+      <btrix-code language="css" value=${defaultSel}></btrix-code
+      ><code class="text-neutral-400">${SELECTOR_DELIMITER}</code
+      ><btrix-code language="xml" value=${defaultAttr}></btrix-code>
+    </span>`;
 
     return html`
       <div class="col-span-5">
@@ -1151,7 +1163,17 @@ https://archiveweb.page/images/${"logo.svg"}`}
                 }}
               ></btrix-link-selector-table>`,
             )}
-            ${this.renderHelpTextCol(infoTextStrings["selectLinks"], false)}
+            ${this.renderHelpTextCol(
+              html`
+                ${infoTextStrings["selectLinks"]}
+                <br /><br />
+                ${msg(
+                  html`If none are specified, the crawler will default to
+                  ${defaultValue}.`,
+                )}
+              `,
+              false,
+            )}
           </div>
         </btrix-details>
       </div>
