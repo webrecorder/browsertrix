@@ -24,6 +24,7 @@ import { regexUnescape } from "@/utils/string";
 
 export const BYTES_PER_GB = 1e9;
 export const DEFAULT_SELECT_LINKS = ["a[href]->href" as const];
+export const DEFAULT_AUTOCLICK_SELECTOR = "a" as const;
 
 export const SECTIONS = [
   "scope",
@@ -92,6 +93,7 @@ export type FormState = {
   crawlerChannel: string;
   proxyId: string | null;
   selectLinks: string[];
+  clickSelector: string;
 };
 
 export type FormStateField = keyof FormState;
@@ -148,6 +150,7 @@ export const getDefaultFormState = (): FormState => ({
   crawlerChannel: "default",
   proxyId: null,
   selectLinks: DEFAULT_SELECT_LINKS,
+  clickSelector: DEFAULT_AUTOCLICK_SELECTOR,
 });
 
 export const mapSeedToUrl = (arr: Seed[]) =>
@@ -294,6 +297,7 @@ export function getInitialFormState(params: {
       ? params.initialWorkflow.config.behaviors.includes(Behavior.AutoClick)
       : defaultFormState.autoclickBehavior,
     selectLinks: params.initialWorkflow.config.selectLinks,
+    clickSelector: params.initialWorkflow.config.clickSelector,
     userAgent:
       params.initialWorkflow.config.userAgent ?? defaultFormState.userAgent,
     crawlerChannel:

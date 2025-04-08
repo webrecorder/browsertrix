@@ -33,17 +33,31 @@ export class SyntaxInput extends TailwindElement {
   @property({ type: Boolean })
   required?: boolean;
 
+  @property({ type: Boolean })
+  disabled?: boolean;
+
   @property({ type: String })
   placeholder?: string;
 
   @property({ type: String })
+  name?: string;
+
+  @property({ type: String })
+  label?: string;
+
+  @property({ type: String })
   language?: Code["language"];
+
+  // FIXME Tooltips should be opt-in for inputs that are used in table cells
+  // Should fix with https://github.com/webrecorder/browsertrix/issues/2497
+  @property({ type: Boolean })
+  disableTooltip = false;
 
   @state()
   private error = "";
 
   @query("sl-input")
-  public readonly input?: SlInput | null;
+  private readonly input?: SlInput | null;
 
   @query("sl-tooltip")
   public readonly tooltip?: SlTooltip | null;
@@ -53,14 +67,17 @@ export class SyntaxInput extends TailwindElement {
 
   public setCustomValidity(message: string) {
     this.input?.setCustomValidity(message);
+    if (this.disableTooltip) {
+      this.input?.setAttribute("help-text", message);
+    }
     this.error = message;
   }
 
   public reportValidity() {
-    const valid = this.checkValidity();
-
-    if (this.input && this.tooltip) {
-      this.tooltip.disabled = true;
+    if (this.input) {
+      if (this.tooltip) {
+        this.tooltip.disabled = true;
+      }
 
       // Suppress tooltip validation from showing on focus
       this.input.addEventListener(
@@ -68,15 +85,18 @@ export class SyntaxInput extends TailwindElement {
         async () => {
           await this.updateComplete;
           await this.input!.updateComplete;
-          this.tooltip!.disabled = !this.error;
+
+          if (this.tooltip && !this.disableTooltip) {
+            this.tooltip.disabled = !this.error;
+          }
         },
         { once: true },
       );
 
-      this.input.reportValidity();
+      return this.input.reportValidity();
     }
 
-    return valid;
+    return this.checkValidity();
   }
 
   public checkValidity() {
@@ -99,23 +119,27 @@ export class SyntaxInput extends TailwindElement {
   render() {
     return html`<sl-tooltip
       content=${this.error}
-      ?disabled=${!this.error}
+      ?disabled=${!this.error || this.disableTooltip}
       hoist
       placement="bottom"
     >
-      <div class=${clsx(tw`relative overflow-hidden p-px`)}>
+      <div class=${clsx(tw`relative`)} part="base">
         <sl-input
           class=${clsx(
-            tw`relative z-10 block`,
-            tw`[--sl-input-border-color:transparent] [--sl-input-border-radius-medium:0] [--sl-input-font-family:var(--sl-font-mono)] [--sl-input-spacing-medium:var(--sl-spacing-small)]`,
-            tw`caret-black part-[base]:bg-transparent part-[input]:text-transparent`,
+            tw`[--sl-input-font-family:var(--sl-font-mono)] [--sl-input-spacing-medium:var(--sl-spacing-small)]`,
+            tw`part-[base]:relative part-[base]:bg-transparent`,
+            tw`part-[input]:relative part-[input]:z-10 part-[input]:text-transparent part-[input]:caret-black`,
+            tw`part-[prefix]:absolute part-[prefix]:inset-0 part-[prefix]:mr-[var(--sl-input-spacing-medium)]`,
           )}
           spellcheck="false"
           value=${this.value}
+          name=${ifDefined(this.name)}
+          label=${ifDefined(this.label)}
           minlength=${ifDefined(this.minlength)}
           maxlength=${ifDefined(this.maxlength)}
           placeholder=${ifDefined(this.placeholder)}
           ?required=${this.required}
+          ?disabled=${this.disabled}
           @sl-input=${async (e: SlInputEvent) => {
             const value = (e.target as SlInput).value;
 
@@ -153,17 +177,29 @@ export class SyntaxInput extends TailwindElement {
               this.onSelectionChange,
             );
           }}
-        ></sl-input>
+          @sl-change=${async () => {
+            if (this.code) {
+              await this.code.updateComplete;
 
-        <btrix-code
-          class=${clsx(
-            tw`absolute inset-0.5 flex items-center overflow-auto px-3 [scrollbar-width:none]`,
-          )}
-          value=${this.value}
-          language=${ifDefined(this.language)}
-          .wrap=${false}
-          aria-hidden="true"
-        ></btrix-code>
+              this.dispatchEvent(
+                new CustomEvent("btrix-change", {
+                  detail: { value: this.code.value },
+                }),
+              );
+            }
+          }}
+        >
+          <btrix-code
+            slot="prefix"
+            class=${clsx(
+              tw`flex items-center overflow-auto [scrollbar-width:none]`,
+              tw`part-[base]:whitespace-pre`,
+            )}
+            value=${this.value}
+            language=${ifDefined(this.language)}
+            aria-hidden="true"
+          ></btrix-code>
+        </sl-input>
       </div>
     </sl-tooltip>`;
   }

@@ -178,6 +178,18 @@ export class ConfigDetails extends BtrixElement {
               .filter((v) => v)
               .join(", ") || none,
           )}
+          ${when(
+            seedsConfig?.behaviors?.includes(Behavior.AutoClick) &&
+              seedsConfig.clickSelector,
+            (clickSelector) =>
+              this.renderSetting(
+                labelFor.clickSelector,
+                html`<btrix-code
+                  language="css"
+                  value=${clickSelector}
+                ></btrix-code>`,
+              ),
+          )}
           ${this.renderSetting(
             labelFor.customBehaviors,
             seedsConfig?.customBehaviors.length

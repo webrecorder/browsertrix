@@ -75,6 +75,7 @@ export class Code extends TailwindElement {
     }).value;
 
     return html`<pre
+      part="base"
       class=${clsx(
         tw`font-monospace m-0 text-neutral-600`,
         this.wrap ? tw`whitespace-pre-wrap` : tw`whitespace-nowrap`,

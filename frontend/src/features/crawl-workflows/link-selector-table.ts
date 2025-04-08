@@ -9,11 +9,13 @@ import { nanoid } from "nanoid";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { SyntaxInput } from "@/components/ui/syntax-input";
+import type { BtrixChangeEvent } from "@/events/btrix-change";
 import type { SeedConfig } from "@/types/crawler";
 import { tw } from "@/utils/tailwind";
 
 export const SELECTOR_DELIMITER = "->" as const;
 const emptyCells = ["", ""];
+const syntaxInputClasses = tw`flex-1 [--sl-input-border-color:transparent] [--sl-input-border-radius-medium:0]`;
 
 /**
  * @fires btrix-change
@@ -145,19 +147,19 @@ export class LinkSelectorTable extends BtrixElement {
 
     return html`
       <btrix-table-row class=${i > 0 ? "border-t" : ""}>
-        <btrix-table-cell>
+        <btrix-table-cell class=${clsx(this.editable && tw`p-0.5`)}>
           ${when(
             this.editable,
             () => html`
               <btrix-syntax-input
-                class="flex-1"
+                class=${syntaxInputClasses}
                 value=${sel}
                 language="css"
                 placeholder=${msg("Enter selector")}
                 ?required=${Boolean(attr)}
-                @sl-change=${(e: CustomEvent) => {
-                  const el = e.currentTarget as SyntaxInput;
-                  const value = el.input?.value.trim() || "";
+                @btrix-change=${(e: BtrixChangeEvent<typeof sel>) => {
+                  const el = e.target as SyntaxInput;
+                  const value = e.detail.value.trim();
 
                   void this.updateRows(
                     {
@@ -189,19 +191,21 @@ export class LinkSelectorTable extends BtrixElement {
               ></btrix-code>`,
           )}
         </btrix-table-cell>
-        <btrix-table-cell class="border-l">
+        <btrix-table-cell
+          class=${clsx(tw`border-l`, this.editable && tw`p-0.5`)}
+        >
           ${when(
             this.editable,
             () => html`
               <btrix-syntax-input
-                class="flex-1"
+                class=${syntaxInputClasses}
                 value=${attr}
                 language="xml"
                 placeholder=${msg("Enter attribute")}
                 ?required=${Boolean(sel)}
-                @sl-change=${(e: CustomEvent) => {
-                  const el = e.currentTarget as SyntaxInput;
-                  const value = el.input?.value.trim() || "";
+                @btrix-change=${(e: BtrixChangeEvent<typeof attr>) => {
+                  const el = e.target as SyntaxInput;
+                  const value = e.detail.value.trim();
 
                   void this.updateRows(
                     {

@@ -46,6 +46,7 @@ export type SeedConfig = Expand<
     userAgent?: string | null;
     selectLinks: string[];
     customBehaviors: string[];
+    clickSelector: string;
   }
 >;
 
