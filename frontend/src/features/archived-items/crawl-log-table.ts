@@ -68,7 +68,7 @@ export class CrawlLogTable extends TailwindElement {
   render() {
     if (!this.logs) return;
 
-    const rowClasses = tw`grid grid-cols-[9rem_2.5rem_20rem_1fr] leading-[1.3]`;
+    const rowClasses = tw`grid grid-cols-[5rem_2.5rem_20rem_1fr] leading-[1.3]`;
 
     return html`<btrix-numbered-list class="text-xs">
         <btrix-numbered-list-header slot="header">
@@ -187,32 +187,31 @@ export class CrawlLogTable extends TailwindElement {
       case CrawlLogLevel.Fatal:
         return html`
           <sl-icon
-            name="exclamation-octagon"
+            name="exclamation-octagon-fill"
             class=${clsx(tw`text-danger-500`, baseClasses)}
           ></sl-icon>
         `;
       case CrawlLogLevel.Error:
         return html`
           <sl-icon
-            name="exclamation-triangle"
+            name="exclamation-triangle-fill"
             class=${clsx(tw`text-danger-500`, baseClasses)}
           ></sl-icon>
         `;
       case CrawlLogLevel.Warning:
         return html`
           <sl-icon
-            name="exclamation-square"
+            name="exclamation-circle-fill"
             class=${clsx(tw`text-warning-500`, baseClasses)}
           ></sl-icon>
         `;
       case CrawlLogLevel.Info:
         return html`
           <sl-icon
-            name="info-square"
+            name="info-circle-fill"
             class=${clsx(
-              contextLevel < MIN_CONTEXT_LEVEL
-                ? tw`text-neutral-400`
-                : tw`text-blue-500`,
+              tw`text-neutral-400`,
+              contextLevel < MIN_CONTEXT_LEVEL && tw`opacity-30`,
               baseClasses,
             )}
           ></sl-icon>
