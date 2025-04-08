@@ -1,7 +1,7 @@
 import { msg } from "@lit/localize";
 
 export const labelFor = {
-  behaviors: msg("Built-in Behaviors"),
+  behaviors: msg("Behaviors"),
   customBehaviors: msg("Custom Behaviors"),
   autoscrollBehavior: msg("Autoscroll"),
   autoclickBehavior: msg("Autoclick"),

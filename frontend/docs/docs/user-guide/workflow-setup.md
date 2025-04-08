@@ -166,7 +166,7 @@ The crawl will be gracefully stopped after reaching this set size in GB.
 
 Customize how and when the browser performs specific operations on a page.
 
-**Built-in Behaviors**
+_**Behaviors**_
 
 Behaviors are browser operations that can be enabled for additional page interactivity.
 
@@ -187,13 +187,17 @@ When clicking a link-like element that would normally result in navigation, auto
     
     - Websites that use `<a>` in place of a `<button>` to reveal in-page content.
 
-### Click Selector
+#### Click Selector
 
 When autoclick is enabled, you can customize which element is automatically clicked by specifying a CSS selector.
 
 See [Basic CSS selectors (MDN)](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics/Basic_selectors) for examples of valid CSS selectors.
 
-**Page Timing**
+### Use Custom Behaviors
+
+Enable custom behaviors to add your own behavior scripts. See [webrecorder/browsertrix-behaviors](https://github.com/webrecorder/browsertrix-behaviors) for more information.
+
+_**Page Timing**_
 
 Page timing gives you more granular control over how long the browser should stay on a page and when behaviors should run on a page. Add limits to decrease the amount of time the browser spends on a page, and add delays to increase the amount of time the browser waits on a page. Adding delays will increase the total amount of time spent on a crawl and may impact your overall crawl minutes.
 

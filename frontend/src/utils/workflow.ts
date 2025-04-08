@@ -89,6 +89,7 @@ export type FormState = {
   description: WorkflowParams["description"];
   autoscrollBehavior: boolean;
   autoclickBehavior: boolean;
+  customBehavior: boolean;
   userAgent: string | null;
   crawlerChannel: string;
   proxyId: string | null;
@@ -151,6 +152,7 @@ export const getDefaultFormState = (): FormState => ({
   proxyId: null,
   selectLinks: DEFAULT_SELECT_LINKS,
   clickSelector: DEFAULT_AUTOCLICK_SELECTOR,
+  customBehavior: false,
 });
 
 export const mapSeedToUrl = (arr: Seed[]) =>
@@ -296,6 +298,9 @@ export function getInitialFormState(params: {
     autoclickBehavior: params.initialWorkflow.config.behaviors
       ? params.initialWorkflow.config.behaviors.includes(Behavior.AutoClick)
       : defaultFormState.autoclickBehavior,
+    customBehavior: Boolean(
+      params.initialWorkflow.config.customBehaviors.length,
+    ),
     selectLinks: params.initialWorkflow.config.selectLinks,
     clickSelector: params.initialWorkflow.config.clickSelector,
     userAgent:
