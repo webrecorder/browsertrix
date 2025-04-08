@@ -19,6 +19,7 @@ import { infoTextFor } from "@/strings/crawl-workflows/infoText";
 import { labelFor } from "@/strings/crawl-workflows/labels";
 import sectionStrings from "@/strings/crawl-workflows/section";
 import { crawlingDefaultsSchema, type CrawlingDefaults } from "@/types/org";
+import { formValidator } from "@/utils/form";
 import {
   appDefaults,
   BYTES_PER_GB,
@@ -61,7 +62,7 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
   @query("btrix-queue-exclusion-table")
   exclusionTable?: QueueExclusionTable | null;
 
-  @query("custom-behaviors-table")
+  @query("btrix-custom-behaviors-table")
   customBehaviorsTable?: CustomBehaviorsTable | null;
 
   @query("btrix-language-select")
@@ -72,6 +73,8 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
 
   @query('sl-button[type="submit"]')
   submitButton?: SlButton | null;
+
+  private readonly checkFormValidity = formValidator(this);
 
   connectedCallback() {
     super.connectedCallback();
@@ -300,6 +303,31 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
     e.preventDefault();
 
     const form = e.target as HTMLFormElement;
+
+    // Wait for custom behaviors validation to finish
+    // TODO Move away from manual validation check
+    // See https://github.com/webrecorder/browsertrix/issues/2536
+    if (this.customBehaviorsTable) {
+      if (!this.customBehaviorsTable.checkValidity()) {
+        this.customBehaviorsTable.reportValidity();
+        return;
+      }
+
+      try {
+        await this.customBehaviorsTable.taskComplete;
+      } catch {
+        this.customBehaviorsTable.reportValidity();
+        return;
+      }
+    }
+
+    const isValid = await this.checkFormValidity(form);
+
+    if (!isValid) {
+      form.reportValidity();
+      return;
+    }
+
     const values = serialize(form) as Record<string, string>;
     const parseNumber = (value: string) => (value ? Number(value) : undefined);
     const parsedValues: CrawlingDefaults = {
@@ -320,7 +348,7 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
       userAgent: values.userAgent,
       lang: this.languageSelect?.value || undefined,
       exclude: this.exclusionTable?.exclusions?.filter((v) => v) || [],
-      customBehaviors: [],
+      customBehaviors: this.customBehaviorsTable?.value || [],
     };
 
     // Set null or empty strings to undefined
