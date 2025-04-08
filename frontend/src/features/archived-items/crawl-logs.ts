@@ -281,14 +281,7 @@ export class CrawlLogs extends BtrixElement {
         ${when(logs, (logs) => {
           const total = logs.value?.total || 0;
           return html`
-            <btrix-badge
-              slot="suffix"
-              variant=${selected || !total
-                ? "neutral"
-                : logType === LogType.Error
-                  ? "danger"
-                  : "blue"}
-            >
+            <btrix-badge slot="suffix" variant="blue">
               ${this.localize.number(total)}
             </btrix-badge>
           `;
