@@ -201,7 +201,7 @@ export class CrawlLogTable extends TailwindElement {
       case CrawlLogLevel.Warning:
         return html`
           <sl-icon
-            name="exclamation-circle-fill"
+            name="exclamation-diamond-fill"
             class=${clsx(tw`text-warning-500`, baseClasses)}
           ></sl-icon>
         `;
