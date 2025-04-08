@@ -166,7 +166,7 @@ The crawl will be gracefully stopped after reaching this set size in GB.
 
 Customize how and when the browser performs specific operations on a page.
 
-**Built-in Behaviors**
+**Behaviors**
 
 Behaviors are browser operations that can be enabled for additional page interactivity.
 

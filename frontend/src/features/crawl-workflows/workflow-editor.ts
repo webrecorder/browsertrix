@@ -1267,7 +1267,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     `;
   }
 
-  private renderBehaviors() {
+  private renderPageBehavior() {
     return html`
       ${this.renderSectionHeading(labelFor.behaviors)}
       ${inputCol(
@@ -1421,32 +1421,29 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
   private renderCustomBehaviors() {
     return html`
-      ${this.renderSectionHeading(labelFor.customBehaviors)}
       ${inputCol(
-        html`<btrix-custom-behaviors-table
-          .customBehaviors=${this.initialWorkflow?.config.customBehaviors || []}
-          editable
-          @btrix-change=${() => {
-            this.customBehaviorsTable?.removeAttribute("data-invalid");
-            this.customBehaviorsTable?.removeAttribute("data-user-invalid");
-          }}
-          @btrix-invalid=${() => {
-            /**
-             * HACK Set data attribute manually so that
-             * table works with `syncTabErrorState`
-             *
-             * FIXME Should be fixed with
-             * https://github.com/webrecorder/browsertrix/issues/2497
-             * or
-             * https://github.com/webrecorder/browsertrix/issues/2536
-             */
-            this.customBehaviorsTable?.setAttribute("data-invalid", "true");
-            this.customBehaviorsTable?.setAttribute(
-              "data-user-invalid",
-              "true",
-            );
-          }}
-        ></btrix-custom-behaviors-table>`,
+        html`<sl-checkbox
+            ?checked=${this.formState.customBehavior}
+            @sl-change=${() =>
+              this.updateFormState({
+                customBehavior: !this.formState.customBehavior,
+              })}
+          >
+            ${msg("Use Custom Behaviors")}
+          </sl-checkbox>
+
+          ${when(
+            this.formState.customBehavior,
+            () => html`
+              <div class="mt-3">
+                <btrix-custom-behaviors-table
+                  .customBehaviors=${this.initialWorkflow?.config
+                    .customBehaviors || []}
+                  editable
+                ></btrix-custom-behaviors-table>
+              </div>
+            `,
+          )} `,
       )}
       ${this.renderHelpTextCol(
         msg(
@@ -1809,7 +1806,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     {
       name: "behaviors",
       desc: msg("Customize how the browser loads and interacts with a page."),
-      render: this.renderBehaviors,
+      render: this.renderPageBehavior,
     },
     {
       name: "browserSettings",
@@ -2217,11 +2214,19 @@ https://archiveweb.page/images/${"logo.svg"}`}
     // Wait for custom behaviors validation to finish
     // TODO Move away from manual validation check
     // See https://github.com/webrecorder/browsertrix/issues/2536
-    try {
-      await this.customBehaviorsTable?.taskComplete;
-    } catch {
-      this.customBehaviorsTable?.reportValidity();
-      return;
+
+    if (this.formState.customBehavior && this.customBehaviorsTable) {
+      if (!this.customBehaviorsTable.checkValidity()) {
+        this.customBehaviorsTable.reportValidity();
+        return;
+      }
+
+      try {
+        await this.customBehaviorsTable.taskComplete;
+      } catch {
+        this.customBehaviorsTable.reportValidity();
+        return;
+      }
     }
 
     const isValid = await this.checkFormValidity(this.formElem);
