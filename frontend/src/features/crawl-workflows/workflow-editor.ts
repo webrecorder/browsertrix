@@ -1284,77 +1284,65 @@ https://archiveweb.page/images/${"logo.svg"}`}
       )}
       ${inputCol(
         html`<sl-checkbox
-          name="autoclickBehavior"
-          ?checked=${this.formState.autoclickBehavior}
-        >
-          ${labelFor.autoclickBehavior}
-        </sl-checkbox>`,
+            name="autoclickBehavior"
+            ?checked=${this.formState.autoclickBehavior}
+          >
+            ${labelFor.autoclickBehavior}
+          </sl-checkbox>
+
+          ${when(
+            this.formState.autoclickBehavior,
+            () =>
+              html`<div class="mt-3">
+                <btrix-syntax-input
+                  name="clickSelector"
+                  label=${labelFor.clickSelector}
+                  language="css"
+                  value=${this.formState.clickSelector}
+                  placeholder="${msg("Default:")} ${DEFAULT_AUTOCLICK_SELECTOR}"
+                  disableTooltip
+                  @btrix-change=${(
+                    e: BtrixChangeEvent<typeof this.formState.clickSelector>,
+                  ) => {
+                    const el = e.target as SyntaxInput;
+                    const value = e.detail.value.trim();
+
+                    if (value) {
+                      try {
+                        // Validate selector
+                        this.cssParser(value);
+
+                        this.updateFormState(
+                          {
+                            clickSelector: e.detail.value,
+                          },
+                          true,
+                        );
+                      } catch {
+                        el.setCustomValidity(
+                          msg("Please enter a valid CSS selector"),
+                        );
+                      }
+                    }
+                  }}
+                ></btrix-syntax-input>
+              </div> `,
+          )} `,
       )}
       ${this.renderHelpTextCol(
-        msg(
-          `Automatically click on all link-like elements without navigating away from the page.`,
-        ),
-        false,
-      )}
-      ${when(
-        this.formState.autoclickBehavior,
-        () => html`
-          ${inputCol(
-            html`<btrix-syntax-input
-              name="clickSelector"
-              label=${labelFor.clickSelector}
-              language="css"
-              value=${this.formState.clickSelector}
-              placeholder="${msg("Default:")} ${DEFAULT_AUTOCLICK_SELECTOR}"
-              disableTooltip
-              @btrix-change=${(
-                e: BtrixChangeEvent<typeof this.formState.clickSelector>,
-              ) => {
-                const el = e.target as SyntaxInput;
-                const value = e.detail.value.trim();
-
-                if (value) {
-                  try {
-                    // Validate selector
-                    this.cssParser(value);
-
-                    this.updateFormState(
-                      {
-                        clickSelector: e.detail.value,
-                      },
-                      true,
-                    );
-
-                    this.clickSelector?.removeAttribute("data-invalid");
-                    this.clickSelector?.removeAttribute("data-user-invalid");
-                  } catch {
-                    el.setCustomValidity(
-                      msg("Please enter a valid CSS selector"),
-                    );
-                  }
-                }
-              }}
-              @btrix-invalid=${() => {
-                /**
-                 * HACK Set data attribute manually so that
-                 * table works with `syncTabErrorState`
-                 *
-                 * FIXME Should be fixed with
-                 * https://github.com/webrecorder/browsertrix/issues/2497
-                 * or
-                 * https://github.com/webrecorder/browsertrix/issues/2536
-                 */
-                this.clickSelector?.setAttribute("data-invalid", "true");
-                this.clickSelector?.setAttribute("data-user-invalid", "true");
-              }}
-            ></btrix-syntax-input>`,
+        html`
+          ${msg(
+            `Automatically click on all link-like elements without navigating away from the page.`,
           )}
-          ${this.renderHelpTextCol(
-            html`${msg(
-                `Customize the CSS selector used to autoclick elements.`,
-              )} <span class="sr-only">${msg('Defaults to "a".')}</span>`,
+          ${when(
+            this.formState.autoclickBehavior,
+            () =>
+              html`<br /><br />${msg(
+                  `Optionally, specify the CSS selector used to autoclick elements.`,
+                )} <span class="sr-only">${msg('Defaults to "a".')}</span>`,
           )}
         `,
+        false,
       )}
       ${this.renderCustomBehaviors()}
       ${this.renderSectionHeading(msg("Page Timing"))}
@@ -2205,10 +2193,12 @@ https://archiveweb.page/images/${"logo.svg"}`}
     // See https://github.com/webrecorder/browsertrix/issues/2536
     if (
       this.formState.autoclickBehavior &&
-      !this.clickSelector?.checkValidity()
+      this.clickSelector
     ) {
-      this.clickSelector?.reportValidity();
-      return;
+      if (!this.clickSelector.checkValidity()) {
+        this.clickSelector.reportValidity();
+        return;
+      }
     }
 
     // Wait for custom behaviors validation to finish
