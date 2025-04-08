@@ -308,7 +308,6 @@ export function getInitialFormState(params: {
     crawlerChannel:
       params.initialWorkflow.crawlerChannel || defaultFormState.crawlerChannel,
     proxyId: params.initialWorkflow.proxyId || defaultFormState.proxyId,
-
     ...formState,
   };
 }
