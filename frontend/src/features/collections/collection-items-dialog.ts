@@ -17,7 +17,7 @@ import type {
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
-import type { PageChangeEvent } from "@/components/ui/pagination";
+import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { type CheckboxChangeEventDetail } from "@/features/archived-items/archived-item-list";
 import type {
   FilterBy,
@@ -695,23 +695,23 @@ export class CollectionItemsDialog extends BtrixElement {
 
   private async initSelection() {
     void this.fetchCrawls({
-      page: parseInt(new URLSearchParams(location.search).get("page") ?? "1"),
+      page: parsePage(new URLSearchParams(location.search).get("page")),
       pageSize: DEFAULT_PAGE_SIZE,
     });
     void this.fetchUploads({
-      page: parseInt(new URLSearchParams(location.search).get("page") ?? "1"),
+      page: parsePage(new URLSearchParams(location.search).get("page")),
       pageSize: DEFAULT_PAGE_SIZE,
     });
     void this.fetchSearchValues();
 
     const [crawls, uploads] = await Promise.all([
       this.getCrawls({
-        page: parseInt(new URLSearchParams(location.search).get("page") ?? "1"),
+        page: parsePage(new URLSearchParams(location.search).get("page")),
         pageSize: COLLECTION_ITEMS_MAX,
         collectionId: this.collectionId,
       }).then(({ items }) => items),
       this.getUploads({
-        page: parseInt(new URLSearchParams(location.search).get("page") ?? "1"),
+        page: parsePage(new URLSearchParams(location.search).get("page")),
         pageSize: COLLECTION_ITEMS_MAX,
         collectionId: this.collectionId,
       }).then(({ items }) => items),

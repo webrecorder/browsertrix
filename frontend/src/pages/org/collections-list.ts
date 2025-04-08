@@ -12,7 +12,7 @@ import queryString from "query-string";
 import type { SelectNewDialogEvent } from ".";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import type { PageChangeEvent } from "@/components/ui/pagination";
+import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { ClipboardController } from "@/controllers/clipboard";
 import type { CollectionSavedEvent } from "@/features/collections/collection-create-dialog";
 import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
@@ -760,7 +760,7 @@ export class CollectionsList extends BtrixElement {
         page:
           queryParams?.page ||
           this.collections?.page ||
-          parseInt(new URLSearchParams(location.search).get("page") ?? "1"),
+          parsePage(new URLSearchParams(location.search).get("page")),
         pageSize:
           queryParams?.pageSize ||
           this.collections?.pageSize ||

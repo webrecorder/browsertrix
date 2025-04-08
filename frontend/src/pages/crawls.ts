@@ -6,7 +6,7 @@ import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import type { PageChangeEvent } from "@/components/ui/pagination";
+import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import needLogin from "@/decorators/needLogin";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
@@ -357,7 +357,7 @@ export class Crawls extends BtrixElement {
         page:
           queryParams?.page ||
           this.crawls?.page ||
-          parseInt(new URLSearchParams(location.search).get("page") ?? "1"),
+          parsePage(new URLSearchParams(location.search).get("page")),
         pageSize: queryParams?.pageSize || this.crawls?.pageSize || 100,
         sortBy: this.orderBy.field,
         sortDirection: this.orderBy.direction === "desc" ? -1 : 1,

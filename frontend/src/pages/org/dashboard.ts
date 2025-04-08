@@ -14,7 +14,7 @@ import queryString from "query-string";
 import type { SelectNewDialogEvent } from ".";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import { type PageChangeEvent } from "@/components/ui/pagination";
+import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { type CollectionSavedEvent } from "@/features/collections/collection-edit-dialog";
 import { pageHeading } from "@/layouts/page";
 import { pageHeader } from "@/layouts/pageHeader";
@@ -70,9 +70,7 @@ export class Dashboard extends BtrixElement {
   collectionsView = CollectionGridView.Public;
 
   @state()
-  collectionPage = parseInt(
-    new URLSearchParams(location.search).get("page") ?? "1",
-  );
+  collectionPage = parsePage(new URLSearchParams(location.search).get("page"));
 
   // Used for busting cache when updating visible collection
   cacheBust = 0;

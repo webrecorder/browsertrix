@@ -11,7 +11,7 @@ import RegexColorize from "regex-colorize";
 import type { Exclusion } from "./queue-exclusion-form";
 
 import { TailwindElement } from "@/classes/TailwindElement";
-import { type PageChangeEvent } from "@/components/ui/pagination";
+import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import type { SeedConfig } from "@/pages/org/types";
 import { regexEscape, regexUnescape } from "@/utils/string";
 import { tw } from "@/utils/tailwind";
@@ -90,9 +90,7 @@ export class QueueExclusionTable extends TailwindElement {
   private results: Exclusion[] = [];
 
   @state()
-  private page = parseInt(
-    new URLSearchParams(location.search).get("page") ?? "1",
-  );
+  private page = parsePage(new URLSearchParams(location.search).get("page"));
 
   @state()
   private exclusionToRemove?: string;

@@ -19,7 +19,7 @@ import {
 } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import type { PageChangeEvent } from "@/components/ui/pagination";
+import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { type SelectEvent } from "@/components/ui/search-combobox";
 import { ClipboardController } from "@/controllers/clipboard";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
@@ -178,10 +178,7 @@ export class WorkflowsList extends BtrixElement {
     } catch (e) {
       if (isApiError(e)) {
         this.fetchErrorStatusCode = e.statusCode;
-      } else if (
-        (e as Error).name === "AbortError" ||
-        e === ABORT_REASON_THROTTLE
-      ) {
+      } else if ((e as Error).name === "AbortError") {
         console.debug("Fetch archived items aborted to throttle");
       } else {
         this.notify.toast({
@@ -754,7 +751,7 @@ export class WorkflowsList extends BtrixElement {
         page:
           queryParams?.page ||
           this.workflows?.page ||
-          parseInt(new URLSearchParams(location.search).get("page") ?? "1"),
+          parsePage(new URLSearchParams(location.search).get("page")),
         pageSize:
           queryParams?.pageSize ||
           this.workflows?.pageSize ||
