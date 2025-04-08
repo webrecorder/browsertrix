@@ -878,7 +878,7 @@ class CrawlOperator(BaseOperator):
             if crawler_running:
                 status.lastActiveTime = date_to_str(dt_now())
 
-            file_done = await redis.lpop(self.done_key)
+            file_done = await redis.rpop(self.done_key)
             while file_done:
                 msg = json.loads(file_done)
                 # add completed file
@@ -887,9 +887,9 @@ class CrawlOperator(BaseOperator):
                     await redis.incr("filesAdded")
 
                 # get next file done
-                file_done = await redis.lpop(self.done_key)
+                file_done = await redis.rpop(self.done_key)
 
-            page_crawled = await redis.lpop(f"{crawl.id}:{self.pages_key}")
+            page_crawled = await redis.rpop(f"{crawl.id}:{self.pages_key}")
             qa_run_id = crawl.id if crawl.is_qa else None
 
             while page_crawled:
@@ -897,21 +897,21 @@ class CrawlOperator(BaseOperator):
                 await self.page_ops.add_page_to_db(
                     page_dict, crawl.db_crawl_id, qa_run_id, crawl.oid
                 )
-                page_crawled = await redis.lpop(f"{crawl.id}:{self.pages_key}")
+                page_crawled = await redis.rpop(f"{crawl.id}:{self.pages_key}")
 
-            crawl_error = await redis.lpop(f"{crawl.id}:{self.errors_key}")
+            crawl_error = await redis.rpop(f"{crawl.id}:{self.errors_key}")
             while crawl_error:
                 await self.crawl_ops.add_crawl_error(
                     crawl.db_crawl_id, crawl.is_qa, crawl_error
                 )
-                crawl_error = await redis.lpop(f"{crawl.id}:{self.errors_key}")
+                crawl_error = await redis.rpop(f"{crawl.id}:{self.errors_key}")
 
-            behavior_log = await redis.lpop(f"{crawl.id}:{self.behavior_logs_key}")
+            behavior_log = await redis.rpop(f"{crawl.id}:{self.behavior_logs_key}")
             while behavior_log:
                 await self.crawl_ops.add_crawl_behavior_log(
                     crawl.db_crawl_id, behavior_log
                 )
-                behavior_log = await redis.lpop(f"{crawl.id}:{self.behavior_logs_key}")
+                behavior_log = await redis.rpop(f"{crawl.id}:{self.behavior_logs_key}")
 
             # ensure filesAdded and filesAddedSize always set
             status.filesAdded = int(await redis.get("filesAdded") or 0)
