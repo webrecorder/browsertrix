@@ -564,7 +564,7 @@ def test_add_upload_to_collection(crawler_auth_headers, default_org_id):
     assert data["dateLatest"]
     assert data["defaultThumbnailName"]
     assert data["topPageOrigins"]
-    for origin in data["topPageOrigins"]
+    for origin in data["topPageOrigins"]:
         assert origin["origin"]
         assert origin["count"]
 
@@ -630,7 +630,7 @@ def test_list_collections(
     assert first_coll["dateLatest"]
     assert first_coll["defaultThumbnailName"]
     assert first_coll["topPageOrigins"]
-    for origin in first_coll["topPageOrigins"]
+    for origin in first_coll["topPageOrigins"]:
         assert origin["origin"]
         assert origin["count"]
 
@@ -650,7 +650,7 @@ def test_list_collections(
     assert second_coll["dateEarliest"]
     assert second_coll["dateLatest"]
     assert second_coll["topPageOrigins"]
-    for origin in second_coll["topPageOrigins"]
+    for origin in second_coll["topPageOrigins"]:
         assert origin["origin"]
         assert origin["count"]
 
@@ -1150,7 +1150,7 @@ def test_list_public_collections(
         assert collection["uniquePageCount"] > 0
         assert collection["totalSize"] > 0
         assert collection["topPageOrigins"]
-        for origin in collection["topPageOrigins"]
+        for origin in collection["topPageOrigins"]:
             assert origin["origin"]
             assert origin["count"]
 
@@ -1346,7 +1346,7 @@ def test_list_public_colls_home_url_thumbnail():
         assert coll["uniquePageCount"] > 0
         assert coll["totalSize"] > 0
         assert coll["topPageOrigins"]
-        for origin in coll["topPageOrigins"]
+        for origin in coll["topPageOrigins"]:
             assert origin["origin"]
             assert origin["count"]
 
@@ -1401,7 +1401,7 @@ def test_get_public_collection(default_org_id):
     assert coll["uniquePageCount"] > 0
     assert coll["totalSize"] > 0
     assert coll["topPageOrigins"]
-    for origin in coll["topPageOrigins"]
+    for origin in coll["topPageOrigins"]:
         assert origin["origin"]
         assert origin["count"]
 
@@ -1487,7 +1487,7 @@ def test_get_public_collection_unlisted(crawler_auth_headers, default_org_id):
     assert coll["defaultThumbnailName"] == "orange-default.avif"
     assert coll["allowPublicDownload"]
     assert coll["topPageOrigins"]
-    for origin in coll["topPageOrigins"]
+    for origin in coll["topPageOrigins"]:
         assert origin["origin"]
         assert origin["count"]
 
@@ -1533,7 +1533,7 @@ def test_get_public_collection_unlisted_org_profile_disabled(
     assert coll["defaultThumbnailName"] == "orange-default.avif"
     assert coll["allowPublicDownload"]
     assert coll["topPageOrigins"]
-    for origin in coll["topPageOrigins"]
+    for origin in coll["topPageOrigins"]:
         assert origin["origin"]
         assert origin["count"]
 
