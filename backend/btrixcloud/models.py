@@ -1558,6 +1558,8 @@ class PublicCollOut(BaseMongoModel):
 
     allowPublicDownload: bool = True
 
+    topPageOrigins: List[OriginCount] = []
+
 
 # ============================================================================
 class UpdateColl(BaseModel):
