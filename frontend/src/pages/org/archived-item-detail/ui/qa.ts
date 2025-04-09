@@ -15,7 +15,7 @@ import queryString from "query-string";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { type Dialog } from "@/components/ui/dialog";
-import type { PageChangeEvent } from "@/components/ui/pagination";
+import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { ClipboardController } from "@/controllers/clipboard";
 import { iconFor as iconForPageReview } from "@/features/qa/page-list/helpers";
 import * as pageApproval from "@/features/qa/page-list/helpers/approval";
@@ -892,7 +892,10 @@ export class ArchivedItemDetailQA extends BtrixElement {
       }
 
       this.pages = await this.getPages({
-        page: params?.page ?? this.pages?.page ?? 1,
+        page:
+          params?.page ??
+          this.pages?.page ??
+          parsePage(new URLSearchParams(location.search).get("page")),
         pageSize: params?.pageSize ?? this.pages?.pageSize ?? 10,
         sortBy,
         sortDirection,

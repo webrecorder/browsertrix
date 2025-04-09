@@ -12,7 +12,7 @@ import type { Embed as ReplayWebPage } from "replaywebpage";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { MarkdownEditor } from "@/components/ui/markdown-editor";
-import type { PageChangeEvent } from "@/components/ui/pagination";
+import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { viewStateContext, type ViewStateContext } from "@/context/view-state";
 import { ClipboardController } from "@/controllers/clipboard";
 import type { EditDialogTab } from "@/features/collections/collection-edit-dialog";
@@ -129,7 +129,9 @@ export class CollectionDetail extends BtrixElement {
   ) {
     if (changedProperties.has("collectionId")) {
       void this.fetchCollection();
-      void this.fetchArchivedItems({ page: 1 });
+      void this.fetchArchivedItems({
+        page: parsePage(new URLSearchParams(location.search).get("page")),
+      });
     }
     if (changedProperties.has("collectionTab") && this.collectionTab === null) {
       this.collectionTab = Tab.Replay;
@@ -1033,7 +1035,10 @@ export class CollectionDetail extends BtrixElement {
     const query = queryString.stringify(
       {
         ...params,
-        page: params?.page || this.archivedItems?.page || 1,
+        page:
+          params?.page ||
+          this.archivedItems?.page ||
+          parsePage(new URLSearchParams(location.search).get("page")),
         pageSize:
           params?.pageSize ||
           this.archivedItems?.pageSize ||

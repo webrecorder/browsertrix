@@ -10,7 +10,7 @@ import type { Profile } from "./types";
 import type { SelectNewDialogEvent } from ".";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import type { PageChangeEvent } from "@/components/ui/pagination";
+import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import {
   SortDirection,
   type SortValues,
@@ -441,7 +441,10 @@ export class BrowserProfilesList extends BtrixElement {
     try {
       this.isLoading = true;
       const data = await this.getProfiles({
-        page: params?.page || this.browserProfiles?.page || 1,
+        page:
+          params?.page ||
+          this.browserProfiles?.page ||
+          parsePage(new URLSearchParams(location.search).get("page")),
         pageSize:
           params?.pageSize ||
           this.browserProfiles?.pageSize ||

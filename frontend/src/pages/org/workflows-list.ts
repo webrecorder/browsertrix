@@ -19,7 +19,7 @@ import {
 } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import type { PageChangeEvent } from "@/components/ui/pagination";
+import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { type SelectEvent } from "@/components/ui/search-combobox";
 import { ClipboardController } from "@/controllers/clipboard";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
@@ -748,7 +748,10 @@ export class WorkflowsList extends BtrixElement {
     const query = queryString.stringify(
       {
         ...this.filterBy,
-        page: queryParams?.page || this.workflows?.page || 1,
+        page:
+          queryParams?.page ||
+          this.workflows?.page ||
+          parsePage(new URLSearchParams(location.search).get("page")),
         pageSize:
           queryParams?.pageSize ||
           this.workflows?.pageSize ||

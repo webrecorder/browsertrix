@@ -6,9 +6,18 @@ import { classMap } from "lit/directives/class-map.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 
+import { SearchParamsController } from "@/controllers/searchParams";
 import { srOnly } from "@/utils/css";
 import chevronLeft from "~assets/icons/chevron-left.svg";
 import chevronRight from "~assets/icons/chevron-right.svg";
+
+export const parsePage = (value: string | undefined | null) => {
+  const page = parseInt(value || "1");
+  if (!Number.isFinite(page)) {
+    throw new Error("couldn't parse page value from search");
+  }
+  return page;
+};
 
 type PageChangeDetail = {
   page: number;
@@ -19,9 +28,19 @@ export type PageChangeEvent = CustomEvent<PageChangeDetail>;
 /**
  * Pagination
  *
+ * Persists via a search param in the URL. Defaults to `page`, but can be set with the `name` attribute.
+ *
  * Usage example:
  * ```ts
- * <btrix-pagination totalCount="11" @page-change=${this.console.log}>
+ * <btrix-pagination totalCount="11" @page-change=${console.log}>
+ * </btrix-pagination>
+ * ```
+ *
+ * You can have multiple paginations on one page by setting different names:
+ * ```ts
+ * <btrix-pagination name="page-a" totalCount="11" @page-change=${console.log}>
+ * </btrix-pagination>
+ * <btrix-pagination name="page-b" totalCount="2" @page-change=${console.log}>
  * </btrix-pagination>
  * ```
  *
@@ -120,8 +139,24 @@ export class Pagination extends LitElement {
     `,
   ];
 
-  @property({ type: Number })
+  searchParams = new SearchParamsController(this, (params) => {
+    const page = parsePage(params.get(this.name));
+    if (this.page !== page) {
+      this.dispatchEvent(
+        new CustomEvent<PageChangeDetail>("page-change", {
+          detail: { page: page, pages: this.pages },
+          composed: true,
+        }),
+      );
+      this.page = page;
+    }
+  });
+
+  @state()
   page = 1;
+
+  @property({ type: String })
+  name = "page";
 
   @property({ type: Number })
   totalCount = 0;
@@ -146,6 +181,15 @@ export class Pagination extends LitElement {
   async willUpdate(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("totalCount") || changedProperties.has("size")) {
       this.calculatePages();
+    }
+
+    const parsedPage = parseFloat(
+      this.searchParams.searchParams.get(this.name) ?? "1",
+    );
+    if (parsedPage != this.page) {
+      const page = parsePage(this.searchParams.searchParams.get(this.name));
+      const constrainedPage = Math.max(1, Math.min(this.pages, page));
+      this.onPageChange(constrainedPage);
     }
 
     if (changedProperties.get("page") && this.page) {
@@ -310,12 +354,23 @@ export class Pagination extends LitElement {
   }
 
   private onPageChange(page: number) {
-    this.dispatchEvent(
-      new CustomEvent<PageChangeDetail>("page-change", {
-        detail: { page: page, pages: this.pages },
-        composed: true,
-      }),
-    );
+    if (this.page !== page) {
+      this.searchParams.set((params) => {
+        if (page === 1) {
+          params.delete(this.name);
+        } else {
+          params.set(this.name, page.toString());
+        }
+        return params;
+      });
+      this.dispatchEvent(
+        new CustomEvent<PageChangeDetail>("page-change", {
+          detail: { page: page, pages: this.pages },
+          composed: true,
+        }),
+      );
+    }
+    this.page = page;
   }
 
   private calculatePages() {
