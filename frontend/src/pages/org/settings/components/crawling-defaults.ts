@@ -269,7 +269,7 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
       limits,
       behaviors,
       browserSettings,
-    };
+    } as const;
   }
 
   private renderWorkflowDefaults() {
@@ -281,10 +281,10 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
               section(
                 sectionName as SectionsEnum,
                 Object.entries(fields)
-                  .filter(([, field]) => field as unknown)
+                  .filter(([, field]) => field)
                   .map(([fieldName, field]) => [
                     field,
-                    infoTextFor[fieldName as FieldName],
+                    infoTextFor[fieldName as keyof typeof infoTextFor],
                   ]),
               ),
             ),
