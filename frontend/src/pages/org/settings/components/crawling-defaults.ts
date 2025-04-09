@@ -7,6 +7,7 @@ import { css, html, type TemplateResult } from "lit";
 import { customElement, query, state } from "lit/decorators.js";
 import { guard } from "lit/directives/guard.js";
 import { ifDefined } from "lit/directives/if-defined.js";
+import type { Entries } from "type-fest";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { LanguageSelect } from "@/components/ui/language-select";
@@ -86,7 +87,7 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
     return html` ${this.renderWorkflowDefaults()} `;
   }
 
-  get fields(): Partial<Record<SectionsEnum, Partial<Field>>> {
+  get fields() {
     const orgDefaults: Partial<CrawlingDefaults> = this.org
       ?.crawlingDefaults || {
       exclude: PLACEHOLDER_EXCLUSIONS,
@@ -269,7 +270,7 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
       limits,
       behaviors,
       browserSettings,
-    } as const;
+    } as const satisfies Partial<Record<SectionsEnum, Partial<Field>>>;
   }
 
   private renderWorkflowDefaults() {
@@ -277,18 +278,22 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
       <div class="rounded-lg border">
         <form @submit=${this.onSubmit}>
           ${guard([this.defaults, this.org], () =>
-            Object.entries(this.fields).map(([sectionName, fields]) =>
-              section(
-                sectionName as SectionsEnum,
-                Object.entries(fields)
-                  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-                  .filter(([, field]) => field)
-                  .map(([fieldName, field]) => [
-                    field,
-                    infoTextFor[fieldName as keyof typeof infoTextFor],
-                  ]),
-              ),
-            ),
+            Object.entries(this.fields).map(([sectionName, fields]) => {
+              const cols: Cols = [];
+
+              (Object.entries(fields) as Entries<Field>).forEach(
+                ([fieldName, field]) => {
+                  if (field) {
+                    cols.push([
+                      field,
+                      infoTextFor[fieldName as keyof typeof infoTextFor],
+                    ]);
+                  }
+                },
+              );
+
+              return section(sectionName as SectionsEnum, cols);
+            }),
           )}
           <footer class="flex justify-end border-t px-4 py-3">
             <sl-button type="submit" size="small" variant="primary">
