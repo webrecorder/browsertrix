@@ -26,7 +26,7 @@ const contextLevelFor: Record<CrawlLogContext, number> = {
   [CrawlLogContext.BehaviorScriptCustom]: 4,
 };
 // Minimum context level to highlight
-const MIN_CONTEXT_LEVEL = 3 as const;
+const MIN_CONTEXT_LEVEL = 3;
 
 /**
  * Tabular list of logs

@@ -13,9 +13,9 @@ import type { BtrixChangeEvent } from "@/events/btrix-change";
 import type { SeedConfig } from "@/types/crawler";
 import { tw } from "@/utils/tailwind";
 
-export const SELECTOR_DELIMITER = "->" as const;
+export const SELECTOR_DELIMITER = "->";
 const emptyCells = ["", ""];
-const syntaxInputClasses = tw`flex-1 [--sl-input-border-color:transparent] [--sl-input-border-radius-medium:0]`;
+const syntaxInputClasses = tw`flex-1 [--sl-input-border-radius-medium:0] [--sl-input-border-color:transparent]`;
 
 /**
  * @fires btrix-change

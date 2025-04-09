@@ -51,7 +51,7 @@ export type OrgRemoveMemberEvent = CustomEvent<{
 
 export type UpdateOrgDetail = Partial<OrgData>;
 
-export const UPDATED_STATUS_TOAST_ID = "org-updated-status" as const;
+export const UPDATED_STATUS_TOAST_ID = "org-updated-status";
 
 /**
  * Usage:

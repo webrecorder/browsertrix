@@ -24,7 +24,7 @@ import { regexUnescape } from "@/utils/string";
 
 export const BYTES_PER_GB = 1e9;
 export const DEFAULT_SELECT_LINKS = ["a[href]->href" as const];
-export const DEFAULT_AUTOCLICK_SELECTOR = "a" as const;
+export const DEFAULT_AUTOCLICK_SELECTOR = "a";
 
 export const SECTIONS = [
   "scope",

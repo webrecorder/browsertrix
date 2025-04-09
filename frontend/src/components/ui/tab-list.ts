@@ -6,7 +6,7 @@ import { TailwindElement } from "@/classes/TailwindElement";
 
 const DEFAULT_PANEL_ID = "default-panel";
 
-const tabTagName = "btrix-tab-list-tab" as const;
+const tabTagName = "btrix-tab-list-tab";
 
 @customElement(tabTagName)
 export class TabListTab extends TailwindElement {
