@@ -47,6 +47,7 @@ export const crawlingDefaultsSchema = z.object({
   lang: z.string().optional(),
   userAgent: z.string().optional(),
   exclude: z.array(z.string()),
+  customBehaviors: z.array(z.string()),
 });
 export type CrawlingDefaults = z.infer<typeof crawlingDefaultsSchema>;
 

@@ -67,7 +67,7 @@ import type {
 import { infoCol, inputCol } from "@/layouts/columns";
 import { pageSectionsWithNav } from "@/layouts/pageSectionsWithNav";
 import { panel } from "@/layouts/panel";
-import infoTextStrings from "@/strings/crawl-workflows/infoText";
+import { infoTextFor } from "@/strings/crawl-workflows/infoText";
 import { labelFor } from "@/strings/crawl-workflows/labels";
 import scopeTypeLabels from "@/strings/crawl-workflows/scopeType";
 import sectionStrings from "@/strings/crawl-workflows/section";
@@ -758,10 +758,7 @@ export class WorkflowEditor extends BtrixElement {
                       @btrix-change=${this.handleChangeRegex}
                     ></btrix-queue-exclusion-table>
                   `)}
-                  ${this.renderHelpTextCol(
-                    infoTextStrings["exclusions"],
-                    false,
-                  )}
+                  ${this.renderHelpTextCol(infoTextFor["exclusions"], false)}
                 </div>
               </btrix-details>
             </div>
@@ -1176,7 +1173,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
             )}
             ${this.renderHelpTextCol(
               html`
-                ${infoTextStrings["selectLinks"]}
+                ${infoTextFor["selectLinks"]}
                 <br /><br />
                 ${msg(
                   html`If none are specified, the crawler will default to
@@ -1235,7 +1232,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           </sl-input>
         </sl-mutation-observer>
       `)}
-      ${this.renderHelpTextCol(infoTextStrings["pageLimit"])}
+      ${this.renderHelpTextCol(infoTextFor["pageLimit"])}
       ${inputCol(html`
         <sl-input
           name="crawlTimeoutMinutes"
@@ -1249,7 +1246,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           <span slot="suffix">${msg("minutes")}</span>
         </sl-input>
       `)}
-      ${this.renderHelpTextCol(infoTextStrings["crawlTimeoutMinutes"])}
+      ${this.renderHelpTextCol(infoTextFor["crawlTimeoutMinutes"])}
       ${inputCol(html`
         <sl-input
           name="maxCrawlSizeGB"
@@ -1263,19 +1260,34 @@ https://archiveweb.page/images/${"logo.svg"}`}
           <span slot="suffix">${msg("GB")}</span>
         </sl-input>
       `)}
-      ${this.renderHelpTextCol(infoTextStrings["maxCrawlSizeGB"])}
+      ${this.renderHelpTextCol(infoTextFor["maxCrawlSizeGB"])}
     `;
   }
 
   private renderPageBehavior() {
+    const behaviorOverrideWarning = html`
+      <span slot="help-text" class="text-warning-600">
+        <sl-icon
+          name="exclamation-triangle"
+          class="align-[-.175em] text-sm"
+        ></sl-icon>
+        ${msg("May be overridden by custom behaviors.")}
+      </span>
+    `;
+
     return html`
       ${this.renderSectionHeading(labelFor.behaviors)}
       ${inputCol(
         html`<sl-checkbox
           name="autoscrollBehavior"
+          class="part-[form-control-help-text]:mt-1.5"
           ?checked=${this.formState.autoscrollBehavior}
         >
           ${labelFor.autoscrollBehavior}
+          ${when(
+            this.formState.autoscrollBehavior && this.formState.customBehavior,
+            () => behaviorOverrideWarning,
+          )}
         </sl-checkbox>`,
       )}
       ${this.renderHelpTextCol(
@@ -1285,9 +1297,14 @@ https://archiveweb.page/images/${"logo.svg"}`}
       ${inputCol(
         html`<sl-checkbox
             name="autoclickBehavior"
+            class="part-[form-control-help-text]:mt-1.5"
             ?checked=${this.formState.autoclickBehavior}
           >
             ${labelFor.autoclickBehavior}
+            ${when(
+              this.formState.autoclickBehavior && this.formState.customBehavior,
+              () => behaviorOverrideWarning,
+            )}
           </sl-checkbox>
 
           ${when(
@@ -1360,7 +1377,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           <span slot="suffix">${msg("seconds")}</span>
         </sl-input>
       `)}
-      ${this.renderHelpTextCol(infoTextStrings["pageLoadTimeoutSeconds"])}
+      ${this.renderHelpTextCol(infoTextFor["pageLoadTimeoutSeconds"])}
       ${inputCol(html`
         <sl-input
           name="postLoadDelaySeconds"
@@ -1374,7 +1391,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           <span slot="suffix">${msg("seconds")}</span>
         </sl-input>
       `)}
-      ${this.renderHelpTextCol(infoTextStrings["postLoadDelaySeconds"])}
+      ${this.renderHelpTextCol(infoTextFor["postLoadDelaySeconds"])}
       ${inputCol(html`
         <sl-input
           name="behaviorTimeoutSeconds"
@@ -1389,7 +1406,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           <span slot="suffix">${msg("seconds")}</span>
         </sl-input>
       `)}
-      ${this.renderHelpTextCol(infoTextStrings["behaviorTimeoutSeconds"])}
+      ${this.renderHelpTextCol(infoTextFor["behaviorTimeoutSeconds"])}
       ${inputCol(html`
         <sl-input
           name="pageExtraDelaySeconds"
@@ -1403,7 +1420,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           <span slot="suffix">${msg("seconds")}</span>
         </sl-input>
       `)}
-      ${this.renderHelpTextCol(infoTextStrings["pageExtraDelaySeconds"])}
+      ${this.renderHelpTextCol(infoTextFor["pageExtraDelaySeconds"])}
     `;
   }
 
@@ -1433,12 +1450,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
             `,
           )} `,
       )}
-      ${this.renderHelpTextCol(
-        msg(
-          `Enable custom page actions with behavior scripts. You can specify any publicly accessible URL or public Git repository.`,
-        ),
-        false,
-      )}
+      ${this.renderHelpTextCol(infoTextFor.customBehavior, false)}
     `;
   }
 
@@ -1454,7 +1466,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
             })}
         ></btrix-select-browser-profile>
       `)}
-      ${this.renderHelpTextCol(infoTextStrings["browserProfile"])}
+      ${this.renderHelpTextCol(infoTextFor["browserProfile"])}
       ${this.proxies?.servers.length
         ? [
             inputCol(html`
@@ -1470,7 +1482,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
                   })}
               ></btrix-select-crawler-proxy>
             `),
-            this.renderHelpTextCol(infoTextStrings["proxyId"]),
+            this.renderHelpTextCol(infoTextFor["proxyId"]),
           ]
         : nothing}
       ${inputCol(html`
@@ -1517,14 +1529,14 @@ https://archiveweb.page/images/${"logo.svg"}`}
         ></btrix-select-crawler>
       `)}
       ${this.showCrawlerChannels
-        ? this.renderHelpTextCol(infoTextStrings["crawlerChannel"])
+        ? this.renderHelpTextCol(infoTextFor["crawlerChannel"])
         : html``}
       ${inputCol(html`
         <sl-checkbox name="blockAds" ?checked=${this.formState.blockAds}>
           ${msg("Block ads by domain")}
         </sl-checkbox>
       `)}
-      ${this.renderHelpTextCol(infoTextStrings["blockAds"], false)}
+      ${this.renderHelpTextCol(infoTextFor["blockAds"], false)}
       ${inputCol(html`
         <sl-input
           name="userAgent"
@@ -1535,7 +1547,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         >
         </sl-input>
       `)}
-      ${this.renderHelpTextCol(infoTextStrings["userAgent"])}
+      ${this.renderHelpTextCol(infoTextFor["userAgent"])}
       ${inputCol(html`
         <btrix-language-select
           .value=${this.formState.lang as LanguageCode}
@@ -1548,7 +1560,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           <span slot="label">${msg("Language")}</span>
         </btrix-language-select>
       `)}
-      ${this.renderHelpTextCol(infoTextStrings["lang"])}
+      ${this.renderHelpTextCol(infoTextFor["lang"])}
     `;
   }
 
@@ -2191,10 +2203,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
     // TODO Move away from manual validation check
     // See https://github.com/webrecorder/browsertrix/issues/2536
-    if (
-      this.formState.autoclickBehavior &&
-      this.clickSelector
-    ) {
+    if (this.formState.autoclickBehavior && this.clickSelector) {
       if (!this.clickSelector.checkValidity()) {
         this.clickSelector.reportValidity();
         return;
@@ -2434,7 +2443,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
         selectLinks: this.linkSelectorTable?.value.length
           ? this.linkSelectorTable.value
           : DEFAULT_SELECT_LINKS,
-        customBehaviors: this.customBehaviorsTable?.value || [],
+        customBehaviors:
+          (this.formState.customBehavior && this.customBehaviorsTable?.value) ||
+          [],
         clickSelector:
           this.formState.clickSelector || DEFAULT_AUTOCLICK_SELECTOR,
       },

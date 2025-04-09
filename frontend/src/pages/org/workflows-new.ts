@@ -160,6 +160,7 @@ export class WorkflowsNew extends LiteElement {
               userAgent: org.crawlingDefaults?.userAgent,
               blockAds: org.crawlingDefaults?.blockAds,
               lang: org.crawlingDefaults?.lang,
+              customBehaviors: org.crawlingDefaults?.customBehaviors,
             },
             crawlTimeout: org.crawlingDefaults?.crawlTimeout,
             maxCrawlSize: org.crawlingDefaults?.maxCrawlSize,

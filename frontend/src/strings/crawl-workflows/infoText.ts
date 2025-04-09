@@ -5,7 +5,7 @@ import { type FormState } from "@/utils/workflow";
 
 type Field = keyof FormState;
 
-const infoText: Partial<Record<Field, string | TemplateResult>> = {
+export const infoTextFor = {
   exclusions: msg(
     "Specify exclusion rules for what pages should not be visited.",
   ),
@@ -72,6 +72,9 @@ const infoText: Partial<Record<Field, string | TemplateResult>> = {
       >
       to find URLs that are defined in custom HTML attributes.`,
   ),
-};
+  customBehavior: msg(
+    `Enable custom page actions with behavior scripts. You can specify any publicly accessible URL or public Git repository.`,
+  ),
+} as const satisfies Partial<Record<Field, string | TemplateResult>>;
 
-export default infoText;
+export default infoTextFor;

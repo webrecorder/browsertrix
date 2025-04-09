@@ -244,6 +244,10 @@ export function getInitialFormState(params: {
     return fallback;
   };
 
+  const enableCustomBehaviors = Boolean(
+    params.initialWorkflow.config.customBehaviors.length,
+  );
+
   return {
     ...defaultFormState,
     primarySeedUrl: defaultFormState.primarySeedUrl,
@@ -294,13 +298,15 @@ export function getInitialFormState(params: {
       params.initialWorkflow.config.limit ?? defaultFormState.pageLimit,
     autoscrollBehavior: params.initialWorkflow.config.behaviors
       ? params.initialWorkflow.config.behaviors.includes(Behavior.AutoScroll)
-      : defaultFormState.autoscrollBehavior,
+      : enableCustomBehaviors
+        ? false
+        : defaultFormState.autoscrollBehavior,
     autoclickBehavior: params.initialWorkflow.config.behaviors
       ? params.initialWorkflow.config.behaviors.includes(Behavior.AutoClick)
-      : defaultFormState.autoclickBehavior,
-    customBehavior: Boolean(
-      params.initialWorkflow.config.customBehaviors.length,
-    ),
+      : enableCustomBehaviors
+        ? false
+        : defaultFormState.autoclickBehavior,
+    customBehavior: enableCustomBehaviors,
     selectLinks: params.initialWorkflow.config.selectLinks,
     clickSelector: params.initialWorkflow.config.clickSelector,
     userAgent:
