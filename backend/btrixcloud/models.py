@@ -1416,6 +1416,14 @@ class PreloadResource(BaseModel):
 
 
 # ============================================================================
+class OriginCount(BaseModel):
+    """Origin Count"""
+
+    origin: str
+    count: int
+
+
+# ============================================================================
 class Collection(BaseMongoModel):
     """Org collection structure"""
 
@@ -1513,6 +1521,8 @@ class CollOut(BaseMongoModel):
     pagesQueryUrl: str = ""
     downloadUrl: Optional[str] = None
 
+    topPageOrigins: List[OriginCount] = []
+
 
 # ============================================================================
 class PublicCollOut(BaseMongoModel):
@@ -1547,6 +1557,8 @@ class PublicCollOut(BaseMongoModel):
     defaultThumbnailName: Optional[str] = None
 
     allowPublicDownload: bool = True
+
+    topPageOrigins: List[OriginCount] = []
 
 
 # ============================================================================

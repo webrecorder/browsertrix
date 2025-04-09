@@ -563,6 +563,10 @@ def test_add_upload_to_collection(crawler_auth_headers, default_org_id):
     assert data["dateEarliest"]
     assert data["dateLatest"]
     assert data["defaultThumbnailName"]
+    assert data["topPageOrigins"]
+    for origin in data["topPageOrigins"]:
+        assert origin["origin"]
+        assert origin["count"]
 
     # Verify it was added
     r = requests.get(
@@ -625,6 +629,10 @@ def test_list_collections(
     assert first_coll["dateEarliest"]
     assert first_coll["dateLatest"]
     assert first_coll["defaultThumbnailName"]
+    assert first_coll["topPageOrigins"]
+    for origin in first_coll["topPageOrigins"]:
+        assert origin["origin"]
+        assert origin["count"]
 
     second_coll = [coll for coll in items if coll["name"] == SECOND_COLLECTION_NAME][0]
     assert second_coll["id"]
@@ -641,6 +649,10 @@ def test_list_collections(
     assert second_coll["access"] == "private"
     assert second_coll["dateEarliest"]
     assert second_coll["dateLatest"]
+    assert second_coll["topPageOrigins"]
+    for origin in second_coll["topPageOrigins"]:
+        assert origin["origin"]
+        assert origin["count"]
 
 
 def test_list_pages_in_collection(crawler_auth_headers, default_org_id):
@@ -1137,6 +1149,10 @@ def test_list_public_collections(
         assert collection["pageCount"] > 0
         assert collection["uniquePageCount"] > 0
         assert collection["totalSize"] > 0
+        assert collection["topPageOrigins"]
+        for origin in collection["topPageOrigins"]:
+            assert origin["origin"]
+            assert origin["count"]
 
     # Test non-existing slug - it should return a 404 but not reveal
     # whether or not an org exists with that slug
@@ -1329,6 +1345,10 @@ def test_list_public_colls_home_url_thumbnail():
         assert coll["pageCount"] > 0
         assert coll["uniquePageCount"] > 0
         assert coll["totalSize"] > 0
+        assert coll["topPageOrigins"]
+        for origin in coll["topPageOrigins"]:
+            assert origin["origin"]
+            assert origin["count"]
 
         for field in non_public_fields:
             assert field not in coll
@@ -1380,6 +1400,10 @@ def test_get_public_collection(default_org_id):
     assert coll["pageCount"] > 0
     assert coll["uniquePageCount"] > 0
     assert coll["totalSize"] > 0
+    assert coll["topPageOrigins"]
+    for origin in coll["topPageOrigins"]:
+        assert origin["origin"]
+        assert origin["count"]
 
     for field in NON_PUBLIC_COLL_FIELDS:
         assert field not in coll
@@ -1462,6 +1486,10 @@ def test_get_public_collection_unlisted(crawler_auth_headers, default_org_id):
     assert coll["totalSize"] > 0
     assert coll["defaultThumbnailName"] == "orange-default.avif"
     assert coll["allowPublicDownload"]
+    assert coll["topPageOrigins"]
+    for origin in coll["topPageOrigins"]:
+        assert origin["origin"]
+        assert origin["count"]
 
     for field in NON_PUBLIC_COLL_FIELDS:
         assert field not in coll
@@ -1504,6 +1532,10 @@ def test_get_public_collection_unlisted_org_profile_disabled(
     assert coll["totalSize"] > 0
     assert coll["defaultThumbnailName"] == "orange-default.avif"
     assert coll["allowPublicDownload"]
+    assert coll["topPageOrigins"]
+    for origin in coll["topPageOrigins"]:
+        assert origin["origin"]
+        assert origin["count"]
 
     for field in NON_PUBLIC_COLL_FIELDS:
         assert field not in coll
