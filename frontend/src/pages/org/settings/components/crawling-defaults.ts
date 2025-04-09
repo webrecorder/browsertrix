@@ -280,13 +280,10 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
             Object.entries(this.fields).map(([sectionName, fields]) =>
               section(
                 sectionName as SectionsEnum,
-                Object.entries(fields)
-                  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-                  .filter(([, field]) => field)
-                  .map(([fieldName, field]) => [
-                    field,
-                    infoTextFor[fieldName as keyof typeof infoTextFor],
-                  ]),
+                Object.entries(fields).map(([fieldName, field]) => [
+                  field,
+                  infoTextFor[fieldName as keyof typeof infoTextFor],
+                ]),
               ),
             ),
           )}
