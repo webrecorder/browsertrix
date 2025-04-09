@@ -3,6 +3,7 @@ import { mergeDeep } from "immutable";
 import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
+import type { PartialDeep } from "type-fest";
 
 import { ScopeType, type Seed, type WorkflowParams } from "./types";
 
@@ -153,20 +154,20 @@ export class WorkflowsNew extends LiteElement {
             profileid: org.crawlingDefaults?.profileid,
             config: {
               exclude: org.crawlingDefaults?.exclude || [""],
-              behaviorTimeout: org.crawlingDefaults?.behaviorTimeout,
-              pageLoadTimeout: org.crawlingDefaults?.pageLoadTimeout,
-              pageExtraDelay: org.crawlingDefaults?.pageExtraDelay,
-              postLoadDelay: org.crawlingDefaults?.postLoadDelay,
+              behaviorTimeout: org.crawlingDefaults?.behaviorTimeout ?? null,
+              pageLoadTimeout: org.crawlingDefaults?.pageLoadTimeout ?? null,
+              pageExtraDelay: org.crawlingDefaults?.pageExtraDelay ?? null,
+              postLoadDelay: org.crawlingDefaults?.postLoadDelay ?? null,
               userAgent: org.crawlingDefaults?.userAgent,
               blockAds: org.crawlingDefaults?.blockAds,
               lang: org.crawlingDefaults?.lang,
-              customBehaviors: org.crawlingDefaults?.customBehaviors,
+              customBehaviors: org.crawlingDefaults?.customBehaviors || [],
             },
             crawlTimeout: org.crawlingDefaults?.crawlTimeout,
             maxCrawlSize: org.crawlingDefaults?.maxCrawlSize,
             crawlerChannel: org.crawlingDefaults?.crawlerChannel,
             proxyId: org.crawlingDefaults?.proxyId,
-          },
+          } satisfies PartialDeep<WorkflowParams>,
           this.initialWorkflow || {},
         );
 

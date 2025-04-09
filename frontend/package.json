@@ -83,6 +83,7 @@
     "thread-loader": "^4.0.4",
     "ts-loader": "^9.2.6",
     "tsconfig-paths-webpack-plugin": "^4.1.0",
+    "type-fest": "^4.39.1",
     "typescript": "^5.3.3",
     "update-dotenv": "^1.1.1",
     "url-pattern": "^1.0.3",
