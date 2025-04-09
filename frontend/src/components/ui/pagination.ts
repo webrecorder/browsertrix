@@ -141,7 +141,15 @@ export class Pagination extends LitElement {
 
   searchParams = new SearchParamsController(this, (params) => {
     const page = parsePage(params.get(this.name));
-    this.onPageChange(page);
+    if (this.page !== page) {
+      this.dispatchEvent(
+        new CustomEvent<PageChangeDetail>("page-change", {
+          detail: { page: page, pages: this.pages },
+          composed: true,
+        }),
+      );
+      this.page = page;
+    }
   });
 
   @state()
