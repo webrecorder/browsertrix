@@ -58,7 +58,7 @@
     "immutable": "^4.1.0",
     "ink-mde": "~0.33.0",
     "iso-639-1": "^2.1.15",
-    "lit": "3.1.1",
+    "lit": "~3.2.0",
     "lit-shared-state": "^0.2.1",
     "lodash": "^4.17.21",
     "micromark": "^4.0.0",
@@ -148,7 +148,7 @@
   },
   "resolutions": {
     "**/playwright": "1.49.0",
-    "**/lit": "3.1.1",
+    "**/lit": "~3.2.0",
     "@web/dev-server-esbuild/esbuild": "^0.19.5"
   },
   "browserslist": [
