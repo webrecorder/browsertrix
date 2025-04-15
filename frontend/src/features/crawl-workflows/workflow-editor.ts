@@ -133,8 +133,8 @@ const DEFAULT_BEHAVIORS = [
   Behavior.AutoFetch,
   Behavior.SiteSpecific,
 ] as const;
-const formName = "newJobConfig" as const;
-const panelSuffix = "--panel" as const;
+const formName = "newJobConfig";
+const panelSuffix = "--panel";
 const defaultFormState = getDefaultFormState();
 
 const getDefaultProgressState = (hasConfigId = false): ProgressState => {

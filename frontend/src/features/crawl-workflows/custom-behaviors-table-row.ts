@@ -82,9 +82,9 @@ const inputStyle = [
   tw`part-[form-control-help-text]:mx-1 part-[form-control-help-text]:mb-1`,
 ];
 
-const INPUT_CLASSNAME = "input" as const;
-const INVALID_CLASSNAME = "invalid" as const;
-export const GIT_PREFIX = "git+" as const;
+const INPUT_CLASSNAME = "input";
+const INVALID_CLASSNAME = "invalid";
+export const GIT_PREFIX = "git+";
 export const isGitRepo = (url: CustomBehaviorSource) =>
   url.startsWith(GIT_PREFIX);
 export const stringifyGitRepo = (behavior: BehaviorGitRepo): string => {
