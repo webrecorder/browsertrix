@@ -13,6 +13,7 @@ module.exports = {
     "plugin:wc/recommended",
     "plugin:lit/recommended",
     "prettier",
+    "plugin:storybook/recommended",
   ],
   plugins: ["@typescript-eslint", "lit"],
   parserOptions: {
