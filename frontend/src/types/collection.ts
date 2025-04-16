@@ -41,6 +41,12 @@ export const publicCollectionSchema = z.object({
   crawlCount: z.number(),
   uniquePageCount: z.number(),
   pageCount: z.number(),
+  topPageOrigins: z.array(
+    z.object({
+      origin: z.string(),
+      count: z.number(),
+    }),
+  ),
   totalSize: z.number(),
   allowPublicDownload: z.boolean(),
   homeUrl: z.string().url().nullable(),
