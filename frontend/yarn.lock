@@ -1944,6 +1944,13 @@
     "@storybook/global" "^5.0.0"
     ts-dedent "^2.0.0"
 
+"@storybook/addon-styling-webpack@^1.0.1":
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/@storybook/addon-styling-webpack/-/addon-styling-webpack-1.0.1.tgz#660ee002ec249f6e32dd2784abfa50f59ef97951"
+  integrity sha512-5n+SXPfMTc4m7sWaJWPWjoHYWc6/B111M2Ia55toQ3GV4ON4vVlTgH9FX+EgCkDticElj99HLTMDJkHRj2yvkg==
+  dependencies:
+    "@storybook/node-logger" "^8.0.0-alpha.10"
+
 "@storybook/addon-toolbars@8.6.12":
   version "8.6.12"
   resolved "https://registry.yarnpkg.com/@storybook/addon-toolbars/-/addon-toolbars-8.6.12.tgz#debf68d7aa807216a479a2b2b5670baabe1a2ebc"
@@ -2067,6 +2074,11 @@
   version "8.6.12"
   resolved "https://registry.yarnpkg.com/@storybook/manager-api/-/manager-api-8.6.12.tgz#a9169a3fb8de97ba406ed83314112d5c47d035ad"
   integrity sha512-O0SpISeJLNTQvhSBOsWzzkCgs8vCjOq1578rwqHlC6jWWm4QmtfdyXqnv7rR1Hk08kQ+Dzqh0uhwHx0nfwy4nQ==
+
+"@storybook/node-logger@^8.0.0-alpha.10":
+  version "8.6.12"
+  resolved "https://registry.yarnpkg.com/@storybook/node-logger/-/node-logger-8.6.12.tgz#a865d14f504941ed350a8773a110e24e39bb158a"
+  integrity sha512-Jk7mQWsu60BptBwYJAd69kMmsEqBAbGDuA/fqban+8vfNiSKgR3PRkhis0DsGEk53bpAEfbkCcyvYRCrrq4M3Q==
 
 "@storybook/preview-api@8.6.12":
   version "8.6.12"

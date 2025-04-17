@@ -7,6 +7,56 @@ const config: StorybookConfig = {
   addons: [
     "@storybook/addon-webpack5-compiler-swc",
     "@storybook/addon-essentials",
+    {
+      name: "@storybook/addon-styling-webpack",
+      options: {
+        rules: [
+          {
+            // Global styles and assets, like fonts and Shoelace,
+            // that get added to document styles
+            test: /\.css$/,
+            sideEffects: true,
+            include: [
+              path.resolve(__dirname, "../src"),
+              path.resolve(
+                __dirname,
+                "../node_modules/@shoelace-style/shoelace",
+              ),
+            ],
+            exclude: /\.stylesheet\.css$/,
+            use: [
+              require.resolve("style-loader"),
+              {
+                loader: require.resolve("css-loader"),
+                options: {
+                  importLoaders: 1,
+                },
+              },
+              {
+                loader: require.resolve("postcss-loader"),
+                options: {
+                  implementation: require.resolve("postcss"),
+                },
+              },
+            ],
+          },
+          {
+            // CSS loaded as raw string and used as a CSSStyleSheet
+            test: /\.stylesheet\.css$/,
+            sideEffects: true,
+            type: "asset/source",
+            use: [
+              {
+                loader: require.resolve("postcss-loader"),
+                options: {
+                  implementation: require.resolve("postcss"),
+                },
+              },
+            ],
+          },
+        ],
+      },
+    },
   ],
   framework: {
     name: "@storybook/web-components-webpack5",

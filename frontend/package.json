@@ -117,6 +117,7 @@
   "devDependencies": {
     "@lit/localize-tools": "^0.8.0",
     "@storybook/addon-essentials": "^8.6.12",
+    "@storybook/addon-styling-webpack": "^1.0.1",
     "@storybook/addon-webpack5-compiler-swc": "^3.0.0",
     "@storybook/blocks": "^8.6.12",
     "@storybook/test": "^8.6.12",
