@@ -2,18 +2,18 @@ import type { Meta, StoryObj } from "@storybook/web-components";
 import { html } from "lit";
 import { ifDefined } from "lit/directives/if-defined.js";
 
-import type { Button as BtrixButton } from "@/components/ui/button";
+import type { Button as ButtonComponent } from "@/components/ui/button";
 
 import "@/components/ui/button";
 
-const ButtonComponent = ({
+const renderButton = ({
   variant,
   filled,
   label,
   raised,
   loading,
   href,
-}: BtrixButton) => {
+}: ButtonComponent) => {
   return html`
     <btrix-button
       variant=${ifDefined(variant)}
@@ -31,19 +31,23 @@ const ButtonComponent = ({
 const meta = {
   component: "btrix-button",
   tags: ["autodocs"],
-  render: (args) => ButtonComponent(args),
+  render: renderButton,
   argTypes: {
     type: {
       control: { type: "select" },
-      options: ["button", "submit"] satisfies BtrixButton["type"][],
+      options: ["button", "submit"] satisfies ButtonComponent["type"][],
     },
     variant: {
       control: { type: "select" },
-      options: ["neutral", "danger"] satisfies BtrixButton["variant"][],
+      options: ["neutral", "danger"] satisfies ButtonComponent["variant"][],
     },
     size: {
       control: { type: "select" },
-      options: ["x-small", "small", "medium"] satisfies BtrixButton["size"][],
+      options: [
+        "x-small",
+        "small",
+        "medium",
+      ] satisfies ButtonComponent["size"][],
     },
   },
   args: {
@@ -55,10 +59,10 @@ const meta = {
       showPanel: false,
     },
   },
-} satisfies Meta<BtrixButton>;
+} satisfies Meta<ButtonComponent>;
 
 export default meta;
-type Story = StoryObj<BtrixButton>;
+type Story = StoryObj<ButtonComponent>;
 
 export const Raised: Story = {
   args: {

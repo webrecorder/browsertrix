@@ -22,26 +22,6 @@ tableCSS.split("}").forEach((rule: string) => {
  * Low-level component for displaying content as a table.
  * To style tables, use TailwindCSS utility classes.
  *
- * @example Usage:
- * ```ts
- * <btrix-table>
- *   <btrix-table-head class="border-b">
- *     <btrix-table-header-cell class="border-r">col 1 </btrix-table-header-cell>
- *     <btrix-table-header-cell>col 2</btrix-table-header-cell>
- *   </btrix-table-head>
- *   <btrix-table-body>
- *     <btrix-table-row class="border-b">
- *       <btrix-table-cell class="border-r">row 1 col 1</btrix-table-cell>
- *       <btrix-table-cell>row 1 col 2</btrix-table-cell>
- *     </btrix-table-row>
- *     <btrix-table-row>
- *       <btrix-table-cellclass="border-r">row 2 col 1</btrix-table-cell>
- *       <btrix-table-cell>row 2 col 2</btrix-table-cell>
- *     </btrix-table-row>
- *   </btrix-table-body>
- * </btrix-table>
- * ```
- *
  * Table columns will be automatically sized according to its content.
  * To specify column size, use `grid-template-columns`.
  *
