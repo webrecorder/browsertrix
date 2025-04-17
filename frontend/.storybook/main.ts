@@ -10,6 +10,7 @@ const config: StorybookConfig = {
     {
       name: "@storybook/addon-styling-webpack",
       options: {
+        // TODO Consolidate with webpack.config.js
         rules: [
           {
             // Global styles and assets, like fonts and Shoelace,
