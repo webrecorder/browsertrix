@@ -4,6 +4,7 @@ import { html, nothing } from "lit";
 import { customElement, property, queryAssignedNodes } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
 import { ifDefined } from "lit/directives/if-defined.js";
+import { keyed } from "lit/directives/keyed.js";
 import { when } from "lit/directives/when.js";
 
 import { CollectionThumbnail } from "./collection-thumbnail";
@@ -88,14 +89,24 @@ export class CollectionsGrid extends BtrixElement {
                 <div
                   class="relative mb-4 rounded-lg shadow-md shadow-stone-600/10 ring-1 ring-stone-600/10 transition group-hover:shadow-stone-800/20 group-hover:ring-stone-800/20"
                 >
-                  <btrix-collection-thumbnail
-                    src=${ifDefined(
-                      Object.entries(CollectionThumbnail.Variants).find(
-                        ([name]) => name === collection.defaultThumbnailName,
-                      )?.[1].path || collection.thumbnail?.path,
-                    )}
-                    collectionName=${collection.name}
-                  ></btrix-collection-thumbnail>
+                  ${
+                    // When swapping images, the previous image is retained until the new one is loaded,
+                    // which leads to the wrong image briefly being displayed when switching pages.
+                    // This removes and replaces the image instead, which prevents this at the cost of the
+                    // occasional flash of white while loading, but overall this feels more responsive.
+                    keyed(
+                      collection.id,
+                      html` <btrix-collection-thumbnail
+                        src=${ifDefined(
+                          Object.entries(CollectionThumbnail.Variants).find(
+                            ([name]) =>
+                              name === collection.defaultThumbnailName,
+                          )?.[1].path || collection.thumbnail?.path,
+                        )}
+                        collectionName=${collection.name}
+                      ></btrix-collection-thumbnail>`,
+                    )
+                  }
                   ${this.renderDateBadge(collection)}
                 </div>
                 <div class="${showActions ? "mr-9" : ""} min-h-9 leading-tight">
