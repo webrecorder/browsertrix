@@ -1,6 +1,6 @@
 import { localized, msg } from "@lit/localize";
 import clsx from "clsx";
-import { html, nothing } from "lit";
+import { html, nothing, type TemplateResult } from "lit";
 import { customElement, property, queryAssignedNodes } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -36,6 +36,9 @@ export class CollectionsGrid extends BtrixElement {
 
   @property({ type: Boolean })
   showVisibility = false;
+
+  @property()
+  renderActions?: (collection: PublicCollection) => TemplateResult;
 
   @queryAssignedNodes({ slot: "pagination" })
   pagination!: Node[];
@@ -196,7 +199,7 @@ export class CollectionsGrid extends BtrixElement {
                   `}
                 </div>
               </a>
-              ${when(showActions, () => this.renderActions(collection))}
+              ${when(showActions, () => this._renderActions(collection))}
               ${when(
                 this.collectionRefreshing === collection.id,
                 () =>
@@ -218,24 +221,26 @@ export class CollectionsGrid extends BtrixElement {
     `;
   }
 
-  private readonly renderActions = (collection: PublicCollection) => html`
+  private readonly _renderActions = (collection: PublicCollection) => html`
     <div class="pointer-events-none absolute left-0 right-0 top-0 aspect-video">
       <div class="pointer-events-auto absolute bottom-2 right-2">
-        <sl-tooltip content=${msg("Edit Collection Settings")}>
-          <btrix-button
-            raised
-            size="small"
-            @click=${() => {
-              this.dispatchEvent(
-                new CustomEvent<string>("btrix-edit-collection", {
-                  detail: collection.id,
-                }),
-              );
-            }}
-          >
-            <sl-icon name="pencil"></sl-icon>
-          </btrix-button>
-        </sl-tooltip>
+        ${this.renderActions
+          ? this.renderActions(collection)
+          : html`<sl-tooltip content=${msg("Edit Collection Settings")}>
+              <btrix-button
+                raised
+                size="small"
+                @click=${() => {
+                  this.dispatchEvent(
+                    new CustomEvent<string>("btrix-edit-collection", {
+                      detail: collection.id,
+                    }),
+                  );
+                }}
+              >
+                <sl-icon name="pencil"></sl-icon>
+              </btrix-button>
+            </sl-tooltip>`}
       </div>
     </div>
   `;

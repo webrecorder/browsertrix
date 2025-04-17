@@ -440,6 +440,8 @@ export class CollectionsList extends BtrixElement {
       slug=${this.orgSlugState || ""}
       .collections=${this.collections?.items}
       .collectionRefreshing=${this.collectionRefreshing}
+      .renderActions=${(col: Collection) =>
+        this.renderActions(col, { renderOnGridItem: true })}
       showVisibility
       class="mt-8 block"
       @btrix-collection-saved=${async ({ detail }: CollectionSavedEvent) => {
@@ -661,11 +663,17 @@ export class CollectionsList extends BtrixElement {
     </btrix-table-row>
   `;
 
-  private readonly renderActions = (col: Collection) => {
+  private readonly renderActions = (
+    col: Collection,
+    { renderOnGridItem } = { renderOnGridItem: false },
+  ) => {
     const authToken = this.authState?.headers.Authorization.split(" ")[1];
 
     return html`
-      <btrix-overflow-dropdown>
+      <btrix-overflow-dropdown
+        ?raised=${renderOnGridItem}
+        size=${renderOnGridItem ? "small" : "medium"}
+      >
         <sl-menu>
           <sl-menu-item @click=${() => void this.manageCollection(col, "edit")}>
             <sl-icon name="gear" slot="prefix"></sl-icon>
