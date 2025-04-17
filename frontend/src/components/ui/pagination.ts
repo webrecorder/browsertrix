@@ -141,19 +141,30 @@ export class Pagination extends LitElement {
 
   searchParams = new SearchParamsController(this, (params) => {
     const page = parsePage(params.get(this.name));
-    if (this.page !== page) {
+    if (this._page !== page) {
       this.dispatchEvent(
         new CustomEvent<PageChangeDetail>("page-change", {
           detail: { page: page, pages: this.pages },
           composed: true,
         }),
       );
-      this.page = page;
+      this._page = page;
     }
   });
 
   @state()
-  page = 1;
+  private _page = 1;
+
+  @property({ type: Number })
+  set page(page: number) {
+    if (page !== this._page) {
+      this.setPage(page);
+    }
+  }
+
+  get page() {
+    return this._page;
+  }
 
   @property({ type: String })
   name = "page";
@@ -174,7 +185,7 @@ export class Pagination extends LitElement {
   private pages = 0;
 
   connectedCallback() {
-    this.inputValue = `${this.page}`;
+    this.inputValue = `${this._page}`;
     super.connectedCallback();
   }
 
@@ -186,14 +197,14 @@ export class Pagination extends LitElement {
     const parsedPage = parseFloat(
       this.searchParams.searchParams.get(this.name) ?? "1",
     );
-    if (parsedPage != this.page) {
+    if (parsedPage != this._page) {
       const page = parsePage(this.searchParams.searchParams.get(this.name));
       const constrainedPage = Math.max(1, Math.min(this.pages, page));
       this.onPageChange(constrainedPage);
     }
 
-    if (changedProperties.get("page") && this.page) {
-      this.inputValue = `${this.page}`;
+    if (changedProperties.get("page") && this._page) {
+      this.inputValue = `${this._page}`;
     }
   }
 
@@ -208,7 +219,7 @@ export class Pagination extends LitElement {
           <li>
             <button
               class="navButton"
-              ?disabled=${this.page === 1}
+              ?disabled=${this._page === 1}
               @click=${this.onPrev}
             >
               <img class="chevron" src=${chevronLeft} />
@@ -221,7 +232,7 @@ export class Pagination extends LitElement {
           <li>
             <button
               class="navButton"
-              ?disabled=${this.page === this.pages}
+              ?disabled=${this._page === this.pages}
               @click=${this.onNext}
             >
               <span class=${classMap({ srOnly: this.compact })}
@@ -250,7 +261,7 @@ export class Pagination extends LitElement {
           inputmode="numeric"
           size="small"
           value=${this.inputValue}
-          aria-label=${msg(str`Current page, page ${this.page}`)}
+          aria-label=${msg(str`Current page, page ${this._page}`)}
           aria-current="page"
           autocomplete="off"
           min="1"
@@ -302,7 +313,7 @@ export class Pagination extends LitElement {
     const middleEnd = middleVisible * 2 - 1;
     const endsVisible = 2;
     if (this.pages > middleVisible + middleEnd) {
-      const currentPageIdx = pages.indexOf(this.page);
+      const currentPageIdx = pages.indexOf(this._page);
       const firstPages = pages.slice(0, endsVisible);
       const lastPages = pages.slice(-1 * endsVisible);
       let middlePages = pages.slice(endsVisible, middleEnd);
@@ -331,7 +342,7 @@ export class Pagination extends LitElement {
   };
 
   private readonly renderPageButton = (page: number) => {
-    const isCurrent = page === this.page;
+    const isCurrent = page === this._page;
     return html`<li aria-current=${ifDefined(isCurrent ? "page" : undefined)}>
       <btrix-navigation-button
         icon
@@ -346,23 +357,16 @@ export class Pagination extends LitElement {
   };
 
   private onPrev() {
-    this.onPageChange(this.page > 1 ? this.page - 1 : 1);
+    this.onPageChange(this._page > 1 ? this._page - 1 : 1);
   }
 
   private onNext() {
-    this.onPageChange(this.page < this.pages ? this.page + 1 : this.pages);
+    this.onPageChange(this._page < this.pages ? this._page + 1 : this.pages);
   }
 
   private onPageChange(page: number) {
-    if (this.page !== page) {
-      this.searchParams.set((params) => {
-        if (page === 1) {
-          params.delete(this.name);
-        } else {
-          params.set(this.name, page.toString());
-        }
-        return params;
-      });
+    if (this._page !== page) {
+      this.setPage(page);
       this.dispatchEvent(
         new CustomEvent<PageChangeDetail>("page-change", {
           detail: { page: page, pages: this.pages },
@@ -370,7 +374,18 @@ export class Pagination extends LitElement {
         }),
       );
     }
-    this.page = page;
+    this._page = page;
+  }
+
+  private setPage(page: number) {
+    this.searchParams.set((params) => {
+      if (page === 1) {
+        params.delete(this.name);
+      } else {
+        params.set(this.name, page.toString());
+      }
+      return params;
+    });
   }
 
   private calculatePages() {

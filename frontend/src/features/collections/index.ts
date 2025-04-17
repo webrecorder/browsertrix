@@ -1,5 +1,6 @@
 import("./collections-add");
 import("./collections-grid");
+import("./collections-grid-with-edit-dialog");
 import("./collection-items-dialog");
 import("./collection-edit-dialog");
 import("./collection-create-dialog");
