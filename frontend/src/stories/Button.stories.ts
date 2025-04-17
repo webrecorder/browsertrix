@@ -1,51 +1,60 @@
-import { fn } from "@storybook/test";
 import type { Meta, StoryObj } from "@storybook/web-components";
+import { html } from "lit";
 
-import type { ButtonProps } from "./Button";
-import { Button } from "./Button";
+import { Button, type ButtonProps } from "./Button";
 
-// More on how to set up stories at: https://storybook.js.org/docs/writing-stories
 const meta = {
-  title: "Example/Button",
   tags: ["autodocs"],
   render: (args) => Button(args),
   argTypes: {
-    backgroundColor: { control: "color" },
-    size: {
+    variant: {
       control: { type: "select" },
-      options: ["small", "medium", "large"],
+      options: ["neutral", "danger"] satisfies ButtonProps["variant"][],
     },
   },
-  args: { onClick: fn() },
+  args: {
+    label: "Button",
+    filled: true,
+  },
+  parameters: {
+    options: {
+      showPanel: false,
+    },
+  },
 } satisfies Meta<ButtonProps>;
 
 export default meta;
 type Story = StoryObj<ButtonProps>;
 
-// More on writing stories with args: https://storybook.js.org/docs/writing-stories/args
-export const Primary: Story = {
+export const Raised: Story = {
   args: {
-    primary: true,
-    label: "Button",
+    raised: true,
   },
 };
 
-export const Secondary: Story = {
+export const Loading: Story = {
   args: {
-    label: "Button",
+    loading: true,
   },
 };
 
-export const Large: Story = {
-  args: {
-    size: "large",
-    label: "Button",
-  },
+export const Variants: Story = {
+  render: () => html`
+    <btrix-button filled variant="neutral">Neutral (Default)</btrix-button>
+    <btrix-button filled variant="danger">Danger</btrix-button>
+  `,
 };
 
-export const Small: Story = {
+export const Sizes: Story = {
+  render: () => html`
+    <btrix-button filled size="x-small">X-Small</btrix-button>
+    <btrix-button filled size="small">Small</btrix-button>
+    <btrix-button filled size="medium">Medium (Default)</btrix-button>
+  `,
+};
+
+export const Link: Story = {
   args: {
-    size: "small",
-    label: "Button",
+    href: "https://webrecorder.net",
   },
 };
