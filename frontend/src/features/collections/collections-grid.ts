@@ -1,12 +1,7 @@
 import { localized, msg } from "@lit/localize";
 import clsx from "clsx";
 import { html, nothing } from "lit";
-import {
-  customElement,
-  property,
-  queryAssignedNodes,
-  state,
-} from "lit/decorators.js";
+import { customElement, property, queryAssignedNodes } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
@@ -34,9 +29,6 @@ export class CollectionsGrid extends BtrixElement {
 
   @property({ type: Array })
   collections?: PublicCollection[];
-
-  @state()
-  collectionBeingEdited: string | null = null;
 
   @property({ type: String })
   collectionRefreshing: string | null = null;
@@ -212,18 +204,6 @@ export class CollectionsGrid extends BtrixElement {
         class=${clsx("justify-center flex", this.pagination.length && "mt-10")}
         name="pagination"
       ></slot>
-
-      ${when(
-        showActions,
-        () =>
-          html`<btrix-collection-edit-dialog
-            .collectionId=${this.collectionBeingEdited ?? undefined}
-            ?open=${!!this.collectionBeingEdited}
-            @sl-after-hide=${() => {
-              this.collectionBeingEdited = null;
-            }}
-          ></btrix-collection-edit-dialog>`,
-      )}
     `;
   }
 
@@ -235,7 +215,11 @@ export class CollectionsGrid extends BtrixElement {
             raised
             size="small"
             @click=${() => {
-              this.collectionBeingEdited = collection.id;
+              this.dispatchEvent(
+                new CustomEvent<string>("btrix-edit-collection", {
+                  detail: collection.id,
+                }),
+              );
             }}
           >
             <sl-icon name="pencil"></sl-icon>
