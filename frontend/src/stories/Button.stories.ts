@@ -1,15 +1,49 @@
 import type { Meta, StoryObj } from "@storybook/web-components";
 import { html } from "lit";
+import { ifDefined } from "lit/directives/if-defined.js";
 
-import { Button, type ButtonProps } from "./Button";
+import type { Button as BtrixButton } from "@/components/ui/button";
+
+import "@/components/ui/button";
+
+const ButtonComponent = ({
+  variant,
+  filled,
+  label,
+  raised,
+  loading,
+  href,
+}: BtrixButton) => {
+  return html`
+    <btrix-button
+      variant=${ifDefined(variant)}
+      label=${ifDefined(label)}
+      href=${ifDefined(href)}
+      ?filled=${filled}
+      ?raised=${raised}
+      ?loading=${loading}
+    >
+      ${label}
+    </btrix-button>
+  `;
+};
 
 const meta = {
+  component: "btrix-button",
   tags: ["autodocs"],
-  render: (args) => Button(args),
+  render: (args) => ButtonComponent(args),
   argTypes: {
+    type: {
+      control: { type: "select" },
+      options: ["button", "submit"] satisfies BtrixButton["type"][],
+    },
     variant: {
       control: { type: "select" },
-      options: ["neutral", "danger"] satisfies ButtonProps["variant"][],
+      options: ["neutral", "danger"] satisfies BtrixButton["variant"][],
+    },
+    size: {
+      control: { type: "select" },
+      options: ["x-small", "small", "medium"] satisfies BtrixButton["size"][],
     },
   },
   args: {
@@ -21,10 +55,10 @@ const meta = {
       showPanel: false,
     },
   },
-} satisfies Meta<ButtonProps>;
+} satisfies Meta<BtrixButton>;
 
 export default meta;
-type Story = StoryObj<ButtonProps>;
+type Story = StoryObj<BtrixButton>;
 
 export const Raised: Story = {
   args: {
@@ -56,5 +90,6 @@ export const Sizes: Story = {
 export const Link: Story = {
   args: {
     href: "https://webrecorder.net",
+    label: "Button Link",
   },
 };

@@ -1,6 +1,14 @@
-import type { Preview } from "@storybook/web-components";
-
 import "../src/global";
+
+import {
+  setCustomElementsManifest,
+  type Preview,
+} from "@storybook/web-components";
+
+import customElements from "../src/__generated__/custom-elements.json";
+
+// Automatically document component properties
+setCustomElementsManifest(customElements);
 
 const preview: Preview = {
   parameters: {
