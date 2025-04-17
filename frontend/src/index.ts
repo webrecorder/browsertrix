@@ -1,4 +1,5 @@
 import "./utils/polyfills";
+import "./global";
 
 import { provide } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
@@ -14,15 +15,9 @@ import { until } from "lit/directives/until.js";
 import { when } from "lit/directives/when.js";
 import isEqual from "lodash/fp/isEqual";
 
-import "broadcastchannel-polyfill";
-import "construct-style-sheets-polyfill";
-import "./shoelace";
 import "./components";
 import "./features";
 import "./pages";
-import "./assets/fonts/Inter/inter.css";
-import "./assets/fonts/Recursive/recursive.css";
-import "./styles.css";
 
 import { viewStateContext } from "./context/view-state";
 import { OrgTab, RouteNamespace } from "./routes";
@@ -38,7 +33,6 @@ import AuthService, {
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { NavigateEventDetail } from "@/controllers/navigate";
 import type { NotifyEventDetail } from "@/controllers/notify";
-import { theme } from "@/theme";
 import { type Auth } from "@/types/auth";
 import {
   translatedLocales,
@@ -52,9 +46,6 @@ import router, { urlForName } from "@/utils/router";
 import { AppStateService } from "@/utils/state";
 import { formatAPIUser } from "@/utils/user";
 import brandLockupColor from "~assets/brand/browsertrix-lockup-color.svg";
-
-// Make theme CSS available in document
-document.adoptedStyleSheets = [theme];
 
 type DialogContent = {
   label?: TemplateResult | string;
