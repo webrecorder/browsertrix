@@ -2,7 +2,6 @@ import { localized, msg } from "@lit/localize";
 import clsx from "clsx";
 import { html, nothing, type TemplateResult } from "lit";
 import { customElement, property, queryAssignedNodes } from "lit/decorators.js";
-import { choose } from "lit/directives/choose.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { keyed } from "lit/directives/keyed.js";
 import { when } from "lit/directives/when.js";
@@ -114,68 +113,24 @@ export class CollectionsGrid extends BtrixElement {
                 </div>
                 <div class="${showActions ? "mr-9" : ""} min-h-9 leading-tight">
                   ${this.showVisibility
-                    ? choose(collection.access, [
-                        [
-                          CollectionAccess.Private,
-                          () => html`
-                            <sl-tooltip
-                              content=${SelectCollectionAccess.Options[
-                                CollectionAccess.Private
-                              ].label}
-                            >
-                              <sl-icon
-                                class="mr-[5px] inline-block align-[-1px] text-neutral-600"
-                                name=${SelectCollectionAccess.Options[
-                                  CollectionAccess.Private
-                                ].icon}
-                              ></sl-icon>
-                            </sl-tooltip>
-                          `,
-                        ],
-                        [
-                          CollectionAccess.Unlisted,
-                          () => html`
-                            <sl-tooltip
-                              content=${SelectCollectionAccess.Options[
-                                CollectionAccess.Unlisted
-                              ].label}
-                            >
-                              <sl-icon
-                                class="mr-[5px] inline-block align-[-1px] text-neutral-600"
-                                name=${SelectCollectionAccess.Options[
-                                  CollectionAccess.Unlisted
-                                ].icon}
-                              ></sl-icon>
-                            </sl-tooltip>
-                          `,
-                        ],
-                        [
-                          CollectionAccess.Public,
-                          () => html`
-                            <sl-tooltip
-                              content=${SelectCollectionAccess.Options[
-                                CollectionAccess.Public
-                              ].label}
-                            >
-                              <sl-icon
-                                class="mr-[5px] inline-block align-[-1px] text-success-600"
-                                name=${SelectCollectionAccess.Options[
-                                  CollectionAccess.Public
-                                ].icon}
-                              ></sl-icon>
-                            </sl-tooltip>
-                          `,
-                        ],
-                      ])
-                    : // ? html`<sl-icon
-                      //     class="mr-[5px] align-[-1px] text-sm"
-                      //     name=${SelectCollectionAccess.Options[collection.access]
-                      //       .icon}
-                      //     label=${SelectCollectionAccess.Options[
-                      //       collection.access
-                      //     ].label}
-                      //   ></sl-icon>`
-                      nothing}
+                    ? html`<sl-tooltip
+                        content=${SelectCollectionAccess.Options[
+                          collection.access
+                        ].label}
+                      >
+                        <sl-icon
+                          class=${clsx(
+                            "mr-[5px] inline-block align-[-1px]",
+                            collection.access === CollectionAccess.Public
+                              ? "text-success-600"
+                              : "text-neutral-600",
+                          )}
+                          name=${SelectCollectionAccess.Options[
+                            collection.access
+                          ].icon}
+                        ></sl-icon>
+                      </sl-tooltip>`
+                    : nothing}
                   <strong
                     class="text-base font-medium leading-tight text-stone-800 transition-colors group-hover:text-cyan-600"
                   >
