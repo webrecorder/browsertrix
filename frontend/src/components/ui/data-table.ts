@@ -15,11 +15,7 @@ export class DataTable extends TailwindElement {
   static styles = css`
     btrix-table {
       --btrix-cell-gap: var(--sl-spacing-x-small);
-      /* TODO Refactor padding config https://github.com/webrecorder/browsertrix/issues/2497 */
-      --btrix-cell-padding-top: var(--sl-spacing-x-small);
-      --btrix-cell-padding-bottom: var(--sl-spacing-x-small);
-      --btrix-cell-padding-left: var(--sl-spacing-x-small);
-      --btrix-cell-padding-right: var(--sl-spacing-x-small);
+      --btrix-cell-padding: var(--sl-spacing-x-small);
     }
   `;
 
@@ -43,11 +39,10 @@ export class DataTable extends TailwindElement {
   border?: "grid" | "horizontal";
 
   render() {
-    const gridAutoColumnsStyle = `grid-template-columns: ${
-      this.columnWidths.length
-        ? this.columnWidths.join(" ")
-        : "minmax(max-content, auto)"
-    }`;
+    const gridAutoColumnsStyle = this.columnWidths
+      ? `--btrix-table-grid-template-columns: ${this.columnWidths.join(" ")}`
+      : "";
+
     return html`
       <btrix-table
         class="relative h-full w-full rounded border"

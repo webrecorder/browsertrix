@@ -25,7 +25,7 @@ export const BasicTable: Story = {
 };
 
 /**
- * Column widths automatically adjust to their content, unless overridden.
+ * Column widths automatically adjust to their content, unless overridden with `columnWidths`.
  */
 export const ColumnWidths: Story = {
   args: {

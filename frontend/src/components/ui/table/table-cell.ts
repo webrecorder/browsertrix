@@ -23,6 +23,9 @@ export const ALLOWED_ROW_CLICK_TARGET_TAG = ["a", "label"] as const;
  * ```
  *
  * @cssproperty --btrix-cell-gap
+ * @cssproperty --btrix-cell-padding
+ * @cssproperty --btrix-cell-padding-x
+ * @cssproperty --btrix-cell-padding-y
  * @cssproperty --btrix-cell-padding-top
  * @cssproperty --btrix-cell-padding-left
  * @cssproperty --btrix-cell-padding-right
@@ -32,13 +35,19 @@ export const ALLOWED_ROW_CLICK_TARGET_TAG = ["a", "label"] as const;
 export class TableCell extends TailwindElement {
   static styles = css`
     :host {
+      --cell-padding: var(--btrix-cell-padding, 0);
+      --cell-padding-x: var(--btrix-cell-padding-x, var(--cell-padding));
+      --cell-padding-y: var(--btrix-cell-padding-y, var(--cell-padding));
+
       display: flex;
       gap: var(--btrix-cell-gap, 0);
       align-items: center;
       height: 100%;
       box-sizing: border-box;
-      padding: var(--btrix-cell-padding-top) var(--btrix-cell-padding-right)
-        var(--btrix-cell-padding-bottom) var(--btrix-cell-padding-left);
+      padding: var(--btrix-cell-padding-top, var(--cell-padding-y))
+        var(--btrix-cell-padding-right, var(--cell-padding-x))
+        var(--btrix-cell-padding-bottom, var(--cell-padding-y))
+        var(--btrix-cell-padding-left, var(--cell-padding-x));
     }
   `;
 

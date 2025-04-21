@@ -27,7 +27,10 @@ const columns = {
   },
   remove: {
     title: html`<span class="sr-only">Remove</span>`,
-    renderItem: () => html`<sl-icon name="trash3"></sl-icon>`,
+    renderItem: () =>
+      html`<btrix-table-cell>
+        <sl-icon name="trash3"></sl-icon>
+      </btrix-table-cell>`,
   },
 };
 
@@ -38,20 +41,20 @@ const rows: {
     data: {
       name: "Alice",
       email: "alice@example.com",
-      role: 40,
+      role: "Admin",
     },
   },
   {
-    data: { name: "Bob", email: "bob@example.com", role: 20 },
+    data: { name: "Bob", email: "bob@example.com", role: "Crawler" },
   },
   {
-    data: { name: "Carol", email: "carol@example.com", role: 20 },
+    data: { name: "Carol", email: "carol@example.com", role: "Crawler" },
   },
   {
-    data: { name: "Dave", email: "dave@example.com", role: 10 },
+    data: { name: "Dave", email: "dave@example.com", role: "Viewer" },
   },
   {
-    data: { name: "Eve", email: "eve@example.com", role: 10 },
+    data: { name: "Eve", email: "eve@example.com", role: "Viewer" },
   },
 ] satisfies TableData["rows"];
 

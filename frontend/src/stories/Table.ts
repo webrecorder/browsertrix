@@ -5,6 +5,8 @@ import "@/components/ui/table";
 
 import data, { type TableData } from "./Table.data";
 
+import { tw } from "@/utils/tailwind";
+
 export interface RenderProps {
   head?: TemplateResult;
   body?: TemplateResult;
@@ -40,9 +42,13 @@ export const renderBody = ({
         <btrix-table-row class=${ifDefined(classes)}>
           ${Object.entries(columns).map(
             ([key, { renderItem }]) => html`
-              <btrix-table-cell class=${ifDefined(classes)}>
-                ${renderItem ? renderItem(data) : data[key]}
-              </btrix-table-cell>
+              ${renderItem
+                ? renderItem(data)
+                : html`
+                    <btrix-table-cell class=${ifDefined(classes)}>
+                      ${data[key]}
+                    </btrix-table-cell>
+                  `}
             `,
           )}
         </btrix-table-row>
@@ -54,6 +60,7 @@ export const renderBody = ({
 export const defaultArgs = {
   head: renderHead(data),
   body: renderBody(data),
+  classes: tw`grid-cols-[repeat(3,1fr)_max-content]`,
 } satisfies RenderProps;
 
 export const renderTable = ({ head, body, classes }: RenderProps) => {

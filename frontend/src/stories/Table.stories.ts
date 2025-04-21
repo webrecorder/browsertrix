@@ -1,4 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/web-components";
+import clsx from "clsx";
+import { html } from "lit";
 
 import {
   defaultArgs,
@@ -6,6 +8,7 @@ import {
   renderHead,
   renderTable,
   type RenderProps,
+  type TableData,
 } from "./Table";
 import data from "./Table.data";
 
@@ -43,19 +46,80 @@ export const BasicTable: Story = {
 };
 
 /**
- * Tables can be styled to have borders between rows (aka horizontal rules) using Tailwind.
+ * Tables can be styled to have borders around and between rows (aka horizontal rules) using Tailwind.
  */
 export const StylingBorderedTable: Story = {
   name: "Styling - Borders",
   args: {
-    classes: tw`relative h-full w-full rounded border`,
+    classes: clsx(
+      defaultArgs.classes,
+      tw`[--btrix-cell-padding-x:var(--sl-spacing-small)]`,
+    ),
     head: renderHead({
       ...data,
-      classes: tw`sticky top-0 z-10 rounded-t-[0.1875rem] border-b bg-neutral-50`,
+      classes: tw`[--btrix-cell-padding-bottom:var(--sl-spacing-2x-small)]`,
     }),
     body: renderBody({
       ...data,
-      classes: "overflow-auto [&>*:not(:first-child)]:border-t",
+      classes: tw`rounded border [--btrix-cell-padding-y:var(--sl-spacing-x-small)] [&>*:not(:first-child)]:border-t`,
+    }),
+  },
+};
+
+const paddedTableData = {
+  columns: {
+    a: { title: "A" },
+    b: { title: "B" },
+    c: {
+      title: "C",
+      renderItem: () => html`
+        <btrix-table-cell
+          class="[--btrix-cell-padding-left:0] [--btrix-cell-padding:0]"
+        >
+          Cell without padding
+        </btrix-table-cell>
+      `,
+    },
+  },
+  rows: [
+    {
+      classes: tw`[--btrix-cell-padding:var(--sl-spacing-small)]`,
+      data: {
+        a: "Cell with small padding",
+        b: "Cell with small padding",
+      },
+    },
+    {
+      classes: tw`[--btrix-cell-padding:var(--sl-spacing-large)]`,
+      data: {
+        a: "Cell with large padding",
+        b: "Cell with large padding",
+      },
+    },
+    {
+      classes: tw`[--btrix-cell-padding-left:var(--sl-spacing-x-large)]`,
+      data: {
+        a: "Cell with only left padding",
+        b: "Cell with only left padding",
+      },
+    },
+  ],
+} satisfies TableData;
+
+/**
+ * Cell padding can be set for the entire table or customized per-cell.
+ */
+export const StylingPaddedTable: Story = {
+  name: "Styling - Padding",
+  args: {
+    classes: tw`relative h-full w-full rounded border`,
+    head: renderHead({
+      ...paddedTableData,
+      classes: tw`[&>*:not(:first-child)]:border-l`,
+    }),
+    body: renderBody({
+      ...paddedTableData,
+      classes: tw`overflow-auto *:border-t [&>*>*:not(:first-child)]:border-l`,
     }),
   },
 };
