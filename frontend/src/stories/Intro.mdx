@@ -4,9 +4,22 @@ import { Meta } from "@storybook/blocks";
 
 # Introduction
 
-Storybook is a tool for building and testing UI components in isolation.
+{/* TODO Consolidate with storybook.md in frontend/docs */}
 
-Individual components are documented in `src/stories` as [stories](https://storybook.js.org/docs/writing-stories) with configurable properties.
+Browsertrix component stories live in `frontend/src/stories`. Component
+attributes that are public properties (i.e. defined with Lit
+`@property({ type: Type })`) or documented in a TSDoc comment will automatically
+appear in stories through the
+[Custom Elements Manifest](https://custom-elements-manifest.open-wc.org/analyzer/getting-started/)
+file.
+
+## Troubleshooting
+
+**Component attributes aren't updating in Storybook**
+
+Ensure you're running Storybook with `yarn storybook:watch` instead of
+`yarn storybook`. The "watch" script automatically regenerates
+`custom-elements.json`, which is the source of element attributes documentation.
 
 ## Storybook Docs
 
