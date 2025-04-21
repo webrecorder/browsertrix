@@ -26,11 +26,6 @@ const meta = {
     label: "Button",
     filled: true,
   },
-  parameters: {
-    options: {
-      showPanel: false,
-    },
-  },
 } satisfies Meta<RenderProps>;
 
 export default meta;

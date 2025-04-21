@@ -6,20 +6,8 @@ import { TailwindElement } from "@/classes/TailwindElement";
 type CellContent = string | TemplateResult<1>;
 
 /**
- * Styled data table
- *
- * Usage example:
- * ```ts
- * <btrix-data-table
- *   .columns=${[html`A`, html`B`, html`C`]}
- *   .rows=${[
- *     [html`1a`, html`1b`, html`1c`],
- *     [html`2a`, html`2b`, html`2c`],
- *   ]}
- *   .columnWidths=${["100%", "20rem"]}
- * >
- * </btrix-data-table>
- * ```
+ * Styled tables for handling lists of tabular data.
+ * Data tables are less flexible than `<btrix-table>` but require less configuration.
  */
 @customElement("btrix-data-table")
 export class DataTable extends TailwindElement {

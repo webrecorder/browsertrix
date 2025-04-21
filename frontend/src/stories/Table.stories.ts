@@ -30,11 +30,6 @@ const meta = {
     classes: { table: { disable: true } },
   },
   args: defaultArgs,
-  parameters: {
-    options: {
-      showPanel: false,
-    },
-  },
 } satisfies Meta<RenderProps>;
 
 export default meta;
