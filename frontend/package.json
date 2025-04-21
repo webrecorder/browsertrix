@@ -112,10 +112,12 @@
     "format:check": "prettier --check .",
     "localize:extract": "lit-localize extract && prettier --write xliff/*.xlf",
     "localize:build": "lit-localize build",
-    "custom-elements-manifest": "custom-elements-manifest analyze --litelement --outdir src/__generated__",
-    "prestorybook": "npm run custom-elements-manifest",
+    "cem": "custom-elements-manifest analyze",
+    "prestorybook": "yarn cem",
+    "prestorybook:build": "yarn cem",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "storybook:watch": "concurrently 'yarn cem --watch' 'yarn storybook'",
+    "storybook:build": "storybook build"
   },
   "devDependencies": {
     "@custom-elements-manifest/analyzer": "^0.10.4",
@@ -131,6 +133,7 @@
     "@web/dev-server-esbuild": "^0.3.3",
     "@web/dev-server-import-maps": "^0.2.0",
     "@web/dev-server-rollup": "^0.6.1",
+    "concurrently": "^9.1.2",
     "husky": "^8.0.3",
     "lint-staged": "^13.1.0",
     "prettier-plugin-tailwindcss": "^0.5.12",

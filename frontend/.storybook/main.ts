@@ -1,6 +1,7 @@
 import path from "path";
 
 import type { StorybookConfig } from "@storybook/web-components-webpack5";
+import type { WebpackConfiguration } from "webpack-dev-server";
 
 const config: StorybookConfig = {
   stories: ["../src/**/*.mdx", "../src/**/*.stories.@(js|jsx|mjs|ts|tsx)"],
@@ -72,6 +73,12 @@ const config: StorybookConfig = {
         files: ["**/stories/*.ts", "**/.storybook/*.ts"],
       }),
     );
+
+    // Watch for changes to custom-elements.json to re-render element
+    // attributes whenever the custom elements manifest is generated
+    (config as WebpackConfiguration).devServer = {
+      watchFiles: ["**/custom-elements.json"],
+    };
 
     return config;
   },
