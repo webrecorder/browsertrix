@@ -1,81 +1,46 @@
 import { html, type TemplateResult } from "lit";
-import { ifDefined } from "lit/directives/if-defined.js";
+
+// import { ifDefined } from "lit/directives/if-defined.js";
 
 import "@/components/ui/table";
 
-const columns = {
-  name: {
-    title: "Name",
-  },
-  email: {
-    title: "Email",
-  },
-  role: {
-    title: "Role",
-  },
-  remove: {
-    title: html`<span class="sr-only">Remove</span>`,
-    renderItem: () => html`<sl-icon name="trash3"></sl-icon>`,
-  },
-} satisfies RenderProps["columns"];
-const rows: { data: Omit<Record<keyof typeof columns, unknown>, "remove"> }[] =
-  [
-    {
-      data: {
-        name: "Alice",
-        email: "alice@example.com",
-        role: 40,
-      },
-    },
-    {
-      data: { name: "Bob", email: "bob@example.com", role: 20 },
-    },
-  ] satisfies RenderProps["rows"];
-
 export interface RenderProps {
-  columns: Record<
-    string,
-    {
-      title: string | TemplateResult;
-      classes?: string;
-      renderItem?: (data: Record<string, unknown>) => TemplateResult;
-    }
-  >;
-  rows: {
-    data: Record<string, unknown>;
-    classes?: string;
-  }[];
+  head?: TemplateResult;
+  body?: TemplateResult;
 }
 
-export const defaultArgs = { columns, rows } satisfies RenderProps;
+const head = html`<btrix-table-head>
+  <btrix-table-header-cell>Name</btrix-table-header-cell>
+  <btrix-table-header-cell>Email</btrix-table-header-cell>
+  <btrix-table-header-cell>Role</btrix-table-header-cell>
+  <btrix-table-header-cell>
+    <span class="sr-only">Actions</span>
+  </btrix-table-header-cell>
+</btrix-table-head>`;
 
-export const renderTable = ({ columns: headers, rows: items }: RenderProps) => {
-  return html`
-    <btrix-table>
-      <btrix-table-head>
-        ${Object.values(headers).map(
-          ({ title, classes }) => html`
-            <btrix-table-header-cell class=${ifDefined(classes)}>
-              ${title}
-            </btrix-table-header-cell>
-          `,
-        )}
-      </btrix-table-head>
-      <btrix-table-body>
-        ${items.map(
-          ({ classes, data }) => html`
-            <btrix-table-row class=${ifDefined(classes)}>
-              ${Object.entries(headers).map(
-                ([key, { renderItem }]) => html`
-                  <btrix-table-cell class=${ifDefined(classes)}>
-                    ${renderItem ? renderItem(data) : data[key]}
-                  </btrix-table-cell>
-                `,
-              )}
-            </btrix-table-row>
-          `,
-        )}
-      </btrix-table-body>
-    </btrix-table>
-  `;
+const body = html`
+  <btrix-table-body>
+    <btrix-table-row>
+      <btrix-table-cell>Alice</btrix-table-cell>
+      <btrix-table-cell>alice@example.com</btrix-table-cell>
+      <btrix-table-cell>40</btrix-table-cell>
+      <btrix-table-cell>
+        <sl-icon name="trash3"></sl-icon>
+      </btrix-table-cell>
+    </btrix-table-row>
+    <btrix-table-row>
+      <btrix-table-cell>Bob</btrix-table-cell>
+      <btrix-table-cell>bob@example.com</btrix-table-cell>
+      <btrix-table-cell>20</btrix-table-cell>
+      <btrix-table-cell>
+        <sl-icon name="trash3"></sl-icon>
+      </btrix-table-cell>
+    </btrix-table-row>
+  </btrix-table-body>
+`;
+
+export const defaultArgs = { head, body } satisfies RenderProps;
+
+export const renderTable = ({ head, body }: RenderProps) => {
+  return html` <btrix-table> ${head} ${body} </btrix-table> `;
 };
