@@ -113,7 +113,6 @@
     "localize:extract": "lit-localize extract && prettier --write xliff/*.xlf",
     "localize:build": "lit-localize build",
     "cem": "custom-elements-manifest analyze",
-    "prestorybook": "yarn cem",
     "prestorybook:build": "yarn cem",
     "storybook": "storybook dev -p 6006",
     "storybook:watch": "concurrently 'yarn cem --watch' 'yarn storybook'",

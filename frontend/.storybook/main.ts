@@ -3,8 +3,19 @@ import path from "path";
 import type { StorybookConfig } from "@storybook/web-components-webpack5";
 import type { WebpackConfiguration } from "webpack-dev-server";
 
+import {
+  shoelaceAssetsPublicPath,
+  shoelaceAssetsSrcPath,
+} from "../config/webpack/shoelace";
+
 const config: StorybookConfig = {
   stories: ["../src/**/*.mdx", "../src/**/*.stories.@(js|jsx|mjs|ts|tsx)"],
+  staticDirs: [
+    {
+      from: shoelaceAssetsSrcPath,
+      to: shoelaceAssetsPublicPath,
+    },
+  ],
   addons: [
     "@storybook/addon-webpack5-compiler-swc",
     "@storybook/addon-essentials",

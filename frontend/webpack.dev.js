@@ -5,14 +5,12 @@ const ESLintPlugin = require("eslint-webpack-plugin");
 const webpack = require("webpack");
 const { merge } = require("webpack-merge");
 
+const {
+  shoelaceAssetsSrcPath,
+  shoelaceAssetsPublicPath,
+} = require("./config/webpack/shoelace.js");
 const baseConfigs = require("./webpack.config.js");
 const [main, vnc] = baseConfigs;
-
-const shoelaceAssetsSrcPath = path.resolve(
-  __dirname,
-  "node_modules/@shoelace-style/shoelace/dist/assets",
-);
-const shoelaceAssetsPublicPath = "shoelace/assets";
 
 if (!process.env.API_BASE_URL) {
   throw new Error(

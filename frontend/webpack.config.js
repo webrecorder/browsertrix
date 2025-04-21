@@ -205,7 +205,12 @@ const main = {
     new ForkTsCheckerWebpackPlugin({
       typescript: {
         configOverwrite: {
-          exclude: ["**/*.test.ts", "tests/**/*.ts", "playwright.config.ts"],
+          exclude: [
+            "**/*.test.ts",
+            "tests/**/*.ts",
+            "src/stories/**/*.ts",
+            "playwright.config.ts",
+          ],
         },
         // Re-enable type checking when `happyPackMode` is enabled
         diagnosticOptions: {
