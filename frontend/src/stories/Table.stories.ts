@@ -46,9 +46,9 @@ export const BasicTable: Story = {
 };
 
 /**
- * Tables can be styled to have borders around and between rows (aka horizontal rules) using Tailwind.
+ * Tables can be styled to have borders using a combination of Tailwind classes. For example, to add borders between rows (aka horizontal rules):
  */
-export const StylingBorderedTable: Story = {
+export const StylingBorders: Story = {
   name: "Styling - Borders",
   args: {
     classes: clsx(
@@ -62,6 +62,27 @@ export const StylingBorderedTable: Story = {
     body: renderBody({
       ...data,
       classes: tw`rounded border [--btrix-cell-padding-y:var(--sl-spacing-x-small)] [&>*:not(:first-child)]:border-t`,
+    }),
+  },
+};
+
+/**
+ * Use `--btrix-row-gap` to add space between rows.
+ */
+export const StylingRowGap: Story = {
+  name: "Styling - Row gap",
+  args: {
+    classes: clsx(
+      defaultArgs.classes,
+      tw`[--btrix-cell-padding:var(--sl-spacing-x-small)] [--btrix-row-gap:var(--sl-spacing-x-small)]`,
+    ),
+    head: renderHead({
+      ...data,
+      classes: tw`[--btrix-cell-padding-bottom:var(--sl-spacing-2x-small)]`,
+    }),
+    body: renderBody({
+      ...data,
+      classes: tw`*:rounded *:border`,
     }),
   },
 };
@@ -109,7 +130,7 @@ const paddedTableData = {
 /**
  * Cell padding can be set for the entire table or customized per-cell.
  */
-export const StylingPaddedTable: Story = {
+export const StylingPadding: Story = {
   name: "Styling - Padding",
   args: {
     classes: tw`relative h-full w-full rounded border`,
