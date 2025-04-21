@@ -1,8 +1,5 @@
-import type { Meta, StoryObj } from "@storybook/web-components";
 import { html, type TemplateResult } from "lit";
 import { ifDefined } from "lit/directives/if-defined.js";
-
-import type { Table as TableComponent } from "@/components/ui/table/table";
 
 import "@/components/ui/table";
 

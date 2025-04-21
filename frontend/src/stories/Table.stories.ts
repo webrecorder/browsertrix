@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/web-components";
 
-import { defaultArgs, RenderProps, renderTable } from "./Table";
+import { defaultArgs, renderTable, type RenderProps } from "./Table";
 
 import type { Table as TableComponent } from "@/components/ui/table/table";
 

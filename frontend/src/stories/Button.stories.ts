@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/web-components";
 import { html } from "lit";
 
-import { renderButton, RenderProps } from "./Button";
+import { renderButton, type RenderProps } from "./Button";
 
 const meta = {
   component: "btrix-button",

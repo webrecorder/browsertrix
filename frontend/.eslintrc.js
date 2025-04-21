@@ -12,8 +12,8 @@ module.exports = {
     "plugin:import-x/recommended",
     "plugin:wc/recommended",
     "plugin:lit/recommended",
-    "prettier",
     "plugin:storybook/recommended",
+    "prettier",
   ],
   plugins: ["@typescript-eslint", "lit"],
   parserOptions: {

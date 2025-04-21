@@ -63,6 +63,18 @@ const config: StorybookConfig = {
     name: "@storybook/web-components-webpack5",
     options: {},
   },
+  webpackFinal: async (config) => {
+    // Show eslint errors from Storybook files in Webpack overlay
+    const ESLintPlugin = require("eslint-webpack-plugin");
+
+    config.plugins?.push(
+      new ESLintPlugin({
+        files: ["**/stories/*.ts", "**/.storybook/*.ts"],
+      }),
+    );
+
+    return config;
+  },
   swc: {
     jsc: {
       parser: {
