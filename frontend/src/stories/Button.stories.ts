@@ -4,6 +4,7 @@ import { html } from "lit";
 import { renderButton, type RenderProps } from "./Button";
 
 const meta = {
+  title: "Components/Button",
   component: "btrix-button",
   tags: ["autodocs"],
   render: renderButton,

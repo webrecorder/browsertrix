@@ -15,7 +15,7 @@ export interface TableData {
   }[];
 }
 
-export const columns = {
+const columns = {
   name: {
     title: "Name",
   },
@@ -31,7 +31,7 @@ export const columns = {
   },
 };
 
-export const rows: {
+const rows: {
   data: Omit<Record<keyof typeof columns, unknown>, "remove">;
 }[] = [
   {
@@ -44,4 +44,15 @@ export const rows: {
   {
     data: { name: "Bob", email: "bob@example.com", role: 20 },
   },
+  {
+    data: { name: "Carol", email: "carol@example.com", role: 20 },
+  },
+  {
+    data: { name: "Dave", email: "dave@example.com", role: 10 },
+  },
+  {
+    data: { name: "Eve", email: "eve@example.com", role: 10 },
+  },
 ] satisfies TableData["rows"];
+
+export default { columns, rows };

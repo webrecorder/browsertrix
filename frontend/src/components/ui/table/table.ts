@@ -19,7 +19,7 @@ tableCSS.split("}").forEach((rule: string) => {
 });
 
 /**
- * Low-level component for displaying content as a table.
+ * Low-level component for displaying content into columns and rows.
  * To style tables, use TailwindCSS utility classes.
  *
  * Table columns will be automatically sized according to its content.
