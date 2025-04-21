@@ -56,11 +56,11 @@ class MyCustomComponent extends BtrixElement {
 }
 ```
 
-### VS Code Snippet
+## VS Code Snippet
 
 If developing with [Visual Studio Code](https://code.visualstudio.com/), you can generate boilerplate for a `BtrixElement` Browsertrix component by typing in `component` to any TypeScript file and selecting "Btrix Component". Hit ++tab++ to move your cursor between fillable fields in the boilerplate code.
 
-### Unit Testing
+## Unit Testing
 
 Unit test files live next to the component file and are suffixed with `.test` (ex: `my-custom-component.test.ts`).
 

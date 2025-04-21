@@ -37,5 +37,11 @@ module.exports = {
         xmlSelfClosingSpace: false,
       },
     },
+    {
+      files: "**/*.mdx",
+      options: {
+        proseWrap: "always",
+      },
+    },
   ],
 };

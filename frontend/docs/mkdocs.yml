@@ -94,6 +94,7 @@ nav:
       - UI Development:
         - develop/frontend-dev.md
         - develop/ui/components.md
+        - develop/ui/storybook.md
         - develop/localization.md
         - Design:
           - develop/ui/design-action-menus.md
