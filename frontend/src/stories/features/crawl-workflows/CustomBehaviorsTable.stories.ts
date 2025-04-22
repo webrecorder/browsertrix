@@ -16,7 +16,7 @@ const meta = {
   tags: ["autodocs"],
   render: (args) => html`
     <btrix-custom-behaviors-table
-      .customBehaviors=${args.customBehaviors || []}
+      .customBehaviors=${args.customBehaviors}
       ?editable=${args.editable}
     ></btrix-custom-behaviors-table>
   `,

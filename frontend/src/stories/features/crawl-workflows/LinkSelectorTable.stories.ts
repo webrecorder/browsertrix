@@ -13,7 +13,7 @@ const meta = {
   tags: ["autodocs"],
   render: (args) => html`
     <btrix-link-selector-table
-      .selectors=${args.selectors || []}
+      .selectors=${args.selectors}
       ?editable=${args.editable}
     ></btrix-link-selector-table>
   `,

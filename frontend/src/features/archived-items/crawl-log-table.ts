@@ -29,7 +29,8 @@ const contextLevelFor: Record<CrawlLogContext, number> = {
 const MIN_CONTEXT_LEVEL = 3;
 
 /**
- * Tabular list of logs
+ * Displays crawl logs as tabular data.
+ * Clicking a row reveals log details in a dialog.
  */
 @customElement("btrix-crawl-log-table")
 @localized()
@@ -56,7 +57,7 @@ export class CrawlLogTable extends TailwindElement {
    * Number to offset index by, e.g. for pagination
    */
   @property({ type: Number })
-  offset = 1;
+  offset = 0;
 
   @state()
   private selectedLog:

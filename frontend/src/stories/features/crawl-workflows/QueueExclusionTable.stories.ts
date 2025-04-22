@@ -14,7 +14,7 @@ const meta = {
   tags: ["autodocs"],
   render: (args) => html`
     <btrix-queue-exclusion-table
-      .exclusions=${args.exclusions || []}
+      .exclusions=${args.exclusions}
       .label=${args.label || ""}
       .labelClassName=${args.labelClassName || ""}
       ?editable=${args.editable}
