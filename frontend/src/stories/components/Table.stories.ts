@@ -8,9 +8,8 @@ import {
   renderHead,
   renderTable,
   type RenderProps,
-  type TableData,
 } from "./Table";
-import data from "./Table.data";
+import data, { type TableData } from "./Table.data";
 
 import type { Table as TableComponent } from "@/components/ui/table/table";
 import { tw } from "@/utils/tailwind";
