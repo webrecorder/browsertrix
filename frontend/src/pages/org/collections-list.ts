@@ -773,9 +773,21 @@ export class CollectionsList extends BtrixElement {
       },
     );
 
-    const data = await this.api.fetch<APIPaginatedList<Collection>>(
-      `/orgs/${this.orgId}/collections?${query}`,
-    );
+    const data = await this.query!.fetchQuery({
+      queryKey: [this.orgId, "collections", query],
+      queryFn: async () => {
+        const data = await this.api.fetch<APIPaginatedList<Collection>>(
+          `/orgs/${this.orgId}/collections?${query}`,
+        );
+        data.items.forEach((collection) => {
+          this.query!.setQueryData(
+            [this.orgId, "collections", collection.id],
+            () => collection,
+          );
+        });
+        return data;
+      },
+    });
 
     return data;
   }

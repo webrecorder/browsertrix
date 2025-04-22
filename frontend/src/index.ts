@@ -25,6 +25,7 @@ import "./assets/fonts/Recursive/recursive.css";
 import "./styles.css";
 
 import { viewStateContext } from "./context/view-state";
+import { QueryClientMixin } from "./query";
 import { OrgTab, RouteNamespace } from "./routes";
 import type { UserInfo, UserOrg } from "./types/user";
 import { pageView, type AnalyticsTrackProps } from "./utils/analytics";
@@ -77,7 +78,7 @@ export interface UserGuideEventMap {
 
 @customElement("browsertrix-app")
 @localized()
-export class App extends BtrixElement {
+export class App extends QueryClientMixin(BtrixElement) {
   /**
    * Browsertrix app version to display in the UI
    */

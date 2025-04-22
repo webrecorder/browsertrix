@@ -990,9 +990,15 @@ export class CollectionDetail extends BtrixElement {
   }
 
   private async getCollection() {
-    const data = await this.api.fetch<Collection>(
-      `/orgs/${this.orgId}/collections/${this.collectionId}/replay.json`,
-    );
+    const data = await this.query!.fetchQuery({
+      queryKey: [this.orgId, "collections", this.collectionId],
+      queryFn: async () => {
+        const data = await this.api.fetch<Collection>(
+          `/orgs/${this.orgId}/collections/${this.collectionId}/replay.json`,
+        );
+        return data;
+      },
+    });
 
     return data;
   }
