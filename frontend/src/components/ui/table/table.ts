@@ -58,11 +58,6 @@ export class Table extends LitElement {
     if (!headEl) return;
     await headEl.updateComplete;
 
-    console.log(
-      "--btrix-table-grid-template-columns:",
-      this.style.getPropertyValue("--btrix-table-grid-template-columns"),
-    );
-
     if (!this.style.getPropertyValue("--btrix-table-grid-template-columns")) {
       // `grid-template-columns` must be defined in order for spanning all
       // columns in a subgrid to work.

@@ -14,8 +14,8 @@ export class DataTable extends TailwindElement {
   // postcss-lit-disable-next-line
   static styles = css`
     btrix-table {
-      --btrix-cell-gap: var(--sl-spacing-x-small);
-      --btrix-cell-padding: var(--sl-spacing-x-small);
+      --btrix-table-cell-gap: var(--sl-spacing-x-small);
+      --btrix-table-cell-padding: var(--sl-spacing-x-small);
     }
   `;
 
@@ -39,7 +39,7 @@ export class DataTable extends TailwindElement {
   border?: "grid" | "horizontal";
 
   render() {
-    const gridAutoColumnsStyle = this.columnWidths
+    const gridAutoColumnsStyle = this.columnWidths.length
       ? `--btrix-table-grid-template-columns: ${this.columnWidths.join(" ")}`
       : "";
 

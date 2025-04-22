@@ -59,9 +59,8 @@ export class BrowserProfilesList extends BtrixElement {
       grid-template-columns:
         [clickable-start] minmax(30ch, 50ch) minmax(30ch, 40ch) repeat(2, 1fr)
         [clickable-end] min-content;
-      --btrix-cell-gap: var(--sl-spacing-x-small);
-      --btrix-cell-padding-left: var(--sl-spacing-small);
-      --btrix-cell-padding-right: var(--sl-spacing-small);
+      --btrix-table-cell-gap: var(--sl-spacing-x-small);
+      --btrix-table-cell-padding-x: var(--sl-spacing-small);
     }
 
     btrix-table-body btrix-table-row:nth-of-type(n + 2) {
