@@ -2,7 +2,7 @@ import { css, html, LitElement } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
 /**
- * @cssproperty --btrix-row-gap
+ * @cssproperty --btrix-row-gap CSS value for `grid-row-gap
  */
 @customElement("btrix-table-body")
 export class TableBody extends LitElement {

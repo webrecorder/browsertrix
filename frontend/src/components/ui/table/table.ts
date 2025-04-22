@@ -24,14 +24,13 @@ tableCSS.split("}").forEach((rule: string) => {
  * To render styled, tabular data, use `<btrix-data-table>`.
  *
  * Table columns are automatically sized according to their content.
- * To specify column sizes, use the `grid-cols-[<value>]` Tailwind class
- * to modify the CSS `grid-template-columns` property.
+ * To specify column sizes, use `--btrix-table-grid-template-columns`.
  *
  * @slot head
  * @slot
  * @csspart head
- * @cssproperty --btrix-table-column-gap
- * @cssproperty --btrix-table-grid-template-columns
+ * @cssproperty --btrix-table-column-gap CSS value for `column-gap`
+ * @cssproperty --btrix-table-grid-template-columns CSS value for `grid-template-columns`
  */
 @customElement("btrix-table")
 export class Table extends LitElement {
