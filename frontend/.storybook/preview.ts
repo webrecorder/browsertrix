@@ -1,11 +1,12 @@
-import "../src/global";
+import "@/global";
+import "@/components/ui";
 
 import {
   setCustomElementsManifest,
   type Preview,
 } from "@storybook/web-components";
 
-import customElements from "../src/__generated__/custom-elements.json";
+import customElements from "@/__generated__/custom-elements.json";
 
 // Automatically document component properties
 setCustomElementsManifest(customElements);

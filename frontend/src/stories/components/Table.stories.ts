@@ -53,15 +53,15 @@ export const StylingBorders: Story = {
   args: {
     classes: clsx(
       defaultArgs.classes,
-      tw`[--btrix-cell-padding-x:var(--sl-spacing-small)]`,
+      tw`[--btrix-table-cell-padding-x:var(--sl-spacing-small)]`,
     ),
     head: renderHead({
       ...data,
-      classes: tw`[--btrix-cell-padding-bottom:var(--sl-spacing-2x-small)]`,
+      classes: tw`[--btrix-table-cell-padding-bottom:var(--sl-spacing-2x-small)]`,
     }),
     body: renderBody({
       ...data,
-      classes: tw`rounded border [--btrix-cell-padding-y:var(--sl-spacing-x-small)] [&>*:not(:first-child)]:border-t`,
+      classes: tw`rounded border [--btrix-table-cell-padding-y:var(--sl-spacing-x-small)] [&>*:not(:first-child)]:border-t`,
     }),
   },
 };
@@ -74,11 +74,11 @@ export const StylingRowGap: Story = {
   args: {
     classes: clsx(
       defaultArgs.classes,
-      tw`[--btrix-cell-padding:var(--sl-spacing-x-small)] [--btrix-row-gap:var(--sl-spacing-x-small)]`,
+      tw`[--btrix-row-gap:var(--sl-spacing-x-small)] [--btrix-table-cell-padding:var(--sl-spacing-x-small)]`,
     ),
     head: renderHead({
       ...data,
-      classes: tw`[--btrix-cell-padding-bottom:var(--sl-spacing-2x-small)]`,
+      classes: tw`[--btrix-table-cell-padding-bottom:var(--sl-spacing-2x-small)]`,
     }),
     body: renderBody({
       ...data,
@@ -95,7 +95,7 @@ const paddedTableData = {
       title: "C",
       renderItem: () => html`
         <btrix-table-cell
-          class="[--btrix-cell-padding-left:0] [--btrix-cell-padding:0]"
+          class="[--btrix-table-cell-padding-left:0] [--btrix-table-cell-padding:0]"
         >
           Cell without padding
         </btrix-table-cell>
@@ -104,21 +104,21 @@ const paddedTableData = {
   },
   rows: [
     {
-      classes: tw`[--btrix-cell-padding:var(--sl-spacing-small)]`,
+      classes: tw`[--btrix-table-cell-padding:var(--sl-spacing-small)]`,
       data: {
         a: "Cell with small padding",
         b: "Cell with small padding",
       },
     },
     {
-      classes: tw`[--btrix-cell-padding:var(--sl-spacing-large)]`,
+      classes: tw`[--btrix-table-cell-padding:var(--sl-spacing-large)]`,
       data: {
         a: "Cell with large padding",
         b: "Cell with large padding",
       },
     },
     {
-      classes: tw`[--btrix-cell-padding-left:var(--sl-spacing-x-large)]`,
+      classes: tw`[--btrix-table-cell-padding-left:var(--sl-spacing-x-large)]`,
       data: {
         a: "Cell with only left padding",
         b: "Cell with only left padding",

@@ -81,7 +81,7 @@ const config: StorybookConfig = {
 
     config.plugins?.push(
       new ESLintPlugin({
-        files: ["**/stories/*.ts", "**/.storybook/*.ts"],
+        files: ["**/stories/**/*.ts", "**/.storybook/*.ts"],
       }),
     );
 
@@ -107,7 +107,7 @@ const config: StorybookConfig = {
       // TODO Consolidate with tsconfig.json
       paths: {
         "@/*": ["./src/*"],
-        "~assets/*": ["./assets/src/*"],
+        "~assets/*": ["./src/assets/*"],
       },
     },
   },
