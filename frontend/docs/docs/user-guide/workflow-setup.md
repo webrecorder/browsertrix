@@ -195,7 +195,17 @@ See [Basic CSS selectors (MDN)](https://developer.mozilla.org/en-US/docs/Learn_w
 
 ### Use Custom Behaviors
 
-Enable custom behaviors to add your own behavior scripts. See [webrecorder/browsertrix-behaviors](https://github.com/webrecorder/browsertrix-behaviors) for more information.
+Enable custom behaviors to add your own behavior scripts. See [Browser Behaviors crawler documentation](https://crawler.docs.browsertrix.com/user-guide/behaviors/#built-in-behaviors) on creating custom behaviors.
+
+Custom behaviors can be specified as:
+
+#### URL
+
+A URL for a single JavaScript or JSON behavior file to download. This should be a URL that the crawler has access to. The workflow editor will validate that the supplied URL can be reached.
+
+#### Git repository
+
+A URL for a public git repository containing one or more behavior files. Optionally, you can specify a branch and/or a relative path within the repository to specify exactly which behavior files within the repository should be used. The workflow editor will validate that the URL exists, is a Git repository, and that the branch name is valid if a branch is specified.
 
 _**Page Timing**_
 
