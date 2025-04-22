@@ -128,8 +128,9 @@ export class CollectionsList extends BtrixElement {
   @state()
   private selectedCollection?: Collection;
 
+  /** ID of the collection currently being refreshed */
   @state()
-  collectionRefreshing: string | null = null;
+  private collectionRefreshing: string | null = null;
 
   @state()
   private fetchErrorStatusCode?: number;
