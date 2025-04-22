@@ -29,7 +29,7 @@ const columns = {
     title: html`<span class="sr-only">Remove</span>`,
     renderItem: () =>
       html`<btrix-table-cell>
-        <sl-icon name="trash3"></sl-icon>
+        <sl-icon-button name="trash3"></sl-icon-button>
       </btrix-table-cell>`,
   },
 };

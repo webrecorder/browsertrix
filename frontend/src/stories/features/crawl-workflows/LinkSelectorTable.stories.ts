@@ -20,13 +20,6 @@ const meta = {
   argTypes: {
     ...argTypes,
   },
-  args: {},
-} satisfies Meta<LinkSelectorTable>;
-
-export default meta;
-type Story = StoryObj<LinkSelectorTable>;
-
-export const WithSelectors: Story = {
   args: {
     selectors: [
       "a->href",
@@ -35,20 +28,23 @@ export const WithSelectors: Story = {
       "footer > button->data-link",
     ],
   },
+} satisfies Meta<LinkSelectorTable>;
+
+export default meta;
+type Story = StoryObj<LinkSelectorTable>;
+
+export const WithSelectors: Story = {
+  args: {},
 };
 
 export const Empty: Story = {
-  args: {},
+  args: {
+    selectors: [],
+  },
 };
 
 export const Editable: Story = {
   args: {
     editable: true,
-    selectors: [
-      "a->href",
-      "button->href",
-      "div.link->data-href",
-      "footer > button->data-link",
-    ],
   },
 };

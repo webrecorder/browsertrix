@@ -23,13 +23,6 @@ const meta = {
   argTypes: {
     ...argTypes,
   },
-  args: {},
-} satisfies Meta<CustomBehaviorsTable>;
-
-export default meta;
-type Story = StoryObj<CustomBehaviorsTable>;
-
-export const WithCustomBehaviors: Story = {
   args: {
     customBehaviors: [
       "https://github.com/webrecorder/custom-behaviors/blob/main/behaviors/fulcrum.js",
@@ -37,19 +30,23 @@ export const WithCustomBehaviors: Story = {
       "git+https://github.com/webrecorder/custom-behaviors?branch=timeline-events&path=behaviors",
     ],
   },
+} satisfies Meta<CustomBehaviorsTable>;
+
+export default meta;
+type Story = StoryObj<CustomBehaviorsTable>;
+
+export const WithCustomBehaviors: Story = {
+  args: {},
 };
 
 export const Empty: Story = {
-  args: {},
+  args: {
+    customBehaviors: [],
+  },
 };
 
 export const Editable: Story = {
   args: {
     editable: true,
-    customBehaviors: [
-      "https://github.com/webrecorder/custom-behaviors/blob/main/behaviors/fulcrum.js",
-      "https://github.com/webrecorder/custom-behaviors/blob/main/flow-behaviors/scalar/scalar-index.json",
-      "git+https://github.com/webrecorder/custom-behaviors?branch=timeline-events&path=behaviors",
-    ],
   },
 };
