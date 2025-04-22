@@ -18,6 +18,8 @@ const emptyCells = ["", ""];
 const syntaxInputClasses = tw`flex-1 [--sl-input-border-color:transparent] [--sl-input-border-radius-medium:0]`;
 
 /**
+ * Displays link selector crawl configuration in an editable table.
+ *
  * @fires btrix-change
  */
 @customElement("btrix-link-selector-table")

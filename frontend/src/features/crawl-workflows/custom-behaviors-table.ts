@@ -26,6 +26,8 @@ const rowIdSchema = z.string().nanoid();
 type RowId = z.infer<typeof rowIdSchema>;
 
 /**
+ * Displays custom behavior crawl configuration in an editable table.
+ *
  * @fires btrix-change
  * @fires btrix-invalid
  */
