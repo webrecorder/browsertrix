@@ -1,4 +1,4 @@
-import { serialize } from "@shoelace-style/shoelace";
+// import { serialize } from "@shoelace-style/shoelace";
 import { html } from "lit";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { nanoid } from "nanoid";
@@ -7,15 +7,12 @@ import type { DataGrid } from "@/components/ui/data-grid/data-grid";
 
 import "@/components/ui/data-grid";
 
-export type RenderProps = Pick<
-  DataGrid,
-  // TODO Get from type
-  "columns" | "items" | "repeatKey" | "editable" | "label"
->;
+export type RenderProps = Pick<DataGrid, keyof DataGrid>;
 
-const columns = "abcde".split("").map((field) => ({
+const columns = "abcde".split("").map((field, i) => ({
   field,
   label: field.toUpperCase(),
+  editable: i > 0,
 })) satisfies RenderProps["columns"];
 const items = Array.from({ length: 5 }).map((_, i) => ({
   ...columns.reduce(
@@ -37,9 +34,11 @@ export const renderComponent = ({
   columns,
   items,
   repeatKey,
-  editable,
   label,
-}: RenderProps) => {
+  stickyHeader,
+  editRows,
+  editCells,
+}: Partial<RenderProps>) => {
   return html`
     <btrix-data-grid
       name="test"
@@ -47,13 +46,17 @@ export const renderComponent = ({
       .items=${items || defaultArgs.items}
       repeatKey=${ifDefined(repeatKey)}
       label=${ifDefined(label)}
-      ?editable=${editable}
+      ?stickyHeader=${stickyHeader}
+      ?editRows=${editRows}
+      ?editCells=${editCells}
       @btrix-change=${(e: CustomEvent) => {
         const el = e.target as DataGrid;
 
-        if (el.form) {
-          console.log("form values:", serialize(el.form));
-        }
+        console.log("el:", el);
+
+        // if (el.form) {
+        //   console.log("form values:", serialize(el.form));
+        // }
       }}
     >
     </btrix-data-grid>

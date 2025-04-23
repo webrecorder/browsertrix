@@ -1,18 +1,37 @@
-import type { SlInput } from "@shoelace-style/shoelace";
 import type { TemplateResult } from "lit";
 import { z } from "zod";
 
-export type Item = Record<string, string | number | null | undefined>;
+export type GridItem = Record<string, string | number | null | undefined>;
 
-export type Column = {
-  field: keyof Item; // TODO Infer from row?
-  label: string | TemplateResult;
-  inputType?: SlInput["type"];
-  renderInput?: (item: Item) => string | TemplateResult;
-  renderItem?: (item: Item) => string | TemplateResult;
+export enum GridColumnType {
+  Text = "text",
+  Number = "number",
+  URL = "url",
+  // Code = "code", // TODO
+  Select = "select",
+}
+
+export type GridColumnSelectType = {
+  inputType: GridColumnType.Select;
+  renderSelectOptions: () => TemplateResult;
 };
 
-const rowIdSchema = z.string().nanoid();
-export type RowId = z.infer<typeof rowIdSchema>;
+export type GridColumn = {
+  field: keyof GridItem; // TODO Infer from row?
+  label: string | TemplateResult;
+  description?: string;
+  editable?: boolean;
+  inputPlaceholder?: string;
+  renderEditCell?: ({ item }: { item: GridItem }) => string | TemplateResult;
+  renderCell?: ({ item }: { item: GridItem }) => string | TemplateResult;
+} & (
+  | {
+      inputType?: GridColumnType;
+    }
+  | GridColumnSelectType
+);
 
-export interface Rows extends Map<RowId, Item> {}
+const rowIdSchema = z.string().nanoid();
+export type GridRowId = z.infer<typeof rowIdSchema>;
+
+export interface GridRows extends Map<GridRowId, GridItem> {}
