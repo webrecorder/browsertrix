@@ -129,6 +129,7 @@
     "@storybook/web-components": "^8.6.12",
     "@storybook/web-components-webpack5": "^8.6.12",
     "@types/webpack-bundle-analyzer": "^4.7.0",
+    "@wc-toolkit/type-parser": "^1.0.3",
     "@web/dev-server-esbuild": "^0.3.3",
     "@web/dev-server-import-maps": "^0.2.0",
     "@web/dev-server-rollup": "^0.6.1",

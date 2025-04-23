@@ -3034,6 +3034,11 @@
   resolved "https://registry.yarnpkg.com/@vscode/web-custom-data/-/web-custom-data-0.4.8.tgz#d1b7c18752361cf5b6b09a2e1cc14f34daba1a74"
   integrity sha512-rRiEeEX49wipCeGZo65mQJUEuCY3IXd6bet90eY6cMMQ9jBe2g3Njw/2ctbaxuACPnEKXTdW0dB7umxDln3Rzg==
 
+"@wc-toolkit/type-parser@^1.0.3":
+  version "1.0.3"
+  resolved "https://registry.yarnpkg.com/@wc-toolkit/type-parser/-/type-parser-1.0.3.tgz#0fc4372b3175c291b2c2ddbf07c189718f042f1a"
+  integrity sha512-Y3oiu4Z2pTF27A2hURDL/9hN7/tBl/sa+udwjWl3gZR92mpqpAtVgQB3oCD36JgknMZu+2J3RBEGORu1Fr7wwg==
+
 "@web/browser-logs@^0.2.1", "@web/browser-logs@^0.2.2":
   version "0.2.5"
   resolved "https://registry.npmjs.org/@web/browser-logs/-/browser-logs-0.2.5.tgz"
