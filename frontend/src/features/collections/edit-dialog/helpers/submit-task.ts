@@ -87,6 +87,17 @@ export default function submitTask(
         );
       }
 
+      tasks.push(
+        this.query!.invalidateQueries({
+          queryKey: [this.orgId, "collections", this.collection.id],
+        }),
+      );
+      tasks.push(
+        this.query!.invalidateQueries({
+          queryKey: [this.orgId, "collections"],
+        }),
+      );
+
       await Promise.all(tasks);
 
       this.dispatchEvent(

@@ -128,6 +128,7 @@ export class CollectionDetail extends BtrixElement {
     changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {
     if (changedProperties.has("collectionId")) {
+      this.getCachedCollection();
       void this.fetchCollection();
       void this.fetchArchivedItems({
         page: parsePage(new URLSearchParams(location.search).get("page")),
@@ -973,6 +974,17 @@ export class CollectionDetail extends BtrixElement {
         icon: "exclamation-octagon",
         id: "collection-delete-status",
       });
+    }
+  }
+
+  private getCachedCollection() {
+    const cachedCollection = this.query!.getQueryData<Collection>([
+      this.orgId,
+      "collections",
+      this.collectionId,
+    ]);
+    if (cachedCollection) {
+      this.collection = cachedCollection;
     }
   }
 
