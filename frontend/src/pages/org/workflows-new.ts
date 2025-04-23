@@ -144,7 +144,7 @@ export class WorkflowsNew extends LiteElement {
           }}
         >
           <sl-icon slot="prefix" name="book"></sl-icon>
-          ${msg("Setup Guide")}
+          ${msg("User Guide")}
         </sl-button>
       </header>
       ${when(this.org, (org) => {
