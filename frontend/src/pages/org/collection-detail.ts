@@ -24,6 +24,7 @@ import {
   metadataItemWithCollection,
 } from "@/layouts/collections/metadataColumn";
 import { pageNav, pageTitle, type Breadcrumb } from "@/layouts/pageHeader";
+import { QueryController } from "@/query";
 import type {
   APIPaginatedList,
   APIPaginationQuery,
@@ -58,8 +59,23 @@ export class CollectionDetail extends BtrixElement {
   @property({ type: String })
   collectionTab: Tab | null = Tab.Replay;
 
+  // @state()
+  // private collection?: Collection;
+
+  private readonly collectionQuery = new QueryController(this, () => ({
+    queryKey: [this.orgId, "collections", this.collectionId],
+    queryFn: async () => {
+      const data = await this.api.fetch<Collection>(
+        `/orgs/${this.orgId}/collections/${this.collectionId}/replay.json`,
+      );
+      return data;
+    },
+  }));
+
   @state()
-  private collection?: Collection;
+  get collection() {
+    return this.collectionQuery.result?.data;
+  }
 
   @state()
   private archivedItems?: APIPaginatedList<ArchivedItem>;
@@ -128,8 +144,8 @@ export class CollectionDetail extends BtrixElement {
     changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {
     if (changedProperties.has("collectionId")) {
-      this.getCachedCollection();
-      void this.fetchCollection();
+      // this.getCachedCollection();
+      // void this.fetchCollection();
       void this.fetchArchivedItems({
         page: parsePage(new URLSearchParams(location.search).get("page")),
       });
@@ -227,7 +243,7 @@ export class CollectionDetail extends BtrixElement {
             context="private"
             @btrix-change=${(e: CustomEvent) => {
               e.stopPropagation();
-              void this.fetchCollection();
+              // void this.collectionQuery.
             }}
           ></btrix-share-collection>
           ${when(this.isCrawler, this.renderActions)}
@@ -326,7 +342,7 @@ export class CollectionDetail extends BtrixElement {
         @sl-hide=${() => (this.openDialogName = undefined)}
         @btrix-collection-saved=${() => {
           this.refreshReplay();
-          void this.fetchCollection();
+          // void this.fetchCollection();
           void this.fetchArchivedItems();
         }}
       >
@@ -338,7 +354,7 @@ export class CollectionDetail extends BtrixElement {
           // Don't do full refresh of rwp so that rwp-url-change fires
           this.isRwpLoaded = false;
 
-          void this.fetchCollection();
+          // void this.fetchCollection();
         }}
         @sl-hide=${async () => (this.openDialogName = undefined)}
         collectionId=${this.collectionId}
@@ -355,13 +371,13 @@ export class CollectionDetail extends BtrixElement {
         @btrix-collection-saved=${() => {
           this.refreshReplay();
           // TODO maybe we can return the updated collection from the update endpoint, and avoid an extra fetch?
-          void this.fetchCollection();
+          // void this.fetchCollection();
         }}
         @btrix-change=${() => {
           // Don't do full refresh of rwp so that rwp-url-change fires
           this.isRwpLoaded = false;
 
-          void this.fetchCollection();
+          // void this.fetchCollection();
         }}
         .replayWebPage=${this.replayEmbed}
         ?replayLoaded=${this.isRwpLoaded}
@@ -977,43 +993,43 @@ export class CollectionDetail extends BtrixElement {
     }
   }
 
-  private getCachedCollection() {
-    const cachedCollection = this.query!.getQueryData<Collection>([
-      this.orgId,
-      "collections",
-      this.collectionId,
-    ]);
-    if (cachedCollection) {
-      this.collection = cachedCollection;
-    }
-  }
+  // private getCachedCollection() {
+  //   const cachedCollection = this.query!.getQueryData<Collection>([
+  //     this.orgId,
+  //     "collections",
+  //     this.collectionId,
+  //   ]);
+  //   if (cachedCollection) {
+  //     this.collection = cachedCollection;
+  //   }
+  // }
 
-  private async fetchCollection() {
-    try {
-      this.collection = await this.getCollection();
-    } catch (e) {
-      this.notify.toast({
-        message: msg("Sorry, couldn't retrieve Collection at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-        id: "collection-retrieve-status",
-      });
-    }
-  }
+  // private async fetchCollection() {
+  //   try {
+  //     this.collection = await this.getCollection();
+  //   } catch (e) {
+  //     this.notify.toast({
+  //       message: msg("Sorry, couldn't retrieve Collection at this time."),
+  //       variant: "danger",
+  //       icon: "exclamation-octagon",
+  //       id: "collection-retrieve-status",
+  //     });
+  //   }
+  // }
 
-  private async getCollection() {
-    const data = await this.query!.fetchQuery({
-      queryKey: [this.orgId, "collections", this.collectionId],
-      queryFn: async () => {
-        const data = await this.api.fetch<Collection>(
-          `/orgs/${this.orgId}/collections/${this.collectionId}/replay.json`,
-        );
-        return data;
-      },
-    });
+  // private async getCollection() {
+  //   const data = await this.query!.fetchQuery({
+  //     queryKey: [this.orgId, "collections", this.collectionId],
+  //     queryFn: async () => {
+  //       const data = await this.api.fetch<Collection>(
+  //         `/orgs/${this.orgId}/collections/${this.collectionId}/replay.json`,
+  //       );
+  //       return data;
+  //     },
+  //   });
 
-    return data;
-  }
+  //   return data;
+  // }
 
   /**
    * Fetch web captures and update internal state
@@ -1092,7 +1108,7 @@ export class CollectionDetail extends BtrixElement {
         id: "collection-item-remove-status",
       });
       this.refreshReplay();
-      void this.fetchCollection();
+      // void this.fetchCollection();
       void this.fetchArchivedItems({
         // Update page if last item
         page: items.length === 1 && page > 1 ? page - 1 : page,
@@ -1135,15 +1151,15 @@ export class CollectionDetail extends BtrixElement {
         icon: "check2-circle",
       });
 
-      if (this.collection) {
-        this.collection = {
-          ...this.collection,
-          description,
-        };
-      }
+      // if (this.collection) {
+      //   this.collection = {
+      //     ...this.collection,
+      //     description,
+      //   };
+      // }
       this.isEditingDescription = false;
 
-      void this.fetchCollection();
+      // void this.fetchCollection();
     } catch (err) {
       console.debug(err);
 
