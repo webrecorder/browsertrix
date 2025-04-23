@@ -1,3 +1,4 @@
+import { serialize } from "@shoelace-style/shoelace";
 import { html } from "lit";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { nanoid } from "nanoid";
@@ -8,7 +9,8 @@ import "@/components/ui/data-grid";
 
 export type RenderProps = Pick<
   DataGrid,
-  "columns" | "items" | "repeatKey" | "editable"
+  // TODO Get from type
+  "columns" | "items" | "repeatKey" | "editable" | "label"
 >;
 
 const columns = "abcde".split("").map((field) => ({
@@ -36,13 +38,23 @@ export const renderComponent = ({
   items,
   repeatKey,
   editable,
+  label,
 }: RenderProps) => {
   return html`
     <btrix-data-grid
+      name="test"
       .columns=${columns || defaultArgs.columns}
       .items=${items || defaultArgs.items}
       repeatKey=${ifDefined(repeatKey)}
+      label=${ifDefined(label)}
       ?editable=${editable}
+      @btrix-change=${(e: CustomEvent) => {
+        const el = e.target as DataGrid;
+
+        if (el.form) {
+          console.log("form values:", serialize(el.form));
+        }
+      }}
     >
     </btrix-data-grid>
   `;
