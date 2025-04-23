@@ -1,5 +1,10 @@
 import { localized, msg } from "@lit/localize";
-import type { SlInput, SlMenuItem } from "@shoelace-style/shoelace";
+import type {
+  SlChangeEvent,
+  SlInput,
+  SlMenuItem,
+  SlRadioGroup,
+} from "@shoelace-style/shoelace";
 import Fuse from "fuse.js";
 import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
@@ -79,6 +84,11 @@ const sortableFields: Record<
 };
 const MIN_SEARCH_LENGTH = 2;
 
+enum ListView {
+  List = "list",
+  Grid = "grid",
+}
+
 @customElement("btrix-collections-list")
 @localized()
 export class CollectionsList extends BtrixElement {
@@ -98,6 +108,9 @@ export class CollectionsList extends BtrixElement {
   };
 
   @state()
+  private listView = ListView.List;
+
+  @state()
   private filterBy: Partial<Record<keyof Collection, unknown>> = {};
 
   @state()
@@ -114,6 +127,10 @@ export class CollectionsList extends BtrixElement {
 
   @state()
   private selectedCollection?: Collection;
+
+  /** ID of the collection currently being refreshed */
+  @state()
+  private collectionRefreshing: string | null = null;
 
   @state()
   private fetchErrorStatusCode?: number;
@@ -178,8 +195,13 @@ export class CollectionsList extends BtrixElement {
               >
                 ${this.renderControls()}
               </div>
-              <div class="overflow-auto px-2 pb-1">
-                ${guard([this.collections], this.renderList)}
+              <div class="-mx-3 overflow-auto px-3 pb-1">
+                ${guard(
+                  [this.collections, this.listView, this.collectionRefreshing],
+                  this.listView === ListView.List
+                    ? this.renderList
+                    : this.renderGrid,
+                )}
               </div>
             `
           : this.renderLoading(),
@@ -291,17 +313,45 @@ export class CollectionsList extends BtrixElement {
                 `,
               )}
             </sl-select>
-            <sl-icon-button
-              name="arrow-down-up"
-              label=${msg("Reverse sort")}
-              @click=${() => {
-                this.orderBy = {
-                  ...this.orderBy,
-                  direction: -1 * this.orderBy.direction,
-                };
-              }}
-            ></sl-icon-button>
+            <sl-tooltip content=${msg("Reverse sort")}>
+              <sl-icon-button
+                name="arrow-down-up"
+                label=${msg("Reverse sort")}
+                @click=${() => {
+                  this.orderBy = {
+                    ...this.orderBy,
+                    direction: -1 * this.orderBy.direction,
+                  };
+                }}
+              ></sl-icon-button>
+            </sl-tooltip>
           </div>
+          <label for="viewStyle" class="mx-2 whitespace-nowrap text-neutral-500"
+            >${msg("View:")}</label
+          >
+          <sl-radio-group
+            id="viewStyle"
+            value=${this.listView}
+            size="small"
+            @sl-change=${(e: SlChangeEvent) => {
+              this.listView = (e.target as SlRadioGroup).value as ListView;
+            }}
+          >
+            <sl-tooltip content=${msg("View as List")}>
+              <sl-radio-button pill value=${ListView.List}>
+                <sl-icon
+                  name="view-list"
+                  label=${msg("List")}
+                ></sl-icon> </sl-radio-button
+            ></sl-tooltip>
+            <sl-tooltip content=${msg("View as Grid")}>
+              <sl-radio-button pill value=${ListView.Grid}>
+                <sl-icon
+                  name="grid"
+                  label=${msg("Grid")}
+                ></sl-icon> </sl-radio-button
+            ></sl-tooltip>
+          </sl-radio-group>
         </div>
       </div>
     `;
@@ -386,6 +436,45 @@ export class CollectionsList extends BtrixElement {
     `;
   }
 
+  private readonly renderGrid = () => {
+    return html`<btrix-collections-grid
+      slug=${this.orgSlugState || ""}
+      .collections=${this.collections?.items}
+      .collectionRefreshing=${this.collectionRefreshing}
+      .renderActions=${(col: Collection) =>
+        this.renderActions(col, { renderOnGridItem: true })}
+      showVisibility
+      class="mt-8 block"
+      @btrix-collection-saved=${async ({ detail }: CollectionSavedEvent) => {
+        this.collectionRefreshing = detail.id;
+        await this.fetchCollections();
+        this.collectionRefreshing = null;
+      }}
+    >
+      ${this.collections &&
+      this.collections.total > this.collections.items.length
+        ? html`
+            <btrix-pagination
+              page=${this.collections.page}
+              totalCount=${this.collections.total}
+              size=${this.collections.pageSize}
+              @page-change=${async (e: PageChangeEvent) => {
+                await this.fetchCollections({
+                  page: e.detail.page,
+                });
+
+                // Scroll to top of list
+                // TODO once deep-linking is implemented, scroll to top of pushstate
+                this.scrollIntoView({ behavior: "smooth" });
+              }}
+              slot="pagination"
+            >
+            </btrix-pagination>
+          `
+        : nothing}
+    </btrix-collections-grid>`;
+  };
+
   private readonly renderList = () => {
     if (this.collections?.items.length) {
       return html`
@@ -393,7 +482,7 @@ export class CollectionsList extends BtrixElement {
           class="[--btrix-column-gap:var(--sl-spacing-small)]"
           style="grid-template-columns: min-content [clickable-start] 45em repeat(4, 1fr) [clickable-end] min-content"
         >
-          <btrix-table-head class="mb-2 whitespace-nowrap">
+          <btrix-table-head class="mb-2 mt-1 whitespace-nowrap">
             <btrix-table-header-cell>
               <span class="sr-only">${msg("Collection Access")}</span>
             </btrix-table-header-cell>
@@ -575,11 +664,17 @@ export class CollectionsList extends BtrixElement {
     </btrix-table-row>
   `;
 
-  private readonly renderActions = (col: Collection) => {
+  private readonly renderActions = (
+    col: Collection,
+    { renderOnGridItem } = { renderOnGridItem: false },
+  ) => {
     const authToken = this.authState?.headers.Authorization.split(" ")[1];
 
     return html`
-      <btrix-overflow-dropdown>
+      <btrix-overflow-dropdown
+        ?raised=${renderOnGridItem}
+        size=${renderOnGridItem ? "small" : "medium"}
+      >
         <sl-menu>
           <sl-menu-item @click=${() => void this.manageCollection(col, "edit")}>
             <sl-icon name="gear" slot="prefix"></sl-icon>
