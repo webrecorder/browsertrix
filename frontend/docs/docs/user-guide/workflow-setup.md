@@ -205,7 +205,7 @@ A URL for a single JavaScript or JSON behavior file to download. This should be 
 
 #### Git repository
 
-A URL for a public Git repository containing one or more behavior files. Optionally, you can specify a branch and/or a relative path within the repository to specify exactly which behavior files within the repository should be used. The workflow editor will validate that the URL exists, is a Git repository, and that the branch name is valid if a branch is specified.
+A URL for a public Git repository containing one or more behavior files. Optionally, you can specify a branch and/or a relative path within the repository to specify exactly which behavior files within the repository should be used. The workflow editor will validate that the URL can be reached and is a Git repository. If a branch name is specified, the workflow editor will also validate that the branch exists in the Git repository.
 
 _**Page Timing**_
 
