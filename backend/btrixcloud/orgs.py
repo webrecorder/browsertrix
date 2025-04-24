@@ -548,6 +548,17 @@ class OrgOps:
         )
         return Organization.from_dict(org_data) if org_data else None
 
+    async def is_subscription_activated(self, sub_id: str) -> bool:
+        """return true if subscription for this org was 'activated', eg. at least
+        one user has signed up and changed the slug
+        """
+        org_data = await self.orgs.find_one({"subscription.subId", sub_id})
+        if not org_data:
+            return False
+
+        org = Organization.from_dict(org_data)
+        return len(org.users) > 0 and org.slug != str(org.id)
+
     async def update_custom_storages(self, org: Organization) -> bool:
         """Update storage on an existing organization"""
 

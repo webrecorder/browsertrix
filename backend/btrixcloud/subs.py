@@ -34,6 +34,7 @@ from .models import (
     UserRole,
     AddedResponseId,
     UpdatedResponse,
+    SuccessResponse,
     PaginatedSubscriptionEventResponse,
     REASON_CANCELED,
 )
@@ -391,6 +392,18 @@ def init_subs_api(
         return await ops.cancel_subscription(cancel)
 
     assert org_ops.router
+
+    @app.get(
+        "/subscriptions/isActivated/{sub_id}",
+        tags=["subscriptions"],
+        dependencies=[Depends(user_or_shared_secret_dep)],
+        response_model=SuccessResponse,
+    )
+    async def is_subscription_activated(
+        sub_id: str,
+    ):
+        result = await org_ops.is_subscription_activated(sub_id)
+        return {"success": result}
 
     @app.get(
         "/subscriptions/events",
