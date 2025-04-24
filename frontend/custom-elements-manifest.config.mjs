@@ -1,5 +1,3 @@
-import { getTsProgram, typeParserPlugin } from "@wc-toolkit/type-parser";
-
 export default {
   /** Globs to analyze */
   globs: ["src/components/**/*.ts", "src/features/**/*.ts"],
@@ -17,15 +15,8 @@ export default {
   packagejson: false,
   /** Enable special handling for litelement */
   litelement: true,
-  overrideModuleCreation({ ts, globs }) {
-    // Give the plugin access to the TypeScript type checker
-    const program = getTsProgram(ts, globs, "tsconfig.json");
-    return program
-      .getSourceFiles()
-      .filter((sf) => globs.find((glob) => sf.fileName.includes(glob)));
-  },
   /** Provide custom plugins */
-  plugins: [typeParserPlugin(), filterPrivateFields()],
+  plugins: [filterPrivateFields()],
 };
 
 // Filter private fields
