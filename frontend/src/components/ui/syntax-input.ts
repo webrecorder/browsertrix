@@ -8,6 +8,7 @@ import clsx from "clsx";
 import { html } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
+import type { EmptyObject } from "type-fest";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import type { Code } from "@/components/ui/code";
@@ -16,6 +17,9 @@ import { tw } from "@/utils/tailwind";
 /**
  * Basic text input with code syntax highlighting
  *
+ * @TODO Refactor to use `ElementInternals`
+ *
+ * @fires btrix-input
  * @fires btrix-change
  */
 @customElement("btrix-syntax-input")
@@ -64,6 +68,10 @@ export class SyntaxInput extends TailwindElement {
 
   @query("btrix-code")
   private readonly code?: Code | null;
+
+  public get validity(): ValidityState | EmptyObject {
+    return this.input?.validity || {};
+  }
 
   public setCustomValidity(message: string) {
     this.input?.setCustomValidity(message);
@@ -126,7 +134,7 @@ export class SyntaxInput extends TailwindElement {
       <div class=${clsx(tw`relative`)} part="base">
         <sl-input
           class=${clsx(
-            tw`[--sl-input-font-family:var(--sl-font-mono)] [--sl-input-spacing-medium:var(--sl-spacing-small)]`,
+            tw`[--sl-input-spacing-medium:var(--sl-spacing-small)] [--sl-input-font-family:var(--sl-font-mono)]`,
             tw`part-[base]:relative part-[base]:bg-transparent`,
             tw`part-[input]:relative part-[input]:z-10 part-[input]:text-transparent part-[input]:caret-black`,
             tw`part-[prefix]:absolute part-[prefix]:inset-0 part-[prefix]:mr-[var(--sl-input-spacing-medium)]`,
@@ -149,6 +157,13 @@ export class SyntaxInput extends TailwindElement {
               this.code.value = value;
 
               await this.code.updateComplete;
+
+              this.dispatchEvent(
+                new CustomEvent("btrix-input", {
+                  detail: { value },
+                  bubbles: true,
+                }),
+              );
 
               void this.scrollSync({ pad: true });
             }
@@ -184,6 +199,7 @@ export class SyntaxInput extends TailwindElement {
               this.dispatchEvent(
                 new CustomEvent("btrix-change", {
                   detail: { value: this.code.value },
+                  bubbles: true,
                 }),
               );
             }

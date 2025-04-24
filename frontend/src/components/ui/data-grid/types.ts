@@ -7,7 +7,7 @@ export enum GridColumnType {
   Text = "text",
   Number = "number",
   URL = "url",
-  // Code = "code", // TODO
+  // Syntax = "syntax",
   Select = "select",
 }
 
@@ -21,6 +21,7 @@ export type GridColumn = {
   label: string | TemplateResult;
   description?: string;
   editable?: boolean;
+  required?: boolean;
   inputPlaceholder?: string;
   renderEditCell?: ({ item }: { item: GridItem }) => string | TemplateResult;
   renderCell?: ({ item }: { item: GridItem }) => string | TemplateResult;

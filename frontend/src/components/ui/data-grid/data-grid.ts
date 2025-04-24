@@ -1,30 +1,15 @@
 import { localized, msg } from "@lit/localize";
-import type { SlInput, SlInputEvent } from "@shoelace-style/shoelace";
 import clsx from "clsx";
 import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import { ifDefined } from "lit/directives/if-defined.js";
 import { repeat } from "lit/directives/repeat.js";
 import { nanoid } from "nanoid";
 
-import type {
-  GridColumn,
-  GridColumnSelectType,
-  GridItem,
-  GridRowId,
-  GridRows,
-} from "./types";
-import { GridColumnType } from "./types";
+import type { CellEventDetail } from "./data-grid-row";
+import type { GridColumn, GridItem, GridRowId, GridRows } from "./types";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import { tw } from "@/utils/tailwind";
-
-export const inputStyle = [
-  tw`w-full [--sl-input-background-color-hover:transparent] [--sl-input-background-color:transparent] [--sl-input-border-color-hover:transparent] [--sl-input-border-radius-medium:0] [--sl-input-spacing-medium:var(--sl-spacing-small)] focus:z-10`,
-  tw`data-[valid]:[--sl-input-border-color:transparent]`,
-  tw`part-[form-control-help-text]:mx-1 part-[form-control-help-text]:mb-1`,
-  tw`part-[input]:px-[var(--sl-spacing-x-small)]`,
-];
 
 /**
  * @slot label
@@ -78,11 +63,19 @@ export class DataGrid extends TailwindElement {
   @property({ type: Boolean })
   editCells = false;
 
+  /**
+   * Make grid focusable on validation.
+   */
+  @property({ type: Number, reflect: true })
+  tabindex = 0;
+
   @state()
   private rows: GridRows = new Map();
 
-  public itemsToValue = (items: GridItem[]) => JSON.stringify(items);
-  public valueToItems = (value: string): unknown => JSON.parse(value);
+  /**
+   * Function to convert items to form value string.
+   */
+  public stringifyItems = (items: GridItem[]) => JSON.stringify(items);
 
   public checkValidity(): boolean | null {
     return this.#internals?.checkValidity() ?? null;
@@ -133,19 +126,16 @@ export class DataGrid extends TailwindElement {
   private setValueFromItems(items: GridItem[]) {
     if (!this.#internals?.form) return;
 
-    this.#internals.setFormValue(this.itemsToValue(items));
+    this.#internals.setFormValue(this.stringifyItems(items));
   }
 
   private setValueFromRows(rows: GridRows) {
     if (!this.#internals?.form) return;
 
     this.setValueFromItems(Array.from(rows.values()));
-    void this.dispatchChange();
   }
 
   render() {
-    const renderRow = this.renderRowForEditMode();
-
     return html`
       <slot name="label">
         <label class="form-label text-xs">${this.label}</label>
@@ -163,8 +153,9 @@ export class DataGrid extends TailwindElement {
         <btrix-table-head
           class=${clsx(
             tw`[--btrix-table-cell-padding:var(--sl-spacing-x-small)]`,
-            this.stickyHeader &&
-              tw`sticky top-0 z-10 rounded-t-[0.1875rem] border-b bg-neutral-50 [&>*:not(:first-child)]:border-l`,
+            this.stickyHeader
+              ? tw`sticky top-0 z-10 rounded-t-[0.1875rem] border-b bg-neutral-50 [&>*:not(:first-child)]:border-l`
+              : tw`px-px`,
           )}
         >
           ${this.columns.map(
@@ -181,7 +172,7 @@ export class DataGrid extends TailwindElement {
         <btrix-table-body
           class=${clsx(
             tw`[--btrix-table-cell-padding:var(--sl-spacing-x-small)]`,
-            tw`leading-none [&>*:not(:first-child)]:border-t [&>*>*:not(:first-child)]:border-l`,
+            tw`leading-none [&>*:not(:first-child)]:border-t`,
             // TODO Support different input sizes
             tw`*:min-h-[calc(var(--sl-input-height-medium)+1px)]`,
             // TODO Fix input ring not visible with overflow-auto
@@ -192,7 +183,19 @@ export class DataGrid extends TailwindElement {
           ${repeat(
             this.rows,
             ([id]) => id,
-            (row) => renderRow(...row),
+            ([id, item]) => html`
+              <btrix-data-grid-row
+                name=${id}
+                key=${id}
+                .item=${item}
+                .columns=${this.columns}
+                ?removable=${this.editRows}
+                ?editCells=${this.editCells}
+                @btrix-input=${this.onInputForRow(id)}
+                @btrix-change=${() => void this.dispatchChange()}
+                @btrix-remove=${() => this.removeRow(id)}
+              ></btrix-data-grid-row>
+            `,
           )}
         </btrix-table-body>
       </btrix-table>
@@ -202,100 +205,13 @@ export class DataGrid extends TailwindElement {
   }
 
   private readonly renderAddButton = () => {
-    return html`<footer class="mt-3">
-      <sl-button @click=${this.addRow}>${msg("Add More")}</sl-button>
+    return html`<footer class="mt-2">
+      <sl-button size="small" @click=${this.addRow}>
+        <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+        <span class="text-neutral-600">${msg("Add More")}</span>
+      </sl-button>
     </footer>`;
   };
-
-  private readonly renderRowForEditMode = () => {
-    const renderTableCell = (item: GridItem, col: GridColumn) => html`
-      <btrix-table-cell>
-        ${col.renderCell ? col.renderCell({ item }) : item[col.field]}
-      </btrix-table-cell>
-    `;
-
-    let renderCellForItem =
-      (_id: GridRowId, item: GridItem) => (col: GridColumn) =>
-        renderTableCell(item, col);
-
-    if (this.editCells) {
-      renderCellForItem =
-        (id: GridRowId, item: GridItem) => (col: GridColumn) =>
-          col.editable
-            ? html`
-                <btrix-table-cell class="p-0">
-                  ${col.renderEditCell
-                    ? col.renderEditCell({ item })
-                    : this.renderEditCell(id, item, col)}
-                </btrix-table-cell>
-              `
-            : renderTableCell(item, col);
-    }
-
-    if (this.editRows) {
-      return (id: GridRowId, item: GridItem) => html`
-        <btrix-table-row>
-          ${this.columns.map(renderCellForItem(id, item))}
-
-          <btrix-table-cell class="p-0">
-            <sl-tooltip content=${msg("Remove")}>
-              <sl-icon-button
-                class="p-1 text-base hover:text-danger"
-                name="trash3"
-                @click=${() => this.removeRow(id)}
-              ></sl-icon-button>
-            </sl-tooltip>
-          </btrix-table-cell>
-        </btrix-table-row>
-      `;
-    }
-
-    return (id: GridRowId, item: GridItem) => html`
-      <btrix-table-row>
-        ${this.columns.map(renderCellForItem(id, item))}
-      </btrix-table-row>
-    `;
-  };
-
-  private renderEditCell(rowId: GridRowId, item: GridItem, col: GridColumn) {
-    switch (col.inputType) {
-      case GridColumnType.Select: {
-        return html`
-          <div class="box-border w-full p-1">
-            <sl-select
-              value=${item[col.field] ?? ""}
-              placeholder=${ifDefined(col.inputPlaceholder)}
-              class="w-full"
-              size="small"
-              hoist
-            >
-              ${(col as GridColumnSelectType).renderSelectOptions()}
-            </sl-select>
-          </div>
-        `;
-      }
-      case GridColumnType.URL:
-        return html`<btrix-url-input
-          class=${clsx(inputStyle)}
-          value=${item[col.field] ?? ""}
-          placeholder=${ifDefined(col.inputPlaceholder)}
-        >
-        </btrix-url-input>`;
-      default:
-        break;
-    }
-
-    return html`
-      <sl-input
-        class=${clsx(inputStyle)}
-        type=${col.inputType === GridColumnType.Number ? "number" : "text"}
-        value=${item[col.field] ?? ""}
-        placeholder=${ifDefined(col.inputPlaceholder)}
-        @sl-change=${() => void this.dispatchChange()}
-        @sl-input=${this.onInput(rowId, col.field)}
-      ></sl-input>
-    `;
-  }
 
   private addRow() {
     const id = nanoid();
@@ -315,15 +231,27 @@ export class DataGrid extends TailwindElement {
     this.setValueFromRows(this.rows);
   }
 
-  private readonly onInput =
-    (id: string, field: GridColumn["field"]) => (e: SlInputEvent) => {
-      const input = e.target as SlInput;
+  private readonly onInputForRow =
+    (id: GridRowId) => (e: CustomEvent<CellEventDetail>) => {
+      const { field, value, valid } = e.detail;
 
       const rows = new Map(this.rows);
       rows.set(id, {
         ...rows.get(id),
-        [field]: input.value,
+        [field]: value,
       });
+
+      // TODO Check all rows
+      if (valid) {
+        this.#internals?.setValidity({});
+      } else {
+        this.#internals?.setValidity(
+          {
+            customError: true,
+          },
+          msg("Please fix all highlighted issues."),
+        );
+      }
 
       this.setValueFromRows(rows);
     };

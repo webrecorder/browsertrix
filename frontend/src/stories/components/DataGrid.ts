@@ -1,4 +1,3 @@
-// import { serialize } from "@shoelace-style/shoelace";
 import { html } from "lit";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { nanoid } from "nanoid";
@@ -7,7 +6,7 @@ import type { DataGrid } from "@/components/ui/data-grid/data-grid";
 
 import "@/components/ui/data-grid";
 
-export type RenderProps = Pick<DataGrid, keyof DataGrid>;
+export type RenderProps = Pick<DataGrid, keyof DataGrid | "stringifyItems">;
 
 const columns = "abcde".split("").map((field, i) => ({
   field,
@@ -38,10 +37,11 @@ export const renderComponent = ({
   stickyHeader,
   editRows,
   editCells,
+  stringifyItems,
 }: Partial<RenderProps>) => {
   return html`
     <btrix-data-grid
-      name="test"
+      name="storybook-data-grid"
       .columns=${columns || defaultArgs.columns}
       .items=${items || defaultArgs.items}
       repeatKey=${ifDefined(repeatKey)}
@@ -49,15 +49,7 @@ export const renderComponent = ({
       ?stickyHeader=${stickyHeader}
       ?editRows=${editRows}
       ?editCells=${editCells}
-      @btrix-change=${(e: CustomEvent) => {
-        const el = e.target as DataGrid;
-
-        console.log("el:", el);
-
-        // if (el.form) {
-        //   console.log("form values:", serialize(el.form));
-        // }
-      }}
+      .stringifyItems=${stringifyItems || JSON.stringify}
     >
     </btrix-data-grid>
   `;
