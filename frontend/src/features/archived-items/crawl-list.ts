@@ -245,14 +245,12 @@ export class CrawlListItem extends BtrixElement {
 export class CrawlList extends TailwindElement {
   static styles = css`
     btrix-table {
-      --btrix-cell-gap: var(--sl-spacing-x-small);
-      --btrix-cell-padding-left: var(--sl-spacing-small);
-      --btrix-cell-padding-right: var(--sl-spacing-small);
+      --btrix-table-cell-gap: var(--sl-spacing-x-small);
+      --btrix-table-cell-padding-x: var(--sl-spacing-small);
     }
 
     btrix-table-body {
-      --btrix-cell-padding-top: var(--sl-spacing-2x-small);
-      --btrix-cell-padding-bottom: var(--sl-spacing-2x-small);
+      --btrix-table-cell-padding-y: var(--sl-spacing-2x-small);
     }
 
     btrix-table-body ::slotted(*:nth-of-type(n + 2)) {

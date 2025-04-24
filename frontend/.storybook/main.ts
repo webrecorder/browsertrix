@@ -3,8 +3,19 @@ import path from "path";
 import type { StorybookConfig } from "@storybook/web-components-webpack5";
 import type { WebpackConfiguration } from "webpack-dev-server";
 
+import {
+  shoelaceAssetsPublicPath,
+  shoelaceAssetsSrcPath,
+} from "../config/webpack/shoelace";
+
 const config: StorybookConfig = {
   stories: ["../src/**/*.mdx", "../src/**/*.stories.@(js|jsx|mjs|ts|tsx)"],
+  staticDirs: [
+    {
+      from: shoelaceAssetsSrcPath,
+      to: shoelaceAssetsPublicPath,
+    },
+  ],
   addons: [
     "@storybook/addon-webpack5-compiler-swc",
     "@storybook/addon-essentials",
@@ -70,7 +81,7 @@ const config: StorybookConfig = {
 
     config.plugins?.push(
       new ESLintPlugin({
-        files: ["**/stories/*.ts", "**/.storybook/*.ts"],
+        files: ["**/stories/**/*.ts", "**/.storybook/*.ts"],
       }),
     );
 
@@ -96,7 +107,7 @@ const config: StorybookConfig = {
       // TODO Consolidate with tsconfig.json
       paths: {
         "@/*": ["./src/*"],
-        "~assets/*": ["./assets/src/*"],
+        "~assets/*": ["./src/assets/*"],
       },
     },
   },

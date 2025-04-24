@@ -26,6 +26,8 @@ const rowIdSchema = z.string().nanoid();
 type RowId = z.infer<typeof rowIdSchema>;
 
 /**
+ * Displays custom behavior crawl configuration in an editable table.
+ *
  * @fires btrix-change
  * @fires btrix-invalid
  */
@@ -62,7 +64,7 @@ export class CustomBehaviorsTable extends BtrixElement {
 
   protected willUpdate(changedProperties: PropertyValues): void {
     if (changedProperties.has("customBehaviors")) {
-      if (!this.customBehaviors.length) {
+      if (!this.customBehaviors.length && this.editable) {
         const id = nanoid();
         this.rows = new Map([[id, ""]]);
       } else {
@@ -89,9 +91,7 @@ export class CustomBehaviorsTable extends BtrixElement {
       <btrix-table
         class=${clsx(
           tw`relative h-full w-full grid-cols-[max-content_1fr_min-content] rounded border`,
-          // TODO Consolidate with data-table
-          // https://github.com/webrecorder/browsertrix/issues/2497
-          tw`[--btrix-cell-padding-bottom:var(--sl-spacing-x-small)] [--btrix-cell-padding-left:var(--sl-spacing-x-small)] [--btrix-cell-padding-right:var(--sl-spacing-x-small)] [--btrix-cell-padding-top:var(--sl-spacing-x-small)]`,
+          tw`[--btrix-table-cell-padding:var(--sl-spacing-x-small)]`,
         )}
       >
         <btrix-table-head class="rounded-t bg-neutral-50">

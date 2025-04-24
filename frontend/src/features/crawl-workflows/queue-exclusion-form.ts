@@ -26,15 +26,7 @@ export type ExclusionAddEvent = CustomEvent<{
 const MIN_LENGTH = 2;
 
 /**
- * Crawl queue exclusion form
- *
- * Usage example:
- * ```ts
- * <btrix-queue-exclusion-form
- *  @btrix-change=${this.handleExclusionChange}
- *  @btrix-add=${this.handleExclusionAdd}
- * ></btrix-queue-exclusion-form>
- * ```
+ * Inline form for adding a new crawl exclusion while the crawl is running.
  *
  * @fires btrix-change ExclusionChangeEvent
  * @fires btrix-add ExclusionAddEvent

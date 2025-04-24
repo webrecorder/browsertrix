@@ -15,9 +15,11 @@ import { tw } from "@/utils/tailwind";
 
 export const SELECTOR_DELIMITER = "->";
 const emptyCells = ["", ""];
-const syntaxInputClasses = tw`flex-1 [--sl-input-border-radius-medium:0] [--sl-input-border-color:transparent]`;
+const syntaxInputClasses = tw`flex-1 [--sl-input-border-color:transparent] [--sl-input-border-radius-medium:0]`;
 
 /**
+ * Displays link selector crawl configuration in an editable table.
+ *
  * @fires btrix-change
  */
 @customElement("btrix-link-selector-table")
@@ -93,8 +95,7 @@ export class LinkSelectorTable extends BtrixElement {
         <btrix-table-head
           class=${clsx(
             tw`rounded-t-[0.1875rem] border-b bg-slate-50 font-medium`,
-            // TODO Refactor padding config https://github.com/webrecorder/browsertrix/issues/2497
-            tw`[--btrix-cell-padding-bottom:var(--sl-spacing-x-small)] [--btrix-cell-padding-left:var(--sl-spacing-x-small)] [--btrix-cell-padding-right:var(--sl-spacing-x-small)] [--btrix-cell-padding-top:var(--sl-spacing-x-small)]`,
+            tw`[--btrix-table-cell-padding:var(--sl-spacing-x-small)]`,
           )}
         >
           <btrix-table-header-cell>

@@ -33,15 +33,7 @@ function formatValue(type: Exclusion["type"], value: Exclusion["value"]) {
 }
 
 /**
- * Crawl queue exclusion table
- *
- * Usage example:
- * ```ts
- * <btrix-queue-exclusion-table
- *   .exclusions=${this.workflow.config.exclude}
- * >
- * </btrix-queue-exclusion-table>
- * ```
+ * Displays crawl exclusions in an editable table.
  *
  * @TODO Refactor to always be uncontrolled field
  * so that callers don't need to maintain their

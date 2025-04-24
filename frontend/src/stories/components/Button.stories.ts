@@ -4,6 +4,7 @@ import { html } from "lit";
 import { renderButton, type RenderProps } from "./Button";
 
 const meta = {
+  title: "Components/Button",
   component: "btrix-button",
   tags: ["autodocs"],
   render: renderButton,
@@ -24,11 +25,6 @@ const meta = {
   args: {
     label: "Button",
     filled: true,
-  },
-  parameters: {
-    options: {
-      showPanel: false,
-    },
   },
 } satisfies Meta<RenderProps>;
 

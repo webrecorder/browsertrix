@@ -77,10 +77,8 @@ function statusWithIcon(
 export class ArchivedItemDetailQA extends BtrixElement {
   static styles = css`
     btrix-table {
-      --btrix-cell-padding-top: var(--sl-spacing-x-small);
-      --btrix-cell-padding-bottom: var(--sl-spacing-x-small);
-      --btrix-cell-padding-left: var(--sl-spacing-small);
-      --btrix-cell-padding-right: var(--sl-spacing-small);
+      --btrix-table-cell-padding-x: var(--sl-spacing-small);
+      --btrix-table-cell-padding-y: var(--sl-spacing-x-small);
     }
   `;
 

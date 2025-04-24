@@ -22,23 +22,32 @@ export const ALLOWED_ROW_CLICK_TARGET_TAG = ["a", "label"] as const;
  * </btrix-table-cell>
  * ```
  *
- * @cssproperty --btrix-cell-gap
- * @cssproperty --btrix-cell-padding-top
- * @cssproperty --btrix-cell-padding-left
- * @cssproperty --btrix-cell-padding-right
- * @cssproperty --btrix-cell-padding-bottom
+ * @cssproperty --btrix-table-cell-gap CSS value for flex `gap`
+ * @cssproperty --btrix-table-cell-padding CSS value for `padding`
+ * @cssproperty --btrix-table-cell-padding-x CSS value for `padding`. Overrides `--btrix-table-cell-padding`
+ * @cssproperty --btrix-table-cell-padding-y CSS value for `padding`. Overrides `--btrix-table-cell-padding`
+ * @cssproperty --btrix-table-cell-padding-top CSS value for `padding`. Overrides `--btrix-table-cell-padding-y`
+ * @cssproperty --btrix-table-cell-padding-bottom CSS value for `padding`. Overrides `--btrix-table-cell-padding-y`
+ * @cssproperty --btrix-table-cell-padding-left CSS value for `padding`. Overrides `--btrix-table-cell-padding-x`
+ * @cssproperty --btrix-table-cell-padding-right CSS value for `padding`. Overrides `--btrix-table-cell-padding-x`
  */
 @customElement("btrix-table-cell")
 export class TableCell extends TailwindElement {
   static styles = css`
     :host {
+      --cell-padding: var(--btrix-table-cell-padding, 0);
+      --cell-padding-x: var(--btrix-table-cell-padding-x, var(--cell-padding));
+      --cell-padding-y: var(--btrix-table-cell-padding-y, var(--cell-padding));
+
       display: flex;
-      gap: var(--btrix-cell-gap, 0);
+      gap: var(--btrix-table-cell-gap, 0);
       align-items: center;
       height: 100%;
       box-sizing: border-box;
-      padding: var(--btrix-cell-padding-top) var(--btrix-cell-padding-right)
-        var(--btrix-cell-padding-bottom) var(--btrix-cell-padding-left);
+      padding: var(--btrix-table-cell-padding-top, var(--cell-padding-y))
+        var(--btrix-table-cell-padding-right, var(--cell-padding-x))
+        var(--btrix-table-cell-padding-bottom, var(--cell-padding-y))
+        var(--btrix-table-cell-padding-left, var(--cell-padding-x));
     }
   `;
 
