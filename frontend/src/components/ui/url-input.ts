@@ -20,6 +20,7 @@ export function validURL(url: string) {
  * @attr {String} label
  * @attr {String} value
  * @attr {Boolean} required
+ * @attr {Boolean} disabled
  */
 @customElement("btrix-url-input")
 export class UrlInput extends SlInput {
@@ -52,18 +53,19 @@ export class UrlInput extends SlInput {
     if (!this.checkValidity() && validURL(this.value)) {
       this.setCustomValidity("");
       if (!this.hideHelpText) this.helpText = "";
+    } else if (this.value && !validURL(this.value)) {
+      const text = msg("Please enter a valid URL.");
+      if (!this.hideHelpText) this.helpText = text;
+      this.setCustomValidity(text);
     }
   };
 
   private readonly onChange = () => {
     const value = this.value.trim();
 
-    if (value && !validURL(value)) {
-      const text = msg("Please enter a valid URL.");
-      if (!this.hideHelpText) this.helpText = text;
-      this.setCustomValidity(text);
-    } else if (
+    if (
       value &&
+      validURL(value) &&
       !value.startsWith("https://") &&
       !value.startsWith("http://")
     ) {

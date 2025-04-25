@@ -1,10 +1,13 @@
 import { serialize } from "@shoelace-style/shoelace";
 import type { Meta, StoryObj } from "@storybook/web-components";
 import { html } from "lit";
+import { repeat } from "lit/directives/repeat.js";
+import { nanoid } from "nanoid";
 
 import { defaultArgs, renderComponent, type RenderProps } from "./DataGrid";
 
 import { GridColumnType } from "@/components/ui/data-grid/types";
+import { cached } from "@/utils/weakCache";
 
 const meta = {
   title: "Components/Data Grid",
@@ -21,12 +24,17 @@ const meta = {
 export default meta;
 type Story = StoryObj<RenderProps>;
 
+/**
+ * In its most basic configuration, the only required fields
+ * are a list of items, and a list of columns that define which
+ * key-value pairs of an item should be displayed.
+ */
 export const Basic: Story = {
   args: {},
 };
 
 /**
- * The table header can stick to the top of the viewport.
+ * The table header can stick to the top of the containing element.
  */
 export const StickyHeader: Story = {
   args: {
@@ -34,21 +42,47 @@ export const StickyHeader: Story = {
   },
 };
 
+const colWidths = ["200px", "10em", "min-content", "auto", "1fr"];
+
 /**
- * Rows can be added or removed.
+ * Columns can have specified widths set to any `grid-template-columns`
+ * [track list value](https://developer.mozilla.org/en-US/docs/Web/CSS/grid-template-columns#syntax).
  */
-export const EditableRows: Story = {
+export const ColumnWidths: Story = {
   args: {
-    editRows: true,
+    columns: defaultArgs.columns.map((col, i) => ({
+      ...col,
+      width: colWidths[i],
+    })),
   },
 };
 
 /**
- * Columns can be made editable.
+ * Rows can be added or removed, with an optional default item for new rows.
  */
-export const EditableColumns: Story = {
+export const EditRows: Story = {
+  args: {
+    editRows: true,
+    defaultItem: {
+      a: "A",
+      b: "--",
+      c: "--",
+      d: "--",
+      e: "--",
+    },
+  },
+};
+
+/**
+ * Cells can be editable.
+ */
+export const EditCells: Story = {
   args: {
     editCells: true,
+    columns: defaultArgs.columns.map((col) => ({
+      ...col,
+      width: "1fr",
+    })),
     items: defaultArgs.items.map((item) => ({
       ...item,
       a: `${(item as Record<string, string>).a} (not editable)`,
@@ -57,50 +91,19 @@ export const EditableColumns: Story = {
 };
 
 /**
- * By default, items are converted to a form value-compatible
- * string with `JSON.stringify`. Pass in a custom converter to
- * modify how the value is formatted (open console logs to view CSV example.)
- */
-export const CustomValueConverter: Story = {
-  args: {
-    editCells: true,
-    columns: defaultArgs.columns.map((col) => ({
-      ...col,
-      editable: true,
-    })),
-    stringifyItems: (items) =>
-      items.map((item) => Object.values(item).join(",")).join("\n"),
-  },
-  render: (args) => {
-    const onSubmit = (e: SubmitEvent) => {
-      e.preventDefault();
-
-      const form = e.target as HTMLFormElement;
-      const value = serialize(form)["storybook-data-grid"] as string;
-
-      console.log("form value:", value);
-    };
-
-    return html`
-      <form @submit=${onSubmit}>
-        ${renderComponent(args)}
-        <sl-button class="mt-3" type="submit" variant="primary">Save</sl-button>
-      </form>
-    `;
-  },
-};
-
-/**
- * The entire table can be made editable. When rendered in a form,
- * the table will function like an HTML input element, complete with validation.
+ * The data grid can become a group of form controls, complete with validation.
+ *
+ * The caveat is that in order for the outer form to recognize the rows as form
+ * controls, row components must be slotted into the `rows` slot of the grid
+ * component. Each row must have the same `name` attribute in order to be
+ * serialized as the same form control.
+ *
+ * Use `DataGridController` to add and remove slotted rows.
  *
  * Open console logs to view the submitted form value.
  */
-export const FullFormExample: Story = {
+export const FormControl: Story = {
   args: {
-    label: "Manual Page QA",
-    editCells: true,
-    editRows: true,
     columns: [
       {
         field: "url",
@@ -174,14 +177,39 @@ export const FullFormExample: Story = {
       e.preventDefault();
 
       const form = e.target as HTMLFormElement;
-      const value = serialize(form)["storybook-data-grid"] as string;
-      console.log("form value:", JSON.parse(value));
+      // const value = serialize(form)["storybook-data-grid"] as string;
+      console.log("form value:", serialize(form));
     };
+
+    const rows = args.items.map((item) => ({
+      ...item,
+      _id: cached((_item) => nanoid())(item),
+    }));
 
     return html`
       <form @submit=${onSubmit}>
-        ${renderComponent(args)}
-        <sl-button type="submit" variant="primary">Save</sl-button>
+        <btrix-data-grid
+          .columns=${args.columns}
+          .items=${args.items}
+          formControlLabel="Page QA Table"
+          stickyHeader
+          editRows
+          editCells
+        >
+          ${repeat(
+            rows,
+            ({ _id }) => _id,
+            (item) => html`
+              <btrix-data-grid-row
+                name="storybook--page-qa-table-example"
+                slot="rows"
+                .item=${item}
+              ></btrix-data-grid-row>
+            `,
+          )}
+        </btrix-data-grid>
+        <sl-button type="reset">Reset</sl-button>
+        <sl-button type="submit" variant="primary">Submit</sl-button>
       </form>
     `;
   },

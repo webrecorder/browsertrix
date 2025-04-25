@@ -6,7 +6,7 @@ import type { DataGrid } from "@/components/ui/data-grid/data-grid";
 
 import "@/components/ui/data-grid";
 
-export type RenderProps = Pick<DataGrid, keyof DataGrid | "stringifyItems">;
+export type RenderProps = Pick<DataGrid, keyof DataGrid>;
 
 const columns = "abcde".split("").map((field, i) => ({
   field,
@@ -32,24 +32,21 @@ export const defaultArgs = { columns, items } satisfies Pick<
 export const renderComponent = ({
   columns,
   items,
-  repeatKey,
-  label,
+  formControlLabel,
   stickyHeader,
   editRows,
   editCells,
-  stringifyItems,
+  defaultItem,
 }: Partial<RenderProps>) => {
   return html`
     <btrix-data-grid
-      name="storybook-data-grid"
       .columns=${columns || defaultArgs.columns}
       .items=${items || defaultArgs.items}
-      repeatKey=${ifDefined(repeatKey)}
-      label=${ifDefined(label)}
+      .defaultItem=${defaultItem}
+      formControlLabel=${ifDefined(formControlLabel)}
       ?stickyHeader=${stickyHeader}
       ?editRows=${editRows}
       ?editCells=${editCells}
-      .stringifyItems=${stringifyItems || JSON.stringify}
     >
     </btrix-data-grid>
   `;

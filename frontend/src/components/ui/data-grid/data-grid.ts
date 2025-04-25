@@ -1,33 +1,49 @@
 import { localized, msg } from "@lit/localize";
 import clsx from "clsx";
-import { html, nothing, type PropertyValues } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
+import { css, html, nothing } from "lit";
+import { customElement, property } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
-import { nanoid } from "nanoid";
+import type { EmptyObject } from "type-fest";
 
-import type { CellEventDetail } from "./data-grid-row";
-import type { GridColumn, GridItem, GridRowId, GridRows } from "./types";
+import type { DataGridRow, RowRemoveEventDetail } from "./data-grid-row";
+import { DataGridController } from "./dataGridController";
+import type { GridColumn, GridItem } from "./types";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import { tw } from "@/utils/tailwind";
 
 /**
+ * Data grids structure data into rows and and columns.
+ *
  * @slot label
- * @attr name
+ * @slot rows
  * @fires btrix-change
  */
 @customElement("btrix-data-grid")
 @localized()
 export class DataGrid extends TailwindElement {
-  // TODO Abstract to mixin or decorator
-  static formAssociated = true;
-  readonly #internals?: ElementInternals;
+  static styles = css`
+    :host {
+      --border: 1px solid var(--sl-panel-border-color);
+    }
+
+    btrix-data-grid-row:not(:first-of-type),
+    btrix-table-body ::slotted(*:nth-of-type(n + 2)) {
+      border-top: var(--border) !important;
+    }
+
+    btrix-data-grid-row,
+    btrix-table-body ::slotted(btrix-data-grid-row) {
+      /* TODO Support different input sizes */
+      min-height: calc(var(--sl-input-height-medium) + 1px);
+    }
+  `;
 
   /**
    * Set of columns.
    */
   @property({ type: Array })
-  columns: GridColumn[] = [];
+  columns?: GridColumn[] = [];
 
   /**
    * Set of data to be presented as rows.
@@ -36,32 +52,34 @@ export class DataGrid extends TailwindElement {
   items: GridItem[] = [];
 
   /**
-   * Key to use as row ID. Defaults to one generated with nanoid.
-   * See [repeat directive](https://lit.dev/docs/api/directives/#repeat) for details.
+   * Stick header row to the top of the viewport.
    */
-  @property({ type: String })
-  repeatKey?: string;
-
   @property({ type: Boolean })
   stickyHeader = false;
 
   /**
-   * Text for form label. Use slot to include markup.
-   */
-  @property({ type: String })
-  label?: string;
-
-  /**
-   * Whether rows can be added and removed
+   * Whether rows can be added and removed.
    */
   @property({ type: Boolean })
   editRows = false;
 
   /**
-   * Whether cells can be edited
+   * Whether cells can be edited.
    */
   @property({ type: Boolean })
   editCells = false;
+
+  /**
+   * Default item for new rows.
+   */
+  @property({ type: Object })
+  defaultItem?: EmptyObject | GridItem = {};
+
+  /**
+   * Text for form control label. Use slot to include markup.
+   */
+  @property({ type: String })
+  formControlLabel?: string;
 
   /**
    * Make grid focusable on validation.
@@ -69,76 +87,16 @@ export class DataGrid extends TailwindElement {
   @property({ type: Number, reflect: true })
   tabindex = 0;
 
-  @state()
-  private rows: GridRows = new Map();
-
-  /**
-   * Function to convert items to form value string.
-   */
-  public stringifyItems = (items: GridItem[]) => JSON.stringify(items);
-
-  public checkValidity(): boolean | null {
-    return this.#internals?.checkValidity() ?? null;
-  }
-
-  public reportValidity(): void {
-    this.#internals?.reportValidity();
-  }
-
-  public get validity(): ValidityState | null {
-    return this.#internals?.validity ?? null;
-  }
-
-  public get validationMessage(): string | null {
-    return this.#internals?.validationMessage ?? null;
-  }
-
-  constructor() {
-    super();
-    this.#internals = this.attachInternals();
-  }
-
-  protected willUpdate(changedProperties: PropertyValues): void {
-    if (changedProperties.has("items") || changedProperties.has("editRows")) {
-      this.setRowsFromItems(this.items);
-      this.setValueFromItems(this.items);
-    } else if (changedProperties.has("rows")) {
-      this.setValueFromRows(this.rows);
-    }
-  }
-
-  private setRowsFromItems(items: GridItem[]) {
-    if (this.editRows && !items.length) {
-      this.addRow();
-    } else {
-      const repeatKey = this.repeatKey;
-
-      if (repeatKey) {
-        this.rows = new Map(
-          items.map((item) => [item[repeatKey] as string, item]),
-        );
-      } else {
-        this.rows = new Map(items.map((item) => [nanoid(), item]));
-      }
-    }
-  }
-
-  private setValueFromItems(items: GridItem[]) {
-    if (!this.#internals?.form) return;
-
-    this.#internals.setFormValue(this.stringifyItems(items));
-  }
-
-  private setValueFromRows(rows: GridRows) {
-    if (!this.#internals?.form) return;
-
-    this.setValueFromItems(Array.from(rows.values()));
-  }
+  readonly #dataGridController = new DataGridController(this);
 
   render() {
+    if (!this.columns?.length) return;
+
+    const cssWidths = this.columns.map((col) => col.width ?? "1fr");
+
     return html`
       <slot name="label">
-        <label class="form-label text-xs">${this.label}</label>
+        <label class="form-label text-xs">${this.formControlLabel}</label>
       </slot>
 
       <btrix-table
@@ -146,21 +104,24 @@ export class DataGrid extends TailwindElement {
           tw`relative size-full`,
           this.stickyHeader && tw`rounded border`,
         )}
-        style=${this.editRows
-          ? `--btrix-table-grid-template-columns: repeat(${this.columns.length}, auto) max-content`
-          : ""}
+        style="--btrix-table-grid-template-columns: ${cssWidths.join(" ")}${this
+          .editRows
+          ? " max-content"
+          : ""}"
       >
         <btrix-table-head
           class=${clsx(
             tw`[--btrix-table-cell-padding:var(--sl-spacing-x-small)]`,
             this.stickyHeader
-              ? tw`sticky top-0 z-10 rounded-t-[0.1875rem] border-b bg-neutral-50 [&>*:not(:first-child)]:border-l`
+              ? tw`sticky top-0 z-10 rounded-t-[0.1875rem] border-b bg-neutral-50 [&>*:not(:first-of-type)]:border-l`
               : tw`px-px`,
           )}
         >
           ${this.columns.map(
             (col) => html`
-              <btrix-table-header-cell>${col.label}</btrix-table-header-cell>
+              <btrix-table-header-cell style=""
+                >${col.label}</btrix-table-header-cell
+              >
             `,
           )}
           ${this.editRows
@@ -172,31 +133,25 @@ export class DataGrid extends TailwindElement {
         <btrix-table-body
           class=${clsx(
             tw`[--btrix-table-cell-padding:var(--sl-spacing-x-small)]`,
-            tw`leading-none [&>*:not(:first-child)]:border-t`,
-            // TODO Support different input sizes
-            tw`*:min-h-[calc(var(--sl-input-height-medium)+1px)]`,
+            tw`leading-none`,
             // TODO Fix input ring not visible with overflow-auto
             // tw`overflow-auto`,
             !this.stickyHeader && tw`rounded border`,
           )}
+          @btrix-remove=${(e: CustomEvent<RowRemoveEventDetail>) => {
+            console.log("remove item:", e.detail);
+
+            e.stopPropagation();
+            const { key } = e.detail;
+
+            if (key) {
+              this.#dataGridController.removeRow(key);
+            } else {
+              console.warn("Could not remove row without key or item");
+            }
+          }}
         >
-          ${repeat(
-            this.rows,
-            ([id]) => id,
-            ([id, item]) => html`
-              <btrix-data-grid-row
-                name=${id}
-                key=${id}
-                .item=${item}
-                .columns=${this.columns}
-                ?removable=${this.editRows}
-                ?editCells=${this.editCells}
-                @btrix-input=${this.onInputForRow(id)}
-                @btrix-change=${() => void this.dispatchChange()}
-                @btrix-remove=${() => this.removeRow(id)}
-              ></btrix-data-grid-row>
-            `,
-          )}
+          ${this.renderRows()}
         </btrix-table-body>
       </btrix-table>
 
@@ -204,61 +159,65 @@ export class DataGrid extends TailwindElement {
     `;
   }
 
+  private renderRows() {
+    return html`
+      <slot name="rows" class="contents" @slotchange=${this.onRowSlotChange}>
+        ${repeat(
+          this.#dataGridController.rows,
+          ([id]) => id,
+          ([id, item]) => html`
+            <btrix-data-grid-row
+              key=${id}
+              .item=${item}
+              .columns=${this.columns}
+              ?removable=${this.editRows}
+              ?editable=${this.editCells}
+            ></btrix-data-grid-row>
+          `,
+        )}
+      </slot>
+    `;
+  }
+
   private readonly renderAddButton = () => {
     return html`<footer class="mt-2">
-      <sl-button size="small" @click=${this.addRow}>
+      <sl-button
+        size="small"
+        @click=${() => this.#dataGridController.addRow(this.defaultItem || {})}
+      >
         <sl-icon slot="prefix" name="plus-lg"></sl-icon>
         <span class="text-neutral-600">${msg("Add More")}</span>
       </sl-button>
     </footer>`;
   };
 
-  private addRow() {
-    const id = nanoid();
+  private readonly onRowSlotChange = (e: Event) => {
+    const rows = (e.target as HTMLSlotElement).assignedElements();
+    const assignProp = (
+      el: Element,
+      { name, value }: { name: keyof DataGridRow; value: string | boolean },
+    ) => {
+      if (el.attributes.getNamedItem(name)) return;
 
-    this.rows = new Map(this.rows.set(id, {}));
-  }
-
-  private removeRow(id: GridRowId) {
-    this.rows.delete(id);
-
-    if (this.rows.size === 0 && this.editRows) {
-      this.addRow();
-    } else {
-      this.rows = new Map(this.rows);
-    }
-
-    this.setValueFromRows(this.rows);
-  }
-
-  private readonly onInputForRow =
-    (id: GridRowId) => (e: CustomEvent<CellEventDetail>) => {
-      const { field, value, valid } = e.detail;
-
-      const rows = new Map(this.rows);
-      rows.set(id, {
-        ...rows.get(id),
-        [field]: value,
-      });
-
-      // TODO Check all rows
-      if (valid) {
-        this.#internals?.setValidity({});
+      if (typeof value === "boolean") {
+        if (value) {
+          el.setAttribute(name, "true");
+        } else {
+          el.removeAttribute(name);
+        }
       } else {
-        this.#internals?.setValidity(
-          {
-            customError: true,
-          },
-          msg("Please fix all highlighted issues."),
-        );
+        el.setAttribute(name, value);
       }
-
-      this.setValueFromRows(rows);
     };
 
-  private readonly dispatchChange = async () => {
-    await this.updateComplete;
+    const removable = this.editRows;
+    const editable = this.editCells;
 
-    this.dispatchEvent(new CustomEvent("btrix-change"));
+    rows.forEach((el) => {
+      assignProp(el, { name: "removable", value: removable });
+      assignProp(el, { name: "editable", value: editable });
+
+      (el as DataGridRow)["columns"] = this.columns;
+    });
   };
 }

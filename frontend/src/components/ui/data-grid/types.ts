@@ -23,6 +23,7 @@ export type GridColumn = {
   editable?: boolean;
   required?: boolean;
   inputPlaceholder?: string;
+  width?: string;
   renderEditCell?: ({ item }: { item: GridItem }) => string | TemplateResult;
   renderCell?: ({ item }: { item: GridItem }) => string | TemplateResult;
 } & (
