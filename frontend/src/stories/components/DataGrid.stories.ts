@@ -1,13 +1,13 @@
-import { serialize } from "@shoelace-style/shoelace";
 import type { Meta, StoryObj } from "@storybook/web-components";
 import { html } from "lit";
+import { ref } from "lit/directives/ref.js";
 import { repeat } from "lit/directives/repeat.js";
-import { nanoid } from "nanoid";
 
 import { defaultArgs, renderComponent, type RenderProps } from "./DataGrid";
+import { dataGridDecorator } from "./decorators/DataGridDecorator";
 
+import { DataGridController } from "@/components/ui/data-grid/dataGridController";
 import { GridColumnType } from "@/components/ui/data-grid/types";
-import { cached } from "@/utils/weakCache";
 
 const meta = {
   title: "Components/Data Grid",
@@ -125,9 +125,11 @@ export const FormControl: Story = {
         label: "Heading Selector",
         editable: true,
         inputPlaceholder: "h1",
-        renderEditCell({ item }) {
+        renderEditCell({ item, refCallback }) {
           return html`
             <btrix-syntax-input
+              ${ref(refCallback)}
+              name="selector"
               class="flex-1 [--sl-input-border-radius-medium:0] [--sl-input-border-color:transparent]"
               value=${item.selector || ""}
               language="css"
@@ -172,45 +174,38 @@ export const FormControl: Story = {
       },
     ],
   },
-  render: (args) => {
-    const onSubmit = (e: SubmitEvent) => {
-      e.preventDefault();
-
-      const form = e.target as HTMLFormElement;
-      // const value = serialize(form)["storybook-data-grid"] as string;
-      console.log("form value:", serialize(form));
-    };
-
-    const rows = args.items.map((item) => ({
-      ...item,
-      _id: cached((_item) => nanoid())(item),
-    }));
+  decorators: [dataGridDecorator],
+  render: (args, context) => {
+    const rows =
+      context.dataGridController instanceof DataGridController
+        ? context.dataGridController.rows
+        : new Map();
 
     return html`
-      <form @submit=${onSubmit}>
-        <btrix-data-grid
-          .columns=${args.columns}
-          .items=${args.items}
-          formControlLabel="Page QA Table"
-          stickyHeader
-          editRows
-          editCells
-        >
-          ${repeat(
-            rows,
-            ({ _id }) => _id,
-            (item) => html`
-              <btrix-data-grid-row
-                name="storybook--page-qa-table-example"
-                slot="rows"
-                .item=${item}
-              ></btrix-data-grid-row>
-            `,
-          )}
-        </btrix-data-grid>
-        <sl-button type="reset">Reset</sl-button>
-        <sl-button type="submit" variant="primary">Submit</sl-button>
-      </form>
+      <btrix-data-grid
+        .columns=${args.columns}
+        .dataGridController=${
+          // `dataGridController` context is added by `dataGridDecorator`
+          context.dataGridController
+        }
+        formControlLabel="Page QA Table"
+        stickyHeader
+        editRows
+        editCells
+      >
+        ${repeat(
+          rows,
+          ([id]) => id,
+          ([id, item]) => html`
+            <btrix-data-grid-row
+              slot="rows"
+              name="storybook--page-qa-table-example"
+              key=${id}
+              .item=${item}
+            ></btrix-data-grid-row>
+          `,
+        )}
+      </btrix-data-grid>
     `;
   },
 };

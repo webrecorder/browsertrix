@@ -24,7 +24,13 @@ export type GridColumn = {
   required?: boolean;
   inputPlaceholder?: string;
   width?: string;
-  renderEditCell?: ({ item }: { item: GridItem }) => string | TemplateResult;
+  renderEditCell?: ({
+    item,
+    refCallback,
+  }: {
+    item: GridItem;
+    refCallback: (el: Element | undefined) => void;
+  }) => string | TemplateResult;
   renderCell?: ({ item }: { item: GridItem }) => string | TemplateResult;
 } & (
   | {

@@ -43,13 +43,13 @@ export class DataGrid extends TailwindElement {
    * Set of columns.
    */
   @property({ type: Array })
-  columns?: GridColumn[] = [];
+  columns?: GridColumn[];
 
   /**
-   * Set of data to be presented as rows.
+   * Set of data to be presented as rows. Omit if using the `rows` slot.
    */
   @property({ type: Array })
-  items: GridItem[] = [];
+  items?: GridItem[];
 
   /**
    * Stick header row to the top of the viewport.
@@ -82,12 +82,17 @@ export class DataGrid extends TailwindElement {
   formControlLabel?: string;
 
   /**
+   * Optional external controller for removing and adding rows,
+   * if rendering rows into the `rows` slot.
+   */
+  @property({ attribute: false })
+  dataGridController = new DataGridController(this);
+
+  /**
    * Make grid focusable on validation.
    */
   @property({ type: Number, reflect: true })
   tabindex = 0;
-
-  readonly #dataGridController = new DataGridController(this);
 
   render() {
     if (!this.columns?.length) return;
@@ -139,13 +144,11 @@ export class DataGrid extends TailwindElement {
             !this.stickyHeader && tw`rounded border`,
           )}
           @btrix-remove=${(e: CustomEvent<RowRemoveEventDetail>) => {
-            console.log("remove item:", e.detail);
-
             e.stopPropagation();
             const { key } = e.detail;
 
             if (key) {
-              this.#dataGridController.removeRow(key);
+              this.dataGridController.removeRow(key);
             } else {
               console.warn("Could not remove row without key or item");
             }
@@ -162,19 +165,21 @@ export class DataGrid extends TailwindElement {
   private renderRows() {
     return html`
       <slot name="rows" class="contents" @slotchange=${this.onRowSlotChange}>
-        ${repeat(
-          this.#dataGridController.rows,
-          ([id]) => id,
-          ([id, item]) => html`
-            <btrix-data-grid-row
-              key=${id}
-              .item=${item}
-              .columns=${this.columns}
-              ?removable=${this.editRows}
-              ?editable=${this.editCells}
-            ></btrix-data-grid-row>
-          `,
-        )}
+        ${this.items
+          ? repeat(
+              this.dataGridController.rows,
+              ([id]) => id,
+              ([id, item]) => html`
+                <btrix-data-grid-row
+                  key=${id}
+                  .item=${item}
+                  .columns=${this.columns}
+                  ?removable=${this.editRows}
+                  ?editable=${this.editCells}
+                ></btrix-data-grid-row>
+              `,
+            )
+          : nothing}
       </slot>
     `;
   }
@@ -183,7 +188,7 @@ export class DataGrid extends TailwindElement {
     return html`<footer class="mt-2">
       <sl-button
         size="small"
-        @click=${() => this.#dataGridController.addRow(this.defaultItem || {})}
+        @click=${() => this.dataGridController.addRow(this.defaultItem || {})}
       >
         <sl-icon slot="prefix" name="plus-lg"></sl-icon>
         <span class="text-neutral-600">${msg("Add More")}</span>

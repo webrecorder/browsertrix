@@ -20,45 +20,49 @@ export class DataGridController implements ReactiveController {
 
   #prevItems?: GridItem[];
 
-  public rows: GridRows = new Map();
+  public rows: GridRows = new Map<GridRowId, GridItem>();
 
   constructor(host: ReactiveControllerHost & EventTarget) {
     this.#host = host;
     host.addController(this);
   }
 
-  hostConnected() {}
+  hostConnected() {
+    if (this.#host.items) {
+      this.setItems(this.#host.items);
+    }
+  }
   hostDisconnected() {}
   hostUpdate() {
     if (this.#host.items) {
-      if (!this.#prevItems || this.#host.items !== this.#prevItems) {
-        this.setRowsFromItems(this.#host.items);
-
-        this.#prevItems = this.#host.items;
-      }
+      this.setItems(this.#host.items);
     }
   }
 
   private setRowsFromItems(items: GridItem[]) {
     this.rows = new Map(items.map(cached((item) => [nanoid(), item])));
-    // this.#host.requestUpdate();
+  }
+
+  public setItems(items: GridItem[]) {
+    if (!this.#prevItems || items !== this.#prevItems) {
+      this.setRowsFromItems(items);
+
+      this.#prevItems = items;
+    }
   }
 
   public addRow(item: GridItem | EmptyObject) {
     const id = nanoid();
 
-    this.rows = new Map(this.rows.set(id, item));
+    this.rows.set(id, item);
     this.#host.requestUpdate();
   }
 
   public removeRow(id: GridRowId) {
     this.rows.delete(id);
-    this.rows = new Map(this.rows);
 
     if (this.rows.size === 0 && this.#host.defaultItem) {
       this.addRow(this.#host.defaultItem);
-    } else {
-      this.rows = new Map(this.rows);
     }
 
     this.#host.requestUpdate();
