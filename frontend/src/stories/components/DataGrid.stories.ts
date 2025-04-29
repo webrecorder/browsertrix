@@ -80,11 +80,20 @@ export const ColumnWidths: Story = {
 };
 
 /**
- * Rows can be added or removed, with an optional default item for new rows.
+ * Rows can be removed.
  */
-export const EditRows: Story = {
+export const RemoveRows: Story = {
   args: {
-    editRows: true,
+    removeRows: true,
+  },
+};
+
+/**
+ * Rows can also be added, with an optional default item for new rows.
+ */
+export const AddRows: Story = {
+  args: {
+    addRows: true,
     defaultItem: {
       a: "A",
       b: "--",
@@ -213,7 +222,8 @@ export const FormControl: Story = {
         }
         formControlLabel="Page QA Table"
         stickyHeader
-        editRows
+        addRows
+        removeRows
         editCells
       >
         ${repeat(

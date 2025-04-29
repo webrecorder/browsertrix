@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/web-components";
 import { html } from "lit";
 import type { DecoratorFunction } from "storybook/internal/types";
 
-import { argTypes } from "../excludeBtrixElementProperties";
+import { argTypes } from "../excludeContainerProperties";
 
 import type { UsageHistoryTable } from "@/features/org/usage-history-table";
 import {

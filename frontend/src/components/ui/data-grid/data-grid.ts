@@ -59,10 +59,16 @@ export class DataGrid extends TailwindElement {
   stickyHeader = false;
 
   /**
-   * Whether rows can be added and removed.
+   * Whether rows can be removed.
    */
   @property({ type: Boolean })
-  editRows = false;
+  removeRows = false;
+
+  /**
+   * Whether rows can be added.
+   */
+  @property({ type: Boolean })
+  addRows = false;
 
   /**
    * Whether cells can be edited.
@@ -120,7 +126,7 @@ export class DataGrid extends TailwindElement {
           this.stickyHeader && tw`rounded border`,
         )}
         style="--btrix-table-grid-template-columns: ${cssWidths.join(" ")}${this
-          .editRows
+          .removeRows
           ? " max-content"
           : ""}"
         aria-labelledby="gridLabel"
@@ -151,7 +157,7 @@ export class DataGrid extends TailwindElement {
               </btrix-table-header-cell>
             `,
           )}
-          ${this.editRows
+          ${this.removeRows
             ? html`<btrix-table-header-cell>
                 <span class="sr-only">${msg("Remove")}</span>
               </btrix-table-header-cell>`
@@ -180,7 +186,7 @@ export class DataGrid extends TailwindElement {
         </btrix-table-body>
       </btrix-table>
 
-      ${this.editRows ? this.renderAddButton() : nothing}
+      ${this.addRows ? this.renderAddButton() : nothing}
     `;
   }
 
@@ -196,7 +202,7 @@ export class DataGrid extends TailwindElement {
                   key=${id}
                   .item=${item}
                   .columns=${this.columns}
-                  ?removable=${this.editRows}
+                  ?removable=${this.removeRows}
                   ?editCells=${this.editCells}
                 ></btrix-data-grid-row>
               `,
@@ -237,7 +243,7 @@ export class DataGrid extends TailwindElement {
       }
     };
 
-    const removable = this.editRows;
+    const removable = this.removeRows;
     const editCells = this.editCells;
 
     rows.forEach((el) => {

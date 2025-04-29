@@ -34,7 +34,8 @@ export const renderComponent = ({
   items,
   formControlLabel,
   stickyHeader,
-  editRows,
+  addRows,
+  removeRows,
   editCells,
   defaultItem,
 }: Partial<RenderProps>) => {
@@ -45,7 +46,8 @@ export const renderComponent = ({
       .defaultItem=${defaultItem}
       formControlLabel=${ifDefined(formControlLabel)}
       ?stickyHeader=${stickyHeader}
-      ?editRows=${editRows}
+      ?addRows=${addRows}
+      ?removeRows=${removeRows}
       ?editCells=${editCells}
     >
     </btrix-data-grid>

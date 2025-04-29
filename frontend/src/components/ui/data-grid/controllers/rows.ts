@@ -20,7 +20,8 @@ export class DataGridRowsController implements ReactiveController {
     EventTarget & {
       items?: GridItem[];
       defaultItem?: DataGrid["defaultItem"];
-      editRows?: DataGrid["editRows"];
+      removeRows?: DataGrid["removeRows"];
+      addRows?: DataGrid["addRows"];
     };
 
   #prevItems?: GridItem[];
