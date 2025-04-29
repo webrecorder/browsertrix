@@ -13,11 +13,13 @@ import { DataGridFocusController } from "@/components/ui/data-grid/controllers/f
 import type { UrlInput } from "@/components/ui/url-input";
 import { tw } from "@/utils/tailwind";
 
-const inputStyle = tw`part-[base]:h-full part-[form-control-input]:h-full part-[form-control]:h-full part-[input]:h-full`;
 const cellInputStyle = [
   tw`size-full [--sl-input-background-color-hover:transparent] [--sl-input-background-color:transparent] [--sl-input-border-radius-medium:0] [--sl-input-spacing-medium:var(--sl-spacing-small)] focus:z-10`,
+  // TODO We need to upgrade to Tailwind v4 for inset rings to actually work
+  // tw`focus-within:part-[base]:inset-ring-2`,
   tw`data-[invalid]:[--sl-input-border-color:transparent] data-[valid]:[--sl-input-border-color:transparent]`,
   tw`part-[form-control-help-text]:mx-1 part-[form-control-help-text]:mb-1`,
+  tw`part-[base]:h-full part-[form-control-input]:h-full part-[form-control]:h-full part-[input]:h-full`,
   tw`part-[input]:px-[var(--sl-spacing-x-small)]`,
 ];
 
@@ -141,7 +143,7 @@ export class DataGridCell extends TableCell {
       case GridColumnType.URL:
         return html`<btrix-url-input
           name=${col.field}
-          class=${clsx(cellInputStyle, inputStyle)}
+          class=${clsx(cellInputStyle)}
           value=${value}
           placeholder=${ifDefined(col.inputPlaceholder)}
           ?required=${col.required}
@@ -155,7 +157,7 @@ export class DataGridCell extends TableCell {
     return html`
       <sl-input
         name=${col.field}
-        class=${clsx(cellInputStyle, inputStyle)}
+        class=${clsx(cellInputStyle)}
         type=${col.inputType === GridColumnType.Number ? "number" : "text"}
         value=${value}
         placeholder=${ifDefined(col.inputPlaceholder)}
