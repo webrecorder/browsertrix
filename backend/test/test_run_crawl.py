@@ -1305,8 +1305,7 @@ def test_custom_behavior_logs(
         if log["context"] == "behaviorScriptCustom":
             assert log["message"] in (
                 "test-stat",
-                "done!",
-                "Using Site-Specific Behavior: TestBehavior",
+                "In Test Behavior!",
             )
             if log["message"] in ("test-stat", "done!"):
                 assert log["details"]["behavior"] == "TestBehavior"
@@ -1314,7 +1313,7 @@ def test_custom_behavior_logs(
 
             custom_log_line_count += 1
 
-    assert custom_log_line_count == 3
+    assert custom_log_line_count == 2
 
 
 def test_crawls_exclude_behavior_logs(

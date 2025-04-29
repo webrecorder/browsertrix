@@ -387,7 +387,7 @@ class CrawlConfigOps:
 
     async def update_crawl_config(
         self, cid: UUID, org: Organization, user: User, update: UpdateCrawlConfig
-    ) -> dict[str, bool | str]:
+    ) -> CrawlConfigUpdateResponse:
         # pylint: disable=too-many-locals, too-many-branches, too-many-statements
         """Update name, scale, schedule, and/or tags for an existing crawl config"""
 
@@ -455,11 +455,9 @@ class CrawlConfigOps:
         run_now = update.runNow
 
         if not changed and not metadata_changed and not run_now:
-            return {
-                "updated": True,
-                "settings_changed": changed,
-                "metadata_changed": metadata_changed,
-            }
+            return CrawlConfigUpdateResponse(
+                settings_changed=changed, metadata_changed=metadata_changed
+            )
 
         if changed:
             orig_dict = orig_crawl_config.dict(exclude_unset=True, exclude_none=True)
@@ -498,10 +496,11 @@ class CrawlConfigOps:
                 status_code=404, detail=f"Crawl Config '{cid}' not found"
             )
 
+        crawlconfig = CrawlConfig.from_dict(result)
+
         # update in crawl manager to change schedule
         if schedule_changed:
             try:
-                crawlconfig = CrawlConfig.from_dict(result)
                 await self.crawl_manager.update_scheduled_job(crawlconfig, str(user.id))
 
             except Exception as exc:
@@ -511,16 +510,24 @@ class CrawlConfigOps:
                     status_code=404, detail=f"Crawl Config '{cid}' not found"
                 )
 
-        ret: dict[str, bool | str] = {
-            "updated": True,
-            "settings_changed": changed,
-            "metadata_changed": metadata_changed,
-            "storageQuotaReached": self.org_ops.storage_quota_reached(org),
-            "execMinutesQuotaReached": self.org_ops.exec_mins_quota_reached(org),
-        }
+        ret = CrawlConfigUpdateResponse(
+            settings_changed=changed,
+            metadata_changed=metadata_changed,
+            storageQuotaReached=self.org_ops.storage_quota_reached(org),
+            execMinutesQuotaReached=self.org_ops.exec_mins_quota_reached(org),
+        )
+
         if run_now:
             crawl_id = await self.run_now(cid, org, user)
-            ret["started"] = crawl_id
+            ret.started = crawl_id
+        elif update.updateRunning and changed:
+            running_crawl = await self.get_running_crawl(cid)
+            if running_crawl:
+                await self.crawl_manager.update_running_crawl_config(
+                    running_crawl.id, crawlconfig
+                )
+                ret.updatedRunning = True
+
         return ret
 
     async def update_usernames(self, userid: UUID, updated_name: str) -> None:
