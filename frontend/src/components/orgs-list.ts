@@ -28,7 +28,7 @@ export class OrgsList extends BtrixElement {
   static styles = css`
     btrix-table {
       --btrix-table-grid-template-columns: min-content [clickable-start]
-        minmax(auto, 50ch) auto auto auto [clickable-end] min-content;
+        minmax(auto, 50ch) auto auto auto auto [clickable-end] min-content;
     }
   `;
 
