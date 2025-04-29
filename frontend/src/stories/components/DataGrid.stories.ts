@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/web-components";
 import { html } from "lit";
-import { ref } from "lit/directives/ref.js";
 import { repeat } from "lit/directives/repeat.js";
 
 import { defaultArgs, renderComponent, type RenderProps } from "./DataGrid";
@@ -14,6 +13,7 @@ const meta = {
   component: "btrix-data-grid",
   subcomponents: {
     DataGridRow: "btrix-data-grid-row",
+    DataGridCell: "btrix-data-grid-cell",
   },
   tags: ["autodocs"],
   render: renderComponent,
@@ -125,10 +125,9 @@ export const FormControl: Story = {
         label: "Heading Selector",
         editable: true,
         inputPlaceholder: "h1",
-        renderEditCell({ item, refCallback }) {
+        renderEditCell({ item }) {
           return html`
             <btrix-syntax-input
-              ${ref(refCallback)}
               name="selector"
               class="flex-1 [--sl-input-border-radius-medium:0] [--sl-input-border-color:transparent]"
               value=${item.selector || ""}

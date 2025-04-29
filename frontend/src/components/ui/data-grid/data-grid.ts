@@ -175,7 +175,7 @@ export class DataGrid extends TailwindElement {
                   .item=${item}
                   .columns=${this.columns}
                   ?removable=${this.editRows}
-                  ?editable=${this.editCells}
+                  ?editCells=${this.editCells}
                 ></btrix-data-grid-row>
               `,
             )
@@ -216,11 +216,11 @@ export class DataGrid extends TailwindElement {
     };
 
     const removable = this.editRows;
-    const editable = this.editCells;
+    const editCells = this.editCells;
 
     rows.forEach((el) => {
       assignProp(el, { name: "removable", value: removable });
-      assignProp(el, { name: "editable", value: editable });
+      assignProp(el, { name: "editCells", value: editCells });
 
       (el as DataGridRow)["columns"] = this.columns;
     });
