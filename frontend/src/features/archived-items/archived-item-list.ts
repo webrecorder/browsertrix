@@ -451,8 +451,8 @@ export class ArchivedItemList extends TailwindElement {
             .join(" ")};
         }
       </style>
-      <div class="overflow-auto">
-        <btrix-table>
+      <div class="-mx-5 overflow-auto px-5">
+        <btrix-table class="min-w-min">
           <btrix-table-head class="mb-2">
             <slot
               name="checkboxCell"
