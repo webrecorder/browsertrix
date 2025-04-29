@@ -130,7 +130,7 @@ export class DataGrid extends TailwindElement {
       <btrix-table
         role="grid"
         class=${clsx(
-          tw`relative size-full`,
+          tw`relative size-full overflow-auto`,
           this.stickyHeader && tw`rounded border`,
         )}
         style="--btrix-table-grid-template-columns: ${cssWidths.join(" ")}${this
@@ -175,8 +175,6 @@ export class DataGrid extends TailwindElement {
           class=${clsx(
             tw`[--btrix-table-cell-padding:var(--sl-spacing-x-small)]`,
             tw`leading-none`,
-            // TODO Fix input ring not visible with overflow-auto
-            // tw`overflow-auto`,
             !this.stickyHeader && tw`rounded border`,
           )}
           @btrix-remove=${(e: CustomEvent<RowRemoveEventDetail>) => {

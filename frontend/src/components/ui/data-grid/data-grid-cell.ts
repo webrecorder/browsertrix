@@ -127,7 +127,7 @@ export class DataGridCell extends TableCell {
               name=${col.field}
               value=${value}
               placeholder=${ifDefined(col.inputPlaceholder)}
-              class="w-full"
+              class="w-full min-w-[5em]"
               size="small"
               ?required=${col.required}
               hoist
