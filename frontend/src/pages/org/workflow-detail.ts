@@ -1571,6 +1571,13 @@ export class WorkflowDetail extends BtrixElement {
       } else {
         throw data;
       }
+
+      this.notify.toast({
+        message: pause ? msg("Pausing crawl.") : msg("Resuming paused crawl."),
+        variant: "success",
+        icon: "check2-circle",
+        id: "crawl-pause-unpause-status",
+      });
     } catch {
       this.notify.toast({
         message: pause
@@ -1578,7 +1585,7 @@ export class WorkflowDetail extends BtrixElement {
           : msg("Something went wrong, couldn't resume paused crawl."),
         variant: "danger",
         icon: "exclamation-octagon",
-        id: "crawl-pause-error",
+        id: "crawl-pause-unpause-status",
       });
     }
   }
