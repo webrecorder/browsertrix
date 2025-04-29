@@ -1569,7 +1569,9 @@ export class WorkflowDetail extends BtrixElement {
       }
     } catch {
       this.notify.toast({
-        message: msg("Something went wrong, couldn't pause or unpause crawl."),
+        message: pause
+          ? msg("Something went wrong, couldn't pause crawl.")
+          : msg("Something went wrong, couldn't resume paused crawl."),
         variant: "danger",
         icon: "exclamation-octagon",
         id: "crawl-pause-error",
