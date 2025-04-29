@@ -253,6 +253,8 @@ class CrawlManager(K8sAPI):
         self, crawl_id: str, crawlconfig: CrawlConfig
     ):
         """force update of config for running crawl"""
+        time_now = date_to_str(dt_now())
+
         # pylint: disable=use-dict-literal
         patch = dict(
             crawlerChannel=crawlconfig.crawlerChannel,
@@ -260,7 +262,8 @@ class CrawlManager(K8sAPI):
             timeout=crawlconfig.crawlTimeout,
             maxCrawlSize=crawlconfig.maxCrawlSize,
             proxyId=crawlconfig.proxyId or DEFAULT_PROXY_ID,
-            lastConfigUpdate=date_to_str(dt_now()),
+            lastConfigUpdate=time_now,
+            restartTime=time_now,
         )
 
         return await self._patch_job(crawl_id, patch)
