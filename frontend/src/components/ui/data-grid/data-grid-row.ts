@@ -171,7 +171,10 @@ export class DataGridRow extends TableRow {
 
     if (this.removable) {
       removeCell = html`
-        <btrix-table-cell class=${tw`border-l p-0`}>
+        <btrix-data-grid-cell
+          class=${tw`border-l p-0`}
+          @keydown=${this.onKeydown}
+        >
           <sl-tooltip content=${msg("Remove")}>
             <sl-icon-button
               class="p-1 text-base hover:text-danger"
@@ -188,7 +191,7 @@ export class DataGridRow extends TableRow {
                 )}
             ></sl-icon-button>
           </sl-tooltip>
-        </btrix-table-cell>
+        </btrix-data-grid-cell>
       `;
     }
 
@@ -214,6 +217,7 @@ export class DataGridRow extends TableRow {
           .column=${col}
           .item=${this.item}
           ${cell(col)}
+          @keydown=${this.onKeydown}
           @focus=${(e: CustomEvent) => {
             e.stopPropagation();
 
@@ -237,6 +241,37 @@ export class DataGridRow extends TableRow {
         ></btrix-data-grid-cell>
       </sl-tooltip>
     `;
+  };
+
+  private readonly onKeydown = (e: KeyboardEvent) => {
+    console.log(this.gridCells);
+    // TODO More complex keyboard navigation
+
+    if (e.composedPath()[0] === e.currentTarget && this.gridCells) {
+      const gridCells = Array.from(this.gridCells);
+      const i = gridCells.indexOf(e.target as DataGridCell);
+
+      if (i === -1) return;
+
+      if (e.key === "ArrowRight") {
+        const nextCell = gridCells[i + 1] || this.gridCells[0];
+
+        if (nextCell) {
+          nextCell.focus();
+        }
+      } else if (e.key === "ArrowLeft") {
+        const prevCell =
+          gridCells[i - 1] || this.gridCells[this.gridCells.length - 1];
+
+        if (prevCell) {
+          prevCell.focus();
+        }
+      } else if (e.key === "ArrowDown") {
+        console.debug("TODO");
+      } else if (e.key === "ArrowUp") {
+        console.debug("TODO");
+      }
+    }
   };
 
   private readonly onCellInput = async (

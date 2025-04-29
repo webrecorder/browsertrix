@@ -88,7 +88,7 @@ export class DataGridCell extends TableCell {
   }
 
   render() {
-    if (!this.column || !this.item) return html``;
+    if (!this.column || !this.item) return html`<slot></slot>`;
 
     if (this.column.editable) {
       return this.renderEditCell({ item: this.item });
