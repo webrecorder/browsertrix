@@ -29,6 +29,12 @@ const meta = {
 export default meta;
 type Story = StoryObj<RenderProps>;
 
+/**
+ * @FIXME The "Docs" view will currently always show an empty usage history table
+ * since usage is configured through global app state.
+ *
+ * Navigate to "With Usage" to see a working example.
+ */
 export const WithUsage: Story = {
   args: {
     orgUsage: true,
