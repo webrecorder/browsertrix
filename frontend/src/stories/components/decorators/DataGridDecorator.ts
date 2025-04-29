@@ -3,17 +3,17 @@ import { html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
-import { DataGridController } from "@/components/ui/data-grid/dataGridController";
+import { DataGridRowsController } from "@/components/ui/data-grid/controllers/rows";
 import type { GridItem } from "@/components/ui/data-grid/types";
 import { serializeDeep } from "@/utils/form";
 
-type DataGridStoryContext = { dataGridController: DataGridController };
+type DataGridStoryContext = { rowsController: DataGridRowsController };
 
 export const formControlName = "storybook--data-grid-form-example";
 
 @customElement("btrix-storybook-data-grid-form")
 export class StorybookDataGridForm extends TailwindElement {
-  readonly #dataGridController = new DataGridController(this);
+  readonly #rowsController = new DataGridRowsController(this);
 
   public renderStory!: (context: DataGridStoryContext) => ReturnType<StoryFn>;
 
@@ -33,7 +33,7 @@ export class StorybookDataGridForm extends TailwindElement {
     return html`
       <form @submit=${onSubmit}>
         ${this.renderStory({
-          dataGridController: this.#dataGridController,
+          rowsController: this.#rowsController,
         })}
         <footer class="mt-4">
           <sl-button type="reset">Reset</sl-button>

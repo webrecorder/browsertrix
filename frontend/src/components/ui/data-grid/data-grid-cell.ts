@@ -9,6 +9,7 @@ import { TableCell } from "../table/table-cell";
 import type { GridColumn, GridColumnSelectType, GridItem } from "./types";
 import { GridColumnType } from "./types";
 
+import { DataGridFocusController } from "@/components/ui/data-grid/controllers/focus";
 import type { UrlInput } from "@/components/ui/url-input";
 import { tw } from "@/utils/tailwind";
 
@@ -41,6 +42,9 @@ export class DataGridCell extends TableCell {
   @property({ type: Object })
   item?: GridItem;
 
+  @property({ type: Boolean })
+  editable = false;
+
   @property({ type: String, reflect: true, noAccessor: true })
   role = "gridcell";
 
@@ -52,6 +56,10 @@ export class DataGridCell extends TableCell {
 
   @property({ type: Number, reflect: true })
   tabindex = 0;
+
+  readonly #focus = new DataGridFocusController(this, {
+    setFocusOnTabbable: true,
+  });
 
   public checkValidity() {
     return this.input?.checkValidity();
@@ -93,7 +101,7 @@ export class DataGridCell extends TableCell {
   render() {
     if (!this.column || !this.item) return html`<slot></slot>`;
 
-    if (this.column.editable) {
+    if (this.editable) {
       return this.renderEditCell({ item: this.item });
     }
 

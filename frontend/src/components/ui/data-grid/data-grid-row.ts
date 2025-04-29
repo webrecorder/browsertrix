@@ -13,6 +13,7 @@ import type {
 } from "./data-grid-cell";
 import type { GridColumn, GridItem, GridRowId } from "./types";
 
+import { DataGridFocusController } from "@/components/ui/data-grid/controllers/focus";
 import { TableRow } from "@/components/ui/table/table-row";
 import { tw } from "@/utils/tailwind";
 
@@ -21,6 +22,9 @@ export type RowRemoveEventDetail = {
 };
 
 const cell = directive(CellDirective);
+
+const cellStyle = tw`focus-visible:-outline-offset-2`;
+const editableCellStyle = tw`p-0 focus-visible:bg-slate-50 `;
 
 /**
  * @fires btrix-remove CustomEvent<RowRemoveEventDetail>
@@ -77,6 +81,13 @@ export class DataGridRow extends TableRow {
   @state()
   private cellValues: Partial<GridItem> = {};
 
+  readonly #focus = new DataGridFocusController(this);
+
+  readonly #invalidInputsMap = new Map<
+    GridColumn["field"],
+    InputElement["validationMessage"]
+  >();
+
   public formAssociatedCallback() {
     console.debug("form associated");
   }
@@ -109,11 +120,6 @@ export class DataGridRow extends TableRow {
   public get validationMessage(): string {
     return this.#internals.validationMessage;
   }
-
-  readonly #invalidInputsMap = new Map<
-    GridColumn["field"],
-    InputElement["validationMessage"]
-  >();
 
   constructor() {
     super();
@@ -172,7 +178,7 @@ export class DataGridRow extends TableRow {
     if (this.removable) {
       removeCell = html`
         <btrix-data-grid-cell
-          class=${tw`border-l p-0`}
+          class=${clsx(tw`border-l p-0`, cellStyle)}
           @keydown=${this.onKeydown}
         >
           <sl-tooltip content=${msg("Remove")}>
@@ -200,6 +206,7 @@ export class DataGridRow extends TableRow {
 
   private readonly renderCell = (col: GridColumn, i: number) => {
     const validationMessage = this.#invalidInputsMap.get(col.field);
+    const editable = this.editCells && col.editable;
 
     return html`
       <sl-tooltip
@@ -213,9 +220,14 @@ export class DataGridRow extends TableRow {
         }
       >
         <btrix-data-grid-cell
-          class=${clsx(i > 0 && tw`border-l`, col.editable && `p-0`)}
+          class=${clsx(
+            i > 0 && tw`border-l`,
+            cellStyle,
+            editable && editableCellStyle,
+          )}
           .column=${col}
           .item=${this.item}
+          ?editable=${editable}
           ${cell(col)}
           @keydown=${this.onKeydown}
           @focus=${(e: CustomEvent) => {
@@ -243,36 +255,74 @@ export class DataGridRow extends TableRow {
     `;
   };
 
-  private readonly onKeydown = (e: KeyboardEvent) => {
-    console.log(this.gridCells);
-    // TODO More complex keyboard navigation
+  /**
+   * Keyboard navigation based on recommendations from
+   * https://www.w3.org/WAI/ARIA/apg/patterns/grid/#keyboardinteraction-settingfocusandnavigatinginsidecells
+   */
+  private onKeydown(e: KeyboardEvent) {
+    const tableCell = e.currentTarget as DataGridCell;
+    const composedTarget = e.composedPath()[0] as HTMLElement;
 
-    if (e.composedPath()[0] === e.currentTarget && this.gridCells) {
+    if (composedTarget === tableCell) {
+      if (!this.gridCells) {
+        console.debug("no grid cells");
+        return;
+      }
+
       const gridCells = Array.from(this.gridCells);
       const i = gridCells.indexOf(e.target as DataGridCell);
 
       if (i === -1) return;
 
-      if (e.key === "ArrowRight") {
-        const nextCell = gridCells[i + 1] || this.gridCells[0];
+      const findNextTabbable = (idx: number, direction: -1 | 1) => {
+        const el = gridCells[idx + direction];
 
-        if (nextCell) {
-          nextCell.focus();
-        }
-      } else if (e.key === "ArrowLeft") {
-        const prevCell =
-          gridCells[i - 1] || this.gridCells[this.gridCells.length - 1];
+        if (!(el as unknown)) return;
 
-        if (prevCell) {
-          prevCell.focus();
+        if (this.#focus.isTabbable(el)) {
+          e.preventDefault();
+
+          el.focus();
+        } else {
+          findNextTabbable(idx + direction, direction);
         }
-      } else if (e.key === "ArrowDown") {
-        console.debug("TODO");
-      } else if (e.key === "ArrowUp") {
-        console.debug("TODO");
+      };
+
+      switch (e.key) {
+        case "ArrowRight":
+        case "ArrowDown": {
+          findNextTabbable(i, 1);
+          break;
+        }
+        case "ArrowLeft":
+        case "ArrowUp": {
+          findNextTabbable(i, -1);
+          break;
+        }
+        case "Tab": {
+          // Check if tabbing was prevented, likely by the focus controller
+          if (e.defaultPrevented) {
+            findNextTabbable(i, 1);
+          }
+          break;
+        }
+        default:
+          break;
+      }
+    } else {
+      if (e.key === "Escape") {
+        const tabIndex = composedTarget.tabIndex;
+
+        // Temporarily disable focusable child so that focus
+        // doesn't move when exiting
+        composedTarget.setAttribute("tabindex", "-1");
+        // Exit back into grid navigation
+        tableCell.focus();
+        // Reinstate focusable child
+        composedTarget.setAttribute("tabindex", `${tabIndex}`);
       }
     }
-  };
+  }
 
   private readonly onCellInput = async (
     e: CustomEvent<CellEditEventDetail>,

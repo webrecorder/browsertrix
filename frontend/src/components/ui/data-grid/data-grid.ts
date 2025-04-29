@@ -6,8 +6,8 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { repeat } from "lit/directives/repeat.js";
 import type { EmptyObject } from "type-fest";
 
+import { DataGridRowsController } from "./controllers/rows";
 import type { DataGridRow, RowRemoveEventDetail } from "./data-grid-row";
-import { DataGridController } from "./dataGridController";
 import type { GridColumn, GridItem } from "./types";
 
 import { TailwindElement } from "@/classes/TailwindElement";
@@ -93,7 +93,7 @@ export class DataGrid extends TailwindElement {
    * if rendering rows into the `rows` slot.
    */
   @property({ attribute: false })
-  dataGridController = new DataGridController(this);
+  rowsController = new DataGridRowsController(this);
 
   /**
    * Make grid focusable on validation.
@@ -158,7 +158,7 @@ export class DataGrid extends TailwindElement {
             const { key } = e.detail;
 
             if (key) {
-              this.dataGridController.removeRow(key);
+              this.rowsController.removeRow(key);
             } else {
               console.warn("Could not remove row without key or item");
             }
@@ -177,7 +177,7 @@ export class DataGrid extends TailwindElement {
       <slot name="rows" class="contents" @slotchange=${this.onRowSlotChange}>
         ${this.items
           ? repeat(
-              this.dataGridController.rows,
+              this.rowsController.rows,
               ([id]) => id,
               ([id, item]) => html`
                 <btrix-data-grid-row
@@ -198,7 +198,7 @@ export class DataGrid extends TailwindElement {
     return html`<footer class="mt-2">
       <sl-button
         size="small"
-        @click=${() => this.dataGridController.addRow(this.defaultItem || {})}
+        @click=${() => this.rowsController.addRow(this.defaultItem || {})}
       >
         <sl-icon slot="prefix" name="plus-lg"></sl-icon>
         <span class="text-neutral-600">${msg("Add More")}</span>

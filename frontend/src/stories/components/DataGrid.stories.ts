@@ -8,7 +8,7 @@ import {
   formControlName,
 } from "./decorators/DataGridDecorator";
 
-import { DataGridController } from "@/components/ui/data-grid/dataGridController";
+import { DataGridRowsController } from "@/components/ui/data-grid/controllers/rows";
 import { GridColumnType } from "@/components/ui/data-grid/types";
 
 const meta = {
@@ -134,7 +134,7 @@ export const FormControl: Story = {
           return html`
             <btrix-syntax-input
               name="selector"
-              class="flex-1 [--sl-input-border-color:transparent] [--sl-input-border-radius-medium:0]"
+              class="flex-1 [--sl-input-border-radius-medium:0] [--sl-input-border-color:transparent]"
               value=${item.selector || ""}
               language="css"
             ></btrix-syntax-input>
@@ -181,16 +181,16 @@ export const FormControl: Story = {
   decorators: [dataGridDecorator],
   render: (args, context) => {
     const rows =
-      context.dataGridController instanceof DataGridController
-        ? context.dataGridController.rows
+      context.rowsController instanceof DataGridRowsController
+        ? context.rowsController.rows
         : new Map();
 
     return html`
       <btrix-data-grid
         .columns=${args.columns}
-        .dataGridController=${
-          // `dataGridController` context is added by `dataGridDecorator`
-          context.dataGridController
+        .rowsController=${
+          // `rowsController` context is added by `dataGridDecorator`
+          context.rowsController
         }
         formControlLabel="Page QA Table"
         stickyHeader

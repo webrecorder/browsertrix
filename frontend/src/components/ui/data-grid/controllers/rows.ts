@@ -2,15 +2,20 @@ import type { ReactiveController, ReactiveControllerHost } from "lit";
 import { nanoid } from "nanoid";
 import type { EmptyObject } from "type-fest";
 
-import type { DataGrid } from "./data-grid";
-import type { GridItem, GridRowId, GridRows } from "./types";
+import type { DataGrid } from "../data-grid";
+import type { GridItem, GridRowId, GridRows } from "../types";
 
 import { cached } from "@/utils/weakCache";
 
 /**
+ * Enables removing and adding rows from a grid.
  *
+ * Implementing this controller isn't necessary if the `.items` property
+ * is specified in `<btrix-data-grid>`. For grids with editable rows
+ * that are slotted into `<btrix-data-grid>`, it may be necessary to
+ * implement this controller on the container component.
  */
-export class DataGridController implements ReactiveController {
+export class DataGridRowsController implements ReactiveController {
   readonly #host: ReactiveControllerHost &
     EventTarget & {
       items?: GridItem[];
