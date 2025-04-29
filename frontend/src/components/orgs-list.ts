@@ -116,7 +116,7 @@ export class OrgsList extends BtrixElement {
         ></sl-icon
       ></sl-input>
       <div class="-mx-3 overflow-x-auto px-3">
-        <btrix-table class="min-w-min">
+        <btrix-table>
           <btrix-table-head class="mb-2">
             <btrix-table-header-cell>
               <span class="sr-only">${msg("Status")}</span>

@@ -39,6 +39,7 @@ export class Table extends LitElement {
       display: grid;
       column-gap: var(--btrix-table-column-gap, 0);
       grid-template-columns: var(--btrix-table-grid-template-columns--internal);
+      min-width: min-content;
     }
   `;
 

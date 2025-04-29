@@ -479,7 +479,7 @@ export class CollectionsList extends BtrixElement {
     if (this.collections?.items.length) {
       return html`
         <btrix-table
-          class="min-w-min [--btrix-table-column-gap:var(--sl-spacing-small)]"
+          class="[--btrix-table-column-gap:var(--sl-spacing-small)]"
           style="--btrix-table-grid-template-columns: min-content [clickable-start] minmax(min-content, 45em) repeat(4, 1fr) [clickable-end] min-content"
         >
           <btrix-table-head class="mb-2 mt-1 whitespace-nowrap">
