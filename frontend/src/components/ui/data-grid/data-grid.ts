@@ -136,7 +136,19 @@ export class DataGrid extends TailwindElement {
         >
           ${this.columns.map(
             (col) => html`
-              <btrix-table-header-cell> ${col.label} </btrix-table-header-cell>
+              <btrix-table-header-cell>
+                ${col.label}
+                ${col.description
+                  ? html`
+                      <sl-tooltip content=${col.description}>
+                        <sl-icon
+                          name="info-circle"
+                          class="ml-1.5 align-[-.175em] text-sm text-slate-500"
+                        ></sl-icon>
+                      </sl-tooltip>
+                    `
+                  : nothing}
+              </btrix-table-header-cell>
             `,
           )}
           ${this.editRows

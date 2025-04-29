@@ -3,7 +3,18 @@ import { html } from "lit";
 import { customElement } from "lit/decorators.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import type { GridColumn, GridItem } from "@/components/ui/data-grid/types";
+import { noData } from "@/strings/ui";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
+
+enum Field {
+  Month = "month",
+  ElapsedTime = "elapsedTime",
+  ExecutionTime = "executionTime",
+  BillableExecutionTime = "billableExecutionTime",
+  RolloverExecutionTime = "rolloverExecutionTime",
+  GiftedExecutionTime = "giftedExecutionTime",
+}
 
 @customElement("btrix-usage-history-table")
 @localized()
@@ -22,7 +33,10 @@ export class UsageHistoryTable extends BtrixElement {
   render() {
     if (!this.org) return;
 
-    if (this.org.usage && !Object.keys(this.org.usage).length) {
+    const org = this.org;
+    const usageEntries = Object.entries(org.usage || {});
+
+    if (!usageEntries.length) {
       return html`
         <p
           class="rounded border bg-neutral-50 p-3 text-center text-neutral-500"
@@ -32,160 +46,129 @@ export class UsageHistoryTable extends BtrixElement {
       `;
     }
 
-    const usageTableCols = [
-      msg("Month"),
-      html`
-        ${msg("Elapsed Time")}
-        <sl-tooltip>
-          <div slot="content" style="text-transform: initial">
-            ${msg(
-              "Total duration of crawls and QA analysis runs, from start to finish",
-            )}
-          </div>
-          <sl-icon name="info-circle" style="vertical-align: -.175em"></sl-icon>
-        </sl-tooltip>
-      `,
-      html`
-        ${msg("Execution Time")}
-        <sl-tooltip>
-          <div slot="content" style="text-transform: initial">
-            ${msg(
-              "Aggregated time across all browser windows that the crawler was actively executing a crawl or QA analysis run, i.e. not in a waiting state",
-            )}
-          </div>
-          <sl-icon name="info-circle" style="vertical-align: -.175em"></sl-icon>
-        </sl-tooltip>
-      `,
+    const cols: GridColumn<Field>[] = [
+      {
+        field: Field.Month,
+        label: msg("Month"),
+        renderCell({ item }) {
+          return html`<btrix-format-date
+            date="${item.month}-15T00:00:00.000Z"
+            time-zone="utc"
+            month="long"
+            year="numeric"
+          >
+          </btrix-format-date>`;
+        },
+      },
+      {
+        field: Field.ElapsedTime,
+        label: msg("Elapsed Time"),
+        description: msg(
+          "Total duration of crawls and QA analysis runs, from start to finish",
+        ),
+      },
+      {
+        field: Field.ExecutionTime,
+        label: msg("Execution Time"),
+        description: msg(
+          "Aggregated time across all browser windows that the crawler was actively executing a crawl or QA analysis run, i.e. not in a waiting state",
+        ),
+      },
     ];
 
     if (this.hasMonthlyTime()) {
-      usageTableCols.push(
-        html`${msg("Billable Execution Time")}
-          <sl-tooltip>
-            <div slot="content" style="text-transform: initial">
-              ${msg(
-                "Execution time used that is billable to the current month of the plan",
-              )}
-            </div>
-            <sl-icon
-              name="info-circle"
-              style="vertical-align: -.175em"
-            ></sl-icon>
-          </sl-tooltip>`,
-      );
+      cols.push({
+        field: Field.BillableExecutionTime,
+        label: msg("Billable Execution Time"),
+        description: msg(
+          "Execution time used that is billable to the current month of the plan",
+        ),
+      });
     }
     if (this.hasExtraTime()) {
-      usageTableCols.push(
-        html`${msg("Rollover Execution Time")}
-          <sl-tooltip>
-            <div slot="content" style="text-transform: initial">
-              ${msg(
-                "Additional execution time used, of which any extra minutes will roll over to next month as billable time",
-              )}
-            </div>
-            <sl-icon
-              name="info-circle"
-              style="vertical-align: -.175em"
-            ></sl-icon>
-          </sl-tooltip>`,
-      );
+      cols.push({
+        field: Field.RolloverExecutionTime,
+        label: msg("Rollover Execution Time"),
+        description: msg(
+          "Additional execution time used, of which any extra minutes will roll over to next month as billable time",
+        ),
+      });
     }
     if (this.hasGiftedTime()) {
-      usageTableCols.push(
-        html`${msg("Gifted Execution Time")}
-          <sl-tooltip>
-            <div slot="content" style="text-transform: initial">
-              ${msg("Execution time used that is free of charge")}
-            </div>
-            <sl-icon
-              name="info-circle"
-              style="vertical-align: -.175em"
-            ></sl-icon>
-          </sl-tooltip>`,
-      );
+      cols.push({
+        field: Field.GiftedExecutionTime,
+        label: msg("Gifted Execution Time"),
+        description: msg("Execution time used that is free of charge"),
+      });
     }
 
-    const rows = Object.entries(this.org.usage || {})
-      // Sort latest
-      .reverse()
-      .map(([mY, crawlTime]) => {
-        if (!this.org) return [];
+    cols.forEach((col) => {
+      if (!col.renderCell) {
+        col.renderCell = this.renderSecondsForField(col.field);
+      }
+    });
 
-        let monthlySecondsUsed = this.org.monthlyExecSeconds?.[mY] || 0;
-        let maxMonthlySeconds = 0;
-        if (this.org.quotas.maxExecMinutesPerMonth) {
-          maxMonthlySeconds = this.org.quotas.maxExecMinutesPerMonth * 60;
-        }
-        if (monthlySecondsUsed > maxMonthlySeconds) {
-          monthlySecondsUsed = maxMonthlySeconds;
-        }
+    const items: GridItem[] = [];
 
-        let extraSecondsUsed = this.org.extraExecSeconds?.[mY] || 0;
-        let maxExtraSeconds = 0;
-        if (this.org.quotas.extraExecMinutes) {
-          maxExtraSeconds = this.org.quotas.extraExecMinutes * 60;
-        }
-        if (extraSecondsUsed > maxExtraSeconds) {
-          extraSecondsUsed = maxExtraSeconds;
-        }
+    usageEntries.forEach(([mY, crawlTime]) => {
+      let monthlySecondsUsed = org.monthlyExecSeconds?.[mY] || 0;
+      let maxMonthlySeconds = 0;
+      if (org.quotas.maxExecMinutesPerMonth) {
+        maxMonthlySeconds = org.quotas.maxExecMinutesPerMonth * 60;
+      }
+      if (monthlySecondsUsed > maxMonthlySeconds) {
+        monthlySecondsUsed = maxMonthlySeconds;
+      }
 
-        let giftedSecondsUsed = this.org.giftedExecSeconds?.[mY] || 0;
-        let maxGiftedSeconds = 0;
-        if (this.org.quotas.giftedExecMinutes) {
-          maxGiftedSeconds = this.org.quotas.giftedExecMinutes * 60;
-        }
-        if (giftedSecondsUsed > maxGiftedSeconds) {
-          giftedSecondsUsed = maxGiftedSeconds;
-        }
+      let extraSecondsUsed = org.extraExecSeconds?.[mY] || 0;
+      let maxExtraSeconds = 0;
+      if (org.quotas.extraExecMinutes) {
+        maxExtraSeconds = org.quotas.extraExecMinutes * 60;
+      }
+      if (extraSecondsUsed > maxExtraSeconds) {
+        extraSecondsUsed = maxExtraSeconds;
+      }
 
-        let totalSecondsUsed = this.org.crawlExecSeconds?.[mY] || 0;
-        const totalMaxQuota =
-          maxMonthlySeconds + maxExtraSeconds + maxGiftedSeconds;
-        if (totalSecondsUsed > totalMaxQuota) {
-          totalSecondsUsed = totalMaxQuota;
-        }
+      let giftedSecondsUsed = org.giftedExecSeconds?.[mY] || 0;
+      let maxGiftedSeconds = 0;
+      if (org.quotas.giftedExecMinutes) {
+        maxGiftedSeconds = org.quotas.giftedExecMinutes * 60;
+      }
+      if (giftedSecondsUsed > maxGiftedSeconds) {
+        giftedSecondsUsed = maxGiftedSeconds;
+      }
 
-        const tableRows = [
-          html`
-            <btrix-format-date
-              date="${mY}-15T00:00:00.000Z"
-              time-zone="utc"
-              month="long"
-              year="numeric"
-            >
-            </btrix-format-date>
-          `,
-          humanizeExecutionSeconds(crawlTime || 0),
-          totalSecondsUsed ? humanizeExecutionSeconds(totalSecondsUsed) : "--",
-        ];
-        if (this.hasMonthlyTime()) {
-          tableRows.push(
-            monthlySecondsUsed
-              ? humanizeExecutionSeconds(monthlySecondsUsed)
-              : "--",
-          );
-        }
-        if (this.hasExtraTime()) {
-          tableRows.push(
-            extraSecondsUsed
-              ? humanizeExecutionSeconds(extraSecondsUsed)
-              : "--",
-          );
-        }
-        if (this.hasGiftedTime()) {
-          tableRows.push(
-            giftedSecondsUsed
-              ? humanizeExecutionSeconds(giftedSecondsUsed)
-              : "--",
-          );
-        }
-        return tableRows;
-      });
+      let totalSecondsUsed = org.crawlExecSeconds?.[mY] || 0;
+      const totalMaxQuota =
+        maxMonthlySeconds + maxExtraSeconds + maxGiftedSeconds;
+      if (totalSecondsUsed > totalMaxQuota) {
+        totalSecondsUsed = totalMaxQuota;
+      }
+
+      const item: Partial<GridItem<Field>> = {
+        [Field.Month]: mY,
+        [Field.ElapsedTime]: crawlTime || 0,
+        [Field.ExecutionTime]: totalSecondsUsed,
+        [Field.BillableExecutionTime]: monthlySecondsUsed,
+        [Field.RolloverExecutionTime]: extraSecondsUsed,
+        [Field.GiftedExecutionTime]: giftedSecondsUsed,
+      };
+
+      items.unshift(item);
+    });
+
     return html`
-      <btrix-data-table
-        .columns=${usageTableCols}
-        .rows=${rows}
-      ></btrix-data-table>
+      <btrix-data-grid
+        .columns=${cols}
+        .items=${items}
+        stickyHeader
+      ></btrix-data-grid>
     `;
   }
+
+  private readonly renderSecondsForField =
+    (field: Field) =>
+    ({ item }: { item: GridItem<Field> }) => html`
+      ${item[field] ? humanizeExecutionSeconds(+item[field]) : noData}
+    `;
 }

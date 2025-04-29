@@ -45,6 +45,25 @@ export const StickyHeader: Story = {
   },
 };
 
+/**
+ * Table header cells can convey additional information in a tooltip.
+ */
+export const HeaderTooltip: Story = {
+  args: {
+    columns: [
+      {
+        ...defaultArgs.columns[0],
+        description: "This is a description of 'A'",
+      },
+      {
+        ...defaultArgs.columns[1],
+        description: "This is a description of 'B'",
+      },
+      ...defaultArgs.columns.slice(2),
+    ],
+  },
+};
+
 const colWidths = ["200px", "10em", "min-content", "auto", "1fr"];
 
 /**
@@ -134,7 +153,7 @@ export const FormControl: Story = {
           return html`
             <btrix-syntax-input
               name="selector"
-              class="flex-1 [--sl-input-border-radius-medium:0] [--sl-input-border-color:transparent]"
+              class="flex-1 [--sl-input-border-color:transparent] [--sl-input-border-radius-medium:0]"
               value=${item.selector || ""}
               language="css"
             ></btrix-syntax-input>

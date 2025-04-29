@@ -1,7 +1,10 @@
 import type { TemplateResult } from "lit";
 import { z } from "zod";
 
-export type GridItem = Record<string, string | number | null | undefined>;
+export type GridItem<T extends PropertyKey = string> = Record<
+  T,
+  string | number | null | undefined
+>;
 
 export enum GridColumnType {
   Text = "text",
@@ -16,8 +19,8 @@ export type GridColumnSelectType = {
   renderSelectOptions: () => TemplateResult;
 };
 
-export type GridColumn = {
-  field: keyof GridItem; // TODO Infer from row?
+export type GridColumn<T = string> = {
+  field: T;
   label: string | TemplateResult;
   description?: string;
   editable?: boolean;
