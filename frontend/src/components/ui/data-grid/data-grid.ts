@@ -2,6 +2,7 @@ import { localized, msg } from "@lit/localize";
 import clsx from "clsx";
 import { css, html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { repeat } from "lit/directives/repeat.js";
 import type { EmptyObject } from "type-fest";
 
@@ -70,6 +71,12 @@ export class DataGrid extends TailwindElement {
   editCells = false;
 
   /**
+   * Disable an editable grid.
+   */
+  @property({ type: Boolean })
+  disabled?: boolean;
+
+  /**
    * Default item for new rows.
    */
   @property({ type: Object })
@@ -101,10 +108,13 @@ export class DataGrid extends TailwindElement {
 
     return html`
       <slot name="label">
-        <label class="form-label text-xs">${this.formControlLabel}</label>
+        <label id="gridLabel" class="form-label text-xs">
+          ${this.formControlLabel}
+        </label>
       </slot>
 
       <btrix-table
+        role="grid"
         class=${clsx(
           tw`relative size-full`,
           this.stickyHeader && tw`rounded border`,
@@ -113,6 +123,8 @@ export class DataGrid extends TailwindElement {
           .editRows
           ? " max-content"
           : ""}"
+        aria-labelledby="gridLabel"
+        aria-readonly=${ifDefined(this.disabled)}
       >
         <btrix-table-head
           class=${clsx(
@@ -124,9 +136,7 @@ export class DataGrid extends TailwindElement {
         >
           ${this.columns.map(
             (col) => html`
-              <btrix-table-header-cell style=""
-                >${col.label}</btrix-table-header-cell
-              >
+              <btrix-table-header-cell> ${col.label} </btrix-table-header-cell>
             `,
           )}
           ${this.editRows

@@ -41,6 +41,9 @@ export class DataGridCell extends TableCell {
   @property({ type: Object })
   item?: GridItem;
 
+  @property({ type: String, reflect: true, noAccessor: true })
+  role = "gridcell";
+
   @property({ attribute: false })
   customRenderCell?: () => TemplateResult;
 
