@@ -3,7 +3,6 @@ import clsx from "clsx";
 import { html, type PropertyValues } from "lit";
 import { customElement, property, queryAll, state } from "lit/decorators.js";
 import { directive } from "lit/directive.js";
-import { ifDefined } from "lit/directives/if-defined.js";
 import isEqual from "lodash/fp/isEqual";
 
 import { CellDirective } from "./cellDirective";
@@ -202,15 +201,39 @@ export class DataGridRow extends TableRow {
     return html`
       <sl-tooltip
         ?disabled=${!validationMessage}
-        content=${ifDefined(validationMessage)}
+        content=${validationMessage || ""}
         hoist
         placement="bottom"
+        trigger=${
+          // Manually show/hide tooltip of blur/focus
+          "manual"
+        }
       >
         <btrix-data-grid-cell
           class=${clsx(i > 0 && tw`border-l`, col.editable && `p-0`)}
           .column=${col}
           .item=${this.item}
           ${cell(col)}
+          @focus=${(e: CustomEvent) => {
+            e.stopPropagation();
+
+            const tableCell = e.target as DataGridCell;
+            const tooltip = tableCell.closest("sl-tooltip");
+
+            if (tooltip?.open) {
+              void tooltip.hide();
+            }
+          }}
+          @blur=${(e: CustomEvent) => {
+            e.stopPropagation();
+
+            const tableCell = e.target as DataGridCell;
+            const tooltip = tableCell.closest("sl-tooltip");
+
+            if (tooltip && !tooltip.disabled) {
+              void tooltip.show();
+            }
+          }}
         ></btrix-data-grid-cell>
       </sl-tooltip>
     `;
