@@ -31,8 +31,8 @@ export type CellEditEventDetail = {
 };
 
 /**
- * @fires btrix-input CustomEvent<CellEditEventDetail>
- * @fires btrix-change CustomEvent<CellEditEventDetail>
+ * @fires btrix-input CustomEvent
+ * @fires btrix-change CustomEvent
  */
 @customElement("btrix-data-grid-cell")
 export class DataGridCell extends TableCell {

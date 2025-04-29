@@ -6,7 +6,7 @@ import { defaultArgs, renderComponent, type RenderProps } from "./DataGrid";
 import {
   dataGridDecorator,
   formControlName,
-} from "./decorators/DataGridDecorator";
+} from "./decorators/dataGridDecorator";
 
 import { DataGridRowsController } from "@/components/ui/data-grid/controllers/rows";
 import { GridColumnType } from "@/components/ui/data-grid/types";

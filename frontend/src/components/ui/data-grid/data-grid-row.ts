@@ -27,7 +27,7 @@ const cellStyle = tw`focus-visible:-outline-offset-2`;
 const editableCellStyle = tw`p-0 focus-visible:bg-slate-50 `;
 
 /**
- * @fires btrix-remove CustomEvent<RowRemoveEventDetail>
+ * @fires btrix-remove CustomEvent
  */
 @customElement("btrix-data-grid-row")
 @localized()
