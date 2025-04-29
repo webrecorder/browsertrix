@@ -38,7 +38,7 @@ export class Table extends LitElement {
     :host {
       display: grid;
       column-gap: var(--btrix-table-column-gap, 0);
-      grid-template-columns: var(--btrix-table-grid-template-columns);
+      grid-template-columns: var(--btrix-table-grid-template-columns--internal);
     }
   `;
 
@@ -57,14 +57,12 @@ export class Table extends LitElement {
     if (!headEl) return;
     await headEl.updateComplete;
 
-    if (!this.style.getPropertyValue("--btrix-table-grid-template-columns")) {
-      // `grid-template-columns` must be defined in order for spanning all
-      // columns in a subgrid to work.
-      // See https://github.com/w3c/csswg-drafts/issues/2402
-      this.style.setProperty(
-        "--btrix-table-grid-template-columns",
-        `repeat(${headEl.colCount}, auto)`,
-      );
-    }
+    // `grid-template-columns` must be defined in order for spanning all
+    // columns in a subgrid to work.
+    // See https://github.com/w3c/csswg-drafts/issues/2402
+    this.style.setProperty(
+      "--btrix-table-grid-template-columns--internal",
+      `var(--btrix-table-grid-template-columns, repeat(${headEl.colCount}, auto))`,
+    );
   }
 }
