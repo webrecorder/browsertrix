@@ -278,10 +278,9 @@ export class CrawlList extends TailwindElement {
   render() {
     return html` <style>
         btrix-table {
-          grid-template-columns:
-            min-content [clickable-start]
-            ${this.workflowId ? "" : `auto `}auto auto
-            auto auto auto auto [clickable-end] min-content;
+          --btrix-table-grid-template-columns: min-content [clickable-start]
+            ${this.workflowId ? "" : `auto `}auto auto auto auto auto auto
+            [clickable-end] min-content;
         }
       </style>
       <div class="overflow-auto">

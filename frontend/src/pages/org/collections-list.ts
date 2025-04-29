@@ -480,7 +480,7 @@ export class CollectionsList extends BtrixElement {
       return html`
         <btrix-table
           class="[--btrix-table-column-gap:var(--sl-spacing-small)]"
-          style="grid-template-columns: min-content [clickable-start] 45em repeat(4, 1fr) [clickable-end] min-content"
+          style="--btrix-table-grid-template-columns: min-content [clickable-start] 45em repeat(4, 1fr) [clickable-end] min-content"
         >
           <btrix-table-head class="mb-2 mt-1 whitespace-nowrap">
             <btrix-table-header-cell>
