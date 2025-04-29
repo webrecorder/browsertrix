@@ -19,6 +19,7 @@ export class DataGridRowsController implements ReactiveController {
   readonly #host: ReactiveControllerHost &
     EventTarget & {
       items?: GridItem[];
+      rowKey?: DataGrid["rowKey"];
       defaultItem?: DataGrid["defaultItem"];
       removeRows?: DataGrid["removeRows"];
       addRows?: DataGrid["addRows"];
@@ -46,7 +47,16 @@ export class DataGridRowsController implements ReactiveController {
   }
 
   private setRowsFromItems(items: GridItem[]) {
-    this.rows = new Map(items.map(cached((item) => [nanoid(), item])));
+    const rowKey = this.#host.rowKey;
+
+    this.rows = new Map(
+      this.#host.rowKey
+        ? items.map((item) => [
+            item[rowKey as unknown as string] as GridRowId,
+            item,
+          ])
+        : items.map(cached((item) => [nanoid(), item])),
+    );
   }
 
   public setItems(items: GridItem[]) {
