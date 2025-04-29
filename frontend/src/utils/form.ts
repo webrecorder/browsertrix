@@ -1,6 +1,9 @@
 import { msg, str } from "@lit/localize";
 import type { SlInput, SlTextarea } from "@shoelace-style/shoelace";
-import { getFormControls } from "@shoelace-style/shoelace/dist/utilities/form.js";
+import {
+  getFormControls,
+  serialize,
+} from "@shoelace-style/shoelace/dist/utilities/form.js";
 import type { LitElement } from "lit";
 
 import localize from "./localize";
@@ -84,4 +87,31 @@ export function formValidator(el: LitElement) {
       !formControls.some((el) => el.getAttribute("data-invalid") !== null)
     );
   };
+}
+
+/**
+ * Serialize forms with stringified JSON data, likely
+ * when used with `<btrix-data-grid>`.
+ */
+export function serializeDeep(
+  form: HTMLFormElement,
+  opts?: { parseKeys: string[] },
+) {
+  const values = serialize(form);
+
+  if (opts) {
+    opts.parseKeys.forEach((key) => {
+      const val = values[key];
+
+      if (typeof val === "string") {
+        values[key] = JSON.parse(val);
+      } else if (Array.isArray(val)) {
+        values[key] = val.map<unknown>((v) =>
+          typeof v === "string" ? JSON.parse(v) : v,
+        );
+      }
+    });
+  }
+
+  return values;
 }

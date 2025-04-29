@@ -1,4 +1,3 @@
-import { serialize } from "@shoelace-style/shoelace";
 import type { StoryContext, StoryFn } from "@storybook/web-components";
 import { html } from "lit";
 import { customElement, property } from "lit/decorators.js";
@@ -6,8 +5,11 @@ import { customElement, property } from "lit/decorators.js";
 import { TailwindElement } from "@/classes/TailwindElement";
 import { DataGridController } from "@/components/ui/data-grid/dataGridController";
 import type { GridItem } from "@/components/ui/data-grid/types";
+import { serializeDeep } from "@/utils/form";
 
 type DataGridStoryContext = { dataGridController: DataGridController };
+
+export const formControlName = "storybook--data-grid-form-example";
 
 @customElement("btrix-storybook-data-grid-form")
 export class StorybookDataGridForm extends TailwindElement {
@@ -23,9 +25,7 @@ export class StorybookDataGridForm extends TailwindElement {
       e.preventDefault();
 
       const form = e.target as HTMLFormElement;
-      const value = serialize(form)[
-        "storybook--page-qa-table-example"
-      ] as string;
+      const value = serializeDeep(form, { parseKeys: [formControlName] });
 
       console.log("form value:", value);
     };

@@ -3,7 +3,10 @@ import { html } from "lit";
 import { repeat } from "lit/directives/repeat.js";
 
 import { defaultArgs, renderComponent, type RenderProps } from "./DataGrid";
-import { dataGridDecorator } from "./decorators/DataGridDecorator";
+import {
+  dataGridDecorator,
+  formControlName,
+} from "./decorators/DataGridDecorator";
 
 import { DataGridController } from "@/components/ui/data-grid/dataGridController";
 import { GridColumnType } from "@/components/ui/data-grid/types";
@@ -98,9 +101,11 @@ export const EditCells: Story = {
  * component. Each row must have the same `name` attribute in order to be
  * serialized as the same form control.
  *
- * Use `DataGridController` to add and remove slotted rows.
+ * A few helpers are included to make managing rows easier:
+ * - `DataGridController` to add and remove slotted rows
+ * - `serializeDeep` to parse form values
  *
- * Open console logs to view the submitted form value.
+ * Open console logs to view the form value submitted in this example.
  */
 export const FormControl: Story = {
   args: {
@@ -129,7 +134,7 @@ export const FormControl: Story = {
           return html`
             <btrix-syntax-input
               name="selector"
-              class="flex-1 [--sl-input-border-radius-medium:0] [--sl-input-border-color:transparent]"
+              class="flex-1 [--sl-input-border-color:transparent] [--sl-input-border-radius-medium:0]"
               value=${item.selector || ""}
               language="css"
             ></btrix-syntax-input>
@@ -198,7 +203,7 @@ export const FormControl: Story = {
           ([id, item]) => html`
             <btrix-data-grid-row
               slot="rows"
-              name="storybook--page-qa-table-example"
+              name="${formControlName}"
               key=${id}
               .item=${item}
             ></btrix-data-grid-row>
