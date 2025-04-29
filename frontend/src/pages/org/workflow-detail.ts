@@ -616,33 +616,37 @@ export class WorkflowDetail extends BtrixElement {
     const workflow = this.workflow;
 
     const archivingDisabled = isArchivingDisabled(this.org, true);
+    const paused = workflow.lastCrawlState === "paused";
+    const hidePause =
+      !this.lastCrawlId ||
+      this.isCancelingOrStoppingCrawl ||
+      this.workflow.lastCrawlStopping;
+    const disablePause =
+      this.workflow.lastCrawlPausing ===
+      (this.workflow.lastCrawlState === "running");
 
     return html`
       ${when(
         this.workflow.isCrawlRunning,
         () => html`
           <sl-button-group>
-            <sl-button
-              size="small"
-              @click=${this.pauseUnpause}
-              ?disabled=${!this.lastCrawlId ||
-              this.isCancelingOrStoppingCrawl ||
-              this.workflow?.lastCrawlStopping ||
-              this.workflow?.lastCrawlPausing ===
-                (this.workflow?.lastCrawlState === "running")}
-            >
-              <sl-icon
-                name=${workflow.lastCrawlState !== "paused"
-                  ? "pause-circle"
-                  : "play-circle"}
-                slot="prefix"
-              ></sl-icon>
-              <span
-                >${workflow.lastCrawlState !== "paused"
-                  ? msg("Pause")
-                  : msg("Resume")}</span
-              >
-            </sl-button>
+            ${when(
+              !hidePause,
+              () => html`
+                <sl-button
+                  size="small"
+                  @click=${this.pauseUnpause}
+                  ?disabled=${disablePause}
+                  variant=${ifDefined(paused ? "primary" : undefined)}
+                >
+                  <sl-icon
+                    name=${paused ? "play-circle" : "pause-circle"}
+                    slot="prefix"
+                  ></sl-icon>
+                  <span>${paused ? msg("Resume") : msg("Pause")}</span>
+                </sl-button>
+              `,
+            )}
             <sl-button
               size="small"
               @click=${() => (this.openDialogName = "stop")}
