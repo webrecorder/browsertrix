@@ -124,7 +124,7 @@ export class CrawlStatus extends TailwindElement {
       case "pausing":
         color = "var(--sl-color-violet-600)";
         icon = html`<sl-icon
-          name="pause-btn"
+          name="pause-circle"
           class="animatePulse"
           slot="prefix"
           style="color: ${color}"
@@ -135,7 +135,7 @@ export class CrawlStatus extends TailwindElement {
       case "unpausing":
         color = "var(--sl-color-violet-600)";
         icon = html`<sl-icon
-          name="play-btn"
+          name="play-circle"
           class="animatePulse"
           slot="prefix"
           style="color: ${color}"
@@ -146,7 +146,7 @@ export class CrawlStatus extends TailwindElement {
       case "paused":
         color = "var(--sl-color-violet-600)";
         icon = html`<sl-icon
-          name="pause-btn"
+          name="pause-circle"
           slot="prefix"
           style="color: ${color}"
         ></sl-icon>`;

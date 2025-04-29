@@ -633,8 +633,8 @@ export class WorkflowDetail extends BtrixElement {
             >
               <sl-icon
                 name=${workflow.lastCrawlState !== "paused"
-                  ? "pause-btn"
-                  : "play-btn"}
+                  ? "pause-circle"
+                  : "play-circle"}
                 slot="prefix"
               ></sl-icon>
               <span
