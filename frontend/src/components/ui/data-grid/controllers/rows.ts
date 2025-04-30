@@ -65,8 +65,6 @@ export class DataGridRowsController implements ReactiveController {
     if (!this.#prevItems || items !== this.#prevItems) {
       this.setRowsFromItems(items);
 
-      // this.#host.requestUpdate();
-
       this.#prevItems = items;
     }
   }

@@ -137,6 +137,11 @@ const formName = "newJobConfig";
 const panelSuffix = "--panel";
 const defaultFormState = getDefaultFormState();
 
+enum SubmitType {
+  Save = "save",
+  SaveAndRun = "run",
+}
+
 const getDefaultProgressState = (hasConfigId = false): ProgressState => {
   let activeTab: StepName = "scope";
   if (window.location.hash) {
@@ -623,10 +628,10 @@ export class WorkflowEditor extends BtrixElement {
         <sl-tooltip content=${msg("Save without running")}>
           <sl-button
             size="small"
-            type="button"
+            type="submit"
+            value=${SubmitType.Save}
             ?disabled=${this.isSubmitting}
             ?loading=${this.isSubmitting}
-            @click=${() => void this.save()}
           >
             ${msg("Save")}
           </sl-button>
@@ -641,6 +646,7 @@ export class WorkflowEditor extends BtrixElement {
             size="small"
             variant="primary"
             type="submit"
+            value=${SubmitType.SaveAndRun}
             ?disabled=${(!this.isCrawlRunning &&
               isArchivingDisabled(this.org, true)) ||
             this.isSubmitting ||
@@ -2191,13 +2197,14 @@ https://archiveweb.page/images/${"logo.svg"}`}
   private async onSubmit(event: SubmitEvent) {
     event.preventDefault();
 
-    void this.save({
-      runNow: !this.isCrawlRunning,
-      updateRunning: Boolean(this.isCrawlRunning),
-    });
-  }
+    const submitType = (
+      event.submitter as HTMLButtonElement & {
+        value?: SubmitType;
+      }
+    ).value;
 
-  private async save(opts?: WorkflowRunParams) {
+    const saveAndRun = submitType === SubmitType.SaveAndRun;
+
     if (!this.formElem) return;
 
     // TODO Move away from manual validation check
@@ -2236,11 +2243,11 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
     const config: CrawlConfigParams & WorkflowRunParams = {
       ...this.parseConfig(),
-      runNow: Boolean(opts?.runNow),
+      runNow: saveAndRun && !this.isCrawlRunning,
     };
 
     if (this.configId) {
-      config.updateRunning = Boolean(opts?.updateRunning);
+      config.updateRunning = saveAndRun && Boolean(this.isCrawlRunning);
     }
 
     this.isSubmitting = true;
