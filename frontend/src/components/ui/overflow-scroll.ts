@@ -9,7 +9,7 @@ import { customElement, property } from "lit/decorators.js";
  * @cssproperty --btrix-overflow-scroll-scrim-color The color of the scrim. White by default.
  */
 @customElement("btrix-overflow-scroll")
-export class OverflowDropdown extends LitElement {
+export class OverflowScroll extends LitElement {
   /**
    * The direction of the overflow scroll. Currently just horizontal.
    */
@@ -19,7 +19,8 @@ export class OverflowDropdown extends LitElement {
   direction: "horizontal" = "horizontal";
 
   /**
-   * Whether to show a scrim when the overflow scroll is active.
+   * Whether to show a scrim when the overflow scroll is active. Only appears when the inner content is wider than this element.
+   *
    * Progressive enhancement: only works on Chromium-based browsers currently.
    * See https://caniuse.com/mdn-css_properties_scroll-timeline for support.
    */
