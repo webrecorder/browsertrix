@@ -18,6 +18,7 @@ import { tw } from "@/utils/tailwind";
  * Basic text input with code syntax highlighting
  *
  * @TODO Refactor to use `ElementInternals`
+ * https://github.com/webrecorder/browsertrix/issues/2577
  *
  * @fires btrix-input
  * @fires btrix-change
@@ -134,7 +135,7 @@ export class SyntaxInput extends TailwindElement {
       <div class=${clsx(tw`relative`)} part="base">
         <sl-input
           class=${clsx(
-            tw`[--sl-input-spacing-medium:var(--sl-spacing-small)] [--sl-input-font-family:var(--sl-font-mono)]`,
+            tw`[--sl-input-font-family:var(--sl-font-mono)] [--sl-input-spacing-medium:var(--sl-spacing-small)]`,
             tw`part-[base]:relative part-[base]:bg-transparent`,
             tw`part-[input]:relative part-[input]:z-10 part-[input]:text-transparent part-[input]:caret-black`,
             tw`part-[prefix]:absolute part-[prefix]:inset-0 part-[prefix]:mr-[var(--sl-input-spacing-medium)]`,

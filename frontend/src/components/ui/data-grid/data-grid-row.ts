@@ -33,6 +33,7 @@ const editableCellStyle = tw`p-0 focus-visible:bg-slate-50 `;
 @localized()
 export class DataGridRow extends TableRow {
   // TODO Abstract to mixin or decorator
+  // https://github.com/webrecorder/browsertrix/issues/2577
   static formAssociated = true;
   readonly #internals: ElementInternals;
 
