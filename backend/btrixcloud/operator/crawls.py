@@ -77,9 +77,7 @@ MEM_SOFT_OOM_THRESHOLD = 1.0
 MEM_LIMIT_PADDING = 1.2
 
 # time in minutes before paused crawl is stopped - default is 7 days
-paused_crawl_limit_minutes = int(
-    os.environ.get("PAUSED_CRAWL_LIMIT_MINUTES", "10080")
-)
+paused_crawl_limit_minutes = int(os.environ.get("PAUSED_CRAWL_LIMIT_MINUTES", "10080"))
 
 
 # pylint: disable=too-many-public-methods, too-many-locals, too-many-branches, too-many-statements

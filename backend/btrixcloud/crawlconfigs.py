@@ -756,7 +756,9 @@ class CrawlConfigOps:
             minutes_until_expiry = int(
                 os.environ.get("PAUSED_CRAWL_LIMIT_MINUTES", "10080")
             )
-            crawlconfig.lastCrawlPausedExpiry = crawl.pausedAt + timedelta(minutes=minutes_until_expiry)
+            crawlconfig.lastCrawlPausedExpiry = crawl.pausedAt + timedelta(
+                minutes=minutes_until_expiry
+            )
         crawlconfig.isCrawlRunning = True
 
     async def get_crawl_config_out(self, cid: UUID, org: Organization):

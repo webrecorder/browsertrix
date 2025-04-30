@@ -784,7 +784,9 @@ class CrawlOps(BaseCrawlOps):
             paused_at = dt_now()
 
         try:
-            result = await self.crawl_manager.pause_resume_crawl(crawl_id, pause=pause, paused_at=paused_at)
+            result = await self.crawl_manager.pause_resume_crawl(
+                crawl_id, pause=pause, paused_at=paused_at
+            )
 
             if result.get("success"):
                 await self.crawls.find_one_and_update(

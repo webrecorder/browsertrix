@@ -1,4 +1,5 @@
 """Operator Models"""
+
 from collections import defaultdict
 from datetime import datetime
 from uuid import UUID
