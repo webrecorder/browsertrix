@@ -879,6 +879,11 @@ class CrawlOperator(BaseOperator):
                             f"Pausing redis, no running crawler pods for >{REDIS_TTL} secs"
                         )
                         status.initRedis = False
+
+                    # crawler pods already shut down, remove redis pause key to allow unpausing later
+                    if crawl.paused or not status.initRedis:
+                        await redis.delete(f"{crawl.id}:paused")
+
                 elif crawler_running and not redis:
                     # if crawler is running, but no redis, init redis
                     status.initRedis = True
@@ -1448,6 +1453,9 @@ class CrawlOperator(BaseOperator):
             await redis.set(f"{crawl.id}:stopping", "1")
             # backwards compatibility with older crawler
             await redis.set("crawl-stop", "1")
+
+        if crawl.paused:
+            await redis.set(f"{crawl.id}:paused", "1")
 
         # resolve scale
         if crawl.scale != status.scale:
