@@ -238,6 +238,7 @@ FAILED_STATES = get_args(TYPE_FAILED_STATES)
 TYPE_SUCCESSFUL_STATES = Literal[
     "complete",
     "stopped_by_user",
+    "stopped_pause_expired",
     "stopped_storage_quota_reached",
     "stopped_time_quota_reached",
     "stopped_org_readonly",
@@ -481,6 +482,8 @@ class CrawlConfigOut(CrawlConfigCore, CrawlConfigAdditional):
 
     lastCrawlStopping: Optional[bool] = False
     lastCrawlPausing: Optional[bool] = False
+    lastCrawlPausedAt: Optional[datetime] = None
+    lastCrawlPausedExpiry: Optional[datetime] = None
     profileName: Optional[str] = None
     firstSeed: Optional[str] = None
     seedCount: int = 0
@@ -867,6 +870,7 @@ class CrawlOut(BaseMongoModel):
     profileName: Optional[str] = None
     stopping: Optional[bool] = False
     pausing: Optional[bool] = False
+    pausedAt: Optional[datetime] = None
     manual: bool = False
     cid_rev: Optional[int] = None
     scale: Scale = 1

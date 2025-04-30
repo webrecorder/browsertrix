@@ -20,6 +20,8 @@ data:
 
   INVITE_EXPIRE_SECONDS: "{{ .Values.invite_expire_seconds }}"
 
+  PAUSED_CRAWL_LIMIT_MINUTES: "{{ .Values.paused_crawl_limit_minutes }}"
+
   REGISTRATION_ENABLED: "{{ .Values.registration_enabled | default 0 }}"
 
   REGISTER_TO_ORG_ID: "{{ .Values.registration_org_id }}"
