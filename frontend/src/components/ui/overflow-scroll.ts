@@ -1,15 +1,28 @@
-import { css, html } from "lit";
+import { css, html, LitElement } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
-import { TailwindElement } from "@/classes/TailwindElement";
-
+/**
+ * Overflow scroller. Optionally displays a scrim/shadow (a small gradient
+ * indicating there's more available content) on supported browsers,
+ * depending on scroll position.
+ * @cssproperty --btrix-overflow-scrim-width The width of the scrim. 3rem by default.
+ * @cssproperty --btrix-overflow-scroll-scrim-color The color of the scrim. White by default.
+ */
 @customElement("btrix-overflow-scroll")
-export class OverflowDropdown extends TailwindElement {
+export class OverflowDropdown extends LitElement {
+  /**
+   * The direction of the overflow scroll. Currently just horizontal.
+   */
   // TODO: Implement vertical overflow scroller
   @property({ type: String })
   // eslint-disable-next-line @typescript-eslint/prefer-as-const
   direction: "horizontal" = "horizontal";
 
+  /**
+   * Whether to show a scrim when the overflow scroll is active.
+   * Progressive enhancement: only works on Chromium-based browsers currently.
+   * See https://caniuse.com/mdn-css_properties_scroll-timeline for support.
+   */
   @property({ type: Boolean })
   scrim = true;
 
@@ -34,11 +47,11 @@ export class OverflowDropdown extends TailwindElement {
         content: "";
         width: var(--btrix-overflow-scrim-width, 3rem);
         position: absolute;
-        z-index: 10;
+        z-index: 1;
         top: 0;
         height: 100%;
         pointer-events: none;
-        animation-name: scroll-indicator;
+        animation-name: btrix-scroll-scrim;
         animation-timeline: --btrix-overflow-scroll-timeline;
         opacity: 0;
       }
@@ -62,14 +75,16 @@ export class OverflowDropdown extends TailwindElement {
         /* background-color: blue; */
         animation-direction: reverse;
       }
-    }
-
-    @keyframes scroll-indicator {
-      0% {
-        opacity: 0;
-      }
-      100% {
-        opacity: 1;
+      @keyframes btrix-scroll-scrim {
+        0% {
+          opacity: 0;
+        }
+        20% {
+          opacity: 1;
+        }
+        100% {
+          opacity: 1;
+        }
       }
     }
   `;
