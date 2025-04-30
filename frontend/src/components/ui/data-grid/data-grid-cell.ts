@@ -134,8 +134,13 @@ export class DataGridCell extends TableCell {
               ?required=${col.required}
               hoist
             >
-              <!-- TODO Cache -->
-              ${(col as GridColumnSelectType).renderSelectOptions()}
+              ${(col as GridColumnSelectType).selectOptions.map(
+                (opt) => html`
+                  <sl-option value=${opt.value}>
+                    ${opt.label ?? opt.value}
+                  </sl-option>
+                `,
+              )}
             </sl-select>
           </div>
         `;

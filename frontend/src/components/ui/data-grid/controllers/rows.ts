@@ -27,7 +27,7 @@ export class DataGridRowsController implements ReactiveController {
 
   #prevItems?: GridItem[];
 
-  public rows: GridRows = new Map<GridRowId, GridItem>();
+  public rows: GridRows<GridItem> = new Map<GridRowId, GridItem>();
 
   constructor(host: ReactiveControllerHost & EventTarget) {
     this.#host = host;
@@ -46,7 +46,7 @@ export class DataGridRowsController implements ReactiveController {
     }
   }
 
-  private setRowsFromItems(items: GridItem[]) {
+  private setRowsFromItems<T extends GridItem = GridItem>(items: T[]) {
     const rowKey = this.#host.rowKey;
 
     this.rows = new Map(
@@ -61,15 +61,20 @@ export class DataGridRowsController implements ReactiveController {
     );
   }
 
-  public setItems(items: GridItem[]) {
+  public setItems<T extends GridItem = GridItem>(items: T[]) {
     if (!this.#prevItems || items !== this.#prevItems) {
       this.setRowsFromItems(items);
+
+      // this.#host.requestUpdate();
 
       this.#prevItems = items;
     }
   }
 
-  public addRows(defaultItem: GridItem | EmptyObject = {}, count = 1) {
+  public addRows<T extends GridItem = GridItem>(
+    defaultItem: T | EmptyObject = {},
+    count = 1,
+  ) {
     for (let i = 0; i < count; i++) {
       const id = nanoid();
 

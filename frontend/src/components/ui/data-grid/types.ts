@@ -16,7 +16,10 @@ export enum GridColumnType {
 
 export type GridColumnSelectType = {
   inputType: GridColumnType.Select;
-  renderSelectOptions: () => TemplateResult;
+  selectOptions: {
+    value: string;
+    label?: string | TemplateResult;
+  }[];
 };
 
 export type GridColumn<T = string> = {
@@ -39,4 +42,4 @@ export type GridColumn<T = string> = {
 const rowIdSchema = z.string().nanoid();
 export type GridRowId = z.infer<typeof rowIdSchema>;
 
-export interface GridRows extends Map<GridRowId, GridItem> {}
+export interface GridRows<T> extends Map<GridRowId, T> {}

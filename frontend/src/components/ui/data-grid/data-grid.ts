@@ -4,12 +4,12 @@ import clsx from "clsx";
 import { css, html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
-import { repeat } from "lit/directives/repeat.js";
 import { nanoid } from "nanoid";
 import type { EmptyObject } from "type-fest";
 
 import { DataGridRowsController } from "./controllers/rows";
 import type { DataGridRow, RowRemoveEventDetail } from "./data-grid-row";
+import { renderRows } from "./renderRows";
 import type { GridColumn, GridItem } from "./types";
 
 import { TailwindElement } from "@/classes/TailwindElement";
@@ -185,7 +185,7 @@ export class DataGrid extends TailwindElement {
           )}
           ${this.removeRows
             ? html`<btrix-table-header-cell>
-                <span class="sr-only">${msg("Remove")}</span>
+                <span class="sr-only">${msg("Remove row")}</span>
               </btrix-table-header-cell>`
             : nothing}
         </btrix-table-head>
@@ -257,10 +257,9 @@ export class DataGrid extends TailwindElement {
     return html`
       <slot name="rows" class="contents" @slotchange=${this.onRowSlotChange}>
         ${this.items
-          ? repeat(
+          ? renderRows(
               this.rowsController.rows,
-              ([id]) => id,
-              ([id, item]) => html`
+              ({ id, item }) => html`
                 <btrix-data-grid-row
                   key=${id}
                   .item=${item}

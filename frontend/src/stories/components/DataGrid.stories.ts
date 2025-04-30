@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/web-components";
 import { html } from "lit";
-import { repeat } from "lit/directives/repeat.js";
 
 import { defaultArgs, renderComponent, type RenderProps } from "./DataGrid";
 import {
@@ -9,6 +8,7 @@ import {
 } from "./decorators/dataGridDecorator";
 
 import { DataGridRowsController } from "@/components/ui/data-grid/controllers/rows";
+import { renderRows } from "@/components/ui/data-grid/renderRows";
 import { GridColumnType } from "@/components/ui/data-grid/types";
 
 const meta = {
@@ -149,6 +149,7 @@ export const EditCells: Story = {
  *
  * A few helpers are included to make managing rows easier:
  * - `DataGridController` to add and remove slotted rows
+ * - `renderRows` to render `<btrix-data-grid-row>`
  * - `serializeDeep` to parse form values
  *
  * Open console logs to view the form value submitted in this example.
@@ -180,7 +181,7 @@ export const FormControl: Story = {
           return html`
             <btrix-syntax-input
               name="selector"
-              class="flex-1 [--sl-input-border-color:transparent] [--sl-input-border-radius-medium:0]"
+              class="flex-1 [--sl-input-border-radius-medium:0] [--sl-input-border-color:transparent]"
               value=${item.selector || ""}
               language="css"
             ></btrix-syntax-input>
@@ -199,12 +200,14 @@ export const FormControl: Story = {
         label: "Status",
         editable: true,
         inputType: GridColumnType.Select,
-        renderSelectOptions() {
-          return html`
-            <sl-option value="Pending">Pending</sl-option>
-            <sl-option value="Approved">Approved</sl-option>
-          `;
-        },
+        selectOptions: [
+          {
+            value: "Pending",
+          },
+          {
+            value: "Approved",
+          },
+        ],
       },
     ],
     items: [
@@ -244,10 +247,9 @@ export const FormControl: Story = {
         removeRows
         editCells
       >
-        ${repeat(
+        ${renderRows(
           rows,
-          ([id]) => id,
-          ([id, item]) => html`
+          ({ id, item }) => html`
             <btrix-data-grid-row
               slot="rows"
               name="${formControlName}"

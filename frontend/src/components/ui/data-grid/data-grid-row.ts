@@ -182,7 +182,7 @@ export class DataGridRow extends TableRow {
           class=${clsx(tw`border-l p-0`, cellStyle)}
           @keydown=${this.onKeydown}
         >
-          <sl-tooltip content=${msg("Remove")}>
+          <sl-tooltip content=${msg("Remove")} hoist>
             <sl-icon-button
               class="p-1 text-base hover:text-danger"
               name="trash3"
