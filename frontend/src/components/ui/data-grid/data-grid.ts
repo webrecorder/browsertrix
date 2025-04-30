@@ -4,6 +4,7 @@ import { css, html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { repeat } from "lit/directives/repeat.js";
+import { nanoid } from "nanoid";
 import type { EmptyObject } from "type-fest";
 
 import { DataGridRowsController } from "./controllers/rows";
@@ -103,6 +104,12 @@ export class DataGrid extends TailwindElement {
   formControlLabel?: string;
 
   /**
+   * ID for form control label.
+   */
+  @property({ type: String })
+  formControlLabelId = nanoid();
+
+  /**
    * Optional external controller for removing and adding rows,
    * if rendering rows into the `rows` slot.
    */
@@ -122,7 +129,7 @@ export class DataGrid extends TailwindElement {
 
     return html`
       <slot name="label">
-        <label id="gridLabel" class="form-label text-xs">
+        <label id=${this.formControlLabelId} class="form-label text-xs">
           ${this.formControlLabel}
         </label>
       </slot>
@@ -137,7 +144,9 @@ export class DataGrid extends TailwindElement {
           .removeRows
           ? " max-content"
           : ""}"
-        aria-labelledby="gridLabel"
+        aria-labelledby=${ifDefined(
+          (this.formControlLabel && this.formControlLabelId) ?? undefined,
+        )}
         aria-readonly=${ifDefined(this.disabled)}
       >
         <btrix-table-head
