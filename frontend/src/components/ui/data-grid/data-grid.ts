@@ -116,7 +116,7 @@ export class DataGrid extends TailwindElement {
    * ID for form control label.
    */
   @property({ type: String })
-  formControlLabelId = nanoid();
+  formControlLabelId = `label-${nanoid()}`;
 
   /**
    * Optional external controller for removing and adding rows,
