@@ -82,10 +82,13 @@ export class DataGridRowsController implements ReactiveController {
     }
   }
 
-  public addRow(item: GridItem | EmptyObject) {
-    const id = nanoid();
+  public addRows(defaultItem: GridItem | EmptyObject = {}, count = 1) {
+    for (let i = 0; i < count; i++) {
+      const id = nanoid();
 
-    this.rows.set(id, item);
+      this.rows.set(id, defaultItem);
+    }
+
     this.#host.requestUpdate();
   }
 
@@ -93,7 +96,7 @@ export class DataGridRowsController implements ReactiveController {
     this.rows.delete(id);
 
     if (this.rows.size === 0 && this.#host.defaultItem) {
-      this.addRow(this.#host.defaultItem);
+      this.addRows(this.#host.defaultItem);
     }
 
     this.#host.requestUpdate();

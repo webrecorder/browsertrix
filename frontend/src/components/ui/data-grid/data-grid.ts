@@ -1,4 +1,5 @@
 import { localized, msg } from "@lit/localize";
+import type { SlChangeEvent, SlInput } from "@shoelace-style/shoelace";
 import clsx from "clsx";
 import { css, html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
@@ -12,6 +13,7 @@ import type { DataGridRow, RowRemoveEventDetail } from "./data-grid-row";
 import type { GridColumn, GridItem } from "./types";
 
 import { TailwindElement } from "@/classes/TailwindElement";
+import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
 
 /**
@@ -78,6 +80,13 @@ export class DataGrid extends TailwindElement {
    */
   @property({ type: Boolean })
   addRows = false;
+
+  /**
+   * Make the number of rows being added configurable,
+   * with a default starting value.
+   */
+  @property({ type: Number })
+  addRowsInputValue?: number;
 
   /**
    * Whether cells can be edited.
@@ -197,10 +206,50 @@ export class DataGrid extends TailwindElement {
           }}
         >
           ${this.renderRows()}
+          ${this.addRows && this.addRowsInputValue
+            ? html`
+                <btrix-table-row class="border-t">
+                  <btrix-table-cell class="col-span-full px-1">
+                    <!-- TODO Replace navigation button -->
+                    <btrix-navigation-button
+                      size="small"
+                      @click=${() =>
+                        this.rowsController.addRows(
+                          this.defaultItem,
+                          this.addRowsInputValue,
+                        )}
+                    >
+                      <sl-icon name="plus-lg"></sl-icon>
+                      ${msg("Add")}
+                    </btrix-navigation-button>
+                    <btrix-inline-input
+                      value=${this.addRowsInputValue}
+                      min="1"
+                      max="99"
+                      minlength="1"
+                      maxlength="2"
+                      class="ml-1 w-10"
+                      @sl-change=${(e: SlChangeEvent) => {
+                        const input = e.target as SlInput;
+                        const value = +input.value;
+
+                        this.addRowsInputValue = Math.max(1, value);
+                        input.value = `${this.addRowsInputValue}`;
+                      }}
+                    ></btrix-inline-input>
+                    <span class="ml-2.5 text-neutral-500">
+                      ${msg("more")} ${pluralOf("rows", this.addRowsInputValue)}
+                    </span>
+                  </btrix-table-cell>
+                </btrix-table-row>
+              `
+            : nothing}
         </btrix-table-body>
       </btrix-table>
 
-      ${this.addRows ? this.renderAddButton() : nothing}
+      ${this.addRows && !this.addRowsInputValue
+        ? this.renderAddButton()
+        : nothing}
     `;
   }
 
@@ -230,7 +279,8 @@ export class DataGrid extends TailwindElement {
     return html`<footer class="mt-2">
       <sl-button
         size="small"
-        @click=${() => this.rowsController.addRow(this.defaultItem || {})}
+        class="w-full"
+        @click=${() => this.rowsController.addRows(this.defaultItem)}
       >
         <sl-icon slot="prefix" name="plus-lg"></sl-icon>
         <span class="text-neutral-600">${msg("Add More")}</span>

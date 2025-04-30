@@ -143,6 +143,32 @@ const plurals = {
       id: "URLs.plural.other",
     }),
   },
+  rows: {
+    zero: msg("rows", {
+      desc: 'plural form of "rows" for zero rows',
+      id: "rows.plural.zero",
+    }),
+    one: msg("row", {
+      desc: 'singular form for "row"',
+      id: "rows.plural.one",
+    }),
+    two: msg("rows", {
+      desc: 'plural form of "rows" for two rows',
+      id: "rows.plural.two",
+    }),
+    few: msg("rows", {
+      desc: 'plural form of "rows" for few rows',
+      id: "rows.plural.few",
+    }),
+    many: msg("rows", {
+      desc: 'plural form of "rows" for many rows',
+      id: "rows.plural.many",
+    }),
+    other: msg("rows", {
+      desc: 'plural form of "rows" for multiple/other rows',
+      id: "rows.plural.other",
+    }),
+  },
 };
 
 export const pluralOf = (word: keyof typeof plurals, count: number) => {

@@ -35,6 +35,7 @@ export const renderComponent = ({
   formControlLabel,
   stickyHeader,
   addRows,
+  addRowsInputValue,
   removeRows,
   editCells,
   defaultItem,
@@ -47,6 +48,7 @@ export const renderComponent = ({
       formControlLabel=${ifDefined(formControlLabel)}
       ?stickyHeader=${stickyHeader}
       ?addRows=${addRows}
+      addRowsInputValue=${ifDefined(addRowsInputValue)}
       ?removeRows=${removeRows}
       ?editCells=${editCells}
     >

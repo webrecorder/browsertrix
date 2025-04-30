@@ -105,6 +105,24 @@ export const AddRows: Story = {
 };
 
 /**
+ * The number of rows being added can be configurable.
+ */
+export const AddRowsInput: Story = {
+  name: "Add more than one row",
+  args: {
+    addRows: true,
+    addRowsInputValue: 5,
+    defaultItem: {
+      a: "A",
+      b: "--",
+      c: "--",
+      d: "--",
+      e: "--",
+    },
+  },
+};
+
+/**
  * Cells can be editable.
  */
 export const EditCells: Story = {
