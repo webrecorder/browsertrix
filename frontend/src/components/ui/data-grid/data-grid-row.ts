@@ -201,7 +201,7 @@ export class DataGridRow extends TableRow {
       `;
     }
 
-    return html` ${this.columns.map(this.renderCell)} ${removeCell} `;
+    return html`${this.columns.map(this.renderCell)}${removeCell}`;
   }
 
   private readonly renderCell = (col: GridColumn, i: number) => {
@@ -215,7 +215,7 @@ export class DataGridRow extends TableRow {
         hoist
         placement="bottom"
         trigger=${
-          // Manually show/hide tooltip of blur/focus
+          // Manually show/hide tooltip on blur/focus
           "manual"
         }
       >
