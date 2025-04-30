@@ -283,7 +283,7 @@ export class CrawlList extends TailwindElement {
             [clickable-end] min-content;
         }
       </style>
-      <div class="overflow-auto">
+      <btrix-overflow-scroll class="-mx-3 part-[content]:px-3">
         <btrix-table>
           <btrix-table-head class="mb-2">
             <btrix-table-header-cell class="pr-0">
@@ -320,7 +320,7 @@ export class CrawlList extends TailwindElement {
             <slot @slotchange=${this.handleSlotchange}></slot>
           </btrix-table-body>
         </btrix-table>
-      </div>`;
+      </btrix-overflow-scroll>`;
   }
 
   private handleSlotchange() {

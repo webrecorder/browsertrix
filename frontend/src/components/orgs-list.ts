@@ -115,7 +115,9 @@ export class OrgsList extends BtrixElement {
           library="default"
         ></sl-icon
       ></sl-input>
-      <div class="-mx-3 overflow-x-auto px-3">
+      <btrix-overflow-scroll
+        class="-mx-3 [--btrix-overflow-scroll-scrim-color:theme(colors.neutral.50)] part-[content]:px-3"
+      >
         <btrix-table>
           <btrix-table-head class="mb-2">
             <btrix-table-header-cell>
@@ -144,7 +146,7 @@ export class OrgsList extends BtrixElement {
             ${orgs?.map(this.renderOrg)}
           </btrix-table-body>
         </btrix-table>
-      </div>
+      </btrix-overflow-scroll>
 
       ${this.renderOrgQuotas()} ${this.renderOrgProxies()}
       ${this.renderOrgReadOnly()} ${this.renderOrgDelete()}

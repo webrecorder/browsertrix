@@ -355,36 +355,38 @@ export class Org extends BtrixElement {
       <div
         class="mx-auto box-border w-full overflow-x-hidden overscroll-contain"
       >
-        <nav class="-mx-3 flex items-end overflow-x-auto px-3 xl:px-6">
-          ${this.renderNavTab({
-            tabName: OrgTab.Dashboard,
-            label: msg("Dashboard"),
-          })}
-          ${this.renderNavTab({
-            tabName: OrgTab.Workflows,
-            label: msg("Crawling"),
-          })}
-          ${this.renderNavTab({
-            tabName: OrgTab.Items,
-            label: msg("Archived Items"),
-          })}
-          ${this.renderNavTab({
-            tabName: OrgTab.Collections,
-            label: msg("Collections"),
-          })}
-          ${when(this.appState.isCrawler, () =>
-            this.renderNavTab({
-              tabName: OrgTab.BrowserProfiles,
-              label: msg("Browser Profiles"),
-            }),
-          )}
-          ${when(this.appState.isAdmin || this.userInfo?.isSuperAdmin, () =>
-            this.renderNavTab({
-              tabName: OrgTab.Settings,
-              label: msg("Settings"),
-            }),
-          )}
-        </nav>
+        <btrix-overflow-scroll class="-mx-3 part-[content]:px-3">
+          <nav class="flex items-end xl:px-6">
+            ${this.renderNavTab({
+              tabName: OrgTab.Dashboard,
+              label: msg("Dashboard"),
+            })}
+            ${this.renderNavTab({
+              tabName: OrgTab.Workflows,
+              label: msg("Crawling"),
+            })}
+            ${this.renderNavTab({
+              tabName: OrgTab.Items,
+              label: msg("Archived Items"),
+            })}
+            ${this.renderNavTab({
+              tabName: OrgTab.Collections,
+              label: msg("Collections"),
+            })}
+            ${when(this.appState.isCrawler, () =>
+              this.renderNavTab({
+                tabName: OrgTab.BrowserProfiles,
+                label: msg("Browser Profiles"),
+              }),
+            )}
+            ${when(this.appState.isAdmin || this.userInfo?.isSuperAdmin, () =>
+              this.renderNavTab({
+                tabName: OrgTab.Settings,
+                label: msg("Settings"),
+              }),
+            )}
+          </nav>
+        </btrix-overflow-scroll>
       </div>
 
       <hr />
