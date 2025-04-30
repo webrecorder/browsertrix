@@ -19,7 +19,7 @@ export const renderOverflowScroll = ({
 }: Partial<RenderProps>) => {
   return html`
     <div
-      class="w-[400px] resize-x overflow-hidden rounded rounded-xl border p-4"
+      class="w-[400px] min-w-16 max-w-[818px] resize-x overflow-hidden rounded rounded-lg rounded-br-none border p-2"
     >
       <btrix-overflow-scroll
         direction=${ifDefined(direction)}
