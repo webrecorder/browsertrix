@@ -30,8 +30,11 @@ export type GridColumn<T = string> = {
   required?: boolean;
   inputPlaceholder?: string;
   width?: string;
-  renderEditCell?: ({ item }: { item: GridItem }) => TemplateResult<1>;
-  renderCell?: ({ item }: { item: GridItem }) => TemplateResult<1>;
+  renderEditCell?: (props: {
+    item: GridItem;
+    value?: GridItem[keyof GridItem];
+  }) => TemplateResult<1>;
+  renderCell?: (props: { item: GridItem }) => TemplateResult<1>;
 } & (
   | {
       inputType?: GridColumnType;

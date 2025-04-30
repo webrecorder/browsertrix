@@ -3,6 +3,7 @@ import clsx from "clsx";
 import { html, type PropertyValues } from "lit";
 import { customElement, property, queryAll, state } from "lit/decorators.js";
 import { directive } from "lit/directive.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import isEqual from "lodash/fp/isEqual";
 
 import { CellDirective } from "./cellDirective";
@@ -15,6 +16,7 @@ import type { GridColumn, GridItem, GridRowId } from "./types";
 
 import { DataGridFocusController } from "@/components/ui/data-grid/controllers/focus";
 import { TableRow } from "@/components/ui/table/table-row";
+import { FormControl } from "@/mixins/FormControl";
 import { tw } from "@/utils/tailwind";
 
 export type RowRemoveEventDetail = {
@@ -31,12 +33,7 @@ const editableCellStyle = tw`p-0 focus-visible:bg-slate-50 `;
  */
 @customElement("btrix-data-grid-row")
 @localized()
-export class DataGridRow extends TableRow {
-  // TODO Abstract to mixin or decorator
-  // https://github.com/webrecorder/browsertrix/issues/2577
-  static formAssociated = true;
-  readonly #internals: ElementInternals;
-
+export class DataGridRow extends FormControl(TableRow) {
   /**
    * Set of columns.
    */
@@ -73,12 +70,6 @@ export class DataGridRow extends TableRow {
   @property({ type: String, reflect: true })
   name?: string;
 
-  /**
-   * Make row focusable on validation.
-   */
-  @property({ type: Number, reflect: true })
-  tabindex = 0;
-
   @state()
   private cellValues: Partial<GridItem> = {};
 
@@ -89,42 +80,9 @@ export class DataGridRow extends TableRow {
     InputElement["validationMessage"]
   >();
 
-  public formAssociatedCallback() {
-    console.debug("form associated");
-  }
-
   public formResetCallback() {
     this.setValue(this.item || {});
     this.commitValue();
-  }
-
-  public formDisabledCallback(disabled: boolean) {
-    console.debug("form disabled:", disabled);
-  }
-
-  public formStateRestoreCallback(state: string | FormData, reason: string) {
-    console.debug("formStateRestoreCallback:", state, reason);
-  }
-
-  public checkValidity(): boolean {
-    return this.#internals.checkValidity();
-  }
-
-  public reportValidity(): void {
-    this.#internals.reportValidity();
-  }
-
-  public get validity(): ValidityState {
-    return this.#internals.validity;
-  }
-
-  public get validationMessage(): string {
-    return this.#internals.validationMessage;
-  }
-
-  constructor() {
-    super();
-    this.#internals = this.attachInternals();
   }
 
   protected createRenderRoot() {
@@ -162,7 +120,7 @@ export class DataGridRow extends TableRow {
       this.cellValues[field] = cellValues[field];
     });
 
-    this.#internals.setFormValue(JSON.stringify(this.cellValues));
+    this.setFormValue(JSON.stringify(this.cellValues));
   }
 
   private commitValue() {
@@ -228,6 +186,7 @@ export class DataGridRow extends TableRow {
           )}
           .column=${col}
           .item=${this.item}
+          value=${ifDefined(this.cellValues[col.field] ?? undefined)}
           ?editable=${editable}
           ${cell(col)}
           @keydown=${this.onKeydown}
@@ -337,7 +296,7 @@ export class DataGridRow extends TableRow {
       this.#invalidInputsMap.delete(field);
     } else {
       this.#invalidInputsMap.set(field, validationMessage);
-      this.#internals.setValidity(validity, validationMessage, tableCell);
+      this.setValidity(validity, validationMessage, tableCell);
     }
 
     this.setValue({
@@ -357,7 +316,7 @@ export class DataGridRow extends TableRow {
       this.#invalidInputsMap.delete(field);
     } else {
       this.#invalidInputsMap.set(field, validationMessage);
-      this.#internals.setValidity(validity, validationMessage, tableCell);
+      this.setValidity(validity, validationMessage, tableCell);
     }
 
     this.commitValue();
@@ -371,13 +330,13 @@ export class DataGridRow extends TableRow {
       );
 
       if (firstInvalid?.validity && firstInvalid.validationMessage) {
-        this.#internals.setValidity(
+        this.setValidity(
           firstInvalid.validity,
           firstInvalid.validationMessage,
           firstInvalid,
         );
       } else {
-        this.#internals.setValidity({});
+        this.setValidity({});
       }
     }
   };

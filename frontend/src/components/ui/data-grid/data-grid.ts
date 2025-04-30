@@ -127,12 +127,6 @@ export class DataGrid extends TailwindElement {
   @property({ attribute: false })
   rowsController = new DataGridRowsController(this);
 
-  /**
-   * Make grid focusable on validation.
-   */
-  @property({ type: Number, reflect: true })
-  tabindex = 0;
-
   render() {
     if (!this.columns?.length) return;
 
