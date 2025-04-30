@@ -11,7 +11,7 @@ import json
 import re
 import os
 import traceback
-from datetime import datetime
+from datetime import datetime, timedelta
 from uuid import UUID, uuid4
 import urllib.parse
 
@@ -95,6 +95,8 @@ class CrawlConfigOps:
     crawler_images_map: dict[str, str]
     crawler_image_pull_policy_map: dict[str, str]
 
+    paused_expiry_delta: timedelta
+
     def __init__(
         self,
         dbclient,
@@ -119,6 +121,10 @@ class CrawlConfigOps:
         self.default_filename_template = os.environ["DEFAULT_CRAWL_FILENAME_TEMPLATE"]
         self.default_crawler_image_pull_policy = os.environ.get(
             "DEFAULT_CRAWLER_IMAGE_PULL_POLICY", "IfNotPresent"
+        )
+
+        self.paused_expiry_delta = timedelta(
+            minutes=int(os.environ.get("PAUSED_CRAWL_LIMIT_MINUTES", "10080"))
         )
 
         self.router = APIRouter(
@@ -766,6 +772,12 @@ class CrawlConfigOps:
         crawlconfig.lastCrawlSize = crawl.stats.size if crawl.stats else 0
         crawlconfig.lastCrawlStopping = crawl.stopping
         crawlconfig.lastCrawlPausing = crawl.pausing
+        crawlconfig.lastCrawlPausedAt = crawl.pausedAt
+        crawlconfig.lastCrawlPausedExpiry = None
+        if crawl.pausedAt:
+            crawlconfig.lastCrawlPausedExpiry = (
+                crawl.pausedAt + self.paused_expiry_delta
+            )
         crawlconfig.isCrawlRunning = True
 
     async def get_crawl_config_out(self, cid: UUID, org: Organization):
