@@ -28,7 +28,7 @@ export class OrgsList extends BtrixElement {
   static styles = css`
     btrix-table {
       --btrix-table-grid-template-columns: min-content [clickable-start]
-        minmax(auto, 50ch) auto auto auto [clickable-end] min-content;
+        minmax(auto, 50ch) auto auto auto auto [clickable-end] min-content;
     }
   `;
 
@@ -115,34 +115,36 @@ export class OrgsList extends BtrixElement {
           library="default"
         ></sl-icon
       ></sl-input>
-      <btrix-table>
-        <btrix-table-head class="mb-2">
-          <btrix-table-header-cell>
-            <span class="sr-only">${msg("Status")}</span>
-          </btrix-table-header-cell>
-          <btrix-table-header-cell class="px-2">
-            ${msg("Name")}
-          </btrix-table-header-cell>
-          <btrix-table-header-cell class="px-2">
-            ${msg("Created")}
-          </btrix-table-header-cell>
-          <btrix-table-header-cell class="px-2">
-            ${msg("Members")}
-          </btrix-table-header-cell>
-          <btrix-table-header-cell class="px-2">
-            ${msg("Bytes Stored")}
-          </btrix-table-header-cell>
-          <btrix-table-header-cell class="px-2">
-            ${msg("Last Crawl")}
-          </btrix-table-header-cell>
-          <btrix-table-header-cell>
-            <span class="sr-only">${msg("Actions")}</span>
-          </btrix-table-header-cell>
-        </btrix-table-head>
-        <btrix-table-body class="rounded border">
-          ${orgs?.map(this.renderOrg)}
-        </btrix-table-body>
-      </btrix-table>
+      <div class="-mx-3 overflow-x-auto px-3">
+        <btrix-table>
+          <btrix-table-head class="mb-2">
+            <btrix-table-header-cell>
+              <span class="sr-only">${msg("Status")}</span>
+            </btrix-table-header-cell>
+            <btrix-table-header-cell class="px-2">
+              ${msg("Name")}
+            </btrix-table-header-cell>
+            <btrix-table-header-cell class="px-2">
+              ${msg("Created")}
+            </btrix-table-header-cell>
+            <btrix-table-header-cell class="px-2">
+              ${msg("Members")}
+            </btrix-table-header-cell>
+            <btrix-table-header-cell class="px-2">
+              ${msg("Bytes Stored")}
+            </btrix-table-header-cell>
+            <btrix-table-header-cell class="px-2">
+              ${msg("Last Crawl")}
+            </btrix-table-header-cell>
+            <btrix-table-header-cell>
+              <span class="sr-only">${msg("Actions")}</span>
+            </btrix-table-header-cell>
+          </btrix-table-head>
+          <btrix-table-body class="rounded border">
+            ${orgs?.map(this.renderOrg)}
+          </btrix-table-body>
+        </btrix-table>
+      </div>
 
       ${this.renderOrgQuotas()} ${this.renderOrgProxies()}
       ${this.renderOrgReadOnly()} ${this.renderOrgDelete()}

@@ -446,12 +446,12 @@ export class ArchivedItemList extends TailwindElement {
     return html`
       <style>
         btrix-table {
-          grid-template-columns: ${headerCols
+          --btrix-table-grid-template-columns: ${headerCols
             .map(({ cssCol }) => cssCol)
             .join(" ")};
         }
       </style>
-      <div class="overflow-auto">
+      <div class="-mx-5 overflow-auto px-5">
         <btrix-table>
           <btrix-table-head class="mb-2">
             <slot

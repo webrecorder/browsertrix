@@ -752,7 +752,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
     return html`
       <btrix-table
         class="-mx-3 overflow-x-auto px-5"
-        style="grid-template-columns: ${[
+        style="--btrix-table-grid-template-columns: ${[
           "[clickable-start] minmax(12rem, auto)",
           "minmax(min-content, 12rem)",
           "minmax(min-content, 12rem) [clickable-end]",

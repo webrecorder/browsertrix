@@ -50,7 +50,11 @@ export class OverflowDropdown extends TailwindElement {
         hoist
         distance=${ifDefined(this.raised ? "4" : undefined)}
       >
-        <btrix-button slot="trigger" ?raised=${this.raised} size=${this.size}>
+        <btrix-button
+          slot="trigger"
+          ?raised=${this.raised}
+          size=${ifDefined(this.size)}
+        >
           <sl-icon
             label=${msg("Actions")}
             name="three-dots-vertical"

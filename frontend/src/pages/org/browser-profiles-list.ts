@@ -56,9 +56,8 @@ export class BrowserProfilesList extends BtrixElement {
 
   static styles = css`
     btrix-table {
-      grid-template-columns:
-        [clickable-start] minmax(30ch, 50ch) minmax(30ch, 40ch) repeat(2, 1fr)
-        [clickable-end] min-content;
+      --btrix-table-grid-template-columns: [clickable-start] minmax(30ch, 50ch)
+        minmax(30ch, 40ch) repeat(2, 1fr) [clickable-end] min-content;
       --btrix-table-cell-gap: var(--sl-spacing-x-small);
       --btrix-table-cell-padding-x: var(--sl-spacing-small);
     }
