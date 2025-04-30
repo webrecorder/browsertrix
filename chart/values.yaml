@@ -82,6 +82,9 @@ allow_dupe_invites: "0"
 # number of seconds before pending invites expire - default is 7 days
 invite_expire_seconds: 604800
 
+# number of minutes before paused crawls are stopped - default is 7 days
+paused_crawl_limit_minutes: 10080
+
 # base url for replayweb.page
 rwp_base_url: "https://cdn.jsdelivr.net/npm/replaywebpage@2.3.3/"
 

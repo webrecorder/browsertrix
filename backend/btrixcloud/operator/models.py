@@ -1,6 +1,7 @@
 """Operator Models"""
 
 from collections import defaultdict
+from datetime import datetime
 from uuid import UUID
 from typing import Optional, DefaultDict, Literal, Annotated, Any
 from pydantic import BaseModel, Field
@@ -17,6 +18,7 @@ CJS = f"CrawlJob.{BTRIX_API}"
 
 StopReason = Literal[
     "stopped_by_user",
+    "stopped_pause_expired",
     "time-limit",
     "size-limit",
     "stopped_storage_quota_reached",
@@ -76,7 +78,7 @@ class CrawlSpec(BaseModel):
     started: str
     crawler_channel: str
     stopping: bool = False
-    paused: bool = False
+    paused_at: Optional[datetime] = None
     scheduled: bool = False
     timeout: int = 0
     max_crawl_size: int = 0

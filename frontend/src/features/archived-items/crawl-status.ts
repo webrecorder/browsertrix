@@ -241,6 +241,16 @@ export class CrawlStatus extends TailwindElement {
         label = msg("Stopped");
         break;
 
+      case "stopped_pause_expired":
+        color = "var(--warning)";
+        icon = html`<sl-icon
+          name="dash-square-fill"
+          slot="prefix"
+          style="color: ${color}"
+        ></sl-icon>`;
+        label = msg("Stopped: Paused Too Long");
+        break;
+
       case "stopped_storage_quota_reached":
         color = "var(--warning)";
         icon = html`<sl-icon

@@ -5,7 +5,7 @@ import os
 import math
 from pprint import pprint
 from typing import Optional, Any, Sequence
-from datetime import datetime
+from datetime import datetime, timedelta
 from uuid import UUID
 
 import json
@@ -79,6 +79,7 @@ MEM_LIMIT_PADDING = 1.2
 
 # pylint: disable=too-many-public-methods, too-many-locals, too-many-branches, too-many-statements
 # pylint: disable=invalid-name, too-many-lines, too-many-return-statements
+# pylint: disable=too-many-instance-attributes
 # ============================================================================
 class CrawlOperator(BaseOperator):
     """CrawlOperator Handler"""
@@ -92,6 +93,8 @@ class CrawlOperator(BaseOperator):
     log_failed_crawl_lines: int
 
     min_avail_storage_ratio: float
+
+    paused_expires_delta: timedelta
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -109,6 +112,13 @@ class CrawlOperator(BaseOperator):
         self.min_avail_storage_ratio = float(
             os.environ.get("CRAWLER_MIN_AVAIL_STORAGE_RATIO") or 0
         )
+
+        # time in minutes before paused crawl is stopped - default is 7 days
+        paused_crawl_limit_minutes = int(
+            os.environ.get("PAUSED_CRAWL_LIMIT_MINUTES", "10080")
+        )
+
+        self.paused_expires_delta = timedelta(minutes=paused_crawl_limit_minutes)
 
     def init_routes(self, app):
         """init routes for this operator"""
@@ -160,7 +170,7 @@ class CrawlOperator(BaseOperator):
             scale=spec.get("scale", 1),
             started=data.parent["metadata"]["creationTimestamp"],
             stopping=spec.get("stopping", False),
-            paused=spec.get("paused", False),
+            paused_at=str_to_date(spec.get("pausedAt")),
             timeout=spec.get("timeout") or 0,
             max_crawl_size=int(spec.get("maxCrawlSize") or 0),
             scheduled=spec.get("manual") != "1",
@@ -265,11 +275,25 @@ class CrawlOperator(BaseOperator):
             status.scale = 1
 
         # stopping paused crawls
-        if crawl.paused and crawl.stopping:
-            status.stopReason = "stopped_by_user"
-            status.stopping = True
-            print(f"Paused crawl stopped by user, id: {crawl.id}")
-            await self.mark_finished(crawl, status, "stopped_by_user")
+        if crawl.paused_at:
+            stop_reason: Optional[StopReason] = None
+            state: Optional[TYPE_NON_RUNNING_STATES] = None
+            # Check if pause expiry limit is reached and if so, stop crawl
+            if dt_now() >= (crawl.paused_at + self.paused_expires_delta):
+                print(f"Paused crawl expiry reached, stopping crawl, id: {crawl.id}")
+                stop_reason = "stopped_pause_expired"
+                state = "stopped_pause_expired"
+
+            # Check if paused crawl was stopped manually
+            elif crawl.stopping:
+                print(f"Paused crawl stopped by user, id: {crawl.id}")
+                stop_reason = "stopped_by_user"
+                state = "stopped_by_user"
+
+            if stop_reason and state:
+                status.stopping = True
+                status.stopReason = stop_reason
+                await self.mark_finished(crawl, status, state)
 
         children = self._load_redis(params, status, data.children)
 
@@ -335,7 +359,9 @@ class CrawlOperator(BaseOperator):
 
         for i in range(0, status.scale):
             children.extend(
-                self._load_crawler(params, i, status, data.children, crawl.paused)
+                self._load_crawler(
+                    params, i, status, data.children, bool(crawl.paused_at)
+                )
             )
 
         return {
@@ -858,12 +884,12 @@ class CrawlOperator(BaseOperator):
                 ):
                     # mark as waiting (if already running)
                     await self.set_state(
-                        "waiting_capacity" if not crawl.paused else "paused",
+                        "waiting_capacity" if not crawl.paused_at else "paused",
                         status,
                         crawl,
                         allowed_from=(
                             RUNNING_AND_STARTING_ONLY
-                            if not crawl.paused
+                            if not crawl.paused_at
                             else RUNNING_AND_WAITING_STATES
                         ),
                     )
@@ -884,7 +910,7 @@ class CrawlOperator(BaseOperator):
 
                     # crawler pods already shut down, remove redis pause key
                     # for simple resume later
-                    if crawl.paused:
+                    if crawl.paused_at:
                         await redis.delete(f"{crawl.id}:paused")
 
                 elif crawler_running and not redis:
@@ -896,7 +922,7 @@ class CrawlOperator(BaseOperator):
                 return status
 
             # only get here if at least one crawler pod is running
-            if crawl.paused:
+            if crawl.paused_at:
                 await redis.set(f"{crawl.id}:paused", "1")
 
             # update lastActiveTime if crawler is running
