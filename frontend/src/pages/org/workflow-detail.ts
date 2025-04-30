@@ -616,33 +616,37 @@ export class WorkflowDetail extends BtrixElement {
     const workflow = this.workflow;
 
     const archivingDisabled = isArchivingDisabled(this.org, true);
+    const paused = workflow.lastCrawlState === "paused";
+    const hidePause =
+      !this.lastCrawlId ||
+      this.isCancelingOrStoppingCrawl ||
+      this.workflow.lastCrawlStopping;
+    const disablePause =
+      this.workflow.lastCrawlPausing ===
+      (this.workflow.lastCrawlState === "running");
 
     return html`
       ${when(
         this.workflow.isCrawlRunning,
         () => html`
           <sl-button-group>
-            <sl-button
-              size="small"
-              @click=${this.pauseUnpause}
-              ?disabled=${!this.lastCrawlId ||
-              this.isCancelingOrStoppingCrawl ||
-              this.workflow?.lastCrawlStopping ||
-              this.workflow?.lastCrawlPausing ===
-                (this.workflow?.lastCrawlState === "running")}
-            >
-              <sl-icon
-                name=${workflow.lastCrawlState !== "paused"
-                  ? "pause-btn"
-                  : "play-btn"}
-                slot="prefix"
-              ></sl-icon>
-              <span
-                >${workflow.lastCrawlState !== "paused"
-                  ? msg("Pause")
-                  : msg("Resume")}</span
-              >
-            </sl-button>
+            ${when(
+              !hidePause,
+              () => html`
+                <sl-button
+                  size="small"
+                  @click=${this.pauseUnpause}
+                  ?disabled=${disablePause}
+                  variant=${ifDefined(paused ? "primary" : undefined)}
+                >
+                  <sl-icon
+                    name=${paused ? "play-circle" : "pause-circle"}
+                    slot="prefix"
+                  ></sl-icon>
+                  <span>${paused ? msg("Resume") : msg("Pause")}</span>
+                </sl-button>
+              `,
+            )}
             <sl-button
               size="small"
               @click=${() => (this.openDialogName = "stop")}
@@ -1567,12 +1571,21 @@ export class WorkflowDetail extends BtrixElement {
       } else {
         throw data;
       }
+
+      this.notify.toast({
+        message: pause ? msg("Pausing crawl.") : msg("Resuming paused crawl."),
+        variant: "success",
+        icon: "check2-circle",
+        id: "crawl-pause-unpause-status",
+      });
     } catch {
       this.notify.toast({
-        message: msg("Something went wrong, couldn't pause or unpause crawl."),
+        message: pause
+          ? msg("Something went wrong, couldn't pause crawl.")
+          : msg("Something went wrong, couldn't resume paused crawl."),
         variant: "danger",
         icon: "exclamation-octagon",
-        id: "crawl-pause-error",
+        id: "crawl-pause-unpause-status",
       });
     }
   }
