@@ -11,7 +11,7 @@ import json
 import re
 import os
 import traceback
-from datetime import datetime
+from datetime import datetime, timedelta
 from uuid import UUID, uuid4
 import urllib.parse
 
@@ -750,6 +750,13 @@ class CrawlConfigOps:
         crawlconfig.lastCrawlSize = crawl.stats.size if crawl.stats else 0
         crawlconfig.lastCrawlStopping = crawl.stopping
         crawlconfig.lastCrawlPausing = crawl.pausing
+        crawlconfig.lastCrawlPausedAt = crawl.pausedAt
+        crawlconfig.lastCrawlPausedExpiry = None
+        if crawl.pausedAt:
+            minutes_until_expiry = int(
+                os.environ.get("PAUSED_CRAWL_LIMIT_MINUTES", "10080")
+            )
+            crawlconfig.lastCrawlPausedExpiry = crawl.pausedAt + timedelta(minutes=minutes_until_expiry)
         crawlconfig.isCrawlRunning = True
 
     async def get_crawl_config_out(self, cid: UUID, org: Organization):
