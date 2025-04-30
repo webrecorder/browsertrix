@@ -5,8 +5,6 @@ import type { EmptyObject } from "type-fest";
 import type { DataGrid } from "../data-grid";
 import type { GridItem, GridRowId, GridRows } from "../types";
 
-import { cached } from "@/utils/weakCache";
-
 /**
  * Enables removing and adding rows from a grid.
  *
@@ -24,6 +22,8 @@ export class DataGridRowsController implements ReactiveController {
       removeRows?: DataGrid["removeRows"];
       addRows?: DataGrid["addRows"];
     };
+
+  readonly #rowIds = new Map<GridItem, GridRowId>();
 
   #prevItems?: GridItem[];
 
@@ -55,8 +55,23 @@ export class DataGridRowsController implements ReactiveController {
             item[rowKey as unknown as string] as GridRowId,
             item,
           ])
-        : items.map(cached((item) => [nanoid(), item])),
+        : items.map((item) => [this.getCachedId(item), item]),
     );
+  }
+
+  /**
+   * Use item reference to get a persistent generated ID.
+   */
+  private getCachedId(item: GridItem): GridRowId {
+    const id = this.#rowIds.get(item);
+
+    if (id) return id;
+
+    const newId = nanoid();
+
+    this.#rowIds.set(item, newId);
+
+    return newId;
   }
 
   public setItems(items: GridItem[]) {
