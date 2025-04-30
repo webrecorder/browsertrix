@@ -1,6 +1,6 @@
 """Operator Models"""
-
 from collections import defaultdict
+from datetime import datetime
 from uuid import UUID
 from typing import Optional, DefaultDict, Literal, Annotated, Any
 from pydantic import BaseModel, Field
@@ -77,6 +77,7 @@ class CrawlSpec(BaseModel):
     crawler_channel: str
     stopping: bool = False
     paused: bool = False
+    paused_at: Optional[datetime] = None
     scheduled: bool = False
     timeout: int = 0
     max_crawl_size: int = 0

@@ -5,7 +5,7 @@ import os
 import math
 from pprint import pprint
 from typing import Optional, Any, Sequence
-from datetime import datetime
+from datetime import datetime, timedelta
 from uuid import UUID
 
 import json
@@ -75,6 +75,11 @@ MEM_SOFT_OOM_THRESHOLD = 1.0
 
 # set memory limit to this much of request for extra padding
 MEM_LIMIT_PADDING = 1.2
+
+# time in minutes before paused crawl is stopped - default is 7 days
+paused_crawl_limit_minutes = int(
+    os.environ.get("PAUSED_CRAWL_LIMIT_MINUTES", "10080")
+)
 
 
 # pylint: disable=too-many-public-methods, too-many-locals, too-many-branches, too-many-statements
@@ -161,6 +166,7 @@ class CrawlOperator(BaseOperator):
             started=data.parent["metadata"]["creationTimestamp"],
             stopping=spec.get("stopping", False),
             paused=spec.get("paused", False),
+            paused_at=spec.get("pausedAt", None),
             timeout=spec.get("timeout") or 0,
             max_crawl_size=int(spec.get("maxCrawlSize") or 0),
             scheduled=spec.get("manual") != "1",
@@ -229,6 +235,18 @@ class CrawlOperator(BaseOperator):
                         crawl, status, "skipped_time_quota_reached"
                     )
                     return self._empty_response(status)
+
+        if crawl.paused:
+            # Check if paused limit is reached and if so, stop crawl
+            expires_delta = timedelta(minutes=paused_crawl_limit_minutes)
+            expire_dt = crawl.paused_at + expires_delta
+
+            if dt_now() >= expire_dt:
+                # TODO: Stop the crawl
+                # 1. Delete any data (e.g. redis state) we've been storing
+                # 2. Update crawlspec?
+                # 3. Call mark_finished with state "stopped"
+                pass
 
         if status.state in ("starting", "waiting_org_limit"):
             if not await self.can_start_new(crawl, data, status):

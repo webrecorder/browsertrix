@@ -778,13 +778,18 @@ class CrawlOps(BaseCrawlOps):
             raise HTTPException(status_code=400, detail="not_a_crawl")
 
         result = None
+
+        paused_at = None
+        if pause:
+            paused_at = dt_now()
+
         try:
-            result = await self.crawl_manager.pause_resume_crawl(crawl_id, pause=pause)
+            result = await self.crawl_manager.pause_resume_crawl(crawl_id, pause=pause, paused_at=paused_at)
 
             if result.get("success"):
                 await self.crawls.find_one_and_update(
                     {"_id": crawl_id, "type": "crawl", "oid": org.id},
-                    {"$set": {"pausing": pause}},
+                    {"$set": {"pausing": pause, "pausedAt": paused_at}},
                 )
 
                 return {"success": True}

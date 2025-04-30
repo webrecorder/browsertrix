@@ -867,6 +867,7 @@ class CrawlOut(BaseMongoModel):
     profileName: Optional[str] = None
     stopping: Optional[bool] = False
     pausing: Optional[bool] = False
+    pausedAt: Optional[datetime] = None
     manual: bool = False
     cid_rev: Optional[int] = None
     scale: Scale = 1

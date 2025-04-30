@@ -37,4 +37,5 @@ spec:
   proxyId: "{{ proxy_id }}"
 
   paused: {{ paused or 0 }}
+  pausedAt: "{{ pausedAt }}"
 
