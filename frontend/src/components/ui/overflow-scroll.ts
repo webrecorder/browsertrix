@@ -5,6 +5,8 @@ import { customElement, property } from "lit/decorators.js";
  * Overflow scroller. Optionally displays a scrim/shadow (a small gradient
  * indicating there's more available content) on supported browsers,
  * depending on scroll position.
+ * @slot
+ * @cssPart content
  * @cssproperty --btrix-overflow-scrim-width The width of the scrim. 3rem by default.
  * @cssproperty --btrix-overflow-scroll-scrim-color The color of the scrim. White by default.
  */
