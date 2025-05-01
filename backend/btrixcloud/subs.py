@@ -394,7 +394,7 @@ def init_subs_api(
     assert org_ops.router
 
     @app.get(
-        "/subscriptions/isActivated/{sub_id}",
+        "/subscriptions/is-activated/{sub_id}",
         tags=["subscriptions"],
         dependencies=[Depends(user_or_shared_secret_dep)],
         response_model=SuccessResponse,
