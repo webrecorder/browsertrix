@@ -18,6 +18,7 @@ CJS = f"CrawlJob.{BTRIX_API}"
 
 StopReason = Literal[
     "stopped_by_user",
+    "paused",
     "stopped_pause_expired",
     "time-limit",
     "size-limit",

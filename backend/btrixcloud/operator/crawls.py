@@ -877,6 +877,28 @@ class CrawlOperator(BaseOperator):
             if status.anyCrawlPodNewExit:
                 await self.log_crashes(crawl.id, status.podStatus, redis)
 
+                if crawl.paused_at and redis:
+                    for name in pods.keys():
+                        pod_status = status.podStatus[name]
+                        if (
+                            pod_status.isNewExit
+                            and pod_status.exitTime
+                            and pod_status.reason == "done"
+                        ):
+                            await redis.hset(f"{crawl.id}:status", name, "interrupted")
+
+            # remove stopping key (used for pause) unless actually stopping if:
+            # 1. no more crawler pods running (to allow easily to resume)
+            # 2. crawl has already been resumed, to allow pods to resume instantly
+            if (
+                not crawl.stopping
+                and redis
+                and status.stopReason == "paused"
+                and (not crawler_running or not crawl.paused_at)
+            ):
+                await redis.delete(f"{crawl.id}:stopping")
+                await redis.delete("crawl-stop")
+
             if not crawler_running or not redis:
                 # if either crawler is not running or redis is inaccessible
                 if not pod_done_count and self.should_mark_waiting(
@@ -908,11 +930,6 @@ class CrawlOperator(BaseOperator):
                         )
                         status.initRedis = False
 
-                    # crawler pods already shut down, remove redis pause key
-                    # for simple resume later
-                    if crawl.paused_at:
-                        await redis.delete(f"{crawl.id}:paused")
-
                 elif crawler_running and not redis:
                     # if crawler is running, but no redis, init redis
                     status.initRedis = True
@@ -922,8 +939,6 @@ class CrawlOperator(BaseOperator):
                 return status
 
             # only get here if at least one crawler pod is running
-            if crawl.paused_at:
-                await redis.set(f"{crawl.id}:paused", "1")
 
             # update lastActiveTime if crawler is running
             if crawler_running:
@@ -1332,8 +1347,6 @@ class CrawlOperator(BaseOperator):
             crawl.db_crawl_id, crawl.is_qa, crawl_file, filecomplete.size
         )
 
-        print("FILE ADDED", filecomplete.size)
-
         # no replicas for QA for now
         if crawl.is_qa:
             return True
@@ -1355,6 +1368,9 @@ class CrawlOperator(BaseOperator):
         # if user requested stop, then enter stopping phase
         if crawl.stopping:
             return "stopped_by_user"
+
+        if crawl.paused_at:
+            return "paused"
 
         # check timeout if timeout time exceeds elapsed time
         if crawl.timeout:
@@ -1477,17 +1493,26 @@ class CrawlOperator(BaseOperator):
                     f"Attempting to adjust storage to {pod_info.newStorage} for {key}"
                 )
 
+        # check if no longer paused, clear paused stopping state
+        if status.stopReason == "paused" and not crawl.paused_at:
+            status.stopReason = None
+            status.stopping = False
+
         if not status.stopReason:
             status.stopReason = await self.is_crawl_stopping(crawl, status, data)
             status.stopping = status.stopReason is not None
-            if status.stopping:
-                print("Crawl gracefully stopping: {status.stopReason}, id: {crawl.id}")
 
         # mark crawl as stopping
         if status.stopping:
             await redis.set(f"{crawl.id}:stopping", "1")
             # backwards compatibility with older crawler
             await redis.set("crawl-stop", "1")
+
+            if status.stopReason == "paused":
+                print(f"Crawl paused, id: {crawl.id}")
+                return status
+
+            print(f"Crawl gracefully stopping: {status.stopReason}, id: {crawl.id}")
 
         # resolve scale
         if crawl.scale != status.scale:
