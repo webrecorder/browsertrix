@@ -10,6 +10,7 @@ import { nanoid } from "nanoid";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { SyntaxInput } from "@/components/ui/syntax-input";
 import type { BtrixChangeEvent } from "@/events/btrix-change";
+import { FormControl } from "@/mixins/FormControl";
 import type { SeedConfig } from "@/types/crawler";
 import { tw } from "@/utils/tailwind";
 
@@ -24,7 +25,7 @@ const syntaxInputClasses = tw`flex-1 [--sl-input-border-color:transparent] [--sl
  */
 @customElement("btrix-link-selector-table")
 @localized()
-export class LinkSelectorTable extends BtrixElement {
+export class LinkSelectorTable extends FormControl(BtrixElement) {
   @property({ type: Array })
   selectors: SeedConfig["selectLinks"] = [];
 
@@ -48,34 +49,6 @@ export class LinkSelectorTable extends BtrixElement {
     return this.rows
       .filter(({ cells }) => cells[0] || cells[1])
       .map(({ cells }) => cells.join(SELECTOR_DELIMITER));
-  }
-
-  public reportValidity() {
-    let tableValid = true;
-
-    this.syntaxInputs.forEach((input) => {
-      const valid = input.reportValidity();
-
-      if (!valid) {
-        tableValid = valid;
-      }
-    });
-
-    return tableValid;
-  }
-
-  public checkValidity() {
-    let tableValid = true;
-
-    this.syntaxInputs.forEach((input) => {
-      const valid = input.checkValidity();
-
-      if (!valid) {
-        tableValid = valid;
-      }
-    });
-
-    return tableValid;
   }
 
   protected willUpdate(changedProperties: PropertyValues): void {
@@ -157,10 +130,24 @@ export class LinkSelectorTable extends BtrixElement {
                 value=${sel}
                 language="css"
                 placeholder=${msg("Enter selector")}
-                ?required=${Boolean(attr)}
+                required
                 @btrix-change=${(e: BtrixChangeEvent<typeof sel>) => {
                   const el = e.target as SyntaxInput;
                   const value = e.detail.value.trim();
+
+                  this.validateValue(
+                    {
+                      input: el,
+                      value,
+
+                      validationMessage: msg(
+                        "Please enter a valid CSS selector",
+                      ),
+                    },
+                    () => {
+                      this.cssParser(value);
+                    },
+                  );
 
                   void this.updateRows(
                     {
@@ -169,17 +156,6 @@ export class LinkSelectorTable extends BtrixElement {
                     },
                     i,
                   );
-
-                  if (value) {
-                    try {
-                      // Validate selector
-                      this.cssParser(value);
-                    } catch {
-                      el.setCustomValidity(
-                        msg("Please enter a valid CSS selector"),
-                      );
-                    }
-                  }
                 }}
               >
               </btrix-syntax-input>
@@ -203,10 +179,24 @@ export class LinkSelectorTable extends BtrixElement {
                 value=${attr}
                 language="xml"
                 placeholder=${msg("Enter attribute")}
-                ?required=${Boolean(sel)}
+                required
                 @btrix-change=${(e: BtrixChangeEvent<typeof attr>) => {
                   const el = e.target as SyntaxInput;
                   const value = e.detail.value.trim();
+
+                  this.validateValue(
+                    {
+                      input: el,
+                      value,
+
+                      validationMessage: msg(
+                        "Please enter a valid HTML attribute",
+                      ),
+                    },
+                    () => {
+                      document.createElement("a").setAttribute(value, "x-test");
+                    },
+                  );
 
                   void this.updateRows(
                     {
@@ -215,17 +205,6 @@ export class LinkSelectorTable extends BtrixElement {
                     },
                     i,
                   );
-
-                  if (value) {
-                    try {
-                      // Validate attribute
-                      document.createElement("a").setAttribute(value, "x-test");
-                    } catch {
-                      el.setCustomValidity(
-                        msg("Please enter a valid HTML attribute"),
-                      );
-                    }
-                  }
                 }}
               >
               </btrix-syntax-input>
@@ -256,6 +235,50 @@ export class LinkSelectorTable extends BtrixElement {
       </btrix-table-row>
     `;
   };
+
+  private validateValue(
+    {
+      input,
+      value,
+      validationMessage,
+    }: {
+      input: SyntaxInput;
+      value: string;
+      validationMessage: string;
+    },
+    validate: () => void,
+  ) {
+    if (!value) {
+      if (input.validity.valueMissing) {
+        this.setValidity(input.validity, input.validationMessage, input);
+      }
+      return;
+    }
+
+    try {
+      validate();
+
+      input.setCustomValidity("");
+
+      // Check if any others are invalid
+      const invalidInput = Array.from(this.syntaxInputs).find((input) => {
+        return !input.validity.valid;
+      });
+
+      if (invalidInput) {
+        this.setValidity(
+          invalidInput.validity,
+          invalidInput.validationMessage,
+          invalidInput,
+        );
+      } else {
+        this.setValidity({});
+      }
+    } catch {
+      input.setCustomValidity(validationMessage);
+      this.setValidity(input.validity, input.validationMessage, input);
+    }
+  }
 
   private async updateRows(
     row: LinkSelectorTable["rows"][0] | undefined,

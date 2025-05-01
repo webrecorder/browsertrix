@@ -1,4 +1,3 @@
-import { localized } from "@lit/localize";
 import type {
   SlInput,
   SlInputEvent,
@@ -6,13 +5,14 @@ import type {
   SlTooltip,
 } from "@shoelace-style/shoelace";
 import clsx from "clsx";
-import { html } from "lit";
+import { html, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import type { Code } from "@/components/ui/code";
 import { FormControl } from "@/mixins/FormControl";
+import { validationMessageFor } from "@/strings/validation";
 import { tw } from "@/utils/tailwind";
 
 /**
@@ -22,7 +22,6 @@ import { tw } from "@/utils/tailwind";
  * @fires btrix-change
  */
 @customElement("btrix-syntax-input")
-@localized()
 export class SyntaxInput extends FormControl(TailwindElement) {
   @property({ type: String })
   value = "";
@@ -100,6 +99,17 @@ export class SyntaxInput extends FormControl(TailwindElement) {
     document.removeEventListener("selectionchange", this.onSelectionChange);
   }
 
+  protected updated(changedProperties: PropertyValues): void {
+    if (changedProperties.has("value") || changedProperties.has("required")) {
+      if (this.required && !this.value) {
+        this.setValidity(
+          { valueMissing: true },
+          validationMessageFor.valueMissing,
+        );
+      }
+    }
+  }
+
   render() {
     return html`<sl-tooltip
       content=${this.error}
@@ -147,6 +157,7 @@ export class SyntaxInput extends FormControl(TailwindElement) {
                 new CustomEvent("btrix-input", {
                   detail: { value },
                   bubbles: true,
+                  composed: true,
                 }),
               );
 
@@ -185,6 +196,7 @@ export class SyntaxInput extends FormControl(TailwindElement) {
                 new CustomEvent("btrix-change", {
                   detail: { value: this.code.value },
                   bubbles: true,
+                  composed: true,
                 }),
               );
             }

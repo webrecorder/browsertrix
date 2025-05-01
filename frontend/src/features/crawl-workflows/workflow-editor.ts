@@ -2207,15 +2207,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
     if (!this.formElem) return;
 
-    // TODO Move away from manual validation check
-    // See https://github.com/webrecorder/browsertrix/issues/2536
-    if (this.formState.autoclickBehavior && this.clickSelector) {
-      if (!this.clickSelector.checkValidity()) {
-        this.clickSelector.reportValidity();
-        return;
-      }
-    }
-
     // Wait for custom behaviors validation to finish
     // TODO Move away from manual validation check
     // See https://github.com/webrecorder/browsertrix/issues/2536
