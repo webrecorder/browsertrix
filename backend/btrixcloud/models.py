@@ -218,11 +218,13 @@ class UserOrgInfoOut(BaseModel):
 
 # ============================================================================
 TYPE_RUNNING_STATES = Literal[
-    "running", "pending-wait", "generate-wacz", "uploading-wacz", "paused"
+    "running", "pending-wait", "generate-wacz", "uploading-wacz"
 ]
 RUNNING_STATES = get_args(TYPE_RUNNING_STATES)
 
-TYPE_WAITING_STATES = Literal["starting", "waiting_capacity", "waiting_org_limit"]
+TYPE_WAITING_STATES = Literal[
+    "starting", "waiting_capacity", "waiting_org_limit", "paused"
+]
 WAITING_STATES = get_args(TYPE_WAITING_STATES)
 
 TYPE_FAILED_STATES = Literal[

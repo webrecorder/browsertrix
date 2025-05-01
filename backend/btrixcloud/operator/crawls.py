@@ -262,12 +262,14 @@ class CrawlOperator(BaseOperator):
             )
 
         else:
-            if crawl.paused:
-                await self.set_state(
-                    "paused", status, crawl, allowed_from=RUNNING_AND_WAITING_STATES
-                )
-
             status.scale = 1
+
+        # stopping paused crawls
+        if crawl.paused and crawl.stopping:
+            status.stopReason = "stopped_by_user"
+            status.stopping = True
+            print(f"Paused crawl stopped by user, id: {crawl.id}")
+            await self.mark_finished(crawl, status, "stopped_by_user")
 
         children = self._load_redis(params, status, data.children)
 
@@ -880,8 +882,9 @@ class CrawlOperator(BaseOperator):
                         )
                         status.initRedis = False
 
-                    # crawler pods already shut down, remove redis pause key to allow unpausing later
-                    if crawl.paused or not status.initRedis:
+                    # crawler pods already shut down, remove redis pause key
+                    # for simple resume later
+                    if crawl.paused:
                         await redis.delete(f"{crawl.id}:paused")
 
                 elif crawler_running and not redis:
@@ -891,6 +894,10 @@ class CrawlOperator(BaseOperator):
                 # if no crawler / no redis, resync after N seconds
                 status.resync_after = self.fast_retry_secs
                 return status
+
+            # only get here if at least one crawler pod is running
+            if crawl.paused:
+                await redis.set(f"{crawl.id}:paused", "1")
 
             # update lastActiveTime if crawler is running
             if crawler_running:
@@ -1299,6 +1306,8 @@ class CrawlOperator(BaseOperator):
             crawl.db_crawl_id, crawl.is_qa, crawl_file, filecomplete.size
         )
 
+        print("FILE ADDED", filecomplete.size)
+
         # no replicas for QA for now
         if crawl.is_qa:
             return True
@@ -1453,9 +1462,6 @@ class CrawlOperator(BaseOperator):
             await redis.set(f"{crawl.id}:stopping", "1")
             # backwards compatibility with older crawler
             await redis.set("crawl-stop", "1")
-
-        if crawl.paused:
-            await redis.set(f"{crawl.id}:paused", "1")
 
         # resolve scale
         if crawl.scale != status.scale:
