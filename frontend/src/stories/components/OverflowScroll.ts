@@ -4,11 +4,9 @@ import { ifDefined } from "lit/directives/if-defined.js";
 
 import { defaultArgs, renderTable } from "./Table";
 
-// eslint-disable-next-line
-import type { OverflowScroll } from "@/components/ui/overflow-scroll";
-
 import "@/components/ui/overflow-scroll";
 
+import type { OverflowScroll } from "@/components/ui/overflow-scroll";
 import { tw } from "@/utils/tailwind";
 
 export type RenderProps = OverflowScroll;
