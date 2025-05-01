@@ -106,6 +106,8 @@ export class LiveWorkflowStatus extends BtrixElement {
         <btrix-crawl-status
           class="block"
           state=${lastCrawlState}
+          ?stopping=${workflow.lastCrawlStopping}
+          ?pausing=${workflow.lastCrawlPausing}
         ></btrix-crawl-status>
       `;
     });
