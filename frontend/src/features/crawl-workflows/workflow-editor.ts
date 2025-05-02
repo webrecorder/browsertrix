@@ -7,7 +7,6 @@ import type {
   SlInput,
   SlRadio,
   SlRadioGroup,
-  SlSelect,
   SlTextarea,
 } from "@shoelace-style/shoelace";
 import clsx from "clsx";
@@ -15,7 +14,13 @@ import { createParser } from "css-selector-parser";
 import Fuse from "fuse.js";
 import { mergeDeep } from "immutable";
 import type { LanguageCode } from "iso-639-1";
-import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
+import {
+  html,
+  nothing,
+  type LitElement,
+  type PropertyValues,
+  type TemplateResult,
+} from "lit";
 import {
   customElement,
   property,
@@ -331,9 +336,6 @@ export class WorkflowEditor extends BtrixElement {
 
   @query("btrix-custom-behaviors-table")
   private readonly customBehaviorsTable?: CustomBehaviorsTable | null;
-
-  @query("btrix-syntax-input[name='clickSelector']")
-  private readonly clickSelector?: SyntaxInput | null;
 
   // CSS parser should ideally match the parser used in browsertrix-crawler.
   // https://github.com/webrecorder/browsertrix-crawler/blob/v1.5.8/package.json#L23
@@ -1170,11 +1172,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
           <div class="grid grid-cols-5 gap-5 py-2">
             ${inputCol(
               html`<btrix-link-selector-table
+                name="selectLinks"
                 .selectors=${selectors}
                 editable
-                @btrix-change=${() => {
-                  this.updateSelectorsValidity();
-                }}
               ></btrix-link-selector-table>`,
             )}
             ${this.renderHelpTextCol(
@@ -2046,25 +2046,14 @@ https://archiveweb.page/images/${"logo.svg"}`}
     }
   }
 
-  /**
-   * HACK Set data attribute manually so that
-   * selectors table works with `syncTabErrorState`
-   */
-  private updateSelectorsValidity() {
-    if (this.linkSelectorTable?.checkValidity() === false) {
-      this.linkSelectorTable.setAttribute("data-invalid", "true");
-      this.linkSelectorTable.setAttribute("data-user-invalid", "true");
-    } else {
-      this.linkSelectorTable?.removeAttribute("data-invalid");
-      this.linkSelectorTable?.removeAttribute("data-user-invalid");
-    }
-  }
-
   private readonly validateOnBlur = async (e: Event) => {
-    const el = e.target as SlInput | SlTextarea | SlSelect | SlCheckbox;
+    const el = e.target as LitElement;
     const tagName = el.tagName.toLowerCase();
     if (
-      !["sl-input", "sl-textarea", "sl-select", "sl-checkbox"].includes(tagName)
+      !["sl-input", "sl-textarea", "sl-select", "sl-checkbox"].includes(
+        tagName,
+      ) &&
+      !("value" in el)
     ) {
       return;
     }
@@ -2078,6 +2067,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     }
 
     const currentTab = panelEl.id.split(panelSuffix)[0] as StepName;
+
     // Check [data-user-invalid] to validate only touched inputs
     if ("userInvalid" in el.dataset) {
       if (this.progressState!.tabs[currentTab].error) return;
@@ -2091,7 +2081,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     }
   };
 
-  private syncTabErrorState(el: HTMLElement) {
+  private syncTabErrorState(el: LitElement) {
     const panelEl = el.closest<HTMLElement>(`.${formName}${panelSuffix}`);
 
     if (!panelEl) {

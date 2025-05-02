@@ -69,6 +69,11 @@ export class DataGridRowsController implements ReactiveController {
     }
   }
 
+  public updateItem<T extends GridItem = GridItem>(id: GridRowId, item: T) {
+    this.rows.set(id, item);
+    this.#host.requestUpdate();
+  }
+
   public addRows<T extends GridItem = GridItem>(
     defaultItem: T | EmptyObject = {},
     count = 1,

@@ -1,6 +1,9 @@
 import type { LitElement } from "lit";
 import type { Constructor } from "type-fest";
 
+/**
+ * Associate a custom element with a form.
+ */
 export const FormControl = <T extends Constructor<LitElement>>(superClass: T) =>
   class extends superClass {
     static formAssociated = true;
