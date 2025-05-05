@@ -552,7 +552,7 @@ class OrgOps:
         """return true if subscription for this org was 'activated', eg. at least
         one user has signed up and changed the slug
         """
-        org_data = await self.orgs.find_one({"subscription.subId", sub_id})
+        org_data = await self.orgs.find_one({"subscription.subId": sub_id})
         if not org_data:
             return False
 
