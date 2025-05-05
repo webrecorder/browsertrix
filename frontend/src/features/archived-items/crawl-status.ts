@@ -143,6 +143,7 @@ export class CrawlStatus extends TailwindElement {
         break;
 
       case "paused":
+        color = "var(--sl-color-neutral-500)";
         icon = html`<sl-icon
           name="pause-circle"
           slot="prefix"
