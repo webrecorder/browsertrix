@@ -646,25 +646,7 @@ export class WorkflowDetail extends BtrixElement {
             </sl-button>
           </sl-button-group>
         `,
-        () => html`
-          <sl-tooltip
-            content=${msg(
-              "Org Storage Full or Monthly Execution Minutes Reached",
-            )}
-            ?disabled=${!this.org?.storageQuotaReached &&
-            !this.org?.execMinutesQuotaReached}
-          >
-            <sl-button
-              size="small"
-              variant="primary"
-              ?disabled=${archivingDisabled}
-              @click=${() => void this.runNow()}
-            >
-              <sl-icon name="play" slot="prefix"></sl-icon>
-              <span>${msg("Run Crawl")}</span>
-            </sl-button>
-          </sl-tooltip>
-        `,
+        this.renderRunNowButton,
       )}
 
       <sl-dropdown placement="bottom-end" distance="4" hoist>
@@ -1162,6 +1144,27 @@ export class WorkflowDetail extends BtrixElement {
     `;
   }
 
+  private readonly renderRunNowButton = () => {
+    return html`
+      <sl-tooltip
+        content=${msg("Org Storage Full or Monthly Execution Minutes Reached")}
+        ?disabled=${!this.org?.storageQuotaReached &&
+        !this.org?.execMinutesQuotaReached}
+      >
+        <sl-button
+          size="small"
+          variant="primary"
+          ?disabled=${this.org?.storageQuotaReached ||
+          this.org?.execMinutesQuotaReached}
+          @click=${() => void this.runNow()}
+        >
+          <sl-icon name="play" slot="prefix"></sl-icon>
+          ${msg("Run Crawl")}
+        </sl-button>
+      </sl-tooltip>
+    `;
+  };
+
   private renderNoCrawlLogs() {
     return html`
       <section
@@ -1170,26 +1173,10 @@ export class WorkflowDetail extends BtrixElement {
         <p class="text-base font-medium">
           ${msg("Logs will show here after you run a crawl.")}
         </p>
-        <div class="mt-4">
-          <sl-tooltip
-            content=${msg(
-              "Org Storage Full or Monthly Execution Minutes Reached",
-            )}
-            ?disabled=${!this.org?.storageQuotaReached &&
-            !this.org?.execMinutesQuotaReached}
-          >
-            <sl-button
-              size="small"
-              variant="primary"
-              ?disabled=${this.org?.storageQuotaReached ||
-              this.org?.execMinutesQuotaReached}
-              @click=${() => void this.runNow()}
-            >
-              <sl-icon name="play" slot="prefix"></sl-icon>
-              ${msg("Run Crawl")}
-            </sl-button>
-          </sl-tooltip>
-        </div>
+        ${when(
+          this.isCrawler,
+          () => html` <div class="mt-4">${this.renderRunNowButton()}</div> `,
+        )}
       </section>
     `;
   }
