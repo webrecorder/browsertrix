@@ -5,7 +5,7 @@ import {
   serialize,
 } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import type { LitElement } from "lit";
-import { isEqual } from "lodash/fp";
+import isEqual from "lodash/fp/isEqual";
 import type { EmptyObject } from "type-fest";
 
 import localize from "./localize";
