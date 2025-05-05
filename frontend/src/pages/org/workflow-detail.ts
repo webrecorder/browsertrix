@@ -1,6 +1,6 @@
 import { localized, msg, str } from "@lit/localize";
 import type { SlSelect } from "@shoelace-style/shoelace";
-import { html, type PropertyValues, type TemplateResult } from "lit";
+import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -1097,6 +1097,7 @@ export class WorkflowDetail extends BtrixElement {
                   </sl-button>`,
               )}
             `,
+            () => (this.isCrawler ? this.renderRunNowButton() : nothing),
           )}
         </div>
       </section>
