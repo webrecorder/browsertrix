@@ -1097,23 +1097,24 @@ export class WorkflowDetail extends BtrixElement {
                 ></sl-icon>
                 ${msg("Replay Latest Crawl")}</sl-button
               >
+
+              ${when(
+                this.isCrawler,
+                () =>
+                  html` <sl-button
+                    href=${`${this.navigate.orgBasePath}/workflows/${workflow.id}/crawls/${workflow.lastCrawlId}#qa`}
+                    size="small"
+                    @click=${this.navigate.link}
+                  >
+                    <sl-icon
+                      slot="prefix"
+                      name="clipboard2-data-fill"
+                      library="default"
+                    ></sl-icon>
+                    ${msg("QA Latest Crawl")}
+                  </sl-button>`,
+              )}
             `,
-          )}
-          ${when(
-            this.isCrawler && this.workflow,
-            (workflow) =>
-              html` <sl-button
-                href=${`${this.navigate.orgBasePath}/workflows/${workflow.id}/crawls/${workflow.lastCrawlId}#qa`}
-                size="small"
-                @click=${this.navigate.link}
-              >
-                <sl-icon
-                  slot="prefix"
-                  name="clipboard2-data-fill"
-                  library="default"
-                ></sl-icon>
-                ${msg("QA Latest Crawl")}
-              </sl-button>`,
           )}
         </div>
       </section>
