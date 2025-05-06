@@ -8,6 +8,7 @@ import type {
   SlDrawer,
   SlSelectEvent,
 } from "@shoelace-style/shoelace";
+import clsx from "clsx";
 import { html, nothing, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -29,6 +30,7 @@ import AuthService, {
   type LoggedInEventDetail,
   type NeedLoginEventDetail,
 } from "./utils/AuthService";
+import { tw } from "./utils/tailwind";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { NavigateEventDetail } from "@/controllers/navigate";
@@ -101,6 +103,9 @@ export class App extends BtrixElement {
 
   @state()
   private globalDialogContent: DialogContent = {};
+
+  @state()
+  private userGuideOpen = false;
 
   @query("#globalDialog")
   private readonly globalDialog!: SlDialog;
@@ -339,7 +344,12 @@ export class App extends BtrixElement {
       <div class="min-w-screen flex min-h-screen flex-col">
         ${this.renderSuperadminBanner()} ${this.renderNavBar()}
         ${this.renderAlertBanner()}
-        <main class="relative flex flex-auto md:min-h-[calc(100vh-3.125rem)]">
+        <main
+          class=${clsx(
+            tw`relative flex flex-auto transition-[padding] md:min-h-[calc(100vh-3.125rem)]`,
+            this.userGuideOpen && tw`pr-[40ch]`,
+          )}
+        >
           ${this.renderPage()}
         </main>
         <div class="border-t border-neutral-100">${this.renderFooter()}</div>
@@ -349,21 +359,24 @@ export class App extends BtrixElement {
         id="globalDialog"
         ?noHeader=${this.globalDialogContent.noHeader === true}
         label=${this.globalDialogContent.label || msg("Message")}
-        @sl-after-hide=${() => (this.globalDialogContent = {})}
+        @sl-hide=${() => (this.globalDialogContent = {})}
         >${this.globalDialogContent.body}</sl-dialog
       >
 
       <sl-drawer
         id="userGuideDrawer"
         label=${msg("User Guide")}
-        style="--body-spacing: 0; --footer-spacing: var(--sl-spacing-2x-small);"
+        class="[--body-spacing:0] [--footer-spacing:var(--sl-spacing-2x-small)] [--size:40ch] part-[base]:fixed part-[base]:z-50"
+        ?open=${this.userGuideOpen}
+        contained
+        @sl-after-hide=${() => (this.userGuideOpen = false)}
       >
         <span slot="label" class="flex items-center gap-3">
           <sl-icon name="book" class=""></sl-icon>
           <span>${msg("User Guide")}</span>
         </span>
         <iframe
-          class="size-full transition-opacity duration-slow"
+          class="size-full text-xs transition-opacity duration-slow [--md-base-font-size:90%]"
           src="${this.docsUrl}user-guide/workflow-setup/"
         ></iframe>
         <sl-button
@@ -952,7 +965,7 @@ export class App extends BtrixElement {
         iframe.src = this.fullDocsUrl;
       }
 
-      void this.userGuideDrawer.show();
+      this.userGuideOpen = true;
     } else {
       console.debug("user guide iframe not found");
     }
