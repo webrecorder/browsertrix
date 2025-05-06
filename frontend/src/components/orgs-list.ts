@@ -5,6 +5,7 @@ import type {
   SlCheckbox,
   SlInput,
   SlMenuItem,
+  SlRadioGroup,
 } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import Fuse from "fuse.js";
@@ -25,6 +26,14 @@ import { ClipboardController } from "@/controllers/clipboard";
 import { SubscriptionStatus } from "@/types/billing";
 import type { ProxiesAPIResponse, Proxy } from "@/types/crawler";
 import type { OrgData } from "@/utils/orgs";
+
+enum OrgFilter {
+  All = "all",
+  Active = "active",
+  Inactive = "inactive",
+  Trialing = "trialing",
+  ScheduledCancel = "scheduled-cancel",
+}
 
 const none = html`
   <sl-icon
@@ -92,6 +101,9 @@ export class OrgsList extends BtrixElement {
   @state()
   private search = "";
 
+  @state()
+  private orgFilter: OrgFilter = OrgFilter.All;
+
   protected willUpdate(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("orgList")) {
       this.fuse.setCollection(this.orgList ?? []);
@@ -107,16 +119,20 @@ export class OrgsList extends BtrixElement {
       return this.renderSkeleton();
     }
 
-    const orgs = this.search
+    const searchResults = this.search
       ? this.fuse.search(this.search).map(({ item }) => item)
       : this.orgList;
+
+    const orgs = searchResults?.filter((org) =>
+      this.filterOrg(org, this.orgFilter),
+    );
 
     return html`
       <sl-input
         value=${this.search}
         clearable
         size="small"
-        class="mb-6"
+        class="mb-4"
         placeholder=${msg(
           "Search all orgs by name, id, slug, users, and subscriptions",
         )}
@@ -131,6 +147,42 @@ export class OrgsList extends BtrixElement {
           library="default"
         ></sl-icon
       ></sl-input>
+      <btrix-overflow-scroll
+        class="-mx-3 [--btrix-overflow-scroll-scrim-color:theme(colors.neutral.50)] part-[content]:px-3"
+      >
+        <sl-radio-group
+          size="small"
+          value=${this.orgFilter}
+          class="mb-6 flex min-w-min justify-end"
+          @sl-change=${(e: SlChangeEvent) => {
+            this.orgFilter = (e.target as SlRadioGroup).value as OrgFilter;
+          }}
+        >
+          ${[
+            { label: msg("All"), icon: "asterisk", filter: OrgFilter.All },
+            {
+              label: msg("Active"),
+              icon: "credit-card",
+              filter: OrgFilter.Active,
+            },
+            {
+              label: msg("Inactive"),
+              icon: "x-square",
+              filter: OrgFilter.Inactive,
+            },
+            {
+              label: msg("Trials"),
+              icon: "basket",
+              filter: OrgFilter.Trialing,
+            },
+            {
+              label: msg("Cancellation Scheduled"),
+              icon: "calendar2-x",
+              filter: OrgFilter.ScheduledCancel,
+            },
+          ].map((options) => this.renderFilterButton(searchResults, options))}
+        </sl-radio-group>
+      </btrix-overflow-scroll>
       <btrix-overflow-scroll
         class="-mx-3 [--btrix-overflow-scroll-scrim-color:theme(colors.neutral.50)] part-[content]:px-3"
       >
@@ -167,6 +219,62 @@ export class OrgsList extends BtrixElement {
       ${this.renderOrgQuotas()} ${this.renderOrgProxies()}
       ${this.renderOrgReadOnly()} ${this.renderOrgDelete()}
     `;
+  }
+
+  private renderFilterButton(
+    orgs: OrgData[] | undefined,
+    options: { label: string; icon: string; filter: OrgFilter },
+  ) {
+    const { label, icon, filter } = options;
+    return (
+      this.orgList?.some((org) => this.filterOrg(org, filter)) &&
+      html`
+        <sl-radio-button
+          pill
+          value=${filter}
+          class="part-[label]:items-baseline"
+        >
+          <sl-icon name=${icon} slot="prefix"></sl-icon>
+          ${label}
+          <span class="ml-2 text-xs font-normal tabular-nums"
+            >${this.localize.number(
+              orgs?.filter((org) => this.filterOrg(org, filter)).length ?? 0,
+            )}</span
+          >
+        </sl-radio-button>
+      `
+    );
+  }
+
+  private filterOrg(org: OrgData, filter: OrgFilter): boolean {
+    switch (filter) {
+      case OrgFilter.Active:
+        return (
+          !!org.subscription &&
+          org.subscription.status === SubscriptionStatus.Active
+        );
+      case OrgFilter.Inactive:
+        return (
+          !!org.subscription &&
+          !(
+            org.subscription.status === SubscriptionStatus.Active ||
+            org.subscription.status === SubscriptionStatus.Trialing
+          )
+        );
+      case OrgFilter.Trialing:
+        return (
+          !!org.subscription &&
+          org.subscription.status === SubscriptionStatus.Trialing
+        );
+      case OrgFilter.ScheduledCancel:
+        return (
+          !!org.subscription &&
+          org.subscription.status === SubscriptionStatus.Active &&
+          !!org.subscription.futureCancelDate
+        );
+      case OrgFilter.All:
+        return true;
+    }
   }
 
   private renderOrgQuotas() {
