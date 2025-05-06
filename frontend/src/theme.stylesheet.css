@@ -104,7 +104,7 @@
      */
     /* Overflow scrim */
     --btrix-overflow-scroll-scrim-color: var(--sl-panel-background-color);
-    --btrix-overflow-scrim-size: 3rem;
+    --btrix-overflow-scrim-width: 3rem;
   }
 
   body {
