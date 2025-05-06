@@ -27,6 +27,7 @@ import("./menu-item-link");
 import("./meter");
 import("./numbered-list");
 import("./overflow-dropdown");
+import("./overflow-scroll");
 import("./pagination");
 import("./pw-strength-alert");
 import("./relative-duration");

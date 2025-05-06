@@ -163,52 +163,54 @@ export class BrowserProfilesList extends BtrixElement {
     };
 
     return html`
-      <btrix-table class="-mx-3 overflow-x-auto px-3">
-        <btrix-table-head class="mb-2">
-          ${headerCells.map(({ sortBy, sortDirection, label, className }) => {
-            const isSorting = sortBy === this.sort.sortBy;
-            const sortValue =
-              (isSorting && SortDirection.get(this.sort.sortDirection)) ||
-              "none";
-            // TODO implement sort render logic in table-header-cell
-            return html`
-              <btrix-table-header-cell
-                class="${className} group cursor-pointer rounded transition-colors hover:bg-primary-50"
-                ariaSort=${sortValue}
-                @click=${() => {
-                  if (isSorting) {
-                    this.sort = {
-                      ...this.sort,
-                      sortDirection: this.sort.sortDirection * -1,
-                    };
-                  } else {
-                    this.sort = {
-                      sortBy,
-                      sortDirection,
-                    };
-                  }
-                }}
-              >
-                ${label} ${getSortIcon(sortValue)}
-              </btrix-table-header-cell>
-            `;
-          })}
-          <btrix-table-header-cell>
-            <span class="sr-only">${msg("Row Actions")}</span>
-          </btrix-table-header-cell>
-        </btrix-table-head>
-        <btrix-table-body
-          class=${clsx(
-            "relative rounded border",
-            this.browserProfiles == null && this.isLoading && tw`min-h-48`,
-          )}
-        >
-          ${when(this.browserProfiles, ({ total, items }) =>
-            total ? html` ${items.map(this.renderItem)} ` : nothing,
-          )}
-          ${when(this.isLoading, this.renderLoading)}
-        </btrix-table-body>
-      </btrix-table>
+      <btrix-overflow-scroll class="-mx-3 part-[content]:px-3">
+        <btrix-table>
+          <btrix-table-head class="mb-2">
+            ${headerCells.map(({ sortBy, sortDirection, label, className }) => {
+              const isSorting = sortBy === this.sort.sortBy;
+              const sortValue =
+                (isSorting && SortDirection.get(this.sort.sortDirection)) ||
+                "none";
+              // TODO implement sort render logic in table-header-cell
+              return html`
+                <btrix-table-header-cell
+                  class="${className} group cursor-pointer rounded transition-colors hover:bg-primary-50"
+                  ariaSort=${sortValue}
+                  @click=${() => {
+                    if (isSorting) {
+                      this.sort = {
+                        ...this.sort,
+                        sortDirection: this.sort.sortDirection * -1,
+                      };
+                    } else {
+                      this.sort = {
+                        sortBy,
+                        sortDirection,
+                      };
+                    }
+                  }}
+                >
+                  ${label} ${getSortIcon(sortValue)}
+                </btrix-table-header-cell>
+              `;
+            })}
+            <btrix-table-header-cell>
+              <span class="sr-only">${msg("Row Actions")}</span>
+            </btrix-table-header-cell>
+          </btrix-table-head>
+          <btrix-table-body
+            class=${clsx(
+              "relative rounded border",
+              this.browserProfiles == null && this.isLoading && tw`min-h-48`,
+            )}
+          >
+            ${when(this.browserProfiles, ({ total, items }) =>
+              total ? html` ${items.map(this.renderItem)} ` : nothing,
+            )}
+            ${when(this.isLoading, this.renderLoading)}
+          </btrix-table-body>
+        </btrix-table>
+      </btrix-overflow-scroll>
       ${when(this.browserProfiles, ({ total, page, pageSize }) =>
         total
           ? html`

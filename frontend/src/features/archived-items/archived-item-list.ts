@@ -451,7 +451,7 @@ export class ArchivedItemList extends TailwindElement {
             .join(" ")};
         }
       </style>
-      <div class="-mx-5 overflow-auto px-5">
+      <btrix-overflow-scroll class="-mx-5 part-[content]:px-5">
         <btrix-table>
           <btrix-table-head class="mb-2">
             <slot
@@ -472,7 +472,7 @@ export class ArchivedItemList extends TailwindElement {
             <slot></slot>
           </btrix-table-body>
         </btrix-table>
-      </div>
+      </btrix-overflow-scroll>
     `;
   }
 }

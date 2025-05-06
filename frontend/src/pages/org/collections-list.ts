@@ -195,14 +195,39 @@ export class CollectionsList extends BtrixElement {
               >
                 ${this.renderControls()}
               </div>
-              <div class="-mx-3 overflow-auto px-3 pb-1">
+              <btrix-overflow-scroll class="-mx-3 pb-1 part-[content]:px-3">
                 ${guard(
                   [this.collections, this.listView, this.collectionRefreshing],
                   this.listView === ListView.List
                     ? this.renderList
                     : this.renderGrid,
                 )}
-              </div>
+              </btrix-overflow-scroll>
+              ${when(this.listView === ListView.List, () =>
+                when(
+                  (this.collections &&
+                    this.collections.total > this.collections.pageSize) ||
+                    (this.collections && this.collections.page > 1),
+                  () => html`
+                    <footer class="mt-6 flex justify-center">
+                      <btrix-pagination
+                        page=${this.collections!.page}
+                        totalCount=${this.collections!.total}
+                        size=${this.collections!.pageSize}
+                        @page-change=${async (e: PageChangeEvent) => {
+                          await this.fetchCollections({
+                            page: e.detail.page,
+                          });
+
+                          // Scroll to top of list
+                          // TODO once deep-linking is implemented, scroll to top of pushstate
+                          this.scrollIntoView({ behavior: "smooth" });
+                        }}
+                      ></btrix-pagination>
+                    </footer>
+                  `,
+                ),
+              )}
             `
           : this.renderLoading(),
       )}
@@ -507,29 +532,6 @@ export class CollectionsList extends BtrixElement {
             ${this.collections.items.map(this.renderItem)}
           </btrix-table-body>
         </btrix-table>
-
-        ${when(
-          this.collections.total > this.collections.pageSize ||
-            this.collections.page > 1,
-          () => html`
-            <footer class="mt-6 flex justify-center">
-              <btrix-pagination
-                page=${this.collections!.page}
-                totalCount=${this.collections!.total}
-                size=${this.collections!.pageSize}
-                @page-change=${async (e: PageChangeEvent) => {
-                  await this.fetchCollections({
-                    page: e.detail.page,
-                  });
-
-                  // Scroll to top of list
-                  // TODO once deep-linking is implemented, scroll to top of pushstate
-                  this.scrollIntoView({ behavior: "smooth" });
-                }}
-              ></btrix-pagination>
-            </footer>
-          `,
-        )}
       `;
     }
 
