@@ -351,7 +351,7 @@ export class App extends BtrixElement {
         id="globalDialog"
         ?noHeader=${this.globalDialogContent.noHeader === true}
         label=${this.globalDialogContent.label || msg("Message")}
-        @sl-hide=${() => (this.globalDialogContent = {})}
+        @sl-after-hide=${() => (this.globalDialogContent = {})}
         >${this.globalDialogContent.body}</sl-dialog
       >
 
