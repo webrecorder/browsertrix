@@ -378,7 +378,7 @@ export class App extends BtrixElement {
           <span>${msg("User Guide")}</span>
         </span>
         <iframe
-          class="size-full text-xs transition-opacity duration-slow [--md-base-font-size:90%]"
+          class="size-full text-xs transition-opacity duration-slow"
           src="${this.docsUrl}user-guide/workflow-setup/"
         ></iframe>
         <sl-button
