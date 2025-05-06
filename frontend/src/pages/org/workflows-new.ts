@@ -17,29 +17,11 @@ import { tw } from "@/utils/tailwind";
 import {
   DEFAULT_AUTOCLICK_SELECTOR,
   DEFAULT_SELECT_LINKS,
-  type SECTIONS,
+  GuideHash,
+  workflowTabToGuideHash,
+  type SectionsEnum,
   type FormState as WorkflowFormState,
 } from "@/utils/workflow";
-
-enum GuideHash {
-  Scope = "scope",
-  Limits = "crawl-limits",
-  Behaviors = "page-behavior",
-  BrowserSettings = "browser-settings",
-  Scheduling = "scheduling",
-  Metadata = "metadata",
-}
-
-type TabName = (typeof SECTIONS)[number];
-
-const workflowTabToGuideHash: Record<TabName, GuideHash> = {
-  scope: GuideHash.Scope,
-  limits: GuideHash.Limits,
-  behaviors: GuideHash.Behaviors,
-  browserSettings: GuideHash.BrowserSettings,
-  scheduling: GuideHash.Scheduling,
-  metadata: GuideHash.Metadata,
-};
 
 /**
  * Usage:
@@ -122,7 +104,7 @@ export class WorkflowsNew extends LiteElement {
           @click=${() => {
             const userGuideHash =
               (workflowTabToGuideHash[
-                window.location.hash.slice(1) as TabName
+                window.location.hash.slice(1) as SectionsEnum
               ] as unknown as GuideHash | undefined) || GuideHash.Scope;
 
             this.dispatchEvent(

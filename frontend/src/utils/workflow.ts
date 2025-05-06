@@ -37,6 +37,24 @@ export const SECTIONS = [
 export const sectionsEnum = z.enum(SECTIONS);
 export type SectionsEnum = z.infer<typeof sectionsEnum>;
 
+export enum GuideHash {
+  Scope = "scope",
+  Limits = "crawl-limits",
+  Behaviors = "page-behavior",
+  BrowserSettings = "browser-settings",
+  Scheduling = "scheduling",
+  Metadata = "metadata",
+}
+
+export const workflowTabToGuideHash: Record<SectionsEnum, GuideHash> = {
+  scope: GuideHash.Scope,
+  limits: GuideHash.Limits,
+  behaviors: GuideHash.Behaviors,
+  browserSettings: GuideHash.BrowserSettings,
+  scheduling: GuideHash.Scheduling,
+  metadata: GuideHash.Metadata,
+};
+
 export function defaultLabel(value: unknown): string {
   if (value === Infinity) {
     return msg("Default: Unlimited");

@@ -64,6 +64,7 @@ import type {
   ExclusionChangeEvent,
   QueueExclusionTable,
 } from "@/features/crawl-workflows/queue-exclusion-table";
+import type { UserGuideEventMap } from "@/index";
 import { infoCol, inputCol } from "@/layouts/columns";
 import { pageSectionsWithNav } from "@/layouts/pageSectionsWithNav";
 import { panel } from "@/layouts/panel";
@@ -106,6 +107,7 @@ import {
   getInitialFormState,
   getServerDefaults,
   SECTIONS,
+  workflowTabToGuideHash,
   type FormState,
   type WorkflowDefaults,
 } from "@/utils/workflow";
@@ -2161,6 +2163,21 @@ https://archiveweb.page/images/${"logo.svg"}`}
       await this.updateComplete;
 
       void this.scrollToActivePanel();
+
+      if (this.appState.userGuideOpen) {
+        this.dispatchEvent(
+          new CustomEvent<UserGuideEventMap["btrix-user-guide-show"]["detail"]>(
+            "btrix-user-guide-show",
+            {
+              detail: {
+                path: `user-guide/workflow-setup/#${workflowTabToGuideHash[step]}`,
+              },
+              bubbles: true,
+              composed: true,
+            },
+          ),
+        );
+      }
     };
 
   private onKeyDown(event: KeyboardEvent) {
