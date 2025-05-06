@@ -458,7 +458,7 @@ export class App extends BtrixElement {
       <div class="border-b bg-slate-100 py-5">
         <div class="mx-auto box-border w-full max-w-screen-desktop px-3">
           <sl-alert variant="warning" open>
-            <sl-icon slot="icon" name="exclamation-triangle-fill"></sl-icon>
+            <sl-icon slot="icon" name="exclamation-diamond-fill"></sl-icon>
             <strong class="block font-semibold">
               ${msg("Your account isn't quite set up yet")}
             </strong>
@@ -1074,7 +1074,6 @@ export class App extends BtrixElement {
       this.notify.toast({
         message: msg("Please log in to continue."),
         variant: "warning",
-        icon: "exclamation-triangle",
         id: "log-in",
       });
     }

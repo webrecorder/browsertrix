@@ -1360,7 +1360,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     const behaviorOverrideWarning = html`
       <span slot="help-text" class="text-warning-600">
         <sl-icon
-          name="exclamation-triangle"
+          name="exclamation-diamond"
           class="align-[-.175em] text-sm"
         ></sl-icon>
         ${msg("May be overridden by custom behaviors.")}

@@ -788,7 +788,7 @@ export class OrgsList extends BtrixElement {
         icon: html`<sl-icon
           tabindex="0"
           class="text-base text-danger"
-          name="exclamation-triangle-fill"
+          name="x-octagon-fill"
           label=${msg("Active with issue")}
         >
         </sl-icon>`,
@@ -993,7 +993,7 @@ export class OrgsList extends BtrixElement {
           subscription = {
             icon: html`<sl-icon
               class="text-base text-danger"
-              name="exclamation-triangle-fill"
+              name="x-octagon-fill"
               label=${msg("Payment Failed")}
             ></sl-icon>`,
             description: msg("Payment Failed"),
