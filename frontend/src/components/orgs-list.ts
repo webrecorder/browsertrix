@@ -16,6 +16,7 @@ import {
   type TemplateResult,
 } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
+import { repeat } from "lit/directives/repeat.js";
 import { when } from "lit/directives/when.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
@@ -24,6 +25,14 @@ import { ClipboardController } from "@/controllers/clipboard";
 import { SubscriptionStatus } from "@/types/billing";
 import type { ProxiesAPIResponse, Proxy } from "@/types/crawler";
 import type { OrgData } from "@/utils/orgs";
+
+const none = html`
+  <sl-icon
+    name="slash"
+    class="text-base text-neutral-400"
+    label=${msg("None")}
+  ></sl-icon>
+`;
 
 /**
  * @fires update-quotas
@@ -150,7 +159,7 @@ export class OrgsList extends BtrixElement {
             </btrix-table-header-cell>
           </btrix-table-head>
           <btrix-table-body class="rounded border">
-            ${orgs?.map(this.renderOrg)}
+            ${repeat(orgs || [], (org) => org.id, this.renderOrg)}
           </btrix-table-body>
         </btrix-table>
       </btrix-overflow-scroll>
@@ -611,14 +620,6 @@ export class OrgsList extends BtrixElement {
     const isUserOrg = this.userInfo.orgs.some(({ id }) => id === org.id);
 
     const memberCount = Object.keys(org.users || {}).length;
-
-    const none = html`
-      <sl-icon
-        name="slash"
-        class="text-base text-neutral-400"
-        label=${msg("None")}
-      ></sl-icon>
-    `;
 
     let status = {
       icon: html`<sl-icon
