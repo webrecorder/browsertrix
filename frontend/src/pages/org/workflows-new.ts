@@ -1,4 +1,5 @@
 import { localized, msg } from "@lit/localize";
+import clsx from "clsx";
 import { mergeDeep } from "immutable";
 import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -8,30 +9,36 @@ import type { PartialDeep } from "type-fest";
 import { ScopeType, type Seed, type WorkflowParams } from "./types";
 
 import type { UserGuideEventMap } from "@/index";
+import { headerClasses } from "@/layouts/crawl-workflows/editor";
 import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
 import { WorkflowScopeType } from "@/types/workflow";
 import LiteElement, { html } from "@/utils/LiteElement";
+import { tw } from "@/utils/tailwind";
 import {
   DEFAULT_AUTOCLICK_SELECTOR,
   DEFAULT_SELECT_LINKS,
+  type SECTIONS,
   type FormState as WorkflowFormState,
 } from "@/utils/workflow";
 
-type GuideHash =
-  | "scope"
-  | "limits"
-  | "browser-settings"
-  | "scheduling"
-  | "metadata"
-  | "review-settings";
+enum GuideHash {
+  Scope = "scope",
+  Limits = "crawl-limits",
+  Behaviors = "page-behavior",
+  BrowserSettings = "browser-settings",
+  Scheduling = "scheduling",
+  Metadata = "metadata",
+}
 
-const workflowTabToGuideHash: Record<string, GuideHash> = {
-  crawlSetup: "scope",
-  crawlLimits: "limits",
-  browserSettings: "browser-settings",
-  crawlScheduling: "scheduling",
-  crawlMetadata: "metadata",
-  confirmSettings: "review-settings",
+type TabName = (typeof SECTIONS)[number];
+
+const workflowTabToGuideHash: Record<TabName, GuideHash> = {
+  scope: GuideHash.Scope,
+  limits: GuideHash.Limits,
+  behaviors: GuideHash.Behaviors,
+  browserSettings: GuideHash.BrowserSettings,
+  scheduling: GuideHash.Scheduling,
+  metadata: GuideHash.Metadata,
 };
 
 /**
@@ -54,23 +61,6 @@ export class WorkflowsNew extends LiteElement {
 
   @property({ type: Object })
   initialWorkflow?: WorkflowParams;
-
-  private userGuideHashLink: GuideHash = "scope";
-
-  connectedCallback(): void {
-    super.connectedCallback();
-
-    this.userGuideHashLink =
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-      workflowTabToGuideHash[window.location.hash.slice(1) as GuideHash] ||
-      "scope";
-
-    window.addEventListener("hashchange", () => {
-      const hashValue = window.location.hash.slice(1) as GuideHash;
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-      this.userGuideHashLink = workflowTabToGuideHash[hashValue] || "scope";
-    });
-  }
 
   private get defaultNewWorkflow(): WorkflowParams {
     return {
@@ -125,17 +115,22 @@ export class WorkflowsNew extends LiteElement {
 
     return html`
       <div class="mb-5">${this.renderBreadcrumbs()}</div>
-      <header class="flex items-center justify-between">
+      <header class=${clsx(tw`items-start justify-between`, headerClasses)}>
         <h2 class="mb-6 text-xl font-semibold">${msg("New Crawl Workflow")}</h2>
         <sl-button
           size="small"
           @click=${() => {
+            const userGuideHash =
+              (workflowTabToGuideHash[
+                window.location.hash.slice(1) as TabName
+              ] as unknown as GuideHash | undefined) || GuideHash.Scope;
+
             this.dispatchEvent(
               new CustomEvent<
                 UserGuideEventMap["btrix-user-guide-show"]["detail"]
               >("btrix-user-guide-show", {
                 detail: {
-                  path: `user-guide/workflow-setup/#${this.userGuideHashLink}`,
+                  path: `user-guide/workflow-setup/#${userGuideHash}`,
                 },
                 bubbles: true,
                 composed: true,
@@ -144,7 +139,9 @@ export class WorkflowsNew extends LiteElement {
           }}
         >
           <sl-icon slot="prefix" name="book"></sl-icon>
-          ${msg("User Guide")}
+          ${this.appState.userGuideOpen
+            ? msg("Jump to Section")
+            : msg("Open User Guide")}
         </sl-button>
       </header>
       ${when(this.org, (org) => {

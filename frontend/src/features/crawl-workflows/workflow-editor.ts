@@ -420,6 +420,7 @@ export class WorkflowEditor extends BtrixElement {
           nav: this.renderNav(),
           main: this.renderFormSections(),
           sticky: true,
+          stickyTopClassname: tw`lg:top-16`,
         })}
         ${this.renderFooter()}
       </form>
