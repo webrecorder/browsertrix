@@ -101,7 +101,7 @@ export class Admin extends BtrixElement {
 
   private renderAdminOrgs() {
     return html`
-      <div class="grid gap-6 lg:grid-cols-[auto,auto]">
+      <div class="grid gap-6 lg:grid-cols-[1fr,minmax(320px,20%)]">
         <div class="grid grid-cols-2 gap-4 lg:order-1 lg:block">
           <btrix-instance-stats
             .orgList=${this.orgList ?? []}
