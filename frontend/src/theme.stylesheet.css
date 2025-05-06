@@ -324,6 +324,22 @@
   .label-same-line::part(form-control-help-text) {
     grid-column-start: 2;
   }
+
+  /* Button group tweaks */
+  [data-sl-button-group__button--first][variant="primary"]:has(
+      + [data-sl-button-group__button][variant="default"]
+    ) {
+    /* Move primary button above secondary button in button group */
+    z-index: 1;
+  }
+  [data-sl-button-group__button--first][variant="primary"]
+    + [data-sl-button-group__button][variant="default"]:not(:hover)::part(
+      base
+    ) {
+    /* Ensure left border color matches primary button's right border color
+       so that no flash of default variant border color shows on hover */
+    border-left-color: var(--sl-color-primary-600);
+  }
 }
 
 @layer utilities {
