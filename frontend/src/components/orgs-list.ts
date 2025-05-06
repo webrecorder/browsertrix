@@ -226,24 +226,23 @@ export class OrgsList extends BtrixElement {
     options: { label: string; icon: string; filter: OrgFilter },
   ) {
     const { label, icon, filter } = options;
-    return (
-      this.orgList?.some((org) => this.filterOrg(org, filter)) &&
-      html`
-        <sl-radio-button
-          pill
-          value=${filter}
-          class="part-[label]:items-baseline"
-        >
-          <sl-icon name=${icon} slot="prefix"></sl-icon>
-          ${label}
-          <span class="ml-2 text-xs font-normal tabular-nums"
-            >${this.localize.number(
-              orgs?.filter((org) => this.filterOrg(org, filter)).length ?? 0,
-            )}</span
+    return this.orgList?.some((org) => this.filterOrg(org, filter))
+      ? html`
+          <sl-radio-button
+            pill
+            value=${filter}
+            class="part-[label]:items-baseline"
           >
-        </sl-radio-button>
-      `
-    );
+            <sl-icon name=${icon} slot="prefix"></sl-icon>
+            ${label}
+            <span class="ml-2 text-xs font-normal tabular-nums"
+              >${this.localize.number(
+                orgs?.filter((org) => this.filterOrg(org, filter)).length ?? 0,
+              )}</span
+            >
+          </sl-radio-button>
+        `
+      : nothing;
   }
 
   private filterOrg(org: OrgData, filter: OrgFilter): boolean {
