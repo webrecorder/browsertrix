@@ -776,7 +776,12 @@ export class OrgsList extends BtrixElement {
     if (org.subscription) {
       switch (org.subscription.status) {
         case SubscriptionStatus.Active:
-          if (org.subscription.futureCancelDate) {
+          if (
+            org.subscription.futureCancelDate &&
+            new Date(org.subscription.futureCancelDate).getTime() -
+              new Date().getTime() >=
+              0
+          ) {
             subscription = {
               icon: html`<sl-icon
                 class="text-base text-warning"
@@ -794,6 +799,37 @@ export class OrgsList extends BtrixElement {
                     timeStyle: "medium",
                     dateStyle: "medium",
                   })})
+                </div>`,
+            };
+          } else if (
+            org.subscription.futureCancelDate &&
+            new Date(org.subscription.futureCancelDate).getTime() -
+              new Date().getTime() <
+              0
+          ) {
+            subscription = {
+              icon: html`<sl-icon
+                  class="text-base text-warning"
+                  name="calendar2-x"
+                  label=${msg("Subscription Cancellation Scheduled")}
+                ></sl-icon>
+                <sl-icon
+                  class="text-base text-danger"
+                  name="x-octagon-fill"
+                  label=${msg("Subscription Cancellation Scheduled")}
+                ></sl-icon>`,
+              description: html`${msg(
+                  "Subscription Cancellation Scheduled in the Past",
+                )}
+                <div class="mt-2 text-xs">
+                  ${msg("Subscription was scheduled for cancellation at")}
+                  ${this.localize.date(org.subscription.futureCancelDate, {
+                    timeStyle: "medium",
+                    dateStyle: "medium",
+                  })}
+                </div>
+                <div class="my-2 font-bold text-danger-300">
+                  ${msg("This indicates something has gone wrong.")}
                 </div>`,
             };
           } else {
