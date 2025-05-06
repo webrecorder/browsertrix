@@ -8,7 +8,6 @@ import type {
   SlDrawer,
   SlSelectEvent,
 } from "@shoelace-style/shoelace";
-import clsx from "clsx";
 import { html, nothing, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -30,7 +29,6 @@ import AuthService, {
   type LoggedInEventDetail,
   type NeedLoginEventDetail,
 } from "./utils/AuthService";
-import { tw } from "./utils/tailwind";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { NavigateEventDetail } from "@/controllers/navigate";
@@ -103,9 +101,6 @@ export class App extends BtrixElement {
 
   @state()
   private globalDialogContent: DialogContent = {};
-
-  @state()
-  private userGuideOpen = false;
 
   @query("#globalDialog")
   private readonly globalDialog!: SlDialog;
@@ -345,10 +340,7 @@ export class App extends BtrixElement {
         ${this.renderSuperadminBanner()} ${this.renderNavBar()}
         ${this.renderAlertBanner()}
         <main
-          class=${clsx(
-            tw`relative flex flex-auto transition-[padding] md:min-h-[calc(100vh-3.125rem)]`,
-            this.userGuideOpen && tw`pr-[40ch]`,
-          )}
+          class="relative flex flex-auto transition-[padding] md:min-h-[calc(100vh-3.125rem)]"
         >
           ${this.renderPage()}
         </main>
@@ -366,10 +358,10 @@ export class App extends BtrixElement {
       <sl-drawer
         id="userGuideDrawer"
         label=${msg("User Guide")}
-        class="[--body-spacing:0] [--footer-spacing:var(--sl-spacing-2x-small)] [--size:40ch] part-[base]:fixed part-[base]:z-50"
-        ?open=${this.userGuideOpen}
+        class="[--body-spacing:0] [--footer-spacing:var(--sl-spacing-2x-small)] [--size:31rem] part-[base]:fixed part-[base]:z-50 part-[panel]:[border-left:1px_solid_var(--sl-panel-border-color)]"
+        ?open=${this.appState.userGuideOpen}
         contained
-        @sl-after-hide=${() => (this.userGuideOpen = false)}
+        @sl-after-hide=${() => AppStateService.updateUserGuideOpen(false)}
       >
         <span slot="label" class="flex items-center gap-3">
           <sl-icon name="book" class=""></sl-icon>
@@ -965,7 +957,7 @@ export class App extends BtrixElement {
         iframe.src = this.fullDocsUrl;
       }
 
-      this.userGuideOpen = true;
+      AppStateService.updateUserGuideOpen(true);
     } else {
       console.debug("user guide iframe not found");
     }
