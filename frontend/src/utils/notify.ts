@@ -5,12 +5,20 @@ import { type NotifyEventDetail } from "@/controllers/notify";
 
 const toastsWithIds = new Map<string | number | symbol, SlAlert>();
 
+const iconMap = {
+  info: "info-circle",
+  primary: "info-circle",
+  success: "check2-circle",
+  warning: "exclamation-diamond",
+  danger: "x-octagon",
+} as const;
+
 export const toast = async (detail: NotifyEventDetail) => {
   const {
     title,
     message,
     variant = "primary",
-    icon = "info-circle",
+    icon = iconMap[variant],
     duration = 5000,
     id,
   } = detail;

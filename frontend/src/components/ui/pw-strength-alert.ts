@@ -93,14 +93,14 @@ export class PasswordStrengthAlert extends LitElement {
       label: string;
       variant: "primary" | "neutral" | "danger" | "success" | "warning";
     } = {
-      icon: "exclamation-triangle",
+      icon: "x-octagon",
       label: msg("Very weak password"),
       variant: "danger",
     };
     switch (score) {
       case 2:
         scoreProps = {
-          icon: "exclamation-circle",
+          icon: "exclamation-diamond",
           label: msg("Weak password"),
           variant: "warning",
         };

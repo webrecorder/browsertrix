@@ -31,7 +31,7 @@ export class OrgStatusBanner extends BtrixElement {
       <div id="banner" class="border-b bg-slate-100 py-5">
         <div class="mx-auto box-border w-full max-w-screen-desktop px-3">
           <sl-alert variant="danger" open>
-            <sl-icon slot="icon" name="exclamation-triangle-fill"></sl-icon>
+            <sl-icon slot="icon" name="exclamation-diamond-fill"></sl-icon>
             <strong class="block font-semibold">${content.title}</strong>
             ${content.detail}
           </sl-alert>

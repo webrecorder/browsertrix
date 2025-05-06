@@ -5,6 +5,7 @@ import type {
   SlRadioGroup,
   SlSelectEvent,
 } from "@shoelace-style/shoelace";
+import clsx from "clsx";
 import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -76,11 +77,11 @@ export class Dashboard extends BtrixElement {
   cacheBust = 0;
 
   private readonly colors = {
-    default: "neutral",
-    crawls: "green",
-    uploads: "sky",
-    browserProfiles: "indigo",
-    runningTime: "blue",
+    default: tw`text-neutral-600`,
+    crawls: tw`text-green-600`,
+    uploads: tw`text-sky-600`,
+    browserProfiles: tw`text-indigo-600`,
+    runningTime: tw`text-blue-600`,
   };
 
   private readonly collections = new Task(this, {
@@ -253,7 +254,7 @@ export class Dashboard extends BtrixElement {
                   pluralLabel: msg("Crawls"),
                   iconProps: {
                     name: "gear-wide-connected",
-                    color: this.colors.crawls,
+                    class: this.colors.crawls,
                   },
                 })}
                 ${this.renderStat({
@@ -263,7 +264,7 @@ export class Dashboard extends BtrixElement {
                     : this.localize.bytes(metrics.storageUsedUploads),
                   singleLabel: msg("Upload"),
                   pluralLabel: msg("Uploads"),
-                  iconProps: { name: "upload", color: this.colors.uploads },
+                  iconProps: { name: "upload", class: this.colors.uploads },
                 })}
                 ${this.renderStat({
                   value: metrics.profileCount,
@@ -274,7 +275,7 @@ export class Dashboard extends BtrixElement {
                   pluralLabel: msg("Browser Profiles"),
                   iconProps: {
                     name: "window-fullscreen",
-                    color: this.colors.browserProfiles,
+                    class: this.colors.browserProfiles,
                   },
                 })}
                 <sl-divider
@@ -307,14 +308,19 @@ export class Dashboard extends BtrixElement {
                   iconProps: {
                     name: "dot",
                     library: "app",
-                    color: metrics.workflowsRunningCount ? "green" : "neutral",
+                    class: metrics.workflowsRunningCount
+                      ? tw`animate-pulse text-green-600`
+                      : tw`text-neutral-600`,
                   },
                 })}
                 ${this.renderStat({
                   value: metrics.workflowsQueuedCount,
                   singleLabel: msg("Crawl Workflow Waiting"),
                   pluralLabel: msg("Crawl Workflows Waiting"),
-                  iconProps: { name: "hourglass-split", color: "violet" },
+                  iconProps: {
+                    name: "hourglass-split",
+                    class: tw`text-violet-600`,
+                  },
                 })}
                 <sl-divider
                   style="--spacing:var(--sl-spacing-small)"
@@ -325,7 +331,7 @@ export class Dashboard extends BtrixElement {
                   pluralLabel: msg("Pages Crawled"),
                   iconProps: {
                     name: "file-richtext-fill",
-                    color: this.colors.crawls,
+                    class: this.colors.crawls,
                   },
                 })}
                 ${this.renderStat({
@@ -334,7 +340,7 @@ export class Dashboard extends BtrixElement {
                   pluralLabel: msg("Pages Uploaded"),
                   iconProps: {
                     name: "file-richtext-fill",
-                    color: this.colors.uploads,
+                    class: this.colors.uploads,
                   },
                 })}
                 ${this.renderStat({
@@ -360,7 +366,10 @@ export class Dashboard extends BtrixElement {
                   value: metrics.publicCollectionsCount,
                   singleLabel: msg("Shareable Collection"),
                   pluralLabel: msg("Shareable Collections"),
-                  iconProps: { name: "people-fill", color: "emerald" },
+                  iconProps: {
+                    name: "people-fill",
+                    class: tw`text-emerald-600`,
+                  },
                 })}
               </dl>
             `,
@@ -567,10 +576,7 @@ export class Dashboard extends BtrixElement {
           isStorageFull,
           () => html`
             <div class="flex items-center gap-2">
-              <sl-icon
-                class="text-danger"
-                name="exclamation-triangle"
-              ></sl-icon>
+              <sl-icon class="text-danger" name="x-octagon"></sl-icon>
               <span>${msg("Storage is Full")}</span>
             </div>
           `,
@@ -788,10 +794,7 @@ export class Dashboard extends BtrixElement {
           isReached,
           () => html`
             <div class="flex items-center gap-2">
-              <sl-icon
-                class="text-danger"
-                name="exclamation-triangle"
-              ></sl-icon>
+              <sl-icon class="text-danger" name="x-octagon"></sl-icon>
               <span>${msg("Execution Minutes Quota Reached")}</span>
             </div>
           `,
@@ -914,18 +917,19 @@ export class Dashboard extends BtrixElement {
     secondaryValue?: number | string | TemplateResult;
     singleLabel: string;
     pluralLabel: string;
-    iconProps: { name: string; library?: string; color?: string };
+    iconProps: { name: string; library?: string; class?: string };
   }) {
     const { value, iconProps } = stat;
     return html`
       <div class="mb-2 flex items-center justify-between last:mb-0">
         <div class="flex items-center">
           <sl-icon
-            class="mr-2 text-base text-neutral-500"
+            class=${clsx(
+              "mr-2 text-base",
+              iconProps.class ?? "text-neutral-600",
+            )}
             name=${iconProps.name}
             library=${ifDefined(iconProps.library)}
-            style="color:var(--sl-color-${iconProps.color ||
-            this.colors.default}-500)"
           ></sl-icon>
           <dt class="order-last">
             ${value === 1 ? stat.singleLabel : stat.pluralLabel}

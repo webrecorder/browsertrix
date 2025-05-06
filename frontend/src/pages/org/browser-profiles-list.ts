@@ -396,7 +396,6 @@ export class BrowserProfilesList extends BtrixElement {
               >. Please remove browser profile from Workflow to continue.`,
           ),
           variant: "warning",
-          icon: "exclamation-triangle",
           duration: 15000,
         });
       } else {
