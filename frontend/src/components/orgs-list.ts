@@ -963,55 +963,64 @@ export class OrgsList extends BtrixElement {
             @click=${(e: MouseEvent) => e.stopPropagation()}
           >
             <sl-menu>
-              <sl-menu-label>${msg("Subscription")}</sl-menu-label>
+              <sl-menu-label
+                >${msg("Subscription")}
+                ${when(
+                  org.subscription,
+                  (sub) => html`
+                    <table class="w-full mt-1 text-xs whitespace-nowrap font-normal">
+                      <tr>
+                        <th scope="row" class="font-normal text-left">${msg("Plan ID")}</th>
+                        <td class="text-right font-monospace text-neutral-900">
+                            ${sub.planId}
+                        </td>
+                      </tr>
+                      <tr>
+                        <th scope="row" class="font-normal text-left">${msg("Action on Cancel")}</td>
+                        <td class="text-right font-bold text-neutral-900">
+                          ${
+                            sub.readOnlyOnCancel
+                              ? msg("Read-Only")
+                              : msg("Delete")
+                          }
+                        </td>
+                      </tr>
+                    </table>
+                  `,
+                )}
+              </sl-menu-label>
               ${org.subscription
-                ? html`
-                    ${org.subscription.subId.startsWith("stripe:")
-                      ? html`<sl-menu-item
-                          @click=${() => {
-                            window.open(
-                              `https://dashboard.stripe.com/subscriptions/${org.subscription!.subId.slice(7)}`,
-                              "_blank",
-                            );
-                          }}
-                        >
-                          <sl-icon slot="prefix" name="stripe"></sl-icon>
-                          ${msg("Open in Stripe")}
-                          <sl-icon
-                            slot="suffix"
-                            name="box-arrow-up-right"
-                          ></sl-icon>
-                        </sl-menu-item>`
-                      : html`<sl-menu-item
-                          @click=${() => {
-                            ClipboardController.copyToClipboard(
-                              org.subscription!.subId,
-                            );
-                            this.notify.toast({
-                              message: msg("Subscription ID Copied"),
-                              duration: 1000,
-                              variant: "success",
-                              id: "item-copied",
-                            });
-                          }}
-                        >
-                          ${msg("Copy Subscription ID")}
-                        </sl-menu-item>`}
-                    <sl-menu-item disabled>
-                      ${msg("Plan ID")}
-                      <span class="font-monospace" slot="suffix"
-                        >${org.subscription.planId}</span
-                      >
-                    </sl-menu-item>
-                    <sl-menu-item disabled>
-                      ${msg("Action on Cancel")}
-                      <span class="font-bold" slot="suffix"
-                        >${org.subscription.readOnlyOnCancel
-                          ? msg("Read-Only")
-                          : msg("Delete")}</span
-                      >
-                    </sl-menu-item>
-                  `
+                ? org.subscription.subId.startsWith("stripe:")
+                  ? html`<sl-menu-item
+                      @click=${() => {
+                        window.open(
+                          `https://dashboard.stripe.com/subscriptions/${org.subscription!.subId.slice(7)}`,
+                          "_blank",
+                        );
+                      }}
+                    >
+                      <sl-icon slot="prefix" name="stripe"></sl-icon>
+                      ${msg("Open in Stripe")}
+                      <sl-icon
+                        slot="suffix"
+                        name="box-arrow-up-right"
+                      ></sl-icon>
+                    </sl-menu-item>`
+                  : html`<sl-menu-item
+                      @click=${() => {
+                        ClipboardController.copyToClipboard(
+                          org.subscription!.subId,
+                        );
+                        this.notify.toast({
+                          message: msg("Subscription ID Copied"),
+                          duration: 1000,
+                          variant: "success",
+                          id: "item-copied",
+                        });
+                      }}
+                    >
+                      ${msg("Copy Subscription ID")}
+                    </sl-menu-item>`
                 : html`<sl-menu-item disabled>
                     <sl-icon
                       name="slash"
