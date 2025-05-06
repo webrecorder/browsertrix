@@ -27,7 +27,7 @@ export function pageSectionsWithNav({
         class=${clsx(
           tw`flex flex-1 flex-col gap-2`,
           sticky &&
-            tw`lg:sticky lg:self-start ${stickyTopClassname || tw`lg:top-2`}`,
+            [tw`lg:sticky lg:self-start`, stickyTopClassname || tw`lg:top-2`],
           placement === "start" ? tw`lg:max-w-[16.5rem]` : tw`lg:flex-row`,
         )}
         part="tabs"
