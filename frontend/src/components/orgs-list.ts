@@ -8,7 +8,13 @@ import type {
 } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import Fuse from "fuse.js";
-import { css, html, nothing, type PropertyValues } from "lit";
+import {
+  css,
+  html,
+  nothing,
+  type PropertyValues,
+  type TemplateResult,
+} from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 
@@ -650,7 +656,10 @@ export class OrgsList extends BtrixElement {
       };
     }
 
-    let subscription = {
+    let subscription: {
+      icon: TemplateResult<1>;
+      description: string | TemplateResult<1>;
+    } = {
       icon: none,
       description: msg("No Subscription"),
     };
@@ -658,14 +667,36 @@ export class OrgsList extends BtrixElement {
     if (org.subscription) {
       switch (org.subscription.status) {
         case SubscriptionStatus.Active:
-          subscription = {
-            icon: html`<sl-icon
-              class="text-base text-success"
-              name="credit-card-fill"
-              label=${msg("Active Subscription")}
-            ></sl-icon>`,
-            description: msg("Active Subscription"),
-          };
+          if (org.subscription.futureCancelDate) {
+            subscription = {
+              icon: html`<sl-icon
+                class="text-base text-warning"
+                name="calendar2-x"
+                label=${msg("Subscription Cancellation Scheduled")}
+              ></sl-icon>`,
+              description: html`${msg("Subscription Cancellation Scheduled")}
+                <div class="mt-2 text-xs">
+                  ${msg("Subscription will be cancelled in")}
+                  ${this.localize.humanizeDuration(
+                    new Date(org.subscription.futureCancelDate).getTime() -
+                      new Date().getTime(),
+                  )}
+                  (${this.localize.date(org.subscription.futureCancelDate, {
+                    timeStyle: "medium",
+                    dateStyle: "medium",
+                  })})
+                </div>`,
+            };
+          } else {
+            subscription = {
+              icon: html`<sl-icon
+                class="text-base text-success"
+                name="credit-card-fill"
+                label=${msg("Active Subscription")}
+              ></sl-icon>`,
+              description: msg("Active Subscription"),
+            };
+          }
           break;
         case SubscriptionStatus.Trialing:
           subscription = {
@@ -731,10 +762,11 @@ export class OrgsList extends BtrixElement {
           : "opacity-50"} cursor-pointer select-none border-b bg-neutral-0 transition-colors first-of-type:rounded-t last-of-type:rounded-b last-of-type:border-none focus-within:bg-neutral-50 hover:bg-neutral-50"
       >
         <btrix-table-cell class="min-w-6 gap-1 pl-2">
-          <sl-tooltip content=${status.description}>
+          <sl-tooltip content=${status.description} hoist>
             ${status.icon}
           </sl-tooltip>
-          <sl-tooltip content=${subscription.description}>
+          <sl-tooltip hoist>
+            <span slot="content">${subscription.description}</span>
             ${subscription.icon}
           </sl-tooltip>
         </btrix-table-cell>
