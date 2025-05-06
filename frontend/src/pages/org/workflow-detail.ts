@@ -911,7 +911,7 @@ export class WorkflowDetail extends BtrixElement {
                         ${msg("Copy Crawl ID")}
                       </sl-menu-item>
                       ${when(
-                        this.isCrawler,
+                        this.isCrawler && !isActive(crawl),
                         () => html`
                           <sl-divider></sl-divider>
                           <sl-menu-item
