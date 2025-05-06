@@ -208,7 +208,7 @@ export class ConfigDetails extends BtrixElement {
             ),
           )}
           ${this.renderSetting(
-            labelFor.pageLoadTimeoutSeconds,
+            labelFor.postLoadDelaySeconds,
             renderTimeLimit(seedsConfig?.postLoadDelay, 0),
           )}
           ${this.renderSetting(
