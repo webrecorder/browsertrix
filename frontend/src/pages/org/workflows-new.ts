@@ -101,6 +101,11 @@ export class WorkflowsNew extends LiteElement {
         <h2 class="mb-6 text-xl font-semibold">${msg("New Crawl Workflow")}</h2>
         <sl-button
           size="small"
+          class=${clsx(
+            tw`transition-opacity`,
+            this.appState.userGuideOpen && tw`pointer-events-none opacity-0`,
+          )}
+          ?disabled=${this.appState.userGuideOpen}
           @click=${() => {
             const userGuideHash =
               (workflowTabToGuideHash[
@@ -121,9 +126,7 @@ export class WorkflowsNew extends LiteElement {
           }}
         >
           <sl-icon slot="prefix" name="book"></sl-icon>
-          ${this.appState.userGuideOpen
-            ? msg("Jump to Section")
-            : msg("Open User Guide")}
+          ${msg("User Guide")}
         </sl-button>
       </header>
       ${when(this.org, (org) => {
