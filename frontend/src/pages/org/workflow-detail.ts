@@ -15,8 +15,8 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import { ClipboardController } from "@/controllers/clipboard";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { ExclusionEditor } from "@/features/crawl-workflows/exclusion-editor";
-import { headerClasses } from "@/layouts/crawl-workflows/editor";
 import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
+import { stickyHeader } from "@/layouts/styles/stickyHeader";
 import { deleteConfirmation } from "@/strings/ui";
 import type { APIPaginatedList } from "@/types/api";
 import { type CrawlState } from "@/types/crawlState";
@@ -593,7 +593,9 @@ export class WorkflowDetail extends BtrixElement {
   private readonly renderEditor = () => html`
     <div class="col-span-1">${this.renderBreadcrumbs()}</div>
 
-    <header class=${clsx(tw`col-span-1 mb-3`, headerClasses)}>
+    <header
+      class=${clsx(tw`col-span-1 mb-3 flex flex-wrap gap-2`, stickyHeader)}
+    >
       <btrix-detail-page-title .item=${this.workflow}></btrix-detail-page-title>
     </header>
 

@@ -7,8 +7,8 @@ import { customElement, property } from "lit/decorators.js";
  * depending on scroll position.
  * @slot
  * @cssPart content
- * @cssproperty --btrix-overflow-scrim-width The width of the scrim. 3rem by default.
- * @cssproperty --btrix-overflow-scroll-scrim-color The color of the scrim. White by default.
+ * @cssproperty --btrix-overflow-scrim-size The size of the scrim. Default set by theme stylesheet.
+ * @cssproperty --btrix-overflow-scroll-scrim-color The color of the scrim. Default set by theme stylesheet.
  */
 @customElement("btrix-overflow-scroll")
 export class OverflowScroll extends LitElement {
@@ -48,7 +48,7 @@ export class OverflowScroll extends LitElement {
       [scrim][direction="horizontal"]:before,
       [scrim][direction="horizontal"]:after {
         content: "";
-        width: var(--btrix-overflow-scrim-width, 3rem);
+        width: var(--btrix-overflow-scrim-size);
         position: absolute;
         z-index: 10;
         top: 0;
@@ -63,19 +63,17 @@ export class OverflowScroll extends LitElement {
         left: 0;
         background: linear-gradient(
           to right,
-          var(--btrix-overflow-scroll-scrim-color, white),
+          var(--btrix-overflow-scroll-scrim-color),
           transparent
         );
-        /* background-color: blue; */
       }
       [scrim][direction="horizontal"]:after {
         right: 0;
         background: linear-gradient(
           to right,
           transparent,
-          var(--btrix-overflow-scroll-scrim-color, white)
+          var(--btrix-overflow-scroll-scrim-color)
         );
-        /* background-color: blue; */
         animation-direction: reverse;
       }
       @keyframes btrix-scroll-scrim {

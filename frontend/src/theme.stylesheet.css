@@ -96,6 +96,15 @@
 
     /* Transition */
     --sl-transition-x-fast: 100ms;
+
+    /* 
+     * 
+     * Browsertrix theme tokens
+     *
+     */
+    /* Overflow scrim */
+    --btrix-overflow-scroll-scrim-color: var(--sl-panel-background-color);
+    --btrix-overflow-scrim-size: 3rem;
   }
 
   body {

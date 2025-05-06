@@ -9,8 +9,8 @@ import type { PartialDeep } from "type-fest";
 import { ScopeType, type Seed, type WorkflowParams } from "./types";
 
 import type { UserGuideEventMap } from "@/index";
-import { headerClasses } from "@/layouts/crawl-workflows/editor";
 import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
+import { stickyHeader } from "@/layouts/styles/stickyHeader";
 import { WorkflowScopeType } from "@/types/workflow";
 import LiteElement, { html } from "@/utils/LiteElement";
 import { tw } from "@/utils/tailwind";
@@ -97,7 +97,12 @@ export class WorkflowsNew extends LiteElement {
 
     return html`
       <div class="mb-5">${this.renderBreadcrumbs()}</div>
-      <header class=${clsx(tw`items-start justify-between`, headerClasses)}>
+      <header
+        class=${clsx(
+          tw`flex flex-wrap items-start justify-between gap-2`,
+          stickyHeader,
+        )}
+      >
         <h2 class="mb-6 text-xl font-semibold">${msg("New Crawl Workflow")}</h2>
         <sl-button
           size="small"
