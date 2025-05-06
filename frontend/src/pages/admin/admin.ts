@@ -101,30 +101,8 @@ export class Admin extends BtrixElement {
 
   private renderAdminOrgs() {
     return html`
-      <div class="grid grid-cols-3 gap-6">
-        <div class="col-span-3 md:col-span-2">
-          <section>
-            <header
-              class="mb-3 flex items-center justify-between border-b pb-3"
-            >
-              <h2 class="text-lg font-medium">${msg("All Organizations")}</h2>
-              <sl-button
-                variant="primary"
-                size="small"
-                @click=${() => (this.isAddingOrg = true)}
-              >
-                <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-                ${msg("New Organization")}
-              </sl-button>
-            </header>
-            <btrix-orgs-list
-              .orgList=${this.orgList}
-              @update-quotas=${this.onUpdateOrgQuotas}
-              @update-proxies=${this.onUpdateOrgProxies}
-            ></btrix-orgs-list>
-          </section>
-        </div>
-        <div class="col-span-3 md:col-span-1">
+      <div class="grid gap-6 lg:grid-cols-[auto,auto]">
+        <div class="grid grid-cols-2 gap-4 lg:order-1 lg:block">
           <btrix-instance-stats
             .orgList=${this.orgList ?? []}
           ></btrix-instance-stats>
@@ -135,6 +113,24 @@ export class Admin extends BtrixElement {
             ${this.renderInvite()}
           </section>
         </div>
+        <section>
+          <header class="mb-3 flex items-center justify-between border-b pb-3">
+            <h2 class="text-lg font-medium">${msg("All Organizations")}</h2>
+            <sl-button
+              variant="primary"
+              size="small"
+              @click=${() => (this.isAddingOrg = true)}
+            >
+              <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+              ${msg("New Organization")}
+            </sl-button>
+          </header>
+          <btrix-orgs-list
+            .orgList=${this.orgList}
+            @update-quotas=${this.onUpdateOrgQuotas}
+            @update-proxies=${this.onUpdateOrgProxies}
+          ></btrix-orgs-list>
+        </section>
       </div>
     `;
   }
