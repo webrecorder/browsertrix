@@ -1,5 +1,6 @@
 import { localized, msg, str } from "@lit/localize";
 import type { SlSelect } from "@shoelace-style/shoelace";
+import clsx from "clsx";
 import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
@@ -26,6 +27,7 @@ import {
 } from "@/utils/crawler";
 import { humanizeSchedule } from "@/utils/cron";
 import { isArchivingDisabled } from "@/utils/orgs";
+import { tw } from "@/utils/tailwind";
 
 const SECTIONS = ["crawls", "watch", "settings", "logs"] as const;
 type Tab = (typeof SECTIONS)[number];
@@ -895,6 +897,9 @@ export class WorkflowDetail extends BtrixElement {
               this.crawls!.items.map(
                 (crawl: Crawl) =>
                   html` <btrix-crawl-list-item
+                    class=${clsx(
+                      isActive(crawl) && tw`cursor-default text-neutral-500`,
+                    )}
                     href=${ifDefined(
                       isActive(crawl)
                         ? undefined
@@ -911,7 +916,7 @@ export class WorkflowDetail extends BtrixElement {
                         ${msg("Copy Crawl ID")}
                       </sl-menu-item>
                       ${when(
-                        this.isCrawler,
+                        this.isCrawler && !isActive(crawl),
                         () => html`
                           <sl-divider></sl-divider>
                           <sl-menu-item
