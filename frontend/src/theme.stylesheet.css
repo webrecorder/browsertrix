@@ -401,6 +401,16 @@
       transparent
     );
   }
+
+  .scrim:before {
+    @apply pointer-events-none absolute -z-10;
+  }
+
+  .scrim-to-b:before {
+    @apply w-full bg-gradient-to-b from-white;
+    height: var(--btrix-overflow-scrim-width);
+    --tw-gradient-from: var(--btrix-overflow-scroll-scrim-color, white);
+  }
 }
 
 @layer components {

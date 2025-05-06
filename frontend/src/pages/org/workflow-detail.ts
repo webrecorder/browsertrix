@@ -16,7 +16,6 @@ import { ClipboardController } from "@/controllers/clipboard";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { ExclusionEditor } from "@/features/crawl-workflows/exclusion-editor";
 import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
-import { stickyHeader } from "@/layouts/styles/stickyHeader";
 import { deleteConfirmation } from "@/strings/ui";
 import type { APIPaginatedList } from "@/types/api";
 import { type CrawlState } from "@/types/crawlState";
@@ -28,7 +27,6 @@ import {
 } from "@/utils/crawler";
 import { humanizeSchedule } from "@/utils/cron";
 import { isArchivingDisabled } from "@/utils/orgs";
-import { tw } from "@/utils/tailwind";
 
 const SECTIONS = ["crawls", "watch", "settings", "logs"] as const;
 type Tab = (typeof SECTIONS)[number];
@@ -594,7 +592,7 @@ export class WorkflowDetail extends BtrixElement {
     <div class="col-span-1">${this.renderBreadcrumbs()}</div>
 
     <header
-      class=${clsx(tw`col-span-1 mb-3 flex flex-wrap gap-2`, stickyHeader)}
+      class="scrim scrim-to-b z-10 col-span-1 mb-3 flex flex-wrap gap-2 before:-top-3 lg:sticky lg:top-3"
     >
       <btrix-detail-page-title .item=${this.workflow}></btrix-detail-page-title>
     </header>
