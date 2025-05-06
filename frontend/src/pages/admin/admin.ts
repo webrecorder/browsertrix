@@ -102,7 +102,7 @@ export class Admin extends BtrixElement {
   private renderAdminOrgs() {
     return html`
       <div class="grid gap-6 lg:grid-cols-[1fr,minmax(320px,20%)]">
-        <div class="grid grid-cols-2 gap-4 lg:order-1 lg:block">
+        <div class="flex flex-wrap gap-4 *:flex-1 lg:order-1 lg:block">
           <btrix-instance-stats
             .orgList=${this.orgList ?? []}
           ></btrix-instance-stats>
@@ -113,7 +113,7 @@ export class Admin extends BtrixElement {
             ${this.renderInvite()}
           </section>
         </div>
-        <section>
+        <section class="min-w-0">
           <header class="mb-3 flex items-center justify-between border-b pb-3">
             <h2 class="text-lg font-medium">${msg("All Organizations")}</h2>
             <sl-button
