@@ -170,8 +170,13 @@
     line-height: 1.5;
   }
 
+  /* Align left edge with prefix icon */
+  sl-menu sl-menu-label::part(base) {
+    padding-left: 25px;
+  }
+
   /* Align left edge with selected item */
-  sl-menu-label::part(base) {
+  sl-select sl-menu-label::part(base) {
     padding-left: var(--sl-spacing-medium);
   }
 

@@ -20,6 +20,7 @@ import { when } from "lit/directives/when.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
+import { ClipboardController } from "@/controllers/clipboard";
 import { SubscriptionStatus } from "@/types/billing";
 import type { ProxiesAPIResponse, Proxy } from "@/types/crawler";
 import type { OrgData } from "@/utils/orgs";
@@ -818,6 +819,65 @@ export class OrgsList extends BtrixElement {
             @click=${(e: MouseEvent) => e.stopPropagation()}
           >
             <sl-menu>
+              <sl-menu-label>${msg("Subscription")}</sl-menu-label>
+              ${org.subscription
+                ? html`
+                    ${org.subscription.subId.startsWith("stripe:")
+                      ? html`<sl-menu-item
+                          @click=${() => {
+                            window.open(
+                              `https://dashboard.stripe.com/subscriptions/${org.subscription!.subId.slice(7)}`,
+                              "_blank",
+                            );
+                          }}
+                        >
+                          <sl-icon slot="prefix" name="stripe"></sl-icon>
+                          ${msg("Open in Stripe")}
+                          <sl-icon
+                            slot="suffix"
+                            name="box-arrow-up-right"
+                          ></sl-icon>
+                        </sl-menu-item>`
+                      : html`<sl-menu-item
+                          @click=${() => {
+                            ClipboardController.copyToClipboard(
+                              org.subscription!.subId,
+                            );
+                            this.notify.toast({
+                              message: msg("Subscription ID Copied"),
+                              duration: 1000,
+                              variant: "success",
+                              id: "item-copied",
+                            });
+                          }}
+                        >
+                          ${msg("Copy Subscription ID")}
+                        </sl-menu-item>`}
+                    <sl-menu-item disabled>
+                      ${msg("Plan ID")}
+                      <span class="font-monospace" slot="suffix"
+                        >${org.subscription.planId}</span
+                      >
+                    </sl-menu-item>
+                    <sl-menu-item disabled>
+                      ${msg("Action on Cancel")}
+                      <span class="font-bold" slot="suffix"
+                        >${org.subscription.readOnlyOnCancel
+                          ? msg("Read-Only")
+                          : msg("Delete")}</span
+                      >
+                    </sl-menu-item>
+                  `
+                : html`<sl-menu-item disabled>
+                    <sl-icon
+                      name="slash"
+                      class="text-base text-neutral-400"
+                      slot="prefix"
+                    ></sl-icon>
+                    ${msg("No Subscription")}</sl-menu-item
+                  >`}
+              <sl-divider></sl-divider>
+              <sl-menu-label>${msg("Manage Org")}</sl-menu-label>
               <sl-menu-item
                 @click=${() => {
                   this.currOrg = org;
