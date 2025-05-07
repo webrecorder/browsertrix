@@ -823,7 +823,7 @@ export class App extends BtrixElement {
       case "admin":
         return this.renderAdminPage(
           () => html`
-            <btrix-admin class="w-full md:bg-neutral-50"></btrix-admin>
+            <btrix-admin class="w-full bg-neutral-50"></btrix-admin>
           `,
         );
 

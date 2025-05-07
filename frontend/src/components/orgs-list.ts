@@ -5,18 +5,43 @@ import type {
   SlCheckbox,
   SlInput,
   SlMenuItem,
+  SlRadioGroup,
 } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import Fuse from "fuse.js";
-import { css, html, nothing, type PropertyValues } from "lit";
+import {
+  css,
+  html,
+  nothing,
+  type PropertyValues,
+  type TemplateResult,
+} from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
+import { repeat } from "lit/directives/repeat.js";
 import { when } from "lit/directives/when.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
+import { ClipboardController } from "@/controllers/clipboard";
 import { SubscriptionStatus } from "@/types/billing";
 import type { ProxiesAPIResponse, Proxy } from "@/types/crawler";
 import type { OrgData } from "@/utils/orgs";
+
+enum OrgFilter {
+  All = "all",
+  Active = "active",
+  Inactive = "inactive",
+  Trialing = "trialing",
+  ScheduledCancel = "scheduled-cancel",
+}
+
+const none = html`
+  <sl-icon
+    name="slash"
+    class="text-base text-neutral-400"
+    label=${msg("None")}
+  ></sl-icon>
+`;
 
 /**
  * @fires update-quotas
@@ -76,6 +101,9 @@ export class OrgsList extends BtrixElement {
   @state()
   private search = "";
 
+  @state()
+  private orgFilter: OrgFilter = OrgFilter.All;
+
   protected willUpdate(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("orgList")) {
       this.fuse.setCollection(this.orgList ?? []);
@@ -91,16 +119,20 @@ export class OrgsList extends BtrixElement {
       return this.renderSkeleton();
     }
 
-    const orgs = this.search
+    const searchResults = this.search
       ? this.fuse.search(this.search).map(({ item }) => item)
       : this.orgList;
+
+    const orgs = searchResults?.filter((org) =>
+      this.filterOrg(org, this.orgFilter),
+    );
 
     return html`
       <sl-input
         value=${this.search}
         clearable
         size="small"
-        class="mb-6"
+        class="mb-4"
         placeholder=${msg(
           "Search all orgs by name, id, slug, users, and subscriptions",
         )}
@@ -115,6 +147,42 @@ export class OrgsList extends BtrixElement {
           library="default"
         ></sl-icon
       ></sl-input>
+      <btrix-overflow-scroll
+        class="-mx-3 [--btrix-overflow-scroll-scrim-color:theme(colors.neutral.50)] part-[content]:px-3"
+      >
+        <sl-radio-group
+          size="small"
+          value=${this.orgFilter}
+          class="mb-6 flex min-w-min justify-end"
+          @sl-change=${(e: SlChangeEvent) => {
+            this.orgFilter = (e.target as SlRadioGroup).value as OrgFilter;
+          }}
+        >
+          ${[
+            { label: msg("All"), icon: "asterisk", filter: OrgFilter.All },
+            {
+              label: msg("Active"),
+              icon: "credit-card",
+              filter: OrgFilter.Active,
+            },
+            {
+              label: msg("Inactive"),
+              icon: "x-square",
+              filter: OrgFilter.Inactive,
+            },
+            {
+              label: msg("Trials"),
+              icon: "basket",
+              filter: OrgFilter.Trialing,
+            },
+            {
+              label: msg("Cancellation Scheduled"),
+              icon: "calendar2-x",
+              filter: OrgFilter.ScheduledCancel,
+            },
+          ].map((options) => this.renderFilterButton(searchResults, options))}
+        </sl-radio-group>
+      </btrix-overflow-scroll>
       <btrix-overflow-scroll
         class="-mx-3 [--btrix-overflow-scroll-scrim-color:theme(colors.neutral.50)] part-[content]:px-3"
       >
@@ -143,7 +211,7 @@ export class OrgsList extends BtrixElement {
             </btrix-table-header-cell>
           </btrix-table-head>
           <btrix-table-body class="rounded border">
-            ${orgs?.map(this.renderOrg)}
+            ${repeat(orgs || [], (org) => org.id, this.renderOrg)}
           </btrix-table-body>
         </btrix-table>
       </btrix-overflow-scroll>
@@ -151,6 +219,61 @@ export class OrgsList extends BtrixElement {
       ${this.renderOrgQuotas()} ${this.renderOrgProxies()}
       ${this.renderOrgReadOnly()} ${this.renderOrgDelete()}
     `;
+  }
+
+  private renderFilterButton(
+    orgs: OrgData[] | undefined,
+    options: { label: string; icon: string; filter: OrgFilter },
+  ) {
+    const { label, icon, filter } = options;
+    return this.orgList?.some((org) => this.filterOrg(org, filter))
+      ? html`
+          <sl-radio-button
+            pill
+            value=${filter}
+            class="part-[label]:items-baseline"
+          >
+            <sl-icon name=${icon} slot="prefix"></sl-icon>
+            ${label}
+            <span class="ml-2 text-xs font-normal tabular-nums"
+              >${this.localize.number(
+                orgs?.filter((org) => this.filterOrg(org, filter)).length ?? 0,
+              )}</span
+            >
+          </sl-radio-button>
+        `
+      : nothing;
+  }
+
+  private filterOrg(org: OrgData, filter: OrgFilter): boolean {
+    switch (filter) {
+      case OrgFilter.Active:
+        return (
+          !!org.subscription &&
+          org.subscription.status === SubscriptionStatus.Active
+        );
+      case OrgFilter.Inactive:
+        return (
+          !!org.subscription &&
+          !(
+            org.subscription.status === SubscriptionStatus.Active ||
+            org.subscription.status === SubscriptionStatus.Trialing
+          )
+        );
+      case OrgFilter.Trialing:
+        return (
+          !!org.subscription &&
+          org.subscription.status === SubscriptionStatus.Trialing
+        );
+      case OrgFilter.ScheduledCancel:
+        return (
+          !!org.subscription &&
+          org.subscription.status === SubscriptionStatus.Active &&
+          !!org.subscription.futureCancelDate
+        );
+      case OrgFilter.All:
+        return true;
+    }
   }
 
   private renderOrgQuotas() {
@@ -605,14 +728,6 @@ export class OrgsList extends BtrixElement {
 
     const memberCount = Object.keys(org.users || {}).length;
 
-    const none = html`
-      <sl-icon
-        name="slash"
-        class="text-base text-neutral-400"
-        label=${msg("None")}
-      ></sl-icon>
-    `;
-
     let status = {
       icon: html`<sl-icon
         class="text-base text-success"
@@ -650,7 +765,10 @@ export class OrgsList extends BtrixElement {
       };
     }
 
-    let subscription = {
+    let subscription: {
+      icon: TemplateResult<1>;
+      description: string | TemplateResult<1>;
+    } = {
       icon: none,
       description: msg("No Subscription"),
     };
@@ -658,14 +776,72 @@ export class OrgsList extends BtrixElement {
     if (org.subscription) {
       switch (org.subscription.status) {
         case SubscriptionStatus.Active:
-          subscription = {
-            icon: html`<sl-icon
-              class="text-base text-success"
-              name="credit-card-fill"
-              label=${msg("Active Subscription")}
-            ></sl-icon>`,
-            description: msg("Active Subscription"),
-          };
+          if (
+            org.subscription.futureCancelDate &&
+            new Date(org.subscription.futureCancelDate).getTime() -
+              new Date().getTime() >=
+              0
+          ) {
+            subscription = {
+              icon: html`<sl-icon
+                class="text-base text-warning"
+                name="calendar2-x"
+                label=${msg("Subscription Cancellation Scheduled")}
+              ></sl-icon>`,
+              description: html`${msg("Subscription Cancellation Scheduled")}
+                <div class="mt-2 text-xs">
+                  ${msg("Subscription will be cancelled in")}
+                  ${this.localize.humanizeDuration(
+                    new Date(org.subscription.futureCancelDate).getTime() -
+                      new Date().getTime(),
+                  )}
+                  (${this.localize.date(org.subscription.futureCancelDate, {
+                    timeStyle: "medium",
+                    dateStyle: "medium",
+                  })})
+                </div>`,
+            };
+          } else if (
+            org.subscription.futureCancelDate &&
+            new Date(org.subscription.futureCancelDate).getTime() -
+              new Date().getTime() <
+              0
+          ) {
+            subscription = {
+              icon: html`<sl-icon
+                  class="text-base text-warning"
+                  name="calendar2-x"
+                  label=${msg("Subscription Cancellation Scheduled")}
+                ></sl-icon>
+                <sl-icon
+                  class="text-base text-danger"
+                  name="x-octagon-fill"
+                  label=${msg("Subscription Cancellation Scheduled")}
+                ></sl-icon>`,
+              description: html`${msg(
+                  "Subscription Cancellation Scheduled in the Past",
+                )}
+                <div class="mt-2 text-xs">
+                  ${msg("Subscription was scheduled for cancellation at")}
+                  ${this.localize.date(org.subscription.futureCancelDate, {
+                    timeStyle: "medium",
+                    dateStyle: "medium",
+                  })}
+                </div>
+                <div class="my-2 font-bold text-danger-300">
+                  ${msg("This indicates something has gone wrong.")}
+                </div>`,
+            };
+          } else {
+            subscription = {
+              icon: html`<sl-icon
+                class="text-base text-success"
+                name="credit-card-fill"
+                label=${msg("Active Subscription")}
+              ></sl-icon>`,
+              description: msg("Active Subscription"),
+            };
+          }
           break;
         case SubscriptionStatus.Trialing:
           subscription = {
@@ -731,10 +907,11 @@ export class OrgsList extends BtrixElement {
           : "opacity-50"} cursor-pointer select-none border-b bg-neutral-0 transition-colors first-of-type:rounded-t last-of-type:rounded-b last-of-type:border-none focus-within:bg-neutral-50 hover:bg-neutral-50"
       >
         <btrix-table-cell class="min-w-6 gap-1 pl-2">
-          <sl-tooltip content=${status.description}>
+          <sl-tooltip content=${status.description} hoist>
             ${status.icon}
           </sl-tooltip>
-          <sl-tooltip content=${subscription.description}>
+          <sl-tooltip hoist>
+            <span slot="content">${subscription.description}</span>
             ${subscription.icon}
           </sl-tooltip>
         </btrix-table-cell>
@@ -786,6 +963,74 @@ export class OrgsList extends BtrixElement {
             @click=${(e: MouseEvent) => e.stopPropagation()}
           >
             <sl-menu>
+              <sl-menu-label
+                >${msg("Subscription")}
+                ${when(
+                  org.subscription,
+                  (sub) => html`
+                    <table class="w-full mt-1 text-xs whitespace-nowrap font-normal">
+                      <tr>
+                        <th scope="row" class="font-normal text-left">${msg("Plan ID")}</th>
+                        <td class="text-right font-monospace text-neutral-900">
+                            ${sub.planId}
+                        </td>
+                      </tr>
+                      <tr>
+                        <th scope="row" class="font-normal text-left">${msg("Action on Cancel")}</td>
+                        <td class="text-right font-bold text-neutral-900">
+                          ${
+                            sub.readOnlyOnCancel
+                              ? msg("Read-Only")
+                              : msg("Delete")
+                          }
+                        </td>
+                      </tr>
+                    </table>
+                  `,
+                )}
+              </sl-menu-label>
+              ${org.subscription
+                ? org.subscription.subId.startsWith("stripe:")
+                  ? html`<sl-menu-item
+                      @click=${() => {
+                        window.open(
+                          `https://dashboard.stripe.com/subscriptions/${org.subscription!.subId.slice(7)}`,
+                          "_blank",
+                        );
+                      }}
+                    >
+                      <sl-icon slot="prefix" name="stripe"></sl-icon>
+                      ${msg("Open in Stripe")}
+                      <sl-icon
+                        slot="suffix"
+                        name="box-arrow-up-right"
+                      ></sl-icon>
+                    </sl-menu-item>`
+                  : html`<sl-menu-item
+                      @click=${() => {
+                        ClipboardController.copyToClipboard(
+                          org.subscription!.subId,
+                        );
+                        this.notify.toast({
+                          message: msg("Subscription ID Copied"),
+                          duration: 1000,
+                          variant: "success",
+                          id: "item-copied",
+                        });
+                      }}
+                    >
+                      ${msg("Copy Subscription ID")}
+                    </sl-menu-item>`
+                : html`<sl-menu-item disabled>
+                    <sl-icon
+                      name="slash"
+                      class="text-base text-neutral-400"
+                      slot="prefix"
+                    ></sl-icon>
+                    ${msg("No Subscription")}</sl-menu-item
+                  >`}
+              <sl-divider></sl-divider>
+              <sl-menu-label>${msg("Manage Org")}</sl-menu-label>
               <sl-menu-item
                 @click=${() => {
                   this.currOrg = org;
