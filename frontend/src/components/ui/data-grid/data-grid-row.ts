@@ -4,6 +4,7 @@ import { html, type PropertyValues } from "lit";
 import { customElement, property, queryAll, state } from "lit/decorators.js";
 import { directive } from "lit/directive.js";
 import { ifDefined } from "lit/directives/if-defined.js";
+import { when } from "lit/directives/when.js";
 import isEqual from "lodash/fp/isEqual";
 
 import { CellDirective } from "./cellDirective";
@@ -59,6 +60,18 @@ export class DataGridRow extends FormControl(TableRow) {
   removable = false;
 
   /**
+   * Whether the row can be clicked.
+   */
+  @property({ type: Boolean })
+  clickable = false;
+
+  /**
+   * Whether the row can be expanded.
+   */
+  @property({ type: Boolean })
+  expandable = false;
+
+  /**
    * Whether cells can be edited.
    */
   @property({ type: Boolean })
@@ -69,6 +82,9 @@ export class DataGridRow extends FormControl(TableRow) {
    */
   @property({ type: String, reflect: true })
   name?: string;
+
+  @state()
+  private expanded = false;
 
   @state()
   private cellValues: Partial<GridItem> = {};
@@ -132,7 +148,30 @@ export class DataGridRow extends FormControl(TableRow) {
   render() {
     if (!this.columns?.length) return html``;
 
+    let expandCell = html``;
     let removeCell = html``;
+
+    if (this.expandable) {
+      expandCell = html`
+        <btrix-data-grid-cell
+          class=${clsx(tw`border-l p-0`, cellStyle)}
+          @keydown=${this.onKeydown}
+        >
+          <sl-icon-button
+            class=${clsx(
+              tw`p-1 text-base transition-transform`,
+              this.expanded && tw`rotate-90`,
+            )}
+            name="chevron-right"
+            label=${this.expanded ? msg("Contract") : msg("Expand")}
+            @click=${(e: MouseEvent) => {
+              e.stopPropagation();
+              this.expanded = !this.expanded;
+            }}
+          ></sl-icon-button>
+        </btrix-data-grid-cell>
+      `;
+    }
 
     if (this.removable) {
       removeCell = html`
@@ -160,8 +199,11 @@ export class DataGridRow extends FormControl(TableRow) {
       `;
     }
 
-    return html`${this.columns.map(this.renderCell)}${removeCell}`;
+    return html`${expandCell}${this.columns.map(this.renderCell)}${removeCell}
+    ${when(this.expanded && this.item, (item) => this.renderDetails({ item }))} `;
   }
+
+  renderDetails = (_row: { item: GridItem }) => html``;
 
   private readonly renderCell = (col: GridColumn, i: number) => {
     const validationMessage = this.#invalidInputsMap.get(col.field);
@@ -180,9 +222,11 @@ export class DataGridRow extends FormControl(TableRow) {
       >
         <btrix-data-grid-cell
           class=${clsx(
-            i > 0 && tw`border-l`,
+            !this.clickable && i > 0 && tw`border-l`,
             cellStyle,
             editable && editableCellStyle,
+            col.align === "center" && tw`justify-center`,
+            col.align === "end" && tw`justify-end`,
           )}
           .column=${col}
           .item=${this.item}

@@ -4,7 +4,7 @@ import { repeat } from "lit/directives/repeat.js";
 import type { GridItem, GridRowId, GridRows } from "./types";
 
 export function renderRows<T = GridItem>(
-  rows: GridRows<GridItem>,
+  rows: GridRows<T>,
   renderRow: (
     { id, item }: { id: GridRowId; item: T },
     index: number,
@@ -13,6 +13,6 @@ export function renderRows<T = GridItem>(
   return repeat(
     rows,
     ([id]) => id,
-    ([id, item], i) => renderRow({ id, item: item as T }, i),
+    ([id, item], i) => renderRow({ id, item: item }, i),
   );
 }

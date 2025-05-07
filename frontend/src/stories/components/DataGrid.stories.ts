@@ -33,6 +33,9 @@ type Story = StoryObj<RenderProps>;
  * In its most basic configuration, the only required fields
  * are a list of items, and a list of columns that define which
  * key-value pairs of an item should be displayed.
+ *
+ * Nested keys are supported by specifying a deep path, e.g.
+ * `object.nestedObject.key`.
  */
 export const Basic: Story = {
   args: {},
@@ -103,7 +106,7 @@ export const ColumnWidths: Story = {
  */
 export const RemoveRows: Story = {
   args: {
-    removeRows: true,
+    rowsRemovable: true,
   },
 };
 
@@ -112,7 +115,7 @@ export const RemoveRows: Story = {
  */
 export const AddRows: Story = {
   args: {
-    addRows: true,
+    rowsAddible: true,
     defaultItem: {
       a: "A",
       b: "--",
@@ -129,7 +132,7 @@ export const AddRows: Story = {
 export const AddRowsInput: Story = {
   name: "Add more than one row",
   args: {
-    addRows: true,
+    rowsAddible: true,
     addRowsInputValue: 5,
     defaultItem: {
       a: "A",
@@ -138,6 +141,18 @@ export const AddRowsInput: Story = {
       d: "--",
       e: "--",
     },
+  },
+};
+
+/**
+ * Rows can be clicked.
+ *
+ * Open your browser console logs to view the clicked row.
+ */
+export const ClickRow: Story = {
+  args: {
+    items: makeItems(5),
+    rowsClickable: true,
   },
 };
 
@@ -200,7 +215,7 @@ export const FormControl: Story = {
           return html`
             <btrix-syntax-input
               name="selector"
-              class="flex-1 [--sl-input-border-color:transparent] [--sl-input-border-radius-medium:0]"
+              class="flex-1 [--sl-input-border-radius-medium:0] [--sl-input-border-color:transparent]"
               value=${item.selector || ""}
               language="css"
             ></btrix-syntax-input>
@@ -262,9 +277,9 @@ export const FormControl: Story = {
         }
         formControlLabel="Page QA Table"
         stickyHeader="table"
-        addRows
+        rowsAddible
         addRowsInputValue="10"
-        removeRows
+        rowsRemovable
         editCells
       >
         ${renderRows(

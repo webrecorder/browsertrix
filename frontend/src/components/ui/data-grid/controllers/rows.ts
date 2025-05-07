@@ -19,11 +19,9 @@ export class DataGridRowsController implements ReactiveController {
   readonly #host: ReactiveControllerHost &
     EventTarget & {
       items?: GridItem[];
-      rowKey?: DataGrid["rowKey"];
-      defaultItem?: DataGrid["defaultItem"];
-      removeRows?: DataGrid["removeRows"];
-      addRows?: DataGrid["addRows"];
-    };
+    } & Partial<
+      Pick<DataGrid, "rowKey" | "defaultItem" | "rowsRemovable" | "rowsAddible">
+    >;
 
   #prevItems?: GridItem[];
 

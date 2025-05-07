@@ -12,6 +12,9 @@ const meta = {
   title: "Features/Crawl Log Table",
   component: "btrix-crawl-log-table",
   tags: ["autodocs"],
+  decorators: [
+    (story) => html` <div class="w-full max-w-[58rem]">${story()}</div> `,
+  ],
   render: (args) => html`
     <btrix-crawl-log-table
       .logs=${args.logs}
@@ -27,7 +30,7 @@ const meta = {
         timestamp: new Date().toISOString(),
         logLevel: CrawlLogLevel.Info,
         details: {
-          page: "https://example.com",
+          page: "https://webrecorder.net/blog/2025-04-16-our-new-resources-page-for-web-archivists/",
         },
         context: CrawlLogContext.General,
         message: "Sample info log",
@@ -36,7 +39,7 @@ const meta = {
         timestamp: new Date().toISOString(),
         logLevel: CrawlLogLevel.Warning,
         details: {
-          page: "https://example.com",
+          page: "https://webrecorder.net/blog/2025-04-30-our-commitment-to-provide-accessible-tools/",
         },
         context: CrawlLogContext.General,
         message: "Sample warning log",
