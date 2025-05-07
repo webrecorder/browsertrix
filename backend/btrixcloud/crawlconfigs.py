@@ -608,36 +608,15 @@ class CrawlConfigOps:
             if sort_by == "name":
                 sort_query["firstSeed"] = sort_direction
 
-            # Special case for last-* fields in case crawl is running or hasn't been run yet
+            # Special case for last-* fields in case crawl is running
             elif sort_by in ("lastRun", "lastCrawlTime", "lastCrawlStartTime"):
-                # Add helper to sort null values first (i.e. when a workflow hasn't been run yet)
-                aggregate.extend(
-                    [
-                        {
-                            "$addFields": {
-                                "lastRunHelper": {
-                                    "$cond": {
-                                        "if": {"$eq": ["$lastRun", None]},
-                                        "then": 1,
-                                        "else": 0,
-                                    }
-                                }
-                            }
-                        }
-                    ]
-                )
                 sort_query = {
                     "isCrawlRunning": sort_direction,
-                    "lastRunHelper": sort_direction,
                     sort_by: sort_direction,
                     "modified": sort_direction,
                 }
 
             aggregate.extend([{"$sort": sort_query}])
-
-            if sort_by in ("lastRun", "lastCrawlTime", "lastCrawlStartTime"):
-                # Remove helpers added earlier
-                aggregate.extend([{"$unset": "lastRunHelper"}])
 
         aggregate.extend(
             [
