@@ -57,13 +57,13 @@ export function metadataColumn(collection?: Collection | PublicCollection) {
         render: (col) => `${localize.bytes(col.totalSize)}`,
       })}
       ${metadataItem({
-        label: metadata.topPageDomains,
+        label: metadata.topPageHosts,
         render: (col) =>
           html` <table>
-            ${col.topPageOrigins.map(
+            ${col.topPageHosts.map(
               (x) => html`
                 <tr>
-                  <td>${x.origin}</td>
+                  <td>${x.host}</td>
                   <td class="pl-4">${x.count}</td>
                 </tr>
               `,

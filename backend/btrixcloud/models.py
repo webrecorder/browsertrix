@@ -1418,10 +1418,10 @@ class PreloadResource(BaseModel):
 
 
 # ============================================================================
-class OriginCount(BaseModel):
-    """Origin Count"""
+class HostCount(BaseModel):
+    """Host Count"""
 
-    origin: str
+    host: str
     count: int
 
 
@@ -1523,7 +1523,7 @@ class CollOut(BaseMongoModel):
     pagesQueryUrl: str = ""
     downloadUrl: Optional[str] = None
 
-    topPageOrigins: List[OriginCount] = []
+    topPageHosts: List[HostCount] = []
 
 
 # ============================================================================
@@ -1559,6 +1559,8 @@ class PublicCollOut(BaseMongoModel):
     defaultThumbnailName: Optional[str] = None
 
     allowPublicDownload: bool = True
+
+    topPageHosts: List[HostCount] = []
 
 
 # ============================================================================

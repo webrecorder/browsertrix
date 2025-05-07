@@ -705,7 +705,7 @@ class CollectionOps:
 
         unique_page_count = await self.page_ops.get_unique_page_count(crawl_ids)
 
-        top_page_origins = await self.page_ops.get_top_page_origins(crawl_ids)
+        top_page_hosts = await self.page_ops.get_top_page_hosts(crawl_ids)
 
         await self.collections.find_one_and_update(
             {"_id": collection_id},
@@ -717,7 +717,7 @@ class CollectionOps:
                     "totalSize": total_size,
                     "tags": sorted_tags,
                     "preloadResources": preload_resources,
-                    "topPageOrigins": top_page_origins,
+                    "topPageHosts": top_page_hosts,
                 }
             },
         )

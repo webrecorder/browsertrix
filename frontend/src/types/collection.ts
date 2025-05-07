@@ -41,9 +41,9 @@ export const publicCollectionSchema = z.object({
   crawlCount: z.number(),
   uniquePageCount: z.number(),
   pageCount: z.number(),
-  topPageOrigins: z.array(
+  topPageHosts: z.array(
     z.object({
-      origin: z.string(),
+      host: z.string(),
       count: z.number(),
     }),
   ),
