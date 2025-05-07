@@ -940,7 +940,12 @@ class PageOps:
                         }
                     }
                 },
-                {"$group": {"_id": "$host.captures", "count": {"$count": {}}}},
+                {
+                    "$group": {
+                        "_id": {"$first": "$host.captures"},
+                        "count": {"$count": {}},
+                    }
+                },
                 {"$sort": {"count": -1}},
             ]
         )
