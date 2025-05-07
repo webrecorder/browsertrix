@@ -1,9 +1,11 @@
 import { localized, msg } from "@lit/localize";
 import clsx from "clsx";
-import { css, html, nothing } from "lit";
+import { css, html, nothing, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
+import type { BtrixRowClickEvent } from "@/components/ui/data-grid/events/btrix-row-click";
+import type { GridColumn } from "@/components/ui/data-grid/types";
 import { noData } from "@/strings/ui";
 import { CrawlLogContext, CrawlLogLevel, type CrawlLog } from "@/types/crawler";
 import { truncate } from "@/utils/css";
@@ -27,6 +29,13 @@ const contextLevelFor: Record<CrawlLogContext, number> = {
 };
 // Minimum context level to highlight
 const MIN_CONTEXT_LEVEL = 3;
+
+enum Field {
+  Timestamp = "timestamp",
+  Level = "logLevel",
+  Message = "message",
+  PageURL = "details.page",
+}
 
 /**
  * Displays crawl logs as tabular data.
@@ -66,12 +75,51 @@ export class CrawlLogTable extends TailwindElement {
       })
     | null = null;
 
+  private readonly columns = [
+    {
+      field: Field.Level,
+      label: msg("Level"),
+      width: "max-content",
+      align: "center",
+      renderCell: ({ item }) => this.renderLevel(item),
+    },
+    {
+      field: Field.Timestamp,
+      label: msg("Timestamp"),
+      width: "max-content",
+      renderCell: ({ item }) => this.renderTimestamp(item),
+    },
+    {
+      field: Field.Message,
+      label: msg("Message"),
+      width: "1fr",
+      renderCell: ({ item }) => this.renderMessage(item),
+    },
+    {
+      field: Field.PageURL,
+      label: msg("Page URL"),
+      width: "50ch",
+      renderCell: ({ item }) => this.renderPageUrl(item),
+    },
+  ] satisfies GridColumn<Field, CrawlLog>[];
+
   render() {
     if (!this.logs) return;
 
     const rowClasses = tw`grid grid-cols-[5rem_2.5rem_20rem_1fr] leading-[1.3]`;
 
-    return html`<btrix-numbered-list class="text-xs">
+    return html`
+      <btrix-data-grid
+        class="text-xs"
+        .columns=${this.columns}
+        .items=${this.logs}
+        rowsClickable
+        stickyHeader="viewport"
+        @btrix-row-click=${(e: BtrixRowClickEvent) => {
+          console.log("click", e.detail);
+        }}
+      ></btrix-data-grid>
+      <btrix-numbered-list class="text-xs">
         <btrix-numbered-list-header slot="header">
           <div class=${rowClasses}>
             <div class="px-2">${msg("Timestamp")}</div>
@@ -109,21 +157,8 @@ export class CrawlLogTable extends TailwindElement {
                 )}
               >
                 <div>
-                  <sl-tooltip
-                    placement="bottom"
-                    @sl-hide=${stopProp}
-                    @sl-after-hide=${stopProp}
-                  >
-                    <btrix-format-date
-                      date=${log.timestamp}
-                      hour="2-digit"
-                      minute="2-digit"
-                      second="2-digit"
-                      hour-format="24"
-                    >
-                    </btrix-format-date>
-                    <btrix-format-date
-                      slot="content"
+                  ${this.renderWithTooltip(
+                    html`<btrix-format-date
                       date=${log.timestamp}
                       month="long"
                       day="numeric"
@@ -133,8 +168,17 @@ export class CrawlLogTable extends TailwindElement {
                       second="numeric"
                       time-zone-name="short"
                     >
-                    </btrix-format-date>
-                  </sl-tooltip>
+                    </btrix-format-date>`,
+                  )(
+                    html`<btrix-format-date
+                      date=${log.timestamp}
+                      hour="2-digit"
+                      minute="2-digit"
+                      second="2-digit"
+                      hour-format="24"
+                    >
+                    </btrix-format-date>`,
+                  )}
                 </div>
                 <div class="pr-4 text-center">
                   <sl-tooltip
@@ -175,10 +219,49 @@ export class CrawlLogTable extends TailwindElement {
           this.selectedLog = null;
         }}
         >${this.renderLogDetails()}</btrix-dialog
-      > `;
+      >
+    `;
   }
 
-  private renderLevel(log: CrawlLog) {
+  private readonly renderTimestamp = (log: CrawlLog) =>
+    this.renderWithTooltip(
+      html`<btrix-format-date
+        date=${log.timestamp}
+        weekday="long"
+        month="long"
+        day="numeric"
+        year="numeric"
+        hour="numeric"
+        minute="numeric"
+        second="numeric"
+        time-zone-name="short"
+      >
+      </btrix-format-date>`,
+    )(
+      html`<btrix-format-date
+        date=${log.timestamp}
+        month="2-digit"
+        day="2-digit"
+        year="numeric"
+        hour="2-digit"
+        minute="2-digit"
+        second="2-digit"
+        hour-format="24"
+      >
+      </btrix-format-date>`,
+    );
+
+  private readonly renderMessage = (log: CrawlLog) =>
+    html`${typeof log.message === "string"
+      ? log.message
+      : this.renderPre(log.message)}`;
+
+  private readonly renderLevel = (log: CrawlLog) =>
+    this.renderWithTooltip(
+      html`<span class="capitalize">${log.logLevel}</span>`,
+    )(this.renderLevelIcon(log));
+
+  private readonly renderLevelIcon = (log: CrawlLog) => {
     const logLevel = log.logLevel;
     const contextLevel =
       contextLevelFor[log.context as unknown as CrawlLogContext] || 0;
@@ -209,10 +292,10 @@ export class CrawlLogTable extends TailwindElement {
       case CrawlLogLevel.Info:
         return html`
           <sl-icon
-            name="info-circle-fill"
+            name="info-circle"
             class=${clsx(
               tw`text-neutral-400`,
-              contextLevel < MIN_CONTEXT_LEVEL && tw`opacity-30`,
+              contextLevel < MIN_CONTEXT_LEVEL && tw`opacity-50`,
               baseClasses,
             )}
           ></sl-icon>
@@ -233,7 +316,26 @@ export class CrawlLogTable extends TailwindElement {
         `;
         break;
     }
-  }
+  };
+
+  private readonly renderPageUrl = (log: CrawlLog) =>
+    this.renderWithTooltip(
+      html`<span class="break-all">${log.details.page}</span>`,
+    )(html`<div class="truncate">${log.details.page}</div>`);
+
+  private readonly renderWithTooltip =
+    (tooltipContent: string | TemplateResult) =>
+    (cellContent: TemplateResult<1>) => html`
+      <sl-tooltip
+        placement="bottom"
+        @sl-hide=${stopProp}
+        @sl-after-hide=${stopProp}
+        hoist
+      >
+        ${cellContent}
+        <div slot="content">${tooltipContent}</div>
+      </sl-tooltip>
+    `;
 
   private renderLogDetails() {
     if (!this.selectedLog) return;
