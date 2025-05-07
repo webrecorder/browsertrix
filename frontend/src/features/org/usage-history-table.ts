@@ -161,7 +161,7 @@ export class UsageHistoryTable extends BtrixElement {
       <btrix-data-grid
         .columns=${cols}
         .items=${items}
-        stickyHeader
+        stickyHeader="viewport"
       ></btrix-data-grid>
     `;
   }

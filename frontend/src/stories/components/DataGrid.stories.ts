@@ -1,7 +1,12 @@
 import type { Meta, StoryObj } from "@storybook/web-components";
 import { html } from "lit";
 
-import { defaultArgs, renderComponent, type RenderProps } from "./DataGrid";
+import {
+  defaultArgs,
+  makeItems,
+  renderComponent,
+  type RenderProps,
+} from "./DataGrid";
 import {
   dataGridDecorator,
   formControlName,
@@ -37,11 +42,28 @@ export const Basic: Story = {
 };
 
 /**
- * The table header can stick to the top of the containing element.
+ * The table header can stick to the top of the table.
  */
-export const StickyHeader: Story = {
+export const StickyHeaderTable: Story = {
+  name: "Sticky Header to Table",
   args: {
-    stickyHeader: true,
+    stickyHeader: "table",
+    items: makeItems(50),
+  },
+};
+
+/**
+ * The table header can stick to the top of the viewport.
+ *
+ * A caveat is that this will disable horizontal scrolling the table,
+ * so care should be taken that the table will render correctly in
+ * smaller screen sizes.
+ */
+export const StickyHeaderViewport: Story = {
+  name: "Sticky Header to Viewport",
+  args: {
+    stickyHeader: "viewport",
+    items: makeItems(50),
   },
 };
 
@@ -181,7 +203,7 @@ export const FormControl: Story = {
           return html`
             <btrix-syntax-input
               name="selector"
-              class="flex-1 [--sl-input-border-radius-medium:0] [--sl-input-border-color:transparent]"
+              class="flex-1 [--sl-input-border-color:transparent] [--sl-input-border-radius-medium:0]"
               value=${item.selector || ""}
               language="css"
             ></btrix-syntax-input>
@@ -242,8 +264,9 @@ export const FormControl: Story = {
           context.rowsController
         }
         formControlLabel="Page QA Table"
-        stickyHeader
+        stickyHeader="table"
         addRows
+        addRowsInputValue="10"
         removeRows
         editCells
       >

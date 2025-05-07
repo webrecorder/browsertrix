@@ -8,21 +8,24 @@ import "@/components/ui/data-grid";
 
 export type RenderProps = Pick<DataGrid, keyof DataGrid>;
 
+export const makeItems = (n: number) =>
+  Array.from({ length: n }).map((_, i) => ({
+    ...columns.reduce(
+      (obj, { field, label }) => ({
+        ...obj,
+        [field]: `${label}${i + 1}`,
+      }),
+      {},
+    ),
+    id: nanoid(),
+  })) satisfies RenderProps["items"];
+
 const columns = "abcde".split("").map((field, i) => ({
   field,
   label: field.toUpperCase(),
   editable: i > 0,
 })) satisfies RenderProps["columns"];
-const items = Array.from({ length: 5 }).map((_, i) => ({
-  ...columns.reduce(
-    (obj, { field, label }) => ({
-      ...obj,
-      [field]: `${label}${i + 1}`,
-    }),
-    {},
-  ),
-  id: nanoid(),
-})) satisfies RenderProps["items"];
+const items = makeItems(10);
 
 export const defaultArgs = { columns, items } satisfies Pick<
   RenderProps,
@@ -46,7 +49,7 @@ export const renderComponent = ({
       .items=${items || defaultArgs.items}
       .defaultItem=${defaultItem}
       formControlLabel=${ifDefined(formControlLabel)}
-      ?stickyHeader=${stickyHeader}
+      stickyHeader=${ifDefined(stickyHeader)}
       ?addRows=${addRows}
       addRowsInputValue=${ifDefined(addRowsInputValue)}
       ?removeRows=${removeRows}

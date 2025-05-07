@@ -57,10 +57,12 @@ export class DataGrid extends TailwindElement {
   items?: GridItem[];
 
   /**
-   * Stick header row to the top of the viewport.
+   * Stick header row to the top of the table or the viewport.
+   *
+   * Horizontal scroll will be disabled if the header sticks to the viewport.
    */
-  @property({ type: Boolean })
-  stickyHeader = false;
+  @property({ type: String })
+  stickyHeader?: "table" | "viewport";
 
   /**
    * Item key to use as the row key, like an ID.
@@ -134,20 +136,43 @@ export class DataGrid extends TailwindElement {
   render() {
     if (!this.columns?.length) return;
 
-    const cssWidths = this.columns.map((col) => col.width ?? "1fr");
-
     return html`
       <slot name="label">
         <label id=${this.formControlLabelId} class="form-label text-xs">
           ${this.formControlLabel}
         </label>
       </slot>
+      <div
+        class=${clsx(
+          this.stickyHeader === "table" && tw`overflow-x-auto overscroll-none`,
+          this.stickyHeader && tw`rounded border`,
+        )}
+      >
+        ${this.renderTable()}
+      </div>
 
+      ${this.addRows && !this.addRowsInputValue
+        ? this.renderAddButton()
+        : nothing}
+    `;
+  }
+
+  private renderTable() {
+    if (!this.columns?.length) return;
+
+    const cssWidths = this.columns.map((col) => col.width ?? "1fr");
+    const showFooter = this.addRows && this.addRowsInputValue;
+
+    return html`
       <btrix-table
         role="grid"
         class=${clsx(
-          tw`relative size-full overflow-auto`,
-          this.stickyHeader && tw`rounded border`,
+          tw`relative size-full min-w-0`,
+          // Add background color for overscroll:
+          this.stickyHeader && tw`rounded bg-neutral-50`,
+          // Height is required for sticky + horizontal scrolling to work:
+          this.stickyHeader === "table" &&
+            tw`max-h-[calc(100vh-4rem)] overflow-y-auto`,
         )}
         style="--btrix-table-grid-template-columns: ${cssWidths.join(" ")}${this
           .removeRows
@@ -168,14 +193,16 @@ export class DataGrid extends TailwindElement {
         >
           ${this.columns.map(
             (col) => html`
-              <btrix-table-header-cell>
+              <btrix-table-header-cell
+                class=${clsx(col.description && tw`flex-wrap`)}
+              >
                 ${col.label}
                 ${col.description
                   ? html`
                       <sl-tooltip content=${col.description}>
                         <sl-icon
                           name="info-circle"
-                          class="ml-1.5 align-[-.175em] text-sm text-slate-500"
+                          class="ml-1.5 flex-shrink-0 align-[-.175em] text-sm text-slate-500"
                         ></sl-icon>
                       </sl-tooltip>
                     `
@@ -192,8 +219,11 @@ export class DataGrid extends TailwindElement {
         <btrix-table-body
           class=${clsx(
             tw`[--btrix-table-cell-padding:var(--sl-spacing-x-small)]`,
-            tw`leading-none`,
-            !this.stickyHeader && tw`rounded border`,
+            tw`bg-[var(--sl-panel-background-color)] leading-none`,
+            !this.stickyHeader && [
+              tw`border`,
+              showFooter ? tw`rounded-t` : tw`rounded`,
+            ],
           )}
           @btrix-remove=${(e: CustomEvent<RowRemoveEventDetail>) => {
             const { key } = e.detail;
@@ -206,10 +236,21 @@ export class DataGrid extends TailwindElement {
           }}
         >
           ${this.renderRows()}
-          ${this.addRows && this.addRowsInputValue
-            ? html`
-                <btrix-table-row class="border-t">
-                  <btrix-table-cell class="col-span-full px-1">
+        </btrix-table-body>
+
+        ${showFooter
+          ? html`
+              <btrix-table-footer
+                class=${clsx(
+                  tw`[--btrix-table-cell-padding-x:var(--sl-spacing-2x-small)] [--btrix-table-cell-padding-y:var(--sl-spacing-x-small)]`,
+                  tw`bg-[var(--sl-panel-background-color)]`,
+                  this.stickyHeader
+                    ? tw`border-t`
+                    : tw`rounded-b border-x border-b`,
+                )}
+              >
+                <btrix-table-row>
+                  <btrix-table-cell class="col-span-full">
                     <!-- TODO Replace navigation button -->
                     <btrix-navigation-button
                       size="small"
@@ -242,14 +283,10 @@ export class DataGrid extends TailwindElement {
                     </span>
                   </btrix-table-cell>
                 </btrix-table-row>
-              `
-            : nothing}
-        </btrix-table-body>
+              </btrix-table-footer>
+            `
+          : nothing}
       </btrix-table>
-
-      ${this.addRows && !this.addRowsInputValue
-        ? this.renderAddButton()
-        : nothing}
     `;
   }
 
