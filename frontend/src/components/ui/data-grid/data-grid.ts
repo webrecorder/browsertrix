@@ -161,7 +161,7 @@ export class DataGrid extends TailwindElement {
     if (!this.columns?.length) return;
 
     const cssWidths = this.columns.map((col) => col.width ?? "1fr");
-    const showFooter = this.addRows && this.addRowsInputValue;
+    const addRowsInputValue = this.addRows && this.addRowsInputValue;
 
     return html`
       <btrix-table
@@ -222,7 +222,7 @@ export class DataGrid extends TailwindElement {
             tw`bg-[var(--sl-panel-background-color)] leading-none`,
             !this.stickyHeader && [
               tw`border`,
-              showFooter ? tw`rounded-t` : tw`rounded`,
+              addRowsInputValue ? tw`rounded-t` : tw`rounded`,
             ],
           )}
           @btrix-remove=${(e: CustomEvent<RowRemoveEventDetail>) => {
@@ -238,7 +238,7 @@ export class DataGrid extends TailwindElement {
           ${this.renderRows()}
         </btrix-table-body>
 
-        ${showFooter
+        ${addRowsInputValue
           ? html`
               <btrix-table-footer
                 class=${clsx(
@@ -257,14 +257,14 @@ export class DataGrid extends TailwindElement {
                       @click=${() =>
                         this.rowsController.addRows(
                           this.defaultItem,
-                          this.addRowsInputValue,
+                          addRowsInputValue,
                         )}
                     >
                       <sl-icon name="plus-lg"></sl-icon>
                       ${msg("Add")}
                     </btrix-navigation-button>
                     <btrix-inline-input
-                      value=${this.addRowsInputValue}
+                      value=${addRowsInputValue}
                       min="1"
                       max="99"
                       minlength="1"
@@ -279,7 +279,7 @@ export class DataGrid extends TailwindElement {
                       }}
                     ></btrix-inline-input>
                     <span class="ml-2.5 text-neutral-500">
-                      ${msg("more")} ${pluralOf("rows", this.addRowsInputValue)}
+                      ${msg("more")} ${pluralOf("rows", addRowsInputValue)}
                     </span>
                   </btrix-table-cell>
                 </btrix-table-row>
