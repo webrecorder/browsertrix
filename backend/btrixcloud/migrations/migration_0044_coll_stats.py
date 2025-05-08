@@ -7,6 +7,7 @@ from btrixcloud.migrations import BaseMigration
 
 MIGRATION_VERSION = "0044"
 
+
 # pylint: disable=duplicate-code
 class Migration(BaseMigration):
     """Migration class."""
