@@ -25,7 +25,10 @@ export class StorybookDataGridForm extends TailwindElement {
       e.preventDefault();
 
       const form = e.target as HTMLFormElement;
-      const value = serializeDeep(form, { parseKeys: [formControlName] });
+      const value = serializeDeep(form, {
+        parseKeys: [formControlName],
+        filterEmpty: {},
+      });
 
       console.log("form value:", value);
     };

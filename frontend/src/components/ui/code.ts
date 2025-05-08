@@ -8,7 +8,7 @@ import { html as staticHtml, unsafeStatic } from "lit/static-html.js";
 import { TailwindElement } from "@/classes/TailwindElement";
 import { tw } from "@/utils/tailwind";
 
-enum Language {
+export enum Language {
   Javascript = "javascript",
   XML = "xml",
   CSS = "css",

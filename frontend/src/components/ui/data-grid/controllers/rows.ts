@@ -65,10 +65,13 @@ export class DataGridRowsController implements ReactiveController {
     if (!this.#prevItems || items !== this.#prevItems) {
       this.setRowsFromItems(items);
 
-      // this.#host.requestUpdate();
-
       this.#prevItems = items;
     }
+  }
+
+  public updateItem<T extends GridItem = GridItem>(id: GridRowId, item: T) {
+    this.rows.set(id, item);
+    this.#host.requestUpdate();
   }
 
   public addRows<T extends GridItem = GridItem>(

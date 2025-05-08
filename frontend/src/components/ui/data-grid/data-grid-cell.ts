@@ -6,7 +6,12 @@ import { ifDefined } from "lit/directives/if-defined.js";
 
 import { TableCell } from "../table/table-cell";
 
-import type { GridColumn, GridColumnSelectType, GridItem } from "./types";
+import type {
+  GridColumn,
+  GridColumnSelectType,
+  GridItem,
+  GridItemValue,
+} from "./types";
 import { GridColumnType } from "./types";
 
 import { DataGridFocusController } from "@/components/ui/data-grid/controllers/focus";
@@ -43,6 +48,9 @@ export class DataGridCell extends TableCell {
 
   @property({ type: Object })
   item?: GridItem;
+
+  @property({ type: String })
+  value?: GridItemValue;
 
   @property({ type: Boolean })
   editable = false;
@@ -104,7 +112,7 @@ export class DataGridCell extends TableCell {
     if (!this.column || !this.item) return html`<slot></slot>`;
 
     if (this.editable) {
-      return this.renderEditCell({ item: this.item });
+      return this.renderEditCell({ item: this.item, value: this.value });
     }
 
     return this.renderCell({ item: this.item });
@@ -114,12 +122,18 @@ export class DataGridCell extends TableCell {
     return html`${(this.column && item[this.column.field]) ?? ""}`;
   };
 
-  renderEditCell = ({ item }: { item: GridItem }) => {
+  renderEditCell = ({
+    item,
+    value: cellValue,
+  }: {
+    item: GridItem;
+    value?: GridItemValue;
+  }) => {
     const col = this.column;
 
     if (!col) return html``;
 
-    const value = item[col.field] ?? "";
+    const value = cellValue ?? item[col.field] ?? "";
 
     switch (col.inputType) {
       case GridColumnType.Select: {

@@ -7,7 +7,6 @@ import type {
   SlInput,
   SlRadio,
   SlRadioGroup,
-  SlSelect,
   SlTextarea,
 } from "@shoelace-style/shoelace";
 import clsx from "clsx";
@@ -15,7 +14,13 @@ import { createParser } from "css-selector-parser";
 import Fuse from "fuse.js";
 import { mergeDeep } from "immutable";
 import type { LanguageCode } from "iso-639-1";
-import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
+import {
+  html,
+  nothing,
+  type LitElement,
+  type PropertyValues,
+  type TemplateResult,
+} from "lit";
 import {
   customElement,
   property,
@@ -136,6 +141,11 @@ const DEFAULT_BEHAVIORS = [
 const formName = "newJobConfig";
 const panelSuffix = "--panel";
 const defaultFormState = getDefaultFormState();
+
+enum SubmitType {
+  Save = "save",
+  SaveAndRun = "run",
+}
 
 const getDefaultProgressState = (hasConfigId = false): ProgressState => {
   let activeTab: StepName = "scope";
@@ -326,9 +336,6 @@ export class WorkflowEditor extends BtrixElement {
 
   @query("btrix-custom-behaviors-table")
   private readonly customBehaviorsTable?: CustomBehaviorsTable | null;
-
-  @query("btrix-syntax-input[name='clickSelector']")
-  private readonly clickSelector?: SyntaxInput | null;
 
   // CSS parser should ideally match the parser used in browsertrix-crawler.
   // https://github.com/webrecorder/browsertrix-crawler/blob/v1.5.8/package.json#L23
@@ -623,10 +630,10 @@ export class WorkflowEditor extends BtrixElement {
         <sl-tooltip content=${msg("Save without running")}>
           <sl-button
             size="small"
-            type="button"
+            type="submit"
+            value=${SubmitType.Save}
             ?disabled=${this.isSubmitting}
             ?loading=${this.isSubmitting}
-            @click=${() => void this.save()}
           >
             ${msg("Save")}
           </sl-button>
@@ -641,6 +648,7 @@ export class WorkflowEditor extends BtrixElement {
             size="small"
             variant="primary"
             type="submit"
+            value=${SubmitType.SaveAndRun}
             ?disabled=${(!this.isCrawlRunning &&
               isArchivingDisabled(this.org, true)) ||
             this.isSubmitting ||
@@ -1164,11 +1172,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
           <div class="grid grid-cols-5 gap-5 py-2">
             ${inputCol(
               html`<btrix-link-selector-table
+                name="selectLinks"
                 .selectors=${selectors}
                 editable
-                @btrix-change=${() => {
-                  this.updateSelectorsValidity();
-                }}
               ></btrix-link-selector-table>`,
             )}
             ${this.renderHelpTextCol(
@@ -2040,25 +2046,14 @@ https://archiveweb.page/images/${"logo.svg"}`}
     }
   }
 
-  /**
-   * HACK Set data attribute manually so that
-   * selectors table works with `syncTabErrorState`
-   */
-  private updateSelectorsValidity() {
-    if (this.linkSelectorTable?.checkValidity() === false) {
-      this.linkSelectorTable.setAttribute("data-invalid", "true");
-      this.linkSelectorTable.setAttribute("data-user-invalid", "true");
-    } else {
-      this.linkSelectorTable?.removeAttribute("data-invalid");
-      this.linkSelectorTable?.removeAttribute("data-user-invalid");
-    }
-  }
-
   private readonly validateOnBlur = async (e: Event) => {
-    const el = e.target as SlInput | SlTextarea | SlSelect | SlCheckbox;
+    const el = e.target as LitElement;
     const tagName = el.tagName.toLowerCase();
     if (
-      !["sl-input", "sl-textarea", "sl-select", "sl-checkbox"].includes(tagName)
+      !["sl-input", "sl-textarea", "sl-select", "sl-checkbox"].includes(
+        tagName,
+      ) &&
+      !("value" in el)
     ) {
       return;
     }
@@ -2072,6 +2067,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     }
 
     const currentTab = panelEl.id.split(panelSuffix)[0] as StepName;
+
     // Check [data-user-invalid] to validate only touched inputs
     if ("userInvalid" in el.dataset) {
       if (this.progressState!.tabs[currentTab].error) return;
@@ -2085,7 +2081,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     }
   };
 
-  private syncTabErrorState(el: HTMLElement) {
+  private syncTabErrorState(el: LitElement) {
     const panelEl = el.closest<HTMLElement>(`.${formName}${panelSuffix}`);
 
     if (!panelEl) {
@@ -2191,23 +2187,15 @@ https://archiveweb.page/images/${"logo.svg"}`}
   private async onSubmit(event: SubmitEvent) {
     event.preventDefault();
 
-    void this.save({
-      runNow: !this.isCrawlRunning,
-      updateRunning: Boolean(this.isCrawlRunning),
-    });
-  }
-
-  private async save(opts?: WorkflowRunParams) {
-    if (!this.formElem) return;
-
-    // TODO Move away from manual validation check
-    // See https://github.com/webrecorder/browsertrix/issues/2536
-    if (this.formState.autoclickBehavior && this.clickSelector) {
-      if (!this.clickSelector.checkValidity()) {
-        this.clickSelector.reportValidity();
-        return;
+    const submitType = (
+      event.submitter as HTMLButtonElement & {
+        value?: SubmitType;
       }
-    }
+    ).value;
+
+    const saveAndRun = submitType === SubmitType.SaveAndRun;
+
+    if (!this.formElem) return;
 
     // Wait for custom behaviors validation to finish
     // TODO Move away from manual validation check
@@ -2236,11 +2224,11 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
     const config: CrawlConfigParams & WorkflowRunParams = {
       ...this.parseConfig(),
-      runNow: Boolean(opts?.runNow),
+      runNow: saveAndRun && !this.isCrawlRunning,
     };
 
     if (this.configId) {
-      config.updateRunning = Boolean(opts?.updateRunning);
+      config.updateRunning = saveAndRun && Boolean(this.isCrawlRunning);
     }
 
     this.isSubmitting = true;

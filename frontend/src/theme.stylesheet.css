@@ -195,8 +195,8 @@
 
   /* Validation styles */
   /**
-   * FIXME Use [data-user-invalid] selector once following is fixed
-   * https://github.com/webrecorder/browsertrix/issues/2497
+   * FIXME Use [data-user-invalid] selector exclusion table is migrated
+   * https://github.com/webrecorder/browsertrix/issues/2542
    */
   .invalid[data-invalid]:not([disabled])::part(base),
   btrix-url-input[data-user-invalid]:not([disabled])::part(base),

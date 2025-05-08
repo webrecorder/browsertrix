@@ -5,6 +5,8 @@ import {
   serialize,
 } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import type { LitElement } from "lit";
+import isEqual from "lodash/fp/isEqual";
+import type { EmptyObject } from "type-fest";
 
 import localize from "./localize";
 
@@ -95,7 +97,10 @@ export function formValidator(el: LitElement) {
  */
 export function serializeDeep(
   form: HTMLFormElement,
-  opts?: { parseKeys: string[] },
+  opts?: {
+    parseKeys: string[];
+    filterEmpty?: boolean | Record<string, unknown> | EmptyObject;
+  },
 ) {
   const values = serialize(form);
 
@@ -106,9 +111,19 @@ export function serializeDeep(
       if (typeof val === "string") {
         values[key] = JSON.parse(val);
       } else if (Array.isArray(val)) {
-        values[key] = val.map<unknown>((v) =>
-          typeof v === "string" ? JSON.parse(v) : v,
-        );
+        const arr: unknown[] = [];
+
+        val.forEach((v) => {
+          if (opts.filterEmpty === true && !v) return;
+
+          const value = typeof v === "string" ? JSON.parse(v) : v;
+
+          if (opts.filterEmpty && isEqual(opts.filterEmpty, value)) return;
+
+          arr.push(value);
+        });
+
+        values[key] = arr;
       }
     });
   }
