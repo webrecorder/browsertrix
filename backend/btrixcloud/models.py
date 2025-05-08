@@ -1418,6 +1418,14 @@ class PreloadResource(BaseModel):
 
 
 # ============================================================================
+class HostCount(BaseModel):
+    """Host Count"""
+
+    host: str
+    count: int
+
+
+# ============================================================================
 class Collection(BaseMongoModel):
     """Org collection structure"""
 
@@ -1515,6 +1523,8 @@ class CollOut(BaseMongoModel):
     pagesQueryUrl: str = ""
     downloadUrl: Optional[str] = None
 
+    topPageHosts: List[HostCount] = []
+
 
 # ============================================================================
 class PublicCollOut(BaseMongoModel):
@@ -1549,6 +1559,8 @@ class PublicCollOut(BaseMongoModel):
     defaultThumbnailName: Optional[str] = None
 
     allowPublicDownload: bool = True
+
+    topPageHosts: List[HostCount] = []
 
 
 # ============================================================================
