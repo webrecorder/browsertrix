@@ -39,6 +39,7 @@ export type GridColumn<T = string, Item = GridItem> = {
     value?: Item[keyof Item];
   }) => TemplateResult<1>;
   renderCell?: (props: { item: Item }) => TemplateResult<1>;
+  renderCellTooltip?: (props: { item: Item }) => TemplateResult<1>;
 } & (
   | {
       inputType?: GridColumnType;

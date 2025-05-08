@@ -273,5 +273,5 @@ export type CrawlLog = {
     stack?: string;
   };
   context: CrawlLogContext | string;
-  message: string;
+  message: string | Record<string, unknown>;
 };

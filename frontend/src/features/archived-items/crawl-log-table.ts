@@ -1,14 +1,14 @@
 import { localized, msg } from "@lit/localize";
 import clsx from "clsx";
-import { css, html, nothing, type TemplateResult } from "lit";
+import { css, html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
-import type { BtrixRowClickEvent } from "@/components/ui/data-grid/events/btrix-row-click";
+import type { BtrixSelectRowEvent } from "@/components/ui/data-grid/events/btrix-select-row";
 import type { GridColumn } from "@/components/ui/data-grid/types";
 import { noData } from "@/strings/ui";
 import { CrawlLogContext, CrawlLogLevel, type CrawlLog } from "@/types/crawler";
-import { truncate } from "@/utils/css";
 import { stopProp } from "@/utils/events";
 import { tw } from "@/utils/tailwind";
 
@@ -37,6 +37,11 @@ enum Field {
   PageURL = "details.page",
 }
 
+type CellRenderers = Pick<
+  GridColumn<Field, CrawlLog>,
+  "renderCell" | "renderCellTooltip"
+>;
+
 /**
  * Displays crawl logs as tabular data.
  * Clicking a row reveals log details in a dialog.
@@ -45,7 +50,6 @@ enum Field {
 @localized()
 export class CrawlLogTable extends TailwindElement {
   static styles = [
-    truncate,
     css`
       pre {
         white-space: pre-wrap;
@@ -69,197 +73,136 @@ export class CrawlLogTable extends TailwindElement {
   offset = 0;
 
   @state()
-  private selectedLog:
-    | (CrawlLog & {
-        index: number;
-      })
-    | null = null;
+  private selectedLog: CrawlLog | null = null;
 
-  private readonly columns = [
-    {
-      field: Field.Level,
-      label: msg("Level"),
-      width: "max-content",
-      align: "center",
-      renderCell: ({ item }) => this.renderLevel(item),
-    },
-    {
-      field: Field.Timestamp,
-      label: msg("Timestamp"),
-      width: "max-content",
-      renderCell: ({ item }) => this.renderTimestamp(item),
-    },
-    {
-      field: Field.Message,
-      label: msg("Message"),
-      width: "1fr",
-      renderCell: ({ item }) => this.renderMessage(item),
-    },
-    {
-      field: Field.PageURL,
-      label: msg("Page URL"),
-      width: "50ch",
-      renderCell: ({ item }) => this.renderPageUrl(item),
-    },
-  ] satisfies GridColumn<Field, CrawlLog>[];
+  private get columns() {
+    return [
+      {
+        field: Field.Level,
+        label: msg("Level"),
+        width: "max-content",
+        align: "center",
+        ...this.renderersForLevel(),
+      },
+      {
+        field: Field.Timestamp,
+        label: msg("Timestamp"),
+        width: "max-content",
+        ...this.renderersForTimestamp(),
+      },
+      {
+        field: Field.Message,
+        label: msg("Message"),
+        width: "1fr",
+        ...this.renderersForMessage(),
+      },
+      {
+        field: Field.PageURL,
+        label: msg("Page URL"),
+        width: "50ch",
+        ...this.renderersForPageUrl(),
+      },
+    ] satisfies GridColumn<Field, CrawlLog>[];
+  }
+
+  private readonly renderersForLevel = () =>
+    ({
+      renderCell: ({ item }) => this.renderLevelIcon(item),
+      renderCellTooltip: ({ item }) =>
+        html`<span class="capitalize">${item.logLevel}</span>`,
+    }) satisfies CellRenderers;
+
+  private readonly renderersForTimestamp = () =>
+    ({
+      renderCell: ({ item }) =>
+        html`<btrix-format-date
+          date=${item.timestamp}
+          month="2-digit"
+          day="2-digit"
+          year="numeric"
+          hour="2-digit"
+          minute="2-digit"
+          second="2-digit"
+          hour-format="24"
+        >
+        </btrix-format-date>`,
+      renderCellTooltip: ({ item }) =>
+        html`<btrix-format-date
+          date=${item.timestamp}
+          month="long"
+          day="numeric"
+          year="numeric"
+          hour="numeric"
+          minute="numeric"
+          second="numeric"
+          time-zone-name="short"
+        >
+        </btrix-format-date>`,
+    }) satisfies CellRenderers;
+
+  private readonly renderersForMessage = () =>
+    ({
+      renderCell: ({ item }) =>
+        html`<div>
+          ${typeof item.message === "string"
+            ? item.message
+            : html`<code>${JSON.stringify(item.message, null, " ")}</code>`}
+        </div>`,
+    }) satisfies CellRenderers;
+
+  private readonly renderersForPageUrl = () =>
+    ({
+      renderCell: ({ item }) =>
+        html`<div class="truncate" title=${ifDefined(item.details.page)}>
+          ${item.details.page || noData}
+        </div>`,
+    }) satisfies CellRenderers;
 
   render() {
     if (!this.logs) return;
 
-    const rowClasses = tw`grid grid-cols-[5rem_2.5rem_20rem_1fr] leading-[1.3]`;
-
     return html`
-      <btrix-data-grid
-        class="text-xs"
-        .columns=${this.columns}
-        .items=${this.logs}
-        rowsClickable
-        stickyHeader="viewport"
-        @btrix-row-click=${(e: BtrixRowClickEvent) => {
-          console.log("click", e.detail);
-        }}
-      ></btrix-data-grid>
-      <btrix-numbered-list class="text-xs">
-        <btrix-numbered-list-header slot="header">
-          <div class=${rowClasses}>
-            <div class="px-2">${msg("Timestamp")}</div>
-            <div class="text-center">${msg("Level")}</div>
-            <div class="px-2">${msg("Message")}</div>
-            <div class="px-2">${msg("Page URL")}</div>
-          </div>
-        </btrix-numbered-list-header>
-        ${this.logs.map((log: CrawlLog, idx) => {
-          const selected = this.selectedLog?.index === idx;
-          return html`
-            <btrix-numbered-list-item
-              class="group"
-              hoverable
-              ?selected=${selected}
-              aria-selected="${selected}"
-              @click=${() => {
-                this.selectedLog = {
-                  index: idx,
-                  ...log,
-                };
-              }}
-            >
-              <div slot="marker" class="min-w-[3ch]">
-                ${idx + 1 + this.offset}.
-              </div>
-              <div
-                class=${clsx(
-                  rowClasses,
-                  (contextLevelFor[log.context as unknown as CrawlLogContext] ||
-                    0) < MIN_CONTEXT_LEVEL
-                    ? tw`text-stone-400`
-                    : tw`text-stone-800`,
-                  tw`group-hover:text-inherit`,
-                )}
-              >
-                <div>
-                  ${this.renderWithTooltip(
-                    html`<btrix-format-date
-                      date=${log.timestamp}
-                      month="long"
-                      day="numeric"
-                      year="numeric"
-                      hour="numeric"
-                      minute="numeric"
-                      second="numeric"
-                      time-zone-name="short"
-                    >
-                    </btrix-format-date>`,
-                  )(
-                    html`<btrix-format-date
-                      date=${log.timestamp}
-                      hour="2-digit"
-                      minute="2-digit"
-                      second="2-digit"
-                      hour-format="24"
-                    >
-                    </btrix-format-date>`,
-                  )}
-                </div>
-                <div class="pr-4 text-center">
-                  <sl-tooltip
-                    class="capitalize"
-                    content=${log.logLevel}
-                    placement="bottom"
-                    @sl-hide=${stopProp}
-                    @sl-after-hide=${stopProp}
-                  >
-                    ${this.renderLevel(log)}
-                  </sl-tooltip>
-                </div>
-                <div class="whitespace-pre-wrap">${log.message}</div>
-                ${log.details.page
-                  ? html`
-                      <div class="truncate" title="${log.details.page}">
-                        ${log.details.page}
-                      </div>
-                    `
-                  : html`<div class="text-neutral-400 group-hover:text-inherit">
-                      ${noData}
-                    </div>`}
-              </div>
-            </btrix-numbered-list-item>
-          `;
-        })}
-      </btrix-numbered-list>
+      <div class="px-1">
+        <btrix-data-grid
+          class="text-xs"
+          .columns=${this.columns}
+          .items=${this.logs}
+          rowsSelectable
+          stickyHeader="viewport"
+          alignRows="start"
+          @btrix-select-row=${(e: BtrixSelectRowEvent<CrawlLog>) => {
+            this.selectedLog = e.detail.item;
+          }}
+        ></btrix-data-grid>
+      </div>
 
-      <btrix-dialog
-        .label=${msg("Log Details")}
-        .open=${!!this.selectedLog}
-        class="[--width:40rem]"
-        @sl-show=${stopProp}
-        @sl-after-show=${stopProp}
-        @sl-hide=${stopProp}
-        @sl-after-hide=${(e: CustomEvent) => {
-          stopProp(e);
-          this.selectedLog = null;
-        }}
-        >${this.renderLogDetails()}</btrix-dialog
+      <sl-details
+        class=${clsx(
+          tw`sticky bottom-2 mt-3 part-[base]:shadow`,
+          !this.selectedLog && tw`part-[base]:bg-slate-50`,
+        )}
       >
+        ${this.renderDetails()}
+        <div slot="summary" class="flex items-center gap-2 text-neutral-600">
+          ${this.selectedLog
+            ? html`
+                ${this.renderLevelIcon(this.selectedLog)}
+                <span class="font-semibold capitalize">
+                  ${this.selectedLog.logLevel}
+                </span>
+                <span class="font-semibold">
+                  ${labelFor[this.selectedLog.context as CrawlLogContext]}</span
+                >
+              `
+            : msg("Select a log to view details.")}
+        </div>
+      </sl-details>
     `;
   }
 
-  private readonly renderTimestamp = (log: CrawlLog) =>
-    this.renderWithTooltip(
-      html`<btrix-format-date
-        date=${log.timestamp}
-        weekday="long"
-        month="long"
-        day="numeric"
-        year="numeric"
-        hour="numeric"
-        minute="numeric"
-        second="numeric"
-        time-zone-name="short"
-      >
-      </btrix-format-date>`,
-    )(
-      html`<btrix-format-date
-        date=${log.timestamp}
-        month="2-digit"
-        day="2-digit"
-        year="numeric"
-        hour="2-digit"
-        minute="2-digit"
-        second="2-digit"
-        hour-format="24"
-      >
-      </btrix-format-date>`,
-    );
-
-  private readonly renderMessage = (log: CrawlLog) =>
-    html`${typeof log.message === "string"
-      ? log.message
-      : this.renderPre(log.message)}`;
-
-  private readonly renderLevel = (log: CrawlLog) =>
-    this.renderWithTooltip(
-      html`<span class="capitalize">${log.logLevel}</span>`,
-    )(this.renderLevelIcon(log));
+  private renderDetails() {
+    return html`TODO`;
+  }
 
   private readonly renderLevelIcon = (log: CrawlLog) => {
     const logLevel = log.logLevel;
@@ -317,25 +260,6 @@ export class CrawlLogTable extends TailwindElement {
         break;
     }
   };
-
-  private readonly renderPageUrl = (log: CrawlLog) =>
-    this.renderWithTooltip(
-      html`<span class="break-all">${log.details.page}</span>`,
-    )(html`<div class="truncate">${log.details.page}</div>`);
-
-  private readonly renderWithTooltip =
-    (tooltipContent: string | TemplateResult) =>
-    (cellContent: TemplateResult<1>) => html`
-      <sl-tooltip
-        placement="bottom"
-        @sl-hide=${stopProp}
-        @sl-after-hide=${stopProp}
-        hoist
-      >
-        ${cellContent}
-        <div slot="content">${tooltipContent}</div>
-      </sl-tooltip>
-    `;
 
   private renderLogDetails() {
     if (!this.selectedLog) return;
@@ -406,7 +330,7 @@ export class CrawlLogTable extends TailwindElement {
       str = JSON.stringify(value, null, 2);
     }
     return html`<pre
-      class="overflow-auto whitespace-pre"
+      class="whitespace-pre-wrap text-[0.95em]"
     ><code>${str}</code></pre>`;
   }
 }

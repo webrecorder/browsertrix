@@ -145,14 +145,14 @@ export const AddRowsInput: Story = {
 };
 
 /**
- * Rows can be clicked.
+ * Rows can be selected.
  *
  * Open your browser console logs to view the clicked row.
  */
-export const ClickRow: Story = {
+export const SelectRow: Story = {
   args: {
     items: makeItems(5),
-    rowsClickable: true,
+    rowsSelectable: true,
   },
 };
 
@@ -215,7 +215,7 @@ export const FormControl: Story = {
           return html`
             <btrix-syntax-input
               name="selector"
-              class="flex-1 [--sl-input-border-radius-medium:0] [--sl-input-border-color:transparent]"
+              class="flex-1 [--sl-input-border-color:transparent] [--sl-input-border-radius-medium:0]"
               value=${item.selector || ""}
               language="css"
             ></btrix-syntax-input>

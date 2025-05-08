@@ -60,7 +60,10 @@ const meta = {
           page: "https://example.com",
         },
         context: CrawlLogContext.General,
-        message: "Sample debug log",
+        message: {
+          text: "Sample debug log",
+          additional_text: "Additional text for sample debug log",
+        },
       },
       {
         timestamp: new Date().toISOString(),

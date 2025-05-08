@@ -9,7 +9,7 @@ import type { EmptyObject } from "type-fest";
 
 import { DataGridRowsController } from "./controllers/rows";
 import type { DataGridRow, RowRemoveEventDetail } from "./data-grid-row";
-import { BtrixRowClickEvent } from "./events/btrix-row-click";
+import { BtrixSelectRowEvent } from "./events/btrix-select-row";
 import { renderRows } from "./renderRows";
 import type { GridColumn, GridItem } from "./types";
 
@@ -26,7 +26,7 @@ import { tw } from "@/utils/tailwind";
  * @slot rows
  * @fires btrix-change
  * @fires btrix-remove
- * @fires btrix-row-click
+ * @fires btrix-select-row
  */
 @customElement("btrix-data-grid")
 @localized()
@@ -75,13 +75,19 @@ export class DataGrid extends TailwindElement {
   rowKey?: string;
 
   /**
-   * Whether rows can be clicked, firing a `btrix-row-click` event.
+   * Whether rows can be selected, firing a `btrix-select-row` event.
    */
   @property({ type: Boolean })
-  rowsClickable = false;
+  rowsSelectable = false;
 
   /**
-   * Whether rows can be clicked, firing a `btrix-row-click` event.
+   * Whether a single or multiple rows can be selected (multiple not yet implemented.)
+   */
+  @property({ type: String })
+  selectMode: "single" | "multiple" = "single";
+
+  /**
+   * Whether rows can be expanded, revealing more content below the row.
    */
   @property({ type: Boolean })
   rowsExpandable = false;
@@ -97,6 +103,12 @@ export class DataGrid extends TailwindElement {
    */
   @property({ type: Boolean })
   rowsAddible = false;
+
+  /**
+   * Vertical alignment of content in body rows.
+   */
+  @property({ type: String })
+  alignRows: "start" | "center" | "end" = "center";
 
   /**
    * Make the number of rows being added configurable,
@@ -199,7 +211,8 @@ export class DataGrid extends TailwindElement {
             this.stickyHeader
               ? [
                   tw`sticky top-0 z-10 self-start rounded-t-[0.1875rem] border-b bg-neutral-50`,
-                  !this.rowsClickable && tw`[&>*:not(:first-of-type)]:border-l`,
+                  !this.rowsSelectable &&
+                    tw`[&>*:not(:first-of-type)]:border-l`,
                 ]
               : tw`px-px`,
           )}
@@ -244,10 +257,8 @@ export class DataGrid extends TailwindElement {
           class=${clsx(
             tw`[--btrix-table-cell-padding:var(--sl-spacing-x-small)]`,
             tw`bg-[var(--sl-panel-background-color)] leading-none`,
-            !this.stickyHeader && [
-              tw`border`,
-              addRowsInputValue ? tw`rounded-t` : tw`rounded`,
-            ],
+            !this.stickyHeader && tw`border`,
+            addRowsInputValue ? tw`rounded-t` : tw`rounded`,
           )}
           @btrix-remove=${(e: CustomEvent<RowRemoveEventDetail>) => {
             const { key } = e.detail;
@@ -323,26 +334,30 @@ export class DataGrid extends TailwindElement {
               ({ id, item }, i) => html`
                 <btrix-data-grid-row
                   class=${clsx(
-                    this.rowsClickable
+                    this.rowsSelectable
                       ? tw`cursor-pointer ring-inset hover:bg-blue-50/50 hover:ring-1`
                       : tw`hover:bg-neutral-50`,
                     this.editCells &&
                       tw`min-h-[calc(var(--sl-input-height-medium)+1px)]`,
-                    i === 0 && tw`rounded-t`,
-                    i === this.rowsController.rows.size - 1 && tw`rounded-b`,
+                    !this.stickyHeader && i === 0 && tw`rounded-t`,
+                    !this.rowsAddible &&
+                      !this.addRowsInputValue &&
+                      i === this.rowsController.rows.size - 1 &&
+                      tw`rounded-b`,
                   )}
                   key=${id}
                   .item=${item}
                   .columns=${this.columns}
+                  alignContent=${ifDefined(this.alignRows)}
                   ?removable=${this.rowsRemovable}
-                  ?clickable=${this.rowsClickable}
+                  ?clickable=${this.rowsSelectable}
                   ?expandable=${this.rowsExpandable}
                   ?editCells=${this.editCells}
                   @click=${() => {
-                    if (this.rowsClickable) {
+                    if (this.rowsSelectable) {
                       this.dispatchEvent(
-                        new CustomEvent<BtrixRowClickEvent["detail"]>(
-                          "btrix-row-click",
+                        new CustomEvent<BtrixSelectRowEvent["detail"]>(
+                          "btrix-select-row",
                           {
                             detail: { id, item },
                             bubbles: true,
