@@ -27,6 +27,7 @@ import {
 } from "@/utils/crawler";
 import { humanizeSchedule } from "@/utils/cron";
 import { isArchivingDisabled } from "@/utils/orgs";
+import { tw } from "@/utils/tailwind";
 
 const SECTIONS = ["crawls", "watch", "settings", "logs"] as const;
 type Tab = (typeof SECTIONS)[number];

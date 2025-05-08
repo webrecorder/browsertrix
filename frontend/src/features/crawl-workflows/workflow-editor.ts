@@ -106,6 +106,7 @@ import {
   getDefaultFormState,
   getInitialFormState,
   getServerDefaults,
+  makeUserGuideEvent,
   SECTIONS,
   workflowTabToGuideHash,
   type FormState,
@@ -488,6 +489,10 @@ export class WorkflowEditor extends BtrixElement {
             this.updateProgressState({
               activeTab: name,
             });
+
+            if (this.appState.userGuideOpen) {
+              this.dispatchEvent(makeUserGuideEvent(name));
+            }
           }
 
           track(AnalyticsTrackEvent.ExpandWorkflowFormSection, {

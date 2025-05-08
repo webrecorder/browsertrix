@@ -8,7 +8,6 @@ import type { PartialDeep } from "type-fest";
 
 import { ScopeType, type Seed, type WorkflowParams } from "./types";
 
-import type { UserGuideEventMap } from "@/index";
 import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
 import { WorkflowScopeType } from "@/types/workflow";
 import LiteElement, { html } from "@/utils/LiteElement";
@@ -16,8 +15,7 @@ import { tw } from "@/utils/tailwind";
 import {
   DEFAULT_AUTOCLICK_SELECTOR,
   DEFAULT_SELECT_LINKS,
-  GuideHash,
-  workflowTabToGuideHash,
+  makeUserGuideEvent,
   type SectionsEnum,
   type FormState as WorkflowFormState,
 } from "@/utils/workflow";
@@ -108,21 +106,8 @@ export class WorkflowsNew extends LiteElement {
           )}
           ?disabled=${this.appState.userGuideOpen}
           @click=${() => {
-            const userGuideHash =
-              (workflowTabToGuideHash[
-                window.location.hash.slice(1) as SectionsEnum
-              ] as unknown as GuideHash | undefined) || GuideHash.Scope;
-
             this.dispatchEvent(
-              new CustomEvent<
-                UserGuideEventMap["btrix-user-guide-show"]["detail"]
-              >("btrix-user-guide-show", {
-                detail: {
-                  path: `user-guide/workflow-setup/#${userGuideHash}`,
-                },
-                bubbles: true,
-                composed: true,
-              }),
+              makeUserGuideEvent(window.location.hash.slice(1) as SectionsEnum),
             );
           }}
         >
