@@ -327,7 +327,7 @@ class UserManager:
             user.email, token, dict(request.headers) if request else None
         )
 
-    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-arguments, too-many-positional-arguments
     async def create_user(
         self,
         name: str,
