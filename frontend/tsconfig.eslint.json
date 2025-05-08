@@ -4,5 +4,11 @@
     "noEmit": true
   },
   "extends": "./tsconfig.json",
-  "include": ["**/*.ts", "**/*.js", "*.mjs"]
+  "include": [
+    "**/*.ts",
+    "**/*.js",
+    "*.mjs",
+    ".storybook/**/*.ts",
+    ".storybook/**/*.tsx"
+  ]
 }
