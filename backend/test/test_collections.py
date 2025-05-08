@@ -339,7 +339,7 @@ def test_add_remove_crawl_from_collection(
     assert data.get("tags", []) == []
     assert data.get("dateEarliest") is None
     assert data.get("dateLatest") is None
-    assert data["topPageHosts"] == {}
+    assert data["topPageHosts"] == []
 
     # Verify they were removed
     r = requests.get(
