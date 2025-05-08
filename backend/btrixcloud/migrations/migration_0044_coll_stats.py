@@ -1,5 +1,5 @@
 """
-Migration 0041 - Rationalize page counts
+Migration 0044 - Recalculate collection stats
 """
 
 from btrixcloud.migrations import BaseMigration
