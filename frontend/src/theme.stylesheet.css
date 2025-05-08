@@ -96,6 +96,15 @@
 
     /* Transition */
     --sl-transition-x-fast: 100ms;
+
+    /* 
+     * 
+     * Browsertrix theme tokens
+     *
+     */
+    /* Overflow scrim */
+    --btrix-overflow-scroll-scrim-color: var(--sl-panel-background-color);
+    --btrix-overflow-scrim-width: 3rem;
   }
 
   body {
@@ -445,6 +454,16 @@
 
   sl-button.button-card::part(label) {
     @apply flex flex-1 flex-col justify-center gap-2 text-left;
+  }
+
+  .scrim:before {
+    @apply pointer-events-none absolute -z-10;
+  }
+
+  .scrim-to-b:before {
+    @apply w-full bg-gradient-to-b from-white;
+    height: var(--btrix-overflow-scrim-width);
+    --tw-gradient-from: var(--btrix-overflow-scroll-scrim-color, white);
   }
 }
 

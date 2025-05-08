@@ -47,6 +47,8 @@ export function makeAppStateService() {
     // Org details
     org: OrgData | null | undefined = undefined;
 
+    userGuideOpen = false;
+
     // Since org slug is used to ID an org, use `userOrg`
     // to retrieve the basic org info like name and ID
     // before other org details are available
@@ -157,6 +159,11 @@ export function makeAppStateService() {
       } else {
         console.warn("no matching org in app state");
       }
+    }
+
+    @unlock()
+    updateUserGuideOpen(open: boolean) {
+      appState.userGuideOpen = open;
     }
 
     @transaction()

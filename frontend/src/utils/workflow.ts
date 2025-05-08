@@ -4,6 +4,7 @@ import { z } from "zod";
 import { getAppSettings } from "./app";
 
 import type { Tags } from "@/components/ui/tag-input";
+import type { UserGuideEventMap } from "@/index";
 import {
   Behavior,
   ScopeType,
@@ -36,6 +37,43 @@ export const SECTIONS = [
 ] as const;
 export const sectionsEnum = z.enum(SECTIONS);
 export type SectionsEnum = z.infer<typeof sectionsEnum>;
+
+export enum GuideHash {
+  Scope = "scope",
+  Limits = "crawl-limits",
+  Behaviors = "page-behavior",
+  BrowserSettings = "browser-settings",
+  Scheduling = "scheduling",
+  Metadata = "metadata",
+}
+
+export const workflowTabToGuideHash: Record<SectionsEnum, GuideHash> = {
+  scope: GuideHash.Scope,
+  limits: GuideHash.Limits,
+  behaviors: GuideHash.Behaviors,
+  browserSettings: GuideHash.BrowserSettings,
+  scheduling: GuideHash.Scheduling,
+  metadata: GuideHash.Metadata,
+};
+
+export function makeUserGuideEvent(
+  section: SectionsEnum,
+): UserGuideEventMap["btrix-user-guide-show"] {
+  const userGuideHash =
+    (workflowTabToGuideHash[section] as GuideHash | undefined) ||
+    GuideHash.Scope;
+
+  return new CustomEvent<UserGuideEventMap["btrix-user-guide-show"]["detail"]>(
+    "btrix-user-guide-show",
+    {
+      detail: {
+        path: `user-guide/workflow-setup/#${userGuideHash}`,
+      },
+      bubbles: true,
+      composed: true,
+    },
+  );
+}
 
 export function defaultLabel(value: unknown): string {
   if (value === Infinity) {

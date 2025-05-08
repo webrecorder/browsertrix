@@ -8,11 +8,13 @@ export function pageSectionsWithNav({
   main,
   placement = "start",
   sticky = false,
+  stickyTopClassname,
 }: {
   nav: TemplateResult;
   main: TemplateResult;
   placement?: "start" | "top";
   sticky?: boolean;
+  stickyTopClassname?: string; // e.g. `lg:top-0`
 }) {
   return html`
     <div
@@ -24,7 +26,8 @@ export function pageSectionsWithNav({
       <div
         class=${clsx(
           tw`flex flex-1 flex-col gap-2`,
-          sticky && tw`lg:sticky lg:top-2 lg:self-start`,
+          sticky &&
+            [tw`lg:sticky lg:self-start`, stickyTopClassname || tw`lg:top-2`],
           placement === "start" ? tw`lg:max-w-[16.5rem]` : tw`lg:flex-row`,
         )}
         part="tabs"

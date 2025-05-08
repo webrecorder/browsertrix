@@ -1,4 +1,5 @@
 import { localized, msg } from "@lit/localize";
+import clsx from "clsx";
 import { mergeDeep } from "immutable";
 import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -7,32 +8,17 @@ import type { PartialDeep } from "type-fest";
 
 import { ScopeType, type Seed, type WorkflowParams } from "./types";
 
-import type { UserGuideEventMap } from "@/index";
 import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
 import { WorkflowScopeType } from "@/types/workflow";
 import LiteElement, { html } from "@/utils/LiteElement";
+import { tw } from "@/utils/tailwind";
 import {
   DEFAULT_AUTOCLICK_SELECTOR,
   DEFAULT_SELECT_LINKS,
+  makeUserGuideEvent,
+  type SectionsEnum,
   type FormState as WorkflowFormState,
 } from "@/utils/workflow";
-
-type GuideHash =
-  | "scope"
-  | "limits"
-  | "browser-settings"
-  | "scheduling"
-  | "metadata"
-  | "review-settings";
-
-const workflowTabToGuideHash: Record<string, GuideHash> = {
-  crawlSetup: "scope",
-  crawlLimits: "limits",
-  browserSettings: "browser-settings",
-  crawlScheduling: "scheduling",
-  crawlMetadata: "metadata",
-  confirmSettings: "review-settings",
-};
 
 /**
  * Usage:
@@ -54,23 +40,6 @@ export class WorkflowsNew extends LiteElement {
 
   @property({ type: Object })
   initialWorkflow?: WorkflowParams;
-
-  private userGuideHashLink: GuideHash = "scope";
-
-  connectedCallback(): void {
-    super.connectedCallback();
-
-    this.userGuideHashLink =
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-      workflowTabToGuideHash[window.location.hash.slice(1) as GuideHash] ||
-      "scope";
-
-    window.addEventListener("hashchange", () => {
-      const hashValue = window.location.hash.slice(1) as GuideHash;
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-      this.userGuideHashLink = workflowTabToGuideHash[hashValue] || "scope";
-    });
-  }
 
   private get defaultNewWorkflow(): WorkflowParams {
     return {
@@ -125,21 +94,20 @@ export class WorkflowsNew extends LiteElement {
 
     return html`
       <div class="mb-5">${this.renderBreadcrumbs()}</div>
-      <header class="flex items-center justify-between">
+      <header
+        class="scrim scrim-to-b z-10 flex flex-wrap items-start justify-between gap-2 to-white before:-top-3 lg:sticky lg:top-3"
+      >
         <h2 class="mb-6 text-xl font-semibold">${msg("New Crawl Workflow")}</h2>
         <sl-button
           size="small"
+          class=${clsx(
+            tw`transition-opacity`,
+            this.appState.userGuideOpen && tw`pointer-events-none opacity-0`,
+          )}
+          ?disabled=${this.appState.userGuideOpen}
           @click=${() => {
             this.dispatchEvent(
-              new CustomEvent<
-                UserGuideEventMap["btrix-user-guide-show"]["detail"]
-              >("btrix-user-guide-show", {
-                detail: {
-                  path: `user-guide/workflow-setup/#${this.userGuideHashLink}`,
-                },
-                bubbles: true,
-                composed: true,
-              }),
+              makeUserGuideEvent(window.location.hash.slice(1) as SectionsEnum),
             );
           }}
         >

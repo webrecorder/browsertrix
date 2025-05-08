@@ -339,7 +339,9 @@ export class App extends BtrixElement {
       <div class="min-w-screen flex min-h-screen flex-col">
         ${this.renderSuperadminBanner()} ${this.renderNavBar()}
         ${this.renderAlertBanner()}
-        <main class="relative flex flex-auto md:min-h-[calc(100vh-3.125rem)]">
+        <main
+          class="relative flex flex-auto transition-[padding] md:min-h-[calc(100vh-3.125rem)]"
+        >
           ${this.renderPage()}
         </main>
         <div class="border-t border-neutral-100">${this.renderFooter()}</div>
@@ -356,14 +358,27 @@ export class App extends BtrixElement {
       <sl-drawer
         id="userGuideDrawer"
         label=${msg("User Guide")}
-        style="--body-spacing: 0; --footer-spacing: var(--sl-spacing-2x-small);"
+        class="[--body-spacing:0] [--footer-spacing:var(--sl-spacing-2x-small)] [--size:31rem] part-[base]:fixed part-[base]:z-50 part-[panel]:[border-left:1px_solid_var(--sl-panel-border-color)]"
+        ?open=${this.appState.userGuideOpen}
+        contained
+        @sl-hide=${() => AppStateService.updateUserGuideOpen(false)}
+        @sl-after-hide=${() => {
+          // FIXME There might be a way to handle this in Mkdocs, but updating
+          // only the hash doesn't seem to update the docs view
+          const iframe = this.userGuideDrawer.querySelector("iframe");
+
+          if (!iframe) return;
+
+          const src = iframe.src;
+          iframe.src = src.slice(0, src.indexOf("#"));
+        }}
       >
         <span slot="label" class="flex items-center gap-3">
           <sl-icon name="book" class=""></sl-icon>
           <span>${msg("User Guide")}</span>
         </span>
         <iframe
-          class="size-full transition-opacity duration-slow"
+          class="size-full text-xs transition-opacity duration-slow"
           src="${this.docsUrl}user-guide/workflow-setup/"
         ></iframe>
         <sl-button
@@ -952,7 +967,9 @@ export class App extends BtrixElement {
         iframe.src = this.fullDocsUrl;
       }
 
-      void this.userGuideDrawer.show();
+      if (!this.appState.userGuideOpen) {
+        AppStateService.updateUserGuideOpen(true);
+      }
     } else {
       console.debug("user guide iframe not found");
     }
