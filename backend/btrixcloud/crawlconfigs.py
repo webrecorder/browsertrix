@@ -608,9 +608,13 @@ class CrawlConfigOps:
             if sort_by == "name":
                 sort_query["firstSeed"] = sort_direction
 
-            # modified for last* fields in case crawl hasn't been run yet
+            # Special case for last-* fields in case crawl is running
             elif sort_by in ("lastRun", "lastCrawlTime", "lastCrawlStartTime"):
-                sort_query["modified"] = sort_direction
+                sort_query = {
+                    "isCrawlRunning": sort_direction,
+                    sort_by: sort_direction,
+                    "modified": sort_direction,
+                }
 
             aggregate.extend([{"$sort": sort_query}])
 
