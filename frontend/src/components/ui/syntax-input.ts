@@ -1,26 +1,28 @@
-import { localized } from "@lit/localize";
 import type {
   SlInput,
   SlInputEvent,
+  SlInvalidEvent,
   SlTooltip,
 } from "@shoelace-style/shoelace";
 import clsx from "clsx";
-import { html } from "lit";
+import { html, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import type { Code } from "@/components/ui/code";
+import { FormControl } from "@/mixins/FormControl";
+import { validationMessageFor } from "@/strings/validation";
 import { tw } from "@/utils/tailwind";
 
 /**
  * Basic text input with code syntax highlighting
  *
+ * @fires btrix-input
  * @fires btrix-change
  */
 @customElement("btrix-syntax-input")
-@localized()
-export class SyntaxInput extends TailwindElement {
+export class SyntaxInput extends FormControl(TailwindElement) {
   @property({ type: String })
   value = "";
 
@@ -67,53 +69,45 @@ export class SyntaxInput extends TailwindElement {
 
   public setCustomValidity(message: string) {
     this.input?.setCustomValidity(message);
+
+    if (message) {
+      this.setValidity({ customError: true }, message);
+    } else {
+      this.setValidity({});
+    }
+
     if (this.disableTooltip) {
       this.input?.setAttribute("help-text", message);
     }
+
     this.error = message;
   }
 
-  public reportValidity() {
-    if (this.input) {
-      if (this.tooltip) {
-        this.tooltip.disabled = true;
-      }
+  public async formResetCallback() {
+    super.formResetCallback();
 
-      // Suppress tooltip validation from showing on focus
-      this.input.addEventListener(
-        "focus",
-        async () => {
-          await this.updateComplete;
-          await this.input!.updateComplete;
+    this.input?.setAttribute("value", this.value);
+    this.code?.setAttribute("value", this.value);
 
-          if (this.tooltip && !this.disableTooltip) {
-            this.tooltip.disabled = !this.error;
-          }
-        },
-        { once: true },
-      );
+    await this.code?.updateComplete;
 
-      return this.input.reportValidity();
-    }
-
-    return this.checkValidity();
-  }
-
-  public checkValidity() {
-    if (!this.input?.input) {
-      if (this.required) {
-        return false;
-      }
-
-      return true;
-    }
-
-    return this.input.checkValidity();
+    void this.scrollSync({ pad: true });
   }
 
   disconnectedCallback(): void {
     super.disconnectedCallback();
     document.removeEventListener("selectionchange", this.onSelectionChange);
+  }
+
+  protected updated(changedProperties: PropertyValues): void {
+    if (changedProperties.has("value") || changedProperties.has("required")) {
+      if (this.required && !this.value) {
+        this.setValidity(
+          { valueMissing: true },
+          validationMessageFor.valueMissing,
+        );
+      }
+    }
   }
 
   render() {
@@ -141,14 +135,31 @@ export class SyntaxInput extends TailwindElement {
           ?required=${this.required}
           ?disabled=${this.disabled}
           @sl-input=${async (e: SlInputEvent) => {
-            const value = (e.target as SlInput).value;
+            const input = e.target as SlInput;
+            const value = input.value;
 
-            this.setCustomValidity("");
+            if (input.validity.customError) {
+              input.setCustomValidity("");
+            }
+
+            if (input.validity.valid) {
+              this.setValidity({});
+            } else {
+              this.setValidity(input.validity, input.validationMessage);
+            }
 
             if (this.code) {
               this.code.value = value;
 
               await this.code.updateComplete;
+
+              this.dispatchEvent(
+                new CustomEvent("btrix-input", {
+                  detail: { value },
+                  bubbles: true,
+                  composed: true,
+                }),
+              );
 
               void this.scrollSync({ pad: true });
             }
@@ -184,9 +195,16 @@ export class SyntaxInput extends TailwindElement {
               this.dispatchEvent(
                 new CustomEvent("btrix-change", {
                   detail: { value: this.code.value },
+                  bubbles: true,
+                  composed: true,
                 }),
               );
             }
+          }}
+          @sl-invalid=${(e: SlInvalidEvent) => {
+            const input = e.currentTarget as SlInput;
+
+            this.setValidity(input.validity, input.validationMessage);
           }}
         >
           <btrix-code

@@ -90,7 +90,7 @@ export const orgDataSchema = z.object({
     .optional(),
   readOnly: z.boolean().nullable(),
   readOnlyReason: z.union([orgReadOnlyReasonSchema, z.string()]).nullable(),
-  readOnlyOnCancel: z.boolean(),
+  readOnlyOnCancel: z.boolean().optional(),
   subscription: subscriptionSchema.nullable(),
   crawlingDefaults: crawlingDefaultsSchema.nullable(),
   allowSharedProxies: z.boolean(),

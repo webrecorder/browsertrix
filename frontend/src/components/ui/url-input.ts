@@ -29,6 +29,9 @@ export class UrlInput extends SlInput {
   @property({ type: String, reflect: true })
   placeholder = "https://example.com";
 
+  @property({ type: Boolean })
+  hideHelpText = false;
+
   constructor() {
     super();
 
@@ -48,7 +51,7 @@ export class UrlInput extends SlInput {
   private readonly onInput = () => {
     if (!this.checkValidity() && validURL(this.value)) {
       this.setCustomValidity("");
-      this.helpText = "";
+      if (!this.hideHelpText) this.helpText = "";
     }
   };
 
@@ -57,7 +60,7 @@ export class UrlInput extends SlInput {
 
     if (value && !validURL(value)) {
       const text = msg("Please enter a valid URL.");
-      this.helpText = text;
+      if (!this.hideHelpText) this.helpText = text;
       this.setCustomValidity(text);
     } else if (
       value &&

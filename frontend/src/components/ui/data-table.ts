@@ -6,6 +6,8 @@ import { TailwindElement } from "@/classes/TailwindElement";
 type CellContent = string | TemplateResult<1>;
 
 /**
+ * @deprecated Use `<btrix-data-grid>` instead.
+ *
  * Styled tables for handling lists of tabular data.
  * Data tables are less flexible than `<btrix-table>` but require less configuration.
  */

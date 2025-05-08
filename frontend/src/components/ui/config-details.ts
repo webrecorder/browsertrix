@@ -503,7 +503,10 @@ export class ConfigDetails extends BtrixElement {
       selectors.length
         ? html`
             <div class="mb-2">
-              <btrix-link-selector-table .selectors=${selectors}>
+              <btrix-link-selector-table
+                .selectors=${selectors}
+                aria-readonly="true"
+              >
               </btrix-link-selector-table>
             </div>
           `
