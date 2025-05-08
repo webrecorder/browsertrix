@@ -94,6 +94,8 @@ def test_create_collection(
     assert data["defaultThumbnailName"] == default_thumbnail_name
     assert data["allowPublicDownload"]
 
+    assert data["topPageHosts"] == [{'count': 3, 'host': 'webrecorder.net'}]
+
 
 def test_create_public_collection(
     crawler_auth_headers, default_org_id, crawler_crawl_id, admin_crawl_id
@@ -223,6 +225,7 @@ def test_update_collection(
     assert data["dateEarliest"]
     assert data["dateLatest"]
     assert data["defaultThumbnailName"]
+    assert data["topPageHosts"]
 
 
 def test_rename_collection(
@@ -310,6 +313,7 @@ def test_add_remove_crawl_from_collection(
     assert data["tags"] == ["wr-test-2", "wr-test-1"]
     assert data["dateEarliest"]
     assert data["dateLatest"]
+    assert data["topPageHosts"] == [{'count': 7, 'host': 'webrecorder.net'}]
 
     # Verify it was added
     r = requests.get(
@@ -335,6 +339,7 @@ def test_add_remove_crawl_from_collection(
     assert data.get("tags", []) == []
     assert data.get("dateEarliest") is None
     assert data.get("dateLatest") is None
+    assert data["topPageHosts"] == {}
 
     # Verify they were removed
     r = requests.get(
@@ -366,6 +371,7 @@ def test_add_remove_crawl_from_collection(
     assert data["tags"] == ["wr-test-2", "wr-test-1"]
     assert data["dateEarliest"]
     assert data["dateLatest"]
+    assert data["topPageHosts"]
 
 
 def test_get_collection(crawler_auth_headers, default_org_id):
@@ -1137,6 +1143,7 @@ def test_list_public_collections(
         assert collection["pageCount"] > 0
         assert collection["uniquePageCount"] > 0
         assert collection["totalSize"] > 0
+        assert collection["topPageHosts"]
 
     # Test non-existing slug - it should return a 404 but not reveal
     # whether or not an org exists with that slug
