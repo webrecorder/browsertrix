@@ -1,6 +1,7 @@
 import path from "path";
 
 import type { StorybookConfig } from "@storybook/web-components-webpack5";
+import remarkGfm from "remark-gfm";
 import type { WebpackConfiguration } from "webpack-dev-server";
 
 import {
@@ -15,6 +16,7 @@ const config: StorybookConfig = {
       from: shoelaceAssetsSrcPath,
       to: shoelaceAssetsPublicPath,
     },
+    { from: "../src/assets/", to: "/assets" },
   ],
   addons: [
     "@storybook/addon-webpack5-compiler-swc",
@@ -70,6 +72,16 @@ const config: StorybookConfig = {
         ],
       },
     },
+    {
+      name: "@storybook/addon-docs",
+      options: {
+        mdxPluginOptions: {
+          mdxCompileOptions: {
+            remarkPlugins: [remarkGfm],
+          },
+        },
+      },
+    },
   ],
   framework: {
     name: "@storybook/web-components-webpack5",
@@ -98,6 +110,7 @@ const config: StorybookConfig = {
       parser: {
         syntax: "typescript",
         decorators: true,
+        jsx: true,
       },
       // TODO Consolidate with tsconfig.json
       transform: {
