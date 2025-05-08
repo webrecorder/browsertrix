@@ -251,6 +251,7 @@ export class WorkflowListItem extends BtrixElement {
               <btrix-crawl-status
                 state=${workflow.lastCrawlState || msg("No Crawls Yet")}
                 ?stopping=${workflow.lastCrawlStopping}
+                ?pausing=${workflow.lastCrawlPausing}
               ></btrix-crawl-status>
             `,
           )}
@@ -281,11 +282,15 @@ export class WorkflowListItem extends BtrixElement {
               if (diff < 1000) {
                 return "";
               }
-              return msg(
-                str`Running for ${this.localize.humanizeDuration(diff, {
-                  compact: true,
-                })}`,
-              );
+              const duration = this.localize.humanizeDuration(diff, {
+                compact: true,
+              });
+
+              if (workflow.lastCrawlState === "paused") {
+                return msg(str`Active for ${duration}`);
+              }
+
+              return msg(str`Running for ${duration}`);
             }
             return notSpecified;
           })}
