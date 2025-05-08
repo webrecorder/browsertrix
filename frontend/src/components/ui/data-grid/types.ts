@@ -6,6 +6,9 @@ export type GridItem<T extends PropertyKey = string> = Record<
   string | number | null | undefined
 >;
 
+export type GridItemValue<T extends PropertyKey = string> =
+  GridItem<T>[keyof GridItem<T>];
+
 export enum GridColumnType {
   Text = "text",
   Number = "number",

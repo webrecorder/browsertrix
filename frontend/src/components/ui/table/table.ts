@@ -19,11 +19,9 @@ tableCSS.split("}").forEach((rule: string) => {
 });
 
 /**
- * @deprecated Use `<btrix-data-grid>` instead.
- *
  * Low-level component for displaying content into columns and rows.
  * To style tables, use TailwindCSS utility classes.
- * To render styled, tabular data, use `<btrix-data-table>`.
+ * To render styled, tabular data, use `<btrix-data-grid>`.
  *
  * Table columns are automatically sized according to their content.
  * To specify column sizes, use `--btrix-table-grid-template-columns`.

@@ -6,7 +6,12 @@ import { ifDefined } from "lit/directives/if-defined.js";
 
 import { TableCell } from "../table/table-cell";
 
-import type { GridColumn, GridColumnSelectType, GridItem } from "./types";
+import type {
+  GridColumn,
+  GridColumnSelectType,
+  GridItem,
+  GridItemValue,
+} from "./types";
 import { GridColumnType } from "./types";
 
 import { DataGridFocusController } from "@/components/ui/data-grid/controllers/focus";
@@ -45,7 +50,7 @@ export class DataGridCell extends TableCell {
   item?: GridItem;
 
   @property({ type: String })
-  value?: GridItem[keyof GridItem];
+  value?: GridItemValue;
 
   @property({ type: Boolean })
   editable = false;
@@ -122,7 +127,7 @@ export class DataGridCell extends TableCell {
     value: cellValue,
   }: {
     item: GridItem;
-    value?: GridItem[keyof GridItem];
+    value?: GridItemValue;
   }) => {
     const col = this.column;
 
