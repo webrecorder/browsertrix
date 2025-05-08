@@ -1,0 +1,394 @@
+apiVersion: v1
+entries:
+  browsertrix:
+  - apiVersion: v2
+    appVersion: 1.16.0
+    created: '2025-05-08T21:41:49Z'
+    description: A chart for Browsertrix integrated web archiving system
+    digest: cd0eebf44f2e6f3180e23a8ccfc5d6dfce6a2c432c2a7dc26832a985df9b10c2
+    home: https://github.com/webrecorder/browsertrix
+    name: Browsertrix v1.16.0
+    sources:
+    - https://github.com/webrecorder/browsertrix/tree/v1.16.0
+    type: application
+    urls:
+    - https://github.com/webrecorder/browsertrix/releases/download/v1.16.0/browsertrix-v1.16.0.tgz
+    version: 1.16.0
+  - apiVersion: v2
+    appVersion: 1.15.0
+    created: '2025-05-08T21:22:53Z'
+    description: A chart for Browsertrix integrated web archiving system
+    digest: d6cdcd600a4efec30cc465da6a68965f560158485137d09b730523cbb39e5639
+    home: https://github.com/webrecorder/browsertrix
+    name: Browsertrix v1.15.0
+    sources:
+    - https://github.com/webrecorder/browsertrix/tree/v1.15.0
+    type: application
+    urls:
+    - https://github.com/webrecorder/browsertrix/releases/download/v1.15.0/browsertrix-v1.15.0.tgz
+    version: 1.15.0
+  - apiVersion: v2
+    appVersion: 1.14.8
+    created: '2025-04-09T08:10:45Z'
+    description: A chart for Browsertrix integrated web archiving system
+    digest: 01ba679350f5f000ff9bd0176572a2abb5f45ffbddfd4e1eadebea4d322997c3
+    home: https://github.com/webrecorder/browsertrix
+    name: Browsertrix v1.14.8
+    sources:
+    - https://github.com/webrecorder/browsertrix/tree/v1.14.8
+    type: application
+    urls:
+    - https://github.com/webrecorder/browsertrix/releases/download/v1.14.8/browsertrix-v1.14.8.tgz
+    version: 1.14.8
+  - apiVersion: v2
+    appVersion: 1.14.7
+    created: '2025-03-31T21:11:58Z'
+    description: A chart for Browsertrix integrated web archiving system
+    digest: 6fa05d6ee4fd42148d2d51068730263f99d3486ad138f062db213db9bb5a3dda
+    home: https://github.com/webrecorder/browsertrix
+    name: Browsertrix v1.14.7
+    sources:
+    - https://github.com/webrecorder/browsertrix/tree/v1.14.7
+    type: application
+    urls:
+    - https://github.com/webrecorder/browsertrix/releases/download/v1.14.7/browsertrix-v1.14.7.tgz
+    version: 1.14.7
+  - apiVersion: v2
+    appVersion: 1.14.6
+    created: '2025-03-26T00:25:11Z'
+    description: A chart for Browsertrix integrated web archiving system
+    digest: 6eb64f8399fe971f3c005e42d25df6d5a6c40960a97aa0fd534374676431b810
+    home: https://github.com/webrecorder/browsertrix
+    name: Browsertrix v1.14.6
+    sources:
+    - https://github.com/webrecorder/browsertrix/tree/v1.14.6
+    type: application
+    urls:
+    - https://github.com/webrecorder/browsertrix/releases/download/v1.14.6/browsertrix-v1.14.6.tgz
+    version: 1.14.6
+  - apiVersion: v2
+    appVersion: 1.14.5
+    created: '2025-03-20T23:51:34Z'
+    description: A chart for Browsertrix integrated web archiving system
+    digest: cf6a7e6d6d6ae655240f61bf108344790977b6a630673142171387fe94c10f2d
+    home: https://github.com/webrecorder/browsertrix
+    name: Browsertrix v1.14.5
+    sources:
+    - https://github.com/webrecorder/browsertrix/tree/v1.14.5
+    type: application
+    urls:
+    - https://github.com/webrecorder/browsertrix/releases/download/v1.14.5/browsertrix-v1.14.5.tgz
+    version: 1.14.5
+  - apiVersion: v2
+    appVersion: 1.14.4
+    created: '2025-03-19T00:23:03Z'
+    description: A chart for Browsertrix integrated web archiving system
+    digest: 95e7a887c80cca353155620ec3fd89d50abe4469ce006d5f3b91f819ca41b143
+    home: https://github.com/webrecorder/browsertrix
+    name: Browsertrix v1.14.4
+    sources:
+    - https://github.com/webrecorder/browsertrix/tree/v1.14.4
+    type: application
+    urls:
+    - https://github.com/webrecorder/browsertrix/releases/download/v1.14.4/browsertrix-v1.14.4.tgz
+    version: 1.14.4
+  - apiVersion: v2
+    appVersion: 1.14.3
+    created: '2025-03-08T23:57:28Z'
+    description: A chart for Browsertrix integrated web archiving system
+    digest: aafedd0be63eae8b71c28d0363bc4a35b4988fc37f814137d1051a0b441522d8
+    home: https://github.com/webrecorder/browsertrix
+    name: Browsertrix v1.14.3
+    sources:
+    - https://github.com/webrecorder/browsertrix/tree/v1.14.3
+    type: application
+    urls:
+    - https://github.com/webrecorder/browsertrix/releases/download/v1.14.3/browsertrix-v1.14.3.tgz
+    version: 1.14.3
+  - apiVersion: v2
+    appVersion: 1.14.2
+    created: '2025-03-03T22:11:43Z'
+    description: A chart for Browsertrix integrated web archiving system
+    digest: 8c740664fe1fa7c2a16e99d390088ae3b276dc8715c0ad5f74aba224798617b5
+    home: https://github.com/webrecorder/browsertrix
+    name: Browsertrix v1.14.2
+    sources:
+    - https://github.com/webrecorder/browsertrix/tree/v1.14.2
+    type: application
+    urls:
+    - https://github.com/webrecorder/browsertrix/releases/download/v1.14.2/browsertrix-v1.14.2.tgz
+    version: 1.14.2
+  - apiVersion: v2
+    appVersion: 1.14.1
+    created: '2025-02-27T19:46:50Z'
+    description: A chart for Browsertrix integrated web archiving system
+    digest: 32decaf65eae32b4d6f56f14ecbed8863be02b6288f1767955ca85310e39f6d9
+    home: https://github.com/webrecorder/browsertrix
+    name: Browsertrix v1.14.1
+    sources:
+    - https://github.com/webrecorder/browsertrix/tree/v1.14.1
+    type: application
+    urls:
+    - https://github.com/webrecorder/browsertrix/releases/download/v1.14.1/browsertrix-v1.14.1.tgz
+    version: 1.14.1
+  - apiVersion: v2
+    appVersion: 1.14.0
+    created: '2025-02-27T07:14:13Z'
+    description: A chart for Browsertrix integrated web archiving system
+    digest: e2db6d8ee9b532add3b479b04066ef15d74607cab3ac92acebac03d13843c84c
+    home: https://github.com/webrecorder/browsertrix
+    name: Browsertrix v1.14.0
+    sources:
+    - https://github.com/webrecorder/browsertrix/tree/v1.14.0
+    type: application
+    urls:
+    - https://github.com/webrecorder/browsertrix/releases/download/v1.14.0/browsertrix-v1.14.0.tgz
+    version: 1.14.0
+  - apiVersion: v2
+    appVersion: 1.14.0-beta.7
+    created: '2025-02-24T22:33:52Z'
+    description: A chart for Browsertrix integrated web archiving system
+    digest: 4f55e0b4795726a772b62deeb477572221ad21036eb30c0aa3261fe465764b3c
+    home: https://github.com/webrecorder/browsertrix
+    name: Browsertrix v1.14.0-beta.7
+    sources:
+    - https://github.com/webrecorder/browsertrix/tree/v1.14.0-beta.7
+    type: application
+    urls:
+    - https://github.com/webrecorder/browsertrix/releases/download/v1.14.0-beta.7/browsertrix-v1.14.0-beta.7.tgz
+    version: 1.14.0-beta.7
+  - apiVersion: v2
+    appVersion: 1.14.0-beta.6
+    created: '2025-02-21T02:43:45Z'
+    description: A chart for Browsertrix integrated web archiving system
+    digest: cb818654568810854d9d9a79eaba626dc306b719f6b3c6384b4fed12f77b735d
+    home: https://github.com/webrecorder/browsertrix
+    name: Browsertrix v1.14.0-beta.6
+    sources:
+    - https://github.com/webrecorder/browsertrix/tree/v1.14.0-beta.6
+    type: application
+    urls:
+    - https://github.com/webrecorder/browsertrix/releases/download/v1.14.0-beta.6/browsertrix-v1.14.0-beta.6.tgz
+    version: 1.14.0-beta.6
+  - apiVersion: v2
+    appVersion: 1.14.0-beta.5
+    created: '2025-02-20T23:26:26Z'
+    description: A chart for Browsertrix integrated web archiving system
+    digest: 54020225b2eefa78ad229b0a4d97bf9c680824f33f485b3e68773db9a3b621e0
+    home: https://github.com/webrecorder/browsertrix
+    name: Browsertrix v1.14.0-beta.5
+    sources:
+    - https://github.com/webrecorder/browsertrix/tree/v1.14.0-beta.5
+    type: application
+    urls:
+    - https://github.com/webrecorder/browsertrix/releases/download/v1.14.0-beta.5/browsertrix-v1.14.0-beta.5.tgz
+    version: 1.14.0-beta.5
+  - apiVersion: v2
+    appVersion: 1.14.0-beta.4
+    created: '2025-02-18T22:19:39Z'
+    description: A chart for Browsertrix integrated web archiving system
+    digest: 3c137b75bb946efa32b1659cf19533476551cbc133e0dbec35da98f84a3d5262
+    home: https://github.com/webrecorder/browsertrix
+    name: Browsertrix v1.14.0-beta.4
+    sources:
+    - https://github.com/webrecorder/browsertrix/tree/v1.14.0-beta.4
+    type: application
+    urls:
+    - https://github.com/webrecorder/browsertrix/releases/download/v1.14.0-beta.4/browsertrix-v1.14.0-beta.4.tgz
+    version: 1.14.0-beta.4
+  - apiVersion: v2
+    appVersion: 1.14.0-beta.3
+    created: '2025-02-18T05:36:51Z'
+    description: A chart for Browsertrix integrated web archiving system
+    digest: f8b79ffd3f2f13c6b8abc822712cc2820be2ed2323b0443843c4b2a9da9e5931
+    home: https://github.com/webrecorder/browsertrix
+    name: Browsertrix v1.14.0-beta.3
+    sources:
+    - https://github.com/webrecorder/browsertrix/tree/v1.14.0-beta.3
+    type: application
+    urls:
+    - https://github.com/webrecorder/browsertrix/releases/download/v1.14.0-beta.3/browsertrix-v1.14.0-beta.3.tgz
+    version: 1.14.0-beta.3
+  - apiVersion: v2
+    appVersion: 1.14.0-beta.2
+    created: '2025-02-18T03:03:58Z'
+    description: A chart for Browsertrix integrated web archiving system
+    digest: c08179c6fa5ed945d120d6dea09c294ecbf0bf528b0b67396170cfee86dfc9ed
+    home: https://github.com/webrecorder/browsertrix
+    name: Browsertrix v1.14.0-beta.2
+    sources:
+    - https://github.com/webrecorder/browsertrix/tree/v1.14.0-beta.2
+    type: application
+    urls:
+    - https://github.com/webrecorder/browsertrix/releases/download/v1.14.0-beta.2/browsertrix-v1.14.0-beta.2.tgz
+    version: 1.14.0-beta.2
+  - apiVersion: v2
+    appVersion: 1.14.0-beta.1
+    created: '2025-02-20T19:04:47Z'
+    description: A chart for Browsertrix integrated web archiving system
+    digest: 9b3637e2a62d15473200c659e241efcaa0029e3db25b6b9221e52b6022c67ec9
+    home: https://github.com/webrecorder/browsertrix
+    name: Browsertrix v1.14.0-beta.1
+    sources:
+    - https://github.com/webrecorder/browsertrix/tree/v1.14.0-beta.1
+    type: application
+    urls:
+    - https://github.com/webrecorder/browsertrix/releases/download/v1.14.0-beta.1/browsertrix-v1.14.0-beta.1.tgz
+    version: 1.14.0-beta.1
+  - apiVersion: v2
+    appVersion: 1.14.0-beta.0
+    created: '2025-02-18T00:48:12Z'
+    description: A chart for Browsertrix integrated web archiving system
+    digest: e172fc26eebb04f3bf29a4dd65559f7b73a94f1b0bd043e5e08fdc88c9e5d91e
+    home: https://github.com/webrecorder/browsertrix
+    name: Browsertrix v1.14.0-beta.0
+    sources:
+    - https://github.com/webrecorder/browsertrix/tree/v1.14.0-beta.0
+    type: application
+    urls:
+    - https://github.com/webrecorder/browsertrix/releases/download/v1.14.0-beta.0/browsertrix-v1.14.0-beta.0.tgz
+    version: 1.14.0-beta.0
+  - apiVersion: v2
+    appVersion: 1.13.3
+    created: '2025-01-29T18:08:14Z'
+    description: A chart for Browsertrix integrated web archiving system
+    digest: 1c962aa6a6c207fd50cc47f26e11bd7752e0ed97a81d647276f503dea2670ddc
+    home: https://github.com/webrecorder/browsertrix
+    name: Browsertrix v1.13.3
+    sources:
+    - https://github.com/webrecorder/browsertrix/tree/v1.13.3
+    type: application
+    urls:
+    - https://github.com/webrecorder/browsertrix/releases/download/v1.13.3/browsertrix-v1.13.3.tgz
+    version: 1.13.3
+  - apiVersion: v2
+    appVersion: 1.13.2
+    created: '2025-01-13T20:02:12Z'
+    description: A chart for Browsertrix integrated web archiving system
+    digest: 0016e7d6ad03fa9e3da18411c83500a8289d57b7f9fda9810a62206291672b24
+    home: https://github.com/webrecorder/browsertrix
+    name: Browsertrix v1.13.2
+    sources:
+    - https://github.com/webrecorder/browsertrix/tree/v1.13.2
+    type: application
+    urls:
+    - https://github.com/webrecorder/browsertrix/releases/download/v1.13.2/browsertrix-v1.13.2.tgz
+    version: 1.13.2
+  - apiVersion: v2
+    appVersion: 1.13.1
+    created: '2025-01-09T06:56:30Z'
+    description: A chart for Browsertrix integrated web archiving system
+    digest: ccf2611bc1facd7ee5360ae0ae2ea0d946f6051471377a8b24b265f56950b0d7
+    home: https://github.com/webrecorder/browsertrix
+    name: Browsertrix v1.13.1
+    sources:
+    - https://github.com/webrecorder/browsertrix/tree/v1.13.1
+    type: application
+    urls:
+    - https://github.com/webrecorder/browsertrix/releases/download/v1.13.1/browsertrix-v1.13.1.tgz
+    version: 1.13.1
+  - apiVersion: v2
+    appVersion: 1.13.0
+    created: '2024-12-17T23:51:58Z'
+    description: A chart for Browsertrix integrated web archiving system
+    digest: e5dd11af028c2b74f6a78fab8e12f5eaf777754ce33e1f39e3feb98cd6d72f38
+    home: https://github.com/webrecorder/browsertrix
+    name: Browsertrix v1.13.0
+    sources:
+    - https://github.com/webrecorder/browsertrix/tree/v1.13.0
+    type: application
+    urls:
+    - https://github.com/webrecorder/browsertrix/releases/download/v1.13.0/browsertrix-v1.13.0.tgz
+    version: 1.13.0
+  - apiVersion: v2
+    appVersion: 1.13.0-beta.0
+    created: '2024-12-14T04:30:20Z'
+    description: A chart for Browsertrix integrated web archiving system
+    digest: 039d93ec9d4841150d14f9092316535d6c15536b15f2cba265e35a7c0e93db34
+    home: https://github.com/webrecorder/browsertrix
+    name: Browsertrix v1.13.0-beta.0
+    sources:
+    - https://github.com/webrecorder/browsertrix/tree/v1.13.0-beta.0
+    type: application
+    urls:
+    - https://github.com/webrecorder/browsertrix/releases/download/v1.13.0-beta.0/browsertrix-v1.13.0-beta.0.tgz
+    version: 1.13.0-beta.0
+  - apiVersion: v2
+    appVersion: 1.12.2
+    created: '2024-11-24T19:54:59Z'
+    description: A chart for Browsertrix integrated web archiving system
+    digest: 2a06c2a7ad33ce00e527d18962440b8207cc22fc9c6ef04a97f44273b41b666c
+    home: https://github.com/webrecorder/browsertrix
+    name: Browsertrix v1.12.2
+    sources:
+    - https://github.com/webrecorder/browsertrix/tree/v1.12.2
+    type: application
+    urls:
+    - https://github.com/webrecorder/browsertrix/releases/download/v1.12.2/browsertrix-v1.12.2.tgz
+    version: 1.12.2
+  - apiVersion: v2
+    appVersion: 1.12.1
+    created: '2024-11-14T04:05:22Z'
+    description: A chart for Browsertrix integrated web archiving system
+    digest: df04886a96cf1b28be6eb20b5db9a6368c94a2a9c0bd5b632e5c70ba6af8bf68
+    home: https://github.com/webrecorder/browsertrix
+    name: Browsertrix v1.12.1
+    sources:
+    - https://github.com/webrecorder/browsertrix/tree/v1.12.1
+    type: application
+    urls:
+    - https://github.com/webrecorder/browsertrix/releases/download/v1.12.1/browsertrix-v1.12.1.tgz
+    version: 1.12.1
+  - apiVersion: v2
+    appVersion: 1.12.0
+    created: '2024-11-18T18:37:37Z'
+    description: A chart for Browsertrix integrated web archiving system
+    digest: 20f7521df9c27b414b25624046ff97c0fd41f54f7b8b446dfc7b85b01c3fa5fb
+    home: https://github.com/webrecorder/browsertrix
+    name: Browsertrix v1.12.0
+    sources:
+    - https://github.com/webrecorder/browsertrix/tree/v1.12.0
+    type: application
+    urls:
+    - https://github.com/webrecorder/browsertrix/releases/download/v1.12.0/browsertrix-v1.12.0.tgz
+    version: 1.12.0
+  - apiVersion: v2
+    appVersion: 1.12.0-beta.0
+    created: '2024-10-03T23:13:45Z'
+    description: A chart for Browsertrix integrated web archiving system
+    digest: 2b4c560741e1706f11fbc6b3abd72e996f267310d7c03a2f9a805a636e2c892b
+    home: https://github.com/webrecorder/browsertrix
+    name: Browsertrix v1.12.0-beta.0
+    sources:
+    - https://github.com/webrecorder/browsertrix/tree/v1.12.0-beta.0
+    type: application
+    urls:
+    - https://github.com/webrecorder/browsertrix/releases/download/v1.12.0-beta.0/browsertrix-v1.12.0-beta.0.tgz
+    version: 1.12.0-beta.0
+  - apiVersion: v2
+    appVersion: 1.11.7
+    created: '2024-09-19T17:05:13Z'
+    description: A chart for Browsertrix integrated web archiving system
+    digest: 2fd190ffaf65403844df6d5e83e78b6ee0cb36b4bc0da0bb7e6ffd7317f6e27a
+    home: https://github.com/webrecorder/browsertrix
+    name: Browsertrix v1.11.7
+    sources:
+    - https://github.com/webrecorder/browsertrix/tree/v1.11.7
+    type: application
+    urls:
+    - https://github.com/webrecorder/browsertrix/releases/download/v1.11.7/browsertrix-v1.11.7.tgz
+    version: 1.11.7
+  - apiVersion: v2
+    appVersion: 1.11.6
+    created: '2024-09-19T00:56:26Z'
+    description: A chart for Browsertrix integrated web archiving system
+    digest: b05807cf27f5f1f242f01ff017f5a789df94da636a4f07e24e3c151cf79f092f
+    home: https://github.com/webrecorder/browsertrix
+    name: Browsertrix v1.11.6
+    sources:
+    - https://github.com/webrecorder/browsertrix/tree/v1.11.6
+    type: application
+    urls:
+    - https://github.com/webrecorder/browsertrix/releases/download/v1.11.6/browsertrix-v1.11.6.tgz
+    version: 1.11.6
+
