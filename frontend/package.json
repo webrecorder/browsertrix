@@ -49,7 +49,7 @@
     "eslint-plugin-lit": "^1.11.0",
     "eslint-plugin-storybook": "^0.12.0",
     "eslint-plugin-wc": "^2.0.4",
-    "eslint-webpack-plugin": "^5.0.1",
+    "eslint-webpack-plugin": "^4.1.0",
     "fork-ts-checker-webpack-plugin": "^6.2.6",
     "fuse.js": "^6.5.3",
     "glob": "^8.1.0",
@@ -122,7 +122,6 @@
   "devDependencies": {
     "@custom-elements-manifest/analyzer": "^0.10.4",
     "@lit/localize-tools": "^0.8.0",
-    "@storybook/addon-docs": "^8.6.12",
     "@storybook/addon-essentials": "^8.6.12",
     "@storybook/addon-styling-webpack": "^1.0.1",
     "@storybook/addon-webpack5-compiler-swc": "^3.0.0",

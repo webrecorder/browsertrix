@@ -1920,7 +1920,7 @@
     dequal "^2.0.2"
     ts-dedent "^2.0.0"
 
-"@storybook/addon-docs@8.6.12", "@storybook/addon-docs@^8.6.12":
+"@storybook/addon-docs@8.6.12":
   version "8.6.12"
   resolved "https://registry.yarnpkg.com/@storybook/addon-docs/-/addon-docs-8.6.12.tgz#81ef50ae5cdc38ac3858f3a1322b0e38d3bf764f"
   integrity sha512-kEezQjAf/p3SpDzLABgg4fbT48B6dkT2LiZCKTRmCrJVtuReaAr4R9MMM6Jsph6XjbIj/SvOWf3CMeOPXOs9sg==
@@ -2437,10 +2437,10 @@
     "@types/estree" "*"
     "@types/json-schema" "*"
 
-"@types/eslint@^9.6.1":
-  version "9.6.1"
-  resolved "https://registry.yarnpkg.com/@types/eslint/-/eslint-9.6.1.tgz#d5795ad732ce81715f27f75da913004a56751584"
-  integrity sha512-FXx2pKgId/WyYo2jXw63kk7/+TY7u7AziEJxJAnSFzHlqTAS3Ync6SvgYAN/k4/PQpnnVuzoMuVnByKK2qp0ag==
+"@types/eslint@^8.56.5":
+  version "8.56.7"
+  resolved "https://registry.yarnpkg.com/@types/eslint/-/eslint-8.56.7.tgz#c33b5b5a9cfb66881beb7b5be6c34aa3e81d3366"
+  integrity sha512-SjDvI/x3zsZnOkYZ3lCt9lOZWZLB2jIlNKz+LBgCtDurK0JZcwucxYHn1w2BJkD34dgX9Tjnak0txtq4WTggEA==
   dependencies:
     "@types/estree" "*"
     "@types/json-schema" "*"
@@ -5774,16 +5774,16 @@ eslint-visitor-keys@^4.2.0:
   resolved "https://registry.yarnpkg.com/eslint-visitor-keys/-/eslint-visitor-keys-4.2.0.tgz#687bacb2af884fcdda8a6e7d65c606f46a14cd45"
   integrity sha512-UyLnSehNt62FFhSwjZlHmeokpRK59rcz29j+F1/aDgbkbRTk7wIc9XzdoasMUbRNKDM0qQt/+BJ4BrpFeABemw==
 
-eslint-webpack-plugin@^5.0.1:
-  version "5.0.1"
-  resolved "https://registry.yarnpkg.com/eslint-webpack-plugin/-/eslint-webpack-plugin-5.0.1.tgz#411ea796918e26659e3aef3a776527609e837817"
-  integrity sha512-Ur100Vi+z0uP7j4Z8Ccah0pXmNHhl3f7P2hCYZj3mZCOSc33G5c1R/vZ4KCapwWikPgRyD4dkangx6JW3KaVFQ==
+eslint-webpack-plugin@^4.1.0:
+  version "4.1.0"
+  resolved "https://registry.yarnpkg.com/eslint-webpack-plugin/-/eslint-webpack-plugin-4.1.0.tgz#83daf1e601ea57b63d7164eea0635d7b7bafe673"
+  integrity sha512-C3wAG2jyockIhN0YRLuKieKj2nx/gnE/VHmoHemD5ifnAtY6ZU+jNPfzPoX4Zd6RIbUyWTiZUh/ofUlBhoAX7w==
   dependencies:
-    "@types/eslint" "^9.6.1"
+    "@types/eslint" "^8.56.5"
     jest-worker "^29.7.0"
-    micromatch "^4.0.8"
+    micromatch "^4.0.5"
     normalize-path "^3.0.0"
-    schema-utils "^4.3.0"
+    schema-utils "^4.2.0"
 
 eslint@^8.56.0:
   version "8.56.0"
