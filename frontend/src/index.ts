@@ -336,7 +336,7 @@ export class App extends BtrixElement {
 
   render() {
     return html`
-      <div class="min-w-screen flex min-h-screen flex-col">
+      <div class="min-w-screen relative flex min-h-screen flex-col">
         ${this.renderSuperadminBanner()} ${this.renderNavBar()}
         ${this.renderAlertBanner()}
         <main
@@ -397,23 +397,9 @@ export class App extends BtrixElement {
 
   private renderSuperadminBanner() {
     if (this.userInfo?.isSuperAdmin) {
-      return html` <div
-        class="sticky top-0 z-50 border-b border-b-warning-800 bg-warning-700 py-2 text-xs text-warning-50 shadow-sm shadow-orange-700/20"
-      >
-        <div
-          class="mx-auto box-border flex w-full items-center gap-2 px-3 xl:pl-6"
-        >
-          <sl-icon
-            slot="icon"
-            name="exclamation-triangle-fill"
-            class="size-4"
-          ></sl-icon>
-          <span>
-            <strong>${msg("You are logged in as a superadmin")}</strong> –
-            ${msg("please be careful.")}
-          </span>
-        </div>
-      </div>`;
+      return html`<btrix-super-admin-banner
+        class="contents"
+      ></btrix-super-admin-banner>`;
     }
   }
 
