@@ -8,6 +8,8 @@ import {
 
 import customElements from "@/__generated__/custom-elements.json";
 
+import "../src/theme.stylesheet.css";
+
 // Automatically document component properties
 setCustomElementsManifest(customElements);
 
