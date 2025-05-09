@@ -1,6 +1,7 @@
 import path from "path";
 
 import type { StorybookConfig } from "@storybook/web-components-webpack5";
+import EslintWebpackPlugin from "eslint-webpack-plugin";
 import remarkGfm from "remark-gfm";
 import type { WebpackConfiguration } from "webpack-dev-server";
 
@@ -89,10 +90,10 @@ const config: StorybookConfig = {
   },
   webpackFinal: async (config) => {
     // Show eslint errors from Storybook files in Webpack overlay
-    const ESLintPlugin = require("eslint-webpack-plugin");
 
     config.plugins?.push(
-      new ESLintPlugin({
+      // @ts-expect-error something to do with different symbols - not totally sure, but doesn't seem to be a problem
+      new EslintWebpackPlugin({
         files: ["**/stories/**/*.ts", "**/.storybook/*.ts"],
       }),
     );
