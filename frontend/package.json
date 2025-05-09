@@ -122,6 +122,7 @@
   "devDependencies": {
     "@custom-elements-manifest/analyzer": "^0.10.4",
     "@lit/localize-tools": "^0.8.0",
+    "@storybook/addon-docs": "^8.6.12",
     "@storybook/addon-essentials": "^8.6.12",
     "@storybook/addon-styling-webpack": "^1.0.1",
     "@storybook/addon-webpack5-compiler-swc": "^3.0.0",
