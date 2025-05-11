@@ -7,19 +7,60 @@ metadata:
   namespace: {{ .Values.crawler_namespace | default "crawlers" }}
 type: Opaque
 stringData:
+
+{{ $proxyDict := dict }}
+{{ $hasMatchHosts := false }}
+
 {{- range .Values.proxies }}
+
+{{ $proxyEntry := dict "url" .url }}
 
 {{- if .ssh_private_key }}
   {{ .id }}-private-key: |
 {{ .ssh_private_key | indent 4 }}
+{{- $_ := set $proxyEntry "privateKeyFile" (printf "/tmp/proxies/%s-private-key" .id) }}
 {{- end }}
 
 {{- if .ssh_host_public_key }}
   {{ .id }}-known-hosts: |
 {{ .ssh_host_public_key | indent 4 }}
+{{- $_ := set $proxyEntry "publicHostsFile" (printf "/tmp/proxies/%s-known-hosts" .id) }}
+{{- end }}
+
+{{- $_ := set $proxyDict .id $proxyEntry }}
+
+{{- end }}
+
+{{- if .Values.matchHosts }}
+  {{- $proxies := dict }}
+
+  {{- range $hostrx, $name := .Values.matchHosts }}
+    {{- $proxyEntry := get $proxyDict $name }}
+    {{- if not $proxyEntry }}
+      {{- fail (cat "Invalid proxy: 'matchHosts' referencing unknown proxy:" $name) }}
+    {{- end }}
+    {{- $_ := set $proxies $name $proxyEntry }}
+    {{- $hasMatchHosts = true }}
+  {{- end }}
+
+{{- if $hasMatchHosts }}
+data:
+  host-proxies.json: {{ dict "matchHosts" .Values.matchHosts "proxies" $proxies | toJson | b64enc | quote }}
 {{- end }}
 
 {{- end }}
+
+{{- if $hasMatchHosts }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: has-proxy-match-hosts
+  namespace: {{ .Values.crawler_namespace | default "crawlers" }}
+  labels:
+    role: has-proxy-match-hosts
+{{- end }}
+
 ---
 apiVersion: v1
 kind: Secret
@@ -31,4 +72,5 @@ type: Opaque
 data:
   crawler_proxies_last_update: {{ now | unixEpoch | toString | b64enc | quote }}
   crawler_proxies.json: {{ .Values.proxies | toJson | b64enc | quote }}
+
 {{- end }}
