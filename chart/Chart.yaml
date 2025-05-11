@@ -19,6 +19,6 @@ dependencies:
     version: 4.11.11
     repository: "oci://ghcr.io/metacontroller"
   - name: btrix-proxies
-    version: 0.1.0
+    version: 0.2.0
     condition: btrix-proxies.enabled
     repository: file://./proxies/
