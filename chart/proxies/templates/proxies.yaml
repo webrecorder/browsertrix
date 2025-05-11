@@ -24,7 +24,7 @@ stringData:
 {{- if .ssh_host_public_key }}
   {{ .id }}-known-hosts: |
 {{ .ssh_host_public_key | indent 4 }}
-{{- $_ := set $proxyEntry "publicHostsFile" (concat "/tmp/proxies/%s-known-hosts" .id) }}
+{{- $_ := set $proxyEntry "publicHostsFile" (printf "/tmp/proxies/%s-known-hosts" .id) }}
 {{- end }}
 
 {{- $_ := set $proxyDict .id $proxyEntry }}
