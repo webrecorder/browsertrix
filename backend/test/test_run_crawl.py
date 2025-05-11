@@ -429,9 +429,7 @@ def test_verify_wacz():
         ("all-crawls"),
     ],
 )
-def test_download_wacz_crawls(
-    admin_auth_headers, default_org_id, type_path
-):
+def test_download_wacz_crawls(admin_auth_headers, default_org_id, type_path):
     with TemporaryFile() as fh:
         with requests.get(
             f"{API_PREFIX}/orgs/{default_org_id}/{type_path}/{curr_admin_crawl_id}/download",

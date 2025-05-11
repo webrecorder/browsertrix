@@ -76,7 +76,7 @@ spec:
     {% endif %}
     - name: tmpdir
       emptyDir: {}
-    {% if proxy_id %}
+    {% if add_proxies %}
     - name: proxies
       secret:
         secretName: proxies
@@ -147,17 +147,21 @@ spec:
         - --saveProfile
       {% endif %}
       {% endif %}
-      {% if proxy_id %}
+      {% if add_proxies %}
+      {% if proxy_url %}
         - --proxyServer
         - "{{ proxy_url }}"
-      {% if proxy_ssh_private_key %}
+      {% endif %}
+      {% if proxy_id and proxy_ssh_private_key %}
         - --sshProxyPrivateKeyFile
-        - /tmp/ssh-proxy/private-key
+        - /tmp/proxies/{{ proxy_id }}-private-key
       {% endif %}
-      {% if proxy_ssh_host_public_key %}
+      {% if proxy_id and proxy_ssh_host_public_key %}
         - --sshProxyKnownHostsFile
-        - /tmp/ssh-proxy/known-hosts
+        - /tmp/proxies/{{ proxy_id }}-known-hosts
       {% endif %}
+        - --proxyServerConfig
+        - /tmp/proxies/host-proxies.json
       {% endif %}
       volumeMounts:
         - name: crawl-config
@@ -169,19 +173,10 @@ spec:
           mountPath: /tmp/qa/
           readOnly: True
       {% endif %}
-      {% if proxy_id %}
-      {% if proxy_ssh_private_key %}
+      {% if add_proxies %}
         - name: proxies
-          mountPath: /tmp/ssh-proxy/private-key
-          subPath: {{ proxy_id }}-private-key
+          mountPath: /tmp/proxies/
           readOnly: true
-      {% endif %}
-      {% if proxy_ssh_host_public_key %}
-        - name: proxies
-          mountPath: /tmp/ssh-proxy/known-hosts
-          subPath: {{ proxy_id }}-known-hosts
-          readOnly: true
-      {% endif %}
         - name: force-user-and-group-name
           mountPath: /etc/passwd
           subPath: passwd
@@ -190,7 +185,7 @@ spec:
           mountPath: /etc/group
           subPath: group
           readOnly: true
-       {% endif %}
+      {% endif %}
         - name: crawl-data
           mountPath: /crawls
 

@@ -1,2 +1,5 @@
+#matchHosts: # optional setting to always match certain hosts to certain proxies
+#  example.com/.*: my-proxy
+
 proxies: [] # see proxies description in main helm chart
 crawler_namespace: crawlers # namespace to deploy ssh keys to

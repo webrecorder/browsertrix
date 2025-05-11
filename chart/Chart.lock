@@ -10,6 +10,6 @@ dependencies:
   version: 4.11.11
 - name: btrix-proxies
   repository: file://./proxies/
-  version: 0.1.0
-digest: sha256:2fd9472f857e9e3eacdcc616a3cffac5bb2951411cc2d34aea84253092225ecf
-generated: "2024-08-15T11:19:17.884682494+02:00"
+  version: 0.2.0
+digest: sha256:7c0ea8ce57470fe27977bb1d6b88dda6da836f829484de55f9d41ee81351b272
+generated: "2025-05-11T12:23:32.959101-07:00"
