@@ -246,18 +246,25 @@ class PageOps:
             await self.add_qa_run_for_page(page.id, oid, qa_run_id, compare)
 
     async def update_crawl_file_and_error_counts(
-        self, crawl_id: str, pages: List[Page]
+        self, crawl_id: str, pages: Optional[List[Page]] = None
     ):
         """Update crawl filePageCount and errorPageCount for pages."""
         file_count = 0
         error_count = 0
 
-        for page in pages:
-            if page.isFile:
-                file_count += 1
-
-            if page.isError:
-                error_count += 1
+        if pages is not None:
+            for page in pages:
+                if page.isFile:
+                    file_count += 1
+                if page.isError:
+                    error_count += 1
+        else:
+            # If page list not supplied, count all pages in crawl
+            async for page_raw in self.pages.find({"crawl_id": crawl_id}):
+                if page_raw.get("isFile"):
+                    file_count += 1
+                if page_raw.get("isError"):
+                    error_count += 1
 
         if file_count == 0 and error_count == 0:
             return
