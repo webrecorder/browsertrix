@@ -32,9 +32,18 @@ class Migration(BaseMigration):
             )
             return
 
-        # Reset filePageCount and errorPageCount to 0 for all crawls
+        # Generate list of crawls to update
+        crawl_ids = []
+
+        match_query = {
+            "$or": [{"errorPageCount": {"$gt": 0}}, {"filePageCount": {"$gt": 0}}]
+        }
+        async for crawl_raw in crawls_mdb.find(match_query, projection=["_id"]):
+            crawl_ids.append(crawl_raw["_id"])
+
+        # Reset filePageCount and errorPageCount to 0
         await crawls_mdb.update_many(
-            {},
+            {"_id": {"$in": crawl_ids}},
             {
                 "$set": {
                     "filePageCount": 0,
@@ -43,9 +52,8 @@ class Migration(BaseMigration):
             },
         )
 
-        # Recalculate filePageCount and errorPageCount for every crawl
-        async for crawl_raw in crawls_mdb.find({}):
-            crawl_id = crawl_raw["_id"]
+        # Re-increment filePageCount and errorPageCount
+        for crawl_id in crawl_ids:
             try:
                 await self.page_ops.update_crawl_file_and_error_counts(crawl_id)
             # pylint: disable=broad-exception-caught
