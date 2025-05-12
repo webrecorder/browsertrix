@@ -956,6 +956,19 @@ def test_crawl_pages_qa_filters(crawler_auth_headers, default_org_id, crawler_cr
 
 
 def test_re_add_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
+    # Store page counts to compare against after re-adding
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    page_count_before = data["pageCount"]
+    page_count_before_unique = data["uniquePageCount"]
+    page_count_before_files = data["filePageCount"]
+    page_count_before_errors = data["errorPageCount"]
+
     # Re-add pages and verify they were correctly added
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages/reAdd",
@@ -1001,15 +1014,20 @@ def test_re_add_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_
     )
     assert r.status_code == 403
 
-    # Check that pageCount and uniquePageCount were stored on crawl
+    # Check that crawl page counts were recalculated properly
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
     data = r.json()
-    assert data["pageCount"] > 0
-    assert data["uniquePageCount"] > 0
+    assert data["pageCount"] > 0 and data["pageCount"] == page_count_before
+    assert (
+        data["uniquePageCount"] > 0
+        and data["uniquePageCount"] == page_count_before_unique
+    )
+    assert data["filePageCount"] == page_count_before_files
+    assert data["errorPageCount"] == page_count_before_errors
 
 
 def test_crawl_page_notes(crawler_auth_headers, default_org_id, crawler_crawl_id):
