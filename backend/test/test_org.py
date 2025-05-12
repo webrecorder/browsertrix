@@ -81,6 +81,20 @@ def test_update_org_crawling_defaults(admin_auth_headers, default_org_id):
     ]
 
 
+def test_update_org_crawling_defaults_invalid_lang(admin_auth_headers, default_org_id):
+    for invalid_code in ("f", "fra", "french"):
+        r = requests.post(
+            f"{API_PREFIX}/orgs/{default_org_id}/defaults/crawling",
+            headers=admin_auth_headers,
+            json={
+                "lang": "invalid_code",
+            },
+        )
+
+    assert r.status_code == 400
+    assert r.json()["detail"] == "invalid_lang"
+
+
 def test_rename_org(admin_auth_headers, default_org_id):
     UPDATED_NAME = "updated org name"
     UPDATED_SLUG = "updated-org-name"

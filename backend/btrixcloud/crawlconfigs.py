@@ -46,7 +46,13 @@ from .models import (
     CrawlerProxies,
     ValidateCustomBehavior,
 )
-from .utils import dt_now, slug_from_name, validate_regexes, is_url
+from .utils import (
+    dt_now,
+    slug_from_name,
+    validate_regexes,
+    validate_language_code,
+    is_url,
+)
 
 if TYPE_CHECKING:
     from .orgs import OrgOps
@@ -235,6 +241,9 @@ class CrawlConfigOps:
 
         self._validate_link_selectors(config_in.config.selectLinks)
 
+        if config_in.config.lang:
+            validate_language_code(config_in.config.lang)
+
         if config_in.config.customBehaviors:
             for url in config_in.config.customBehaviors:
                 self._validate_custom_behavior_url_syntax(url)
@@ -405,6 +414,9 @@ class CrawlConfigOps:
         if update.config and update.config.customBehaviors:
             for url in update.config.customBehaviors:
                 self._validate_custom_behavior_url_syntax(url)
+
+        if update.config and update.config.lang:
+            validate_language_code(update.config.lang)
 
         # indicates if any k8s crawl config settings changed
         changed = False
