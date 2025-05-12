@@ -1,7 +1,7 @@
 import { localized, msg } from "@lit/localize";
 import type { SlChangeEvent, SlInput } from "@shoelace-style/shoelace";
 import clsx from "clsx";
-import { css, html, nothing, unsafeCSS } from "lit";
+import { html, nothing, unsafeCSS } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { nanoid } from "nanoid";
@@ -11,7 +11,6 @@ import { DataGridRowsController } from "./controllers/rows";
 import type { DataGridRow, RowRemoveEventDetail } from "./data-grid-row";
 import stylesheet from "./data-grid.stylesheet.css";
 import type { BtrixSelectRowEvent } from "./events/btrix-select-row";
-import { renderRows } from "./renderRows";
 import type { GridColumn, GridItem } from "./types";
 
 import { TailwindElement } from "@/classes/TailwindElement";
@@ -327,8 +326,7 @@ export class DataGrid extends TailwindElement {
     return html`
       <slot name="rows" class="contents" @slotchange=${this.onRowSlotChange}>
         ${this.items
-          ? renderRows(
-              this.rowsController.rows,
+          ? this.rowsController.renderRows(
               ({ id, item }) => html`
                 <btrix-data-grid-row
                   key=${id}
