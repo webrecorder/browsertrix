@@ -1,7 +1,7 @@
 import { localized, msg } from "@lit/localize";
 import type { SlChangeEvent, SlInput } from "@shoelace-style/shoelace";
 import clsx from "clsx";
-import { css, html, nothing } from "lit";
+import { css, html, nothing, unsafeCSS } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { nanoid } from "nanoid";
@@ -9,13 +9,16 @@ import type { EmptyObject } from "type-fest";
 
 import { DataGridRowsController } from "./controllers/rows";
 import type { DataGridRow, RowRemoveEventDetail } from "./data-grid-row";
-import { BtrixSelectRowEvent } from "./events/btrix-select-row";
+import stylesheet from "./data-grid.stylesheet.css";
+import type { BtrixSelectRowEvent } from "./events/btrix-select-row";
 import { renderRows } from "./renderRows";
 import type { GridColumn, GridItem } from "./types";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
+
+const styles = unsafeCSS(stylesheet);
 
 /**
  * Data grids structure data into rows and and columns.
@@ -31,21 +34,7 @@ import { tw } from "@/utils/tailwind";
 @customElement("btrix-data-grid")
 @localized()
 export class DataGrid extends TailwindElement {
-  static styles = css`
-    :host {
-      --border: 1px solid var(--sl-panel-border-color);
-    }
-
-    btrix-data-grid-row:not(:first-of-type),
-    btrix-table-body ::slotted(*:nth-of-type(n + 2)) {
-      border-top: var(--border) !important;
-    }
-
-    btrix-table-body ::slotted(btrix-data-grid-row) {
-      /* TODO Support different input sizes */
-      min-height: calc(var(--sl-input-height-medium) + 1px);
-    }
-  `;
+  static styles = styles;
 
   /**
    * Set of columns.
@@ -255,6 +244,15 @@ export class DataGrid extends TailwindElement {
         </btrix-table-head>
         <btrix-table-body
           class=${clsx(
+            "data-grid-body data-grid-body--horizontalRule",
+            this.stickyHeader
+              ? "data-grid-body--stickyHeader"
+              : "data-grid-body--not-stickyHeader",
+            this.rowsSelectable && "data-grid-body--rowsSelectable",
+            this.rowsAddible
+              ? "data-grid-body--rowsAddible"
+              : !this.addRowsInputValue && "data-grid-body--not-rowsAddible",
+            this.editCells && "data-grid-body--editCells",
             tw`[--btrix-table-cell-padding:var(--sl-spacing-x-small)]`,
             tw`bg-[var(--sl-panel-background-color)] leading-none`,
             !this.stickyHeader && tw`border`,
@@ -331,20 +329,8 @@ export class DataGrid extends TailwindElement {
         ${this.items
           ? renderRows(
               this.rowsController.rows,
-              ({ id, item }, i) => html`
+              ({ id, item }) => html`
                 <btrix-data-grid-row
-                  class=${clsx(
-                    this.rowsSelectable
-                      ? tw`cursor-pointer ring-inset hover:bg-blue-50/50 hover:ring-1`
-                      : tw`hover:bg-neutral-50`,
-                    this.editCells &&
-                      tw`min-h-[calc(var(--sl-input-height-medium)+1px)]`,
-                    !this.stickyHeader && i === 0 && tw`rounded-t`,
-                    !this.rowsAddible &&
-                      !this.addRowsInputValue &&
-                      i === this.rowsController.rows.size - 1 &&
-                      tw`rounded-b`,
-                  )}
                   key=${id}
                   .item=${item}
                   .columns=${this.columns}
