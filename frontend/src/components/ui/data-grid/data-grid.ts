@@ -20,7 +20,7 @@ import { tw } from "@/utils/tailwind";
 /**
  * Data grids structure data into rows and and columns.
  *
- * {@link https://www.figma.com/design/ySaSMMI2vctbxP3edAHXib/Webrecorder-Shoelace?node-id=1327-354&p=f}
+ * [Figma design file](https://www.figma.com/design/ySaSMMI2vctbxP3edAHXib/Webrecorder-Shoelace?node-id=1327-354&p=f)
  *
  * @slot label
  * @slot rows
