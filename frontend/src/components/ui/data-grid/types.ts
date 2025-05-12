@@ -25,7 +25,7 @@ export type GridColumnSelectType = {
   }[];
 };
 
-export type GridColumn<T = string> = {
+export type GridColumn<T = string, Item = GridItem> = {
   field: T;
   label: string | TemplateResult;
   description?: string;
@@ -33,11 +33,13 @@ export type GridColumn<T = string> = {
   required?: boolean;
   inputPlaceholder?: string;
   width?: string;
+  align?: "start" | "center" | "end";
   renderEditCell?: (props: {
-    item: GridItem;
-    value?: GridItem[keyof GridItem];
+    item: Item;
+    value?: Item[keyof Item];
   }) => TemplateResult<1>;
-  renderCell?: (props: { item: GridItem }) => TemplateResult<1>;
+  renderCell?: (props: { item: Item }) => TemplateResult<1>;
+  renderCellTooltip?: (props: { item: Item }) => TemplateResult<1>;
 } & (
   | {
       inputType?: GridColumnType;

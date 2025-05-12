@@ -9,6 +9,7 @@ import type { EmptyObject } from "type-fest";
 
 import { DataGridRowsController } from "./controllers/rows";
 import type { DataGridRow, RowRemoveEventDetail } from "./data-grid-row";
+import { BtrixSelectRowEvent } from "./events/btrix-select-row";
 import { renderRows } from "./renderRows";
 import type { GridColumn, GridItem } from "./types";
 
@@ -19,10 +20,13 @@ import { tw } from "@/utils/tailwind";
 /**
  * Data grids structure data into rows and and columns.
  *
+ * {@link https://www.figma.com/design/ySaSMMI2vctbxP3edAHXib/Webrecorder-Shoelace?node-id=1327-354&p=f}
+ *
  * @slot label
  * @slot rows
  * @fires btrix-change
  * @fires btrix-remove
+ * @fires btrix-select-row
  */
 @customElement("btrix-data-grid")
 @localized()
@@ -37,7 +41,6 @@ export class DataGrid extends TailwindElement {
       border-top: var(--border) !important;
     }
 
-    btrix-data-grid-row,
     btrix-table-body ::slotted(btrix-data-grid-row) {
       /* TODO Support different input sizes */
       min-height: calc(var(--sl-input-height-medium) + 1px);
@@ -72,16 +75,40 @@ export class DataGrid extends TailwindElement {
   rowKey?: string;
 
   /**
+   * Whether rows can be selected, firing a `btrix-select-row` event.
+   */
+  @property({ type: Boolean })
+  rowsSelectable = false;
+
+  /**
+   * Whether a single or multiple rows can be selected (multiple not yet implemented.)
+   */
+  @property({ type: String })
+  selectMode: "single" | "multiple" = "single";
+
+  /**
+   * Whether rows can be expanded, revealing more content below the row.
+   */
+  @property({ type: Boolean })
+  rowsExpandable = false;
+
+  /**
    * Whether rows can be removed.
    */
   @property({ type: Boolean })
-  removeRows = false;
+  rowsRemovable = false;
 
   /**
    * Whether rows can be added.
    */
   @property({ type: Boolean })
-  addRows = false;
+  rowsAddible = false;
+
+  /**
+   * Vertical alignment of content in body rows.
+   */
+  @property({ type: String })
+  alignRows: "start" | "center" | "end" = "center";
 
   /**
    * Make the number of rows being added configurable,
@@ -145,7 +172,7 @@ export class DataGrid extends TailwindElement {
         ${this.renderTable()}
       </div>
 
-      ${this.addRows && !this.addRowsInputValue
+      ${this.rowsAddible && !this.addRowsInputValue
         ? this.renderAddButton()
         : nothing}
     `;
@@ -155,7 +182,7 @@ export class DataGrid extends TailwindElement {
     if (!this.columns?.length) return;
 
     const cssWidths = this.columns.map((col) => col.width ?? "1fr");
-    const addRowsInputValue = this.addRows && this.addRowsInputValue;
+    const addRowsInputValue = this.rowsAddible && this.addRowsInputValue;
 
     return html`
       <btrix-table
@@ -168,8 +195,9 @@ export class DataGrid extends TailwindElement {
           this.stickyHeader === "table" &&
             tw`max-h-[calc(100vh-4rem)] overflow-y-auto`,
         )}
-        style="--btrix-table-grid-template-columns: ${cssWidths.join(" ")}${this
-          .removeRows
+        style="--btrix-table-grid-template-columns: ${this.rowsExpandable
+          ? "max-content "
+          : ""}${cssWidths.join(" ")}${this.rowsRemovable
           ? " max-content"
           : ""}"
         aria-labelledby=${ifDefined(
@@ -181,14 +209,29 @@ export class DataGrid extends TailwindElement {
           class=${clsx(
             tw`[--btrix-table-cell-padding:var(--sl-spacing-x-small)]`,
             this.stickyHeader
-              ? tw`sticky top-0 z-10 rounded-t-[0.1875rem] border-b bg-neutral-50 [&>*:not(:first-of-type)]:border-l`
+              ? [
+                  tw`sticky top-0 z-10 self-start rounded-t-[0.1875rem] border-b bg-neutral-50`,
+                  !this.rowsSelectable &&
+                    tw`[&>*:not(:first-of-type)]:border-l`,
+                ]
               : tw`px-px`,
           )}
         >
+          ${this.rowsExpandable
+            ? html`
+                <btrix-table-header-cell>
+                  <span class="sr-only">${msg("Expand row")}</span>
+                </btrix-table-header-cell>
+              `
+            : nothing}
           ${this.columns.map(
             (col) => html`
               <btrix-table-header-cell
-                class=${clsx(col.description && tw`flex-wrap`)}
+                class=${clsx(
+                  col.description && tw`flex-wrap`,
+                  col.align === "center" && tw`justify-center`,
+                  col.align === "end" && tw`justify-end`,
+                )}
               >
                 ${col.label}
                 ${col.description
@@ -204,7 +247,7 @@ export class DataGrid extends TailwindElement {
               </btrix-table-header-cell>
             `,
           )}
-          ${this.removeRows
+          ${this.rowsRemovable
             ? html`<btrix-table-header-cell>
                 <span class="sr-only">${msg("Remove row")}</span>
               </btrix-table-header-cell>`
@@ -214,10 +257,8 @@ export class DataGrid extends TailwindElement {
           class=${clsx(
             tw`[--btrix-table-cell-padding:var(--sl-spacing-x-small)]`,
             tw`bg-[var(--sl-panel-background-color)] leading-none`,
-            !this.stickyHeader && [
-              tw`border`,
-              addRowsInputValue ? tw`rounded-t` : tw`rounded`,
-            ],
+            !this.stickyHeader && tw`border`,
+            addRowsInputValue ? tw`rounded-t` : tw`rounded`,
           )}
           @btrix-remove=${(e: CustomEvent<RowRemoveEventDetail>) => {
             const { key } = e.detail;
@@ -290,13 +331,42 @@ export class DataGrid extends TailwindElement {
         ${this.items
           ? renderRows(
               this.rowsController.rows,
-              ({ id, item }) => html`
+              ({ id, item }, i) => html`
                 <btrix-data-grid-row
+                  class=${clsx(
+                    this.rowsSelectable
+                      ? tw`cursor-pointer ring-inset hover:bg-blue-50/50 hover:ring-1`
+                      : tw`hover:bg-neutral-50`,
+                    this.editCells &&
+                      tw`min-h-[calc(var(--sl-input-height-medium)+1px)]`,
+                    !this.stickyHeader && i === 0 && tw`rounded-t`,
+                    !this.rowsAddible &&
+                      !this.addRowsInputValue &&
+                      i === this.rowsController.rows.size - 1 &&
+                      tw`rounded-b`,
+                  )}
                   key=${id}
                   .item=${item}
                   .columns=${this.columns}
-                  ?removable=${this.removeRows}
+                  alignContent=${ifDefined(this.alignRows)}
+                  ?removable=${this.rowsRemovable}
+                  ?clickable=${this.rowsSelectable}
+                  ?expandable=${this.rowsExpandable}
                   ?editCells=${this.editCells}
+                  @click=${() => {
+                    if (this.rowsSelectable) {
+                      this.dispatchEvent(
+                        new CustomEvent<BtrixSelectRowEvent["detail"]>(
+                          "btrix-select-row",
+                          {
+                            detail: { id, item },
+                            bubbles: true,
+                            composed: true,
+                          },
+                        ),
+                      );
+                    }
+                  }}
                 ></btrix-data-grid-row>
               `,
             )
@@ -337,7 +407,7 @@ export class DataGrid extends TailwindElement {
       }
     };
 
-    const removable = this.removeRows;
+    const removable = this.rowsRemovable;
     const editCells = this.editCells;
 
     rows.forEach((el) => {
