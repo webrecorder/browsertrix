@@ -65,7 +65,6 @@ export class AcceptInvite extends BtrixElement {
       this.notify.toast({
         message: msg("Please log in to accept this invite."),
         variant: "warning",
-        icon: "exclamation-triangle",
       });
 
       this.navigate.to(

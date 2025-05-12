@@ -171,7 +171,7 @@ export class CrawlStatus extends TailwindElement {
       case "failed":
         color = "var(--danger)";
         icon = html`<sl-icon
-          name="exclamation-triangle-fill"
+          name="x-octagon-fill"
           slot="prefix"
           style="color: ${color}"
         ></sl-icon>`;
@@ -181,7 +181,7 @@ export class CrawlStatus extends TailwindElement {
       case "skipped_storage_quota_reached":
         color = "var(--danger)";
         icon = html`<sl-icon
-          name="exclamation-triangle-fill"
+          name="x-octagon-fill"
           slot="prefix"
           style="color: ${color}"
         ></sl-icon>`;
@@ -191,7 +191,7 @@ export class CrawlStatus extends TailwindElement {
       case "skipped_time_quota_reached":
         color = "var(--danger)";
         icon = html`<sl-icon
-          name="exclamation-triangle-fill"
+          name="x-octagon-fill"
           slot="prefix"
           style="color: ${color}"
         ></sl-icon>`;

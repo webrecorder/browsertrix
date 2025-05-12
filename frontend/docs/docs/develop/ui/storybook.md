@@ -1,6 +1,6 @@
 # Using Storybook
 
-[Storybook](https://storybook.js.org/) is a tool for documenting and building UI components in isolation. Component documentation is organized into ["stories"](https://storybook.js.org/docs/writing-stories) that show a variety of possible rendered states of a UI component.
+[Storybook](https://storybook.js.org/) is a tool for documenting and building UI components and design systems in isolation. Component documentation is organized into ["stories"](https://storybook.js.org/docs/writing-stories) that show a variety of possible rendered states of a UI component.
 
 Browsertrix component stories live in `frontend/src/stories`. Component attributes that are public properties (i.e. defined with Lit `@property({ type: Type })`) or documented in a TSDoc comment will automatically appear in stories through the [Custom Elements Manifest](https://custom-elements-manifest.open-wc.org/analyzer/getting-started/) file.
 

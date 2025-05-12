@@ -24,7 +24,7 @@ module.exports = {
     "^~assets/(.*)",
     "",
   ],
-  importOrderParserPlugins: ["typescript", "decorators-legacy"],
+  importOrderParserPlugins: ["typescript", "jsx", "decorators-legacy"],
   overrides: [
     {
       files: "**/*.xlf",
