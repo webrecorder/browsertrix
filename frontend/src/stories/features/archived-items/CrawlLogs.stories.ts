@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/web-components";
 import { html } from "lit";
 
-import { argTypes } from "../excludeBtrixElementProperties";
+import { argTypes } from "../excludeContainerProperties";
 
 import type { CrawlLogTable } from "@/features/archived-items/crawl-log-table";
 import { CrawlLogContext, CrawlLogLevel } from "@/types/crawler";

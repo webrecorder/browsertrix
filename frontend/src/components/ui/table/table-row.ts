@@ -1,8 +1,10 @@
-import { css, html, LitElement } from "lit";
+import { css, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
+import { TailwindElement } from "@/classes/TailwindElement";
+
 @customElement("btrix-table-row")
-export class TableRow extends LitElement {
+export class TableRow extends TailwindElement {
   static styles = css`
     :host {
       grid-column: 1 / -1;

@@ -157,7 +157,8 @@ export class OrgStatusBanner extends BtrixElement {
         },
       },
       {
-        test: () => !readOnly && readOnlyOnCancel && !!futureCancelDate,
+        test: () =>
+          !readOnly && (readOnlyOnCancel ?? false) && !!futureCancelDate,
 
         content: () => {
           return {

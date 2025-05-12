@@ -61,6 +61,10 @@
     --sl-font-weight-medium: 500;
     --sl-font-weight-semibold: 600;
 
+    /* Focus rings */
+    --sl-focus-ring-color: var(--sl-color-primary-200);
+    --sl-focus-ring-width: 2px;
+
     /*
      * Forms
      */
@@ -109,6 +113,11 @@
 
   body {
     font-size: var(--sl-font-size-medium);
+  }
+
+  :focus-visible {
+    outline: var(--sl-focus-ring);
+    outline-offset: var(--sl-focus-ring-offset);
   }
 }
 
@@ -200,8 +209,8 @@
 
   /* Validation styles */
   /**
-   * FIXME Use [data-user-invalid] selector once following is fixed
-   * https://github.com/webrecorder/browsertrix/issues/2497
+   * FIXME Use [data-user-invalid] selector exclusion table is migrated
+   * https://github.com/webrecorder/browsertrix/issues/2542
    */
   .invalid[data-invalid]:not([disabled])::part(base),
   btrix-url-input[data-user-invalid]:not([disabled])::part(base),

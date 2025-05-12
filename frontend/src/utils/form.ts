@@ -1,7 +1,12 @@
 import { msg, str } from "@lit/localize";
 import type { SlInput, SlTextarea } from "@shoelace-style/shoelace";
-import { getFormControls } from "@shoelace-style/shoelace/dist/utilities/form.js";
+import {
+  getFormControls,
+  serialize,
+} from "@shoelace-style/shoelace/dist/utilities/form.js";
 import type { LitElement } from "lit";
+import isEqual from "lodash/fp/isEqual";
+import type { EmptyObject } from "type-fest";
 
 import localize from "./localize";
 
@@ -84,4 +89,44 @@ export function formValidator(el: LitElement) {
       !formControls.some((el) => el.getAttribute("data-invalid") !== null)
     );
   };
+}
+
+/**
+ * Serialize forms with stringified JSON data, likely
+ * when used with `<btrix-data-grid>`.
+ */
+export function serializeDeep(
+  form: HTMLFormElement,
+  opts?: {
+    parseKeys: string[];
+    filterEmpty?: boolean | Record<string, unknown> | EmptyObject;
+  },
+) {
+  const values = serialize(form);
+
+  if (opts) {
+    opts.parseKeys.forEach((key) => {
+      const val = values[key];
+
+      if (typeof val === "string") {
+        values[key] = JSON.parse(val);
+      } else if (Array.isArray(val)) {
+        const arr: unknown[] = [];
+
+        val.forEach((v) => {
+          if (opts.filterEmpty === true && !v) return;
+
+          const value = typeof v === "string" ? JSON.parse(v) : v;
+
+          if (opts.filterEmpty && isEqual(opts.filterEmpty, value)) return;
+
+          arr.push(value);
+        });
+
+        values[key] = arr;
+      }
+    });
+  }
+
+  return values;
 }
