@@ -75,7 +75,7 @@ export class DataGrid extends TailwindElement {
   selectMode: "single" | "multiple" = "single";
 
   /**
-   * Whether rows can be expanded, revealing more content below the row.
+   * WIP: Whether rows can be expanded, revealing more content below the row.
    */
   @property({ type: Boolean })
   rowsExpandable = false;
