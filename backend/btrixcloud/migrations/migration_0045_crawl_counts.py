@@ -21,7 +21,7 @@ class Migration(BaseMigration):
     async def migrate_up(self):
         """Perform migration up.
 
-        Recalculate collection stats to get top host names
+        Recalculate crawl filePageCount and errorPageCount for all crawls
         """
         crawls_mdb = self.mdb["crawls"]
 
