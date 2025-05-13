@@ -132,7 +132,13 @@ export class WorkflowsList extends BtrixElement {
   }
 
   searchParams = new SearchParamsController(this, (params) => {
-    switch (params.get("filter")) {
+    this.setFiltersFromSearchParams(params);
+  });
+
+  private setFiltersFromSearchParams(
+    searchParams = this.searchParams.searchParams,
+  ) {
+    switch (searchParams.get("filter")) {
       case "":
         this.filterBy = {
           ...this.filterBy,
@@ -162,13 +168,14 @@ export class WorkflowsList extends BtrixElement {
         };
         break;
     }
-  });
+  }
 
   constructor() {
     super();
     this.filterByCurrentUser =
       window.sessionStorage.getItem(FILTER_BY_CURRENT_USER_STORAGE_KEY) ===
       "true";
+    this.setFiltersFromSearchParams();
   }
 
   protected async willUpdate(
