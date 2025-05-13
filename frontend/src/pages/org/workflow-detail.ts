@@ -1198,7 +1198,6 @@ export class WorkflowDetail extends BtrixElement {
         source="${replaySource}"
         url="${(this.workflow.seedCount === 1 && this.workflow.firstSeed) ||
         ""}"
-        coll=${this.lastCrawlId}
         config="${config}"
         replayBase="/replay/"
         noSandbox="true"
