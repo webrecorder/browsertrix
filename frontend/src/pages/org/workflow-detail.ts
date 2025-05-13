@@ -564,11 +564,15 @@ export class WorkflowDetail extends BtrixElement {
 
     const archivingDisabled = isArchivingDisabled(this.org, true);
     const paused = workflow.lastCrawlState === "paused";
-    const hidePause =
+
+    const hidePauseResume =
       !this.lastCrawlId ||
       this.isCancelingOrStoppingCrawl ||
       this.workflow.lastCrawlStopping;
-    const disablePause =
+    // disable pause/resume button if desired state is already in the process of being set.
+    // if crawl is running, and already pausing, don't allow clicking Pausing
+    // if crawl not running, and already unpausing (lastCrawlPausing is false), don't allow clicking Resume
+    const disablePauseResume =
       this.workflow.lastCrawlPausing ===
       (this.workflow.lastCrawlState === "running");
 
@@ -578,12 +582,12 @@ export class WorkflowDetail extends BtrixElement {
         () => html`
           <sl-button-group>
             ${when(
-              !hidePause,
+              !hidePauseResume,
               () => html`
                 <sl-button
                   size="small"
-                  @click=${this.pauseUnpause}
-                  ?disabled=${disablePause}
+                  @click=${this.pauseResume}
+                  ?disabled=${disablePauseResume}
                   variant=${ifDefined(paused ? "primary" : undefined)}
                 >
                   <sl-icon
@@ -1681,14 +1685,14 @@ export class WorkflowDetail extends BtrixElement {
     }
   }
 
-  private async pauseUnpause() {
+  private async pauseResume() {
     if (!this.lastCrawlId) return;
 
     const pause = this.workflow?.lastCrawlState !== "paused";
 
     try {
       const data = await this.api.fetch<{ success: boolean }>(
-        `/orgs/${this.orgId}/crawls/${this.lastCrawlId}/${pause ? "pause" : "unpause"}`,
+        `/orgs/${this.orgId}/crawls/${this.lastCrawlId}/${pause ? "pause" : "resume"}`,
         {
           method: "POST",
         },
@@ -1703,7 +1707,7 @@ export class WorkflowDetail extends BtrixElement {
         message: pause ? msg("Pausing crawl.") : msg("Resuming paused crawl."),
         variant: "success",
         icon: "check2-circle",
-        id: "crawl-pause-unpause-status",
+        id: "crawl-pause-resume-status",
       });
     } catch {
       this.notify.toast({
@@ -1712,7 +1716,7 @@ export class WorkflowDetail extends BtrixElement {
           : msg("Something went wrong, couldn't resume paused crawl."),
         variant: "danger",
         icon: "exclamation-octagon",
-        id: "crawl-pause-unpause-status",
+        id: "crawl-pause-resume-status",
       });
     }
   }
