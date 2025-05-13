@@ -9,6 +9,7 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import needLogin from "@/decorators/needLogin";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
+import { WorkflowTab } from "@/routes";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { Crawl } from "@/types/crawler";
 import type { CrawlState } from "@/types/crawlState";
@@ -291,10 +292,14 @@ export class Crawls extends BtrixElement {
   private readonly renderCrawlItem = (crawl: Crawl) => {
     const crawlPath = `/orgs/${this.slugLookup[crawl.oid]}/workflows/${crawl.cid}`;
     return html`
-      <btrix-crawl-list-item href=${`${crawlPath}#watch`} .crawl=${crawl}>
+      <btrix-crawl-list-item
+        href=${`${crawlPath}/${WorkflowTab.LatestCrawl}`}
+        .crawl=${crawl}
+      >
         <sl-menu slot="menu">
           <sl-menu-item
-            @click=${() => this.navigate.to(`${crawlPath}#settings`)}
+            @click=${() =>
+              this.navigate.to(`${crawlPath}/${WorkflowTab.Settings}`)}
           >
             ${msg("View Workflow Settings")}
           </sl-menu-item>

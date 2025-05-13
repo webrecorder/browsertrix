@@ -10,6 +10,7 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import { type Dialog } from "@/components/ui/dialog";
 import { ClipboardController } from "@/controllers/clipboard";
 import { pageBack, pageNav, type Breadcrumb } from "@/layouts/pageHeader";
+import { WorkflowTab } from "@/routes";
 import type { APIPaginatedList } from "@/types/api";
 import type {
   ArchivedItem,
@@ -123,7 +124,7 @@ export class ArchivedItemDetail extends BtrixElement {
   private get listUrl(): string {
     let path = "items";
     if (this.workflowId) {
-      path = `workflows/crawl/${this.workflowId}#crawls`;
+      path = `workflows/crawl/${this.workflowId}/${WorkflowTab.Crawls}`;
     } else if (this.collectionId) {
       path = `collections/view/${this.collectionId}/items`;
     } else if (this.item?.type === "upload") {
@@ -202,7 +203,7 @@ export class ArchivedItemDetail extends BtrixElement {
           // Items can technically be "running" on the backend, but only
           // workflows should be considered running by the frontend
           this.navigate.to(
-            `${this.navigate.orgBasePath}/workflows/${this.item.cid}#watch`,
+            `${this.navigate.orgBasePath}/workflows/${this.item.cid}/${WorkflowTab.LatestCrawl}`,
             undefined,
             undefined,
             true,
@@ -454,7 +455,7 @@ export class ArchivedItemDetail extends BtrixElement {
           content: this.workflow ? renderName(this.workflow) : undefined,
         },
         {
-          href: `${this.navigate.orgBasePath}/workflows/${this.item?.cid}#crawls`,
+          href: `${this.navigate.orgBasePath}/workflows/${this.item?.cid}/${WorkflowTab.Crawls}`,
           content: msg("Crawls"),
         },
       );

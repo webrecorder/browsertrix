@@ -73,6 +73,7 @@ import type { UserGuideEventMap } from "@/index";
 import { infoCol, inputCol } from "@/layouts/columns";
 import { pageSectionsWithNav } from "@/layouts/pageSectionsWithNav";
 import { panel } from "@/layouts/panel";
+import { WorkflowTab } from "@/routes";
 import { infoTextFor } from "@/strings/crawl-workflows/infoText";
 import { labelFor } from "@/strings/crawl-workflows/labels";
 import scopeTypeLabels from "@/strings/crawl-workflows/scopeType";
@@ -2294,7 +2295,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       this.navigate.to(
         `${this.navigate.orgBasePath}/workflows/${this.configId || data.id}${
           crawlId && !storageQuotaReached && !executionMinutesQuotaReached
-            ? "#watch"
+            ? `/${WorkflowTab.LatestCrawl}`
             : ""
         }`,
       );
@@ -2363,7 +2364,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
   private async onReset() {
     this.navigate.to(
-      `${this.navigate.orgBasePath}/workflows${this.configId ? `/${this.configId}#settings` : ""}`,
+      `${this.navigate.orgBasePath}/workflows${this.configId ? `/${this.configId}/${WorkflowTab.Settings}` : ""}`,
     );
     // this.initializeEditor();
   }

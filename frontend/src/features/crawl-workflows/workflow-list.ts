@@ -22,6 +22,7 @@ import {
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { OverflowDropdown } from "@/components/ui/overflow-dropdown";
+import { WorkflowTab } from "@/routes";
 import type { ListWorkflow } from "@/types/crawler";
 import { humanizeSchedule } from "@/utils/cron";
 import { srOnly, truncate } from "@/utils/css";
@@ -222,7 +223,7 @@ export class WorkflowListItem extends BtrixElement {
         await this.updateComplete;
         const href = `/orgs/${this.orgSlugState}/workflows/${
           this.workflow?.id
-        }#${this.workflow?.isCrawlRunning ? "watch" : "crawls"}`;
+        }/${this.workflow?.isCrawlRunning ? WorkflowTab.LatestCrawl : WorkflowTab.Crawls}`;
         this.navigate.to(href);
       }}
     >

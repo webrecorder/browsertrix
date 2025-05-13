@@ -16,6 +16,7 @@ import { ClipboardController } from "@/controllers/clipboard";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { ExclusionEditor } from "@/features/crawl-workflows/exclusion-editor";
 import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
+import { WorkflowTab } from "@/routes";
 import { deleteConfirmation } from "@/strings/ui";
 import type { APIPaginatedList } from "@/types/api";
 import { type CrawlState } from "@/types/crawlState";
@@ -29,9 +30,6 @@ import { humanizeSchedule } from "@/utils/cron";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { tw } from "@/utils/tailwind";
 
-const SECTIONS = ["crawls", "watch", "settings", "logs"] as const;
-type Tab = (typeof SECTIONS)[number];
-const DEFAULT_SECTION: Tab = "crawls";
 const POLL_INTERVAL_SECONDS = 10;
 
 /**
@@ -45,6 +43,9 @@ const POLL_INTERVAL_SECONDS = 10;
 export class WorkflowDetail extends BtrixElement {
   @property({ type: String })
   workflowId!: string;
+
+  @property({ type: String })
+  workflowTab = WorkflowTab.LatestCrawl;
 
   @property({ type: Boolean })
   isEditing = false;
@@ -60,9 +61,6 @@ export class WorkflowDetail extends BtrixElement {
     | "stop"
     | "delete"
     | "deleteCrawl";
-
-  @property({ type: String })
-  initialActivePanel?: Tab;
 
   @property({ type: Number })
   maxScale = DEFAULT_MAX_SCALE;
@@ -84,9 +82,6 @@ export class WorkflowDetail extends BtrixElement {
 
   @state()
   private lastCrawlStats?: Crawl["stats"];
-
-  @state()
-  private activePanel: Tab | undefined = SECTIONS[0];
 
   @state()
   private isLoading = false;
@@ -120,29 +115,25 @@ export class WorkflowDetail extends BtrixElement {
     );
   }
 
-  private readonly tabLabels: Record<Tab, string> = {
+  private readonly tabLabels: Record<WorkflowTab, string> = {
+    [WorkflowTab.LatestCrawl]: msg("Latest Crawl"),
     crawls: msg("Crawls"),
-    watch: msg("Watch Crawl"),
     logs: msg("Logs"),
     settings: msg("Settings"),
   };
 
-  connectedCallback(): void {
-    // Set initial active section and dialog based on URL #hash value
-    if (this.initialActivePanel) {
-      this.activePanel = this.initialActivePanel;
-    } else {
-      void this.getActivePanelFromHash();
-    }
+  private get basePath() {
+    return `${this.navigate.orgBasePath}/workflows/${this.workflowId}`;
+  }
 
+  connectedCallback(): void {
+    this.redirectHash();
     super.connectedCallback();
-    window.addEventListener("hashchange", this.getActivePanelFromHash);
   }
 
   disconnectedCallback(): void {
     this.stopPoll();
     super.disconnectedCallback();
-    window.removeEventListener("hashchange", this.getActivePanelFromHash);
   }
 
   firstUpdated() {
@@ -162,44 +153,15 @@ export class WorkflowDetail extends BtrixElement {
       void this.fetchWorkflow();
       void this.fetchSeeds();
     }
-    if (changedProperties.has("isEditing")) {
-      if (this.isEditing) {
-        this.stopPoll();
-      } else {
-        void this.getActivePanelFromHash();
-      }
+    if (changedProperties.has("isEditing") && this.isEditing) {
+      this.stopPoll();
     }
     if (
-      !this.isEditing &&
-      changedProperties.has("activePanel") &&
-      this.activePanel
+      changedProperties.has("workflowTab") &&
+      this.workflowTab === WorkflowTab.Crawls
     ) {
-      if (this.activePanel === "crawls") {
-        void this.fetchCrawls();
-      }
+      void this.fetchCrawls();
     }
-  }
-
-  private readonly getActivePanelFromHash = async () => {
-    await this.updateComplete;
-    if (this.isEditing) return;
-
-    const hashValue = window.location.hash.slice(1);
-    if (SECTIONS.includes(hashValue as (typeof SECTIONS)[number])) {
-      this.activePanel = hashValue as Tab;
-    } else {
-      this.goToTab(DEFAULT_SECTION, { replace: true });
-    }
-  };
-
-  private goToTab(tab: Tab, { replace = false } = {}) {
-    const path = `${window.location.href.split("#")[0]}#${tab}`;
-    if (replace) {
-      window.history.replaceState(null, "", path);
-    } else {
-      window.history.pushState(null, "", path);
-    }
-    this.activePanel = tab;
   }
 
   private async fetchWorkflow() {
@@ -421,7 +383,7 @@ export class WorkflowDetail extends BtrixElement {
     if (this.isEditing) {
       breadcrumbs.push(
         {
-          href: `${this.navigate.orgBasePath}/workflows/${this.workflowId}`,
+          href: this.basePath,
           content: this.workflow ? this.renderName() : undefined,
         },
         {
@@ -438,49 +400,33 @@ export class WorkflowDetail extends BtrixElement {
   }
 
   private readonly renderTabList = () => html`
-    <btrix-tab-group active=${ifDefined(this.activePanel)} placement="start">
+    <btrix-tab-group active=${this.workflowTab} placement="start">
       <header
         class="mb-2 flex h-7 items-center justify-between text-lg font-medium"
       >
         ${this.renderPanelHeader()}
       </header>
 
-      ${this.renderTab("crawls")} ${this.renderTab("watch")}
-      ${this.renderTab("logs")} ${this.renderTab("settings")}
+      ${this.renderTab(WorkflowTab.LatestCrawl)}
+      ${this.renderTab(WorkflowTab.Crawls)}
+      ${this.renderTab(WorkflowTab.Settings)}
 
-      <btrix-tab-group-panel name="crawls">
+      <btrix-tab-group-panel name=${WorkflowTab.Crawls}>
         ${this.renderCrawls()}
       </btrix-tab-group-panel>
-      <btrix-tab-group-panel name="watch">
-        ${until(
-          this.getWorkflowPromise?.then(
-            () => html`
-              ${when(this.activePanel === "watch", () =>
-                this.workflow?.isCrawlRunning
-                  ? html` <div class="mb-5 h-14 rounded-lg border py-2">
-                        ${this.renderCurrentCrawl()}
-                      </div>
-                      ${this.renderWatchCrawl()}`
-                  : this.renderInactiveWatchCrawl(),
-              )}
-            `,
-          ),
-        )}
+      <btrix-tab-group-panel name=${WorkflowTab.LatestCrawl}>
+        ${until(this.getWorkflowPromise?.then(() => html` TODO `))}
       </btrix-tab-group-panel>
-      <btrix-tab-group-panel name="logs">
-        ${this.renderLogs()}
-      </btrix-tab-group-panel>
-      <btrix-tab-group-panel name="settings">
+      <btrix-tab-group-panel name=${WorkflowTab.Settings}>
         ${this.renderSettings()}
       </btrix-tab-group-panel>
     </btrix-tab-group>
   `;
 
   private renderPanelHeader() {
-    if (!this.activePanel) return;
-    if (this.activePanel === "crawls") {
+    if (this.workflowTab === WorkflowTab.Crawls) {
       return html`<h3>
-        ${this.tabLabels[this.activePanel]}
+        ${this.tabLabels[this.workflowTab]}
         ${when(
           this.crawls,
           () => html`
@@ -494,24 +440,22 @@ export class WorkflowDetail extends BtrixElement {
         )}
       </h3>`;
     }
-    if (this.activePanel === "settings" && this.isCrawler) {
-      return html` <h3>${this.tabLabels[this.activePanel]}</h3>
+    if (this.workflowTab === WorkflowTab.Settings && this.isCrawler) {
+      return html` <h3>${this.tabLabels[this.workflowTab]}</h3>
         <sl-tooltip content=${msg("Edit Workflow Settings")}></sl-tooltip>
           <sl-icon-button
             name="pencil"
             class="text-base"
-            @click=${() =>
-              this.navigate.to(
-                `/orgs/${this.appState.orgSlug}/workflows/${this.workflow?.id}?edit`,
-              )}
+            href="/orgs/${this.appState.orgSlug}/workflows/${this.workflow?.id}?edit"
+            @click=${this.navigate.link}
           >
           </sl-icon-button>
         </sl-tooltip>`;
     }
-    if (this.activePanel === "watch" && this.isCrawler) {
+    if (this.workflowTab === WorkflowTab.LatestCrawl && this.isCrawler) {
       const enableEditBrowserWindows =
         this.workflow?.isCrawlRunning && !this.workflow.lastCrawlStopping;
-      return html` <h3>${this.tabLabels[this.activePanel]}</h3>
+      return html` <h3>${this.tabLabels[this.workflowTab]}</h3>
         <div>
           <sl-tooltip
             content=${msg(
@@ -534,7 +478,7 @@ export class WorkflowDetail extends BtrixElement {
           </sl-tooltip>
         </div>`;
     }
-    if (this.activePanel === "logs") {
+    if (this.workflowTab === WorkflowTab.Logs) {
       const authToken = this.authState?.headers.Authorization.split(" ")[1];
       const isDownloadEnabled = Boolean(
         this.workflow?.lastCrawlId && !this.workflow.isCrawlRunning,
@@ -558,31 +502,29 @@ export class WorkflowDetail extends BtrixElement {
         </sl-tooltip>`;
     }
 
-    return html`<h3>${this.tabLabels[this.activePanel]}</h3>`;
+    return html`<h3>${this.tabLabels[this.workflowTab]}</h3>`;
   }
 
-  private renderTab(tabName: Tab, { disabled = false } = {}) {
-    const isActive = tabName === this.activePanel;
+  private renderTab(tabName: WorkflowTab) {
+    const isActive = tabName === this.workflowTab;
     return html`
       <btrix-tab-group-tab
         slot="nav"
         panel=${tabName}
-        href=${`${window.location.pathname}#${tabName}`}
-        ?disabled=${disabled}
+        href="${this.basePath}/${tabName}"
         aria-selected=${isActive}
-        aria-disabled=${disabled}
-        @click=${(e: MouseEvent) => {
-          if (disabled) e.preventDefault();
-        }}
+        @click=${this.navigate.link}
       >
         ${choose(tabName, [
           [
-            "crawls",
+            WorkflowTab.LatestCrawl,
             () => html`<sl-icon name="gear-wide-connected"></sl-icon>`,
           ],
-          ["watch", () => html`<sl-icon name="eye-fill"></sl-icon>`],
-          ["logs", () => html`<sl-icon name="terminal-fill"></sl-icon>`],
-          ["settings", () => html`<sl-icon name="file-code-fill"></sl-icon>`],
+          [WorkflowTab.Crawls, () => html`<sl-icon name="list-ul"></sl-icon>`],
+          [
+            WorkflowTab.Settings,
+            () => html`<sl-icon name="file-code-fill"></sl-icon>`,
+          ],
         ])}
         ${this.tabLabels[tabName]}
       </btrix-tab-group-tab>
@@ -605,10 +547,7 @@ export class WorkflowDetail extends BtrixElement {
           .initialWorkflow=${workflow}
           .initialSeeds=${this.seeds!.items}
           configId=${workflow.id}
-          @reset=${() =>
-            this.navigate.to(
-              `${this.navigate.orgBasePath}/workflows/${workflow.id}`,
-            )}
+          @reset=${() => this.navigate.to(this.basePath)}
         ></btrix-workflow-editor>
       `,
       this.renderLoading,
@@ -884,7 +823,7 @@ export class WorkflowDetail extends BtrixElement {
                 ${msg(
                   html`Crawl is currently running.
                     <a
-                      href="${`${window.location.pathname}#watch`}"
+                      href="${this.basePath}/${WorkflowTab.LatestCrawl}"
                       class="underline hover:no-underline"
                       >Watch Crawl Progress</a
                     >`,
@@ -905,7 +844,7 @@ export class WorkflowDetail extends BtrixElement {
                     href=${ifDefined(
                       isActive(crawl)
                         ? undefined
-                        : `${this.navigate.orgBasePath}/workflows/${this.workflowId}/crawls/${crawl.id}`,
+                        : `${this.basePath}/${crawl.id}`,
                     )}
                     .crawl=${crawl}
                   >
@@ -1133,7 +1072,7 @@ export class WorkflowDetail extends BtrixElement {
                         "You are viewing error and behavior logs for the currently running crawl.",
                       )}
                       <a
-                        href="${`${window.location.pathname}#watch`}"
+                        href="${this.basePath}/${WorkflowTab.LatestCrawl}"
                         class="underline hover:no-underline"
                       >
                         ${msg("Watch Crawl")}
@@ -1593,7 +1532,7 @@ export class WorkflowDetail extends BtrixElement {
       this.lastCrawlId = data.started;
       this.lastCrawlStartTime = new Date().toISOString();
       void this.fetchWorkflow();
-      this.goToTab("watch");
+      this.navigate.to(`${this.basePath}/${WorkflowTab.LatestCrawl}`);
 
       this.notify.toast({
         message: msg("Starting crawl."),
@@ -1678,6 +1617,31 @@ export class WorkflowDetail extends BtrixElement {
         icon: "exclamation-octagon",
         id: "archived-item-delete-status",
       });
+    }
+  }
+
+  /**
+   * Handle redirects to new tabs introduced in
+   * https://github.com/webrecorder/browsertrix/issues/2603
+   */
+  private redirectHash() {
+    const hashValue = window.location.hash.slice(1);
+
+    switch (hashValue) {
+      case "watch":
+        this.navigate.to(`${this.basePath}/${WorkflowTab.LatestCrawl}`, {
+          replace: true,
+        });
+        break;
+      case "crawls":
+      case "logs":
+      case "settings":
+        this.navigate.to(`${this.basePath}/${hashValue}`, {
+          replace: true,
+        });
+        break;
+      default:
+        break;
     }
   }
 }
