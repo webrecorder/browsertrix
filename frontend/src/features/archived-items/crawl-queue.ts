@@ -257,6 +257,7 @@ export class CrawlQueue extends BtrixElement {
         void this.fetchQueue();
       }, POLL_INTERVAL_SECONDS * 1000);
     } catch (e) {
+      console.log("crawl queue:", e);
       if ((e as Error).message !== "invalid_regex") {
         this.notify.toast({
           message: msg("Sorry, couldn't fetch crawl queue at this time."),
