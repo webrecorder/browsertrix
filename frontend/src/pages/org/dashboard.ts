@@ -297,19 +297,28 @@ export class Dashboard extends BtrixElement {
             (metrics) => html`
               ${this.renderCrawlingMeter(metrics)}
               <dl>
-                ${this.renderStat({
-                  value:
-                    metrics.workflowsRunningCount && metrics.maxConcurrentCrawls
-                      ? `${metrics.workflowsRunningCount} / ${metrics.maxConcurrentCrawls}`
-                      : metrics.workflowsRunningCount,
-                  singleLabel: msg("Crawl Running"),
-                  pluralLabel: msg("Crawls Running"),
-                  iconProps: {
-                    name: "dot",
-                    library: "app",
-                    color: metrics.workflowsRunningCount ? "green" : "neutral",
-                  },
-                })}
+                <a
+                  href=${`/orgs/${this.orgId}/workflows?filter=running`}
+                  class="mb-2 block underline decoration-primary-200 transition-colors hover:text-primary-600"
+                  @click=${this.navigate.link}
+                >
+                  ${this.renderStat({
+                    value:
+                      metrics.workflowsRunningCount &&
+                      metrics.maxConcurrentCrawls
+                        ? `${metrics.workflowsRunningCount} / ${metrics.maxConcurrentCrawls}`
+                        : metrics.workflowsRunningCount,
+                    singleLabel: msg("Crawl Running"),
+                    pluralLabel: msg("Crawls Running"),
+                    iconProps: {
+                      name: "dot",
+                      library: "app",
+                      color: metrics.workflowsRunningCount
+                        ? "green"
+                        : "neutral",
+                    },
+                  })}
+                </a>
                 ${this.renderStat({
                   value: metrics.workflowsQueuedCount,
                   singleLabel: msg("Crawl Workflow Waiting"),
@@ -919,7 +928,7 @@ export class Dashboard extends BtrixElement {
     const { value, iconProps } = stat;
     return html`
       <div class="mb-2 flex items-center justify-between last:mb-0">
-        <div class="flex items-center">
+        <div class="flex items-center tabular-nums">
           <sl-icon
             class="mr-2 text-base text-neutral-500"
             name=${iconProps.name}
@@ -927,12 +936,8 @@ export class Dashboard extends BtrixElement {
             style="color:var(--sl-color-${iconProps.color ||
             this.colors.default}-500)"
           ></sl-icon>
-          <dt class="order-last">
-            ${value === 1 ? stat.singleLabel : stat.pluralLabel}
-          </dt>
-          <dd class="mr-1">
-            ${typeof value === "number" ? this.localize.number(value) : value}
-          </dd>
+          ${typeof value === "number" ? this.localize.number(value) : value}
+          ${value === 1 ? stat.singleLabel : stat.pluralLabel}
         </div>
         ${when(
           stat.secondaryValue,
