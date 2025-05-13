@@ -16,6 +16,7 @@ import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { ExclusionEditor } from "@/features/crawl-workflows/exclusion-editor";
 import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
 import { WorkflowTab } from "@/routes";
+import { tooltipFor } from "@/strings/archived-items/tooltips";
 import { deleteConfirmation } from "@/strings/ui";
 import type { APIPaginatedList } from "@/types/api";
 import { type CrawlState } from "@/types/crawlState";
@@ -212,7 +213,7 @@ export class WorkflowDetail extends BtrixElement {
             : msg("Sorry, couldn't retrieve workflow at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
-        id: "workflow-data-retrieve-error",
+        id: "data-retrieve-error",
       });
     }
 
@@ -944,27 +945,52 @@ export class WorkflowDetail extends BtrixElement {
   };
 
   private renderLatestCrawlAction() {
-    if (this.workflowTab === WorkflowTab.Logs) {
-      const authToken = this.authState?.headers.Authorization.split(" ")[1];
-      const isDownloadEnabled = Boolean(
-        this.workflow?.lastCrawlId && !this.workflow.isCrawlRunning,
-      );
+    const authToken = this.authState?.headers.Authorization.split(" ")[1];
+    const showDownload = this.lastCrawlId && this.workflow?.lastCrawlSize;
+    const enableDownload = Boolean(
+      this.workflow && !this.workflow.isCrawlRunning,
+    );
+    const downloadDisabledMessage = msg(
+      "Downloading will be enabled when this crawl is finished",
+    );
 
-      return html` <sl-tooltip
+    if (this.workflowTab === WorkflowTab.LatestCrawl && showDownload) {
+      return html`<sl-tooltip
         content=${msg(
-          "Downloading will be enabled when this crawl is finished.",
+          enableDownload
+            ? tooltipFor.downloadMultWacz
+            : downloadDisabledMessage,
         )}
-        ?disabled=${!this.workflow?.isCrawlRunning}
+        hoist
       >
-        <sl-button
-          href=${`/api/orgs/${this.orgId}/crawls/${this.lastCrawlId}/logs?auth_bearer=${authToken}`}
-          download=${`btrix-${this.lastCrawlId}-logs.txt`}
-          size="small"
-          ?disabled=${!isDownloadEnabled}
+        <sl-icon-button
+          class="text-base"
+          name="cloud-download"
+          href=${`/api/orgs/${this.orgId}/all-crawls/${this.lastCrawlId}/download?auth_bearer=${authToken}`}
+          download=${`browsertrix-${this.lastCrawlId}.wacz`}
+          label=${msg("Download")}
+          ?disabled=${!enableDownload}
         >
-          <sl-icon slot="prefix" name="cloud-download"></sl-icon>
-          ${msg("Download All Logs")}
-        </sl-button>
+        </sl-icon-button>
+      </sl-tooltip> `;
+    }
+
+    if (this.workflowTab === WorkflowTab.Logs && showDownload) {
+      return html`<sl-tooltip
+        content=${msg(
+          enableDownload ? tooltipFor.downloadLogs : downloadDisabledMessage,
+        )}
+        hoist
+      >
+        <sl-icon-button
+          class="text-base"
+          name="file-earmark-arrow-down"
+          href=${`/api/orgs/${this.orgId}/crawls/${this.lastCrawlId}/logs?auth_bearer=${authToken}`}
+          download=${`browsertrix-${this.lastCrawlId}-logs.log`}
+          label=${msg("Download")}
+          ?disabled=${!enableDownload}
+        >
+        </sl-icon-button>
       </sl-tooltip>`;
     }
 
@@ -1434,7 +1460,7 @@ export class WorkflowDetail extends BtrixElement {
         ),
         variant: "danger",
         icon: "exclamation-octagon",
-        id: "workflow-data-retrieve-error",
+        id: "data-retrieve-error",
       });
     }
   }
@@ -1454,7 +1480,7 @@ export class WorkflowDetail extends BtrixElement {
         message: msg("Sorry, couldn't get crawls at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
-        id: "workflow-data-retrieve-error",
+        id: "data-retrieve-error",
       });
     }
   }
@@ -1492,7 +1518,7 @@ export class WorkflowDetail extends BtrixElement {
         message: msg("Sorry, couldn't retrieve latest crawl at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
-        id: "archived-item-retrieve-error",
+        id: "data-retrieve-error",
       });
     }
 

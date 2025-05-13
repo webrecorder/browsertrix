@@ -11,6 +11,7 @@ import { type Dialog } from "@/components/ui/dialog";
 import { ClipboardController } from "@/controllers/clipboard";
 import { pageBack, pageNav, type Breadcrumb } from "@/layouts/pageHeader";
 import { WorkflowTab } from "@/routes";
+import { tooltipFor } from "@/strings/archived-items/tooltips";
 import type { APIPaginatedList } from "@/types/api";
 import type {
   ArchivedItem,
@@ -315,15 +316,15 @@ export class ArchivedItemDetail extends BtrixElement {
       case "files":
         sectionContent = this.renderPanel(
           html` ${this.renderTitle(this.tabLabels.files)}
-            <sl-tooltip content=${msg("Download all files as a single WACZ")}>
+            <sl-tooltip content=${tooltipFor.downloadMultWacz}>
               <sl-button
                 href=${`/api/orgs/${this.orgId}/all-crawls/${this.itemId}/download?auth_bearer=${authToken}`}
-                download
+                download=${`browsertrix-${this.itemId}.wacz`}
                 size="small"
                 variant="primary"
               >
                 <sl-icon slot="prefix" name="cloud-download"></sl-icon>
-                ${msg("Download as Multi-WACZ")}
+                ${msg("Download Files")}
               </sl-button>
             </sl-tooltip>`,
           this.renderFiles(),
@@ -332,19 +333,15 @@ export class ArchivedItemDetail extends BtrixElement {
       case "logs":
         sectionContent = this.renderPanel(
           html` ${this.renderTitle(this.tabLabels.logs)}
-            <sl-tooltip
-              content=${msg(
-                "Download entire log, including verbose logging levels",
-              )}
-            >
+            <sl-tooltip content=${tooltipFor.downloadLogs}>
               <sl-button
                 href=${`/api/orgs/${this.orgId}/crawls/${this.itemId}/logs?auth_bearer=${authToken}`}
-                download=${`btrix-${this.itemId}-logs.txt`}
+                download=${`browsertrix-${this.itemId}-logs.log`}
                 size="small"
                 variant="primary"
               >
-                <sl-icon slot="prefix" name="cloud-download"></sl-icon>
-                ${msg("Download All Logs")}
+                <sl-icon slot="prefix" name="file-earmark-arrow-down"></sl-icon>
+                ${msg("Download Logs")}
               </sl-button>
             </sl-tooltip>`,
           this.renderLogs(),
