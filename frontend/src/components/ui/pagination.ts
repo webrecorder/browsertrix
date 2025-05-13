@@ -378,14 +378,11 @@ export class Pagination extends LitElement {
   }
 
   private setPage(page: number) {
-    this.searchParams.set((params) => {
-      if (page === 1) {
-        params.delete(this.name);
-      } else {
-        params.set(this.name, page.toString());
-      }
-      return params;
-    });
+    if (page === 1) {
+      this.searchParams.delete(this.name);
+    } else {
+      this.searchParams.set(this.name, page.toString());
+    }
   }
 
   private calculatePages() {
