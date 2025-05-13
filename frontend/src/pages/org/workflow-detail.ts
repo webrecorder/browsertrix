@@ -1555,11 +1555,12 @@ export class WorkflowDetail extends BtrixElement {
     }
 
     if (
+      !this.logTotals ||
       (crawlState && isActive({ state: crawlState })) ||
       this.workflowTab === WorkflowTab.Logs
     ) {
       try {
-        this.logTotals = await this.getLogsTotal(this.lastCrawlId);
+        this.logTotals = await this.getLogTotals(this.lastCrawlId);
       } catch (err) {
         // Fail silently, since we're fetching just the total
         console.debug(err);
@@ -1575,7 +1576,7 @@ export class WorkflowDetail extends BtrixElement {
     return data;
   }
 
-  private async getLogsTotal(
+  private async getLogTotals(
     crawlId: Crawl["id"],
   ): Promise<WorkflowDetail["logTotals"]> {
     const query = queryString.stringify({ pageSize: 1 });
