@@ -32,7 +32,7 @@ else:
     ) = PageOps = BackgroundJobOps = object
 
 
-CURR_DB_VERSION = "0044"
+CURR_DB_VERSION = "0045"
 
 
 # ============================================================================

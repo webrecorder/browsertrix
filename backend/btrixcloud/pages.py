@@ -246,18 +246,25 @@ class PageOps:
             await self.add_qa_run_for_page(page.id, oid, qa_run_id, compare)
 
     async def update_crawl_file_and_error_counts(
-        self, crawl_id: str, pages: List[Page]
+        self, crawl_id: str, pages: Optional[List[Page]] = None
     ):
         """Update crawl filePageCount and errorPageCount for pages."""
         file_count = 0
         error_count = 0
 
-        for page in pages:
-            if page.isFile:
-                file_count += 1
-
-            if page.isError:
-                error_count += 1
+        if pages is not None:
+            for page in pages:
+                if page.isFile:
+                    file_count += 1
+                if page.isError:
+                    error_count += 1
+        else:
+            # If page list not supplied, count all pages in crawl
+            async for page_raw in self.pages.find({"crawl_id": crawl_id}):
+                if page_raw.get("isFile"):
+                    file_count += 1
+                if page_raw.get("isError"):
+                    error_count += 1
 
         if file_count == 0 and error_count == 0:
             return
@@ -276,7 +283,7 @@ class PageOps:
         )
 
     async def delete_crawl_pages(self, crawl_id: str, oid: Optional[UUID] = None):
-        """Delete crawl pages from db"""
+        """Delete crawl pages from db and clear crawl page counts"""
         query: Dict[str, Union[str, UUID]] = {"crawl_id": crawl_id}
         if oid:
             query["oid"] = oid
@@ -286,6 +293,25 @@ class PageOps:
         except Exception as err:
             print(
                 f"Error deleting pages from crawl {crawl_id}: {err}",
+                flush=True,
+            )
+
+        try:
+            await self.crawls.find_one_and_update(
+                {"_id": crawl_id},
+                {
+                    "$set": {
+                        "pageCount": 0,
+                        "uniquePageCount": 0,
+                        "filePageCount": 0,
+                        "errorPageCount": 0,
+                    }
+                },
+            )
+        # pylint: disable=broad-except
+        except Exception as err:
+            print(
+                f"Error resetting page counts for crawl {crawl_id}: {err}",
                 flush=True,
             )
 
