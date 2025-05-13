@@ -76,6 +76,7 @@ class BaseCrawlOps:
         background_job_ops: BackgroundJobOps,
     ):
         self.crawls = mdb["crawls"]
+        self.mongo_crawl_configs = mdb["crawl_configs"]
         self.crawl_configs = crawl_configs
         self.user_manager = users
         self.orgs = orgs
@@ -520,7 +521,7 @@ class BaseCrawlOps:
                 {"collectionIds": collection_id},
                 {"$pull": {"collectionIds": collection_id}},
             ),
-            self.crawl_configs.update_many(
+            self.mongo_crawl_configs.update_many(
                 {"autoAddCollections": collection_id},
                 {"$pull": {"autoAddCollections": collection_id}},
             ),
