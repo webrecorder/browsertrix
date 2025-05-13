@@ -22,6 +22,7 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { type SelectEvent } from "@/components/ui/search-combobox";
 import { ClipboardController } from "@/controllers/clipboard";
+import { SearchParamsController } from "@/controllers/searchParams";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
 import { pageHeader } from "@/layouts/pageHeader";
 import scopeTypeLabels from "@/strings/crawl-workflows/scopeType";
@@ -129,6 +130,39 @@ export class WorkflowsList extends BtrixElement {
       Boolean((this.filterBy as Record<string, unknown>)[key]),
     );
   }
+
+  searchParams = new SearchParamsController(this, (params) => {
+    switch (params.get("filter")) {
+      case "":
+        this.filterBy = {
+          ...this.filterBy,
+          schedule: undefined,
+          isCrawlRunning: undefined,
+        };
+        break;
+      case "scheduled":
+        this.filterBy = {
+          ...this.filterBy,
+          schedule: true,
+          isCrawlRunning: undefined,
+        };
+        break;
+      case "unscheduled":
+        this.filterBy = {
+          ...this.filterBy,
+          schedule: false,
+          isCrawlRunning: undefined,
+        };
+        break;
+      case "running":
+        this.filterBy = {
+          ...this.filterBy,
+          schedule: undefined,
+          isCrawlRunning: true,
+        };
+        break;
+    }
+  });
 
   constructor() {
     super();
@@ -418,43 +452,76 @@ export class WorkflowsList extends BtrixElement {
       <div class="flex flex-wrap items-center justify-between">
         <div class="text-sm">
           <button
-            class="${this.filterBy.schedule === undefined
+            class="${this.filterBy.schedule === undefined &&
+            this.filterBy.isCrawlRunning === undefined
               ? "border-b-current text-primary"
               : "text-neutral-500"} mr-3 inline-block border-b-2 border-transparent font-medium"
             aria-selected=${this.filterBy.schedule === undefined}
-            @click=${() =>
-              (this.filterBy = {
+            @click=${() => {
+              this.searchParams.delete("filter");
+              this.searchParams.delete("page");
+              this.filterBy = {
                 ...this.filterBy,
                 schedule: undefined,
-              })}
+                isCrawlRunning: undefined,
+              };
+            }}
           >
             ${msg("All")}
           </button>
           <button
-            class="${this.filterBy.schedule === true
+            class="${this.filterBy.schedule === true &&
+            this.filterBy.isCrawlRunning === undefined
               ? "border-b-current text-primary"
               : "text-neutral-500"} mr-3 inline-block border-b-2 border-transparent font-medium"
             aria-selected=${this.filterBy.schedule === true}
-            @click=${() =>
-              (this.filterBy = {
+            @click=${() => {
+              this.searchParams.set("filter", "scheduled");
+              this.searchParams.delete("page");
+              this.filterBy = {
                 ...this.filterBy,
                 schedule: true,
-              })}
+                isCrawlRunning: undefined,
+              };
+            }}
           >
             ${msg("Scheduled")}
           </button>
           <button
-            class="${this.filterBy.schedule === false
+            class="${this.filterBy.schedule === false &&
+            this.filterBy.isCrawlRunning === undefined
               ? "border-b-current text-primary"
               : "text-neutral-500"} mr-3 inline-block border-b-2 border-transparent font-medium"
             aria-selected=${this.filterBy.schedule === false}
-            @click=${() =>
-              (this.filterBy = {
+            @click=${() => {
+              this.searchParams.set("filter", "unscheduled");
+              this.searchParams.delete("page");
+              this.filterBy = {
                 ...this.filterBy,
                 schedule: false,
-              })}
+                isCrawlRunning: undefined,
+              };
+            }}
           >
             ${msg("No schedule")}
+          </button>
+          <button
+            class="${this.filterBy.schedule === undefined &&
+            this.filterBy.isCrawlRunning === true
+              ? "border-b-current text-primary"
+              : "text-neutral-500"} mr-3 inline-block border-b-2 border-transparent font-medium"
+            aria-selected=${this.filterBy.isCrawlRunning === true}
+            @click=${() => {
+              this.searchParams.set("filter", "running");
+              this.searchParams.delete("page");
+              this.filterBy = {
+                ...this.filterBy,
+                schedule: undefined,
+                isCrawlRunning: true,
+              };
+            }}
+          >
+            ${msg("Running")}
           </button>
         </div>
         <div class="flex items-center justify-end">
