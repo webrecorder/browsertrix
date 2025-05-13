@@ -2340,6 +2340,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
                     "Page exclusion contains invalid regex",
                   );
                   break;
+                case APIErrorDetail.InvalidLang:
+                  errorDetailMessage = msg("Invalid language code");
+                  break;
                 default:
                   break;
               }

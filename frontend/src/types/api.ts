@@ -40,6 +40,7 @@ export type APISortQuery<T = Record<string, unknown>> = {
 export enum APIErrorDetail {
   InvalidLinkSelector = "invalid_link_selector",
   InvalidRegex = "invalid_regex",
+  InvalidLang = "invalid_lang",
   InvalidCustomBehavior = "invalid_custom_behavior",
   CustomBehaviorNotFound = "custom_behavior_not_found",
   CustomBehaviorBranchNotFound = "custom_behavior_branch_not_found",

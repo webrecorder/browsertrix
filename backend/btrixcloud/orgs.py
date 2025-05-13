@@ -86,6 +86,7 @@ from .utils import (
     slug_from_name,
     validate_slug,
     get_duplicate_key_error_field,
+    validate_language_code,
     JSONSerializer,
 )
 
@@ -654,6 +655,9 @@ class OrgOps:
         self, org: Organization, defaults: CrawlConfigDefaults
     ):
         """Update crawling defaults"""
+        if defaults.lang:
+            validate_language_code(defaults.lang)
+
         res = await self.orgs.find_one_and_update(
             {"_id": org.id},
             {"$set": {"crawlingDefaults": defaults.model_dump()}},

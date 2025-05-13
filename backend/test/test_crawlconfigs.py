@@ -172,6 +172,7 @@ def test_update_config_invalid_exclude_regex(
     assert r.status_code == 400
     assert r.json()["detail"] == "invalid_regex"
 
+
 def test_update_config_invalid_link_selector(
     crawler_auth_headers, default_org_id, sample_crawl_data
 ):
@@ -190,6 +191,20 @@ def test_update_config_invalid_link_selector(
     )
     assert r.status_code == 400
     assert r.json()["detail"] == "invalid_link_selector"
+
+
+def test_update_config_invalid_lang(
+    crawler_auth_headers, default_org_id, sample_crawl_data
+):
+    for invalid_code in ("f", "fra", "french"):
+        r = requests.patch(
+            f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
+            headers=crawler_auth_headers,
+            json={"config": {"lang": invalid_code}},
+        )
+        assert r.status_code == 400
+        assert r.json()["detail"] == "invalid_lang"
+
 
 def test_verify_default_select_links(
     crawler_auth_headers, default_org_id, sample_crawl_data
@@ -575,6 +590,20 @@ def test_add_crawl_config_invalid_exclude_regex(
     )
     assert r.status_code == 400
     assert r.json()["detail"] == "invalid_regex"
+
+
+def test_add_crawl_config_invalid_lang(
+    crawler_auth_headers, default_org_id, sample_crawl_data
+):
+    for invalid_code in ("f", "fra", "french"):
+        sample_crawl_data["config"]["lang"] = invalid_code
+        r = requests.post(
+            f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+            headers=crawler_auth_headers,
+            json=sample_crawl_data,
+        )
+        assert r.status_code == 400
+        assert r.json()["detail"] == "invalid_lang"
 
 
 def test_add_crawl_config_invalid_link_selectors(

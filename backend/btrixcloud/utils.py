@@ -16,6 +16,7 @@ from uuid import UUID
 
 from fastapi import HTTPException
 from fastapi.responses import StreamingResponse
+from iso639 import is_language
 from pymongo.errors import DuplicateKeyError
 from slugify import slugify
 
@@ -193,3 +194,9 @@ def validate_regexes(regexes: List[str]):
         except re.error:
             # pylint: disable=raise-missing-from
             raise HTTPException(status_code=400, detail="invalid_regex")
+
+
+def validate_language_code(lang: str):
+    """Validate ISO-639-1 language code, raise HTTPException if invalid"""
+    if not is_language(lang, "pt1"):
+        raise HTTPException(status_code=400, detail="invalid_lang")
