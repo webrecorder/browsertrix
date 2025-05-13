@@ -885,7 +885,7 @@ export class WorkflowDetail extends BtrixElement {
     }
 
     return html`
-      <div class="mb-4 rounded-lg border px-4 py-2">
+      <div class="mb-3 rounded-lg border px-4 py-2">
         ${this.renderCrawlDetails()}
       </div>
 
@@ -928,14 +928,15 @@ export class WorkflowDetail extends BtrixElement {
           ${this.renderLatestCrawlAction()}
         </div>
 
-        <sl-divider></sl-divider>
-
-        <btrix-tab-group-panel name=${WorkflowTab.LatestCrawl} class="block">
+        <btrix-tab-group-panel
+          name=${WorkflowTab.LatestCrawl}
+          class="mt-3 block"
+        >
           ${when(this.workflow?.isCrawlRunning, this.renderWatchCrawl, () =>
             this.renderInactiveWatchCrawl(),
           )}
         </btrix-tab-group-panel>
-        <btrix-tab-group-panel name=${WorkflowTab.Logs} class="block">
+        <btrix-tab-group-panel name=${WorkflowTab.Logs} class="mt-3 block">
           ${this.renderLogs()}
         </btrix-tab-group-panel>
       </btrix-tab-group>
@@ -1103,23 +1104,52 @@ export class WorkflowDetail extends BtrixElement {
   };
 
   private renderInactiveWatchCrawl() {
-    if (this.workflow && !this.workflow.lastCrawlId) {
+    if (!this.workflow) return;
+
+    if (!this.lastCrawlId || !this.workflow.lastCrawlSize) {
+      let message = msg("This workflow hasn’t been run yet.");
+
+      if (this.lastCrawlId) {
+        if (this.workflow.lastCrawlState === "canceled") {
+          message = msg("This crawl can’t be replayed since it was canceled.");
+        } else {
+          message = msg("Replay is not enabled on this crawl.");
+        }
+      }
+
       return html`
         <section
           class="flex h-56 min-h-max flex-col items-center justify-center rounded-lg border p-4"
         >
-          <p class="text-base font-medium">
-            ${msg("This crawl workflow hasn’t been run yet.")}
-          </p>
+          <p class="text-base font-medium">${message}</p>
 
-          ${this.isCrawler
-            ? html` <div class="mt-4">${this.renderRunNowButton()}</div> `
-            : nothing}
+          ${when(
+            this.isCrawler && !this.lastCrawlId,
+            () => html`<div class="mt-4">${this.renderRunNowButton()}</div>`,
+          )}
+          ${when(
+            this.lastCrawlId,
+            () =>
+              html`<div class="mt-4">
+                <sl-button
+                  size="small"
+                  href="${this.basePath}/crawls/${this.lastCrawlId}"
+                  @click=${this.navigate.link}
+                >
+                  ${msg("View Crawl Details")}
+                  <sl-icon slot="suffix" name="arrow-right"></sl-icon>
+                </sl-button>
+              </div>`,
+          )}
         </section>
       `;
     }
 
-    return html`TODO`;
+    return html`
+      <div class="aspect-video overflow-hidden rounded-lg border">
+        ${this.renderReplay()}
+      </div>
+    `;
   }
 
   private renderInactiveCrawlMessage() {
@@ -1127,6 +1157,27 @@ export class WorkflowDetail extends BtrixElement {
       <div class="rounded border bg-neutral-50 p-3">
         <p class="text-sm text-neutral-600">${msg("Crawl is not running.")}</p>
       </div>
+    `;
+  }
+
+  private renderReplay() {
+    if (!this.workflow || !this.lastCrawlId) return;
+
+    const replaySource = `/api/orgs/${this.workflow.oid}/crawls/${this.lastCrawlId}/replay.json`;
+    const headers = this.authState?.headers;
+    const config = JSON.stringify({ headers });
+
+    return html`
+      <replay-web-page
+        source="${replaySource}"
+        url="${(this.workflow.seedCount === 1 && this.workflow.firstSeed) ||
+        ""}"
+        coll=${this.lastCrawlId}
+        config="${config}"
+        replayBase="/replay/"
+        noSandbox="true"
+        noCache="true"
+      ></replay-web-page>
     `;
   }
 

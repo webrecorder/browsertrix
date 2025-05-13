@@ -95,7 +95,7 @@ export class WorkflowsNew extends LiteElement {
     return html`
       <div class="mb-5">${this.renderBreadcrumbs()}</div>
       <header
-        class="scrim scrim-to-b z-10 flex flex-wrap items-start justify-between gap-2 to-white before:-top-3 lg:sticky lg:top-3"
+        class="scrim scrim-to-b z-10 flex flex-wrap items-start justify-between gap-2 before:-top-3 lg:sticky lg:top-3"
       >
         <h2 class="mb-6 text-xl font-semibold">${msg("New Crawl Workflow")}</h2>
         <sl-button

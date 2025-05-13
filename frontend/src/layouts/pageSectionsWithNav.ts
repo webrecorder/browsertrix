@@ -29,7 +29,7 @@ export function pageSectionsWithNav({
         class=${clsx(
           tw`flex w-full flex-1 flex-col gap-2`,
           sticky && [
-            tw`z-50 lg:sticky lg:self-start`,
+            tw`scrim scrim-to-b z-50 before:-top-2 lg:sticky lg:self-start`,
             stickyTopClassname || tw`lg:top-2`,
           ],
           placement === "start"
