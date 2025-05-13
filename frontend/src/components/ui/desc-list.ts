@@ -41,6 +41,7 @@ export class DescListItem extends LitElement {
       font-family: var(--font-monostyle-family);
       font-variation-settings: var(--font-monostyle-variation);
       line-height: 1rem;
+      min-height: calc(1rem + var(--sl-spacing-2x-small));
     }
 
     .item {

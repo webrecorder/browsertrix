@@ -17,7 +17,7 @@ import { ExclusionEditor } from "@/features/crawl-workflows/exclusion-editor";
 import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
 import { WorkflowTab } from "@/routes";
 import { tooltipFor } from "@/strings/archived-items/tooltips";
-import { deleteConfirmation } from "@/strings/ui";
+import { deleteConfirmation, noData } from "@/strings/ui";
 import type { APIPaginatedList } from "@/types/api";
 import { type CrawlState } from "@/types/crawlState";
 import { isApiError } from "@/utils/api";
@@ -82,7 +82,7 @@ export class WorkflowDetail extends BtrixElement {
   private lastCrawlStartTime: Workflow["lastCrawlStartTime"] = null;
 
   @state()
-  private lastCrawl?: Pick<Crawl, "stats" | "pageCount">;
+  private lastCrawl?: Pick<Crawl, "stats" | "pageCount" | "reviewStatus">;
 
   @state()
   private logTotals?: { errors: number; behaviors: number };
@@ -426,7 +426,7 @@ export class WorkflowDetail extends BtrixElement {
   private readonly renderTabList = () => html`
     <btrix-tab-group active=${this.groupedWorkflowTab} placement="start">
       <header
-        class="mb-2 flex h-7 items-center justify-between text-lg font-medium"
+        class="mb-2 flex h-7 items-end justify-between text-lg font-medium"
       >
         <h3>${this.tabLabels[this.groupedWorkflowTab]}</h3>
         ${this.renderPanelAction()}
@@ -449,13 +449,33 @@ export class WorkflowDetail extends BtrixElement {
   `;
 
   private renderPanelAction() {
+    if (
+      this.workflowTab === WorkflowTab.LatestCrawl &&
+      this.isCrawler &&
+      this.workflow &&
+      !this.workflow.isCrawlRunning &&
+      this.lastCrawlId
+    ) {
+      return html`<sl-tooltip content=${msg("Go to Quality Assurance")}>
+        <sl-button
+          size="small"
+          href="${this.basePath}/crawls/${this.lastCrawlId}#qa"
+          @click=${this.navigate.link}
+          ?loading=${!this.lastCrawl}
+        >
+          <sl-icon slot="prefix" name="clipboard2-data-fill"></sl-icon>
+          ${msg("QA Crawl")}
+        </sl-button>
+      </sl-tooltip>`;
+    }
+
     if (this.workflowTab === WorkflowTab.Settings && this.isCrawler) {
       return html` 
         <sl-tooltip content=${msg("Edit Workflow Settings")}></sl-tooltip>
           <sl-icon-button
             name="pencil"
             class="text-base"
-            href="/orgs/${this.appState.orgSlug}/workflows/${this.workflow?.id}?edit"
+            href="${this.basePath}?edit"
             @click=${this.navigate.link}
           >
           </sl-icon-button>
@@ -1026,6 +1046,29 @@ export class WorkflowDetail extends BtrixElement {
       return this.localize.number(this.lastCrawl.pageCount || 0);
     };
 
+    const qa = (workflow: Workflow) => {
+      if (!this.lastCrawl)
+        return html`<sl-skeleton class="w-24"></sl-skeleton>`;
+
+      if (workflow.isCrawlRunning) {
+        return html`<span class="text-neutral-400">
+          ${noData}
+          <sl-tooltip
+            class="invert-tooltip"
+            content=${msg("QA will be enabled once this crawl is finished.")}
+            hoist
+            placement="bottom"
+          >
+            <sl-icon name="question-circle"></sl-icon>
+          </sl-tooltip>
+        </span>`;
+      }
+
+      return html`<btrix-qa-review-status
+        status=${ifDefined(this.lastCrawl.reviewStatus)}
+      ></btrix-qa-review-status>`;
+    };
+
     return html`
       <btrix-desc-list horizontal>
         ${this.renderDetailItem(msg("Duration"), (workflow) =>
@@ -1044,6 +1087,7 @@ export class WorkflowDetail extends BtrixElement {
             unitDisplay: "narrow",
           }),
         )}
+        ${this.renderDetailItem(msg("QA Rating"), qa)}
       </btrix-desc-list>
     `;
   };
@@ -1495,8 +1539,10 @@ export class WorkflowDetail extends BtrixElement {
     let crawlState: CrawlState | null = null;
 
     try {
-      const { stats, pageCount, state } = await this.getCrawl(this.lastCrawlId);
-      this.lastCrawl = { stats, pageCount };
+      const { stats, pageCount, reviewStatus, state } = await this.getCrawl(
+        this.lastCrawlId,
+      );
+      this.lastCrawl = { stats, pageCount, reviewStatus };
 
       crawlState = state;
     } catch {
