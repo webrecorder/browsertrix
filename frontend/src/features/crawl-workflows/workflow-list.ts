@@ -221,9 +221,7 @@ export class WorkflowListItem extends BtrixElement {
         }
         e.preventDefault();
         await this.updateComplete;
-        const href = `/orgs/${this.orgSlugState}/workflows/${
-          this.workflow?.id
-        }/${this.workflow?.isCrawlRunning ? WorkflowTab.LatestCrawl : WorkflowTab.Crawls}`;
+        const href = `/orgs/${this.orgSlugState}/workflows/${this.workflow?.id}/${WorkflowTab.LatestCrawl}`;
         this.navigate.to(href);
       }}
     >

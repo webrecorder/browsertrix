@@ -5,11 +5,10 @@ import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
 import { ifDefined } from "lit/directives/if-defined.js";
-import { until } from "lit/directives/until.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
-import type { Crawl, Seed, Workflow, WorkflowParams } from "./types";
+import type { Crawl, CrawlLog, Seed, Workflow, WorkflowParams } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { ClipboardController } from "@/controllers/clipboard";
@@ -28,6 +27,7 @@ import {
 } from "@/utils/crawler";
 import { humanizeSchedule } from "@/utils/cron";
 import { isArchivingDisabled } from "@/utils/orgs";
+import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
 
 const POLL_INTERVAL_SECONDS = 10;
@@ -84,6 +84,9 @@ export class WorkflowDetail extends BtrixElement {
   private lastCrawlStats?: Crawl["stats"];
 
   @state()
+  private errorLogsTotal?: number;
+
+  @state()
   private isLoading = false;
 
   @state()
@@ -122,6 +125,12 @@ export class WorkflowDetail extends BtrixElement {
     settings: msg("Settings"),
   };
 
+  private get groupedWorkflowTab() {
+    return this.workflowTab === WorkflowTab.Logs
+      ? WorkflowTab.LatestCrawl
+      : this.workflowTab;
+  }
+
   private get basePath() {
     return `${this.navigate.orgBasePath}/workflows/${this.workflowId}`;
   }
@@ -156,11 +165,23 @@ export class WorkflowDetail extends BtrixElement {
     if (changedProperties.has("isEditing") && this.isEditing) {
       this.stopPoll();
     }
-    if (
-      changedProperties.has("workflowTab") &&
-      this.workflowTab === WorkflowTab.Crawls
-    ) {
-      void this.fetchCrawls();
+    if (changedProperties.has("workflowTab")) {
+      void this.fetchDataForTab();
+    }
+  }
+
+  private async fetchDataForTab() {
+    switch (this.groupedWorkflowTab) {
+      case WorkflowTab.LatestCrawl:
+        void this.fetchWorkflow();
+        break;
+
+      case WorkflowTab.Crawls: {
+        void this.fetchCrawls();
+        break;
+      }
+      default:
+        break;
     }
   }
 
@@ -174,11 +195,13 @@ export class WorkflowDetail extends BtrixElement {
       this.lastCrawlId = this.workflow.lastCrawlId;
       this.lastCrawlStartTime = this.workflow.lastCrawlStartTime;
 
-      if (this.lastCrawlId) {
-        if (this.workflow.isCrawlRunning) {
-          void this.fetchCurrentCrawlStats();
-        }
+      if (
+        this.lastCrawlId &&
+        this.groupedWorkflowTab === WorkflowTab.LatestCrawl
+      ) {
+        void this.fetchLastCrawlStats();
       }
+
       // TODO: Check if storage quota has been exceeded here by running
       // crawl??
     } catch (e) {
@@ -400,11 +423,12 @@ export class WorkflowDetail extends BtrixElement {
   }
 
   private readonly renderTabList = () => html`
-    <btrix-tab-group active=${this.workflowTab} placement="start">
+    <btrix-tab-group active=${this.groupedWorkflowTab} placement="start">
       <header
         class="mb-2 flex h-7 items-center justify-between text-lg font-medium"
       >
-        ${this.renderPanelHeader()}
+        <h3>${this.tabLabels[this.groupedWorkflowTab]}</h3>
+        ${this.renderPanelAction()}
       </header>
 
       ${this.renderTab(WorkflowTab.LatestCrawl)}
@@ -415,7 +439,7 @@ export class WorkflowDetail extends BtrixElement {
         ${this.renderCrawls()}
       </btrix-tab-group-panel>
       <btrix-tab-group-panel name=${WorkflowTab.LatestCrawl}>
-        ${until(this.getWorkflowPromise?.then(() => html` TODO `))}
+        ${this.renderLatestCrawl()}
       </btrix-tab-group-panel>
       <btrix-tab-group-panel name=${WorkflowTab.Settings}>
         ${this.renderSettings()}
@@ -423,25 +447,9 @@ export class WorkflowDetail extends BtrixElement {
     </btrix-tab-group>
   `;
 
-  private renderPanelHeader() {
-    if (this.workflowTab === WorkflowTab.Crawls) {
-      return html`<h3>
-        ${this.tabLabels[this.workflowTab]}
-        ${when(
-          this.crawls,
-          () => html`
-            <span class="text-neutral-500"
-              >(${this.localize.number(this.crawls!.total)}${this.workflow
-                ?.isCrawlRunning
-                ? html`<span class="text-success"> + 1</span>`
-                : ""})</span
-            >
-          `,
-        )}
-      </h3>`;
-    }
+  private renderPanelAction() {
     if (this.workflowTab === WorkflowTab.Settings && this.isCrawler) {
-      return html` <h3>${this.tabLabels[this.workflowTab]}</h3>
+      return html` 
         <sl-tooltip content=${msg("Edit Workflow Settings")}></sl-tooltip>
           <sl-icon-button
             name="pencil"
@@ -452,57 +460,8 @@ export class WorkflowDetail extends BtrixElement {
           </sl-icon-button>
         </sl-tooltip>`;
     }
-    if (this.workflowTab === WorkflowTab.LatestCrawl && this.isCrawler) {
-      const enableEditBrowserWindows =
-        this.workflow?.isCrawlRunning && !this.workflow.lastCrawlStopping;
-      return html` <h3>${this.tabLabels[this.workflowTab]}</h3>
-        <div>
-          <sl-tooltip
-            content=${msg(
-              "Browser windows can only be edited while a crawl is starting or running",
-            )}
-            ?disabled=${enableEditBrowserWindows}
-          >
-            <sl-button
-              size="small"
-              ?disabled=${!enableEditBrowserWindows}
-              @click=${() => (this.openDialogName = "scale")}
-            >
-              <sl-icon
-                name="plus-slash-minus"
-                slot="prefix"
-                label=${msg("Increase or decrease")}
-              ></sl-icon>
-              <span>${msg("Edit Browser Windows")}</span>
-            </sl-button>
-          </sl-tooltip>
-        </div>`;
-    }
-    if (this.workflowTab === WorkflowTab.Logs) {
-      const authToken = this.authState?.headers.Authorization.split(" ")[1];
-      const isDownloadEnabled = Boolean(
-        this.workflow?.lastCrawlId && !this.workflow.isCrawlRunning,
-      );
-      return html` <h3>${this.tabLabels.logs}</h3>
-        <sl-tooltip
-          content=${msg(
-            "Downloading will be enabled when this crawl is finished.",
-          )}
-          ?disabled=${!this.workflow?.isCrawlRunning}
-        >
-          <sl-button
-            href=${`/api/orgs/${this.orgId}/crawls/${this.lastCrawlId}/logs?auth_bearer=${authToken}`}
-            download=${`btrix-${this.lastCrawlId}-logs.txt`}
-            size="small"
-            ?disabled=${!isDownloadEnabled}
-          >
-            <sl-icon slot="prefix" name="cloud-download"></sl-icon>
-            ${msg("Download All Logs")}
-          </sl-button>
-        </sl-tooltip>`;
-    }
 
-    return html`<h3>${this.tabLabels[this.workflowTab]}</h3>`;
+    return nothing;
   }
 
   private renderTab(tabName: WorkflowTab) {
@@ -527,6 +486,29 @@ export class WorkflowDetail extends BtrixElement {
           ],
         ])}
         ${this.tabLabels[tabName]}
+        ${choose(tabName, [
+          [
+            WorkflowTab.LatestCrawl,
+            () =>
+              this.workflow?.isCrawlRunning
+                ? html`<btrix-badge variant="success">
+                    ${msg("Active")}
+                  </btrix-badge>`
+                : nothing,
+          ],
+          [
+            WorkflowTab.Crawls,
+            () =>
+              this.workflow
+                ? html`<btrix-badge>
+                    ${this.localize.number(
+                      this.workflow.crawlCount +
+                        (this.workflow.isCrawlRunning ? 1 : 0),
+                    )}
+                  </btrix-badge>`
+                : nothing,
+          ],
+        ])}
       </btrix-tab-group-tab>
     `;
   }
@@ -820,14 +802,14 @@ export class WorkflowDetail extends BtrixElement {
           () =>
             html`<div class="mb-4">
               <btrix-alert variant="success" class="text-sm">
-                ${msg(
-                  html`Crawl is currently running.
-                    <a
-                      href="${this.basePath}/${WorkflowTab.LatestCrawl}"
-                      class="underline hover:no-underline"
-                      >Watch Crawl Progress</a
-                    >`,
-                )}
+                ${msg("A crawl is currently in progress.")}
+                <a
+                  href="${this.basePath}/${WorkflowTab.LatestCrawl}"
+                  class="underline hover:no-underline"
+                  @click=${this.navigate.link}
+                >
+                  ${msg("Watch Running Crawl")}
+                </a>
               </btrix-alert>
             </div>`,
         )}
@@ -844,7 +826,7 @@ export class WorkflowDetail extends BtrixElement {
                     href=${ifDefined(
                       isActive(crawl)
                         ? undefined
-                        : `${this.basePath}/${crawl.id}`,
+                        : `${this.basePath}/crawls/${crawl.id}`,
                     )}
                     .crawl=${crawl}
                   >
@@ -897,37 +879,158 @@ export class WorkflowDetail extends BtrixElement {
     return html`<sl-option value=${state}>${icon}${label}</sl-option>`;
   };
 
-  private readonly renderCurrentCrawl = () => {
+  private readonly renderLatestCrawl = () => {
+    if (!this.lastCrawlId) {
+      return this.renderInactiveWatchCrawl();
+    }
+
+    return html`
+      <div class="mb-4 rounded-lg border px-4 py-2">
+        ${this.renderCrawlDetails()}
+      </div>
+
+      <btrix-tab-group active=${this.workflowTab}>
+        <btrix-tab-group-tab
+          slot="nav"
+          panel=${WorkflowTab.LatestCrawl}
+          href="${this.basePath}/${WorkflowTab.LatestCrawl}"
+          @click=${this.navigate.link}
+        >
+          ${when(
+            this.workflow?.isCrawlRunning,
+            () => html`
+              <sl-icon name="eye-fill"></sl-icon>
+              ${msg("Watch")}
+            `,
+            () => html`
+              <sl-icon name="replaywebpage" library="app"></sl-icon>
+              ${msg("Replay")}
+            `,
+          )}
+        </btrix-tab-group-tab>
+        <btrix-tab-group-tab
+          slot="nav"
+          panel=${WorkflowTab.Logs}
+          href="${this.basePath}/${WorkflowTab.Logs}"
+          @click=${this.navigate.link}
+        >
+          <sl-icon name="terminal-fill"></sl-icon>
+          ${this.tabLabels.logs}
+          ${this.errorLogsTotal
+            ? html`<btrix-badge variant="danger">
+                ${this.localize.number(this.errorLogsTotal)}
+                ${pluralOf("errors", this.errorLogsTotal)}
+              </btrix-badge>`
+            : nothing}
+        </btrix-tab-group-tab>
+
+        <div slot="action" class="flex items-center gap-2">
+          ${this.renderLatestCrawlAction()}
+        </div>
+
+        <sl-divider></sl-divider>
+
+        <btrix-tab-group-panel name=${WorkflowTab.LatestCrawl} class="block">
+          ${when(this.workflow?.isCrawlRunning, this.renderWatchCrawl, () =>
+            this.renderInactiveWatchCrawl(),
+          )}
+        </btrix-tab-group-panel>
+        <btrix-tab-group-panel name=${WorkflowTab.Logs} class="block">
+          ${this.renderLogs()}
+        </btrix-tab-group-panel>
+      </btrix-tab-group>
+    `;
+  };
+
+  private renderLatestCrawlAction() {
+    if (this.workflowTab === WorkflowTab.Logs) {
+      const authToken = this.authState?.headers.Authorization.split(" ")[1];
+      const isDownloadEnabled = Boolean(
+        this.workflow?.lastCrawlId && !this.workflow.isCrawlRunning,
+      );
+
+      return html` <sl-tooltip
+        content=${msg(
+          "Downloading will be enabled when this crawl is finished.",
+        )}
+        ?disabled=${!this.workflow?.isCrawlRunning}
+      >
+        <sl-button
+          href=${`/api/orgs/${this.orgId}/crawls/${this.lastCrawlId}/logs?auth_bearer=${authToken}`}
+          download=${`btrix-${this.lastCrawlId}-logs.txt`}
+          size="small"
+          ?disabled=${!isDownloadEnabled}
+        >
+          <sl-icon slot="prefix" name="cloud-download"></sl-icon>
+          ${msg("Download All Logs")}
+        </sl-button>
+      </sl-tooltip>`;
+    }
+
+    if (this.isCrawler && this.workflow?.isCrawlRunning) {
+      const enableEditBrowserWindows = !this.workflow.lastCrawlStopping;
+      const windowCount =
+        this.workflow.scale * (this.appState.settings?.numBrowsers || 1);
+
+      return html`
+        <div class="text-neutral-500">
+          ${msg("Running in")} ${this.localize.number(windowCount)}
+          ${pluralOf("browserWindows", windowCount)}
+        </div>
+
+        <sl-tooltip
+          content=${msg(
+            "Browser windows can only be edited while a crawl is starting or running",
+          )}
+          ?disabled=${enableEditBrowserWindows}
+        >
+          <sl-button
+            size="small"
+            ?disabled=${!enableEditBrowserWindows}
+            @click=${() => (this.openDialogName = "scale")}
+          >
+            <sl-icon
+              name="plus-slash-minus"
+              slot="prefix"
+              label=${msg("Increase or decrease")}
+            ></sl-icon>
+            <span>${msg("Edit")}</span>
+          </sl-button>
+        </sl-tooltip>
+      `;
+    }
+
+    // TODO Download files
+  }
+
+  private readonly renderCrawlDetails = () => {
     const skeleton = html`<sl-skeleton class="w-full"></sl-skeleton>`;
 
     return html`
       <btrix-desc-list horizontal>
-        ${this.renderDetailItem(msg("Pages Crawled"), () =>
+        ${this.renderDetailItem(msg("Pages Crawled"), (workflow) =>
           this.lastCrawlStats
-            ? `${this.localize.number(
-                +(this.lastCrawlStats.done || 0),
-              )} / ${this.localize.number(+(this.lastCrawlStats.found || 0))}`
+            ? `${this.localize.number(+(this.lastCrawlStats.done || 0))}${
+                workflow.isCrawlRunning
+                  ? ` / ${this.localize.number(+(this.lastCrawlStats.found || 0))}`
+                  : ""
+              }`
             : html`<sl-spinner></sl-spinner>`,
         )}
-        ${this.renderDetailItem(msg("Run Duration"), () =>
+        ${this.renderDetailItem(msg("Duration"), (workflow) =>
           this.lastCrawlStartTime
             ? this.localize.humanizeDuration(
-                new Date().valueOf() -
-                  new Date(this.lastCrawlStartTime).valueOf(),
+                (workflow.lastCrawlTime && !workflow.isCrawlRunning
+                  ? new Date(workflow.lastCrawlTime)
+                  : new Date()
+                ).valueOf() - new Date(this.lastCrawlStartTime).valueOf(),
               )
             : skeleton,
         )}
-        ${this.renderDetailItem(msg("Crawl Size"), () =>
-          this.workflow
-            ? this.localize.bytes(this.workflow.lastCrawlSize || 0, {
-                unitDisplay: "narrow",
-              })
-            : skeleton,
-        )}
-        ${this.renderDetailItem(msg("Browser Windows"), () =>
-          this.workflow && this.appState.settings
-            ? this.workflow.scale * this.appState.settings.numBrowsers
-            : skeleton,
+        ${this.renderDetailItem(msg("Size"), (workflow) =>
+          this.localize.bytes(workflow.lastCrawlSize || 0, {
+            unitDisplay: "narrow",
+          }),
         )}
       </btrix-desc-list>
     `;
@@ -985,12 +1088,11 @@ export class WorkflowDetail extends BtrixElement {
             ></btrix-screencast>
           </div>
 
-          <section class="mt-4">${this.renderWatchLogs()}</section>
           <section class="mt-8">${this.renderExclusions()}</section>
         `,
         () =>
           waitingMsg
-            ? html`<div class="rounded border p-3">
+            ? html`<div class="rounded-lg border p-3">
                 <p class="text-sm text-neutral-600 motion-safe:animate-pulse">
                   ${waitingMsg}
                 </p>
@@ -1001,53 +1103,23 @@ export class WorkflowDetail extends BtrixElement {
   };
 
   private renderInactiveWatchCrawl() {
-    return html`
-      <section
-        class="flex h-56 min-h-max flex-col items-center justify-center rounded-lg border p-4"
-      >
-        <p class="text-base font-medium">
-          ${msg("Crawl workflow is not currently running.")}
-        </p>
-        <div class="mt-4">
-          ${when(
-            this.workflow?.lastCrawlId && this.workflow,
-            (workflow) => html`
-              <sl-button
-                href=${`${this.navigate.orgBasePath}/workflows/${workflow.id}/crawls/${workflow.lastCrawlId}#replay`}
-                variant="primary"
-                size="small"
-                @click=${this.navigate.link}
-              >
-                <sl-icon
-                  slot="prefix"
-                  name="replaywebpage"
-                  library="app"
-                ></sl-icon>
-                ${msg("Replay Latest Crawl")}</sl-button
-              >
+    if (this.workflow && !this.workflow.lastCrawlId) {
+      return html`
+        <section
+          class="flex h-56 min-h-max flex-col items-center justify-center rounded-lg border p-4"
+        >
+          <p class="text-base font-medium">
+            ${msg("This crawl workflow hasn’t been run yet.")}
+          </p>
 
-              ${when(
-                this.isCrawler,
-                () =>
-                  html` <sl-button
-                    href=${`${this.navigate.orgBasePath}/workflows/${workflow.id}/crawls/${workflow.lastCrawlId}#qa`}
-                    size="small"
-                    @click=${this.navigate.link}
-                  >
-                    <sl-icon
-                      slot="prefix"
-                      name="clipboard2-data-fill"
-                      library="default"
-                    ></sl-icon>
-                    ${msg("QA Latest Crawl")}
-                  </sl-button>`,
-              )}
-            `,
-            () => (this.isCrawler ? this.renderRunNowButton() : nothing),
-          )}
-        </div>
-      </section>
-    `;
+          ${this.isCrawler
+            ? html` <div class="mt-4">${this.renderRunNowButton()}</div> `
+            : nothing}
+        </section>
+      `;
+    }
+
+    return html`TODO`;
   }
 
   private renderInactiveCrawlMessage() {
@@ -1063,28 +1135,15 @@ export class WorkflowDetail extends BtrixElement {
       <div aria-live="polite" aria-busy=${this.isLoading}>
         ${when(
           this.lastCrawlId || this.workflow?.lastCrawlId,
-          (crawlId) =>
-            this.workflow?.isCrawlRunning
-              ? html`
-                  <div class="mb-4">
-                    <btrix-alert variant="success" class="text-sm">
-                      ${msg(
-                        "You are viewing error and behavior logs for the currently running crawl.",
-                      )}
-                      <a
-                        href="${this.basePath}/${WorkflowTab.LatestCrawl}"
-                        class="underline hover:no-underline"
-                      >
-                        ${msg("Watch Crawl")}
-                      </a>
-                    </btrix-alert>
-                  </div>
-                  <btrix-crawl-logs
-                    crawlId=${crawlId}
-                    liveKey=${ifDefined(this.timerId)}
-                  ></btrix-crawl-logs>
-                `
-              : html`<btrix-crawl-logs crawlId=${crawlId}></btrix-crawl-logs>`,
+          (crawlId) => html`
+            <btrix-crawl-logs
+              crawlId=${crawlId}
+              liveKey=${ifDefined(
+                (this.isExplicitRunning && this.timerId) || undefined,
+              )}
+              pageSize=${this.isExplicitRunning ? 100 : 50}
+            ></btrix-crawl-logs>
+          `,
           () => this.renderNoCrawlLogs(),
         )}
       </div>
@@ -1125,19 +1184,6 @@ export class WorkflowDetail extends BtrixElement {
           () => html` <div class="mt-4">${this.renderRunNowButton()}</div> `,
         )}
       </section>
-    `;
-  }
-
-  private renderWatchLogs() {
-    if (!this.lastCrawlId) return;
-
-    return html`
-      <btrix-crawl-logs
-        crawlId=${this.lastCrawlId}
-        liveKey=${ifDefined(this.timerId)}
-        pageSize=${1000}
-        collapsible
-      ></btrix-crawl-logs>
     `;
   }
 
@@ -1380,21 +1426,30 @@ export class WorkflowDetail extends BtrixElement {
     return data;
   }
 
-  private async fetchCurrentCrawlStats() {
+  private stopPoll() {
+    window.clearTimeout(this.timerId);
+  }
+
+  private async fetchLastCrawlStats() {
     if (!this.lastCrawlId) return;
 
     try {
-      // TODO see if API can pass stats in GET workflow
       const { stats } = await this.getCrawl(this.lastCrawlId);
       this.lastCrawlStats = stats;
-    } catch (e) {
-      // TODO handle error
-      console.debug(e);
+    } catch {
+      this.notify.toast({
+        message: msg("Sorry, couldn't get latest crawl at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+        id: "archived-item-retrieve-error",
+      });
     }
-  }
 
-  private stopPoll() {
-    window.clearTimeout(this.timerId);
+    try {
+      this.errorLogsTotal = await this.getErrorLogsTotal(this.lastCrawlId);
+    } catch (err) {
+      console.debug(err);
+    }
   }
 
   private async getCrawl(crawlId: Crawl["id"]): Promise<Crawl> {
@@ -1403,6 +1458,16 @@ export class WorkflowDetail extends BtrixElement {
     );
 
     return data;
+  }
+
+  private async getErrorLogsTotal(crawlId: Crawl["id"]): Promise<number> {
+    const query = queryString.stringify({ pageSize: 1 });
+
+    const data = await this.api.fetch<APIPaginatedList<CrawlLog>>(
+      `/orgs/${this.orgId}/crawls/${crawlId}/errors?${query}`,
+    );
+
+    return data.total;
   }
 
   /**

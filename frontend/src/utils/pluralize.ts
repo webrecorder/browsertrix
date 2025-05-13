@@ -169,6 +169,58 @@ const plurals = {
       id: "rows.plural.other",
     }),
   },
+  errors: {
+    zero: msg("errors", {
+      desc: 'plural form of "errors" for zero errors',
+      id: "errors.plural.zero",
+    }),
+    one: msg("error", {
+      desc: 'singular form for "error"',
+      id: "errors.plural.one",
+    }),
+    two: msg("errors", {
+      desc: 'plural form of "errors" for two errors',
+      id: "errors.plural.two",
+    }),
+    few: msg("errors", {
+      desc: 'plural form of "errors" for few errors',
+      id: "errors.plural.few",
+    }),
+    many: msg("errors", {
+      desc: 'plural form of "errors" for many errors',
+      id: "errors.plural.many",
+    }),
+    other: msg("errors", {
+      desc: 'plural form of "errors" for multiple/other errors',
+      id: "errors.plural.other",
+    }),
+  },
+  browserWindows: {
+    zero: msg("browser windows", {
+      desc: 'plural form of "browser windows" for zero browser windows',
+      id: "browserWindows.plural.zero",
+    }),
+    one: msg("browser window", {
+      desc: 'singular form for "browser window"',
+      id: "browserWindows.plural.one",
+    }),
+    two: msg("browser windows", {
+      desc: 'plural form of "browser windows" for two browser windows',
+      id: "browserWindows.plural.two",
+    }),
+    few: msg("browser windows", {
+      desc: 'plural form of "browser windows" for few browser windows',
+      id: "browserWindows.plural.few",
+    }),
+    many: msg("browser windows", {
+      desc: 'plural form of "browser windows" for many browser windows',
+      id: "browserWindows.plural.many",
+    }),
+    other: msg("browser windows", {
+      desc: 'plural form of "browser windows" for multiple/other browser windows',
+      id: "browserWindows.plural.other",
+    }),
+  },
 };
 
 export const pluralOf = (word: keyof typeof plurals, count: number) => {
