@@ -209,10 +209,10 @@ export class WorkflowDetail extends BtrixElement {
         message:
           isApiError(e) && e.statusCode === 404
             ? msg("Workflow not found.")
-            : msg("Sorry, couldn't retrieve Workflow at this time."),
+            : msg("Sorry, couldn't retrieve workflow at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
-        id: "workflow-retrieve-error",
+        id: "workflow-data-retrieve-error",
       });
     }
 
@@ -894,7 +894,7 @@ export class WorkflowDetail extends BtrixElement {
           slot="nav"
           panel=${WorkflowTab.LatestCrawl}
           href="${this.basePath}/${WorkflowTab.LatestCrawl}"
-          @click=${this.navigate.link}
+          @click=${(e: MouseEvent) => this.navigate.link(e, undefined, false)}
         >
           ${when(
             this.workflow?.isCrawlRunning,
@@ -912,7 +912,7 @@ export class WorkflowDetail extends BtrixElement {
           slot="nav"
           panel=${WorkflowTab.Logs}
           href="${this.basePath}/${WorkflowTab.Logs}"
-          @click=${this.navigate.link}
+          @click=${(e: MouseEvent) => this.navigate.link(e, undefined, false)}
         >
           <sl-icon name="terminal-fill"></sl-icon>
           ${this.tabLabels.logs}
@@ -1015,7 +1015,7 @@ export class WorkflowDetail extends BtrixElement {
                   ? ` / ${this.localize.number(+(this.lastCrawlStats.found || 0))}`
                   : ""
               }`
-            : html`<sl-spinner></sl-spinner>`,
+            : skeleton,
         )}
         ${this.renderDetailItem(msg("Duration"), (workflow) =>
           this.lastCrawlStartTime
@@ -1383,7 +1383,7 @@ export class WorkflowDetail extends BtrixElement {
         ),
         variant: "danger",
         icon: "exclamation-octagon",
-        id: "archived-item-retrieve-error",
+        id: "workflow-data-retrieve-error",
       });
     }
   }
@@ -1403,7 +1403,7 @@ export class WorkflowDetail extends BtrixElement {
         message: msg("Sorry, couldn't get crawls at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
-        id: "archived-item-retrieve-error",
+        id: "workflow-data-retrieve-error",
       });
     }
   }
@@ -1438,7 +1438,7 @@ export class WorkflowDetail extends BtrixElement {
       this.lastCrawlStats = stats;
     } catch {
       this.notify.toast({
-        message: msg("Sorry, couldn't get latest crawl at this time."),
+        message: msg("Sorry, couldn't retrieve latest crawl at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
         id: "archived-item-retrieve-error",
@@ -1448,6 +1448,7 @@ export class WorkflowDetail extends BtrixElement {
     try {
       this.errorLogsTotal = await this.getErrorLogsTotal(this.lastCrawlId);
     } catch (err) {
+      // Fail silently, since we're fetching just the total
       console.debug(err);
     }
   }
