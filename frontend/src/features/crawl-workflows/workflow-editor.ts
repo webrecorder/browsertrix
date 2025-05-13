@@ -2293,10 +2293,10 @@ https://archiveweb.page/images/${"logo.svg"}`}
       });
 
       this.navigate.to(
-        `${this.navigate.orgBasePath}/workflows/${this.configId || data.id}${
+        `${this.navigate.orgBasePath}/workflows/${this.configId || data.id}/${
           crawlId && !storageQuotaReached && !executionMinutesQuotaReached
-            ? `/${WorkflowTab.LatestCrawl}`
-            : ""
+            ? WorkflowTab.LatestCrawl
+            : WorkflowTab.Settings
         }`,
       );
     } catch (e) {
