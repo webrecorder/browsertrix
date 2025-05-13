@@ -554,8 +554,6 @@ export class WorkflowDetail extends BtrixElement {
               ?disabled=${!this.lastCrawlId ||
               this.isCancelingOrStoppingCrawl ||
               this.workflow?.lastCrawlStopping}
-              ?loading=${this.isCancelingOrStoppingCrawl ||
-              this.workflow?.lastCrawlStopping}
             >
               <sl-icon name="dash-square" slot="prefix"></sl-icon>
               <span>${msg("Stop")}</span>
