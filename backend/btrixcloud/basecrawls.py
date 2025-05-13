@@ -515,9 +515,16 @@ class BaseCrawlOps:
 
     async def remove_collection_from_all_crawls(self, collection_id: UUID):
         """Remove collection id from all crawls it's currently in."""
-        await self.crawls.update_many(
-            {"collectionIds": collection_id},
-            {"$pull": {"collectionIds": collection_id}},
+        await asyncio.gather(
+            self.crawls.update_many(
+                {"collectionIds": collection_id},
+                {"$pull": {"collectionIds": collection_id}},
+            ),
+            self.crawl_configs.update_many(
+                {"autoAddCollections": collection_id},
+                {"$pull": {"autoAddCollections": collection_id}},
+            ),
+            return_exceptions=True,
         )
 
     # pylint: disable=too-many-branches, invalid-name, too-many-statements
