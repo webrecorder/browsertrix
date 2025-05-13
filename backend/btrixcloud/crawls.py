@@ -772,7 +772,7 @@ class CrawlOps(BaseCrawlOps):
     async def pause_crawl(
         self, crawl_id: str, org: Organization, pause: bool
     ) -> Dict[str, bool]:
-        """pause or unpause a crawl temporarily"""
+        """pause or resume a crawl temporarily"""
         crawl = await self.get_base_crawl(crawl_id, org)
         if crawl and crawl.type != "crawl":
             raise HTTPException(status_code=400, detail="not_a_crawl")
@@ -1284,11 +1284,11 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
         return await ops.pause_crawl(crawl_id, org, pause=True)
 
     @app.post(
-        "/orgs/{oid}/crawls/{crawl_id}/unpause",
+        "/orgs/{oid}/crawls/{crawl_id}/resume",
         tags=["crawls"],
         response_model=SuccessResponse,
     )
-    async def unpause_crawl(crawl_id, org: Organization = Depends(org_crawl_dep)):
+    async def resume_crawl(crawl_id, org: Organization = Depends(org_crawl_dep)):
         return await ops.pause_crawl(crawl_id, org, pause=False)
 
     @app.post(
