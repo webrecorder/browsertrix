@@ -389,7 +389,7 @@ class CrawlManager(K8sAPI):
     async def pause_resume_crawl(
         self, crawl_id: str, paused_at: Optional[datetime] = None
     ) -> dict:
-        """pause or unpause a crawl"""
+        """pause or resume a crawl"""
         return await self._patch_job(
             crawl_id, {"pausedAt": date_to_str(paused_at) if paused_at else ""}
         )
