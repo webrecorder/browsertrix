@@ -23,6 +23,8 @@ export class SearchParamsController implements ReactiveController {
         ? update(this.searchParams).toString()
         : update.toString();
 
+    if (url.toString() === location.toString()) return;
+
     if (options.replace) {
       history.replaceState(options.data, "", url);
     } else {
@@ -40,6 +42,8 @@ export class SearchParamsController implements ReactiveController {
     const newParams = new URLSearchParams(this.searchParams);
     newParams.set(name, value);
     url.search = newParams.toString();
+
+    if (url.toString() === location.toString()) return;
 
     if (options.replace) {
       history.replaceState(options.data, "", url);
@@ -73,6 +77,8 @@ export class SearchParamsController implements ReactiveController {
     }
     options ??= { replace: false };
     url.search = newParams.toString();
+
+    if (url.toString() === location.toString()) return;
 
     if (options.replace) {
       history.replaceState(options.data, "", url);
