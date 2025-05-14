@@ -1197,7 +1197,7 @@ export class WorkflowDetail extends BtrixElement {
         return [
           this.localize.number(+(this.lastCrawl.stats?.done || 0)),
           this.localize.number(+(this.lastCrawl.stats?.found || 0)),
-        ].join(" / ");
+        ].join(` ${msg("of")} `);
       }
 
       return this.localize.number(this.lastCrawl.pageCount || 0);

@@ -303,7 +303,7 @@ export class CrawlList extends TailwindElement {
               ${msg("Finished")}
             </btrix-table-header-cell>
             <btrix-table-header-cell
-              >${msg("Duration")}</btrix-table-header-cell
+              >${msg("Duration Active")}</btrix-table-header-cell
             >
             <btrix-table-header-cell>${msg("Pages")}</btrix-table-header-cell>
             <btrix-table-header-cell>${msg("Size")}</btrix-table-header-cell>
