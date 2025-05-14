@@ -257,14 +257,22 @@ export class CrawlQueue extends BtrixElement {
         void this.fetchQueue();
       }, POLL_INTERVAL_SECONDS * 1000);
     } catch (e) {
-      if ((e as Error).message !== "invalid_regex") {
-        this.notify.toast({
-          message: msg("Sorry, couldn't fetch crawl queue at this time."),
-          variant: "danger",
-          icon: "exclamation-octagon",
-          id: "crawl-queue-status",
-        });
+      const errorMessage = (e as Error).message;
+
+      if (
+        errorMessage === "invalid_regex" ||
+        errorMessage === "crawl_not_running"
+      ) {
+        console.debug(errorMessage);
+        return;
       }
+
+      this.notify.toast({
+        message: msg("Sorry, couldn't fetch crawl queue at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+        id: "crawl-queue-status",
+      });
     }
   }
 

@@ -26,7 +26,6 @@ import { TailwindElement } from "@/classes/TailwindElement";
 import type { OverflowDropdown } from "@/components/ui/overflow-dropdown";
 import type { Crawl } from "@/types/crawler";
 import { renderName } from "@/utils/crawler";
-import { pluralOf } from "@/utils/pluralize";
 
 /**
  * @slot menu
@@ -185,20 +184,20 @@ export class CrawlListItem extends BtrixElement {
           )}
         </btrix-table-cell>
         <btrix-table-cell>
-          ${this.localize.bytes(this.crawl.fileSize || 0, {
-            unitDisplay: "narrow",
-          })}
-        </btrix-table-cell>
-        <btrix-table-cell>
           ${this.safeRender((crawl) => {
             const pagesFound = +(crawl.stats?.found || 0);
             if (crawl.finished) {
               const pagesComplete = crawl.pageCount ? +crawl.pageCount : 0;
-              return `${this.localize.number(pagesComplete, { notation: "compact" })} ${pluralOf("pages", pagesComplete)}`;
+              return `${this.localize.number(pagesComplete, { notation: "compact" })}`;
             }
 
             const pagesComplete = +(crawl.stats?.done || 0);
-            return `${this.localize.number(pagesComplete, { notation: "compact" })} / ${this.localize.number(pagesFound, { notation: "compact" })} ${pluralOf("pages", pagesFound)}`;
+            return `${this.localize.number(pagesComplete, { notation: "compact" })} / ${this.localize.number(pagesFound, { notation: "compact" })}`;
+          })}
+        </btrix-table-cell>
+        <btrix-table-cell>
+          ${this.localize.bytes(this.crawl.fileSize || 0, {
+            unitDisplay: "narrow",
           })}
         </btrix-table-cell>
         <btrix-table-cell>
@@ -305,10 +304,8 @@ export class CrawlList extends TailwindElement {
             <btrix-table-header-cell
               >${msg("Duration")}</btrix-table-header-cell
             >
+            <btrix-table-header-cell>${msg("Pages")}</btrix-table-header-cell>
             <btrix-table-header-cell>${msg("Size")}</btrix-table-header-cell>
-            <btrix-table-header-cell
-              >${msg("Pages Crawled")}</btrix-table-header-cell
-            >
             <btrix-table-header-cell>
               ${msg("Created By")}
             </btrix-table-header-cell>
