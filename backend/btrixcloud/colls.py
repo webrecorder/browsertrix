@@ -624,12 +624,16 @@ class CollectionOps:
             async with sesh.start_transaction():
                 await self.crawl_ops.remove_collection_from_all_crawls(coll_id)
 
-                result = await self.collections.delete_one({"_id": coll_id, "oid": org.id})
+                result = await self.collections.delete_one(
+                    {"_id": coll_id, "oid": org.id}
+                )
                 if result.deleted_count < 1:
                     raise HTTPException(status_code=404, detail="collection_not_found")
 
                 asyncio.create_task(
-                    self.event_webhook_ops.create_collection_deleted_notification(coll_id, org)
+                    self.event_webhook_ops.create_collection_deleted_notification(
+                        coll_id, org
+                    )
                 )
 
                 return {"success": True}
