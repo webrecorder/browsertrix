@@ -256,7 +256,7 @@ export class Dashboard extends BtrixElement {
                     color: this.colors.crawls,
                   },
                   button: {
-                    url: `/orgs/${this.orgId}/items/crawls`,
+                    url: `/orgs/${this.navigate.orgBasePath}/items/crawl`,
                   },
                 })}
                 ${this.renderStat({
@@ -268,7 +268,7 @@ export class Dashboard extends BtrixElement {
                   pluralLabel: msg("Uploads"),
                   iconProps: { name: "upload", color: this.colors.uploads },
                   button: {
-                    url: `/orgs/${this.orgId}/items/uploads`,
+                    url: `/orgs/${this.navigate.orgBasePath}/items/upload`,
                   },
                 })}
                 ${this.renderStat({
@@ -283,7 +283,7 @@ export class Dashboard extends BtrixElement {
                     color: this.colors.browserProfiles,
                   },
                   button: {
-                    url: `/orgs/${this.orgId}/browser-profiles`,
+                    url: `/orgs/${this.navigate.orgBasePath}/browser-profiles`,
                   },
                 })}
                 <sl-divider
@@ -298,7 +298,7 @@ export class Dashboard extends BtrixElement {
                   pluralLabel: msg("Archived Items"),
                   iconProps: { name: "file-zip-fill" },
                   button: {
-                    url: `/orgs/${this.orgId}/items`,
+                    url: `/orgs/${this.navigate.orgBasePath}/items`,
                   },
                 })}
               </dl>
@@ -322,7 +322,7 @@ export class Dashboard extends BtrixElement {
                     color: metrics.workflowsRunningCount ? "green" : "neutral",
                   },
                   button: {
-                    url: `/orgs/${this.orgId}/workflows?filter=running`,
+                    url: `/orgs/${this.navigate.orgBasePath}/workflows?filter=running`,
                   },
                 })}
                 ${this.renderStat({
@@ -371,7 +371,7 @@ export class Dashboard extends BtrixElement {
                   pluralLabel: msg("Collections Total"),
                   iconProps: { name: "collection-fill" },
                   button: {
-                    url: `/orgs/${this.orgId}/collections`,
+                    url: `/orgs/${this.navigate.orgBasePath}/collections`,
                   },
                 })}
                 ${this.renderStat({
