@@ -77,7 +77,8 @@ class CollectionOps:
     crawl_ops: CrawlOps
     page_ops: PageOps
 
-    def __init__(self, mdb, storage_ops, orgs, event_webhook_ops):
+    def __init__(self, dbclient, mdb, storage_ops, orgs, event_webhook_ops):
+        self.dbclient = dbclient
         self.collections = mdb["collections"]
         self.crawls = mdb["crawls"]
         self.crawl_configs = mdb["crawl_configs"]
@@ -619,17 +620,19 @@ class CollectionOps:
 
     async def delete_collection(self, coll_id: UUID, org: Organization):
         """Delete collection and remove from associated crawls."""
-        await self.crawl_ops.remove_collection_from_all_crawls(coll_id)
+        async with await self.dbclient.start_session() as sesh:
+            async with sesh.start_transaction():
+                await self.crawl_ops.remove_collection_from_all_crawls(coll_id)
 
-        result = await self.collections.delete_one({"_id": coll_id, "oid": org.id})
-        if result.deleted_count < 1:
-            raise HTTPException(status_code=404, detail="collection_not_found")
+                result = await self.collections.delete_one({"_id": coll_id, "oid": org.id})
+                if result.deleted_count < 1:
+                    raise HTTPException(status_code=404, detail="collection_not_found")
 
-        asyncio.create_task(
-            self.event_webhook_ops.create_collection_deleted_notification(coll_id, org)
-        )
+                asyncio.create_task(
+                    self.event_webhook_ops.create_collection_deleted_notification(coll_id, org)
+                )
 
-        return {"success": True}
+                return {"success": True}
 
     async def download_collection(self, coll_id: UUID, org: Organization):
         """Download all WACZs in collection as streaming nested WACZ"""
@@ -958,12 +961,14 @@ class CollectionOps:
 # ============================================================================
 # pylint: disable=too-many-locals
 def init_collections_api(
-    app, mdb, orgs, storage_ops, event_webhook_ops, user_dep
+    app, dbclient, mdb, orgs, storage_ops, event_webhook_ops, user_dep
 ) -> CollectionOps:
     """init collections api"""
     # pylint: disable=invalid-name, unused-argument, too-many-arguments
 
-    colls: CollectionOps = CollectionOps(mdb, storage_ops, orgs, event_webhook_ops)
+    colls: CollectionOps = CollectionOps(
+        mdb, dbclient, storage_ops, orgs, event_webhook_ops
+    )
 
     org_crawl_dep = orgs.org_crawl_dep
     org_viewer_dep = orgs.org_viewer_dep
