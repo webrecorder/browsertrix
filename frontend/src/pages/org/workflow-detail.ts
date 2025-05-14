@@ -1,4 +1,5 @@
 import { localized, msg, str } from "@lit/localize";
+import { Task, TaskStatus } from "@lit/task";
 import type { SlSelect } from "@shoelace-style/shoelace";
 import clsx from "clsx";
 import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
@@ -110,6 +111,15 @@ export class WorkflowDetail extends BtrixElement {
 
   private getWorkflowPromise?: Promise<Workflow>;
   private getSeedsPromise?: Promise<APIPaginatedList<Seed>>;
+
+  private readonly runNowTask = new Task(this, {
+    autoRun: false,
+    task: async (_args, { signal }) => {
+      await this.runNow({ signal });
+      await this.fetchWorkflow();
+    },
+    args: () => [] as const,
+  });
 
   private get isExplicitRunning() {
     return (
@@ -656,7 +666,7 @@ export class WorkflowDetail extends BtrixElement {
               <sl-menu-item
                 style="--sl-color-neutral-700: var(--success)"
                 ?disabled=${archivingDisabled}
-                @click=${() => void this.runNow()}
+                @click=${() => void this.runNowTask.run()}
               >
                 <sl-icon name="play" slot="prefix"></sl-icon>
                 ${msg("Run Crawl")}
@@ -1086,7 +1096,7 @@ export class WorkflowDetail extends BtrixElement {
           ${noData}
           <sl-tooltip
             class="invert-tooltip"
-            content=${msg("QA will be enabled once this crawl is finished.")}
+            content=${msg("QA will be enabled once this crawl is complete.")}
             hoist
             placement="bottom"
           >
@@ -1295,10 +1305,12 @@ export class WorkflowDetail extends BtrixElement {
           size="small"
           variant="primary"
           ?disabled=${this.org?.storageQuotaReached ||
-          this.org?.execMinutesQuotaReached}
-          @click=${() => void this.runNow()}
+          this.org?.execMinutesQuotaReached ||
+          this.runNowTask.status === TaskStatus.PENDING}
+          ?loading=${this.runNowTask.status === TaskStatus.PENDING}
+          @click=${() => void this.runNowTask.run()}
         >
-          <sl-icon name="play" slot="prefix"></sl-icon>
+          <sl-icon slot="prefix" name="play"></sl-icon>
           ${msg("Run Crawl")}
         </sl-button>
       </sl-tooltip>
@@ -1779,17 +1791,20 @@ export class WorkflowDetail extends BtrixElement {
     this.isCancelingOrStoppingCrawl = false;
   }
 
-  private async runNow(): Promise<void> {
+  private async runNow({
+    signal,
+  }: { signal?: AbortSignal } = {}): Promise<void> {
     try {
       const data = await this.api.fetch<{ started: string | null }>(
         `/orgs/${this.orgId}/crawlconfigs/${this.workflowId}/run`,
         {
           method: "POST",
+          signal,
         },
       );
       this.lastCrawlId = data.started;
       this.lastCrawlStartTime = new Date().toISOString();
-      void this.fetchWorkflow();
+
       this.navigate.to(`${this.basePath}/${WorkflowTab.LatestCrawl}`);
 
       this.notify.toast({
