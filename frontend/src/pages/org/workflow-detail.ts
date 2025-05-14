@@ -1196,7 +1196,7 @@ export class WorkflowDetail extends BtrixElement {
         return [
           this.localize.number(+(this.lastCrawl.stats?.done || 0)),
           this.localize.number(+(this.lastCrawl.stats?.found || 0)),
-        ].join(" / ");
+        ].join(` ${msg("of")} `);
       }
 
       return this.localize.number(this.lastCrawl.pageCount || 0);
@@ -1227,17 +1227,22 @@ export class WorkflowDetail extends BtrixElement {
 
     return html`
       <btrix-desc-list horizontal>
-        ${this.renderDetailItem(msg("Duration"), (workflow) =>
-          this.lastCrawlStartTime
-            ? this.localize.humanizeDuration(
-                (workflow.lastCrawlTime && !workflow.isCrawlRunning
-                  ? new Date(workflow.lastCrawlTime)
-                  : new Date()
-                ).valueOf() - new Date(this.lastCrawlStartTime).valueOf(),
-              )
-            : skeleton,
-        )}
-        ${this.renderDetailItem(msg("Pages"), pages)}
+        ${this.renderDetailItem(msg("Run Duration"), (workflow) => {
+          if (this.lastCrawlStartTime) {
+            const latestDate =
+              workflow.lastCrawlPausing && workflow.lastCrawlPausedAt
+                ? new Date(workflow.lastCrawlPausedAt)
+                : new Date();
+            const diff =
+              latestDate.valueOf() -
+              new Date(this.lastCrawlStartTime).valueOf();
+
+            return this.localize.humanizeDuration(diff);
+          }
+
+          return skeleton;
+        })}
+        ${this.renderDetailItem(msg("Pages Crawled"), pages)}
         ${this.renderDetailItem(msg("Size"), (workflow) =>
           this.localize.bytes(workflow.lastCrawlSize || 0, {
             unitDisplay: "narrow",
