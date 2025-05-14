@@ -525,7 +525,6 @@ class BaseCrawlOps:
                 {"autoAddCollections": collection_id},
                 {"$pull": {"autoAddCollections": collection_id}},
             ),
-            return_exceptions=True,
         )
 
     # pylint: disable=too-many-branches, invalid-name, too-many-statements
