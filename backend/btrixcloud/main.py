@@ -124,6 +124,8 @@ class SettingsResponse(BaseModel):
 
     localesEnabled: Optional[List[str]]
 
+    pausedExpiryMinutes: int
+
 
 # ============================================================================
 # pylint: disable=too-many-locals, duplicate-code
@@ -158,6 +160,7 @@ def main() -> None:
             if os.environ.get("LOCALES_ENABLED")
             else None
         ),
+        pausedExpiryMinutes=int(os.environ.get("PAUSED_CRAWL_LIMIT_MINUTES", 10080)),
     )
 
     invites = init_invites(mdb, email)
