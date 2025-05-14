@@ -22,7 +22,7 @@ class Migration(BaseMigration):
         Recompute collection data to include totalSize.
         """
         # pylint: disable=duplicate-code
-        coll_ops = CollectionOps(self.mdb, None, None, None)
+        coll_ops = CollectionOps(None, self.mdb, None, None, None)
 
         async for coll in coll_ops.collections.find({}):
             coll_id = coll["_id"]
