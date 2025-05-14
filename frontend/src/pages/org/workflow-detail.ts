@@ -868,14 +868,16 @@ export class WorkflowDetail extends BtrixElement {
           this.workflow?.isCrawlRunning,
           () =>
             html`<div class="mb-4">
-              <btrix-alert variant="success" class="text-sm">
+              <btrix-alert variant="success">
                 ${msg("A crawl is currently in progress.")}
                 <a
                   href="${this.basePath}/${WorkflowTab.LatestCrawl}"
                   class="underline hover:no-underline"
                   @click=${this.navigate.link}
                 >
-                  ${msg("Watch Crawl")}
+                  ${this.workflow?.lastCrawlState === "paused"
+                    ? msg("View Paused Crawl")
+                    : msg("Watch Crawl")}
                 </a>
               </btrix-alert>
             </div>`,
@@ -883,44 +885,53 @@ export class WorkflowDetail extends BtrixElement {
 
         <div class="mx-2">
           <btrix-crawl-list workflowId=${this.workflowId}>
-            ${when(this.crawls, () =>
-              this.crawls!.items.map(
-                (crawl: Crawl) =>
-                  html` <btrix-crawl-list-item
-                    class=${clsx(
-                      isActive(crawl) && tw`cursor-default text-neutral-500`,
-                    )}
-                    href=${ifDefined(
-                      isActive(crawl)
-                        ? undefined
-                        : `${this.basePath}/crawls/${crawl.id}`,
-                    )}
-                    .crawl=${crawl}
-                  >
-                    <sl-menu slot="menu">
-                      <sl-menu-item
-                        @click=${() =>
-                          ClipboardController.copyToClipboard(crawl.id)}
-                      >
-                        <sl-icon name="copy" slot="prefix"></sl-icon>
-                        ${msg("Copy Crawl ID")}
-                      </sl-menu-item>
-                      ${when(
-                        this.isCrawler && !isActive(crawl),
-                        () => html`
-                          <sl-divider></sl-divider>
-                          <sl-menu-item
-                            style="--sl-color-neutral-700: var(--danger)"
-                            @click=${() => this.confirmDeleteCrawl(crawl)}
-                          >
-                            <sl-icon name="trash3" slot="prefix"></sl-icon>
-                            ${msg("Delete Crawl")}
-                          </sl-menu-item>
-                        `,
+            ${when(
+              this.crawls,
+              () =>
+                this.crawls!.items.map(
+                  (crawl: Crawl) =>
+                    html` <btrix-crawl-list-item
+                      class=${clsx(
+                        isActive(crawl) && tw`cursor-default text-neutral-500`,
                       )}
-                    </sl-menu>
-                  </btrix-crawl-list-item>`,
-              ),
+                      href=${ifDefined(
+                        isActive(crawl)
+                          ? undefined
+                          : `${this.basePath}/crawls/${crawl.id}`,
+                      )}
+                      .crawl=${crawl}
+                    >
+                      <sl-menu slot="menu">
+                        <sl-menu-item
+                          @click=${() =>
+                            ClipboardController.copyToClipboard(crawl.id)}
+                        >
+                          <sl-icon name="copy" slot="prefix"></sl-icon>
+                          ${msg("Copy Crawl ID")}
+                        </sl-menu-item>
+                        ${when(
+                          this.isCrawler && !isActive(crawl),
+                          () => html`
+                            <sl-divider></sl-divider>
+                            <sl-menu-item
+                              style="--sl-color-neutral-700: var(--danger)"
+                              @click=${() => this.confirmDeleteCrawl(crawl)}
+                            >
+                              <sl-icon name="trash3" slot="prefix"></sl-icon>
+                              ${msg("Delete Crawl")}
+                            </sl-menu-item>
+                          `,
+                        )}
+                      </sl-menu>
+                    </btrix-crawl-list-item>`,
+                ),
+              () =>
+                // TODO Handle laoding state in crawls list
+                html`
+                  <div class="col-span-full py-3 text-center">
+                    <sl-spinner class="text-xl"></sl-spinner>
+                  </div>
+                `,
             )}
           </btrix-crawl-list>
         </div>
@@ -1361,6 +1372,8 @@ export class WorkflowDetail extends BtrixElement {
 
   private renderReplay() {
     if (!this.workflow || !this.lastCrawlId) return;
+
+    console.log(this.lastCrawlId);
 
     const replaySource = `/api/orgs/${this.workflow.oid}/crawls/${this.lastCrawlId}/replay.json`;
     const headers = this.authState?.headers;
