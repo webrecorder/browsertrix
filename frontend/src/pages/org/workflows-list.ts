@@ -134,25 +134,41 @@ export class WorkflowsList extends BtrixElement {
   }
 
   searchParams = new SearchParamsController(this, (params) => {
-    this.setFilterPreset(
-      (params.get("filter") || "all") as FilterPreset,
-      false,
-    );
+    this.updateFiltersFromSearchParams(params);
   });
+
+  private updateFiltersFromSearchParams(
+    params = this.searchParams.searchParams,
+  ) {
+    const filterBy = { ...this.filterBy };
+    // remove filters no longer present in search params
+    for (const key of Object.keys(filterBy)) {
+      if (!params.has(key)) {
+        filterBy[key as keyof typeof filterBy] = undefined;
+      }
+    }
+    // add filters present in search params
+    for (const [key, value] of params) {
+      // ignored params
+      if (["page"].includes(key)) return;
+
+      // convert string bools to filter values
+      if (value === "true") {
+        filterBy[key as keyof typeof filterBy] = true;
+      } else if (value === "false") {
+        filterBy[key as keyof typeof filterBy] = false;
+      } else {
+        filterBy[key as keyof typeof filterBy] = undefined;
+      }
+    }
+    this.filterBy = { ...filterBy };
+  }
 
   private setFilterPreset(
     filter: FilterPreset = (this.searchParams.searchParams.get("filter") ||
       "all") as FilterPreset,
     setSearchParams = true,
   ) {
-    if (setSearchParams) {
-      this.searchParams.delete("page");
-      if (filter === "all") {
-        this.searchParams.delete("filter");
-      } else {
-        this.searchParams.set("filter", filter);
-      }
-    }
     switch (filter) {
       case "all":
         this.filterBy = {
@@ -183,6 +199,23 @@ export class WorkflowsList extends BtrixElement {
         };
         break;
     }
+
+    if (setSearchParams) {
+      this.searchParams.update((params) => {
+        params.delete("page");
+        for (const [filter, value] of Object.entries(this.filterBy) as [
+          string,
+          boolean | undefined,
+        ][]) {
+          if (value === undefined) {
+            params.delete(filter);
+          } else {
+            params.set(filter, value.toString());
+          }
+        }
+        return params;
+      });
+    }
   }
 
   constructor() {
@@ -190,7 +223,7 @@ export class WorkflowsList extends BtrixElement {
     this.filterByCurrentUser =
       window.sessionStorage.getItem(FILTER_BY_CURRENT_USER_STORAGE_KEY) ===
       "true";
-    this.setFilterPreset();
+    this.updateFiltersFromSearchParams();
   }
 
   protected async willUpdate(

@@ -322,7 +322,7 @@ export class Dashboard extends BtrixElement {
                     color: metrics.workflowsRunningCount ? "green" : "neutral",
                   },
                   button: {
-                    url: `/orgs/${this.navigate.orgBasePath}/workflows?filter=running`,
+                    url: `/orgs/${this.navigate.orgBasePath}/workflows?isCrawlRunning=true`,
                   },
                 })}
                 ${this.renderStat({
