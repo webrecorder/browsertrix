@@ -971,7 +971,7 @@ def init_collections_api(
     # pylint: disable=invalid-name, unused-argument, too-many-arguments
 
     colls: CollectionOps = CollectionOps(
-        mdb, dbclient, storage_ops, orgs, event_webhook_ops
+        dbclient, mdb, storage_ops, orgs, event_webhook_ops
     )
 
     org_crawl_dep = orgs.org_crawl_dep
