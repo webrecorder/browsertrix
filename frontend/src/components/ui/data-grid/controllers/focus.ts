@@ -41,6 +41,7 @@ export class DataGridFocusController implements ReactiveController {
           return;
         }
 
+        // Move focus from table cell to on first tabbable element
         const el = opts.setFocusOnTabbable
           ? this.firstTabbable
           : this.firstFocusable;
@@ -54,6 +55,28 @@ export class DataGridFocusController implements ReactiveController {
           } else {
             el.focus();
           }
+        }
+
+        // Show tooltip on tab focus. Tooltip on any focus should be
+        // disabled in `btrix-data-grid-row` to prevent tooltips being
+        // showing duplicate messages during form submission.
+        const tooltip = this.#host.closest("sl-tooltip");
+
+        if (tooltip && !tooltip.disabled) {
+          const hideTooltip = () => {
+            void tooltip.hide();
+            this.#host.removeEventListener("input", hideTooltip);
+            this.#host.removeEventListener("blur", hideTooltip);
+          };
+
+          this.#host.addEventListener("input", hideTooltip, {
+            once: true,
+          });
+          this.#host.addEventListener("blur", hideTooltip, {
+            once: true,
+          });
+
+          void tooltip.show();
         }
       },
       { passive: true, capture: true },
