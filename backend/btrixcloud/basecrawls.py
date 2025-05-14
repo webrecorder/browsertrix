@@ -76,6 +76,7 @@ class BaseCrawlOps:
         background_job_ops: BackgroundJobOps,
     ):
         self.crawls = mdb["crawls"]
+        self.mongo_crawl_configs = mdb["crawl_configs"]
         self.crawl_configs = crawl_configs
         self.user_manager = users
         self.orgs = orgs
@@ -515,9 +516,15 @@ class BaseCrawlOps:
 
     async def remove_collection_from_all_crawls(self, collection_id: UUID):
         """Remove collection id from all crawls it's currently in."""
-        await self.crawls.update_many(
-            {"collectionIds": collection_id},
-            {"$pull": {"collectionIds": collection_id}},
+        await asyncio.gather(
+            self.crawls.update_many(
+                {"collectionIds": collection_id},
+                {"$pull": {"collectionIds": collection_id}},
+            ),
+            self.mongo_crawl_configs.update_many(
+                {"autoAddCollections": collection_id},
+                {"$pull": {"autoAddCollections": collection_id}},
+            ),
         )
 
     # pylint: disable=too-many-branches, invalid-name, too-many-statements
