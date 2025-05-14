@@ -4,7 +4,7 @@ import os
 import secrets
 
 from typing import Optional, Dict, Tuple
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from fastapi import HTTPException
 
@@ -385,6 +385,14 @@ class CrawlManager(K8sAPI):
             return await self._patch_job(crawl_id, patch)
 
         return await self.delete_crawl_job(crawl_id)
+
+    async def pause_resume_crawl(
+        self, crawl_id: str, paused_at: Optional[datetime] = None
+    ) -> dict:
+        """pause or resume a crawl"""
+        return await self._patch_job(
+            crawl_id, {"pausedAt": date_to_str(paused_at) if paused_at else ""}
+        )
 
     async def delete_crawl_configs_for_org(self, org: str) -> None:
         """Delete all crawl configs for given org"""

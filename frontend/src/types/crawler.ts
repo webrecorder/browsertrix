@@ -92,6 +92,9 @@ export type Workflow = CrawlConfig & {
   lastCrawlSize: number | null;
   lastStartedByName: string | null;
   lastCrawlStopping: boolean | null;
+  lastCrawlPausing: boolean | null;
+  lastCrawlPausedAt: string | null;
+  lastCrawlPausedExpiry: string | null;
   lastRun: string;
   totalSize: string | null;
   inactive: boolean;

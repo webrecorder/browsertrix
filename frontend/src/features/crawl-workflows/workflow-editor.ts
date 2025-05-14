@@ -622,7 +622,7 @@ export class WorkflowEditor extends BtrixElement {
         class=${clsx(
           "flex items-center justify-end gap-2 rounded-lg border bg-white px-6 py-4 mb-7",
           this.configId || this.serverError
-            ? tw`sticky bottom-3 z-50 shadow-md`
+            ? tw`z- sticky bottom-3 z-20 shadow-md`
             : tw`shadow`,
         )}
       >
