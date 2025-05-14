@@ -22,7 +22,7 @@ from .utils import get_templates_dir, dt_now
 
 
 # ============================================================================
-# pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-instance-attributes, too-many-positional-arguments
 class K8sAPI:
     """K8S API accessors"""
 
@@ -328,7 +328,7 @@ class K8sAPI:
         """return true/false if any crawljobs or profilejobs
         match given label"""
         try:
-            await self.custom_api.list_namespaced_custom_object(
+            resp = await self.custom_api.list_namespaced_custom_object(
                 group="btrix.cloud",
                 version="v1",
                 namespace=self.namespace,
@@ -336,6 +336,9 @@ class K8sAPI:
                 label_selector=label,
                 limit=1,
             )
+            matching_items = resp.get("items", [])
+            if not matching_items:
+                return False
             return True
         # pylint: disable=broad-exception-caught
         except Exception:

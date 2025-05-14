@@ -49,7 +49,7 @@ else:
 
 
 # ============================================================================
-# pylint: disable=too-many-instance-attributes, too-many-public-methods, too-many-lines, too-many-branches
+# pylint: disable=too-many-instance-attributes, too-many-public-methods, too-many-lines, too-many-branches, too-many-positional-arguments
 class BaseCrawlOps:
     """operations that apply to all crawls"""
 

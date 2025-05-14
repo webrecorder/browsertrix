@@ -82,7 +82,7 @@ DEFAULT_PROXY_ID: str | None = os.environ.get("DEFAULT_PROXY_ID")
 class CrawlConfigOps:
     """Crawl Config Operations"""
 
-    # pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-public-methods
+    # pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-public-methods, too-many-positional-arguments
 
     user_manager: UserManager
     org_ops: OrgOps
@@ -1281,7 +1281,7 @@ async def stats_recompute_all(crawl_configs, crawls, cid: UUID):
 
 
 # ============================================================================
-# pylint: disable=redefined-builtin,invalid-name,too-many-locals,too-many-arguments
+# pylint: disable=redefined-builtin,invalid-name,too-many-locals,too-many-arguments,too-many-positional-arguments
 def init_crawl_config_api(
     app,
     dbclient,

@@ -49,7 +49,7 @@ BROWSER_EXPIRE = 300
 
 
 # ============================================================================
-# pylint: disable=too-many-instance-attributes, too-many-arguments
+# pylint: disable=too-many-instance-attributes, too-many-arguments, too-many-positional-arguments
 class ProfileOps:
     """Profile management"""
 
@@ -500,7 +500,7 @@ class ProfileOps:
 
 
 # ============================================================================
-# pylint: disable=redefined-builtin,invalid-name,too-many-locals,too-many-arguments
+# pylint: disable=redefined-builtin,invalid-name,too-many-locals,too-many-arguments, too-many-positional-arguments
 def init_profiles_api(
     mdb,
     org_ops: OrgOps,

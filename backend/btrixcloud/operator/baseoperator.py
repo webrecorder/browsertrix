@@ -136,7 +136,7 @@ class K8sOpAPI(K8sAPI):
         print("Auto-Resize Enabled", self.enable_auto_resize)
 
 
-# pylint: disable=too-many-instance-attributes, too-many-arguments
+# pylint: disable=too-many-instance-attributes, too-many-arguments, too-many-positional-arguments
 # ============================================================================
 class BaseOperator:
     """BaseOperator"""

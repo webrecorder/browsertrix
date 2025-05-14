@@ -52,7 +52,7 @@ else:
 
 
 # ============================================================================
-# pylint: disable=too-many-instance-attributes, too-many-arguments,too-many-public-methods
+# pylint: disable=too-many-instance-attributes, too-many-arguments,too-many-public-methods, too-many-positional-arguments
 class PageOps:
     """crawl pages"""
 
@@ -1068,7 +1068,7 @@ class PageOps:
 
 
 # ============================================================================
-# pylint: disable=too-many-arguments, too-many-locals, invalid-name, fixme
+# pylint: disable=too-many-arguments, too-many-locals, invalid-name, fixme, too-many-positional-arguments
 def init_pages_api(
     app, mdb, crawl_ops, org_ops, storage_ops, background_job_ops, coll_ops, user_dep
 ) -> PageOps:
