@@ -71,6 +71,8 @@ const sortableFields: Record<
   },
 };
 
+type FilterPreset = "all" | "scheduled" | "unscheduled" | "running";
+
 /**
  * Usage:
  * ```ts
@@ -132,14 +134,27 @@ export class WorkflowsList extends BtrixElement {
   }
 
   searchParams = new SearchParamsController(this, (params) => {
-    this.setFiltersFromSearchParams(params);
+    this.setFilterPreset(
+      (params.get("filter") || "all") as FilterPreset,
+      false,
+    );
   });
 
-  private setFiltersFromSearchParams(
-    searchParams = this.searchParams.searchParams,
+  private setFilterPreset(
+    filter: FilterPreset = (this.searchParams.searchParams.get("filter") ||
+      "all") as FilterPreset,
+    setSearchParams = true,
   ) {
-    switch (searchParams.get("filter")) {
-      case "":
+    if (setSearchParams) {
+      this.searchParams.delete("page");
+      if (filter === "all") {
+        this.searchParams.delete("filter");
+      } else {
+        this.searchParams.set("filter", filter);
+      }
+    }
+    switch (filter) {
+      case "all":
         this.filterBy = {
           ...this.filterBy,
           schedule: undefined,
@@ -175,7 +190,7 @@ export class WorkflowsList extends BtrixElement {
     this.filterByCurrentUser =
       window.sessionStorage.getItem(FILTER_BY_CURRENT_USER_STORAGE_KEY) ===
       "true";
-    this.setFiltersFromSearchParams();
+    this.setFilterPreset();
   }
 
   protected async willUpdate(
@@ -463,15 +478,10 @@ export class WorkflowsList extends BtrixElement {
             this.filterBy.isCrawlRunning === undefined
               ? "border-b-current text-primary"
               : "text-neutral-500"} mr-3 inline-block border-b-2 border-transparent font-medium"
-            aria-selected=${this.filterBy.schedule === undefined}
+            aria-selected=${this.filterBy.schedule === undefined &&
+            this.filterBy.isCrawlRunning === undefined}
             @click=${() => {
-              this.searchParams.delete("filter");
-              this.searchParams.delete("page");
-              this.filterBy = {
-                ...this.filterBy,
-                schedule: undefined,
-                isCrawlRunning: undefined,
-              };
+              this.setFilterPreset("all");
             }}
           >
             ${msg("All")}
@@ -481,15 +491,10 @@ export class WorkflowsList extends BtrixElement {
             this.filterBy.isCrawlRunning === undefined
               ? "border-b-current text-primary"
               : "text-neutral-500"} mr-3 inline-block border-b-2 border-transparent font-medium"
-            aria-selected=${this.filterBy.schedule === true}
+            aria-selected=${this.filterBy.schedule === true &&
+            this.filterBy.isCrawlRunning === undefined}
             @click=${() => {
-              this.searchParams.set("filter", "scheduled");
-              this.searchParams.delete("page");
-              this.filterBy = {
-                ...this.filterBy,
-                schedule: true,
-                isCrawlRunning: undefined,
-              };
+              this.setFilterPreset("scheduled");
             }}
           >
             ${msg("Scheduled")}
@@ -499,15 +504,10 @@ export class WorkflowsList extends BtrixElement {
             this.filterBy.isCrawlRunning === undefined
               ? "border-b-current text-primary"
               : "text-neutral-500"} mr-3 inline-block border-b-2 border-transparent font-medium"
-            aria-selected=${this.filterBy.schedule === false}
+            aria-selected=${this.filterBy.schedule === false &&
+            this.filterBy.isCrawlRunning === undefined}
             @click=${() => {
-              this.searchParams.set("filter", "unscheduled");
-              this.searchParams.delete("page");
-              this.filterBy = {
-                ...this.filterBy,
-                schedule: false,
-                isCrawlRunning: undefined,
-              };
+              this.setFilterPreset("unscheduled");
             }}
           >
             ${msg("No schedule")}
@@ -517,15 +517,10 @@ export class WorkflowsList extends BtrixElement {
             this.filterBy.isCrawlRunning === true
               ? "border-b-current text-primary"
               : "text-neutral-500"} mr-3 inline-block border-b-2 border-transparent font-medium"
-            aria-selected=${this.filterBy.isCrawlRunning === true}
+            aria-selected=${this.filterBy.schedule === undefined &&
+            this.filterBy.isCrawlRunning === true}
             @click=${() => {
-              this.searchParams.set("filter", "running");
-              this.searchParams.delete("page");
-              this.filterBy = {
-                ...this.filterBy,
-                schedule: undefined,
-                isCrawlRunning: true,
-              };
+              this.setFilterPreset("running");
             }}
           >
             ${msg("Running")}
