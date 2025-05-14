@@ -636,7 +636,7 @@ class CollectionOps:
                     )
                 )
 
-                return {"success": True}
+        return {"success": True}
 
     async def download_collection(self, coll_id: UUID, org: Organization):
         """Download all WACZs in collection as streaming nested WACZ"""
