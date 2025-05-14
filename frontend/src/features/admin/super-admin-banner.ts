@@ -22,7 +22,7 @@ export class SuperAdminBanner extends TailwindElement {
             <strong>${msg("You are logged in as a superadmin")}</strong> –
             ${msg("please be careful.")}
           </span>
-          <div class="sticky right-2 top-2 z-50">
+          <div class="sticky right-2 top-2 z-[999]">
             <button
               type="button"
               class="flex rounded-full border border-warning-800 bg-warning-700 p-2 text-warning-50 shadow-md shadow-orange-700/20 transition hover:scale-110"
@@ -41,7 +41,7 @@ export class SuperAdminBanner extends TailwindElement {
       </div>`;
     } else {
       return html`<div
-        class="sticky top-0 z-50 border-b border-b-warning-800 bg-warning-700 py-2 text-xs text-warning-50 shadow-sm shadow-orange-700/20"
+        class="sticky top-0 z-[999] border-b border-b-warning-800 bg-warning-700 py-2 text-xs text-warning-50 shadow-sm shadow-orange-700/20"
       >
         <div
           class="mx-auto box-border flex w-full items-center gap-2 px-3 xl:pl-6"

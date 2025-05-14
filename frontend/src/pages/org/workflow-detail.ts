@@ -3,7 +3,7 @@ import { Task, TaskStatus } from "@lit/task";
 import type { SlSelect } from "@shoelace-style/shoelace";
 import clsx from "clsx";
 import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
@@ -12,6 +12,7 @@ import queryString from "query-string";
 import type { Crawl, CrawlLog, Seed, Workflow, WorkflowParams } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import type { Alert } from "@/components/ui/alert";
 import { ClipboardController } from "@/controllers/clipboard";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { ExclusionEditor } from "@/features/crawl-workflows/exclusion-editor";
@@ -108,6 +109,9 @@ export class WorkflowDetail extends BtrixElement {
 
   @state()
   private timerId?: number;
+
+  @query("#pausedNotice")
+  private readonly pausedNotice?: Alert | null;
 
   private getWorkflowPromise?: Promise<Workflow>;
   private getSeedsPromise?: Promise<APIPaginatedList<Seed>>;
@@ -451,7 +455,7 @@ export class WorkflowDetail extends BtrixElement {
         ${this.renderCrawls()}
       </btrix-tab-group-panel>
       <btrix-tab-group-panel name=${WorkflowTab.LatestCrawl}>
-        ${this.renderLatestCrawl()}
+        ${this.renderPausedNotice()} ${this.renderLatestCrawl()}
       </btrix-tab-group-panel>
       <btrix-tab-group-panel name=${WorkflowTab.Settings}>
         ${this.renderSettings()}
@@ -587,6 +591,7 @@ export class WorkflowDetail extends BtrixElement {
       (this.workflow.lastCrawlState === "running");
 
     return html`
+      ${this.renderPausedNotice({ truncate: true })}
       ${when(
         this.workflow.isCrawlRunning,
         () => html`
@@ -1002,6 +1007,96 @@ export class WorkflowDetail extends BtrixElement {
           ${this.renderLogs()}
         </btrix-tab-group-panel>
       </btrix-tab-group>
+    `;
+  };
+
+  private readonly renderPausedNotice = (
+    { truncate } = { truncate: false },
+  ) => {
+    if (
+      !this.workflow ||
+      this.workflow.lastCrawlState !== "paused" ||
+      !this.workflow.lastCrawlPausedExpiry
+    )
+      return;
+
+    const diff =
+      new Date(this.workflow.lastCrawlPausedExpiry).valueOf() -
+      new Date().valueOf();
+
+    if (diff < 0) return;
+
+    const formattedDate = this.localize.date(
+      this.workflow.lastCrawlPausedExpiry,
+    );
+
+    const infoIcon = html`<sl-icon
+      class="text-base"
+      name="info-circle"
+    ></sl-icon>`;
+
+    if (truncate) {
+      return html`
+        <sl-tooltip>
+          <btrix-badge
+            class="cursor-default part-[base]:gap-1.5"
+            variant="blue"
+          >
+            ${infoIcon}
+            <div>
+              ${this.localize.humanizeDuration(diff, {
+                unitCount: diff / 1000 / 60 < 10 ? 2 : 1,
+              })}
+              ${msg("left to resume")}
+            </div>
+          </btrix-badge>
+
+          <div slot="content">
+            ${msg(str`This crawl will stop on ${formattedDate}.`)}
+            ${msg(
+              "Pages crawled so far will be saved, but the crawl will not be resumable.",
+            )}
+          </div>
+        </sl-tooltip>
+      `;
+    }
+
+    return html`
+      <btrix-alert
+        id="pausedNotice"
+        class="sticky top-2 z-50 mb-5"
+        variant="info"
+      >
+        <div class="mb-2 flex justify-between">
+          <span class="inline-flex items-center gap-1.5">
+            ${infoIcon}
+            <strong class="font-medium">
+              ${msg("This crawl is currently paused.")}
+            </strong>
+          </span>
+          <sl-button
+            size="small"
+            variant="text"
+            @click=${() => this.pausedNotice?.hide()}
+          >
+            <sl-icon slot="prefix" name="check-lg"></sl-icon>
+            ${msg("Dismiss")}
+          </sl-button>
+        </div>
+        <div class="text-pretty text-neutral-600">
+          <p class="mb-2">
+            ${msg(
+              str`If the crawl isn't resumed by ${formattedDate}, the crawl will stop gracefully.`,
+            )}
+            ${msg("All pages crawled so far will be saved.")}
+          </p>
+          <p class="mb-2">
+            ${msg(
+              "You can replay or download your crawl while it's paused to assess whether to resume the crawl.",
+            )}
+          </p>
+        </div>
+      </btrix-alert>
     `;
   };
 
