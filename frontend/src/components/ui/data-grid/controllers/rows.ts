@@ -22,7 +22,7 @@ export const emptyItem: EmptyObject = {};
  * that are slotted into `<btrix-data-grid>`, it may be necessary to
  * implement this controller on the container component.
  */
-export class DataGridRowsController<Item = GridItem>
+export class DataGridRowsController<Item extends GridItem = GridItem>
   implements ReactiveController
 {
   readonly #host: ReactiveControllerHost &
@@ -60,8 +60,8 @@ export class DataGridRowsController<Item = GridItem>
     const rowKey = this.#host.rowKey;
 
     this.rows = new Map(
-      this.#host.rowKey
-        ? items.map((item) => [item[rowKey as keyof Item] as GridRowId, item])
+      rowKey
+        ? items.map((item) => [item[rowKey] as GridRowId, item])
         : items.map(
             cached((item) => [nanoid(), item], { cacheConstructor: Map }),
           ),
