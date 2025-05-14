@@ -51,4 +51,5 @@ def test_api_settings():
         "salesEmail": "",
         "supportEmail": "",
         "localesEnabled": None,
+        "pausedExpiryMinutes": 10080,
     }
