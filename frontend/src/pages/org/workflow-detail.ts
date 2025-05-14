@@ -951,6 +951,11 @@ export class WorkflowDetail extends BtrixElement {
       return this.renderInactiveCrawlMessage();
     }
 
+    const showReplay =
+      this.workflow &&
+      (!this.workflow.isCrawlRunning ||
+        this.workflow.lastCrawlState === "paused");
+
     return html`
       <div class="mb-3 rounded-lg border px-4 py-2">
         ${this.renderCrawlDetails()}
@@ -963,17 +968,15 @@ export class WorkflowDetail extends BtrixElement {
           href="${this.basePath}/${WorkflowTab.LatestCrawl}"
           @click=${(e: MouseEvent) => this.navigate.link(e, undefined, false)}
         >
-          ${when(
-            this.workflow?.isCrawlRunning,
-            () => html`
-              <sl-icon name="eye-fill"></sl-icon>
-              ${msg("Watch")}
-            `,
-            () => html`
-              <sl-icon name="replaywebpage" library="app"></sl-icon>
-              ${msg("Replay")}
-            `,
-          )}
+          ${showReplay
+            ? html`
+                <sl-icon name="replaywebpage" library="app"></sl-icon>
+                ${msg("Replay")}
+              `
+            : html`
+                <sl-icon name="eye-fill"></sl-icon>
+                ${msg("Watch")}
+              `}
         </btrix-tab-group-tab>
         <btrix-tab-group-tab
           slot="nav"
@@ -999,8 +1002,10 @@ export class WorkflowDetail extends BtrixElement {
           name=${WorkflowTab.LatestCrawl}
           class="mt-3 block"
         >
-          ${when(this.workflow?.isCrawlRunning, this.renderWatchCrawl, () =>
-            this.renderInactiveWatchCrawl(),
+          ${when(
+            showReplay,
+            this.renderInactiveWatchCrawl,
+            this.renderWatchCrawl,
           )}
         </btrix-tab-group-panel>
         <btrix-tab-group-panel name=${WorkflowTab.Logs} class="mt-3 block">
@@ -1101,7 +1106,12 @@ export class WorkflowDetail extends BtrixElement {
   };
 
   private renderLatestCrawlAction() {
-    if (this.isCrawler && this.workflow?.isCrawlRunning) {
+    if (
+      this.isCrawler &&
+      this.workflow &&
+      this.workflow.isCrawlRunning &&
+      this.workflow.lastCrawlState !== "paused"
+    ) {
       const enableEditBrowserWindows = !this.workflow.lastCrawlStopping;
       const windowCount =
         this.workflow.scale * (this.appState.settings?.numBrowsers || 1);
@@ -1294,7 +1304,7 @@ export class WorkflowDetail extends BtrixElement {
     `;
   };
 
-  private renderInactiveWatchCrawl() {
+  private readonly renderInactiveWatchCrawl = () => {
     if (!this.workflow) return;
 
     if (!this.lastCrawlId || !this.workflow.lastCrawlSize) {
@@ -1306,7 +1316,7 @@ export class WorkflowDetail extends BtrixElement {
         ${this.renderReplay()}
       </div>
     `;
-  }
+  };
 
   private renderInactiveCrawlMessage() {
     if (!this.workflow) return;
