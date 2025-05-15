@@ -34,6 +34,7 @@ from aiobotocore.config import AioConfig
 
 import aiobotocore.session
 import requests
+import pymongo
 
 from types_aiobotocore_s3 import S3Client as AIOS3Client
 from types_aiobotocore_s3.type_defs import CompletedPartTypeDef
@@ -147,9 +148,21 @@ class StorageOps:
 
     async def init_index(self):
         """init index for storages"""
-        await self.presigned_urls.create_index(
-            "signedAt", expireAfterSeconds=self.expire_at_duration_seconds
-        )
+        try:
+            await self.presigned_urls.create_index(
+                "signedAt", expireAfterSeconds=self.expire_at_duration_seconds
+            )
+        except pymongo.errors.OperationFailure:
+            # create_index() fails if expire_at_duration_seconds has changed since
+            # previous run
+            # if so, just delete this index (as this collection is temporary anyway)
+            # and recreate
+            print("Recreating presigned_urls index")
+            await self.presigned_urls.drop_index("signedAt")
+
+            await self.presigned_urls.create_index(
+                "signedAt", expireAfterSeconds=self.expire_at_duration_seconds
+            )
 
     def _create_s3_storage(self, storage: dict[str, str]) -> S3Storage:
         """create S3Storage object"""
@@ -591,7 +604,13 @@ class StorageOps:
                         ).to_dict()
                     )
 
-                await self.presigned_urls.insert_many(presigned_obj, ordered=False)
+                try:
+                    await self.presigned_urls.insert_many(presigned_obj, ordered=False)
+                except pymongo.errors.BulkWriteError as bwe:
+                    for err in bwe.details.get("writeErrors", []):
+                        # ignorable duplicate key errors
+                        if err.get("code") != 11000:
+                            raise
 
         return urls, now + self.signed_duration_delta
 
