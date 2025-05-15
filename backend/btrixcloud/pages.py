@@ -191,15 +191,22 @@ class PageOps:
 
     async def _add_pages_to_db(self, crawl_id: str, pages: List[Page], ordered=True):
         """Add batch of pages to db in one insert"""
-        result = await self.pages.insert_many(
-            [
-                page.to_dict(
-                    exclude_unset=True, exclude_none=True, exclude_defaults=True
-                )
-                for page in pages
-            ],
-            ordered=ordered,
-        )
+        try:
+            result = await self.pages.insert_many(
+                [
+                    page.to_dict(
+                        exclude_unset=True, exclude_none=True, exclude_defaults=True
+                    )
+                    for page in pages
+                ],
+                ordered=ordered,
+            )
+        except pymongo.errors.BulkWriteError as bwe:
+            for err in bwe.details.get("writeErrors", []):
+                # ignorable duplicate key errors
+                if err.get("code") != 11000:
+                    raise
+
         if not result.inserted_ids:
             # pylint: disable=broad-exception-raised
             raise Exception("No pages inserted")
