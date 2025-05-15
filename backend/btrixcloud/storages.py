@@ -34,6 +34,7 @@ from aiobotocore.config import AioConfig
 
 import aiobotocore.session
 import requests
+import pymongo
 
 from types_aiobotocore_s3 import S3Client as AIOS3Client
 from types_aiobotocore_s3.type_defs import CompletedPartTypeDef
@@ -70,7 +71,7 @@ CHUNK_SIZE = 1024 * 256
 
 
 # ============================================================================
-# pylint: disable=broad-except,raise-missing-from
+# pylint: disable=broad-except,raise-missing-from,too-many-instance-attributes
 class StorageOps:
     """All storage handling, download/upload operations"""
 
@@ -103,6 +104,8 @@ class StorageOps:
         )
         default_namespace = os.environ.get("DEFAULT_NAMESPACE", "default")
         self.frontend_origin = f"{frontend_origin}.{default_namespace}"
+
+        self.presign_batch_size = int(os.environ.get("PRESIGN_BATCH_SIZE", 8))
 
         with open(os.environ["STORAGES_JSON"], encoding="utf-8") as fh:
             storage_list = json.loads(fh.read())
@@ -144,9 +147,21 @@ class StorageOps:
 
     async def init_index(self):
         """init index for storages"""
-        await self.presigned_urls.create_index(
-            "signedAt", expireAfterSeconds=self.expire_at_duration_seconds
-        )
+        try:
+            await self.presigned_urls.create_index(
+                "signedAt", expireAfterSeconds=self.expire_at_duration_seconds
+            )
+        except pymongo.errors.OperationFailure:
+            # create_index() fails if expire_at_duration_seconds has changed since
+            # previous run
+            # if so, just delete this index (as this collection is temporary anyway)
+            # and recreate
+            print("Recreating presigned_urls index")
+            await self.presigned_urls.drop_indexes()
+
+            await self.presigned_urls.create_index(
+                "signedAt", expireAfterSeconds=self.expire_at_duration_seconds
+            )
 
     def _create_s3_storage(self, storage: dict[str, str]) -> S3Storage:
         """create S3Storage object"""
@@ -485,12 +500,9 @@ class StorageOps:
             s3storage,
             for_presign=True,
         ) as (client, bucket, key):
-            orig_key = key
-            key += crawlfile.filename
-
             presigned_url = await client.generate_presigned_url(
                 "get_object",
-                Params={"Bucket": bucket, "Key": key},
+                Params={"Bucket": bucket, "Key": key + crawlfile.filename},
                 ExpiresIn=PRESIGN_DURATION_SECONDS,
             )
 
@@ -499,9 +511,7 @@ class StorageOps:
                 and s3storage.access_endpoint_url != s3storage.endpoint_url
             ):
                 parts = urlsplit(s3storage.endpoint_url)
-                host_endpoint_url = (
-                    f"{parts.scheme}://{bucket}.{parts.netloc}/{orig_key}"
-                )
+                host_endpoint_url = f"{parts.scheme}://{bucket}.{parts.netloc}/{key}"
                 presigned_url = presigned_url.replace(
                     host_endpoint_url, s3storage.access_endpoint_url
                 )
@@ -520,6 +530,73 @@ class StorageOps:
         )
 
         return presigned_url, now + self.signed_duration_delta
+
+    async def get_presigned_urls_bulk(
+        self, org: Organization, s3storage: S3Storage, filenames: list[str]
+    ) -> tuple[list[str], datetime]:
+        """generate pre-signed url for crawl file"""
+
+        urls = []
+
+        futures = []
+        num_batch = self.presign_batch_size
+
+        now = dt_now()
+
+        async with self.get_s3_client(
+            s3storage,
+            for_presign=True,
+        ) as (client, bucket, key):
+
+            if (
+                s3storage.access_endpoint_url
+                and s3storage.access_endpoint_url != s3storage.endpoint_url
+            ):
+                parts = urlsplit(s3storage.endpoint_url)
+                host_endpoint_url = f"{parts.scheme}://{bucket}.{parts.netloc}/{key}"
+            else:
+                host_endpoint_url = None
+
+            for filename in filenames:
+                futures.append(
+                    client.generate_presigned_url(
+                        "get_object",
+                        Params={"Bucket": bucket, "Key": key + filename},
+                        ExpiresIn=PRESIGN_DURATION_SECONDS,
+                    )
+                )
+
+            for i in range(0, len(futures), num_batch):
+                batch = futures[i : i + num_batch]
+                results = await asyncio.gather(*batch)
+
+                presigned_obj = []
+
+                for presigned_url, filename in zip(
+                    results, filenames[i : i + num_batch]
+                ):
+                    if host_endpoint_url:
+                        presigned_url = presigned_url.replace(
+                            host_endpoint_url, s3storage.access_endpoint_url
+                        )
+
+                    urls.append(presigned_url)
+
+                    presigned_obj.append(
+                        PresignedUrl(
+                            id=filename, url=presigned_url, signedAt=now, oid=org.id
+                        ).to_dict()
+                    )
+
+                try:
+                    await self.presigned_urls.insert_many(presigned_obj, ordered=False)
+                except pymongo.errors.BulkWriteError as bwe:
+                    for err in bwe.details.get("writeErrors", []):
+                        # ignorable duplicate key errors
+                        if err.get("code") != 11000:
+                            raise
+
+        return urls, now + self.signed_duration_delta
 
     async def delete_file_object(self, org: Organization, crawlfile: BaseFile) -> bool:
         """delete crawl file from storage."""
