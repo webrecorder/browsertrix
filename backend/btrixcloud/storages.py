@@ -158,7 +158,7 @@ class StorageOps:
             # if so, just delete this index (as this collection is temporary anyway)
             # and recreate
             print("Recreating presigned_urls index")
-            await self.presigned_urls.drop_index("signedAt")
+            await self.presigned_urls.drop_indexes()
 
             await self.presigned_urls.create_index(
                 "signedAt", expireAfterSeconds=self.expire_at_duration_seconds
