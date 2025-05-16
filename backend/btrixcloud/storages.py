@@ -308,7 +308,7 @@ class StorageOps:
 
         config = None
         if for_presign and storage.access_endpoint_url != storage.endpoint_url:
-            config = AioConfig(s3={"addressing_style": "virtual"})
+            config = AioConfig(s3={"addressing_style": "virtual"}, signature_version="s3v4")
 
         async with session.create_client(
             "s3",
