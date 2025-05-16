@@ -1676,6 +1676,7 @@ class S3StorageIn(BaseModel):
     bucket: str
     access_endpoint_url: Optional[str] = None
     region: str = ""
+    use_v4_signature: bool = False
 
 
 # ============================================================================
@@ -1690,6 +1691,7 @@ class S3Storage(BaseModel):
     secret_key: str
     access_endpoint_url: str
     region: str = ""
+    use_v4_signature: bool = False
 
 
 # ============================================================================
