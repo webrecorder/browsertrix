@@ -162,6 +162,7 @@ class StorageOps:
             access_key=storage["access_key"],
             secret_key=storage["secret_key"],
             region=storage.get("region", ""),
+            use_v4_signature=storage.get("useV4Signature", False),
             endpoint_url=endpoint_url,
             endpoint_no_bucket_url=endpoint_no_bucket_url,
             access_endpoint_url=access_endpoint_url,
@@ -291,9 +292,14 @@ class StorageOps:
 
         session = aiobotocore.session.get_session()
 
-        config = None
+        s3 = None
+
         if for_presign and storage.access_endpoint_url != storage.endpoint_url:
-            config = AioConfig(s3={"addressing_style": "virtual"})
+            s3 = {"addressing_style": "virtual"}
+
+        config = AioConfig(
+            signature_version="s3v4" if storage.use_v4_signature else "s3", s3=s3
+        )
 
         async with session.create_client(
             "s3",
