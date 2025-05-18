@@ -70,7 +70,7 @@ CHUNK_SIZE = 1024 * 256
 
 
 # ============================================================================
-# pylint: disable=broad-except,raise-missing-from
+# pylint: disable=broad-except,raise-missing-from,too-many-instance-attributes
 class StorageOps:
     """All storage handling, download/upload operations"""
 
@@ -103,6 +103,8 @@ class StorageOps:
         )
         default_namespace = os.environ.get("DEFAULT_NAMESPACE", "default")
         self.frontend_origin = f"{frontend_origin}.{default_namespace}"
+
+        self.local_minio_access_path = os.environ.get("LOCAL_MINIO_ACCESS_PATH")
 
         with open(os.environ["STORAGES_JSON"], encoding="utf-8") as fh:
             storage_list = json.loads(fh.read())
@@ -158,14 +160,18 @@ class StorageOps:
 
         access_endpoint_url = storage.get("access_endpoint_url") or endpoint_url
 
+        addressing_style = storage.get("access_addressing_style", "virtual")
+        if access_endpoint_url == self.local_minio_access_path:
+            addressing_style = "path"
+
         return S3Storage(
             access_key=storage["access_key"],
             secret_key=storage["secret_key"],
             region=storage.get("region", ""),
-            use_v4_signature=storage.get("useV4Signature", False),
             endpoint_url=endpoint_url,
             endpoint_no_bucket_url=endpoint_no_bucket_url,
             access_endpoint_url=access_endpoint_url,
+            access_addressing_style=addressing_style,
         )
 
     async def add_custom_storage(
@@ -190,6 +196,7 @@ class StorageOps:
             endpoint_url=endpoint_url,
             endpoint_no_bucket_url=endpoint_no_bucket_url,
             access_endpoint_url=storagein.access_endpoint_url or storagein.endpoint_url,
+            access_addressing_style=storagein.access_addressing_style,
         )
 
         try:
@@ -295,11 +302,9 @@ class StorageOps:
         s3 = None
 
         if for_presign and storage.access_endpoint_url != storage.endpoint_url:
-            s3 = {"addressing_style": "virtual"}
+            s3 = {"addressing_style": storage.access_addressing_style}
 
-        config = AioConfig(
-            signature_version="s3v4" if storage.use_v4_signature else "s3", s3=s3
-        )
+        config = AioConfig(signature_version="s3v4", s3=s3)
 
         async with session.create_client(
             "s3",
@@ -504,9 +509,12 @@ class StorageOps:
                 s3storage.access_endpoint_url
                 and s3storage.access_endpoint_url != s3storage.endpoint_url
             ):
+                virtual = s3storage.access_addressing_style == "virtual"
                 parts = urlsplit(s3storage.endpoint_url)
                 host_endpoint_url = (
                     f"{parts.scheme}://{bucket}.{parts.netloc}/{orig_key}"
+                    if virtual
+                    else f"{parts.scheme}://{parts.netloc}/{bucket}/{orig_key}"
                 )
                 presigned_url = presigned_url.replace(
                     host_endpoint_url, s3storage.access_endpoint_url

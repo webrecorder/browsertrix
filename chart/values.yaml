@@ -398,6 +398,9 @@ minio_pull_policy: "IfNotPresent"
 
 minio_local_bucket_name: &local_bucket_name "btrix-data"
 
+# path for serving from local minio bucket
+minio_access_path: &minio_access_path "/data/"
+
 minio_cpu: "10m"
 minio_memory: "1024Mi"
 
@@ -413,8 +416,8 @@ storages:
     secret_key: "PASSW0RD"
     bucket_name: *local_bucket_name
 
-    endpoint_url: "http://local-minio.default:9000/"
-    access_endpoint_url: "/data/"
+    endpoint_url: "http://local-minio:9000/"
+    access_endpoint_url: *minio_access_path
 
 
 # optional: duration in minutes for WACZ download links to be valid
@@ -494,6 +497,9 @@ signer_memory: "50Mi"
 
 # Other Settings
 # =========================================
+
+# default FQDN suffix, shouldn't need to change
+fqdn_suffix: .svc.cluster.local
 
 # Optional: configure load balancing annotations
 # service:
