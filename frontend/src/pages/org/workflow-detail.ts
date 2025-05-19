@@ -82,10 +82,7 @@ export class WorkflowDetail extends BtrixElement {
   private lastCrawlStartTime: Workflow["lastCrawlStartTime"] = null;
 
   @state()
-  private lastCrawl?: Pick<
-    Crawl,
-    "stats" | "pageCount" | "reviewStatus" | "crawlExecSeconds"
-  >;
+  private lastCrawl?: Pick<Crawl, "stats" | "pageCount" | "reviewStatus">;
 
   @state()
   private logTotals?: { errors: number; behaviors: number };
@@ -1037,23 +1034,6 @@ export class WorkflowDetail extends BtrixElement {
   private readonly renderCrawlDetails = () => {
     const skeleton = html`<sl-skeleton class="w-full"></sl-skeleton>`;
 
-    const duration = (workflow: Workflow) => {
-      if (workflow.isCrawlRunning && this.lastCrawlStartTime) {
-        return this.localize.humanizeDuration(
-          (workflow.lastCrawlTime
-            ? new Date(workflow.lastCrawlTime)
-            : new Date()
-          ).valueOf() - new Date(this.lastCrawlStartTime).valueOf(),
-        );
-      }
-
-      if (!this.lastCrawl) return skeleton;
-
-      return this.localize.humanizeDuration(
-        this.lastCrawl.crawlExecSeconds * 1000,
-      );
-    };
-
     const pages = (workflow: Workflow) => {
       if (!this.lastCrawl) return skeleton;
 
@@ -1092,8 +1072,17 @@ export class WorkflowDetail extends BtrixElement {
 
     return html`
       <btrix-desc-list horizontal>
-        ${this.renderDetailItem(msg("Run Duration"), duration)}
-        ${this.renderDetailItem(msg("Pages Crawled"), pages)}
+        ${this.renderDetailItem(msg("Duration"), (workflow) =>
+          this.lastCrawlStartTime
+            ? this.localize.humanizeDuration(
+                (workflow.lastCrawlTime && !workflow.isCrawlRunning
+                  ? new Date(workflow.lastCrawlTime)
+                  : new Date()
+                ).valueOf() - new Date(this.lastCrawlStartTime).valueOf(),
+              )
+            : skeleton,
+        )}
+        ${this.renderDetailItem(msg("Pages"), pages)}
         ${this.renderDetailItem(msg("Size"), (workflow) =>
           this.localize.bytes(workflow.lastCrawlSize || 0, {
             unitDisplay: "narrow",
@@ -1551,9 +1540,10 @@ export class WorkflowDetail extends BtrixElement {
     let crawlState: CrawlState | null = null;
 
     try {
-      const { stats, pageCount, reviewStatus, state, crawlExecSeconds } =
-        await this.getCrawl(this.lastCrawlId);
-      this.lastCrawl = { stats, pageCount, reviewStatus, crawlExecSeconds };
+      const { stats, pageCount, reviewStatus, state } = await this.getCrawl(
+        this.lastCrawlId,
+      );
+      this.lastCrawl = { stats, pageCount, reviewStatus };
 
       crawlState = state;
     } catch {
@@ -1724,9 +1714,6 @@ export class WorkflowDetail extends BtrixElement {
   }
 
   private async runNow(): Promise<void> {
-    this.stopPoll();
-    this.lastCrawl = undefined;
-
     try {
       const data = await this.api.fetch<{ started: string | null }>(
         `/orgs/${this.orgId}/crawlconfigs/${this.workflowId}/run`,
@@ -1737,10 +1724,7 @@ export class WorkflowDetail extends BtrixElement {
       this.lastCrawlId = data.started;
       this.lastCrawlStartTime = new Date().toISOString();
       void this.fetchWorkflow();
-
-      if (this.workflowTab !== WorkflowTab.LatestCrawl) {
-        this.navigate.to(`${this.basePath}/${WorkflowTab.LatestCrawl}`);
-      }
+      this.navigate.to(`${this.basePath}/${WorkflowTab.LatestCrawl}`);
 
       this.notify.toast({
         message: msg("Starting crawl."),
