@@ -250,7 +250,7 @@ export class WorkflowListItem extends BtrixElement {
               <btrix-crawl-status
                 state=${workflow.lastCrawlState || msg("No Crawls Yet")}
                 ?stopping=${workflow.lastCrawlStopping}
-                ?pausing=${workflow.lastCrawlPausing}
+                ?shouldPause=${workflow.lastCrawlShouldPause}
               ></btrix-crawl-status>
             `,
           )}

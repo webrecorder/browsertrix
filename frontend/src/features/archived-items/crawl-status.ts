@@ -26,7 +26,7 @@ export class CrawlStatus extends TailwindElement {
   stopping = false;
 
   @property({ type: Boolean })
-  pausing = false;
+  shouldPause = false;
 
   @property({ type: Boolean })
   hoist = false;
@@ -132,7 +132,7 @@ export class CrawlStatus extends TailwindElement {
         label = msg("Pausing");
         break;
 
-      case "unpausing":
+      case "resuming":
         icon = html`<sl-icon
           name="play-circle"
           class="animatePulse"
@@ -306,11 +306,11 @@ export class CrawlStatus extends TailwindElement {
     if (this.stopping && this.state === "running") {
       return "stopping";
     }
-    if (this.pausing && this.state === "running") {
+    if (this.shouldPause && this.state === "running") {
       return "pausing";
     }
-    if (!this.pausing && this.state === "paused") {
-      return "unpausing";
+    if (!this.shouldPause && this.state === "paused") {
+      return "resuming";
     }
     return this.state;
   }

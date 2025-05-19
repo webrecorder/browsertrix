@@ -771,7 +771,7 @@ class CrawlConfigOps:
         crawlconfig.lastCrawlState = crawl.state
         crawlconfig.lastCrawlSize = crawl.stats.size if crawl.stats else 0
         crawlconfig.lastCrawlStopping = crawl.stopping
-        crawlconfig.lastCrawlPausing = crawl.pausing
+        crawlconfig.lastCrawlShouldPause = crawl.shouldPause
         crawlconfig.lastCrawlPausedAt = crawl.pausedAt
         crawlconfig.lastCrawlPausedExpiry = None
         if crawl.pausedAt:

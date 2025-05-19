@@ -569,10 +569,10 @@ export class WorkflowDetail extends BtrixElement {
       this.isCancelingOrStoppingCrawl ||
       this.workflow.lastCrawlStopping;
     // disable pause/resume button if desired state is already in the process of being set.
-    // if crawl is running, and already pausing, don't allow clicking Pausing
-    // if crawl not running, and already unpausing (lastCrawlPausing is false), don't allow clicking Resume
+    // if crawl is running, and pause requested (shouldPause is true), don't allow clicking Pausing
+    // if crawl not running, and resume requested (shouldPause is false), don't allow clicking Resume
     const disablePauseResume =
-      this.workflow.lastCrawlPausing ===
+      this.workflow.lastCrawlShouldPause ===
       (this.workflow.lastCrawlState === "running");
 
     return html`
@@ -738,7 +738,7 @@ export class WorkflowDetail extends BtrixElement {
             <btrix-crawl-status
               state=${workflow.lastCrawlState || msg("No Crawls Yet")}
               ?stopping=${workflow.lastCrawlStopping}
-              ?pausing=${workflow.lastCrawlPausing}
+              ?shouldPause=${workflow.lastCrawlShouldPause}
             ></btrix-crawl-status>
           `,
         )}

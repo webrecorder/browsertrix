@@ -792,7 +792,7 @@ class CrawlOps(BaseCrawlOps):
             if result.get("success"):
                 await self.crawls.find_one_and_update(
                     {"_id": crawl_id, "type": "crawl", "oid": org.id},
-                    {"$set": {"pausing": pause, "pausedAt": paused_at}},
+                    {"$set": {"shouldPause": pause, "pausedAt": paused_at}},
                 )
 
                 return {"success": True}
