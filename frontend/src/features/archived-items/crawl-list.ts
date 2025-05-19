@@ -176,10 +176,9 @@ export class CrawlListItem extends BtrixElement {
         <btrix-table-cell>
           ${this.safeRender((crawl) =>
             this.localize.humanizeDuration(
-              (crawl.finished
-                ? new Date(crawl.finished)
-                : new Date()
-              ).valueOf() - new Date(crawl.started).valueOf(),
+              crawl.finished
+                ? crawl.crawlExecSeconds * 1000
+                : new Date().valueOf() - new Date(crawl.started).valueOf(),
             ),
           )}
         </btrix-table-cell>
@@ -302,7 +301,7 @@ export class CrawlList extends TailwindElement {
               ${msg("Finished")}
             </btrix-table-header-cell>
             <btrix-table-header-cell
-              >${msg("Duration")}</btrix-table-header-cell
+              >${msg("Run Duration")}</btrix-table-header-cell
             >
             <btrix-table-header-cell>${msg("Pages")}</btrix-table-header-cell>
             <btrix-table-header-cell>${msg("Size")}</btrix-table-header-cell>
