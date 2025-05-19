@@ -1072,7 +1072,7 @@ export class WorkflowDetail extends BtrixElement {
 
     return html`
       <btrix-desc-list horizontal>
-        ${this.renderDetailItem(msg("Duration"), (workflow) =>
+        ${this.renderDetailItem(msg("Run Duration"), (workflow) =>
           this.lastCrawlStartTime
             ? this.localize.humanizeDuration(
                 (workflow.lastCrawlTime && !workflow.isCrawlRunning
@@ -1082,7 +1082,7 @@ export class WorkflowDetail extends BtrixElement {
               )
             : skeleton,
         )}
-        ${this.renderDetailItem(msg("Pages"), pages)}
+        ${this.renderDetailItem(msg("Pages Crawled"), pages)}
         ${this.renderDetailItem(msg("Size"), (workflow) =>
           this.localize.bytes(workflow.lastCrawlSize || 0, {
             unitDisplay: "narrow",
