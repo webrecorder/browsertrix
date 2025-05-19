@@ -484,6 +484,7 @@ class CrawlConfigOut(CrawlConfigCore, CrawlConfigAdditional):
     lastCrawlPausing: Optional[bool] = False
     lastCrawlPausedAt: Optional[datetime] = None
     lastCrawlPausedExpiry: Optional[datetime] = None
+    lastCrawlExecSeconds: Optional[int] = None
     profileName: Optional[str] = None
     firstSeed: Optional[str] = None
     seedCount: int = 0

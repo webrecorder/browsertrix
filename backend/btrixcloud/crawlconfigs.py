@@ -774,6 +774,7 @@ class CrawlConfigOps:
         crawlconfig.lastCrawlPausing = crawl.pausing
         crawlconfig.lastCrawlPausedAt = crawl.pausedAt
         crawlconfig.lastCrawlPausedExpiry = None
+        crawlconfig.lastCrawlExecSeconds = crawl.crawlExecSeconds
         if crawl.pausedAt:
             crawlconfig.lastCrawlPausedExpiry = (
                 crawl.pausedAt + self.paused_expiry_delta

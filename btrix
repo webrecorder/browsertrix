@@ -39,8 +39,8 @@ bootstrap(){
     echo "Building backend..."
     ./scripts/build-backend.sh
 
-    echo "Building frontend..."
-    ./scripts/build-frontend.sh
+    # echo "Building frontend..."
+    # ./scripts/build-frontend.sh
 
     echo "Installing..."
     helm upgrade --install -f ./chart/values.yaml -f ./chart/local.yaml btrix ./chart
