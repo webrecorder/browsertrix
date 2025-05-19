@@ -244,6 +244,7 @@ TYPE_SUCCESSFUL_STATES = Literal[
     "stopped_org_readonly",
 ]
 SUCCESSFUL_STATES = get_args(TYPE_SUCCESSFUL_STATES)
+SUCCESSFUL_AND_PAUSED_STATES = ["paused", *SUCCESSFUL_STATES]
 
 TYPE_RUNNING_AND_WAITING_STATES = Literal[TYPE_WAITING_STATES, TYPE_RUNNING_STATES]
 RUNNING_AND_WAITING_STATES = [*WAITING_STATES, *RUNNING_STATES]
@@ -481,7 +482,7 @@ class CrawlConfigOut(CrawlConfigCore, CrawlConfigAdditional):
     id: UUID
 
     lastCrawlStopping: Optional[bool] = False
-    lastCrawlPausing: Optional[bool] = False
+    lastCrawlShouldPause: Optional[bool] = False
     lastCrawlPausedAt: Optional[datetime] = None
     lastCrawlPausedExpiry: Optional[datetime] = None
     profileName: Optional[str] = None
@@ -869,7 +870,7 @@ class CrawlOut(BaseMongoModel):
     seedCount: Optional[int] = None
     profileName: Optional[str] = None
     stopping: Optional[bool] = False
-    pausing: Optional[bool] = False
+    shouldPause: Optional[bool] = False
     pausedAt: Optional[datetime] = None
     manual: bool = False
     cid_rev: Optional[int] = None
@@ -1025,7 +1026,7 @@ class Crawl(BaseCrawl, CrawlConfigCore):
     manual: bool = False
 
     stopping: Optional[bool] = False
-    pausing: Optional[bool] = False
+    shouldPause: Optional[bool] = False
 
     qaCrawlExecSeconds: int = 0
 
