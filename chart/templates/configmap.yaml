@@ -14,7 +14,7 @@ data:
 
   FRONTEND_ORIGIN: {{ .Values.frontend_alias | default "http://browsertrix-cloud-frontend" }}
 
-  CRAWLER_FQDN_SUFFIX: ".{{ .Values.crawler_namespace }}.svc.cluster.local"
+  CRAWLER_FQDN_SUFFIX: ".{{ .Values.crawler_namespace }}{{ .Values.fqdn_suffix }}"
 
   DEFAULT_ORG: "{{ .Values.default_org }}"
 
@@ -52,6 +52,8 @@ data:
   LOG_FAILED_CRAWL_LINES: "{{ .Values.log_failed_crawl_lines | default 0 }}"
 
   IS_LOCAL_MINIO: "{{ .Values.minio_local }}"
+
+  LOCAL_MINIO_ACCESS_PATH: "{{ .Values.minio_access_path }}"
 
   STORAGES_JSON: "/ops-configs/storages.json"
 

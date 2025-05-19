@@ -1666,6 +1666,7 @@ class S3StorageIn(BaseModel):
     endpoint_url: str
     bucket: str
     access_endpoint_url: Optional[str] = None
+    access_addressing_style: Literal["virtual", "path"] = "virtual"
     region: str = ""
 
 
@@ -1680,6 +1681,7 @@ class S3Storage(BaseModel):
     access_key: str
     secret_key: str
     access_endpoint_url: str
+    access_addressing_style: Literal["virtual", "path"] = "virtual"
     region: str = ""
 
 

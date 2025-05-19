@@ -136,6 +136,23 @@ spec:
       {{- end }}
       name: minio
 
+---
+apiVersion: v1
+kind: Service
+
+metadata:
+  namespace: {{ .Values.crawler_namespace }}
+  name: local-minio
+  labels:
+    app: local-minio
+
+spec:
+  type: ExternalName
+  externalName: "local-minio.{{ .Release.Namespace }}{{ .Values.fqdn_suffix }}"
+  ports:
+    - port: 9000
+
+
 {{- if .Values.minio_local_console_port }}
 ---
 apiVersion: v1

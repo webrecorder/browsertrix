@@ -7,7 +7,9 @@ if [ -z "$LOCAL_MINIO_HOST" ]; then
   echo "no local minio, clearing out minio route"
   echo "" >/etc/nginx/includes/minio.conf
 else
-  echo "local minio: replacing \$LOCAL_MINIO_HOST with \"$LOCAL_MINIO_HOST\", \$LOCAL_BUCKET with \"$LOCAL_BUCKET\""
+  LOCAL_ACCESS_PATH=$(printf '%s\n' "$LOCAL_ACCESS_PATH" | sed -e 's/[\/&]/\\&/g')
+  echo "local minio: replacing \$LOCAL_MINIO_HOST with \"$LOCAL_MINIO_HOST\", \$LOCAL_BUCKET with \"$LOCAL_BUCKET\", \$LOCAL_ACCESS_PATH with \"$LOCAL_ACCESS_PATH\""
+  sed -i "s/\$LOCAL_ACCESS_PATH/$LOCAL_ACCESS_PATH/g" /etc/nginx/includes/minio.conf
   sed -i "s/\$LOCAL_MINIO_HOST/$LOCAL_MINIO_HOST/g" /etc/nginx/includes/minio.conf
   sed -i "s/\$LOCAL_BUCKET/$LOCAL_BUCKET/g" /etc/nginx/includes/minio.conf
 fi
