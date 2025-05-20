@@ -878,13 +878,16 @@ class CrawlOperator(BaseOperator):
                 await self.log_crashes(crawl.id, status.podStatus, redis)
 
                 if crawl.paused_at and redis:
+                    print("paused_at and exit")
                     for name in pods.keys():
                         pod_status = status.podStatus[name]
+                        print("pod_status", pod_status)
                         if (
                             pod_status.isNewExit
                             and pod_status.exitTime
                             and pod_status.reason == "done"
                         ):
+                            print("done -> interrupted")
                             await redis.hset(f"{crawl.id}:status", name, "interrupted")
 
             # remove stopping key (used for pause) unless actually stopping if:
