@@ -564,17 +564,29 @@ class BaseCrawlOps:
 
             sign_files.extend(list(mapping.values()))
 
-        if sign_files:
-            names = [file["filename"] for file in sign_files]
+        by_storage: dict[str, dict] = {}
+        for file in sign_files:
+            storage_ref = StorageRef(**file.get("storage"))
+            sid = str(storage_ref)
 
-            first_file = CrawlFile(**sign_files[0])
-            s3storage = self.storage_ops.get_org_storage_by_ref(org, first_file.storage)
+            storage_group = by_storage.get(sid)
+            if not storage_group:
+                storage_group = {"ref": storage_ref, "names": [], "files": []}
+                by_storage[sid] = storage_group
 
-            signed_urls, expire_at = await self.storage_ops.get_presigned_urls_bulk(
-                org, s3storage, names
+            storage_group["names"].append(file["filename"])
+            storage_group["files"].append(file)
+
+        for storage_group in by_storage.values():
+            s3storage = self.storage_ops.get_org_storage_by_ref(
+                org, storage_group["ref"]
             )
 
-            for url, file in zip(signed_urls, sign_files):
+            signed_urls, expire_at = await self.storage_ops.get_presigned_urls_bulk(
+                org, s3storage, storage_group["names"]
+            )
+
+            for url, file in zip(signed_urls, storage_group["files"]):
                 resources.append(
                     CrawlFileOut(
                         name=os.path.basename(file["filename"]),
