@@ -618,7 +618,7 @@ class CollectionOps:
 
     async def delete_collection(self, coll_id: UUID, org: Organization):
         """Delete collection and remove from associated crawls."""
-        await self.crawl_ops.remove_collection_from_all_crawls(coll_id)
+        await self.crawl_ops.remove_collection_from_all_crawls(coll_id, org)
 
         result = await self.collections.delete_one({"_id": coll_id, "oid": org.id})
         if result.deleted_count < 1:
