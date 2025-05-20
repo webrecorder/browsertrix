@@ -1599,6 +1599,13 @@ class CollectionSearchValuesResponse(BaseModel):
 
 
 # ============================================================================
+class CollectionAllResponse(BaseModel):
+    """Response model for '$all' collection endpoint"""
+
+    resources: List[CrawlFileOut] = []
+
+
+# ============================================================================
 
 ### ORGS ###
 
