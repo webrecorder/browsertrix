@@ -1565,7 +1565,9 @@ class CrawlOperator(BaseOperator):
                 crawl.oid, status.filesAddedSize, "crawl"
             )
             await self.org_ops.set_last_crawl_finished(crawl.oid)
-            await self.coll_ops.add_successful_crawl_to_collections(crawl.id, crawl.cid)
+            await self.coll_ops.add_successful_crawl_to_collections(
+                crawl.id, crawl.cid, crawl.oid
+            )
 
         if state in FAILED_STATES:
             await self.crawl_ops.delete_crawl_files(crawl.id, crawl.oid)
