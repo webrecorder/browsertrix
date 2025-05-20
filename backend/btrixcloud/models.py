@@ -31,7 +31,7 @@ from slugify import slugify
 from .db import BaseMongoModel
 
 # crawl scale for constraint
-MAX_CRAWL_SCALE = int(os.environ.get("MAX_CRAWL_SCALE", 3))
+MAX_BROWSER_WINDOWS = int(os.environ.get("MAX_BROWSER_WINDOWS", 8))
 
 # Presign duration must be less than 604800 seconds (one week),
 # so set this one minute short of a week
@@ -52,7 +52,7 @@ MIN_UPLOAD_PART_SIZE = 10000000
 
 EmptyStr = Annotated[str, Field(min_length=0, max_length=0)]
 
-Scale = Annotated[int, Field(strict=True, ge=1, le=MAX_CRAWL_SCALE)]
+Scale = Annotated[int, Field(strict=True, ge=1, le=MAX_BROWSER_WINDOWS)]
 ReviewStatus = Optional[Annotated[int, Field(strict=True, ge=1, le=5)]]
 
 any_http_url_adapter = TypeAdapter(AnyHttpUrlNonStr)
