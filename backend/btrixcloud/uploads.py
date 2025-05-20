@@ -192,7 +192,7 @@ class UploadOps(BaseCrawlOps):
         )
 
         asyncio.create_task(
-            self._add_pages_and_update_collections(crawl_id, collections)
+            self._add_pages_and_update_collections(crawl_id, org.id, collections)
         )
 
         await self.orgs.inc_org_bytes_stored(org.id, file_size, "upload")
@@ -208,11 +208,11 @@ class UploadOps(BaseCrawlOps):
         return {"id": crawl_id, "added": True, "storageQuotaReached": quota_reached}
 
     async def _add_pages_and_update_collections(
-        self, crawl_id: str, collections: Optional[List[str]] = None
+        self, crawl_id: str, oid: UUID, collections: Optional[List[str]] = None
     ):
         await self.page_ops.add_crawl_pages_to_db_from_wacz(crawl_id)
         if collections:
-            await self.colls.update_crawl_collections(crawl_id)
+            await self.colls.update_crawl_collections(crawl_id, oid)
 
     async def delete_uploads(
         self,
