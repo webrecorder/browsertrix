@@ -39,6 +39,7 @@ from .models import (
     AddedResponse,
     DeletedResponse,
     CollectionSearchValuesResponse,
+    CollectionAllResponse,
     OrgPublicCollections,
     PublicOrgDetails,
     CollAccessType,
@@ -1007,6 +1008,7 @@ def init_collections_api(
     @app.get(
         "/orgs/{oid}/collections/$all",
         tags=["collections"],
+        response_model=CollectionAllResponse,
     )
     async def get_collection_all(org: Organization = Depends(org_viewer_dep)):
         results = {}
