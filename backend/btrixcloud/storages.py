@@ -516,7 +516,7 @@ class StorageOps:
                 ExpiresIn=PRESIGN_DURATION_SECONDS,
             )
 
-            host_endpoint_url = self.get_host_endpoint_url(s3storage, bucket)
+            host_endpoint_url = self.get_host_endpoint_url(s3storage, bucket, key)
 
         if host_endpoint_url:
             presigned_url = presigned_url.replace(
@@ -538,7 +538,9 @@ class StorageOps:
 
         return presigned_url, now + self.signed_duration_delta
 
-    def get_host_endpoint_url(self, s3storage: S3Storage, bucket: str) -> Optional[str]:
+    def get_host_endpoint_url(
+        self, s3storage: S3Storage, bucket: str, key: str
+    ) -> Optional[str]:
         """compute host endpoint for given storage for replacement for access"""
         if not s3storage.access_endpoint_url:
             return None
@@ -549,9 +551,9 @@ class StorageOps:
         is_virtual = s3storage.access_addressing_style == "virtual"
         parts = urlsplit(s3storage.endpoint_url)
         host_endpoint_url = (
-            f"{parts.scheme}://{bucket}.{parts.netloc}/"
+            f"{parts.scheme}://{bucket}.{parts.netloc}/{key}"
             if is_virtual
-            else f"{parts.scheme}://{parts.netloc}/{bucket}/"
+            else f"{parts.scheme}://{parts.netloc}/{bucket}/{key}"
         )
         return host_endpoint_url
 
@@ -581,7 +583,7 @@ class StorageOps:
                     )
                 )
 
-            host_endpoint_url = self.get_host_endpoint_url(s3storage, bucket)
+            host_endpoint_url = self.get_host_endpoint_url(s3storage, bucket, key)
 
         for i in range(0, len(futures), num_batch):
             batch = futures[i : i + num_batch]
