@@ -1228,7 +1228,7 @@ export class WorkflowDetail extends BtrixElement {
 
     return html`
       <btrix-desc-list horizontal>
-        ${this.renderDetailItem(msg("Run Duration"), (workflow) =>
+        ${this.renderDetailItem(msg("Elapsed Time"), (workflow) =>
           this.lastCrawlStartTime
             ? this.localize.humanizeDuration(
                 (workflow.lastCrawlTime && !workflow.isCrawlRunning
