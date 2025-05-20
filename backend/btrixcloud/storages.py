@@ -72,6 +72,7 @@ CHUNK_SIZE = 1024 * 256
 
 # ============================================================================
 # pylint: disable=broad-except,raise-missing-from,too-many-instance-attributes
+# pylint: disable=too-many-public-methods
 class StorageOps:
     """All storage handling, download/upload operations"""
 
@@ -313,12 +314,11 @@ class StorageOps:
 
         session = aiobotocore.session.get_session()
 
-        s3 = None
+        config = None
 
         if for_presign and storage.access_endpoint_url != storage.endpoint_url:
             s3 = {"addressing_style": storage.access_addressing_style}
-
-        config = AioConfig(signature_version="s3v4", s3=s3)
+            config = AioConfig(signature_version="s3v4", s3=s3)
 
         async with session.create_client(
             "s3",
@@ -516,21 +516,12 @@ class StorageOps:
                 ExpiresIn=PRESIGN_DURATION_SECONDS,
             )
 
-            if (
-                s3storage.access_endpoint_url
-                and s3storage.access_endpoint_url != s3storage.endpoint_url
-            ):
-                virtual = s3storage.access_addressing_style == "virtual"
-                parts = urlsplit(s3storage.endpoint_url)
-                host_endpoint_url = (
-                    f"{parts.scheme}://{bucket}.{parts.netloc}/{orig_key}"
-                    if virtual
-                    else f"{parts.scheme}://{parts.netloc}/{bucket}/{orig_key}"
-                )
-                host_endpoint_url = f"{parts.scheme}://{bucket}.{parts.netloc}/{key}"
-                presigned_url = presigned_url.replace(
-                    host_endpoint_url, s3storage.access_endpoint_url
-                )
+            host_endpoint_url = self.get_host_endpoint_url(s3storage, bucket)
+
+        if host_endpoint_url:
+            presigned_url = presigned_url.replace(
+                host_endpoint_url, s3storage.access_endpoint_url
+            )
 
         now = dt_now()
 
@@ -546,6 +537,23 @@ class StorageOps:
         )
 
         return presigned_url, now + self.signed_duration_delta
+
+    def get_host_endpoint_url(self, s3storage: S3Storage, bucket: str) -> Optional[str]:
+        """compute host endpoint for given storage for replacement for access"""
+        if not s3storage.access_endpoint_url:
+            return None
+
+        if s3storage.access_endpoint_url == s3storage.endpoint_url:
+            return None
+
+        is_virtual = s3storage.access_addressing_style == "virtual"
+        parts = urlsplit(s3storage.endpoint_url)
+        host_endpoint_url = (
+            f"{parts.scheme}://{bucket}.{parts.netloc}/"
+            if is_virtual
+            else f"{parts.scheme}://{parts.netloc}/{bucket}/"
+        )
+        return host_endpoint_url
 
     async def get_presigned_urls_bulk(
         self, org: Organization, s3storage: S3Storage, filenames: list[str]
@@ -564,15 +572,6 @@ class StorageOps:
             for_presign=True,
         ) as (client, bucket, key):
 
-            if (
-                s3storage.access_endpoint_url
-                and s3storage.access_endpoint_url != s3storage.endpoint_url
-            ):
-                parts = urlsplit(s3storage.endpoint_url)
-                host_endpoint_url = f"{parts.scheme}://{bucket}.{parts.netloc}/{key}"
-            else:
-                host_endpoint_url = None
-
             for filename in filenames:
                 futures.append(
                     client.generate_presigned_url(
@@ -582,35 +581,35 @@ class StorageOps:
                     )
                 )
 
-            for i in range(0, len(futures), num_batch):
-                batch = futures[i : i + num_batch]
-                results = await asyncio.gather(*batch)
+            host_endpoint_url = self.get_host_endpoint_url(s3storage, bucket)
 
-                presigned_obj = []
+        for i in range(0, len(futures), num_batch):
+            batch = futures[i : i + num_batch]
+            results = await asyncio.gather(*batch)
 
-                for presigned_url, filename in zip(
-                    results, filenames[i : i + num_batch]
-                ):
-                    if host_endpoint_url:
-                        presigned_url = presigned_url.replace(
-                            host_endpoint_url, s3storage.access_endpoint_url
-                        )
+            presigned_obj = []
 
-                    urls.append(presigned_url)
-
-                    presigned_obj.append(
-                        PresignedUrl(
-                            id=filename, url=presigned_url, signedAt=now, oid=org.id
-                        ).to_dict()
+            for presigned_url, filename in zip(results, filenames[i : i + num_batch]):
+                if host_endpoint_url:
+                    presigned_url = presigned_url.replace(
+                        host_endpoint_url, s3storage.access_endpoint_url
                     )
 
-                try:
-                    await self.presigned_urls.insert_many(presigned_obj, ordered=False)
-                except pymongo.errors.BulkWriteError as bwe:
-                    for err in bwe.details.get("writeErrors", []):
-                        # ignorable duplicate key errors
-                        if err.get("code") != 11000:
-                            raise
+                urls.append(presigned_url)
+
+                presigned_obj.append(
+                    PresignedUrl(
+                        id=filename, url=presigned_url, signedAt=now, oid=org.id
+                    ).to_dict()
+                )
+
+            try:
+                await self.presigned_urls.insert_many(presigned_obj, ordered=False)
+            except pymongo.errors.BulkWriteError as bwe:
+                for err in bwe.details.get("writeErrors", []):
+                    # ignorable duplicate key errors
+                    if err.get("code") != 11000:
+                        raise
 
         return urls, now + self.signed_duration_delta
 
