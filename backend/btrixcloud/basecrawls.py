@@ -24,7 +24,7 @@ from .models import (
     User,
     StorageRef,
     RUNNING_AND_WAITING_STATES,
-    SUCCESSFUL_STATES,
+    SUCCESSFUL_AND_PAUSED_STATES,
     QARun,
     UpdatedResponse,
     DeletedResponseQuota,
@@ -448,7 +448,7 @@ class BaseCrawlOps:
 
         if (
             files
-            and crawl.state in SUCCESSFUL_STATES
+            and crawl.state in SUCCESSFUL_AND_PAUSED_STATES
             and isinstance(crawl, CrawlOutWithResources)
         ):
             crawl.resources = await self._files_to_resources(files, org, crawl.id)

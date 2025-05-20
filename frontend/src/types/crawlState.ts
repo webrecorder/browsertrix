@@ -11,12 +11,14 @@ export const WAITING_STATES = [
   "starting",
   "waiting_capacity",
   "waiting_org_limit",
+  "paused",
 ] as const;
 
 // Match backend TYPE_SUCCESSFUL_STATES in models.py
 export const SUCCESSFUL_STATES = [
   "complete",
   "stopped_by_user",
+  "stopped_pause_expired",
   "stopped_storage_quota_reached",
   "stopped_time_quota_reached",
   "stopped_org_readonly",

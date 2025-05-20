@@ -562,12 +562,41 @@ export class WorkflowDetail extends BtrixElement {
     const workflow = this.workflow;
 
     const archivingDisabled = isArchivingDisabled(this.org, true);
+    const paused = workflow.lastCrawlState === "paused";
+
+    const hidePauseResume =
+      !this.lastCrawlId ||
+      this.isCancelingOrStoppingCrawl ||
+      this.workflow.lastCrawlStopping;
+    // disable pause/resume button if desired state is already in the process of being set.
+    // if crawl is running, and pause requested (shouldPause is true), don't allow clicking Pausing
+    // if crawl not running, and resume requested (shouldPause is false), don't allow clicking Resume
+    const disablePauseResume =
+      this.workflow.lastCrawlShouldPause ===
+      (this.workflow.lastCrawlState === "running");
 
     return html`
       ${when(
         this.workflow.isCrawlRunning,
         () => html`
           <sl-button-group>
+            ${when(
+              !hidePauseResume,
+              () => html`
+                <sl-button
+                  size="small"
+                  @click=${this.pauseResume}
+                  ?disabled=${disablePauseResume}
+                  variant=${ifDefined(paused ? "primary" : undefined)}
+                >
+                  <sl-icon
+                    name=${paused ? "play-circle" : "pause-circle"}
+                    slot="prefix"
+                  ></sl-icon>
+                  <span>${paused ? msg("Resume") : msg("Pause")}</span>
+                </sl-button>
+              `,
+            )}
             <sl-button
               size="small"
               @click=${() => (this.openDialogName = "stop")}
@@ -709,6 +738,7 @@ export class WorkflowDetail extends BtrixElement {
             <btrix-crawl-status
               state=${workflow.lastCrawlState || msg("No Crawls Yet")}
               ?stopping=${workflow.lastCrawlStopping}
+              ?shouldPause=${workflow.lastCrawlShouldPause}
             ></btrix-crawl-status>
           `,
         )}
@@ -1650,6 +1680,42 @@ export class WorkflowDetail extends BtrixElement {
         variant: "danger",
         icon: "exclamation-octagon",
         id: "workflow-delete-status",
+      });
+    }
+  }
+
+  private async pauseResume() {
+    if (!this.lastCrawlId) return;
+
+    const pause = this.workflow?.lastCrawlState !== "paused";
+
+    try {
+      const data = await this.api.fetch<{ success: boolean }>(
+        `/orgs/${this.orgId}/crawls/${this.lastCrawlId}/${pause ? "pause" : "resume"}`,
+        {
+          method: "POST",
+        },
+      );
+      if (data.success) {
+        void this.fetchWorkflow();
+      } else {
+        throw data;
+      }
+
+      this.notify.toast({
+        message: pause ? msg("Pausing crawl.") : msg("Resuming paused crawl."),
+        variant: "success",
+        icon: "check2-circle",
+        id: "crawl-pause-resume-status",
+      });
+    } catch {
+      this.notify.toast({
+        message: pause
+          ? msg("Something went wrong, couldn't pause crawl.")
+          : msg("Something went wrong, couldn't resume paused crawl."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+        id: "crawl-pause-resume-status",
       });
     }
   }
