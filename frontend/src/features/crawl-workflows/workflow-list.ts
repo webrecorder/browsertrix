@@ -317,7 +317,7 @@ export class WorkflowListItem extends BtrixElement {
             }
             if (workflow.lastCrawlStartTime) {
               const latestDate =
-                workflow.lastCrawlPausing && workflow.lastCrawlPausedAt
+                workflow.lastCrawlShouldPause && workflow.lastCrawlPausedAt
                   ? new Date(workflow.lastCrawlPausedAt)
                   : new Date();
               const diff =
