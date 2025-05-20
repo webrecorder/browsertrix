@@ -162,12 +162,13 @@ export class WorkflowDetail extends BtrixElement {
     ) {
       void this.fetchWorkflow();
       void this.fetchSeeds();
+      void this.fetchCrawls();
+    } else if (changedProperties.has("workflowTab")) {
+      void this.fetchDataForTab();
     }
+
     if (changedProperties.has("isEditing") && this.isEditing) {
       this.stopPoll();
-    }
-    if (changedProperties.has("workflowTab")) {
-      void this.fetchDataForTab();
     }
   }
 
@@ -829,7 +830,7 @@ export class WorkflowDetail extends BtrixElement {
                   class="underline hover:no-underline"
                   @click=${this.navigate.link}
                 >
-                  ${msg("Watch Running Crawl")}
+                  ${msg("Watch Crawl")}
                 </a>
               </btrix-alert>
             </div>`,
@@ -1071,7 +1072,7 @@ export class WorkflowDetail extends BtrixElement {
 
     return html`
       <btrix-desc-list horizontal>
-        ${this.renderDetailItem(msg("Duration"), (workflow) =>
+        ${this.renderDetailItem(msg("Run Duration"), (workflow) =>
           this.lastCrawlStartTime
             ? this.localize.humanizeDuration(
                 (workflow.lastCrawlTime && !workflow.isCrawlRunning
@@ -1081,7 +1082,7 @@ export class WorkflowDetail extends BtrixElement {
               )
             : skeleton,
         )}
-        ${this.renderDetailItem(msg("Pages"), pages)}
+        ${this.renderDetailItem(msg("Pages Crawled"), pages)}
         ${this.renderDetailItem(msg("Size"), (workflow) =>
           this.localize.bytes(workflow.lastCrawlSize || 0, {
             unitDisplay: "narrow",
