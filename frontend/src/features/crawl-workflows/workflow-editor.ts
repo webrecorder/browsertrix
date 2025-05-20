@@ -1510,6 +1510,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
               scale: +(e.target as SlCheckbox).value,
             })}
         >
+          <sl-radio-button value="0" size="small">1</sl-radio-button>
           ${when(this.appState.settings?.numBrowsers, (numBrowsers) =>
             map(
               range(this.orgDefaults.maxScale),

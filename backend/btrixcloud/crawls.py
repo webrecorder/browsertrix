@@ -529,7 +529,7 @@ class CrawlOps(BaseCrawlOps):
 
         cid = crawl.cid
 
-        scale = crawl.scale or 1
+        scale = crawl.scale if isinstance(crawl.scale, int) else 1
 
         async with self.get_redis(crawl_id) as redis:
             query = {

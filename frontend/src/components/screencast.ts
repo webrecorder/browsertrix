@@ -181,7 +181,7 @@ export class Screencast extends BtrixElement {
   }
 
   render() {
-    const screenCount = this.scale * this.browsersCount;
+    const screenCount = this.scale > 0 ? this.scale * this.browsersCount : 1;
     return html`
       <div class="wrapper">
         <div
@@ -254,7 +254,13 @@ export class Screencast extends BtrixElement {
   }
 
   private scaleDown() {
-    for (let idx = this.wsMap.size - 1; idx > this.scale - 1; idx--) {
+    // let workingScale;
+    // if (this.scale == 0) {
+    //   workingScale = 1;
+    // } else {
+    //   workingScale = this.scale;
+    // }
+    for (let idx = this.wsMap.size - 1; idx > this.scale; idx--) {
       const ws = this.wsMap.get(idx);
 
       if (ws) {
@@ -271,6 +277,13 @@ export class Screencast extends BtrixElement {
     if (!this.orgId || !this.crawlId) {
       return;
     }
+
+    // let workingScale;
+    // if (this.scale == 0) {
+    //   workingScale = 1;
+    // } else {
+    //   workingScale = this.scale;
+    // }
 
     for (let idx = 0; idx < this.scale; idx++) {
       if (!this.wsMap.get(idx)) {
@@ -304,7 +317,8 @@ export class Screencast extends BtrixElement {
   ) {
     if (message.msg === "init") {
       const dataMap: Record<number, null> = {};
-      for (let i = 0; i < message.browsers * this.scale; i++) {
+      const upperBound = this.scale === 0 ? 1 : this.scale * message.browsers;
+      for (let i = 0; i < upperBound; i++) {
         dataMap[i] = null;
       }
       this.dataMap = dataMap;
@@ -363,6 +377,13 @@ export class Screencast extends BtrixElement {
     delaySec?: number;
   }): void {
     const { index, retries = 0, delaySec = 10 } = opts;
+
+    // let workingScale;
+    // if (this.scale == 0) {
+    //   workingScale = 1;
+    // } else {
+    //   workingScale = this.scale;
+    // }
 
     if (index >= this.scale) {
       return;

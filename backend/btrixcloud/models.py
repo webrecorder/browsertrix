@@ -52,7 +52,7 @@ MIN_UPLOAD_PART_SIZE = 10000000
 
 EmptyStr = Annotated[str, Field(min_length=0, max_length=0)]
 
-Scale = Annotated[int, Field(strict=True, ge=1, le=MAX_CRAWL_SCALE)]
+Scale = Annotated[int, Field(strict=True, ge=0, le=MAX_CRAWL_SCALE)]
 ReviewStatus = Optional[Annotated[int, Field(strict=True, ge=1, le=5)]]
 
 any_http_url_adapter = TypeAdapter(AnyHttpUrlNonStr)

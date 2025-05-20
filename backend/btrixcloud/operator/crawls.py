@@ -326,7 +326,9 @@ class CrawlOperator(BaseOperator):
             children.extend(await self._load_qa_configmap(params, data.children))
 
         for i in range(0, status.scale):
-            children.extend(self._load_crawler(params, i, status, data.children))
+            children.extend(
+                self._load_crawler(params, i, status, crawl.scale, data.children)
+            )
 
         return {
             "status": status.dict(exclude_none=True),
@@ -430,7 +432,9 @@ class CrawlOperator(BaseOperator):
         params["qa_source_replay_json"] = crawl_replay.json(include={"resources"})
         return self.load_from_yaml("qa_configmap.yaml", params)
 
-    def _load_crawler(self, params, i, status: CrawlStatus, children):
+    def _load_crawler(
+        self, params, i, status: CrawlStatus, desired_scale: int, children
+    ):
         name = f"crawl-{params['id']}-{i}"
         has_pod = name in children[POD]
 
@@ -455,7 +459,19 @@ class CrawlOperator(BaseOperator):
         else:
             params["memory_limit"] = self.k8s.max_crawler_memory_size
         params["storage"] = pod_info.newStorage or params.get("crawler_storage")
-        params["workers"] = params.get(worker_field) or 1
+
+        print(f"crawl.scale (desired): {desired_scale}", flush=True)
+        print(f"status.scale: {status.scale}", flush=True)
+
+        # Scale of 0 means we want 1 browser window (1 pod with 1 worker)
+        if desired_scale == 0:
+            params["workers"] = 1
+        else:
+            params["workers"] = params.get(worker_field) or 1
+
+        wrkrs = params["workers"]
+        print(f"Loading crawler with {wrkrs} workers", flush=True)
+
         params["do_restart"] = False
         if has_pod:
             restart_reason = pod_info.should_restart_pod(params.get("force_restart"))
@@ -496,12 +512,18 @@ class CrawlOperator(BaseOperator):
         If desired scale < actual scale, attempt to shut down each crawl instance
         via redis setting. If contiguous instances shutdown (successful exit), lower
         scale and clean up previous scale state.
+
+        Desired scale = number of pods desired, not necessarily equal to workflow
+        config value if latter is set to 0, which means 1 pod with 1 worker.
         """
 
         # actual scale (minus redis pod)
         actual_scale = len(pods)
         if pods.get(f"redis-{crawl_id}"):
             actual_scale -= 1
+
+        print(f"Desired pods: {desired_scale}", flush=True)
+        print(f"Actual scale: {actual_scale}", flush=True)
 
         # ensure at least enough pages for the scale
         if status.pagesFound < desired_scale:
@@ -1437,9 +1459,11 @@ class CrawlOperator(BaseOperator):
             await redis.set("crawl-stop", "1")
 
         # resolve scale
-        if crawl.scale != status.scale:
+        # todo: come back and make sure this makes sense
+        desired_pods = crawl.scale or 1
+        if desired_pods != status.scale:
             status.scale = await self._resolve_scale(
-                crawl.id, crawl.scale, redis, status, pods
+                crawl.id, desired_pods, redis, status, pods
             )
 
         # check if done / failed

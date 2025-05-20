@@ -968,7 +968,9 @@ export class WorkflowDetail extends BtrixElement {
     if (this.isCrawler && this.workflow?.isCrawlRunning) {
       const enableEditBrowserWindows = !this.workflow.lastCrawlStopping;
       const windowCount =
-        this.workflow.scale * (this.appState.settings?.numBrowsers || 1);
+        this.workflow.scale == 0
+          ? 1
+          : this.workflow.scale * (this.appState.settings?.numBrowsers || 1);
 
       return html`
         <div class="text-neutral-500">
@@ -1351,10 +1353,12 @@ export class WorkflowDetail extends BtrixElement {
     const scaleOptions = [];
 
     if (this.appState.settings) {
-      for (let value = 1; value <= this.maxScale; value++) {
+      for (let value = 0; value <= this.maxScale; value++) {
+        const valueLabel =
+          value === 0 ? 1 : value * this.appState.settings.numBrowsers;
         scaleOptions.push({
           value,
-          label: value * this.appState.settings.numBrowsers,
+          label: valueLabel,
         });
       }
     }
