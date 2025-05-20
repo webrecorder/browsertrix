@@ -50,8 +50,8 @@ default_crawl_filename_template: "@ts-@hostsuffix.wacz"
 crawler_extra_args: ""
 
 
-# max allowed crawl scale per crawl
-max_crawl_scale: 3
+# max allowed browser windows per crawl
+max_browser_windows: 8
 
 
 # Cluster Settings

@@ -200,3 +200,9 @@ def validate_language_code(lang: str):
     """Validate ISO-639-1 language code, raise HTTPException if invalid"""
     if not is_language(lang, "pt1"):
         raise HTTPException(status_code=400, detail="invalid_lang")
+
+
+def pod_count_from_browser_windows(browser_windows: int) -> int:
+    """Return number of pods for given number of browser windows"""
+    browsers_per_pod = int(os.environ.get("NUM_BROWSERS", 1))
+    return math.ceil(browser_windows / browsers_per_pod)

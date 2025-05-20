@@ -105,7 +105,7 @@ else:
 
 DEFAULT_ORG = os.environ.get("DEFAULT_ORG", "My Organization")
 
-MAX_CRAWL_SCALE = int(os.environ.get("MAX_CRAWL_SCALE", 3))
+MAX_BROWSER_WINDOWS = int(os.environ.get("MAX_BROWSER_WINDOWS", 8))
 
 # number of items to delete at a time
 DEL_ITEMS = 1000
@@ -1268,7 +1268,7 @@ class OrgOps:
 
             # Ensure scale isn't above max_scale
             workflow_scale = workflow.get("scale", 1)
-            workflow["scale"] = max(workflow_scale, MAX_CRAWL_SCALE)
+            workflow["scale"] = max(workflow_scale, MAX_BROWSER_WINDOWS)
 
             # Ensure crawlerChannel is set
             if not workflow.get("crawlerChannel"):

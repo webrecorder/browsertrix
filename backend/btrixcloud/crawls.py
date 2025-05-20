@@ -25,6 +25,7 @@ from .utils import (
     parse_jsonl_log_messages,
     stream_dict_list_as_csv,
     validate_regexes,
+    pod_count_from_browser_windows,
 )
 from .basecrawls import BaseCrawlOps
 from .crawlmanager import CrawlManager
@@ -529,7 +530,7 @@ class CrawlOps(BaseCrawlOps):
 
         cid = crawl.cid
 
-        scale = crawl.scale or 1
+        browser_windows = crawl.scale or 1
 
         async with self.get_redis(crawl_id) as redis:
             query = {
@@ -538,7 +539,8 @@ class CrawlOps(BaseCrawlOps):
             }
             query_str = json.dumps(query)
 
-            for i in range(0, scale):
+            pod_count = pod_count_from_browser_windows(browser_windows)
+            for i in range(0, pod_count):
                 await redis.rpush(f"crawl-{crawl_id}-{i}:msg", query_str)
 
         new_config = await self.crawl_configs.add_or_remove_exclusion(
