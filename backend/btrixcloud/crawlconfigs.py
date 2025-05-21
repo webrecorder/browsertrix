@@ -924,6 +924,15 @@ class CrawlConfigOps:
 
         return crawl_config.config
 
+    async def remove_collection_from_all_configs(
+        self, coll_id: UUID, org: Organization
+    ):
+        """remove collection from all autoAddCollection list"""
+        await self.crawl_configs.update_many(
+            {"oid": org.id, "autoAddCollections": coll_id},
+            {"$pull": {"autoAddCollections": coll_id}},
+        )
+
     async def get_crawl_config_tags(self, org):
         """get distinct tags from all crawl configs for this org"""
         tags = await self.crawl_configs.distinct("tags", {"oid": org.id})
