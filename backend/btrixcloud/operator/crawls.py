@@ -486,6 +486,7 @@ class CrawlOperator(BaseOperator):
         params["qa_source_replay_json"] = crawl_replay.json(include={"resources"})
         return self.load_from_yaml("qa_configmap.yaml", params)
 
+    # pylint: too-many-arguments
     def _load_crawler(
         self,
         params,
