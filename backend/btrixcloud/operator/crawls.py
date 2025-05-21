@@ -376,15 +376,8 @@ class CrawlOperator(BaseOperator):
 
         if crawl.scale < browsers_per_pod:
             remainder = crawl.scale
-            print(
-                f"remainder (scale less than browsers per pod): {remainder}", flush=True
-            )
         else:
             remainder = crawl.scale % crawler_pod_count
-            print(
-                f"remainder (scale not less than browsers per pod): {remainder}",
-                flush=True,
-            )
 
         for i in range(0, crawler_pod_count):
             children.extend(
@@ -604,7 +597,7 @@ class CrawlOperator(BaseOperator):
 
         # if desired_scale same or scaled up, return desired_scale
         if desired_scale >= actual_scale:
-            return desired_browser_windows
+            return desired_scale
 
         new_scale = actual_scale
         for i in range(actual_scale - 1, desired_scale - 1, -1):
@@ -1536,21 +1529,20 @@ class CrawlOperator(BaseOperator):
 
         # resolve scale
         desired_pod_count = pod_count_from_browser_windows(crawl.scale)
-        current_pod_count = pod_count_from_browser_windows(status.scale)
 
         print(f"desired pod count: {desired_pod_count}", flush=True)
-        print(f"current pod count: {current_pod_count}", flush=True)
+        print(f"current pod count: {status.scale}", flush=True)
 
-        if desired_pod_count != current_pod_count:
-            current_pod_count = await self._resolve_scale(
+        if desired_pod_count != status.scale:
+            status.scale = await self._resolve_scale(
                 crawl.id, crawl.scale, redis, status, pods
             )
-            print(f"reset current pod count to: {current_pod_count}", flush=True)
+            print(f"reset current pod count to: {status.scale}", flush=True)
 
         # check if done / failed
         status_count: dict[str, int] = {}
 
-        for i in range(current_pod_count):
+        for i in range(status.scale):
             res = results.get(f"crawl-{crawl.id}-{i}")
             if res:
                 status_count[res] = status_count.get(res, 0) + 1
@@ -1558,7 +1550,7 @@ class CrawlOperator(BaseOperator):
         num_done = status_count.get("done", 0)
         num_failed = status_count.get("failed", 0)
         # all expected pods are either done or failed
-        all_completed = (num_done + num_failed) >= current_pod_count
+        all_completed = (num_done + num_failed) >= status.scale
         print(f"all completed: {all_completed}", flush=True)
 
         # check paused
