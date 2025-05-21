@@ -1587,14 +1587,12 @@ https://archiveweb.page/images/${"logo.svg"}`}
               scale: +(e.target as SlCheckbox).value,
             })}
         >
-          ${when(this.appState.settings?.numBrowsers, (numBrowsers) =>
-            map(
-              range(this.orgDefaults.maxScale),
-              (i: number) =>
-                html` <sl-radio-button value="${i + 1}" size="small"
-                  >${(i + 1) * numBrowsers}</sl-radio-button
-                >`,
-            ),
+          ${map(
+            range(this.appState.settings?.maxBrowserWindows || 1),
+            (i: number) =>
+              html` <sl-radio-button value="${i + 1}" size="small"
+                >${i + 1}</sl-radio-button
+              >`,
           )}
         </sl-radio-group>
       `)}

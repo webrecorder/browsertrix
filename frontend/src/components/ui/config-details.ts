@@ -251,9 +251,7 @@ export class ConfigDetails extends BtrixElement {
           )}
           ${this.renderSetting(
             msg("Browser Windows"),
-            crawlConfig?.scale && this.appState.settings
-              ? `${crawlConfig.scale * this.appState.settings.numBrowsers}`
-              : "",
+            crawlConfig?.scale ? `${crawlConfig.scale}` : "",
           )}
           ${this.renderSetting(
             msg("Crawler Channel (Exact Crawler Version)"),

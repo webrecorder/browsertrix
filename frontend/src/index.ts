@@ -885,7 +885,8 @@ export class App extends BtrixElement {
           class="w-full"
           .viewStateData=${this.viewState.data}
           .params=${this.viewState.params}
-          .maxScale=${this.appState.settings?.maxScale || DEFAULT_MAX_SCALE}
+          .maxBrowserWindows=${this.appState.settings?.maxBrowserWindows ||
+          DEFAULT_MAX_SCALE}
           orgPath=${orgPath.split(slug)[1]}
           orgTab=${orgTab}
         ></btrix-org>`;
