@@ -364,7 +364,12 @@ class CrawlOperator(BaseOperator):
 
         is_paused = bool(crawl.paused_at) and status.state == "paused"
         crawler_pod_count = pod_count_from_browser_windows(status.scale)
-        last_pod_remainder = status.scale % crawler_pod_count
+        browsers_per_pod = int(os.environ.get("NUM_BROWSERS", 1))
+
+        if status.scale < browsers_per_pod:
+            remainder = status.scale
+        else:
+            remainder = status.scale % crawler_pod_count
 
         for i in range(0, crawler_pod_count):
             children.extend(
@@ -372,7 +377,7 @@ class CrawlOperator(BaseOperator):
                     params,
                     i,
                     crawler_pod_count - 1,
-                    last_pod_remainder,
+                    remainder,
                     status,
                     data.children,
                     is_paused
