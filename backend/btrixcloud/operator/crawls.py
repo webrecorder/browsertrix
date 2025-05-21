@@ -369,10 +369,7 @@ class CrawlOperator(BaseOperator):
         print(f"crawl.scale: {crawl.scale}", flush=True)
 
         crawler_pod_count = pod_count_from_browser_windows(crawl.scale)
-        print(f"crawler pod count: {crawler_pod_count}", flush=True)
-
         browsers_per_pod = int(os.environ.get("NUM_BROWSERS", 1))
-        print(f"browsers per pod: {browsers_per_pod}", flush=True)
 
         if crawl.scale < browsers_per_pod:
             remainder = crawl.scale
