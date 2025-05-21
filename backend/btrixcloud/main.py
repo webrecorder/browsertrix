@@ -112,8 +112,7 @@ class SettingsResponse(BaseModel):
     defaultPageLoadTimeSeconds: int
 
     maxPagesPerCrawl: int
-    numBrowsers: int
-    maxScale: int
+    maxBrowserWindows: int
 
     billingEnabled: bool
 
