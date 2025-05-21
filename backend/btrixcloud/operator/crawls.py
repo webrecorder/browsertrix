@@ -389,11 +389,14 @@ class CrawlOperator(BaseOperator):
                 )
             )
 
-        return {
+        return_value = {
             "status": status.dict(exclude_none=True),
             "children": children,
             "resyncAfterSeconds": status.resync_after,
         }
+        print("sync_crawls return:", flush=True)
+        print(return_value, flush=True)
+        return return_value
 
     def _load_redis(self, params, status: CrawlStatus, children):
         name = f"redis-{params['id']}"
