@@ -1458,8 +1458,8 @@ class CrawlOperator(BaseOperator):
         if status.stopReason == "paused" and not crawl.paused_at:
             status.stopReason = None
             status.stopping = False
-            # just in case, should already have been removed
-            await redis.delete(f"{crawl.id}:stopping", "crawl-stop")
+            # should have already been removed, just in case
+            await redis.delete(f"{crawl.id}:paused")
 
         if not status.stopping:
             status.stopReason = await self.is_crawl_stopping(crawl, status, data)
@@ -1467,13 +1467,11 @@ class CrawlOperator(BaseOperator):
 
             # mark crawl as stopping
             if status.stopping:
-                await redis.set(f"{crawl.id}:stopping", "1")
-                # backwards compatibility with older crawler
-                await redis.set("crawl-stop", "1")
-
                 if status.stopReason == "paused":
+                    await redis.set(f"{crawl.id}:paused", "1")
                     print(f"Crawl pausing, id: {crawl.id}")
                 else:
+                    await redis.set(f"{crawl.id}:stopping", "1")
                     print(
                         f"Crawl gracefully stopping: {status.stopReason}, id: {crawl.id}"
                     )
@@ -1495,27 +1493,6 @@ class CrawlOperator(BaseOperator):
         num_failed = status_count.get("failed", 0)
         # all expected pods are either done or failed
         all_completed = (num_done + num_failed) >= status.scale
-
-        if crawl.paused_at and status.stopReason == "paused":
-            num_paused = status_count.get("paused", 0)
-            if num_done:
-                for name in pods.keys():
-                    pod_status = status.podStatus[name]
-                    if pod_status.reason == "done" and results[name] == "done":
-                        await redis.hset(f"{crawl.id}:status", name, "paused")
-                        results[name] = "paused"
-                        num_paused += 1
-
-            if (num_paused + num_failed) >= status.scale:
-                # now fully paused!
-                # remove stopping key (used for pause) and set state to paused
-                await redis.delete(f"{crawl.id}:stopping", "crawl-stop")
-                await self.set_state(
-                    "paused", status, crawl, allowed_from=RUNNING_AND_WAITING_STATES
-                )
-
-            # prevent transitioning to any other state
-            return status
 
         # if at least one is done according to redis, consider crawl successful
         # ensure pod successfully exited as well
@@ -1548,6 +1525,17 @@ class CrawlOperator(BaseOperator):
                 await self.mark_finished(crawl, status, "canceled", stats)
             else:
                 await self.fail_crawl(crawl, status, pods, stats)
+
+        # check paused
+        elif crawl.paused_at and status.stopReason == "paused":
+            num_paused = status_count.get("interrupted", 0)
+            if (num_paused + num_failed) >= status.scale:
+                # now fully paused!
+                # remove pausing key and set state to paused
+                await redis.delete(f"{crawl.id}:paused")
+                await self.set_state(
+                    "paused", status, crawl, allowed_from=RUNNING_AND_WAITING_STATES
+                )
 
         # check for other statuses, default to "running"
         else:
