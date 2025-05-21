@@ -189,6 +189,7 @@ export type Crawl = ArchivedItemBase &
     schedule: string;
     manual: boolean;
     scale: number;
+    shouldPause: boolean | null;
     resources?: {
       name: string;
       path: string;

@@ -127,9 +127,10 @@ export class CrawlListItem extends BtrixElement {
       >
         <btrix-table-cell class="pr-0">
           ${this.safeRender(
-            (workflow) => html`
+            (crawl: Crawl) => html`
               <btrix-crawl-status
-                state=${workflow.state}
+                state=${crawl.state}
+                ?shouldPause=${crawl.shouldPause}
                 hideLabel
                 hoist
               ></btrix-crawl-status>
