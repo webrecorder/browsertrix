@@ -19,7 +19,7 @@ export const activeCrawlStates = RUNNING_AND_WAITING_STATES;
 export const finishedCrawlStates = SUCCESSFUL_STATES;
 export const inactiveCrawlStates = SUCCESSFUL_AND_FAILED_STATES;
 
-export const DEFAULT_MAX_SCALE = 3;
+export const DEFAULT_MAX_SCALE = 8;
 
 export const DEPTH_SUPPORTED_SCOPES = [
   "prefix",

@@ -64,7 +64,7 @@ export class WorkflowDetail extends BtrixElement {
     | "deleteCrawl";
 
   @property({ type: Number })
-  maxScale = DEFAULT_MAX_SCALE;
+  maxBrowserWindows = DEFAULT_MAX_SCALE;
 
   @state()
   private workflow?: Workflow;
@@ -998,8 +998,7 @@ export class WorkflowDetail extends BtrixElement {
   private renderLatestCrawlAction() {
     if (this.isCrawler && this.workflow?.isCrawlRunning) {
       const enableEditBrowserWindows = !this.workflow.lastCrawlStopping;
-      const windowCount =
-        this.workflow.scale * (this.appState.settings?.numBrowsers || 1);
+      const windowCount = this.workflow.scale || 1;
 
       return html`
         <div class="text-neutral-500">
@@ -1382,10 +1381,10 @@ export class WorkflowDetail extends BtrixElement {
     const scaleOptions = [];
 
     if (this.appState.settings) {
-      for (let value = 1; value <= this.maxScale; value++) {
+      for (let value = 1; value <= this.maxBrowserWindows; value++) {
         scaleOptions.push({
           value,
-          label: value * this.appState.settings.numBrowsers,
+          label: value,
         });
       }
     }

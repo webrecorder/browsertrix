@@ -113,7 +113,7 @@ export class Org extends BtrixElement {
   orgTab?: OrgTab | string;
 
   @property({ type: Number })
-  maxScale: number = DEFAULT_MAX_SCALE;
+  maxBrowserWindows: number = DEFAULT_MAX_SCALE;
 
   @state()
   private openDialogName?: ResourceName;
@@ -536,7 +536,7 @@ export class Org extends BtrixElement {
           openDialogName=${this.viewStateData?.dialog}
           ?isEditing=${isEditing}
           ?isCrawler=${this.appState.isCrawler}
-          .maxScale=${this.maxScale}
+          .maxBrowserWindows=${this.maxBrowserWindows}
         ></btrix-workflow-detail>
       `;
     }

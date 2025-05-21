@@ -140,11 +140,11 @@ export type WorkflowDefaults = {
   behaviorTimeoutSeconds?: number;
   pageLoadTimeoutSeconds?: number;
   maxPagesPerCrawl?: number;
-  maxScale: number;
+  maxBrowserWindows: number;
 };
 
 export const appDefaults: WorkflowDefaults = {
-  maxScale: DEFAULT_MAX_SCALE,
+  maxBrowserWindows: DEFAULT_MAX_SCALE,
 };
 
 export const getDefaultFormState = (): FormState => ({
@@ -365,8 +365,8 @@ export async function getServerDefaults(): Promise<WorkflowDefaults> {
     if (data.maxPagesPerCrawl > 0) {
       defaults.maxPagesPerCrawl = data.maxPagesPerCrawl;
     }
-    if (data.maxScale) {
-      defaults.maxScale = data.maxScale;
+    if (data.maxBrowserWindows) {
+      defaults.maxBrowserWindows = data.maxBrowserWindows;
     }
 
     return defaults;
