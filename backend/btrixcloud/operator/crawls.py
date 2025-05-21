@@ -541,9 +541,11 @@ class CrawlOperator(BaseOperator):
                 print(f"Restarting {name}, reason: {restart_reason}")
                 params["init_crawler"] = False
 
-        print(f"crawler pod {i + 1} of {last_pod_index + 1}, index: {i}", flush=True)
         worker_count = params["workers"]
-        print(f"num of workers in pod: {worker_count}", flush=True)
+        print(
+            f"crawler pod {i + 1} of {last_pod_index + 1}, index {i}, {worker_count} workers",
+            flush=True,
+        )
 
         return self.load_from_yaml("crawler.yaml", params)
 
