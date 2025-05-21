@@ -360,7 +360,7 @@ class CrawlOperator(BaseOperator):
         for i in range(0, status.scale):
             children.extend(
                 self._load_crawler(
-                    params, i, status, data.children, bool(crawl.paused_at)
+                    params, i, status, data.children, status.state == "paused"
                 )
             )
 
@@ -1024,17 +1024,6 @@ class CrawlOperator(BaseOperator):
 
                 if "containerStatuses" in pstatus:
                     cstatus = pstatus["containerStatuses"][0]
-
-                    # don't consider 'ContainerCreating' as running for now
-                    # may be stuck in this state for other reasons
-                    #
-                    # waiting = cstatus["state"].get("waiting")
-                    # if (
-                    #    phase == "Pending"
-                    #    and waiting
-                    #    and waiting.get("reason") == "ContainerCreating"
-                    # ):
-                    #    running = True
 
                     self.handle_terminated_pod(
                         name, role, status, cstatus["state"].get("terminated")
