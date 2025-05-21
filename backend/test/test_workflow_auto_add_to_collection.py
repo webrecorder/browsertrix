@@ -68,3 +68,33 @@ def test_workflow_crawl_auto_added_subsequent_runs(
     assert r.status_code == 200
     new_crawl_count = r.json()["crawlCount"]
     assert new_crawl_count == crawl_count + 1
+
+
+def test_workflow_autoadd_collection_removed_on_delete(
+    default_org_id, auto_add_config_id, crawler_auth_headers, auto_add_collection_id
+):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{auto_add_config_id}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+
+    data = r.json()
+    assert data["autoAddCollections"] == [auto_add_collection_id]
+
+    # Delete Collection
+    r = requests.delete(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{auto_add_collection_id}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["success"]
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{auto_add_config_id}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+
+    data = r.json()
+    assert data["autoAddCollections"] == []

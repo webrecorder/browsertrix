@@ -924,7 +924,9 @@ class CrawlConfigOps:
 
         return crawl_config.config
 
-    async def remove_collection_from_all_configs(self, coll_id, org: Organization):
+    async def remove_collection_from_all_configs(
+        self, coll_id: UUID, org: Organization
+    ):
         """remove collection from all autoAddCollection list"""
         await self.crawl_configs.update_many(
             {"oid": org.id, "autoAddCollections": coll_id},
