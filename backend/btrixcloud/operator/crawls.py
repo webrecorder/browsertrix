@@ -369,7 +369,13 @@ class CrawlOperator(BaseOperator):
         for i in range(0, crawler_pod_count):
             children.extend(
                 self._load_crawler(
-                    params, i, last_index, last_pod_remainder, status, data.children, is_paused
+                    params,
+                    i,
+                    crawler_pod_count - 1,
+                    last_pod_remainder,
+                    status,
+                    data.children,
+                    is_paused
                 )
             )
 
@@ -521,7 +527,7 @@ class CrawlOperator(BaseOperator):
                 print(f"Restarting {name}, reason: {restart_reason}")
                 params["init_crawler"] = False
 
-        print(f"crawler pod {i + 1} of {last_index + 1}, index: {i}", flush=True)
+        print(f"crawler pod {i + 1} of {last_pod_index + 1}, index: {i}", flush=True)
         worker_count = params["workers"]
         print(f"num of workers in pod: {worker_count}", flush=True)
 
