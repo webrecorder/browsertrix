@@ -628,34 +628,38 @@ export class WorkflowDetail extends BtrixElement {
   private renderPanelAction() {
     if (
       this.groupedWorkflowTab === WorkflowTab.LatestCrawl &&
-      this.isCrawler &&
-      this.workflow &&
-      !this.workflow.isCrawlRunning &&
-      this.lastCrawlId
+      this.lastCrawlId &&
+      this.latestCrawlTask.value?.finished
     ) {
-      return html`<sl-tooltip content=${msg("Go to Quality Assurance")}>
-        <sl-button
-          size="small"
-          href="${this.basePath}/crawls/${this.lastCrawlId}"
-          @click=${this.navigate.link}
-        >
-          ${msg("View Details")}
-          <sl-icon slot="suffix" name="arrow-right"></sl-icon>
-        </sl-button>
-      </sl-tooltip> `;
+      return html`<div class="flex items-center gap-1">
+        <btrix-copy-button
+          size="medium"
+          value=${this.lastCrawlId}
+          content=${msg("Copy Crawl ID")}
+        ></btrix-copy-button>
+
+        <sl-tooltip content=${msg("View Archived Item")}>
+          <btrix-button
+            size="medium"
+            href="${this.basePath}/crawls/${this.lastCrawlId}"
+            @click=${this.navigate.link}
+          >
+            <sl-icon name="file-earmark-zip" class="size-4"> </sl-icon>
+          </btrix-button>
+        </sl-tooltip>
+      </div>`;
     }
 
     if (this.workflowTab === WorkflowTab.Settings && this.isCrawler) {
-      return html` 
-        <sl-tooltip content=${msg("Edit Workflow Settings")}></sl-tooltip>
-          <sl-icon-button
-            name="pencil"
-            class="text-base"
-            href="${this.basePath}?edit"
-            @click=${this.navigate.link}
-          >
-          </sl-icon-button>
-        </sl-tooltip>`;
+      return html` <sl-tooltip content=${msg("Edit Workflow Settings")}>
+        <sl-icon-button
+          name="pencil"
+          class="text-base"
+          href="${this.basePath}?edit"
+          @click=${this.navigate.link}
+        >
+        </sl-icon-button>
+      </sl-tooltip>`;
     }
 
     return nothing;
@@ -1445,25 +1449,20 @@ export class WorkflowDetail extends BtrixElement {
       }
 
       return html`<div class="inline-flex items-center gap-2">
-        ${latestCrawl.reviewStatus
+        ${latestCrawl.reviewStatus || !this.isCrawler
           ? html`<btrix-qa-review-status
               status=${ifDefined(latestCrawl.reviewStatus)}
             ></btrix-qa-review-status>`
-          : html`<sl-tooltip
-              content=${msg("Add Quality Assurance Rating")}
-              placement="bottom"
-              hoist
+          : html`<sl-button
+              class="micro -ml-2"
+              size="small"
+              variant="text"
+              href="${this.basePath}/crawls/${this.lastCrawlId}#qa"
+              @click=${this.navigate.link}
             >
-              <sl-button
-                class="micro"
-                size="small"
-                href="${this.basePath}/crawls/${this.lastCrawlId}#qa"
-                @click=${this.navigate.link}
-              >
-                <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-                ${msg("Add")}
-              </sl-button>
-            </sl-tooltip>`}
+              <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+              ${msg("Add Review")}
+            </sl-button> `}
       </div> `;
     };
 
@@ -1595,11 +1594,11 @@ export class WorkflowDetail extends BtrixElement {
         )}
         ${when(
           this.lastCrawlId,
-          () =>
+          (id) =>
             html`<div class="mt-4">
               <sl-button
                 size="small"
-                href="${this.basePath}/crawls/${this.lastCrawlId}"
+                href="${this.basePath}/crawls/${id}"
                 @click=${this.navigate.link}
               >
                 ${msg("View Crawl Details")}
