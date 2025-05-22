@@ -106,7 +106,7 @@ export class Crawls extends BtrixElement {
 
   render() {
     return html`<btrix-document-title
-        title=${msg("Running crawls")}
+        title=${msg("Active Crawls – Admin")}
       ></btrix-document-title>
 
       <div class="mx-auto box-border w-full max-w-screen-desktop px-3 py-4">
@@ -122,9 +122,7 @@ export class Crawls extends BtrixElement {
       <main>
         <header class="contents">
           <div class="mb-3 flex w-full justify-between border-b pb-4">
-            <h1 class="h-8 text-xl font-semibold">
-              ${msg("All Running Crawls")}
-            </h1>
+            <h1 class="h-8 text-xl font-semibold">${msg("Active Crawls")}</h1>
           </div>
           <div
             class="sticky top-2 z-10 mb-3 rounded-lg border bg-neutral-50 p-4"
