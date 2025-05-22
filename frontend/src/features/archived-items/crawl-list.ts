@@ -197,9 +197,14 @@ export class CrawlListItem extends BtrixElement {
           })}
         </btrix-table-cell>
         <btrix-table-cell>
-          ${this.localize.bytes(this.crawl.fileSize || 0, {
-            unitDisplay: "narrow",
-          })}
+          ${this.safeRender((crawl) =>
+            this.localize.bytes(
+              crawl.finished ? crawl.fileSize || 0 : +(crawl.stats?.size || 0),
+              {
+                unitDisplay: "narrow",
+              },
+            ),
+          )}
         </btrix-table-cell>
         <btrix-table-cell>
           <div class="max-w-sm truncate">
