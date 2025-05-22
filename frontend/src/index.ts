@@ -491,7 +491,6 @@ export class App extends BtrixElement {
                       >
                     `
                   : nothing}
-                <div role="separator" class="mx-2.5 h-7 w-0 border-l"></div>
                 ${this.renderOrgs()}
               `,
             )}
@@ -615,6 +614,7 @@ export class App extends BtrixElement {
     const orgNameLength = 50;
 
     return html`
+      <div role="separator" class="mx-2.5 h-7 w-0 border-l"></div>
       <div class="max-w-32 truncate sm:max-w-52 md:max-w-none">
         ${selectedOption.slug
           ? html`
