@@ -294,7 +294,7 @@ export class Org extends BtrixElement {
                   OrgTab.Items,
                   () => html`
                     <btrix-document-title
-                      title=${`${msg("Archived Items")} - ${userOrg.name}`}
+                      title=${`${msg("Archived Items")} – ${userOrg.name}`}
                     ></btrix-document-title>
                     ${this.renderArchivedItem()}
                   `,
@@ -303,7 +303,7 @@ export class Org extends BtrixElement {
                   OrgTab.Workflows,
                   () => html`
                     <btrix-document-title
-                      title=${`${msg("Crawl Workflows")} - ${userOrg.name}`}
+                      title=${`${msg("Crawl Workflows")} – ${userOrg.name}`}
                     ></btrix-document-title>
                     ${this.renderWorkflows()}
                   `,
@@ -312,7 +312,7 @@ export class Org extends BtrixElement {
                   OrgTab.BrowserProfiles,
                   () => html`
                     <btrix-document-title
-                      title=${`${msg("Browser Profiles")} - ${userOrg.name}`}
+                      title=${`${msg("Browser Profiles")} – ${userOrg.name}`}
                     ></btrix-document-title>
                     ${this.renderBrowserProfiles()}
                   `,
@@ -321,7 +321,7 @@ export class Org extends BtrixElement {
                   OrgTab.Collections,
                   () => html`
                     <btrix-document-title
-                      title=${`${msg("Collections")} - ${userOrg.name}`}
+                      title=${`${msg("Collections")} – ${userOrg.name}`}
                     ></btrix-document-title>
                     ${this.renderCollections()}
                   `,
@@ -332,7 +332,7 @@ export class Org extends BtrixElement {
                     this.appState.isAdmin
                       ? html`
                           <btrix-document-title
-                            title=${`${msg("Org Settings")} - ${userOrg.name}`}
+                            title=${`${msg("Org Settings")} – ${userOrg.name}`}
                           ></btrix-document-title>
                           ${this.renderOrgSettings()}
                         `

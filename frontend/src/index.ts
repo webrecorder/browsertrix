@@ -3,6 +3,7 @@ import "./global";
 
 import { provide } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
+import { Task } from "@lit/task";
 import type {
   SlDialog,
   SlDrawer,
@@ -14,6 +15,7 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { until } from "lit/directives/until.js";
 import { when } from "lit/directives/when.js";
 import isEqual from "lodash/fp/isEqual";
+import queryString from "query-string";
 
 import "./components";
 import "./features";
@@ -33,7 +35,9 @@ import AuthService, {
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { NavigateEventDetail } from "@/controllers/navigate";
 import type { NotifyEventDetail } from "@/controllers/notify";
+import type { APIPaginatedList } from "@/types/api";
 import { type Auth } from "@/types/auth";
+import type { Crawl } from "@/types/crawler";
 import {
   translatedLocales,
   type TranslatedLocaleEnum,
@@ -65,6 +69,8 @@ export type APIUser = {
 export interface UserGuideEventMap {
   "btrix-user-guide-show": CustomEvent<{ path?: string }>;
 }
+
+const POLL_INTERVAL_SECONDS = 30;
 
 @customElement("browsertrix-app")
 @localized()
@@ -107,6 +113,24 @@ export class App extends BtrixElement {
 
   @query("#userGuideDrawer")
   private readonly userGuideDrawer!: SlDrawer;
+
+  private readonly activeCrawlsTotalTask = new Task(this, {
+    task: async () => {
+      return await this.getActiveCrawlsTotal();
+    },
+    args: () => [] as const,
+  });
+
+  private readonly pollTask = new Task(this, {
+    task: async ([crawls]) => {
+      if (!crawls) return;
+
+      return window.setTimeout(() => {
+        void this.activeCrawlsTotalTask.run();
+      }, POLL_INTERVAL_SECONDS * 1000);
+    },
+    args: () => [this.activeCrawlsTotalTask.value] as const,
+  });
 
   get orgSlugInPath() {
     return this.viewState.params.slug || "";
@@ -162,6 +186,12 @@ export class App extends BtrixElement {
     });
 
     this.startSyncBrowserTabs();
+  }
+
+  disconnectedCallback(): void {
+    super.disconnectedCallback();
+
+    window.clearTimeout(this.pollTask.value);
   }
 
   private attachUserGuideListeners() {
@@ -579,15 +609,22 @@ export class App extends BtrixElement {
           </div>
           ${isSuperAdmin
             ? html`
-                <div
-                  class="order-3 grid w-full auto-cols-max grid-flow-col items-center gap-5 md:order-2 md:w-auto"
-                >
+                <div class="order-3 w-full auto-cols-max md:order-2 md:w-auto">
                   <a
-                    class="font-medium text-neutral-500 hover:text-primary"
+                    class="inline-flex items-center gap-2 font-medium text-neutral-500 hover:text-primary"
                     href=${urlForName("adminCrawls")}
                     @click=${this.navigate.link}
-                    >${msg("Running Crawls")}</a
                   >
+                    ${msg("Active Crawls")}
+                    ${when(
+                      this.activeCrawlsTotalTask.value,
+                      (total) => html`
+                        <btrix-badge variant=${total > 0 ? "primary" : "blue"}>
+                          ${this.localize.number(total)}
+                        </btrix-badge>
+                      `,
+                    )}
+                  </a>
                 </div>
               `
             : nothing}
@@ -1126,5 +1163,17 @@ export class App extends BtrixElement {
 
   private clearSelectedOrg() {
     AppStateService.updateOrgSlug(null);
+  }
+
+  private async getActiveCrawlsTotal() {
+    const query = queryString.stringify({
+      pageSize: 1,
+    });
+
+    const data = await this.api.fetch<APIPaginatedList<Crawl>>(
+      `/orgs/all/crawls?${query}`,
+    );
+
+    return data.total;
   }
 }
