@@ -586,7 +586,7 @@ export class App extends BtrixElement {
                     class="font-medium text-neutral-500 hover:text-primary"
                     href=${urlForName("adminCrawls")}
                     @click=${this.navigate.link}
-                    >${msg("Running Crawls")}</a
+                    >${msg("Active Crawls")}</a
                   >
                 </div>
               `
