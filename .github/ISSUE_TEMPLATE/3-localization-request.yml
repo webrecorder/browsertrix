@@ -2,6 +2,7 @@ name: Localization Request
 description: Request a new language or translation.
 title: "[L10N]: "
 labels: ["localization"]
+type: "Task"
 body:
   - type: textarea
     attributes:
@@ -13,5 +14,3 @@ body:
     attributes:
       label: Context
       description: Any background information that helps us understand the request.
-    validations:
-      required: true

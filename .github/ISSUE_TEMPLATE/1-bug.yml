@@ -2,6 +2,7 @@ name: Bug Report
 description: Report a demonstrable problem caused by code in this repo.
 title: "[Bug]: "
 labels: ["bug"]
+type: "Bug"
 body:
   # Version number
   - type: input
