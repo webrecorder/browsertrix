@@ -803,7 +803,7 @@ export class ArchivedItemDetail extends BtrixElement {
                     ? this.formattedFinishedDate
                     : html`<span class="text-0-400">${msg("Pending")}</span>`}
                 </btrix-desc-list-item>
-                <btrix-desc-list-item label=${msg("Elapsed Time")}>
+                <btrix-desc-list-item label=${msg("Total Run Time")}>
                   ${this.item!.finished
                     ? html`${this.localize.humanizeDuration(
                         new Date(this.item!.finished).valueOf() -
@@ -819,7 +819,7 @@ export class ArchivedItemDetail extends BtrixElement {
                         </span>
                       `}
                 </btrix-desc-list-item>
-                <btrix-desc-list-item label=${msg("Execution Time")}>
+                <btrix-desc-list-item label=${msg("Aggregate Crawling Time")}>
                   ${this.item!.finished
                     ? html`<span
                         >${humanizeExecutionSeconds(

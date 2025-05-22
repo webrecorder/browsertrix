@@ -43,12 +43,12 @@ export const CellGap: Story = {
         <sl-tooltip content="This is a description of month">
           <sl-icon name="info-circle"></sl-icon>
         </sl-tooltip>`,
-      html`Elapsed Time
-        <sl-tooltip content="This is a description of elapsed time">
+      html`Total Run Time
+        <sl-tooltip content="This is a description of Total Run Time">
           <sl-icon name="info-circle"></sl-icon>
         </sl-tooltip>`,
-      html`Execution Time
-        <sl-tooltip content="This is a description of execution time">
+      html`Aggregate Crawling Time
+        <sl-tooltip content="This is a description of Aggregate Crawling Time">
           <sl-icon name="info-circle"></sl-icon>
         </sl-tooltip>`,
     ],

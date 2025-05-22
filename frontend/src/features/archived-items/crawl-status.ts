@@ -106,7 +106,7 @@ export class CrawlStatus extends TailwindElement {
           slot="prefix"
           style="color: ${color}"
         ></sl-icon>`;
-        label = msg("Running");
+        label = msg("Crawling");
         break;
 
       case "stopping":

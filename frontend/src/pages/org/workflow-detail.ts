@@ -514,7 +514,9 @@ export class WorkflowDetail extends BtrixElement {
             () =>
               this.workflow?.isCrawlRunning
                 ? html`<btrix-badge variant="success">
-                    ${msg("Active")}
+                    ${this.workflow.lastCrawlState === "paused"
+                      ? msg("Active")
+                      : msg("Running")}
                   </btrix-badge>`
                 : nothing,
           ],
@@ -1003,7 +1005,7 @@ export class WorkflowDetail extends BtrixElement {
 
       return html`
         <div class="text-neutral-500">
-          ${msg("Running in")} ${this.localize.number(windowCount)}
+          ${msg("Crawling in")} ${this.localize.number(windowCount)}
           ${pluralOf("browserWindows", windowCount)}
         </div>
 
@@ -1102,7 +1104,7 @@ export class WorkflowDetail extends BtrixElement {
 
     return html`
       <btrix-desc-list horizontal>
-        ${this.renderDetailItem(msg("Run Duration"), (workflow) =>
+        ${this.renderDetailItem(msg("Total Run Time"), (workflow) =>
           this.lastCrawlStartTime
             ? this.localize.humanizeDuration(
                 (workflow.lastCrawlTime && !workflow.isCrawlRunning

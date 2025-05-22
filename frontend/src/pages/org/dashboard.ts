@@ -302,8 +302,8 @@ export class Dashboard extends BtrixElement {
                     metrics.workflowsRunningCount && metrics.maxConcurrentCrawls
                       ? `${metrics.workflowsRunningCount} / ${metrics.maxConcurrentCrawls}`
                       : metrics.workflowsRunningCount,
-                  singleLabel: msg("Crawl Running"),
-                  pluralLabel: msg("Crawls Running"),
+                  singleLabel: msg("Workflow Running"),
+                  pluralLabel: msg("Workflows Running"),
                   iconProps: {
                     name: "dot",
                     library: "app",
@@ -312,8 +312,8 @@ export class Dashboard extends BtrixElement {
                 })}
                 ${this.renderStat({
                   value: metrics.workflowsQueuedCount,
-                  singleLabel: msg("Crawl Workflow Waiting"),
-                  pluralLabel: msg("Crawl Workflows Waiting"),
+                  singleLabel: msg("Workflow Waiting"),
+                  pluralLabel: msg("Workflows Waiting"),
                   iconProps: { name: "hourglass-split", color: "violet" },
                 })}
                 <sl-divider
@@ -829,7 +829,7 @@ export class Dashboard extends BtrixElement {
                 renderBar(
                   usageSeconds > quotaSeconds ? quotaSeconds : usageSeconds,
                   hasExtra ? quotaSeconds : quotaSecondsAllTypes,
-                  msg("Monthly Execution Time Used"),
+                  msg("Monthly Crawling Time Used"),
                   "green",
                   hasExtra ? true : false,
                 ),
@@ -840,7 +840,7 @@ export class Dashboard extends BtrixElement {
                     ? quotaSecondsGifted
                     : usageSecondsGifted,
                   quotaSecondsGifted,
-                  msg("Gifted Execution Time Used"),
+                  msg("Gifted Crawling Time Used"),
                   "blue",
                 ),
               )}
@@ -850,14 +850,14 @@ export class Dashboard extends BtrixElement {
                     ? quotaSecondsExtra
                     : usageSecondsExtra,
                   quotaSecondsExtra,
-                  msg("Extra Execution Time Used"),
+                  msg("Extra Crawling Time Used"),
                   "red",
                 ),
               )}
               <div slot="available" class="flex-1">
                 <sl-tooltip class="text-center">
                   <div slot="content">
-                    <div>${msg("Monthly Execution Time Remaining")}</div>
+                    <div>${msg("Monthly Crawling Time Remaining")}</div>
                     <div class="text-xs opacity-80">
                       ${humanizeExecutionSeconds(quotaSeconds - usageSeconds, {
                         displaySeconds: true,

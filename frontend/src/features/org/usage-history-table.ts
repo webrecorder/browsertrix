@@ -62,16 +62,16 @@ export class UsageHistoryTable extends BtrixElement {
       },
       {
         field: Field.ElapsedTime,
-        label: msg("Elapsed Time"),
+        label: msg("Total Run Time"),
         description: msg(
           "Total duration of crawls and QA analysis runs, from start to finish",
         ),
       },
       {
         field: Field.ExecutionTime,
-        label: msg("Execution Time"),
+        label: msg("Aggregate Crawling Time"),
         description: msg(
-          "Aggregated time across all browser windows that the crawler was actively executing a crawl or QA analysis run, i.e. not in a waiting state",
+          "Aggregated minutes across all browser windows that the crawler was actively executing a crawl or QA analysis run, i.e. not waiting or paused",
         ),
       },
     ];
@@ -79,26 +79,26 @@ export class UsageHistoryTable extends BtrixElement {
     if (this.hasMonthlyTime()) {
       cols.push({
         field: Field.BillableExecutionTime,
-        label: msg("Billable Execution Time"),
+        label: msg("Billable Crawling Time"),
         description: msg(
-          "Execution time used that is billable to the current month of the plan",
+          "Aggregate crawling minutes that are billable to the current month of the plan",
         ),
       });
     }
     if (this.hasExtraTime()) {
       cols.push({
         field: Field.RolloverExecutionTime,
-        label: msg("Rollover Execution Time"),
+        label: msg("Rollover Crawling Time"),
         description: msg(
-          "Additional execution time used, of which any extra minutes will roll over to next month as billable time",
+          "Additional crawling minutes used, of which any extra minutes will roll over to next month as billable time",
         ),
       });
     }
     if (this.hasGiftedTime()) {
       cols.push({
         field: Field.GiftedExecutionTime,
-        label: msg("Gifted Execution Time"),
-        description: msg("Execution time used that is free of charge"),
+        label: msg("Gifted Crawling Time"),
+        description: msg("Crawling minutes used that are free of charge"),
       });
     }
 
