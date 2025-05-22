@@ -331,12 +331,12 @@ export class CrawlStatus extends TailwindElement {
       </div>`;
     }
     if (label) {
-      return html`<div class="flex items-center gap-2">
+      return html`<div class="flex h-6 items-center gap-2">
         ${icon}
         <div class="leading-none">${label}</div>
       </div>`;
     }
-    return html`<div class="flex items-center gap-2">
+    return html`<div class="flex h-6 items-center gap-2">
       ${icon}<sl-skeleton></sl-skeleton>
     </div>`;
   }
