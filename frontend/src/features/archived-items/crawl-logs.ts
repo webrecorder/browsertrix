@@ -203,7 +203,7 @@ export class CrawlLogs extends BtrixElement {
 
           <footer class="my-4 flex justify-center">
             <btrix-pagination
-              name="logs"
+              name="logsPage"
               page=${logs.page}
               totalCount=${logs.total}
               size=${logs.pageSize}
