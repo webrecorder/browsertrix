@@ -385,18 +385,15 @@ class CrawlOperator(BaseOperator):
                     remainder,
                     status,
                     data.children,
-                    is_paused
+                    is_paused,
                 )
             )
 
-        return_value = {
+        return {
             "status": status.dict(exclude_none=True),
             "children": children,
             "resyncAfterSeconds": status.resync_after,
         }
-        print("sync_crawls return:", flush=True)
-        print(return_value, flush=True)
-        return return_value
 
     def _load_redis(self, params, status: CrawlStatus, children):
         name = f"redis-{params['id']}"
@@ -503,7 +500,7 @@ class CrawlOperator(BaseOperator):
         last_pod_remainder: int,
         status: CrawlStatus,
         children,
-        is_paused: bool
+        is_paused: bool,
     ):
         name = f"crawl-{params['id']}-{i}"
         has_pod = name in children[POD]
@@ -534,8 +531,8 @@ class CrawlOperator(BaseOperator):
         else:
             params["workers"] = params.get(worker_field) or 1
 
-        params["init_crawler"] = not paused
-        if has_pod and not paused:
+        params["init_crawler"] = not is_paused
+        if has_pod and not is_paused:
             restart_reason = pod_info.should_restart_pod(params.get("force_restart"))
             if restart_reason:
                 print(f"Restarting {name}, reason: {restart_reason}")
