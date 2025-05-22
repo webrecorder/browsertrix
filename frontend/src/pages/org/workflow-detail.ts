@@ -101,12 +101,9 @@ export class WorkflowDetail extends BtrixElement {
   // Keep previous values to use when editing
   private readonly prevValues: {
     workflow?: Awaited<ReturnType<WorkflowDetail["getWorkflow"]>>;
-    latestCrawl?: Awaited<ReturnType<WorkflowDetail["getCrawl"]>>;
-    logTotals?: Awaited<ReturnType<WorkflowDetail["getLogTotals"]>>;
     seeds?: APIPaginatedList<Seed>;
   } = {};
 
-  // Get workflow and supplementary data, like latest crawl and logs
   private readonly workflowTask = new Task(this, {
     task: async ([workflowId, isEditing], { signal }) => {
       if (!workflowId) throw new Error("required `workflowId` missing");
@@ -114,76 +111,23 @@ export class WorkflowDetail extends BtrixElement {
       this.stopPoll();
 
       if (isEditing && this.prevValues.workflow) {
-        return { workflow: this.prevValues.workflow };
+        return this.prevValues.workflow;
       }
 
-      const workflow = await this.getWorkflow(workflowId, signal).then(
-        (workflow) => {
-          this.prevValues.workflow = workflow;
-          return workflow;
-        },
-      );
+      const workflow = await this.getWorkflow(workflowId, signal);
+
+      this.prevValues.workflow = workflow;
 
       if (
-        // Last crawl ID and crawl time can also be set in `runNow()`
+        // Last crawl ID can also be set in `runNow()`
         workflow.lastCrawlId !== this.lastCrawlId
       ) {
         this.lastCrawlId = workflow.lastCrawlId;
-      } else if (
-        this.crawlsTask.value &&
-        workflow.isCrawlRunning &&
-        this.groupedWorkflowTab === WorkflowTab.Crawls
-      ) {
-        void this.crawlsTask.run();
       }
 
-      if (
-        workflow.lastCrawlId &&
-        (!this.workflowTask.value ||
-          (workflow.isCrawlRunning &&
-            this.groupedWorkflowTab === WorkflowTab.LatestCrawl))
-      ) {
-        // Fill in crawl information that's not provided by workflow
-        const [{ stats, pageCount, reviewStatus }, logTotals] =
-          await Promise.all([
-            this.getCrawl(workflow.lastCrawlId, signal).then((latestCrawl) => {
-              this.prevValues.latestCrawl = latestCrawl;
-              return latestCrawl;
-            }),
-            this.getLogTotals(workflow.lastCrawlId, signal).then(
-              (logTotals) => {
-                this.prevValues.logTotals = logTotals;
-                return logTotals;
-              },
-            ),
-          ]);
-        return {
-          workflow,
-          latestCrawl: { stats, pageCount, reviewStatus },
-          logTotals,
-        };
-      }
-
-      return {
-        workflow,
-        latestCrawl: this.prevValues.latestCrawl,
-        logTotals: this.prevValues.logTotals,
-      };
+      return workflow;
     },
     args: () => [this.workflowId, this.isEditing] as const,
-  });
-
-  private readonly pollTask = new Task(this, {
-    task: async ([workflow, isEditing]) => {
-      if (!workflow || isEditing) {
-        return;
-      }
-
-      return window.setTimeout(() => {
-        void this.workflowTask.run();
-      }, POLL_INTERVAL_SECONDS * 1000);
-    },
-    args: () => [this.workflowTask.value, this.isEditing] as const,
   });
 
   private readonly seedsTask = new Task(this, {
@@ -199,6 +143,24 @@ export class WorkflowDetail extends BtrixElement {
     args: () => [this.workflowId, this.isEditing] as const,
   });
 
+  private readonly latestCrawlTask = new Task(this, {
+    task: async ([lastCrawlId], { signal }) => {
+      if (!lastCrawlId) return null;
+
+      return await this.getCrawl(lastCrawlId, signal);
+    },
+    args: () => [this.lastCrawlId] as const,
+  });
+
+  private readonly logTotalsTask = new Task(this, {
+    task: async ([lastCrawlId], { signal }) => {
+      if (!lastCrawlId) return null;
+
+      return await this.getLogTotals(lastCrawlId, signal);
+    },
+    args: () => [this.lastCrawlId] as const,
+  });
+
   private readonly crawlsTask = new Task(this, {
     task: async ([workflowId, crawlsParams], { signal }) => {
       if (!workflowId) throw new Error("required `workflowId` missing");
@@ -206,6 +168,49 @@ export class WorkflowDetail extends BtrixElement {
       return await this.getCrawls(workflowId, crawlsParams, signal);
     },
     args: () => [this.workflowId, this.crawlsParams] as const,
+  });
+
+  private readonly pollTask = new Task(this, {
+    task: async ([workflow, isEditing]) => {
+      if (!workflow || isEditing) {
+        return;
+      }
+
+      if (workflow.lastCrawlId) {
+        await Promise.all([
+          this.latestCrawlTask.taskComplete,
+          this.logTotalsTask.taskComplete,
+          this.crawlsTask.taskComplete,
+        ]);
+      }
+
+      return window.setTimeout(async () => {
+        void this.workflowTask.run();
+        const workflow = await this.workflowTask.taskComplete;
+
+        // Retrieve additional data based on current tab
+        if (
+          workflow.isCrawlRunning &&
+          !workflow.lastCrawlShouldPause &&
+          workflow.lastCrawlState !== "paused"
+        ) {
+          switch (this.groupedWorkflowTab) {
+            case WorkflowTab.LatestCrawl: {
+              void this.latestCrawlTask.run();
+              void this.logTotalsTask.run();
+              break;
+            }
+            case WorkflowTab.Crawls: {
+              void this.crawlsTask.run();
+              break;
+            }
+            default:
+              break;
+          }
+        }
+      }, POLL_INTERVAL_SECONDS * 1000);
+    },
+    args: () => [this.workflowTask.value, this.isEditing] as const,
   });
 
   private readonly runNowTask = new Task(this, {
@@ -239,7 +244,6 @@ export class WorkflowDetail extends BtrixElement {
       await this.pauseResume(signal);
 
       void this.crawlsTask.run();
-
       await this.workflowTask.run();
 
       return this.workflow;
@@ -253,7 +257,6 @@ export class WorkflowDetail extends BtrixElement {
       await this.stop(signal);
 
       void this.crawlsTask.run();
-
       await this.workflowTask.run();
 
       return this.workflow;
@@ -267,7 +270,6 @@ export class WorkflowDetail extends BtrixElement {
       await this.cancel(signal);
 
       void this.crawlsTask.run();
-
       await this.workflowTask.run();
 
       return this.workflow;
@@ -276,7 +278,7 @@ export class WorkflowDetail extends BtrixElement {
 
   // TODO Use task render function
   private get workflow() {
-    return this.workflowTask.value?.workflow;
+    return this.workflowTask.value;
   }
   private get seeds() {
     return this.seedsTask.value;
@@ -284,9 +286,27 @@ export class WorkflowDetail extends BtrixElement {
   private get crawls() {
     return this.crawlsTask.value;
   }
-  private get isLoading() {
-    return this.workflowTask.status === TaskStatus.INITIAL;
+
+  private get isReady() {
+    if (!this.workflow) return false;
+
+    if (this.workflow.lastCrawlId) {
+      if (this.groupedWorkflowTab === WorkflowTab.LatestCrawl) {
+        return Boolean(this.latestCrawlTask.value);
+      }
+
+      if (this.groupedWorkflowTab === WorkflowTab.Crawls) {
+        return Boolean(this.crawlsTask.value);
+      }
+    }
+
+    if (this.groupedWorkflowTab === WorkflowTab.Settings) {
+      return Boolean(this.seedsTask.value);
+    }
+
+    return true;
   }
+
   private get isCancelingOrStoppingCrawl() {
     return isLoading(this.stopTask) || isLoading(this.cancelTask);
   }
@@ -391,7 +411,7 @@ export class WorkflowDetail extends BtrixElement {
         </div>
 
         ${when(
-          this.workflow && this.groupedWorkflowTab,
+          this.isReady && this.groupedWorkflowTab,
           this.renderTabList,
           this.renderLoading,
         )}
@@ -616,12 +636,10 @@ export class WorkflowDetail extends BtrixElement {
       return html`<sl-tooltip content=${msg("Go to Quality Assurance")}>
         <sl-button
           size="small"
-          href="${this.basePath}/crawls/${this.lastCrawlId}#qa"
+          href="${this.basePath}/crawls/${this.lastCrawlId}"
           @click=${this.navigate.link}
-          ?loading=${this.isLoading}
         >
-          <sl-icon slot="prefix" name="clipboard2-data-fill"></sl-icon>
-          ${msg("QA Crawl")}
+          ${msg("View Details")}
           <sl-icon slot="suffix" name="arrow-right"></sl-icon>
         </sl-button>
       </sl-tooltip> `;
@@ -1034,8 +1052,10 @@ export class WorkflowDetail extends BtrixElement {
                   class="underline hover:no-underline"
                   @click=${this.navigate.link}
                 >
-                  ${this.workflow?.lastCrawlState === "paused"
-                    ? msg("View Paused Crawl")
+                  ${this.workflow &&
+                  (this.workflow.lastCrawlShouldPause ||
+                    this.workflow.lastCrawlState === "paused")
+                    ? msg("View Crawl")
                     : msg("Watch Crawl")}
                 </a>
               </btrix-alert>
@@ -1148,7 +1168,7 @@ export class WorkflowDetail extends BtrixElement {
       return this.renderInactiveCrawlMessage();
     }
 
-    const logTotals = this.workflowTask.value?.logTotals;
+    const logTotals = this.logTotalsTask.value;
     const showReplay =
       this.workflow &&
       (!this.workflow.isCrawlRunning ||
@@ -1200,14 +1220,17 @@ export class WorkflowDetail extends BtrixElement {
           name=${WorkflowTab.LatestCrawl}
           class="mt-3 block"
         >
-          ${when(
-            showReplay,
-            this.renderInactiveWatchCrawl,
-            this.renderWatchCrawl,
+          <!-- Don't render tab panel content when tab isn't active to prevent too many API calls -->
+          ${when(this.workflowTab === WorkflowTab.LatestCrawl, () =>
+            when(
+              showReplay,
+              this.renderInactiveWatchCrawl,
+              this.renderWatchCrawl,
+            ),
           )}
         </btrix-tab-group-panel>
         <btrix-tab-group-panel name=${WorkflowTab.Logs} class="mt-3 block">
-          ${this.renderLogs()}
+          ${when(this.workflowTab === WorkflowTab.Logs, this.renderLogs)}
         </btrix-tab-group-panel>
       </btrix-tab-group>
     `;
@@ -1357,7 +1380,7 @@ export class WorkflowDetail extends BtrixElement {
       </sl-tooltip> `;
     }
 
-    const logTotals = this.workflowTask.value?.logTotals;
+    const logTotals = this.logTotalsTask.value;
 
     if (
       this.workflowTab === WorkflowTab.Logs &&
@@ -1377,7 +1400,7 @@ export class WorkflowDetail extends BtrixElement {
   }
 
   private readonly renderCrawlDetails = () => {
-    const latestCrawl = this.workflowTask.value?.latestCrawl;
+    const latestCrawl = this.latestCrawlTask.value;
     const skeleton = html`<sl-skeleton class="w-full"></sl-skeleton>`;
 
     const duration = (workflow: Workflow) => {
@@ -1421,9 +1444,27 @@ export class WorkflowDetail extends BtrixElement {
         </span>`;
       }
 
-      return html`<btrix-qa-review-status
-        status=${ifDefined(latestCrawl.reviewStatus)}
-      ></btrix-qa-review-status>`;
+      return html`<div class="inline-flex items-center gap-2">
+        ${latestCrawl.reviewStatus
+          ? html`<btrix-qa-review-status
+              status=${ifDefined(latestCrawl.reviewStatus)}
+            ></btrix-qa-review-status>`
+          : html`<sl-tooltip
+              content=${msg("Add Quality Assurance Rating")}
+              placement="bottom"
+              hoist
+            >
+              <sl-button
+                class="micro"
+                size="small"
+                href="${this.basePath}/crawls/${this.lastCrawlId}#qa"
+                @click=${this.navigate.link}
+              >
+                <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+                ${msg("Add")}
+              </sl-button>
+            </sl-tooltip>`}
+      </div> `;
     };
 
     return html`
@@ -1590,9 +1631,9 @@ export class WorkflowDetail extends BtrixElement {
     `;
   };
 
-  private renderLogs() {
+  private readonly renderLogs = () => {
     return html`
-      <div aria-live="polite" aria-busy=${this.isLoading}>
+      <div aria-live="polite" aria-busy=${isLoading(this.logTotalsTask)}>
         ${when(
           this.lastCrawlId,
           (crawlId) => html`
@@ -1608,7 +1649,7 @@ export class WorkflowDetail extends BtrixElement {
         )}
       </div>
     `;
-  }
+  };
 
   private readonly renderRunNowButton = () => {
     return html`
@@ -1760,7 +1801,7 @@ export class WorkflowDetail extends BtrixElement {
     return html`<section
       class="rounded-lg border px-5 py-3"
       aria-live="polite"
-      aria-busy=${this.isLoading || !this.seeds}
+      aria-busy=${isLoading(this.seedsTask)}
     >
       <btrix-config-details
         .crawlConfig=${this.workflow}
@@ -1873,6 +1914,8 @@ export class WorkflowDetail extends BtrixElement {
     if (this.pollTask.value) {
       window.clearTimeout(this.pollTask.value);
     }
+
+    this.pollTask.abort();
   }
 
   private async getCrawl(crawlId: Crawl["id"], signal: AbortSignal) {
