@@ -23,6 +23,7 @@ import {
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { OverflowDropdown } from "@/components/ui/overflow-dropdown";
 import { WorkflowTab } from "@/routes";
+import { noData } from "@/strings/ui";
 import type { ListWorkflow } from "@/types/crawler";
 import { humanizeSchedule } from "@/utils/cron";
 import { srOnly, truncate } from "@/utils/css";
@@ -70,6 +71,10 @@ const hostVars = css`
     --row-offset: var(--sl-spacing-x-small);
   }
 `;
+
+const notSpecified = html`<span class="notSpecified" role="presentation"
+  >${noData}</span
+>`;
 
 @customElement("btrix-workflow-list-item")
 @localized()
@@ -208,10 +213,6 @@ export class WorkflowListItem extends BtrixElement {
   dropdownMenu!: OverflowDropdown;
 
   render() {
-    const notSpecified = html`<span class="notSpecified" role="presentation"
-      >---</span
-    >`;
-
     return html`<div
       class="item row"
       role="button"
@@ -243,138 +244,7 @@ export class WorkflowListItem extends BtrixElement {
           })}
         </div>
       </div>
-      <div class="col">
-        <div class="detail">
-          ${this.safeRender(
-            (workflow) => html`
-              <btrix-crawl-status
-                state=${workflow.lastCrawlState || msg("No Crawls Yet")}
-                ?stopping=${workflow.lastCrawlStopping}
-                ?shouldPause=${workflow.lastCrawlShouldPause}
-              ></btrix-crawl-status>
-            `,
-          )}
-        </div>
-        <div class="desc duration">
-          ${this.safeRender((workflow) => {
-            const inDuration = (dur: number) => {
-              const compactDuration = this.localize.humanizeDuration(dur, {
-                compact: true,
-              });
-              return msg(str`in ${compactDuration}`, {
-                desc: "`compactDuration` example: '2h'",
-              });
-            };
-            const forDuration = (dur: number) => {
-              const compactDuration = this.localize.humanizeDuration(dur, {
-                compact: true,
-              });
-              return msg(str`for ${compactDuration}`, {
-                desc: "`compactDuration` example: '2h'",
-              });
-            };
-            const afterDuration = (dur: number) => {
-              const verboseDuration = this.localize.humanizeDuration(dur, {
-                verbose: true,
-                unitCount: 2,
-              });
-              return msg(str`after ${verboseDuration}`, {
-                desc: "`verboseDuration` example: '2 hours, 15 seconds'",
-              });
-            };
-
-            if (workflow.lastCrawlTime && workflow.lastCrawlStartTime) {
-              const diff =
-                new Date(workflow.lastCrawlTime).valueOf() -
-                new Date(workflow.lastCrawlStartTime).valueOf();
-
-              return html`<sl-tooltip placement="bottom" hoist>
-                <span>
-                  <btrix-format-date
-                    date=${workflow.lastCrawlTime}
-                    month="2-digit"
-                    day="2-digit"
-                    year="numeric"
-                    hour="2-digit"
-                    minute="2-digit"
-                  ></btrix-format-date>
-                  ${inDuration(diff)}
-                </span>
-                <span slot="content">
-                  ${msg("Crawl ended on")}
-                  <btrix-format-date
-                    date=${workflow.lastCrawlTime}
-                    month="long"
-                    day="numeric"
-                    year="numeric"
-                    hour="2-digit"
-                    minute="2-digit"
-                    time-zone-name="short"
-                  ></btrix-format-date>
-                  ${afterDuration(diff)}
-                </span>
-              </sl-tooltip>`;
-            }
-            if (workflow.lastCrawlStartTime) {
-              const latestDate =
-                workflow.lastCrawlShouldPause && workflow.lastCrawlPausedAt
-                  ? new Date(workflow.lastCrawlPausedAt)
-                  : new Date();
-              const diff =
-                latestDate.valueOf() -
-                new Date(workflow.lastCrawlStartTime).valueOf();
-              if (diff < 1000) {
-                return "";
-              }
-
-              if (
-                workflow.lastCrawlState === "paused" &&
-                workflow.lastCrawlPausedAt
-              ) {
-                const pausedDiff =
-                  new Date().valueOf() -
-                  new Date(workflow.lastCrawlPausedAt).valueOf();
-                const runDuration = afterDuration(diff);
-
-                return html`
-                  <sl-tooltip placement="bottom" hoist>
-                    <span>
-                      <btrix-format-date
-                        date=${workflow.lastCrawlPausedAt}
-                        month="2-digit"
-                        day="2-digit"
-                        year="numeric"
-                        hour="2-digit"
-                        minute="2-digit"
-                      ></btrix-format-date>
-                      ${forDuration(pausedDiff)}
-                    </span>
-
-                    <span slot="content">
-                      ${msg("Crawl paused on")}
-                      <btrix-format-date
-                        date=${workflow.lastCrawlPausedAt}
-                        month="long"
-                        day="numeric"
-                        year="numeric"
-                        hour="2-digit"
-                        minute="2-digit"
-                        time-zone-name="short"
-                      ></btrix-format-date>
-                      ${msg(str`${runDuration} of run time`, {
-                        desc: "`runDuration` example: 'after 5 minutes'",
-                      })}
-                    </span>
-                  </sl-tooltip>
-                `;
-              }
-
-              return html`${msg("Running")} ${forDuration(diff)}`;
-            }
-            return notSpecified;
-          })}
-        </div>
-      </div>
+      <div class="col">${this.renderLatestCrawl()}</div>
       <div class="col">
         <div class="detail">
           ${this.safeRender((workflow) => {
@@ -456,6 +326,141 @@ export class WorkflowListItem extends BtrixElement {
       </div>
     </div>`;
   }
+
+  private readonly renderLatestCrawl = () =>
+    this.safeRender((workflow) => {
+      let tooltipContent = html``;
+
+      const status = () => html`
+        <btrix-crawl-status
+          state=${workflow.lastCrawlState || msg("No Crawls Yet")}
+          ?stopping=${workflow.lastCrawlStopping}
+          ?shouldPause=${workflow.lastCrawlShouldPause}
+        ></btrix-crawl-status>
+      `;
+
+      const duration = () => {
+        const inDuration = (dur: number) => {
+          const compactDuration = this.localize.humanizeDuration(dur, {
+            compact: true,
+          });
+          return msg(str`in ${compactDuration}`, {
+            desc: "`compactDuration` example: '2h'",
+          });
+        };
+        const forDuration = (dur: number) => {
+          const compactDuration = this.localize.humanizeDuration(dur, {
+            compact: true,
+          });
+          return msg(str`for ${compactDuration}`, {
+            desc: "`compactDuration` example: '2h'",
+          });
+        };
+        const afterDuration = (dur: number) => {
+          const verboseDuration = this.localize.humanizeDuration(dur, {
+            verbose: true,
+            unitCount: 2,
+          });
+          return msg(str`after ${verboseDuration}`, {
+            desc: "`verboseDuration` example: '2 hours, 15 seconds'",
+          });
+        };
+
+        if (workflow.lastCrawlTime && workflow.lastCrawlStartTime) {
+          const diff =
+            new Date(workflow.lastCrawlTime).valueOf() -
+            new Date(workflow.lastCrawlStartTime).valueOf();
+
+          tooltipContent = html`
+            <span slot="content">
+              ${msg("Crawl ended on")}
+              <btrix-format-date
+                date=${workflow.lastCrawlTime}
+                month="long"
+                day="numeric"
+                year="numeric"
+                hour="2-digit"
+                minute="2-digit"
+                time-zone-name="short"
+              ></btrix-format-date>
+              ${afterDuration(diff)}
+            </span>
+          `;
+
+          return html`<btrix-format-date
+              date=${workflow.lastCrawlTime}
+              month="2-digit"
+              day="2-digit"
+              year="numeric"
+              hour="2-digit"
+              minute="2-digit"
+            ></btrix-format-date>
+            ${inDuration(diff)}`;
+        }
+
+        if (workflow.lastCrawlStartTime) {
+          const latestDate =
+            workflow.lastCrawlShouldPause && workflow.lastCrawlPausedAt
+              ? new Date(workflow.lastCrawlPausedAt)
+              : new Date();
+          const diff =
+            latestDate.valueOf() -
+            new Date(workflow.lastCrawlStartTime).valueOf();
+          if (diff < 1000) {
+            return "";
+          }
+
+          if (
+            workflow.lastCrawlState === "paused" &&
+            workflow.lastCrawlPausedAt
+          ) {
+            const pausedDiff =
+              new Date().valueOf() -
+              new Date(workflow.lastCrawlPausedAt).valueOf();
+            tooltipContent = html`
+              <span slot="content">
+                ${msg("Crawl paused on")}
+                <btrix-format-date
+                  date=${workflow.lastCrawlPausedAt}
+                  month="long"
+                  day="numeric"
+                  year="numeric"
+                  hour="2-digit"
+                  minute="2-digit"
+                  time-zone-name="short"
+                ></btrix-format-date>
+              </span>
+            `;
+
+            return html`
+              <btrix-format-date
+                date=${workflow.lastCrawlPausedAt}
+                month="2-digit"
+                day="2-digit"
+                year="numeric"
+                hour="2-digit"
+                minute="2-digit"
+              ></btrix-format-date>
+              ${forDuration(pausedDiff)}
+            `;
+          }
+
+          return html`${msg("Running")} ${forDuration(diff)}`;
+        }
+        return notSpecified;
+      };
+
+      return html`
+        <sl-tooltip hoist placement="bottom" ?disabled=${!tooltipContent}>
+          <div>
+            <div class="detail">${status()}</div>
+            <div class="desc duration">${duration()}</div>
+          </div>
+
+          ${tooltipContent}
+        </sl-tooltip>
+      `;
+    });
 
   private safeRender(
     render: (workflow: ListWorkflow) => string | TemplateResult<1>,
