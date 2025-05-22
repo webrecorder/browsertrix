@@ -133,6 +133,7 @@ export class CrawlStatus extends TailwindElement {
         break;
 
       case "resuming":
+        color = "var(--sl-color-violet-600)";
         icon = html`<sl-icon
           name="play-circle"
           class="animatePulse"
@@ -331,12 +332,12 @@ export class CrawlStatus extends TailwindElement {
       </div>`;
     }
     if (label) {
-      return html`<div class="flex items-center gap-2">
+      return html`<div class="flex h-6 items-center gap-2">
         ${icon}
         <div class="leading-none">${label}</div>
       </div>`;
     }
-    return html`<div class="flex items-center gap-2">
+    return html`<div class="flex h-6 items-center gap-2">
       ${icon}<sl-skeleton></sl-skeleton>
     </div>`;
   }

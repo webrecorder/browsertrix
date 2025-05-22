@@ -71,7 +71,7 @@ export class UsageHistoryTable extends BtrixElement {
         field: Field.ExecutionTime,
         label: msg("Execution Time"),
         description: msg(
-          "Aggregated time across all browser windows that the crawler was actively executing a crawl or QA analysis run, i.e. not in a waiting state",
+          "Aggregated time across all browser windows that the crawler was actively executing a crawl or QA analysis run, i.e. not waiting or paused",
         ),
       },
     ];
