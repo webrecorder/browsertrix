@@ -35,6 +35,7 @@ const sortableFields: Record<
   },
 };
 const ABORT_REASON_THROTTLE = "throttled";
+const POLL_INTERVAL_SECONDS = 30;
 
 @customElement("btrix-crawls")
 @localized()
@@ -65,6 +66,8 @@ export class Crawls extends BtrixElement {
   private filterBy: Partial<Record<keyof Crawl, unknown>> = {
     state: activeCrawlStates,
   };
+
+  private timerId?: number;
 
   // Use to cancel requests
   private getCrawlsController: AbortController | null = null;
@@ -102,6 +105,8 @@ export class Crawls extends BtrixElement {
   disconnectedCallback(): void {
     this.cancelInProgressGetCrawls();
     super.disconnectedCallback();
+
+    window.clearTimeout(this.timerId);
   }
 
   render() {
@@ -327,8 +332,15 @@ export class Crawls extends BtrixElement {
    */
   private async fetchCrawls(params?: APIPaginationQuery): Promise<void> {
     this.cancelInProgressGetCrawls();
+    window.clearTimeout(this.timerId);
+
     try {
       this.crawls = await this.getCrawls(params);
+
+      // TODO Refactor to poll task
+      this.timerId = window.setTimeout(() => {
+        void this.fetchCrawls();
+      }, POLL_INTERVAL_SECONDS * 1000);
     } catch (e) {
       if ((e as Error).name === "AbortError") {
         console.debug("Fetch crawls aborted to throttle");

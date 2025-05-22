@@ -70,7 +70,7 @@ export interface UserGuideEventMap {
   "btrix-user-guide-show": CustomEvent<{ path?: string }>;
 }
 
-const POLL_INTERVAL_SECONDS = 10;
+const POLL_INTERVAL_SECONDS = 30;
 
 @customElement("browsertrix-app")
 @localized()
