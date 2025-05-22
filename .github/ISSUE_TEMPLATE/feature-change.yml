@@ -2,6 +2,7 @@ name: Feature / Change Request
 description: Request a new feature or change to an existing feature of the app.
 title: "[Feature]: "
 labels: ["enhancement"]
+type: "Feature"
 body:
   # User story sentence
   - type: textarea
