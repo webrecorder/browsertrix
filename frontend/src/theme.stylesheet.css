@@ -158,6 +158,12 @@
     font-size: var(--sl-input-help-text-font-size-medium);
   }
 
+  /* TODO Move to custom button */
+  sl-button[size="small"].micro::part(base) {
+    --sl-input-height-small: 1.5rem;
+    font-size: var(--sl-font-size-x-small);
+  }
+
   /* Update button colors */
   sl-button[variant="primary"]:not([outline])::part(base) {
     background-color: theme(colors.primary.400);

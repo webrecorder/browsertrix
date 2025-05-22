@@ -30,7 +30,7 @@ export class DescListItem extends LitElement {
       color: var(--sl-color-neutral-500);
       font-size: var(--sl-font-size-x-small);
       line-height: 1rem;
-      margin: 0 0 var(--sl-spacing-2x-small) 0;
+      margin: 0 0 var(--sl-spacing-3x-small) 0;
     }
 
     dd {
@@ -40,8 +40,8 @@ export class DescListItem extends LitElement {
       font-size: var(--sl-font-size-medium);
       font-family: var(--font-monostyle-family);
       font-variation-settings: var(--font-monostyle-variation);
-      line-height: 1rem;
-      min-height: calc(1rem + var(--sl-spacing-2x-small));
+      line-height: 1.5rem;
+      min-height: 1.5rem;
     }
 
     .item {
@@ -94,7 +94,7 @@ export class DescList extends LitElement {
       display: inline-block;
       flex: 1 0 0;
       min-width: min-content;
-      padding-top: var(--sl-spacing-2x-small);
+      padding-top: var(--sl-spacing-x-small);
     }
 
     .horizontal ::slotted(btrix-desc-list-item)::before {
