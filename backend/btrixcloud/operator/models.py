@@ -206,6 +206,7 @@ class CrawlStatus(BaseModel):
     # human readable size string
     sizeHuman: str = ""
     scale: int = 1
+    lastScale: int = 1
     filesAdded: int = 0
     filesAddedSize: int = 0
     finished: Optional[str] = None

@@ -363,26 +363,25 @@ class CrawlOperator(BaseOperator):
             children.extend(await self._load_qa_configmap(params, data.children))
 
         is_paused = bool(crawl.paused_at) and status.state == "paused"
-        crawler_pod_count = pod_count_from_browser_windows(status.scale)
-        browsers_per_pod = int(os.environ.get("NUM_BROWSERS", 1))
+
         print(f"status.scale: {status.scale}", flush=True)
         print(f"crawl.scale: {crawl.scale}", flush=True)
 
         crawler_pod_count = pod_count_from_browser_windows(crawl.scale)
         browsers_per_pod = int(os.environ.get("NUM_BROWSERS", 1))
 
-        if crawl.scale < browsers_per_pod:
-            remainder = crawl.scale
-        else:
-            remainder = crawl.scale % crawler_pod_count
+        remainder = crawl.scale % browsers_per_pod
+        remainder_changed = (status.lastScale % browsers_per_pod) != remainder
+        print(f"remainder: {remainder}, changed: {remainder_changed}")
+        status.lastScale = crawl.scale
 
         for i in range(0, crawler_pod_count):
             children.extend(
                 self._load_crawler(
                     params,
                     i,
-                    crawler_pod_count - 1,
                     remainder,
+                    remainder_changed,
                     status,
                     data.children,
                     is_paused,
@@ -496,8 +495,8 @@ class CrawlOperator(BaseOperator):
         self,
         params,
         i: int,
-        last_pod_index: int,
-        last_pod_remainder: int,
+        first_pod_remainder: int,
+        remainder_changed: bool,
         status: CrawlStatus,
         children,
         is_paused: bool,
@@ -526,21 +525,25 @@ class CrawlOperator(BaseOperator):
         else:
             params["memory_limit"] = self.k8s.max_crawler_memory_size
         params["storage"] = pod_info.newStorage or params.get("crawler_storage")
-        if i == last_pod_index and last_pod_remainder:
-            params["workers"] = last_pod_remainder
+
+        if i == 0 and first_pod_remainder:
+            params["workers"] = first_pod_remainder
         else:
             params["workers"] = params.get(worker_field) or 1
 
         params["init_crawler"] = not is_paused
         if has_pod and not is_paused:
             restart_reason = pod_info.should_restart_pod(params.get("force_restart"))
+            if not restart_reason and i == 0 and remainder_changed:
+                restart_reason = "pod_resized"
+
             if restart_reason:
                 print(f"Restarting {name}, reason: {restart_reason}")
                 params["init_crawler"] = False
 
         worker_count = params["workers"]
         print(
-            f"crawler pod {i + 1} of {last_pod_index + 1}, index {i}, {worker_count} workers",
+            f"crawler pod {i}, {worker_count} workers",
             flush=True,
         )
 
@@ -591,8 +594,8 @@ class CrawlOperator(BaseOperator):
         print(f"desired scale (pods): {desired_scale}", flush=True)
 
         # ensure at least enough pages for the scale
-        if status.pagesFound < desired_scale:
-            desired_scale = max(1, status.pagesFound)
+        #if status.pagesFound < desired_scale:
+        #    desired_scale = max(1, status.pagesFound)
 
         # if desired_scale same or scaled up, return desired_scale
         if desired_scale >= actual_scale:
