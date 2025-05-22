@@ -1,5 +1,5 @@
-name: Feature Request
-description: Request new or changes to functionality.
+name: Change Request
+description: Request new functionality or changes to an existing feature.
 title: "[Change]: "
 labels: ["enhancement", "idea"]
 type: "Feature"
