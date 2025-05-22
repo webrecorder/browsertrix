@@ -602,12 +602,12 @@ export class App extends BtrixElement {
 
     const selectedOption = this.orgSlugInPath
       ? orgs.find(({ slug }) => slug === this.orgSlugInPath)
-      : { slug: "", name: msg("All Organizations") };
+      : {
+          slug: "",
+          name: msg("All Organizations"),
+        };
+
     if (!selectedOption) {
-      console.debug(
-        `Couldn't find organization with slug ${this.orgSlugInPath}`,
-        orgs,
-      );
       return;
     }
 
