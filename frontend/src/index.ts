@@ -832,6 +832,10 @@ export class App extends BtrixElement {
         return html`<btrix-orgs class="w-full md:bg-neutral-50"></btrix-orgs>`;
 
       case "org": {
+        if (!this.isUserInCurrentOrg) {
+          return this.renderNotFoundPage();
+        }
+
         const slug = this.viewState.params.slug;
         const orgPath = this.viewState.pathname;
         const pathname = this.getLocationPathname();
