@@ -43,7 +43,7 @@ import {
   type TranslatedLocaleEnum,
 } from "@/types/localization";
 import { type AppSettings } from "@/utils/app";
-import { activeCrawlStates, DEFAULT_MAX_SCALE } from "@/utils/crawler";
+import { DEFAULT_MAX_SCALE } from "@/utils/crawler";
 import localize from "@/utils/localize";
 import { toast } from "@/utils/notify";
 import router, { urlForName } from "@/utils/router";
@@ -122,8 +122,8 @@ export class App extends BtrixElement {
   });
 
   private readonly pollTask = new Task(this, {
-    task: async ([workflow]) => {
-      if (!workflow) return;
+    task: async ([crawls]) => {
+      if (!crawls) return;
 
       return window.setTimeout(() => {
         void this.activeCrawlsTotalTask.run();
@@ -616,15 +616,14 @@ export class App extends BtrixElement {
                     @click=${this.navigate.link}
                   >
                     ${msg("Active Crawls")}
-                    ${this.activeCrawlsTotalTask.render({
-                      complete: (total) => html`
-                        <btrix-badge
-                          variant=${total > 0 ? "primary" : "neutral"}
-                        >
+                    ${when(
+                      this.activeCrawlsTotalTask.value,
+                      (total) => html`
+                        <btrix-badge variant=${total > 0 ? "primary" : "blue"}>
                           ${this.localize.number(total)}
                         </btrix-badge>
                       `,
-                    })}
+                    )}
                   </a>
                 </div>
               `
@@ -1168,7 +1167,6 @@ export class App extends BtrixElement {
 
   private async getActiveCrawlsTotal() {
     const query = queryString.stringify({
-      state: activeCrawlStates,
       pageSize: 1,
     });
 
