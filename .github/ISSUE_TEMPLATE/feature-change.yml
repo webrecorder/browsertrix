@@ -1,21 +1,34 @@
-name: Feature / Change Request
-description: Request a new feature or change to an existing feature of the app.
-title: "[Feature]: "
-labels: ["enhancement"]
+name: Feature Request
+description: Request new or changes to functionality.
+title: "[Change]: "
+labels: ["enhancement", "idea"]
 type: "Feature"
 body:
-  # User story sentence
+  # Deployment type
+  - type: dropdown
+    id: deployment
+    attributes:
+      label: Browsertrix Host
+      description: Are you self-hosting Browsertrix, or are you on a hosted plan?
+      options:
+        - Self-Hosted
+        - Hosted by Webrecorder
+    validations:
+      required: true
   - type: textarea
     attributes:
       label: What change would you like to see?
-      description: Describe the improvement or feature you'd like added to Browsertrix.
+      description: |
+        A clear and concise description of the change to existing functionality.
+
+        For general ideas on how to improve Browsertrix, or if you have questions about 
+        existing functionality, please check our [community forum](https://forum.webrecorder.net/) 
+        before submitting a request.
       placeholder: I would like to be able to ____________ so that I can ____________.
     validations:
       required: true
-  # Context
+  # Additional details
   - type: textarea
     attributes:
-      label: Context
-      description: Any background information that helps us understand the request.
-    validations:
-      required: true
+      label: Additional details
+      description: Any additional context that helps us understand this request.

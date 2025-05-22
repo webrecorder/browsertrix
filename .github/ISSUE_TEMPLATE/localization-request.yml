@@ -14,5 +14,3 @@ body:
     attributes:
       label: Context
       description: Any background information that helps us understand the request.
-    validations:
-      required: true
