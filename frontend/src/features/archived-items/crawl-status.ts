@@ -133,6 +133,7 @@ export class CrawlStatus extends TailwindElement {
         break;
 
       case "resuming":
+        color = "var(--sl-color-violet-600)";
         icon = html`<sl-icon
           name="play-circle"
           class="animatePulse"

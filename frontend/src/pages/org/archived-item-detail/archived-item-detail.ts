@@ -1031,8 +1031,6 @@ ${this.item?.description}
     const qaIsRunning = this.isQAActive;
     const qaIsAvailable = !!this.mostRecentNonFailedQARun;
 
-    console.log(new URL(window.location.href).pathname);
-
     const reviewLink =
       qaIsAvailable && this.qaRunId
         ? `${new URL(window.location.href).pathname}/review/screenshots?qaRunId=${this.qaRunId}`

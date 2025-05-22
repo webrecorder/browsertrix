@@ -5,6 +5,7 @@ import clsx from "clsx";
 import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
+import { guard } from "lit/directives/guard.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { until } from "lit/directives/until.js";
 import { when } from "lit/directives/when.js";
@@ -606,7 +607,7 @@ export class WorkflowDetail extends BtrixElement {
 
   private renderPanelAction() {
     if (
-      this.workflowTab === WorkflowTab.LatestCrawl &&
+      this.groupedWorkflowTab === WorkflowTab.LatestCrawl &&
       this.isCrawler &&
       this.workflow &&
       !this.workflow.isCrawlRunning &&
@@ -621,8 +622,9 @@ export class WorkflowDetail extends BtrixElement {
         >
           <sl-icon slot="prefix" name="clipboard2-data-fill"></sl-icon>
           ${msg("QA Crawl")}
+          <sl-icon slot="suffix" name="arrow-right"></sl-icon>
         </sl-button>
-      </sl-tooltip>`;
+      </sl-tooltip> `;
     }
 
     if (this.workflowTab === WorkflowTab.Settings && this.isCrawler) {
@@ -1265,7 +1267,7 @@ export class WorkflowDetail extends BtrixElement {
     return html`
       <btrix-alert
         id="pausedNotice"
-        class="sticky top-2 z-50 mb-5"
+        class="sticky top-2 z-50 part-[base]:mb-5"
         variant="info"
       >
         <div class="mb-2 flex justify-between">
@@ -1302,9 +1304,10 @@ export class WorkflowDetail extends BtrixElement {
   };
 
   private renderLatestCrawlAction() {
+    if (!this.workflow || !this.lastCrawlId) return;
+
     if (
       this.isCrawler &&
-      this.workflow &&
       this.workflow.isCrawlRunning &&
       this.workflow.lastCrawlState !== "paused"
     ) {
@@ -1313,7 +1316,7 @@ export class WorkflowDetail extends BtrixElement {
         this.workflow.scale * (this.appState.settings?.numBrowsers || 1);
 
       return html`
-        <div class="text-neutral-500">
+        <div class="text-xs text-neutral-500">
           ${msg("Running in")} ${this.localize.number(windowCount)}
           ${pluralOf("browserWindows", windowCount)}
         </div>
@@ -1340,8 +1343,7 @@ export class WorkflowDetail extends BtrixElement {
 
     if (
       this.workflowTab === WorkflowTab.LatestCrawl &&
-      this.lastCrawlId &&
-      this.workflow?.lastCrawlSize
+      this.workflow.lastCrawlSize
     ) {
       return html`<sl-tooltip content=${tooltipFor.downloadMultWacz} hoist>
         <sl-icon-button
@@ -1522,7 +1524,7 @@ export class WorkflowDetail extends BtrixElement {
 
     return html`
       <div class="aspect-video overflow-hidden rounded-lg border">
-        ${this.renderReplay()}
+        ${guard([this.lastCrawlId], this.renderReplay)}
       </div>
     `;
   };
@@ -1568,7 +1570,7 @@ export class WorkflowDetail extends BtrixElement {
     `;
   }
 
-  private renderReplay() {
+  private readonly renderReplay = () => {
     if (!this.workflow || !this.lastCrawlId) return;
 
     const replaySource = `/api/orgs/${this.workflow.oid}/crawls/${this.lastCrawlId}/replay.json`;
@@ -1586,7 +1588,7 @@ export class WorkflowDetail extends BtrixElement {
         noCache="true"
       ></replay-web-page>
     `;
-  }
+  };
 
   private renderLogs() {
     return html`
