@@ -338,6 +338,7 @@ export class Crawls extends BtrixElement {
       this.crawls = await this.getCrawls(params);
 
       // TODO Refactor to poll task
+      // https://github.com/webrecorder/browsertrix/issues/1716
       this.timerId = window.setTimeout(() => {
         void this.fetchCrawls();
       }, POLL_INTERVAL_SECONDS * 1000);
