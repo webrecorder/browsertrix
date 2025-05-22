@@ -14,6 +14,11 @@ import type { Crawl, CrawlLog, Seed, Workflow, WorkflowParams } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Alert } from "@/components/ui/alert";
+import {
+  calculatePages,
+  parsePage,
+  type PageChangeEvent,
+} from "@/components/ui/pagination";
 import { ClipboardController } from "@/controllers/clipboard";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { ExclusionEditor } from "@/features/crawl-workflows/exclusion-editor";
@@ -22,7 +27,7 @@ import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
 import { WorkflowTab } from "@/routes";
 import { tooltipFor } from "@/strings/archived-items/tooltips";
 import { deleteConfirmation, noData } from "@/strings/ui";
-import type { APIPaginatedList } from "@/types/api";
+import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import { type CrawlState } from "@/types/crawlState";
 import { isApiError } from "@/utils/api";
 import {
@@ -36,6 +41,7 @@ import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
 
 const POLL_INTERVAL_SECONDS = 10;
+const CRAWLS_PAGINATION_NAME = "crawlsPage";
 
 const isLoading = (task: Task) => task.status === TaskStatus.PENDING;
 
@@ -82,7 +88,11 @@ export class WorkflowDetail extends BtrixElement {
   private crawlToDelete: Crawl | null = null;
 
   @state()
-  private filterBy: Partial<Record<keyof Crawl, string | CrawlState[]>> = {};
+  private crawlsParams: { state?: CrawlState[] } & APIPaginationQuery = {
+    page: parsePage(
+      new URLSearchParams(location.search).get(CRAWLS_PAGINATION_NAME),
+    ),
+  };
 
   @query("#pausedNotice")
   private readonly pausedNotice?: Alert | null;
@@ -96,7 +106,7 @@ export class WorkflowDetail extends BtrixElement {
   } = {};
 
   // Get workflow and supplementary data, like latest crawl and logs
-  private readonly workflowDataTask = new Task(this, {
+  private readonly workflowTask = new Task(this, {
     task: async ([workflowId, isEditing], { signal }) => {
       if (!workflowId) throw new Error("required `workflowId` missing");
 
@@ -119,6 +129,7 @@ export class WorkflowDetail extends BtrixElement {
       ) {
         this.lastCrawlId = workflow.lastCrawlId;
       } else if (
+        this.crawlsTask.value &&
         workflow.isCrawlRunning &&
         this.groupedWorkflowTab === WorkflowTab.Crawls
       ) {
@@ -127,7 +138,7 @@ export class WorkflowDetail extends BtrixElement {
 
       if (
         workflow.lastCrawlId &&
-        (!this.workflowDataTask.value ||
+        (!this.workflowTask.value ||
           (workflow.isCrawlRunning &&
             this.groupedWorkflowTab === WorkflowTab.LatestCrawl))
       ) {
@@ -168,10 +179,10 @@ export class WorkflowDetail extends BtrixElement {
       }
 
       return window.setTimeout(() => {
-        void this.workflowDataTask.run();
+        void this.workflowTask.run();
       }, POLL_INTERVAL_SECONDS * 1000);
     },
-    args: () => [this.workflowDataTask.value, this.isEditing] as const,
+    args: () => [this.workflowTask.value, this.isEditing] as const,
   });
 
   private readonly seedsTask = new Task(this, {
@@ -188,12 +199,12 @@ export class WorkflowDetail extends BtrixElement {
   });
 
   private readonly crawlsTask = new Task(this, {
-    task: async ([workflowId, filterBy], { signal }) => {
+    task: async ([workflowId, crawlsParams], { signal }) => {
       if (!workflowId) throw new Error("required `workflowId` missing");
 
-      return await this.getCrawls(workflowId, filterBy, signal);
+      return await this.getCrawls(workflowId, crawlsParams, signal);
     },
-    args: () => [this.workflowId, this.filterBy, this.lastCrawlId] as const,
+    args: () => [this.workflowId, this.crawlsParams] as const,
   });
 
   private readonly runNowTask = new Task(this, {
@@ -202,7 +213,7 @@ export class WorkflowDetail extends BtrixElement {
 
       await this.runNow(signal);
 
-      await this.workflowDataTask.run();
+      await this.workflowTask.run();
 
       return this.workflow;
     },
@@ -214,7 +225,7 @@ export class WorkflowDetail extends BtrixElement {
 
       await this.scale(value as Crawl["scale"], signal);
 
-      await this.workflowDataTask.run();
+      await this.workflowTask.run();
 
       return this.workflow;
     },
@@ -228,7 +239,7 @@ export class WorkflowDetail extends BtrixElement {
 
       void this.crawlsTask.run();
 
-      await this.workflowDataTask.run();
+      await this.workflowTask.run();
 
       return this.workflow;
     },
@@ -242,7 +253,7 @@ export class WorkflowDetail extends BtrixElement {
 
       void this.crawlsTask.run();
 
-      await this.workflowDataTask.run();
+      await this.workflowTask.run();
 
       return this.workflow;
     },
@@ -256,7 +267,7 @@ export class WorkflowDetail extends BtrixElement {
 
       void this.crawlsTask.run();
 
-      await this.workflowDataTask.run();
+      await this.workflowTask.run();
 
       return this.workflow;
     },
@@ -264,7 +275,7 @@ export class WorkflowDetail extends BtrixElement {
 
   // TODO Use task render function
   private get workflow() {
-    return this.workflowDataTask.value?.workflow;
+    return this.workflowTask.value?.workflow;
   }
   private get seeds() {
     return this.seedsTask.value;
@@ -273,7 +284,7 @@ export class WorkflowDetail extends BtrixElement {
     return this.crawlsTask.value;
   }
   private get isLoading() {
-    return this.workflowDataTask.status === TaskStatus.INITIAL;
+    return this.workflowTask.status === TaskStatus.INITIAL;
   }
   private get isCancelingOrStoppingCrawl() {
     return isLoading(this.stopTask) || isLoading(this.cancelTask);
@@ -335,8 +346,8 @@ export class WorkflowDetail extends BtrixElement {
   }
 
   render() {
-    if (this.workflowDataTask.status === TaskStatus.ERROR) {
-      return this.workflowDataTask.render({
+    if (this.workflowTask.status === TaskStatus.ERROR) {
+      return this.workflowTask.render({
         error: this.renderPageError,
       });
     }
@@ -699,7 +710,7 @@ export class WorkflowDetail extends BtrixElement {
         `
       : until(
           Promise.all([
-            this.workflowDataTask.taskComplete,
+            this.workflowTask.taskComplete,
             this.seedsTask.taskComplete,
           ]).catch(this.renderPageError),
           this.renderLoading(),
@@ -968,13 +979,25 @@ export class WorkflowDetail extends BtrixElement {
   }
 
   private renderCrawls() {
+    const pageView = (crawls: APIPaginatedList<Crawl>) => {
+      const pages = calculatePages(crawls);
+
+      if (crawls.page === 1 || pages < 2) return;
+
+      const page = this.localize.number(crawls.page);
+      const pageCount = this.localize.number(pages);
+
+      return msg(str`Viewing page ${page} of ${pageCount}`);
+    };
+
     return html`
       <section>
         <div
-          class="mb-3 flex items-center justify-end rounded-lg border bg-neutral-50 p-3"
+          class="mb-3 flex items-center justify-between rounded-lg border bg-neutral-50 p-3 text-neutral-500"
         >
+          <div>${when(this.crawls, pageView)}</div>
           <div class="flex items-center">
-            <div class="mx-2 text-neutral-500">${msg("View:")}</div>
+            <div class="mx-2">${msg("Status:")}</div>
             <sl-select
               id="stateSelect"
               class="flex-1 md:min-w-[16rem]"
@@ -982,12 +1005,13 @@ export class WorkflowDetail extends BtrixElement {
               pill
               multiple
               max-options-visible="1"
-              placeholder=${msg("All Crawls")}
+              placeholder=${msg("Any")}
               @sl-change=${async (e: CustomEvent) => {
                 const value = (e.target as SlSelect).value as CrawlState[];
                 await this.updateComplete;
-                this.filterBy = {
-                  ...this.filterBy,
+                this.crawlsParams = {
+                  ...this.crawlsParams,
+                  page: 1,
                   state: value,
                 };
               }}
@@ -1078,17 +1102,34 @@ export class WorkflowDetail extends BtrixElement {
             )}
           </btrix-crawl-list>
         </div>
-        ${when(
-          this.crawls && !this.crawls.items.length,
-          () => html`
-            <div class="p-4">
-              <p class="text-center text-neutral-400">
-                ${this.crawls?.total
-                  ? msg("No matching crawls found.")
-                  : msg("No crawls yet.")}
-              </p>
-            </div>
-          `,
+        ${when(this.crawls, (crawls) =>
+          crawls.total
+            ? html`
+                <footer class="my-4 flex justify-center">
+                  <btrix-pagination
+                    name=${CRAWLS_PAGINATION_NAME}
+                    page=${crawls.page}
+                    totalCount=${crawls.total}
+                    size=${crawls.pageSize}
+                    @page-change=${(e: PageChangeEvent) => {
+                      this.crawlsParams = {
+                        ...this.crawlsParams,
+                        page: e.detail.page,
+                      };
+                    }}
+                  >
+                  </btrix-pagination>
+                </footer>
+              `
+            : html`
+                <div class="p-4">
+                  <p class="text-center text-neutral-400">
+                    ${this.crawls?.total
+                      ? msg("No matching crawls found.")
+                      : msg("No crawls yet.")}
+                  </p>
+                </div>
+              `,
         )}
       </section>
     `;
@@ -1105,7 +1146,7 @@ export class WorkflowDetail extends BtrixElement {
       return this.renderInactiveCrawlMessage();
     }
 
-    const logTotals = this.workflowDataTask.value?.logTotals;
+    const logTotals = this.workflowTask.value?.logTotals;
     const showReplay =
       this.workflow &&
       (!this.workflow.isCrawlRunning ||
@@ -1314,7 +1355,7 @@ export class WorkflowDetail extends BtrixElement {
       </sl-tooltip> `;
     }
 
-    const logTotals = this.workflowDataTask.value?.logTotals;
+    const logTotals = this.workflowTask.value?.logTotals;
 
     if (
       this.workflowTab === WorkflowTab.Logs &&
@@ -1334,7 +1375,7 @@ export class WorkflowDetail extends BtrixElement {
   }
 
   private readonly renderCrawlDetails = () => {
-    const latestCrawl = this.workflowDataTask.value?.latestCrawl;
+    const latestCrawl = this.workflowTask.value?.latestCrawl;
     const skeleton = html`<sl-skeleton class="w-full"></sl-skeleton>`;
 
     const duration = (workflow: Workflow) => {
@@ -1733,12 +1774,12 @@ export class WorkflowDetail extends BtrixElement {
     </div>`;
 
   private readonly showDialog = async () => {
-    await this.workflowDataTask.taskComplete;
+    await this.workflowTask.taskComplete;
     this.isDialogVisible = true;
   };
 
   private handleExclusionChange() {
-    void this.workflowDataTask.run();
+    void this.workflowTask.run();
   }
 
   private async scale(value: Crawl["scale"], signal: AbortSignal) {
@@ -1802,19 +1843,22 @@ export class WorkflowDetail extends BtrixElement {
 
   private async getCrawls(
     workflowId: string,
-    { state }: WorkflowDetail["filterBy"],
+    params: WorkflowDetail["crawlsParams"],
     signal: AbortSignal,
   ) {
     const query = queryString.stringify(
       {
-        state,
         cid: workflowId,
         sortBy: "started",
+        page: params.page ?? this.crawls?.page,
+        pageSize: this.crawls?.pageSize ?? 10,
+        ...params,
       },
       {
         arrayFormat: "comma",
       },
     );
+
     const data = await this.api.fetch<APIPaginatedList<Crawl>>(
       `/orgs/${this.orgId}/crawls?${query}`,
       { signal },
@@ -1862,7 +1906,7 @@ export class WorkflowDetail extends BtrixElement {
    * Create a new template using existing template data
    */
   private async duplicateConfig() {
-    if (!this.workflow) await this.workflowDataTask.taskComplete;
+    if (!this.workflow) await this.workflowTask.taskComplete;
     if (!this.seeds) await this.seedsTask.taskComplete;
     await this.updateComplete;
     if (!this.workflow) return;
@@ -2084,7 +2128,7 @@ export class WorkflowDetail extends BtrixElement {
       });
 
       // Update crawl count
-      void this.workflowDataTask.run();
+      void this.workflowTask.run();
     } catch (e) {
       if (this.crawlToDelete) {
         this.confirmDeleteCrawl(this.crawlToDelete);

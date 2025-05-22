@@ -25,6 +25,20 @@ type PageChangeDetail = {
 };
 export type PageChangeEvent = CustomEvent<PageChangeDetail>;
 
+export function calculatePages({
+  total,
+  pageSize,
+}: {
+  total: number;
+  pageSize: number;
+}) {
+  if (total && pageSize) {
+    return Math.ceil(total / pageSize);
+  } else {
+    return 0;
+  }
+}
+
 /**
  * Pagination
  *
@@ -200,7 +214,7 @@ export class Pagination extends LitElement {
     if (parsedPage != this._page) {
       const page = parsePage(this.searchParams.searchParams.get(this.name));
       const constrainedPage = Math.max(1, Math.min(this.pages, page));
-      this.onPageChange(constrainedPage);
+      this.onPageChange(constrainedPage, { dispatch: false });
     }
 
     if (changedProperties.get("page") && this._page) {
@@ -364,15 +378,18 @@ export class Pagination extends LitElement {
     this.onPageChange(this._page < this.pages ? this._page + 1 : this.pages);
   }
 
-  private onPageChange(page: number) {
+  private onPageChange(page: number, opts = { dispatch: true }) {
     if (this._page !== page) {
       this.setPage(page);
-      this.dispatchEvent(
-        new CustomEvent<PageChangeDetail>("page-change", {
-          detail: { page: page, pages: this.pages },
-          composed: true,
-        }),
-      );
+
+      if (opts.dispatch) {
+        this.dispatchEvent(
+          new CustomEvent<PageChangeDetail>("page-change", {
+            detail: { page: page, pages: this.pages },
+            composed: true,
+          }),
+        );
+      }
     }
     this._page = page;
   }
@@ -389,10 +406,9 @@ export class Pagination extends LitElement {
   }
 
   private calculatePages() {
-    if (this.totalCount && this.size) {
-      this.pages = Math.ceil(this.totalCount / this.size);
-    } else {
-      this.pages = 0;
-    }
+    this.pages = calculatePages({
+      total: this.totalCount,
+      pageSize: this.size,
+    });
   }
 }
