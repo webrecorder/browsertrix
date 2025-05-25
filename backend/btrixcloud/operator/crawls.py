@@ -368,7 +368,7 @@ class CrawlOperator(BaseOperator):
         print(f"status.scale: {status.scale}", flush=True)
         print(f"crawl.browser_windows: {crawl.browser_windows}", flush=True)
 
-        crawler_pod_count = pod_count_from_browser_windows(crawl.browser_windows)
+        crawler_pod_count = self.desired_pod_count(crawl, status)
         browsers_per_pod = int(os.environ.get("NUM_BROWSERS", 1))
 
         remainder = crawl.browser_windows % browsers_per_pod
@@ -566,11 +566,20 @@ class CrawlOperator(BaseOperator):
 
         return False
 
+    def desired_pod_count(self, crawl: CrawlSpec, status: CrawlStatus):
+        """get pod count from browser windows, also ensure not bigger
+        than pages found"""
+        desired_scale = pod_count_from_browser_windows(crawl.browser_windows)
+
+        if status.pagesFound < desired_scale:
+            desired_scale = max(1, status.pagesFound)
+
+        return desired_scale
+
     # pylint: disable=too-many-arguments
     async def _resolve_scale(
         self,
-        crawl_id: str,
-        desired_browser_windows: int,
+        crawl: CrawlSpec,
         redis: Redis,
         # pylint: disable=unused-argument
         status: CrawlStatus,
@@ -584,20 +593,14 @@ class CrawlOperator(BaseOperator):
         scale and clean up previous scale state.
         """
 
+        crawl_id = crawl.id
+
         # actual scale (minus redis pod)
         actual_scale = len(pods)
         if pods.get(f"redis-{crawl_id}"):
             actual_scale -= 1
 
-        desired_scale = pod_count_from_browser_windows(desired_browser_windows)
-
-        print(f"actual scale (pods): {actual_scale}", flush=True)
-        print(f"desired browser windows: {desired_browser_windows}", flush=True)
-        print(f"desired scale (pods): {desired_scale}", flush=True)
-
-        # ensure at least enough pages for the scale
-        # if status.pagesFound < desired_scale:
-        #    desired_scale = max(1, status.pagesFound)
+        desired_scale = self.desired_pod_count(crawl, status)
 
         # if desired_scale same or scaled up, return desired_scale
         if desired_scale >= actual_scale:
@@ -1532,12 +1535,10 @@ class CrawlOperator(BaseOperator):
                     )
 
         # resolve scale
-        desired_pod_count = pod_count_from_browser_windows(crawl.browser_windows)
+        desired_pod_count = self.desired_pod_count(crawl, status)
 
         if desired_pod_count != status.scale:
-            status.scale = await self._resolve_scale(
-                crawl.id, crawl.browser_windows, redis, status, pods
-            )
+            status.scale = await self._resolve_scale(crawl, redis, status, pods)
 
         # check if done / failed
         status_count: dict[str, int] = {}
