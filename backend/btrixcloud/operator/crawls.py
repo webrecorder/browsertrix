@@ -534,7 +534,7 @@ class CrawlOperator(BaseOperator):
         params["init_crawler"] = not is_paused
         if has_pod and not is_paused:
             restart_reason = pod_info.should_restart_pod(params.get("force_restart"))
-            if not restart_reason and pod_remainder and remainder_changed:
+            if not restart_reason and remainder_changed:
                 restart_reason = "pod_resized"
 
             if restart_reason:
