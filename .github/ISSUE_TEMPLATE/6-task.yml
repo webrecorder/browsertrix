@@ -1,0 +1,16 @@
+name: (Webrecorder Team) Task
+description: For internal Webrecorder use only.
+title: "[Task]: "
+type: "Task"
+projects: ["webrecorder/9"]
+body:
+  - type: textarea
+    attributes:
+      label: Description
+      description: A summary of the task.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Context
+      description: Additional context.
