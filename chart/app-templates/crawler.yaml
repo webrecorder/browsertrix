@@ -185,7 +185,7 @@ spec:
           mountPath: /crawls
 
         - name: crawl-data
-          mountPath: /crawls/tmp
+          mountPath: /tmp
           subPath: tmp
 
       envFrom:
@@ -203,9 +203,6 @@ spec:
       env:
         - name: HOME
           value: /crawls/home
-
-        - name: TMPDIR
-          value: /crawls/tmp
 
         - name: CRAWL_ID
           value: "{{ id }}"
