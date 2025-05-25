@@ -380,7 +380,7 @@ class CrawlOperator(BaseOperator):
                 self._load_crawler(
                     params,
                     i,
-                    remainder,
+                    remainder if i == crawler_pod_count - 1 else 0,
                     remainder_changed,
                     status,
                     data.children,
@@ -495,7 +495,7 @@ class CrawlOperator(BaseOperator):
         self,
         params,
         i: int,
-        first_pod_remainder: int,
+        pod_remainder: int,
         remainder_changed: bool,
         status: CrawlStatus,
         children,
@@ -526,15 +526,15 @@ class CrawlOperator(BaseOperator):
             params["memory_limit"] = self.k8s.max_crawler_memory_size
         params["storage"] = pod_info.newStorage or params.get("crawler_storage")
 
-        if i == 0 and first_pod_remainder:
-            params["workers"] = first_pod_remainder
+        if pod_remainder:
+            params["workers"] = pod_remainder
         else:
             params["workers"] = params.get(worker_field) or 1
 
         params["init_crawler"] = not is_paused
         if has_pod and not is_paused:
             restart_reason = pod_info.should_restart_pod(params.get("force_restart"))
-            if not restart_reason and i == 0 and remainder_changed:
+            if not restart_reason and pod_remainder and remainder_changed:
                 restart_reason = "pod_resized"
 
             if restart_reason:
@@ -594,7 +594,7 @@ class CrawlOperator(BaseOperator):
         print(f"desired scale (pods): {desired_scale}", flush=True)
 
         # ensure at least enough pages for the scale
-        #if status.pagesFound < desired_scale:
+        # if status.pagesFound < desired_scale:
         #    desired_scale = max(1, status.pagesFound)
 
         # if desired_scale same or scaled up, return desired_scale
