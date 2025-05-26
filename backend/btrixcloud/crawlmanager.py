@@ -234,6 +234,7 @@ class CrawlManager(K8sAPI):
             str(storage),
             crawlconfig.crawlerChannel,
             crawlconfig.scale,
+            crawlconfig.browserWindows,
             crawlconfig.crawlTimeout,
             crawlconfig.maxCrawlSize,
             manual=True,
