@@ -74,6 +74,7 @@ class CrawlSpec(BaseModel):
     cid: UUID
     oid: UUID
     org: Organization
+    scale: int = 1
     browser_windows: int = 1
     storage: StorageRef
     started: str
