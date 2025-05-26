@@ -305,7 +305,6 @@ export class Screencast extends BtrixElement {
         dataMap[i] = null;
       }
       this.dataMap = dataMap;
-      this.browsersCount = message.browsers;
       this.screenWidth = message.width;
       this.screenHeight = message.height;
     } else {
