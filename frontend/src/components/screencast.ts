@@ -141,9 +141,6 @@ export class Screencast extends BtrixElement {
 
   // Websocket connections
   private readonly wsMap = new Map<number, WebSocket>();
-  // Number of available browsers.
-  // Multiply by scale to get available browser window count
-  private browsersCount = 1;
   private screenWidth = 640;
   private screenHeight = 480;
   private readonly timerIds: number[] = [];
@@ -181,7 +178,7 @@ export class Screencast extends BtrixElement {
   }
 
   render() {
-    const screenCount = this.scale * this.browsersCount;
+    const screenCount = this.scale;
     return html`
       <div class="wrapper">
         <div
@@ -304,11 +301,11 @@ export class Screencast extends BtrixElement {
   ) {
     if (message.msg === "init") {
       const dataMap: Record<number, null> = {};
-      for (let i = 0; i < message.browsers * this.scale; i++) {
+      for (let i = 0; i < this.scale; i++) {
         dataMap[i] = null;
       }
       this.dataMap = dataMap;
-      this.browsersCount = message.browsers;
+      // this.browsersCount = message.browsers;
       this.screenWidth = message.width;
       this.screenHeight = message.height;
     } else {
