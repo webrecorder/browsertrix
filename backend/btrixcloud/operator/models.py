@@ -74,7 +74,7 @@ class CrawlSpec(BaseModel):
     cid: UUID
     oid: UUID
     org: Organization
-    browserWindows: int = 1
+    browser_windows: int = 1
     storage: StorageRef
     started: str
     crawler_channel: str
