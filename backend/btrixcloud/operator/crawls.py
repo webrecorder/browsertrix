@@ -516,21 +516,26 @@ class CrawlOperator(BaseOperator):
             worker_field = "crawler_workers"
             pri_class = f"crawl-pri-{i}"
 
+        if pod_remainder:
+            memory, cpu = self.k8s.compute_for_num_browsers(pod_remainder)
+            workers = pod_remainder
+            print("pod remainder cpu, memory", cpu, memory)
+        else:
+            cpu = params.get(cpu_field)
+            memory = params.get(mem_field)
+            workers = params.get(worker_field) or 1
+
         pod_info = status.podStatus[name]
         params["name"] = name
         params["priorityClassName"] = pri_class
-        params["cpu"] = pod_info.newCpu or params.get(cpu_field)
-        params["memory"] = pod_info.newMemory or params.get(mem_field)
+        params["cpu"] = pod_info.newCpu or cpu
+        params["memory"] = pod_info.newMemory or memory
+        params["workers"] = workers
         if self.k8s.enable_auto_resize:
             params["memory_limit"] = float(params["memory"]) * MEM_LIMIT_PADDING
         else:
             params["memory_limit"] = self.k8s.max_crawler_memory_size
         params["storage"] = pod_info.newStorage or params.get("crawler_storage")
-
-        if pod_remainder:
-            params["workers"] = pod_remainder
-        else:
-            params["workers"] = params.get(worker_field) or 1
 
         params["init_crawler"] = not is_paused
         if has_pod and not is_paused:
