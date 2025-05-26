@@ -650,7 +650,9 @@ export class WorkflowDetail extends BtrixElement {
     if (this.groupedWorkflowTab === WorkflowTab.LatestCrawl && latestCrawl) {
       const logTotals = this.logTotalsTask.value;
       const authToken = this.authState?.headers.Authorization.split(" ")[1];
-      const disableDownload = this.workflow?.isCrawlRunning;
+      const disableDownload =
+        this.workflow?.isCrawlRunning &&
+        this.workflow.lastCrawlState !== "paused";
 
       return html`
         <btrix-copy-button
