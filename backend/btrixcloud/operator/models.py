@@ -74,7 +74,7 @@ class CrawlSpec(BaseModel):
     cid: UUID
     oid: UUID
     org: Organization
-    scale: int = 1
+    browserWindows: int = 1
     storage: StorageRef
     started: str
     crawler_channel: str
@@ -205,8 +205,9 @@ class CrawlStatus(BaseModel):
     size: int = 0
     # human readable size string
     sizeHuman: str = ""
+    # number of pods
     scale: int = 1
-    lastScale: int = 1
+    lastBrowserWindows: int = 1
     filesAdded: int = 0
     filesAddedSize: int = 0
     finished: Optional[str] = None

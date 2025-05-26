@@ -172,7 +172,7 @@ class CrawlOperator(BaseOperator):
             storage=StorageRef(spec["storageName"]),
             crawler_channel=spec.get("crawlerChannel", "default"),
             proxy_id=spec.get("proxyId"),
-            scale=spec.get("scale", 1),
+            browserWindows=spec.get("scale", 1),
             started=data.parent["metadata"]["creationTimestamp"],
             stopping=spec.get("stopping", False),
             paused_at=str_to_date(spec.get("pausedAt")),
@@ -183,7 +183,7 @@ class CrawlOperator(BaseOperator):
         )
 
         if crawl.qa_source_crawl_id:
-            crawl.scale = int(params.get("qa_scale", 1))
+            crawl.browserWindows = int(params.get("qa_scale", 1))
 
         # if finalizing, crawl is being deleted
         if data.finalizing:
@@ -365,15 +365,15 @@ class CrawlOperator(BaseOperator):
         is_paused = bool(crawl.paused_at) and status.state == "paused"
 
         print(f"status.scale: {status.scale}", flush=True)
-        print(f"crawl.scale: {crawl.scale}", flush=True)
+        print(f"crawl.browserWindows: {crawl.browserWindows}", flush=True)
 
-        crawler_pod_count = pod_count_from_browser_windows(crawl.scale)
+        crawler_pod_count = pod_count_from_browser_windows(crawl.browserWindows)
         browsers_per_pod = int(os.environ.get("NUM_BROWSERS", 1))
 
-        remainder = crawl.scale % browsers_per_pod
-        remainder_changed = (status.lastScale % browsers_per_pod) != remainder
+        remainder = crawl.browserWindows % browsers_per_pod
+        remainder_changed = (status.lastBrowserWindows % browsers_per_pod) != remainder
         print(f"remainder: {remainder}, changed: {remainder_changed}")
-        status.lastScale = crawl.scale
+        status.lastBrowserWindows = crawl.browserWindows
 
         for i in range(0, crawler_pod_count):
             children.extend(
@@ -1530,16 +1530,12 @@ class CrawlOperator(BaseOperator):
                     )
 
         # resolve scale
-        desired_pod_count = pod_count_from_browser_windows(crawl.scale)
-
-        print(f"desired pod count: {desired_pod_count}", flush=True)
-        print(f"current pod count: {status.scale}", flush=True)
+        desired_pod_count = pod_count_from_browser_windows(crawl.browserWindows)
 
         if desired_pod_count != status.scale:
             status.scale = await self._resolve_scale(
-                crawl.id, crawl.scale, redis, status, pods
+                crawl.id, crawl.browserWindows, redis, status, pods
             )
-            print(f"reset current pod count to: {status.scale}", flush=True)
 
         # check if done / failed
         status_count: dict[str, int] = {}
@@ -1553,7 +1549,6 @@ class CrawlOperator(BaseOperator):
         num_failed = status_count.get("failed", 0)
         # all expected pods are either done or failed
         all_completed = (num_done + num_failed) >= status.scale
-        print(f"all completed: {all_completed}", flush=True)
 
         # check paused
         if not all_completed and crawl.paused_at and status.stopReason == "paused":
