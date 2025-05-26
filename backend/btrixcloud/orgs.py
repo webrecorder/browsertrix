@@ -88,6 +88,7 @@ from .utils import (
     get_duplicate_key_error_field,
     validate_language_code,
     JSONSerializer,
+    browser_windows_from_pod_count,
 )
 
 if TYPE_CHECKING:
@@ -1270,6 +1271,11 @@ class OrgOps:
             workflow_scale = workflow.get("scale", 1)
             workflow["scale"] = max(workflow_scale, MAX_BROWSER_WINDOWS)
 
+            if workflow.get("browserWindows") is None:
+                workflow["browserWindows"] = browser_windows_from_pod_count(
+                    workflow["scale"]
+                )
+
             # Ensure crawlerChannel is set
             if not workflow.get("crawlerChannel"):
                 workflow["crawlerChannel"] = "default"
@@ -1299,6 +1305,13 @@ class OrgOps:
                 # Ensure crawlerChannel is set
                 if not item.get("crawlerChannel"):
                     item["crawlerChannel"] = "default"
+
+                # Set browserWindows
+                if item.get("browserWindows") is None:
+                    item["browserWindows"] = browser_windows_from_pod_count(
+                        item.get("scale", 1)
+                    )
+
                 item_obj = Crawl.from_dict(item)
             if item["type"] == "upload":
                 item_obj = UploadedCrawl.from_dict(item)  # type: ignore
