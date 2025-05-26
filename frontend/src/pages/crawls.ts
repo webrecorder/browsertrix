@@ -35,6 +35,7 @@ const sortableFields: Record<
   },
 };
 const ABORT_REASON_THROTTLE = "throttled";
+const POLL_INTERVAL_SECONDS = 30;
 
 @customElement("btrix-crawls")
 @localized()
@@ -65,6 +66,8 @@ export class Crawls extends BtrixElement {
   private filterBy: Partial<Record<keyof Crawl, unknown>> = {
     state: activeCrawlStates,
   };
+
+  private timerId?: number;
 
   // Use to cancel requests
   private getCrawlsController: AbortController | null = null;
@@ -102,11 +105,13 @@ export class Crawls extends BtrixElement {
   disconnectedCallback(): void {
     this.cancelInProgressGetCrawls();
     super.disconnectedCallback();
+
+    window.clearTimeout(this.timerId);
   }
 
   render() {
     return html`<btrix-document-title
-        title=${msg("Running crawls")}
+        title=${msg("Active Crawls – Admin")}
       ></btrix-document-title>
 
       <div class="mx-auto box-border w-full max-w-screen-desktop px-3 py-4">
@@ -122,9 +127,7 @@ export class Crawls extends BtrixElement {
       <main>
         <header class="contents">
           <div class="mb-3 flex w-full justify-between border-b pb-4">
-            <h1 class="h-8 text-xl font-semibold">
-              ${msg("All Running Crawls")}
-            </h1>
+            <h1 class="h-8 text-xl font-semibold">${msg("Active Crawls")}</h1>
           </div>
           <div
             class="sticky top-2 z-10 mb-3 rounded-lg border bg-neutral-50 p-4"
@@ -329,8 +332,16 @@ export class Crawls extends BtrixElement {
    */
   private async fetchCrawls(params?: APIPaginationQuery): Promise<void> {
     this.cancelInProgressGetCrawls();
+    window.clearTimeout(this.timerId);
+
     try {
       this.crawls = await this.getCrawls(params);
+
+      // TODO Refactor to poll task
+      // https://github.com/webrecorder/browsertrix/issues/1716
+      this.timerId = window.setTimeout(() => {
+        void this.fetchCrawls();
+      }, POLL_INTERVAL_SECONDS * 1000);
     } catch (e) {
       if ((e as Error).name === "AbortError") {
         console.debug("Fetch crawls aborted to throttle");
