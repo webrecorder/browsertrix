@@ -427,9 +427,13 @@ class CrawlConfigOps:
             )
 
         if update.browserWindows:
-            update.scale = pod_count_from_browser_windows(update.browserWindows)
+            update.scale = pod_count_from_browser_windows(
+                cast(int, update.browserWindows)
+            )
         else:
-            update.browserWindows = browser_windows_from_pod_count(update.scale)
+            update.browserWindows = browser_windows_from_pod_count(
+                cast(int, update.scale)
+            )
 
         if update.config and update.config.exclude:
             exclude = update.config.exclude

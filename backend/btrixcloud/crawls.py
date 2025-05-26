@@ -10,7 +10,7 @@ import urllib.parse
 from datetime import datetime
 from uuid import UUID
 
-from typing import Optional, List, Dict, Union, Any, Sequence, AsyncIterator
+from typing import Optional, List, Dict, Union, Any, Sequence, AsyncIterator, cast
 
 from fastapi import Depends, HTTPException
 from fastapi.responses import StreamingResponse
@@ -1546,9 +1546,13 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
             )
 
         if scale.browserWindows:
-            scale.scale = pod_count_from_browser_windows(scale.browserWindows)
+            scale.scale = pod_count_from_browser_windows(
+                cast(int, scale.browserWindows)
+            )
         else:
-            scale.browserWindows = browser_windows_from_pod_count(scale.scale)
+            scale.browserWindows = browser_windows_from_pod_count(
+                cast(int, scale.scale)
+            )
 
         await ops.update_crawl_scale(crawl_id, org, scale, user)
 
