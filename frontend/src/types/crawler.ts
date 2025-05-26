@@ -56,7 +56,6 @@ export type WorkflowParams = {
   jobType?: JobType;
   name: string;
   schedule: string;
-  scale: number;
   browserWindows: number;
   profileid: string | null;
   config: SeedConfig;

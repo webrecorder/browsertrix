@@ -2081,7 +2081,7 @@ export class WorkflowDetail extends BtrixElement {
     try {
       const data = await this.api.fetch<{
         scaled: boolean;
-        browserWindows: int;
+        browserWindows: number;
       }>(`/orgs/${this.orgId}/crawls/${this.lastCrawlId}/scale`, {
         method: "POST",
         body: JSON.stringify({ browserWindows: +value }),
