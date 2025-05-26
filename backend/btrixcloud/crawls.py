@@ -26,6 +26,7 @@ from .utils import (
     stream_dict_list_as_csv,
     validate_regexes,
     pod_count_from_browser_windows,
+    browser_windows_from_pod_count,
 )
 from .basecrawls import BaseCrawlOps
 from .crawlmanager import CrawlManager
@@ -397,12 +398,20 @@ class CrawlOps(BaseCrawlOps):
     ) -> bool:
         """Update crawl scale in the db"""
         crawl = await self.get_crawl(crawl_id, org)
-        update = UpdateCrawlConfig(scale=crawl_scale.scale)
+
+        update = UpdateCrawlConfig(
+            scale=crawl_scale.scale, browserWindows=crawl_scale.browserWindows
+        )
         await self.crawl_configs.update_crawl_config(crawl.cid, org, user, update)
 
         result = await self.crawls.find_one_and_update(
             {"_id": crawl_id, "type": "crawl", "oid": org.id},
-            {"$set": {"scale": crawl_scale.scale}},
+            {
+                "$set": {
+                    "scale": crawl_scale.scale,
+                    "browserWindows": crawl_scale.browserWindows,
+                }
+            },
             return_document=pymongo.ReturnDocument.AFTER,
         )
 
@@ -1531,15 +1540,27 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
         user: User = Depends(user_dep),
         org: Organization = Depends(org_crawl_dep),
     ):
+        if scale.scale is None and scale.browserWindows is None:
+            raise HTTPException(
+                status_code=400, detail="browser_windows_or_scale_required"
+            )
+
+        if scale.browserWindows:
+            scale.scale = pod_count_from_browser_windows(scale.browserWindows)
+        else:
+            scale.browserWindows = browser_windows_from_pod_count(scale.scale)
+
         await ops.update_crawl_scale(crawl_id, org, scale, user)
 
-        result = await ops.crawl_manager.scale_crawl(crawl_id, scale.scale)
+        result = await ops.crawl_manager.scale_crawl(
+            crawl_id, scale.scale, scale.browserWindows
+        )
         if not result or not result.get("success"):
             raise HTTPException(
                 status_code=400, detail=result.get("error") or "unknown"
             )
 
-        return {"scaled": scale.scale}
+        return {"scaled": scale.scale, "browserWindows": scale.browserWindows}
 
     @app.get(
         "/orgs/{oid}/crawls/{crawl_id}/access",

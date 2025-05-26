@@ -31,6 +31,9 @@ from slugify import slugify
 from .db import BaseMongoModel
 
 # crawl scale for constraint
+MAX_CRAWL_SCALE = int(os.environ.get("MAX_CRAWL_SCALE", 3))
+
+# browser window for constraint (preferred over scale if provided)
 MAX_BROWSER_WINDOWS = int(os.environ.get("MAX_BROWSER_WINDOWS", 8))
 
 # Presign duration must be less than 604800 seconds (one week),
@@ -52,7 +55,8 @@ MIN_UPLOAD_PART_SIZE = 10000000
 
 EmptyStr = Annotated[str, Field(min_length=0, max_length=0)]
 
-Scale = Annotated[int, Field(strict=True, ge=1, le=MAX_BROWSER_WINDOWS)]
+Scale = Annotated[int, Field(strict=True, ge=1, le=MAX_CRAWL_SCALE)]
+BrowserWindowCount = Annotated[int, Field(strict=True, ge=1, le=MAX_BROWSER_WINDOWS)]
 ReviewStatus = Optional[Annotated[int, Field(strict=True, ge=1, le=5)]]
 
 any_http_url_adapter = TypeAdapter(AnyHttpUrlNonStr)
@@ -369,7 +373,9 @@ class CrawlConfigIn(BaseModel):
 
     crawlTimeout: int = 0
     maxCrawlSize: int = 0
-    scale: Scale = 1
+
+    scale: Optional[Scale] = None
+    browserWindows: Optional[BrowserWindowCount] = None
 
     crawlFilenameTemplate: Optional[str] = None
 
@@ -391,6 +397,7 @@ class ConfigRevision(BaseMongoModel):
     crawlTimeout: Optional[int] = 0
     maxCrawlSize: Optional[int] = 0
     scale: Scale = 1
+    browserWindows: Optional[BrowserWindowCount] = 2
 
     modified: datetime
     modifiedBy: Optional[UUID] = None
@@ -412,6 +419,7 @@ class CrawlConfigCore(BaseMongoModel):
     crawlTimeout: Optional[int] = 0
     maxCrawlSize: Optional[int] = 0
     scale: Scale = 1
+    browserWindows: BrowserWindowCount = 2
 
     oid: UUID
 
@@ -522,7 +530,8 @@ class UpdateCrawlConfig(BaseModel):
     proxyId: Optional[str] = None
     crawlTimeout: Optional[int] = None
     maxCrawlSize: Optional[int] = None
-    scale: Scale = 1
+    scale: Optional[Scale] = None
+    browserWindows: Optional[BrowserWindowCount] = None
     crawlFilenameTemplate: Optional[str] = None
     config: Optional[RawCrawlConfig] = None
 
@@ -875,6 +884,7 @@ class CrawlOut(BaseMongoModel):
     manual: bool = False
     cid_rev: Optional[int] = None
     scale: Scale = 1
+    browserWindows: BrowserWindowCount = 2
 
     storageQuotaReached: Optional[bool] = False
     execMinutesQuotaReached: Optional[bool] = False
@@ -961,7 +971,8 @@ class MatchCrawlQueueResponse(BaseModel):
 class CrawlScale(BaseModel):
     """scale the crawl to N parallel containers"""
 
-    scale: Scale = 1
+    scale: Optional[Scale] = None
+    browserWindows: Optional[BrowserWindowCount] = None
 
 
 # ============================================================================
@@ -1054,6 +1065,7 @@ class CrawlScaleResponse(BaseModel):
     """Response model for modifying crawl scale"""
 
     scaled: int
+    browserWindows: int
 
 
 # ============================================================================

@@ -373,9 +373,13 @@ class CrawlManager(K8sAPI):
         update = date_to_str(dt_now())
         return await self._patch_job(crawl_id, {"restartTime": update})
 
-    async def scale_crawl(self, crawl_id: str, scale: int = 1) -> dict:
+    async def scale_crawl(
+        self, crawl_id: str, scale: int = 1, browser_windows: int = 1
+    ) -> dict:
         """Set the crawl scale (job parallelism) on the specified job"""
-        return await self._patch_job(crawl_id, {"scale": scale})
+        return await self._patch_job(
+            crawl_id, {"scale": scale, "browserWindows": browser_windows}
+        )
 
     async def shutdown_crawl(self, crawl_id: str, graceful=True) -> dict:
         """Request a crawl cancelation or stop by calling an API

@@ -207,3 +207,9 @@ def pod_count_from_browser_windows(browser_windows: int) -> int:
     """Return number of pods for given number of browser windows"""
     browsers_per_pod = int(os.environ.get("NUM_BROWSERS", 1))
     return math.ceil(browser_windows / browsers_per_pod)
+
+
+def browser_windows_from_pod_count(pod_count: int) -> int:
+    """Return number of browser windows from specified scale"""
+    browsers_per_pod = int(os.environ.get("NUM_BROWSERS", 1))
+    return pod_count * browsers_per_pod
