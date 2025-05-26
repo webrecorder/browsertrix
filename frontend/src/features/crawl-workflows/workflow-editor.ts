@@ -1581,10 +1581,10 @@ https://archiveweb.page/images/${"logo.svg"}`}
         <sl-radio-group
           name="scale"
           label=${msg("Browser Windows")}
-          value=${this.formState.scale}
+          value=${this.formState.browserWindows}
           @sl-change=${(e: Event) =>
             this.updateFormState({
-              scale: +(e.target as SlCheckbox).value,
+              browserWindows: +(e.target as SlCheckbox).value,
             })}
         >
           ${map(
@@ -2548,7 +2548,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       jobType: "custom",
       name: this.formState.jobName || "",
       description: this.formState.description,
-      scale: this.formState.scale,
+      browserWindows: this.formState.browserWindows,
       profileid: this.formState.browserProfile?.id || "",
       schedule: this.formState.scheduleType === "cron" ? this.utcSchedule : "",
       crawlTimeout: this.formState.crawlTimeoutMinutes * 60,

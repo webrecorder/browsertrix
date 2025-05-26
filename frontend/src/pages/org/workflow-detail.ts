@@ -1591,7 +1591,7 @@ export class WorkflowDetail extends BtrixElement {
       if (!this.isCrawler) return;
 
       const enableEditBrowserWindows = !this.workflow.lastCrawlStopping;
-      const windowCount = this.workflow.scale || 1;
+      const windowCount = this.workflow.browserWindows || 1;
 
       return html`
         <div class="text-xs text-neutral-500">
@@ -1788,7 +1788,7 @@ export class WorkflowDetail extends BtrixElement {
             <btrix-screencast
               authToken=${authToken}
               .crawlId=${this.lastCrawlId ?? undefined}
-              scale=${workflow.scale}
+              browserWindows=${workflow.browserWindows}
             ></btrix-screencast>
           </div>
 
@@ -2016,7 +2016,7 @@ export class WorkflowDetail extends BtrixElement {
             "Change the number of browser windows crawling in parallel. This change will take effect immediately on the currently running crawl and update crawl workflow settings.",
           )}
         </p>
-        <sl-radio-group value=${this.workflow.scale}>
+        <sl-radio-group value=${this.workflow.browserWindows}>
           ${scaleOptions.map(
             ({ value, label }) => html`
               <sl-radio-button
@@ -2075,18 +2075,18 @@ export class WorkflowDetail extends BtrixElement {
     void this.workflowTask.run();
   }
 
-  private async scale(value: Crawl["scale"], signal: AbortSignal) {
+  private async scale(value: Crawl["browserWindows"], signal: AbortSignal) {
     if (!this.lastCrawlId) return;
 
     try {
-      const data = await this.api.fetch<{ scaled: boolean }>(
-        `/orgs/${this.orgId}/crawls/${this.lastCrawlId}/scale`,
-        {
-          method: "POST",
-          body: JSON.stringify({ scale: +value }),
-          signal,
-        },
-      );
+      const data = await this.api.fetch<{
+        scaled: boolean;
+        browserWindows: int;
+      }>(`/orgs/${this.orgId}/crawls/${this.lastCrawlId}/scale`, {
+        method: "POST",
+        body: JSON.stringify({ browserWindows: +value }),
+        signal,
+      });
 
       if (data.scaled) {
         this.notify.toast({

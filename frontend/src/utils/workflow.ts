@@ -107,7 +107,7 @@ export type FormState = {
     | (typeof NewWorkflowOnlyScopeType)[keyof typeof NewWorkflowOnlyScopeType];
   exclusions: WorkflowParams["config"]["exclude"];
   pageLimit: WorkflowParams["config"]["limit"];
-  scale: WorkflowParams["scale"];
+  browserWindows: WorkflowParams["browserWindows"];
   blockAds: WorkflowParams["config"]["blockAds"];
   lang: WorkflowParams["config"]["lang"];
   scheduleType: "date" | "cron" | "none";
@@ -164,7 +164,7 @@ export const getDefaultFormState = (): FormState => ({
   scopeType: ScopeType.Page,
   exclusions: [],
   pageLimit: null,
-  scale: 1,
+  browserWindows: 2,
   blockAds: true,
   lang: getDefaultLang(),
   scheduleType: "none",
@@ -306,7 +306,7 @@ export function getInitialFormState(params: {
     postLoadDelaySeconds:
       seedsConfig.postLoadDelay ?? defaultFormState.postLoadDelaySeconds,
     maxScopeDepth: primarySeedConfig.depth ?? defaultFormState.maxScopeDepth,
-    scale: params.initialWorkflow.scale,
+    browserWindows: params.initialWorkflow.browserWindows,
     blockAds: params.initialWorkflow.config.blockAds,
     lang: params.initialWorkflow.config.lang ?? defaultFormState.lang,
     scheduleType: defaultFormState.scheduleType,

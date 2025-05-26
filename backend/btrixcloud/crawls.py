@@ -1560,7 +1560,7 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
                 status_code=400, detail=result.get("error") or "unknown"
             )
 
-        return {"scaled": scale.scale, "browserWindows": scale.browserWindows}
+        return {"scaled": True, "browserWindows": scale.browserWindows}
 
     @app.get(
         "/orgs/{oid}/crawls/{crawl_id}/access",

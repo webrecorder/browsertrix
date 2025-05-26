@@ -66,7 +66,7 @@ export class WorkflowsNew extends LiteElement {
       crawlTimeout: null,
       maxCrawlSize: null,
       jobType: "custom",
-      scale: 1,
+      browserWindows: 2,
       autoAddCollections: [],
       crawlerChannel: "default",
       proxyId: null,

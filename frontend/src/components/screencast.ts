@@ -130,7 +130,7 @@ export class Screencast extends BtrixElement {
   crawlId?: string;
 
   @property({ type: Number })
-  scale = 1;
+  browserWindows = 1;
 
   // List of browser screens
   @state()
@@ -161,9 +161,9 @@ export class Screencast extends BtrixElement {
       this.disconnectAll();
       this.connectAll();
     }
-    const prevScale = changedProperties.get("scale");
-    if (prevScale !== undefined) {
-      if (this.scale > prevScale) {
+    const prevWindows = changedProperties.get("browserWindows");
+    if (prevWindows !== undefined) {
+      if (this.browserWindows > prevWindows) {
         this.scaleUp();
       } else {
         this.scaleDown();
@@ -178,7 +178,7 @@ export class Screencast extends BtrixElement {
   }
 
   render() {
-    const screenCount = this.scale;
+    const screenCount = this.browserWindows;
     return html`
       <div class="wrapper">
         <div
@@ -251,7 +251,7 @@ export class Screencast extends BtrixElement {
   }
 
   private scaleDown() {
-    for (let idx = this.wsMap.size - 1; idx > this.scale - 1; idx--) {
+    for (let idx = this.wsMap.size - 1; idx > this.browserWindows - 1; idx--) {
       const ws = this.wsMap.get(idx);
 
       if (ws) {
@@ -269,7 +269,7 @@ export class Screencast extends BtrixElement {
       return;
     }
 
-    for (let idx = 0; idx < this.scale; idx++) {
+    for (let idx = 0; idx < this.browserWindows; idx++) {
       if (!this.wsMap.get(idx)) {
         const ws = this.connectWs(idx);
 
@@ -301,7 +301,7 @@ export class Screencast extends BtrixElement {
   ) {
     if (message.msg === "init") {
       const dataMap: Record<number, null> = {};
-      for (let i = 0; i < message.browsers * this.scale; i++) {
+      for (let i = 0; i < message.browsers * this.browserWindows; i++) {
         dataMap[i] = null;
       }
       this.dataMap = dataMap;
@@ -360,7 +360,7 @@ export class Screencast extends BtrixElement {
   }): void {
     const { index, retries = 0, delaySec = 10 } = opts;
 
-    if (index >= this.scale) {
+    if (index >= this.browserWindows) {
       return;
     }
 

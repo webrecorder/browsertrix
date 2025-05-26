@@ -1064,7 +1064,7 @@ class CrawlCompleteIn(BaseModel):
 class CrawlScaleResponse(BaseModel):
     """Response model for modifying crawl scale"""
 
-    scaled: int
+    scaled: bool
     browserWindows: int
 
 
