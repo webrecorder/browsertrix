@@ -1557,7 +1557,7 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
         await ops.update_crawl_scale(crawl_id, org, scale, user)
 
         result = await ops.crawl_manager.scale_crawl(
-            crawl_id, scale.scale, cast(int, scale.browserWindows)
+            crawl_id, cast(int, scale.scale), cast(int, scale.browserWindows)
         )
         if not result or not result.get("success"):
             raise HTTPException(

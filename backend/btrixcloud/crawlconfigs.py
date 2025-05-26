@@ -230,9 +230,13 @@ class CrawlConfigOps:
             )
 
         if config_in.browserWindows:
-            config_in.scale = pod_count_from_browser_windows(config_in.browserWindows)
+            config_in.scale = pod_count_from_browser_windows(
+                cast(int, config_in.browserWindows)
+            )
         else:
-            config_in.browserWindows = browser_windows_from_pod_count(config_in.scale)
+            config_in.browserWindows = browser_windows_from_pod_count(
+                cast(int, config_in.scale)
+            )
 
         # ensure crawlChannel is valid
         if not self.get_channel_crawler_image(config_in.crawlerChannel):
@@ -421,16 +425,13 @@ class CrawlConfigOps:
 
         orig_crawl_config = await self.get_crawl_config(cid, org.id)
 
-        if update.scale is None and update.browserWindows is None:
-            raise HTTPException(
-                status_code=400, detail="browser_windows_or_scale_required"
-            )
-
+        # Ensure browserWindows and scale are kept in sync and that
+        # browserWindows is given priority
         if update.browserWindows:
             update.scale = pod_count_from_browser_windows(
                 cast(int, update.browserWindows)
             )
-        else:
+        elif update.scale:
             update.browserWindows = browser_windows_from_pod_count(
                 cast(int, update.scale)
             )
