@@ -301,11 +301,11 @@ export class Screencast extends BtrixElement {
   ) {
     if (message.msg === "init") {
       const dataMap: Record<number, null> = {};
-      for (let i = 0; i < this.scale; i++) {
+      for (let i = 0; i < message.browsers * this.scale; i++) {
         dataMap[i] = null;
       }
       this.dataMap = dataMap;
-      // this.browsersCount = message.browsers;
+      this.browsersCount = message.browsers;
       this.screenWidth = message.width;
       this.screenHeight = message.height;
     } else {
