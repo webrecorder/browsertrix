@@ -224,11 +224,7 @@ class CrawlConfigOps:
     ) -> CrawlConfigAddedResponse:
         """Add new crawl config"""
 
-        if config_in.scale is None and config_in.browserWindows is None:
-            raise HTTPException(
-                status_code=400, detail="browser_windows_or_scale_required"
-            )
-
+        # Overrides scale if set
         if config_in.browserWindows:
             config_in.scale = pod_count_from_browser_windows(
                 cast(int, config_in.browserWindows)

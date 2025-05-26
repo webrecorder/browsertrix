@@ -374,7 +374,9 @@ class CrawlConfigIn(BaseModel):
     crawlTimeout: int = 0
     maxCrawlSize: int = 0
 
-    scale: Optional[Scale] = None
+    scale: Scale = 1
+
+    # Overrides scale if set
     browserWindows: Optional[BrowserWindowCount] = None
 
     crawlFilenameTemplate: Optional[str] = None
