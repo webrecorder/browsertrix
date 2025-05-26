@@ -261,6 +261,9 @@ export class WorkflowEditor extends BtrixElement {
   @state()
   private isCrawlRunning: boolean | null = this.configId ? null : false;
 
+  @query("#formFooter")
+  private readonly formFooter?: HTMLElement | null;
+
   // For observing panel sections position in viewport
   private readonly observable = new ObservableController(this, {
     // Add some padding to account for stickied elements
@@ -433,7 +436,23 @@ export class WorkflowEditor extends BtrixElement {
           sticky: true,
           stickyTopClassname: tw`lg:top-16`,
         })}
-        ${this.renderFooter()}
+        <btrix-observable
+          @btrix-intersect=${(e: IntersectEvent) => {
+            if (!this.formFooter) return;
+
+            const [entry] = e.detail.entries;
+
+            if (entry.isIntersecting) {
+              if (this.formFooter.classList.contains(tw`sticky`)) {
+                console.log("stickied");
+              } else {
+                this.formFooter.classList.add(tw`sticky`);
+              }
+            }
+          }}
+        >
+          ${this.renderFooter()}
+        </btrix-observable>
       </form>
     `;
   }
@@ -454,7 +473,7 @@ export class WorkflowEditor extends BtrixElement {
 
     return html`
       <btrix-tab-list
-        class="hidden lg:block"
+        class="mb-5 hidden lg:block"
         tab=${ifDefined(this.progressState?.activeTab)}
       >
         ${STEPS.map(button)}
@@ -619,20 +638,15 @@ export class WorkflowEditor extends BtrixElement {
   private renderFooter() {
     return html`
       <footer
+        id="formFooter"
         class=${clsx(
-          "flex items-center justify-end gap-2 rounded-lg border bg-white px-6 py-4 mb-7",
-          this.configId || this.serverError
-            ? tw`z- sticky bottom-3 z-20 shadow-md`
-            : tw`shadow`,
+          "flex items-center justify-end gap-2 rounded-lg border bg-white px-6 py-4 mb-7 z-50 shadow-md bottom-3",
         )}
       >
-        ${this.configId
-          ? html`
-              <sl-button class="mr-auto" size="small" type="reset">
-                ${msg("Cancel")}
-              </sl-button>
-            `
-          : nothing}
+        <sl-button class="mr-auto" size="small" type="reset">
+          ${msg("Cancel")}
+        </sl-button>
+
         ${when(this.serverError, (error) => this.renderErrorAlert(error))}
         ${when(this.configId, this.renderCrawlStatus)}
 
