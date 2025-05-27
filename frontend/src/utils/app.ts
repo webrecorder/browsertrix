@@ -8,6 +8,7 @@ export type AppSettings = {
   defaultBehaviorTimeSeconds: number;
   defaultPageLoadTimeSeconds: number;
   maxPagesPerCrawl: number;
+  numBrowsersPerInstance: number;
   maxBrowserWindows: number;
   billingEnabled: boolean;
   signUpUrl: string;
@@ -36,6 +37,7 @@ export async function getAppSettings(): Promise<AppSettings> {
       defaultBehaviorTimeSeconds: 0,
       defaultPageLoadTimeSeconds: 0,
       maxPagesPerCrawl: 0,
+      numBrowsersPerInstance: 1,
       maxBrowserWindows: 4,
       billingEnabled: false,
       signUpUrl: "",

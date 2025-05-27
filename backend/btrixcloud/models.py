@@ -8,6 +8,7 @@ from uuid import UUID
 import base64
 import hashlib
 import mimetypes
+import math
 import os
 
 from typing import Optional, List, Dict, Union, Literal, Any, get_args
@@ -30,11 +31,19 @@ from slugify import slugify
 
 from .db import BaseMongoModel
 
-# crawl scale for constraint
-MAX_CRAWL_SCALE = int(os.environ.get("MAX_CRAWL_SCALE", 3))
+# num browsers per crawler instance
+NUM_BROWSERS = int(os.environ.get("NUM_BROWSERS", 2))
 
 # browser window for constraint (preferred over scale if provided)
-MAX_BROWSER_WINDOWS = int(os.environ.get("MAX_BROWSER_WINDOWS", 8))
+MAX_BROWSER_WINDOWS = os.environ.get("MAX_BROWSER_WINDOWS") or 0
+
+# crawl scale for constraint
+if MAX_BROWSER_WINDOWS:
+    MAX_BROWSER_WINDOWS = int(MAX_BROWSER_WINDOWS)
+    MAX_CRAWL_SCALE = math.ceil(MAX_BROWSER_WINDOWS / NUM_BROWSERS)
+else:
+    MAX_CRAWL_SCALE = int(os.environ.get("MAX_CRAWL_SCALE", 3))
+    MAX_BROWSER_WINDOWS = MAX_CRAWL_SCALE * NUM_BROWSERS
 
 # Presign duration must be less than 604800 seconds (one week),
 # so set this one minute short of a week

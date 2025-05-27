@@ -1788,6 +1788,8 @@ export class WorkflowDetail extends BtrixElement {
             <btrix-screencast
               authToken=${authToken}
               .crawlId=${this.lastCrawlId ?? undefined}
+              numBrowsersPerInstance=${this.appState.settings
+                ?.numBrowsersPerInstance}
               browserWindows=${workflow.browserWindows}
             ></btrix-screencast>
           </div>

@@ -144,6 +144,8 @@ class PodInfo(BaseModel):
 
     evicted: Optional[bool] = False
 
+    lastWorkers: Optional[int] = 0
+
     def dict(self, *a, **kw):
         res = super().dict(*a, **kw)
         percent = {
@@ -208,7 +210,6 @@ class CrawlStatus(BaseModel):
     sizeHuman: str = ""
     # number of pods
     scale: int = 1
-    lastBrowserWindows: int = 1
     filesAdded: int = 0
     filesAddedSize: int = 0
     finished: Optional[str] = None

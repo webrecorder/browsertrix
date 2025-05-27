@@ -368,21 +368,20 @@ class CrawlOperator(BaseOperator):
         print(f"status.scale: {status.scale}", flush=True)
         print(f"crawl.browser_windows: {crawl.browser_windows}", flush=True)
 
-        crawler_pod_count = self.desired_pod_count(crawl, status)
+        crawler_pod_count = pod_count_from_browser_windows(crawl.browser_windows)
+
         browsers_per_pod = int(os.environ.get("NUM_BROWSERS", 1))
 
-        remainder = crawl.browser_windows % browsers_per_pod
-        remainder_changed = (status.lastBrowserWindows % browsers_per_pod) != remainder
-        print(f"remainder: {remainder}, changed: {remainder_changed}")
-        status.lastBrowserWindows = crawl.browser_windows
-
         for i in range(0, crawler_pod_count):
+            if status.pagesFound < i * browsers_per_pod:
+                break
+
             children.extend(
                 self._load_crawler(
                     params,
                     i,
-                    remainder if i == crawler_pod_count - 1 else 0,
-                    remainder_changed,
+                    crawler_pod_count,
+                    crawl.browser_windows,
                     status,
                     data.children,
                     is_paused,
@@ -496,8 +495,8 @@ class CrawlOperator(BaseOperator):
         self,
         params,
         i: int,
-        pod_remainder: int,
-        remainder_changed: bool,
+        total_pods: int,
+        total_browser_windows: int,
         status: CrawlStatus,
         children,
         is_paused: bool,
@@ -516,16 +515,30 @@ class CrawlOperator(BaseOperator):
             worker_field = "crawler_workers"
             pri_class = f"crawl-pri-{i}"
 
-        if pod_remainder:
-            memory, cpu = self.k8s.compute_for_num_browsers(pod_remainder)
-            workers = pod_remainder
-            print("pod remainder cpu, memory", cpu, memory)
+        browsers_per_pod = params.get(worker_field) or 1
+
+        # if last pod, compute remaining browsers, or full amount if 0
+        if i == total_pods - 1:
+            workers = (total_browser_windows % browsers_per_pod) or browsers_per_pod
+        else:
+            workers = browsers_per_pod
+
+        # scale resources if < full browsers_per_pod
+        if workers < browsers_per_pod:
+            memory, cpu = self.k8s.compute_for_num_browsers(workers)
         else:
             cpu = params.get(cpu_field)
             memory = params.get(mem_field)
-            workers = params.get(worker_field) or 1
 
         pod_info = status.podStatus[name]
+
+        # compute if number of browsers for this pod has changed
+        workers_changed = pod_info.lastWorkers != workers
+        if workers_changed:
+            print(f"Workers changed for {i}: {pod_info.lastWorkers} -> {workers}")
+
+        pod_info.lastWorkers = workers
+
         params["name"] = name
         params["priorityClassName"] = pri_class
         params["cpu"] = pod_info.newCpu or cpu
@@ -540,7 +553,7 @@ class CrawlOperator(BaseOperator):
         params["init_crawler"] = not is_paused
         if has_pod and not is_paused:
             restart_reason = pod_info.should_restart_pod(params.get("force_restart"))
-            if not restart_reason and remainder_changed:
+            if not restart_reason and workers_changed:
                 restart_reason = "pod_resized"
 
             if restart_reason:
@@ -571,16 +584,6 @@ class CrawlOperator(BaseOperator):
 
         return False
 
-    def desired_pod_count(self, crawl: CrawlSpec, status: CrawlStatus):
-        """get pod count from browser windows, also ensure not bigger
-        than pages found"""
-        desired_scale = pod_count_from_browser_windows(crawl.browser_windows)
-
-        if status.pagesFound < desired_scale:
-            desired_scale = max(1, status.pagesFound)
-
-        return desired_scale
-
     # pylint: disable=too-many-arguments
     async def _resolve_scale(
         self,
@@ -598,14 +601,20 @@ class CrawlOperator(BaseOperator):
         scale and clean up previous scale state.
         """
 
+        desired_scale = pod_count_from_browser_windows(crawl.browser_windows)
+
+        if status.pagesFound < desired_scale:
+            desired_scale = max(1, status.pagesFound)
+
+        if desired_scale == status.scale:
+            return status.scale
+
         crawl_id = crawl.id
 
         # actual scale (minus redis pod)
         actual_scale = len(pods)
         if pods.get(f"redis-{crawl_id}"):
             actual_scale -= 1
-
-        desired_scale = self.desired_pod_count(crawl, status)
 
         # if desired_scale same or scaled up, return desired_scale
         if desired_scale >= actual_scale:
@@ -1540,10 +1549,7 @@ class CrawlOperator(BaseOperator):
                     )
 
         # resolve scale
-        desired_pod_count = self.desired_pod_count(crawl, status)
-
-        if desired_pod_count != status.scale:
-            status.scale = await self._resolve_scale(crawl, redis, status, pods)
+        await self._resolve_scale(crawl, redis, status, pods)
 
         # check if done / failed
         status_count: dict[str, int] = {}

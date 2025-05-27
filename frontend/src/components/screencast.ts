@@ -132,6 +132,15 @@ export class Screencast extends BtrixElement {
   @property({ type: Number })
   browserWindows = 1;
 
+  @property({ type: Number })
+  numBrowsersPerInstance = 1;
+
+  @state()
+  private scale = 1;
+
+  @state()
+  private lastIndexOffset = 0;
+
   // List of browser screens
   @state()
   private dataMap: { [index: string | number]: ScreencastMessage | null } = {};
@@ -146,8 +155,17 @@ export class Screencast extends BtrixElement {
   private readonly timerIds: number[] = [];
 
   protected firstUpdated() {
+    this.updateScale();
+
     // Connect to websocket server
     this.connectAll();
+  }
+  protected updateScale() {
+    const remainder = this.browserWindows % this.numBrowsersPerInstance;
+    this.scale = Math.ceil(this.browserWindows / this.numBrowsersPerInstance);
+    this.lastIndexOffset = remainder
+      ? (this.scale - 1) * (this.numBrowsersPerInstance - remainder)
+      : 0;
   }
 
   async updated(
@@ -160,6 +178,9 @@ export class Screencast extends BtrixElement {
       // Reconnect
       this.disconnectAll();
       this.connectAll();
+    }
+    if (changedProperties.has("browserWindows")) {
+      this.updateScale();
     }
     const prevWindows = changedProperties.get("browserWindows");
     if (prevWindows !== undefined) {
@@ -251,7 +272,7 @@ export class Screencast extends BtrixElement {
   }
 
   private scaleDown() {
-    for (let idx = this.wsMap.size - 1; idx > this.browserWindows - 1; idx--) {
+    for (let idx = this.wsMap.size - 1; idx > this.scale - 1; idx--) {
       const ws = this.wsMap.get(idx);
 
       if (ws) {
@@ -269,7 +290,7 @@ export class Screencast extends BtrixElement {
       return;
     }
 
-    for (let idx = 0; idx < this.browserWindows; idx++) {
+    for (let idx = 0; idx < this.scale; idx++) {
       if (!this.wsMap.get(idx)) {
         const ws = this.connectWs(idx);
 
@@ -298,17 +319,21 @@ export class Screencast extends BtrixElement {
 
   private handleMessage(
     message: InitMessage | ScreencastMessage | CloseMessage,
+    isLast: boolean,
   ) {
     if (message.msg === "init") {
       const dataMap: Record<number, null> = {};
-      for (let i = 0; i < message.browsers * this.browserWindows; i++) {
+      for (let i = 0; i < this.browserWindows; i++) {
         dataMap[i] = null;
       }
       this.dataMap = dataMap;
       this.screenWidth = message.width;
       this.screenHeight = message.height;
     } else {
-      const { id } = message;
+      let { id } = message;
+      if (isLast) {
+        id += this.lastIndexOffset;
+      }
       const dataMap = { ...this.dataMap };
 
       if (message.msg === "screencast") {
@@ -344,6 +369,7 @@ export class Screencast extends BtrixElement {
     ws.addEventListener("message", ({ data }: MessageEvent<string>) => {
       this.handleMessage(
         JSON.parse(data) as InitMessage | ScreencastMessage | CloseMessage,
+        index === this.scale - 1,
       );
     });
 
@@ -360,7 +386,7 @@ export class Screencast extends BtrixElement {
   }): void {
     const { index, retries = 0, delaySec = 10 } = opts;
 
-    if (index >= this.browserWindows) {
+    if (index >= this.scale) {
       return;
     }
 
