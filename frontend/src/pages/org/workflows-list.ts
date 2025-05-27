@@ -1,7 +1,9 @@
 import { localized, msg, str } from "@lit/localize";
 import type {
+  SlChangeEvent,
   SlCheckbox,
   SlDialog,
+  SlRadioGroup,
   SlSelectEvent,
 } from "@shoelace-style/shoelace";
 import { html, type PropertyValues } from "lit";
@@ -71,7 +73,10 @@ const sortableFields: Record<
   },
 };
 
-type FilterPreset = "all" | "scheduled" | "unscheduled" | "running";
+const USED_FILTERS = [
+  "schedule",
+  "isCrawlRunning",
+] as const satisfies (keyof ListWorkflow)[];
 
 /**
  * Usage:
@@ -164,60 +169,6 @@ export class WorkflowsList extends BtrixElement {
     this.filterBy = { ...filterBy };
   }
 
-  private setFilterPreset(
-    filter: FilterPreset = (this.searchParams.searchParams.get("filter") ||
-      "all") as FilterPreset,
-    setSearchParams = true,
-  ) {
-    switch (filter) {
-      case "all":
-        this.filterBy = {
-          ...this.filterBy,
-          schedule: undefined,
-          isCrawlRunning: undefined,
-        };
-        break;
-      case "scheduled":
-        this.filterBy = {
-          ...this.filterBy,
-          schedule: true,
-          isCrawlRunning: undefined,
-        };
-        break;
-      case "unscheduled":
-        this.filterBy = {
-          ...this.filterBy,
-          schedule: false,
-          isCrawlRunning: undefined,
-        };
-        break;
-      case "running":
-        this.filterBy = {
-          ...this.filterBy,
-          schedule: undefined,
-          isCrawlRunning: true,
-        };
-        break;
-    }
-
-    if (setSearchParams) {
-      this.searchParams.update((params) => {
-        params.delete("page");
-        for (const [filter, value] of Object.entries(this.filterBy) as [
-          string,
-          boolean | undefined,
-        ][]) {
-          if (value === undefined) {
-            params.delete(filter);
-          } else {
-            params.set(filter, value.toString());
-          }
-        }
-        return params;
-      });
-    }
-  }
-
   constructor() {
     super();
     this.filterByCurrentUser =
@@ -249,6 +200,27 @@ export class WorkflowsList extends BtrixElement {
 
   protected firstUpdated() {
     void this.fetchConfigSearchValues();
+  }
+
+  protected updated(
+    changedProperties: PropertyValues<this> & Map<string, unknown>,
+  ) {
+    if (changedProperties.has("filterBy")) {
+      this.searchParams.update((params) => {
+        params.delete("page");
+        for (const [filter, value] of [
+          ...USED_FILTERS.map((f) => [f, undefined]),
+          ...Object.entries(this.filterBy),
+        ] as [string, boolean | undefined][]) {
+          if (value !== undefined) {
+            params.set(filter, value.toString());
+          } else {
+            params.delete(filter);
+          }
+        }
+        return params;
+      });
+    }
   }
 
   disconnectedCallback(): void {
@@ -504,73 +476,77 @@ export class WorkflowsList extends BtrixElement {
         </div>
       </div>
 
-      <div class="flex flex-wrap items-center justify-between">
-        <div class="text-sm">
-          <button
-            class="${this.filterBy.schedule === undefined &&
-            this.filterBy.isCrawlRunning === undefined
-              ? "border-b-current text-primary"
-              : "text-neutral-500"} mr-3 inline-block border-b-2 border-transparent font-medium"
-            aria-selected=${this.filterBy.schedule === undefined &&
-            this.filterBy.isCrawlRunning === undefined}
-            @click=${() => {
-              this.setFilterPreset("all");
-            }}
-          >
-            ${msg("All")}
-          </button>
-          <button
-            class="${this.filterBy.schedule === true &&
-            this.filterBy.isCrawlRunning === undefined
-              ? "border-b-current text-primary"
-              : "text-neutral-500"} mr-3 inline-block border-b-2 border-transparent font-medium"
-            aria-selected=${this.filterBy.schedule === true &&
-            this.filterBy.isCrawlRunning === undefined}
-            @click=${() => {
-              this.setFilterPreset("scheduled");
-            }}
-          >
+      <div class="flex flex-wrap items-center justify-start gap-4">
+        <sl-radio-group
+          size="small"
+          @sl-change=${(e: SlChangeEvent) => {
+            const filter = (e.target as SlRadioGroup).value;
+            switch (filter) {
+              case "all-schedules":
+                this.filterBy = {
+                  ...this.filterBy,
+                  schedule: undefined,
+                };
+                break;
+              case "scheduled":
+                this.filterBy = {
+                  ...this.filterBy,
+                  schedule: true,
+                };
+                break;
+              case "unscheduled":
+                this.filterBy = {
+                  ...this.filterBy,
+                  schedule: false,
+                };
+                break;
+            }
+          }}
+          value=${this.filterBy.schedule === undefined
+            ? "all-schedules"
+            : this.filterBy.schedule
+              ? "scheduled"
+              : "unscheduled"}
+        >
+          <sl-radio-button value="all-schedules" pill>
+            <sl-icon name="asterisk" slot="prefix"></sl-icon>
+            ${msg("All Schedule States")}
+          </sl-radio-button>
+          <sl-radio-button value="scheduled" pill>
+            <sl-icon name="calendar2-check" slot="prefix"></sl-icon>
             ${msg("Scheduled")}
-          </button>
-          <button
-            class="${this.filterBy.schedule === false &&
-            this.filterBy.isCrawlRunning === undefined
-              ? "border-b-current text-primary"
-              : "text-neutral-500"} mr-3 inline-block border-b-2 border-transparent font-medium"
-            aria-selected=${this.filterBy.schedule === false &&
-            this.filterBy.isCrawlRunning === undefined}
-            @click=${() => {
-              this.setFilterPreset("unscheduled");
-            }}
-          >
+          </sl-radio-button>
+          <sl-radio-button value="unscheduled" pill>
+            <sl-icon name="calendar2-x" slot="prefix"></sl-icon>
             ${msg("No schedule")}
-          </button>
-          <button
-            class="${this.filterBy.schedule === undefined &&
-            this.filterBy.isCrawlRunning === true
-              ? "border-b-current text-primary"
-              : "text-neutral-500"} mr-3 inline-block border-b-2 border-transparent font-medium"
-            aria-selected=${this.filterBy.schedule === undefined &&
-            this.filterBy.isCrawlRunning === true}
-            @click=${() => {
-              this.setFilterPreset("running");
-            }}
+          </sl-radio-button>
+        </sl-radio-group>
+
+        <label>
+          <span class="mr-1 text-xs text-neutral-500"
+            >${msg("Show Only Running")}</span
           >
-            ${msg("Running")}
-          </button>
-        </div>
-        <div class="flex items-center justify-end">
-          <label>
-            <span class="mr-1 text-xs text-neutral-500"
-              >${msg("Show Only Mine")}</span
-            >
-            <sl-switch
-              @sl-change=${(e: CustomEvent) =>
-                (this.filterByCurrentUser = (e.target as SlCheckbox).checked)}
-              ?checked=${this.filterByCurrentUser}
-            ></sl-switch>
-          </label>
-        </div>
+          <sl-switch
+            @sl-change=${(e: CustomEvent) => {
+              this.filterBy = {
+                ...this.filterBy,
+                isCrawlRunning: (e.target as SlCheckbox).checked || undefined,
+              };
+            }}
+            ?checked=${this.filterBy.isCrawlRunning === true}
+          ></sl-switch>
+        </label>
+
+        <label>
+          <span class="mr-1 text-xs text-neutral-500"
+            >${msg("Show Only Mine")}</span
+          >
+          <sl-switch
+            @sl-change=${(e: CustomEvent) =>
+              (this.filterByCurrentUser = (e.target as SlCheckbox).checked)}
+            ?checked=${this.filterByCurrentUser}
+          ></sl-switch>
+        </label>
       </div>
     `;
   }
