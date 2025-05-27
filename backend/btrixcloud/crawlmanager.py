@@ -261,7 +261,8 @@ class CrawlManager(K8sAPI):
         # pylint: disable=use-dict-literal
         patch = dict(
             crawlerChannel=crawlconfig.crawlerChannel,
-            scale=crawlconfig.scale,
+            scale=pod_count_from_browser_windows(crawlconfig.browserWindows),
+            browserWindows=crawlconfig.browserWindows,
             timeout=crawlconfig.crawlTimeout,
             maxCrawlSize=crawlconfig.maxCrawlSize,
             proxyId=crawlconfig.proxyId or DEFAULT_PROXY_ID,

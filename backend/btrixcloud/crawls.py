@@ -370,7 +370,7 @@ class CrawlOps(BaseCrawlOps):
             oid=crawlconfig.oid,
             cid=crawlconfig.id,
             cid_rev=crawlconfig.rev,
-            scale=crawlconfig.scale,
+            browserWindows=crawlconfig.browserWindows,
             jobType=crawlconfig.jobType,
             config=crawlconfig.config,
             profileid=crawlconfig.profileid,
@@ -537,7 +537,7 @@ class CrawlOps(BaseCrawlOps):
 
         cid = crawl.cid
 
-        browser_windows = crawl.scale or 1
+        browser_windows = crawl.browserWindows or 2
 
         async with self.get_redis(crawl_id) as redis:
             query = {
