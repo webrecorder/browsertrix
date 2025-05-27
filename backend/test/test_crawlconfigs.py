@@ -450,9 +450,9 @@ def test_verify_revs_history(crawler_auth_headers, default_org_id):
     assert r.status_code == 200
 
     data = r.json()
-    assert data["total"] == 3
+    assert data["total"] == 5
     items = data["items"]
-    assert len(items) == 3
+    assert len(items) == 5
     sorted_data = sorted(items, key=lambda revision: revision["rev"])
     assert sorted_data[0]["config"]["scopeType"] == "prefix"
 
