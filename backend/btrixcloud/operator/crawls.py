@@ -1494,6 +1494,17 @@ class CrawlOperator(BaseOperator):
         # all expected pods are either done or failed
         all_completed = (num_done + num_failed) >= status.scale
 
+        # check paused
+        if not all_completed and crawl.paused_at and status.stopReason == "paused":
+            num_paused = status_count.get("interrupted", 0)
+            if (num_paused + num_failed) >= status.scale:
+                # now fully paused!
+                # remove pausing key and set state to paused
+                await redis.delete(f"{crawl.id}:paused")
+                await self.set_state(
+                    "paused", status, crawl, allowed_from=RUNNING_AND_WAITING_STATES
+                )
+
         # if at least one is done according to redis, consider crawl successful
         # ensure pod successfully exited as well
         # pylint: disable=chained-comparison
@@ -1525,17 +1536,6 @@ class CrawlOperator(BaseOperator):
                 await self.mark_finished(crawl, status, "canceled", stats)
             else:
                 await self.fail_crawl(crawl, status, pods, stats)
-
-        # check paused
-        elif crawl.paused_at and status.stopReason == "paused":
-            num_paused = status_count.get("interrupted", 0)
-            if (num_paused + num_failed) >= status.scale:
-                # now fully paused!
-                # remove pausing key and set state to paused
-                await redis.delete(f"{crawl.id}:paused")
-                await self.set_state(
-                    "paused", status, crawl, allowed_from=RUNNING_AND_WAITING_STATES
-                )
 
         # check for other statuses, default to "running"
         else:
