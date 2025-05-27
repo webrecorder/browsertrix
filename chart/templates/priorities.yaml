@@ -1,5 +1,7 @@
+{{ $max_browser_windows := not (empty .Values.max_browser_windows) | ternary (int .Values.max_browser_windows) (mul (int .Values.max_crawl_scale) (int .Values.crawler_browser_instances) ) }}
 
-{{- range untilStep 0 (int .Values.max_browser_windows) 1 }}
+
+{{- range untilStep 0 $max_browser_windows 1 }}
 ---
 apiVersion: scheduling.k8s.io/v1
 kind: PriorityClass
@@ -11,7 +13,7 @@ description: "Priority for crawl instance #{{ . }}"
 
 {{- end }}
 
-{{- range untilStep 0 (int .Values.max_browser_windows) 1 }}
+{{- range untilStep 0 $max_browser_windows 1 }}
 ---
 apiVersion: scheduling.k8s.io/v1
 kind: PriorityClass
