@@ -52,10 +52,13 @@ export class CrawlStatus extends TailwindElement {
 
   // TODO look into customizing sl-select multi-select
   // instead of separate utility function?
-  static getContent(
-    state?: CrawlState | AnyString,
-    type: CrawlType = "crawl",
-  ): {
+  static getContent({
+    state,
+    type = "crawl",
+  }: {
+    state?: CrawlState | AnyString;
+    type?: CrawlType | undefined;
+  }): {
     icon: TemplateResult;
     label: string;
     cssColor: string;
@@ -318,7 +321,7 @@ export class CrawlStatus extends TailwindElement {
 
   render() {
     const state = this.filterState();
-    const { icon, label } = CrawlStatus.getContent(state, this.type);
+    const { icon, label } = CrawlStatus.getContent({ state, type: this.type });
     if (this.hideLabel) {
       return html`<div class="flex items-center">
         <sl-tooltip

@@ -1353,7 +1353,7 @@ export class WorkflowDetail extends BtrixElement {
   }
 
   private readonly renderStatusMenuItem = (state: CrawlState) => {
-    const { icon, label } = CrawlStatus.getContent(state);
+    const { icon, label } = CrawlStatus.getContent({ state });
 
     return html`<sl-option value=${state}>${icon}${label}</sl-option>`;
   };
