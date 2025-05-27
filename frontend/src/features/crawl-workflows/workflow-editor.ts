@@ -32,8 +32,6 @@ import {
   state,
 } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
-import { map } from "lit/directives/map.js";
-import { range } from "lit/directives/range.js";
 import { when } from "lit/directives/when.js";
 import compact from "lodash/fp/compact";
 import flow from "lodash/fp/flow";
@@ -1578,23 +1576,18 @@ https://archiveweb.page/images/${"logo.svg"}`}
           ]
         : nothing}
       ${inputCol(html`
-        <sl-radio-group
+        <sl-input
           name="scale"
           label=${msg("Browser Windows")}
-          value=${this.formState.browserWindows}
-          @sl-change=${(e: Event) =>
-            this.updateFormState({
-              browserWindows: +(e.target as SlCheckbox).value,
-            })}
-        >
-          ${map(
-            range(this.appState.settings?.maxBrowserWindows || 1),
-            (i: number) =>
-              html` <sl-radio-button value="${i + 1}" size="small"
-                >${i + 1}</sl-radio-button
-              >`,
+          value=${this.formState.browserWindows || ""}
+          placeholder=${defaultLabel(
+            this.appState.settings?.numBrowsersPerInstance,
           )}
-        </sl-radio-group>
+          min="1"
+          max="${this.appState.settings?.maxBrowserWindows || 1}"
+          type="number"
+          inputmode="numeric"
+        ></sl-input>
       `)}
       ${this.renderHelpTextCol(
         html`${msg(
