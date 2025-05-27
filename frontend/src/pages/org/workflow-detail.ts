@@ -37,6 +37,7 @@ import {
   isSuccessfullyFinished,
 } from "@/utils/crawler";
 import { humanizeSchedule } from "@/utils/cron";
+import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
@@ -1118,12 +1119,13 @@ export class WorkflowDetail extends BtrixElement {
             ></btrix-crawl-status>
           `,
         )}
-        ${this.renderDetailItem(
-          msg("Total Size"),
-          (workflow) =>
-            html` ${this.localize.bytes(Number(workflow.totalSize), {
-              unitDisplay: "narrow",
-            })}`,
+        ${this.renderDetailItem(msg("Last Run"), (workflow) =>
+          workflow.lastRun
+            ? html`<sl-relative-time
+                sync
+                date=${workflow.lastRun}
+              ></sl-relative-time>`
+            : html`<span class="text-neutral-400">${msg("Never")}</span>`,
         )}
         ${this.renderDetailItem(msg("Schedule"), (workflow) =>
           workflow.schedule
@@ -1134,12 +1136,19 @@ export class WorkflowDetail extends BtrixElement {
                   })}
                 </div>
               `
-            : html`<span class="text-neutral-400">${msg("No Schedule")}</span>`,
+            : html`<span class="text-neutral-400">${msg("None")}</span>`,
         )}
-        ${this.renderDetailItem(msg("Created By"), (workflow) =>
+        ${this.renderDetailItem(msg("Total Size"), (workflow) =>
+          workflow.lastRun
+            ? html` ${this.localize.bytes(Number(workflow.totalSize), {
+                unitDisplay: "narrow",
+              })}`
+            : noData,
+        )}
+        ${this.renderDetailItem(msg("Last Modified By"), (workflow) =>
           msg(
-            str`${workflow.createdByName} on ${this.localize.date(
-              new Date(workflow.created),
+            str`${workflow.modifiedByName} on ${this.localize.date(
+              new Date(workflow.modified),
               {
                 year: "numeric",
                 month: "numeric",
@@ -1415,16 +1424,20 @@ export class WorkflowDetail extends BtrixElement {
                 ${msg("More")}
               </sl-button>
               <sl-menu>
-                <btrix-menu-item-link href="${this.basePath}/crawls/${id}">
+                <btrix-menu-item-link
+                  href="${this.basePath}/crawls/${id}#overview"
+                >
                   <sl-icon name="info-circle-fill" slot="prefix"></sl-icon>
                   ${msg("View Metadata")}
                 </btrix-menu-item-link>
-                <btrix-menu-item-link href="${this.basePath}/crawls/${id}">
+                <btrix-menu-item-link href="${this.basePath}/crawls/${id}#qa">
                   <sl-icon name="clipboard2-data-fill" slot="prefix"></sl-icon>
                   ${msg("View Quality Assurance")}
                 </btrix-menu-item-link>
 
-                <btrix-menu-item-link href="${this.basePath}/crawls/${id}">
+                <btrix-menu-item-link
+                  href="${this.basePath}/crawls/${id}#files"
+                >
                   <sl-icon name="folder-fill" slot="prefix"></sl-icon>
                   ${msg("View WACZ Files")}
                 </btrix-menu-item-link>
@@ -1600,6 +1613,36 @@ export class WorkflowDetail extends BtrixElement {
       );
     };
 
+    const execTime = (workflow: Workflow) => {
+      if (!latestCrawl) return skeleton;
+
+      if (workflow.isCrawlRunning && workflow.lastCrawlState !== "paused") {
+        return html`<span class="text-neutral-400">
+          ${noData}
+          <sl-tooltip
+            class="invert-tooltip"
+            content=${msg(
+              "Execution time will be calculated once this crawl is finished or paused.",
+            )}
+            hoist
+            placement="bottom"
+          >
+            <sl-icon name="question-circle"></sl-icon>
+          </sl-tooltip>
+        </span>`;
+      }
+
+      if (latestCrawl.crawlExecSeconds < 60) {
+        return this.localize.humanizeDuration(
+          latestCrawl.crawlExecSeconds * 1000,
+        );
+      }
+
+      return humanizeExecutionSeconds(latestCrawl.crawlExecSeconds, {
+        style: "short",
+      });
+    };
+
     const pages = (workflow: Workflow) => {
       if (!latestCrawl) return skeleton;
 
@@ -1650,7 +1693,7 @@ export class WorkflowDetail extends BtrixElement {
 
     return html`
       <btrix-desc-list horizontal>
-        ${this.renderDetailItem(msg("Elapsed Time"), (workflow) =>
+        ${this.renderDetailItem(msg("Run Duration"), (workflow) =>
           isLoading(this.runNowTask)
             ? html`${until(
                 this.runNowTask.taskComplete.then((workflow) =>
@@ -1659,6 +1702,16 @@ export class WorkflowDetail extends BtrixElement {
                 html`<sl-spinner class="text-base"></sl-spinner>`,
               )}`
             : duration(workflow),
+        )}
+        ${this.renderDetailItem(msg("Execution Time"), (workflow) =>
+          isLoading(this.runNowTask)
+            ? html`${until(
+                this.runNowTask.taskComplete.then((workflow) =>
+                  workflow ? execTime(workflow) : noData,
+                ),
+                html`<sl-spinner class="text-base"></sl-spinner>`,
+              )}`
+            : execTime(workflow),
         )}
         ${this.renderDetailItem(msg("Pages Crawled"), pages)}
         ${this.renderDetailItem(msg("Size"), (workflow) =>

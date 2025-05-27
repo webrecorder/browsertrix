@@ -76,8 +76,6 @@ export class CrawlStatus extends TailwindElement {
     let label = "";
     let reason = "";
 
-    console.log(state, originalState);
-
     switch (state) {
       case "starting":
         color = "var(--sl-color-violet-600)";

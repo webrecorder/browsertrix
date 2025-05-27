@@ -63,9 +63,7 @@ export class UsageHistoryTable extends BtrixElement {
       {
         field: Field.ElapsedTime,
         label: msg("Elapsed Time"),
-        description: msg(
-          "Total duration of workflow and QA analysis runs, from start to finish.",
-        ),
+        description: msg("Total duration of workflow and QA analysis runs."),
       },
       {
         field: Field.ExecutionTime,
