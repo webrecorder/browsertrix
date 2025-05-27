@@ -1,0 +1,77 @@
+name: Weblate Reformat
+on:
+  pull_request_target
+
+jobs:
+  # In order to be able to have required checks, a workflow can't be entirely
+  # skipped: see https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/collaborating-on-repositories-with-code-quality-features/troubleshooting-required-status-checks#handling-skipped-but-required-checks
+  paths-filter:
+    name: "Changed files?"
+    runs-on: ubuntu-latest
+    # Only run on PRs with a target branch set of 'weblate'
+    if: github.base_ref == 'weblate'
+    outputs:
+      matches: ${{ steps.filter.outputs.matches }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2  # important, to fetch previous commit
+
+      # workaround for https://github.com/dorny/paths-filter/issues/240
+      - id: previous-sha
+        run: 'echo "sha=$(git rev-parse HEAD^1)" >> $GITHUB_OUTPUT'
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          base: "${{ steps.previous-sha.outputs.sha }}"
+          filters: |
+            matches:
+              - 'frontend/xliff/**'
+              - '.github/workflows/weblate-reformat.yaml'
+
+  reformat:
+    needs: paths-filter
+    if: needs.paths-filter.outputs.matches == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      # Give the default GITHUB_TOKEN write permission to commit and push the
+      # added or changed files to the repository.
+      contents: write
+
+    steps:
+      # Setup:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.head_ref }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'yarn'
+          cache-dependency-path: frontend/yarn.lock
+      - name: Install dependencies
+        working-directory: frontend
+        env:
+          HUSKY: 0
+        run: yarn install --frozen-lockfile
+
+      # Localize:
+      - name: Reformat XLIFF files
+        working-directory: frontend
+        run: yarn localize:extract
+
+      - name: Rebuild frontend templates
+        working-directory: frontend
+        run: yarn localize:build
+
+      - name: Commit changes to upstream branch
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: Format Weblate Changes
+          file_pattern: '**/*.xlf **/__generated__/locales/*.ts'
+          skip_fetch: true
+          skip_checkout: true

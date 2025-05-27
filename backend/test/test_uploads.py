@@ -207,6 +207,7 @@ def test_get_upload_replay_json(
     assert data["resources"][0]["hash"]
     assert data["errors"] == []
     assert "files" not in data
+    assert data["version"] == 2
 
 
 def test_get_upload_replay_json_admin(
@@ -230,6 +231,84 @@ def test_get_upload_replay_json_admin(
     assert data["resources"][0]["hash"]
     assert data["errors"] == []
     assert "files" not in data
+    assert data["version"] == 2
+
+
+def test_get_upload_pages(admin_auth_headers, default_org_id, upload_id):
+    # Give time for pages to finish being uploaded
+    time.sleep(10)
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads/{upload_id}/pages",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data["total"] > 0
+
+    pages = data["items"]
+    for page in pages:
+        assert page["id"]
+        assert page["oid"]
+        assert page["crawl_id"] == upload_id
+        assert page["url"]
+        assert page["ts"]
+        assert page["filename"]
+        assert page.get("title") or page.get("title") is None
+        assert page["isSeed"]
+
+    page_id = pages[0]["id"]
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads/{upload_id}/pages/{page_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    page = r.json()
+
+    assert page["id"] == page_id
+    assert page["oid"]
+    assert page["crawl_id"]
+    assert page["url"]
+    assert page["ts"]
+    assert page["filename"]
+    assert page.get("title") or page.get("title") is None
+    assert page["isSeed"]
+
+    assert page["notes"] == []
+    assert page.get("userid") is None
+    assert page.get("modified") is None
+    assert page.get("approved") is None
+
+    # Check that pageCount and uniquePageCount stored on upload
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads/{upload_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["pageCount"] > 0
+    assert data["uniquePageCount"] > 0
+
+
+def test_uploads_collection_updated(
+    admin_auth_headers, default_org_id, uploads_collection_id, upload_id
+):
+    # Verify that collection is updated when WACZ is added on upload
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{uploads_collection_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data["crawlCount"] > 0
+    assert data["pageCount"] > 0
+    assert data["uniquePageCount"] > 0
+    assert data["totalSize"] > 0
+    assert data["dateEarliest"]
+    assert data["dateLatest"]
+    assert data["modified"] > data["created"]
 
 
 def test_replace_upload(
@@ -441,6 +520,7 @@ def test_list_all_crawls(
         assert item["started"]
         assert item["finished"]
         assert item["state"]
+        assert item["version"] == 2
 
     # Test that all-crawls lastQAState and lastQAStarted sorts always puts crawls before uploads
     r = requests.get(
@@ -527,7 +607,7 @@ def test_get_all_crawls_by_type(
     )
     assert r.status_code == 200
     data = r.json()
-    assert data["total"] == 5
+    assert data["total"] == 6
     for item in data["items"]:
         assert item["type"] == "crawl"
 
@@ -743,9 +823,10 @@ def test_all_crawls_search_values(
     assert r.status_code == 200
     data = r.json()
 
-    assert len(data["names"]) == 7
+    assert len(data["names"]) == 8
     expected_names = [
         "Crawler User Test Crawl",
+        "Custom Behavior Logs",
         "My Upload Updated",
         "test2.wacz",
         "All Crawls Test Crawl",
@@ -757,6 +838,7 @@ def test_all_crawls_search_values(
     assert sorted(data["descriptions"]) == ["Lorem ipsum"]
     assert sorted(data["firstSeeds"]) == [
         "https://old.webrecorder.net/",
+        "https://specs.webrecorder.net/",
         "https://webrecorder.net/",
     ]
 
@@ -768,12 +850,13 @@ def test_all_crawls_search_values(
     assert r.status_code == 200
     data = r.json()
 
-    assert len(data["names"]) == 4
+    assert len(data["names"]) == 5
     expected_names = [
         "Admin Test Crawl",
         "All Crawls Test Crawl",
         "Crawler User Crawl for Testing QA",
         "Crawler User Test Crawl",
+        "Custom Behavior Logs",
     ]
     for expected_name in expected_names:
         assert expected_name in data["names"]
@@ -781,6 +864,7 @@ def test_all_crawls_search_values(
     assert sorted(data["descriptions"]) == ["Lorem ipsum"]
     assert sorted(data["firstSeeds"]) == [
         "https://old.webrecorder.net/",
+        "https://specs.webrecorder.net/",
         "https://webrecorder.net/",
     ]
 
@@ -846,6 +930,7 @@ def test_get_upload_replay_json_from_all_crawls(
     assert data["resources"][0]["hash"]
     assert data["errors"] == []
     assert "files" not in data
+    assert data["version"] == 2
 
 
 def test_get_upload_replay_json_admin_from_all_crawls(
@@ -867,6 +952,7 @@ def test_get_upload_replay_json_admin_from_all_crawls(
     assert data["resources"][0]["hash"]
     assert data["errors"] == []
     assert "files" not in data
+    assert data["version"] == 2
 
 
 def test_update_upload_metadata_all_crawls(
@@ -946,6 +1032,39 @@ def test_update_upload_metadata_all_crawls(
     assert data["description"] == UPDATED_DESC
     assert data["name"] == UPDATED_NAME
     assert data["collectionIds"] == []
+
+
+def test_clear_all_presigned_urls(
+    admin_auth_headers, crawler_auth_headers, default_org_id
+):
+    # All orgs
+    r = requests.post(
+        f"{API_PREFIX}/orgs/clear-presigned-urls",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 403
+    assert r.json()["detail"] == "Not Allowed"
+
+    r = requests.post(
+        f"{API_PREFIX}/orgs/clear-presigned-urls",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["success"]
+
+    # Per-org
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/clear-presigned-urls",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 403
+
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/clear-presigned-urls",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["success"]
 
 
 def test_delete_form_upload_and_crawls_from_all_crawls(
@@ -1043,7 +1162,9 @@ def test_delete_form_upload_and_crawls_from_all_crawls(
             break
 
         if count + 1 == MAX_ATTEMPTS:
-            assert False
+            assert data["storageUsedBytes"] == org_bytes - total_size
+            assert data["storageUsedCrawls"] == org_crawl_bytes - combined_crawl_size
+            assert data["storageUsedUploads"] == org_upload_bytes - upload_size
 
         time.sleep(5)
         count += 1

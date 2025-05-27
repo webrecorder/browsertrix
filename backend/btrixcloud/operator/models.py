@@ -1,10 +1,12 @@
-""" Operator Models """
+"""Operator Models"""
 
 from collections import defaultdict
+from datetime import datetime
 from uuid import UUID
 from typing import Optional, DefaultDict, Literal, Annotated, Any
 from pydantic import BaseModel, Field
-from btrixcloud.models import StorageRef, TYPE_ALL_CRAWL_STATES
+from kubernetes.utils import parse_quantity
+from btrixcloud.models import StorageRef, TYPE_ALL_CRAWL_STATES, Organization
 
 
 BTRIX_API = "btrix.cloud/v1"
@@ -16,6 +18,8 @@ CJS = f"CrawlJob.{BTRIX_API}"
 
 StopReason = Literal[
     "stopped_by_user",
+    "paused",
+    "stopped_pause_expired",
     "time-limit",
     "size-limit",
     "stopped_storage_quota_reached",
@@ -69,11 +73,13 @@ class CrawlSpec(BaseModel):
     id: str
     cid: UUID
     oid: UUID
+    org: Organization
     scale: int = 1
     storage: StorageRef
     started: str
     crawler_channel: str
     stopping: bool = False
+    paused_at: Optional[datetime] = None
     scheduled: bool = False
     timeout: int = 0
     max_crawl_size: int = 0
@@ -134,6 +140,7 @@ class CrawlStatus(BaseModel):
     stopReason: Optional[StopReason] = None
     initRedis: bool = False
     crawlerImage: Optional[str] = None
+    lastConfigUpdate: str = ""
 
     lastActiveTime: str = ""
     podStatus: DefaultDict[str, Annotated[PodInfo, Field(default_factory=PodInfo)]] = (

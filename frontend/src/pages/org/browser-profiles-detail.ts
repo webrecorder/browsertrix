@@ -10,6 +10,7 @@ import type { Profile, ProfileWorkflow } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
+import { ClipboardController } from "@/controllers/clipboard";
 import type { BrowserConnectionChange } from "@/features/browser-profiles/profile-browser";
 import { pageNav } from "@/layouts/pageHeader";
 import { isApiError } from "@/utils/api";
@@ -27,8 +28,8 @@ const DESCRIPTION_MAXLENGTH = 500;
  * ></btrix-browser-profiles-detail>
  * ```
  */
-@localized()
 @customElement("btrix-browser-profiles-detail")
+@localized()
 export class BrowserProfilesDetail extends BtrixElement {
   @property({ type: String })
   profileId!: string;
@@ -115,32 +116,32 @@ export class BrowserProfilesDetail extends BtrixElement {
           <btrix-desc-list-item label=${msg("Created On")}>
             ${this.profile
               ? html`
-                  <sl-format-date
+                  <btrix-format-date
                     date=${this.profile.created}
                     month="2-digit"
                     day="2-digit"
-                    year="2-digit"
+                    year="numeric"
                     hour="numeric"
                     minute="numeric"
                     time-zone-name="short"
-                  ></sl-format-date>
+                  ></btrix-format-date>
                 `
               : nothing}
           </btrix-desc-list-item>
           <btrix-desc-list-item label=${msg("Last Updated")}>
             ${this.profile
-              ? html` <sl-format-date
+              ? html` <btrix-format-date
                   date=${
                     // NOTE older profiles may not have "modified" data
                     this.profile.modified || this.profile.created
                   }
                   month="2-digit"
                   day="2-digit"
-                  year="2-digit"
+                  year="numeric"
                   hour="numeric"
                   minute="numeric"
                   time-zone-name="short"
-                ></sl-format-date>`
+                ></btrix-format-date>`
               : nothing}
           </btrix-desc-list-item>
           ${
@@ -433,11 +434,18 @@ export class BrowserProfilesDetail extends BtrixElement {
           </sl-menu-item>
           <sl-divider></sl-divider>
           <sl-menu-item
+            @click=${() => ClipboardController.copyToClipboard(this.profileId)}
+          >
+            <sl-icon name="copy" slot="prefix"></sl-icon>
+            ${msg("Copy Profile ID")}
+          </sl-menu-item>
+          <sl-divider></sl-divider>
+          <sl-menu-item
             style="--sl-color-neutral-700: var(--danger)"
             @click=${() => void this.deleteProfile()}
           >
             <sl-icon slot="prefix" name="trash3"></sl-icon>
-            ${msg("Delete")}
+            ${msg("Delete Profile")}
           </sl-menu-item>
         </sl-menu>
       </sl-dropdown>
@@ -537,6 +545,7 @@ export class BrowserProfilesDetail extends BtrixElement {
         message: msg("Sorry, couldn't preview browser profile at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "browser-profile-error",
       });
     }
   }
@@ -592,6 +601,7 @@ export class BrowserProfilesDetail extends BtrixElement {
         message: msg("Sorry, couldn't create browser profile at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "browser-profile-error",
       });
     }
   }
@@ -633,6 +643,7 @@ export class BrowserProfilesDetail extends BtrixElement {
         message: msg("Sorry, couldn't delete browser profile at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "browser-profile-error",
       });
     }
   }
@@ -671,6 +682,7 @@ export class BrowserProfilesDetail extends BtrixElement {
         message: msg("Sorry, couldn't retrieve browser profiles at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "browser-profile-error",
       });
     }
   }
@@ -707,6 +719,7 @@ export class BrowserProfilesDetail extends BtrixElement {
           message: msg("Successfully saved browser profile."),
           variant: "success",
           icon: "check2-circle",
+          id: "browser-profile-save-status",
         });
 
         this.browserId = undefined;
@@ -718,6 +731,7 @@ export class BrowserProfilesDetail extends BtrixElement {
         message: msg("Sorry, couldn't save browser profile at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "browser-profile-save-status",
       });
     }
 
@@ -755,6 +769,7 @@ export class BrowserProfilesDetail extends BtrixElement {
           message: msg("Successfully saved browser profile."),
           variant: "success",
           icon: "check2-circle",
+          id: "browser-profile-save-status",
         });
 
         this.profile = {
@@ -782,6 +797,7 @@ export class BrowserProfilesDetail extends BtrixElement {
         message: message,
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "browser-profile-save-status",
       });
     }
 

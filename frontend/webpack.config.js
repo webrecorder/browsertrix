@@ -8,13 +8,15 @@ const path = require("path");
 const CopyPlugin = require("copy-webpack-plugin");
 const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
+const threadLoader = require("thread-loader");
 const TsconfigPathsPlugin = require("tsconfig-paths-webpack-plugin");
 const webpack = require("webpack");
 
+const defineConfig = require("./config/define.js");
 // @ts-ignore
 const packageJSON = require("./package.json");
 
-const isDevServer = process.env.WEBPACK_SERVE;
+const isDevServer = process.env.WEBPACK_SERVE === "true";
 
 const dotEnvPath = path.resolve(
   process.cwd(),
@@ -24,16 +26,15 @@ require("dotenv").config({
   path: dotEnvPath,
 });
 
-const WEBSOCKET_HOST =
-  isDevServer && process.env.API_BASE_URL
-    ? new URL(process.env.API_BASE_URL).host
-    : process.env.WEBSOCKET_HOST || "";
-
 const DOCS_URL = process.env.DOCS_URL
   ? new URL(process.env.DOCS_URL)
   : isDevServer
     ? "https://docs.browsertrix.com/"
     : "/docs/";
+
+const OPENGRAPH_BASE_URL = process.env.OPENGRAPH_BASE_URL
+  ? new URL(process.env.OPENGRAPH_BASE_URL)
+  : "https://app.browsertrix.com/";
 
 // Get git info for release version info
 
@@ -79,6 +80,20 @@ const version = (() => {
   return packageJSON.version;
 })();
 
+/** @type {Partial<import('ts-loader').Options>} */
+const tsLoaderOptions = {
+  onlyCompileBundledFiles: true,
+  transpileOnly: true,
+  // Enables compatibility with thread-loader
+  happyPackMode: true,
+};
+
+const threadLoaderOptions = {
+  poolTimeout: isDevServer ? Infinity : 2000,
+};
+
+threadLoader.warmup(threadLoaderOptions, ["ts-loader"]);
+
 /** @type {import('webpack').Configuration} */
 const main = {
   entry: "./src/index.ts",
@@ -91,9 +106,11 @@ const main = {
 
   module: {
     rules: [
+      // Non-generated source files
       {
         test: /\.ts$/,
         include: path.resolve(__dirname, "src"),
+        exclude: path.resolve(__dirname, "src/__generated__"),
         use: [
           {
             loader: "postcss-loader",
@@ -105,14 +122,29 @@ const main = {
             },
           },
           {
+            loader: "thread-loader",
+            options: threadLoaderOptions,
+          },
+          {
             loader: "ts-loader",
-            options: {
-              onlyCompileBundledFiles: true,
-              transpileOnly: true,
-            },
+            options: tsLoaderOptions,
           },
         ],
-        exclude: /node_modules/,
+      },
+      {
+        // Generated source files
+        test: /\.ts$/,
+        include: path.resolve(__dirname, "src/__generated__"),
+        use: [
+          {
+            loader: "thread-loader",
+            options: threadLoaderOptions,
+          },
+          {
+            loader: "ts-loader",
+            options: tsLoaderOptions,
+          },
+        ],
       },
       {
         // Global styles and assets, like fonts and Shoelace,
@@ -142,7 +174,7 @@ const main = {
         loader: "html-loader",
       },
       {
-        test: /\.(woff(2)?|ttf|svg|webp)(\?v=\d+\.\d+\.\d+)?$/,
+        test: /\.(woff(2)?|ttf|svg|webp|avif)(\?v=\d+\.\d+\.\d+)?$/,
         include: path.resolve(__dirname, "src"),
         type: "asset/resource",
       },
@@ -156,9 +188,15 @@ const main = {
   },
 
   plugins: [
-    new webpack.DefinePlugin({
-      "window.process.env.WEBSOCKET_HOST": JSON.stringify(WEBSOCKET_HOST),
+    // Shim polyfill
+    new webpack.ProvidePlugin({
+      "Intl.DurationFormat": path.resolve(
+        __dirname,
+        "lib/intl-durationformat.js",
+      ),
     }),
+
+    new webpack.DefinePlugin(defineConfig),
 
     new webpack.optimize.LimitChunkCountPlugin({
       maxChunks: 12,
@@ -167,7 +205,17 @@ const main = {
     new ForkTsCheckerWebpackPlugin({
       typescript: {
         configOverwrite: {
-          exclude: ["**/*.test.ts", "tests/**/*.ts", "playwright.config.ts"],
+          exclude: [
+            "**/*.test.ts",
+            "tests/**/*.ts",
+            "src/stories/**/*.ts",
+            "playwright.config.ts",
+          ],
+        },
+        // Re-enable type checking when `happyPackMode` is enabled
+        diagnosticOptions: {
+          semantic: true,
+          syntactic: true,
         },
       },
     }),
@@ -178,6 +226,7 @@ const main = {
         glitchtip_dsn: process.env.GLITCHTIP_DSN || "",
         environment: isDevServer ? "development" : "production",
         docsUrl: DOCS_URL,
+        openGraphBaseUrl: OPENGRAPH_BASE_URL,
         version,
         gitBranch,
         commitHash,
@@ -211,6 +260,12 @@ const main = {
         {
           from: path.resolve(__dirname, "src/manifest.webmanifest"),
           to: path.resolve(__dirname, "dist"),
+        },
+        // Copy public contents
+        {
+          from: path.resolve(__dirname, "public"),
+          to: path.resolve(__dirname, "dist"),
+          noErrorOnMissing: true,
         },
       ],
     }),

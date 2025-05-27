@@ -12,12 +12,7 @@ import { tw } from "@/utils/tailwind";
 type Variant = "neutral" | "danger";
 
 /**
- * Custom styled button
- *
- * Usage example:
- * ```ts
- * <btrix-button>Click me</btrix-button>
- * ```
+ * Custom styled button.
  */
 @customElement("btrix-button")
 export class Button extends TailwindElement {
@@ -74,7 +69,8 @@ export class Button extends TailwindElement {
           small: tw`min-h-6 min-w-6 rounded-md text-base`,
           medium: tw`min-h-8 min-w-8 rounded-sm text-lg`,
         }[this.size],
-        this.raised && tw`border shadow-sm`,
+        this.raised &&
+          tw`shadow ring-1 ring-stone-500/20 hover:shadow-stone-800/20 hover:ring-stone-800/20`,
         this.filled
           ? [
               tw`text-white`,

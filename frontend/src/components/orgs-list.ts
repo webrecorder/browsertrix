@@ -5,27 +5,55 @@ import type {
   SlCheckbox,
   SlInput,
   SlMenuItem,
+  SlRadioGroup,
 } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
-import { css, html, nothing } from "lit";
+import Fuse from "fuse.js";
+import {
+  css,
+  html,
+  nothing,
+  type PropertyValues,
+  type TemplateResult,
+} from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
+import { repeat } from "lit/directives/repeat.js";
 import { when } from "lit/directives/when.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
+import { ClipboardController } from "@/controllers/clipboard";
+import { SubscriptionStatus } from "@/types/billing";
 import type { ProxiesAPIResponse, Proxy } from "@/types/crawler";
 import type { OrgData } from "@/utils/orgs";
+
+enum OrgFilter {
+  All = "all",
+  Active = "active",
+  Inactive = "inactive",
+  Trialing = "trialing",
+  ScheduledCancel = "scheduled-cancel",
+}
+
+const none = html`
+  <sl-icon
+    name="slash"
+    class="text-base text-neutral-400"
+    label=${msg("None")}
+  ></sl-icon>
+`;
 
 /**
  * @fires update-quotas
  * @fires update-proxies
  */
-@localized()
 @customElement("btrix-orgs-list")
+@localized()
 export class OrgsList extends BtrixElement {
   static styles = css`
     btrix-table {
-      grid-template-columns: min-content [clickable-start] 50ch auto auto auto [clickable-end] min-content;
+      --btrix-table-grid-template-columns: min-content [clickable-start]
+        minmax(auto, 50ch) auto auto auto auto [clickable-end] min-content;
     }
   `;
 
@@ -56,41 +84,196 @@ export class OrgsList extends BtrixElement {
   @query("#orgDeleteButton")
   private readonly orgDeleteButton?: SlButton | null;
 
+  // For fuzzy search:
+  private readonly fuse = new Fuse(this.orgList ?? [], {
+    keys: [
+      "id",
+      "name",
+      "slug",
+      "users.name",
+      "users.email",
+      "subscription.subId",
+      "subscription.planId",
+    ],
+    useExtendedSearch: true,
+  });
+
+  @state()
+  private search = "";
+
+  @state()
+  private orgFilter: OrgFilter = OrgFilter.All;
+
+  protected willUpdate(changedProperties: PropertyValues<this>) {
+    if (changedProperties.has("orgList")) {
+      this.fuse.setCollection(this.orgList ?? []);
+    }
+  }
+
+  protected firstUpdated() {
+    this.fuse.setCollection(this.orgList ?? []);
+  }
+
   render() {
     if (this.skeleton) {
       return this.renderSkeleton();
     }
 
+    const searchResults = this.search
+      ? this.fuse.search(this.search).map(({ item }) => item)
+      : this.orgList;
+
+    const orgs = searchResults?.filter((org) =>
+      this.filterOrg(org, this.orgFilter),
+    );
+
     return html`
-      <btrix-table>
-        <btrix-table-head class="mb-2">
-          <btrix-table-header-cell>
-            <span class="sr-only">${msg("Status")}</span>
-          </btrix-table-header-cell>
-          <btrix-table-header-cell class="px-2">
-            ${msg("Name")}
-          </btrix-table-header-cell>
-          <btrix-table-header-cell class="px-2">
-            ${msg("Created")}
-          </btrix-table-header-cell>
-          <btrix-table-header-cell class="px-2">
-            ${msg("Members")}
-          </btrix-table-header-cell>
-          <btrix-table-header-cell class="px-2">
-            ${msg("Bytes Stored")}
-          </btrix-table-header-cell>
-          <btrix-table-header-cell>
-            <span class="sr-only">${msg("Actions")}</span>
-          </btrix-table-header-cell>
-        </btrix-table-head>
-        <btrix-table-body class="rounded border">
-          ${this.orgList?.map(this.renderOrg)}
-        </btrix-table-body>
-      </btrix-table>
+      <sl-input
+        value=${this.search}
+        clearable
+        size="small"
+        class="mb-4"
+        placeholder=${msg(
+          "Search all orgs by name, id, slug, users, and subscriptions",
+        )}
+        @sl-input=${(e: Event) => {
+          this.search = (e.target as SlInput).value.trim() || "";
+        }}
+      >
+        <sl-icon
+          name="search"
+          slot="prefix"
+          aria-hidden="true"
+          library="default"
+        ></sl-icon
+      ></sl-input>
+      <btrix-overflow-scroll
+        class="-mx-3 [--btrix-overflow-scroll-scrim-color:theme(colors.neutral.50)] part-[content]:px-3"
+      >
+        <sl-radio-group
+          size="small"
+          value=${this.orgFilter}
+          class="mb-6 flex min-w-min justify-end"
+          @sl-change=${(e: SlChangeEvent) => {
+            this.orgFilter = (e.target as SlRadioGroup).value as OrgFilter;
+          }}
+        >
+          ${[
+            { label: msg("All"), icon: "asterisk", filter: OrgFilter.All },
+            {
+              label: msg("Active"),
+              icon: "credit-card",
+              filter: OrgFilter.Active,
+            },
+            {
+              label: msg("Inactive"),
+              icon: "x-square",
+              filter: OrgFilter.Inactive,
+            },
+            {
+              label: msg("Trials"),
+              icon: "basket",
+              filter: OrgFilter.Trialing,
+            },
+            {
+              label: msg("Cancellation Scheduled"),
+              icon: "calendar2-x",
+              filter: OrgFilter.ScheduledCancel,
+            },
+          ].map((options) => this.renderFilterButton(searchResults, options))}
+        </sl-radio-group>
+      </btrix-overflow-scroll>
+      <btrix-overflow-scroll
+        class="-mx-3 [--btrix-overflow-scroll-scrim-color:theme(colors.neutral.50)] part-[content]:px-3"
+      >
+        <btrix-table>
+          <btrix-table-head class="mb-2">
+            <btrix-table-header-cell>
+              <span class="sr-only">${msg("Status")}</span>
+            </btrix-table-header-cell>
+            <btrix-table-header-cell class="px-2">
+              ${msg("Name")}
+            </btrix-table-header-cell>
+            <btrix-table-header-cell class="px-2">
+              ${msg("Created")}
+            </btrix-table-header-cell>
+            <btrix-table-header-cell class="px-2">
+              ${msg("Members")}
+            </btrix-table-header-cell>
+            <btrix-table-header-cell class="px-2">
+              ${msg("Bytes Stored")}
+            </btrix-table-header-cell>
+            <btrix-table-header-cell class="px-2">
+              ${msg("Last Crawl")}
+            </btrix-table-header-cell>
+            <btrix-table-header-cell>
+              <span class="sr-only">${msg("Actions")}</span>
+            </btrix-table-header-cell>
+          </btrix-table-head>
+          <btrix-table-body class="rounded border">
+            ${repeat(orgs || [], (org) => org.id, this.renderOrg)}
+          </btrix-table-body>
+        </btrix-table>
+      </btrix-overflow-scroll>
 
       ${this.renderOrgQuotas()} ${this.renderOrgProxies()}
       ${this.renderOrgReadOnly()} ${this.renderOrgDelete()}
     `;
+  }
+
+  private renderFilterButton(
+    orgs: OrgData[] | undefined,
+    options: { label: string; icon: string; filter: OrgFilter },
+  ) {
+    const { label, icon, filter } = options;
+    return this.orgList?.some((org) => this.filterOrg(org, filter))
+      ? html`
+          <sl-radio-button
+            pill
+            value=${filter}
+            class="part-[label]:items-baseline"
+          >
+            <sl-icon name=${icon} slot="prefix"></sl-icon>
+            ${label}
+            <span class="ml-2 text-xs font-normal tabular-nums"
+              >${this.localize.number(
+                orgs?.filter((org) => this.filterOrg(org, filter)).length ?? 0,
+              )}</span
+            >
+          </sl-radio-button>
+        `
+      : nothing;
+  }
+
+  private filterOrg(org: OrgData, filter: OrgFilter): boolean {
+    switch (filter) {
+      case OrgFilter.Active:
+        return (
+          !!org.subscription &&
+          org.subscription.status === SubscriptionStatus.Active
+        );
+      case OrgFilter.Inactive:
+        return (
+          !!org.subscription &&
+          !(
+            org.subscription.status === SubscriptionStatus.Active ||
+            org.subscription.status === SubscriptionStatus.Trialing
+          )
+        );
+      case OrgFilter.Trialing:
+        return (
+          !!org.subscription &&
+          org.subscription.status === SubscriptionStatus.Trialing
+        );
+      case OrgFilter.ScheduledCancel:
+        return (
+          !!org.subscription &&
+          org.subscription.status === SubscriptionStatus.Active &&
+          !!org.subscription.futureCancelDate
+        );
+      case OrgFilter.All:
+        return true;
+    }
   }
 
   private renderOrgQuotas() {
@@ -319,7 +502,7 @@ export class OrgsList extends BtrixElement {
               ${msg(
                 html`Deleting an org will delete all
                   <strong class="font-semibold">
-                    <sl-format-bytes value=${org.bytesStored}></sl-format-bytes>
+                    ${this.localize.bytes(org.bytesStored)}
                   </strong>
                   of data associated with the org.`,
               )}
@@ -327,26 +510,17 @@ export class OrgsList extends BtrixElement {
             <ul class="mb-3 text-neutral-600">
               <li>
                 ${msg(
-                  html`Crawls:
-                    <sl-format-bytes
-                      value=${org.bytesStoredCrawls}
-                    ></sl-format-bytes>`,
+                  str`Crawls: ${this.localize.bytes(org.bytesStoredCrawls)}`,
                 )}
               </li>
               <li>
                 ${msg(
-                  html`Uploads:
-                    <sl-format-bytes
-                      value=${org.bytesStoredUploads}
-                    ></sl-format-bytes>`,
+                  str`Uploads: ${this.localize.bytes(org.bytesStoredUploads)}`,
                 )}
               </li>
               <li>
                 ${msg(
-                  html`Profiles:
-                    <sl-format-bytes
-                      value=${org.bytesStoredProfiles}
-                    ></sl-format-bytes>`,
+                  str`Profiles: ${this.localize.bytes(org.bytesStoredProfiles)}`,
                 )}
               </li>
             </ul>
@@ -486,6 +660,7 @@ export class OrgsList extends BtrixElement {
           : msg(str`Archiving in "${org.name}" is re-enabled.`),
         variant: "success",
         icon: "check2-circle",
+        id: "archiving-enabled-status",
       });
     } catch (e) {
       console.debug(e);
@@ -496,6 +671,7 @@ export class OrgsList extends BtrixElement {
         ),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "archiving-ability-status",
       });
     }
   }
@@ -513,6 +689,7 @@ export class OrgsList extends BtrixElement {
         message: msg("Sorry, couldn't get all proxies at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "proxy-retrieve-status",
       });
     }
   }
@@ -528,6 +705,7 @@ export class OrgsList extends BtrixElement {
         message: msg(str`Org "${org.name}" has been deleted.`),
         variant: "success",
         icon: "check2-circle",
+        id: "org-delete-status",
       });
     } catch (e) {
       console.debug(e);
@@ -536,6 +714,7 @@ export class OrgsList extends BtrixElement {
         message: msg("Sorry, couldn't delete org at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "org-delete-status",
       });
     }
   }
@@ -548,14 +727,6 @@ export class OrgsList extends BtrixElement {
     const isUserOrg = this.userInfo.orgs.some(({ id }) => id === org.id);
 
     const memberCount = Object.keys(org.users || {}).length;
-
-    const none = html`
-      <sl-icon
-        name="slash"
-        class="text-base text-neutral-400"
-        label=${msg("None")}
-      ></sl-icon>
-    `;
 
     let status = {
       icon: html`<sl-icon
@@ -594,21 +765,160 @@ export class OrgsList extends BtrixElement {
       };
     }
 
+    let subscription: {
+      icon: TemplateResult<1>;
+      description: string | TemplateResult<1>;
+    } = {
+      icon: none,
+      description: msg("No Subscription"),
+    };
+
+    if (org.subscription) {
+      switch (org.subscription.status) {
+        case SubscriptionStatus.Active:
+          if (
+            org.subscription.futureCancelDate &&
+            new Date(org.subscription.futureCancelDate).getTime() -
+              new Date().getTime() >=
+              0
+          ) {
+            subscription = {
+              icon: html`<sl-icon
+                class="text-base text-warning"
+                name="calendar2-x"
+                label=${msg("Subscription Cancellation Scheduled")}
+              ></sl-icon>`,
+              description: html`${msg("Subscription Cancellation Scheduled")}
+                <div class="mt-2 text-xs">
+                  ${msg("Subscription will be cancelled in")}
+                  ${this.localize.humanizeDuration(
+                    new Date(org.subscription.futureCancelDate).getTime() -
+                      new Date().getTime(),
+                  )}
+                  (${this.localize.date(org.subscription.futureCancelDate, {
+                    timeStyle: "medium",
+                    dateStyle: "medium",
+                  })})
+                </div>`,
+            };
+          } else if (
+            org.subscription.futureCancelDate &&
+            new Date(org.subscription.futureCancelDate).getTime() -
+              new Date().getTime() <
+              0
+          ) {
+            subscription = {
+              icon: html`<sl-icon
+                  class="text-base text-warning"
+                  name="calendar2-x"
+                  label=${msg("Subscription Cancellation Scheduled")}
+                ></sl-icon>
+                <sl-icon
+                  class="text-base text-danger"
+                  name="x-octagon-fill"
+                  label=${msg("Subscription Cancellation Scheduled")}
+                ></sl-icon>`,
+              description: html`${msg(
+                  "Subscription Cancellation Scheduled in the Past",
+                )}
+                <div class="mt-2 text-xs">
+                  ${msg("Subscription was scheduled for cancellation at")}
+                  ${this.localize.date(org.subscription.futureCancelDate, {
+                    timeStyle: "medium",
+                    dateStyle: "medium",
+                  })}
+                </div>
+                <div class="my-2 font-bold text-danger-300">
+                  ${msg("This indicates something has gone wrong.")}
+                </div>`,
+            };
+          } else {
+            subscription = {
+              icon: html`<sl-icon
+                class="text-base text-success"
+                name="credit-card-fill"
+                label=${msg("Active Subscription")}
+              ></sl-icon>`,
+              description: msg("Active Subscription"),
+            };
+          }
+          break;
+        case SubscriptionStatus.Trialing:
+          subscription = {
+            icon: html`<sl-icon
+              class="text-base text-neutral-400"
+              name="basket-fill"
+              label=${msg("Trial")}
+            ></sl-icon>`,
+            description: msg("Trial"),
+          };
+          break;
+        case SubscriptionStatus.TrialingCanceled:
+          subscription = {
+            icon: html`<sl-icon
+              class="text-base text-neutral-400"
+              name="x-square-fill"
+              label=${msg("Trial Cancelled")}
+            ></sl-icon>`,
+            description: msg("Trial Canceled"),
+          };
+          break;
+        case SubscriptionStatus.PausedPaymentFailed:
+          subscription = {
+            icon: html`<sl-icon
+              class="text-base text-danger"
+              name="exclamation-triangle-fill"
+              label=${msg("Payment Failed")}
+            ></sl-icon>`,
+            description: msg("Payment Failed"),
+          };
+          break;
+        case SubscriptionStatus.Cancelled:
+          subscription = {
+            icon: html`<sl-icon
+              class="text-base text-neutral-400"
+              name="x-square-fill"
+              label=${msg("Canceled")}
+            >
+            </sl-icon>`,
+            description: msg("Canceled"),
+          };
+          break;
+        case SubscriptionStatus.PaymentNeverMade:
+          subscription = {
+            icon: html`<sl-icon
+              class="text-base text-neutral-400"
+              name="dash-square-fill"
+              label=${msg("Payment Never Made")}
+            >
+            </sl-icon>`,
+            description: msg("Payment Never Made"),
+          };
+          break;
+        default:
+          break;
+      }
+    }
+
     return html`
       <btrix-table-row
         class="${isUserOrg
           ? ""
           : "opacity-50"} cursor-pointer select-none border-b bg-neutral-0 transition-colors first-of-type:rounded-t last-of-type:rounded-b last-of-type:border-none focus-within:bg-neutral-50 hover:bg-neutral-50"
       >
-        <btrix-table-cell class="min-w-6 pl-2">
-          <sl-tooltip content=${status.description}>
+        <btrix-table-cell class="min-w-6 gap-1 pl-2">
+          <sl-tooltip content=${status.description} hoist>
             ${status.icon}
+          </sl-tooltip>
+          <sl-tooltip hoist>
+            <span slot="content">${subscription.description}</span>
+            ${subscription.icon}
           </sl-tooltip>
         </btrix-table-cell>
         <btrix-table-cell class="p-2" rowClickTarget="a">
           <a
             class=${org.readOnly ? "text-neutral-500" : "text-neutral-900"}
-            href="/orgs/${org.slug}"
+            href="/orgs/${org.slug}/dashboard"
             @click=${this.navigate.link}
             aria-disabled="${!isUserOrg}"
           >
@@ -620,25 +930,32 @@ export class OrgsList extends BtrixElement {
               : org.name}
           </a>
         </btrix-table-cell>
-
         <btrix-table-cell class="p-2">
-          <sl-format-date
-            class="truncate"
-            date=${org.created}
-            month="2-digit"
-            day="2-digit"
-            year="2-digit"
-          ></sl-format-date>
+          ${org.created
+            ? html` <btrix-format-date
+                date=${org.created}
+                month="2-digit"
+                day="2-digit"
+                year="numeric"
+              ></btrix-format-date>`
+            : none}
         </btrix-table-cell>
         <btrix-table-cell class="p-2">
           ${memberCount ? this.localize.number(memberCount) : none}
         </btrix-table-cell>
         <btrix-table-cell class="p-2">
           ${org.bytesStored
-            ? html`<sl-format-bytes
-                value=${org.bytesStored}
-                display="narrow"
-              ></sl-format-bytes>`
+            ? this.localize.bytes(org.bytesStored, { unitDisplay: "narrow" })
+            : none}
+        </btrix-table-cell>
+        <btrix-table-cell class="p-2">
+          ${org.lastCrawlFinished
+            ? html`<btrix-format-date
+                date=${org.lastCrawlFinished}
+                month="2-digit"
+                day="2-digit"
+                year="numeric"
+              ></btrix-format-date>`
             : none}
         </btrix-table-cell>
         <btrix-table-cell class="p-1">
@@ -646,6 +963,74 @@ export class OrgsList extends BtrixElement {
             @click=${(e: MouseEvent) => e.stopPropagation()}
           >
             <sl-menu>
+              <sl-menu-label
+                >${msg("Subscription")}
+                ${when(
+                  org.subscription,
+                  (sub) => html`
+                    <table class="w-full mt-1 text-xs whitespace-nowrap font-normal">
+                      <tr>
+                        <th scope="row" class="font-normal text-left">${msg("Plan ID")}</th>
+                        <td class="text-right font-monospace text-neutral-900">
+                            ${sub.planId}
+                        </td>
+                      </tr>
+                      <tr>
+                        <th scope="row" class="font-normal text-left">${msg("Action on Cancel")}</td>
+                        <td class="text-right font-bold text-neutral-900">
+                          ${
+                            sub.readOnlyOnCancel
+                              ? msg("Read-Only")
+                              : msg("Delete")
+                          }
+                        </td>
+                      </tr>
+                    </table>
+                  `,
+                )}
+              </sl-menu-label>
+              ${org.subscription
+                ? org.subscription.subId.startsWith("stripe:")
+                  ? html`<sl-menu-item
+                      @click=${() => {
+                        window.open(
+                          `https://dashboard.stripe.com/subscriptions/${org.subscription!.subId.slice(7)}`,
+                          "_blank",
+                        );
+                      }}
+                    >
+                      <sl-icon slot="prefix" name="stripe"></sl-icon>
+                      ${msg("Open in Stripe")}
+                      <sl-icon
+                        slot="suffix"
+                        name="box-arrow-up-right"
+                      ></sl-icon>
+                    </sl-menu-item>`
+                  : html`<sl-menu-item
+                      @click=${() => {
+                        ClipboardController.copyToClipboard(
+                          org.subscription!.subId,
+                        );
+                        this.notify.toast({
+                          message: msg("Subscription ID Copied"),
+                          duration: 1000,
+                          variant: "success",
+                          id: "item-copied",
+                        });
+                      }}
+                    >
+                      ${msg("Copy Subscription ID")}
+                    </sl-menu-item>`
+                : html`<sl-menu-item disabled>
+                    <sl-icon
+                      name="slash"
+                      class="text-base text-neutral-400"
+                      slot="prefix"
+                    ></sl-icon>
+                    ${msg("No Subscription")}</sl-menu-item
+                  >`}
+              <sl-divider></sl-divider>
+              <sl-menu-label>${msg("Manage Org")}</sl-menu-label>
               <sl-menu-item
                 @click=${() => {
                   this.currOrg = org;

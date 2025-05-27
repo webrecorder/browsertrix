@@ -78,6 +78,7 @@ from .models import (
     RemovedResponse,
     OrgSlugsResponse,
     OrgImportResponse,
+    OrgPublicProfileUpdate,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import (
@@ -85,6 +86,7 @@ from .utils import (
     slug_from_name,
     validate_slug,
     get_duplicate_key_error_field,
+    validate_language_code,
     JSONSerializer,
 )
 
@@ -95,9 +97,10 @@ if TYPE_CHECKING:
     from .profiles import ProfileOps
     from .users import UserManager
     from .background_jobs import BackgroundJobOps
+    from .pages import PageOps
 else:
     InviteOps = BaseCrawlOps = ProfileOps = CollectionOps = object
-    BackgroundJobOps = UserManager = object
+    BackgroundJobOps = UserManager = PageOps = object
 
 
 DEFAULT_ORG = os.environ.get("DEFAULT_ORG", "My Organization")
@@ -109,7 +112,7 @@ DEL_ITEMS = 1000
 
 
 # ============================================================================
-# pylint: disable=too-many-public-methods, too-many-instance-attributes, too-many-locals
+# pylint: disable=too-many-public-methods, too-many-instance-attributes, too-many-locals, too-many-arguments
 class OrgOps:
     """Organization API operations"""
 
@@ -155,13 +158,15 @@ class OrgOps:
         profile_ops: ProfileOps,
         coll_ops: CollectionOps,
         background_job_ops: BackgroundJobOps,
+        page_ops: PageOps,
     ) -> None:
-        """Set base crawl ops"""
+        """Set additional ops classes"""
         # pylint: disable=attribute-defined-outside-init
         self.base_crawl_ops = base_crawl_ops
         self.profile_ops = profile_ops
         self.coll_ops = coll_ops
         self.background_job_ops = background_job_ops
+        self.page_ops = page_ops
 
     def set_default_primary_storage(self, storage: StorageRef):
         """set default primary storage"""
@@ -220,11 +225,24 @@ class OrgOps:
         sort_query = {"default": -1}
 
         if sort_by:
-            sort_fields = ("name", "slug", "readOnly")
+            sort_fields = (
+                "name",
+                "slug",
+                "readOnly",
+                "lastCrawlFinished",
+                "subscriptionStatus",
+                "subscriptionPlan",
+            )
             if sort_by not in sort_fields:
                 raise HTTPException(status_code=400, detail="invalid_sort_by")
             if sort_direction not in (1, -1):
                 raise HTTPException(status_code=400, detail="invalid_sort_direction")
+
+            if sort_by == "subscriptionStatus":
+                sort_by = "subscription.status"
+
+            if sort_by == "subscriptionPlan":
+                sort_by = "subscription.planId"
 
             # Do lexical sort of names
             if sort_by == "name":
@@ -276,11 +294,29 @@ class OrgOps:
 
         return Organization.from_dict(res)
 
+    async def get_users_for_org(
+        self, org: Organization, min_role=UserRole.VIEWER
+    ) -> List[User]:
+        """get users for org"""
+        uuid_ids = [UUID(id_) for id_, role in org.users.items() if role >= min_role]
+        users: List[User] = []
+        async for user_dict in self.users_db.find({"id": {"$in": uuid_ids}}):
+            users.append(User(**user_dict))
+        return users
+
     async def get_org_by_id(self, oid: UUID) -> Organization:
         """Get an org by id"""
         res = await self.orgs.find_one({"_id": oid})
         if not res:
             raise HTTPException(status_code=400, detail="invalid_org_id")
+
+        return Organization.from_dict(res)
+
+    async def get_org_by_slug(self, slug: str) -> Organization:
+        """Get an org by id"""
+        res = await self.orgs.find_one({"slug": slug})
+        if not res:
+            raise HTTPException(status_code=400, detail="invalid_org_slug")
 
         return Organization.from_dict(res)
 
@@ -489,7 +525,7 @@ class OrgOps:
         org_data = await self.orgs.find_one_and_update(
             {"subscription.subId": update.subId},
             {"$set": query},
-            return_document=ReturnDocument.AFTER,
+            return_document=ReturnDocument.BEFORE,
         )
         if not org_data:
             return None
@@ -512,6 +548,17 @@ class OrgOps:
             return_document=ReturnDocument.BEFORE,
         )
         return Organization.from_dict(org_data) if org_data else None
+
+    async def is_subscription_activated(self, sub_id: str) -> bool:
+        """return true if subscription for this org was 'activated', eg. at least
+        one user has signed up and changed the slug
+        """
+        org_data = await self.orgs.find_one({"subscription.subId": sub_id})
+        if not org_data:
+            return False
+
+        org = Organization.from_dict(org_data)
+        return len(org.users) > 0 and org.slug != str(org.id)
 
     async def update_custom_storages(self, org: Organization) -> bool:
         """Update storage on an existing organization"""
@@ -608,6 +655,9 @@ class OrgOps:
         self, org: Organization, defaults: CrawlConfigDefaults
     ):
         """Update crawling defaults"""
+        if defaults.lang:
+            validate_language_code(defaults.lang)
+
         res = await self.orgs.find_one_and_update(
             {"_id": org.id},
             {"$set": {"crawlingDefaults": defaults.model_dump()}},
@@ -907,7 +957,10 @@ class OrgOps:
         archived_item_count = 0
         crawl_count = 0
         upload_count = 0
+
         page_count = 0
+        crawl_page_count = 0
+        upload_page_count = 0
 
         async for item_data in self.crawls_db.find({"oid": org.id}):
             item = BaseCrawl.from_dict(item_data)
@@ -916,10 +969,12 @@ class OrgOps:
             archived_item_count += 1
             if item.type == "crawl":
                 crawl_count += 1
+                crawl_page_count += item.pageCount or 0
             if item.type == "upload":
                 upload_count += 1
-            if item.stats:
-                page_count += item.stats.done
+                upload_page_count += item.pageCount or 0
+            if item.pageCount:
+                page_count += item.pageCount
 
         profile_count = await self.profiles_db.count_documents({"oid": org.id})
         workflows_running_count = await self.crawls_db.count_documents(
@@ -930,7 +985,7 @@ class OrgOps:
         )
         collections_count = await self.colls_db.count_documents({"oid": org.id})
         public_collections_count = await self.colls_db.count_documents(
-            {"oid": org.id, "isPublic": True}
+            {"oid": org.id, "access": {"$in": ["public", "unlisted"]}}
         )
 
         return {
@@ -943,6 +998,8 @@ class OrgOps:
             "crawlCount": crawl_count,
             "uploadCount": upload_count,
             "pageCount": page_count,
+            "crawlPageCount": crawl_page_count,
+            "uploadPageCount": upload_page_count,
             "profileCount": profile_count,
             "workflowsRunningCount": workflows_running_count,
             "maxConcurrentCrawls": max_concurrent_crawls,
@@ -984,6 +1041,21 @@ class OrgOps:
         res = await self.orgs.find_one_and_update(
             {"_id": org.id, "subscription.readOnlyOnCancel": False},
             {"$set": {"subscription.readOnlyOnCancel": update.readOnlyOnCancel}},
+        )
+        return res is not None
+
+    async def update_public_profile(
+        self, org: Organization, update: OrgPublicProfileUpdate
+    ):
+        """Update or enable/disable organization's public profile"""
+        query = update.dict(exclude_unset=True)
+
+        if len(query) == 0:
+            raise HTTPException(status_code=400, detail="no_update_data")
+
+        res = await self.orgs.find_one_and_update(
+            {"_id": org.id},
+            {"$set": query},
         )
         return res is not None
 
@@ -1248,7 +1320,7 @@ class OrgOps:
 
             # Regenerate presigned URLs
             await self.base_crawl_ops.resolve_signed_urls(
-                item_obj.files, org, update_presigned_url=True, crawl_id=item_id
+                item_obj.files, org, crawl_id=item_id, force_update=True
             )
 
         # pages
@@ -1257,9 +1329,15 @@ class OrgOps:
             await self.pages_db.insert_one(PageWithAllQA.from_dict(page).to_dict())
 
         # collections
-        for collection in org_data.get("collections", []):
-            collection = json_stream.to_standard_types(collection)
-            await self.colls_db.insert_one(Collection.from_dict(collection).to_dict())
+        for coll_raw in org_data.get("collections", []):
+            coll_raw = json_stream.to_standard_types(coll_raw)
+
+            if not coll_raw.get("slug"):
+                coll_raw["slug"] = slug_from_name(coll_raw["name"])
+
+            collection = Collection.from_dict(coll_raw)
+            await self.colls_db.insert_one(collection.to_dict())
+            await self.coll_ops.update_collection_counts_and_tags(collection.id)
 
     async def delete_org_and_data(
         self, org: Organization, user_manager: UserManager
@@ -1347,6 +1425,14 @@ class OrgOps:
             )
 
         return {"success": True}
+
+    async def set_last_crawl_finished(self, oid: UUID):
+        """Recalculate and set lastCrawlFinished field on org"""
+        last_crawl_finished = await self.base_crawl_ops.get_org_last_crawl_finished(oid)
+        await self.orgs.find_one_and_update(
+            {"_id": oid},
+            {"$set": {"lastCrawlFinished": last_crawl_finished}},
+        )
 
 
 # ============================================================================
@@ -1540,6 +1626,19 @@ def init_orgs_api(
             raise HTTPException(status_code=403, detail="Not Allowed")
 
         await ops.update_read_only_on_cancel(org, update)
+
+        return {"updated": True}
+
+    @router.post(
+        "/public-profile",
+        tags=["organizations", "collections"],
+        response_model=UpdatedResponse,
+    )
+    async def update_public_profile(
+        update: OrgPublicProfileUpdate,
+        org: Organization = Depends(org_owner_dep),
+    ):
+        await ops.update_public_profile(org, update)
 
         return {"updated": True}
 

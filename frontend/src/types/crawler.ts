@@ -10,6 +10,14 @@ export enum ScopeType {
   Any = "any",
 }
 
+export enum Behavior {
+  AutoScroll = "autoscroll",
+  AutoClick = "autoclick",
+  AutoPlay = "autoplay",
+  AutoFetch = "autofetch",
+  SiteSpecific = "siteSpecific",
+}
+
 export type Seed = {
   url: string;
   scopeType: ScopeType | undefined;
@@ -36,6 +44,9 @@ export type SeedConfig = Expand<
     failOnFailedSeed?: boolean;
     depth?: number | null;
     userAgent?: string | null;
+    selectLinks: string[];
+    customBehaviors: string[];
+    clickSelector: string;
   }
 >;
 
@@ -81,6 +92,7 @@ export type Workflow = CrawlConfig & {
   lastCrawlSize: number | null;
   lastStartedByName: string | null;
   lastCrawlStopping: boolean | null;
+  lastCrawlShouldPause: boolean | null;
   lastRun: string;
   totalSize: string | null;
   inactive: boolean;
@@ -164,6 +176,8 @@ type ArchivedItemBase = {
   activeQAStats: { done: number; found: number } | null;
   lastQAState: CrawlState | null;
   lastQAStarted: string | null;
+  pageCount?: number;
+  uniquePageCount?: number;
   filePageCount?: number;
   errorPageCount?: number;
 };
@@ -175,6 +189,7 @@ export type Crawl = ArchivedItemBase &
     schedule: string;
     manual: boolean;
     scale: number;
+    shouldPause: boolean | null;
     resources?: {
       name: string;
       path: string;
@@ -234,4 +249,31 @@ export type ArchivedItemPage = {
   modified?: string;
   approved?: boolean | null;
   notes?: ArchivedItemPageComment[];
+};
+
+export enum CrawlLogLevel {
+  Fatal = "fatal",
+  Error = "error",
+  Warning = "warn",
+  Info = "info",
+  Debug = "debug",
+}
+
+export enum CrawlLogContext {
+  General = "general",
+  Behavior = "behavior",
+  BehaviorScript = "behaviorScript",
+  BehaviorScriptCustom = "behaviorScriptCustom",
+}
+
+export type CrawlLog = {
+  timestamp: string;
+  logLevel: CrawlLogLevel;
+  details: Record<string, unknown> & {
+    behavior?: string;
+    page?: string;
+    stack?: string;
+  };
+  context: CrawlLogContext | string;
+  message: string;
 };

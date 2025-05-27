@@ -22,7 +22,7 @@ import {
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { OverflowDropdown } from "@/components/ui/overflow-dropdown";
-import { RelativeDuration } from "@/components/ui/relative-duration";
+import { WorkflowTab } from "@/routes";
 import type { ListWorkflow } from "@/types/crawler";
 import { humanizeSchedule } from "@/utils/cron";
 import { srOnly, truncate } from "@/utils/css";
@@ -221,9 +221,7 @@ export class WorkflowListItem extends BtrixElement {
         }
         e.preventDefault();
         await this.updateComplete;
-        const href = `/orgs/${this.orgSlug}/workflows/${
-          this.workflow?.id
-        }#${this.workflow?.isCrawlRunning ? "watch" : "crawls"}`;
+        const href = `/orgs/${this.orgSlugState}/workflows/${this.workflow?.id}/${WorkflowTab.LatestCrawl}`;
         this.navigate.to(href);
       }}
     >
@@ -234,11 +232,9 @@ export class WorkflowListItem extends BtrixElement {
         <div class="desc">
           ${this.safeRender((workflow) => {
             if (workflow.schedule) {
-              return msg(
-                str`${humanizeSchedule(workflow.schedule, {
-                  length: "short",
-                })}`,
-              );
+              return humanizeSchedule(workflow.schedule, {
+                length: "short",
+              });
             }
             if (workflow.lastStartedByName) {
               return msg(str`Manual run by ${workflow.lastStartedByName}`);
@@ -254,6 +250,7 @@ export class WorkflowListItem extends BtrixElement {
               <btrix-crawl-status
                 state=${workflow.lastCrawlState || msg("No Crawls Yet")}
                 ?stopping=${workflow.lastCrawlStopping}
+                ?shouldPause=${workflow.lastCrawlShouldPause}
               ></btrix-crawl-status>
             `,
           )}
@@ -261,16 +258,16 @@ export class WorkflowListItem extends BtrixElement {
         <div class="desc duration">
           ${this.safeRender((workflow) => {
             if (workflow.lastCrawlTime && workflow.lastCrawlStartTime) {
-              return html`<sl-format-date
+              return html`<btrix-format-date
                   date="${workflow.lastRun.toString()}"
                   month="2-digit"
                   day="2-digit"
-                  year="2-digit"
+                  year="numeric"
                   hour="2-digit"
                   minute="2-digit"
-                ></sl-format-date>
+                ></btrix-format-date>
                 ${msg(
-                  str`in ${RelativeDuration.humanize(
+                  str`in ${this.localize.humanizeDuration(
                     new Date(workflow.lastCrawlTime).valueOf() -
                       new Date(workflow.lastCrawlStartTime).valueOf(),
                     { compact: true },
@@ -284,11 +281,15 @@ export class WorkflowListItem extends BtrixElement {
               if (diff < 1000) {
                 return "";
               }
-              return msg(
-                str`Running for ${RelativeDuration.humanize(diff, {
-                  compact: true,
-                })}`,
-              );
+              const duration = this.localize.humanizeDuration(diff, {
+                compact: true,
+              });
+
+              if (workflow.lastCrawlState === "paused") {
+                return msg(str`Active for ${duration}`);
+              }
+
+              return msg(str`Running for ${duration}`);
             }
             return notSpecified;
           })}
@@ -302,37 +303,32 @@ export class WorkflowListItem extends BtrixElement {
               workflow.totalSize &&
               workflow.lastCrawlSize
             ) {
-              return html`<sl-format-bytes
-                  value=${+workflow.totalSize}
-                  display="narrow"
-                ></sl-format-bytes>
+              return html`${this.localize.bytes(+workflow.totalSize, {
+                  unitDisplay: "narrow",
+                })}
                 <span class="currCrawlSize">
                   +
-                  <sl-format-bytes
-                    value=${workflow.lastCrawlSize}
-                    display="narrow"
-                  ></sl-format-bytes>
+                  ${this.localize.bytes(workflow.lastCrawlSize, {
+                    unitDisplay: "narrow",
+                  })}
                 </span>`;
             }
             if (workflow.totalSize && workflow.lastCrawlSize) {
-              return html`<sl-format-bytes
-                value=${+workflow.totalSize}
-                display="narrow"
-              ></sl-format-bytes>`;
+              return this.localize.bytes(+workflow.totalSize, {
+                unitDisplay: "narrow",
+              });
             }
             if (workflow.isCrawlRunning && workflow.lastCrawlSize) {
               return html`<span class="currCrawlSize">
-                <sl-format-bytes
-                  value=${workflow.lastCrawlSize}
-                  display="narrow"
-                ></sl-format-bytes>
+                ${this.localize.bytes(workflow.lastCrawlSize, {
+                  unitDisplay: "narrow",
+                })}
               </span>`;
             }
             if (workflow.totalSize) {
-              return html`<sl-format-bytes
-                value=${+workflow.totalSize}
-                display="narrow"
-              ></sl-format-bytes>`;
+              return this.localize.bytes(+workflow.totalSize, {
+                unitDisplay: "narrow",
+              });
             }
             return notSpecified;
           })}
@@ -354,14 +350,14 @@ export class WorkflowListItem extends BtrixElement {
         <div class="desc">
           ${this.safeRender(
             (workflow) => html`
-              <sl-format-date
+              <btrix-format-date
                 date="${workflow.modified}"
                 month="2-digit"
                 day="2-digit"
-                year="2-digit"
+                year="numeric"
                 hour="2-digit"
                 minute="2-digit"
-              ></sl-format-date>
+              ></btrix-format-date>
             `,
           )}
         </div>
@@ -411,8 +407,8 @@ export class WorkflowListItem extends BtrixElement {
   };
 }
 
-@localized()
 @customElement("btrix-workflow-list")
+@localized()
 export class WorkflowList extends LitElement {
   static styles = [
     srOnly,
@@ -462,7 +458,7 @@ export class WorkflowList extends LitElement {
 
   render() {
     return html` <div class="listHeader row">
-        <div class="col">${msg("Name & Schedule")}</div>
+        <div class="col">${msg(html`Name & Schedule`)}</div>
         <div class="col">${msg("Latest Crawl")}</div>
         <div class="col">${msg("Total Size")}</div>
         <div class="col">${msg("Last Modified")}</div>

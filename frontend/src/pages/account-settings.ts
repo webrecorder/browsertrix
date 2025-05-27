@@ -1,20 +1,26 @@
 import { localized, msg, str } from "@lit/localize";
-import type { SlInput, SlSelectEvent } from "@shoelace-style/shoelace";
+import type {
+  SlChangeEvent,
+  SlInput,
+  SlSelectEvent,
+  SlSwitch,
+} from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import type { ZxcvbnResult } from "@zxcvbn-ts/core";
-import { nothing, type PropertyValues } from "lit";
+import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
 import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
 
+import { BtrixElement } from "@/classes/BtrixElement";
 import { TailwindElement } from "@/classes/TailwindElement";
 import needLogin from "@/decorators/needLogin";
 import { pageHeader } from "@/layouts/pageHeader";
-import { translatedLocales, type LanguageCode } from "@/types/localization";
+import { type LanguageCode } from "@/types/localization";
 import type { UnderlyingFunction } from "@/types/utils";
 import { isApiError } from "@/utils/api";
-import LiteElement, { html } from "@/utils/LiteElement";
+import localize from "@/utils/localize";
 import PasswordService from "@/utils/PasswordService";
 import { AppStateService } from "@/utils/state";
 import { tw } from "@/utils/tailwind";
@@ -27,8 +33,8 @@ enum Tab {
 const { PASSWORD_MINLENGTH, PASSWORD_MAXLENGTH, PASSWORD_MIN_SCORE } =
   PasswordService;
 
-@localized()
 @customElement("btrix-request-verify")
+@localized()
 export class RequestVerify extends TailwindElement {
   @property({ type: String })
   email!: string;
@@ -99,10 +105,10 @@ export class RequestVerify extends TailwindElement {
   }
 }
 
-@localized()
 @customElement("btrix-account-settings")
+@localized()
 @needLogin
-export class AccountSettings extends LiteElement {
+export class AccountSettings extends BtrixElement {
   @property({ type: String })
   tab: string | Tab = Tab.Profile;
 
@@ -138,27 +144,20 @@ export class AccountSettings extends LiteElement {
         title=${msg("Account Settings")}
       ></btrix-document-title>
 
-      ${pageHeader(msg("Account Settings"), undefined, tw`mb-3 lg:mb-5`)}
+      ${pageHeader({
+        title: msg("Account Settings"),
+        classNames: tw`mb-3 lg:mb-5`,
+      })}
 
-      <btrix-tab-list activePanel=${this.activeTab} hideIndicator>
-        <header slot="header" class="flex h-7 items-end justify-between">
-          ${choose(
-            this.activeTab,
-            [
-              [Tab.Profile, () => html`<h2>${msg("Display Name")}</h2>`],
-              [Tab.Security, () => html`<h2>${msg("Password")}</h2>`],
-            ],
-            () => html`<h2>${this.tabLabels[this.activeTab]}</h2>`,
-          )}
-        </header>
+      <btrix-tab-group active=${this.activeTab} placement="start">
         ${this.renderTab(Tab.Profile)} ${this.renderTab(Tab.Security)}
-        <btrix-tab-panel name=${Tab.Profile}>
+        <btrix-tab-group-panel name=${Tab.Profile}>
           ${this.renderProfile()}
-        </btrix-tab-panel>
-        <btrix-tab-panel name=${Tab.Security}>
+        </btrix-tab-group-panel>
+        <btrix-tab-group-panel name=${Tab.Security}>
           ${this.renderSecurity()}
-        </btrix-tab-panel>
-      </btrix-tab-list>
+        </btrix-tab-group-panel>
+      </btrix-tab-group>
     `;
   }
 
@@ -166,6 +165,7 @@ export class AccountSettings extends LiteElement {
     if (!this.userInfo) return;
 
     return html`
+      <h2 class="mb-2 text-lg font-medium">${msg("Display Name")}</h2>
       <form class="mb-5 rounded-lg border" @submit=${this.onSubmitName}>
         <div class="p-4">
           <p class="mb-2">
@@ -242,14 +242,13 @@ export class AccountSettings extends LiteElement {
         </footer>
       </form>
 
-      ${(translatedLocales as unknown as string[]).length > 1
-        ? this.renderLanguage()
-        : nothing}
+      ${localize.languages.length > 1 ? this.renderLanguage() : nothing}
     `;
   }
 
   private renderSecurity() {
     return html`
+      <h2 class="mb-2 text-lg font-medium">${msg("Password")}</h2>
       <form class="rounded-lg border" @submit=${this.onSubmitPassword}>
         <div class="p-4">
           <sl-input
@@ -297,15 +296,12 @@ export class AccountSettings extends LiteElement {
   }
 
   private renderTab(name: Tab) {
-    const isActive = name === this.activeTab;
-
     return html`
-      <btrix-navigation-button
+      <btrix-tab-group-tab
         slot="nav"
+        panel=${name}
         href=${`/account/settings/${name}`}
-        .active=${isActive}
-        aria-selected=${isActive}
-        @click=${this.navLink}
+        @click=${this.navigate.link}
       >
         ${choose(name, [
           [
@@ -318,7 +314,7 @@ export class AccountSettings extends LiteElement {
           ],
         ])}
         ${this.tabLabels[name]}
-      </btrix-navigation-button>
+      </btrix-tab-group-tab>
     `;
   }
 
@@ -348,17 +344,47 @@ export class AccountSettings extends LiteElement {
             @sl-select=${this.onSelectLocale}
           ></btrix-user-language-select>
         </div>
+        <sl-switch
+          .helpText=${msg(
+            "Your browser’s language settings will take precedence over the language chosen above when formatting numbers, dates, and durations.",
+          )}
+          @sl-change=${this.onSelectFormattingPreference}
+          ?checked=${this.appState.userPreferences
+            ?.useBrowserLanguageForFormatting ?? true}
+          class="mt-4 block px-4 pb-4 part-[label]:-order-1 part-[label]:me-2 part-[label]:ms-0 part-[base]:flex part-[form-control-help-text]:max-w-prose part-[label]:flex-grow"
+          >${msg(
+            "Use browser language settings for formatting numbers and dates.",
+          )}</sl-switch
+        >
+        <div class="m-4 mt-0 text-xs">
+          ${msg("For example:")}
+          <btrix-badge
+            >${this.localize.date(new Date(), {
+              dateStyle: "short",
+            })}</btrix-badge
+          >
+          <btrix-badge
+            >${this.localize.date(new Date(), {
+              timeStyle: "short",
+            })}</btrix-badge
+          >
+          <btrix-badge
+            >${this.localize.humanizeDuration(9283849, {
+              unitCount: 2,
+            })}</btrix-badge
+          >
+          <btrix-badge>${this.localize.bytes(3943298234)}</btrix-badge>
+        </div>
         <footer class="flex items-center justify-start border-t px-4 py-3">
           <p class="text-neutral-600">
             ${msg("Help us translate Browsertrix.")}
-            <a
-              class="inline-flex items-center gap-1 text-blue-500 hover:text-blue-600"
+            <btrix-link
               href="https://docs.browsertrix.com/develop/localization/"
               target="_blank"
+              variant="primary"
             >
               ${msg("Contribute to translations")}
-              <sl-icon slot="suffix" name="arrow-right"></sl-icon
-            ></a>
+            </btrix-link>
           </p>
         </footer>
       </section>
@@ -407,7 +433,7 @@ export class AccountSettings extends LiteElement {
     this.sectionSubmitting = "name";
 
     try {
-      await this.apiFetch(`/users/me`, {
+      await this.api.fetch(`/users/me`, {
         method: "PATCH",
         body: JSON.stringify({
           email: this.userInfo.email,
@@ -420,16 +446,18 @@ export class AccountSettings extends LiteElement {
         name: newName,
       });
 
-      this.notify({
+      this.notify.toast({
         message: msg("Your name has been updated."),
         variant: "success",
         icon: "check2-circle",
+        id: "name-update-status",
       });
     } catch (e) {
-      this.notify({
+      this.notify.toast({
         message: msg("Sorry, couldn't update name at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "name-update-status",
       });
     }
 
@@ -452,7 +480,7 @@ export class AccountSettings extends LiteElement {
     this.sectionSubmitting = "email";
 
     try {
-      await this.apiFetch(`/users/me`, {
+      await this.api.fetch(`/users/me`, {
         method: "PATCH",
         body: JSON.stringify({
           email: newEmail,
@@ -464,16 +492,18 @@ export class AccountSettings extends LiteElement {
         email: newEmail,
       });
 
-      this.notify({
+      this.notify.toast({
         message: msg("Your email has been updated."),
         variant: "success",
         icon: "check2-circle",
+        id: "email-update-status",
       });
     } catch (e) {
-      this.notify({
+      this.notify.toast({
         message: msg("Sorry, couldn't update email at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "email-update-status",
       });
     }
 
@@ -493,7 +523,7 @@ export class AccountSettings extends LiteElement {
     this.sectionSubmitting = "password";
 
     try {
-      await this.apiFetch("/users/me/password-change", {
+      await this.api.fetch("/users/me/password-change", {
         method: "PUT",
         body: JSON.stringify({
           email: this.userInfo.email,
@@ -502,23 +532,26 @@ export class AccountSettings extends LiteElement {
         }),
       });
 
-      this.notify({
+      this.notify.toast({
         message: msg("Your password has been updated."),
         variant: "success",
         icon: "check2-circle",
+        id: "password-update-status",
       });
     } catch (e) {
       if (isApiError(e) && e.details === "invalid_current_password") {
-        this.notify({
+        this.notify.toast({
           message: msg("Please correct your current password and try again."),
           variant: "danger",
           icon: "exclamation-octagon",
+          id: "password-update-status",
         });
       } else {
-        this.notify({
+        this.notify.toast({
           message: msg("Sorry, couldn't update password at this time."),
           variant: "danger",
           icon: "exclamation-octagon",
+          id: "password-update-status",
         });
       }
     }
@@ -536,10 +569,32 @@ export class AccountSettings extends LiteElement {
       AppStateService.partialUpdateUserPreferences({ language: locale });
     }
 
-    this.notify({
+    this.notify.toast({
       message: msg("Your language preference has been updated."),
       variant: "success",
       icon: "check2-circle",
+      id: "language-update-status",
+    });
+  };
+
+  /**
+   * Save formatting setting in local storage
+   */
+  private readonly onSelectFormattingPreference = async (e: SlChangeEvent) => {
+    const checked = (e.target as SlSwitch).checked;
+    if (
+      checked !== this.appState.userPreferences?.useBrowserLanguageForFormatting
+    ) {
+      AppStateService.partialUpdateUserPreferences({
+        useBrowserLanguageForFormatting: checked,
+      });
+    }
+
+    this.notify.toast({
+      message: msg("Your formatting preference has been updated."),
+      variant: "success",
+      icon: "check2-circle",
+      id: "account-settings-formatting",
     });
   };
 }

@@ -17,7 +17,7 @@ invite_email = "test-user@example.com"
 def test_ensure_only_one_default_org(admin_auth_headers):
     r = requests.get(f"{API_PREFIX}/orgs", headers=admin_auth_headers)
     data = r.json()
-    assert data["total"] == 1
+    assert data["total"] == 2
 
     orgs = data["items"]
     default_orgs = [org for org in orgs if org["default"]]
@@ -60,7 +60,11 @@ def test_update_org_crawling_defaults(admin_auth_headers, default_org_id):
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/defaults/crawling",
         headers=admin_auth_headers,
-        json={"maxCrawlSize": 200000, "lang": "fr"},
+        json={
+            "maxCrawlSize": 200000,
+            "lang": "fr",
+            "customBehaviors": ["git+https://github.com/webrecorder/custom-behaviors"],
+        },
     )
 
     assert r.status_code == 200
@@ -72,6 +76,23 @@ def test_update_org_crawling_defaults(admin_auth_headers, default_org_id):
     assert data["crawlingDefaults"]
     assert data["crawlingDefaults"]["maxCrawlSize"] == 200000
     assert data["crawlingDefaults"]["lang"] == "fr"
+    assert data["crawlingDefaults"]["customBehaviors"] == [
+        "git+https://github.com/webrecorder/custom-behaviors"
+    ]
+
+
+def test_update_org_crawling_defaults_invalid_lang(admin_auth_headers, default_org_id):
+    for invalid_code in ("f", "fra", "french"):
+        r = requests.post(
+            f"{API_PREFIX}/orgs/{default_org_id}/defaults/crawling",
+            headers=admin_auth_headers,
+            json={
+                "lang": "invalid_code",
+            },
+        )
+
+    assert r.status_code == 400
+    assert r.json()["detail"] == "invalid_lang"
 
 
 def test_rename_org(admin_auth_headers, default_org_id):
@@ -755,3 +776,23 @@ def test_sort_orgs(admin_auth_headers):
         if last_name:
             assert org_name_lower < last_name
         last_name = org_name_lower
+
+    # Sort desc by lastCrawlFinished, ensure default org still first
+    r = requests.get(
+        f"{API_PREFIX}/orgs?sortBy=lastCrawlFinished&sortDirection=-1",
+        headers=admin_auth_headers,
+    )
+    data = r.json()
+    orgs = data["items"]
+
+    assert orgs[0]["default"]
+
+    other_orgs = orgs[1:]
+    last_last_crawl_finished = None
+    for org in other_orgs:
+        last_crawl_finished = org.get("lastCrawlFinished")
+        if not last_crawl_finished:
+            continue
+        if last_last_crawl_finished:
+            assert last_crawl_finished <= last_last_crawl_finished
+        last_last_crawl_finished = last_crawl_finished

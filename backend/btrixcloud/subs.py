@@ -4,7 +4,9 @@ Subscription API handling
 
 from typing import Callable, Union, Any, Optional, Tuple, List
 import os
+import asyncio
 from uuid import UUID
+from datetime import datetime
 
 from fastapi import Depends, HTTPException, Request
 import aiohttp
@@ -32,6 +34,7 @@ from .models import (
     UserRole,
     AddedResponseId,
     UpdatedResponse,
+    SuccessResponse,
     PaginatedSubscriptionEventResponse,
     REASON_CANCELED,
 )
@@ -114,7 +117,37 @@ class SubOps:
             )
 
         await self.add_sub_event("update", update, org.id)
+
+        if update.futureCancelDate and self.should_send_cancel_email(org, update):
+            asyncio.create_task(self.send_cancel_emails(update.futureCancelDate, org))
+
         return {"updated": True}
+
+    def should_send_cancel_email(self, org: Organization, update: SubscriptionUpdate):
+        """Should we sent a cancellation email"""
+        if not update.futureCancelDate:
+            return False
+
+        if not org.subscription:
+            return False
+
+        # new cancel date, send
+        if update.futureCancelDate != org.subscription.futureCancelDate:
+            return True
+
+        # if 'trialing_canceled', send
+        if update.status == "trialing_canceled":
+            return True
+
+        return False
+
+    async def send_cancel_emails(self, cancel_date: datetime, org: Organization):
+        """Asynchronously send cancellation emails to all org admins"""
+        users = await self.org_ops.get_users_for_org(org, UserRole.OWNER)
+        for user in users:
+            self.user_manager.email.send_subscription_will_be_canceled(
+                cancel_date, user.name, user.email, org
+            )
 
     async def cancel_subscription(self, cancel: SubscriptionCancel) -> dict[str, bool]:
         """delete subscription data, and unless if readOnlyOnCancel is true, the entire org"""
@@ -359,6 +392,18 @@ def init_subs_api(
         return await ops.cancel_subscription(cancel)
 
     assert org_ops.router
+
+    @app.get(
+        "/subscriptions/is-activated/{sub_id}",
+        tags=["subscriptions"],
+        dependencies=[Depends(user_or_shared_secret_dep)],
+        response_model=SuccessResponse,
+    )
+    async def is_subscription_activated(
+        sub_id: str,
+    ):
+        result = await org_ops.is_subscription_activated(sub_id)
+        return {"success": result}
 
     @app.get(
         "/subscriptions/events",

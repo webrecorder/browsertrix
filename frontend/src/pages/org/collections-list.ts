@@ -1,8 +1,14 @@
 import { localized, msg } from "@lit/localize";
-import type { SlInput, SlMenuItem } from "@shoelace-style/shoelace";
+import type {
+  SlChangeEvent,
+  SlInput,
+  SlMenuItem,
+  SlRadioGroup,
+} from "@shoelace-style/shoelace";
 import Fuse from "fuse.js";
-import { html, type PropertyValues } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
+import { html, nothing, type PropertyValues } from "lit";
+import { customElement, property, query, state } from "lit/decorators.js";
+import { choose } from "lit/directives/choose.js";
 import { guard } from "lit/directives/guard.js";
 import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
@@ -11,16 +17,25 @@ import queryString from "query-string";
 import type { SelectNewDialogEvent } from ".";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import type { PageChangeEvent } from "@/components/ui/pagination";
-import type { CollectionSavedEvent } from "@/features/collections/collection-metadata-dialog";
+import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
+import { ClipboardController } from "@/controllers/clipboard";
+import type { CollectionSavedEvent } from "@/features/collections/collection-create-dialog";
+import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
+import { emptyMessage } from "@/layouts/emptyMessage";
 import { pageHeader } from "@/layouts/pageHeader";
+import { RouteNamespace } from "@/routes";
+import { metadata } from "@/strings/collections/metadata";
+import { monthYearDateRange } from "@/strings/utils";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
-import type { Collection, CollectionSearchValues } from "@/types/collection";
-import type { UnderlyingFunction } from "@/types/utils";
+import {
+  CollectionAccess,
+  type Collection,
+  type CollectionSearchValues,
+} from "@/types/collection";
+import { SortDirection, type UnderlyingFunction } from "@/types/utils";
 import { isApiError } from "@/utils/api";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
-import noCollectionsImg from "~assets/images/no-collections-found.webp";
 
 type Collections = APIPaginatedList<Collection>;
 type SearchFields = "name";
@@ -30,30 +45,52 @@ type SearchResult = {
     value: string;
   };
 };
-type SortField = "modified" | "name" | "totalSize";
-type SortDirection = "asc" | "desc";
+type SortField =
+  | "modified"
+  | "dateLatest"
+  | "name"
+  | "totalSize"
+  | "pageCount"
+  | "crawlCount";
 const INITIAL_PAGE_SIZE = 20;
 const sortableFields: Record<
   SortField,
   { label: string; defaultDirection?: SortDirection }
 > = {
-  modified: {
-    label: msg("Last Updated"),
-    defaultDirection: "desc",
-  },
   name: {
     label: msg("Name"),
-    defaultDirection: "asc",
+    defaultDirection: SortDirection.Ascending,
+  },
+  dateLatest: {
+    label: metadata.dateLatest,
+    defaultDirection: SortDirection.Descending,
+  },
+  crawlCount: {
+    label: msg("Archived Items"),
+    defaultDirection: SortDirection.Descending,
+  },
+  pageCount: {
+    label: msg("Total Pages"),
+    defaultDirection: SortDirection.Descending,
   },
   totalSize: {
     label: msg("Size"),
-    defaultDirection: "desc",
+    defaultDirection: SortDirection.Descending,
+  },
+  modified: {
+    label: msg("Last Modified"),
+    defaultDirection: SortDirection.Descending,
   },
 };
 const MIN_SEARCH_LENGTH = 2;
 
-@localized()
+enum ListView {
+  List = "list",
+  Grid = "grid",
+}
+
 @customElement("btrix-collections-list")
+@localized()
 export class CollectionsList extends BtrixElement {
   @property({ type: Boolean })
   isCrawler?: boolean;
@@ -71,6 +108,9 @@ export class CollectionsList extends BtrixElement {
   };
 
   @state()
+  private listView = ListView.List;
+
+  @state()
   private filterBy: Partial<Record<keyof Collection, unknown>> = {};
 
   @state()
@@ -80,7 +120,7 @@ export class CollectionsList extends BtrixElement {
   private searchResultsOpen = false;
 
   @state()
-  private openDialogName?: "create" | "delete" | "editMetadata";
+  private openDialogName?: "create" | "delete" | "edit";
 
   @state()
   private isDialogVisible = false;
@@ -88,8 +128,15 @@ export class CollectionsList extends BtrixElement {
   @state()
   private selectedCollection?: Collection;
 
+  /** ID of the collection currently being refreshed */
+  @state()
+  private collectionRefreshing: string | null = null;
+
   @state()
   private fetchErrorStatusCode?: number;
+
+  @query("sl-input")
+  private readonly input?: SlInput | null;
 
   // For fuzzy search:
   private readonly fuse = new Fuse<{ key: "name"; value: string }>([], {
@@ -97,6 +144,10 @@ export class CollectionsList extends BtrixElement {
     shouldSort: false,
     threshold: 0.2, // stricter; default is 0.6
   });
+
+  private getShareLink(collection: Collection) {
+    return `${window.location.protocol}//${window.location.hostname}${window.location.port ? `:${window.location.port}` : ""}/${collection.access === CollectionAccess.Private ? `${RouteNamespace.PrivateOrgs}/${this.orgSlugState}/collections/view` : `${RouteNamespace.PublicOrgs}/${this.orgSlugState}/collections`}/${collection.slug}`;
+  }
 
   private get hasSearchStr() {
     return this.searchByValue.length >= MIN_SEARCH_LENGTH;
@@ -117,27 +168,25 @@ export class CollectionsList extends BtrixElement {
   render() {
     return html`
       <div class="contents">
-        ${pageHeader(
-          msg("Collections"),
-          when(
-            this.isCrawler,
-            () => html`
-              <sl-button
+        ${pageHeader({
+          title: msg("Collections"),
+          actions: this.isCrawler
+            ? html` <sl-button
                 variant="primary"
                 size="small"
                 ?disabled=${!this.org || this.org.readOnly}
-                @click=${() => (this.openDialogName = "create")}
+                @click=${() => {
+                  this.openDialogName = "create";
+                }}
               >
                 <sl-icon slot="prefix" name="plus-lg"></sl-icon>
                 ${msg("New Collection")}
-              </sl-button>
-            `,
-          ),
-          tw`border-b-transparent`,
-        )}
+              </sl-button>`
+            : nothing,
+          classNames: tw`border-b-transparent`,
+        })}
       </div>
 
-      <link rel="preload" as="image" href=${noCollectionsImg} />
       ${when(this.fetchErrorStatusCode, this.renderFetchError, () =>
         this.collections
           ? html`
@@ -146,9 +195,39 @@ export class CollectionsList extends BtrixElement {
               >
                 ${this.renderControls()}
               </div>
-              <div class="overflow-auto px-2 pb-1">
-                ${guard([this.collections], this.renderList)}
-              </div>
+              <btrix-overflow-scroll class="-mx-3 pb-1 part-[content]:px-3">
+                ${guard(
+                  [this.collections, this.listView, this.collectionRefreshing],
+                  this.listView === ListView.List
+                    ? this.renderList
+                    : this.renderGrid,
+                )}
+              </btrix-overflow-scroll>
+              ${when(this.listView === ListView.List, () =>
+                when(
+                  (this.collections &&
+                    this.collections.total > this.collections.pageSize) ||
+                    (this.collections && this.collections.page > 1),
+                  () => html`
+                    <footer class="mt-6 flex justify-center">
+                      <btrix-pagination
+                        page=${this.collections!.page}
+                        totalCount=${this.collections!.total}
+                        size=${this.collections!.pageSize}
+                        @page-change=${async (e: PageChangeEvent) => {
+                          await this.fetchCollections({
+                            page: e.detail.page,
+                          });
+
+                          // Scroll to top of list
+                          // TODO once deep-linking is implemented, scroll to top of pushstate
+                          this.scrollIntoView({ behavior: "smooth" });
+                        }}
+                      ></btrix-pagination>
+                    </footer>
+                  `,
+                ),
+              )}
             `
           : this.renderLoading(),
       )}
@@ -190,14 +269,8 @@ export class CollectionsList extends BtrixElement {
         )}
         </div>
       </btrix-dialog>
-      <btrix-collection-metadata-dialog
-        .collection=${
-          this.openDialogName === "create" ? undefined : this.selectedCollection
-        }
-        ?open=${
-          this.openDialogName === "create" ||
-          this.openDialogName === "editMetadata"
-        }
+      <btrix-collection-create-dialog
+        ?open=${this.openDialogName === "create"}
         @sl-hide=${() => (this.openDialogName = undefined)}
         @sl-after-hide=${() => (this.selectedCollection = undefined)}
         @btrix-collection-saved=${(e: CollectionSavedEvent) => {
@@ -210,7 +283,20 @@ export class CollectionsList extends BtrixElement {
           }
         }}
       >
-      </btrix-collection-metadata-dialog>
+      </btrix-collection-create-dialog>
+      <btrix-collection-edit-dialog
+            .collection=${this.selectedCollection}
+            ?open=${this.openDialogName === "edit"}
+            @sl-hide=${() => {
+              this.openDialogName = undefined;
+            }}
+            @sl-after-hide=${() => {
+              this.selectedCollection = undefined;
+            }}
+            @btrix-collection-saved=${() => {
+              void this.fetchCollections();
+            }}
+          ></btrix-collection-edit-dialog>
     `;
   }
 
@@ -218,53 +304,6 @@ export class CollectionsList extends BtrixElement {
     html`<div class="my-24 flex w-full items-center justify-center text-3xl">
       <sl-spinner></sl-spinner>
     </div>`;
-
-  private readonly renderEmpty = () => html`
-    <div
-      class="grid grid-cols-[max-content] justify-center justify-items-center gap-3 text-center"
-    >
-      <figure>
-        <div class="aspect-square w-[27rem] max-w-[100vw]">
-          <img src=${noCollectionsImg} />
-        </div>
-        <figcaption class="text-lg font-semibold text-primary">
-          ${this.isCrawler
-            ? msg("Start building your Collection.")
-            : msg("No Collections Found")}
-        </figcaption>
-      </figure>
-      ${when(
-        this.isCrawler,
-        () => html`
-          <p class="max-w-[18em]">
-            ${msg(
-              "Organize your crawls into a Collection to easily replay them together.",
-            )}
-          </p>
-          <div>
-            <sl-button
-              variant="primary"
-              @click=${() => {
-                this.dispatchEvent(
-                  new CustomEvent("select-new-dialog", {
-                    detail: "collection",
-                  }) as SelectNewDialogEvent,
-                );
-              }}
-            >
-              <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-              ${msg("Create a New Collection")}
-            </sl-button>
-          </div>
-        `,
-        () => html`
-          <p class="max-w-[18em]">
-            ${msg("Your organization doesn't have any Collections, yet.")}
-          </p>
-        `,
-      )}
-    </div>
-  `;
 
   private renderControls() {
     return html`
@@ -299,17 +338,45 @@ export class CollectionsList extends BtrixElement {
                 `,
               )}
             </sl-select>
-            <sl-icon-button
-              name="arrow-down-up"
-              label=${msg("Reverse sort")}
-              @click=${() => {
-                this.orderBy = {
-                  ...this.orderBy,
-                  direction: this.orderBy.direction === "asc" ? "desc" : "asc",
-                };
-              }}
-            ></sl-icon-button>
+            <sl-tooltip content=${msg("Reverse sort")}>
+              <sl-icon-button
+                name="arrow-down-up"
+                label=${msg("Reverse sort")}
+                @click=${() => {
+                  this.orderBy = {
+                    ...this.orderBy,
+                    direction: -1 * this.orderBy.direction,
+                  };
+                }}
+              ></sl-icon-button>
+            </sl-tooltip>
           </div>
+          <label for="viewStyle" class="mx-2 whitespace-nowrap text-neutral-500"
+            >${msg("View:")}</label
+          >
+          <sl-radio-group
+            id="viewStyle"
+            value=${this.listView}
+            size="small"
+            @sl-change=${(e: SlChangeEvent) => {
+              this.listView = (e.target as SlRadioGroup).value as ListView;
+            }}
+          >
+            <sl-tooltip content=${msg("View as List")}>
+              <sl-radio-button pill value=${ListView.List}>
+                <sl-icon
+                  name="view-list"
+                  label=${msg("List")}
+                ></sl-icon> </sl-radio-button
+            ></sl-tooltip>
+            <sl-tooltip content=${msg("View as Grid")}>
+              <sl-radio-button pill value=${ListView.Grid}>
+                <sl-icon
+                  name="grid"
+                  label=${msg("Grid")}
+                ></sl-icon> </sl-radio-button
+            ></sl-tooltip>
+          </sl-radio-group>
         </div>
       </div>
     `;
@@ -339,7 +406,6 @@ export class CollectionsList extends BtrixElement {
           size="small"
           placeholder=${msg("Search by Name")}
           clearable
-          value=${this.searchByValue}
           @sl-clear=${() => {
             this.searchResultsOpen = false;
             this.onSearchInput.cancel();
@@ -395,79 +461,93 @@ export class CollectionsList extends BtrixElement {
     `;
   }
 
+  private readonly renderGrid = () => {
+    return html`<btrix-collections-grid
+      slug=${this.orgSlugState || ""}
+      .collections=${this.collections?.items}
+      .collectionRefreshing=${this.collectionRefreshing}
+      .renderActions=${(col: Collection) =>
+        this.renderActions(col, { renderOnGridItem: true })}
+      showVisibility
+      class="mt-8 block"
+      @btrix-collection-saved=${async ({ detail }: CollectionSavedEvent) => {
+        this.collectionRefreshing = detail.id;
+        await this.fetchCollections();
+        this.collectionRefreshing = null;
+      }}
+    >
+      ${this.collections &&
+      this.collections.total > this.collections.items.length
+        ? html`
+            <btrix-pagination
+              page=${this.collections.page}
+              totalCount=${this.collections.total}
+              size=${this.collections.pageSize}
+              @page-change=${async (e: PageChangeEvent) => {
+                await this.fetchCollections({
+                  page: e.detail.page,
+                });
+
+                // Scroll to top of list
+                // TODO once deep-linking is implemented, scroll to top of pushstate
+                this.scrollIntoView({ behavior: "smooth" });
+              }}
+              slot="pagination"
+            >
+            </btrix-pagination>
+          `
+        : nothing}
+    </btrix-collections-grid>`;
+  };
+
   private readonly renderList = () => {
     if (this.collections?.items.length) {
       return html`
         <btrix-table
-          style="grid-template-columns: min-content [clickable-start] 50ch repeat(4, 1fr) [clickable-end] min-content"
+          class="[--btrix-table-column-gap:var(--sl-spacing-small)]"
+          style="--btrix-table-grid-template-columns: min-content [clickable-start] minmax(min-content, 45em) repeat(4, 1fr) [clickable-end] min-content"
         >
-          <btrix-table-head class="mb-2">
+          <btrix-table-head class="mb-2 mt-1 whitespace-nowrap">
             <btrix-table-header-cell>
               <span class="sr-only">${msg("Collection Access")}</span>
             </btrix-table-header-cell>
-            <btrix-table-header-cell>${msg("Name")}</btrix-table-header-cell>
+            <btrix-table-header-cell>
+              ${msg(html`Name & Collection Period`)}
+            </btrix-table-header-cell>
             <btrix-table-header-cell>
               ${msg("Archived Items")}
             </btrix-table-header-cell>
+            <btrix-table-header-cell
+              >${msg("Total Pages")}</btrix-table-header-cell
+            >
+            <btrix-table-header-cell>${msg("Size")}</btrix-table-header-cell>
             <btrix-table-header-cell>
-              ${msg("Total Size")}
-            </btrix-table-header-cell>
-            <btrix-table-header-cell>
-              ${msg("Total Pages")}
-            </btrix-table-header-cell>
-            <btrix-table-header-cell>
-              ${msg("Last Updated")}
+              ${msg("Last Modified")}
             </btrix-table-header-cell>
             <btrix-table-header-cell>
               <span class="sr-only">${msg("Row Actions")}</span>
             </btrix-table-header-cell>
           </btrix-table-head>
-          <btrix-table-body style="--btrix-row-gap: var(--sl-spacing-x-small)">
+          <btrix-table-body class="[--btrix-row-gap:var(--sl-spacing-x-small)]">
             ${this.collections.items.map(this.renderItem)}
           </btrix-table-body>
         </btrix-table>
-
-        ${when(
-          this.collections.total > this.collections.pageSize ||
-            this.collections.page > 1,
-          () => html`
-            <footer class="mt-6 flex justify-center">
-              <btrix-pagination
-                page=${this.collections!.page}
-                totalCount=${this.collections!.total}
-                size=${this.collections!.pageSize}
-                @page-change=${async (e: PageChangeEvent) => {
-                  await this.fetchCollections({
-                    page: e.detail.page,
-                  });
-
-                  // Scroll to top of list
-                  // TODO once deep-linking is implemented, scroll to top of pushstate
-                  this.scrollIntoView({ behavior: "smooth" });
-                }}
-              ></btrix-pagination>
-            </footer>
-          `,
-        )}
       `;
     }
 
+    const message = msg("Your org doesn’t have any collections yet.");
+
     return html`
-      <div class="rounded-lg border bg-neutral-50 p-4 text-center">
-        <p class="text-center">
-          <span class="text-neutral-400">${msg("No Collections Yet.")}</span>
-        </p>
-        ${when(
-          this.isCrawler,
-          () => html`
-            <p class="p-4 text-center">
-              ${msg(
-                "Organize your crawls into a Collection to easily replay them together.",
-              )}
-            </p>
-            <div>
+      ${when(
+        this.isCrawler,
+        () =>
+          emptyMessage({
+            message,
+            detail: msg(
+              "Collections let you easily organize, replay, and share multiple crawls.",
+            ),
+            actions: html`
               <sl-button
-                variant="primary"
                 @click=${() => {
                   this.dispatchEvent(
                     new CustomEvent("select-new-dialog", {
@@ -477,44 +557,75 @@ export class CollectionsList extends BtrixElement {
                 }}
               >
                 <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-                ${msg("Create a New Collection")}
+                ${msg("Create Collection")}
               </sl-button>
-            </div>
-          `,
-          () => html`
-            <p class="max-w-[18em] text-center">
-              ${msg("Your organization doesn't have any Collections, yet.")}
-            </p>
-          `,
-        )}
-      </div>
+            `,
+          }),
+        () =>
+          emptyMessage({
+            message,
+          }),
+      )}
     `;
   };
 
   private readonly renderItem = (col: Collection) => html`
     <btrix-table-row
-      class="cursor-pointer select-none rounded border shadow transition-all focus-within:bg-neutral-50 hover:bg-neutral-50 hover:shadow-none"
+      class="cursor-pointer select-none whitespace-nowrap rounded border shadow transition-all focus-within:bg-neutral-50 hover:bg-neutral-50 hover:shadow-none"
     >
       <btrix-table-cell class="p-3">
-        ${col.isPublic
-          ? html`
-              <sl-tooltip content=${msg("Shareable")}>
+        ${choose(col.access, [
+          [
+            CollectionAccess.Private,
+            () => html`
+              <sl-tooltip
+                content=${SelectCollectionAccess.Options[
+                  CollectionAccess.Private
+                ].label}
+              >
+                <sl-icon
+                  class="inline-block align-middle text-neutral-600"
+                  name=${SelectCollectionAccess.Options[
+                    CollectionAccess.Private
+                  ].icon}
+                ></sl-icon>
+              </sl-tooltip>
+            `,
+          ],
+          [
+            CollectionAccess.Unlisted,
+            () => html`
+              <sl-tooltip
+                content=${SelectCollectionAccess.Options[
+                  CollectionAccess.Unlisted
+                ].label}
+              >
+                <sl-icon
+                  class="inline-block align-middle text-neutral-600"
+                  name=${SelectCollectionAccess.Options[
+                    CollectionAccess.Unlisted
+                  ].icon}
+                ></sl-icon>
+              </sl-tooltip>
+            `,
+          ],
+          [
+            CollectionAccess.Public,
+            () => html`
+              <sl-tooltip
+                content=${SelectCollectionAccess.Options[
+                  CollectionAccess.Public
+                ].label}
+              >
                 <sl-icon
                   class="inline-block align-middle text-success-600"
-                  name="people-fill"
-                  label=${msg("Shareable Collection")}
+                  name=${SelectCollectionAccess.Options[CollectionAccess.Public]
+                    .icon}
                 ></sl-icon>
               </sl-tooltip>
-            `
-          : html`
-              <sl-tooltip content=${msg("Private")}>
-                <sl-icon
-                  class="inline-block align-middle"
-                  name="eye-slash-fill"
-                  label=${msg("Private Collection")}
-                ></sl-icon>
-              </sl-tooltip>
-            `}
+            `,
+          ],
+        ])}
       </btrix-table-cell>
       <btrix-table-cell rowClickTarget="a">
         <a
@@ -522,7 +633,10 @@ export class CollectionsList extends BtrixElement {
           href=${`${this.navigate.orgBasePath}/collections/view/${col.id}`}
           @click=${this.navigate.link}
         >
-          ${col.name}
+          <div class="mb-0.5 truncate">${col.name}</div>
+          <div class="text-xs leading-4 text-neutral-500">
+            ${monthYearDateRange(col.dateEarliest, col.dateLatest)}
+          </div>
         </a>
       </btrix-table-cell>
       <btrix-table-cell>
@@ -530,24 +644,21 @@ export class CollectionsList extends BtrixElement {
         ${pluralOf("items", col.crawlCount)}
       </btrix-table-cell>
       <btrix-table-cell>
-        <sl-format-bytes
-          value=${col.totalSize || 0}
-          display="narrow"
-        ></sl-format-bytes>
-      </btrix-table-cell>
-      <btrix-table-cell>
         ${this.localize.number(col.pageCount, { notation: "compact" })}
         ${pluralOf("pages", col.pageCount)}
       </btrix-table-cell>
       <btrix-table-cell>
-        <sl-format-date
+        ${this.localize.bytes(col.totalSize || 0, {
+          unitDisplay: "narrow",
+        })}
+      </btrix-table-cell>
+      <btrix-table-cell>
+        <btrix-format-date
           date=${col.modified}
           month="2-digit"
           day="2-digit"
-          year="2-digit"
-          hour="2-digit"
-          minute="2-digit"
-        ></sl-format-date>
+          year="numeric"
+        ></btrix-format-date>
       </btrix-table-cell>
       <btrix-table-cell class="p-0">
         ${this.isCrawler ? this.renderActions(col) : ""}
@@ -555,57 +666,61 @@ export class CollectionsList extends BtrixElement {
     </btrix-table-row>
   `;
 
-  private readonly renderActions = (col: Collection) => {
+  private readonly renderActions = (
+    col: Collection,
+    { renderOnGridItem } = { renderOnGridItem: false },
+  ) => {
     const authToken = this.authState?.headers.Authorization.split(" ")[1];
 
     return html`
-      <btrix-overflow-dropdown>
+      <btrix-overflow-dropdown
+        ?raised=${renderOnGridItem}
+        size=${renderOnGridItem ? "small" : "medium"}
+      >
         <sl-menu>
-          <sl-menu-item
-            @click=${() => void this.manageCollection(col, "editMetadata")}
-          >
-            <sl-icon name="pencil" slot="prefix"></sl-icon>
-            ${msg("Edit Metadata")}
+          <sl-menu-item @click=${() => void this.manageCollection(col, "edit")}>
+            <sl-icon name="gear" slot="prefix"></sl-icon>
+            ${msg("Edit Collection Settings")}
           </sl-menu-item>
-          <sl-divider></sl-divider>
-          ${!col.isPublic
+          ${col.access === CollectionAccess.Public ||
+          col.access === CollectionAccess.Unlisted
             ? html`
                 <sl-menu-item
-                  style="--sl-color-neutral-700: var(--success)"
-                  @click=${() => void this.onTogglePublic(col, true)}
+                  @click=${() => {
+                    ClipboardController.copyToClipboard(this.getShareLink(col));
+                    this.notify.toast({
+                      message: msg("Link copied"),
+                      variant: "success",
+                      icon: "check2-circle",
+                    });
+                  }}
                 >
-                  <sl-icon name="people-fill" slot="prefix"></sl-icon>
-                  ${msg("Make Shareable")}
+                  <sl-icon name="copy" slot="prefix"></sl-icon>
+                  ${msg("Copy Share Link")}
                 </sl-menu-item>
               `
-            : html`
-                <sl-menu-item style="--sl-color-neutral-700: var(--success)">
-                  <sl-icon name="box-arrow-up-right" slot="prefix"></sl-icon>
-                  <a
-                    target="_blank"
-                    slot="prefix"
-                    href="https://replayweb.page?source=${this.getPublicReplayURL(
-                      col,
-                    )}"
-                  >
-                    Visit Shareable URL
-                  </a>
-                </sl-menu-item>
-                <sl-menu-item
-                  style="--sl-color-neutral-700: var(--warning)"
-                  @click=${() => void this.onTogglePublic(col, false)}
-                >
-                  <sl-icon name="eye-slash" slot="prefix"></sl-icon>
-                  ${msg("Make Private")}
-                </sl-menu-item>
-              `}
+            : nothing}
+          <sl-divider></sl-divider>
           <btrix-menu-item-link
             href=${`/api/orgs/${this.orgId}/collections/${col.id}/download?auth_bearer=${authToken}`}
             download
+            ?disabled=${!col.totalSize}
           >
             <sl-icon name="cloud-download" slot="prefix"></sl-icon>
             ${msg("Download Collection")}
+            <btrix-badge
+              slot="suffix"
+              class="font-monostyle text-xs text-neutral-500"
+              >${this.localize.bytes(col.totalSize)}</btrix-badge
+            >
           </btrix-menu-item-link>
+          <sl-divider></sl-divider>
+          <sl-menu-item
+            @click=${() => ClipboardController.copyToClipboard(col.id)}
+          >
+            <sl-icon name="copy" slot="prefix"></sl-icon>
+            ${msg("Copy Collection ID")}
+          </sl-menu-item>
           <sl-divider></sl-divider>
           <sl-menu-item
             style="--sl-color-neutral-700: var(--danger)"
@@ -627,8 +742,8 @@ export class CollectionsList extends BtrixElement {
     </div>
   `;
 
-  private readonly onSearchInput = debounce(150)((e: Event) => {
-    this.searchByValue = (e.target as SlInput).value.trim();
+  private readonly onSearchInput = debounce(150)(() => {
+    this.searchByValue = this.input?.value.trim() || "";
 
     if (!this.searchResultsOpen && this.hasSearchStr) {
       this.searchResultsOpen = true;
@@ -642,10 +757,10 @@ export class CollectionsList extends BtrixElement {
     }
   });
 
-  private async onTogglePublic(coll: Collection, isPublic: boolean) {
+  private async updateAccess(coll: Collection, access: CollectionAccess) {
     await this.api.fetch(`/orgs/${this.orgId}/collections/${coll.id}`, {
       method: "PATCH",
-      body: JSON.stringify({ isPublic }),
+      body: JSON.stringify({ access }),
     });
 
     void this.fetchCollections();
@@ -684,12 +799,14 @@ export class CollectionsList extends BtrixElement {
         message: msg(html`Deleted <strong>${name}</strong> Collection.`),
         variant: "success",
         icon: "check2-circle",
+        id: "collection-delete-status",
       });
     } catch {
       this.notify.toast({
         message: msg("Sorry, couldn't delete Collection at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "collection-delete-status",
       });
     }
   }
@@ -727,6 +844,7 @@ export class CollectionsList extends BtrixElement {
           message: msg("Sorry, couldn't retrieve Collections at this time."),
           variant: "danger",
           icon: "exclamation-octagon",
+          id: "collection-retrieve-status",
         });
       }
     }
@@ -736,13 +854,16 @@ export class CollectionsList extends BtrixElement {
     const query = queryString.stringify(
       {
         ...this.filterBy,
-        page: queryParams?.page || this.collections?.page || 1,
+        page:
+          queryParams?.page ||
+          this.collections?.page ||
+          parsePage(new URLSearchParams(location.search).get("page")),
         pageSize:
           queryParams?.pageSize ||
           this.collections?.pageSize ||
           INITIAL_PAGE_SIZE,
         sortBy: this.orderBy.field,
-        sortDirection: this.orderBy.direction === "desc" ? -1 : 1,
+        sortDirection: this.orderBy.direction,
       },
       {
         arrayFormat: "comma",

@@ -32,7 +32,7 @@ export class BtrixElement extends TailwindElement {
     return this.appState.orgId;
   }
 
-  protected get orgSlug() {
+  protected get orgSlugState() {
     return this.appState.orgSlug;
   }
 

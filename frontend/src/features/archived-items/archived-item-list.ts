@@ -26,8 +26,8 @@ export type CheckboxChangeEventDetail = {
  * @slot actionCell - Action cell
  * @fires btrix-checkbox-change
  */
-@localized()
 @customElement("btrix-archived-item-list-item")
+@localized()
 export class ArchivedItemListItem extends BtrixElement {
   static styles = css`
     :host {
@@ -226,13 +226,13 @@ export class ArchivedItemListItem extends BtrixElement {
             @click=${this.onTooltipClick}
             hoist
           >
-            <sl-format-date
+            <btrix-format-date
               class="truncate"
-              date=${this.item.finished}
+              .date=${this.item.finished}
               month="2-digit"
               day="2-digit"
-              year="2-digit"
-            ></sl-format-date>
+              year="numeric"
+            ></btrix-format-date>
           </sl-tooltip>
         </btrix-table-cell>
         <btrix-table-cell class="tabular-nums">
@@ -243,16 +243,33 @@ export class ArchivedItemListItem extends BtrixElement {
             })}
             @click=${this.onTooltipClick}
           >
-            <sl-format-bytes
-              class="truncate"
-              value=${this.item.fileSize || 0}
-              display="narrow"
-            ></sl-format-bytes>
+            <span class="truncate">
+              ${this.localize.bytes(this.item.fileSize || 0, {
+                unitDisplay: "narrow",
+              })}
+            </span>
           </sl-tooltip>
         </btrix-table-cell>
         <btrix-table-cell class="tabular-nums">
           ${isUpload
-            ? notApplicable
+            ? html`<sl-tooltip
+                hoist
+                @click=${this.onTooltipClick}
+                content=${msg(
+                  str`${this.localize.number(
+                    this.item.pageCount ? +this.item.pageCount : 0,
+                  )}`,
+                )}
+              >
+                <div class="min-w-4">
+                  ${this.localize.number(
+                    this.item.pageCount ? +this.item.pageCount : 0,
+                    {
+                      notation: "compact",
+                    },
+                  )}
+                </div>
+              </sl-tooltip>`
             : html`<sl-tooltip
                 hoist
                 @click=${this.onTooltipClick}
@@ -334,14 +351,13 @@ export class ArchivedItemListItem extends BtrixElement {
  * @slot checkboxCell
  * @slot actionCell
  */
-@localized()
 @customElement("btrix-archived-item-list")
+@localized()
 export class ArchivedItemList extends TailwindElement {
   static styles = css`
     btrix-table {
-      --btrix-cell-gap: var(--sl-spacing-x-small);
-      --btrix-cell-padding-left: var(--sl-spacing-small);
-      --btrix-cell-padding-right: var(--sl-spacing-small);
+      --btrix-table-cell-gap: var(--sl-spacing-x-small);
+      --btrix-table-cell-padding-x: var(--sl-spacing-small);
     }
 
     btrix-table-body ::slotted(*:nth-of-type(n + 2)) {
@@ -398,7 +414,7 @@ export class ArchivedItemList extends TailwindElement {
       {
         cssCol: "1fr",
         cell: html`<btrix-table-header-cell>
-          ${msg("Pages Crawled")}
+          ${msg("Pages")}
         </btrix-table-header-cell>`,
       },
       {
@@ -430,12 +446,12 @@ export class ArchivedItemList extends TailwindElement {
     return html`
       <style>
         btrix-table {
-          grid-template-columns: ${headerCols
+          --btrix-table-grid-template-columns: ${headerCols
             .map(({ cssCol }) => cssCol)
             .join(" ")};
         }
       </style>
-      <div class="overflow-auto">
+      <btrix-overflow-scroll class="-mx-5 part-[content]:px-5">
         <btrix-table>
           <btrix-table-head class="mb-2">
             <slot
@@ -456,7 +472,7 @@ export class ArchivedItemList extends TailwindElement {
             <slot></slot>
           </btrix-table-body>
         </btrix-table>
-      </div>
+      </btrix-overflow-scroll>
     `;
   }
 }

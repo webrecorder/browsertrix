@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.4
-FROM --platform=$BUILDPLATFORM docker.io/library/node:18 as build_deps
+FROM --platform=$BUILDPLATFORM docker.io/library/node:22 as build_deps
 
 WORKDIR /app
 COPY .yarnrc yarn.lock package.json ./
@@ -18,6 +18,7 @@ COPY --link lit-localize.json \
   index.d.ts \
   ./
 
+COPY --link lib ./lib/
 COPY --link src ./src/
 
 # Build variables used to show current app version
@@ -39,7 +40,7 @@ FROM --platform=$BUILDPLATFORM docker.io/library/python:3.12-slim as build_docs
 
 WORKDIR /docs
 
-RUN pip install mkdocs-material
+RUN pip install mkdocs-material mkdocs-redirects
 
 COPY --link ./docs/mkdocs.yml .
 COPY --link ./docs/docs ./docs

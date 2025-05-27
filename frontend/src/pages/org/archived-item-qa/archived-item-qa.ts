@@ -38,6 +38,7 @@ import type {
 } from "@/types/api";
 import type { ArchivedItem, ArchivedItemPageComment } from "@/types/crawler";
 import type { ArchivedItemQAPage, QARun } from "@/types/qa";
+import { SortDirection as APISortDirection } from "@/types/utils";
 import {
   isActive,
   isSuccessfullyFinished,
@@ -45,6 +46,7 @@ import {
   type finishedCrawlStates,
 } from "@/utils/crawler";
 import { maxLengthValidator } from "@/utils/form";
+import { formatRwpTimestamp } from "@/utils/replay";
 import { tw } from "@/utils/tailwind";
 
 const DEFAULT_PAGE_SIZE = 100;
@@ -84,8 +86,8 @@ const tabToPrefix: Record<QATypes.QATab, string> = {
   replay: "",
 };
 
-@localized()
 @customElement("btrix-archived-item-qa")
+@localized()
 export class ArchivedItemQA extends BtrixElement {
   static styles = styles;
 
@@ -552,7 +554,8 @@ export class ArchivedItemQA extends BtrixElement {
             .pages=${this.pages}
             .orderBy=${{
               field: this.sortPagesBy.sortBy,
-              direction: (this.sortPagesBy.sortDirection === -1
+              direction: (this.sortPagesBy.sortDirection ===
+              APISortDirection.Descending
                 ? "desc"
                 : "asc") as SortDirection,
             }}
@@ -895,16 +898,16 @@ export class ArchivedItemQA extends BtrixElement {
           ${when(
             this.page,
             (page) => html`
-              <sl-format-date
+              <btrix-format-date
                 class="font-monostyle text-xs text-neutral-500"
-                date=${page.ts}
+                .date=${page.ts}
                 month="2-digit"
                 day="2-digit"
-                year="2-digit"
+                year="numeric"
                 hour="2-digit"
                 minute="2-digit"
               >
-              </sl-format-date>
+              </btrix-format-date>
             `,
           )}
         </div>
@@ -1086,6 +1089,7 @@ export class ArchivedItemQA extends BtrixElement {
         message: msg("Sorry, couldn't retrieve archived item at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "qa-error",
       });
     }
   }
@@ -1150,6 +1154,7 @@ export class ArchivedItemQA extends BtrixElement {
         message: msg("Sorry, couldn't add comment at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "qa-error",
       });
     }
   }
@@ -1178,6 +1183,7 @@ export class ArchivedItemQA extends BtrixElement {
         message: msg("Sorry, couldn't delete comment at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "qa-error",
       });
     }
   }
@@ -1192,6 +1198,7 @@ export class ArchivedItemQA extends BtrixElement {
         message: msg("Sorry, couldn't retrieve analysis runs at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "qa-error",
       });
     }
   }
@@ -1218,6 +1225,7 @@ export class ArchivedItemQA extends BtrixElement {
         message: msg("Sorry, couldn't retrieve page at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "qa-error",
       });
     }
   }
@@ -1309,7 +1317,7 @@ export class ArchivedItemQA extends BtrixElement {
       return;
     }
 
-    const timestamp = page.ts?.split(".")[0].replace(/\D/g, "");
+    const timestamp = formatRwpTimestamp(page.ts) || "";
     const pageUrl = page.url;
 
     const doLoad = async (isQA: boolean) => {
@@ -1449,6 +1457,7 @@ export class ArchivedItemQA extends BtrixElement {
         message: msg("Sorry, couldn't retrieve pages at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "qa-error",
       });
     }
   }
@@ -1505,12 +1514,14 @@ export class ArchivedItemQA extends BtrixElement {
         message: msg("Saved QA review."),
         variant: "success",
         icon: "check2-circle",
+        id: "qa-review-status",
       });
     } catch (e) {
       this.notify.toast({
         message: msg("Sorry, couldn't submit QA review at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "qa-review-status",
       });
     }
   }

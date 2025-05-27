@@ -50,7 +50,7 @@ describe("humanizeExecutionSeconds", () => {
       parentNode,
     });
     expect(el.getAttribute("title")).to.equal("20,576,132 minutes");
-    expect(el.textContent?.trim()).to.equal("21M minutes");
+    expect(el.textContent?.trim()).to.equal("21M minutes\u00a0(342,935h 32m)");
     expect(parentNode.innerText).to.equal("21M minutes\u00a0(342,935h 32m)");
   });
 
@@ -73,7 +73,6 @@ describe("humanizeExecutionSeconds", () => {
     const el = await fixture(humanizeExecutionSeconds(3_540), {
       parentNode,
     });
-    expect(el.getAttribute("title")).to.equal("59 minutes");
     expect(el.textContent?.trim()).to.equal("59 minutes");
     expect(parentNode.innerText).to.equal("59 minutes");
   });
@@ -82,7 +81,6 @@ describe("humanizeExecutionSeconds", () => {
     const el = await fixture(humanizeExecutionSeconds(90, { round: "down" }), {
       parentNode,
     });
-    expect(el.getAttribute("title")).to.equal("1 minute");
     expect(el.textContent?.trim()).to.equal("1 minute");
     expect(parentNode.innerText).to.equal("1 minute");
   });
@@ -94,7 +92,6 @@ describe("humanizeExecutionSeconds", () => {
         parentNode,
       },
     );
-    expect(el.getAttribute("title")).to.equal("2 minutes");
     expect(el.textContent?.trim()).to.equal("2 minutes");
     expect(parentNode.innerText).to.equal("2 minutes");
   });
@@ -108,8 +105,7 @@ describe("humanizeExecutionSeconds", () => {
         parentNode,
       },
     );
-    expect(el.getAttribute("title")).to.equal("1 minute");
-    expect(el.textContent?.trim()).to.equal("1 minute");
+    expect(el.textContent?.trim()).to.equal("1 minute\u00a0(0m 24s)");
     expect(parentNode.innerText).to.equal("1 minute\u00a0(0m 24s)");
   });
 });

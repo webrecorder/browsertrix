@@ -32,9 +32,15 @@ module.exports = {
         parser: "xml",
         proseWrap: "never",
         printWidth: Infinity,
-        xmlSortAttributesByKey: true,
+        xmlSortAttributesByKey: false,
         xmlWhitespaceSensitivity: "preserve",
         xmlSelfClosingSpace: false,
+      },
+    },
+    {
+      files: "**/*.mdx",
+      options: {
+        proseWrap: "always",
       },
     },
   ],

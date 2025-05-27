@@ -1,4 +1,4 @@
-""" Basic Email Sending Support"""
+"""Basic Email Sending Support"""
 
 from datetime import datetime
 import os
@@ -28,6 +28,7 @@ class EmailSender:
     smtp_port: int
     smtp_use_tls: bool
     support_email: str
+    survey_url: str
 
     templates: Jinja2Templates
 
@@ -38,6 +39,7 @@ class EmailSender:
         self.password = os.environ.get("EMAIL_PASSWORD") or ""
         self.reply_to = os.environ.get("EMAIL_REPLY_TO") or self.sender
         self.support_email = os.environ.get("EMAIL_SUPPORT") or self.reply_to
+        self.survey_url = os.environ.get("USER_SURVEY_URL") or ""
         self.smtp_server = os.environ.get("EMAIL_SMTP_HOST")
         self.smtp_port = int(os.environ.get("EMAIL_SMTP_PORT", 587))
         self.smtp_use_tls = is_bool(os.environ.get("EMAIL_SMTP_USE_TLS"))
@@ -152,11 +154,35 @@ class EmailSender:
     def send_background_job_failed(
         self,
         job: Union[CreateReplicaJob, DeleteReplicaJob],
-        org: Organization,
         finished: datetime,
         receiver_email: str,
+        org: Optional[Organization] = None,
     ):
         """Send background job failed email to superuser"""
         self._send_encrypted(
             receiver_email, "failed_bg_job", job=job, org=org, finished=finished
+        )
+
+    def send_subscription_will_be_canceled(
+        self,
+        cancel_date: datetime,
+        user_name: str,
+        receiver_email: str,
+        org: Organization,
+        headers=None,
+    ):
+        """Send email indicating subscription is cancelled and all org data will be deleted"""
+
+        origin = get_origin(headers)
+        org_url = f"{origin}/orgs/{org.slug}/"
+
+        self._send_encrypted(
+            receiver_email,
+            "sub_cancel",
+            org_url=org_url,
+            user_name=user_name,
+            org_name=org.name,
+            cancel_date=cancel_date,
+            support_email=self.support_email,
+            survey_url=self.survey_url,
         )

@@ -6,9 +6,18 @@ import { classMap } from "lit/directives/class-map.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 
+import { SearchParamsController } from "@/controllers/searchParams";
 import { srOnly } from "@/utils/css";
 import chevronLeft from "~assets/icons/chevron-left.svg";
 import chevronRight from "~assets/icons/chevron-right.svg";
+
+export const parsePage = (value: string | undefined | null) => {
+  const page = parseInt(value || "1");
+  if (!Number.isFinite(page)) {
+    throw new Error("couldn't parse page value from search");
+  }
+  return page;
+};
 
 type PageChangeDetail = {
   page: number;
@@ -19,13 +28,23 @@ export type PageChangeEvent = CustomEvent<PageChangeDetail>;
 /**
  * Pagination
  *
+ * Persists via a search param in the URL. Defaults to `page`, but can be set with the `name` attribute.
+ *
  * Usage example:
  * ```ts
- * <btrix-pagination totalCount="11" @page-change=${this.console.log}>
+ * <btrix-pagination totalCount="11" @page-change=${console.log}>
  * </btrix-pagination>
  * ```
  *
- * @event page-change {PageChangeEvent}
+ * You can have multiple paginations on one page by setting different names:
+ * ```ts
+ * <btrix-pagination name="page-a" totalCount="11" @page-change=${console.log}>
+ * </btrix-pagination>
+ * <btrix-pagination name="page-b" totalCount="2" @page-change=${console.log}>
+ * </btrix-pagination>
+ * ```
+ *
+ * @fires page-change {PageChangeEvent}
  */
 @customElement("btrix-pagination")
 @localized()
@@ -120,8 +139,35 @@ export class Pagination extends LitElement {
     `,
   ];
 
+  searchParams = new SearchParamsController(this, (params) => {
+    const page = parsePage(params.get(this.name));
+    if (this._page !== page) {
+      this.dispatchEvent(
+        new CustomEvent<PageChangeDetail>("page-change", {
+          detail: { page: page, pages: this.pages },
+          composed: true,
+        }),
+      );
+      this._page = page;
+    }
+  });
+
+  @state()
+  private _page = 1;
+
   @property({ type: Number })
-  page = 1;
+  set page(page: number) {
+    if (page !== this._page) {
+      this.setPage(page);
+    }
+  }
+
+  get page() {
+    return this._page;
+  }
+
+  @property({ type: String })
+  name = "page";
 
   @property({ type: Number })
   totalCount = 0;
@@ -139,7 +185,7 @@ export class Pagination extends LitElement {
   private pages = 0;
 
   connectedCallback() {
-    this.inputValue = `${this.page}`;
+    this.inputValue = `${this._page}`;
     super.connectedCallback();
   }
 
@@ -148,8 +194,17 @@ export class Pagination extends LitElement {
       this.calculatePages();
     }
 
-    if (changedProperties.get("page") && this.page) {
-      this.inputValue = `${this.page}`;
+    const parsedPage = parseFloat(
+      this.searchParams.searchParams.get(this.name) ?? "1",
+    );
+    if (parsedPage != this._page) {
+      const page = parsePage(this.searchParams.searchParams.get(this.name));
+      const constrainedPage = Math.max(1, Math.min(this.pages, page));
+      this.onPageChange(constrainedPage);
+    }
+
+    if (changedProperties.get("page") && this._page) {
+      this.inputValue = `${this._page}`;
     }
   }
 
@@ -164,7 +219,7 @@ export class Pagination extends LitElement {
           <li>
             <button
               class="navButton"
-              ?disabled=${this.page === 1}
+              ?disabled=${this._page === 1}
               @click=${this.onPrev}
             >
               <img class="chevron" src=${chevronLeft} />
@@ -177,7 +232,7 @@ export class Pagination extends LitElement {
           <li>
             <button
               class="navButton"
-              ?disabled=${this.page === this.pages}
+              ?disabled=${this._page === this.pages}
               @click=${this.onNext}
             >
               <span class=${classMap({ srOnly: this.compact })}
@@ -206,7 +261,7 @@ export class Pagination extends LitElement {
           inputmode="numeric"
           size="small"
           value=${this.inputValue}
-          aria-label=${msg(str`Current page, page ${this.page}`)}
+          aria-label=${msg(str`Current page, page ${this._page}`)}
           aria-current="page"
           autocomplete="off"
           min="1"
@@ -258,7 +313,7 @@ export class Pagination extends LitElement {
     const middleEnd = middleVisible * 2 - 1;
     const endsVisible = 2;
     if (this.pages > middleVisible + middleEnd) {
-      const currentPageIdx = pages.indexOf(this.page);
+      const currentPageIdx = pages.indexOf(this._page);
       const firstPages = pages.slice(0, endsVisible);
       const lastPages = pages.slice(-1 * endsVisible);
       let middlePages = pages.slice(endsVisible, middleEnd);
@@ -287,7 +342,7 @@ export class Pagination extends LitElement {
   };
 
   private readonly renderPageButton = (page: number) => {
-    const isCurrent = page === this.page;
+    const isCurrent = page === this._page;
     return html`<li aria-current=${ifDefined(isCurrent ? "page" : undefined)}>
       <btrix-navigation-button
         icon
@@ -302,20 +357,35 @@ export class Pagination extends LitElement {
   };
 
   private onPrev() {
-    this.onPageChange(this.page > 1 ? this.page - 1 : 1);
+    this.onPageChange(this._page > 1 ? this._page - 1 : 1);
   }
 
   private onNext() {
-    this.onPageChange(this.page < this.pages ? this.page + 1 : this.pages);
+    this.onPageChange(this._page < this.pages ? this._page + 1 : this.pages);
   }
 
   private onPageChange(page: number) {
-    this.dispatchEvent(
-      new CustomEvent<PageChangeDetail>("page-change", {
-        detail: { page: page, pages: this.pages },
-        composed: true,
-      }),
-    );
+    if (this._page !== page) {
+      this.setPage(page);
+      this.dispatchEvent(
+        new CustomEvent<PageChangeDetail>("page-change", {
+          detail: { page: page, pages: this.pages },
+          composed: true,
+        }),
+      );
+    }
+    this._page = page;
+  }
+
+  private setPage(page: number) {
+    this.searchParams.set((params) => {
+      if (page === 1) {
+        params.delete(this.name);
+      } else {
+        params.set(this.name, page.toString());
+      }
+      return params;
+    });
   }
 
   private calculatePages() {

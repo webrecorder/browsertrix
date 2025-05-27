@@ -6,6 +6,7 @@ supports docker and kubernetes based deployments of multiple browsertrix-crawler
 import os
 import asyncio
 import sys
+from typing import List, Optional
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
@@ -15,7 +16,7 @@ from fastapi.openapi.utils import get_openapi
 from fastapi.openapi.docs import get_swagger_ui_html, get_redoc_html
 from pydantic import BaseModel
 
-from .db import init_db, await_db_and_migrations, update_and_prepare_db
+from .db import init_db, await_db_and_migrations
 
 from .emailsender import EmailSender
 from .invites import init_invites
@@ -37,7 +38,7 @@ from .pages import init_pages_api
 from .subs import init_subs_api
 
 from .crawlmanager import CrawlManager
-from .utils import run_once_lock, register_exit_handler, is_bool
+from .utils import register_exit_handler, is_bool
 from .version import __version__
 
 API_PREFIX = "/api"
@@ -121,6 +122,10 @@ class SettingsResponse(BaseModel):
     salesEmail: str = ""
     supportEmail: str = ""
 
+    localesEnabled: Optional[List[str]]
+
+    pausedExpiryMinutes: int
+
 
 # ============================================================================
 # pylint: disable=too-many-locals, duplicate-code
@@ -150,6 +155,12 @@ def main() -> None:
         signUpUrl=os.environ.get("SIGN_UP_URL", ""),
         salesEmail=os.environ.get("SALES_EMAIL", ""),
         supportEmail=os.environ.get("EMAIL_SUPPORT", ""),
+        localesEnabled=(
+            [lang.strip() for lang in os.environ.get("LOCALES_ENABLED", "").split(",")]
+            if os.environ.get("LOCALES_ENABLED")
+            else None
+        ),
+        pausedExpiryMinutes=int(os.environ.get("PAUSED_CRAWL_LIMIT_MINUTES", 10080)),
     )
 
     invites = init_invites(mdb, email)
@@ -182,7 +193,9 @@ def main() -> None:
 
     crawl_manager = CrawlManager()
 
-    storage_ops = init_storages_api(org_ops, crawl_manager)
+    storage_ops = init_storages_api(
+        org_ops, crawl_manager, app, mdb, current_active_user
+    )
 
     background_job_ops = init_background_jobs_api(
         app,
@@ -215,7 +228,9 @@ def main() -> None:
         profiles,
     )
 
-    coll_ops = init_collections_api(app, mdb, org_ops, storage_ops, event_webhook_ops)
+    coll_ops = init_collections_api(
+        app, mdb, org_ops, storage_ops, event_webhook_ops, current_active_user
+    )
 
     base_crawl_init = (
         app,
@@ -235,16 +250,24 @@ def main() -> None:
 
     crawls = init_crawls_api(crawl_manager, *base_crawl_init)
 
+    upload_ops = init_uploads_api(*base_crawl_init)
+
     page_ops = init_pages_api(
-        app, mdb, crawls, org_ops, storage_ops, current_active_user
+        app,
+        mdb,
+        crawls,
+        org_ops,
+        storage_ops,
+        background_job_ops,
+        coll_ops,
+        current_active_user,
     )
 
     base_crawl_ops.set_page_ops(page_ops)
     crawls.set_page_ops(page_ops)
+    upload_ops.set_page_ops(page_ops)
 
-    init_uploads_api(*base_crawl_init)
-
-    org_ops.set_ops(base_crawl_ops, profiles, coll_ops, background_job_ops)
+    org_ops.set_ops(base_crawl_ops, profiles, coll_ops, background_job_ops, page_ops)
 
     user_manager.set_ops(org_ops, crawl_config_ops, base_crawl_ops)
 
@@ -252,24 +275,10 @@ def main() -> None:
 
     crawl_config_ops.set_coll_ops(coll_ops)
 
-    # run only in first worker
-    if run_once_lock("btrix-init-db"):
-        asyncio.create_task(
-            update_and_prepare_db(
-                mdb,
-                user_manager,
-                org_ops,
-                crawls,
-                crawl_config_ops,
-                coll_ops,
-                invites,
-                storage_ops,
-                page_ops,
-                db_inited,
-            )
-        )
-    else:
-        asyncio.create_task(await_db_and_migrations(mdb, db_inited))
+    coll_ops.set_page_ops(page_ops)
+
+    # await db init, migrations should have already completed in init containers
+    asyncio.create_task(await_db_and_migrations(mdb, db_inited))
 
     app.include_router(org_ops.router)
 

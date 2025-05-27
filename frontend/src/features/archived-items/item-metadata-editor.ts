@@ -27,8 +27,8 @@ import LiteElement, { html } from "@/utils/LiteElement";
  * @event request-close
  * @event updated
  */
-@localized()
 @customElement("btrix-item-metadata-editor")
+@localized()
 export class CrawlMetadataEditor extends LiteElement {
   @property({ type: Object })
   crawl?: ArchivedItem;
@@ -235,6 +235,7 @@ export class CrawlMetadataEditor extends LiteElement {
         message: msg("Successfully saved crawl details."),
         variant: "success",
         icon: "check2-circle",
+        id: "crawl-details-update-status",
       });
       this.requestClose();
     } catch (e) {
@@ -242,6 +243,7 @@ export class CrawlMetadataEditor extends LiteElement {
         message: msg("Sorry, couldn't save crawl details at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "crawl-details-update-status",
       });
     }
 

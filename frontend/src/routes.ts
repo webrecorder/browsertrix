@@ -1,3 +1,27 @@
+export enum OrgTab {
+  Dashboard = "dashboard",
+  Workflows = "workflows",
+  Items = "items",
+  Collections = "collections",
+  BrowserProfiles = "browser-profiles",
+  Settings = "settings",
+}
+
+export enum RouteNamespace {
+  PrivateOrgs = "orgs",
+  PublicOrgs = "explore",
+  Superadmin = "admin",
+}
+
+export enum WorkflowTab {
+  LatestCrawl = "latest",
+  Crawls = "crawls",
+  Logs = "logs",
+  Settings = "settings",
+}
+
+const archivedItemPath = "/:itemId(/review/:qaTab)";
+
 export const ROUTES = {
   home: "/",
   join: "/join/:token",
@@ -9,20 +33,28 @@ export const ROUTES = {
   forgotPassword: "/log-in/forgot-password",
   resetPassword: "/reset-password",
   accountSettings: "/account/settings(/:settingsTab)",
-  orgs: "/orgs",
+  orgs: `/${RouteNamespace.PrivateOrgs}(/)`,
   org: [
-    "/orgs/:slug",
+    `/${RouteNamespace.PrivateOrgs}/:slug(/)`,
     // Org sections:
-    "(/workflows(/new)(/:workflowId(/crawls/:itemId(/review/:qaTab))))",
-    "(/items(/:itemType(/:itemId)))",
-    "(/collections(/new)(/view/:collectionId(/:collectionTab)))",
-    "(/browser-profiles(/profile(/browser/:browserId)(/:browserProfileId)))",
-    "(/settings(/:settingsTab))",
+    `(/${OrgTab.Dashboard})`,
+    `(/${OrgTab.Workflows}(/new)(/:workflowId(/:workflowTab)(/crawls${archivedItemPath})))`,
+    `(/${OrgTab.Items}(/:itemType(${archivedItemPath})))`,
+    `(/${OrgTab.Collections}(/new)(/view/:collectionId(/:collectionTab)))`,
+    `(/${OrgTab.BrowserProfiles}(/profile(/browser/:browserId)(/:browserProfileId)))`,
+    `(/${OrgTab.Settings}(/:settingsTab))`,
   ].join(""),
-  users: "/users",
-  usersInvite: "/users/invite",
-  crawls: "/crawls",
-  crawl: "/crawls/crawl/:crawlId",
+  publicOrgs: `/${RouteNamespace.PublicOrgs}(/)`,
+  publicOrg: `/${RouteNamespace.PublicOrgs}/:slug(/)`,
+  publicCollection: `/${RouteNamespace.PublicOrgs}/:slug/collections/:collectionSlug(/:collectionTab)`,
+  // Superadmin routes
+  admin: `/${RouteNamespace.Superadmin}(/)`,
+  adminUsers: `/${RouteNamespace.Superadmin}/users(/)`,
+  adminUsersInvite: `/${RouteNamespace.Superadmin}/users/invite`,
+  adminCrawls: `/${RouteNamespace.Superadmin}/crawls(/)`,
+  adminCrawl: `/${RouteNamespace.Superadmin}/crawls/crawl/:crawlId`,
   // Redirect for https://github.com/webrecorder/browsertrix-cloud/issues/935
-  awpUploadRedirect: "/orgs/:orgId/artifacts/upload/:uploadId",
+  awpUploadRedirect: `/${RouteNamespace.PrivateOrgs}/:orgId/artifacts/upload/:uploadId`,
 } as const;
+
+export type Routes = typeof ROUTES;

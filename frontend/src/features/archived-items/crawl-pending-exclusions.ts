@@ -3,7 +3,7 @@ import { html } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import { type PageChangeEvent } from "@/components/ui/pagination";
+import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 
 type URLs = string[];
 
@@ -17,14 +17,14 @@ type URLs = string[];
  * ></btrix-crawl-pending-exclusions>
  * ```
  */
-@localized()
 @customElement("btrix-crawl-pending-exclusions")
+@localized()
 export class CrawlPendingExclusions extends BtrixElement {
   @property({ type: Array })
   matchedURLs: URLs | null = null;
 
   @state()
-  private page = 1;
+  private page = parsePage(new URLSearchParams(location.search).get("page"));
 
   private get pageSize() {
     return 10;

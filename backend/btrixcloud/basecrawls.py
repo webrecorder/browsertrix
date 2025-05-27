@@ -1,9 +1,20 @@
-""" base crawl type """
+"""base crawl type"""
 
-import os
-from datetime import timedelta
-from typing import Optional, List, Union, Dict, Any, Type, TYPE_CHECKING, cast, Tuple
+from datetime import datetime
+from typing import (
+    Optional,
+    List,
+    Union,
+    Dict,
+    Any,
+    Type,
+    TYPE_CHECKING,
+    cast,
+    Tuple,
+    AsyncIterable,
+)
 from uuid import UUID
+import os
 import urllib.parse
 
 import asyncio
@@ -24,14 +35,14 @@ from .models import (
     User,
     StorageRef,
     RUNNING_AND_WAITING_STATES,
-    SUCCESSFUL_STATES,
+    SUCCESSFUL_AND_PAUSED_STATES,
     QARun,
     UpdatedResponse,
     DeletedResponseQuota,
     CrawlSearchValuesResponse,
 )
 from .pagination import paginated_format, DEFAULT_PAGE_SIZE
-from .utils import dt_now, date_to_str
+from .utils import dt_now, get_origin, date_to_str
 
 if TYPE_CHECKING:
     from .crawlconfigs import CrawlConfigOps
@@ -47,14 +58,9 @@ else:
     CrawlConfigOps = UserManager = OrgOps = CollectionOps = PageOps = object
     StorageOps = EventWebhookOps = BackgroundJobOps = object
 
-# Presign duration must be less than 604800 seconds (one week),
-# so set this one minute short of a week.
-PRESIGN_MINUTES_MAX = 10079
-PRESIGN_MINUTES_DEFAULT = PRESIGN_MINUTES_MAX
-
 
 # ============================================================================
-# pylint: disable=too-many-instance-attributes, too-many-public-methods, too-many-lines
+# pylint: disable=too-many-instance-attributes, too-many-public-methods, too-many-lines, too-many-branches
 class BaseCrawlOps:
     """operations that apply to all crawls"""
 
@@ -69,9 +75,6 @@ class BaseCrawlOps:
     background_job_ops: BackgroundJobOps
     page_ops: PageOps
 
-    presign_duration_seconds: int
-    expire_at_duration_seconds: int
-
     def __init__(
         self,
         mdb,
@@ -84,6 +87,7 @@ class BaseCrawlOps:
         background_job_ops: BackgroundJobOps,
     ):
         self.crawls = mdb["crawls"]
+        self.presigned_urls = mdb["presigned_urls"]
         self.crawl_configs = crawl_configs
         self.user_manager = users
         self.orgs = orgs
@@ -92,17 +96,6 @@ class BaseCrawlOps:
         self.event_webhook_ops = event_webhook_ops
         self.background_job_ops = background_job_ops
         self.page_ops = cast(PageOps, None)
-
-        presign_duration_minutes = int(
-            os.environ.get("PRESIGN_DURATION_MINUTES") or PRESIGN_MINUTES_DEFAULT
-        )
-
-        self.presign_duration_seconds = (
-            min(presign_duration_minutes, PRESIGN_MINUTES_MAX) * 60
-        )
-
-        # renew when <25% of time remaining
-        self.expire_at_duration_seconds = int(self.presign_duration_seconds * 0.75)
 
     def set_page_ops(self, page_ops):
         """set page ops reference"""
@@ -136,13 +129,12 @@ class BaseCrawlOps:
         files: List[Dict],
         org: Organization,
         crawlid: str,
-        qa_run_id: Optional[str] = None,
     ) -> List[CrawlFileOut]:
         if not files:
             return []
 
         crawl_files = [CrawlFile(**data) for data in files]
-        return await self.resolve_signed_urls(crawl_files, org, crawlid, qa_run_id)
+        return await self.resolve_signed_urls(crawl_files, org, crawlid)
 
     async def get_wacz_files(self, crawl_id: str, org: Organization):
         """Return list of WACZ files associated with crawl."""
@@ -169,17 +161,34 @@ class BaseCrawlOps:
         org: Optional[Organization] = None,
         type_: Optional[str] = None,
         skip_resources=False,
+        headers: Optional[dict] = None,
     ) -> CrawlOutWithResources:
         """Get crawl data for api output"""
         res = await self.get_crawl_raw(crawlid, org, type_)
 
         files = res.pop("files", None)
         res.pop("errors", None)
+        res.pop("behaviorLogs", None)
 
         if not skip_resources:
             coll_ids = res.get("collectionIds")
             if coll_ids:
                 res["collections"] = await self.colls.get_collection_names(coll_ids)
+
+            if res.get("version", 1) == 2:
+                res["initialPages"], _ = await self.page_ops.list_pages(
+                    crawl_ids=[crawlid], page_size=25
+                )
+
+                oid = res.get("oid")
+                if oid:
+                    origin = get_origin(headers)
+                    res["pagesQueryUrl"] = (
+                        origin + f"/api/orgs/{oid}/crawls/{crawlid}/pagesSearch"
+                    )
+
+                # this will now disable the downloadUrl in RWP
+                res["downloadUrl"] = None
 
         crawl = CrawlOutWithResources.from_dict(res)
 
@@ -313,6 +322,7 @@ class BaseCrawlOps:
     ) -> tuple[int, dict[UUID, dict[str, int]], bool]:
         """Delete a list of crawls by id for given org"""
         cids_to_update: dict[UUID, dict[str, int]] = {}
+        collection_ids_to_update = set()
 
         size = 0
 
@@ -336,8 +346,13 @@ class BaseCrawlOps:
                         status_code=400, detail=f"Error Stopping Crawl: {exc}"
                     )
 
+            await self.page_ops.delete_crawl_pages(crawl_id, org.id)
+
+            if crawl.collectionIds:
+                for coll_id in crawl.collectionIds:
+                    collection_ids_to_update.add(coll_id)
+
             if type_ == "crawl":
-                await self.page_ops.delete_crawl_pages(crawl_id, org.id)
                 await self.delete_all_crawl_qa_files(crawl_id, org)
 
             crawl_size = await self._delete_crawl_files(crawl, org)
@@ -371,6 +386,12 @@ class BaseCrawlOps:
 
         await self.orgs.inc_org_bytes_stored(org.id, -size, type_)
 
+        await self.orgs.set_last_crawl_finished(org.id)
+
+        if collection_ids_to_update:
+            for coll_id in collection_ids_to_update:
+                await self.colls.update_collection_counts_and_tags(coll_id)
+
         quota_reached = self.orgs.storage_quota_reached(org)
 
         return res.deleted_count, cids_to_update, quota_reached
@@ -382,7 +403,7 @@ class BaseCrawlOps:
         size = 0
         for file_ in crawl.files:
             size += file_.size
-            if not await self.storage_ops.delete_crawl_file_object(org, file_):
+            if not await self.storage_ops.delete_file_object(org, file_):
                 raise HTTPException(status_code=400, detail="file_deletion_error")
             # Not replicating QA run WACZs yet
             if not isinstance(crawl, QARun):
@@ -439,7 +460,7 @@ class BaseCrawlOps:
 
         if (
             files
-            and crawl.state in SUCCESSFUL_STATES
+            and crawl.state in SUCCESSFUL_AND_PAUSED_STATES
             and isinstance(crawl, CrawlOutWithResources)
         ):
             crawl.resources = await self._files_to_resources(files, org, crawl.id)
@@ -451,64 +472,134 @@ class BaseCrawlOps:
         files: List[CrawlFile],
         org: Organization,
         crawl_id: Optional[str] = None,
-        qa_run_id: Optional[str] = None,
-        update_presigned_url: bool = False,
+        force_update=False,
     ) -> List[CrawlFileOut]:
         """Regenerate presigned URLs for files as necessary"""
         if not files:
-            print("no files")
             return []
-
-        delta = timedelta(seconds=self.expire_at_duration_seconds)
 
         out_files = []
 
-        for file_ in files:
-            presigned_url = file_.presignedUrl
-            now = dt_now()
+        cursor = self.presigned_urls.find(
+            {"_id": {"$in": [file.filename for file in files]}}
+        )
 
-            if (
-                update_presigned_url
-                or not presigned_url
-                or (file_.expireAt and now >= file_.expireAt)
-            ):
-                exp = now + delta
-                presigned_url = await self.storage_ops.get_presigned_url(
-                    org, file_, self.presign_duration_seconds
-                )
+        presigned = await cursor.to_list(10000)
 
-                prefix = "files"
-                if qa_run_id:
-                    prefix = f"qaFinished.{qa_run_id}.{prefix}"
+        files_dict = [file.dict() for file in files]
 
-                await self.crawls.find_one_and_update(
-                    {f"{prefix}.filename": file_.filename},
-                    {
-                        "$set": {
-                            f"{prefix}.$.presignedUrl": presigned_url,
-                            f"{prefix}.$.expireAt": exp,
-                        }
-                    },
-                )
-                file_.expireAt = exp
+        # need an async generator to call bulk_presigned_files
+        async def async_gen():
+            yield {"presigned": presigned, "files": files_dict, "_id": crawl_id}
 
-            expire_at_str = ""
-            if file_.expireAt:
-                expire_at_str = date_to_str(file_.expireAt)
-
-            out_files.append(
-                CrawlFileOut(
-                    name=file_.filename,
-                    path=presigned_url or "",
-                    hash=file_.hash,
-                    size=file_.size,
-                    crawlId=crawl_id,
-                    numReplicas=len(file_.replicas) if file_.replicas else 0,
-                    expireAt=expire_at_str,
-                )
-            )
+        out_files, _ = await self.bulk_presigned_files(async_gen(), org, force_update)
 
         return out_files
+
+    async def get_presigned_files(
+        self, match: dict[str, Any], org: Organization
+    ) -> tuple[list[CrawlFileOut], bool]:
+        """return presigned crawl files queried as batch, merging presigns with files in one pass"""
+        cursor = self.crawls.aggregate(
+            [
+                {"$match": match},
+                {"$project": {"files": "$files", "version": 1}},
+                {
+                    "$lookup": {
+                        "from": "presigned_urls",
+                        "localField": "files.filename",
+                        "foreignField": "_id",
+                        "as": "presigned",
+                    }
+                },
+            ]
+        )
+
+        return await self.bulk_presigned_files(cursor, org)
+
+    async def bulk_presigned_files(
+        self,
+        cursor: AsyncIterable[dict[str, Any]],
+        org: Organization,
+        force_update=False,
+    ) -> tuple[list[CrawlFileOut], bool]:
+        """process presigned files in batches"""
+        resources = []
+        pages_optimized = False
+
+        sign_files = []
+
+        async for result in cursor:
+            pages_optimized = result.get("version") == 2
+
+            mapping = {}
+            # create mapping of filename -> file data
+            for file in result["files"]:
+                file["crawl_id"] = result["_id"]
+                mapping[file["filename"]] = file
+
+            if not force_update:
+                # add already presigned resources
+                for presigned in result["presigned"]:
+                    file = mapping.get(presigned["_id"])
+                    if file:
+                        file["signedAt"] = presigned["signedAt"]
+                        file["path"] = presigned["url"]
+                        resources.append(
+                            CrawlFileOut(
+                                name=os.path.basename(file["filename"]),
+                                path=presigned["url"],
+                                hash=file["hash"],
+                                size=file["size"],
+                                crawlId=file["crawl_id"],
+                                numReplicas=len(file.get("replicas") or []),
+                                expireAt=date_to_str(
+                                    presigned["signedAt"]
+                                    + self.storage_ops.signed_duration_delta
+                                ),
+                            )
+                        )
+
+                        del mapping[presigned["_id"]]
+
+            sign_files.extend(list(mapping.values()))
+
+        by_storage: dict[str, dict] = {}
+        for file in sign_files:
+            storage_ref = StorageRef(**file.get("storage"))
+            sid = str(storage_ref)
+
+            storage_group = by_storage.get(sid)
+            if not storage_group:
+                storage_group = {"ref": storage_ref, "names": [], "files": []}
+                by_storage[sid] = storage_group
+
+            storage_group["names"].append(file["filename"])
+            storage_group["files"].append(file)
+
+        for storage_group in by_storage.values():
+            s3storage = self.storage_ops.get_org_storage_by_ref(
+                org, storage_group["ref"]
+            )
+
+            signed_urls, expire_at = await self.storage_ops.get_presigned_urls_bulk(
+                org, s3storage, storage_group["names"]
+            )
+
+            for url, file in zip(signed_urls, storage_group["files"]):
+                resources.append(
+                    CrawlFileOut(
+                        name=os.path.basename(file["filename"]),
+                        path=url,
+                        hash=file["hash"],
+                        size=file["size"],
+                        crawlId=file["crawl_id"],
+                        numReplicas=len(file.get("replicas") or []),
+                        expireAt=date_to_str(expire_at),
+                    )
+                )
+
+        return resources, pages_optimized
 
     async def add_to_collection(
         self, crawl_ids: List[str], collection_id: UUID, org: Organization
@@ -535,11 +626,16 @@ class BaseCrawlOps:
                 {"$pull": {"collectionIds": collection_id}},
             )
 
-    async def remove_collection_from_all_crawls(self, collection_id: UUID):
+    async def remove_collection_from_all_crawls(
+        self, collection_id: UUID, org: Organization
+    ):
         """Remove collection id from all crawls it's currently in."""
-        await self.crawls.update_many(
-            {"collectionIds": collection_id},
-            {"$pull": {"collectionIds": collection_id}},
+        await asyncio.gather(
+            self.crawls.update_many(
+                {"oid": org.id, "collectionIds": collection_id},
+                {"$pull": {"collectionIds": collection_id}},
+            ),
+            self.crawl_configs.remove_collection_from_all_configs(collection_id, org),
         )
 
     # pylint: disable=too-many-branches, invalid-name, too-many-statements
@@ -591,7 +687,7 @@ class BaseCrawlOps:
             {"$match": query},
             {"$set": {"firstSeedObject": {"$arrayElemAt": ["$config.seeds", 0]}}},
             {"$set": {"firstSeed": "$firstSeedObject.url"}},
-            {"$unset": ["firstSeedObject", "errors", "config"]},
+            {"$unset": ["firstSeedObject", "errors", "behaviorLogs", "config"]},
             {"$set": {"activeQAStats": "$qa.stats"}},
             {
                 "$set": {
@@ -864,6 +960,21 @@ class BaseCrawlOps:
                 uploads_size += item_size
 
         return total_size, crawls_size, uploads_size
+
+    async def get_org_last_crawl_finished(self, oid: UUID) -> Optional[datetime]:
+        """Get last crawl finished time for org"""
+        last_crawl_finished: Optional[datetime] = None
+
+        cursor = (
+            self.crawls.find({"oid": oid, "finished": {"$ne": None}})
+            .sort({"finished": -1})
+            .limit(1)
+        )
+        last_crawl = await cursor.to_list(length=1)
+        if last_crawl:
+            last_crawl_finished = last_crawl[0].get("finished")
+
+        return last_crawl_finished
 
 
 # ============================================================================

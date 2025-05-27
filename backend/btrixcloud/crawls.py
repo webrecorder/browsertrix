@@ -1,4 +1,4 @@
-""" Crawl API """
+"""Crawl API"""
 
 # pylint: disable=too-many-lines
 
@@ -22,8 +22,9 @@ from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import (
     dt_now,
     date_to_str,
-    parse_jsonl_error_messages,
+    parse_jsonl_log_messages,
     stream_dict_list_as_csv,
+    validate_regexes,
 )
 from .basecrawls import BaseCrawlOps
 from .crawlmanager import CrawlManager
@@ -48,7 +49,7 @@ from .models import (
     Seed,
     PaginatedCrawlOutResponse,
     PaginatedSeedResponse,
-    PaginatedCrawlErrorResponse,
+    PaginatedCrawlLogResponse,
     RUNNING_AND_WAITING_STATES,
     SUCCESSFUL_STATES,
     NON_RUNNING_STATES,
@@ -185,7 +186,7 @@ class CrawlOps(BaseCrawlOps):
             {"$match": query},
             {"$set": {"firstSeedObject": {"$arrayElemAt": ["$config.seeds", 0]}}},
             {"$set": {"firstSeed": "$firstSeedObject.url"}},
-            {"$unset": ["firstSeedObject", "errors", "config"]},
+            {"$unset": ["firstSeedObject", "errors", "behaviorLogs", "config"]},
             {"$set": {"activeQAStats": "$qa.stats"}},
             {
                 "$set": {
@@ -381,6 +382,7 @@ class CrawlOps(BaseCrawlOps):
             crawlerChannel=crawlconfig.crawlerChannel,
             proxyId=crawlconfig.proxyId,
             image=image,
+            version=2,
         )
 
         try:
@@ -517,6 +519,9 @@ class CrawlOps(BaseCrawlOps):
         """add new exclusion to config or remove exclusion from config
         for given crawl_id, update config on crawl"""
 
+        if add:
+            validate_regexes([regex])
+
         crawl = await self.get_crawl(crawl_id, org)
 
         if crawl.state not in RUNNING_AND_WAITING_STATES:
@@ -539,6 +544,8 @@ class CrawlOps(BaseCrawlOps):
         new_config = await self.crawl_configs.add_or_remove_exclusion(
             regex, cid, org, user, add
         )
+
+        await self.crawl_manager.reload_running_crawl_config(crawl.id)
 
         await self.crawls.find_one_and_update(
             {"_id": crawl_id, "type": "crawl", "oid": org.id},
@@ -642,6 +649,13 @@ class CrawlOps(BaseCrawlOps):
             return None, None
         return res.get("state"), res.get("finished")
 
+    async def is_upload(self, crawl_id: str):
+        """return true if archived item with this id is an upload"""
+        res = await self.crawls.find_one({"_id": crawl_id}, projection={"type": 1})
+        if not res:
+            return False
+        return res.get("type") == "upload"
+
     async def add_crawl_error(
         self,
         crawl_id: str,
@@ -653,6 +667,17 @@ class CrawlOps(BaseCrawlOps):
 
         res = await self.crawls.find_one_and_update(
             {"_id": crawl_id}, {"$push": {f"{prefix}errors": error}}
+        )
+        return res is not None
+
+    async def add_crawl_behavior_log(
+        self,
+        crawl_id: str,
+        log_line: str,
+    ) -> bool:
+        """add crawl behavior log from redis to mongodb behaviorLogs field"""
+        res = await self.crawls.find_one_and_update(
+            {"_id": crawl_id}, {"$push": {"behaviorLogs": log_line}}
         )
         return res is not None
 
@@ -743,6 +768,39 @@ class CrawlOps(BaseCrawlOps):
             crawls_data.append(data)
 
         return crawls_data
+
+    async def pause_crawl(
+        self, crawl_id: str, org: Organization, pause: bool
+    ) -> Dict[str, bool]:
+        """pause or resume a crawl temporarily"""
+        crawl = await self.get_base_crawl(crawl_id, org)
+        if crawl and crawl.type != "crawl":
+            raise HTTPException(status_code=400, detail="not_a_crawl")
+
+        result = None
+
+        if pause:
+            paused_at = dt_now()
+        else:
+            paused_at = None
+
+        try:
+            result = await self.crawl_manager.pause_resume_crawl(
+                crawl_id, paused_at=paused_at
+            )
+
+            if result.get("success"):
+                await self.crawls.find_one_and_update(
+                    {"_id": crawl_id, "type": "crawl", "oid": org.id},
+                    {"$set": {"shouldPause": pause, "pausedAt": paused_at}},
+                )
+
+                return {"success": True}
+        # pylint: disable=bare-except
+        except:
+            pass
+
+        raise HTTPException(status_code=404, detail="crawl_not_found")
 
     async def shutdown_crawl(
         self, crawl_id: str, org: Organization, graceful: bool
@@ -918,7 +976,7 @@ class CrawlOps(BaseCrawlOps):
         """delete crawl qa wacz files"""
         qa_run = await self.get_qa_run(crawl_id, qa_run_id, org)
         for file_ in qa_run.files:
-            if not await self.storage_ops.delete_crawl_file_object(org, file_):
+            if not await self.storage_ops.delete_file_object(org, file_):
                 raise HTTPException(status_code=400, detail="file_deletion_error")
             # Not replicating QA run WACZs yet
             # await self.background_job_ops.create_delete_replica_jobs(
@@ -1012,9 +1070,7 @@ class CrawlOps(BaseCrawlOps):
             if not org:
                 raise HTTPException(status_code=400, detail="missing_org")
 
-        resources = await self.resolve_signed_urls(
-            qa_run.files, org, crawl.id, qa_run_id
-        )
+        resources = await self.resolve_signed_urls(qa_run.files, org, crawl.id)
 
         qa_run.files = []
 
@@ -1218,6 +1274,22 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
     )
     async def crawl_graceful_stop(crawl_id, org: Organization = Depends(org_crawl_dep)):
         return await ops.shutdown_crawl(crawl_id, org, graceful=True)
+
+    @app.post(
+        "/orgs/{oid}/crawls/{crawl_id}/pause",
+        tags=["crawls"],
+        response_model=SuccessResponse,
+    )
+    async def pause_crawl(crawl_id, org: Organization = Depends(org_crawl_dep)):
+        return await ops.pause_crawl(crawl_id, org, pause=True)
+
+    @app.post(
+        "/orgs/{oid}/crawls/{crawl_id}/resume",
+        tags=["crawls"],
+        response_model=SuccessResponse,
+    )
+    async def resume_crawl(crawl_id, org: Organization = Depends(org_crawl_dep)):
+        return await ops.pause_crawl(crawl_id, org, pause=False)
 
     @app.post(
         "/orgs/{oid}/crawls/delete",
@@ -1583,7 +1655,7 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
     @app.get(
         "/orgs/{oid}/crawls/{crawl_id}/errors",
         tags=["crawls"],
-        response_model=PaginatedCrawlErrorResponse,
+        response_model=PaginatedCrawlLogResponse,
     )
     async def get_crawl_errors(
         crawl_id: str,
@@ -1597,7 +1669,31 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
         upper_bound = skip + pageSize
 
         errors = crawl.errors[skip:upper_bound] if crawl.errors else []
-        parsed_errors = parse_jsonl_error_messages(errors)
+        parsed_errors = parse_jsonl_log_messages(errors)
         return paginated_format(parsed_errors, len(crawl.errors or []), page, pageSize)
+
+    @app.get(
+        "/orgs/{oid}/crawls/{crawl_id}/behaviorLogs",
+        tags=["crawls"],
+        response_model=PaginatedCrawlLogResponse,
+    )
+    async def get_crawl_behavior_logs(
+        crawl_id: str,
+        pageSize: int = DEFAULT_PAGE_SIZE,
+        page: int = 1,
+        org: Organization = Depends(org_viewer_dep),
+    ):
+        crawl = await ops.get_crawl(crawl_id, org)
+
+        skip = (page - 1) * pageSize
+        upper_bound = skip + pageSize
+
+        behavior_logs = (
+            crawl.behaviorLogs[skip:upper_bound] if crawl.behaviorLogs else []
+        )
+        parsed_logs = parse_jsonl_log_messages(behavior_logs)
+        return paginated_format(
+            parsed_logs, len(crawl.behaviorLogs or []), page, pageSize
+        )
 
     return ops

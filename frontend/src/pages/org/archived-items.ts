@@ -11,8 +11,8 @@ import queryString from "query-string";
 import type { ArchivedItem, Crawl, Workflow } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import { CopyButton } from "@/components/ui/copy-button";
-import type { PageChangeEvent } from "@/components/ui/pagination";
+import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
+import { ClipboardController } from "@/controllers/clipboard";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { pageHeader } from "@/layouts/pageHeader";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
@@ -76,8 +76,8 @@ const sortableFields: Record<
  * <btrix-archived-items></btrix-archived-items>
  * ```
  */
-@localized()
 @customElement("btrix-archived-items")
+@localized()
 export class CrawlsList extends BtrixElement {
   static FieldLabels: Record<SearchFields, string> = {
     name: msg("Name"),
@@ -92,7 +92,7 @@ export class CrawlsList extends BtrixElement {
 
   @state()
   private pagination: Required<APIPaginationQuery> = {
-    page: 1,
+    page: parsePage(new URLSearchParams(location.search).get("page")),
     pageSize: INITIAL_PAGE_SIZE,
   };
 
@@ -165,6 +165,7 @@ export class CrawlsList extends BtrixElement {
             ),
             variant: "danger",
             icon: "exclamation-octagon",
+            id: "archived-item-fetch-error",
           });
         }
         throw e;
@@ -263,29 +264,28 @@ export class CrawlsList extends BtrixElement {
     return html`
       <main>
         <div class="contents">
-          ${pageHeader(
-            msg("Archived Items"),
-            when(
-              this.isCrawler,
-              () => html`
-                <sl-tooltip
-                  content=${msg("Org Storage Full")}
-                  ?disabled=${!this.org?.storageQuotaReached}
-                >
-                  <sl-button
-                    size="small"
-                    variant="primary"
-                    @click=${() => (this.isUploadingArchive = true)}
-                    ?disabled=${isArchivingDisabled(this.org)}
+          ${pageHeader({
+            title: msg("Archived Items"),
+            actions: this.isCrawler
+              ? html`
+                  <sl-tooltip
+                    content=${msg("Org Storage Full")}
+                    ?disabled=${!this.org?.storageQuotaReached}
                   >
-                    <sl-icon slot="prefix" name="upload"></sl-icon>
-                    ${msg("Upload WACZ")}
-                  </sl-button>
-                </sl-tooltip>
-              `,
-            ),
-            tw`mb-3`,
-          )}
+                    <sl-button
+                      size="small"
+                      variant="primary"
+                      @click=${() => (this.isUploadingArchive = true)}
+                      ?disabled=${isArchivingDisabled(this.org)}
+                    >
+                      <sl-icon slot="prefix" name="upload"></sl-icon>
+                      ${msg("Upload WACZ")}
+                    </sl-button>
+                  </sl-tooltip>
+                `
+              : nothing,
+            classNames: tw`mb-3`,
+          })}
           <div class="mb-3 flex gap-2">
             ${listTypes.map(({ label, itemType, icon }) => {
               const isSelected = itemType === this.itemType;
@@ -598,6 +598,26 @@ export class CrawlsList extends BtrixElement {
           <sl-divider></sl-divider>
         `,
       )}
+      ${when(
+        isSuccessfullyFinished(item),
+        () => html`
+          <btrix-menu-item-link
+            href=${`/api/orgs/${this.orgId}/all-crawls/${item.id}/download?auth_bearer=${authToken}`}
+            download
+          >
+            <sl-icon name="cloud-download" slot="prefix"></sl-icon>
+            ${msg("Download Item")}
+            ${item.fileSize
+              ? html` <btrix-badge
+                  slot="suffix"
+                  class="font-monostyle text-xs text-neutral-500"
+                  >${this.localize.bytes(item.fileSize)}</btrix-badge
+                >`
+              : nothing}
+          </btrix-menu-item-link>
+          <sl-divider></sl-divider>
+        `,
+      )}
       ${item.type === "crawl"
         ? html`
             <sl-menu-item
@@ -609,36 +629,29 @@ export class CrawlsList extends BtrixElement {
               <sl-icon name="arrow-return-right" slot="prefix"></sl-icon>
               ${msg("Go to Workflow")}
             </sl-menu-item>
-            <sl-menu-item @click=${() => CopyButton.copyToClipboard(item.cid)}>
+            <sl-menu-item
+              @click=${() => ClipboardController.copyToClipboard(item.cid)}
+            >
               <sl-icon name="copy" slot="prefix"></sl-icon>
               ${msg("Copy Workflow ID")}
             </sl-menu-item>
-            <sl-menu-item @click=${() => CopyButton.copyToClipboard(item.id)}>
-              <sl-icon name="copy" slot="prefix"></sl-icon>
-              ${msg("Copy Crawl ID")}
-            </sl-menu-item>
           `
         : nothing}
+
       <sl-menu-item
-        @click=${() => CopyButton.copyToClipboard(item.tags.join(", "))}
+        @click=${() =>
+          ClipboardController.copyToClipboard(item.tags.join(", "))}
         ?disabled=${!item.tags.length}
       >
         <sl-icon name="tags" slot="prefix"></sl-icon>
         ${msg("Copy Tags")}
       </sl-menu-item>
-      ${when(
-        isSuccessfullyFinished(item),
-        () => html`
-          <sl-divider></sl-divider>
-          <btrix-menu-item-link
-            href=${`/api/orgs/${this.orgId}/all-crawls/${item.id}/download?auth_bearer=${authToken}`}
-            download
-          >
-            <sl-icon name="cloud-download" slot="prefix"></sl-icon>
-            ${msg("Download Item")}
-          </btrix-menu-item-link>
-        `,
-      )}
+      <sl-menu-item
+        @click=${() => ClipboardController.copyToClipboard(item.id)}
+      >
+        <sl-icon name="copy" slot="prefix"></sl-icon>
+        ${msg("Copy Item ID")}
+      </sl-menu-item>
       ${when(
         this.isCrawler && (item.type !== "crawl" || !isActive(item)),
         () => html`

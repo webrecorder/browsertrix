@@ -1,5 +1,5 @@
 import { localized, msg, str } from "@lit/localize";
-import clsx from "clsx";
+import clsx, { type ClassValue } from "clsx";
 import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -7,12 +7,11 @@ import { when } from "lit/directives/when.js";
 import capitalize from "lodash/fp/capitalize";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import { CopyButton } from "@/components/ui/copy-button";
 import { type Dialog } from "@/components/ui/dialog";
-import type { PageChangeEvent } from "@/components/ui/pagination";
-import { RelativeDuration } from "@/components/ui/relative-duration";
-import type { CrawlLog } from "@/features/archived-items/crawl-logs";
+import { ClipboardController } from "@/controllers/clipboard";
 import { pageBack, pageNav, type Breadcrumb } from "@/layouts/pageHeader";
+import { WorkflowTab } from "@/routes";
+import { tooltipFor } from "@/strings/archived-items/tooltips";
 import type { APIPaginatedList } from "@/types/api";
 import type {
   ArchivedItem,
@@ -54,8 +53,8 @@ const POLL_INTERVAL_SECONDS = 5;
  * <btrix-archived-item-detail></btrix-archived-item-detail>
  * ```
  */
-@localized()
 @customElement("btrix-archived-item-detail")
+@localized()
 export class ArchivedItemDetail extends BtrixElement {
   @property({ type: String })
   itemType: ArchivedItem["type"] = "crawl";
@@ -75,6 +74,9 @@ export class ArchivedItemDetail extends BtrixElement {
   @property({ type: Boolean })
   isCrawler = false;
 
+  @property({ type: String })
+  qaTab?: string;
+
   @state()
   private qaRunId?: string;
 
@@ -92,9 +94,6 @@ export class ArchivedItemDetail extends BtrixElement {
 
   @state()
   private seeds?: APIPaginatedList<Seed>;
-
-  @state()
-  private logs?: APIPaginatedList<CrawlLog>;
 
   @state()
   activeTab: SectionName = "overview";
@@ -119,14 +118,14 @@ export class ArchivedItemDetail extends BtrixElement {
     qa: msg("Quality Assurance"),
     replay: msg("Replay"),
     files: msg("WACZ Files"),
-    logs: msg("Error Logs"),
+    logs: msg("Logs"),
     config: msg("Crawl Settings"),
   };
 
   private get listUrl(): string {
     let path = "items";
     if (this.workflowId) {
-      path = `workflows/crawl/${this.workflowId}#crawls`;
+      path = `workflows/crawl/${this.workflowId}/${WorkflowTab.Crawls}`;
     } else if (this.collectionId) {
       path = `collections/view/${this.collectionId}/items`;
     } else if (this.item?.type === "upload") {
@@ -139,11 +138,6 @@ export class ArchivedItemDetail extends BtrixElement {
 
   private timerId?: number;
 
-  private get isActive(): boolean {
-    if (!this.item || this.item.type !== "crawl") return false;
-    return isActive(this.item);
-  }
-
   private get hasFiles(): boolean | null {
     if (!this.item) return null;
     if (!this.item.resources) return false;
@@ -154,21 +148,20 @@ export class ArchivedItemDetail extends BtrixElement {
   private get formattedFinishedDate() {
     if (!this.item) return;
 
-    return html`<sl-format-date
-      date=${this.item.finished}
+    return html`<btrix-format-date
+      date=${this.item.finished!}
       month="2-digit"
       day="2-digit"
-      year="2-digit"
+      year="numeric"
       hour="numeric"
       minute="numeric"
       time-zone-name="short"
-    ></sl-format-date>`;
+    ></btrix-format-date>`;
   }
 
   willUpdate(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("itemId") && this.itemId) {
       void this.fetchCrawl();
-      void this.fetchCrawlLogs();
       if (this.itemType === "crawl") {
         void this.fetchSeeds();
         void this.fetchQARuns();
@@ -198,6 +191,43 @@ export class ArchivedItemDetail extends BtrixElement {
     ) {
       if (!this.qaRunId) {
         this.qaRunId = this.mostRecentNonFailedQARun.id;
+      }
+    }
+
+    if (
+      this.itemType === "crawl" &&
+      changedProperties.has("item") &&
+      this.item
+    ) {
+      if (this.workflowId) {
+        if (this.item.type === "crawl" && isActive(this.item)) {
+          // Items can technically be "running" on the backend, but only
+          // workflows should be considered running by the frontend
+          this.navigate.to(
+            `${this.navigate.orgBasePath}/workflows/${this.item.cid}/${WorkflowTab.LatestCrawl}`,
+            undefined,
+            undefined,
+            true,
+          );
+        }
+      } else {
+        // If item is a crawl and workflow ID isn't set, redirect to item page with workflow prefix
+        if (this.qaTab) {
+          // QA review open
+          this.navigate.to(
+            `${this.navigate.orgBasePath}/workflows/${this.item.cid}/crawls/${this.item.id}/review/${this.qaTab}${location.search}`,
+            undefined,
+            undefined,
+            true,
+          );
+        } else {
+          this.navigate.to(
+            `${this.navigate.orgBasePath}/workflows/${this.item.cid}/crawls/${this.item.id}#${this.activeTab}`,
+            undefined,
+            undefined,
+            true,
+          );
+        }
       }
     }
   }
@@ -286,15 +316,15 @@ export class ArchivedItemDetail extends BtrixElement {
       case "files":
         sectionContent = this.renderPanel(
           html` ${this.renderTitle(this.tabLabels.files)}
-            <sl-tooltip content=${msg("Download all files as a single WACZ")}>
+            <sl-tooltip content=${tooltipFor.downloadMultWacz}>
               <sl-button
                 href=${`/api/orgs/${this.orgId}/all-crawls/${this.itemId}/download?auth_bearer=${authToken}`}
-                download
+                download=${`browsertrix-${this.itemId}.wacz`}
                 size="small"
                 variant="primary"
               >
                 <sl-icon slot="prefix" name="cloud-download"></sl-icon>
-                ${msg("Download as Multi-WACZ")}
+                ${msg("Download Files")}
               </sl-button>
             </sl-tooltip>`,
           this.renderFiles(),
@@ -303,15 +333,17 @@ export class ArchivedItemDetail extends BtrixElement {
       case "logs":
         sectionContent = this.renderPanel(
           html` ${this.renderTitle(this.tabLabels.logs)}
-            <sl-button
-              href=${`/api/orgs/${this.orgId}/crawls/${this.itemId}/logs?auth_bearer=${authToken}`}
-              download=${`btrix-${this.itemId}-logs.txt`}
-              size="small"
-              variant="primary"
-            >
-              <sl-icon slot="prefix" name="cloud-download"></sl-icon>
-              ${msg("Download Logs")}
-            </sl-button>`,
+            <sl-tooltip content=${tooltipFor.downloadLogs}>
+              <sl-button
+                href=${`/api/orgs/${this.orgId}/crawls/${this.itemId}/logs?auth_bearer=${authToken}`}
+                download=${`browsertrix-${this.itemId}-logs.log`}
+                size="small"
+                variant="primary"
+              >
+                <sl-icon slot="prefix" name="file-earmark-arrow-down"></sl-icon>
+                ${msg("Download Logs")}
+              </sl-button>
+            </sl-tooltip>`,
           this.renderLogs(),
         );
         break;
@@ -324,7 +356,7 @@ export class ArchivedItemDetail extends BtrixElement {
                 content=${msg("Workflow settings used to run this crawl")}
               >
                 <sl-icon
-                  class="text-base text-neutral-500"
+                  class="align-[-.175em] text-base text-neutral-500"
                   name="info-circle"
                 ></sl-icon>
               </sl-tooltip>
@@ -360,22 +392,12 @@ export class ArchivedItemDetail extends BtrixElement {
                   ${when(
                     this.isCrawler,
                     () => html`
-                      <sl-tooltip
-                        content=${msg(
-                          "Metadata cannot be edited while crawl is running.",
-                        )}
-                        ?disabled=${!this.isActive}
-                      >
-                        <sl-icon-button
-                          class=${`text-base${
-                            this.isActive ? " cursor-not-allowed" : ""
-                          }`}
-                          name="pencil"
-                          @click=${this.openMetadataEditor}
-                          label=${msg("Edit Metadata")}
-                          ?disabled=${this.isActive}
-                        ></sl-icon-button>
-                      </sl-tooltip>
+                      <sl-icon-button
+                        class="text-base"
+                        name="pencil"
+                        @click=${this.openMetadataEditor}
+                        label=${msg("Edit Metadata")}
+                      ></sl-icon-button>
                     `,
                   )}
                 `,
@@ -430,7 +452,7 @@ export class ArchivedItemDetail extends BtrixElement {
           content: this.workflow ? renderName(this.workflow) : undefined,
         },
         {
-          href: `${this.navigate.orgBasePath}/workflows/${this.item?.cid}#crawls`,
+          href: `${this.navigate.orgBasePath}/workflows/${this.item?.cid}/${WorkflowTab.Crawls}`,
           content: msg("Crawls"),
         },
       );
@@ -516,7 +538,7 @@ export class ArchivedItemDetail extends BtrixElement {
     };
     return html`
       <nav
-        class="sticky top-0 -mx-3 flex flex-row gap-2 overflow-x-auto px-3 pb-4 text-center md:mt-10 md:flex-col md:text-start"
+        class="sticky top-0 -mx-3 flex flex-row gap-2 overflow-x-auto px-3 pb-4 text-center md:flex-col md:text-start"
         role="menu"
       >
         ${renderNavItem({
@@ -569,24 +591,6 @@ export class ArchivedItemDetail extends BtrixElement {
       <header class="mb-3 flex flex-wrap gap-2 border-b pb-3">
         <btrix-detail-page-title .item=${this.item}></btrix-detail-page-title>
         <div class="ml-auto flex flex-wrap justify-end gap-2">
-          ${this.isActive
-            ? html`
-                <sl-button-group>
-                  <sl-button size="small" @click=${this.stop}>
-                    <sl-icon name="dash-square" slot="prefix"></sl-icon>
-                    <span> ${msg("Stop")} </span>
-                  </sl-button>
-                  <sl-button size="small" @click=${this.cancel}>
-                    <sl-icon
-                      class="text-danger"
-                      name="trash3"
-                      slot="prefix"
-                    ></sl-icon>
-                    <span class="text-danger"> ${msg("Cancel")} </span>
-                  </sl-button>
-                </sl-button-group>
-              `
-            : ""}
           ${this.isCrawler
             ? this.item
               ? this.renderMenu()
@@ -607,9 +611,7 @@ export class ArchivedItemDetail extends BtrixElement {
     return html`
       <sl-dropdown placement="bottom-end" distance="4" hoist>
         <sl-button slot="trigger" size="small" caret
-          >${this.isActive
-            ? html`<sl-icon name="three-dots"></sl-icon>`
-            : msg("Actions")}</sl-button
+          >${msg("Actions")}</sl-button
         >
         <sl-menu>
           ${when(
@@ -627,6 +629,26 @@ export class ArchivedItemDetail extends BtrixElement {
             `,
           )}
           ${when(
+            isSuccessfullyFinished(this.item),
+            () => html`
+              <btrix-menu-item-link
+                href=${`/api/orgs/${this.orgId}/all-crawls/${this.itemId}/download?auth_bearer=${authToken}`}
+                download
+              >
+                <sl-icon name="cloud-download" slot="prefix"></sl-icon>
+                ${msg("Download Item")}
+                ${this.item?.fileSize
+                  ? html` <btrix-badge
+                      slot="suffix"
+                      class="font-monostyle text-xs text-neutral-500"
+                      >${this.localize.bytes(this.item.fileSize)}</btrix-badge
+                    >`
+                  : nothing}
+              </btrix-menu-item-link>
+              <sl-divider></sl-divider>
+            `,
+          )}
+          ${when(
             this.itemType === "crawl",
             () => html`
               <sl-menu-item
@@ -639,7 +661,8 @@ export class ArchivedItemDetail extends BtrixElement {
                 ${msg("Go to Workflow")}
               </sl-menu-item>
               <sl-menu-item
-                @click=${() => CopyButton.copyToClipboard(this.item?.cid || "")}
+                @click=${() =>
+                  ClipboardController.copyToClipboard(this.item?.cid || "")}
               >
                 <sl-icon name="copy" slot="prefix"></sl-icon>
                 ${msg("Copy Workflow ID")}
@@ -648,28 +671,23 @@ export class ArchivedItemDetail extends BtrixElement {
           )}
           <sl-menu-item
             @click=${() =>
-              CopyButton.copyToClipboard(this.item!.tags.join(", "))}
+              ClipboardController.copyToClipboard(this.item!.tags.join(", "))}
             ?disabled=${!this.item.tags.length}
           >
             <sl-icon name="tags" slot="prefix"></sl-icon>
             ${msg("Copy Tags")}
           </sl-menu-item>
+          <sl-menu-item
+            @click=${() =>
+              ClipboardController.copyToClipboard(
+                this.item?.id ?? this.itemId ?? "",
+              )}
+          >
+            <sl-icon name="copy" slot="prefix"></sl-icon>
+            ${msg("Copy Item ID")}
+          </sl-menu-item>
           ${when(
-            isSuccessfullyFinished(this.item),
-            () => html`
-              <sl-divider></sl-divider>
-              <btrix-menu-item-link
-                href=${`/api/orgs/${this.orgId}/all-crawls/${this.itemId}/download?auth_bearer=${authToken}`}
-                download
-              >
-                <sl-icon name="cloud-download" slot="prefix"></sl-icon>
-                ${msg("Download Item")}
-              </btrix-menu-item-link>
-            `,
-          )}
-          ${when(
-            this.isCrawler &&
-              (this.item.type !== "crawl" || !isActive(this.item)),
+            this.isCrawler,
             () => html`
               <sl-divider></sl-divider>
               <sl-menu-item
@@ -686,9 +704,9 @@ export class ArchivedItemDetail extends BtrixElement {
     `;
   }
 
-  private renderTitle(title: string | TemplateResult<1>) {
+  private renderTitle(title: string | TemplateResult) {
     return html`<h2
-      class="flex items-center gap-2 text-lg font-semibold leading-8"
+      class="flex items-center gap-2 text-lg font-medium leading-8"
     >
       ${title}
     </h2>`;
@@ -697,7 +715,7 @@ export class ArchivedItemDetail extends BtrixElement {
   private renderPanel(
     heading: string | TemplateResult,
     content: TemplateResult | undefined,
-    classes: clsx.ClassValue[] = [],
+    classes: ClassValue[] = [],
   ) {
     const headingIsTitle = typeof heading === "string";
     return html`
@@ -740,9 +758,7 @@ export class ArchivedItemDetail extends BtrixElement {
             </div>`
           : html`
               <p class="p-4 text-sm text-neutral-400">
-                ${this.isActive
-                  ? msg("No files yet.")
-                  : msg("No files to replay.")}
+                ${msg("No files to replay.")}
               </p>
             `
       }
@@ -772,15 +788,15 @@ export class ArchivedItemDetail extends BtrixElement {
               `
             : html`
                 <btrix-desc-list-item label=${msg("Start Time")}>
-                  <sl-format-date
+                  <btrix-format-date
                     date=${this.item!.started}
                     month="2-digit"
                     day="2-digit"
-                    year="2-digit"
+                    year="numeric"
                     hour="numeric"
                     minute="numeric"
                     time-zone-name="short"
-                  ></sl-format-date>
+                  ></btrix-format-date>
                 </btrix-desc-list-item>
                 <btrix-desc-list-item label=${msg("Finish Time")}>
                   ${this.item!.finished
@@ -789,7 +805,7 @@ export class ArchivedItemDetail extends BtrixElement {
                 </btrix-desc-list-item>
                 <btrix-desc-list-item label=${msg("Elapsed Time")}>
                   ${this.item!.finished
-                    ? html`${RelativeDuration.humanize(
+                    ? html`${this.localize.humanizeDuration(
                         new Date(this.item!.finished).valueOf() -
                           new Date(this.item!.started).valueOf(),
                       )}`
@@ -825,34 +841,21 @@ export class ArchivedItemDetail extends BtrixElement {
                 </btrix-desc-list-item>
               `,
         )}
-
+        <btrix-desc-list-item label=${msg("Pages")}>
+          ${this.item
+            ? html`${this.localize.number(this.item.pageCount || 0)}
+              ${pluralOf("pages", this.item.pageCount || 0)}`
+            : html`<sl-skeleton class="h-[16px] w-24"></sl-skeleton>`}
+        </btrix-desc-list-item>
         <btrix-desc-list-item label=${msg("Size")}>
           ${this.item
             ? html`${this.item.fileSize
-                ? html`<sl-format-bytes
-                      value=${this.item.fileSize || 0}
-                      display="narrow"
-                    ></sl-format-bytes
-                    >${this.item.stats
-                      ? html`<span>,</span
-                          ><span
-                            class="tracking-tighter${this.isActive
-                              ? " text-violet-600"
-                              : ""} font-mono"
-                          >
-                            ${this.localize.number(+this.item.stats.done)}
-                            <span class="text-0-400">/</span>
-                            ${this.localize.number(+this.item.stats.found)}
-                          </span>
-                          <span
-                            >${pluralOf("pages", +this.item.stats.found)}</span
-                          >`
-                      : ""}`
+                ? this.localize.bytes(this.item.fileSize || 0)
                 : html`<span class="text-0-400">${msg("Unknown")}</span>`}`
             : html`<sl-skeleton class="h-[16px] w-24"></sl-skeleton>`}
         </btrix-desc-list-item>
         ${this.renderCrawlChannelVersion()}
-        <btrix-desc-list-item label=${msg("Crawl ID")}>
+        <btrix-desc-list-item label=${msg("Archived Item ID")}>
           ${this.item
             ? html`<btrix-copy-field
                 value="${this.item.id}"
@@ -983,7 +986,7 @@ ${this.item?.description}
                             ></sl-icon>
                           </sl-tooltip>`,
                       )}
-                      <sl-format-bytes value=${file.size}></sl-format-bytes>
+                      ${this.localize.bytes(Number(file.size))}
                     </div>
                   </li>
                 `,
@@ -992,40 +995,16 @@ ${this.item?.description}
           `
         : html`
             <p class="text-sm text-neutral-400">
-              ${this.isActive
-                ? msg("No files yet.")
-                : msg("No files to download.")}
+              ${msg("No files to download.")}
             </p>
           `}
     `;
   }
 
   private renderLogs() {
-    return html`
-      <div aria-live="polite" aria-busy=${!this.logs}>
-        ${when(this.logs, () =>
-          this.logs!.total
-            ? html`
-                <btrix-crawl-logs
-                  .logs=${this.logs}
-                  paginate
-                  @page-change=${async (e: PageChangeEvent) => {
-                    await this.fetchCrawlLogs({
-                      page: e.detail.page,
-                    });
-                    // Scroll to top of list
-                    this.scrollIntoView();
-                  }}
-                ></btrix-crawl-logs>
-              `
-            : html`<div class="rounded-lg border p-4">
-                <p class="text-sm text-neutral-400">
-                  ${msg("No error logs to display.")}
-                </p>
-              </div>`,
-        )}
-      </div>
-    `;
+    if (!this.itemId) return;
+
+    return html` <btrix-crawl-logs crawlId=${this.itemId}></btrix-crawl-logs> `;
   }
 
   private renderConfig() {
@@ -1186,6 +1165,7 @@ ${this.item?.description}
         message: msg("Sorry, couldn't retrieve crawl at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "archived-item-retrieve-error",
       });
     }
   }
@@ -1200,6 +1180,7 @@ ${this.item?.description}
         ),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "archived-item-retrieve-error",
       });
     }
   }
@@ -1217,6 +1198,7 @@ ${this.item?.description}
         message: msg("Sorry, couldn't load all crawl settings."),
         variant: "warning",
         icon: "exclamation-circle",
+        id: "archived-item-retrieve-error",
       });
     }
   }
@@ -1240,36 +1222,6 @@ ${this.item?.description}
     return this.api.fetch<Workflow>(`/orgs/${this.orgId}/crawlconfigs/${id}`);
   }
 
-  private async fetchCrawlLogs(
-    params: Partial<APIPaginatedList> = {},
-  ): Promise<void> {
-    if (this.itemType !== "crawl") {
-      return;
-    }
-    try {
-      this.logs = await this.getCrawlErrors(params);
-    } catch (e: unknown) {
-      console.debug(e);
-
-      this.notify.toast({
-        message: msg("Sorry, couldn't retrieve crawl logs at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-      });
-    }
-  }
-
-  private async getCrawlErrors(params: Partial<APIPaginatedList>) {
-    const page = params.page || this.logs?.page || 1;
-    const pageSize = params.pageSize || this.logs?.pageSize || 50;
-
-    const data = (await this.api.fetch)<APIPaginatedList<CrawlLog>>(
-      `/orgs/${this.orgId}/crawls/${this.itemId}/errors?page=${page}&pageSize=${pageSize}`,
-    );
-
-    return data;
-  }
-
   private async cancel() {
     if (window.confirm(msg("Are you sure you want to cancel the crawl?"))) {
       const data = await this.api.fetch<{ success: boolean }>(
@@ -1286,6 +1238,7 @@ ${this.item?.description}
           message: msg("Sorry, couldn't cancel crawl at this time."),
           variant: "danger",
           icon: "exclamation-octagon",
+          id: "crawl-stop-error",
         });
       }
     }
@@ -1307,6 +1260,7 @@ ${this.item?.description}
           message: msg("Sorry, couldn't stop crawl at this time."),
           variant: "danger",
           icon: "exclamation-octagon",
+          id: "crawl-stop-error",
         });
       }
     }
@@ -1346,6 +1300,7 @@ ${this.item?.description}
         message: msg(`Successfully deleted crawl`),
         variant: "success",
         icon: "check2-circle",
+        id: "crawl-stop-error",
       });
     } catch (e) {
       let message = msg(
@@ -1364,6 +1319,7 @@ ${this.item?.description}
         message: message,
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "archived-item-delete-status",
       });
     }
   }
@@ -1384,6 +1340,7 @@ ${this.item?.description}
         message: msg("Starting QA analysis..."),
         variant: "success",
         icon: "check2-circle",
+        id: "qa-start-status",
       });
     } catch (e: unknown) {
       let message = msg("Sorry, couldn't start QA run at this time.");
@@ -1398,6 +1355,7 @@ ${this.item?.description}
         message,
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "qa-start-status",
       });
     }
   }
@@ -1420,6 +1378,7 @@ ${this.item?.description}
         message: msg(`Stopping QA analysis...`),
         variant: "success",
         icon: "check2-circle",
+        id: "qa-stop-status",
       });
     } catch (e: unknown) {
       this.notify.toast({
@@ -1429,6 +1388,7 @@ ${this.item?.description}
             : msg("Sorry, couldn't stop crawl at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "qa-stop-status",
       });
     }
   }
@@ -1451,6 +1411,7 @@ ${this.item?.description}
         message: msg(`Canceling QA analysis...`),
         variant: "success",
         icon: "check2-circle",
+        id: "qa-stop-status",
       });
     } catch (e: unknown) {
       this.notify.toast({
@@ -1460,6 +1421,7 @@ ${this.item?.description}
             : msg("Sorry, couldn't cancel crawl at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "qa-stop-status",
       });
     }
   }
@@ -1472,6 +1434,7 @@ ${this.item?.description}
         message: msg("Sorry, couldn't retrieve archived item at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "archived-item-retrieve-error",
       });
     }
 

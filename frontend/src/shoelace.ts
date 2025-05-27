@@ -11,6 +11,7 @@ import "@shoelace-style/shoelace/dist/components/avatar/avatar";
 import "@shoelace-style/shoelace/dist/components/button/button";
 import "@shoelace-style/shoelace/dist/components/drawer/drawer";
 import "@shoelace-style/shoelace/dist/components/icon/icon";
+import "@shoelace-style/shoelace/dist/components/icon-button/icon-button";
 import "@shoelace-style/shoelace/dist/components/input/input";
 import "@shoelace-style/shoelace/dist/components/checkbox/checkbox";
 import "@shoelace-style/shoelace/dist/components/details/details";
@@ -31,61 +32,55 @@ import "@shoelace-style/shoelace/dist/components/progress-ring/progress-ring";
 import "@shoelace-style/shoelace/dist/components/visually-hidden/visually-hidden";
 
 import(
-  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/breadcrumb/breadcrumb"
+  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/breadcrumb/breadcrumb.js"
 );
 import(
-  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/breadcrumb-item/breadcrumb-item"
+  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/breadcrumb-item/breadcrumb-item.js"
 );
 import(
-  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/dialog/dialog"
+  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/dialog/dialog.js"
 );
 import(
-  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/divider/divider"
+  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/divider/divider.js"
 );
 import(
-  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/format-bytes/format-bytes"
+  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/menu/menu.js"
 );
 import(
-  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/format-date/format-date"
+  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/menu-item/menu-item.js"
 );
 import(
-  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/menu/menu"
+  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/menu-label/menu-label.js"
 );
 import(
-  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/menu-item/menu-item"
+  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/relative-time/relative-time.js"
 );
 import(
-  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/menu-label/menu-label"
+  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/skeleton/skeleton.js"
 );
 import(
-  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/relative-time/relative-time"
+  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/spinner/spinner.js"
 );
 import(
-  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/skeleton/skeleton"
+  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/tab/tab.js"
 );
 import(
-  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/spinner/spinner"
+  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/tab-group/tab-group.js"
 );
 import(
-  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/tab/tab"
+  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/tab-panel/tab-panel.js"
 );
 import(
-  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/tab-group/tab-group"
+  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/tooltip/tooltip.js"
 );
 import(
-  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/tab-panel/tab-panel"
+  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/popup/popup.js"
 );
 import(
-  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/tooltip/tooltip"
+  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/tree/tree.js"
 );
 import(
-  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/popup/popup"
-);
-import(
-  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/tree/tree"
-);
-import(
-  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/tree-item/tree-item"
+  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/tree-item/tree-item.js"
 );
 
 setBasePath("/shoelace");

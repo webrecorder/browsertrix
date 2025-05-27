@@ -9,8 +9,8 @@ import { animateTo, shimKeyframesHeightAuto } from "./animate";
 import { TailwindElement } from "@/classes/TailwindElement";
 import { tw } from "@/utils/tailwind";
 
-@localized()
 @customElement("btrix-qa-page-group")
+@localized()
 export class QaPageGroup extends TailwindElement {
   @property({ type: Boolean, reflect: true })
   expanded = false;

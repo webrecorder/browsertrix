@@ -5,6 +5,9 @@ Crawl-related models and types
 from datetime import datetime
 from enum import Enum, IntEnum
 from uuid import UUID
+import base64
+import hashlib
+import mimetypes
 import os
 
 from typing import Optional, List, Dict, Union, Literal, Any, get_args
@@ -21,6 +24,7 @@ from pydantic import (
     BeforeValidator,
     TypeAdapter,
 )
+from slugify import slugify
 
 # from fastapi_users import models as fastapi_users_models
 
@@ -28,6 +32,20 @@ from .db import BaseMongoModel
 
 # crawl scale for constraint
 MAX_CRAWL_SCALE = int(os.environ.get("MAX_CRAWL_SCALE", 3))
+
+# Presign duration must be less than 604800 seconds (one week),
+# so set this one minute short of a week
+PRESIGN_MINUTES_MAX = 10079
+PRESIGN_MINUTES_DEFAULT = PRESIGN_MINUTES_MAX
+
+# Expire duration seconds for presigned urls
+PRESIGN_DURATION_MINUTES = int(
+    os.environ.get("PRESIGN_DURATION_MINUTES") or PRESIGN_MINUTES_DEFAULT
+)
+PRESIGN_DURATION_SECONDS = min(PRESIGN_DURATION_MINUTES, PRESIGN_MINUTES_MAX) * 60
+
+# Minimum part size for file uploads
+MIN_UPLOAD_PART_SIZE = 10000000
 
 # annotated types
 # ============================================================================
@@ -195,20 +213,6 @@ class UserOrgInfoOut(BaseModel):
 
 
 # ============================================================================
-class UserOut(BaseModel):
-    """Output User model"""
-
-    id: UUID
-
-    name: str = ""
-    email: EmailStr
-    is_superuser: bool = False
-    is_verified: bool = False
-
-    orgs: List[UserOrgInfoOut]
-
-
-# ============================================================================
 
 ### CRAWL STATES
 
@@ -218,7 +222,9 @@ TYPE_RUNNING_STATES = Literal[
 ]
 RUNNING_STATES = get_args(TYPE_RUNNING_STATES)
 
-TYPE_WAITING_STATES = Literal["starting", "waiting_capacity", "waiting_org_limit"]
+TYPE_WAITING_STATES = Literal[
+    "starting", "waiting_capacity", "waiting_org_limit", "paused"
+]
 WAITING_STATES = get_args(TYPE_WAITING_STATES)
 
 TYPE_FAILED_STATES = Literal[
@@ -232,11 +238,13 @@ FAILED_STATES = get_args(TYPE_FAILED_STATES)
 TYPE_SUCCESSFUL_STATES = Literal[
     "complete",
     "stopped_by_user",
+    "stopped_pause_expired",
     "stopped_storage_quota_reached",
     "stopped_time_quota_reached",
     "stopped_org_readonly",
 ]
 SUCCESSFUL_STATES = get_args(TYPE_SUCCESSFUL_STATES)
+SUCCESSFUL_AND_PAUSED_STATES = ["paused", *SUCCESSFUL_STATES]
 
 TYPE_RUNNING_AND_WAITING_STATES = Literal[TYPE_WAITING_STATES, TYPE_RUNNING_STATES]
 RUNNING_AND_WAITING_STATES = [*WAITING_STATES, *RUNNING_STATES]
@@ -329,8 +337,12 @@ class RawCrawlConfig(BaseModel):
 
     logging: Optional[str] = None
     behaviors: Optional[str] = "autoscroll,autoplay,autofetch,siteSpecific"
+    customBehaviors: List[str] = []
 
     userAgent: Optional[str] = None
+
+    selectLinks: List[str] = ["a[href]->href"]
+    clickSelector: str = "a"
 
 
 # ============================================================================
@@ -470,6 +482,9 @@ class CrawlConfigOut(CrawlConfigCore, CrawlConfigAdditional):
     id: UUID
 
     lastCrawlStopping: Optional[bool] = False
+    lastCrawlShouldPause: Optional[bool] = False
+    lastCrawlPausedAt: Optional[datetime] = None
+    lastCrawlPausedExpiry: Optional[datetime] = None
     profileName: Optional[str] = None
     firstSeed: Optional[str] = None
     seedCount: int = 0
@@ -498,6 +513,7 @@ class UpdateCrawlConfig(BaseModel):
     description: Optional[str] = None
     autoAddCollections: Optional[List[UUID]] = None
     runNow: bool = False
+    updateRunning: bool = False
 
     # crawl data: revision tracked
     schedule: Optional[str] = None
@@ -535,6 +551,8 @@ class CrawlConfigDefaults(BaseModel):
 
     exclude: Optional[List[str]] = None
 
+    customBehaviors: List[str] = []
+
 
 # ============================================================================
 class CrawlConfigAddedResponse(BaseModel):
@@ -568,9 +586,10 @@ class CrawlConfigSearchValues(BaseModel):
 class CrawlConfigUpdateResponse(BaseModel):
     """Response model for updating crawlconfigs"""
 
-    updated: bool
+    updated: bool = True
     settings_changed: bool
     metadata_changed: bool
+    updatedRunning: bool = False
 
     storageQuotaReached: Optional[bool] = False
     execMinutesQuotaReached: Optional[bool] = False
@@ -587,6 +606,13 @@ class CrawlConfigDeletedResponse(BaseModel):
 
 
 # ============================================================================
+class ValidateCustomBehavior(BaseModel):
+    """Input model for validating custom behavior URL/Git reference"""
+
+    customBehavior: str
+
+
+# ============================================================================
 
 ### CRAWLER VERSIONS ###
 
@@ -597,6 +623,7 @@ class CrawlerChannel(BaseModel):
 
     id: str
     image: str
+    imagePullPolicy: Optional[str] = None
 
 
 # ============================================================================
@@ -681,6 +708,16 @@ class StorageRef(BaseModel):
 
 
 # ============================================================================
+class PresignedUrl(BaseMongoModel):
+    """Base model for presigned url"""
+
+    id: str
+    url: str
+    oid: UUID
+    signedAt: datetime
+
+
+# ============================================================================
 class BaseFile(BaseModel):
     """Base model for crawl and profile files"""
 
@@ -695,9 +732,6 @@ class BaseFile(BaseModel):
 # ============================================================================
 class CrawlFile(BaseFile):
     """file from a crawl"""
-
-    presignedUrl: Optional[str] = None
-    expireAt: Optional[datetime] = None
 
 
 # ============================================================================
@@ -750,6 +784,7 @@ class CoreCrawlable(BaseModel):
     fileCount: int = 0
 
     errors: Optional[List[str]] = []
+    behaviorLogs: Optional[List[str]] = []
 
 
 # ============================================================================
@@ -770,6 +805,15 @@ class BaseCrawl(CoreCrawlable, BaseMongoModel):
     collectionIds: Optional[List[UUID]] = []
 
     reviewStatus: ReviewStatus = None
+
+    pageCount: Optional[int] = 0
+    uniquePageCount: Optional[int] = 0
+
+    filePageCount: Optional[int] = 0
+    errorPageCount: Optional[int] = 0
+
+    isMigrating: Optional[bool] = None
+    version: Optional[int] = None
 
 
 # ============================================================================
@@ -812,6 +856,7 @@ class CrawlOut(BaseMongoModel):
     tags: Optional[List[str]] = []
 
     errors: Optional[List[str]] = []
+    behaviorLogs: Optional[List[str]] = []
 
     collectionIds: Optional[List[UUID]] = []
 
@@ -825,6 +870,8 @@ class CrawlOut(BaseMongoModel):
     seedCount: Optional[int] = None
     profileName: Optional[str] = None
     stopping: Optional[bool] = False
+    shouldPause: Optional[bool] = False
+    pausedAt: Optional[datetime] = None
     manual: bool = False
     cid_rev: Optional[int] = None
     scale: Scale = 1
@@ -843,16 +890,14 @@ class CrawlOut(BaseMongoModel):
     lastQAState: Optional[str] = None
     lastQAStarted: Optional[datetime] = None
 
+    pageCount: Optional[int] = 0
+    uniquePageCount: Optional[int] = 0
     filePageCount: Optional[int] = 0
     errorPageCount: Optional[int] = 0
 
-
-# ============================================================================
-class CrawlOutWithResources(CrawlOut):
-    """Crawl output model including resources"""
-
-    resources: Optional[List[CrawlFileOut]] = []
-    collections: Optional[List[CollIdName]] = []
+    # Set to older version by default, crawls with optimized
+    # pages will have this explicitly set to 2
+    version: Optional[int] = 1
 
 
 # ============================================================================
@@ -981,14 +1026,12 @@ class Crawl(BaseCrawl, CrawlConfigCore):
     manual: bool = False
 
     stopping: Optional[bool] = False
+    shouldPause: Optional[bool] = False
 
     qaCrawlExecSeconds: int = 0
 
     qa: Optional[QARun] = None
     qaFinished: Optional[Dict[str, QARun]] = {}
-
-    filePageCount: Optional[int] = 0
-    errorPageCount: Optional[int] = 0
 
 
 # ============================================================================
@@ -1014,8 +1057,8 @@ class CrawlScaleResponse(BaseModel):
 
 
 # ============================================================================
-class CrawlError(BaseModel):
-    """Crawl error"""
+class CrawlLogMessage(BaseModel):
+    """Crawl log message"""
 
     timestamp: str
     logLevel: str
@@ -1043,27 +1086,393 @@ class UpdateUpload(UpdateCrawl):
 
 
 # ============================================================================
+class FilePreparer:
+    """wrapper to compute digest / name for streaming upload"""
+
+    def __init__(self, prefix, filename):
+        self.upload_size = 0
+        self.upload_hasher = hashlib.sha256()
+        self.upload_name = prefix + "-" + self.prepare_filename(filename)
+
+    def add_chunk(self, chunk):
+        """add chunk for file"""
+        self.upload_size += len(chunk)
+        self.upload_hasher.update(chunk)
+
+    def get_crawl_file(self, storage: StorageRef):
+        """get crawl file"""
+        return CrawlFile(
+            filename=self.upload_name,
+            hash=self.upload_hasher.hexdigest(),
+            size=self.upload_size,
+            storage=storage,
+        )
+
+    def prepare_filename(self, filename):
+        """prepare filename by sanitizing and adding extra string
+        to avoid duplicates"""
+        name, ext = os.path.splitext(filename)
+        name = slugify(name.rsplit("/", 1)[-1])
+        randstr = base64.b32encode(os.urandom(5)).lower()
+        return name + "-" + randstr.decode("utf-8") + ext
+
+
+# ============================================================================
+
+### USER-UPLOADED IMAGES ###
+
+
+# ============================================================================
+class ImageFileOut(BaseModel):
+    """output for user-upload imaged file (conformance to Data Resource Spec)"""
+
+    name: str
+    path: str
+    hash: str
+    size: int
+
+    originalFilename: str
+    mime: str
+    userid: UUID
+    userName: str
+    created: datetime
+
+
+# ============================================================================
+class PublicImageFileOut(BaseModel):
+    """public output for user-upload imaged file (conformance to Data Resource Spec)"""
+
+    name: str
+    path: str
+    hash: str
+    size: int
+
+    mime: str
+
+
+# ============================================================================
+class ImageFile(BaseFile):
+    """User-uploaded image file"""
+
+    originalFilename: str
+    mime: str
+    userid: UUID
+    userName: str
+    created: datetime
+
+    async def get_image_file_out(self, org, storage_ops) -> ImageFileOut:
+        """Get ImageFileOut with new presigned url"""
+        presigned_url, _ = await storage_ops.get_presigned_url(org, self)
+
+        return ImageFileOut(
+            name=self.filename,
+            path=presigned_url or "",
+            hash=self.hash,
+            size=self.size,
+            originalFilename=self.originalFilename,
+            mime=self.mime,
+            userid=self.userid,
+            userName=self.userName,
+            created=self.created,
+        )
+
+    async def get_public_image_file_out(self, org, storage_ops) -> PublicImageFileOut:
+        """Get PublicImageFileOut with new presigned url"""
+        presigned_url, _ = await storage_ops.get_presigned_url(org, self)
+
+        return PublicImageFileOut(
+            name=self.filename,
+            path=presigned_url or "",
+            hash=self.hash,
+            size=self.size,
+            mime=self.mime,
+        )
+
+
+# ============================================================================
+class ImageFilePreparer(FilePreparer):
+    """Wrapper for user image streaming uploads"""
+
+    # pylint: disable=too-many-arguments, too-many-function-args
+
+    def __init__(
+        self,
+        prefix,
+        filename,
+        original_filename: str,
+        user: User,
+        created: datetime,
+    ):
+        super().__init__(prefix, filename)
+
+        self.original_filename = original_filename
+        self.mime, _ = mimetypes.guess_type(original_filename) or ("image/jpeg", None)
+        self.userid = user.id
+        self.user_name = user.name
+        self.created = created
+
+    def get_image_file(
+        self,
+        storage: StorageRef,
+    ) -> ImageFile:
+        """get user-uploaded image file"""
+        return ImageFile(
+            filename=self.upload_name,
+            hash=self.upload_hasher.hexdigest(),
+            size=self.upload_size,
+            storage=storage,
+            originalFilename=self.original_filename,
+            mime=self.mime,
+            userid=self.userid,
+            userName=self.user_name,
+            created=self.created,
+        )
+
+
+# ============================================================================
+
+### PAGES ###
+
+
+# ============================================================================
+class PageReviewUpdate(BaseModel):
+    """Update model for page manual review/approval"""
+
+    approved: Optional[bool] = None
+
+
+# ============================================================================
+class PageNoteIn(BaseModel):
+    """Input model for adding page notes"""
+
+    text: str
+
+
+# ============================================================================
+class PageNoteEdit(BaseModel):
+    """Input model for editing page notes"""
+
+    id: UUID
+    text: str
+
+
+# ============================================================================
+class PageNoteDelete(BaseModel):
+    """Delete model for page notes"""
+
+    delete_list: List[UUID] = []
+
+
+# ============================================================================
+class PageNote(BaseModel):
+    """Model for page notes, tracking user and time"""
+
+    id: UUID
+    text: str
+    created: datetime
+    userid: UUID
+    userName: str
+
+
+# ============================================================================
+class PageQACompare(BaseModel):
+    """Model for updating pages from QA run"""
+
+    screenshotMatch: Optional[float] = None
+    textMatch: Optional[float] = None
+    resourceCounts: Optional[Dict[str, int]] = None
+
+
+# ============================================================================
+class Page(BaseMongoModel):
+    """Core page data, no QA"""
+
+    id: UUID
+
+    oid: UUID
+    crawl_id: str
+
+    # core page data
+    url: AnyHttpUrl
+    title: Optional[str] = None
+    ts: Optional[datetime] = None
+    loadState: Optional[int] = None
+    status: Optional[int] = None
+    mime: Optional[str] = None
+    filename: Optional[str] = None
+    depth: Optional[int] = None
+    favIconUrl: Optional[str] = None
+    isSeed: Optional[bool] = False
+
+    # manual review
+    userid: Optional[UUID] = None
+    modified: Optional[datetime] = None
+    approved: Optional[bool] = None
+    notes: List[PageNote] = []
+
+    isFile: Optional[bool] = False
+    isError: Optional[bool] = False
+
+    def compute_page_type(self):
+        """sets self.isFile or self.isError flags"""
+        self.isFile = False
+        self.isError = False
+        if self.loadState == 2:
+            # pylint: disable=unsupported-membership-test
+            if self.mime and "html" not in self.mime:
+                self.isFile = True
+            elif self.title is None and self.status == 200:
+                self.isFile = True
+
+        elif self.loadState == 0:
+            self.isError = True
+
+
+# ============================================================================
+class PageWithAllQA(Page):
+    """Model for core page data + qa"""
+
+    # automated heuristics, keyed by QA run id
+    qa: Optional[Dict[str, PageQACompare]] = {}
+
+
+# ============================================================================
+class PageOut(Page):
+    """Model for pages output, no QA"""
+
+    status: int = 200
+
+
+# ============================================================================
+class PageOutWithSingleQA(Page):
+    """Page out with single QA entry"""
+
+    qa: Optional[PageQACompare] = None
+
+
+# ============================================================================
+class PageNoteAddedResponse(BaseModel):
+    """Model for response to adding page"""
+
+    added: bool
+    data: PageNote
+
+
+# ============================================================================
+class PageNoteUpdatedResponse(BaseModel):
+    """Model for response to updating page"""
+
+    updated: bool
+    data: PageNote
+
+
+# ============================================================================
+class PageIdTimestamp(BaseModel):
+    """Simplified model for page info to include in PageUrlCount"""
+
+    pageId: UUID
+    ts: Optional[datetime] = None
+    status: int = 200
+
+
+# ============================================================================
+class PageUrlCount(BaseModel):
+    """Model for counting pages by URL"""
+
+    url: AnyHttpUrl
+    count: int = 0
+    snapshots: List[PageIdTimestamp] = []
+
+
+# ============================================================================
+class CrawlOutWithResources(CrawlOut):
+    """Crawl output model including resources"""
+
+    resources: Optional[List[CrawlFileOut]] = []
+    collections: Optional[List[CollIdName]] = []
+
+    initialPages: List[PageOut] = []
+    pagesQueryUrl: str = ""
+    downloadUrl: Optional[str] = None
+
+
+# ============================================================================
 
 ### COLLECTIONS ###
+
+
+# ============================================================================
+class CollAccessType(str, Enum):
+    """Collection access types"""
+
+    PRIVATE = "private"
+    UNLISTED = "unlisted"
+    PUBLIC = "public"
+
+
+# ============================================================================
+class CollectionThumbnailSource(BaseModel):
+    """The page source for a thumbnail"""
+
+    url: AnyHttpUrl
+    urlTs: datetime
+    urlPageId: UUID
+
+
+# ============================================================================
+class PreloadResource(BaseModel):
+    """Resources that will preloaded in RWP"""
+
+    name: str
+    crawlId: str
+
+
+# ============================================================================
+class HostCount(BaseModel):
+    """Host Count"""
+
+    host: str
+    count: int
 
 
 # ============================================================================
 class Collection(BaseMongoModel):
     """Org collection structure"""
 
+    id: UUID
     name: str = Field(..., min_length=1)
+    slug: str = Field(..., min_length=1)
     oid: UUID
     description: Optional[str] = None
+    caption: Optional[str] = None
+
+    created: Optional[datetime] = None
     modified: Optional[datetime] = None
 
     crawlCount: Optional[int] = 0
     pageCount: Optional[int] = 0
+    uniquePageCount: Optional[int] = 0
     totalSize: Optional[int] = 0
+
+    dateEarliest: Optional[datetime] = None
+    dateLatest: Optional[datetime] = None
 
     # Sorted by count, descending
     tags: Optional[List[str]] = []
 
-    isPublic: Optional[bool] = False
+    access: CollAccessType = CollAccessType.PRIVATE
+
+    homeUrl: Optional[AnyHttpUrl] = None
+    homeUrlTs: Optional[datetime] = None
+    homeUrlPageId: Optional[UUID] = None
+
+    thumbnail: Optional[ImageFile] = None
+    thumbnailSource: Optional[CollectionThumbnailSource] = None
+    defaultThumbnailName: Optional[str] = None
+
+    allowPublicDownload: Optional[bool] = True
+
+    previousSlugs: List[str] = []
 
 
 # ============================================================================
@@ -1071,17 +1480,97 @@ class CollIn(BaseModel):
     """Collection Passed in By User"""
 
     name: str = Field(..., min_length=1)
+    slug: Optional[str] = None
     description: Optional[str] = None
+    caption: Optional[str] = None
     crawlIds: Optional[List[str]] = []
 
-    isPublic: bool = False
+    access: CollAccessType = CollAccessType.PRIVATE
+
+    defaultThumbnailName: Optional[str] = None
+    allowPublicDownload: bool = True
 
 
 # ============================================================================
-class CollOut(Collection):
+class CollOut(BaseMongoModel):
     """Collection output model with annotations."""
 
+    id: UUID
+    name: str
+    slug: str
+    oid: UUID
+    description: Optional[str] = None
+    caption: Optional[str] = None
+    created: Optional[datetime] = None
+    modified: Optional[datetime] = None
+
+    crawlCount: Optional[int] = 0
+    pageCount: Optional[int] = 0
+    uniquePageCount: Optional[int] = 0
+    totalSize: Optional[int] = 0
+
+    dateEarliest: Optional[datetime] = None
+    dateLatest: Optional[datetime] = None
+
+    # Sorted by count, descending
+    tags: Optional[List[str]] = []
+
+    access: CollAccessType = CollAccessType.PRIVATE
+
+    homeUrl: Optional[AnyHttpUrl] = None
+    homeUrlTs: Optional[datetime] = None
+    homeUrlPageId: Optional[UUID] = None
+
     resources: List[CrawlFileOut] = []
+    thumbnail: Optional[ImageFileOut] = None
+    thumbnailSource: Optional[CollectionThumbnailSource] = None
+    defaultThumbnailName: Optional[str] = None
+
+    allowPublicDownload: bool = True
+
+    initialPages: List[PageOut] = []
+    preloadResources: List[PreloadResource] = []
+    pagesQueryUrl: str = ""
+    downloadUrl: Optional[str] = None
+
+    topPageHosts: List[HostCount] = []
+
+
+# ============================================================================
+class PublicCollOut(BaseMongoModel):
+    """Collection output model with annotations."""
+
+    id: UUID
+    name: str
+    slug: str
+    oid: UUID
+    orgName: str
+    orgPublicProfile: bool
+    description: Optional[str] = None
+    caption: Optional[str] = None
+    created: Optional[datetime] = None
+    modified: Optional[datetime] = None
+
+    crawlCount: Optional[int] = 0
+    pageCount: Optional[int] = 0
+    uniquePageCount: Optional[int] = 0
+    totalSize: Optional[int] = 0
+
+    dateEarliest: Optional[datetime] = None
+    dateLatest: Optional[datetime] = None
+
+    access: CollAccessType = CollAccessType.PUBLIC
+
+    homeUrl: Optional[AnyHttpUrl] = None
+    homeUrlTs: Optional[datetime] = None
+
+    resources: List[CrawlFileOut] = []
+    thumbnail: Optional[PublicImageFileOut] = None
+    defaultThumbnailName: Optional[str] = None
+
+    allowPublicDownload: bool = True
+
+    topPageHosts: List[HostCount] = []
 
 
 # ============================================================================
@@ -1089,8 +1578,20 @@ class UpdateColl(BaseModel):
     """Update collection"""
 
     name: Optional[str] = None
+    slug: Optional[str] = None
     description: Optional[str] = None
-    isPublic: Optional[bool] = None
+    caption: Optional[str] = None
+    access: Optional[CollAccessType] = None
+    defaultThumbnailName: Optional[str] = None
+    allowPublicDownload: Optional[bool] = None
+    thumbnailSource: Optional[CollectionThumbnailSource] = None
+
+
+# ============================================================================
+class UpdateCollHomeUrl(BaseModel):
+    """Update home url for collection"""
+
+    pageId: Optional[UUID] = None
 
 
 # ============================================================================
@@ -1105,6 +1606,13 @@ class CollectionSearchValuesResponse(BaseModel):
     """Response model for collections search values"""
 
     names: List[str]
+
+
+# ============================================================================
+class CollectionAllResponse(BaseModel):
+    """Response model for '$all' collection endpoint"""
+
+    resources: List[CrawlFileOut] = []
 
 
 # ============================================================================
@@ -1136,6 +1644,24 @@ class RenameOrg(BaseModel):
 
 
 # ============================================================================
+class PublicOrgDetails(BaseModel):
+    """Model for org details that are available in public profile"""
+
+    name: str
+    description: str = ""
+    url: str = ""
+
+
+# ============================================================================
+class OrgPublicCollections(BaseModel):
+    """Model for listing public collections in org"""
+
+    org: PublicOrgDetails
+
+    collections: List[PublicCollOut] = []
+
+
+# ============================================================================
 class OrgStorageRefs(BaseModel):
     """Input model for setting primary storage + optional replicas"""
 
@@ -1157,6 +1683,7 @@ class S3StorageIn(BaseModel):
     endpoint_url: str
     bucket: str
     access_endpoint_url: Optional[str] = None
+    access_addressing_style: Literal["virtual", "path"] = "virtual"
     region: str = ""
 
 
@@ -1171,8 +1698,8 @@ class S3Storage(BaseModel):
     access_key: str
     secret_key: str
     access_endpoint_url: str
+    access_addressing_style: Literal["virtual", "path"] = "virtual"
     region: str = ""
-    use_access_for_presign: bool = True
 
 
 # ============================================================================
@@ -1332,6 +1859,36 @@ class SubscriptionCanceledResponse(BaseModel):
 
 
 # ============================================================================
+# User Org Info With Subs
+# ============================================================================
+class UserOrgInfoOutWithSubs(UserOrgInfoOut):
+    """org per user with sub info"""
+
+    readOnly: bool
+    readOnlyReason: Optional[str] = None
+
+    subscription: Optional[Subscription] = None
+
+
+# ============================================================================
+class UserOutNoId(BaseModel):
+    """Output User Model, no ID"""
+
+    name: str = ""
+    email: EmailStr
+    orgs: List[UserOrgInfoOut | UserOrgInfoOutWithSubs]
+    is_verified: bool = False
+
+
+# ============================================================================
+class UserOut(UserOutNoId):
+    """Output User Model"""
+
+    id: UUID
+    is_superuser: bool = False
+
+
+# ============================================================================
 # ORGS
 # ============================================================================
 class OrgReadOnlyOnCancel(BaseModel):
@@ -1362,6 +1919,15 @@ class OrgReadOnlyUpdate(BaseModel):
 
     readOnly: bool
     readOnlyReason: Optional[str] = None
+
+
+# ============================================================================
+class OrgPublicProfileUpdate(BaseModel):
+    """Organization enablePublicProfile update"""
+
+    enablePublicProfile: Optional[bool] = None
+    publicDescription: Optional[str] = None
+    publicUrl: Optional[str] = None
 
 
 # ============================================================================
@@ -1432,6 +1998,12 @@ class OrgOut(BaseMongoModel):
     allowedProxies: list[str] = []
     crawlingDefaults: Optional[CrawlConfigDefaults] = None
 
+    lastCrawlFinished: Optional[datetime] = None
+
+    enablePublicProfile: bool = False
+    publicDescription: str = ""
+    publicUrl: str = ""
+
 
 # ============================================================================
 class Organization(BaseMongoModel):
@@ -1487,6 +2059,12 @@ class Organization(BaseMongoModel):
     allowedProxies: list[str] = []
     crawlingDefaults: Optional[CrawlConfigDefaults] = None
 
+    lastCrawlFinished: Optional[datetime] = None
+
+    enablePublicProfile: bool = False
+    publicDescription: Optional[str] = None
+    publicUrl: Optional[str] = None
+
     def is_owner(self, user):
         """Check if user is owner"""
         return self._is_auth(user, UserRole.OWNER)
@@ -1540,10 +2118,14 @@ class Organization(BaseMongoModel):
                 if not role:
                     continue
 
-                result["users"][id_] = {
+                email = org_user.get("email")
+                if not email:
+                    continue
+
+                result["users"][email] = {
                     "role": role,
                     "name": org_user.get("name", ""),
-                    "email": org_user.get("email", ""),
+                    "email": email,
                 }
 
         return OrgOut.from_dict(result)
@@ -1596,6 +2178,8 @@ class OrgMetrics(BaseModel):
     crawlCount: int
     uploadCount: int
     pageCount: int
+    crawlPageCount: int
+    uploadPageCount: int
     profileCount: int
     workflowsRunningCount: int
     maxConcurrentCrawls: int
@@ -2015,6 +2599,8 @@ class BgJobType(str, Enum):
     DELETE_REPLICA = "delete-replica"
     DELETE_ORG = "delete-org"
     RECALCULATE_ORG_STATS = "recalculate-org-stats"
+    READD_ORG_PAGES = "readd-org-pages"
+    OPTIMIZE_PAGES = "optimize-pages"
 
 
 # ============================================================================
@@ -2023,7 +2609,7 @@ class BackgroundJob(BaseMongoModel):
 
     id: str
     type: BgJobType
-    oid: UUID
+    oid: Optional[UUID] = None
     success: Optional[bool] = None
     started: datetime
     finished: Optional[datetime] = None
@@ -2051,6 +2637,7 @@ class DeleteReplicaJob(BackgroundJob):
     object_type: str
     object_id: str
     replica_storage: StorageRef
+    schedule: Optional[str] = None
 
 
 # ============================================================================
@@ -2068,6 +2655,22 @@ class RecalculateOrgStatsJob(BackgroundJob):
 
 
 # ============================================================================
+class ReAddOrgPagesJob(BackgroundJob):
+    """Model for tracking jobs to readd pages for an org or single crawl"""
+
+    type: Literal[BgJobType.READD_ORG_PAGES] = BgJobType.READD_ORG_PAGES
+    crawl_type: Optional[str] = None
+    crawl_id: Optional[str] = None
+
+
+# ============================================================================
+class OptimizePagesJob(BackgroundJob):
+    """Model for tracking jobs to optimize pages across all orgs"""
+
+    type: Literal[BgJobType.OPTIMIZE_PAGES] = BgJobType.OPTIMIZE_PAGES
+
+
+# ============================================================================
 # Union of all job types, for response model
 
 AnyJob = RootModel[
@@ -2077,141 +2680,10 @@ AnyJob = RootModel[
         BackgroundJob,
         DeleteOrgJob,
         RecalculateOrgStatsJob,
+        ReAddOrgPagesJob,
+        OptimizePagesJob,
     ]
 ]
-
-
-# ============================================================================
-
-### PAGES ###
-
-
-# ============================================================================
-class PageReviewUpdate(BaseModel):
-    """Update model for page manual review/approval"""
-
-    approved: Optional[bool] = None
-
-
-# ============================================================================
-class PageNoteIn(BaseModel):
-    """Input model for adding page notes"""
-
-    text: str
-
-
-# ============================================================================
-class PageNoteEdit(BaseModel):
-    """Input model for editing page notes"""
-
-    id: UUID
-    text: str
-
-
-# ============================================================================
-class PageNoteDelete(BaseModel):
-    """Delete model for page notes"""
-
-    delete_list: List[UUID] = []
-
-
-# ============================================================================
-class PageNote(BaseModel):
-    """Model for page notes, tracking user and time"""
-
-    id: UUID
-    text: str
-    created: datetime
-    userid: UUID
-    userName: str
-
-
-# ============================================================================
-class PageQACompare(BaseModel):
-    """Model for updating pages from QA run"""
-
-    screenshotMatch: Optional[float] = None
-    textMatch: Optional[float] = None
-    resourceCounts: Optional[Dict[str, int]] = None
-
-
-# ============================================================================
-class Page(BaseMongoModel):
-    """Core page data, no QA"""
-
-    id: UUID
-
-    oid: UUID
-    crawl_id: str
-
-    # core page data
-    url: AnyHttpUrl
-    title: Optional[str] = None
-    ts: Optional[datetime] = None
-    loadState: Optional[int] = None
-    status: Optional[int] = None
-    mime: Optional[str] = None
-
-    # manual review
-    userid: Optional[UUID] = None
-    modified: Optional[datetime] = None
-    approved: Optional[bool] = None
-    notes: List[PageNote] = []
-
-    isFile: Optional[bool] = False
-    isError: Optional[bool] = False
-
-    def compute_page_type(self):
-        """sets self.isFile or self.isError flags"""
-        self.isFile = False
-        self.isError = False
-        if self.loadState == 2:
-            # pylint: disable=unsupported-membership-test
-            if self.mime and "html" not in self.mime:
-                self.isFile = True
-            elif self.title is None and self.status == 200:
-                self.isFile = True
-
-        elif self.loadState == 0:
-            self.isError = True
-
-
-# ============================================================================
-class PageWithAllQA(Page):
-    """Model for core page data + qa"""
-
-    # automated heuristics, keyed by QA run id
-    qa: Optional[Dict[str, PageQACompare]] = {}
-
-
-# ============================================================================
-class PageOut(Page):
-    """Model for pages output, no QA"""
-
-    status: Optional[int] = 200
-
-
-# ============================================================================
-class PageOutWithSingleQA(Page):
-    """Page out with single QA entry"""
-
-    qa: Optional[PageQACompare] = None
-
-
-# ============================================================================
-class PageNoteAddedResponse(BaseModel):
-    """Model for response to adding page"""
-
-    added: bool
-    data: PageNote
-
-
-# ============================================================================
-class PageNoteUpdatedResponse(BaseModel):
-    """Model for response to updating page"""
-
-    updated: bool
-    data: PageNote
 
 
 # ============================================================================
@@ -2414,6 +2886,13 @@ class PaginatedPageOutResponse(PaginatedResponse):
 
 
 # ============================================================================
+class PageOutItemsResponse(BaseModel):
+    """Response model for pages without total"""
+
+    items: List[PageOut]
+
+
+# ============================================================================
 class PaginatedPageOutWithQAResponse(PaginatedResponse):
     """Response model for paginated pages with single QA info"""
 
@@ -2449,7 +2928,21 @@ class PaginatedWebhookNotificationResponse(PaginatedResponse):
 
 
 # ============================================================================
-class PaginatedCrawlErrorResponse(PaginatedResponse):
-    """Response model for crawl errors"""
+class PaginatedCrawlLogResponse(PaginatedResponse):
+    """Response model for crawl logs"""
 
-    items: List[CrawlError]
+    items: List[CrawlLogMessage]
+
+
+# ============================================================================
+class PaginatedUserOutResponse(PaginatedResponse):
+    """Response model for user emails with org info"""
+
+    items: List[UserOutNoId]
+
+
+# ============================================================================
+class PageUrlCountResponse(BaseModel):
+    """Response model for page count by url"""
+
+    items: List[PageUrlCount]

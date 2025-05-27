@@ -1,5 +1,6 @@
+import { provide } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
-import { nothing } from "lit";
+import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -11,18 +12,22 @@ import type { Tab as CollectionTab } from "./collection-detail";
 import type {
   Member,
   OrgRemoveMemberEvent,
+  UpdateOrgDetail,
   UserRoleChangeEvent,
 } from "./settings/settings";
 
+import { BtrixElement } from "@/classes/BtrixElement";
+import { proxiesContext, type ProxiesContext } from "@/context/org";
 import type { QuotaUpdateDetail } from "@/controllers/api";
 import needLogin from "@/decorators/needLogin";
-import type { CollectionSavedEvent } from "@/features/collections/collection-metadata-dialog";
+import type { CollectionSavedEvent } from "@/features/collections/collection-create-dialog";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
+import { OrgTab, RouteNamespace, WorkflowTab } from "@/routes";
+import type { ProxiesAPIResponse } from "@/types/crawler";
 import type { UserOrg } from "@/types/user";
 import { isApiError } from "@/utils/api";
 import type { ViewState } from "@/utils/APIRouter";
 import { DEFAULT_MAX_SCALE } from "@/utils/crawler";
-import LiteElement, { html } from "@/utils/LiteElement";
 import { type OrgData } from "@/utils/orgs";
 import { AppStateService } from "@/utils/state";
 import type { FormState as WorkflowFormState } from "@/utils/workflow";
@@ -48,21 +53,23 @@ export type SelectNewDialogEvent = CustomEvent<ResourceName>;
 type ArchivedItemPageParams = {
   itemId?: string;
   workflowId?: string;
+  workflowTab?: WorkflowTab;
   collectionId?: string;
 };
 export type OrgParams = {
-  home: Record<string, never>;
-  workflows: ArchivedItemPageParams & {
+  [OrgTab.Dashboard]: Record<string, never>;
+  [OrgTab.Workflows]: ArchivedItemPageParams & {
     scopeType?: WorkflowFormState["scopeType"];
     new?: ResourceName;
     itemPageId?: string;
     qaTab?: QATab;
     qaRunId?: string;
   };
-  items: ArchivedItemPageParams & {
+  [OrgTab.Items]: ArchivedItemPageParams & {
     itemType?: string;
+    qaTab?: QATab;
   };
-  "browser-profiles": {
+  [OrgTab.BrowserProfiles]: {
     browserProfileId?: string;
     browserId?: string;
     new?: ResourceName;
@@ -74,24 +81,24 @@ export type OrgParams = {
     navigateUrl?: string;
     proxyId?: string;
   };
-  collections: ArchivedItemPageParams & {
+  [OrgTab.Collections]: ArchivedItemPageParams & {
     collectionTab?: string;
   };
-  settings: {
+  [OrgTab.Settings]: {
     settingsTab?: "information" | "members";
   };
 };
-export type OrgTab = keyof OrgParams;
-
-const defaultTab = "home";
 
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
-@localized()
 @customElement("btrix-org")
+@localized()
 @needLogin
-export class Org extends LiteElement {
+export class Org extends BtrixElement {
+  @provide({ context: proxiesContext })
+  proxies: ProxiesContext = null;
+
   @property({ type: Object })
   viewStateData?: ViewState["data"];
 
@@ -103,7 +110,7 @@ export class Org extends LiteElement {
   params: OrgParams[OrgTab] = {};
 
   @property({ type: String })
-  orgTab: OrgTab = defaultTab;
+  orgTab?: OrgTab | string;
 
   @property({ type: Number })
   maxScale: number = DEFAULT_MAX_SCALE;
@@ -115,6 +122,12 @@ export class Org extends LiteElement {
   private isCreateDialogVisible = false;
 
   connectedCallback() {
+    if (
+      !this.orgTab ||
+      !Object.values(OrgTab).includes(this.orgTab as OrgTab)
+    ) {
+      this.navigate.to(`${this.navigate.orgBasePath}/${OrgTab.Dashboard}`);
+    }
     super.connectedCallback();
     this.addEventListener(
       "btrix-execution-minutes-quota-update",
@@ -142,17 +155,20 @@ export class Org extends LiteElement {
     if (
       changedProperties.has("appState.orgSlug") &&
       this.userInfo &&
-      this.orgSlug
+      this.orgSlugState
     ) {
       if (this.userOrg) {
         void this.updateOrg();
+        void this.updateOrgProxies();
       } else {
         // Couldn't find org with slug, redirect to first org
         const org = this.userInfo.orgs[0] as UserOrg | undefined;
         if (org) {
-          this.navTo(`/orgs/${org.slug}`);
+          this.navigate.to(
+            `/${RouteNamespace.PrivateOrgs}/${org.slug}/${OrgTab.Dashboard}`,
+          );
         } else {
-          this.navTo(`/account/settings`);
+          this.navigate.to(`/account/settings`);
         }
 
         return;
@@ -167,7 +183,7 @@ export class Org extends LiteElement {
       if (this.openDialogName) {
         if (url.searchParams.get("new") !== this.openDialogName) {
           url.searchParams.set("new", this.openDialogName);
-          this.navTo(`${url.pathname}${url.search}`);
+          this.navigate.to(`${url.pathname}${url.search}`);
         }
       } else {
         const prevOpenDialogName = changedProperties.get("openDialogName");
@@ -176,7 +192,7 @@ export class Org extends LiteElement {
           prevOpenDialogName === url.searchParams.get("new")
         ) {
           url.searchParams.delete("new");
-          this.navTo(`${url.pathname}${url.search}`);
+          this.navigate.to(`${url.pathname}${url.search}`);
         }
       }
     } else if (changedProperties.has("params")) {
@@ -201,25 +217,34 @@ export class Org extends LiteElement {
       }
     } catch (e) {
       console.debug(e);
-      this.notify({
+      this.notify.toast({
         message: msg("Sorry, couldn't retrieve organization at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "org-retrieve-error",
       });
+    }
+  }
+
+  private async updateOrgProxies() {
+    try {
+      this.proxies = await this.getOrgProxies(this.orgId);
+    } catch (e) {
+      console.debug(e);
     }
   }
 
   async firstUpdated() {
     // if slug is actually an orgId (UUID), attempt to lookup the slug
     // and redirect to the slug url
-    if (this.orgSlug && UUID_REGEX.test(this.orgSlug)) {
-      const org = await this.getOrg(this.orgSlug);
+    if (this.orgSlugState && UUID_REGEX.test(this.orgSlugState)) {
+      const org = await this.getOrg(this.orgSlugState);
       const actualSlug = org?.slug;
       if (actualSlug) {
-        this.navTo(
+        this.navigate.to(
           window.location.href
             .slice(window.location.origin.length)
-            .replace(this.orgSlug, actualSlug),
+            .replace(this.orgSlugState, actualSlug),
         );
         return;
       }
@@ -227,6 +252,8 @@ export class Org extends LiteElement {
     // Sync URL to create dialog
     const dialogName = this.getDialogName();
     if (dialogName) this.openDialog(dialogName);
+
+    void this.updateOrgProxies();
   }
 
   private getDialogName() {
@@ -255,16 +282,16 @@ export class Org extends LiteElement {
         <main
           class="${noMaxWidth
             ? "w-full"
-            : "w-full max-w-screen-desktop"} mx-auto box-border flex flex-1 flex-col p-3"
+            : "w-full max-w-screen-desktop"} mx-auto box-border flex flex-1 flex-col p-3 lg:px-10 lg:pb-10"
           aria-labelledby="${this.orgTab}-tab"
         >
           ${when(this.userOrg, (userOrg) =>
             choose(
               this.orgTab,
               [
-                ["home", this.renderDashboard],
+                [OrgTab.Dashboard, this.renderDashboard],
                 [
-                  "items",
+                  OrgTab.Items,
                   () => html`
                     <btrix-document-title
                       title=${`${msg("Archived Items")} - ${userOrg.name}`}
@@ -273,7 +300,7 @@ export class Org extends LiteElement {
                   `,
                 ],
                 [
-                  "workflows",
+                  OrgTab.Workflows,
                   () => html`
                     <btrix-document-title
                       title=${`${msg("Crawl Workflows")} - ${userOrg.name}`}
@@ -282,7 +309,7 @@ export class Org extends LiteElement {
                   `,
                 ],
                 [
-                  "browser-profiles",
+                  OrgTab.BrowserProfiles,
                   () => html`
                     <btrix-document-title
                       title=${`${msg("Browser Profiles")} - ${userOrg.name}`}
@@ -291,7 +318,7 @@ export class Org extends LiteElement {
                   `,
                 ],
                 [
-                  "collections",
+                  OrgTab.Collections,
                   () => html`
                     <btrix-document-title
                       title=${`${msg("Collections")} - ${userOrg.name}`}
@@ -300,7 +327,7 @@ export class Org extends LiteElement {
                   `,
                 ],
                 [
-                  "settings",
+                  OrgTab.Settings,
                   () =>
                     this.appState.isAdmin
                       ? html`
@@ -329,66 +356,54 @@ export class Org extends LiteElement {
       <div
         class="mx-auto box-border w-full overflow-x-hidden overscroll-contain"
       >
-        <nav class="-mx-3 flex items-end overflow-x-auto px-3 xl:px-6">
-          ${this.renderNavTab({
-            tabName: "home",
-            label: msg("Overview"),
-            path: "",
-          })}
-          ${this.renderNavTab({
-            tabName: "workflows",
-            label: msg("Crawling"),
-            path: "workflows",
-          })}
-          ${this.renderNavTab({
-            tabName: "items",
-            label: msg("Archived Items"),
-            path: "items",
-          })}
-          ${this.renderNavTab({
-            tabName: "collections",
-            label: msg("Collections"),
-            path: "collections",
-          })}
-          ${when(this.appState.isCrawler, () =>
-            this.renderNavTab({
-              tabName: "browser-profiles",
-              label: msg("Browser Profiles"),
-              path: "browser-profiles",
-            }),
-          )}
-          ${when(this.appState.isAdmin || this.userInfo?.isSuperAdmin, () =>
-            this.renderNavTab({
-              tabName: "settings",
-              label: msg("Settings"),
-              path: "settings",
-            }),
-          )}
-        </nav>
+        <btrix-overflow-scroll class="-mx-3 part-[content]:px-3">
+          <nav class="flex items-end xl:px-6">
+            ${this.renderNavTab({
+              tabName: OrgTab.Dashboard,
+              label: msg("Dashboard"),
+            })}
+            ${this.renderNavTab({
+              tabName: OrgTab.Workflows,
+              label: msg("Crawling"),
+            })}
+            ${this.renderNavTab({
+              tabName: OrgTab.Items,
+              label: msg("Archived Items"),
+            })}
+            ${this.renderNavTab({
+              tabName: OrgTab.Collections,
+              label: msg("Collections"),
+            })}
+            ${when(this.appState.isCrawler, () =>
+              this.renderNavTab({
+                tabName: OrgTab.BrowserProfiles,
+                label: msg("Browser Profiles"),
+              }),
+            )}
+            ${when(this.appState.isAdmin || this.userInfo?.isSuperAdmin, () =>
+              this.renderNavTab({
+                tabName: OrgTab.Settings,
+                label: msg("Settings"),
+              }),
+            )}
+          </nav>
+        </btrix-overflow-scroll>
       </div>
 
       <hr />
     `;
   }
 
-  private renderNavTab({
-    tabName,
-    label,
-    path,
-  }: {
-    tabName: OrgTab;
-    label: string;
-    path: string;
-  }) {
+  private renderNavTab({ tabName, label }: { tabName: OrgTab; label: string }) {
     const isActive = this.orgTab === tabName;
 
     return html`
       <a
         id="${tabName}-tab"
         class="block flex-shrink-0 rounded-t px-3 transition-colors hover:bg-neutral-50"
-        href=${`${this.orgBasePath}${path ? `/${path}` : ""}`}
+        href=${`${this.navigate.orgBasePath}/${tabName}`}
         aria-selected=${isActive}
-        @click=${this.navLink}
+        @click=${this.navigate.link}
       >
         <div
           class="${isActive
@@ -423,8 +438,8 @@ export class Org extends LiteElement {
           ?open=${this.openDialogName === "upload"}
           @request-close=${() => (this.openDialogName = undefined)}
           @uploaded=${() => {
-            if (this.orgTab === "home") {
-              this.navTo(`${this.orgBasePath}/items/upload`);
+            if (this.orgTab === OrgTab.Dashboard) {
+              this.navigate.to(`${this.navigate.orgBasePath}/items/upload`);
             }
           }}
         ></btrix-file-uploader>
@@ -433,16 +448,16 @@ export class Org extends LiteElement {
           @sl-hide=${() => (this.openDialogName = undefined)}
         >
         </btrix-new-browser-profile-dialog>
-        <btrix-collection-metadata-dialog
+        <btrix-collection-create-dialog
           ?open=${this.openDialogName === "collection"}
           @sl-hide=${() => (this.openDialogName = undefined)}
           @btrix-collection-saved=${(e: CollectionSavedEvent) => {
-            this.navTo(
-              `${this.orgBasePath}/collections/view/${e.detail.id}/items`,
+            this.navigate.to(
+              `${this.navigate.orgBasePath}/collections/view/${e.detail.id}/items`,
             );
           }}
         >
-        </btrix-collection-metadata-dialog>
+        </btrix-collection-create-dialog>
       </div>
     `;
   }
@@ -467,6 +482,7 @@ export class Org extends LiteElement {
         workflowId=${params.workflowId || ""}
         itemType=${params.itemType || "crawl"}
         ?isCrawler=${this.appState.isCrawler}
+        .qaTab=${params.qaTab}
       ></btrix-archived-item-detail>`;
     }
 
@@ -514,6 +530,9 @@ export class Org extends LiteElement {
         <btrix-workflow-detail
           class="col-span-5"
           workflowId=${workflowId}
+          workflowTab=${ifDefined(
+            params.itemId ? WorkflowTab.Crawls : params.workflowTab,
+          )}
           openDialogName=${this.viewStateData?.dialog}
           ?isEditing=${isEditing}
           ?isCrawler=${this.appState.isCrawler}
@@ -546,7 +565,7 @@ export class Org extends LiteElement {
           });
         }
 
-        this.navTo(`${this.orgBasePath}/workflows/new`, {
+        this.navigate.to(`${this.navigate.orgBasePath}/workflows/new`, {
           scopeType: e.detail,
         });
       }}
@@ -573,7 +592,7 @@ export class Org extends LiteElement {
           crawlerChannel: params.crawlerChannel,
           profileId: params.profileId,
           navigateUrl: params.navigateUrl,
-          proxyId: params.proxyId,
+          proxyId: params.proxyId ?? null,
         }}
       ></btrix-browser-profiles-new>`;
     }
@@ -589,9 +608,11 @@ export class Org extends LiteElement {
 
     if (params.collectionId) {
       return html`<btrix-collection-detail
+        class="flex min-h-screen flex-1 flex-col pb-7"
         collectionId=${params.collectionId}
-        collectionTab=${(params.collectionTab as CollectionTab | undefined) ||
-        "replay"}
+        collectionTab=${ifDefined(
+          params.collectionTab as CollectionTab | undefined,
+        )}
         ?isCrawler=${this.appState.isCrawler}
       ></btrix-collection-detail>`;
     }
@@ -613,6 +634,17 @@ export class Org extends LiteElement {
     return html`<btrix-org-settings
       activePanel=${activePanel}
       ?isAddingMember=${isAddingMember}
+      @btrix-update-org=${(e: CustomEvent<UpdateOrgDetail>) => {
+        e.stopPropagation();
+
+        // Optimistic update
+        AppStateService.partialUpdateOrg({
+          id: this.orgId,
+          ...e.detail,
+        });
+
+        void this.updateOrg();
+      }}
       @org-user-role-change=${this.onUserRoleChange}
       @org-remove-member=${this.onOrgRemoveMember}
     ></btrix-org-settings>`;
@@ -626,9 +658,15 @@ export class Org extends LiteElement {
   }
 
   private async getOrg(orgId: string): Promise<OrgData | undefined> {
-    const data = await this.apiFetch<OrgData>(`/orgs/${orgId}`);
+    const data = await this.api.fetch<OrgData>(`/orgs/${orgId}`);
 
     return data;
+  }
+
+  private async getOrgProxies(orgId: string): Promise<ProxiesAPIResponse> {
+    return this.api.fetch<ProxiesAPIResponse>(
+      `/orgs/${orgId}/crawlconfigs/crawler-proxies`,
+    );
   }
 
   private async onOrgRemoveMember(e: OrgRemoveMemberEvent) {
@@ -637,6 +675,8 @@ export class Org extends LiteElement {
 
   private async onStorageQuotaUpdate(e: CustomEvent<QuotaUpdateDetail>) {
     e.stopPropagation();
+
+    if (!this.org) return;
 
     const { reached } = e.detail;
 
@@ -651,6 +691,8 @@ export class Org extends LiteElement {
   ) {
     e.stopPropagation();
 
+    if (!this.org) return;
+
     const { reached } = e.detail;
 
     AppStateService.partialUpdateOrg({
@@ -663,7 +705,7 @@ export class Org extends LiteElement {
     const { user, newRole } = e.detail;
 
     try {
-      await this.apiFetch(`/orgs/${this.orgId}/user-role`, {
+      await this.api.fetch(`/orgs/${this.orgId}/user-role`, {
         method: "PATCH",
         body: JSON.stringify({
           email: user.email,
@@ -671,20 +713,27 @@ export class Org extends LiteElement {
         }),
       });
 
-      this.notify({
+      this.notify.toast({
         message: msg(
           str`Successfully updated role for ${user.name || user.email}.`,
         ),
         variant: "success",
         icon: "check2-circle",
+        id: "user-updated-status",
       });
+
       const org = await this.getOrg(this.orgId);
 
-      AppStateService.updateOrg(org);
+      if (org) {
+        AppStateService.partialUpdateOrg({
+          id: org.id,
+          users: org.users,
+        });
+      }
     } catch (e) {
       console.debug(e);
 
-      this.notify({
+      this.notify.toast({
         message: isApiError(e)
           ? e.message
           : msg(
@@ -694,6 +743,7 @@ export class Org extends LiteElement {
             ),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "user-updated-status",
       });
     }
   }
@@ -714,14 +764,14 @@ export class Org extends LiteElement {
     }
 
     try {
-      await this.apiFetch(`/orgs/${this.orgId}/remove`, {
+      await this.api.fetch(`/orgs/${this.orgId}/remove`, {
         method: "POST",
         body: JSON.stringify({
           email: member.email,
         }),
       });
 
-      this.notify({
+      this.notify.toast({
         message: msg(
           str`Successfully removed ${member.name || member.email} from ${
             this.userOrg.name
@@ -729,19 +779,25 @@ export class Org extends LiteElement {
         ),
         variant: "success",
         icon: "check2-circle",
+        id: "user-updated-status",
       });
       if (isSelf) {
         // FIXME better UX, this is the only page currently that doesn't require org...
-        this.navTo("/account/settings");
+        this.navigate.to("/account/settings");
       } else {
         const org = await this.getOrg(this.orgId);
 
-        AppStateService.updateOrg(org);
+        if (org) {
+          AppStateService.partialUpdateOrg({
+            id: org.id,
+            users: org.users,
+          });
+        }
       }
     } catch (e) {
       console.debug(e);
 
-      this.notify({
+      this.notify.toast({
         message: isApiError(e)
           ? e.message
           : msg(
@@ -751,6 +807,7 @@ export class Org extends LiteElement {
             ),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "user-updated-status",
       });
     }
   }

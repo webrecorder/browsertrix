@@ -1,3 +1,11 @@
+# Global Settings
+# =========================================
+
+# locales available to choose from in the UI
+# if not set, all locales available by default
+# ex: enable only 'en' and 'es' locales
+# locales_enabled: "en,es"
+
 
 # Crawler Settings
 # =========================================
@@ -75,8 +83,11 @@ allow_dupe_invites: "0"
 # number of seconds before pending invites expire - default is 7 days
 invite_expire_seconds: 604800
 
+# number of minutes before paused crawls are stopped - default is 7 days
+paused_crawl_limit_minutes: 10080
+
 # base url for replayweb.page
-rwp_base_url: "https://cdn.jsdelivr.net/npm/replaywebpage@2.2.4/"
+rwp_base_url: "https://cdn.jsdelivr.net/npm/replaywebpage@2.3.3/"
 
 superuser:
   # set this to enable a superuser admin
@@ -89,16 +100,23 @@ superuser:
 # Set name for default organization created with superuser
 default_org: "My Organization"
 
+# Set number of days replica file deletion should be delayed by
+# if set >0, will keep replicas (if any) for this number of days
+replica_deletion_delay_days: 0
+
 
 # API Image
 # =========================================
-backend_image: "docker.io/webrecorder/browsertrix-backend:1.13.0-beta.0"
-backend_pull_policy: "Always"
+backend_image: "docker.io/webrecorder/browsertrix-backend:1.16.2"
+backend_pull_policy: "IfNotPresent"
 
 backend_password_secret: "PASSWORD!"
 
 # number of workers per pod
 backend_workers: 1
+
+# for gunicorn --timeout
+backend_worker_timeout: 60
 
 backend_cpu: "100m"
 
@@ -123,6 +141,11 @@ sign_up_url: ""
 # set e-mail to show for subscriptions related info
 sales_email: ""
 
+
+# survey e-mail
+# if set, subscription cancellation e-mails will include a link to this survey
+user_survey_url: ""
+
 # if set, print last 'log_failed_crawl_lines' of each failed
 # crawl pod to backend operator stdout
 # mostly intended for debugging / testing
@@ -142,8 +165,8 @@ backend_avg_memory_threshold: 95
 
 # Nginx Image
 # =========================================
-frontend_image: "docker.io/webrecorder/browsertrix-frontend:1.13.0-beta.0"
-frontend_pull_policy: "Always"
+frontend_image: "docker.io/webrecorder/browsertrix-frontend:1.16.2"
+frontend_pull_policy: "IfNotPresent"
 
 frontend_cpu: "10m"
 
@@ -179,7 +202,7 @@ frontend_avg_memory_threshold: 95
 # =========================================
 mongo_local: true
 
-mongo_host: "local-mongo.default"
+mongo_host: "local-mongo"
 
 mongo_image: "docker.io/library/mongo:6.0.5"
 mongo_pull_policy: "IfNotPresent"
@@ -200,12 +223,8 @@ mongo_auth:
 
 # Redis Image
 # =========================================
-redis_local: true
-
 redis_image: "redis"
 redis_pull_policy: "IfNotPresent"
-
-redis_url: "redis://local-redis.default:6379/1"
 
 redis_cpu: "10m"
 
@@ -222,17 +241,23 @@ redis_storage: "3Gi"
 crawler_channels:
   - id: default
     image: "docker.io/webrecorder/browsertrix-crawler:latest"
+    imagePullPolicy: Always
 
   # Add, remove, or edit additional crawler versions below, for example:
   # - id: custom_version
   #   image: "<DOCKER IMAGE>"
+  #   imagePullPolicy: Always|IfNotPresent|Never (optional, defaults to crawler_pull_policy)
 
-crawler_pull_policy: "Always"
+# default crawler pull policy if not set per channel
+crawler_pull_policy: "IfNotPresent"
 
 crawler_namespace: "crawlers"
 
 # if set, will restrict QA to image names that are >= than this value
 # min_qa_crawler_image: ""
+
+# if set, will restrict autoclick behavior to image names that are >= than this value
+min_autoclick_crawler_image: "docker.io/webrecorder/browsertrix-crawler:1.5.0"
 
 # optional: enable to use a persist volume claim for all crawls
 # can be enabled to use a multi-write shared filesystem
@@ -379,13 +404,16 @@ minio_local: true
 # minio_local_console_port: 30091
 
 minio_scheme: "http"
-minio_host: "local-minio.default:9000"
+minio_host: "local-minio:9000"
 
 minio_image: docker.io/minio/minio:RELEASE.2022-10-24T18-35-07Z
 minio_mc_image: minio/mc
 minio_pull_policy: "IfNotPresent"
 
 minio_local_bucket_name: &local_bucket_name "btrix-data"
+
+# path for serving from local minio bucket
+minio_access_path: &minio_access_path "/data/"
 
 minio_cpu: "10m"
 minio_memory: "1024Mi"
@@ -402,7 +430,8 @@ storages:
     secret_key: "PASSW0RD"
     bucket_name: *local_bucket_name
 
-    endpoint_url: "http://local-minio.default:9000/"
+    endpoint_url: "http://local-minio:9000/"
+    access_endpoint_url: *minio_access_path
 
 
 # optional: duration in minutes for WACZ download links to be valid
@@ -439,12 +468,20 @@ ingress:
   #host: ""
   cert_email: "test@example.com"
   tls: false
+
+  # If set, will use the old 'kubernetes.io/ingress.class' annotation instead of the new ingressClassName
+  # also uses old http01.ingress.class in cert-manager instead of http01.ingress.ingressClassName
+  # provided for backwards compatibility
+  useOldClassAnnotation: false
+
   # Optional: Uncomment to use your own cluster-issuer instead of default ACME https validation
   # custom_cluster_issuer: custom_cluster_issuer-name
 
 ingress_class: nginx
 
-
+# Optional: Front-end injected script
+# This runs as a blocking script on the frontend, so usually you'll want to have it just add a single script tag to the page with the `defer` attribute. Useful for things like analytics and bug tracking.
+# inject_extra: // your front-end injected script
 
 # Signing Options
 # =========================================
@@ -461,6 +498,22 @@ signer_cpu: "5m"
 
 signer_memory: "50Mi"
 
+
+# Migration Options (Advanced)
+# =========================================
+
+# enable to force rerun from specific migration
+# see backend/btrixcloud/migrations/ for list of available migrations
+# rerun_from_migration:
+
+# scale for certain migration background jobs
+# migration_jobs_scale: 1
+
+# Other Settings
+# =========================================
+
+# default FQDN suffix, shouldn't need to change
+fqdn_suffix: .svc.cluster.local
 
 # Optional: configure load balancing annotations
 # service:

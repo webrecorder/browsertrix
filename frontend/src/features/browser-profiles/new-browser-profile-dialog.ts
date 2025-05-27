@@ -1,5 +1,7 @@
+import { consume } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
 import { type SlInput } from "@shoelace-style/shoelace";
+import { nothing } from "lit";
 import {
   customElement,
   property,
@@ -7,16 +9,21 @@ import {
   queryAsync,
   state,
 } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import queryString from "query-string";
 
 import type { Dialog } from "@/components/ui/dialog";
 import { type SelectCrawlerChangeEvent } from "@/components/ui/select-crawler";
 import { type SelectCrawlerProxyChangeEvent } from "@/components/ui/select-crawler-proxy";
+import { proxiesContext, type ProxiesContext } from "@/context/org";
 import LiteElement, { html } from "@/utils/LiteElement";
 
-@localized()
 @customElement("btrix-new-browser-profile-dialog")
+@localized()
 export class NewBrowserProfileDialog extends LiteElement {
+  @consume({ context: proxiesContext, subscribe: true })
+  private readonly proxies?: ProxiesContext;
+
   @property({ type: Boolean })
   open = false;
 
@@ -83,14 +90,22 @@ export class NewBrowserProfileDialog extends LiteElement {
               (this.crawlerChannel = e.detail.value!)}
           ></btrix-select-crawler>
         </div>
-        <div class="mt-4">
-          <btrix-select-crawler-proxy
-            orgId=${this.orgId}
-            .proxyId="${this.proxyId || ""}"
-            @on-change=${(e: SelectCrawlerProxyChangeEvent) =>
-              (this.proxyId = e.detail.value!)}
-          ></btrix-select-crawler-proxy>
-        </div>
+        ${this.proxies?.servers.length
+          ? html`
+              <div class="mt-4">
+                <btrix-select-crawler-proxy
+                  defaultProxyId=${ifDefined(
+                    this.proxies.default_proxy_id ?? undefined,
+                  )}
+                  .proxyServers=${this.proxies.servers}
+                  .proxyId="${this.proxyId || ""}"
+                  @btrix-change=${(e: SelectCrawlerProxyChangeEvent) =>
+                    (this.proxyId = e.detail.value)}
+                ></btrix-select-crawler-proxy>
+              </div>
+            `
+          : nothing}
+
         <input class="invisible size-0" type="submit" />
       </form>
       <div slot="footer" class="flex justify-between">
@@ -145,6 +160,7 @@ export class NewBrowserProfileDialog extends LiteElement {
         message: msg("Starting up browser for new profile..."),
         variant: "success",
         icon: "check2-circle",
+        id: "browser-profile-update-status",
       });
       await this.hideDialog();
       this.navTo(
@@ -162,6 +178,7 @@ export class NewBrowserProfileDialog extends LiteElement {
         message: msg("Sorry, couldn't create browser profile at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "browser-profile-update-status",
       });
     }
     this.isSubmitting = false;

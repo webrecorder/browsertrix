@@ -17,7 +17,7 @@ import type {
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
-import type { PageChangeEvent } from "@/components/ui/pagination";
+import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { type CheckboxChangeEventDetail } from "@/features/archived-items/archived-item-list";
 import type {
   FilterBy,
@@ -39,7 +39,7 @@ import { pluralOf } from "@/utils/pluralize";
 
 const TABS = ["crawl", "upload"] as const;
 type Tab = (typeof TABS)[number];
-const searchKeys = ["name", "firstSeed"];
+const searchKeys = ["name", "firstSeed"] as const;
 const crawlSortOptions: SortOptions = [
   {
     // NOTE "finished" field doesn't exist in crawlconfigs,
@@ -69,8 +69,8 @@ const uploadSortOptions: SortOptions = [
 const COLLECTION_ITEMS_MAX = 1000;
 const DEFAULT_PAGE_SIZE = 10;
 
-@localized()
 @customElement("btrix-collection-items-dialog")
+@localized()
 export class CollectionItemsDialog extends BtrixElement {
   static styles = css`
     btrix-dialog {
@@ -674,17 +674,19 @@ export class CollectionItemsDialog extends BtrixElement {
       this.close();
       this.dispatchEvent(new CustomEvent("btrix-collection-saved"));
       this.notify.toast({
-        message: msg(str`Successfully saved archived item selection.`),
+        message: msg(str`Archived item selection updated.`),
         variant: "success",
         icon: "check2-circle",
+        id: "archived-item-selection-status",
       });
     } catch (e) {
       this.notify.toast({
         message: isApiError(e)
           ? e.message
-          : msg("Something unexpected went wrong"),
+          : msg("Sorry, couldn't save archived item selection at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "archived-item-selection-status",
       });
     }
 
@@ -692,18 +694,24 @@ export class CollectionItemsDialog extends BtrixElement {
   }
 
   private async initSelection() {
-    void this.fetchCrawls({ page: 1, pageSize: DEFAULT_PAGE_SIZE });
-    void this.fetchUploads({ page: 1, pageSize: DEFAULT_PAGE_SIZE });
+    void this.fetchCrawls({
+      page: parsePage(new URLSearchParams(location.search).get("page")),
+      pageSize: DEFAULT_PAGE_SIZE,
+    });
+    void this.fetchUploads({
+      page: parsePage(new URLSearchParams(location.search).get("page")),
+      pageSize: DEFAULT_PAGE_SIZE,
+    });
     void this.fetchSearchValues();
 
     const [crawls, uploads] = await Promise.all([
       this.getCrawls({
-        page: 1,
+        page: parsePage(new URLSearchParams(location.search).get("page")),
         pageSize: COLLECTION_ITEMS_MAX,
         collectionId: this.collectionId,
       }).then(({ items }) => items),
       this.getUploads({
-        page: 1,
+        page: parsePage(new URLSearchParams(location.search).get("page")),
         pageSize: COLLECTION_ITEMS_MAX,
         collectionId: this.collectionId,
       }).then(({ items }) => items),
@@ -871,6 +879,7 @@ export class CollectionItemsDialog extends BtrixElement {
         variant: "success",
         icon: "check2-circle",
         duration: 1000,
+        id: "auto-add-status",
       });
     } catch (e: unknown) {
       console.debug(e);
@@ -880,6 +889,7 @@ export class CollectionItemsDialog extends BtrixElement {
         ),
         variant: "warning",
         icon: "exclamation-circle",
+        id: "auto-add-status",
       });
     }
   }

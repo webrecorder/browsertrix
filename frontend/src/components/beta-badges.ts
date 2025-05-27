@@ -9,8 +9,8 @@ import { TailwindElement } from "@/classes/TailwindElement";
 
 const styles = unsafeCSS(stylesheet);
 
-@localized()
 @customElement("btrix-beta-icon")
+@localized()
 export class BetaIcon extends TailwindElement {
   static styles = styles;
   render() {
@@ -26,8 +26,8 @@ export class BetaIcon extends TailwindElement {
   }
 }
 
-@localized()
 @customElement("btrix-beta-badge")
+@localized()
 export class BetaBadge extends TailwindElement {
   @property({ type: String })
   placement: SlTooltip["placement"] = "top";

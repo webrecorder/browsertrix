@@ -23,8 +23,8 @@ const MAX_SEARCH_RESULTS = 10;
  * @event btrix-select
  * @event btrix-clear
  */
-@localized()
 @customElement("btrix-search-combobox")
+@localized()
 export class SearchCombobox<T> extends LitElement {
   @property({ type: Array })
   searchOptions: T[] = [];
@@ -56,7 +56,6 @@ export class SearchCombobox<T> extends LitElement {
 
   private fuse = new Fuse<T>([], {
     keys: [],
-    shouldSort: false,
     threshold: 0.2, // stricter; default is 0.6
     includeMatches: true,
   });

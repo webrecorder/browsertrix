@@ -1,5 +1,5 @@
+import { type BtrixElement } from "@/classes/BtrixElement";
 import AuthService from "@/utils/AuthService";
-import type LiteElement from "@/utils/LiteElement";
 
 /**
  * Block rendering and dispatch event if user is not logged in.
@@ -17,7 +17,7 @@ import type LiteElement from "@/utils/LiteElement";
  */
 export default function needLogin<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  T extends { new (...args: any[]): LiteElement },
+  T extends { new (...args: any[]): BtrixElement },
 >(constructor: T) {
   return class extends constructor {
     update(changedProperties: Map<string, unknown>) {

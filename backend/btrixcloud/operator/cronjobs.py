@@ -1,4 +1,4 @@
-""" Operator handler for crawl CronJobs """
+"""Operator handler for crawl CronJobs"""
 
 from uuid import UUID
 from typing import Optional
@@ -41,6 +41,8 @@ class CronJobOperator(BaseOperator):
                 "startTime": metadata.get("creationTimestamp"),
                 "completionTime": finished,
             }
+
+        self.run_task(self.k8s.unsuspend_k8s_job(metadata.get("name")))
 
         return MCDecoratorSyncResponse(
             attachments=[],
@@ -112,6 +114,7 @@ class CronJobOperator(BaseOperator):
                 crawl_id,
                 crawlconfig,
                 user,
+                org,
                 manual=False,
             )
             print("Scheduled Crawl Created: " + crawl_id)

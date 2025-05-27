@@ -61,6 +61,10 @@
     --sl-font-weight-medium: 500;
     --sl-font-weight-semibold: 600;
 
+    /* Focus rings */
+    --sl-focus-ring-color: var(--sl-color-primary-200);
+    --sl-focus-ring-width: 2px;
+
     /*
      * Forms
      */
@@ -76,6 +80,8 @@
     --sl-input-font-size-small: var(--sl-font-size-small);
     --sl-input-font-size-medium: var(--sl-font-size-small);
     --sl-input-font-size-large: var(--sl-font-size-medium);
+
+    --sl-input-placeholder-color: var(--sl-color-neutral-400);
 
     /* From GitHub Primer https://github.com/primer/primitives/blob/8b767947e35a79db17b9d7970836f03c904c8afe/data/colors/vars/global_light.ts#L47 */
     /* TODO replace hardcoded color */
@@ -94,10 +100,24 @@
 
     /* Transition */
     --sl-transition-x-fast: 100ms;
+
+    /* 
+     * 
+     * Browsertrix theme tokens
+     *
+     */
+    /* Overflow scrim */
+    --btrix-overflow-scroll-scrim-color: var(--sl-panel-background-color);
+    --btrix-overflow-scrim-width: 3rem;
   }
 
   body {
     font-size: var(--sl-font-size-medium);
+  }
+
+  :focus-visible {
+    outline: var(--sl-focus-ring);
+    outline-offset: var(--sl-focus-ring-offset);
   }
 }
 
@@ -139,11 +159,15 @@
   }
 
   /* Update button colors */
-  sl-button[variant="primary"]::part(base) {
+  sl-button[variant="primary"]:not([outline])::part(base) {
     background-color: theme(colors.primary.400);
   }
 
-  sl-button[variant="primary"]::part(base):hover {
+  sl-button[variant="primary"]:not([outline])::part(base):hover {
+    background-color: theme(colors.primary.500);
+  }
+
+  sl-radio-button[checked]::part(button) {
     background-color: theme(colors.primary.500);
   }
 
@@ -164,8 +188,13 @@
     line-height: 1.5;
   }
 
+  /* Align left edge with prefix icon */
+  sl-menu sl-menu-label::part(base) {
+    padding-left: 25px;
+  }
+
   /* Align left edge with selected item */
-  sl-menu-label::part(base) {
+  sl-select sl-menu-label::part(base) {
     padding-left: var(--sl-spacing-medium);
   }
 
@@ -179,11 +208,21 @@
   }
 
   /* Validation styles */
-  [data-user-invalid]:not([disabled])::part(base) {
+  /**
+   * FIXME Use [data-user-invalid] selector exclusion table is migrated
+   * https://github.com/webrecorder/browsertrix/issues/2542
+   */
+  .invalid[data-invalid]:not([disabled])::part(base),
+  btrix-url-input[data-user-invalid]:not([disabled])::part(base),
+  sl-input[data-user-invalid]:not([disabled])::part(base),
+  sl-textarea[data-user-invalid]:not([disabled])::part(base) {
     border-color: var(--sl-color-danger-400);
   }
 
-  [data-user-invalid]:focus-within::part(base) {
+  .invalid[data-invalid]:focus-within::part(base),
+  btrix-url-input[data-user-invalid]:focus-within::part(base),
+  sl-input[data-user-invalid]:focus-within::part(base),
+  sl-textarea[data-user-invalid]:focus-within::part(base) {
     box-shadow: 0 0 0 var(--sl-focus-ring-width) var(--sl-color-danger-100);
   }
 
@@ -212,8 +251,8 @@
   }
 
   /* Have button group take up whole width */
-  sl-radio-group::part(button-group),
-  sl-radio-group sl-radio-button {
+  sl-radio-group:not([size="small"])::part(button-group),
+  sl-radio-group:not([size="small"]) sl-radio-button {
     width: 100%;
     min-width: min-content;
   }
@@ -221,13 +260,33 @@
   /* Style tooltip with white background */
   sl-tooltip.invert-tooltip {
     --sl-tooltip-arrow-size: 0;
-    --sl-tooltip-background-color: var(--sl-color-neutral-0);
+    --sl-tooltip-background-color: var(--sl-color-neutral-50);
     --sl-tooltip-color: var(--sl-color-neutral-700);
   }
 
   sl-tooltip.invert-tooltip::part(body) {
     outline: 1px solid var(--sl-panel-border-color);
     box-shadow: var(--sl-shadow-large);
+  }
+
+  sl-tab-group {
+    --indicator-color: var(--sl-color-primary-500);
+  }
+
+  sl-tab::part(base) {
+    padding: var(--sl-spacing-small) var(--sl-spacing-medium);
+  }
+
+  sl-tab:not([active]):not(:hover)::part(base) {
+    color: var(--sl-color-neutral-500);
+  }
+
+  sl-tab:not([active]):hover::part(base) {
+    color: var(--sl-color-neutral-600);
+  }
+
+  sl-tab[active]::part(base) {
+    color: var(--sl-color-primary-500);
   }
 
   /* For single-input forms with submit button inline */
@@ -287,6 +346,22 @@
 
   .label-same-line::part(form-control-help-text) {
     grid-column-start: 2;
+  }
+
+  /* Button group tweaks */
+  [data-sl-button-group__button--first][variant="primary"]:has(
+      + [data-sl-button-group__button][variant="default"]
+    ) {
+    /* Move primary button above secondary button in button group */
+    z-index: 1;
+  }
+  [data-sl-button-group__button--first][variant="primary"]
+    + [data-sl-button-group__button][variant="default"]:not(:hover)::part(
+      base
+    ) {
+    /* Ensure left border color matches primary button's right border color
+       so that no flash of default variant border color shows on hover */
+    border-left-color: var(--sl-color-primary-600);
   }
 }
 
@@ -359,6 +434,11 @@
     border-radius: var(--sl-input-border-radius-small);
   }
 
+  sl-textarea::part(textarea)::placeholder,
+  sl-input::part(input)::placeholder {
+    font-weight: var(--sl-font-weight-light);
+  }
+
   sl-drawer::part(header) {
     --header-spacing: var(--sl-spacing-small);
   }
@@ -371,6 +451,28 @@
 
   sl-drawer::part(footer) {
     border-top: 1px solid var(--sl-panel-border-color);
+  }
+
+  sl-button.button-card {
+    @apply w-full;
+  }
+
+  sl-button.button-card::part(base) {
+    @apply min-h-20 justify-between leading-none;
+  }
+
+  sl-button.button-card::part(label) {
+    @apply flex flex-1 flex-col justify-center gap-2 text-left;
+  }
+
+  .scrim:before {
+    @apply pointer-events-none absolute -z-10;
+  }
+
+  .scrim-to-b:before {
+    @apply w-full bg-gradient-to-b from-white;
+    height: var(--btrix-overflow-scrim-width);
+    --tw-gradient-from: var(--btrix-overflow-scroll-scrim-color, white);
   }
 }
 

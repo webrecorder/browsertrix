@@ -3,10 +3,7 @@ import { html } from "lit";
 import { customElement, state } from "lit/decorators.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import {
-  translatedLocales,
-  type TranslatedLocaleEnum,
-} from "@/types/localization";
+import { type TranslatedLocaleEnum } from "@/types/localization";
 import localize from "@/utils/localize";
 
 /**
@@ -17,7 +14,8 @@ export class LocalePicker extends BtrixElement {
   @state()
   private localeNames: { [locale: string]: string } = {};
 
-  firstUpdated() {
+  connectedCallback() {
+    super.connectedCallback();
     this.setLocaleNames();
   }
 
@@ -38,8 +36,6 @@ export class LocalePicker extends BtrixElement {
   }
 
   render() {
-    const selectedLocale = this.localize.lang();
-
     return html`
       <sl-dropdown
         @sl-select=${this.localeChanged}
@@ -51,11 +47,13 @@ export class LocalePicker extends BtrixElement {
           slot="trigger"
           size="small"
           caret
-          ?disabled=${(translatedLocales as unknown as string[]).length < 2}
+          ?disabled=${localize.languages.length < 2}
         >
           <sl-icon slot="prefix" name="translate"></sl-icon>
           <span class="capitalize"
-            >${this.localeNames[selectedLocale as TranslatedLocaleEnum]}</span
+            >${this.localeNames[
+              localize.activeLanguage as TranslatedLocaleEnum
+            ]}</span
           >
         </sl-button>
         <sl-menu>
@@ -67,7 +65,7 @@ export class LocalePicker extends BtrixElement {
                   class="capitalize"
                   type="checkbox"
                   value=${locale}
-                  ?checked=${locale === selectedLocale}
+                  ?checked=${locale === localize.activeLanguage}
                 >
                   ${this.localeNames[locale]}
                 </sl-menu-item>`,
@@ -80,6 +78,19 @@ export class LocalePicker extends BtrixElement {
   async localeChanged(event: SlSelectEvent) {
     const newLocale = event.detail.item.value as TranslatedLocaleEnum;
 
-    localize.setLanguage(newLocale);
+    // Workaround for the fact that Shoelace menu items that are checkboxes have
+    // their `checked` internal state inverted on click, regardless of the value
+    // of their `checked` attribute.
+    // https://github.com/shoelace-style/shoelace/blob/v2.15.1/src/components/menu/menu.component.ts#L43-L45
+    const items = this.shadowRoot!.querySelectorAll("sl-menu-item");
+    items.forEach((item) => {
+      item.checked = item.value === localize.activeLanguage;
+    });
+
+    if (newLocale === localize.activeLanguage) {
+      event.preventDefault();
+      return;
+    }
+    await localize.setLanguage(newLocale);
   }
 }

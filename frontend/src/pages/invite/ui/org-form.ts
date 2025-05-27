@@ -25,8 +25,8 @@ export type OrgUpdatedDetail = {
 /**
  * @fires btrix-org-updated
  */
-@localized()
 @customElement("btrix-org-form")
+@localized()
 export class OrgForm extends BtrixElement {
   @property({ type: String })
   newOrgId?: string;
@@ -139,6 +139,7 @@ export class OrgForm extends BtrixElement {
         message: msg("Org successfully updated."),
         variant: "success",
         icon: "check2-circle",
+        id: "org-update-status",
       });
 
       await this.onRenameSuccess(payload);
@@ -183,6 +184,7 @@ export class OrgForm extends BtrixElement {
         ),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "org-update-status",
       });
     }
   }

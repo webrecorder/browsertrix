@@ -1,10 +1,11 @@
 import { localized, msg } from "@lit/localize";
-import { type SlSelect } from "@shoelace-style/shoelace";
+import type { SlSelect } from "@shoelace-style/shoelace";
 import { html } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 
-import type { ProxiesAPIResponse, Proxy } from "@/pages/org/types";
-import LiteElement from "@/utils/LiteElement";
+import { BtrixElement } from "@/classes/BtrixElement";
+import type { Proxy } from "@/pages/org/types";
 
 type SelectCrawlerProxyChangeDetail = {
   value: string | null;
@@ -26,18 +27,27 @@ export type SelectCrawlerProxyUpdateEvent =
  * Usage example:
  * ```ts
  * <btrix-select-crawler-proxy
- *   orgId=${orgId}
- *   on-change=${({value}) => selectedcrawlerProxy = value}
+ *   .proxyServers=${proxyServers}
+ *   btrix-change=${({value}) => selectedcrawlerProxy = value}
  * ></btrix-select-crawler-proxy>
  * ```
  *
- * @event on-change
+ * @fires btrix-change
  */
 @customElement("btrix-select-crawler-proxy")
 @localized()
-export class SelectCrawlerProxy extends LiteElement {
+export class SelectCrawlerProxy extends BtrixElement {
+  @property({ type: String })
+  defaultProxyId: string | null = null;
+
+  @property({ type: Array })
+  proxyServers: Proxy[] = [];
+
   @property({ type: String })
   proxyId: string | null = null;
+
+  @property({ type: String })
+  size?: SlSelect["size"];
 
   @state()
   private selectedProxy?: Proxy;
@@ -45,11 +55,12 @@ export class SelectCrawlerProxy extends LiteElement {
   @state()
   private defaultProxy?: Proxy;
 
-  @state()
-  private allProxies?: Proxy[];
+  public get value() {
+    return this.selectedProxy?.id || "";
+  }
 
   protected firstUpdated() {
-    void this.fetchOrgProxies();
+    void this.initProxies();
   }
   // credit: https://dev.to/jorik/country-code-to-flag-emoji-a21
   private countryCodeToFlagEmoji(countryCode: String): String {
@@ -61,10 +72,6 @@ export class SelectCrawlerProxy extends LiteElement {
   }
 
   render() {
-    /*if (this.crawlerProxys && this.crawlerProxys.length < 2) {
-      return html``;
-    }*/
-
     return html`
       <sl-select
         name="proxyId"
@@ -75,15 +82,12 @@ export class SelectCrawlerProxy extends LiteElement {
           : msg("No Proxy")}
         hoist
         clearable
+        size=${ifDefined(this.size)}
         @sl-change=${this.onChange}
-        @sl-focus=${() => {
-          // Refetch to keep list up to date
-          void this.fetchOrgProxies();
-        }}
         @sl-hide=${this.stopProp}
         @sl-after-hide=${this.stopProp}
       >
-        ${this.allProxies?.map(
+        ${this.proxyServers.map(
           (server) =>
             html` <sl-option value=${server.id}>
               ${server.country_code
@@ -121,7 +125,7 @@ export class SelectCrawlerProxy extends LiteElement {
   private onChange(e: Event) {
     this.stopProp(e);
 
-    this.selectedProxy = this.allProxies?.find(
+    this.selectedProxy = this.proxyServers.find(
       ({ id }) => id === (e.target as SlSelect).value,
     );
 
@@ -130,7 +134,7 @@ export class SelectCrawlerProxy extends LiteElement {
     }
 
     this.dispatchEvent(
-      new CustomEvent<SelectCrawlerProxyChangeDetail>("on-change", {
+      new CustomEvent<SelectCrawlerProxyChangeDetail>("btrix-change", {
         detail: {
           value: this.selectedProxy ? this.selectedProxy.id : null,
         },
@@ -138,62 +142,24 @@ export class SelectCrawlerProxy extends LiteElement {
     );
   }
 
-  /**
-   * Fetch crawler proxies and update internal state
-   */
-  private async fetchOrgProxies(): Promise<void> {
-    try {
-      const data = await this.getOrgProxies();
-      const defaultProxyId = data.default_proxy_id;
+  private async initProxies(): Promise<void> {
+    const defaultProxyId = this.defaultProxyId;
 
-      this.allProxies = data.servers;
-
-      if (!this.defaultProxy) {
-        this.defaultProxy = this.allProxies.find(
-          ({ id }) => id === defaultProxyId,
-        );
-      }
-
-      if (this.proxyId && !this.selectedProxy?.id) {
-        this.selectedProxy = this.allProxies.find(
-          ({ id }) => id === this.proxyId,
-        );
-      }
-
-      if (!this.selectedProxy) {
-        this.proxyId = null;
-        this.dispatchEvent(
-          new CustomEvent("on-change", {
-            detail: {
-              value: null,
-            },
-          }),
-        );
-        this.selectedProxy = this.allProxies.find(
-          ({ id }) => id === this.proxyId,
-        );
-      }
-
-      this.dispatchEvent(
-        new CustomEvent<SelectCrawlerProxyUpdateDetail>("on-update", {
-          detail: {
-            show: this.allProxies.length > 1,
-          },
-        }),
+    if (!this.defaultProxy) {
+      this.defaultProxy = this.proxyServers.find(
+        ({ id }) => id === defaultProxyId,
       );
-    } catch (e) {
-      this.notify({
-        message: msg("Sorry, couldn't retrieve proxies at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-      });
     }
-  }
 
-  private async getOrgProxies(): Promise<ProxiesAPIResponse> {
-    return this.apiFetch<ProxiesAPIResponse>(
-      `/orgs/${this.orgId}/crawlconfigs/crawler-proxies`,
-    );
+    if (this.proxyId && !this.selectedProxy) {
+      this.selectedProxy = this.proxyServers.find(
+        ({ id }) => id === this.proxyId,
+      );
+    }
+
+    if (!this.selectedProxy) {
+      this.proxyId = null;
+    }
   }
 
   /**

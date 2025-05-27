@@ -1,25 +1,30 @@
 import { localized, msg, str } from "@lit/localize";
 import ISO6391 from "iso-639-1";
-import { html, nothing } from "lit";
+import { html, nothing, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import { html as staticHtml, unsafeStatic } from "lit/static-html.js";
 import capitalize from "lodash/fp/capitalize";
 import RegexColorize from "regex-colorize";
 
-import { RelativeDuration } from "./relative-duration";
-
 import { BtrixElement } from "@/classes/BtrixElement";
-import type { CrawlConfig, Seed, SeedConfig } from "@/pages/org/types";
+import { none, notSpecified } from "@/layouts/empty";
+import {
+  Behavior,
+  type CrawlConfig,
+  type Seed,
+  type SeedConfig,
+} from "@/pages/org/types";
+import { labelFor } from "@/strings/crawl-workflows/labels";
 import scopeTypeLabel from "@/strings/crawl-workflows/scopeType";
 import sectionStrings from "@/strings/crawl-workflows/section";
 import type { Collection } from "@/types/collection";
 import { WorkflowScopeType } from "@/types/workflow";
 import { isApiError } from "@/utils/api";
-import { getAppSettings } from "@/utils/app";
 import { DEPTH_SUPPORTED_SCOPES, isPageScopeType } from "@/utils/crawler";
 import { humanizeSchedule } from "@/utils/cron";
 import { pluralOf } from "@/utils/pluralize";
+import { getServerDefaults } from "@/utils/workflow";
 
 /**
  * Usage:
@@ -29,8 +34,8 @@ import { pluralOf } from "@/utils/pluralize";
  * ></btrix-config-details>
  * ```
  */
-@localized()
 @customElement("btrix-config-details")
+@localized()
 export class ConfigDetails extends BtrixElement {
   @property({ type: Object })
   crawlConfig?: CrawlConfig;
@@ -57,19 +62,18 @@ export class ConfigDetails extends BtrixElement {
 
   async connectedCallback() {
     super.connectedCallback();
-    void this.fetchAPIDefaults();
+    void this.fetchOrgDefaults();
     await this.fetchCollections();
   }
 
   render() {
     const crawlConfig = this.crawlConfig;
-    const seedsConfig = crawlConfig?.config;
     const renderTimeLimit = (
       valueSeconds?: number | null,
       fallbackValue?: number,
     ) => {
       if (valueSeconds) {
-        return RelativeDuration.humanize(valueSeconds * 1000, {
+        return this.localize.humanizeDuration(valueSeconds * 1000, {
           verbose: true,
         });
       }
@@ -80,7 +84,7 @@ export class ConfigDetails extends BtrixElement {
         } else if (fallbackValue === 0) {
           value = msg("0 seconds");
         } else {
-          value = RelativeDuration.humanize(fallbackValue * 1000, {
+          value = this.localize.humanizeDuration(fallbackValue * 1000, {
             verbose: true,
           });
         }
@@ -92,10 +96,7 @@ export class ConfigDetails extends BtrixElement {
     const renderSize = (valueBytes?: number | null) => {
       // Eventually we will want to set this to the selected locale
       if (valueBytes) {
-        return html`<sl-format-bytes
-          value=${valueBytes}
-          display="narrow"
-        ></sl-format-bytes>`;
+        return this.localize.bytes(valueBytes, { unitDisplay: "narrow" });
       }
 
       return html`<span class="text-neutral-400"
@@ -104,12 +105,11 @@ export class ConfigDetails extends BtrixElement {
     };
 
     return html`
-      <section id="crawler-settings" class="mb-8">
-        <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
-          <h4>${sectionStrings.scope}</h4>
-        </btrix-section-heading>
-        <btrix-desc-list>
-          ${when(
+      ${this.renderSection({
+        id: "crawler-settings",
+        heading: sectionStrings.scope,
+        renderDescItems: (seedsConfig) =>
+          when(
             seedsConfig,
             (config) => html`
               ${this.renderSetting(
@@ -126,10 +126,12 @@ export class ConfigDetails extends BtrixElement {
                 ? this.renderConfirmUrlListSettings(config)
                 : this.renderConfirmSeededSettings(config)}
             `,
-          )}
-          <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
-            <h4>${sectionStrings.perCrawlLimits}</h4>
-          </btrix-section-heading>
+          ),
+      })}
+      ${this.renderSection({
+        id: "crawl-limits",
+        heading: sectionStrings.limits,
+        renderDescItems: (seedsConfig) => html`
           ${this.renderSetting(
             msg("Max Pages"),
             when(seedsConfig && this.seeds, (seeds) => {
@@ -142,7 +144,9 @@ export class ConfigDetails extends BtrixElement {
 
               if (this.orgDefaults?.maxPagesPerCrawl) {
                 return html`<span class="text-neutral-400">
-                  ${this.localize.number(this.orgDefaults.maxPagesPerCrawl)}
+                  ${this.orgDefaults.maxPagesPerCrawl === Infinity
+                    ? msg("Unlimited")
+                    : this.localize.number(this.orgDefaults.maxPagesPerCrawl)}
                   ${pluralOf("pages", this.orgDefaults.maxPagesPerCrawl)}
                   ${msg("(default)")}</span
                 >`;
@@ -151,53 +155,79 @@ export class ConfigDetails extends BtrixElement {
           )}
           ${this.renderSetting(
             msg("Crawl Time Limit"),
-            renderTimeLimit(crawlConfig?.crawlTimeout, Infinity),
+            renderTimeLimit(this.crawlConfig?.crawlTimeout, Infinity),
           )}
           ${this.renderSetting(
             msg("Crawl Size Limit"),
-            renderSize(crawlConfig?.maxCrawlSize),
+            renderSize(this.crawlConfig?.maxCrawlSize),
           )}
-          <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
-            <h4>${sectionStrings.perPageLimits}</h4>
-          </btrix-section-heading>
+        `,
+      })}
+      ${this.renderSection({
+        id: "browser-behaviors",
+        heading: sectionStrings.behaviors,
+        renderDescItems: (seedsConfig) => html`
           ${this.renderSetting(
-            msg("Page Load Timeout"),
+            labelFor.behaviors,
+            [
+              seedsConfig?.behaviors?.includes(Behavior.AutoScroll) &&
+                labelFor.autoscrollBehavior,
+              seedsConfig?.behaviors?.includes(Behavior.AutoClick) &&
+                labelFor.autoclickBehavior,
+            ]
+              .filter((v) => v)
+              .join(", ") || none,
+          )}
+          ${when(
+            seedsConfig?.behaviors?.includes(Behavior.AutoClick) &&
+              seedsConfig.clickSelector,
+            (clickSelector) =>
+              this.renderSetting(
+                labelFor.clickSelector,
+                html`<btrix-code
+                  language="css"
+                  value=${clickSelector}
+                ></btrix-code>`,
+              ),
+          )}
+          ${this.renderSetting(
+            labelFor.customBehaviors,
+            seedsConfig?.customBehaviors.length
+              ? html`
+                  <btrix-custom-behaviors-table
+                    .customBehaviors=${seedsConfig.customBehaviors}
+                  ></btrix-custom-behaviors-table>
+                `
+              : none,
+          )}
+          ${this.renderSetting(
+            labelFor.pageLoadTimeoutSeconds,
             renderTimeLimit(
-              crawlConfig?.config.pageLoadTimeout,
+              seedsConfig?.pageLoadTimeout,
               this.orgDefaults?.pageLoadTimeoutSeconds ?? Infinity,
             ),
           )}
           ${this.renderSetting(
-            msg("Delay After Page Load"),
-            renderTimeLimit(crawlConfig?.config.postLoadDelay, 0),
+            labelFor.postLoadDelaySeconds,
+            renderTimeLimit(seedsConfig?.postLoadDelay, 0),
           )}
           ${this.renderSetting(
-            msg("Behavior Timeout"),
+            labelFor.behaviorTimeoutSeconds,
             renderTimeLimit(
-              crawlConfig?.config.behaviorTimeout,
+              seedsConfig?.behaviorTimeout,
               this.orgDefaults?.behaviorTimeoutSeconds ?? Infinity,
             ),
           )}
           ${this.renderSetting(
-            msg("Auto-Scroll Behavior"),
-            crawlConfig?.config.behaviors &&
-              !crawlConfig.config.behaviors.includes("autoscroll")
-              ? msg("Disabled")
-              : html`<span class="text-neutral-400"
-                  >${msg("Enabled (default)")}</span
-                >`,
+            labelFor.pageExtraDelaySeconds,
+            renderTimeLimit(seedsConfig?.pageExtraDelay, 0),
           )}
-          ${this.renderSetting(
-            msg("Delay Before Next Page"),
-            renderTimeLimit(crawlConfig?.config.pageExtraDelay, 0),
-          )}
-        </btrix-desc-list>
-      </section>
-      <section id="browser-settings" class="mb-8">
-        <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
-          <h4>${sectionStrings.browserSettings}</h4>
-        </btrix-section-heading>
-        <btrix-desc-list>
+        `,
+      })}
+      ${this.renderSection({
+        id: "browser-settings",
+        heading: sectionStrings.browserSettings,
+        renderDescItems: (seedsConfig) => html`
           ${this.renderSetting(
             msg("Browser Profile"),
             when(
@@ -232,32 +262,31 @@ export class ConfigDetails extends BtrixElement {
           )}
           ${this.renderSetting(
             msg("Block Ads by Domain"),
-            crawlConfig?.config.blockAds,
+            seedsConfig?.blockAds,
           )}
           ${this.renderSetting(
             msg("User Agent"),
-            crawlConfig?.config.userAgent
-              ? crawlConfig.config.userAgent
+            seedsConfig?.userAgent
+              ? seedsConfig.userAgent
               : html`<span class="text-neutral-400"
                   >${msg("Browser User Agent (default)")}</span
                 >`,
           )}
-          ${crawlConfig?.config.lang
+          ${seedsConfig?.lang
             ? this.renderSetting(
                 msg("Language"),
-                ISO6391.getName(crawlConfig.config.lang),
+                ISO6391.getName(seedsConfig.lang),
               )
             : nothing}
           ${crawlConfig?.proxyId
             ? this.renderSetting(msg("Proxy"), capitalize(crawlConfig.proxyId))
             : nothing}
-        </btrix-desc-list>
-      </section>
-      <section id="crawl-scheduling" class="mb-8">
-        <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
-          <h4>${sectionStrings.scheduling}</h4>
-        </btrix-section-heading>
-        <btrix-desc-list>
+        `,
+      })}
+      ${this.renderSection({
+        id: "crawl-scheduling",
+        heading: sectionStrings.scheduling,
+        renderDescItems: () => html`
           ${this.renderSetting(
             msg("Crawl Schedule Type"),
             crawlConfig?.schedule
@@ -272,54 +301,72 @@ export class ConfigDetails extends BtrixElement {
                 : undefined,
             ),
           )}
+        `,
+      })}
+      ${when(!this.hideMetadata, () =>
+        this.renderSection({
+          id: "crawl-metadata",
+          heading: sectionStrings.metadata,
+          renderDescItems: () => html`
+            ${this.renderSetting(msg("Name"), crawlConfig?.name)}
+            ${this.renderSetting(
+              msg("Description"),
+              crawlConfig?.description
+                ? html`
+                    <p class="max-w-prose font-sans">
+                      ${crawlConfig.description}
+                    </p>
+                  `
+                : undefined,
+            )}
+            ${this.renderSetting(
+              msg("Tags"),
+              crawlConfig?.tags.length
+                ? crawlConfig.tags.map(
+                    (tag) =>
+                      html`<btrix-tag class="mr-2 mt-1">${tag}</btrix-tag>`,
+                  )
+                : [],
+            )}
+            ${this.renderSetting(
+              msg("Collections"),
+              this.collections.length
+                ? this.collections.map(
+                    (coll) =>
+                      html`<sl-tag class="mr-2 mt-1" variant="neutral">
+                        ${coll.name}
+                        <span class="font-monostyle pl-1 text-xs">
+                          (${this.localize.number(coll.crawlCount)}
+                          ${pluralOf("items", coll.crawlCount)})
+                        </span>
+                      </sl-tag>`,
+                  )
+                : undefined,
+            )}
+          `,
+        }),
+      )}
+    `;
+  }
+
+  private renderSection({
+    id,
+    heading,
+    renderDescItems,
+  }: {
+    id: string;
+    heading: string;
+    renderDescItems: (seedsConfig?: CrawlConfig["config"]) => TemplateResult;
+  }) {
+    return html`
+      <section id=${id} class="mb-8">
+        <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
+          <h4>${heading}</h4>
+        </btrix-section-heading>
+        <btrix-desc-list>
+          ${renderDescItems(this.crawlConfig?.config)}
         </btrix-desc-list>
       </section>
-      ${this.hideMetadata
-        ? nothing
-        : html`
-            <section id="crawl-metadata" class="mb-8">
-              <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
-                <h4>${msg("Metadata")}</h4>
-              </btrix-section-heading>
-              <btrix-desc-list>
-                ${this.renderSetting(msg("Name"), crawlConfig?.name)}
-                ${this.renderSetting(
-                  msg("Description"),
-                  crawlConfig?.description
-                    ? html`
-                        <p class="max-w-prose font-sans">
-                          ${crawlConfig.description}
-                        </p>
-                      `
-                    : undefined,
-                )}
-                ${this.renderSetting(
-                  msg("Tags"),
-                  crawlConfig?.tags.length
-                    ? crawlConfig.tags.map(
-                        (tag) =>
-                          html`<btrix-tag class="mr-2 mt-1">${tag}</btrix-tag>`,
-                      )
-                    : [],
-                )}
-                ${this.renderSetting(
-                  msg("Collections"),
-                  this.collections.length
-                    ? this.collections.map(
-                        (coll) =>
-                          html`<sl-tag class="mr-2 mt-1" variant="neutral">
-                            ${coll.name}
-                            <span class="font-monostyle pl-1 text-xs">
-                              (${this.localize.number(coll.crawlCount)}
-                              ${pluralOf("items", coll.crawlCount)})
-                            </span>
-                          </sl-tag>`,
-                      )
-                    : undefined,
-                )}
-              </btrix-desc-list>
-            </section>
-          `}
     `;
   }
 
@@ -356,6 +403,10 @@ export class ConfigDetails extends BtrixElement {
         msg("Include Any Linked Page (“one hop out”)"),
         Boolean(config.extraHops),
       )}
+      ${when(
+        config.extraHops,
+        () => html`${this.renderLinkSelectors()}${this.renderExclusions()}`,
+      )}
     `;
   };
 
@@ -367,7 +418,6 @@ export class ConfigDetails extends BtrixElement {
     const primarySeedConfig = this.seeds[0] as SeedConfig | Seed | undefined;
     const primarySeedUrl = (primarySeedConfig as Seed | undefined)?.url;
     const includeUrlList = primarySeedConfig?.include || config.include || [];
-    const exclusions = config.exclude || [];
     const scopeType = config.scopeType!;
 
     return html`
@@ -398,7 +448,7 @@ export class ConfigDetails extends BtrixElement {
                   )}
                 </ul>
               `
-            : msg("None"),
+            : none,
           true,
         ),
       )}
@@ -418,6 +468,7 @@ export class ConfigDetails extends BtrixElement {
         msg("Check For Sitemap"),
         Boolean(config.useSitemap),
       )}
+      ${this.renderLinkSelectors()}
       ${this.renderSetting(
         msg("Additional Page URLs"),
         additionalUrlList.length
@@ -437,24 +488,49 @@ export class ConfigDetails extends BtrixElement {
                 })}
               </ul>
             `
-          : msg("None"),
+          : none,
         true,
       )}
-      ${when(
-        exclusions.length,
-        () => html`
-          <div class="mb-2">
-            <btrix-queue-exclusion-table
-              .exclusions=${exclusions}
-              labelClassName="text-xs text-neutral-500"
-            >
-            </btrix-queue-exclusion-table>
-          </div>
-        `,
-        () => this.renderSetting(msg("Exclusions"), msg("None")),
-      )}
+      ${this.renderExclusions()}
     `;
   };
+
+  private renderLinkSelectors() {
+    const selectors = this.crawlConfig?.config.selectLinks || [];
+
+    return this.renderSetting(
+      labelFor.selectLink,
+      selectors.length
+        ? html`
+            <div class="mb-2">
+              <btrix-link-selector-table
+                .selectors=${selectors}
+                aria-readonly="true"
+              >
+              </btrix-link-selector-table>
+            </div>
+          `
+        : msg("None"),
+    );
+  }
+
+  private renderExclusions() {
+    const exclusions = this.crawlConfig?.config.exclude || [];
+
+    return when(
+      exclusions.length,
+      () => html`
+        <div class="mb-2">
+          <btrix-queue-exclusion-table
+            .exclusions=${exclusions}
+            labelClassName="text-xs text-neutral-500"
+          >
+          </btrix-queue-exclusion-table>
+        </div>
+      `,
+      () => this.renderSetting(msg("Exclusions"), none),
+    );
+  }
 
   private renderSetting(label: string, value: unknown, breakAll?: boolean) {
     let content = value;
@@ -464,11 +540,9 @@ export class ConfigDetails extends BtrixElement {
     } else if (typeof value === "boolean") {
       content = value ? msg("Yes") : msg("No");
     } else if (Array.isArray(value) && !value.length) {
-      content = html`<span class="text-neutral-400">${msg("None")}</span>`;
+      content = none;
     } else if (typeof value !== "number" && !value) {
-      content = html`<span class="text-neutral-400"
-        >${msg("Not specified")}</span
-      >`;
+      content = notSpecified;
     }
     return html`
       <btrix-desc-list-item label=${label} class=${breakAll ? "break-all" : ""}>
@@ -491,6 +565,7 @@ export class ConfigDetails extends BtrixElement {
                 ),
           variant: "danger",
           icon: "exclamation-octagon",
+          id: "collection-fetch-status",
         });
       }
     }
@@ -514,25 +589,29 @@ export class ConfigDetails extends BtrixElement {
     this.requestUpdate();
   }
 
-  private async fetchAPIDefaults() {
+  // TODO Consolidate with workflow-editor
+  private async fetchOrgDefaults() {
     try {
-      const settings = await getAppSettings();
-      const orgDefaults = {
+      const [serverDefaults, { quotas }] = await Promise.all([
+        getServerDefaults(),
+        this.api.fetch<{
+          quotas: { maxPagesPerCrawl?: number };
+        }>(`/orgs/${this.orgId}`),
+      ]);
+
+      const defaults = {
         ...this.orgDefaults,
+        ...serverDefaults,
       };
 
-      if (settings.defaultBehaviorTimeSeconds > 0) {
-        orgDefaults.behaviorTimeoutSeconds =
-          settings.defaultBehaviorTimeSeconds;
+      if (defaults.maxPagesPerCrawl && quotas.maxPagesPerCrawl) {
+        defaults.maxPagesPerCrawl = Math.min(
+          defaults.maxPagesPerCrawl,
+          quotas.maxPagesPerCrawl,
+        );
       }
-      if (settings.defaultPageLoadTimeSeconds > 0) {
-        orgDefaults.pageLoadTimeoutSeconds =
-          settings.defaultPageLoadTimeSeconds;
-      }
-      if (settings.maxPagesPerCrawl > 0) {
-        orgDefaults.maxPagesPerCrawl = settings.maxPagesPerCrawl;
-      }
-      this.orgDefaults = orgDefaults;
+
+      this.orgDefaults = defaults;
     } catch (e) {
       console.debug(e);
     }

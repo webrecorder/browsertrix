@@ -10,6 +10,7 @@ import { when } from "lit/directives/when.js";
 import throttle from "lodash/fp/throttle";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import type { IntersectEvent } from "@/controllers/observable";
 
 type Pages = string[];
 type ResponseData = {
@@ -31,8 +32,8 @@ const POLL_INTERVAL_SECONDS = 5;
  * ></btrix-crawl-queue>
  * ```
  */
-@localized()
 @customElement("btrix-crawl-queue")
+@localized()
 export class CrawlQueue extends BtrixElement {
   @property({ type: String })
   crawlId?: string;
@@ -115,37 +116,39 @@ export class CrawlQueue extends BtrixElement {
     const getInputWidth = (v: number | string) =>
       `${Math.max(v.toString().length, 3) + 2}ch`;
 
+    const fromInput = html` <btrix-inline-input
+      class="mx-1 inline-block"
+      style="width: ${Math.max(offsetValue.toString().length, 2) + 2}ch"
+      value="1"
+      inputmode="numeric"
+      size="small"
+      autocomplete="off"
+      @sl-input=${(e: SlInputEvent) => {
+        const input = e.target as SlInput;
+
+        input.style.width = getInputWidth(input.value);
+      }}
+      @sl-change=${async (e: SlChangeEvent) => {
+        const input = e.target as SlInput;
+        const int = +input.value.replace(/\D/g, "");
+
+        await this.updateComplete;
+
+        const value = Math.max(1, Math.min(int, this.queue!.total - 1));
+
+        input.value = value.toString();
+        this.pageOffset = value - 1;
+      }}
+    ></btrix-inline-input>`;
+
+    const max = this.localize.number(countMax);
+    const total = this.localize.number(this.queue.total);
+
     return html`
       <div class="flex items-center text-neutral-500">
-        ${msg(html`
-          Queued URLs from
-          <btrix-inline-input
-            class="mx-1 inline-block"
-            style="width: ${Math.max(offsetValue.toString().length, 2) + 2}ch"
-            value="1"
-            inputmode="numeric"
-            size="small"
-            autocomplete="off"
-            @sl-input=${(e: SlInputEvent) => {
-              const input = e.target as SlInput;
-
-              input.style.width = getInputWidth(input.value);
-            }}
-            @sl-change=${async (e: SlChangeEvent) => {
-              const input = e.target as SlInput;
-              const int = +input.value.replace(/\D/g, "");
-
-              await this.updateComplete;
-
-              const value = Math.max(1, Math.min(int, this.queue!.total - 1));
-
-              input.value = value.toString();
-              this.pageOffset = value - 1;
-            }}
-          ></btrix-inline-input>
-          to ${this.localize.number(countMax)} of
-          ${this.localize.number(this.queue.total)}
-        `)}
+        ${msg(html`Queued URLs from ${fromInput} to ${max} of ${total}`, {
+          id: "h077c8fe82a78c616",
+        })}
       </div>
     `;
   }
@@ -199,7 +202,7 @@ export class CrawlQueue extends BtrixElement {
               ${msg("End of queue")}
             </div>`,
           () => html`
-            <btrix-observable @intersect=${this.onLoadMoreIntersect}>
+            <btrix-observable @btrix-intersect=${this.onLoadMoreIntersect}>
               <div class="py-3">
                 <sl-icon-button
                   name="three-dots"
@@ -230,8 +233,8 @@ export class CrawlQueue extends BtrixElement {
     `;
   }
 
-  private readonly onLoadMoreIntersect = throttle(50)((e: CustomEvent) => {
-    if (!e.detail.entry.isIntersecting) return;
+  private readonly onLoadMoreIntersect = throttle(50)((e: IntersectEvent) => {
+    if (!e.detail.entries[0].isIntersecting) return;
     this.loadMore();
   }) as (e: CustomEvent) => void;
 
@@ -254,13 +257,22 @@ export class CrawlQueue extends BtrixElement {
         void this.fetchQueue();
       }, POLL_INTERVAL_SECONDS * 1000);
     } catch (e) {
-      if ((e as Error).message !== "invalid_regex") {
-        this.notify.toast({
-          message: msg("Sorry, couldn't fetch crawl queue at this time."),
-          variant: "danger",
-          icon: "exclamation-octagon",
-        });
+      const errorMessage = (e as Error).message;
+
+      if (
+        errorMessage === "invalid_regex" ||
+        errorMessage === "crawl_not_running"
+      ) {
+        console.debug(errorMessage);
+        return;
       }
+
+      this.notify.toast({
+        message: msg("Sorry, couldn't fetch crawl queue at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+        id: "crawl-queue-status",
+      });
     }
   }
 

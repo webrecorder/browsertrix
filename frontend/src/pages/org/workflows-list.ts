@@ -1,7 +1,11 @@
 import { localized, msg, str } from "@lit/localize";
-import type { SlCheckbox, SlSelectEvent } from "@shoelace-style/shoelace";
+import type {
+  SlCheckbox,
+  SlDialog,
+  SlSelectEvent,
+} from "@shoelace-style/shoelace";
 import { html, type PropertyValues } from "lit";
-import { customElement, state } from "lit/decorators.js";
+import { customElement, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
@@ -15,12 +19,14 @@ import {
 } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import { CopyButton } from "@/components/ui/copy-button";
-import type { PageChangeEvent } from "@/components/ui/pagination";
+import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { type SelectEvent } from "@/components/ui/search-combobox";
+import { ClipboardController } from "@/controllers/clipboard";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
 import { pageHeader } from "@/layouts/pageHeader";
+import { WorkflowTab } from "@/routes";
 import scopeTypeLabels from "@/strings/crawl-workflows/scopeType";
+import { deleteConfirmation } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import { NewWorkflowOnlyScopeType } from "@/types/workflow";
 import { isApiError } from "@/utils/api";
@@ -71,8 +77,8 @@ const sortableFields: Record<
  * <btrix-workflows-list></btrix-workflows-list>
  * ```
  */
-@localized()
 @customElement("btrix-workflows-list")
+@localized()
 export class WorkflowsList extends BtrixElement {
   static FieldLabels: Record<SearchFields, string> = {
     name: msg("Name"),
@@ -92,6 +98,9 @@ export class WorkflowsList extends BtrixElement {
   private fetchErrorStatusCode?: number;
 
   @state()
+  private workflowToDelete?: ListWorkflow;
+
+  @state()
   private orderBy: {
     field: SortField;
     direction: SortDirection;
@@ -105,6 +114,9 @@ export class WorkflowsList extends BtrixElement {
 
   @state()
   private filterByCurrentUser = false;
+
+  @query("#deleteDialog")
+  private readonly deleteDialog?: SlDialog | null;
 
   // For fuzzy search:
   private readonly searchKeys = ["name", "firstSeed"];
@@ -174,6 +186,7 @@ export class WorkflowsList extends BtrixElement {
           message: msg("Sorry, couldn't retrieve Workflows at this time."),
           variant: "danger",
           icon: "exclamation-octagon",
+          id: "workflow-retrieve-error",
         });
       }
     }
@@ -196,9 +209,9 @@ export class WorkflowsList extends BtrixElement {
   render() {
     return html`
       <div class="contents">
-        ${pageHeader(
-          msg("Crawl Workflows"),
-          html`
+        ${pageHeader({
+          title: msg("Crawl Workflows"),
+          actions: html`
             ${when(
               this.appState.isAdmin,
               () =>
@@ -292,8 +305,8 @@ export class WorkflowsList extends BtrixElement {
               `,
             )}
           `,
-          tw`border-b-transparent`,
-        )}
+          classNames: tw`border-b-transparent`,
+        })}
         <div class="sticky top-2 z-10 mb-3 rounded-lg border bg-neutral-50 p-4">
           ${this.renderControls()}
         </div>
@@ -310,12 +323,52 @@ export class WorkflowsList extends BtrixElement {
             </btrix-alert>
           </div>
         `,
-        () =>
-          this.workflows
-            ? this.workflows.total
-              ? this.renderWorkflowList()
-              : this.renderEmptyState()
-            : this.renderLoading(),
+        () => html`
+          <div class="pb-10">
+            ${this.workflows
+              ? this.workflows.total
+                ? this.renderWorkflowList()
+                : this.renderEmptyState()
+              : this.renderLoading()}
+          </div>
+        `,
+      )}
+      ${this.renderDialogs()}
+    `;
+  }
+
+  private renderDialogs() {
+    return html`
+      ${when(
+        this.workflowToDelete,
+        (workflow) => html`
+          <btrix-dialog id="deleteDialog" .label=${msg("Delete Workflow?")}>
+            ${deleteConfirmation(this.renderName(workflow))}
+            <div slot="footer" class="flex justify-between">
+              <sl-button
+                size="small"
+                .autofocus=${true}
+                @click=${() => void this.deleteDialog?.hide()}
+                >${msg("Cancel")}</sl-button
+              >
+              <sl-button
+                size="small"
+                variant="danger"
+                @click=${async () => {
+                  void this.deleteDialog?.hide();
+
+                  try {
+                    await this.delete(workflow);
+                    this.workflowToDelete = undefined;
+                  } catch {
+                    void this.deleteDialog?.show();
+                  }
+                }}
+                >${msg("Delete Workflow")}</sl-button
+              >
+            </div>
+          </btrix-dialog>
+        `,
       )}
     `;
   }
@@ -481,10 +534,7 @@ export class WorkflowsList extends BtrixElement {
   }
 
   private readonly renderWorkflowItem = (workflow: ListWorkflow) => html`
-    <btrix-workflow-list-item
-      orgSlug=${this.appState.orgSlug || ""}
-      .workflow=${workflow}
-    >
+    <btrix-workflow-list-item .workflow=${workflow}>
       <sl-menu slot="menu">${this.renderMenuItems(workflow)}</sl-menu>
     </btrix-workflow-list-item>
   `;
@@ -508,7 +558,7 @@ export class WorkflowsList extends BtrixElement {
             @click=${() => void this.cancel(workflow.lastCrawlId)}
           >
             <sl-icon name="x-octagon" slot="prefix"></sl-icon>
-            ${msg("Cancel & Discard Crawl")}
+            ${msg(html`Cancel & Discard Crawl`)}
           </sl-menu-item>
         `,
       )}
@@ -536,7 +586,7 @@ export class WorkflowsList extends BtrixElement {
           <sl-menu-item
             @click=${() =>
               this.navigate.to(
-                `${this.navigate.orgBasePath}/workflows/${workflow.id}#watch`,
+                `${this.navigate.orgBasePath}/workflows/${workflow.id}/${WorkflowTab.LatestCrawl}`,
                 {
                   dialog: "scale",
                 },
@@ -549,7 +599,7 @@ export class WorkflowsList extends BtrixElement {
             ?disabled=${workflow.lastCrawlState !== "running"}
             @click=${() =>
               this.navigate.to(
-                `${this.navigate.orgBasePath}/workflows/${workflow.id}#watch`,
+                `${this.navigate.orgBasePath}/workflows/${workflow.id}/${WorkflowTab.LatestCrawl}`,
                 {
                   dialog: "exclusions",
                 },
@@ -564,19 +614,19 @@ export class WorkflowsList extends BtrixElement {
       ${when(
         this.appState.isCrawler,
         () =>
-          html` <sl-divider></sl-divider>
-            <sl-menu-item
-              @click=${() =>
-                this.navigate.to(
-                  `${this.navigate.orgBasePath}/workflows/${workflow.id}?edit`,
-                )}
-            >
-              <sl-icon name="gear" slot="prefix"></sl-icon>
-              ${msg("Edit Workflow Settings")}
-            </sl-menu-item>`,
+          html`<sl-menu-item
+            @click=${() =>
+              this.navigate.to(
+                `${this.navigate.orgBasePath}/workflows/${workflow.id}?edit`,
+              )}
+          >
+            <sl-icon name="gear" slot="prefix"></sl-icon>
+            ${msg("Edit Workflow Settings")}
+          </sl-menu-item>`,
       )}
       <sl-menu-item
-        @click=${() => CopyButton.copyToClipboard(workflow.tags.join(", "))}
+        @click=${() =>
+          ClipboardController.copyToClipboard(workflow.tags.join(", "))}
         ?disabled=${!workflow.tags.length}
       >
         <sl-icon name="tags" slot="prefix"></sl-icon>
@@ -592,13 +642,24 @@ export class WorkflowsList extends BtrixElement {
             <sl-icon name="files" slot="prefix"></sl-icon>
             ${msg("Duplicate Workflow")}
           </sl-menu-item>
+          <sl-divider></sl-divider>
+          <sl-menu-item
+            @click=${() => ClipboardController.copyToClipboard(workflow.id)}
+          >
+            <sl-icon name="copy" slot="prefix"></sl-icon>
+            ${msg("Copy Workflow ID")}
+          </sl-menu-item>
           ${when(
-            !workflow.lastCrawlId,
+            !workflow.crawlCount,
             () => html`
               <sl-divider></sl-divider>
               <sl-menu-item
                 style="--sl-color-neutral-700: var(--danger)"
-                @click=${() => void this.delete(workflow)}
+                @click=${async () => {
+                  this.workflowToDelete = workflow;
+                  await this.updateComplete;
+                  void this.deleteDialog?.show();
+                }}
               >
                 <sl-icon name="trash3" slot="prefix"></sl-icon>
                 ${msg("Delete Workflow")}
@@ -688,7 +749,10 @@ export class WorkflowsList extends BtrixElement {
     const query = queryString.stringify(
       {
         ...this.filterBy,
-        page: queryParams?.page || this.workflows?.page || 1,
+        page:
+          queryParams?.page ||
+          this.workflows?.page ||
+          parsePage(new URLSearchParams(location.search).get("page")),
         pageSize:
           queryParams?.pageSize ||
           this.workflows?.pageSize ||
@@ -741,12 +805,14 @@ export class WorkflowsList extends BtrixElement {
         ),
         variant: "warning",
         icon: "exclamation-triangle",
+        id: "workflow-copied-status",
       });
     } else {
       this.notify.toast({
         message: msg(str`Copied Workflow to new template.`),
         variant: "success",
         icon: "check2-circle",
+        id: "workflow-copied-status",
       });
     }
   }
@@ -764,12 +830,14 @@ export class WorkflowsList extends BtrixElement {
         ),
         variant: "success",
         icon: "check2-circle",
+        id: "workflow-delete-status",
       });
     } catch {
       this.notify.toast({
         message: msg("Sorry, couldn't delete Workflow at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "workflow-delete-status",
       });
     }
   }
@@ -790,6 +858,7 @@ export class WorkflowsList extends BtrixElement {
           message: msg("Something went wrong, couldn't cancel crawl."),
           variant: "danger",
           icon: "exclamation-octagon",
+          id: "crawl-stop-error",
         });
       }
     }
@@ -811,6 +880,7 @@ export class WorkflowsList extends BtrixElement {
           message: msg("Something went wrong, couldn't stop crawl."),
           variant: "danger",
           icon: "exclamation-octagon",
+          id: "crawl-stop-error",
         });
       }
     }
@@ -831,7 +901,8 @@ export class WorkflowsList extends BtrixElement {
             <br />
             <a
               class="underline hover:no-underline"
-              href="${this.navigate.orgBasePath}/workflows/${workflow.id}#watch"
+              href="${this.navigate
+                .orgBasePath}/workflows/${workflow.id}/${WorkflowTab.LatestCrawl}"
               @click=${this.navigate.link.bind(this)}
               >Watch crawl</a
             >`,
@@ -865,6 +936,7 @@ export class WorkflowsList extends BtrixElement {
         message: message,
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "crawl-start-error",
       });
     }
   }

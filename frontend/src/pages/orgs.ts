@@ -1,15 +1,16 @@
 import { localized, msg } from "@lit/localize";
+import { html } from "lit";
 import { customElement, state } from "lit/decorators.js";
 
+import { BtrixElement } from "@/classes/BtrixElement";
 import needLogin from "@/decorators/needLogin";
 import type { APIPaginatedList } from "@/types/api";
-import LiteElement, { html } from "@/utils/LiteElement";
 import type { OrgData } from "@/utils/orgs";
 
-@localized()
 @customElement("btrix-orgs")
+@localized()
 @needLogin
-export class Orgs extends LiteElement {
+export class Orgs extends BtrixElement {
   @state()
   private orgList?: OrgData[];
 
@@ -52,7 +53,7 @@ export class Orgs extends LiteElement {
   }
 
   private async getOrgs() {
-    const data = await this.apiFetch<APIPaginatedList<OrgData>>("/orgs");
+    const data = await this.api.fetch<APIPaginatedList<OrgData>>("/orgs");
 
     return data.items;
   }

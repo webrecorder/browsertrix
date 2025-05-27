@@ -20,8 +20,9 @@ storages:
     secret_key: "PASSW0RD"
     bucket_name: *local_bucket_name
 
-    endpoint_url: "http://local-minio.default:9000/"
-    is_default_primary: True
+    endpoint_url: "http://local-minio:9000/"
+    is_default_primary: true
+    access_endpoint_url: "/data/"
 
   - name: "replica-0"
     type: "s3"
@@ -29,7 +30,7 @@ storages:
     secret_key: "PASSW0RD"
     bucket_name: "replica-0"
 
-    endpoint_url: "http://local-minio.default:9000/"
-    is_default_replica: True
+    endpoint_url: "http://local-minio:9000/"
+    is_default_replica: true
 
 

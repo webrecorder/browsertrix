@@ -18,20 +18,23 @@ from contextlib import asynccontextmanager
 from itertools import chain
 
 import asyncio
+import time
 import heapq
 import zlib
 import json
 import os
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from zipfile import ZipInfo
 
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, APIRouter
 from stream_zip import stream_zip, NO_COMPRESSION_64, Method
 from remotezip import RemoteZip
+from aiobotocore.config import AioConfig
 
 import aiobotocore.session
 import requests
+import pymongo
 
 from types_aiobotocore_s3 import S3Client as AIOS3Client
 from types_aiobotocore_s3.type_defs import CompletedPartTypeDef
@@ -48,9 +51,13 @@ from .models import (
     DeletedResponse,
     UpdatedResponse,
     AddedResponseName,
+    PRESIGN_DURATION_SECONDS,
+    PresignedUrl,
+    SuccessResponse,
+    User,
 )
 
-from .utils import is_bool, slug_from_name
+from .utils import slug_from_name, dt_now
 from .version import __version__
 
 
@@ -64,7 +71,8 @@ CHUNK_SIZE = 1024 * 256
 
 
 # ============================================================================
-# pylint: disable=broad-except,raise-missing-from
+# pylint: disable=broad-except,raise-missing-from,too-many-instance-attributes
+# pylint: disable=too-many-public-methods
 class StorageOps:
     """All storage handling, download/upload operations"""
 
@@ -77,20 +85,29 @@ class StorageOps:
     org_ops: OrgOps
     crawl_manager: CrawlManager
 
-    is_local_minio: bool
     frontend_origin: str
 
-    def __init__(self, org_ops, crawl_manager) -> None:
+    expire_at_duration_seconds: int
+    signed_duration_delta: timedelta
+
+    def __init__(self, org_ops, crawl_manager, mdb) -> None:
         self.org_ops = org_ops
         self.crawl_manager = crawl_manager
 
-        self.is_local_minio = is_bool(os.environ.get("IS_LOCAL_MINIO"))
+        self.presigned_urls = mdb["presigned_urls"]
+
+        # renew when <25% of time remaining
+        self.expire_at_duration_seconds = int(PRESIGN_DURATION_SECONDS * 0.75)
+        self.signed_duration_delta = timedelta(seconds=self.expire_at_duration_seconds)
 
         frontend_origin = os.environ.get(
             "FRONTEND_ORIGIN", "http://browsertrix-cloud-frontend"
         )
         default_namespace = os.environ.get("DEFAULT_NAMESPACE", "default")
         self.frontend_origin = f"{frontend_origin}.{default_namespace}"
+
+        self.local_minio_access_path = os.environ.get("LOCAL_MINIO_ACCESS_PATH")
+        self.presign_batch_size = int(os.environ.get("PRESIGN_BATCH_SIZE", 8))
 
         with open(os.environ["STORAGES_JSON"], encoding="utf-8") as fh:
             storage_list = json.loads(fh.read())
@@ -130,6 +147,24 @@ class StorageOps:
 
         self.org_ops.set_default_primary_storage(self.default_primary)
 
+    async def init_index(self):
+        """init index for storages"""
+        try:
+            await self.presigned_urls.create_index(
+                "signedAt", expireAfterSeconds=self.expire_at_duration_seconds
+            )
+        except pymongo.errors.OperationFailure:
+            # create_index() fails if expire_at_duration_seconds has changed since
+            # previous run
+            # if so, just delete this index (as this collection is temporary anyway)
+            # and recreate
+            print("Recreating presigned_urls index")
+            await self.presigned_urls.drop_indexes()
+
+            await self.presigned_urls.create_index(
+                "signedAt", expireAfterSeconds=self.expire_at_duration_seconds
+            )
+
     def _create_s3_storage(self, storage: dict[str, str]) -> S3Storage:
         """create S3Storage object"""
         endpoint_url = storage["endpoint_url"]
@@ -138,12 +173,11 @@ class StorageOps:
         if bucket_name:
             endpoint_url += bucket_name + "/"
 
-        if self.is_local_minio:
-            access_endpoint_url = "/data/"
-            use_access_for_presign = False
-        else:
-            access_endpoint_url = storage.get("access_endpoint_url") or endpoint_url
-            use_access_for_presign = is_bool(storage.get("use_access_for_presign"))
+        access_endpoint_url = storage.get("access_endpoint_url") or endpoint_url
+
+        addressing_style = storage.get("access_addressing_style", "virtual")
+        if access_endpoint_url == self.local_minio_access_path:
+            addressing_style = "path"
 
         return S3Storage(
             access_key=storage["access_key"],
@@ -152,7 +186,7 @@ class StorageOps:
             endpoint_url=endpoint_url,
             endpoint_no_bucket_url=endpoint_no_bucket_url,
             access_endpoint_url=access_endpoint_url,
-            use_access_for_presign=use_access_for_presign,
+            access_addressing_style=addressing_style,
         )
 
     async def add_custom_storage(
@@ -177,7 +211,7 @@ class StorageOps:
             endpoint_url=endpoint_url,
             endpoint_no_bucket_url=endpoint_no_bucket_url,
             access_endpoint_url=storagein.access_endpoint_url or storagein.endpoint_url,
-            use_access_for_presign=True,
+            access_addressing_style=storagein.access_addressing_style,
         )
 
         try:
@@ -264,12 +298,12 @@ class StorageOps:
 
     @asynccontextmanager
     async def get_s3_client(
-        self, storage: S3Storage, use_access=False
+        self, storage: S3Storage, for_presign=False
     ) -> AsyncIterator[tuple[AIOS3Client, str, str]]:
         """context manager for s3 client"""
-        endpoint_url = (
-            storage.endpoint_url if not use_access else storage.access_endpoint_url
-        )
+        # parse bucket and key from standard endpoint_url
+        endpoint_url = storage.endpoint_url
+
         if not endpoint_url.endswith("/"):
             endpoint_url += "/"
 
@@ -280,12 +314,19 @@ class StorageOps:
 
         session = aiobotocore.session.get_session()
 
+        config = None
+
+        if for_presign and storage.access_endpoint_url != storage.endpoint_url:
+            s3 = {"addressing_style": storage.access_addressing_style}
+            config = AioConfig(signature_version="s3v4", s3=s3)
+
         async with session.create_client(
             "s3",
-            region_name=storage.region,
+            region_name=storage.region or "us-east-1",
             endpoint_url=endpoint_url,
             aws_access_key_id=storage.access_key,
             aws_secret_access_key=storage.secret_key,
+            config=config,
         ) as client:
             yield client, bucket, key
 
@@ -366,6 +407,7 @@ class StorageOps:
         filename: str,
         file_: AsyncIterator,
         min_size: int,
+        mime: Optional[str] = None,
     ) -> bool:
         """do upload to specified key using multipart chunking"""
         s3storage = self.get_org_primary_storage(org)
@@ -389,7 +431,10 @@ class StorageOps:
             key += filename
 
             mup_resp = await client.create_multipart_upload(
-                ACL="bucket-owner-full-control", Bucket=bucket, Key=key
+                ACL="bucket-owner-full-control",
+                Bucket=bucket,
+                Key=key,
+                ContentType=mime or "",
             )
 
             upload_id = mup_resp["UploadId"]
@@ -448,37 +493,129 @@ class StorageOps:
                 return False
 
     async def get_presigned_url(
-        self, org: Organization, crawlfile: CrawlFile, duration=3600
-    ) -> str:
+        self, org: Organization, crawlfile: CrawlFile, force_update=False
+    ) -> tuple[str, datetime]:
         """generate pre-signed url for crawl file"""
+
+        res = None
+        if not force_update:
+            res = await self.presigned_urls.find_one({"_id": crawlfile.filename})
+            if res:
+                presigned = PresignedUrl.from_dict(res)
+                return presigned.url, presigned.signedAt + self.signed_duration_delta
 
         s3storage = self.get_org_storage_by_ref(org, crawlfile.storage)
 
-        async with self.get_s3_client(s3storage, s3storage.use_access_for_presign) as (
-            client,
-            bucket,
-            key,
-        ):
-            key += crawlfile.filename
-
+        async with self.get_s3_client(
+            s3storage,
+            for_presign=True,
+        ) as (client, bucket, key):
             presigned_url = await client.generate_presigned_url(
-                "get_object", Params={"Bucket": bucket, "Key": key}, ExpiresIn=duration
+                "get_object",
+                Params={"Bucket": bucket, "Key": key + crawlfile.filename},
+                ExpiresIn=PRESIGN_DURATION_SECONDS,
             )
 
-            if (
-                not s3storage.use_access_for_presign
-                and s3storage.access_endpoint_url
-                and s3storage.access_endpoint_url != s3storage.endpoint_url
-            ):
-                presigned_url = presigned_url.replace(
-                    s3storage.endpoint_url, s3storage.access_endpoint_url
+            host_endpoint_url = self.get_host_endpoint_url(s3storage, bucket, key)
+
+        if host_endpoint_url:
+            presigned_url = presigned_url.replace(
+                host_endpoint_url, s3storage.access_endpoint_url
+            )
+
+        now = dt_now()
+
+        presigned = PresignedUrl(
+            id=crawlfile.filename, url=presigned_url, signedAt=dt_now(), oid=org.id
+        )
+        await self.presigned_urls.find_one_and_update(
+            {"_id": crawlfile.filename},
+            {
+                "$set": presigned.to_dict(),
+            },
+            upsert=True,
+        )
+
+        return presigned_url, now + self.signed_duration_delta
+
+    def get_host_endpoint_url(
+        self, s3storage: S3Storage, bucket: str, key: str
+    ) -> Optional[str]:
+        """compute host endpoint for given storage for replacement for access"""
+        if not s3storage.access_endpoint_url:
+            return None
+
+        if s3storage.access_endpoint_url == s3storage.endpoint_url:
+            return None
+
+        is_virtual = s3storage.access_addressing_style == "virtual"
+        parts = urlsplit(s3storage.endpoint_url)
+        host_endpoint_url = (
+            f"{parts.scheme}://{bucket}.{parts.netloc}/{key}"
+            if is_virtual
+            else f"{parts.scheme}://{parts.netloc}/{bucket}/{key}"
+        )
+        return host_endpoint_url
+
+    async def get_presigned_urls_bulk(
+        self, org: Organization, s3storage: S3Storage, filenames: list[str]
+    ) -> tuple[list[str], datetime]:
+        """generate pre-signed url for crawl file"""
+
+        urls = []
+
+        futures = []
+        num_batch = self.presign_batch_size
+
+        now = dt_now()
+
+        async with self.get_s3_client(
+            s3storage,
+            for_presign=True,
+        ) as (client, bucket, key):
+
+            for filename in filenames:
+                futures.append(
+                    client.generate_presigned_url(
+                        "get_object",
+                        Params={"Bucket": bucket, "Key": key + filename},
+                        ExpiresIn=PRESIGN_DURATION_SECONDS,
+                    )
                 )
 
-        return presigned_url
+            host_endpoint_url = self.get_host_endpoint_url(s3storage, bucket, key)
 
-    async def delete_crawl_file_object(
-        self, org: Organization, crawlfile: BaseFile
-    ) -> bool:
+        for i in range(0, len(futures), num_batch):
+            batch = futures[i : i + num_batch]
+            results = await asyncio.gather(*batch)
+
+            presigned_obj = []
+
+            for presigned_url, filename in zip(results, filenames[i : i + num_batch]):
+                if host_endpoint_url:
+                    presigned_url = presigned_url.replace(
+                        host_endpoint_url, s3storage.access_endpoint_url
+                    )
+
+                urls.append(presigned_url)
+
+                presigned_obj.append(
+                    PresignedUrl(
+                        id=filename, url=presigned_url, signedAt=now, oid=org.id
+                    ).to_dict()
+                )
+
+            try:
+                await self.presigned_urls.insert_many(presigned_obj, ordered=False)
+            except pymongo.errors.BulkWriteError as bwe:
+                for err in bwe.details.get("writeErrors", []):
+                    # ignorable duplicate key errors
+                    if err.get("code") != 11000:
+                        raise
+
+        return urls, now + self.signed_duration_delta
+
+    async def delete_file_object(self, org: Organization, crawlfile: BaseFile) -> bool:
         """delete crawl file from storage."""
         return await self._delete_file(org, crawlfile.filename, crawlfile.storage)
 
@@ -490,11 +627,7 @@ class StorageOps:
 
         s3storage = self.get_org_storage_by_ref(org, storage)
 
-        async with self.get_s3_client(s3storage) as (
-            client,
-            bucket,
-            key,
-        ):
+        async with self.get_s3_client(s3storage) as (client, bucket, key):
             key += filename
             response = await client.delete_object(Bucket=bucket, Key=key)
             status_code = response["ResponseMetadata"]["HTTPStatusCode"]
@@ -502,12 +635,14 @@ class StorageOps:
         return status_code == 204
 
     async def sync_stream_wacz_pages(
-        self, wacz_files: List[CrawlFileOut]
+        self, wacz_files: List[CrawlFileOut], num_retries=5
     ) -> Iterator[Dict[Any, Any]]:
         """Return stream of pages specified WACZ"""
         loop = asyncio.get_event_loop()
 
-        resp = await loop.run_in_executor(None, self._sync_get_pages, wacz_files)
+        resp = await loop.run_in_executor(
+            None, self._sync_get_pages, wacz_files, num_retries
+        )
 
         return resp
 
@@ -607,14 +742,15 @@ class StorageOps:
         return stream_json_lines(heap_iter, log_levels, contexts)
 
     def _sync_get_pages(
-        self,
-        wacz_files: List[CrawlFileOut],
+        self, wacz_files: List[CrawlFileOut], num_retries=5
     ) -> Iterator[Dict[Any, Any]]:
         """Generate stream of page dicts from specified WACZs"""
 
         # pylint: disable=too-many-function-args
         def stream_page_lines(
-            pagefile_zipinfo: ZipInfo, wacz_url: str, wacz_filename: str
+            pagefile_zipinfo: ZipInfo,
+            wacz_url: str,
+            wacz_filename: str,
         ) -> Iterator[Dict[Any, Any]]:
             """Pass lines as json objects"""
             filename = pagefile_zipinfo.filename
@@ -626,26 +762,50 @@ class StorageOps:
 
             line_iter: Iterator[bytes] = self._sync_get_filestream(wacz_url, filename)
             for line in line_iter:
-                yield _parse_json(line.decode("utf-8", errors="ignore"))
+                page_json = _parse_json(line.decode("utf-8", errors="ignore"))
+                page_json["filename"] = os.path.basename(wacz_filename)
+                if filename == "pages/pages.jsonl":
+                    page_json["seed"] = True
+                yield page_json
 
-        page_generators: List[Iterator[Dict[Any, Any]]] = []
+        count = 0
+        total = len(wacz_files)
 
         for wacz_file in wacz_files:
             wacz_url = self.resolve_internal_access_path(wacz_file.path)
-            with RemoteZip(wacz_url) as remote_zip:
-                page_files: List[ZipInfo] = [
-                    f
-                    for f in remote_zip.infolist()
-                    if f.filename.startswith("pages/")
-                    and f.filename.endswith(".jsonl")
-                    and not f.is_dir()
-                ]
-                for pagefile_zipinfo in page_files:
-                    page_generators.append(
-                        stream_page_lines(pagefile_zipinfo, wacz_url, wacz_file.name)
-                    )
 
-        return chain.from_iterable(page_generators)
+            retry = 0
+            count += 1
+
+            print(f"  Processing {count} of {total} WACZ {wacz_url}")
+
+            while True:
+                try:
+                    with RemoteZip(wacz_url) as remote_zip:
+                        page_files: List[ZipInfo] = [
+                            f
+                            for f in remote_zip.infolist()
+                            if f.filename.startswith("pages/")
+                            and f.filename.endswith(".jsonl")
+                            and not f.is_dir()
+                        ]
+                        for pagefile_zipinfo in page_files:
+                            yield from stream_page_lines(
+                                pagefile_zipinfo,
+                                wacz_url,
+                                wacz_file.name,
+                            )
+                except Exception as exc:
+                    msg = str(exc)
+                    if retry < num_retries:
+                        retry += 1
+                        print(f"Retrying, {retry} of {num_retries}, {msg}")
+                        time.sleep(30)
+                        continue
+
+                    print(f"No more retries for error: {msg}, skipping {wacz_url}")
+
+                break
 
     def _sync_get_filestream(self, wacz_url: str, filename: str) -> Iterator[bytes]:
         """Return iterator of lines in remote file as bytes"""
@@ -732,10 +892,12 @@ def _parse_json(line) -> dict:
 
 
 # ============================================================================
-def init_storages_api(org_ops, crawl_manager):
+def init_storages_api(
+    org_ops: OrgOps, crawl_manager: CrawlManager, app: APIRouter, mdb, user_dep
+) -> StorageOps:
     """API for updating storage for an org"""
 
-    storage_ops = StorageOps(org_ops, crawl_manager)
+    storage_ops = StorageOps(org_ops, crawl_manager, mdb)
 
     if not org_ops.router:
         return storage_ops
@@ -753,6 +915,29 @@ def init_storages_api(org_ops, crawl_manager):
     @router.get("/allStorages", tags=["organizations"], response_model=List[StorageRef])
     def get_available_storages(org: Organization = Depends(org_owner_dep)):
         return storage_ops.get_available_storages(org)
+
+    @router.post(
+        "/clear-presigned-urls",
+        tags=["organizations"],
+        response_model=SuccessResponse,
+    )
+    async def clear_presigned_url(org: Organization = Depends(org_owner_dep)):
+        await storage_ops.presigned_urls.delete_many({"oid": org.id})
+
+        return {"success": True}
+
+    @app.post(
+        "/orgs/clear-presigned-urls",
+        tags=["organizations"],
+        response_model=SuccessResponse,
+    )
+    async def clear_all_presigned_urls(user: User = Depends(user_dep)):
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+
+        await storage_ops.presigned_urls.delete_many({})
+
+        return {"success": True}
 
     # pylint: disable=unreachable, fixme
     # todo: enable when ready to support custom storage

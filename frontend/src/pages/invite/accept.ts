@@ -8,6 +8,7 @@ import { renderInviteMessage } from "./ui/inviteMessage";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { APIUser } from "@/index";
 import type { OrgUpdatedDetail } from "@/pages/invite/ui/org-form";
+import { OrgTab, RouteNamespace } from "@/routes";
 import type { UserOrg, UserOrgInviteInfo } from "@/types/user";
 import { isApiError } from "@/utils/api";
 import { AppStateService } from "@/utils/state";
@@ -20,8 +21,8 @@ import "./ui/org-form";
  * Uses custom redirect instead of needLogin decorator to suppress "need login"
  * message when accessing root URL.
  */
-@localized()
 @customElement("btrix-accept-invite")
+@localized()
 export class AcceptInvite extends BtrixElement {
   @property({ type: String })
   token?: string;
@@ -126,7 +127,9 @@ export class AcceptInvite extends BtrixElement {
                           e: CustomEvent<OrgUpdatedDetail>,
                         ) => {
                           e.stopPropagation();
-                          this.navigate.to(`/orgs/${e.detail.data.slug}`);
+                          this.navigate.to(
+                            `/${RouteNamespace.PrivateOrgs}/${e.detail.data.slug}/${OrgTab.Dashboard}`,
+                          );
                         }}
                       ></btrix-org-form>
                     `
@@ -244,7 +247,9 @@ export class AcceptInvite extends BtrixElement {
           icon: "check2-circle",
         });
 
-        this.navigate.to(`/orgs/${org.slug}`);
+        this.navigate.to(
+          `/${RouteNamespace.PrivateOrgs}/${org.slug}/${OrgTab.Dashboard}`,
+        );
       }
     } catch (err) {
       if (isApiError(err) && err.message === "Invalid Invite Code") {

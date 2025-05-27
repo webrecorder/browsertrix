@@ -1,54 +1,51 @@
+import "./utils/polyfills";
+import "./global";
+
+import { provide } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
 import type {
   SlDialog,
   SlDrawer,
   SlSelectEvent,
 } from "@shoelace-style/shoelace";
-import { html, nothing, render, type TemplateResult } from "lit";
+import { html, nothing, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
+import { until } from "lit/directives/until.js";
 import { when } from "lit/directives/when.js";
 import isEqual from "lodash/fp/isEqual";
 
-import "broadcastchannel-polyfill";
-import "construct-style-sheets-polyfill";
-import "./utils/polyfills";
+import "./components";
+import "./features";
+import "./pages";
 
-import type { OrgTab } from "./pages/org";
-import { ROUTES } from "./routes";
+import { viewStateContext } from "./context/view-state";
+import { OrgTab, RouteNamespace } from "./routes";
 import type { UserInfo, UserOrg } from "./types/user";
-import APIRouter, { type ViewState } from "./utils/APIRouter";
+import { pageView, type AnalyticsTrackProps } from "./utils/analytics";
+import { type ViewState } from "./utils/APIRouter";
 import AuthService, {
   type AuthEventDetail,
   type LoggedInEventDetail,
   type NeedLoginEventDetail,
 } from "./utils/AuthService";
-import { DEFAULT_MAX_SCALE } from "./utils/crawler";
-import { AppStateService } from "./utils/state";
-import { formatAPIUser } from "./utils/user";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { NavigateEventDetail } from "@/controllers/navigate";
 import type { NotifyEventDetail } from "@/controllers/notify";
-import { theme } from "@/theme";
 import { type Auth } from "@/types/auth";
 import {
   translatedLocales,
   type TranslatedLocaleEnum,
 } from "@/types/localization";
 import { type AppSettings } from "@/utils/app";
+import { DEFAULT_MAX_SCALE } from "@/utils/crawler";
 import localize from "@/utils/localize";
+import { toast } from "@/utils/notify";
+import router, { urlForName } from "@/utils/router";
+import { AppStateService } from "@/utils/state";
+import { formatAPIUser } from "@/utils/user";
 import brandLockupColor from "~assets/brand/browsertrix-lockup-color.svg";
-
-import "./shoelace";
-import "./components";
-import "./features";
-import "./pages";
-import "./assets/fonts/Inter/inter.css";
-import "./assets/fonts/Recursive/recursive.css";
-import "./styles.css";
-
-// Make theme CSS available in document
-document.adoptedStyleSheets = [theme];
 
 type DialogContent = {
   label?: TemplateResult | string;
@@ -69,21 +66,33 @@ export interface UserGuideEventMap {
   "btrix-user-guide-show": CustomEvent<{ path?: string }>;
 }
 
-@localized()
 @customElement("browsertrix-app")
+@localized()
 export class App extends BtrixElement {
+  /**
+   * Browsertrix app version to display in the UI
+   */
   @property({ type: String })
   version?: string;
 
+  /**
+   * Base URL for user guide documentation
+   */
   @property({ type: String })
   docsUrl = "/docs/";
 
+  /**
+   * App settings from `/api/settings`
+   */
   @property({ type: Object })
   settings?: AppSettings;
 
-  private readonly router = new APIRouter(ROUTES);
+  // TODO Refactor into context
+  private readonly router = router;
+
   authService = new AuthService();
 
+  @provide({ context: viewStateContext })
   @state()
   private viewState!: ViewState;
 
@@ -99,6 +108,32 @@ export class App extends BtrixElement {
   @query("#userGuideDrawer")
   private readonly userGuideDrawer!: SlDrawer;
 
+  get orgSlugInPath() {
+    return this.viewState.params.slug || "";
+  }
+
+  private get homePath() {
+    let path = "/log-in";
+    if (this.authState) {
+      if (this.userInfo?.isSuperAdmin) {
+        path = `/${RouteNamespace.Superadmin}`;
+      } else if (this.appState.orgSlug) {
+        path = `${this.navigate.orgBasePath}/${OrgTab.Dashboard}`;
+      } else if (this.userInfo?.orgs[0]) {
+        path = `/${RouteNamespace.PrivateOrgs}/${this.userInfo.orgs[0].slug}/${OrgTab.Dashboard}`;
+      } else {
+        path = "/account/settings";
+      }
+    }
+    return path;
+  }
+
+  get isUserInCurrentOrg(): boolean {
+    const slug = this.orgSlugInPath;
+    if (!this.userInfo || !slug) return false;
+    return Boolean(this.userInfo.orgs.some((org) => org.slug === slug));
+  }
+
   async connectedCallback() {
     let authState: AuthService["authState"] = null;
     try {
@@ -110,10 +145,10 @@ export class App extends BtrixElement {
     if (authState) {
       this.authService.saveLogin(authState);
     }
-    this.syncViewState();
     if (authState && !this.userInfo) {
       void this.fetchAndUpdateUserInfo();
     }
+
     super.connectedCallback();
 
     this.addEventListener("btrix-navigate", this.onNavigateTo);
@@ -139,24 +174,51 @@ export class App extends BtrixElement {
     );
   }
 
+  firstUpdated() {
+    void this.initTranslation();
+    this.trackPageView();
+  }
+
   willUpdate(changedProperties: Map<string, unknown>) {
     if (changedProperties.has("settings")) {
       AppStateService.updateSettings(this.settings || null);
     }
     if (changedProperties.has("viewState")) {
-      if (this.viewState.route === "orgs") {
-        this.routeTo(this.navigate.orgBasePath);
-      } else if (
-        changedProperties.get("viewState") &&
-        this.viewState.route === "org"
-      ) {
-        this.updateOrgSlugIfNeeded();
-      }
+      this.handleViewStateChange(
+        changedProperties.get("viewState") as undefined | ViewState,
+      );
     }
   }
 
-  protected firstUpdated(): void {
-    localize.initLanguage();
+  private handleViewStateChange(prevValue?: ViewState) {
+    switch (this.viewState.route) {
+      case "orgs":
+        // Orgs index page don't exist right now
+        this.routeTo(this.navigate.orgBasePath);
+        break;
+      case "publicOrgs":
+        // Public index page don't exist right now
+        this.routeTo("/");
+        break;
+      case "org": {
+        if (prevValue) {
+          this.updateOrgSlugIfNeeded();
+        }
+        break;
+      }
+      case "home":
+        // Redirect base URL
+        this.routeTo(this.homePath);
+        break;
+      default:
+        break;
+    }
+  }
+
+  async initTranslation() {
+    await localize.initLanguage();
+    // TODO We might want to set this in a lit-localize-status event listener
+    // see https://lit.dev/docs/localization/runtime-mode/#example-of-using-the-status-event
   }
 
   getLocationPathname() {
@@ -190,7 +252,11 @@ export class App extends BtrixElement {
 
   private updateOrgSlugIfNeeded() {
     const slug = this.viewState.params.slug || null;
-    if (this.viewState.route === "org" && slug !== this.appState.orgSlug) {
+    if (
+      this.isUserInCurrentOrg &&
+      this.viewState.route === "org" &&
+      slug !== this.appState.orgSlug
+    ) {
       AppStateService.updateOrgSlug(slug);
     }
   }
@@ -210,7 +276,7 @@ export class App extends BtrixElement {
           this.authService.authState,
         );
         this.clearUser();
-        this.routeTo(ROUTES.login);
+        this.routeTo(urlForName("login"));
       }
     }
   }
@@ -250,13 +316,34 @@ export class App extends BtrixElement {
     } else {
       window.history.pushState(this.viewState, "", urlStr);
     }
+
+    this.trackPageView();
+  }
+
+  trackPageView() {
+    const { slug, collectionSlug } = this.viewState.params;
+    const pageViewProps: AnalyticsTrackProps = {
+      org_slug: slug || null,
+      logged_in: !!this.authState,
+    };
+
+    if (collectionSlug) {
+      pageViewProps.collection_slug = collectionSlug;
+    }
+
+    pageView(pageViewProps);
   }
 
   render() {
     return html`
-      <div class="min-w-screen flex min-h-screen flex-col">
-        ${this.renderNavBar()} ${this.renderAlertBanner()}
-        <main class="relative flex flex-auto">${this.renderPage()}</main>
+      <div class="min-w-screen relative flex min-h-screen flex-col">
+        ${this.renderSuperadminBanner()} ${this.renderNavBar()}
+        ${this.renderAlertBanner()}
+        <main
+          class="relative flex flex-auto transition-[padding] md:min-h-[calc(100vh-3.125rem)]"
+        >
+          ${this.renderPage()}
+        </main>
         <div class="border-t border-neutral-100">${this.renderFooter()}</div>
       </div>
 
@@ -271,14 +358,27 @@ export class App extends BtrixElement {
       <sl-drawer
         id="userGuideDrawer"
         label=${msg("User Guide")}
-        style="--body-spacing: 0; --footer-spacing: var(--sl-spacing-2x-small);"
+        class="[--body-spacing:0] [--footer-spacing:var(--sl-spacing-2x-small)] [--size:31rem] part-[base]:fixed part-[base]:z-50 part-[panel]:[border-left:1px_solid_var(--sl-panel-border-color)]"
+        ?open=${this.appState.userGuideOpen}
+        contained
+        @sl-hide=${() => AppStateService.updateUserGuideOpen(false)}
+        @sl-after-hide=${() => {
+          // FIXME There might be a way to handle this in Mkdocs, but updating
+          // only the hash doesn't seem to update the docs view
+          const iframe = this.userGuideDrawer.querySelector("iframe");
+
+          if (!iframe) return;
+
+          const src = iframe.src;
+          iframe.src = src.slice(0, src.indexOf("#"));
+        }}
       >
         <span slot="label" class="flex items-center gap-3">
           <sl-icon name="book" class=""></sl-icon>
           <span>${msg("User Guide")}</span>
         </span>
         <iframe
-          class="size-full transition-opacity duration-slow"
+          class="size-full text-xs transition-opacity duration-slow"
           src="${this.docsUrl}user-guide/workflow-setup/"
         ></iframe>
         <sl-button
@@ -293,6 +393,14 @@ export class App extends BtrixElement {
         >
       </sl-drawer>
     `;
+  }
+
+  private renderSuperadminBanner() {
+    if (this.userInfo?.isSuperAdmin) {
+      return html`<btrix-super-admin-banner
+        class="contents"
+      ></btrix-super-admin-banner>`;
+    }
   }
 
   private renderAlertBanner() {
@@ -328,10 +436,6 @@ export class App extends BtrixElement {
 
   private renderNavBar() {
     const isSuperAdmin = this.userInfo?.isSuperAdmin;
-    let homeHref = "/";
-    if (!isSuperAdmin && this.appState.orgSlug) {
-      homeHref = this.navigate.orgBasePath;
-    }
 
     const showFullLogo =
       this.viewState.route === "login" || !this.authService.authState;
@@ -345,7 +449,7 @@ export class App extends BtrixElement {
             <a
               class="items-between flex gap-2"
               aria-label="home"
-              href=${homeHref}
+              href=${this.homePath}
               @click=${(e: MouseEvent) => {
                 if (isSuperAdmin) {
                   this.clearSelectedOrg();
@@ -373,7 +477,7 @@ export class App extends BtrixElement {
                       ></div>
                       <a
                         class="flex items-center gap-2 font-medium text-primary-700 transition-colors hover:text-primary"
-                        href="/"
+                        href="/${RouteNamespace.Superadmin}"
                         @click=${(e: MouseEvent) => {
                           this.clearSelectedOrg();
                           this.navigate.link(e);
@@ -392,7 +496,11 @@ export class App extends BtrixElement {
               `,
             )}
           </div>
-          <div class="order-2 flex flex-grow-0 items-center gap-4 md:order-3">
+          <div
+            class="${this.authState
+              ? "gap-4"
+              : "gap-2"} order-2 flex flex-grow-0 items-center md:order-3"
+          >
             ${this.authState
               ? html`${this.userInfo && !isSuperAdmin
                     ? html`
@@ -433,7 +541,8 @@ export class App extends BtrixElement {
                       </sl-menu-item>
                       ${this.userInfo?.isSuperAdmin
                         ? html` <sl-menu-item
-                            @click=${() => this.routeTo(ROUTES.usersInvite)}
+                            @click=${() =>
+                              this.routeTo(urlForName("adminUsersInvite"))}
                           >
                             <sl-icon slot="prefix" name="person-plus"></sl-icon>
                             ${msg("Invite Users")}
@@ -447,7 +556,18 @@ export class App extends BtrixElement {
                     </sl-menu>
                   </sl-dropdown>`
               : html`
-                  ${this.renderSignUpLink()}
+                  ${this.viewState.route !== "login"
+                    ? html`
+                        <sl-button
+                          size="small"
+                          variant="primary"
+                          href="/log-in"
+                          @click=${this.navigate.link}
+                        >
+                          ${msg("Sign In")}
+                        </sl-button>
+                      `
+                    : nothing}
                   ${(translatedLocales as unknown as string[]).length > 2
                     ? html`
                         <btrix-user-language-select
@@ -464,11 +584,10 @@ export class App extends BtrixElement {
                 >
                   <a
                     class="font-medium text-neutral-500 hover:text-primary"
-                    href="/crawls"
+                    href=${urlForName("adminCrawls")}
                     @click=${this.navigate.link}
                     >${msg("Running Crawls")}</a
                   >
-                  <div class="hidden md:block">${this.renderFindCrawl()}</div>
                 </div>
               `
             : nothing}
@@ -477,45 +596,16 @@ export class App extends BtrixElement {
     `;
   }
 
-  private renderSignUpLink() {
-    const { registrationEnabled, signUpUrl } = this.appState.settings || {};
-
-    if (registrationEnabled) {
-      return html`
-        <sl-button
-          href="/sign-up"
-          size="small"
-          @click="${(e: MouseEvent) => {
-            if (!this.navigate.handleAnchorClick(e)) {
-              return;
-            }
-            this.routeTo("/sign-up");
-          }}"
-        >
-          ${msg("Sign Up")}
-        </sl-button>
-      `;
-    }
-
-    if (signUpUrl) {
-      return html`
-        <sl-button href=${signUpUrl} size="small">
-          ${msg("Sign Up")}
-        </sl-button>
-      `;
-    }
-  }
-
   private renderOrgs() {
     const orgs = this.userInfo?.orgs;
     if (!orgs) return;
 
-    const selectedOption = this.orgSlug
-      ? orgs.find(({ slug }) => slug === this.orgSlug)
+    const selectedOption = this.orgSlugInPath
+      ? orgs.find(({ slug }) => slug === this.orgSlugInPath)
       : { slug: "", name: msg("All Organizations") };
     if (!selectedOption) {
       console.debug(
-        `Couldn't find organization with slug ${this.orgSlug}`,
+        `Couldn't find organization with slug ${this.orgSlugInPath}`,
         orgs,
       );
       return;
@@ -530,7 +620,7 @@ export class App extends BtrixElement {
           ? html`
               <a
                 class="font-medium text-neutral-600"
-                href=${this.navigate.orgBasePath}
+                href=${`${this.navigate.orgBasePath}/${OrgTab.Dashboard}`}
                 @click=${this.navigate.link}
               >
                 ${selectedOption.name.slice(0, orgNameLength)}
@@ -555,7 +645,9 @@ export class App extends BtrixElement {
               @sl-select=${(e: CustomEvent<{ item: { value: string } }>) => {
                 const { value } = e.detail.item;
                 if (value) {
-                  this.routeTo(`/orgs/${value}`);
+                  this.routeTo(
+                    `/${RouteNamespace.PrivateOrgs}/${value}/${OrgTab.Dashboard}`,
+                  );
                 } else {
                   if (this.userInfo) {
                     this.clearSelectedOrg();
@@ -629,9 +721,9 @@ export class App extends BtrixElement {
   private renderFooter() {
     return html`
       <footer
-        class="mx-auto box-border flex w-full max-w-screen-desktop flex-col items-center justify-between gap-4 p-3 md:flex-row"
+        class="mx-auto box-border flex w-full max-w-screen-desktop flex-col items-center  gap-4 p-3 md:flex-row"
       >
-        <div>
+        <div class="flex-1">
           <a
             class="flex items-center gap-2 leading-none text-neutral-400 hover:text-primary"
             href="https://github.com/webrecorder/browsertrix"
@@ -642,9 +734,11 @@ export class App extends BtrixElement {
             ${msg("Source Code")}
           </a>
         </div>
-        <div>
+        <div class="flex-1">
           <a
-            class="flex items-center gap-2 leading-none text-neutral-400 hover:text-primary"
+            class="${this.version
+              ? "justify-center"
+              : "justify-end"} flex items-center gap-2 leading-none text-neutral-400 hover:text-primary"
             href="https://forum.webrecorder.net/c/help/5"
             target="_blank"
             rel="noopener"
@@ -655,7 +749,9 @@ export class App extends BtrixElement {
         </div>
         ${this.version
           ? html`
-              <div class="flex items-center justify-center gap-2 leading-none">
+              <div
+                class="flex flex-1 items-center justify-end gap-2 leading-none"
+              >
                 <btrix-copy-button
                   class="size-4 text-neutral-400"
                   .getValue=${() => this.version}
@@ -672,6 +768,7 @@ export class App extends BtrixElement {
     `;
   }
 
+  // TODO move into separate component
   private renderPage() {
     switch (this.viewState.route) {
       case "signUp": {
@@ -712,7 +809,7 @@ export class App extends BtrixElement {
       case "loginWithRedirect":
       case "forgotPassword":
         return html`<btrix-log-in
-          class="flex w-full items-center justify-center md:bg-neutral-50"
+          class="flex w-full flex-col items-center justify-center md:bg-neutral-50"
           .viewState=${this.viewState}
           redirectUrl=${this.viewState.params.redirectUrl ||
           this.viewState.data?.redirectUrl}
@@ -724,8 +821,12 @@ export class App extends BtrixElement {
           .viewState=${this.viewState}
         ></btrix-reset-password>`;
 
-      case "home":
-        return html`<btrix-home class="w-full md:bg-neutral-50"></btrix-home>`;
+      case "admin":
+        return this.renderAdminPage(
+          () => html`
+            <btrix-admin class="w-full bg-neutral-50"></btrix-admin>
+          `,
+        );
 
       case "orgs":
         return html`<btrix-orgs class="w-full md:bg-neutral-50"></btrix-orgs>`;
@@ -734,19 +835,40 @@ export class App extends BtrixElement {
         const slug = this.viewState.params.slug;
         const orgPath = this.viewState.pathname;
         const pathname = this.getLocationPathname();
-        const orgTab =
-          pathname
-            .slice(pathname.indexOf(slug) + slug.length)
-            .replace(/(^\/|\/$)/, "")
-            .split("/")[0] || "home";
+        const orgTab = pathname
+          .slice(pathname.indexOf(slug) + slug.length)
+          .replace(/(^\/|\/$)/, "")
+          .split("/")[0];
+
         return html`<btrix-org
           class="w-full"
           .viewStateData=${this.viewState.data}
           .params=${this.viewState.params}
           .maxScale=${this.appState.settings?.maxScale || DEFAULT_MAX_SCALE}
           orgPath=${orgPath.split(slug)[1]}
-          orgTab=${orgTab as OrgTab}
+          orgTab=${orgTab}
         ></btrix-org>`;
+      }
+
+      case "publicOrg":
+        return html`<btrix-public-org
+          class="w-full"
+          orgSlug=${this.viewState.params.slug}
+        ></btrix-public-org>`;
+
+      case "publicCollection": {
+        const { collectionSlug, collectionTab } = this.viewState.params;
+
+        if (!collectionSlug) {
+          break;
+        }
+
+        return html`<btrix-collection
+          class="w-full"
+          orgSlug=${this.viewState.params.slug}
+          collectionSlug=${collectionSlug}
+          tab=${ifDefined(collectionTab || undefined)}
+        ></btrix-collection>`;
       }
 
       case "accountSettings":
@@ -755,36 +877,25 @@ export class App extends BtrixElement {
           tab=${this.viewState.params.settingsTab}
         ></btrix-account-settings>`;
 
-      case "usersInvite": {
-        if (this.userInfo) {
-          if (this.userInfo.isSuperAdmin) {
-            return html`<btrix-users-invite
+      case "adminUsers":
+      case "adminUsersInvite":
+        return this.renderAdminPage(
+          () =>
+            html`<btrix-users-invite
               class="mx-auto box-border w-full max-w-screen-desktop p-2 md:py-8"
-            ></btrix-users-invite>`;
-          } else {
-            return this.renderNotFoundPage();
-          }
-        } else {
-          return this.renderSpinner();
-        }
-      }
+            ></btrix-users-invite>`,
+        );
 
-      case "crawls":
-      case "crawl": {
-        if (this.userInfo) {
-          if (this.userInfo.isSuperAdmin) {
-            return html`<btrix-crawls
+      case "adminCrawls":
+      case "adminCrawl":
+        return this.renderAdminPage(
+          () =>
+            html`<btrix-crawls
               class="w-full"
               @notify=${this.onNotify}
               crawlId=${this.viewState.params.crawlId}
-            ></btrix-crawls>`;
-          } else {
-            return this.renderNotFoundPage();
-          }
-        } else {
-          return this.renderSpinner();
-        }
-      }
+            ></btrix-crawls>`,
+        );
 
       case "awpUploadRedirect": {
         const { orgId, uploadId } = this.viewState.params;
@@ -796,12 +907,24 @@ export class App extends BtrixElement {
         // falls through
       }
 
-      case "components":
-        return html`<btrix-components></btrix-components>`;
-
       default:
         return this.renderNotFoundPage();
     }
+  }
+
+  private renderAdminPage(renderer: () => TemplateResult) {
+    // if (!this.userInfo) return this.renderSpinner();
+
+    if (this.userInfo?.isSuperAdmin) {
+      // Dynamically import admin pages
+      return until(
+        import(/* webpackChunkName: "admin" */ "@/pages/admin/index").then(
+          renderer,
+        ),
+      );
+    }
+
+    return this.renderNotFoundPage();
   }
 
   private renderSpinner() {
@@ -818,57 +941,6 @@ export class App extends BtrixElement {
     ></btrix-not-found>`;
   }
 
-  private renderFindCrawl() {
-    return html`
-      <sl-dropdown
-        @sl-after-show=${(e: Event) => {
-          (e.target as HTMLElement).querySelector("sl-input")?.focus();
-        }}
-        @sl-after-hide=${(e: Event) => {
-          (e.target as HTMLElement).querySelector("sl-input")!.value = "";
-        }}
-        hoist
-      >
-        <button
-          slot="trigger"
-          class="font-medium text-primary-700 hover:text-primary"
-        >
-          ${msg("Jump to Crawl")}
-        </button>
-
-        <div class="p-2">
-          <form
-            @submit=${(e: SubmitEvent) => {
-              e.preventDefault();
-              const id = new FormData(e.target as HTMLFormElement).get(
-                "crawlId",
-              ) as string;
-              this.routeTo(`/crawls/crawl/${id}#watch`);
-              void (e.target as HTMLFormElement).closest("sl-dropdown")?.hide();
-            }}
-          >
-            <div class="flex flex-wrap items-center">
-              <div class="w-90 mr-2">
-                <sl-input
-                  size="small"
-                  name="crawlId"
-                  placeholder=${msg("Enter Crawl ID")}
-                  required
-                ></sl-input>
-              </div>
-              <div class="grow-0">
-                <sl-button size="small" variant="neutral" type="submit">
-                  <sl-icon slot="prefix" name="arrow-right-circle"></sl-icon>
-                  ${msg("Go")}</sl-button
-                >
-              </div>
-            </div>
-          </form>
-        </div>
-      </sl-dropdown>
-    `;
-  }
-
   private showUserGuide(pathName?: string) {
     const iframe = this.userGuideDrawer.querySelector("iframe");
 
@@ -881,7 +953,9 @@ export class App extends BtrixElement {
         iframe.src = this.fullDocsUrl;
       }
 
-      void this.userGuideDrawer.show();
+      if (!this.appState.userGuideOpen) {
+        AppStateService.updateUserGuideOpen(true);
+      }
     } else {
       console.debug("user guide iframe not found");
     }
@@ -902,7 +976,7 @@ export class App extends BtrixElement {
     this.clearUser();
 
     if (redirect) {
-      this.routeTo(ROUTES.login);
+      this.routeTo(urlForName("login"));
     }
   }
 
@@ -916,7 +990,7 @@ export class App extends BtrixElement {
     });
 
     if (!detail.api) {
-      this.routeTo(detail.redirectUrl || this.navigate.orgBasePath);
+      this.routeTo(detail.redirectUrl || this.homePath);
     }
 
     if (detail.firstLogin) {
@@ -937,7 +1011,7 @@ export class App extends BtrixElement {
 
     this.clearUser();
     const redirectUrl = e.detail.redirectUrl;
-    this.routeTo(ROUTES.login, {
+    this.routeTo(urlForName("login"), {
       redirectUrl,
     });
     if (redirectUrl && redirectUrl !== "/") {
@@ -945,6 +1019,7 @@ export class App extends BtrixElement {
         message: msg("Please log in to continue."),
         variant: "warning",
         icon: "exclamation-triangle",
+        id: "log-in",
       });
     }
   };
@@ -975,37 +1050,7 @@ export class App extends BtrixElement {
   onNotify = (event: CustomEvent<NotifyEventDetail>) => {
     event.stopPropagation();
 
-    const {
-      title,
-      message,
-      variant = "primary",
-      icon = "info-circle",
-      duration = 5000,
-    } = event.detail;
-
-    const container = document.createElement("sl-alert");
-    const alert = Object.assign(container, {
-      variant,
-      closable: true,
-      duration: duration,
-      style: [
-        "--sl-panel-background-color: var(--sl-color-neutral-1000)",
-        "--sl-color-neutral-700: var(--sl-color-neutral-0)",
-        // "--sl-panel-border-width: 0px",
-        "--sl-spacing-large: var(--sl-spacing-medium)",
-      ].join(";"),
-    });
-
-    render(
-      html`
-        <sl-icon name="${icon}" slot="icon"></sl-icon>
-        ${title ? html`<strong>${title}</strong>` : ""}
-        ${message ? html`<div>${message}</div>` : ""}
-      `,
-      container,
-    );
-    document.body.append(alert);
-    void alert.toast();
+    void toast(event.detail);
   };
 
   async getUserInfo(): Promise<APIUser> {
@@ -1071,7 +1116,7 @@ export class App extends BtrixElement {
               this.syncViewState();
             } else {
               this.clearUser();
-              this.routeTo(ROUTES.login);
+              this.routeTo(urlForName("login"));
             }
           }
         }

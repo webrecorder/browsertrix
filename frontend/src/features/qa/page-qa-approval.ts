@@ -17,8 +17,8 @@ export type UpdatePageApprovalDetail = {
  * @fires btrix-update-page-approval
  * @fires btrix-show-comments
  */
-@localized()
 @customElement("btrix-page-qa-approval")
+@localized()
 export class PageQAToolbar extends BtrixElement {
   static styles = css`
     :host {
@@ -263,6 +263,7 @@ export class PageQAToolbar extends BtrixElement {
         message: msg("Sorry, couldn't submit page approval at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "qa-page-approval-status",
       });
     }
   }

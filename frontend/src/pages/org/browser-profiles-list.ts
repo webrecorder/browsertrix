@@ -10,11 +10,12 @@ import type { Profile } from "./types";
 import type { SelectNewDialogEvent } from ".";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import type { PageChangeEvent } from "@/components/ui/pagination";
+import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import {
   SortDirection,
   type SortValues,
 } from "@/components/ui/table/table-header-cell";
+import { ClipboardController } from "@/controllers/clipboard";
 import { pageHeader } from "@/layouts/pageHeader";
 import type {
   APIPaginatedList,
@@ -35,8 +36,8 @@ const INITIAL_PAGE_SIZE = 20;
  * ></btrix-browser-profiles-list>
  * ```
  */
-@localized()
 @customElement("btrix-browser-profiles-list")
+@localized()
 export class BrowserProfilesList extends BtrixElement {
   @property({ type: Boolean })
   isCrawler = false;
@@ -55,12 +56,10 @@ export class BrowserProfilesList extends BtrixElement {
 
   static styles = css`
     btrix-table {
-      grid-template-columns:
-        [clickable-start] minmax(30ch, 50ch) minmax(30ch, 40ch) repeat(2, 1fr)
-        [clickable-end] min-content;
-      --btrix-cell-gap: var(--sl-spacing-x-small);
-      --btrix-cell-padding-left: var(--sl-spacing-small);
-      --btrix-cell-padding-right: var(--sl-spacing-small);
+      --btrix-table-grid-template-columns: [clickable-start] minmax(30ch, 50ch)
+        minmax(30ch, 40ch) repeat(2, 1fr) [clickable-end] min-content;
+      --btrix-table-cell-gap: var(--sl-spacing-x-small);
+      --btrix-table-cell-padding-x: var(--sl-spacing-small);
     }
 
     btrix-table-body btrix-table-row:nth-of-type(n + 2) {
@@ -93,30 +92,29 @@ export class BrowserProfilesList extends BtrixElement {
   }
 
   render() {
-    return html`${pageHeader(
-        msg("Browser Profiles"),
-        when(
-          this.isCrawler,
-          () => html`
-            <sl-button
-              variant="primary"
-              size="small"
-              ?disabled=${isArchivingDisabled(this.org)}
-              @click=${() => {
-                this.dispatchEvent(
-                  new CustomEvent("select-new-dialog", {
-                    detail: "browser-profile",
-                  }) as SelectNewDialogEvent,
-                );
-              }}
-            >
-              <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-              ${msg("New Browser Profile")}
-            </sl-button>
-          `,
-        ),
-        tw`mb-3`,
-      )}
+    return html`${pageHeader({
+        title: msg("Browser Profiles"),
+        actions: this.isCrawler
+          ? html`
+              <sl-button
+                variant="primary"
+                size="small"
+                ?disabled=${isArchivingDisabled(this.org)}
+                @click=${() => {
+                  this.dispatchEvent(
+                    new CustomEvent("select-new-dialog", {
+                      detail: "browser-profile",
+                    }) as SelectNewDialogEvent,
+                  );
+                }}
+              >
+                <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+                ${msg("New Browser Profile")}
+              </sl-button>
+            `
+          : undefined,
+        classNames: tw`mb-3`,
+      })}
       <div class="pb-1">${this.renderTable()}</div>`;
   }
 
@@ -165,52 +163,54 @@ export class BrowserProfilesList extends BtrixElement {
     };
 
     return html`
-      <btrix-table class="-mx-3 overflow-x-auto px-3">
-        <btrix-table-head class="mb-2">
-          ${headerCells.map(({ sortBy, sortDirection, label, className }) => {
-            const isSorting = sortBy === this.sort.sortBy;
-            const sortValue =
-              (isSorting && SortDirection.get(this.sort.sortDirection)) ||
-              "none";
-            // TODO implement sort render logic in table-header-cell
-            return html`
-              <btrix-table-header-cell
-                class="${className} group cursor-pointer rounded transition-colors hover:bg-primary-50"
-                ariaSort=${sortValue}
-                @click=${() => {
-                  if (isSorting) {
-                    this.sort = {
-                      ...this.sort,
-                      sortDirection: this.sort.sortDirection * -1,
-                    };
-                  } else {
-                    this.sort = {
-                      sortBy,
-                      sortDirection,
-                    };
-                  }
-                }}
-              >
-                ${label} ${getSortIcon(sortValue)}
-              </btrix-table-header-cell>
-            `;
-          })}
-          <btrix-table-header-cell>
-            <span class="sr-only">${msg("Row Actions")}</span>
-          </btrix-table-header-cell>
-        </btrix-table-head>
-        <btrix-table-body
-          class=${clsx(
-            "relative rounded border",
-            this.browserProfiles == null && this.isLoading && tw`min-h-48`,
-          )}
-        >
-          ${when(this.browserProfiles, ({ total, items }) =>
-            total ? html` ${items.map(this.renderItem)} ` : nothing,
-          )}
-          ${when(this.isLoading, this.renderLoading)}
-        </btrix-table-body>
-      </btrix-table>
+      <btrix-overflow-scroll class="-mx-3 part-[content]:px-3">
+        <btrix-table>
+          <btrix-table-head class="mb-2">
+            ${headerCells.map(({ sortBy, sortDirection, label, className }) => {
+              const isSorting = sortBy === this.sort.sortBy;
+              const sortValue =
+                (isSorting && SortDirection.get(this.sort.sortDirection)) ||
+                "none";
+              // TODO implement sort render logic in table-header-cell
+              return html`
+                <btrix-table-header-cell
+                  class="${className} group cursor-pointer rounded transition-colors hover:bg-primary-50"
+                  ariaSort=${sortValue}
+                  @click=${() => {
+                    if (isSorting) {
+                      this.sort = {
+                        ...this.sort,
+                        sortDirection: this.sort.sortDirection * -1,
+                      };
+                    } else {
+                      this.sort = {
+                        sortBy,
+                        sortDirection,
+                      };
+                    }
+                  }}
+                >
+                  ${label} ${getSortIcon(sortValue)}
+                </btrix-table-header-cell>
+              `;
+            })}
+            <btrix-table-header-cell>
+              <span class="sr-only">${msg("Row Actions")}</span>
+            </btrix-table-header-cell>
+          </btrix-table-head>
+          <btrix-table-body
+            class=${clsx(
+              "relative rounded border",
+              this.browserProfiles == null && this.isLoading && tw`min-h-48`,
+            )}
+          >
+            ${when(this.browserProfiles, ({ total, items }) =>
+              total ? html` ${items.map(this.renderItem)} ` : nothing,
+            )}
+            ${when(this.isLoading, this.renderLoading)}
+          </btrix-table-body>
+        </btrix-table>
+      </btrix-overflow-scroll>
       ${when(this.browserProfiles, ({ total, page, pageSize }) =>
         total
           ? html`
@@ -278,14 +278,14 @@ export class BrowserProfilesList extends BtrixElement {
             content=${msg(str`By ${data.createdByName}`)}
             ?disabled=${!data.createdByName}
           >
-            <sl-format-date
+            <btrix-format-date
               date=${data.created}
               month="2-digit"
               day="2-digit"
-              year="2-digit"
+              year="numeric"
               hour="2-digit"
               minute="2-digit"
-            ></sl-format-date>
+            ></btrix-format-date>
           </sl-tooltip>
         </btrix-table-cell>
         <btrix-table-cell class="whitespace-nowrap tabular-nums">
@@ -293,17 +293,17 @@ export class BrowserProfilesList extends BtrixElement {
             content=${msg(str`By ${data.modifiedByName || data.createdByName}`)}
             ?disabled=${!data.createdByName}
           >
-            <sl-format-date
+            <btrix-format-date
               date=${
                 // NOTE older profiles may not have "modified" data
                 data.modified || data.created
               }
               month="2-digit"
               day="2-digit"
-              year="2-digit"
+              year="numeric"
               hour="2-digit"
               minute="2-digit"
-            ></sl-format-date>
+            ></btrix-format-date>
           </sl-tooltip>
         </btrix-table-cell>
         <btrix-table-cell class="p-0">
@@ -326,6 +326,14 @@ export class BrowserProfilesList extends BtrixElement {
             <sl-icon slot="prefix" name="files"></sl-icon>
             ${msg("Duplicate Profile")}
           </sl-menu-item>
+          <sl-divider></sl-divider>
+          <sl-menu-item
+            @click=${() => ClipboardController.copyToClipboard(data.id)}
+          >
+            <sl-icon name="copy" slot="prefix"></sl-icon>
+            ${msg("Copy Profile ID")}
+          </sl-menu-item>
+          <sl-divider></sl-divider>
           <sl-menu-item
             style="--sl-color-neutral-700: var(--danger)"
             @click=${() => {
@@ -333,7 +341,7 @@ export class BrowserProfilesList extends BtrixElement {
             }}
           >
             <sl-icon slot="prefix" name="trash3"></sl-icon>
-            ${msg("Delete")}
+            ${msg("Delete Profile")}
           </sl-menu-item>
         </sl-menu>
       </btrix-overflow-dropdown>
@@ -398,6 +406,7 @@ export class BrowserProfilesList extends BtrixElement {
           message: msg(html`Deleted <strong>${profile.name}</strong>.`),
           variant: "success",
           icon: "check2-circle",
+          id: "browser-profile-deleted-status",
         });
 
         void this.fetchBrowserProfiles();
@@ -407,6 +416,7 @@ export class BrowserProfilesList extends BtrixElement {
         message: msg("Sorry, couldn't delete browser profile at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "browser-profile-deleted-status",
       });
     }
   }
@@ -431,7 +441,10 @@ export class BrowserProfilesList extends BtrixElement {
     try {
       this.isLoading = true;
       const data = await this.getProfiles({
-        page: params?.page || this.browserProfiles?.page || 1,
+        page:
+          params?.page ||
+          this.browserProfiles?.page ||
+          parsePage(new URLSearchParams(location.search).get("page")),
         pageSize:
           params?.pageSize ||
           this.browserProfiles?.pageSize ||
@@ -444,6 +457,7 @@ export class BrowserProfilesList extends BtrixElement {
         message: msg("Sorry, couldn't retrieve browser profiles at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "browser-profile-status",
       });
     } finally {
       this.isLoading = false;

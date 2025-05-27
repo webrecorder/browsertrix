@@ -1,6 +1,7 @@
-""" shared helper to initialize ops classes """
+"""shared helper to initialize ops classes"""
 
 from typing import Tuple
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 
 from .crawlmanager import CrawlManager
 from .db import init_db
@@ -16,6 +17,7 @@ from .orgs import OrgOps
 from .pages import PageOps
 from .profiles import ProfileOps
 from .storages import StorageOps
+from .uploads import UploadOps
 from .users import UserManager
 from .webhooks import EventWebhookOps
 
@@ -26,6 +28,7 @@ def init_ops() -> Tuple[
     CrawlConfigOps,
     BaseCrawlOps,
     CrawlOps,
+    UploadOps,
     PageOps,
     CollectionOps,
     ProfileOps,
@@ -33,6 +36,9 @@ def init_ops() -> Tuple[
     BackgroundJobOps,
     EventWebhookOps,
     UserManager,
+    InviteOps,
+    AsyncIOMotorClient,
+    AsyncIOMotorDatabase,
 ]:
     """Initialize and return ops classes"""
     email = EmailSender()
@@ -49,7 +55,7 @@ def init_ops() -> Tuple[
 
     crawl_manager = CrawlManager()
 
-    storage_ops = StorageOps(org_ops, crawl_manager)
+    storage_ops = StorageOps(org_ops, crawl_manager, mdb)
 
     background_job_ops = BackgroundJobOps(
         mdb, email, user_manager, org_ops, crawl_manager, storage_ops
@@ -68,9 +74,9 @@ def init_ops() -> Tuple[
         profile_ops,
     )
 
-    coll_ops = CollectionOps(mdb, crawl_manager, org_ops, event_webhook_ops)
+    coll_ops = CollectionOps(mdb, storage_ops, org_ops, event_webhook_ops)
 
-    base_crawl_ops = BaseCrawlOps(
+    base_crawl_init = (
         mdb,
         user_manager,
         org_ops,
@@ -81,27 +87,23 @@ def init_ops() -> Tuple[
         background_job_ops,
     )
 
-    crawl_ops = CrawlOps(
-        crawl_manager,
-        mdb,
-        user_manager,
-        org_ops,
-        crawl_config_ops,
-        coll_ops,
-        storage_ops,
-        event_webhook_ops,
-        background_job_ops,
-    )
+    base_crawl_ops = BaseCrawlOps(*base_crawl_init)
 
-    page_ops = PageOps(mdb, crawl_ops, org_ops, storage_ops)
+    crawl_ops = CrawlOps(crawl_manager, *base_crawl_init)
+
+    upload_ops = UploadOps(*base_crawl_init)
+
+    page_ops = PageOps(
+        mdb, crawl_ops, org_ops, storage_ops, background_job_ops, coll_ops
+    )
 
     base_crawl_ops.set_page_ops(page_ops)
-
     crawl_ops.set_page_ops(page_ops)
+    upload_ops.set_page_ops(page_ops)
 
     background_job_ops.set_ops(crawl_ops, profile_ops)
 
-    org_ops.set_ops(base_crawl_ops, profile_ops, coll_ops, background_job_ops)
+    org_ops.set_ops(base_crawl_ops, profile_ops, coll_ops, background_job_ops, page_ops)
 
     user_manager.set_ops(org_ops, crawl_config_ops, base_crawl_ops)
 
@@ -109,11 +111,14 @@ def init_ops() -> Tuple[
 
     crawl_config_ops.set_coll_ops(coll_ops)
 
+    coll_ops.set_page_ops(page_ops)
+
     return (
         org_ops,
         crawl_config_ops,
         base_crawl_ops,
         crawl_ops,
+        upload_ops,
         page_ops,
         coll_ops,
         profile_ops,
@@ -121,4 +126,7 @@ def init_ops() -> Tuple[
         background_job_ops,
         event_webhook_ops,
         user_manager,
+        invite_ops,
+        dbclient,
+        mdb,
     )

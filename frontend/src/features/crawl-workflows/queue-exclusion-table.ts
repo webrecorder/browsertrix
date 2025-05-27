@@ -1,6 +1,8 @@
 import { localized, msg, str } from "@lit/localize";
+import type { SlInput, SlSelect } from "@shoelace-style/shoelace";
+import clsx from "clsx";
 import { css, html, type PropertyValues, type TemplateResult } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
+import { customElement, property, queryAll, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import { html as staticHtml, unsafeStatic } from "lit/static-html.js";
@@ -9,21 +11,20 @@ import RegexColorize from "regex-colorize";
 import type { Exclusion } from "./queue-exclusion-form";
 
 import { TailwindElement } from "@/classes/TailwindElement";
-import { type PageChangeEvent } from "@/components/ui/pagination";
+import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import type { SeedConfig } from "@/pages/org/types";
 import { regexEscape, regexUnescape } from "@/utils/string";
+import { tw } from "@/utils/tailwind";
 
-export type ExclusionChangeEvent = CustomEvent<{
+export type ExclusionChangeEventDetail = {
   index: number;
   regex: string;
-}>;
+  valid?: boolean;
+};
 
-export type ExclusionRemoveEvent = CustomEvent<{
-  index: number;
-  regex: string;
-}>;
+export type ExclusionChangeEvent = CustomEvent<ExclusionChangeEventDetail>;
 
-type SLInputElement = HTMLInputElement & { invalid: boolean };
+export type ExclusionRemoveEvent = CustomEvent<ExclusionChangeEventDetail>;
 
 const MIN_LENGTH = 2;
 
@@ -32,15 +33,7 @@ function formatValue(type: Exclusion["type"], value: Exclusion["value"]) {
 }
 
 /**
- * Crawl queue exclusion table
- *
- * Usage example:
- * ```ts
- * <btrix-queue-exclusion-table
- *   .exclusions=${this.workflow.config.exclude}
- * >
- * </btrix-queue-exclusion-table>
- * ```
+ * Displays crawl exclusions in an editable table.
  *
  * @TODO Refactor to always be uncontrolled field
  * so that callers don't need to maintain their
@@ -54,12 +47,6 @@ function formatValue(type: Exclusion["type"], value: Exclusion["value"]) {
 @localized()
 export class QueueExclusionTable extends TailwindElement {
   static styles = css`
-    sl-input {
-      --sl-input-border-radius-medium: 0;
-      --sl-input-font-family: var(--sl-font-mono);
-      --sl-input-spacing-medium: var(--sl-spacing-small);
-    }
-
     sl-input:not([data-invalid]) {
       --sl-input-border-width: 0;
     }
@@ -95,10 +82,23 @@ export class QueueExclusionTable extends TailwindElement {
   private results: Exclusion[] = [];
 
   @state()
-  private page = 1;
+  private page = parsePage(new URLSearchParams(location.search).get("page"));
 
   @state()
   private exclusionToRemove?: string;
+
+  @queryAll("sl-input")
+  private readonly inputs!: NodeListOf<SlInput>;
+
+  public reportValidity() {
+    this.inputs.forEach((input) => {
+      input.reportValidity();
+    });
+  }
+
+  public checkValidity() {
+    return ![...this.inputs].some((input) => !input.validity.valid);
+  }
 
   private get total() {
     return this.exclusions?.length;
@@ -178,7 +178,7 @@ export class QueueExclusionTable extends TailwindElement {
         class="w-full border-separate leading-none"
         style="border-spacing: 0;"
       >
-        <thead class="font-mono text-xs uppercase text-neutral-600">
+        <thead class="text-xs text-neutral-600">
           <tr class="h-10 text-left">
             <th class="${typeColClass} w-40 bg-slate-50 px-2 font-normal">
               ${msg("Exclusion Type")}
@@ -187,11 +187,11 @@ export class QueueExclusionTable extends TailwindElement {
               ${msg("Exclusion Value")}
             </th>
             <th class="${actionColClass} w-10 bg-slate-50 px-2 font-normal">
-              <span class="sr-only">Row actions</span>
+              <span class="sr-only">${msg("Row actions")}</span>
             </th>
           </tr>
         </thead>
-        <tbody>
+        <tbody class="align-top">
           ${this.results.map(this.renderItem)}
         </tbody>
       </table>
@@ -220,12 +220,12 @@ export class QueueExclusionTable extends TailwindElement {
       <tr
         class="${this.exclusionToRemove === exclusion.value
           ? "text-neutral-200"
-          : "text-neutral-600"} h-10"
+          : "text-neutral-600"}"
       >
         <td class="${typeColClass} whitespace-nowrap">
           ${this.renderType({ exclusion, index })}
         </td>
-        <td class="${valueColClass} font-mono">
+        <td class="${valueColClass}">
           ${this.renderValue({ exclusion, index })}
         </td>
         <td class="${actionColClass} text-center text-[1rem]">
@@ -266,11 +266,23 @@ export class QueueExclusionTable extends TailwindElement {
       return html`
         <sl-select
           placeholder=${msg("Select Type")}
+          class="my-1"
           size="small"
-          .value=${exclusion.type}
+          value=${exclusion.type}
           @sl-hide=${this.stopProp}
           @sl-after-hide=${this.stopProp}
           @sl-change=${(e: Event) => {
+            const inputElem = (e.target as SlSelect)
+              .closest("tr")
+              ?.querySelector("sl-input");
+
+            if (inputElem) {
+              this.checkInputValidity(inputElem);
+              this.reportInputValidity(inputElem);
+            } else {
+              console.debug("no inputElem for ", e.target);
+            }
+
             void this.updateExclusion({
               type: (e.target as HTMLSelectElement).value as Exclusion["type"],
               value: exclusion.value,
@@ -302,7 +314,13 @@ export class QueueExclusionTable extends TailwindElement {
         <sl-input
           name="exclusion-${index}"
           placeholder=${msg("Enter value")}
-          class="m-0"
+          class=${clsx(
+            tw`m-0`,
+            tw`[--sl-input-border-radius-medium:0] [--sl-input-spacing-medium:var(--sl-spacing-small)]`,
+            tw`part-[form-control-help-text]:mx-1 part-[form-control-help-text]:mb-1`,
+            exclusion.type === "regex" &&
+              tw`[--sl-input-font-family:var(--sl-font-mono)]`,
+          )}
           value=${exclusion.value}
           autocomplete="off"
           autocorrect="off"
@@ -315,27 +333,22 @@ export class QueueExclusionTable extends TailwindElement {
             });
           }}
           @sl-input=${(e: CustomEvent) => {
-            const inputElem = e.target as SLInputElement;
-            const validityMessage = this.getInputValidity(inputElem) || "";
+            const inputElem = e.target as SlInput;
 
-            inputElem.classList.remove("invalid");
-            inputElem.setCustomValidity(validityMessage);
-
+            this.checkInputValidity(inputElem);
             this.checkSiblingRowValidity(e);
           }}
           @sl-change=${(e: CustomEvent) => {
-            const inputElem = e.target as SLInputElement;
+            const inputElem = e.target as SlInput;
+
+            this.reportInputValidity(inputElem);
+
             const values = this.getCurrentValues(inputElem);
             const params = {
               type: values.type || exclusion.type,
               value: values.value,
               index,
             };
-
-            if (!inputElem.checkValidity()) {
-              inputElem.classList.add("invalid");
-            }
-            inputElem.reportValidity();
 
             void this.updateExclusion(params);
           }}
@@ -344,12 +357,33 @@ export class QueueExclusionTable extends TailwindElement {
     }
 
     if (exclusion.type === "regex") {
-      value = staticHtml`<span class="regex">${unsafeStatic(
+      value = staticHtml`<span class="regex ${tw`font-mono`}">${unsafeStatic(
         new RegexColorize().colorizeText(exclusion.value) as string,
       )}</span>`;
     }
 
     return value;
+  }
+
+  private checkInputValidity(inputElem: SlInput) {
+    const validityMessage = this.getInputValidity(inputElem) || "";
+
+    inputElem.setCustomValidity(validityMessage);
+
+    if (inputElem.classList.contains("invalid")) {
+      // Update help text on change
+      this.reportInputValidity(inputElem);
+    }
+  }
+
+  private reportInputValidity(inputElem: SlInput) {
+    if (inputElem.validationMessage) {
+      inputElem.classList.add("invalid");
+    } else {
+      inputElem.classList.remove("invalid");
+    }
+
+    inputElem.helpText = inputElem.validationMessage;
   }
 
   private getColumnClassNames(
@@ -398,7 +432,7 @@ export class QueueExclusionTable extends TailwindElement {
     return [typeColClass, valueColClass, actionColClass];
   }
 
-  private getCurrentValues(inputElem: SLInputElement) {
+  private getCurrentValues(inputElem: SlInput) {
     // Get latest exclusion type value from select
     const typeSelectElem = inputElem.closest("tr")?.querySelector("sl-select");
     const exclusionType = typeSelectElem?.value;
@@ -408,7 +442,7 @@ export class QueueExclusionTable extends TailwindElement {
     };
   }
 
-  private getInputDuplicateValidity(inputElem: SLInputElement) {
+  private getInputDuplicateValidity(inputElem: SlInput) {
     const siblingElems = inputElem
       .closest("table")
       ?.querySelectorAll(`sl-input:not([name="${inputElem.name}"])`);
@@ -417,7 +451,7 @@ export class QueueExclusionTable extends TailwindElement {
       return;
     }
     const siblingValues = Array.from(siblingElems).map(
-      (elem) => (elem as SLInputElement).value,
+      (elem) => (elem as SlInput).value,
     );
     const { type, value } = this.getCurrentValues(inputElem);
     const formattedValue = formatValue(type!, value);
@@ -426,10 +460,24 @@ export class QueueExclusionTable extends TailwindElement {
     }
   }
 
-  private getInputValidity(inputElem: SLInputElement): string | void {
+  private getInputValidity(inputElem: SlInput): string | void {
     const { type, value } = this.getCurrentValues(inputElem);
     if (!value) return;
 
+    const validityMessage = this.getValidityMessage({ type, value });
+
+    if (validityMessage) return validityMessage;
+
+    return this.getInputDuplicateValidity(inputElem);
+  }
+
+  private getValidityMessage({
+    type,
+    value,
+  }: {
+    type?: Exclusion["type"];
+    value: string;
+  }) {
     if (value.length < MIN_LENGTH) {
       return msg(str`Please enter ${MIN_LENGTH} or more characters`);
     }
@@ -439,13 +487,9 @@ export class QueueExclusionTable extends TailwindElement {
         // Check if valid regex
         new RegExp(value);
       } catch (err) {
-        return msg(
-          "Please enter a valid Regular Expression constructor pattern",
-        );
+        return msg("Please enter a valid regular expression");
       }
     }
-
-    return this.getInputDuplicateValidity(inputElem);
   }
 
   private checkSiblingRowValidity(e: CustomEvent) {
@@ -456,9 +500,8 @@ export class QueueExclusionTable extends TailwindElement {
     Array.from(table.querySelectorAll("sl-input[data-invalid]")).map((elem) => {
       if (elem !== inputElem) {
         const validityMessage =
-          this.getInputDuplicateValidity(elem as SLInputElement) || "";
-        (elem as SLInputElement).setCustomValidity(validityMessage);
-        (elem as SLInputElement).reportValidity();
+          this.getInputDuplicateValidity(elem as SlInput) || "";
+        (elem as SlInput).setCustomValidity(validityMessage);
       }
     });
   }
@@ -477,11 +520,18 @@ export class QueueExclusionTable extends TailwindElement {
 
     await this.updateComplete;
 
+    let valid: boolean | undefined;
+
+    if (value.length) {
+      valid = !this.getValidityMessage({ type, value });
+    }
+
     this.dispatchEvent(
-      new CustomEvent("btrix-remove", {
+      new CustomEvent<ExclusionChangeEventDetail>("btrix-remove", {
         detail: {
           index,
           regex,
+          valid,
         },
       }) as ExclusionRemoveEvent,
     );
@@ -517,13 +567,20 @@ export class QueueExclusionTable extends TailwindElement {
 
     await this.updateComplete;
 
+    let valid: boolean | undefined;
+
+    if (value.length) {
+      valid = !this.getValidityMessage({ type, value });
+    }
+
     this.dispatchEvent(
-      new CustomEvent("btrix-change", {
+      new CustomEvent<ExclusionChangeEventDetail>("btrix-change", {
         detail: {
           index,
           regex,
+          valid,
         },
-      }) as ExclusionChangeEvent,
+      }),
     );
   }
 

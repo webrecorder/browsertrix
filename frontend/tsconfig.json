@@ -3,7 +3,7 @@
     "outDir": "./dist/",
     "module": "esnext",
     "target": "es6",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "allowJs": true,
     "strict": true,
     "noImplicitAny": true,
@@ -14,6 +14,7 @@
     "inlineSources": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
+    "useDefineForClassFields": false,
     "plugins": [
       {
         "name": "ts-lit-plugin",

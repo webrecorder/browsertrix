@@ -1,12 +1,15 @@
 import queryString from "query-string";
 import UrlPattern from "url-pattern";
 
-type Routes = { [key: string]: UrlPattern };
-type Paths = { [key: string]: string };
+import type { ROUTES } from "@/routes";
+
+type RouteName = keyof typeof ROUTES;
+type Routes = Record<RouteName, UrlPattern>;
+type Paths = Record<RouteName, string>;
 
 export type ViewState = {
   // route name, e.g. "admin"
-  route: string | null;
+  route: RouteName | null;
   // path name
   // e.g. "/dashboard"
   // e.g. "/users/abc123"
@@ -24,11 +27,13 @@ export default class APIRouter {
   private readonly routes: Routes;
 
   constructor(paths: Paths) {
-    this.routes = {};
+    const routes: { [key: string]: UrlPattern } = {};
 
     for (const [name, route] of Object.entries(paths)) {
-      this.routes[name] = new UrlPattern(route);
+      routes[name] = new UrlPattern(route);
     }
+
+    this.routes = routes as Routes;
   }
 
   match(relativePath: string): ViewState {
@@ -46,10 +51,20 @@ export default class APIRouter {
           ...match,
           ...queryParams,
         };
-        return { route: name, pathname: relativePath, params };
+        return { route: name as RouteName, pathname: relativePath, params };
       }
     }
 
     return { route: null, pathname: relativePath, params: {} };
   }
+
+  /**
+   * Get URL for a route name, with optional parameters
+   */
+  public readonly urlForName = (
+    name: RouteName,
+    params?: { [key: string]: unknown },
+  ) => {
+    return this.routes[name].stringify(params);
+  };
 }

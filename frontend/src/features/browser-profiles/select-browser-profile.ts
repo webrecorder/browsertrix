@@ -84,12 +84,12 @@ export class SelectBrowserProfile extends BtrixElement {
               ${profile.name}
               <div slot="suffix">
                 <div class="text-xs">
-                  <sl-format-date
-                    date=${profile.modified}
+                  <btrix-format-date
+                    .date=${profile.modified}
                     month="2-digit"
                     day="2-digit"
-                    year="2-digit"
-                  ></sl-format-date>
+                    year="numeric"
+                  ></btrix-format-date>
                 </div></div
             ></sl-option>
           `,
@@ -102,14 +102,14 @@ export class SelectBrowserProfile extends BtrixElement {
             ? html`
                 <span>
                   ${msg("Last updated")}
-                  <sl-format-date
-                    date=${this.selectedProfile.modified}
+                  <btrix-format-date
+                    .date=${this.selectedProfile.modified}
                     month="2-digit"
                     day="2-digit"
-                    year="2-digit"
+                    year="numeric"
                     hour="2-digit"
                     minute="2-digit"
-                  ></sl-format-date>
+                  ></btrix-format-date>
                 </span>
                 ${this.selectedProfile.proxyId
                   ? html` <span>
@@ -168,7 +168,7 @@ export class SelectBrowserProfile extends BtrixElement {
           >${msg("This org doesn't have any custom profiles yet.")}</span
         >
         <a
-          href=${`${this.navigate.orgBasePath}/browser-profiles?new`}
+          href=${`${this.navigate.orgBasePath}/browser-profiles?new=browser-profile`}
           class="font-medium text-primary hover:text-primary-500"
           target="_blank"
           @click=${(e: Event) => {
@@ -236,6 +236,7 @@ export class SelectBrowserProfile extends BtrixElement {
         message: msg("Sorry, couldn't retrieve browser profiles at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "browser-profile-status",
       });
     }
   }

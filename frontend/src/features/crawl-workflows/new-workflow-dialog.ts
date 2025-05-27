@@ -14,8 +14,8 @@ export type SelectJobTypeEvent = CustomEvent<
 /**
  * @event select-job-type SelectJobTypeEvent
  */
-@localized()
 @customElement("btrix-new-workflow-dialog")
+@localized()
 export class NewWorkflowDialog extends TailwindElement {
   @property({ type: Boolean })
   open = false;

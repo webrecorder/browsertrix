@@ -1,7 +1,7 @@
 import { expect } from "@open-wc/testing";
 import { restore, stub } from "sinon";
 
-import { Localize } from "./localize";
+import { Localize, mergeLocales } from "./localize";
 import { AppStateService } from "./state";
 
 describe("Localize", () => {
@@ -10,6 +10,10 @@ describe("Localize", () => {
     window.sessionStorage.clear();
     AppStateService.resetAll();
     document.documentElement.lang = "";
+    AppStateService.partialUpdateUserPreferences({
+      useBrowserLanguageForFormatting: false,
+    });
+    // TODO write tests with for `useBrowserLanguageForFormatting`
   });
 
   afterEach(() => {
@@ -35,7 +39,7 @@ describe("Localize", () => {
     it("returns the correct languages", () => {
       stub(window.navigator, "languages").get(() => ["en-US", "ar", "ko"]);
       const localize = new Localize();
-      expect(localize.languages).to.eql(["en", "es", "ar", "ko"]);
+      expect(localize.languages).to.eql(["de", "en", "es", "fr", "pt"]);
     });
   });
 
@@ -66,7 +70,15 @@ describe("Localize", () => {
       const localize = new Localize();
       localize.setLanguage("es");
       expect(localize.date(new Date("2024-01-01T00:00:00.000Z"))).to.equal(
-        "31/12/23, 19:00",
+        "31/12/2023, 19:00",
+      );
+    });
+
+    it("updates the duration formatter", () => {
+      const localize = new Localize();
+      localize.setLanguage("ar");
+      expect(localize.duration({ days: 1, hours: 2, minutes: 3 })).to.equal(
+        "1 ي و2 س و3 د",
       );
     });
 
@@ -92,18 +104,13 @@ describe("Localize", () => {
       const localize = new Localize("es");
       expect(localize.number(10000)).to.equal("10.000");
     });
-
-    it("formats an ordinal", () => {
-      const localize = new Localize();
-      expect(localize.number(1, { ordinal: true })).to.equal("1st");
-    });
   });
 
   describe(".date()", () => {
     it("formats with the current language", () => {
       const localize = new Localize("ko");
       expect(localize.date(new Date("2024-01-01T00:00:00.000Z"))).to.equal(
-        "23. 12. 31. 오후 07:00",
+        "2023. 12. 31. 오후 07:00",
       );
     });
 
@@ -116,4 +123,70 @@ describe("Localize", () => {
       ).to.equal("2024. 1. 1.");
     });
   });
+
+  describe(".duration()", () => {
+    it("formats a duration", () => {
+      const localize = new Localize("am");
+      expect(
+        localize.duration({
+          days: 1,
+          hours: 2,
+          minutes: 3,
+          seconds: 4,
+          milliseconds: 5,
+        }),
+      ).to.equal("1 ቀ፣ 2 ሰ፣ 3 ደ፣ 4 ሰ 5 ሚሴ");
+    });
+
+    it("formats an empty duration", () => {
+      const localize = new Localize("am");
+      expect(localize.duration({ seconds: 0 })).to.equal("");
+    });
+
+    it("errors with an invalid duration", () => {
+      const localize = new Localize("am");
+      // @ts-expect-error empty object shouldn't be allowed
+      expect(() => localize.duration({})).to.throw();
+    });
+  });
+
+  // TODO test `.ordinal()`
+});
+
+describe("mergeLocales", () => {
+  it("returns the target lang when navigator locales don't overlap", () => {
+    expect(mergeLocales("fr", false, ["en-US", "ar", "ko"])).to.deep.equal([
+      "fr",
+    ]);
+  });
+
+  it("returns the target lang last when navigator locales do overlap", () => {
+    expect(
+      mergeLocales("fr", false, ["fr-FR", "fr-CA", "fr-CH"]),
+    ).to.deep.equal(["fr-FR", "fr-CA", "fr-CH", "fr"]);
+  });
+
+  it("returns the target lang in place last when navigator locales does overlap and contains target lang exactly", () => {
+    expect(
+      mergeLocales("fr", false, ["fr-FR", "fr", "fr-CA", "fr-CH"]),
+    ).to.deep.equal(["fr-FR", "fr", "fr-CA", "fr-CH"]);
+  });
+
+  it("handles more complicated locale strings", () => {
+    expect(
+      mergeLocales("fr", false, [
+        "fr-u-CA-gregory-hc-h12",
+        "ja-Jpan-JP-u-ca-japanese-hc-h12",
+        "fr-Latn-FR-u-ca-gregory-hc-h12",
+        "fr-CA",
+      ]),
+    ).to.deep.equal([
+      "fr-u-CA-gregory-hc-h12",
+      "fr-Latn-FR-u-ca-gregory-hc-h12",
+      "fr-CA",
+      "fr",
+    ]);
+  });
+
+  // TODO test with `useNavigatorLocales = true`
 });

@@ -7,8 +7,8 @@ import LiteElement, { html } from "@/utils/LiteElement";
 /**
  * @fires user-info-change
  */
-@localized()
 @customElement("btrix-verify")
+@localized()
 export class Verify extends LiteElement {
   @property({ type: String })
   token?: string;

@@ -68,6 +68,15 @@ def test_create_sub_org_and_invite_new_user(admin_auth_headers):
     new_subs_oid = org_id
 
 
+def test_validate_new_org_not_activated(admin_auth_headers):
+    r = requests.get(
+        f"{API_PREFIX}/subscriptions/is-activated/123",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["success"] is False
+
+
 def test_validate_new_org_with_quotas_and_name_is_uid(admin_auth_headers):
     r = requests.get(f"{API_PREFIX}/orgs/{new_subs_oid}", headers=admin_auth_headers)
     assert r.status_code == 200
@@ -124,6 +133,15 @@ def test_validate_new_org_with_quotas_and_update_name(admin_auth_headers):
         "giftedExecMinutes": 0,
     }
     assert "subscription" in data
+
+
+def test_validate_new_org_is_activated(admin_auth_headers):
+    r = requests.get(
+        f"{API_PREFIX}/subscriptions/is-activated/123",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["success"] is True
 
 
 def test_create_sub_org_and_invite_existing_user_dupe_sub(admin_auth_headers):

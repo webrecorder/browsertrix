@@ -56,6 +56,48 @@ spec:
           configMap:
             name: email-templates
 
+      initContainers:
+        - name: migrations
+          image: {{ .Values.backend_image }}
+          imagePullPolicy: {{ .Values.backend_pull_policy }}
+          command: ["python3", "-m", "btrixcloud.main_migrations"]
+
+          envFrom:
+            - configMapRef:
+                name: backend-env-config
+            - secretRef:
+                name: backend-auth
+            - secretRef:
+                name: mongo-auth
+
+          env:
+            - name: MOTOR_MAX_WORKERS
+              value: "{{ .Values.backend_mongodb_workers | default 1 }}"
+
+          volumeMounts:
+            - name: config-volume
+              mountPath: /config
+
+            - name: ops-configs
+              mountPath: /ops-configs/
+
+            - name: ops-proxy-configs
+              mountPath: /ops-proxy-configs/
+
+            - name: app-templates
+              mountPath: /app/btrixcloud/templates/
+
+            - name: email-templates
+              mountPath: /app/btrixcloud/email-templates/
+
+          resources:
+            limits:
+              memory: {{ .Values.backend_memory }}
+
+            requests:
+              cpu: {{ .Values.backend_cpu }}
+              memory: {{ .Values.backend_memory }}
+
       containers:
         - name: api
           image: {{ .Values.backend_image }}
@@ -123,8 +165,8 @@ spec:
             httpGet:
               path: /healthzStartup
               port: 8000
-            periodSeconds: 5
-            failureThreshold: 60
+            periodSeconds: 10
+            failureThreshold: 8640
             successThreshold: 1
 
           readinessProbe:

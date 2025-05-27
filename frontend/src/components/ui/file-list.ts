@@ -6,6 +6,7 @@ import {
   queryAssignedElements,
 } from "lit/decorators.js";
 
+import { BtrixElement } from "@/classes/BtrixElement";
 import { TailwindElement } from "@/classes/TailwindElement";
 import { truncate } from "@/utils/css";
 
@@ -17,9 +18,9 @@ export type FileRemoveEvent = CustomEvent<FileRemoveDetail>;
 /**
  * @event on-remove FileRemoveEvent
  */
-@localized()
 @customElement("btrix-file-list-item")
-export class FileListItem extends TailwindElement {
+@localized()
+export class FileListItem extends BtrixElement {
   static styles = [
     truncate,
     css`
@@ -82,11 +83,11 @@ export class FileListItem extends TailwindElement {
           <div class="name">${this.file.name}</div>
           <div class="size">
             ${this.progressValue !== undefined
-              ? html`<sl-format-bytes
-                    value=${(this.progressValue / 100) * this.file.size}
-                  ></sl-format-bytes>
-                  / `
-              : ""}<sl-format-bytes value=${this.file.size}></sl-format-bytes>
+              ? html`${this.localize.bytes(
+                  (this.progressValue / 100) * this.file.size,
+                )}
+                / `
+              : ""}${this.localize.bytes(this.file.size)}
           </div>
         </div>
         <div class="actions">

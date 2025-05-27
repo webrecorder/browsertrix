@@ -1,4 +1,4 @@
-""" auth functions for login """
+"""auth functions for login"""
 
 import os
 from uuid import UUID, uuid4
@@ -28,7 +28,7 @@ from .utils import dt_now
 # ============================================================================
 PASSWORD_SECRET = os.environ.get("PASSWORD_SECRET", uuid4().hex)
 
-JWT_TOKEN_LIFETIME = int(os.environ.get("JWT_TOKEN_LIFETIME_MINUTES", 60)) * 60
+JWT_TOKEN_LIFETIME = int(os.environ.get("JWT_TOKEN_LIFETIME_MINUTES", 60))
 
 BTRIX_SUBS_APP_API_KEY = os.environ.get("BTRIX_SUBS_APP_API_KEY", "")
 

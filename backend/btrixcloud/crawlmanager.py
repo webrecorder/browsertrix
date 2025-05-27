@@ -1,10 +1,10 @@
-""" shared crawl manager implementation """
+"""shared crawl manager implementation"""
 
 import os
 import secrets
 
-from typing import Optional, Dict
-from datetime import timedelta
+from typing import Optional, Dict, Tuple
+from datetime import datetime, timedelta
 
 from fastapi import HTTPException
 
@@ -21,6 +21,7 @@ DEFAULT_NAMESPACE: str = os.environ.get("DEFAULT_NAMESPACE", "default")
 
 
 # ============================================================================
+# pylint: disable=too-many-public-methods
 class CrawlManager(K8sAPI):
     """abstract crawl manager"""
 
@@ -32,6 +33,7 @@ class CrawlManager(K8sAPI):
         url: str,
         storage: StorageRef,
         crawler_image: str,
+        image_pull_policy: str,
         baseprofile: str = "",
         profile_filename: str = "",
         proxy_id: str = "",
@@ -56,6 +58,7 @@ class CrawlManager(K8sAPI):
             "vnc_password": secrets.token_hex(16),
             "expire_time": date_to_str(dt_now() + timedelta(seconds=30)),
             "crawler_image": crawler_image,
+            "image_pull_policy": image_pull_policy,
             "proxy_id": proxy_id or DEFAULT_PROXY_ID,
         }
 
@@ -72,24 +75,21 @@ class CrawlManager(K8sAPI):
         replica_storage: StorageRef,
         replica_file_path: str,
         replica_endpoint: str,
+        delay_days: int = 0,
         primary_storage: Optional[StorageRef] = None,
         primary_file_path: Optional[str] = None,
         primary_endpoint: Optional[str] = None,
-        job_id_prefix: Optional[str] = None,
         existing_job_id: Optional[str] = None,
-    ):
+    ) -> Tuple[str, Optional[str]]:
         """run job to replicate file from primary storage to replica storage"""
 
         if existing_job_id:
             job_id = existing_job_id
         else:
-            if not job_id_prefix:
-                job_id_prefix = job_type
+            # Keep name shorter than in past to avoid k8s issues with length
+            job_id = f"{job_type}-{secrets.token_hex(5)}"
 
-            # ensure name is <=63 characters
-            job_id = f"{job_id_prefix[:52]}-{secrets.token_hex(5)}"
-
-        params = {
+        params: Dict[str, object] = {
             "id": job_id,
             "oid": oid,
             "job_type": job_type,
@@ -106,17 +106,21 @@ class CrawlManager(K8sAPI):
             "BgJobType": BgJobType,
         }
 
+        if job_type == BgJobType.DELETE_REPLICA.value and delay_days > 0:
+            # If replica deletion delay is configured, schedule as cronjob
+            return await self.create_replica_deletion_scheduled_job(
+                job_id, params, delay_days
+            )
+
         data = self.templates.env.get_template("replica_job.yaml").render(params)
 
         await self.create_from_yaml(data)
 
-        return job_id
+        return job_id, None
 
     async def run_delete_org_job(
         self,
         oid: str,
-        backend_image: str,
-        pull_policy: str,
         existing_job_id: Optional[str] = None,
     ) -> str:
         """run job to delete org and all of its data"""
@@ -127,14 +131,12 @@ class CrawlManager(K8sAPI):
             job_id = f"delete-org-{oid}-{secrets.token_hex(5)}"
 
         return await self._run_bg_job_with_ops_classes(
-            oid, backend_image, pull_policy, job_id, job_type=BgJobType.DELETE_ORG.value
+            job_id, job_type=BgJobType.DELETE_ORG.value, oid=oid
         )
 
     async def run_recalculate_org_stats_job(
         self,
         oid: str,
-        backend_image: str,
-        pull_policy: str,
         existing_job_id: Optional[str] = None,
     ) -> str:
         """run job to recalculate storage stats for the org"""
@@ -145,30 +147,64 @@ class CrawlManager(K8sAPI):
             job_id = f"org-stats-{oid}-{secrets.token_hex(5)}"
 
         return await self._run_bg_job_with_ops_classes(
-            oid,
-            backend_image,
-            pull_policy,
+            job_id, job_type=BgJobType.RECALCULATE_ORG_STATS.value, oid=oid
+        )
+
+    async def run_re_add_org_pages_job(
+        self,
+        oid: str,
+        crawl_type: Optional[str] = None,
+        crawl_id: Optional[str] = None,
+        existing_job_id: Optional[str] = None,
+    ) -> str:
+        """run job to recalculate storage stats for the org"""
+
+        if existing_job_id:
+            job_id = existing_job_id
+        else:
+            job_id = f"org-pages-{oid}-{secrets.token_hex(5)}"
+
+        return await self._run_bg_job_with_ops_classes(
             job_id,
-            job_type=BgJobType.RECALCULATE_ORG_STATS.value,
+            job_type=BgJobType.READD_ORG_PAGES.value,
+            oid=oid,
+            crawl_type=crawl_type,
+            crawl_id=crawl_id,
+        )
+
+    async def run_optimize_pages_job(
+        self, existing_job_id: Optional[str] = None, scale=1
+    ) -> str:
+        """run job to optimize crawl pages"""
+
+        if existing_job_id:
+            job_id = existing_job_id
+        else:
+            job_id = f"optimize-pages-{secrets.token_hex(5)}"
+
+        return await self._run_bg_job_with_ops_classes(
+            job_id, job_type=BgJobType.OPTIMIZE_PAGES.value, scale=scale
         )
 
     async def _run_bg_job_with_ops_classes(
         self,
-        oid: str,
-        backend_image: str,
-        pull_policy: str,
         job_id: str,
         job_type: str,
+        oid: Optional[str] = None,
+        **kwargs,
     ) -> str:
         """run background job with access to ops classes"""
 
         params = {
             "id": job_id,
-            "oid": oid,
             "job_type": job_type,
-            "backend_image": backend_image,
-            "pull_policy": pull_policy,
+            "backend_image": os.environ.get("BACKEND_IMAGE", ""),
+            "pull_policy": os.environ.get("BACKEND_IMAGE_PULL_POLICY", ""),
+            "larger_resources": True,
+            **kwargs,
         }
+        if oid:
+            params["oid"] = oid
 
         data = self.templates.env.get_template("background_job.yaml").render(params)
 
@@ -206,6 +242,31 @@ class CrawlManager(K8sAPI):
             profile_filename=profile_filename,
             proxy_id=crawlconfig.proxyId or DEFAULT_PROXY_ID,
         )
+
+    async def reload_running_crawl_config(self, crawl_id: str):
+        """force reload of configmap for crawl"""
+        return await self._patch_job(
+            crawl_id, {"lastConfigUpdate": date_to_str(dt_now())}
+        )
+
+    async def update_running_crawl_config(
+        self, crawl_id: str, crawlconfig: CrawlConfig
+    ):
+        """force update of config for running crawl"""
+        time_now = date_to_str(dt_now())
+
+        # pylint: disable=use-dict-literal
+        patch = dict(
+            crawlerChannel=crawlconfig.crawlerChannel,
+            scale=crawlconfig.scale,
+            timeout=crawlconfig.crawlTimeout,
+            maxCrawlSize=crawlconfig.maxCrawlSize,
+            proxyId=crawlconfig.proxyId or DEFAULT_PROXY_ID,
+            lastConfigUpdate=time_now,
+            restartTime=time_now,
+        )
+
+        return await self._patch_job(crawl_id, patch)
 
     async def create_qa_crawl_job(
         self,
@@ -325,6 +386,14 @@ class CrawlManager(K8sAPI):
 
         return await self.delete_crawl_job(crawl_id)
 
+    async def pause_resume_crawl(
+        self, crawl_id: str, paused_at: Optional[datetime] = None
+    ) -> dict:
+        """pause or resume a crawl"""
+        return await self._patch_job(
+            crawl_id, {"pausedAt": date_to_str(paused_at) if paused_at else ""}
+        )
+
     async def delete_crawl_configs_for_org(self, org: str) -> None:
         """Delete all crawl configs for given org"""
         await self._delete_crawl_configs(f"btrix.org={org}")
@@ -393,3 +462,37 @@ class CrawlManager(K8sAPI):
         await self.create_from_yaml(data, self.namespace)
 
         return cron_job_id
+
+    async def create_replica_deletion_scheduled_job(
+        self,
+        job_id: str,
+        params: Dict[str, object],
+        delay_days: int,
+    ) -> Tuple[str, Optional[str]]:
+        """create scheduled job to delay replica file in x days"""
+        now = dt_now()
+        run_at = now + timedelta(days=delay_days)
+        schedule = f"{run_at.minute} {run_at.hour} {run_at.day} {run_at.month} *"
+
+        params["schedule"] = schedule
+
+        print(f"Replica deletion cron schedule: '{schedule}'", flush=True)
+
+        data = self.templates.env.get_template("replica_deletion_cron_job.yaml").render(
+            params
+        )
+
+        await self.create_from_yaml(data, self.namespace)
+
+        return job_id, schedule
+
+    async def delete_replica_deletion_scheduled_job(self, job_id: str):
+        """delete scheduled job to delay replica file in x days"""
+        cron_job = await self.batch_api.read_namespaced_cron_job(
+            name=job_id,
+            namespace=self.namespace,
+        )
+        if cron_job:
+            await self.batch_api.delete_namespaced_cron_job(
+                name=cron_job.metadata.name, namespace=self.namespace
+            )

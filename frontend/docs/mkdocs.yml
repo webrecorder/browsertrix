@@ -6,6 +6,7 @@ extra_css:
   - stylesheets/extra.css
 extra_javascript:
   - js/insertversion.js
+  - js/embed.js
 theme:
   name: material
   custom_dir: docs/overrides
@@ -61,9 +62,10 @@ nav:
       - Archived Items:
           - user-guide/archived-items.md
           - user-guide/review.md
-          - user-guide/collections.md
       - Collections:
           - user-guide/collection.md
+          - user-guide/public-collections-gallery.md
+          - user-guide/presentation-sharing.md
       - Browser Profiles:
           - user-guide/browser-profiles.md
       - Org Settings:
@@ -83,13 +85,21 @@ nav:
           - deploy/ansible/microk8s.md
           - deploy/ansible/k3s.md
       - Administration:
+          - deploy/admin/upgrade-notes.md
           - deploy/admin/org-import-export.md
   - Development:
       - develop/index.md
       - develop/local-dev-setup.md
-      - develop/frontend-dev.md
-      - develop/localization.md
       - develop/docs.md
+
+      - UI Development:
+        - develop/frontend-dev.md
+        - develop/ui/components.md
+        - develop/ui/storybook.md
+        - develop/localization.md
+        - Design:
+          - develop/ui/design-action-menus.md
+          - develop/ui/design-status-icons.md
 
   - API Reference: !ENV [ API_DOCS_URL, "/api/" ]
 
@@ -134,3 +144,6 @@ copyright: "Creative Commons Attribution 4.0 International (CC BY 4.0)"
 
 plugins:
   - search
+  - redirects:
+      redirect_maps:
+        "user-guide/collections.md": "user-guide/collection.md"

@@ -1,14 +1,13 @@
-import { css, html, LitElement } from "lit";
+import { css, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
-/**
- * @cssproperty --btrix-table-grid-column
- */
+import { TailwindElement } from "@/classes/TailwindElement";
+
 @customElement("btrix-table-row")
-export class TableRow extends LitElement {
+export class TableRow extends TailwindElement {
   static styles = css`
     :host {
-      grid-column: var(--btrix-table-grid-column);
+      grid-column: 1 / -1;
       display: grid;
       grid-template-columns: subgrid;
       position: relative;

@@ -44,12 +44,14 @@ enum AbortReason {
  * ></btrix-file-uploader>
  * ```
  *
+ * @TODO Refactor to use this.api.upload
+ *
  * @event request-close
  * @event upload-start
  * @event uploaded
  */
-@localized()
 @customElement("btrix-file-uploader")
+@localized()
 export class FileUploader extends BtrixElement {
   @property({ type: Boolean })
   open = false;
@@ -457,6 +459,7 @@ export class FileUploader extends BtrixElement {
           ),
           variant: "success",
           icon: "check2-circle",
+          id: "file-upload-status",
         });
       } else {
         throw data;
@@ -482,6 +485,7 @@ export class FileUploader extends BtrixElement {
           message: message,
           variant: "danger",
           icon: "exclamation-octagon",
+          id: "file-upload-status",
         });
       }
     }

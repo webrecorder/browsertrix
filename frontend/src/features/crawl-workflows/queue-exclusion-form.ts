@@ -1,7 +1,7 @@
 import { localized, msg } from "@lit/localize";
 import { type SlInput, type SlSelect } from "@shoelace-style/shoelace";
 import { type PropertyValues } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
 import debounce from "lodash/fp/debounce";
 
 import type { UnderlyingFunction } from "@/types/utils";
@@ -26,21 +26,13 @@ export type ExclusionAddEvent = CustomEvent<{
 const MIN_LENGTH = 2;
 
 /**
- * Crawl queue exclusion form
+ * Inline form for adding a new crawl exclusion while the crawl is running.
  *
- * Usage example:
- * ```ts
- * <btrix-queue-exclusion-form
- *  @on-change=${this.handleExclusionChange}
- *  @on-add=${this.handleExclusionAdd}
- * ></btrix-queue-exclusion-form>
- * ```
- *
- * @event on-change ExclusionChangeEvent
- * @event on-add ExclusionAddEvent
+ * @fires btrix-change ExclusionChangeEvent
+ * @fires btrix-add ExclusionAddEvent
  */
-@localized()
 @customElement("btrix-queue-exclusion-form")
+@localized()
 export class QueueExclusionForm extends LiteElement {
   @property({ type: Boolean })
   isSubmitting = false;
@@ -52,18 +44,21 @@ export class QueueExclusionForm extends LiteElement {
   private selectValue: Exclusion["type"] = "text";
 
   @state()
-  private inputValue = "";
+  private regex = "";
 
   @state()
   private isRegexInvalid = false;
+
+  @query("sl-input")
+  private readonly input?: SlInput | null;
 
   async willUpdate(
     changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {
     if (
       changedProperties.get("selectValue") ||
-      (changedProperties.has("inputValue") &&
-        changedProperties.get("inputValue") !== undefined)
+      (changedProperties.has("regex") &&
+        changedProperties.get("regex") !== undefined)
     ) {
       this.fieldErrorMessage = "";
       this.checkInputValidity();
@@ -107,7 +102,6 @@ export class QueueExclusionForm extends LiteElement {
                 placeholder=${this.selectValue === "text"
                   ? "/skip-this-page"
                   : "example.com/skip.*"}
-                .value=${this.inputValue}
                 ?disabled=${this.isSubmitting}
                 @keydown=${this.onKeyDown}
                 @sl-input=${this.onInput as UnderlyingFunction<
@@ -151,7 +145,7 @@ export class QueueExclusionForm extends LiteElement {
               <btrix-button
                 variant="neutral"
                 raised
-                ?disabled=${!this.inputValue ||
+                ?disabled=${!this.regex ||
                 this.isRegexInvalid ||
                 this.isSubmitting}
                 ?loading=${this.isSubmitting}
@@ -166,8 +160,8 @@ export class QueueExclusionForm extends LiteElement {
     `;
   }
 
-  private readonly onInput = debounce(200)((e: Event) => {
-    this.inputValue = (e.target as SlInput).value;
+  private readonly onInput = debounce(200)(() => {
+    this.regex = this.input?.value || "";
   });
 
   private onButtonClick() {
@@ -176,7 +170,7 @@ export class QueueExclusionForm extends LiteElement {
 
   private readonly onKeyDown = (e: KeyboardEvent) => {
     e.stopPropagation();
-    if (e.key === "Enter") {
+    if (e.key === "Enter" && !this.isRegexInvalid) {
       void this.handleAdd();
     }
   };
@@ -184,12 +178,12 @@ export class QueueExclusionForm extends LiteElement {
   private checkInputValidity(): void {
     let isValid = true;
 
-    if (!this.inputValue || this.inputValue.length < MIN_LENGTH) {
+    if (!this.regex || this.regex.length < MIN_LENGTH) {
       isValid = false;
     } else if (this.selectValue === "regex") {
       try {
         // Check if valid regex
-        new RegExp(this.inputValue);
+        new RegExp(this.regex);
       } catch (err) {
         this.fieldErrorMessage = (err as Error).message;
         isValid = false;
@@ -202,12 +196,10 @@ export class QueueExclusionForm extends LiteElement {
   private async dispatchChangeEvent() {
     await this.updateComplete;
     this.dispatchEvent(
-      new CustomEvent("on-change", {
+      new CustomEvent("btrix-change", {
         detail: {
           value:
-            this.selectValue === "text"
-              ? regexEscape(this.inputValue)
-              : this.inputValue,
+            this.selectValue === "text" ? regexEscape(this.regex) : this.regex,
           valid: !this.isRegexInvalid,
         },
       }) as ExclusionChangeEvent,
@@ -217,19 +209,23 @@ export class QueueExclusionForm extends LiteElement {
   private async handleAdd() {
     this.onInput.flush();
     await this.updateComplete;
-    if (!this.inputValue) return;
+    if (!this.regex || this.isRegexInvalid) return;
 
-    let regex = this.inputValue;
+    if (this.input) {
+      this.input.value = "";
+    }
+
+    let regex = this.regex;
     if (this.selectValue === "text") {
-      regex = regexEscape(this.inputValue);
+      regex = regexEscape(this.regex);
     }
 
     this.dispatchEvent(
-      new CustomEvent("on-add", {
+      new CustomEvent("btrix-add", {
         detail: {
           regex,
           onSuccess: () => {
-            this.inputValue = "";
+            this.regex = "";
           },
         },
       }) as ExclusionAddEvent,

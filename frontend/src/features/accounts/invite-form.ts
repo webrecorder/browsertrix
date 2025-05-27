@@ -8,6 +8,7 @@ import sortBy from "lodash/fp/sortBy";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { AccessCode, type OrgData } from "@/types/org";
+import { type UserOrg } from "@/types/user";
 import { isApiError } from "@/utils/api";
 
 export type InviteSuccessDetail = {
@@ -18,17 +19,19 @@ export type InviteSuccessDetail = {
 
 const sortByName = sortBy("name");
 
+type Org = UserOrg & Partial<OrgData>;
+
 /**
  * @event btrix-invite-success
  */
-@localized()
 @customElement("btrix-invite-form")
+@localized()
 export class InviteForm extends BtrixElement {
   @property({ type: Array, attribute: false })
-  orgs?: OrgData[] = [];
+  orgs?: Org[] = [];
 
   @property({ type: Object, attribute: false })
-  defaultOrg: Partial<OrgData> | null = null;
+  defaultOrg: Partial<Org> | null = null;
 
   @state()
   private isSubmitting = false;

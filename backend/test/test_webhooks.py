@@ -85,6 +85,7 @@ def test_get_webhook_event(admin_auth_headers, default_org_id):
 
     if event in ("crawlFinished", "uploadFinished"):
         assert len(body["resources"]) >= 1
+        assert body["resources"][0]["expireAt"]
         assert body["itemId"]
 
     elif event in ("crawlStarted"):

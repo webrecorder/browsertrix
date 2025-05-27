@@ -35,8 +35,8 @@ export type CollectionsChangeEvent = CustomEvent<{
  * ```
  * @events collections-change
  */
-@localized()
 @customElement("btrix-collections-add")
+@localized()
 export class CollectionsAdd extends BtrixElement {
   @property({ type: Array })
   initialCollections?: string[];
@@ -299,6 +299,7 @@ export class CollectionsAdd extends BtrixElement {
           message: msg("Sorry, couldn't retrieve Collections at this time."),
           variant: "danger",
           icon: "exclamation-octagon",
+          id: "collection-fetch-throttled",
         });
       }
     }

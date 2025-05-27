@@ -14,8 +14,8 @@ import { tw } from "@/utils/tailwind";
  * <btrix-copy-field label="my field" value=${value}></btrix-copy-field>
  * ```
  */
-@localized()
 @customElement("btrix-copy-field")
+@localized()
 export class CopyField extends TailwindElement {
   @property({ type: String })
   value?: string;
@@ -34,6 +34,9 @@ export class CopyField extends TailwindElement {
 
   @property({ type: Boolean })
   hoist = false;
+
+  @property({ type: Boolean })
+  border = true;
 
   @property({ type: Boolean })
   monostyle = true;
@@ -65,8 +68,8 @@ export class CopyField extends TailwindElement {
       <div
         role="group"
         class=${clsx(
-          tw`rounded border`,
-          this.filled && tw`bg-slate-50`,
+          this.border && tw`rounded border`,
+          this.filled ? tw`bg-slate-50` : tw`border-neutral-150`,
           this.monostyle && tw`font-monostyle`,
         )}
       >

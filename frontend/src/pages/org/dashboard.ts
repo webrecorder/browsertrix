@@ -1,15 +1,31 @@
 import { localized, msg } from "@lit/localize";
-import type { SlSelectEvent } from "@shoelace-style/shoelace";
-import { html, type PropertyValues, type TemplateResult } from "lit";
+import { Task, TaskStatus } from "@lit/task";
+import type {
+  SlChangeEvent,
+  SlRadioGroup,
+  SlSelectEvent,
+} from "@shoelace-style/shoelace";
+import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
+import queryString from "query-string";
 
 import type { SelectNewDialogEvent } from ".";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
+import { type CollectionSavedEvent } from "@/features/collections/collection-edit-dialog";
+import { pageHeading } from "@/layouts/page";
 import { pageHeader } from "@/layouts/pageHeader";
+import { RouteNamespace } from "@/routes";
+import type { APIPaginatedList, APISortQuery } from "@/types/api";
+import { CollectionAccess, type Collection } from "@/types/collection";
+import { SortDirection } from "@/types/utils";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
+import { tw } from "@/utils/tailwind";
+import { timeoutCache } from "@/utils/timeoutCache";
+import { cached } from "@/utils/weakCache";
 
 type Metrics = {
   storageUsedBytes: number;
@@ -21,6 +37,8 @@ type Metrics = {
   crawlCount: number;
   uploadCount: number;
   pageCount: number;
+  crawlPageCount: number;
+  uploadPageCount: number;
   profileCount: number;
   workflowsRunningCount: number;
   maxConcurrentCrawls: number;
@@ -29,14 +47,33 @@ type Metrics = {
   publicCollectionsCount: number;
 };
 
-@localized()
+enum CollectionGridView {
+  All = "all",
+  Public = "public",
+}
+
+const PAGE_SIZE = 16;
+
 @customElement("btrix-dashboard")
+@localized()
 export class Dashboard extends BtrixElement {
   @property({ type: Boolean })
   isCrawler?: boolean;
 
   @state()
   private metrics?: Metrics;
+
+  @state()
+  collectionRefreshing: string | null = null;
+
+  @state()
+  collectionsView = CollectionGridView.Public;
+
+  @state()
+  collectionPage = parsePage(new URLSearchParams(location.search).get("page"));
+
+  // Used for busting cache when updating visible collection
+  cacheBust = 0;
 
   private readonly colors = {
     default: "neutral",
@@ -45,6 +82,33 @@ export class Dashboard extends BtrixElement {
     browserProfiles: "indigo",
     runningTime: "blue",
   };
+
+  private readonly collections = new Task(this, {
+    task: cached(
+      async ([orgId, collectionsView, collectionPage]) => {
+        if (!orgId) throw new Error("orgId required");
+
+        const collections = await this.getCollections({
+          orgId,
+          access:
+            collectionsView === CollectionGridView.Public
+              ? CollectionAccess.Public
+              : undefined,
+          page: collectionPage,
+        });
+        this.collectionRefreshing = null;
+        return collections;
+      },
+      { cacheConstructor: timeoutCache(300) },
+    ),
+    args: () =>
+      [
+        this.orgId,
+        this.collectionsView,
+        this.collectionPage,
+        this.cacheBust,
+      ] as const,
+  });
 
   willUpdate(changedProperties: PropertyValues<this> & Map<string, unknown>) {
     if (changedProperties.has("appState.orgSlug") && this.orgId) {
@@ -66,19 +130,56 @@ export class Dashboard extends BtrixElement {
       this.metrics.storageUsedBytes >= this.metrics.storageQuotaBytes;
 
     return html`
-      ${pageHeader(
-        this.userOrg?.name,
-        html`
+      ${pageHeader({
+        title: this.userOrg?.name,
+        secondary: html`
+          ${when(
+            this.org?.publicDescription,
+            (publicDescription) => html`
+              <div class="text-pretty text-stone-600">${publicDescription}</div>
+            `,
+          )}
+          ${when(this.org?.publicUrl, (urlStr) => {
+            let url: URL;
+            try {
+              url = new URL(urlStr);
+            } catch {
+              return nothing;
+            }
+
+            return html`
+              <div
+                class="flex items-center gap-1.5 text-pretty text-neutral-700"
+              >
+                <sl-icon
+                  name="globe2"
+                  class="size-4 text-stone-400"
+                  label=${msg("Website")}
+                ></sl-icon>
+                <a
+                  class="font-medium leading-none text-stone-500 transition-colors hover:text-stone-600"
+                  href="${url.href}"
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                >
+                  ${url.href.split("//")[1].replace(/\/$/, "")}
+                </a>
+              </div>
+            `;
+          })}
+        `,
+        actions: html`
           ${when(
             this.appState.isAdmin,
             () =>
-              html` <sl-icon-button
-                href=${`${this.navigate.orgBasePath}/settings`}
-                class="size-8 text-base"
-                name="gear"
-                label=${msg("Edit org settings")}
-                @click=${this.navigate.link}
-              ></sl-icon-button>`,
+              html`<sl-tooltip content=${msg("Edit Org Settings")}>
+                <sl-icon-button
+                  href=${`${this.navigate.orgBasePath}/settings`}
+                  class="size-8 text-base"
+                  name="gear"
+                  @click=${this.navigate.link}
+                ></sl-icon-button>
+              </sl-tooltip>`,
           )}
           ${when(
             this.isCrawler,
@@ -134,8 +235,8 @@ export class Dashboard extends BtrixElement {
               </sl-dropdown>`,
           )}
         `,
-        "mb-6",
-      )}
+        classNames: tw`border-b-transparent lg:mb-2`,
+      })}
       <main>
         <div class="mb-10 flex flex-col gap-6 md:flex-row">
           ${this.renderCard(
@@ -147,9 +248,7 @@ export class Dashboard extends BtrixElement {
                   value: metrics.crawlCount,
                   secondaryValue: hasQuota
                     ? ""
-                    : html`<sl-format-bytes
-                        value=${metrics.storageUsedCrawls}
-                      ></sl-format-bytes>`,
+                    : this.localize.bytes(metrics.storageUsedCrawls),
                   singleLabel: msg("Crawl"),
                   pluralLabel: msg("Crawls"),
                   iconProps: {
@@ -161,9 +260,7 @@ export class Dashboard extends BtrixElement {
                   value: metrics.uploadCount,
                   secondaryValue: hasQuota
                     ? ""
-                    : html`<sl-format-bytes
-                        value=${metrics.storageUsedUploads}
-                      ></sl-format-bytes>`,
+                    : this.localize.bytes(metrics.storageUsedUploads),
                   singleLabel: msg("Upload"),
                   pluralLabel: msg("Uploads"),
                   iconProps: { name: "upload", color: this.colors.uploads },
@@ -172,9 +269,7 @@ export class Dashboard extends BtrixElement {
                   value: metrics.profileCount,
                   secondaryValue: hasQuota
                     ? ""
-                    : html`<sl-format-bytes
-                        value=${metrics.storageUsedProfiles}
-                      ></sl-format-bytes>`,
+                    : this.localize.bytes(metrics.storageUsedProfiles),
                   singleLabel: msg("Browser Profile"),
                   pluralLabel: msg("Browser Profiles"),
                   iconProps: {
@@ -189,9 +284,7 @@ export class Dashboard extends BtrixElement {
                   value: metrics.archivedItemCount,
                   secondaryValue: hasQuota
                     ? ""
-                    : html`<sl-format-bytes
-                        value=${metrics.storageUsedBytes}
-                      ></sl-format-bytes>`,
+                    : this.localize.bytes(metrics.storageUsedBytes),
                   singleLabel: msg("Archived Item"),
                   pluralLabel: msg("Archived Items"),
                   iconProps: { name: "file-zip-fill" },
@@ -223,10 +316,31 @@ export class Dashboard extends BtrixElement {
                   pluralLabel: msg("Crawl Workflows Waiting"),
                   iconProps: { name: "hourglass-split", color: "violet" },
                 })}
+                <sl-divider
+                  style="--spacing:var(--sl-spacing-small)"
+                ></sl-divider>
                 ${this.renderStat({
-                  value: metrics.pageCount,
+                  value: metrics.crawlPageCount,
                   singleLabel: msg("Page Crawled"),
                   pluralLabel: msg("Pages Crawled"),
+                  iconProps: {
+                    name: "file-richtext-fill",
+                    color: this.colors.crawls,
+                  },
+                })}
+                ${this.renderStat({
+                  value: metrics.uploadPageCount,
+                  singleLabel: msg("Page Uploaded"),
+                  pluralLabel: msg("Pages Uploaded"),
+                  iconProps: {
+                    name: "file-richtext-fill",
+                    color: this.colors.uploads,
+                  },
+                })}
+                ${this.renderStat({
+                  value: metrics.pageCount,
+                  singleLabel: msg("Page Total"),
+                  pluralLabel: msg("Pages Total"),
                   iconProps: { name: "file-richtext-fill" },
                 })}
               </dl>
@@ -252,14 +366,179 @@ export class Dashboard extends BtrixElement {
             `,
           )}
         </div>
-        <section class="mb-10">
-          <btrix-details>
-            <span slot="title">${msg("Usage History")}</span>
-            <btrix-usage-history-table></btrix-usage-history-table>
-          </btrix-details>
+
+        <section class="mb-16">
+          <header class="mb-1.5 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              ${pageHeading({
+                content:
+                  this.collectionsView === CollectionGridView.Public
+                    ? msg("Public Collections")
+                    : msg("All Collections"),
+              })}
+              ${
+                this.collectionsView === CollectionGridView.Public
+                  ? html` <span class="text-sm text-neutral-400"
+                      >—
+                      <a
+                        href=${`/${RouteNamespace.PublicOrgs}/${this.orgSlugState}`}
+                        class="inline-flex h-8 items-center text-sm font-medium text-primary-500 transition hover:text-primary-600"
+                        @click=${this.navigate.link}
+                      >
+                        ${this.org?.enablePublicProfile
+                          ? msg("Visit public collections gallery")
+                          : msg("Preview public collections gallery")}
+                      </a>
+                      <!-- TODO Refactor clipboard code, get URL in a nicer way? -->
+                      ${this.org?.enablePublicProfile
+                        ? html`<btrix-copy-button
+                            value=${new URL(
+                              `/${RouteNamespace.PublicOrgs}/${this.orgSlugState}`,
+                              window.location.toString(),
+                            ).toString()}
+                            content=${msg(
+                              "Copy Link to Public Collections Gallery",
+                            )}
+                            class="inline-block"
+                          ></btrix-copy-button>`
+                        : nothing}
+                    </span>`
+                  : nothing
+              }
+            </div>
+            <div class="flex items-center gap-2">
+              ${when(
+                this.appState.isCrawler,
+                () => html`
+                  <sl-tooltip content=${msg("Manage Collections")}>
+                    <sl-icon-button
+                      href=${`${this.navigate.orgBasePath}/collections`}
+                      class="size-8 text-base"
+                      name="collection"
+                      @click=${this.navigate.link}
+                    ></sl-icon-button>
+                  </sl-tooltip>
+                `,
+              )}
+
+              <sl-radio-group
+                value=${this.collectionsView}
+                size="small"
+                @sl-change=${(e: SlChangeEvent) => {
+                  this.collectionPage = 1;
+                  this.collectionsView = (e.target as SlRadioGroup)
+                    .value as CollectionGridView;
+                }}
+              >
+                <sl-tooltip content=${msg("Public Collections")}>
+                  <sl-radio-button pill value=${CollectionGridView.Public}>
+                    <sl-icon
+                      name="globe"
+                      label=${msg("Public Collections")}
+                    ></sl-icon> </sl-radio-button
+                ></sl-tooltip>
+                <sl-tooltip content=${msg("All Collections")}>
+                  <sl-radio-button pill value=${CollectionGridView.All}>
+                    <sl-icon
+                      name="asterisk"
+                      label=${msg("All Collections")}
+                    ></sl-icon> </sl-radio-button
+                ></sl-tooltip>
+              </sl-radio-group>
+            </div>
+          </header>
+          <div class="relative rounded-lg border p-10">
+            <btrix-collections-grid-with-edit-dialog
+              .collections=${this.collections.value?.items}
+              .collectionRefreshing=${this.collectionRefreshing}
+              ?showVisibility=${this.collectionsView === CollectionGridView.All}
+              @btrix-collection-saved=${async (e: CollectionSavedEvent) => {
+                this.collectionRefreshing = e.detail.id;
+                void this.collections.run([
+                  this.orgId,
+                  this.collectionsView,
+                  this.collectionPage,
+                  ++this.cacheBust,
+                ]);
+              }}
+            >
+              ${this.renderNoPublicCollections()}
+              <span slot="empty-text"
+                >${
+                  this.collectionsView === CollectionGridView.Public
+                    ? msg("No public collections yet.")
+                    : msg("No collections yet.")
+                }</span
+              >
+              ${
+                this.collections.value &&
+                this.collections.value.total >
+                  this.collections.value.items.length
+                  ? html`
+                      <btrix-pagination
+                        page=${this.collectionPage}
+                        size=${PAGE_SIZE}
+                        totalCount=${this.collections.value.total}
+                        @page-change=${(e: PageChangeEvent) => {
+                          this.collectionPage = e.detail.page;
+                        }}
+                        slot="pagination"
+                      >
+                      </btrix-pagination>
+                    `
+                  : nothing
+              }
+            </btrix-collections-grid>
+            ${
+              this.collections.status === TaskStatus.PENDING &&
+              this.collections.value
+                ? html`<div
+                    class="absolute inset-0 rounded-lg bg-stone-50/75 p-24 text-center text-4xl"
+                  >
+                    <sl-spinner></sl-spinner>
+                  </div>`
+                : nothing
+            }
+          </div>
         </section>
       </main>
     `;
+  }
+
+  private renderNoPublicCollections() {
+    if (!this.org || !this.metrics) return;
+
+    let button: TemplateResult;
+
+    if (this.metrics.collectionsCount) {
+      button = html`
+        <sl-button
+          @click=${() => {
+            this.navigate.to(`${this.navigate.orgBasePath}/collections`);
+          }}
+        >
+          <sl-icon slot="prefix" name="collection-fill"></sl-icon>
+          ${msg("Manage Collections")}
+        </sl-button>
+      `;
+    } else {
+      button = html`
+        <sl-button
+          @click=${() => {
+            this.dispatchEvent(
+              new CustomEvent("select-new-dialog", {
+                detail: "collection",
+              }) as SelectNewDialogEvent,
+            );
+          }}
+        >
+          <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+          ${msg("Create a Collection")}
+        </sl-button>
+      `;
+    }
+
+    return html`<div slot="empty-actions">${button}</div>`;
   }
 
   private renderStorageMeter(metrics: Metrics) {
@@ -274,7 +553,9 @@ export class Dashboard extends BtrixElement {
         <div class="text-center">
           <div>${label}</div>
           <div class="text-xs opacity-80">
-            <sl-format-bytes value=${value} display="narrow"></sl-format-bytes>
+            ${this.localize.bytes(value, {
+              unitDisplay: "narrow",
+            })}
             | ${this.renderPercentage(value / metrics.storageUsedBytes)}
           </div>
         </div>
@@ -296,10 +577,9 @@ export class Dashboard extends BtrixElement {
           () =>
             hasQuota
               ? html`
-                  <sl-format-bytes
-                    value=${metrics.storageQuotaBytes -
-                    metrics.storageUsedBytes}
-                  ></sl-format-bytes>
+                  ${this.localize.bytes(
+                    metrics.storageQuotaBytes - metrics.storageUsedBytes,
+                  )}
                   ${msg("Available")}
                 `
               : "",
@@ -349,16 +629,16 @@ export class Dashboard extends BtrixElement {
                   <div class="h-full w-full"></div>
                 </sl-tooltip>
               </div>
-              <sl-format-bytes
-                slot="valueLabel"
-                value=${metrics.storageUsedBytes}
-                display="narrow"
-              ></sl-format-bytes>
-              <sl-format-bytes
-                slot="maxLabel"
-                value=${metrics.storageQuotaBytes}
-                display="narrow"
-              ></sl-format-bytes>
+              <span slot="valueLabel"
+                >${this.localize.bytes(metrics.storageUsedBytes, {
+                  unitDisplay: "narrow",
+                })}</span
+              >
+              <span slot="maxLabel"
+                >${this.localize.bytes(metrics.storageQuotaBytes, {
+                  unitDisplay: "narrow",
+                })}</span
+              >
             </btrix-meter>
           </div>
         `,
@@ -691,7 +971,37 @@ export class Dashboard extends BtrixElement {
         message: msg("Sorry, couldn't retrieve org metrics at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "metrics-retrieve-error",
       });
     }
+  }
+
+  private async getCollections({
+    orgId,
+    access,
+    page,
+  }: {
+    orgId: string;
+    access?: CollectionAccess;
+    page?: number;
+  }) {
+    const params: APISortQuery<Collection> & {
+      access?: CollectionAccess;
+      page?: number;
+      pageSize?: number;
+    } = {
+      sortBy: "dateLatest",
+      sortDirection: SortDirection.Descending,
+      access,
+      page,
+      pageSize: PAGE_SIZE,
+    };
+    const query = queryString.stringify(params);
+
+    const data = await this.api.fetch<APIPaginatedList<Collection>>(
+      `/orgs/${orgId}/collections?${query}`,
+    );
+
+    return data;
   }
 }

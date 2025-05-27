@@ -1,4 +1,4 @@
-""" Operator handler for BackgroundJobs """
+"""Operator handler for BackgroundJobs"""
 
 from uuid import UUID
 import traceback
@@ -35,10 +35,15 @@ class BgJobOperator(BaseOperator):
         labels: dict[str, str] = metadata.get("labels", {})
         oid: str = labels.get("btrix.org") or ""
         job_type: str = labels.get("job_type") or ""
-        job_id: str = metadata.get("name")
+        job_id: str = labels.get("job_id") or metadata.get("name")
 
         status = data.object["status"]
-        success = status.get("succeeded") == 1
+        spec = data.object["spec"]
+        success = status.get("succeeded") == spec.get("parallelism")
+        if not success:
+            print(
+                "Succeeded: {status.get('succeeded')}, Num Pods: {spec.get('parallelism')}"
+            )
         completion_time = status.get("completionTime")
 
         finalized = True
@@ -50,8 +55,14 @@ class BgJobOperator(BaseOperator):
             finished = dt_now()
 
         try:
+            org_id = UUID(oid)
+        # pylint: disable=broad-except
+        except Exception:
+            org_id = None
+
+        try:
             await self.background_job_ops.job_finished(
-                job_id, job_type, UUID(oid), success=success, finished=finished
+                job_id, job_type, success=success, finished=finished, oid=org_id
             )
             # print(
             #    f"{job_type} background job completed: success: {success}, {job_id}",

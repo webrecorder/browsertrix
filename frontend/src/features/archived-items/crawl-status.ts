@@ -10,8 +10,8 @@ import { animatePulse } from "@/utils/css";
 
 type CrawlType = "crawl" | "upload" | "qa";
 
-@localized()
 @customElement("btrix-crawl-status")
+@localized()
 export class CrawlStatus extends TailwindElement {
   @property({ type: String })
   state?: CrawlState | AnyString;
@@ -24,6 +24,9 @@ export class CrawlStatus extends TailwindElement {
 
   @property({ type: Boolean })
   stopping = false;
+
+  @property({ type: Boolean })
+  shouldPause = false;
 
   @property({ type: Boolean })
   hoist = false;
@@ -118,6 +121,37 @@ export class CrawlStatus extends TailwindElement {
         label = msg("Stopping");
         break;
 
+      case "pausing":
+        color = "var(--sl-color-violet-600)";
+        icon = html`<sl-icon
+          name="pause-circle"
+          class="animatePulse"
+          slot="prefix"
+          style="color: ${color}"
+        ></sl-icon>`;
+        label = msg("Pausing");
+        break;
+
+      case "resuming":
+        icon = html`<sl-icon
+          name="play-circle"
+          class="animatePulse"
+          slot="prefix"
+          style="color: ${color}"
+        ></sl-icon>`;
+        label = msg("Resuming");
+        break;
+
+      case "paused":
+        color = "var(--sl-color-neutral-500)";
+        icon = html`<sl-icon
+          name="pause-circle"
+          slot="prefix"
+          style="color: ${color}"
+        ></sl-icon>`;
+        label = msg("Paused");
+        break;
+
       case "pending-wait":
         color = "var(--sl-color-violet-600)";
         icon = html`<sl-icon
@@ -208,6 +242,16 @@ export class CrawlStatus extends TailwindElement {
         label = msg("Stopped");
         break;
 
+      case "stopped_pause_expired":
+        color = "var(--warning)";
+        icon = html`<sl-icon
+          name="dash-square-fill"
+          slot="prefix"
+          style="color: ${color}"
+        ></sl-icon>`;
+        label = msg("Stopped: Paused Too Long");
+        break;
+
       case "stopped_storage_quota_reached":
         color = "var(--warning)";
         icon = html`<sl-icon
@@ -258,9 +302,21 @@ export class CrawlStatus extends TailwindElement {
     return { icon, label, cssColor: color };
   }
 
+  filterState() {
+    if (this.stopping && this.state === "running") {
+      return "stopping";
+    }
+    if (this.shouldPause && this.state === "running") {
+      return "pausing";
+    }
+    if (!this.shouldPause && this.state === "paused") {
+      return "resuming";
+    }
+    return this.state;
+  }
+
   render() {
-    const state =
-      this.stopping && this.state === "running" ? "stopping" : this.state;
+    const state = this.filterState();
     const { icon, label } = CrawlStatus.getContent(state, this.type);
     if (this.hideLabel) {
       return html`<div class="flex items-center">

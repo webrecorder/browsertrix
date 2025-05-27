@@ -1,0 +1,43 @@
+Your Browsertrix Subscription Has Been Canceled
+~~~
+<html>
+<body>
+<p>Hello {{ user_name }},</p>
+
+<p>The Browsertrix subscription for "{{ org_name }}" has been cancelled at the end of this
+subscription period.</p>
+
+<p style="font-weight: bold">All data hosted on Browsertrix under: <a href="{{ org_url}}">{{ org_url }}</a> will be deleted on {{ cancel_date }}</p>
+
+<p>You can continue to use Browsertrix and download your data before this date. If you change your mind, you can still resubscribe
+by going to <i>Settings -> Billing</i> tab after logging in.</p>
+
+{% if survey_url %}
+<p>We hope you enjoyed using Browsertrix!</p>
+
+<p>To help us make Browsertrix better, we would be very grateful if you could complete <a href="{{ survey_url }}">a quick survey</a> about your experience using Browsertrix.</p>
+{% endif %}
+
+{% if support_email %}
+<p>If you'd like us to keep your data longer or have other questions, you can still reach out to us at: <a href="mailto:{{ support_email }}">{{ support_email }}</a>
+{% endif %}
+~~~
+Hello {{ name }},
+
+The Browsertrix subscription for "{{ org_name }}" has been cancelled at the end of this
+subscription period.
+
+All data hosted on Browsertrix under: {{ org_url }} will be deleted on {{ cancel_date }}
+
+You can continue to use Browsertrix and download your data before this date. If you change your mind, you can still resubscribe
+by going to Settings -> Billing tab after logging in.
+
+{% if survey_url %}
+We hoped you enjoyed using Browsertrix!
+
+To help us make Browsertrix better, we would be very grateful if you could complete a quick survey about your experience with Browsertrix: {{ survey_url }}
+{% endif %}
+
+{% if support_email %}
+If you'd like us to keep your data longer or have other questions, you can still reach out to us at: {{ support_email }}
+{% endif %}

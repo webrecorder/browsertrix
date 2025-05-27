@@ -1,0 +1,300 @@
+name: Frontend
+on:
+  pull_request
+
+# Cancel in progress workflows on pull_requests.
+# https://docs.github.com/en/actions/using-jobs/using-concurrency#example-using-a-fallback-value
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  # In order to be able to have required checks, a workflow can't be entirely
+  # skipped: see https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/collaborating-on-repositories-with-code-quality-features/troubleshooting-required-status-checks#handling-skipped-but-required-checks
+  paths-filter:
+    name: "Changed files?"
+    runs-on: ubuntu-latest
+    outputs:
+      matches: ${{ steps.filter.outputs.matches }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2  # important, to fetch previous commit
+
+      # workaround for https://github.com/dorny/paths-filter/issues/240
+      - id: previous-sha
+        run: 'echo "sha=$(git rev-parse HEAD^1)" >> $GITHUB_OUTPUT'
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          base: "${{ steps.previous-sha.outputs.sha }}"
+          filters: |
+            matches:
+              - 'frontend/src/**'
+              - 'frontend/*.json'
+              - 'frontend/*.js'
+              - 'frontend/*.ts'
+              - 'frontend/docs/mkdocs.yml'
+              - '.github/workflows/frontend-lint-test-build.yaml'
+
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: paths-filter
+    if: needs.paths-filter.outputs.matches == 'true'
+    strategy:
+      matrix:
+        node: [20, 22]
+    steps:
+      # Setup:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: 'yarn'
+          cache-dependency-path: frontend/yarn.lock
+
+      - name: Get installed Playwright version
+        working-directory: frontend
+        id: playwright-version
+        run: |
+          yarn add @yarnpkg/lockfile
+          echo "PLAYWRIGHT_VERSION=$(node scripts/get-resolved-playwright-version.js)" >> $GITHUB_ENV
+
+      - name: Cache playwright binaries
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: |
+            ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ env.PLAYWRIGHT_VERSION }}
+
+      - name: Install dependencies
+        working-directory: frontend
+        env:
+          HUSKY: 0
+        run: yarn install --frozen-lockfile
+
+      - name: Install Playwright Browsers
+        working-directory: frontend
+        env:
+          HUSKY: 0
+        run: yarn playwright install --with-deps
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+
+      - name: Install Playwright Deps
+        working-directory: frontend
+        env:
+          HUSKY: 0
+        run: yarn playwright install-deps
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+
+      # Test:
+      - name: Unit tests
+        working-directory: frontend
+        run: yarn test
+
+  integration-tests:
+    name: Integration Tests
+    needs: paths-filter
+    if: needs.paths-filter.outputs.matches == 'true'
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [20, 22]
+    env:
+      E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
+      E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
+      API_BASE_URL: ${{ secrets.API_BASE_URL }}
+      working-directory: ./frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: 'yarn'
+          cache-dependency-path: frontend/yarn.lock
+
+      - name: Get installed Playwright version
+        working-directory: frontend
+        id: playwright-version
+        run: |
+          yarn add @yarnpkg/lockfile
+          echo "PLAYWRIGHT_VERSION=$(node scripts/get-resolved-playwright-version.js)" >> $GITHUB_ENV
+
+      - name: Cache playwright binaries
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: |
+            ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ env.PLAYWRIGHT_VERSION }}
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: yarn install --frozen-lockfile
+
+      - name: Install Playwright Browsers
+        working-directory: frontend
+        env:
+          HUSKY: 0
+        run: yarn playwright install --with-deps
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+
+      - name: Install Playwright Deps
+        working-directory: frontend
+        env:
+          HUSKY: 0
+        run: yarn playwright install-deps
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+
+      - name: Create env file
+        working-directory: frontend
+        run: |
+          touch .env
+          echo E2E_USER_EMAIL="${{ secrets.E2E_USER_EMAIL }}" >> .env
+          echo E2E_USER_PASSWORD="${{ secrets.E2E_USER_PASSWORD }}" >> .env
+          cat .env
+
+      - name: Build frontend
+        working-directory: frontend
+        run: yarn build
+        id: build-frontend
+
+      - name: Run Playwright tests
+        working-directory: frontend
+        run: yarn playwright test
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-node${{ matrix.node }}-${{github.sha}}
+          path: frontend/playwright-report/
+          retention-days: 30
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    needs: paths-filter
+    if: needs.paths-filter.outputs.matches == 'true'
+    strategy:
+      matrix:
+        node: [20, 22]
+    steps:
+      # Setup:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: 'yarn'
+          cache-dependency-path: frontend/yarn.lock
+
+      - name: Install dependencies
+        working-directory: frontend
+        env:
+          HUSKY: 0
+        run: yarn install --frozen-lockfile
+
+      # Lint:
+      - name: Lint
+        working-directory: frontend
+        run: yarn lint:check
+
+  localize:
+    name: Localize
+    runs-on: ubuntu-latest
+    needs: paths-filter
+    if: needs.paths-filter.outputs.matches == 'true'
+    strategy:
+      matrix:
+        node: [20, 22]
+    steps:
+      # Setup:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: 'yarn'
+          cache-dependency-path: frontend/yarn.lock
+
+      - name: Install dependencies
+        working-directory: frontend
+        env:
+          HUSKY: 0
+        run: yarn install --frozen-lockfile
+
+      # Localize:
+      - name: Localization build dry run
+        working-directory: frontend
+        run: yarn localize:build
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: paths-filter
+    if: needs.paths-filter.outputs.matches == 'true'
+    strategy:
+      matrix:
+        node: [20, 22]
+    steps:
+      # Setup:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: 'yarn'
+          cache-dependency-path: frontend/yarn.lock
+
+      - name: Restore cache
+        uses: actions/cache@v4
+        with:
+          path: frontend/dist
+          key: ${{ runner.os }}-btrix-frontend-build-${{ hashFiles('frontend/dist') }}
+          restore-keys: |
+            ${{ runner.os }}-btrix-frontend-build-
+
+      - name: Install dependencies
+        working-directory: frontend
+        env:
+          HUSKY: 0
+        run: yarn install --frozen-lockfile
+
+      # Check build:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: network=host
+
+      - name: Build Frontend
+        uses: docker/build-push-action@v3
+        with:
+          context: frontend
+          load: true
+          tags: webrecorder/browsertrix-frontend:latest
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,scope=frontend,mode=max

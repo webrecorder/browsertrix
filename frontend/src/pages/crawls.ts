@@ -1,18 +1,19 @@
 import { localized, msg } from "@lit/localize";
 import type { SlSelect } from "@shoelace-style/shoelace";
-import { type PropertyValues } from "lit";
+import { html, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
-import type { PageChangeEvent } from "@/components/ui/pagination";
+import { BtrixElement } from "@/classes/BtrixElement";
+import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import needLogin from "@/decorators/needLogin";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
+import { WorkflowTab } from "@/routes";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { Crawl } from "@/types/crawler";
 import type { CrawlState } from "@/types/crawlState";
-import { activeCrawlStates } from "@/utils/crawler";
-import LiteElement, { html } from "@/utils/LiteElement";
+import { activeCrawlStates, isActive } from "@/utils/crawler";
 
 type SortField = "started" | "firstSeed" | "fileSize";
 type SortDirection = "asc" | "desc";
@@ -35,10 +36,10 @@ const sortableFields: Record<
 };
 const ABORT_REASON_THROTTLE = "throttled";
 
-@localized()
 @customElement("btrix-crawls")
+@localized()
 @needLogin
-export class Crawls extends LiteElement {
+export class Crawls extends BtrixElement {
   @property({ type: String })
   crawlId?: string;
 
@@ -68,20 +69,28 @@ export class Crawls extends LiteElement {
   // Use to cancel requests
   private getCrawlsController: AbortController | null = null;
 
-  protected async willUpdate(
+  protected willUpdate(
     changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {
     if (changedProperties.has("crawlId") && this.crawlId) {
       // Redirect to org crawl page
-      await this.fetchWorkflowId();
-      const slug = this.slugLookup[this.crawl!.oid];
-      this.navTo(`/orgs/${slug}/items/crawl/${this.crawlId}`);
+      void this.fetchWorkflowId();
     } else {
       if (
         changedProperties.has("filterBy") ||
         changedProperties.has("orderBy")
       ) {
         void this.fetchCrawls();
+      }
+    }
+    if (changedProperties.has("crawl") && this.crawl) {
+      const slug = this.slugLookup[this.crawl.oid];
+      if (isActive(this.crawl)) {
+        this.navigate.to(`/orgs/${slug}/workflows/${this.crawl.cid}#cid`);
+      } else {
+        this.navigate.to(
+          `/orgs/${slug}/workflows/${this.crawl.cid}/crawls/${this.crawlId}`,
+        );
       }
     }
   }
@@ -281,14 +290,18 @@ export class Crawls extends LiteElement {
   }
 
   private readonly renderCrawlItem = (crawl: Crawl) => {
-    const crawlPath = `/orgs/${this.slugLookup[crawl.oid]}/workflows/${crawl.cid}/crawls/${
-      crawl.id
-    }`;
+    const crawlPath = `/orgs/${this.slugLookup[crawl.oid]}/workflows/${crawl.cid}`;
     return html`
-      <btrix-crawl-list-item href=${crawlPath} .crawl=${crawl}>
+      <btrix-crawl-list-item
+        href=${`${crawlPath}/${WorkflowTab.LatestCrawl}`}
+        .crawl=${crawl}
+      >
         <sl-menu slot="menu">
-          <sl-menu-item @click=${() => this.navTo(`${crawlPath}#config`)}>
-            ${msg("View Crawl Settings")}
+          <sl-menu-item
+            @click=${() =>
+              this.navigate.to(`${crawlPath}/${WorkflowTab.Settings}`)}
+          >
+            ${msg("View Workflow Settings")}
           </sl-menu-item>
         </sl-menu>
       </btrix-crawl-list-item>
@@ -322,10 +335,11 @@ export class Crawls extends LiteElement {
       if ((e as Error).name === "AbortError") {
         console.debug("Fetch crawls aborted to throttle");
       } else {
-        this.notify({
+        this.notify.toast({
           message: msg("Sorry, couldn't retrieve crawls at this time."),
           variant: "danger",
           icon: "exclamation-octagon",
+          id: "fetch-crawls-throttled",
         });
       }
     }
@@ -345,7 +359,10 @@ export class Crawls extends LiteElement {
       {
         ...this.filterBy,
         ...queryParams,
-        page: queryParams?.page || this.crawls?.page || 1,
+        page:
+          queryParams?.page ||
+          this.crawls?.page ||
+          parsePage(new URLSearchParams(location.search).get("page")),
         pageSize: queryParams?.pageSize || this.crawls?.pageSize || 100,
         sortBy: this.orderBy.field,
         sortDirection: this.orderBy.direction === "desc" ? -1 : 1,
@@ -356,7 +373,7 @@ export class Crawls extends LiteElement {
     );
 
     this.getCrawlsController = new AbortController();
-    const data = await this.apiFetch<APIPaginatedList<Crawl>>(
+    const data = await this.api.fetch<APIPaginatedList<Crawl>>(
       `/orgs/all/crawls?${query}`,
       {
         signal: this.getCrawlsController.signal,
@@ -368,7 +385,7 @@ export class Crawls extends LiteElement {
   }
 
   private async getCrawl() {
-    const data: Crawl = await this.apiFetch<Crawl>(
+    const data: Crawl = await this.api.fetch<Crawl>(
       `/orgs/all/crawls/${this.crawlId}/replay.json`,
     );
 
@@ -377,7 +394,7 @@ export class Crawls extends LiteElement {
 
   private async getSlugLookup() {
     const data =
-      await this.apiFetch<Record<string, string>>(`/orgs/slug-lookup`);
+      await this.api.fetch<Record<string, string>>(`/orgs/slug-lookup`);
 
     return data;
   }

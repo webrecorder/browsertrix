@@ -1,5 +1,7 @@
 import appState from "./state";
 
+import { translatedLocales } from "@/types/localization";
+
 export type AppSettings = {
   registrationEnabled: boolean;
   jwtTokenLifetime: number;
@@ -12,6 +14,7 @@ export type AppSettings = {
   signUpUrl: string;
   salesEmail: string;
   supportEmail: string;
+  localesEnabled?: readonly string[];
 };
 
 export async function getAppSettings(): Promise<AppSettings> {
@@ -40,6 +43,7 @@ export async function getAppSettings(): Promise<AppSettings> {
       signUpUrl: "",
       salesEmail: "",
       supportEmail: "",
+      localesEnabled: translatedLocales,
     };
   }
 }

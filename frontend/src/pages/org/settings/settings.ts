@@ -1,7 +1,12 @@
 import { localized, msg, str } from "@lit/localize";
-import type { SlInput } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
-import { html, unsafeCSS, type PropertyValues } from "lit";
+import {
+  html,
+  nothing,
+  unsafeCSS,
+  type PropertyValues,
+  type TemplateResult,
+} from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -10,18 +15,15 @@ import { when } from "lit/directives/when.js";
 import stylesheet from "./settings.stylesheet.css";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import type { APIUser } from "@/index";
 import { columns } from "@/layouts/columns";
 import { pageHeader } from "@/layouts/pageHeader";
 import type { APIPaginatedList } from "@/types/api";
 import { isApiError } from "@/utils/api";
-import { maxLengthValidator } from "@/utils/form";
-import { AccessCode, isAdmin, isCrawler } from "@/utils/orgs";
-import slugifyStrict from "@/utils/slugify";
-import { AppStateService } from "@/utils/state";
+import { formValidator } from "@/utils/form";
+import { AccessCode, isAdmin, isCrawler, type OrgData } from "@/utils/orgs";
 import { tw } from "@/utils/tailwind";
-import { formatAPIUser } from "@/utils/user";
 
+import "./components/general";
 import "./components/billing";
 import "./components/crawling-defaults";
 
@@ -47,6 +49,10 @@ export type OrgRemoveMemberEvent = CustomEvent<{
   member: Member;
 }>;
 
+export type UpdateOrgDetail = Partial<OrgData>;
+
+export const UPDATED_STATUS_TOAST_ID = "org-updated-status";
+
 /**
  * Usage:
  * ```ts
@@ -56,11 +62,12 @@ export type OrgRemoveMemberEvent = CustomEvent<{
  * ></btrix-org-settings>
  * ```
  *
+ * @fires btrix-update-org
  * @fires org-user-role-change
  * @fires org-remove-member
  */
-@localized()
 @customElement("btrix-org-settings")
+@localized()
 export class OrgSettings extends BtrixElement {
   static styles = styles;
 
@@ -71,9 +78,6 @@ export class OrgSettings extends BtrixElement {
   isAddingMember = false;
 
   @state()
-  private isSavingOrgName = false;
-
-  @state()
   private pendingInvites: Invite[] = [];
 
   @state()
@@ -81,9 +85,6 @@ export class OrgSettings extends BtrixElement {
 
   @state()
   private isSubmittingInvite = false;
-
-  @state()
-  private slugValue = "";
 
   private get tabLabels(): Record<Tab, string> {
     return {
@@ -93,8 +94,6 @@ export class OrgSettings extends BtrixElement {
       "crawling-defaults": msg("Crawling Defaults"),
     };
   }
-
-  private readonly validateOrgNameMax = maxLengthValidator(40);
 
   async willUpdate(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("isAddingMember") && this.isAddingMember) {
@@ -108,70 +107,51 @@ export class OrgSettings extends BtrixElement {
     }
   }
 
-  render() {
-    return html` ${pageHeader(
-        msg("Org Settings"),
-        when(
-          this.userInfo?.orgs && this.userInfo.orgs.length > 1 && this.userOrg,
-          (userOrg) => html`
-            <div class="text-neutral-400">
-              ${msg(
-                html`Viewing
-                  <strong class="font-medium">${userOrg.name}</strong>`,
-              )}
-            </div>
-          `,
-        ),
-        tw`mb-3 lg:mb-5`,
-      )}
+  // TODO (emma) maybe upstream this into BtrixElement?
+  handleHashChange = (e: HashChangeEvent) => {
+    const { hash } = new URL(e.newURL);
+    if (!hash) return;
 
-      <btrix-tab-list activePanel=${this.activePanel} hideIndicator>
-        <header slot="header" class="flex h-7 items-end justify-between">
-          ${choose(
-            this.activePanel,
-            [
-              [
-                "members",
-                () => html`
-                  <h3>${msg("Active Members")}</h3>
-                  <sl-button
-                    href=${`${this.navigate.orgBasePath}/settings/members?invite`}
-                    variant="primary"
-                    size="small"
-                    @click=${this.navigate.link}
-                  >
-                    <sl-icon
-                      slot="prefix"
-                      name="person-add"
-                      aria-hidden="true"
-                      library="default"
-                    ></sl-icon>
-                    ${msg("Invite New Member")}
-                  </sl-button>
-                `,
-              ],
-              ["billing", () => html`<h3>${msg("Current Plan")}</h3> `],
-              [
-                "crawling-defaults",
-                () =>
-                  html`<h3 class="flex items-center gap-2">
-                    ${msg("Crawling Defaults")}
-                    <sl-tooltip
-                      content=${msg(
-                        "Default settings for all new crawl workflows. Existing workflows will not be affected.",
-                      )}
-                    >
-                      <sl-icon
-                        class="text-base text-neutral-500"
-                        name="info-circle"
-                      ></sl-icon>
-                    </sl-tooltip>
-                  </h3>`,
-              ],
-            ],
-            () => html`<h3>${this.tabLabels[this.activePanel]}</h3>`,
-          )}
-        </header>
+    const el = this.shadowRoot?.querySelector<HTMLElement>(hash);
+
+    el?.focus();
+    el?.scrollIntoView({
+      behavior: window.matchMedia("prefers-reduced-motion: reduce").matches
+        ? "instant"
+        : "smooth",
+    });
+  };
+
+  connectedCallback() {
+    super.connectedCallback();
+    window.addEventListener("hashchange", this.handleHashChange);
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    window.removeEventListener("hashchange", this.handleHashChange);
+  }
+
+  render() {
+    return html` ${pageHeader({
+        title: msg("Org Settings"),
+        actions:
+          this.userInfo?.orgs && this.userInfo.orgs.length > 1 && this.userOrg
+            ? html`
+                <div class="text-neutral-400">
+                  ${msg(
+                    html`Viewing
+                      <strong class="font-medium"
+                        >${this.userOrg.name}</strong
+                      >`,
+                  )}
+                </div>
+              `
+            : nothing,
+        classNames: tw`mb-3 lg:mb-5`,
+      })}
+
+      <btrix-tab-group active=${this.activePanel} placement="start">
         ${this.renderTab("information", "settings")}
         ${this.renderTab("members", "settings/members")}
         ${when(this.appState.settings?.billingEnabled, () =>
@@ -179,32 +159,82 @@ export class OrgSettings extends BtrixElement {
         )}
         ${this.renderTab("crawling-defaults", "settings/crawling-defaults")}
 
-        <btrix-tab-panel name="information">
-          ${this.renderInformation()}
-        </btrix-tab-panel>
-        <btrix-tab-panel name="members">
+        <btrix-tab-group-panel name="information">
+          ${this.renderPanelHeader({ title: msg("General") })}
+          <btrix-org-settings-general></btrix-org-settings-general>
+          ${this.renderApi()}
+        </btrix-tab-group-panel>
+        <btrix-tab-group-panel name="members">
+          ${this.renderPanelHeader({
+            title: msg("Active Members"),
+            actions: html`
+              <sl-button
+                href=${`${this.navigate.orgBasePath}/settings/members?invite`}
+                variant="primary"
+                size="small"
+                @click=${this.navigate.link}
+              >
+                <sl-icon
+                  slot="prefix"
+                  name="person-add"
+                  aria-hidden="true"
+                  library="default"
+                ></sl-icon>
+                ${msg("Invite New Member")}
+              </sl-button>
+            `,
+          })}
           ${this.renderMembers()}
-        </btrix-tab-panel>
-        <btrix-tab-panel name="billing">
+        </btrix-tab-group-panel>
+        <btrix-tab-group-panel name="billing">
+          ${this.renderPanelHeader({ title: msg("Current Plan") })}
           <btrix-org-settings-billing
             .salesEmail=${this.appState.settings?.salesEmail}
           ></btrix-org-settings-billing>
-        </btrix-tab-panel>
-        <btrix-tab-panel name="crawling-defaults">
+        </btrix-tab-group-panel>
+        <btrix-tab-group-panel name="crawling-defaults">
+          ${this.renderPanelHeader({
+            title: msg("Crawling Defaults"),
+            actions: html`
+              <sl-tooltip
+                content=${msg(
+                  "Default settings for all new crawl workflows. Existing workflows will not be affected.",
+                )}
+              >
+                <sl-icon
+                  class="text-base text-neutral-500"
+                  name="info-circle"
+                ></sl-icon>
+              </sl-tooltip>
+            `,
+          })}
           <btrix-org-settings-crawling-defaults></btrix-org-settings-crawling-defaults>
-        </btrix-tab-panel>
-      </btrix-tab-list>`;
+        </btrix-tab-group-panel>
+      </btrix-tab-group>`;
+  }
+
+  private renderPanelHeader({
+    title,
+    actions,
+  }: {
+    title: string;
+    actions?: TemplateResult;
+  }) {
+    return html`
+      <header class="mb-2 flex items-center justify-between">
+        <h3 class="text-lg font-medium">${title}</h3>
+        ${actions}
+      </header>
+    `;
   }
 
   private renderTab(name: Tab, path: string) {
-    const isActive = name === this.activePanel;
     return html`
-      <btrix-navigation-button
+      <btrix-tab-group-tab
         slot="nav"
+        panel=${name}
         href=${`${this.navigate.orgBasePath}/${path}`}
-        .active=${isActive}
         @click=${this.navigate.link}
-        aria-selected=${isActive}
       >
         ${choose(name, [
           [
@@ -219,66 +249,20 @@ export class OrgSettings extends BtrixElement {
           ],
         ])}
         ${this.tabLabels[name]}
-      </btrix-navigation-button>
+      </btrix-tab-group-tab>
     `;
   }
 
-  private renderInformation() {
+  private renderApi() {
     if (!this.userOrg) return;
 
-    return html`<div class="rounded-lg border">
-      <form @submit=${this.onOrgInfoSubmit}>
+    return html` <h2 class="mb-2 mt-7 text-lg font-medium">
+        ${msg("Developer Tools")}
+      </h2>
+
+      <section class="rounded-lg border">
         <div class="p-5">
           ${columns([
-            [
-              html`
-                <sl-input
-                  class="with-max-help-text mb-2"
-                  name="orgName"
-                  size="small"
-                  label=${msg("Org Name")}
-                  placeholder=${msg("My Organization")}
-                  autocomplete="off"
-                  value=${this.userOrg.name}
-                  minlength="2"
-                  required
-                  help-text=${this.validateOrgNameMax.helpText}
-                  @sl-input=${this.validateOrgNameMax.validate}
-                ></sl-input>
-              `,
-              msg(
-                "Name of your organization that is visible to all org members.",
-              ),
-            ],
-            [
-              html`
-                <sl-input
-                  class="mb-2"
-                  name="orgSlug"
-                  size="small"
-                  label=${msg("Custom URL Identifier")}
-                  placeholder="my-organization"
-                  autocomplete="off"
-                  value=${this.orgSlug || ""}
-                  minlength="2"
-                  maxlength="30"
-                  required
-                  help-text=${msg(
-                    str`Org home page: ${window.location.protocol}//${
-                      window.location.hostname
-                    }/orgs/${
-                      this.slugValue
-                        ? slugifyStrict(this.slugValue)
-                        : this.orgSlug
-                    }`,
-                  )}
-                  @sl-input=${this.handleSlugInput}
-                ></sl-input>
-              `,
-              msg(
-                "Customize your organization's web address for accessing Browsertrix.",
-              ),
-            ],
             [
               html`
                 <btrix-copy-field
@@ -287,47 +271,26 @@ export class OrgSettings extends BtrixElement {
                   value=${this.orgId}
                 ></btrix-copy-field>
               `,
-              msg("Use this ID to reference this org in the Browsertrix API."),
+              msg("Use this ID to reference your org in the Browsertrix API."),
             ],
           ])}
         </div>
-        <footer class="flex justify-end border-t px-4 py-3">
-          <sl-button
-            type="submit"
-            size="small"
-            variant="primary"
-            ?disabled=${this.isSavingOrgName}
-            ?loading=${this.isSavingOrgName}
-            >${msg("Save Changes")}</sl-button
-          >
-        </footer>
-      </form>
-    </div>`;
-  }
-
-  private handleSlugInput(e: InputEvent) {
-    const input = e.target as SlInput;
-    // Ideally this would match against the full character map that slugify uses
-    // but this'll do for most use cases
-    const end = input.value.match(/[\s*_+~.,()'"!\-:@]$/g) ? "-" : "";
-    input.value = slugifyStrict(input.value) + end;
-    this.slugValue = slugifyStrict(input.value);
-
-    input.setCustomValidity(
-      this.slugValue.length < 2 ? msg("URL Identifier too short") : "",
-    );
+      </section>`;
   }
 
   private renderMembers() {
     if (!this.org?.users) return;
 
     const columnWidths = ["1fr", "2fr", "auto", "min-content"];
-    const rows = Object.entries(this.org.users).map(([_id, user]) => [
-      user.name,
-      user.email,
-      this.renderUserRoleSelect(user),
-      this.renderRemoveMemberButton(user),
-    ]);
+    const rows = Object.entries(this.org.users).map(
+      ([_id, user]) =>
+        [
+          user.name,
+          user.email,
+          this.renderUserRoleSelect(user),
+          this.renderRemoveMemberButton(user),
+        ] as const,
+    );
     return html`
       <section>
         <btrix-data-table
@@ -582,10 +545,7 @@ export class OrgSettings extends BtrixElement {
     `;
   }
 
-  private async checkFormValidity(formEl: HTMLFormElement) {
-    await this.updateComplete;
-    return !formEl.querySelector("[data-invalid]");
-  }
+  private readonly checkFormValidity = formValidator(this);
 
   private async getPendingInvites() {
     const data = await this.api.fetch<APIPaginatedList<Invite>>(
@@ -605,32 +565,9 @@ export class OrgSettings extends BtrixElement {
         message: msg("Sorry, couldn't retrieve pending invites at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "pending-invites-retrieve-error",
       });
     }
-  }
-
-  private async onOrgInfoSubmit(e: SubmitEvent) {
-    e.preventDefault();
-
-    const formEl = e.target as HTMLFormElement;
-    if (!(await this.checkFormValidity(formEl))) return;
-
-    const { orgName } = serialize(formEl) as { orgName: string };
-
-    const params = {
-      name: orgName,
-      slug: this.orgSlug!,
-    };
-
-    if (this.slugValue) {
-      params.slug = slugifyStrict(this.slugValue);
-    }
-
-    this.isSavingOrgName = true;
-
-    await this.renameOrg(params);
-
-    this.isSavingOrgName = false;
   }
 
   private readonly selectUserRole = (user: User) => (e: Event) => {
@@ -667,6 +604,7 @@ export class OrgSettings extends BtrixElement {
         message: msg(str`Successfully invited ${inviteEmail}.`),
         variant: "success",
         icon: "check2-circle",
+        id: "user-updated-status",
       });
 
       void this.fetchPendingInvites();
@@ -678,6 +616,7 @@ export class OrgSettings extends BtrixElement {
           : msg("Sorry, couldn't invite user at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "user-updated-status",
       });
     }
 
@@ -699,6 +638,7 @@ export class OrgSettings extends BtrixElement {
         ),
         variant: "success",
         icon: "check2-circle",
+        id: "user-updated-status",
       });
 
       this.pendingInvites = this.pendingInvites.filter(
@@ -713,59 +653,9 @@ export class OrgSettings extends BtrixElement {
           : msg(str`Sorry, couldn't remove ${invite.email} at this time.`),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "user-updated-status",
       });
     }
-  }
-
-  private async renameOrg({ name, slug }: { name: string; slug: string }) {
-    try {
-      await this.api.fetch(`/orgs/${this.orgId}/rename`, {
-        method: "POST",
-        body: JSON.stringify({ name, slug }),
-      });
-
-      const user = await this.getCurrentUser();
-
-      AppStateService.updateUser(formatAPIUser(user), slug);
-
-      this.navigate.to(`${this.navigate.orgBasePath}/settings`);
-
-      this.notify.toast({
-        message: msg("Org successfully updated."),
-        variant: "success",
-        icon: "check2-circle",
-      });
-    } catch (e) {
-      console.debug(e);
-
-      let message = msg(
-        "Sorry, couldn't rename organization at this time. Try again later from org settings.",
-      );
-
-      if (isApiError(e)) {
-        if (e.details === "duplicate_org_name") {
-          message = msg("This org name is already taken, try another one.");
-        } else if (e.details === "duplicate_org_slug") {
-          message = msg(
-            "This org URL identifier is already taken, try another one.",
-          );
-        } else if (e.details === "invalid_slug") {
-          message = msg(
-            "This org URL identifier is invalid. Please use alphanumeric characters and dashes (-) only.",
-          );
-        }
-      }
-
-      this.notify.toast({
-        message: message,
-        variant: "danger",
-        icon: "exclamation-octagon",
-      });
-    }
-  }
-
-  private async getCurrentUser(): Promise<APIUser> {
-    return this.api.fetch("/users/me");
   }
 
   /**

@@ -15,7 +15,8 @@ import queryString from "query-string";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { type Dialog } from "@/components/ui/dialog";
-import type { PageChangeEvent } from "@/components/ui/pagination";
+import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
+import { ClipboardController } from "@/controllers/clipboard";
 import { iconFor as iconForPageReview } from "@/features/qa/page-list/helpers";
 import * as pageApproval from "@/features/qa/page-list/helpers/approval";
 import type { SelectDetail } from "@/features/qa/qa-run-dropdown";
@@ -71,15 +72,13 @@ function statusWithIcon(
 /**
  * @fires btrix-qa-runs-update
  */
-@localized()
 @customElement("btrix-archived-item-detail-qa")
+@localized()
 export class ArchivedItemDetailQA extends BtrixElement {
   static styles = css`
     btrix-table {
-      --btrix-cell-padding-top: var(--sl-spacing-x-small);
-      --btrix-cell-padding-bottom: var(--sl-spacing-x-small);
-      --btrix-cell-padding-left: var(--sl-spacing-small);
-      --btrix-cell-padding-right: var(--sl-spacing-small);
+      --btrix-table-cell-padding-x: var(--sl-spacing-small);
+      --btrix-table-cell-padding-y: var(--sl-spacing-x-small);
     }
   `;
 
@@ -265,6 +264,14 @@ export class ArchivedItemDetailQA extends BtrixElement {
                       <span class="text-danger">${errorCount}</span>
                       Failed ${pluralOf("pages", errorCount)}
                     `)}
+                    ${errorCount > 0
+                      ? html`—
+                          <a
+                            class="text-primary"
+                            href=${`/orgs/${this.orgSlugState}/workflows/${this.workflowId}/crawls/${this.crawlId}#logs`}
+                            >${msg("View error logs")}</a
+                          >`
+                      : ""}
                   </p>
                 </div> `
               : html`
@@ -341,26 +348,26 @@ export class ArchivedItemDetailQA extends BtrixElement {
             ></btrix-crawl-status>
           </btrix-table-cell>
           <btrix-table-cell>
-            <sl-format-date
+            <btrix-format-date
               date=${run.started}
               month="2-digit"
               day="2-digit"
-              year="2-digit"
+              year="numeric"
               hour="2-digit"
               minute="2-digit"
-            ></sl-format-date>
+            ></btrix-format-date>
           </btrix-table-cell>
           <btrix-table-cell>
             ${run.finished
               ? html`
-                  <sl-format-date
+                  <btrix-format-date
                     date=${run.finished}
                     month="2-digit"
                     day="2-digit"
-                    year="2-digit"
+                    year="numeric"
                     hour="2-digit"
                     minute="2-digit"
-                  ></sl-format-date>
+                  ></btrix-format-date>
                 `
               : notApplicable()}
           </btrix-table-cell>
@@ -384,6 +391,13 @@ export class ArchivedItemDetailQA extends BtrixElement {
                         </btrix-menu-item-link>
                         <sl-divider></sl-divider>
                       `}
+                  <sl-menu-item
+                    @click=${() => ClipboardController.copyToClipboard(run.id)}
+                  >
+                    <sl-icon name="copy" slot="prefix"></sl-icon>
+                    ${msg("Copy Run ID")}
+                  </sl-menu-item>
+                  <sl-divider></sl-divider>
                   <sl-menu-item
                     @click=${() => {
                       this.deleting = run.id;
@@ -421,14 +435,14 @@ export class ArchivedItemDetailQA extends BtrixElement {
             ${msg(
               str`This analysis run includes data for ${runToBeDeleted.stats.done} ${pluralOf("pages", runToBeDeleted.stats.done)} and was started on `,
             )}
-            <sl-format-date
+            <btrix-format-date
               date=${runToBeDeleted.started}
               month="2-digit"
               day="2-digit"
-              year="2-digit"
+              year="numeric"
               hour="2-digit"
               minute="2-digit"
-            ></sl-format-date>
+            ></btrix-format-date>
             ${msg("by")} ${runToBeDeleted.userName}.
           </div>
           <div slot="footer" class="flex justify-between">
@@ -695,7 +709,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
             class="label-same-line"
             label=${msg("Sort by:")}
             size="small"
-            value=${this.qaRunId ? "approved.-1" : "url.1"}
+            value=${this.qaRunId ? "approved.-1" : ".1"}
             pill
             @sl-change=${(e: SlChangeEvent) => {
               const { value } = e.target as SlSelect;
@@ -709,6 +723,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
               });
             }}
           >
+            <sl-option value=".1">${msg("Crawl Order")}</sl-option>
             <sl-option value="title.1">${msg("Title")}</sl-option>
             <sl-option value="url.1">${msg("URL")}</sl-option>
             <sl-option value="notes.-1" ?disabled=${!this.qaRunId}
@@ -737,16 +752,20 @@ export class ArchivedItemDetailQA extends BtrixElement {
     return html`
       <btrix-table
         class="-mx-3 overflow-x-auto px-5"
-        style="grid-template-columns: ${[
+        style="--btrix-table-grid-template-columns: ${[
           "[clickable-start] minmax(12rem, auto)",
           "minmax(min-content, 12rem)",
           "minmax(min-content, 12rem) [clickable-end]",
+          "min-content",
         ].join(" ")}"
       >
         <btrix-table-head>
           <btrix-table-header-cell>${msg("Page")}</btrix-table-header-cell>
           <btrix-table-header-cell>${msg("Approval")}</btrix-table-header-cell>
           <btrix-table-header-cell>${msg("Comments")}</btrix-table-header-cell>
+          <btrix-table-header-cell class="px-0">
+            <span class="sr-only">${msg("Row actions")}</span>
+          </btrix-table-header-cell>
         </btrix-table-head>
         <btrix-table-body class="rounded border">
           ${this.pages?.items.map(
@@ -799,6 +818,21 @@ export class ArchivedItemDetailQA extends BtrixElement {
                     : html`<span class="text-neutral-400">
                         ${msg("None")}
                       </span>`}
+                </btrix-table-cell>
+                <btrix-table-cell class="p-0">
+                  <div class="col action">
+                    <btrix-overflow-dropdown>
+                      <sl-menu>
+                        <sl-menu-item
+                          @click=${() =>
+                            ClipboardController.copyToClipboard(page.id)}
+                        >
+                          <sl-icon name="copy" slot="prefix"></sl-icon>
+                          ${msg("Copy Page ID")}
+                        </sl-menu-item>
+                      </sl-menu>
+                    </btrix-overflow-dropdown>
+                  </div>
                 </btrix-table-cell>
               </btrix-table-row>
             `,
@@ -856,7 +890,10 @@ export class ArchivedItemDetailQA extends BtrixElement {
       }
 
       this.pages = await this.getPages({
-        page: params?.page ?? this.pages?.page ?? 1,
+        page:
+          params?.page ??
+          this.pages?.page ??
+          parsePage(new URLSearchParams(location.search).get("page")),
         pageSize: params?.pageSize ?? this.pages?.pageSize ?? 10,
         sortBy,
         sortDirection,
@@ -866,6 +903,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
         message: msg("Sorry, couldn't retrieve archived item at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "qa-error",
       });
     }
   }

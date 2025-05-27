@@ -4,7 +4,7 @@ import { customElement, property } from "lit/decorators.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
-import { type ArchivedItem, type Workflow } from "@/types/crawler";
+import { type CrawlState } from "@/types/crawlState";
 import localize from "@/utils/localize";
 import { pluralOf } from "@/utils/pluralize";
 
@@ -14,13 +14,18 @@ enum TitleSource {
   FirstSeed,
 }
 
-type Item = Pick<
-  ArchivedItem & Workflow,
-  "name" | "firstSeed" | "seedCount" | "id" | "type" | "state" | "finished"
->;
+type Item = {
+  name: string;
+  id: string;
+  firstSeed: string;
+  seedCount: number;
+  type?: "crawl" | "upload";
+  finished?: string | undefined;
+  state?: CrawlState;
+};
 
-@localized()
 @customElement("btrix-detail-page-title")
+@localized()
 export class DetailPageTitle extends TailwindElement {
   @property({ type: Object })
   item: Item | undefined;

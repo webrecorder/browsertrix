@@ -3,10 +3,12 @@ import type { SlDropdown, SlMenu } from "@shoelace-style/shoelace";
 import { html } from "lit";
 import {
   customElement,
+  property,
   query,
   queryAssignedElements,
   state,
 } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 
@@ -23,9 +25,15 @@ import { TailwindElement } from "@/classes/TailwindElement";
  *< /btrix-overflow-dropdown>
  * ```
  */
-@localized()
 @customElement("btrix-overflow-dropdown")
+@localized()
 export class OverflowDropdown extends TailwindElement {
+  @property({ type: Boolean })
+  raised = false;
+
+  @property({ type: String })
+  size?: "x-small" | "small" | "medium";
+
   @state()
   private hasMenuItems?: boolean;
 
@@ -37,15 +45,23 @@ export class OverflowDropdown extends TailwindElement {
 
   render() {
     return html`
-      <sl-dropdown ?disabled=${!this.hasMenuItems} hoist>
-        <sl-icon-button
+      <sl-dropdown
+        ?disabled=${!this.hasMenuItems}
+        hoist
+        distance=${ifDefined(this.raised ? "4" : undefined)}
+      >
+        <btrix-button
           slot="trigger"
-          class="font-base attr-[disabled]:invisible part-[base]:p-3"
-          label=${msg("Actions")}
-          name="three-dots-vertical"
-          ?disabled=${!this.hasMenuItems}
+          ?raised=${this.raised}
+          size=${ifDefined(this.size)}
         >
-        </sl-icon-button>
+          <sl-icon
+            label=${msg("Actions")}
+            name="three-dots-vertical"
+            class="size-4 text-base leading-none"
+          ></sl-icon>
+        </btrix-button>
+
         <slot
           @slotchange=${() => (this.hasMenuItems = this.menu.length > 0)}
         ></slot>

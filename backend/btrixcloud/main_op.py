@@ -1,4 +1,4 @@
-""" entrypoint module for operator """
+"""entrypoint module for operator"""
 
 import os
 import sys
@@ -31,12 +31,16 @@ def main():
         crawl_config_ops,
         _,
         crawl_ops,
+        _,
         page_ops,
         coll_ops,
         _,
         storage_ops,
         background_job_ops,
         event_webhook_ops,
+        _,
+        _,
+        _,
         _,
     ) = init_ops()
 

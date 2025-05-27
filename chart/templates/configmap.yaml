@@ -14,11 +14,13 @@ data:
 
   FRONTEND_ORIGIN: {{ .Values.frontend_alias | default "http://browsertrix-cloud-frontend" }}
 
-  CRAWLER_FQDN_SUFFIX: ".{{ .Values.crawler_namespace }}.svc.cluster.local"
+  CRAWLER_FQDN_SUFFIX: ".{{ .Values.crawler_namespace }}{{ .Values.fqdn_suffix }}"
 
   DEFAULT_ORG: "{{ .Values.default_org }}"
 
   INVITE_EXPIRE_SECONDS: "{{ .Values.invite_expire_seconds }}"
+
+  PAUSED_CRAWL_LIMIT_MINUTES: "{{ .Values.paused_crawl_limit_minutes }}"
 
   REGISTRATION_ENABLED: "{{ .Values.registration_enabled | default 0 }}"
 
@@ -34,11 +36,14 @@ data:
 
   DEFAULT_CRAWL_FILENAME_TEMPLATE: "{{ .Values.default_crawl_filename_template }}"
 
+  DEFAULT_CRAWLER_IMAGE_PULL_POLICY: "{{ .Values.crawler_pull_policy }}"
+
   MAX_PAGES_PER_CRAWL: "{{ .Values.max_pages_per_crawl | default 0 }}"
 
   IDLE_TIMEOUT: "{{ .Values.profile_browser_idle_seconds | default 60 }}"
 
   RERUN_FROM_MIGRATION: "{{ .Values.rerun_from_migration }}"
+  MIGRATION_JOBS_SCALE: "{{ .Values.migration_jobs_scale | default 1 }}"
 
   PRESIGN_DURATION_MINUTES: "{{ .Values.storage_presign_duration_minutes }}"
 
@@ -50,6 +55,8 @@ data:
 
   IS_LOCAL_MINIO: "{{ .Values.minio_local }}"
 
+  LOCAL_MINIO_ACCESS_PATH: "{{ .Values.minio_access_path }}"
+
   STORAGES_JSON: "/ops-configs/storages.json"
 
   CRAWLER_CHANNELS_JSON: "/ops-configs/crawler_channels.json"
@@ -60,6 +67,8 @@ data:
   DEFAULT_PROXY_ID: "{{ .Values.default_proxy }}"
 
   MIN_QA_CRAWLER_IMAGE: "{{ .Values.min_qa_crawler_image }}"
+
+  MIN_AUTOCLICK_CRAWLER_IMAGE: "{{ .Values.min_autoclick_crawler_image }}"
 
   NUM_BROWSERS: "{{ .Values.crawler_browser_instances }}"
 
@@ -76,11 +85,19 @@ data:
 
   SALES_EMAIL: "{{ .Values.sales_email }}"
 
+  USER_SURVEY_URL: "{{ .Values.user_survey_url }}"
+
   LOG_SENT_EMAILS: "{{ .Values.email.log_sent_emails }}"
 
   BACKEND_IMAGE: "{{ .Values.backend_image }}"
 
   BACKEND_IMAGE_PULL_POLICY: "{{ .Values.backend_pull_policy }}"
+
+  LOCALES_ENABLED: "{{ .Values.locales_enabled }}"
+
+  REPLICA_DELETION_DELAY_DAYS: "{{ .Values.replica_deletion_delay_days | default 0 }}"
+
+  PRESIGN_BATCH_SIZE: "{{ .Values.presign_batch_size | default 8 }}"
 
 
 ---
@@ -91,7 +108,7 @@ metadata:
   namespace: {{ .Values.crawler_namespace }}
 
 data:
-  {{- define "btrix.crawler_args" }} --sizeLimit {{ .Values.crawler_session_size_limit_bytes }} --timeLimit {{ .Values.crawler_session_time_limit_seconds }} --maxPageLimit {{ .Values.max_pages_per_crawl | default 0 }} --healthCheckPort {{ .Values.crawler_liveness_port }} --diskUtilization {{ .Values.disk_utilization_threshold }} --logging {{ .Values.crawler_logging_opts }} --text {{ .Values.crawler_extract_full_text }} --generateWACZ --collection thecrawl --screencastPort 9037 --logErrorsToRedis --writePagesToRedis --restartsOnError --headless --screenshot view,thumbnail {{ .Values.crawler_extra_args }} {{- end }}
+  {{- define "btrix.crawler_args" }} --sizeLimit {{ .Values.crawler_session_size_limit_bytes }} --timeLimit {{ .Values.crawler_session_time_limit_seconds }} --maxPageLimit {{ .Values.max_pages_per_crawl | default 0 }} --healthCheckPort {{ .Values.crawler_liveness_port }} --diskUtilization {{ .Values.disk_utilization_threshold }} --logging {{ .Values.crawler_logging_opts }} --text {{ .Values.crawler_extract_full_text }} --generateWACZ --collection thecrawl --screencastPort 9037 --logErrorsToRedis --logBehaviorsToRedis --writePagesToRedis --restartsOnError --headless --screenshot view,thumbnail {{ .Values.crawler_extra_args }} {{- end }}
 
   CRAWL_ARGS: {{- include "btrix.crawler_args" . }}
 
@@ -195,7 +212,7 @@ metadata:
 
 data:
 {{- $email_templates := .Values.email.templates | default dict }}
-{{- range tuple "failed_bg_job" "invite" "password_reset" "validate" }}
+{{- range tuple "failed_bg_job" "invite" "password_reset" "validate" "sub_cancel" }}
   {{ . }}: |
 {{ ((get $email_templates . ) | default ($.Files.Get (printf "%s/%s" "email-templates" . ))) | indent 4 }}
   {{- end }}

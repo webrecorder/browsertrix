@@ -4,19 +4,20 @@ Crawl Config API handling
 
 # pylint: disable=too-many-lines
 
-from typing import List, Union, Optional, TYPE_CHECKING, cast
+from typing import List, Union, Optional, TYPE_CHECKING, cast, Dict, Tuple
 
 import asyncio
 import json
 import re
 import os
 import traceback
-from datetime import datetime
+from datetime import datetime, timedelta
 from uuid import UUID, uuid4
 import urllib.parse
 
-import pymongo
+import aiohttp
 from fastapi import APIRouter, Depends, HTTPException, Query
+import pymongo
 
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .models import (
@@ -36,14 +37,22 @@ from .models import (
     CrawlerChannel,
     CrawlerChannels,
     StartedResponse,
+    SuccessResponse,
     CrawlConfigAddedResponse,
     CrawlConfigSearchValues,
     CrawlConfigUpdateResponse,
     CrawlConfigDeletedResponse,
     CrawlerProxy,
     CrawlerProxies,
+    ValidateCustomBehavior,
 )
-from .utils import dt_now, slug_from_name
+from .utils import (
+    dt_now,
+    slug_from_name,
+    validate_regexes,
+    validate_language_code,
+    is_url,
+)
 
 if TYPE_CHECKING:
     from .orgs import OrgOps
@@ -84,6 +93,9 @@ class CrawlConfigOps:
 
     crawler_channels: CrawlerChannels
     crawler_images_map: dict[str, str]
+    crawler_image_pull_policy_map: dict[str, str]
+
+    paused_expiry_delta: timedelta
 
     def __init__(
         self,
@@ -107,6 +119,13 @@ class CrawlConfigOps:
         self.coll_ops = cast(CollectionOps, None)
 
         self.default_filename_template = os.environ["DEFAULT_CRAWL_FILENAME_TEMPLATE"]
+        self.default_crawler_image_pull_policy = os.environ.get(
+            "DEFAULT_CRAWLER_IMAGE_PULL_POLICY", "IfNotPresent"
+        )
+
+        self.paused_expiry_delta = timedelta(
+            minutes=int(os.environ.get("PAUSED_CRAWL_LIMIT_MINUTES", "10080"))
+        )
 
         self.router = APIRouter(
             prefix="/crawlconfigs",
@@ -117,6 +136,7 @@ class CrawlConfigOps:
         self._file_rx = re.compile("\\W+")
 
         self.crawler_images_map = {}
+        self.crawler_image_pull_policy_map = {}
         channels = []
         with open(os.environ["CRAWLER_CHANNELS_JSON"], encoding="utf-8") as fh:
             crawler_list = json.loads(fh.read())
@@ -124,6 +144,10 @@ class CrawlConfigOps:
                 channel = CrawlerChannel(**channel_data)
                 channels.append(channel)
                 self.crawler_images_map[channel.id] = channel.image
+                if channel.imagePullPolicy:
+                    self.crawler_image_pull_policy_map[channel.id] = (
+                        channel.imagePullPolicy
+                    )
 
             self.crawler_channels = CrawlerChannels(channels=channels)
 
@@ -189,7 +213,7 @@ class CrawlConfigOps:
 
         return profile_filename
 
-    # pylint: disable=invalid-name
+    # pylint: disable=invalid-name, too-many-branches
     async def add_crawl_config(
         self,
         config_in: CrawlConfigIn,
@@ -214,6 +238,21 @@ class CrawlConfigOps:
         if config_in.proxyId:
             if not self.can_org_use_proxy(org, config_in.proxyId):
                 raise HTTPException(status_code=404, detail="proxy_not_found")
+
+        if config_in.config.exclude:
+            exclude = config_in.config.exclude
+            if isinstance(exclude, str):
+                exclude = [exclude]
+            validate_regexes(exclude)
+
+        self._validate_link_selectors(config_in.config.selectLinks)
+
+        if config_in.config.lang:
+            validate_language_code(config_in.config.lang)
+
+        if config_in.config.customBehaviors:
+            for url in config_in.config.customBehaviors:
+                self._validate_custom_behavior_url_syntax(url)
 
         now = dt_now()
         crawlconfig = CrawlConfig(
@@ -245,11 +284,6 @@ class CrawlConfigOps:
             crawlconfig.lastStartedBy = user.id
             crawlconfig.lastStartedByName = user.name
 
-        # Ensure page limit is below org maxPagesPerCall if set
-        max_pages = org.quotas.maxPagesPerCrawl or 0
-        if max_pages > 0:
-            crawlconfig.config.limit = max_pages
-
         # add  CrawlConfig to DB here
         result = await self.crawl_configs.insert_one(crawlconfig.to_dict())
 
@@ -280,12 +314,64 @@ class CrawlConfigOps:
             execMinutesQuotaReached=exec_mins_quota_reached,
         )
 
+    def _validate_link_selectors(self, link_selectors: List[str]):
+        """Validate link selectors
+
+        Ensure at least one link selector is set and that all the link slectors passed
+        follow expected syntax: selector->attribute/property.
+
+        We don't yet check the validity of the CSS selector itself.
+        """
+        if not link_selectors:
+            raise HTTPException(status_code=400, detail="invalid_link_selector")
+
+        for link_selector in link_selectors:
+            parts = link_selector.split("->")
+            if not len(parts) == 2:
+                raise HTTPException(status_code=400, detail="invalid_link_selector")
+            if not parts[0] or not parts[1]:
+                raise HTTPException(status_code=400, detail="invalid_link_selector")
+
+    def _validate_custom_behavior_url_syntax(self, url: str) -> Tuple[bool, List[str]]:
+        """Validate custom behaviors are valid URLs after removing custom git syntax"""
+        git_prefix = "git+"
+        is_git_repo = False
+
+        if url.startswith(git_prefix):
+            is_git_repo = True
+            url = url[len(git_prefix) :]
+
+        parts = url.split("?")
+        url = parts[0]
+
+        if not is_url(url):
+            raise HTTPException(status_code=400, detail="invalid_custom_behavior")
+
+        return is_git_repo, parts
+
+    def ensure_quota_page_limit(self, crawlconfig: CrawlConfig, org: Organization):
+        """ensure page limit is set to no greater than quota page limit, if any"""
+        if org.quotas.maxPagesPerCrawl and org.quotas.maxPagesPerCrawl > 0:
+            if crawlconfig.config.limit and crawlconfig.config.limit > 0:
+                crawlconfig.config.limit = min(
+                    org.quotas.maxPagesPerCrawl, crawlconfig.config.limit
+                )
+            else:
+                crawlconfig.config.limit = org.quotas.maxPagesPerCrawl
+
     async def add_new_crawl(
-        self, crawl_id: str, crawlconfig: CrawlConfig, user: User, manual: bool
+        self,
+        crawl_id: str,
+        crawlconfig: CrawlConfig,
+        user: User,
+        org: Organization,
+        manual: bool,
     ) -> None:
         """increments crawl count for this config and adds new crawl"""
 
         started = dt_now()
+
+        self.ensure_quota_page_limit(crawlconfig, org)
 
         inc = self.inc_crawl_count(crawlconfig.id)
         add = self.crawl_ops.add_new_crawl(
@@ -316,11 +402,27 @@ class CrawlConfigOps:
 
     async def update_crawl_config(
         self, cid: UUID, org: Organization, user: User, update: UpdateCrawlConfig
-    ) -> dict[str, bool | str]:
-        # pylint: disable=too-many-locals
+    ) -> CrawlConfigUpdateResponse:
+        # pylint: disable=too-many-locals, too-many-branches, too-many-statements
         """Update name, scale, schedule, and/or tags for an existing crawl config"""
 
         orig_crawl_config = await self.get_crawl_config(cid, org.id)
+
+        if update.config and update.config.exclude:
+            exclude = update.config.exclude
+            if isinstance(exclude, str):
+                exclude = [exclude]
+            validate_regexes(exclude)
+
+        if update.config and update.config.selectLinks is not None:
+            self._validate_link_selectors(update.config.selectLinks)
+
+        if update.config and update.config.customBehaviors:
+            for url in update.config.customBehaviors:
+                self._validate_custom_behavior_url_syntax(url)
+
+        if update.config and update.config.lang:
+            validate_language_code(update.config.lang)
 
         # indicates if any k8s crawl config settings changed
         changed = False
@@ -371,11 +473,9 @@ class CrawlConfigOps:
         run_now = update.runNow
 
         if not changed and not metadata_changed and not run_now:
-            return {
-                "updated": True,
-                "settings_changed": changed,
-                "metadata_changed": metadata_changed,
-            }
+            return CrawlConfigUpdateResponse(
+                settings_changed=changed, metadata_changed=metadata_changed
+            )
 
         if changed:
             orig_dict = orig_crawl_config.dict(exclude_unset=True, exclude_none=True)
@@ -414,10 +514,11 @@ class CrawlConfigOps:
                 status_code=404, detail=f"Crawl Config '{cid}' not found"
             )
 
+        crawlconfig = CrawlConfig.from_dict(result)
+
         # update in crawl manager to change schedule
         if schedule_changed:
             try:
-                crawlconfig = CrawlConfig.from_dict(result)
                 await self.crawl_manager.update_scheduled_job(crawlconfig, str(user.id))
 
             except Exception as exc:
@@ -427,16 +528,24 @@ class CrawlConfigOps:
                     status_code=404, detail=f"Crawl Config '{cid}' not found"
                 )
 
-        ret: dict[str, bool | str] = {
-            "updated": True,
-            "settings_changed": changed,
-            "metadata_changed": metadata_changed,
-            "storageQuotaReached": self.org_ops.storage_quota_reached(org),
-            "execMinutesQuotaReached": self.org_ops.exec_mins_quota_reached(org),
-        }
+        ret = CrawlConfigUpdateResponse(
+            settings_changed=changed,
+            metadata_changed=metadata_changed,
+            storageQuotaReached=self.org_ops.storage_quota_reached(org),
+            execMinutesQuotaReached=self.org_ops.exec_mins_quota_reached(org),
+        )
+
         if run_now:
             crawl_id = await self.run_now(cid, org, user)
-            ret["started"] = crawl_id
+            ret.started = crawl_id
+        elif update.updateRunning and changed:
+            running_crawl = await self.get_running_crawl(cid)
+            if running_crawl:
+                await self.crawl_manager.update_running_crawl_config(
+                    running_crawl.id, crawlconfig
+                )
+                ret.updatedRunning = True
+
         return ret
 
     async def update_usernames(self, userid: UUID, updated_name: str) -> None:
@@ -517,9 +626,13 @@ class CrawlConfigOps:
             if sort_by == "name":
                 sort_query["firstSeed"] = sort_direction
 
-            # modified for last* fields in case crawl hasn't been run yet
+            # Special case for last-* fields in case crawl is running
             elif sort_by in ("lastRun", "lastCrawlTime", "lastCrawlStartTime"):
-                sort_query["modified"] = sort_direction
+                sort_query = {
+                    "isCrawlRunning": sort_direction,
+                    sort_by: sort_direction,
+                    "modified": sort_direction,
+                }
 
             aggregate.extend([{"$sort": sort_query}])
 
@@ -658,6 +771,13 @@ class CrawlConfigOps:
         crawlconfig.lastCrawlState = crawl.state
         crawlconfig.lastCrawlSize = crawl.stats.size if crawl.stats else 0
         crawlconfig.lastCrawlStopping = crawl.stopping
+        crawlconfig.lastCrawlShouldPause = crawl.shouldPause
+        crawlconfig.lastCrawlPausedAt = crawl.pausedAt
+        crawlconfig.lastCrawlPausedExpiry = None
+        if crawl.pausedAt:
+            crawlconfig.lastCrawlPausedExpiry = (
+                crawl.pausedAt + self.paused_expiry_delta
+            )
         crawlconfig.isCrawlRunning = True
 
     async def get_crawl_config_out(self, cid: UUID, org: Organization):
@@ -817,6 +937,15 @@ class CrawlConfigOps:
 
         return crawl_config.config
 
+    async def remove_collection_from_all_configs(
+        self, coll_id: UUID, org: Organization
+    ):
+        """remove collection from all autoAddCollection list"""
+        await self.crawl_configs.update_many(
+            {"oid": org.id, "autoAddCollections": coll_id},
+            {"$pull": {"autoAddCollections": coll_id}},
+        )
+
     async def get_crawl_config_tags(self, org):
         """get distinct tags from all crawl configs for this org"""
         tags = await self.crawl_configs.distinct("tags", {"oid": org.id})
@@ -880,7 +1009,7 @@ class CrawlConfigOps:
                 storage_filename=storage_filename,
                 profile_filename=profile_filename or "",
             )
-            await self.add_new_crawl(crawl_id, crawlconfig, user, manual=True)
+            await self.add_new_crawl(crawl_id, crawlconfig, user, org, manual=True)
             return crawl_id
 
         except Exception as exc:
@@ -934,6 +1063,15 @@ class CrawlConfigOps:
     ) -> Optional[str]:
         """Get crawler image name by id"""
         return self.crawler_images_map.get(crawler_channel or "")
+
+    def get_channel_crawler_image_pull_policy(
+        self, crawler_channel: Optional[str]
+    ) -> str:
+        """Get crawler image name by id"""
+        return (
+            self.crawler_image_pull_policy_map.get(crawler_channel or "")
+            or self.default_crawler_image_pull_policy
+        )
 
     def get_crawler_proxies_map(self) -> dict[str, CrawlerProxy]:
         """Load CrawlerProxy mapping from config"""
@@ -1011,6 +1149,90 @@ class CrawlConfigOps:
         name = slug_from_name(name or "")
         prefix = org.slug + "-" + name
         return prefix[:80]
+
+    async def re_add_all_scheduled_cron_jobs(self):
+        """Re-add all scheduled workflow cronjobs"""
+        match_query = {"schedule": {"$nin": ["", None]}, "inactive": {"$ne": True}}
+        async for config_dict in self.crawl_configs.find(match_query):
+            config = CrawlConfig.from_dict(config_dict)
+            try:
+                await self.crawl_manager.update_scheduled_job(config)
+                print(f"Updated cronjob for scheduled workflow {config.id}", flush=True)
+            # pylint: disable=broad-except
+            except Exception as err:
+                print(
+                    f"Error updating cronjob for scheduled workflow {config.id}: {err}",
+                    flush=True,
+                )
+
+    async def _validate_behavior_git_repo(self, repo_url: str, branch: str = ""):
+        """Validate git repository and branch, if specified, exist and are reachable"""
+        cmd = f"git ls-remote {repo_url} HEAD"
+        proc = await asyncio.create_subprocess_shell(cmd)
+        if await proc.wait() > 0:
+            raise HTTPException(
+                status_code=404,
+                detail="custom_behavior_not_found",
+            )
+
+        if branch:
+            await asyncio.sleep(0.5)
+            git_remote_cmd = (
+                f"git ls-remote --exit-code --heads {repo_url} refs/heads/{branch}"
+            )
+            proc = await asyncio.create_subprocess_shell(git_remote_cmd)
+            if await proc.wait() > 0:
+                raise HTTPException(
+                    status_code=404,
+                    detail="custom_behavior_branch_not_found",
+                )
+
+    async def _validate_behavior_url(self, url: str):
+        """Validate behavior file exists at url"""
+        try:
+            timeout = aiohttp.ClientTimeout(total=10)
+            async with aiohttp.ClientSession(timeout=timeout) as session:
+                async with session.get(url) as resp:
+                    if resp.status >= 400:
+                        raise HTTPException(
+                            status_code=404,
+                            detail="custom_behavior_not_found",
+                        )
+        # pylint: disable=raise-missing-from
+        except aiohttp.ClientError:
+            raise HTTPException(
+                status_code=404,
+                detail="custom_behavior_not_found",
+            )
+
+    async def validate_custom_behavior(self, url: str) -> Dict[str, bool]:
+        """Validate custom behavior URL
+
+        Implemented:
+        - Ensure URL is valid (after removing custom git prefix and syntax)
+        - Ensure URL returns status code < 400
+        - Ensure git repository can be reached by git ls-remote and that branch
+        exists, if provided
+        """
+        git_branch = ""
+
+        is_git_repo, url_parts = self._validate_custom_behavior_url_syntax(url)
+        url = url_parts[0]
+
+        if is_git_repo and len(url_parts) > 1:
+            query_str = url_parts[1]
+            try:
+                git_branch = urllib.parse.parse_qs(query_str)["branch"][0]
+            # pylint: disable=broad-exception-caught
+            except (KeyError, IndexError):
+                pass
+
+        if is_git_repo:
+            await self._validate_behavior_git_repo(url, branch=git_branch)
+        else:
+            await self._validate_behavior_url(url)
+
+        return {"success": True}
 
 
 # ============================================================================
@@ -1247,6 +1469,24 @@ def init_crawl_config_api(
         crawlconfig = await ops.get_crawl_config(cid, org.id)
 
         return await ops.do_make_inactive(crawlconfig)
+
+    @app.post("/orgs/all/crawlconfigs/reAddCronjobs", response_model=SuccessResponse)
+    async def re_add_all_scheduled_cron_jobs(
+        user: User = Depends(user_dep),
+    ):
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+
+        asyncio.create_task(ops.re_add_all_scheduled_cron_jobs())
+        return {"success": True}
+
+    @router.post("/validate/custom-behavior", response_model=SuccessResponse)
+    async def validate_custom_behavior(
+        behavior: ValidateCustomBehavior,
+        # pylint: disable=unused-argument
+        org: Organization = Depends(org_crawl_dep),
+    ):
+        return await ops.validate_custom_behavior(behavior.customBehavior)
 
     org_ops.router.include_router(router)
 

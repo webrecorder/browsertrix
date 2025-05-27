@@ -2,7 +2,10 @@ import { expect, fixture } from "@open-wc/testing";
 import { html } from "lit";
 import { restore, stub } from "sinon";
 
-import AuthService from "./utils/AuthService";
+import { NavigateController } from "./controllers/navigate";
+import { NotifyController } from "./controllers/notify";
+import { type AppSettings } from "./utils/app";
+import AuthService, { type LoggedInEventDetail } from "./utils/AuthService";
 import { AppStateService } from "./utils/state";
 import { formatAPIUser } from "./utils/user";
 
@@ -24,13 +27,36 @@ const mockAPIUser: APIUser = {
   ],
 };
 const mockUserInfo = formatAPIUser(mockAPIUser);
+const mockAuth = {
+  headers: { Authorization: self.crypto.randomUUID() },
+  tokenExpiresAt: Date.now(),
+  username: "test-auth@example.com",
+  user: mockAPIUser,
+};
+
+const mockAppSettings: AppSettings = {
+  registrationEnabled: false,
+  jwtTokenLifetime: 86400,
+  defaultBehaviorTimeSeconds: 300,
+  defaultPageLoadTimeSeconds: 120,
+  maxPagesPerCrawl: 50000,
+  numBrowsers: 2,
+  maxScale: 3,
+  billingEnabled: false,
+  signUpUrl: "",
+  salesEmail: "",
+  supportEmail: "",
+  localesEnabled: ["en", "es"],
+};
 
 describe("browsertrix-app", () => {
   beforeEach(() => {
     AppStateService.resetAll();
     AuthService.broadcastChannel = new BroadcastChannel(AuthService.storageKey);
     window.sessionStorage.clear();
+    window.localStorage.clear();
     stub(window.history, "pushState");
+    stub(NotifyController.prototype, "toast");
   });
 
   afterEach(() => {
@@ -43,7 +69,7 @@ describe("browsertrix-app", () => {
     expect(el).instanceOf(App);
   });
 
-  it("renders home when authenticated", async () => {
+  it("don't block render if settings aren't defined", async () => {
     stub(AuthService, "initSessionStorage").returns(
       Promise.resolve({
         headers: { Authorization: "_fake_headers_" },
@@ -51,14 +77,47 @@ describe("browsertrix-app", () => {
         username: "test-auth@example.com",
       }),
     );
+    // @ts-expect-error checkFreshness is private
+    stub(AuthService.prototype, "checkFreshness");
     const el = await fixture<App>(html` <browsertrix-app></browsertrix-app>`);
-    expect(el.shadowRoot?.querySelector("btrix-home")).to.exist;
+    await el.updateComplete;
+
+    expect(el.shadowRoot?.childElementCount).to.not.equal(0);
   });
 
-  it("renders home when not authenticated", async () => {
+  it("renders org when authenticated", async () => {
+    stub(AuthService, "initSessionStorage").returns(
+      Promise.resolve({
+        headers: { Authorization: "_fake_headers_" },
+        tokenExpiresAt: 0,
+        username: "test-auth@example.com",
+      }),
+    );
+    // @ts-expect-error checkFreshness is private
+    stub(AuthService.prototype, "checkFreshness");
+    AppStateService.updateOrgSlug("fake-org");
+    const el = await fixture<App>(
+      html` <browsertrix-app .settings=${mockAppSettings}></browsertrix-app>`,
+    );
+    await el.updateComplete;
+    expect(el.shadowRoot?.querySelector("btrix-org")).to.exist;
+  });
+
+  it("renders log in when not authenticated", async () => {
     stub(AuthService, "initSessionStorage").returns(Promise.resolve(null));
-    const el = await fixture<App>(html` <browsertrix-app></browsertrix-app>`);
-    expect(el.shadowRoot?.querySelector("btrix-home")).to.exist;
+    // @ts-expect-error checkFreshness is private
+    stub(AuthService.prototype, "checkFreshness");
+    stub(NavigateController, "createNavigateEvent").callsFake(
+      () =>
+        new CustomEvent("x-ignored", {
+          detail: { url: "", resetScroll: false },
+        }),
+    );
+
+    const el = await fixture<App>(
+      html` <browsertrix-app .settings=${mockAppSettings}></browsertrix-app>`,
+    );
+    expect(el.shadowRoot?.querySelector("btrix-log-in")).to.exist;
   });
 
   // TODO move tests to AuthService
@@ -113,13 +172,16 @@ describe("browsertrix-app", () => {
         username: "test-auth@example.com",
       }),
     );
+    stub(AuthService, "createNeedLoginEvent").callsFake(
+      () => new CustomEvent("x-ignored", { detail: {} }),
+    );
 
     const el = await fixture<App>("<browsertrix-app></browsertrix-app>");
 
     expect(el.appState.orgSlug).to.equal("test-org");
   });
 
-  it("sets org slug from path", async () => {
+  it("sets org slug from path if user is in org", async () => {
     const id = self.crypto.randomUUID();
     const mockOrg = {
       id: id,
@@ -127,13 +189,13 @@ describe("browsertrix-app", () => {
       slug: id,
       role: 10,
     };
-    stub(App.prototype, "getLocationPathname").callsFake(() => `/orgs/${id}`);
-    stub(App.prototype, "getUserInfo").callsFake(async () =>
-      Promise.resolve({
+    AppStateService.updateUser(
+      formatAPIUser({
         ...mockAPIUser,
         orgs: [...mockAPIUser.orgs, mockOrg],
       }),
     );
+    stub(App.prototype, "getLocationPathname").callsFake(() => `/orgs/${id}`);
     stub(AuthService.prototype, "startFreshnessCheck").callsFake(() => {});
     stub(AuthService, "initSessionStorage").callsFake(async () =>
       Promise.resolve({
@@ -146,5 +208,42 @@ describe("browsertrix-app", () => {
     const el = await fixture<App>("<browsertrix-app></browsertrix-app>");
 
     expect(el.appState.orgSlug).to.equal(id);
+  });
+
+  describe(".onLoggedIn()", () => {
+    describe("routing", () => {
+      it("routes to redirect URL if specified", async () => {
+        stub(App.prototype, "routeTo");
+
+        const event = new CustomEvent<LoggedInEventDetail>("btrix-logged-in", {
+          detail: {
+            ...mockAuth,
+            redirectUrl: "/fake-page",
+          },
+        });
+
+        const el = await fixture<App>("<browsertrix-app></browsertrix-app>");
+
+        el.onLoggedIn(event);
+
+        expect(el.routeTo).to.have.been.calledWith("/fake-page");
+      });
+
+      it("falls back to account settings", async () => {
+        stub(App.prototype, "routeTo");
+
+        const event = new CustomEvent<LoggedInEventDetail>("btrix-logged-in", {
+          detail: {
+            ...mockAuth,
+          },
+        });
+
+        const el = await fixture<App>("<browsertrix-app></browsertrix-app>");
+
+        el.onLoggedIn(event);
+
+        expect(el.routeTo).to.have.been.calledWith("/account/settings");
+      });
+    });
   });
 });

@@ -8,7 +8,7 @@ You can create, view, search for, and run crawl workflows from the **Crawling** 
 
 ## Create a Crawl Workflow
 
-Create new crawl workflows from the **Crawling** page, or the  _Create New ..._ shortcut from **Overview**.
+Create new crawl workflows from the **Crawling** page, or the  _Create New ..._ shortcut from **Dashboard**.
 
 ### Choose what to crawl
 
@@ -32,7 +32,7 @@ After deciding what type of crawl you'd like to run, you can begin to set up you
 
 Run a crawl workflow by clicking _Run Crawl_ in the actions menu of the workflow in the crawl workflow list, or by clicking the _Run Crawl_ button on the workflow's details page.
 
-While crawling, the **Watch Crawl** section displays a list of queued URLs that will be visited, and streams the current state of the browser windows as they visit pages from the queue. You can [modify the crawl live](./running-crawl.md) by adding URL exclusions or changing the number of crawling instances.
+While crawling, the **Latest Crawl** section streams the current state of the browser windows as they visit pages. You can [modify the crawl live](./running-crawl.md) by adding URL exclusions or changing the number of crawling instances.
 
 Re-running a crawl workflow can be useful to capture a website as it changes over time, or to run with an updated [crawl scope](workflow-setup.md#crawl-scope-options).
 

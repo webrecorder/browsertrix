@@ -1,7 +1,7 @@
 // cSpell:words xstate
 import { localized, msg } from "@lit/localize";
 import { assign, createMachine, interpret } from "@xstate/fsm";
-import { html, type PropertyValues } from "lit";
+import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
@@ -139,8 +139,8 @@ const machine = createMachine<FormContext, FormEvent, FormTypestate>(
   },
 );
 
-@localized()
 @customElement("btrix-log-in")
+@localized()
 export class LogInPage extends BtrixElement {
   @property({ type: Object })
   viewState!: ViewState;
@@ -158,8 +158,8 @@ export class LogInPage extends BtrixElement {
     this.formStateService.subscribe((state) => {
       this.formState = state;
     });
-
     this.formStateService.start();
+    this.syncFormStateView();
     void this.checkBackendInitialized();
   }
 
@@ -187,17 +187,17 @@ export class LogInPage extends BtrixElement {
       form = this.renderForgotPasswordForm();
       link = html`
         <a
-          class="text-sm text-gray-400 hover:text-gray-500"
+          class="text-cyan-400 transition-colors hover:text-cyan-500"
           href="/log-in"
           @click=${this.navigate.link}
-          >${msg("Sign in with password")}</a
+          >${msg("Return to Sign In")}</a
         >
       `;
     } else {
       form = this.renderLoginForm();
       link = html`
         <a
-          class="text-sm text-gray-400 hover:text-gray-500"
+          class="text-cyan-400 transition-colors hover:text-cyan-500"
           href="/log-in/forgot-password"
           @click=${this.navigate.link}
           >${msg("Forgot your password?")}</a
@@ -215,15 +215,31 @@ export class LogInPage extends BtrixElement {
       `;
     }
 
-    return html`
-      <article class="grid w-full max-w-md gap-5">
-        ${successMessage}
+    const { registrationEnabled, signUpUrl } = this.appState.settings || {};
 
-        <main class="p-10 md:rounded-lg md:border md:bg-white md:shadow-lg">
-          <div>${form}</div>
-        </main>
-        <footer class="text-center">${link}</footer>
-      </article>
+    return html`
+      <div class="flex w-full flex-1 items-center justify-center pb-4 pt-16">
+        <article class="flex w-full max-w-md flex-col gap-5">
+          ${successMessage}
+
+          <main class="p-10 md:rounded-lg md:border md:bg-white md:shadow-lg">
+            <div>${form}</div>
+          </main>
+          <footer class="text-center">${link}</footer>
+        </article>
+      </div>
+      ${registrationEnabled || signUpUrl
+        ? html`
+            <div
+              class="w-full gap-4 border-y bg-white/30 p-6 px-3 text-center text-neutral-500"
+            >
+              <span>${msg("Need an account?")}</span>
+              <btrix-link href=${signUpUrl || "/sign-up"} variant="primary">
+                ${msg("Sign Up")}
+              </btrix-link>
+            </div>
+          `
+        : nothing}
     `;
   }
 
@@ -336,7 +352,7 @@ export class LogInPage extends BtrixElement {
           variant="primary"
           ?loading=${this.formState.value === "submittingForgotPassword"}
           type="submit"
-          >${msg("Request password reset")}</sl-button
+          >${msg("Request Password Reset")}</sl-button
         >
       </form>
     `;
@@ -349,15 +365,21 @@ export class LogInPage extends BtrixElement {
       return;
     }
 
-    const resp = await fetch("/api/settings");
-    if (resp.status === 200) {
-      this.formStateService.send("BACKEND_INITIALIZED");
-    } else {
-      this.formStateService.send("BACKEND_NOT_INITIALIZED");
-      this.timerId = window.setTimeout(() => {
-        void this.checkBackendInitialized();
-      }, 5000);
+    try {
+      const resp = await fetch("/api/settings");
+      if (resp.status === 200) {
+        this.formStateService.send("BACKEND_INITIALIZED");
+        return;
+      }
+    } catch (e) {
+      // assume backend not available if exception thrown
     }
+
+    // mark as not initialized
+    this.formStateService.send("BACKEND_NOT_INITIALIZED");
+    this.timerId = window.setTimeout(() => {
+      void this.checkBackendInitialized();
+    }, 5000);
   }
 
   async onSubmitLogIn(event: SubmitEvent) {
@@ -371,7 +393,18 @@ export class LogInPage extends BtrixElement {
     try {
       const data = await AuthService.login({ email: username, password });
 
-      AppStateService.updateUser(formatAPIUser(data.user));
+      // Check if org slug in app state matches newly logged in user
+      const slug =
+        this.orgSlugState &&
+        data.user.orgs.some((org) => org.slug === this.orgSlugState)
+          ? this.orgSlugState
+          : data.user.orgs.length
+            ? data.user.orgs[0].slug
+            : "";
+
+      if (slug) {
+        AppStateService.updateUser(formatAPIUser(data.user), slug);
+      }
 
       await this.updateComplete;
 

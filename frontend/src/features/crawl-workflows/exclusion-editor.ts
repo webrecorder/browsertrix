@@ -33,8 +33,8 @@ type ResponseData = {
  *
  * @event on-success On successful edit
  */
-@localized()
 @customElement("btrix-exclusion-editor")
+@localized()
 export class ExclusionEditor extends LiteElement {
   @property({ type: String })
   crawlId?: string;
@@ -89,7 +89,17 @@ export class ExclusionEditor extends LiteElement {
         ? html`<btrix-queue-exclusion-table
             ?removable=${this.isActiveCrawl}
             .exclusions=${this.config.exclude || []}
-            @btrix-remove=${this.deleteExclusion}
+            @btrix-change=${async (e: ExclusionRemoveEvent) => {
+              await this.updateComplete;
+              const { index, regex } = e.detail;
+              if (this.config?.exclude && index === 0 && !regex) {
+                void this.deleteExclusion({
+                  regex: this.config.exclude[index],
+                });
+              }
+            }}
+            @btrix-remove=${(e: ExclusionRemoveEvent) =>
+              void this.deleteExclusion({ regex: e.detail.regex })}
           >
           </btrix-queue-exclusion-table>`
         : html`
@@ -102,8 +112,8 @@ export class ExclusionEditor extends LiteElement {
             <btrix-queue-exclusion-form
               ?isSubmitting=${this.isSubmitting}
               fieldErrorMessage=${this.exclusionFieldErrorMessage}
-              @on-change=${this.handleRegexChange}
-              @on-add=${this.handleAddRegex}
+              @btrix-change=${this.handleRegexChange}
+              @btrix-add=${this.handleAddRegex}
             >
             </btrix-queue-exclusion-form>
           </div>`
@@ -138,9 +148,7 @@ export class ExclusionEditor extends LiteElement {
     }
   }
 
-  private async deleteExclusion(e: ExclusionRemoveEvent) {
-    const { regex } = e.detail;
-
+  private async deleteExclusion({ regex }: { regex: string }) {
     try {
       const params = new URLSearchParams({ regex });
       const data = await this.apiFetch<{ success: boolean }>(
@@ -157,6 +165,7 @@ export class ExclusionEditor extends LiteElement {
           message: msg(html`Removed exclusion: <code>${regex}</code>`),
           variant: "success",
           icon: "check2-circle",
+          id: "exclusion-edit-status",
         });
 
         this.dispatchEvent(new CustomEvent("on-success"));
@@ -171,6 +180,7 @@ export class ExclusionEditor extends LiteElement {
             : msg("Sorry, couldn't remove exclusion at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
+        id: "exclusion-edit-status",
       });
     }
   }
@@ -196,6 +206,7 @@ export class ExclusionEditor extends LiteElement {
           ),
           variant: "danger",
           icon: "exclamation-octagon",
+          id: "exclusion-edit-status",
         });
       }
     }
@@ -247,6 +258,7 @@ export class ExclusionEditor extends LiteElement {
           message: msg("Exclusion added."),
           variant: "success",
           icon: "check2-circle",
+          id: "exclusion-edit-status",
         });
 
         this.regex = "";
@@ -272,6 +284,7 @@ export class ExclusionEditor extends LiteElement {
           message: msg("Sorry, couldn't add exclusion at this time."),
           variant: "danger",
           icon: "exclamation-octagon",
+          id: "exclusion-edit-status",
         });
       }
     }

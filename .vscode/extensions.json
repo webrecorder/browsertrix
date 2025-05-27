@@ -2,10 +2,12 @@
   "recommendations": [
     "dbaeumer.vscode-eslint",
     "esbenp.prettier-vscode",
-    "dbaeumer.vscode-eslint",
     "runem.lit-plugin",
     "bradlc.vscode-tailwindcss",
     "redhat.vscode-yaml",
-    "streetsidesoftware.code-spell-checker"
+    "streetsidesoftware.code-spell-checker",
+    "ms-python.black-formatter",
+    "ms-python.pylint",
+    "unifiedjs.vscode-mdx"
   ]
 }

@@ -1,10 +1,23 @@
-# Change Org Settings
+# Edit Org Settings
 
 Settings that apply to the entire organization are found in the **Settings** page. If you're an org admin, you'll see the link to _Settings_ in the org navigation bar.
 
 ## General
 
-Change your organization's name and URL identifier in this tab. Choose an org name that's unique and memorable, like the name of your company or organization. Org name and URLs are unique to each Browsertrix instance (for example, on browsertrix.com) and you may be asked to change the org name or URL identifier if either are already in use by another org.
+### Name, URL, and other basic information
+
+Your org name appears throughout the web application and in email notifications. Choose a display name for your org that's unique and memorable, like the name of your company, organization, or personal project.
+
+The org URL is where you and other org members will go to view the dashboard, configure org settings, and manage all other org-related activities. If your org has a [public collections gallery](#public-collections-gallery) enabled, changing this will also update the URL to the gallery.
+
+Org name and URLs are unique to each Browsertrix instance (for example, on `app.browsertrix.com`) and you may be prompted to change the org name or URL if either are already in use by another org.
+
+??? info "What information will be visible to the public?"
+    All org information is private until you make the org visible. Once your org is made visible to the public, the org name, description, and website will appear on the org's public collections gallery page. You can preview how information appears to the public by visiting the linked public collections gallery page.
+
+### Public Collections Gallery
+
+Enable a homepage for your public collections to easily share all public collections in your org. Once enabled, anyone on the internet with a link to your org's public collections gallery will be able to browse public collections and view general information like the org name, description, and website.
 
 ## Billing
 

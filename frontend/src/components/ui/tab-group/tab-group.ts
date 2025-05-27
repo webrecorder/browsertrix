@@ -9,15 +9,33 @@ import type { TabClickDetail, TabGroupTab } from "./tab";
 import { type TabGroupPanel } from "./tab-panel";
 
 import { TailwindElement } from "@/classes/TailwindElement";
+import { pageSectionsWithNav } from "@/layouts/pageSectionsWithNav";
 
 /**
- * TODO consolidate with btrix-tab-list
+ * @fires btrix-tab-change
+ * @example Usage:
+ * ```ts
+ * <btrix-tab-group>
+ *   <btrix-tab-group-tab slot="nav" panel="first">First</btrix-tab-group-tab>
+ *   <btrix-tab-group-tab slot="nav" panel="second">Second</btrix-tab-group-tab>
+ *   <btrix-tab-group-panel name="first">First tab content</btrix-tab-group-panel>
+ *   <btrix-tab-group-panel name="second">First tab content</btrix-tab-group-panel>
+ * </btrix-tab-group>
+ * ```
  */
 @customElement("btrix-tab-group")
 export class TabGroup extends TailwindElement {
   /* Active panel name */
   @property({ type: String, reflect: false })
   active = "";
+
+  /* Nav placement */
+  @property({ type: String })
+  placement: "top" | "start" = "top";
+
+  /* Nav sticky */
+  @property({ type: Boolean })
+  sticky = true;
 
   @property({ type: String, noAccessor: true, reflect: true })
   role = "tablist";
@@ -47,12 +65,17 @@ export class TabGroup extends TailwindElement {
   }
 
   render() {
-    return html`
-      <div class="mb-4 flex gap-2" @keydown=${this.onKeyDown}>
-        <slot name="nav" @btrix-select-tab=${this.onSelectTab}></slot>
-      </div>
-      <slot></slot>
-    `;
+    return pageSectionsWithNav({
+      nav: html`<slot
+        name="nav"
+        @btrix-select-tab=${this.onSelectTab}
+        @keydown=${this.onKeyDown}
+      ></slot>`,
+      main: html`<slot></slot>`,
+      action: html`<slot name="action"></slot>`,
+      placement: this.placement,
+      sticky: this.sticky,
+    });
   }
 
   private handleActiveChange() {
@@ -124,5 +147,11 @@ export class TabGroup extends TailwindElement {
   private onSelectTab(e: CustomEvent<TabClickDetail>) {
     e.stopPropagation();
     this.active = e.detail.panel;
+    this.dispatchEvent(
+      new CustomEvent<string>("btrix-tab-change", {
+        detail: this.active,
+        bubbles: true,
+      }),
+    );
   }
 }

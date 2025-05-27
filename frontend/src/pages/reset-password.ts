@@ -13,8 +13,8 @@ import PasswordService from "@/utils/PasswordService";
 const { PASSWORD_MINLENGTH, PASSWORD_MAXLENGTH, PASSWORD_MIN_SCORE } =
   PasswordService;
 
-@localized()
 @customElement("btrix-reset-password")
+@localized()
 export class ResetPassword extends LiteElement {
   @property({ type: Object })
   viewState!: ViewState;

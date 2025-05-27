@@ -12,7 +12,7 @@ To start crawling with hosted Browsertrix, you'll need a Browsertrix account. [S
 
 ## Starting the crawl
 
-Once you've logged in you should see your org [overview](overview.md). If you land somewhere else, navigate to **Overview**.
+Once you've logged in you should see your org [overview](overview.md). If you land somewhere else, navigate to **Dashboard**.
 
 1. Tap the _Create New..._ shortcut and select **Crawl Workflow**.
 2. Choose **Page List**. We'll get into the details of the options [later](./crawl-workflows.md), but this is a good starting point for a simple crawl.
@@ -31,5 +31,5 @@ After running your first crawl, check out the following to learn more about Brow
 - Adding [exclusions](workflow-setup.md#exclude-pages) to limit your crawl's scope and evading crawler traps by [editing exclusion rules while crawling](running-crawl.md#live-exclusion-editing).
 - Best practices for crawling with [browser profiles](browser-profiles.md) to capture content only available when logged in to a website.
 - Managing archived items, including [uploading previously archived content](archived-items.md#uploading-web-archives).
-- Organizing and combining archived items with [collections](collections.md) for sharing and export.
+- Organizing and combining archived items with [collections](collection.md) for sharing and export.
 - [Invite collaborators](org-members.md) to your org.

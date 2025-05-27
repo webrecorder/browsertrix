@@ -31,8 +31,8 @@ const CRAWLS_PAGE_SIZE = 50;
  * @fires btrix-selection-change
  * @fires btrix-auto-add-change
  */
-@localized()
 @customElement("btrix-collection-workflow-list")
+@localized()
 export class CollectionWorkflowList extends BtrixElement {
   static styles = css`
     :host {
@@ -276,23 +276,22 @@ export class CollectionWorkflowList extends BtrixElement {
       >
         <div class="grid flex-1 grid-cols-5 items-center">
           <div class="col-span-3 md:col-span-1">
-            <sl-format-date
-              date=${crawl.finished}
+            <btrix-format-date
+              .date=${crawl.finished}
               month="2-digit"
               day="2-digit"
-              year="2-digit"
+              year="numeric"
               hour="2-digit"
               minute="2-digit"
-            ></sl-format-date>
+            ></btrix-format-date>
           </div>
           <div class="col-span-2 md:col-span-1">
             <btrix-crawl-status state=${crawl.state}></btrix-crawl-status>
           </div>
           <div class="col-span-3 md:col-span-1">
-            <sl-format-bytes
-              value=${crawl.fileSize || 0}
-              display="narrow"
-            ></sl-format-bytes>
+            ${this.localize.bytes(crawl.fileSize || 0, {
+              unitDisplay: "narrow",
+            })}
           </div>
           <div class="col-span-2 md:col-span-1">
             ${pageCount === 1

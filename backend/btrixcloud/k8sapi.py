@@ -1,4 +1,4 @@
-""" K8S API Access """
+"""K8S API Access"""
 
 import os
 import traceback
@@ -273,6 +273,18 @@ class K8sAPI:
                 name=name,
                 body={"spec": body},
                 _content_type="application/merge-patch+json",
+            )
+            return {"success": True}
+        # pylint: disable=broad-except
+        except Exception as exc:
+            traceback.print_exc()
+            return {"error": str(exc)}
+
+    async def unsuspend_k8s_job(self, name) -> dict:
+        """unsuspend k8s Job"""
+        try:
+            await self.batch_api.patch_namespaced_job(
+                name=name, namespace=self.namespace, body={"spec": {"suspend": False}}
             )
             return {"success": True}
         # pylint: disable=broad-except

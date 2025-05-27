@@ -2,6 +2,7 @@
   "Btrix Component": {
     "scope": "javascript,typescript",
     "prefix": ["component", "@customElement"],
+    "isFileTemplate": true,
     "body": [
       "import { localized } from \"@lit/localize\";",
       "import { html } from \"lit\";",
@@ -9,8 +10,8 @@
       "",
       "import { BtrixElement } from \"@/classes/BtrixElement\";",
       "",
-      "@localized()",
       "@customElement(\"btrix-${1:component}\")",
+      "@localized()",
       "export class ${2:Component} extends BtrixElement {",
       "\trender() {",
       "\t\treturn html``;",
@@ -18,5 +19,40 @@
       "}",
       ""
     ]
+  },
+  "Btrix Component Test": {
+    "scope": "javascript,typescript",
+    "prefix": ["test","describe"],
+    "isFileTemplate": true,
+    "body": [
+      "import { expect, fixture } from \"@open-wc/testing\";",
+      "import { html } from \"lit/static-html.js\";",
+      "import { restore, stub } from \"sinon\";",
+      "",
+      "import { ${1:Component} } from \"./${TM_FILENAME_BASE/\\.test(.*)/$1/}\";",
+      "",
+      "import { AppStateService } from \"@/utils/state\";",
+      "",
+      "describe(\"<btrix-${TM_FILENAME_BASE/\\.test(.*)/$1/}>\", () => {",
+      "  beforeEach(() => {",
+      "    AppStateService.resetAll();",
+      "    stub(window.history, \"pushState\");",
+      "  });",
+      "",
+      "  afterEach(() => {",
+      "    restore();",
+      "  });",
+      "",
+      "  it(\"is defined\", async () => {",
+      "    const el = await fixture<${1:Component}>(",
+      "      html`<btrix-${TM_FILENAME_BASE/\\.test(.*)/$1/}></btrix-${TM_FILENAME_BASE/\\.test(.*)/$1/}>`,",
+      "    );",
+      "",
+      "    expect(el).instanceOf(${1:Component});",
+      "  });",
+      "});",
+      ""
+    ],
+    "description": "Unit test for custom component that extends `BtrixComponent`"
   }
 }
