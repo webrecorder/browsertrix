@@ -1345,36 +1345,6 @@ class CrawlOperator(BaseOperator):
             crawl.db_crawl_id, crawl.is_qa, stats
         )
 
-        for key, value in sizes.items():
-            increase_storage = False
-            value = int(value)
-            if value > 0 and status.podStatus:
-                pod_info = status.podStatus[key]
-                pod_info.used.storage = value
-
-                if (
-                    status.state == "running"
-                    and self.min_avail_storage_ratio
-                    and pod_info.allocated.storage
-                    and pod_info.used.storage * self.min_avail_storage_ratio
-                    > pod_info.allocated.storage
-                ):
-                    increase_storage = True
-
-            # out of storage
-            if pod_info.isNewExit and pod_info.exitCode == 3:
-                pod_info.used.storage = pod_info.allocated.storage
-                increase_storage = True
-
-            if increase_storage:
-                new_storage = math.ceil(
-                    pod_info.used.storage * self.min_avail_storage_ratio / 1_000_000_000
-                )
-                pod_info.newStorage = f"{new_storage}Gi"
-                print(
-                    f"Attempting to adjust storage to {pod_info.newStorage} for {key}"
-                )
-
         # check if no longer paused, clear paused stopping state
         if status.stopReason == "paused" and not crawl.paused_at:
             status.stopReason = None
