@@ -15,6 +15,7 @@ import Fuse from "fuse.js";
 import { mergeDeep } from "immutable";
 import type { LanguageCode } from "iso-639-1";
 import {
+  css,
   html,
   nothing,
   type LitElement,
@@ -220,6 +221,21 @@ type CrawlConfigResponse = {
 @customElement("btrix-workflow-editor")
 @localized()
 export class WorkflowEditor extends BtrixElement {
+  static styles = css`
+    :host {
+      @keyframes sticky-footer {
+        from {
+          transform: translateY(100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+    }
+  `;
+
   @consume({ context: proxiesContext, subscribe: true })
   private readonly proxies?: ProxiesContext;
 
@@ -259,10 +275,10 @@ export class WorkflowEditor extends BtrixElement {
   private serverError?: TemplateResult | string;
 
   @state()
-  private isCrawlRunning: boolean | null = this.configId ? null : false;
+  private stickyFooter: "animate" | boolean = false;
 
-  @query("#formFooter")
-  private readonly formFooter?: HTMLElement | null;
+  @state()
+  private isCrawlRunning: boolean | null = this.configId ? null : false;
 
   // For observing panel sections position in viewport
   private readonly observable = new ObservableController(this, {
@@ -393,6 +409,10 @@ export class WorkflowEditor extends BtrixElement {
     }
   }
 
+  private animateStickyFooter() {
+    this.stickyFooter = "animate";
+  }
+
   async firstUpdated() {
     // Observe form sections to get scroll position
     this.panels?.forEach((panel) => {
@@ -401,6 +421,11 @@ export class WorkflowEditor extends BtrixElement {
 
     if (this.progressState?.activeTab !== STEPS[0]) {
       void this.scrollToActivePanel();
+    }
+
+    // Always show footer when editing or duplicating workflow
+    if (this.configId || this.hasRequiredFields()) {
+      this.stickyFooter = true;
     }
   }
 
@@ -437,19 +462,18 @@ export class WorkflowEditor extends BtrixElement {
           stickyTopClassname: tw`lg:top-16`,
         })}
         <btrix-observable
-          @btrix-intersect=${(e: IntersectEvent) => {
-            if (!this.formFooter) return;
-
-            const [entry] = e.detail.entries;
-
-            if (entry.isIntersecting) {
-              if (this.formFooter.classList.contains(tw`sticky`)) {
-                console.log("stickied");
-              } else {
-                this.formFooter.classList.add(tw`sticky`);
-              }
-            }
+          .options=${{
+            threshold: 1,
           }}
+          @btrix-intersect=${this.stickyFooter
+            ? null
+            : (e: IntersectEvent) => {
+                const [entry] = e.detail.entries;
+
+                if (entry.isIntersecting) {
+                  this.stickyFooter = true;
+                }
+              }}
         >
           ${this.renderFooter()}
         </btrix-observable>
@@ -638,9 +662,13 @@ export class WorkflowEditor extends BtrixElement {
   private renderFooter() {
     return html`
       <footer
-        id="formFooter"
         class=${clsx(
-          "flex items-center justify-end gap-2 rounded-lg border bg-white px-6 py-4 mb-7 z-50 shadow-md bottom-3",
+          "flex items-center justify-end gap-2 rounded-lg border bg-white px-6 py-4 mb-7 z-50 shadow bottom-3 duration-slow",
+          this.stickyFooter && [
+            `sticky`,
+            this.stickyFooter === "animate" &&
+              tw`motion-safe:animate-[sticky-footer_var(--sl-transition-medium)_ease-in-out]`,
+          ],
         )}
       >
         <sl-button class="mr-auto" size="small" type="reset">
@@ -822,9 +850,14 @@ export class WorkflowEditor extends BtrixElement {
                     },
                     true,
                   );
-                  if (!inputEl.checkValidity() && validURL(inputEl.value)) {
+                  const valid = validURL(inputEl.value);
+                  if (!inputEl.checkValidity() && valid) {
                     inputEl.setCustomValidity("");
                     inputEl.helpText = "";
+                  }
+
+                  if (valid) {
+                    this.animateStickyFooter();
                   }
                 }}
                 @sl-blur=${async (e: Event) => {
@@ -872,7 +905,15 @@ https://archiveweb.page/guide`}
                 }}
                 @sl-input=${(e: CustomEvent) => {
                   const inputEl = e.target as SlInput;
-                  if (!inputEl.value) {
+                  const value = inputEl.value;
+
+                  if (value) {
+                    const { isValid } = this.validateUrlList(inputEl.value);
+
+                    if (isValid) {
+                      this.animateStickyFooter();
+                    }
+                  } else {
                     inputEl.helpText = msg("At least 1 URL is required.");
                   }
                 }}
