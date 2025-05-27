@@ -986,7 +986,7 @@ export class App extends BtrixElement {
         this.fullDocsUrl = this.docsUrl + pathName;
         iframe.src = this.fullDocsUrl;
       } else {
-        this.fullDocsUrl = this.docsUrl;
+        this.fullDocsUrl = this.docsUrl + "user-guide";
         iframe.src = this.fullDocsUrl;
       }
 
