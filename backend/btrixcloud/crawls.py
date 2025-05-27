@@ -395,19 +395,24 @@ class CrawlOps(BaseCrawlOps):
             pass
 
     async def update_crawl_scale(
-        self, crawl_id: str, org: Organization, browser_windows: int, user: User
+        self,
+        crawl_id: str,
+        org: Organization,
+        scale: int,
+        browser_windows: int,
+        user: User,
     ) -> bool:
         """Update crawl scale in the db"""
         crawl = await self.get_crawl(crawl_id, org)
 
         update = UpdateCrawlConfig(browserWindows=browser_windows)
-
         await self.crawl_configs.update_crawl_config(crawl.cid, org, user, update)
 
         result = await self.crawls.find_one_and_update(
             {"_id": crawl_id, "type": "crawl", "oid": org.id},
             {
                 "$set": {
+                    "scale": scale,
                     "browserWindows": browser_windows,
                 }
             },
@@ -1553,10 +1558,13 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
                 cast(int, scale.scale)
             )
 
-        await ops.update_crawl_scale(crawl_id, org, scale.browserWindows, user)
+        num_scale = cast(int, scale.scale)
+        browser_windows = cast(int, scale.browserWindows)
+
+        await ops.update_crawl_scale(crawl_id, org, num_scale, browser_windows, user)
 
         result = await ops.crawl_manager.scale_crawl(
-            crawl_id, cast(int, scale.scale), cast(int, scale.browserWindows)
+            crawl_id, num_scale, browser_windows
         )
         if not result or not result.get("success"):
             raise HTTPException(
