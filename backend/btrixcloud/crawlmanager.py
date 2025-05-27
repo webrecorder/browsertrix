@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 
 from fastapi import HTTPException
 
-from .utils import dt_now, date_to_str
+from .utils import dt_now, date_to_str, pod_count_from_browser_windows
 from .k8sapi import K8sAPI
 
 from .models import StorageRef, CrawlConfig, BgJobType
@@ -227,13 +227,15 @@ class CrawlManager(K8sAPI):
 
         await self.has_storage_secret(storage_secret)
 
+        scale = pod_count_from_browser_windows(crawlconfig.browserWindows)
+
         return await self.new_crawl_job(
             cid,
             userid,
             str(crawlconfig.oid),
             str(storage),
             crawlconfig.crawlerChannel,
-            crawlconfig.scale,
+            scale,
             crawlconfig.browserWindows,
             crawlconfig.crawlTimeout,
             crawlconfig.maxCrawlSize,

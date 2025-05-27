@@ -52,7 +52,6 @@ from .utils import (
     validate_regexes,
     validate_language_code,
     is_url,
-    pod_count_from_browser_windows,
     browser_windows_from_pod_count,
 )
 
@@ -225,11 +224,7 @@ class CrawlConfigOps:
         """Add new crawl config"""
 
         # Overrides scale if set
-        if config_in.browserWindows:
-            config_in.scale = pod_count_from_browser_windows(
-                cast(int, config_in.browserWindows)
-            )
-        else:
+        if config_in.browserWindows is None:
             config_in.browserWindows = browser_windows_from_pod_count(
                 cast(int, config_in.scale)
             )
@@ -284,7 +279,6 @@ class CrawlConfigOps:
             jobType=config_in.jobType,
             crawlTimeout=config_in.crawlTimeout,
             maxCrawlSize=config_in.maxCrawlSize,
-            scale=config_in.scale,
             browserWindows=config_in.browserWindows,
             autoAddCollections=config_in.autoAddCollections,
             profileid=profileid,
@@ -421,16 +415,11 @@ class CrawlConfigOps:
 
         orig_crawl_config = await self.get_crawl_config(cid, org.id)
 
-        # Ensure browserWindows and scale are kept in sync and that
-        # browserWindows is given priority
-        if update.browserWindows:
-            update.scale = pod_count_from_browser_windows(
-                cast(int, update.browserWindows)
-            )
-        elif update.scale:
+        if update.scale:
             update.browserWindows = browser_windows_from_pod_count(
                 cast(int, update.scale)
             )
+            update.scale = None
 
         if update.config and update.config.exclude:
             exclude = update.config.exclude
@@ -465,7 +454,6 @@ class CrawlConfigOps:
         changed = changed or (
             self.check_attr_changed(orig_crawl_config, update, "crawlFilenameTemplate")
         )
-        changed = changed or self.check_attr_changed(orig_crawl_config, update, "scale")
         changed = changed or self.check_attr_changed(
             orig_crawl_config, update, "browserWindows"
         )

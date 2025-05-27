@@ -407,7 +407,7 @@ class ConfigRevision(BaseMongoModel):
 
     crawlTimeout: Optional[int] = 0
     maxCrawlSize: Optional[int] = 0
-    scale: Scale = 1
+    scale: Optional[Scale] = 1
     browserWindows: Optional[BrowserWindowCount] = 2
 
     modified: datetime
@@ -429,7 +429,6 @@ class CrawlConfigCore(BaseMongoModel):
 
     crawlTimeout: Optional[int] = 0
     maxCrawlSize: Optional[int] = 0
-    scale: Scale = 1
     browserWindows: BrowserWindowCount = 2
 
     oid: UUID
@@ -894,7 +893,6 @@ class CrawlOut(BaseMongoModel):
     pausedAt: Optional[datetime] = None
     manual: bool = False
     cid_rev: Optional[int] = None
-    scale: Scale = 1
     browserWindows: BrowserWindowCount = 2
 
     storageQuotaReached: Optional[bool] = False
@@ -980,7 +978,7 @@ class MatchCrawlQueueResponse(BaseModel):
 
 # ============================================================================
 class CrawlScale(BaseModel):
-    """scale the crawl to N parallel containers"""
+    """scale the crawl to N parallel containers or windows"""
 
     scale: Optional[Scale] = None
     browserWindows: Optional[BrowserWindowCount] = None
