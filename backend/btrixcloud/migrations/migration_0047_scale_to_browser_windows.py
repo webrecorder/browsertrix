@@ -36,7 +36,6 @@ class Migration(BaseMigration):
                         "$set": {
                             "browserWindows": browser_windows_from_pod_count(scale)
                         },
-                        # "$unset": {"scale": 1}
                     },
                 )
             # pylint: disable=broad-exception-caught
@@ -57,7 +56,6 @@ class Migration(BaseMigration):
                         "$set": {
                             "browserWindows": browser_windows_from_pod_count(scale)
                         },
-                        # "$unset": {"scale": 1}
                     },
                 )
             # pylint: disable=broad-exception-caught
