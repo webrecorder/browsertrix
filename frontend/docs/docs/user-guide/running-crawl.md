@@ -1,6 +1,6 @@
 # Modifying Running Crawls
 
-Running crawls can be modified from the crawl workflow **Latest Crawl** tab. You may want to modify a runnning crawl if you find that the workflow is crawling pages that you didn't intend to archive, or if you want a boost of speed.
+Running crawls can be modified from the crawl workflow **Latest Crawl** tab. You may want to modify a running crawl if you find that the workflow is crawling pages that you didn't intend to archive, or if you want a boost of speed.
 
 ## Crawl Workflow Status
 
