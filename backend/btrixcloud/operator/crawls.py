@@ -1278,7 +1278,7 @@ class CrawlOperator(BaseOperator):
             pages_found -= extra_seeds
 
         sizes = await redis.hgetall(f"{crawl_id}:size")
-        int_sizes = {k: int(v) for k, v in sizes}
+        int_sizes = {k: int(v) for k, v in sizes.items()}
         archive_size = sum(int_sizes.values())
 
         stats = CrawlStats(found=pages_found, done=pages_done, size=archive_size)
