@@ -5,7 +5,6 @@ from datetime import datetime
 from uuid import UUID
 from typing import Optional, DefaultDict, Literal, Annotated, Any
 from pydantic import BaseModel, Field
-from kubernetes.utils import parse_quantity
 from btrixcloud.models import StorageRef, TYPE_ALL_CRAWL_STATES, Organization
 
 
