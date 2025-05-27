@@ -55,8 +55,6 @@ spec:
     runAsUser: {{ crawler_uid }}
     runAsGroup: {{ crawler_gid }}
     fsGroup: {{ crawler_fsgroup }}
-    allowPrivilegeEscalation: false
-    readOnlyRootFilesystem: true
 
   terminationGracePeriodSeconds: {{ termination_grace_secs }}
   volumes:
@@ -185,6 +183,11 @@ spec:
        {% endif %}
         - name: crawl-data
           mountPath: /crawls
+
+        - name: crawl-data
+          mountPath: /tmp
+          subPath: tmp
+
       envFrom:
         - configMapRef:
             name: shared-crawler-config
@@ -237,5 +240,9 @@ spec:
         periodSeconds: 120
         failureThreshold: 3
       {% endif %}
+
+      securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
 
 {% endif %}
