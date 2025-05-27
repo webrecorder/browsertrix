@@ -5,10 +5,13 @@ import { html, type PropertyValues } from "lit";
 import { customElement, property, queryAll } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import isEqual from "lodash/fp/isEqual";
+import type { EmptyObject } from "type-fest";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import { DataGridRowsController } from "@/components/ui/data-grid/controllers/rows";
-import { renderRows } from "@/components/ui/data-grid/renderRows";
+import {
+  DataGridRowsController,
+  emptyItem,
+} from "@/components/ui/data-grid/controllers/rows";
 import type { SyntaxInput } from "@/components/ui/syntax-input";
 import { FormControlController } from "@/controllers/formControl";
 import type { BtrixChangeEvent } from "@/events/btrix-change";
@@ -22,11 +25,6 @@ const syntaxInputClasses = tw`flex-1 [--sl-input-border-color:transparent] [--sl
 type SelectorItem = {
   selector: string;
   attribute: string;
-};
-
-const emptyItem = {
-  selector: "",
-  attribute: "",
 };
 
 /**
@@ -48,7 +46,7 @@ export class LinkSelectorTable extends FormControl(BtrixElement) {
   @property({ type: Boolean })
   editable = false;
 
-  readonly #rowsController = new DataGridRowsController(this);
+  readonly #rowsController = new DataGridRowsController<SelectorItem>(this);
 
   @queryAll("btrix-syntax-input")
   private readonly syntaxInputs!: NodeListOf<SyntaxInput>;
@@ -64,7 +62,7 @@ export class LinkSelectorTable extends FormControl(BtrixElement) {
     const selectLinks: string[] = [];
 
     this.#rowsController.rows.forEach((val) => {
-      if (val === emptyItem) return;
+      if (this.#rowsController.isEmpty(val)) return;
       selectLinks.push(`${val.selector}${SELECTOR_DELIMITER}${val.attribute}`);
     });
 
@@ -76,7 +74,8 @@ export class LinkSelectorTable extends FormControl(BtrixElement) {
     const selectLinks: string[] = [];
 
     this.#rowsController.rows.forEach((val) => {
-      if (!val.selector || !val.attribute) return;
+      if (this.#rowsController.isEmpty(val) || !val.selector || !val.attribute)
+        return;
       selectLinks.push(`${val.selector}${SELECTOR_DELIMITER}${val.attribute}`);
     });
 
@@ -122,7 +121,7 @@ export class LinkSelectorTable extends FormControl(BtrixElement) {
           )}
         </btrix-table-head>
         <btrix-table-body class="overflow-auto">
-          ${renderRows<SelectorItem>(this.#rowsController.rows, this.row)}
+          ${this.#rowsController.renderRows(this.row)}
         </btrix-table-body>
       </btrix-table>
 
@@ -144,11 +143,16 @@ export class LinkSelectorTable extends FormControl(BtrixElement) {
   }
 
   private readonly row = (
-    { id, item }: { id: string; item: SelectorItem },
+    { id, item }: { id: string; item: SelectorItem | EmptyObject },
     i: number,
   ) => {
-    const sel = item.selector;
-    const attr = item.attribute;
+    let sel = "";
+    let attr = "";
+
+    if (!this.#rowsController.isEmpty(item)) {
+      sel = item.selector;
+      attr = item.attribute;
+    }
 
     return html`
       <btrix-table-row class=${i > 0 ? "border-t" : ""}>

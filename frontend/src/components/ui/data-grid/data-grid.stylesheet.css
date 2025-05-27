@@ -1,0 +1,37 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  :host {
+    --border: 1px solid var(--sl-panel-border-color);
+  }
+
+  .data-grid-body--horizontalRule btrix-data-grid-row:nth-of-type(n + 2),
+  .data-grid-body--horizontalRule
+    ::slotted(btrix-data-grid-row:nth-of-type(n + 2)) {
+    border-top: var(--border) !important;
+  }
+
+  .data-grid-body--rowsSelectable btrix-data-grid-row,
+  .data-grid-body--rowsSelectable ::slotted(btrix-data-grid-row) {
+    /* TODO Same ring color as edit cells */
+    @apply cursor-pointer ring-inset hover:bg-blue-50/50 hover:ring-1;
+  }
+
+  .data-grid-body--editCells btrix-data-grid-row,
+  .data-grid-body--editCells ::slotted(btrix-data-grid-row) {
+    /* TODO Support different input sizes */
+    min-height: calc(var(--sl-input-height-medium) + 1px);
+  }
+
+  .data-grid-body--not-stickyHeader btrix-data-grid-row:first-child,
+  .data-grid-body--not-stickyHeader ::slotted(btrix-data-grid-row:first-child) {
+    @apply rounded-t;
+  }
+
+  .data-grid-body--not-rowsAddible btrix-data-grid-row:last-child,
+  .data-grid-body--not-rowsAddible ::slotted(btrix-data-grid-row:last-child) {
+    @apply rounded-b;
+  }
+}

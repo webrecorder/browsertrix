@@ -41,6 +41,7 @@ export class DescListItem extends LitElement {
       font-family: var(--font-monostyle-family);
       font-variation-settings: var(--font-monostyle-variation);
       line-height: 1rem;
+      min-height: calc(1rem + var(--sl-spacing-2x-small));
     }
 
     .item {
@@ -93,6 +94,7 @@ export class DescList extends LitElement {
       display: inline-block;
       flex: 1 0 0;
       min-width: min-content;
+      padding-top: var(--sl-spacing-2x-small);
     }
 
     .horizontal ::slotted(btrix-desc-list-item)::before {

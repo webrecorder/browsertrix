@@ -4,6 +4,7 @@ import { html, type PropertyValues } from "lit";
 import { customElement, property, queryAll, state } from "lit/decorators.js";
 import { directive } from "lit/directive.js";
 import { ifDefined } from "lit/directives/if-defined.js";
+import { when } from "lit/directives/when.js";
 import isEqual from "lodash/fp/isEqual";
 
 import { CellDirective } from "./cellDirective";
@@ -59,16 +60,37 @@ export class DataGridRow extends FormControl(TableRow) {
   removable = false;
 
   /**
+   * Whether the row can be clicked.
+   */
+  @property({ type: Boolean })
+  clickable = false;
+
+  /**
+   * Whether the row can be expanded.
+   */
+  @property({ type: Boolean })
+  expandable = false;
+
+  /**
    * Whether cells can be edited.
    */
   @property({ type: Boolean })
   editCells = false;
 
   /**
+   * Vertical alignment of content.
+   */
+  @property({ type: String })
+  alignContent: "start" | "center" | "end" = "center";
+
+  /**
    * Form control name, if used in a form.
    */
   @property({ type: String, reflect: true })
   name?: string;
+
+  @state()
+  private expanded = false;
 
   @state()
   private cellValues: Partial<GridItem> = {};
@@ -132,7 +154,30 @@ export class DataGridRow extends FormControl(TableRow) {
   render() {
     if (!this.columns?.length) return html``;
 
+    let expandCell = html``;
     let removeCell = html``;
+
+    if (this.expandable) {
+      expandCell = html`
+        <btrix-data-grid-cell
+          class=${clsx(tw`border-l p-0`, cellStyle)}
+          @keydown=${this.onKeydown}
+        >
+          <sl-icon-button
+            class=${clsx(
+              tw`p-1 text-base transition-transform`,
+              this.expanded && tw`rotate-90`,
+            )}
+            name="chevron-right"
+            label=${this.expanded ? msg("Contract") : msg("Expand")}
+            @click=${(e: MouseEvent) => {
+              e.stopPropagation();
+              this.expanded = !this.expanded;
+            }}
+          ></sl-icon-button>
+        </btrix-data-grid-cell>
+      `;
+    }
 
     if (this.removable) {
       removeCell = html`
@@ -160,57 +205,58 @@ export class DataGridRow extends FormControl(TableRow) {
       `;
     }
 
-    return html`${this.columns.map(this.renderCell)}${removeCell}`;
+    return html`${expandCell}${this.columns.map(this.renderCell)}${removeCell}
+    ${when(this.expanded && this.item, (item) => this.renderDetails({ item }))} `;
   }
 
+  renderDetails = (_row: { item: GridItem }) => html``;
+
   private readonly renderCell = (col: GridColumn, i: number) => {
-    const validationMessage = this.#invalidInputsMap.get(col.field);
+    const item = this.item;
+
+    if (!item) return;
+
     const editable = this.editCells && col.editable;
+    const tooltipContent = editable
+      ? this.#invalidInputsMap.get(col.field)
+      : col.renderCellTooltip
+        ? col.renderCellTooltip({ item })
+        : undefined;
 
     return html`
       <sl-tooltip
-        ?disabled=${!validationMessage}
-        content=${validationMessage || ""}
+        class="[--max-width:40ch]"
+        ?disabled=${!tooltipContent}
         hoist
         placement="bottom"
         trigger=${
-          // Manually show/hide tooltip on blur/focus
-          "manual"
+          // Disable showing tooltip on focus by default
+          // so that it doesn't show along with the browser
+          // validation message on form submit.
+          // The tooltip is shown manually when tabbed to
+          // by checking `:focus-visible` on focus.
+          "hover"
         }
       >
         <btrix-data-grid-cell
           class=${clsx(
-            i > 0 && tw`border-l`,
+            !this.clickable && i > 0 && tw`border-l`,
             cellStyle,
             editable && editableCellStyle,
+            this.alignContent === "start" && tw`items-start`,
+            this.alignContent === "end" && tw`items-end`,
+            col.align === "center" && tw`justify-center`,
+            col.align === "end" && tw`justify-end`,
           )}
           .column=${col}
-          .item=${this.item}
+          .item=${item}
           value=${ifDefined(this.cellValues[col.field] ?? undefined)}
           ?editable=${editable}
           ${cell(col)}
           @keydown=${this.onKeydown}
-          @focus=${(e: CustomEvent) => {
-            e.stopPropagation();
-
-            const tableCell = e.target as DataGridCell;
-            const tooltip = tableCell.closest("sl-tooltip");
-
-            if (tooltip?.open) {
-              void tooltip.hide();
-            }
-          }}
-          @blur=${(e: CustomEvent) => {
-            e.stopPropagation();
-
-            const tableCell = e.target as DataGridCell;
-            const tooltip = tableCell.closest("sl-tooltip");
-
-            if (tooltip && !tooltip.disabled) {
-              void tooltip.show();
-            }
-          }}
         ></btrix-data-grid-cell>
+
+        <div slot="content">${tooltipContent}</div>
       </sl-tooltip>
     `;
   };

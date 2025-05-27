@@ -22,6 +22,7 @@ import {
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { OverflowDropdown } from "@/components/ui/overflow-dropdown";
+import { WorkflowTab } from "@/routes";
 import type { ListWorkflow } from "@/types/crawler";
 import { humanizeSchedule } from "@/utils/cron";
 import { srOnly, truncate } from "@/utils/css";
@@ -220,9 +221,7 @@ export class WorkflowListItem extends BtrixElement {
         }
         e.preventDefault();
         await this.updateComplete;
-        const href = `/orgs/${this.orgSlugState}/workflows/${
-          this.workflow?.id
-        }#${this.workflow?.isCrawlRunning ? "watch" : "crawls"}`;
+        const href = `/orgs/${this.orgSlugState}/workflows/${this.workflow?.id}/${WorkflowTab.LatestCrawl}`;
         this.navigate.to(href);
       }}
     >
@@ -251,6 +250,7 @@ export class WorkflowListItem extends BtrixElement {
               <btrix-crawl-status
                 state=${workflow.lastCrawlState || msg("No Crawls Yet")}
                 ?stopping=${workflow.lastCrawlStopping}
+                ?shouldPause=${workflow.lastCrawlShouldPause}
               ></btrix-crawl-status>
             `,
           )}
@@ -281,11 +281,15 @@ export class WorkflowListItem extends BtrixElement {
               if (diff < 1000) {
                 return "";
               }
-              return msg(
-                str`Running for ${this.localize.humanizeDuration(diff, {
-                  compact: true,
-                })}`,
-              );
+              const duration = this.localize.humanizeDuration(diff, {
+                compact: true,
+              });
+
+              if (workflow.lastCrawlState === "paused") {
+                return msg(str`Active for ${duration}`);
+              }
+
+              return msg(str`Running for ${duration}`);
             }
             return notSpecified;
           })}

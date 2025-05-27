@@ -27,6 +27,7 @@ import { ClipboardController } from "@/controllers/clipboard";
 import { SearchParamsController } from "@/controllers/searchParams";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
 import { pageHeader } from "@/layouts/pageHeader";
+import { WorkflowTab } from "@/routes";
 import scopeTypeLabels from "@/strings/crawl-workflows/scopeType";
 import { deleteConfirmation } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
@@ -663,7 +664,7 @@ export class WorkflowsList extends BtrixElement {
           <sl-menu-item
             @click=${() =>
               this.navigate.to(
-                `${this.navigate.orgBasePath}/workflows/${workflow.id}#watch`,
+                `${this.navigate.orgBasePath}/workflows/${workflow.id}/${WorkflowTab.LatestCrawl}`,
                 {
                   dialog: "scale",
                 },
@@ -676,7 +677,7 @@ export class WorkflowsList extends BtrixElement {
             ?disabled=${workflow.lastCrawlState !== "running"}
             @click=${() =>
               this.navigate.to(
-                `${this.navigate.orgBasePath}/workflows/${workflow.id}#watch`,
+                `${this.navigate.orgBasePath}/workflows/${workflow.id}/${WorkflowTab.LatestCrawl}`,
                 {
                   dialog: "exclusions",
                 },
@@ -978,7 +979,8 @@ export class WorkflowsList extends BtrixElement {
             <br />
             <a
               class="underline hover:no-underline"
-              href="${this.navigate.orgBasePath}/workflows/${workflow.id}#watch"
+              href="${this.navigate
+                .orgBasePath}/workflows/${workflow.id}/${WorkflowTab.LatestCrawl}"
               @click=${this.navigate.link.bind(this)}
               >Watch crawl</a
             >`,

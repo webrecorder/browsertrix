@@ -3,6 +3,7 @@ import clsx from "clsx";
 import { html, type TemplateResult } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
+import get from "lodash/fp/get";
 
 import { TableCell } from "../table/table-cell";
 
@@ -119,7 +120,7 @@ export class DataGridCell extends TableCell {
   }
 
   renderCell = ({ item }: { item: GridItem }) => {
-    return html`${(this.column && item[this.column.field]) ?? ""}`;
+    return html`${(this.column && get(this.column.field, item)) ?? ""}`;
   };
 
   renderEditCell = ({

@@ -191,15 +191,22 @@ class PageOps:
 
     async def _add_pages_to_db(self, crawl_id: str, pages: List[Page], ordered=True):
         """Add batch of pages to db in one insert"""
-        result = await self.pages.insert_many(
-            [
-                page.to_dict(
-                    exclude_unset=True, exclude_none=True, exclude_defaults=True
-                )
-                for page in pages
-            ],
-            ordered=ordered,
-        )
+        try:
+            result = await self.pages.insert_many(
+                [
+                    page.to_dict(
+                        exclude_unset=True, exclude_none=True, exclude_defaults=True
+                    )
+                    for page in pages
+                ],
+                ordered=ordered,
+            )
+        except pymongo.errors.BulkWriteError as bwe:
+            for err in bwe.details.get("writeErrors", []):
+                # ignorable duplicate key errors
+                if err.get("code") != 11000:
+                    raise
+
         if not result.inserted_ids:
             # pylint: disable=broad-exception-raised
             raise Exception("No pages inserted")
@@ -523,7 +530,6 @@ class PageOps:
         coll_id: Optional[UUID] = None,
         crawl_ids: Optional[List[str]] = None,
         public_or_unlisted_only=False,
-        # pylint: disable=unused-argument
         org: Optional[Organization] = None,
         search: Optional[str] = None,
         url: Optional[str] = None,
@@ -561,8 +567,15 @@ class PageOps:
                     detail="only one of crawl_ids or coll_id can be provided",
                 )
 
+            if not org:
+                raise HTTPException(
+                    status_code=400, detail="org_missing_for_coll_pages"
+                )
+
             crawl_ids = await self.coll_ops.get_collection_crawl_ids(
-                coll_id, public_or_unlisted_only
+                coll_id,
+                org.id,
+                public_or_unlisted_only,
             )
 
         if not crawl_ids:
@@ -734,12 +747,13 @@ class PageOps:
     async def list_page_url_counts(
         self,
         coll_id: UUID,
+        oid: UUID,
         url_prefix: Optional[str] = None,
         page_size: int = DEFAULT_PAGE_SIZE,
     ) -> List[PageUrlCount]:
         """List all page URLs in collection sorted desc by snapshot count
         unless prefix is specified"""
-        crawl_ids = await self.coll_ops.get_collection_crawl_ids(coll_id)
+        crawl_ids = await self.coll_ops.get_collection_crawl_ids(coll_id, oid)
 
         pages, _ = await self.list_pages(
             crawl_ids=crawl_ids,
@@ -1468,14 +1482,15 @@ def init_pages_api(
     )
     async def get_collection_url_list(
         coll_id: UUID,
-        # oid: UUID,
         urlPrefix: Optional[str] = None,
         pageSize: int = DEFAULT_PAGE_SIZE,
+        org: Organization = Depends(org_viewer_dep),
         # page: int = 1,
     ):
         """Retrieve paginated list of urls in collection sorted by snapshot count"""
         pages = await ops.list_page_url_counts(
             coll_id=coll_id,
+            oid=org.id,
             url_prefix=urlPrefix,
             page_size=pageSize,
         )

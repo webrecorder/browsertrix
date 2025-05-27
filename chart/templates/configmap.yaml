@@ -14,11 +14,13 @@ data:
 
   FRONTEND_ORIGIN: {{ .Values.frontend_alias | default "http://browsertrix-cloud-frontend" }}
 
-  CRAWLER_FQDN_SUFFIX: ".{{ .Values.crawler_namespace }}.svc.cluster.local"
+  CRAWLER_FQDN_SUFFIX: ".{{ .Values.crawler_namespace }}{{ .Values.fqdn_suffix }}"
 
   DEFAULT_ORG: "{{ .Values.default_org }}"
 
   INVITE_EXPIRE_SECONDS: "{{ .Values.invite_expire_seconds }}"
+
+  PAUSED_CRAWL_LIMIT_MINUTES: "{{ .Values.paused_crawl_limit_minutes }}"
 
   REGISTRATION_ENABLED: "{{ .Values.registration_enabled | default 0 }}"
 
@@ -52,6 +54,8 @@ data:
   LOG_FAILED_CRAWL_LINES: "{{ .Values.log_failed_crawl_lines | default 0 }}"
 
   IS_LOCAL_MINIO: "{{ .Values.minio_local }}"
+
+  LOCAL_MINIO_ACCESS_PATH: "{{ .Values.minio_access_path }}"
 
   STORAGES_JSON: "/ops-configs/storages.json"
 
@@ -91,6 +95,8 @@ data:
   LOCALES_ENABLED: "{{ .Values.locales_enabled }}"
 
   REPLICA_DELETION_DELAY_DAYS: "{{ .Values.replica_deletion_delay_days | default 0 }}"
+
+  PRESIGN_BATCH_SIZE: "{{ .Values.presign_batch_size | default 8 }}"
 
 
 ---

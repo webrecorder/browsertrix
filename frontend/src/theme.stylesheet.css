@@ -260,7 +260,7 @@
   /* Style tooltip with white background */
   sl-tooltip.invert-tooltip {
     --sl-tooltip-arrow-size: 0;
-    --sl-tooltip-background-color: var(--sl-color-neutral-0);
+    --sl-tooltip-background-color: var(--sl-color-neutral-50);
     --sl-tooltip-color: var(--sl-color-neutral-700);
   }
 

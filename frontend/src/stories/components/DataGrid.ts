@@ -3,6 +3,7 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { nanoid } from "nanoid";
 
 import type { DataGrid } from "@/components/ui/data-grid/data-grid";
+import type { BtrixSelectRowEvent } from "@/components/ui/data-grid/events/btrix-select-row";
 
 import "@/components/ui/data-grid";
 
@@ -37,9 +38,11 @@ export const renderComponent = ({
   items,
   formControlLabel,
   stickyHeader,
-  addRows,
+  rowsAddible,
   addRowsInputValue,
-  removeRows,
+  rowsRemovable,
+  rowsSelectable,
+  selectMode,
   editCells,
   defaultItem,
 }: Partial<RenderProps>) => {
@@ -50,10 +53,15 @@ export const renderComponent = ({
       .defaultItem=${defaultItem}
       formControlLabel=${ifDefined(formControlLabel)}
       stickyHeader=${ifDefined(stickyHeader)}
-      ?addRows=${addRows}
+      ?rowsAddible=${rowsAddible}
       addRowsInputValue=${ifDefined(addRowsInputValue)}
-      ?removeRows=${removeRows}
+      ?rowsRemovable=${rowsRemovable}
+      ?rowsSelectable=${rowsSelectable}
+      selectMode=${ifDefined(selectMode)}
       ?editCells=${editCells}
+      @btrix-select-row=${(e: BtrixSelectRowEvent) => {
+        console.log("row clicked:", e.detail);
+      }}
     >
     </btrix-data-grid>
   `;

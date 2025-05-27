@@ -72,6 +72,7 @@ export class TabGroup extends TailwindElement {
         @keydown=${this.onKeyDown}
       ></slot>`,
       main: html`<slot></slot>`,
+      action: html`<slot name="action"></slot>`,
       placement: this.placement,
       sticky: this.sticky,
     });

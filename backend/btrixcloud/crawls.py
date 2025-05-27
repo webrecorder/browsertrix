@@ -769,6 +769,39 @@ class CrawlOps(BaseCrawlOps):
 
         return crawls_data
 
+    async def pause_crawl(
+        self, crawl_id: str, org: Organization, pause: bool
+    ) -> Dict[str, bool]:
+        """pause or resume a crawl temporarily"""
+        crawl = await self.get_base_crawl(crawl_id, org)
+        if crawl and crawl.type != "crawl":
+            raise HTTPException(status_code=400, detail="not_a_crawl")
+
+        result = None
+
+        if pause:
+            paused_at = dt_now()
+        else:
+            paused_at = None
+
+        try:
+            result = await self.crawl_manager.pause_resume_crawl(
+                crawl_id, paused_at=paused_at
+            )
+
+            if result.get("success"):
+                await self.crawls.find_one_and_update(
+                    {"_id": crawl_id, "type": "crawl", "oid": org.id},
+                    {"$set": {"shouldPause": pause, "pausedAt": paused_at}},
+                )
+
+                return {"success": True}
+        # pylint: disable=bare-except
+        except:
+            pass
+
+        raise HTTPException(status_code=404, detail="crawl_not_found")
+
     async def shutdown_crawl(
         self, crawl_id: str, org: Organization, graceful: bool
     ) -> Dict[str, bool]:
@@ -1241,6 +1274,22 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
     )
     async def crawl_graceful_stop(crawl_id, org: Organization = Depends(org_crawl_dep)):
         return await ops.shutdown_crawl(crawl_id, org, graceful=True)
+
+    @app.post(
+        "/orgs/{oid}/crawls/{crawl_id}/pause",
+        tags=["crawls"],
+        response_model=SuccessResponse,
+    )
+    async def pause_crawl(crawl_id, org: Organization = Depends(org_crawl_dep)):
+        return await ops.pause_crawl(crawl_id, org, pause=True)
+
+    @app.post(
+        "/orgs/{oid}/crawls/{crawl_id}/resume",
+        tags=["crawls"],
+        response_model=SuccessResponse,
+    )
+    async def resume_crawl(crawl_id, org: Organization = Depends(org_crawl_dep)):
+        return await ops.pause_crawl(crawl_id, org, pause=False)
 
     @app.post(
         "/orgs/{oid}/crawls/delete",

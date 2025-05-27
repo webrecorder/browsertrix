@@ -82,6 +82,9 @@ allow_dupe_invites: "0"
 # number of seconds before pending invites expire - default is 7 days
 invite_expire_seconds: 604800
 
+# number of minutes before paused crawls are stopped - default is 7 days
+paused_crawl_limit_minutes: 10080
+
 # base url for replayweb.page
 rwp_base_url: "https://cdn.jsdelivr.net/npm/replaywebpage@2.3.3/"
 
@@ -103,7 +106,7 @@ replica_deletion_delay_days: 0
 
 # API Image
 # =========================================
-backend_image: "docker.io/webrecorder/browsertrix-backend:1.16.1"
+backend_image: "docker.io/webrecorder/browsertrix-backend:1.16.2"
 backend_pull_policy: "IfNotPresent"
 
 backend_password_secret: "PASSWORD!"
@@ -161,7 +164,7 @@ backend_avg_memory_threshold: 95
 
 # Nginx Image
 # =========================================
-frontend_image: "docker.io/webrecorder/browsertrix-frontend:1.16.1"
+frontend_image: "docker.io/webrecorder/browsertrix-frontend:1.16.2"
 frontend_pull_policy: "IfNotPresent"
 
 frontend_cpu: "10m"
@@ -398,6 +401,9 @@ minio_pull_policy: "IfNotPresent"
 
 minio_local_bucket_name: &local_bucket_name "btrix-data"
 
+# path for serving from local minio bucket
+minio_access_path: &minio_access_path "/data/"
+
 minio_cpu: "10m"
 minio_memory: "1024Mi"
 
@@ -413,8 +419,8 @@ storages:
     secret_key: "PASSW0RD"
     bucket_name: *local_bucket_name
 
-    endpoint_url: "http://local-minio.default:9000/"
-    access_endpoint_url: "/data/"
+    endpoint_url: "http://local-minio:9000/"
+    access_endpoint_url: *minio_access_path
 
 
 # optional: duration in minutes for WACZ download links to be valid
@@ -494,6 +500,9 @@ signer_memory: "50Mi"
 
 # Other Settings
 # =========================================
+
+# default FQDN suffix, shouldn't need to change
+fqdn_suffix: .svc.cluster.local
 
 # Optional: configure load balancing annotations
 # service:

@@ -70,7 +70,7 @@ export class Admin extends BtrixElement {
     if (this.userInfo.orgs.length && !this.orgList) {
       return html`
         <btrix-document-title
-          title=${msg("Admin dashboard")}
+          title=${msg("Dashboard – Admin")}
         ></btrix-document-title>
 
         <div class="my-24 flex items-center justify-center text-3xl">
@@ -81,7 +81,7 @@ export class Admin extends BtrixElement {
 
     return html`
       <btrix-document-title
-        title=${msg("Admin dashboard")}
+        title=${msg("Dashboard – Admin")}
       ></btrix-document-title>
 
       <div class="bg-white">

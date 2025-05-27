@@ -28,7 +28,6 @@ from .models import (
     UpdateColl,
     AddRemoveCrawlList,
     BaseCrawl,
-    CrawlOutWithResources,
     CrawlFileOut,
     Organization,
     PaginatedCollOutResponse,
@@ -40,6 +39,7 @@ from .models import (
     AddedResponse,
     DeletedResponse,
     CollectionSearchValuesResponse,
+    CollectionAllResponse,
     OrgPublicCollections,
     PublicOrgDetails,
     CollAccessType,
@@ -50,7 +50,12 @@ from .models import (
     MIN_UPLOAD_PART_SIZE,
     PublicCollOut,
 )
-from .utils import dt_now, slug_from_name, get_duplicate_key_error_field, get_origin
+from .utils import (
+    dt_now,
+    slug_from_name,
+    get_duplicate_key_error_field,
+    get_origin,
+)
 
 if TYPE_CHECKING:
     from .orgs import OrgOps
@@ -145,7 +150,7 @@ class CollectionOps:
             if crawl_ids:
                 await self.crawl_ops.add_to_collection(crawl_ids, coll_id, org)
                 await self.update_collection_counts_and_tags(coll_id)
-                await self.update_collection_dates(coll_id)
+                await self.update_collection_dates(coll_id, org.id)
                 asyncio.create_task(
                     self.event_webhook_ops.create_added_to_collection_notification(
                         crawl_ids, coll_id, org
@@ -174,7 +179,7 @@ class CollectionOps:
 
         if name_update or slug_update:
             # If we're updating slug, save old one to previousSlugs to support redirects
-            coll = await self.get_collection(coll_id)
+            coll = await self.get_collection(coll_id, org.id)
             previous_slug = coll.slug
 
         if name_update and not slug_update:
@@ -232,7 +237,7 @@ class CollectionOps:
             raise HTTPException(status_code=404, detail="collection_not_found")
 
         await self.update_collection_counts_and_tags(coll_id)
-        await self.update_collection_dates(coll_id)
+        await self.update_collection_dates(coll_id, org.id)
 
         asyncio.create_task(
             self.event_webhook_ops.create_added_to_collection_notification(
@@ -257,7 +262,7 @@ class CollectionOps:
             raise HTTPException(status_code=404, detail="collection_not_found")
 
         await self.update_collection_counts_and_tags(coll_id)
-        await self.update_collection_dates(coll_id)
+        await self.update_collection_dates(coll_id, org.id)
 
         asyncio.create_task(
             self.event_webhook_ops.create_removed_from_collection_notification(
@@ -268,10 +273,10 @@ class CollectionOps:
         return await self.get_collection_out(coll_id, org)
 
     async def get_collection_raw(
-        self, coll_id: UUID, public_or_unlisted_only: bool = False
+        self, coll_id: UUID, oid: UUID, public_or_unlisted_only: bool = False
     ) -> Dict[str, Any]:
         """Get collection by id as dict from database"""
-        query: dict[str, object] = {"_id": coll_id}
+        query: dict[str, object] = {"_id": coll_id, "oid": oid}
         if public_or_unlisted_only:
             query["access"] = {"$in": ["public", "unlisted"]}
 
@@ -303,10 +308,10 @@ class CollectionOps:
         return result
 
     async def get_collection(
-        self, coll_id: UUID, public_or_unlisted_only: bool = False
+        self, coll_id: UUID, oid: UUID, public_or_unlisted_only: bool = False
     ) -> Collection:
         """Get collection by id"""
-        result = await self.get_collection_raw(coll_id, public_or_unlisted_only)
+        result = await self.get_collection_raw(coll_id, oid, public_or_unlisted_only)
         return Collection.from_dict(result)
 
     async def get_collection_by_slug(
@@ -339,14 +344,14 @@ class CollectionOps:
     ) -> CollOut:
         """Get CollOut by id"""
         # pylint: disable=too-many-locals
-        result = await self.get_collection_raw(coll_id, public_or_unlisted_only)
+        result = await self.get_collection_raw(coll_id, org.id, public_or_unlisted_only)
 
         if resources:
             (
                 result["resources"],
                 crawl_ids,
                 pages_optimized,
-            ) = await self.get_collection_crawl_resources(coll_id)
+            ) = await self.get_collection_crawl_resources(coll_id, org)
 
             initial_pages, _ = await self.page_ops.list_pages(
                 crawl_ids=crawl_ids,
@@ -388,7 +393,7 @@ class CollectionOps:
         allow_unlisted: bool = False,
     ) -> PublicCollOut:
         """Get PublicCollOut by id"""
-        result = await self.get_collection_raw(coll_id)
+        result = await self.get_collection_raw(coll_id, org.id)
 
         result["orgName"] = org.name
         result["orgPublicProfile"] = org.enablePublicProfile
@@ -400,7 +405,9 @@ class CollectionOps:
         if result.get("access") not in allowed_access:
             raise HTTPException(status_code=404, detail="collection_not_found")
 
-        result["resources"], _, _ = await self.get_collection_crawl_resources(coll_id)
+        result["resources"], _, _ = await self.get_collection_crawl_resources(
+            coll_id, org
+        )
 
         thumbnail = result.get("thumbnail")
         if thumbnail:
@@ -554,31 +561,23 @@ class CollectionOps:
 
         return collections, total
 
+    # pylint: disable=too-many-locals
     async def get_collection_crawl_resources(
-        self, coll_id: UUID
+        self, coll_id: Optional[UUID], org: Organization
     ) -> tuple[List[CrawlFileOut], List[str], bool]:
         """Return pre-signed resources for all collection crawl files."""
-        # Ensure collection exists
-        _ = await self.get_collection_raw(coll_id)
+        match: dict[str, Any]
 
-        resources = []
-        pages_optimized = True
+        if coll_id:
+            crawl_ids = await self.get_collection_crawl_ids(coll_id, org.id)
+            match = {"_id": {"$in": crawl_ids}}
+        else:
+            crawl_ids = []
+            match = {"oid": org.id}
 
-        crawls, _ = await self.crawl_ops.list_all_base_crawls(
-            collection_id=coll_id,
-            states=list(SUCCESSFUL_STATES),
-            page_size=10_000,
-            cls_type=CrawlOutWithResources,
+        resources, pages_optimized = await self.crawl_ops.get_presigned_files(
+            match, org
         )
-
-        crawl_ids = []
-
-        for crawl in crawls:
-            crawl_ids.append(crawl.id)
-            if crawl.resources:
-                resources.extend(crawl.resources)
-            if crawl.version != 2:
-                pages_optimized = False
 
         return resources, crawl_ids, pages_optimized
 
@@ -601,13 +600,16 @@ class CollectionOps:
         return {"names": names}
 
     async def get_collection_crawl_ids(
-        self, coll_id: UUID, public_or_unlisted_only=False
+        self,
+        coll_id: UUID,
+        oid: UUID,
+        public_or_unlisted_only=False,
     ) -> List[str]:
         """Return list of crawl ids in collection, including only public collections"""
         crawl_ids = []
         # ensure collection is public or unlisted, else throw here
         if public_or_unlisted_only:
-            await self.get_collection_raw(coll_id, public_or_unlisted_only)
+            await self.get_collection_raw(coll_id, oid, public_or_unlisted_only)
 
         async for crawl_raw in self.crawls.find(
             {"collectionIds": coll_id}, projection=["_id"]
@@ -619,7 +621,7 @@ class CollectionOps:
 
     async def delete_collection(self, coll_id: UUID, org: Organization):
         """Delete collection and remove from associated crawls."""
-        await self.crawl_ops.remove_collection_from_all_crawls(coll_id)
+        await self.crawl_ops.remove_collection_from_all_crawls(coll_id, org)
 
         result = await self.collections.delete_one({"_id": coll_id, "oid": org.id})
         if result.deleted_count < 1:
@@ -655,7 +657,7 @@ class CollectionOps:
         """recalculate counts, tags and dates for all collections in an org"""
         async for coll in self.collections.find({"oid": org.id}, projection={"_id": 1}):
             await self.update_collection_counts_and_tags(coll.get("_id"))
-            await self.update_collection_dates(coll.get("_id"))
+            await self.update_collection_dates(coll.get("_id"), org.id)
 
     async def update_collection_counts_and_tags(self, collection_id: UUID):
         """Set current crawl info in config when crawl begins"""
@@ -722,11 +724,11 @@ class CollectionOps:
             },
         )
 
-    async def update_collection_dates(self, coll_id: UUID):
+    async def update_collection_dates(self, coll_id: UUID, oid: UUID):
         """Update collection earliest and latest dates from page timestamps"""
         # pylint: disable=too-many-locals
-        coll = await self.get_collection(coll_id)
-        crawl_ids = await self.get_collection_crawl_ids(coll_id)
+        coll = await self.get_collection(coll_id, oid)
+        crawl_ids = await self.get_collection_crawl_ids(coll_id, oid)
 
         earliest_ts = None
         latest_ts = None
@@ -763,7 +765,7 @@ class CollectionOps:
             },
         )
 
-    async def update_crawl_collections(self, crawl_id: str):
+    async def update_crawl_collections(self, crawl_id: str, oid: UUID):
         """Update counts, dates, and modified for all collections in crawl"""
         crawl = await self.crawls.find_one({"_id": crawl_id})
         crawl_coll_ids = crawl.get("collectionIds")
@@ -771,14 +773,16 @@ class CollectionOps:
 
         for coll_id in crawl_coll_ids:
             await self.update_collection_counts_and_tags(coll_id)
-            await self.update_collection_dates(coll_id)
+            await self.update_collection_dates(coll_id, oid)
             await self.collections.find_one_and_update(
                 {"_id": coll_id},
                 {"$set": {"modified": modified}},
                 return_document=pymongo.ReturnDocument.AFTER,
             )
 
-    async def add_successful_crawl_to_collections(self, crawl_id: str, cid: UUID):
+    async def add_successful_crawl_to_collections(
+        self, crawl_id: str, cid: UUID, oid: UUID
+    ):
         """Add successful crawl to its auto-add collections."""
         workflow = await self.crawl_configs.find_one({"_id": cid})
         auto_add_collections = workflow.get("autoAddCollections")
@@ -787,7 +791,7 @@ class CollectionOps:
                 {"_id": crawl_id},
                 {"$set": {"collectionIds": auto_add_collections}},
             )
-            await self.update_crawl_collections(crawl_id)
+            await self.update_crawl_collections(crawl_id, oid)
 
     async def get_org_public_collections(
         self,
@@ -863,7 +867,7 @@ class CollectionOps:
         source_page_id: Optional[UUID] = None,
     ) -> Dict[str, bool]:
         """Upload file as stream to use as collection thumbnail"""
-        coll = await self.get_collection(coll_id)
+        coll = await self.get_collection(coll_id, org.id)
 
         _, extension = os.path.splitext(filename)
 
@@ -937,7 +941,7 @@ class CollectionOps:
 
     async def delete_thumbnail(self, coll_id: UUID, org: Organization):
         """Delete collection thumbnail"""
-        coll = await self.get_collection(coll_id)
+        coll = await self.get_collection(coll_id, org.id)
 
         if not coll.thumbnail:
             raise HTTPException(status_code=404, detail="thumbnail_not_found")
@@ -1009,24 +1013,11 @@ def init_collections_api(
     @app.get(
         "/orgs/{oid}/collections/$all",
         tags=["collections"],
-        response_model=Dict[str, List[CrawlFileOut]],
+        response_model=CollectionAllResponse,
     )
     async def get_collection_all(org: Organization = Depends(org_viewer_dep)):
         results = {}
-        try:
-            all_collections, _ = await colls.list_collections(org, page_size=10_000)
-            for collection in all_collections:
-                (
-                    results[collection.name],
-                    _,
-                    _,
-                ) = await colls.get_collection_crawl_resources(collection.id)
-        except Exception as exc:
-            # pylint: disable=raise-missing-from
-            raise HTTPException(
-                status_code=400, detail="Error Listing All Crawled Files: " + str(exc)
-            )
-
+        results["resources"] = await colls.get_collection_crawl_resources(None, org)
         return results
 
     @app.get(

@@ -92,6 +92,7 @@ export type Workflow = CrawlConfig & {
   lastCrawlSize: number | null;
   lastStartedByName: string | null;
   lastCrawlStopping: boolean | null;
+  lastCrawlShouldPause: boolean | null;
   lastRun: string;
   totalSize: string | null;
   inactive: boolean;
@@ -188,6 +189,7 @@ export type Crawl = ArchivedItemBase &
     schedule: string;
     manual: boolean;
     scale: number;
+    shouldPause: boolean | null;
     resources?: {
       name: string;
       path: string;

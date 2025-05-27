@@ -94,7 +94,7 @@ def test_create_collection(
     assert data["defaultThumbnailName"] == default_thumbnail_name
     assert data["allowPublicDownload"]
 
-    assert data["topPageHosts"] == [{'count': 3, 'host': 'webrecorder.net'}]
+    assert data["topPageHosts"] == [{"count": 3, "host": "webrecorder.net"}]
 
 
 def test_create_public_collection(
@@ -313,7 +313,7 @@ def test_add_remove_crawl_from_collection(
     assert data["tags"] == ["wr-test-2", "wr-test-1"]
     assert data["dateEarliest"]
     assert data["dateLatest"]
-    assert data["topPageHosts"] == [{'count': 7, 'host': 'webrecorder.net'}]
+    assert data["topPageHosts"] == [{"count": 7, "host": "webrecorder.net"}]
 
     # Verify it was added
     r = requests.get(
@@ -497,6 +497,21 @@ def test_collection_public(crawler_auth_headers, default_org_id):
     assert r.headers["Access-Control-Allow-Origin"] == "*"
     assert r.headers["Access-Control-Allow-Headers"] == "*"
 
+
+def test_collection_wrong_org(admin_auth_headers, non_default_org_id):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{non_default_org_id}/collections/{_coll_id}/replay.json",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 404
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{non_default_org_id}/collections/{_coll_id}/public/replay.json",
+    )
+    assert r.status_code == 404
+
+
+def test_collection_public_make_private(crawler_auth_headers, default_org_id):
     # make private again
     r = requests.patch(
         f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}",

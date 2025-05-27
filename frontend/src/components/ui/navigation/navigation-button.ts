@@ -100,13 +100,13 @@ export class NavigationButton extends TailwindElement {
             tw`outline-primary-600`,
             this.active
               ? tw`bg-primary-100/80 text-primary-800 shadow-primary-900/20`
-              : tw`text-neutral-700 hover:bg-primary-50`,
+              : tw`bg-white/80 text-neutral-700 outline-primary-100/80 hover:bg-primary-50`,
           ],
           error: [
             tw`outline-red-600`,
             this.active
               ? tw`bg-red-100/80 text-red-800 shadow-red-900/20`
-              : tw`text-red-700 ring-1 ring-red-300 hover:bg-red-50`,
+              : tw`bg-white/80 text-red-700 ring-1 ring-red-300 hover:bg-red-50`,
           ],
         }[this.variant],
       ])}

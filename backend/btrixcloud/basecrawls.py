@@ -1,7 +1,18 @@
 """base crawl type"""
 
 from datetime import datetime
-from typing import Optional, List, Union, Dict, Any, Type, TYPE_CHECKING, cast, Tuple
+from typing import (
+    Optional,
+    List,
+    Union,
+    Dict,
+    Any,
+    Type,
+    TYPE_CHECKING,
+    cast,
+    Tuple,
+    AsyncIterable,
+)
 from uuid import UUID
 import os
 import urllib.parse
@@ -24,7 +35,7 @@ from .models import (
     User,
     StorageRef,
     RUNNING_AND_WAITING_STATES,
-    SUCCESSFUL_STATES,
+    SUCCESSFUL_AND_PAUSED_STATES,
     QARun,
     UpdatedResponse,
     DeletedResponseQuota,
@@ -76,6 +87,7 @@ class BaseCrawlOps:
         background_job_ops: BackgroundJobOps,
     ):
         self.crawls = mdb["crawls"]
+        self.presigned_urls = mdb["presigned_urls"]
         self.crawl_configs = crawl_configs
         self.user_manager = users
         self.orgs = orgs
@@ -448,7 +460,7 @@ class BaseCrawlOps:
 
         if (
             files
-            and crawl.state in SUCCESSFUL_STATES
+            and crawl.state in SUCCESSFUL_AND_PAUSED_STATES
             and isinstance(crawl, CrawlOutWithResources)
         ):
             crawl.resources = await self._files_to_resources(files, org, crawl.id)
@@ -464,29 +476,130 @@ class BaseCrawlOps:
     ) -> List[CrawlFileOut]:
         """Regenerate presigned URLs for files as necessary"""
         if not files:
-            print("no files")
             return []
 
         out_files = []
 
-        for file_ in files:
-            presigned_url, expire_at = await self.storage_ops.get_presigned_url(
-                org, file_, force_update=force_update
-            )
+        cursor = self.presigned_urls.find(
+            {"_id": {"$in": [file.filename for file in files]}}
+        )
 
-            out_files.append(
-                CrawlFileOut(
-                    name=os.path.basename(file_.filename),
-                    path=presigned_url or "",
-                    hash=file_.hash,
-                    size=file_.size,
-                    crawlId=crawl_id,
-                    numReplicas=len(file_.replicas) if file_.replicas else 0,
-                    expireAt=date_to_str(expire_at),
-                )
-            )
+        presigned = await cursor.to_list(10000)
+
+        files_dict = [file.dict() for file in files]
+
+        # need an async generator to call bulk_presigned_files
+        async def async_gen():
+            yield {"presigned": presigned, "files": files_dict, "_id": crawl_id}
+
+        out_files, _ = await self.bulk_presigned_files(async_gen(), org, force_update)
 
         return out_files
+
+    async def get_presigned_files(
+        self, match: dict[str, Any], org: Organization
+    ) -> tuple[list[CrawlFileOut], bool]:
+        """return presigned crawl files queried as batch, merging presigns with files in one pass"""
+        cursor = self.crawls.aggregate(
+            [
+                {"$match": match},
+                {"$project": {"files": "$files", "version": 1}},
+                {
+                    "$lookup": {
+                        "from": "presigned_urls",
+                        "localField": "files.filename",
+                        "foreignField": "_id",
+                        "as": "presigned",
+                    }
+                },
+            ]
+        )
+
+        return await self.bulk_presigned_files(cursor, org)
+
+    async def bulk_presigned_files(
+        self,
+        cursor: AsyncIterable[dict[str, Any]],
+        org: Organization,
+        force_update=False,
+    ) -> tuple[list[CrawlFileOut], bool]:
+        """process presigned files in batches"""
+        resources = []
+        pages_optimized = False
+
+        sign_files = []
+
+        async for result in cursor:
+            pages_optimized = result.get("version") == 2
+
+            mapping = {}
+            # create mapping of filename -> file data
+            for file in result["files"]:
+                file["crawl_id"] = result["_id"]
+                mapping[file["filename"]] = file
+
+            if not force_update:
+                # add already presigned resources
+                for presigned in result["presigned"]:
+                    file = mapping.get(presigned["_id"])
+                    if file:
+                        file["signedAt"] = presigned["signedAt"]
+                        file["path"] = presigned["url"]
+                        resources.append(
+                            CrawlFileOut(
+                                name=os.path.basename(file["filename"]),
+                                path=presigned["url"],
+                                hash=file["hash"],
+                                size=file["size"],
+                                crawlId=file["crawl_id"],
+                                numReplicas=len(file.get("replicas") or []),
+                                expireAt=date_to_str(
+                                    presigned["signedAt"]
+                                    + self.storage_ops.signed_duration_delta
+                                ),
+                            )
+                        )
+
+                        del mapping[presigned["_id"]]
+
+            sign_files.extend(list(mapping.values()))
+
+        by_storage: dict[str, dict] = {}
+        for file in sign_files:
+            storage_ref = StorageRef(**file.get("storage"))
+            sid = str(storage_ref)
+
+            storage_group = by_storage.get(sid)
+            if not storage_group:
+                storage_group = {"ref": storage_ref, "names": [], "files": []}
+                by_storage[sid] = storage_group
+
+            storage_group["names"].append(file["filename"])
+            storage_group["files"].append(file)
+
+        for storage_group in by_storage.values():
+            s3storage = self.storage_ops.get_org_storage_by_ref(
+                org, storage_group["ref"]
+            )
+
+            signed_urls, expire_at = await self.storage_ops.get_presigned_urls_bulk(
+                org, s3storage, storage_group["names"]
+            )
+
+            for url, file in zip(signed_urls, storage_group["files"]):
+                resources.append(
+                    CrawlFileOut(
+                        name=os.path.basename(file["filename"]),
+                        path=url,
+                        hash=file["hash"],
+                        size=file["size"],
+                        crawlId=file["crawl_id"],
+                        numReplicas=len(file.get("replicas") or []),
+                        expireAt=date_to_str(expire_at),
+                    )
+                )
+
+        return resources, pages_optimized
 
     async def add_to_collection(
         self, crawl_ids: List[str], collection_id: UUID, org: Organization
@@ -513,11 +626,16 @@ class BaseCrawlOps:
                 {"$pull": {"collectionIds": collection_id}},
             )
 
-    async def remove_collection_from_all_crawls(self, collection_id: UUID):
+    async def remove_collection_from_all_crawls(
+        self, collection_id: UUID, org: Organization
+    ):
         """Remove collection id from all crawls it's currently in."""
-        await self.crawls.update_many(
-            {"collectionIds": collection_id},
-            {"$pull": {"collectionIds": collection_id}},
+        await asyncio.gather(
+            self.crawls.update_many(
+                {"oid": org.id, "collectionIds": collection_id},
+                {"$pull": {"collectionIds": collection_id}},
+            ),
+            self.crawl_configs.remove_collection_from_all_configs(collection_id, org),
         )
 
     # pylint: disable=too-many-branches, invalid-name, too-many-statements
