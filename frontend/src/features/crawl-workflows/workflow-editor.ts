@@ -32,6 +32,7 @@ import {
   state,
 } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
+import { map } from "lit/directives/map.js";
 import { when } from "lit/directives/when.js";
 import compact from "lodash/fp/compact";
 import flow from "lodash/fp/flow";
@@ -113,6 +114,7 @@ import {
   getInitialFormState,
   getServerDefaults,
   makeUserGuideEvent,
+  rangeBrowserWindows,
   SECTIONS,
   workflowTabToGuideHash,
   type FormState,
@@ -1576,18 +1578,23 @@ https://archiveweb.page/images/${"logo.svg"}`}
           ]
         : nothing}
       ${inputCol(html`
-        <sl-input
+        <sl-radio-group
           name="scale"
           label=${msg("Browser Windows")}
-          value=${this.formState.browserWindows || ""}
-          placeholder=${defaultLabel(
-            this.appState.settings?.numBrowsersPerInstance,
+          value=${this.formState.browserWindows}
+          @sl-change=${(e: Event) =>
+            this.updateFormState({
+              browserWindows: +(e.target as SlCheckbox).value,
+            })}
+        >
+          ${map(
+            rangeBrowserWindows(this.appState.settings),
+            (i: number) =>
+              html` <sl-radio-button value="${i}" size="small"
+                >${i}</sl-radio-button
+              >`,
           )}
-          min="1"
-          max="${this.appState.settings?.maxBrowserWindows || 1}"
-          type="number"
-          inputmode="numeric"
-        ></sl-input>
+        </sl-radio-group>
       `)}
       ${this.renderHelpTextCol(
         html`${msg(

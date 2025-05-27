@@ -1,7 +1,7 @@
 import { msg, str } from "@lit/localize";
 import { z } from "zod";
 
-import { getAppSettings } from "./app";
+import { getAppSettings, type AppSettings } from "./app";
 
 import type { Tags } from "@/components/ui/tag-input";
 import type { UserGuideEventMap } from "@/index";
@@ -375,4 +375,28 @@ export async function getServerDefaults(): Promise<WorkflowDefaults> {
   }
 
   return defaults;
+}
+
+export function* rangeBrowserWindows(
+  settings: AppSettings | null,
+): Iterable<number> {
+  console.log("range");
+  if (!settings) {
+    yield 1;
+    return;
+  }
+
+  const { numBrowsersPerInstance, maxBrowserWindows } = settings;
+
+  for (let i = 1; i < numBrowsersPerInstance; i++) {
+    yield i;
+  }
+
+  for (
+    let i = numBrowsersPerInstance;
+    i <= maxBrowserWindows;
+    i += numBrowsersPerInstance
+  ) {
+    yield i;
+  }
 }

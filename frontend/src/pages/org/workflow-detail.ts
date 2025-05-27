@@ -41,6 +41,7 @@ import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
+import { rangeBrowserWindows } from "@/utils/workflow";
 
 const POLL_INTERVAL_SECONDS = 10;
 const CRAWLS_PAGINATION_NAME = "crawlsPage";
@@ -1789,7 +1790,7 @@ export class WorkflowDetail extends BtrixElement {
               authToken=${authToken}
               .crawlId=${this.lastCrawlId ?? undefined}
               numBrowsersPerInstance=${this.appState.settings
-                ?.numBrowsersPerInstance}
+                ?.numBrowsersPerInstance || 1}
               browserWindows=${workflow.browserWindows}
             ></btrix-screencast>
           </div>
@@ -2003,7 +2004,7 @@ export class WorkflowDetail extends BtrixElement {
     const scaleOptions = [];
 
     if (this.appState.settings) {
-      for (let value = 1; value <= this.maxBrowserWindows; value++) {
+      for (const value of rangeBrowserWindows(this.appState.settings)) {
         scaleOptions.push({
           value,
           label: value,
