@@ -12,10 +12,14 @@
 #
 # One way to deploy this is with k3s, which will require the following changes:
 #
-# Make sure to disable traefik on your k3s cluster by adding `--no-deploy traefik` to the systemd unit that starts k3s _before_ starting your server. One way to check that traefik is not running your cluster is with `kubectl get deployments -n kube-system` and see if traefik shows up in the output
+# Make sure to disable traefik on your k3s cluster by adding `--no-deploy traefik` to the systemd unit that starts k3s _before_ starting your server.
+# One way to check that traefik is not running your cluster is with `kubectl get deployments -n kube-system` and see if traefik shows up in the output.
 #
-# Once traefik has been disabled, you must install `nginx-ingress` which can be installed by: 
-# helm upgrade --install nginx ingress-nginx/ingress-nginx -n ingress-nginx --create-namespace
+# Once traefik has been disabled, you must install `nginx-ingress`, which can be installed by:
+# 
+# helm upgrade --install ingress-nginx ingress-nginx \
+#   --repo https://kubernetes.github.io/ingress-nginx \
+#   --namespace ingress-nginx --create-namespace
 #
 # You'll also need to install cert-manager. Browsertrix recommends installing cert-manager through jetpack with the following command: 
 #
