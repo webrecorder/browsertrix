@@ -648,6 +648,7 @@ export class WorkflowDetail extends BtrixElement {
     const latestCrawl = this.latestCrawlTask.value;
 
     if (this.groupedWorkflowTab === WorkflowTab.LatestCrawl && latestCrawl) {
+      const latestCrawlId = latestCrawl.id;
       const logTotals = this.logTotalsTask.value;
       const authToken = this.authState?.headers.Authorization.split(" ")[1];
       const disableDownload =
@@ -657,46 +658,78 @@ export class WorkflowDetail extends BtrixElement {
       return html`
         <btrix-copy-button
           class="mt-0.5"
-          value=${latestCrawl.id}
+          value=${latestCrawlId}
           content=${msg("Copy Item ID")}
           hoist
         ></btrix-copy-button>
         <sl-tooltip
-          class="invert-tooltip"
+          class=${disableDownload ? "invert-tooltip" : ""}
           content=${msg(
             "Downloads are disabled while running. Pause the crawl or wait for the crawl to finish to download.",
           )}
           ?disabled=${!disableDownload}
+          hoist
         >
-          <sl-dropdown distance="4" placement="bottom-end" hoist sync="width">
-            <sl-button
-              slot="trigger"
-              size="small"
-              ?disabled=${disableDownload}
-              caret
+          <sl-button-group>
+            <sl-tooltip
+              content="${msg("Download Item as WACZ")} (${this.localize.bytes(
+                latestCrawl.fileSize || 0,
+              )})"
+              ?disabled=${!latestCrawl.fileSize}
             >
-              <sl-icon slot="prefix" name="download"></sl-icon>
-              ${msg("Download")}
-            </sl-button>
-            <sl-menu>
-              <btrix-menu-item-link
-                href=${`/api/orgs/${this.orgId}/all-crawls/${this.lastCrawlId}/download?auth_bearer=${authToken}`}
-                ?disabled=${!latestCrawl.fileSize}
-                download
+              <sl-button
+                size="small"
+                href=${`/api/orgs/${this.orgId}/all-crawls/${latestCrawlId}/download?auth_bearer=${authToken}`}
+                download=${`browsertrix-${latestCrawlId}.wacz`}
+                ?disabled=${disableDownload || !latestCrawl.fileSize}
               >
                 <sl-icon name="cloud-download" slot="prefix"></sl-icon>
-                ${msg("Item")}
-              </btrix-menu-item-link>
-              <btrix-menu-item-link
-                href=${`/api/orgs/${this.orgId}/crawls/${this.lastCrawlId}/logs?auth_bearer=${authToken}`}
-                ?disabled=${!(logTotals?.errors || logTotals?.behaviors)}
-                download
+                ${msg("Download")}
+              </sl-button>
+            </sl-tooltip>
+            <sl-dropdown distance="4" placement="bottom-end" hoist>
+              <sl-button
+                slot="trigger"
+                size="small"
+                caret
+                ?disabled=${disableDownload}
               >
-                <sl-icon name="file-earmark-arrow-down" slot="prefix"></sl-icon>
-                ${msg("Log")}
-              </btrix-menu-item-link>
-            </sl-menu>
-          </sl-dropdown>
+                <sl-visually-hidden
+                  >${msg("Download options")}</sl-visually-hidden
+                >
+              </sl-button>
+              <sl-menu>
+                <btrix-menu-item-link
+                  href=${`/api/orgs/${this.orgId}/all-crawls/${this.lastCrawlId}/download?auth_bearer=${authToken}`}
+                  ?disabled=${!latestCrawl.fileSize}
+                  download
+                >
+                  <sl-icon name="cloud-download" slot="prefix"></sl-icon>
+                  ${msg("Item")}
+                  ${latestCrawl.fileSize
+                    ? html` <btrix-badge
+                        slot="suffix"
+                        class="font-monostyle text-xs text-neutral-500"
+                        >${this.localize.bytes(
+                          latestCrawl.fileSize,
+                        )}</btrix-badge
+                      >`
+                    : nothing}
+                </btrix-menu-item-link>
+                <btrix-menu-item-link
+                  href=${`/api/orgs/${this.orgId}/crawls/${this.lastCrawlId}/logs?auth_bearer=${authToken}`}
+                  ?disabled=${!(logTotals?.errors || logTotals?.behaviors)}
+                  download
+                >
+                  <sl-icon
+                    name="file-earmark-arrow-down"
+                    slot="prefix"
+                  ></sl-icon>
+                  ${msg("Log")}
+                </btrix-menu-item-link>
+              </sl-menu>
+            </sl-dropdown>
+          </sl-button-group>
         </sl-tooltip>
       `;
     }
@@ -1384,19 +1417,16 @@ export class WorkflowDetail extends BtrixElement {
               <sl-menu>
                 <btrix-menu-item-link href="${this.basePath}/crawls/${id}">
                   <sl-icon name="info-circle-fill" slot="prefix"></sl-icon>
-                  ${msg("Metadata")}
-                  <sl-icon name="arrow-right" slot="suffix"></sl-icon>
+                  ${msg("View Metadata")}
                 </btrix-menu-item-link>
                 <btrix-menu-item-link href="${this.basePath}/crawls/${id}">
                   <sl-icon name="clipboard2-data-fill" slot="prefix"></sl-icon>
-                  ${msg("Quality Assurance")}
-                  <sl-icon name="arrow-right" slot="suffix"></sl-icon>
+                  ${msg("View Quality Assurance")}
                 </btrix-menu-item-link>
 
                 <btrix-menu-item-link href="${this.basePath}/crawls/${id}">
                   <sl-icon name="folder-fill" slot="prefix"></sl-icon>
-                  ${msg("WACZ Files")}
-                  <sl-icon name="arrow-right" slot="suffix"></sl-icon>
+                  ${msg("View WACZ Files")}
                 </btrix-menu-item-link>
               </sl-menu>
             </sl-dropdown>
