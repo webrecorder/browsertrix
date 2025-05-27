@@ -44,6 +44,7 @@ def test_api_settings():
         "defaultBehaviorTimeSeconds": 300,
         "maxPagesPerCrawl": 4,
         "maxBrowserWindows": 8,
+        "numBrowsersPerInstance": 2,
         "defaultPageLoadTimeSeconds": 120,
         "billingEnabled": True,
         "signUpUrl": "",
