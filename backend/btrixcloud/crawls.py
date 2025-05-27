@@ -370,6 +370,7 @@ class CrawlOps(BaseCrawlOps):
             oid=crawlconfig.oid,
             cid=crawlconfig.id,
             cid_rev=crawlconfig.rev,
+            scale=pod_count_from_browser_windows(crawlconfig.browserWindows),
             browserWindows=crawlconfig.browserWindows,
             jobType=crawlconfig.jobType,
             config=crawlconfig.config,

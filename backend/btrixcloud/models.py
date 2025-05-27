@@ -429,6 +429,8 @@ class CrawlConfigCore(BaseMongoModel):
 
     crawlTimeout: Optional[int] = 0
     maxCrawlSize: Optional[int] = 0
+
+    scale: Optional[Scale] = None
     browserWindows: BrowserWindowCount = 2
 
     oid: UUID
@@ -893,6 +895,7 @@ class CrawlOut(BaseMongoModel):
     pausedAt: Optional[datetime] = None
     manual: bool = False
     cid_rev: Optional[int] = None
+    scale: Optional[Scale] = None
     browserWindows: BrowserWindowCount = 2
 
     storageQuotaReached: Optional[bool] = False
