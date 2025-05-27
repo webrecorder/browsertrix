@@ -54,9 +54,12 @@ export class CrawlStatus extends TailwindElement {
   // instead of separate utility function?
   static getContent({
     state,
+    originalState,
     type = "crawl",
   }: {
     state?: CrawlState | AnyString;
+    // `state` might be composed status
+    originalState?: CrawlState | AnyString;
     type?: CrawlType | undefined;
   }): {
     icon: TemplateResult;
@@ -71,6 +74,9 @@ export class CrawlStatus extends TailwindElement {
       style="color: ${color}"
     ></sl-icon>`;
     let label = "";
+    let reason = "";
+
+    console.log(state, originalState);
 
     switch (state) {
       case "starting":
@@ -94,10 +100,11 @@ export class CrawlStatus extends TailwindElement {
           slot="prefix"
           style="color: ${color}"
         ></sl-icon>`;
-        label =
-          state === "waiting_capacity"
-            ? msg("Waiting (At Capacity)")
-            : msg("Waiting (Crawl Limit)");
+        label = msg("Waiting");
+        reason =
+          originalState === "waiting_capacity"
+            ? msg("At Capacity")
+            : msg("At Crawl Limit");
         break;
 
       case "running":
@@ -133,6 +140,12 @@ export class CrawlStatus extends TailwindElement {
           style="color: ${color}"
         ></sl-icon>`;
         label = msg("Pausing");
+        reason =
+          originalState === "pending-wait"
+            ? msg("Finishing Downloads")
+            : originalState?.endsWith("-wacz")
+              ? msg("Creating WACZ")
+              : "";
         break;
 
       case "resuming":
@@ -165,7 +178,7 @@ export class CrawlStatus extends TailwindElement {
           slot="prefix"
           style="color: ${color}"
         ></sl-icon>`;
-        label = msg("Finishing Crawl");
+        label = msg("Finishing Downloads");
         break;
 
       case "generate-wacz":
@@ -303,7 +316,11 @@ export class CrawlStatus extends TailwindElement {
         }
         break;
     }
-    return { icon, label, cssColor: color };
+    return {
+      icon,
+      label: reason ? `${label} (${reason})` : label,
+      cssColor: color,
+    };
   }
 
   filterState() {
@@ -321,7 +338,11 @@ export class CrawlStatus extends TailwindElement {
 
   render() {
     const state = this.filterState();
-    const { icon, label } = CrawlStatus.getContent({ state, type: this.type });
+    const { icon, label } = CrawlStatus.getContent({
+      state,
+      originalState: this.state,
+      type: this.type,
+    });
     if (this.hideLabel) {
       return html`<div class="flex items-center">
         <sl-tooltip
