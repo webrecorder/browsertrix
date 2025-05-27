@@ -12,6 +12,9 @@ describe("formatHours", () => {
   it("returns 1m when given a time under a minute", () => {
     expect(humanizeSeconds(24, "en-US")).to.equal("1m");
   });
+  it("returns seconds given a time under a minute when not rounding", () => {
+    expect(humanizeSeconds(24, "en-US")).to.equal("1m");
+  });
   it("returns 0m and seconds when given a time under a minute with seconds on", () => {
     expect(humanizeSeconds(24, "en-US", true)).to.equal("0m 24s");
   });
@@ -105,7 +108,7 @@ describe("humanizeExecutionSeconds", () => {
         parentNode,
       },
     );
-    expect(el.textContent?.trim()).to.equal("1 minute\u00a0(0m 24s)");
-    expect(parentNode.innerText).to.equal("1 minute\u00a0(0m 24s)");
+    expect(el.textContent?.trim()).to.equal("<1 minute\u00a0(0m 24s)");
+    expect(parentNode.innerText).to.equal("<1 minute\u00a0(0m 24s)");
   });
 });

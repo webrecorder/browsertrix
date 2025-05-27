@@ -88,7 +88,7 @@ export const humanizeExecutionSeconds = (
 ) => {
   const {
     style = "long",
-    displaySeconds = false,
+    displaySeconds = seconds < 60,
     round = "up",
   } = options || {};
   const locale = localize.activeLanguage;
@@ -110,7 +110,9 @@ export const humanizeExecutionSeconds = (
   });
 
   const details = humanizeSeconds(seconds, locale, displaySeconds);
-  const compactMinutes = compactMinuteFormatter.format(minutes);
+  const compactMinutes =
+    (displaySeconds && seconds < 60 ? "<" : "") +
+    compactMinuteFormatter.format(minutes);
   const fullMinutes = longMinuteFormatter.format(minutes);
 
   // if the time is less than an hour and lines up exactly on the minute, don't render the details.
@@ -126,8 +128,7 @@ export const humanizeExecutionSeconds = (
         title="${ifDefined(
           fullMinutes !== compactMinutes ? fullMinutes : undefined,
         )}"
-      >
-        ${compactMinutes}${formattedDetails}</span
+        >${compactMinutes}${formattedDetails}</span
       >`;
     case "short":
       return html`<span
