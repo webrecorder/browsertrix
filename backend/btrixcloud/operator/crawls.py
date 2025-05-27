@@ -589,7 +589,6 @@ class CrawlOperator(BaseOperator):
         self,
         crawl: CrawlSpec,
         redis: Redis,
-        # pylint: disable=unused-argument
         status: CrawlStatus,
         pods: dict[str, dict],
     ):
