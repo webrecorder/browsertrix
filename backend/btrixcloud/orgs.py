@@ -79,6 +79,8 @@ from .models import (
     OrgSlugsResponse,
     OrgImportResponse,
     OrgPublicProfileUpdate,
+    MAX_BROWSER_WINDOWS,
+    MAX_CRAWL_SCALE,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import (
@@ -105,8 +107,6 @@ else:
 
 
 DEFAULT_ORG = os.environ.get("DEFAULT_ORG", "My Organization")
-
-MAX_BROWSER_WINDOWS = int(os.environ.get("MAX_BROWSER_WINDOWS", 8))
 
 # number of items to delete at a time
 DEL_ITEMS = 1000
@@ -1267,13 +1267,16 @@ class OrgOps:
                 if old_userid and old_userid in user_id_map:
                     workflow[userid_field] = user_id_map[old_userid]
 
-            # Ensure scale isn't above max_scale
+            # Ensure and browser windows don't exceed limits
             workflow_scale = workflow.get("scale", 1)
-            workflow["scale"] = max(workflow_scale, MAX_BROWSER_WINDOWS)
+            workflow["scale"] = max(workflow_scale, MAX_CRAWL_SCALE)
 
             if workflow.get("browserWindows") is None:
-                workflow["browserWindows"] = browser_windows_from_pod_count(
+                workflow_browser_windows = browser_windows_from_pod_count(
                     workflow["scale"]
+                )
+                workflow["browserWindows"] = max(
+                    workflow_browser_windows, MAX_BROWSER_WINDOWS
                 )
 
             # Ensure crawlerChannel is set
