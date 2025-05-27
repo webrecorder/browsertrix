@@ -1267,13 +1267,11 @@ class OrgOps:
                 if old_userid and old_userid in user_id_map:
                     workflow[userid_field] = user_id_map[old_userid]
 
-            # Ensure and browser windows don't exceed limits
-            workflow_scale = workflow.get("scale", 1)
-            workflow["scale"] = max(workflow_scale, MAX_CRAWL_SCALE)
-
+            # Convert scale to browser windows and respect limits
+            workflow_scale = max(workflow.get("scale", 1), MAX_CRAWL_SCALE)
             if workflow.get("browserWindows") is None:
                 workflow_browser_windows = browser_windows_from_pod_count(
-                    workflow["scale"]
+                    workflow_scale
                 )
                 workflow["browserWindows"] = max(
                     workflow_browser_windows, MAX_BROWSER_WINDOWS
@@ -1310,10 +1308,12 @@ class OrgOps:
                     item["crawlerChannel"] = "default"
 
                 # Set browserWindows
-                if item.get("browserWindows") is None:
-                    item["browserWindows"] = browser_windows_from_pod_count(
+                browser_windows = item.get("browserWindows")
+                if browser_windows is None:
+                    browser_windows = browser_windows_from_pod_count(
                         item.get("scale", 1)
                     )
+                item["browserWindows"] = max(browser_windows, MAX_BROWSER_WINDOWS)
 
                 item_obj = Crawl.from_dict(item)
             if item["type"] == "upload":
