@@ -1,5 +1,9 @@
 # Register For an Account
 
+!!! tip "Already have an account?"
+
+    Skip ahead to [running your first crawl](./getting-started.md).
+
 !!! note "Self-hosting?"
 
     This guide only applies to hosted Browsertrix accounts. If you're self-hosting Browsertrix, [enable open registration](../deploy/customization.md#enable-open-registration) to allow others to sign up for an account on your instance.
@@ -8,7 +12,7 @@ To sign up for Browsertrix, [choose a plan](https://webrecorder.net/browsertrix/
 
 ## Register Your Org
 
-After you finish setting up your subscription, you'll receive an email from us with a link to set up your org (organization.)
+After you finish setting up your subscription, you'll receive an email from Webrecorder with a link to set up your org (organization.)
 
 Choose an org name that's unique and memorable, like the name of your company or organization. Your org URL identifier will determine the unique URL of the org's home page.
 
