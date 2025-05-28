@@ -521,7 +521,6 @@ export class App extends BtrixElement {
                       >
                     `
                   : nothing}
-                <div role="separator" class="mx-2.5 h-7 w-0 border-l"></div>
                 ${this.renderOrgs()}
               `,
             )}
@@ -639,12 +638,12 @@ export class App extends BtrixElement {
 
     const selectedOption = this.orgSlugInPath
       ? orgs.find(({ slug }) => slug === this.orgSlugInPath)
-      : { slug: "", name: msg("All Organizations") };
+      : {
+          slug: "",
+          name: msg("All Organizations"),
+        };
+
     if (!selectedOption) {
-      console.debug(
-        `Couldn't find organization with slug ${this.orgSlugInPath}`,
-        orgs,
-      );
       return;
     }
 
@@ -652,6 +651,7 @@ export class App extends BtrixElement {
     const orgNameLength = 50;
 
     return html`
+      <div role="separator" class="mx-2.5 h-7 w-0 border-l"></div>
       <div class="max-w-32 truncate sm:max-w-52 md:max-w-none">
         ${selectedOption.slug
           ? html`
@@ -869,6 +869,10 @@ export class App extends BtrixElement {
         return html`<btrix-orgs class="w-full md:bg-neutral-50"></btrix-orgs>`;
 
       case "org": {
+        if (!this.isUserInCurrentOrg) {
+          return this.renderNotFoundPage();
+        }
+
         const slug = this.viewState.params.slug;
         const orgPath = this.viewState.pathname;
         const pathname = this.getLocationPathname();
