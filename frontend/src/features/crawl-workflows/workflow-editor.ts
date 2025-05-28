@@ -1,6 +1,7 @@
 import { consume } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
 import type {
+  SlBlurEvent,
   SlCheckbox,
   SlDetails,
   SlHideEvent,
@@ -2260,8 +2261,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
   private onKeyDown(event: KeyboardEvent) {
     const el = event.target as HTMLElement;
-    const tagName = el.tagName.toLowerCase();
-    if (tagName !== "sl-input") return;
+    if (!("value" in el)) return;
     const { key, metaKey } = event;
 
     if (metaKey) {
@@ -2275,7 +2275,23 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
         this.saveAndRun = key === "Enter";
 
-        this.formElem?.requestSubmit();
+        // Trigger blur to run value transformations and validation
+        el.addEventListener(
+          "sl-blur",
+          async (e: SlBlurEvent) => {
+            const input = e.currentTarget as SlInput;
+
+            // Wait for all transformations and validations to run
+            await input.updateComplete;
+            await this.updateComplete;
+
+            this.formElem?.requestSubmit();
+          },
+          { once: true },
+        );
+
+        el.blur();
+
         return;
       }
     }
