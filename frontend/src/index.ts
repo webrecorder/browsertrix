@@ -103,7 +103,7 @@ export class App extends BtrixElement {
   private viewState!: ViewState;
 
   @state()
-  private fullDocsUrl = "/docs/";
+  private userGuidePath = "";
 
   @state()
   private globalDialogContent: DialogContent = {};
@@ -199,7 +199,7 @@ export class App extends BtrixElement {
       "btrix-user-guide-show",
       (e: UserGuideEventMap["btrix-user-guide-show"]) => {
         e.stopPropagation();
-        this.showUserGuide(e.detail.path);
+        void this.showUserGuide(e.detail.path);
       },
     );
   }
@@ -385,6 +385,16 @@ export class App extends BtrixElement {
         >${this.globalDialogContent.body}</sl-dialog
       >
 
+      ${this.renderUserGuide()}
+    `;
+  }
+
+  private renderUserGuide() {
+    if (!this.docsUrl) return;
+
+    const url = `${this.docsUrl}user-guide/${this.userGuidePath}`;
+
+    return html`
       <sl-drawer
         id="userGuideDrawer"
         label=${msg("User Guide")}
@@ -400,22 +410,26 @@ export class App extends BtrixElement {
           if (!iframe) return;
 
           const src = iframe.src;
-          iframe.src = src.slice(0, src.indexOf("#"));
+          const hashIdx = src.indexOf("#");
+
+          if (hashIdx > -1) {
+            iframe.src = src.slice(0, src.indexOf("#"));
+          }
         }}
       >
         <span slot="label" class="flex items-center gap-3">
-          <sl-icon name="book" class=""></sl-icon>
+          <sl-icon name="book"></sl-icon>
           <span>${msg("User Guide")}</span>
         </span>
         <iframe
           class="size-full text-xs transition-opacity duration-slow"
-          src="${this.docsUrl}user-guide/workflow-setup/"
+          src="${url}"
         ></iframe>
         <sl-button
           size="small"
           slot="footer"
           variant="text"
-          href="${this.fullDocsUrl}"
+          href="${url}"
           target="_blank"
         >
           <sl-icon slot="suffix" name="box-arrow-up-right"></sl-icon>
@@ -536,7 +550,7 @@ export class App extends BtrixElement {
                     ? html`
                         <button
                           class="flex items-center gap-2 leading-none text-neutral-500 hover:text-primary"
-                          @click=${() => this.showUserGuide()}
+                          @click=${() => void this.showUserGuide()}
                         >
                           <sl-icon
                             name="book"
@@ -978,14 +992,16 @@ export class App extends BtrixElement {
     ></btrix-not-found>`;
   }
 
-  private showUserGuide(pathName = "user-guide") {
+  private async showUserGuide(pathName = "") {
     const iframe = this.userGuideDrawer.querySelector("iframe");
 
     if (iframe) {
-      this.fullDocsUrl = this.docsUrl + pathName;
+      const url = `${this.docsUrl}user-guide/${pathName}`;
 
-      if (iframe.src !== this.fullDocsUrl) {
-        iframe.src = this.fullDocsUrl;
+      if (url !== iframe.src) {
+        this.userGuidePath = pathName;
+
+        await this.updateComplete;
       }
 
       if (!this.appState.userGuideOpen) {
