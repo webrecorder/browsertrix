@@ -283,6 +283,8 @@ export class WorkflowEditor extends BtrixElement {
   @state()
   private showKeyboardShortcuts = false;
 
+  private saveAndRun = false;
+
   // For observing panel sections position in viewport
   private readonly observable = new ObservableController(this, {
     // Add some padding to account for stickied elements
@@ -2271,6 +2273,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
       if (key === "s" || key === "Enter") {
         event.preventDefault();
 
+        this.saveAndRun = key === "Enter";
+
         this.formElem?.requestSubmit();
         return;
       }
@@ -2296,17 +2300,16 @@ https://archiveweb.page/images/${"logo.svg"}`}
   private async onSubmit(event: SubmitEvent) {
     event.preventDefault();
 
-    console.log("submitter:", event.submitter);
+    // Submitter may not exist if requesting submit from keyboard shortcuts
+    if (event.submitter) {
+      const submitType = (
+        event.submitter as HTMLButtonElement & {
+          value?: SubmitType;
+        }
+      ).value;
 
-    const submitType = event.submitter
-      ? (
-          event.submitter as HTMLButtonElement & {
-            value?: SubmitType;
-          }
-        ).value
-      : null;
-
-    const saveAndRun = submitType === SubmitType.SaveAndRun;
+      this.saveAndRun = submitType === SubmitType.SaveAndRun;
+    }
 
     if (!this.formElem) return;
 
@@ -2337,11 +2340,11 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
     const config: CrawlConfigParams & WorkflowRunParams = {
       ...this.parseConfig(),
-      runNow: saveAndRun && !this.isCrawlRunning,
+      runNow: this.saveAndRun && !this.isCrawlRunning,
     };
 
     if (this.configId) {
-      config.updateRunning = saveAndRun && Boolean(this.isCrawlRunning);
+      config.updateRunning = this.saveAndRun && Boolean(this.isCrawlRunning);
     }
 
     this.isSubmitting = true;
