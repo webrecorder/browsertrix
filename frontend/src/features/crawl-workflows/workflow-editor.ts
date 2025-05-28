@@ -2260,16 +2260,18 @@ https://archiveweb.page/images/${"logo.svg"}`}
     };
 
   private onKeyDown(event: KeyboardEvent) {
-    const el = event.target as HTMLElement;
-    if (!("value" in el)) return;
     const { key, metaKey } = event;
 
-    if (metaKey) {
-      if (!this.showKeyboardShortcuts) {
-        // Show meta keyboard shortcut
-        this.showKeyboardShortcuts = true;
-      }
+    if (metaKey && !this.showKeyboardShortcuts) {
+      // Show meta keyboard shortcut
+      this.showKeyboardShortcuts = true;
+      this.animateStickyFooter();
+    }
 
+    const el = event.target as HTMLElement;
+    if (!("value" in el)) return;
+
+    if (metaKey) {
       if (key === "s" || key === "Enter") {
         event.preventDefault();
 
