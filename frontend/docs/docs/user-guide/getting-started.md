@@ -2,24 +2,26 @@
 
 Let’s crawl your first webpage! Start by opening up a webpage that you'd like to crawl, and note the URL for later.
 
-## Logging in
+## Accessing your dashboard
 
-To start crawling with hosted Browsertrix, you'll need a Browsertrix account. [Sign up for an account](./signup.md) and log in.
+To start a crawl, you'll need to log in using a Browsertrix account that has [**crawler** permissions](./org-members.md#permission-levels).
 
-!!! note "Self-hosting"
+You likely have crawler permissions already if:
 
-    If you'd like to try Browsertrix before signing up, or you have specialized hosting requirements, you can host Browsertrix yourself. [Set up Browsertrix](../deploy/index.md) on your system and log in as your admin user.
+- You [registered for an org on hosted Browsertrix](./signup.md)
+- You [joined an existing org](./join.md) and were given crawler permissions
+- You are the admin of a self-hosted instance
+
+Check if you have crawler permissions by logging in. If you see a _+ Create New..._ button near the org name, you're able to start a crawl. If you don't see this button, contact your org admin to update your permissions.
 
 ## Starting the crawl
 
-Once you've logged in you should see your org [overview](overview.md). If you land somewhere else, navigate to **Dashboard**.
+When you log in, the first page you see is the [org dashboard](overview.md). If you've navigated away to another page, navigate back to **Dashboard**.
 
 1. Tap the _Create New..._ shortcut and select **Crawl Workflow**.
-2. Choose **Page List**. We'll get into the details of the options [later](./crawl-workflows.md), but this is a good starting point for a simple crawl.
-3. Enter the URL of the webpage that you noted earlier in **Page URL(s)**.
-4. Tap _Review & Save_.
-5. Tap _Save Workflow_.
-6. You should now see your new crawl workflow. Give the crawler a few moments to warm up, and then watch as it archives the webpage!
+2. Enter the URL of the webpage that you noted earlier as the **Page URL**.
+3. Tap _Run Crawl_.
+4. You should now see your new crawl workflow running. Give the crawler a few moments to warm up, and then watch as it archives the webpage!
 
 ---
 
