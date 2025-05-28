@@ -258,6 +258,7 @@
   }
 
   /* Style tooltip with white background */
+  /* TODO Replace instances with `<btrix-popover>` */
   sl-tooltip.invert-tooltip {
     --sl-tooltip-arrow-size: 0;
     --sl-tooltip-background-color: var(--sl-color-neutral-50);
