@@ -111,4 +111,17 @@ describe("humanizeExecutionSeconds", () => {
     expect(el.textContent?.trim()).to.equal("<1 minute\u00a0(0m 24s)");
     expect(parentNode.innerText).to.equal("<1 minute\u00a0(0m 24s)");
   });
+  it("formats zero seconds", async () => {
+    const parentNode = document.createElement("div");
+    const el = await fixture(
+      humanizeExecutionSeconds(0, {
+        displaySeconds: true,
+      }),
+      {
+        parentNode,
+      },
+    );
+    expect(el.textContent?.trim()).to.equal("0 minutes");
+    expect(parentNode.innerText).to.equal("0 minutes");
+  });
 });
