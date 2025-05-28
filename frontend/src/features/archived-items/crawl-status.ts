@@ -325,7 +325,7 @@ export class CrawlStatus extends TailwindElement {
     if (this.stopping && this.state === "running") {
       return "stopping";
     }
-    if (this.shouldPause && this.state === "running") {
+    if (this.shouldPause && this.state !== "paused") {
       return "pausing";
     }
     if (!this.shouldPause && this.state === "paused") {

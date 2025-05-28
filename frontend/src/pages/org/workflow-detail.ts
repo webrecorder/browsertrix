@@ -26,7 +26,7 @@ import { ExclusionEditor } from "@/features/crawl-workflows/exclusion-editor";
 import { pageError } from "@/layouts/pageError";
 import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
 import { WorkflowTab } from "@/routes";
-import { deleteConfirmation, noData } from "@/strings/ui";
+import { deleteConfirmation, noData, notApplicable } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import { type CrawlState } from "@/types/crawlState";
 import { isApiError } from "@/utils/api";
@@ -194,14 +194,10 @@ export class WorkflowDetail extends BtrixElement {
 
       return window.setTimeout(async () => {
         void this.workflowTask.run();
-        const workflow = await this.workflowTask.taskComplete;
+        await this.workflowTask.taskComplete;
 
         // Retrieve additional data based on current tab
-        if (
-          workflow.isCrawlRunning &&
-          !workflow.lastCrawlShouldPause &&
-          workflow.lastCrawlState !== "paused"
-        ) {
+        if (this.isRunning) {
           switch (this.groupedWorkflowTab) {
             case WorkflowTab.LatestCrawl: {
               void this.latestCrawlTask.run();
@@ -315,16 +311,26 @@ export class WorkflowDetail extends BtrixElement {
     return true;
   }
 
-  private get isPendingStopOrCancel() {
-    return isLoading(this.stopTask) || isLoading(this.cancelTask);
+  // Workflow is active and not paused
+  private get isRunning() {
+    return this.workflow?.isCrawlRunning && !this.isPaused;
   }
 
-  private get isExplicitRunning() {
+  // Crawl is explicitly running
+  private get isCrawling() {
     return (
       this.workflow?.isCrawlRunning &&
       !this.workflow.lastCrawlStopping &&
       this.workflow.lastCrawlState === "running"
     );
+  }
+
+  private get isPaused() {
+    return this.workflow?.lastCrawlState === "paused";
+  }
+
+  private get isResuming() {
+    return this.workflow?.lastCrawlShouldPause === false && this.isPaused;
   }
 
   // Differentiate between archived item and crawl ID, since
@@ -652,9 +658,7 @@ export class WorkflowDetail extends BtrixElement {
       const latestCrawlId = latestCrawl.id;
       const logTotals = this.logTotalsTask.value;
       const authToken = this.authState?.headers.Authorization.split(" ")[1];
-      const disableDownload =
-        this.workflow?.isCrawlRunning &&
-        this.workflow.lastCrawlState !== "paused";
+      const disableDownload = this.isRunning;
 
       return html`
         <btrix-copy-button
@@ -835,7 +839,7 @@ export class WorkflowDetail extends BtrixElement {
 
     return (
       this.workflow.lastCrawlShouldPause ===
-        (this.workflow.lastCrawlState === "running") ||
+        (this.workflow.lastCrawlState !== "paused") ||
       isLoading(this.pauseResumeTask)
     );
   }
@@ -846,7 +850,7 @@ export class WorkflowDetail extends BtrixElement {
 
     const archivingDisabled = isArchivingDisabled(this.org, true);
     const cancelStopLoading = this.isCancelingRun;
-    const paused = workflow.lastCrawlState === "paused";
+    const paused = this.isPaused;
 
     const hidePauseResume =
       !this.lastCrawlId ||
@@ -923,7 +927,7 @@ export class WorkflowDetail extends BtrixElement {
             // color without resetting the --sl-color-neutral-700 variable
             () => html`
               ${when(!hidePauseResume && !disablePauseResume, () =>
-                workflow.lastCrawlState === "paused"
+                paused
                   ? html`
                       <sl-menu-item
                         class="[--sl-color-neutral-700:var(--success)]"
@@ -980,7 +984,7 @@ export class WorkflowDetail extends BtrixElement {
               </sl-menu-item>
               <sl-menu-item
                 @click=${() => (this.openDialogName = "exclusions")}
-                ?disabled=${!this.isExplicitRunning}
+                ?disabled=${!this.isCrawling}
               >
                 <sl-icon name="table" slot="prefix"></sl-icon>
                 ${msg("Edit Exclusions")}
@@ -1107,6 +1111,36 @@ export class WorkflowDetail extends BtrixElement {
   }
 
   private renderDetails() {
+    const relativeDate = (dateStr: string) => {
+      const date = new Date(dateStr);
+      const diff = new Date().valueOf() - date.valueOf();
+      const seconds = diff / 1000;
+      const minutes = seconds / 60;
+      const hours = minutes / 60;
+
+      return html`
+        <sl-tooltip
+          content=${this.localize.date(date, {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+            timeZoneName: "short",
+          })}
+        >
+          ${hours > 24
+            ? this.localize.date(date, {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+              })
+            : seconds > 60
+              ? html`<sl-relative-time sync date=${dateStr}></sl-relative-time>`
+              : msg("Now")}
+        </sl-tooltip>
+      `;
+    };
     return html`
       <btrix-desc-list horizontal>
         ${this.renderDetailItem(
@@ -1121,10 +1155,8 @@ export class WorkflowDetail extends BtrixElement {
         )}
         ${this.renderDetailItem(msg("Last Run"), (workflow) =>
           workflow.lastRun
-            ? html`<sl-relative-time
-                sync
-                date=${workflow.lastRun}
-              ></sl-relative-time>`
+            ? // TODO Use `lastStartedByName` when it's updated to be null for scheduled runs
+              relativeDate(workflow.lastRun)
             : html`<span class="text-neutral-400">${msg("Never")}</span>`,
         )}
         ${this.renderDetailItem(msg("Schedule"), (workflow) =>
@@ -1143,19 +1175,13 @@ export class WorkflowDetail extends BtrixElement {
             ? html` ${this.localize.bytes(Number(workflow.totalSize), {
                 unitDisplay: "narrow",
               })}`
-            : noData,
+            : notApplicable,
         )}
-        ${this.renderDetailItem(msg("Last Modified By"), (workflow) =>
-          msg(
-            str`${workflow.modifiedByName} on ${this.localize.date(
-              new Date(workflow.modified),
-              {
-                year: "numeric",
-                month: "numeric",
-                day: "numeric",
-              },
-            )}`,
-          ),
+        ${this.renderDetailItem(
+          msg("Last Modified"),
+          (workflow) =>
+            html`${relativeDate(workflow.modified)} ${msg("by")}
+            ${workflow.modifiedByName}`,
         )}
       </btrix-desc-list>
     `;
@@ -1250,17 +1276,15 @@ export class WorkflowDetail extends BtrixElement {
           () =>
             html`<div class="mb-4">
               <btrix-alert variant="success">
-                ${msg("A crawl is currently in progress.")}
+                ${this.isRunning
+                  ? msg("Workflow crawl is currently in progress.")
+                  : msg("This workflow has an active crawl.")}
                 <a
                   href="${this.basePath}/${WorkflowTab.LatestCrawl}"
                   class="underline hover:no-underline"
                   @click=${this.navigate.link}
                 >
-                  ${this.workflow &&
-                  (this.workflow.lastCrawlShouldPause ||
-                    this.workflow.lastCrawlState === "paused")
-                    ? msg("View Crawl")
-                    : msg("Watch Crawl")}
+                  ${this.isRunning ? msg("Watch Crawl") : msg("View Crawl")}
                 </a>
               </btrix-alert>
             </div>`,
@@ -1373,10 +1397,7 @@ export class WorkflowDetail extends BtrixElement {
     }
 
     const logTotals = this.logTotalsTask.value;
-    const showReplay =
-      this.workflow &&
-      (!this.workflow.isCrawlRunning ||
-        this.workflow.lastCrawlState === "paused");
+    const showReplay = !this.isRunning;
 
     return html`
       <div class="mb-3 rounded-lg border px-4 py-2">
@@ -1475,7 +1496,8 @@ export class WorkflowDetail extends BtrixElement {
   ) => {
     if (
       !this.workflow ||
-      this.workflow.lastCrawlState !== "paused" ||
+      !this.isPaused ||
+      this.isResuming ||
       !this.workflow.lastCrawlPausedExpiry
     )
       return;
@@ -1563,10 +1585,7 @@ export class WorkflowDetail extends BtrixElement {
   private renderLatestCrawlAction() {
     if (!this.workflow || !this.lastCrawlId) return;
 
-    if (
-      this.workflow.isCrawlRunning &&
-      this.workflow.lastCrawlState !== "paused"
-    ) {
+    if (this.isRunning) {
       if (!this.isCrawler) return;
 
       const enableEditBrowserWindows = !this.workflow.lastCrawlStopping;
@@ -1613,10 +1632,10 @@ export class WorkflowDetail extends BtrixElement {
       );
     };
 
-    const execTime = (workflow: Workflow) => {
+    const execTime = () => {
       if (!latestCrawl) return skeleton;
 
-      if (workflow.isCrawlRunning && workflow.lastCrawlState !== "paused") {
+      if (this.isRunning) {
         return html`<span class="text-neutral-400">
           ${noData}
           <sl-tooltip
@@ -1703,15 +1722,15 @@ export class WorkflowDetail extends BtrixElement {
               )}`
             : duration(workflow),
         )}
-        ${this.renderDetailItem(msg("Execution Time"), (workflow) =>
+        ${this.renderDetailItem(msg("Execution Time"), () =>
           isLoading(this.runNowTask)
             ? html`${until(
                 this.runNowTask.taskComplete.then((workflow) =>
-                  workflow ? execTime(workflow) : noData,
+                  workflow ? execTime() : noData,
                 ),
                 html`<sl-spinner class="text-base"></sl-spinner>`,
               )}`
-            : execTime(workflow),
+            : execTime(),
         )}
         ${this.renderDetailItem(msg("Pages Crawled"), pages)}
         ${this.renderDetailItem(msg("Size"), (workflow) =>
@@ -1730,7 +1749,7 @@ export class WorkflowDetail extends BtrixElement {
     // Show custom message if crawl is active but not explicitly running
     let waitingMsg: string | null = null;
 
-    if (!this.isExplicitRunning) {
+    if (!this.isCrawling) {
       switch (this.workflow.lastCrawlState) {
         case "starting":
           waitingMsg = msg("Crawl starting...");
@@ -1766,7 +1785,7 @@ export class WorkflowDetail extends BtrixElement {
 
     return html`
       ${when(
-        this.isExplicitRunning && this.workflow,
+        this.isCrawling && this.workflow,
         (workflow) => html`
           <div id="screencast-crawl">
             <btrix-screencast
@@ -1874,9 +1893,9 @@ export class WorkflowDetail extends BtrixElement {
             <btrix-crawl-logs
               crawlId=${crawlId}
               liveKey=${ifDefined(
-                (this.isExplicitRunning && this.pollTask.value) || undefined,
+                (this.isCrawling && this.pollTask.value) || undefined,
               )}
-              pageSize=${this.isExplicitRunning ? 100 : 50}
+              pageSize=${this.isCrawling ? 100 : 50}
             ></btrix-crawl-logs>
           `,
           () => this.renderNoCrawlLogs(),
@@ -2242,11 +2261,11 @@ export class WorkflowDetail extends BtrixElement {
   private async pauseResume(signal: AbortSignal) {
     if (!this.lastCrawlId) return;
 
-    const pause = this.workflow?.lastCrawlState !== "paused";
+    const shouldPause = !this.isPaused;
 
     try {
       const data = await this.api.fetch<{ success: boolean }>(
-        `/orgs/${this.orgId}/crawls/${this.lastCrawlId}/${pause ? "pause" : "resume"}`,
+        `/orgs/${this.orgId}/crawls/${this.lastCrawlId}/${shouldPause ? "pause" : "resume"}`,
         {
           method: "POST",
           signal,
@@ -2254,7 +2273,7 @@ export class WorkflowDetail extends BtrixElement {
       );
       if (data.success) {
         this.notify.toast({
-          message: pause
+          message: shouldPause
             ? msg("Pausing crawl.")
             : msg("Resuming paused crawl."),
           variant: "success",
@@ -2266,7 +2285,7 @@ export class WorkflowDetail extends BtrixElement {
       }
     } catch {
       this.notify.toast({
-        message: pause
+        message: shouldPause
           ? msg("Something went wrong, couldn't pause crawl.")
           : msg("Something went wrong, couldn't resume paused crawl."),
         variant: "danger",
