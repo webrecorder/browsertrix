@@ -1,4 +1,4 @@
-# Welcome
+# Introduction
 
 Browsertrix is an intuitive, automated web archiving platform designed to allow you to archive, replay, and share websites exactly as they were at a certain point in time.
 

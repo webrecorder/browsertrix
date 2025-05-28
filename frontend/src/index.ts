@@ -978,15 +978,13 @@ export class App extends BtrixElement {
     ></btrix-not-found>`;
   }
 
-  private showUserGuide(pathName?: string) {
+  private showUserGuide(pathName = "user-guide") {
     const iframe = this.userGuideDrawer.querySelector("iframe");
 
     if (iframe) {
-      if (pathName) {
-        this.fullDocsUrl = this.docsUrl + pathName;
-        iframe.src = this.fullDocsUrl;
-      } else {
-        this.fullDocsUrl = this.docsUrl + "user-guide";
+      this.fullDocsUrl = this.docsUrl + pathName;
+
+      if (iframe.src !== this.fullDocsUrl) {
         iframe.src = this.fullDocsUrl;
       }
 
