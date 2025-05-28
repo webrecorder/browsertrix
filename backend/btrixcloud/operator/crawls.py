@@ -1504,6 +1504,7 @@ class CrawlOperator(BaseOperator):
                 await self.set_state(
                     "paused", status, crawl, allowed_from=RUNNING_AND_WAITING_STATES
                 )
+                return status
 
         # if at least one is done according to redis, consider crawl successful
         # ensure pod successfully exited as well
