@@ -1128,6 +1128,8 @@ export class WorkflowDetail extends BtrixElement {
             minute: "2-digit",
             timeZoneName: "short",
           })}
+          hoist
+          placement="bottom"
         >
           ${hours > 24
             ? this.localize.date(date, {
@@ -1141,6 +1143,7 @@ export class WorkflowDetail extends BtrixElement {
         </sl-tooltip>
       `;
     };
+
     return html`
       <btrix-desc-list horizontal>
         ${this.renderDetailItem(
