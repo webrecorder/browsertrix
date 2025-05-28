@@ -280,6 +280,9 @@ export class WorkflowEditor extends BtrixElement {
   @state()
   private isCrawlRunning: boolean | null = this.configId ? null : false;
 
+  @state()
+  private showKeyboardShortcuts = false;
+
   // For observing panel sections position in viewport
   private readonly observable = new ObservableController(this, {
     // Add some padding to account for stickied elements
@@ -660,6 +663,20 @@ export class WorkflowEditor extends BtrixElement {
   }
 
   private renderFooter() {
+    const keyboardShortcut = (key: string) => {
+      const ua = navigator.userAgent;
+      const metaKey = ua.includes("Mac")
+        ? html`<kbd class="font-sans">⌘</kbd>`
+        : html`<kbd class="font-sans">Ctrl</kbd>`;
+
+      return html`<kbd
+        class="inline-flex items-center gap-0.5 rounded-sm border border-black/20 bg-white/20 px-1 py-0.5 text-xs leading-none"
+        slot="suffix"
+      >
+        ${metaKey}<kbd class="font-sans">${key}</kbd></kbd
+      > `;
+    };
+
     return html`
       <footer
         class=${clsx(
@@ -687,6 +704,7 @@ export class WorkflowEditor extends BtrixElement {
             ?loading=${this.isSubmitting}
           >
             ${msg("Save")}
+            ${when(this.showKeyboardShortcuts, () => keyboardShortcut("S"))}
           </sl-button>
         </sl-tooltip>
         <sl-tooltip
@@ -707,6 +725,7 @@ export class WorkflowEditor extends BtrixElement {
             ?loading=${this.isSubmitting || this.isCrawlRunning === null}
           >
             ${msg(this.isCrawlRunning ? "Update Crawl" : "Run Crawl")}
+            ${when(this.showKeyboardShortcuts, () => keyboardShortcut("Enter"))}
           </sl-button>
         </sl-tooltip>
       </footer>
@@ -2241,19 +2260,30 @@ https://archiveweb.page/images/${"logo.svg"}`}
     const el = event.target as HTMLElement;
     const tagName = el.tagName.toLowerCase();
     if (tagName !== "sl-input") return;
-    const { key } = event;
-    if ((el as SlInput).type === "number") {
+    const { key, metaKey } = event;
+
+    if (metaKey) {
+      if (!this.showKeyboardShortcuts) {
+        // Show meta keyboard shortcut
+        this.showKeyboardShortcuts = true;
+      }
+
+      if (key === "s" || key === "Enter") {
+        event.preventDefault();
+
+        this.formElem?.requestSubmit();
+        return;
+      }
+    }
+
+    if ((el as unknown as SlInput).type === "number") {
       // Prevent typing non-numeric keys
-      if (
-        !event.metaKey &&
-        !event.shiftKey &&
-        key.length === 1 &&
-        /\D/.test(key)
-      ) {
+      if (!metaKey && !event.shiftKey && key.length === 1 && /\D/.test(key)) {
         event.preventDefault();
         return;
       }
     }
+
     if (
       key === "Enter" &&
       this.progressState!.activeTab !== STEPS[STEPS.length - 1]
@@ -2266,11 +2296,15 @@ https://archiveweb.page/images/${"logo.svg"}`}
   private async onSubmit(event: SubmitEvent) {
     event.preventDefault();
 
-    const submitType = (
-      event.submitter as HTMLButtonElement & {
-        value?: SubmitType;
-      }
-    ).value;
+    console.log("submitter:", event.submitter);
+
+    const submitType = event.submitter
+      ? (
+          event.submitter as HTMLButtonElement & {
+            value?: SubmitType;
+          }
+        ).value
+      : null;
 
     const saveAndRun = submitType === SubmitType.SaveAndRun;
 
