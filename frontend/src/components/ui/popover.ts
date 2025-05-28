@@ -5,6 +5,12 @@ import { css } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
 /**
+ * Popovers are used to reveal supplementary information, like additional context or details.
+ * They're hidden until an anchor is activated, e.g. on hover.
+ *
+ * Popovers should be used to convey information in full sentences or complex HTML.
+ * To display titles, labels, and expand truncated text on hover, use `<sl-tooltip>`.
+ *
  * @attr {String} content
  * @attr {String} placement
  * @attr {String} trigger
