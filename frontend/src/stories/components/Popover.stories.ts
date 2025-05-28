@@ -12,6 +12,7 @@ const meta = {
   render: renderComponent,
   argTypes: {
     anchor: { table: { disable: true } },
+    slottedContent: { table: { disable: true } },
   },
   args: {
     content: "Popover content",
@@ -54,5 +55,20 @@ export const RightPlacement: Story = {
     open: true,
     placement: "right",
     anchor: html`<btrix-badge>Popover displays right</btrix-badge>`,
+  },
+};
+
+export const HTMLContent: Story = {
+  args: {
+    open: true,
+    anchor: html`<btrix-badge>HTML Content</btrix-badge>`,
+    slottedContent: html`
+      <header class="font-medium leading-none">Popover Title</header>
+      <hr class="my-2" />
+      <p>
+        This popover has HTML content for displaying informative text or
+        additional details when the anchor is activated.
+      </p>
+    `,
   },
 };

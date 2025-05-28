@@ -1,17 +1,21 @@
-import { html, type TemplateResult } from "lit";
+import { html, nothing, type TemplateResult } from "lit";
 import { ifDefined } from "lit/directives/if-defined.js";
 
 import type { Popover } from "@/components/ui/popover";
 
 import "@/components/ui/popover";
 
-export type RenderProps = Popover & { anchor: TemplateResult };
+export type RenderProps = Popover & {
+  anchor: TemplateResult;
+  slottedContent: TemplateResult;
+};
 
 export const renderComponent = ({
   content,
   placement,
   open,
-  anchor: triggerContent,
+  anchor,
+  slottedContent,
 }: Partial<RenderProps>) => {
   return html`
     <btrix-popover
@@ -20,7 +24,10 @@ export const renderComponent = ({
       trigger=${open ? "manual" : "hover"}
       ?open=${open}
     >
-      ${triggerContent}
+      ${anchor}
+      ${slottedContent
+        ? html`<div slot="content">${slottedContent}</div>`
+        : nothing}
     </btrix-popover>
   `;
 };

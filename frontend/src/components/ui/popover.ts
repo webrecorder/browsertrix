@@ -24,36 +24,39 @@ export class Popover extends SlTooltip {
     css`
       :host {
         --btrix-border: 1px solid var(--sl-panel-border-color);
-        --sl-tooltip-background-color: var(--sl-color-neutral-50);
+        --sl-tooltip-background-color: var(--sl-color-neutral-0);
         --sl-tooltip-color: var(--sl-color-neutral-700);
+        --sl-tooltip-font-size: var(--sl-font-size-x-small);
+        --sl-tooltip-padding: var(--sl-spacing-small);
+        --sl-tooltip-line-height: var(--sl-line-height-dense);
       }
 
       ::part(body) {
         border: var(--btrix-border);
-        box-shadow: var(--sl-shadow-small), var(--sl-shadow-medium);
+        box-shadow: var(--sl-shadow-medium);
       }
 
       ::part(arrow) {
         z-index: 1;
       }
 
-      [placement="bottom"]::part(arrow),
-      [placement="left"]::part(arrow) {
+      [placement^="bottom"]::part(arrow),
+      [placement^="left"]::part(arrow) {
         border-top: var(--btrix-border);
       }
 
-      [placement="bottom"]::part(arrow),
-      [placement="right"]::part(arrow) {
+      [placement^="bottom"]::part(arrow),
+      [placement^="right"]::part(arrow) {
         border-left: var(--btrix-border);
       }
 
-      [placement="top"]::part(arrow),
-      [placement="right"]::part(arrow) {
+      [placement^="top"]::part(arrow),
+      [placement^="right"]::part(arrow) {
         border-bottom: var(--btrix-border);
       }
 
-      [placement="top"]::part(arrow),
-      [placement="left"]::part(arrow) {
+      [placement^="top"]::part(arrow),
+      [placement^="left"]::part(arrow) {
         border-right: var(--btrix-border);
       }
     `,
