@@ -1420,8 +1420,8 @@ export class WorkflowDetail extends BtrixElement {
           (id) => html`
             <sl-dropdown slot="nav" distance="4" hoist>
               <sl-button slot="trigger" size="small" caret variant="text">
-                <sl-icon slot="prefix" name="three-dots"></sl-icon>
-                ${msg("More")}
+                <sl-icon slot="prefix" name="info-square-fill"></sl-icon>
+                ${msg("More Info")}
               </sl-button>
               <sl-menu>
                 <btrix-menu-item-link
