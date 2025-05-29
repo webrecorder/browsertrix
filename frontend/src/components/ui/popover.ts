@@ -40,7 +40,7 @@ export class Popover extends SlTooltip {
         --sl-tooltip-line-height: var(--sl-line-height-dense);
       }
 
-      ::part(body) {
+      .tooltip__body {
         border: var(--btrix-border);
         box-shadow: var(--sl-shadow-small), var(--sl-shadow-large);
       }
