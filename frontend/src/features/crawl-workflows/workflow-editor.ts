@@ -683,9 +683,9 @@ export class WorkflowEditor extends BtrixElement {
     return html`
       <footer
         class=${clsx(
-          "flex items-center justify-end gap-2 rounded-lg border bg-white px-6 py-4 mb-7 z-50 shadow bottom-3 duration-slow",
+          tw`bottom-3 z-50 mb-7 flex items-center justify-end gap-2 rounded-lg border bg-white px-6 py-4 shadow duration-slow`,
           this.stickyFooter && [
-            `sticky`,
+            tw`sticky`,
             this.stickyFooter === "animate" &&
               tw`motion-safe:animate-[sticky-footer_var(--sl-transition-medium)_ease-in-out]`,
           ],
