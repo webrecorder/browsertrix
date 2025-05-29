@@ -790,12 +790,16 @@ export class OrgsList extends BtrixElement {
                 name="calendar2-x"
                 label=${msg("Subscription Cancellation Scheduled")}
               ></sl-icon>`,
-              description: html`${msg("Subscription Cancellation Scheduled")}
+              description: html` <header class="font-medium leading-none">
+                  ${msg("Subscription Cancellation Scheduled")}
+                </header>
+                <hr class="my-2" />
                 <div class="mt-2 text-xs">
-                  ${msg("Subscription will be cancelled in")}
+                  ${msg("Cancels in")}
                   ${this.localize.humanizeDuration(
                     new Date(org.subscription.futureCancelDate).getTime() -
                       new Date().getTime(),
+                    { compact: true, verbose: true },
                   )}
                   (${this.localize.date(org.subscription.futureCancelDate, {
                     timeStyle: "medium",
@@ -829,6 +833,7 @@ export class OrgsList extends BtrixElement {
                     timeStyle: "medium",
                     dateStyle: "medium",
                   })}
+                  ${msg("but is still active.")}
                 </div>
                 <div class="my-2 font-bold text-danger-300">
                   ${msg("This indicates something has gone wrong.")}
@@ -862,7 +867,22 @@ export class OrgsList extends BtrixElement {
               name="x-square-fill"
               label=${msg("Trial Cancelled")}
             ></sl-icon>`,
-            description: msg("Trial Canceled"),
+            description: html`<header class="font-medium leading-none">
+                ${msg("Subscription Cancellation Scheduled")}
+              </header>
+              <hr class="my-2" />
+              <div class="mt-2 text-xs">
+                ${msg("Cancels in")}
+                ${this.localize.humanizeDuration(
+                  new Date(org.subscription.futureCancelDate!).getTime() -
+                    new Date().getTime(),
+                  { compact: true, verbose: true },
+                )}
+                (${this.localize.date(org.subscription.futureCancelDate, {
+                  timeStyle: "medium",
+                  dateStyle: "medium",
+                })})
+              </div>`,
           };
           break;
         case SubscriptionStatus.PausedPaymentFailed:
