@@ -1,7 +1,9 @@
 import { localized, msg, str } from "@lit/localize";
 import type {
+  SlChangeEvent,
   SlCheckbox,
   SlDialog,
+  SlRadioGroup,
   SlSelectEvent,
 } from "@shoelace-style/shoelace";
 import { html, type PropertyValues } from "lit";
@@ -22,6 +24,7 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { type SelectEvent } from "@/components/ui/search-combobox";
 import { ClipboardController } from "@/controllers/clipboard";
+import { SearchParamsController } from "@/controllers/searchParams";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
 import { pageHeader } from "@/layouts/pageHeader";
 import { WorkflowTab } from "@/routes";
@@ -70,6 +73,11 @@ const sortableFields: Record<
     defaultDirection: "desc",
   },
 };
+
+const USED_FILTERS = [
+  "schedule",
+  "isCrawlRunning",
+] as const satisfies (keyof ListWorkflow)[];
 
 /**
  * Usage:
@@ -131,11 +139,43 @@ export class WorkflowsList extends BtrixElement {
     );
   }
 
+  searchParams = new SearchParamsController(this, (params) => {
+    this.updateFiltersFromSearchParams(params);
+  });
+
+  private updateFiltersFromSearchParams(
+    params = this.searchParams.searchParams,
+  ) {
+    const filterBy = { ...this.filterBy };
+    // remove filters no longer present in search params
+    for (const key of Object.keys(filterBy)) {
+      if (!params.has(key)) {
+        filterBy[key as keyof typeof filterBy] = undefined;
+      }
+    }
+    // add filters present in search params
+    for (const [key, value] of params) {
+      // ignored params
+      if (["page"].includes(key)) return;
+
+      // convert string bools to filter values
+      if (value === "true") {
+        filterBy[key as keyof typeof filterBy] = true;
+      } else if (value === "false") {
+        filterBy[key as keyof typeof filterBy] = false;
+      } else {
+        filterBy[key as keyof typeof filterBy] = undefined;
+      }
+    }
+    this.filterBy = { ...filterBy };
+  }
+
   constructor() {
     super();
     this.filterByCurrentUser =
       window.sessionStorage.getItem(FILTER_BY_CURRENT_USER_STORAGE_KEY) ===
       "true";
+    this.updateFiltersFromSearchParams();
   }
 
   protected async willUpdate(
@@ -161,6 +201,27 @@ export class WorkflowsList extends BtrixElement {
 
   protected firstUpdated() {
     void this.fetchConfigSearchValues();
+  }
+
+  protected updated(
+    changedProperties: PropertyValues<this> & Map<string, unknown>,
+  ) {
+    if (changedProperties.has("filterBy")) {
+      this.searchParams.update((params) => {
+        params.delete("page");
+        for (const [filter, value] of [
+          ...USED_FILTERS.map((f) => [f, undefined]),
+          ...Object.entries(this.filterBy),
+        ] as [string, boolean | undefined][]) {
+          if (value !== undefined) {
+            params.set(filter, value.toString());
+          } else {
+            params.delete(filter);
+          }
+        }
+        return params;
+      });
+    }
   }
 
   disconnectedCallback(): void {
@@ -416,60 +477,77 @@ export class WorkflowsList extends BtrixElement {
         </div>
       </div>
 
-      <div class="flex flex-wrap items-center justify-between">
-        <div class="text-sm">
-          <button
-            class="${this.filterBy.schedule === undefined
-              ? "border-b-current text-primary"
-              : "text-neutral-500"} mr-3 inline-block border-b-2 border-transparent font-medium"
-            aria-selected=${this.filterBy.schedule === undefined}
-            @click=${() =>
-              (this.filterBy = {
-                ...this.filterBy,
-                schedule: undefined,
-              })}
-          >
-            ${msg("All")}
-          </button>
-          <button
-            class="${this.filterBy.schedule === true
-              ? "border-b-current text-primary"
-              : "text-neutral-500"} mr-3 inline-block border-b-2 border-transparent font-medium"
-            aria-selected=${this.filterBy.schedule === true}
-            @click=${() =>
-              (this.filterBy = {
-                ...this.filterBy,
-                schedule: true,
-              })}
-          >
+      <div class="flex flex-wrap items-center justify-start gap-4">
+        <sl-radio-group
+          size="small"
+          @sl-change=${(e: SlChangeEvent) => {
+            const filter = (e.target as SlRadioGroup).value;
+            switch (filter) {
+              case "all-schedules":
+                this.filterBy = {
+                  ...this.filterBy,
+                  schedule: undefined,
+                };
+                break;
+              case "scheduled":
+                this.filterBy = {
+                  ...this.filterBy,
+                  schedule: true,
+                };
+                break;
+              case "unscheduled":
+                this.filterBy = {
+                  ...this.filterBy,
+                  schedule: false,
+                };
+                break;
+            }
+          }}
+          value=${this.filterBy.schedule === undefined
+            ? "all-schedules"
+            : this.filterBy.schedule
+              ? "scheduled"
+              : "unscheduled"}
+        >
+          <sl-radio-button value="all-schedules" pill>
+            <sl-icon name="asterisk" slot="prefix"></sl-icon>
+            ${msg("All Schedule States")}
+          </sl-radio-button>
+          <sl-radio-button value="scheduled" pill>
+            <sl-icon name="calendar2-check" slot="prefix"></sl-icon>
             ${msg("Scheduled")}
-          </button>
-          <button
-            class="${this.filterBy.schedule === false
-              ? "border-b-current text-primary"
-              : "text-neutral-500"} mr-3 inline-block border-b-2 border-transparent font-medium"
-            aria-selected=${this.filterBy.schedule === false}
-            @click=${() =>
-              (this.filterBy = {
-                ...this.filterBy,
-                schedule: false,
-              })}
-          >
+          </sl-radio-button>
+          <sl-radio-button value="unscheduled" pill>
+            <sl-icon name="calendar2-x" slot="prefix"></sl-icon>
             ${msg("No schedule")}
-          </button>
-        </div>
-        <div class="flex items-center justify-end">
-          <label>
-            <span class="mr-1 text-xs text-neutral-500"
-              >${msg("Show Only Mine")}</span
-            >
-            <sl-switch
-              @sl-change=${(e: CustomEvent) =>
-                (this.filterByCurrentUser = (e.target as SlCheckbox).checked)}
-              ?checked=${this.filterByCurrentUser}
-            ></sl-switch>
-          </label>
-        </div>
+          </sl-radio-button>
+        </sl-radio-group>
+
+        <label>
+          <span class="mr-1 text-xs text-neutral-500"
+            >${msg("Show Only Running")}</span
+          >
+          <sl-switch
+            @sl-change=${(e: CustomEvent) => {
+              this.filterBy = {
+                ...this.filterBy,
+                isCrawlRunning: (e.target as SlCheckbox).checked || undefined,
+              };
+            }}
+            ?checked=${this.filterBy.isCrawlRunning === true}
+          ></sl-switch>
+        </label>
+
+        <label>
+          <span class="mr-1 text-xs text-neutral-500"
+            >${msg("Show Only Mine")}</span
+          >
+          <sl-switch
+            @sl-change=${(e: CustomEvent) =>
+              (this.filterByCurrentUser = (e.target as SlCheckbox).checked)}
+            ?checked=${this.filterByCurrentUser}
+          ></sl-switch>
+        </label>
       </div>
     `;
   }
