@@ -67,7 +67,7 @@ export function makeUserGuideEvent(
     "btrix-user-guide-show",
     {
       detail: {
-        path: `user-guide/workflow-setup/#${userGuideHash}`,
+        path: `workflow-setup/#${userGuideHash}`,
       },
       bubbles: true,
       composed: true,
