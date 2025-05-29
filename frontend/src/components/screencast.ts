@@ -203,10 +203,10 @@ export class Screencast extends BtrixElement {
     return html`
       <div class="wrapper">
         <div
-          class="container"
+          class="container justify-center"
           style="grid-template-columns: repeat(${screenCount > 2
             ? Math.ceil(screenCount / 2)
-            : screenCount}, 1fr);"
+            : screenCount}, minmax(0, ${this.screenWidth}px));"
         >
           ${Array.from({ length: screenCount }).map((_, i) =>
             this.renderScreen(`${i}`),

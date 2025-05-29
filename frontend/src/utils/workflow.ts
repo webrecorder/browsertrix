@@ -380,7 +380,6 @@ export async function getServerDefaults(): Promise<WorkflowDefaults> {
 export function* rangeBrowserWindows(
   settings: AppSettings | null,
 ): Iterable<number> {
-  console.log("range");
   if (!settings) {
     yield 1;
     return;
