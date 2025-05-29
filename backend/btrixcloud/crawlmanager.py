@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 
 from fastapi import HTTPException
 
-from .utils import dt_now, date_to_str
+from .utils import dt_now, date_to_str, scale_from_browser_windows
 from .k8sapi import K8sAPI
 
 from .models import StorageRef, CrawlConfig, BgJobType
@@ -227,13 +227,16 @@ class CrawlManager(K8sAPI):
 
         await self.has_storage_secret(storage_secret)
 
+        scale = scale_from_browser_windows(crawlconfig.browserWindows)
+
         return await self.new_crawl_job(
             cid,
             userid,
             str(crawlconfig.oid),
             str(storage),
             crawlconfig.crawlerChannel,
-            crawlconfig.scale,
+            scale,
+            crawlconfig.browserWindows,
             crawlconfig.crawlTimeout,
             crawlconfig.maxCrawlSize,
             manual=True,
@@ -258,7 +261,8 @@ class CrawlManager(K8sAPI):
         # pylint: disable=use-dict-literal
         patch = dict(
             crawlerChannel=crawlconfig.crawlerChannel,
-            scale=crawlconfig.scale,
+            scale=scale_from_browser_windows(crawlconfig.browserWindows),
+            browserWindows=crawlconfig.browserWindows,
             timeout=crawlconfig.crawlTimeout,
             maxCrawlSize=crawlconfig.maxCrawlSize,
             proxyId=crawlconfig.proxyId or DEFAULT_PROXY_ID,
@@ -373,9 +377,13 @@ class CrawlManager(K8sAPI):
         update = date_to_str(dt_now())
         return await self._patch_job(crawl_id, {"restartTime": update})
 
-    async def scale_crawl(self, crawl_id: str, scale: int = 1) -> dict:
+    async def scale_crawl(
+        self, crawl_id: str, scale: int = 1, browser_windows: int = 1
+    ) -> dict:
         """Set the crawl scale (job parallelism) on the specified job"""
-        return await self._patch_job(crawl_id, {"scale": scale})
+        return await self._patch_job(
+            crawl_id, {"scale": scale, "browserWindows": browser_windows}
+        )
 
     async def shutdown_crawl(self, crawl_id: str, graceful=True) -> dict:
         """Request a crawl cancelation or stop by calling an API

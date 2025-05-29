@@ -57,40 +57,15 @@ class K8sOpAPI(K8sAPI):
         except:
             # default to 1 for now for best results (to revisit in the future)
             qa_num_workers = 1
-        crawler_cpu: float = 0
-        crawler_memory: int = 0
-        qa_cpu: float = 0
-        qa_memory: int = 0
+
+        crawler_memory, crawler_cpu = self.compute_for_num_browsers(
+            num_workers, p.get("crawler_memory"), p.get("crawler_cpu")
+        )
+        qa_memory, qa_cpu = self.compute_for_num_browsers(qa_num_workers)
+
         print("crawler resources")
-        if not p.get("crawler_cpu"):
-            base = parse_quantity(p["crawler_cpu_base"])
-            extra = parse_quantity(p["crawler_extra_cpu_per_browser"])
-
-            # cpu is a floating value of cpu cores
-            crawler_cpu = float(base + (num_workers - 1) * extra)
-            qa_cpu = float(base + (qa_num_workers - 1) * extra)
-
-            print(f"cpu = {base} + {num_workers - 1} * {extra} = {crawler_cpu}")
-            print(f"qa_cpu = {base} + {qa_num_workers - 1} * {extra} = {qa_cpu}")
-        else:
-            crawler_cpu = float(parse_quantity(p["crawler_cpu"]))
-            qa_cpu = crawler_cpu
-            print(f"cpu = {crawler_cpu}")
-
-        if not p.get("crawler_memory"):
-            base = parse_quantity(p["crawler_memory_base"])
-            extra = parse_quantity(p["crawler_extra_memory_per_browser"])
-
-            # memory is always an int
-            crawler_memory = int(base + (num_workers - 1) * extra)
-            qa_memory = int(base + (qa_num_workers - 1) * extra)
-
-            print(f"memory = {base} + {num_workers - 1} * {extra} = {crawler_memory}")
-            print(f"qa_memory = {base} + {qa_num_workers - 1} * {extra} = {qa_memory}")
-        else:
-            crawler_memory = int(parse_quantity(p["crawler_memory"]))
-            qa_memory = crawler_memory
-            print(f"memory = {crawler_memory}")
+        print(f"cpu = {crawler_cpu} qa: {qa_cpu}")
+        print(f"memory = {crawler_memory} qa: {qa_memory}")
 
         max_crawler_memory_size = 0
         max_crawler_memory = os.environ.get("MAX_CRAWLER_MEMORY")
@@ -107,6 +82,33 @@ class K8sOpAPI(K8sAPI):
         p["qa_cpu"] = qa_cpu
         p["qa_memory"] = qa_memory
         p["qa_workers"] = qa_num_workers
+
+    def compute_for_num_browsers(
+        self, num_browsers, crawler_memory_fixed="", crawler_cpu_fixed=""
+    ) -> tuple[int, float]:
+        """compute memory, cpu for given num of browsers"""
+        p = self.shared_params
+
+        if not crawler_memory_fixed:
+            base = parse_quantity(p["crawler_memory_base"])
+            extra = parse_quantity(p["crawler_extra_memory_per_browser"])
+
+            # memory is always an int
+            crawler_memory = int(base + (num_browsers - 1) * extra)
+        else:
+            crawler_memory = int(parse_quantity(crawler_memory_fixed))
+
+        if not crawler_cpu_fixed:
+            base = parse_quantity(p["crawler_cpu_base"])
+            extra = parse_quantity(p["crawler_extra_cpu_per_browser"])
+
+            # cpu is a floating value of cpu cores
+            crawler_cpu = float(base + (num_browsers - 1) * extra)
+
+        else:
+            crawler_cpu = float(parse_quantity(crawler_cpu_fixed))
+
+        return crawler_memory, crawler_cpu
 
     def compute_profile_resources(self) -> None:
         """compute memory /cpu resources for a single profile browser"""

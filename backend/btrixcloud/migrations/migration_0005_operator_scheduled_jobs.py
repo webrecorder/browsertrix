@@ -43,7 +43,7 @@ class Migration(BaseMigration):
             config = CrawlConfig.from_dict(config_dict)
             print(
                 f"Updating Crawl Config {config.id}: schedule: {config.schedule}, "
-                + f"timeout: {config.crawlTimeout}, scale: {config.scale}"
+                + f"timeout: {config.crawlTimeout}"
             )
             try:
                 await crawl_manager.update_scheduled_job(config)

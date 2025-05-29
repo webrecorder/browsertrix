@@ -130,7 +130,16 @@ export class Screencast extends BtrixElement {
   crawlId?: string;
 
   @property({ type: Number })
-  scale = 1;
+  browserWindows = 1;
+
+  @property({ type: Number })
+  numBrowsersPerInstance = 1;
+
+  @state()
+  private scale = 1;
+
+  @state()
+  private lastIndexOffset = 0;
 
   // List of browser screens
   @state()
@@ -141,16 +150,22 @@ export class Screencast extends BtrixElement {
 
   // Websocket connections
   private readonly wsMap = new Map<number, WebSocket>();
-  // Number of available browsers.
-  // Multiply by scale to get available browser window count
-  private browsersCount = 1;
   private screenWidth = 640;
   private screenHeight = 480;
   private readonly timerIds: number[] = [];
 
   protected firstUpdated() {
+    this.updateScale();
+
     // Connect to websocket server
     this.connectAll();
+  }
+  protected updateScale() {
+    const remainder = this.browserWindows % this.numBrowsersPerInstance;
+    this.scale = Math.ceil(this.browserWindows / this.numBrowsersPerInstance);
+    this.lastIndexOffset = remainder
+      ? (this.scale - 1) * (this.numBrowsersPerInstance - remainder)
+      : 0;
   }
 
   async updated(
@@ -164,9 +179,12 @@ export class Screencast extends BtrixElement {
       this.disconnectAll();
       this.connectAll();
     }
-    const prevScale = changedProperties.get("scale");
-    if (prevScale !== undefined) {
-      if (this.scale > prevScale) {
+    if (changedProperties.has("browserWindows")) {
+      this.updateScale();
+    }
+    const prevWindows = changedProperties.get("browserWindows");
+    if (prevWindows !== undefined) {
+      if (this.browserWindows > prevWindows) {
         this.scaleUp();
       } else {
         this.scaleDown();
@@ -181,14 +199,14 @@ export class Screencast extends BtrixElement {
   }
 
   render() {
-    const screenCount = this.scale * this.browsersCount;
+    const screenCount = this.browserWindows;
     return html`
       <div class="wrapper">
         <div
-          class="container"
+          class="container justify-center"
           style="grid-template-columns: repeat(${screenCount > 2
             ? Math.ceil(screenCount / 2)
-            : screenCount}, 1fr);"
+            : screenCount}, minmax(0, ${this.screenWidth}px));"
         >
           ${Array.from({ length: screenCount }).map((_, i) =>
             this.renderScreen(`${i}`),
@@ -226,6 +244,7 @@ export class Screencast extends BtrixElement {
 
   private readonly renderScreen = (id: string) => {
     const pageData = this.dataMap[id];
+
     return html` <figure
       class="screen"
       title=${pageData?.url || ""}
@@ -233,13 +252,15 @@ export class Screencast extends BtrixElement {
       @click=${pageData ? () => (this.focusedScreenData = pageData) : () => {}}
     >
       <figcaption class="caption">${pageData?.url || html`&nbsp;`}</figcaption>
-      <div
-        class="frame"
-        style="aspect-ratio: ${this.screenWidth / this.screenHeight}"
-      >
+      <div class="frame">
         ${pageData
           ? html`<img src="data:image/png;base64,${pageData.data}" />`
-          : html`<sl-spinner></sl-spinner>`}
+          : html`<div
+              class="flex size-full items-center justify-center"
+              style="aspect-ratio: ${this.screenWidth / this.screenHeight}"
+            >
+              <sl-spinner></sl-spinner>
+            </div>`}
       </div>
     </figure>`;
   };
@@ -301,18 +322,21 @@ export class Screencast extends BtrixElement {
 
   private handleMessage(
     message: InitMessage | ScreencastMessage | CloseMessage,
+    isLast: boolean,
   ) {
     if (message.msg === "init") {
       const dataMap: Record<number, null> = {};
-      for (let i = 0; i < message.browsers * this.scale; i++) {
+      for (let i = 0; i < this.browserWindows; i++) {
         dataMap[i] = null;
       }
       this.dataMap = dataMap;
-      this.browsersCount = message.browsers;
       this.screenWidth = message.width;
       this.screenHeight = message.height;
     } else {
-      const { id } = message;
+      let { id } = message;
+      if (isLast) {
+        id += this.lastIndexOffset;
+      }
       const dataMap = { ...this.dataMap };
 
       if (message.msg === "screencast") {
@@ -348,6 +372,7 @@ export class Screencast extends BtrixElement {
     ws.addEventListener("message", ({ data }: MessageEvent<string>) => {
       this.handleMessage(
         JSON.parse(data) as InitMessage | ScreencastMessage | CloseMessage,
+        index === this.scale - 1,
       );
     });
 

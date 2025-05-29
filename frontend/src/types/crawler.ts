@@ -56,7 +56,7 @@ export type WorkflowParams = {
   jobType?: JobType;
   name: string;
   schedule: string;
-  scale: number;
+  browserWindows: number;
   profileid: string | null;
   config: SeedConfig;
   tags: string[];
@@ -193,6 +193,7 @@ export type Crawl = ArchivedItemBase &
     schedule: string;
     manual: boolean;
     scale: number;
+    browserWindows: number;
     shouldPause: boolean | null;
     resources?: {
       name: string;
