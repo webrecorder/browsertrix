@@ -1,6 +1,7 @@
 import { consume } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
 import type {
+  SlBlurEvent,
   SlCheckbox,
   SlDetails,
   SlHideEvent,
@@ -15,6 +16,7 @@ import Fuse from "fuse.js";
 import { mergeDeep } from "immutable";
 import type { LanguageCode } from "iso-639-1";
 import {
+  css,
   html,
   nothing,
   type LitElement,
@@ -220,6 +222,21 @@ type CrawlConfigResponse = {
 @customElement("btrix-workflow-editor")
 @localized()
 export class WorkflowEditor extends BtrixElement {
+  static styles = css`
+    :host {
+      @keyframes sticky-footer {
+        from {
+          transform: translateY(100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+    }
+  `;
+
   @consume({ context: proxiesContext, subscribe: true })
   private readonly proxies?: ProxiesContext;
 
@@ -259,7 +276,15 @@ export class WorkflowEditor extends BtrixElement {
   private serverError?: TemplateResult | string;
 
   @state()
+  private stickyFooter: "animate" | boolean = false;
+
+  @state()
   private isCrawlRunning: boolean | null = this.configId ? null : false;
+
+  @state()
+  private showKeyboardShortcuts = false;
+
+  private saveAndRun = false;
 
   // For observing panel sections position in viewport
   private readonly observable = new ObservableController(this, {
@@ -390,6 +415,10 @@ export class WorkflowEditor extends BtrixElement {
     }
   }
 
+  private animateStickyFooter() {
+    this.stickyFooter = "animate";
+  }
+
   async firstUpdated() {
     // Observe form sections to get scroll position
     this.panels?.forEach((panel) => {
@@ -398,6 +427,11 @@ export class WorkflowEditor extends BtrixElement {
 
     if (this.progressState?.activeTab !== STEPS[0]) {
       void this.scrollToActivePanel();
+    }
+
+    // Always show footer when editing or duplicating workflow
+    if (this.configId || this.hasRequiredFields()) {
+      this.stickyFooter = true;
     }
   }
 
@@ -433,7 +467,22 @@ export class WorkflowEditor extends BtrixElement {
           sticky: true,
           stickyTopClassname: tw`lg:top-16`,
         })}
-        ${this.renderFooter()}
+        <btrix-observable
+          .options=${{
+            threshold: 1,
+          }}
+          @btrix-intersect=${this.stickyFooter
+            ? null
+            : (e: IntersectEvent) => {
+                const [entry] = e.detail.entries;
+
+                if (entry.isIntersecting) {
+                  this.stickyFooter = true;
+                }
+              }}
+        >
+          ${this.renderFooter()}
+        </btrix-observable>
       </form>
     `;
   }
@@ -454,7 +503,7 @@ export class WorkflowEditor extends BtrixElement {
 
     return html`
       <btrix-tab-list
-        class="hidden lg:block"
+        class="mb-5 hidden lg:block"
         tab=${ifDefined(this.progressState?.activeTab)}
       >
         ${STEPS.map(button)}
@@ -617,22 +666,35 @@ export class WorkflowEditor extends BtrixElement {
   }
 
   private renderFooter() {
+    const keyboardShortcut = (key: string) => {
+      const ua = navigator.userAgent;
+      const metaKey = ua.includes("Mac")
+        ? html`<kbd class="font-sans">⌘</kbd>`
+        : html`<kbd class="font-sans">Ctrl</kbd>`;
+
+      return html`<kbd
+        class="inline-flex items-center gap-0.5 rounded-sm border border-black/20 bg-white/20 px-1 py-0.5 text-xs leading-none"
+        slot="suffix"
+      >
+        ${metaKey}<kbd class="font-sans">${key}</kbd></kbd
+      > `;
+    };
+
     return html`
       <footer
         class=${clsx(
-          "flex items-center justify-end gap-2 rounded-lg border bg-white px-6 py-4 mb-7",
-          this.configId || this.serverError
-            ? tw`z- sticky bottom-3 z-20 shadow-md`
-            : tw`shadow`,
+          tw`bottom-3 z-50 mb-7 flex items-center justify-end gap-2 rounded-lg border bg-white px-6 py-4 shadow duration-slow`,
+          this.stickyFooter && [
+            tw`sticky`,
+            this.stickyFooter === "animate" &&
+              tw`motion-safe:animate-[sticky-footer_var(--sl-transition-medium)_ease-in-out]`,
+          ],
         )}
       >
-        ${this.configId
-          ? html`
-              <sl-button class="mr-auto" size="small" type="reset">
-                ${msg("Cancel")}
-              </sl-button>
-            `
-          : nothing}
+        <sl-button class="mr-auto" size="small" type="reset">
+          ${msg("Cancel")}
+        </sl-button>
+
         ${when(this.serverError, (error) => this.renderErrorAlert(error))}
         ${when(this.configId, this.renderCrawlStatus)}
 
@@ -645,6 +707,7 @@ export class WorkflowEditor extends BtrixElement {
             ?loading=${this.isSubmitting}
           >
             ${msg("Save")}
+            ${when(this.showKeyboardShortcuts, () => keyboardShortcut("S"))}
           </sl-button>
         </sl-tooltip>
         <sl-tooltip
@@ -665,6 +728,7 @@ export class WorkflowEditor extends BtrixElement {
             ?loading=${this.isSubmitting || this.isCrawlRunning === null}
           >
             ${msg(this.isCrawlRunning ? "Update Crawl" : "Run Crawl")}
+            ${when(this.showKeyboardShortcuts, () => keyboardShortcut("Enter"))}
           </sl-button>
         </sl-tooltip>
       </footer>
@@ -808,9 +872,14 @@ export class WorkflowEditor extends BtrixElement {
                     },
                     true,
                   );
-                  if (!inputEl.checkValidity() && validURL(inputEl.value)) {
+                  const valid = validURL(inputEl.value);
+                  if (!inputEl.checkValidity() && valid) {
                     inputEl.setCustomValidity("");
                     inputEl.helpText = "";
+                  }
+
+                  if (valid) {
+                    this.animateStickyFooter();
                   }
                 }}
                 @sl-blur=${async (e: Event) => {
@@ -858,7 +927,15 @@ https://archiveweb.page/guide`}
                 }}
                 @sl-input=${(e: CustomEvent) => {
                   const inputEl = e.target as SlInput;
-                  if (!inputEl.value) {
+                  const value = inputEl.value;
+
+                  if (value) {
+                    const { isValid } = this.validateUrlList(inputEl.value);
+
+                    if (isValid) {
+                      this.animateStickyFooter();
+                    }
+                  } else {
                     inputEl.helpText = msg("At least 1 URL is required.");
                   }
                 }}
@@ -2183,22 +2260,52 @@ https://archiveweb.page/images/${"logo.svg"}`}
     };
 
   private onKeyDown(event: KeyboardEvent) {
+    const { key, metaKey } = event;
+
+    if (metaKey && !this.showKeyboardShortcuts) {
+      // Show meta keyboard shortcut
+      this.showKeyboardShortcuts = true;
+      this.animateStickyFooter();
+    }
+
     const el = event.target as HTMLElement;
-    const tagName = el.tagName.toLowerCase();
-    if (tagName !== "sl-input") return;
-    const { key } = event;
-    if ((el as SlInput).type === "number") {
+    if (!("value" in el)) return;
+
+    if (metaKey) {
+      if (key === "s" || key === "Enter") {
+        event.preventDefault();
+
+        this.saveAndRun = key === "Enter";
+
+        // Trigger blur to run value transformations and validation
+        el.addEventListener(
+          "sl-blur",
+          async (e: SlBlurEvent) => {
+            const input = e.currentTarget as SlInput;
+
+            // Wait for all transformations and validations to run
+            await input.updateComplete;
+            await this.updateComplete;
+
+            this.formElem?.requestSubmit();
+          },
+          { once: true },
+        );
+
+        el.blur();
+
+        return;
+      }
+    }
+
+    if ((el as unknown as SlInput).type === "number") {
       // Prevent typing non-numeric keys
-      if (
-        !event.metaKey &&
-        !event.shiftKey &&
-        key.length === 1 &&
-        /\D/.test(key)
-      ) {
+      if (!metaKey && !event.shiftKey && key.length === 1 && /\D/.test(key)) {
         event.preventDefault();
         return;
       }
     }
+
     if (
       key === "Enter" &&
       this.progressState!.activeTab !== STEPS[STEPS.length - 1]
@@ -2211,13 +2318,16 @@ https://archiveweb.page/images/${"logo.svg"}`}
   private async onSubmit(event: SubmitEvent) {
     event.preventDefault();
 
-    const submitType = (
-      event.submitter as HTMLButtonElement & {
-        value?: SubmitType;
-      }
-    ).value;
+    // Submitter may not exist if requesting submit from keyboard shortcuts
+    if (event.submitter) {
+      const submitType = (
+        event.submitter as HTMLButtonElement & {
+          value?: SubmitType;
+        }
+      ).value;
 
-    const saveAndRun = submitType === SubmitType.SaveAndRun;
+      this.saveAndRun = submitType === SubmitType.SaveAndRun;
+    }
 
     if (!this.formElem) return;
 
@@ -2248,11 +2358,11 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
     const config: CrawlConfigParams & WorkflowRunParams = {
       ...this.parseConfig(),
-      runNow: saveAndRun && !this.isCrawlRunning,
+      runNow: this.saveAndRun && !this.isCrawlRunning,
     };
 
     if (this.configId) {
-      config.updateRunning = saveAndRun && Boolean(this.isCrawlRunning);
+      config.updateRunning = this.saveAndRun && Boolean(this.isCrawlRunning);
     }
 
     this.isSubmitting = true;
