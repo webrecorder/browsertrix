@@ -12,7 +12,7 @@ You likely have crawler permissions already if:
 - You [joined an existing org](./join.md) and were given crawler permissions
 - You are the admin of a self-hosted instance
 
-Check if you have crawler permissions by logging in. If you see a _+ Create New..._ button near the org name, you're able to start a crawl. If you don't see this button, contact your org admin to update your permissions.
+Check if you have crawler permissions by logging in. If you see a _+ Create New..._ button near the org name, you're able to start a crawl. If you don't see this button and think that you should, contact your org admin to update your permissions.
 
 ## Starting the crawl
 
