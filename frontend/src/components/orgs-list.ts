@@ -257,7 +257,8 @@ export class OrgsList extends BtrixElement {
           !!org.subscription &&
           !(
             org.subscription.status === SubscriptionStatus.Active ||
-            org.subscription.status === SubscriptionStatus.Trialing
+            org.subscription.status === SubscriptionStatus.Trialing ||
+            org.subscription.status === SubscriptionStatus.TrialingCanceled
           )
         );
       case OrgFilter.Trialing:
@@ -268,8 +269,9 @@ export class OrgsList extends BtrixElement {
       case OrgFilter.ScheduledCancel:
         return (
           !!org.subscription &&
-          org.subscription.status === SubscriptionStatus.Active &&
-          !!org.subscription.futureCancelDate
+          ((org.subscription.status === SubscriptionStatus.Active &&
+            !!org.subscription.futureCancelDate) ||
+            org.subscription.status === SubscriptionStatus.TrialingCanceled)
         );
       case OrgFilter.All:
         return true;
