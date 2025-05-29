@@ -667,13 +667,12 @@ export class WorkflowDetail extends BtrixElement {
           content=${msg("Copy Item ID")}
           hoist
         ></btrix-copy-button>
-        <sl-tooltip
-          class=${disableDownload ? "invert-tooltip" : ""}
+        <btrix-popover
           content=${msg(
             "Downloads are disabled while running. Pause the crawl or wait for the crawl to finish to download.",
           )}
+          placement="top"
           ?disabled=${!disableDownload}
-          hoist
         >
           <sl-button-group>
             <sl-tooltip
@@ -735,7 +734,7 @@ export class WorkflowDetail extends BtrixElement {
               </sl-menu>
             </sl-dropdown>
           </sl-button-group>
-        </sl-tooltip>
+        </btrix-popover>
       `;
     }
 
@@ -1641,16 +1640,14 @@ export class WorkflowDetail extends BtrixElement {
       if (this.isRunning) {
         return html`<span class="text-neutral-400">
           ${noData}
-          <sl-tooltip
-            class="invert-tooltip"
+          <btrix-popover
             content=${msg(
               "Execution time will be calculated once this crawl is finished or paused.",
             )}
-            hoist
-            placement="bottom"
+            distance="12"
           >
             <sl-icon name="question-circle"></sl-icon>
-          </sl-tooltip>
+          </btrix-popover>
         </span>`;
       }
 
@@ -1684,14 +1681,12 @@ export class WorkflowDetail extends BtrixElement {
       if (workflow.isCrawlRunning) {
         return html`<span class="text-neutral-400">
           ${noData}
-          <sl-tooltip
-            class="invert-tooltip"
+          <btrix-popover
             content=${msg("QA will be enabled once this crawl is complete.")}
-            hoist
-            placement="bottom"
+            distance="12"
           >
             <sl-icon name="question-circle"></sl-icon>
-          </sl-tooltip>
+          </btrix-popover>
         </span>`;
       }
 
