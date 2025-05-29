@@ -874,7 +874,7 @@ export class OrgsList extends BtrixElement {
               <div class="mt-2 text-xs">
                 ${msg("Cancels in")}
                 ${this.localize.humanizeDuration(
-                  new Date(org.subscription.futureCancelDate!).getTime() -
+                  new Date(org.subscription.futureCancelDate ?? 0).getTime() -
                     new Date().getTime(),
                   { compact: true, verbose: true },
                 )}
