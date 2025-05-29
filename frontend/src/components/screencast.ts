@@ -244,6 +244,7 @@ export class Screencast extends BtrixElement {
 
   private readonly renderScreen = (id: string) => {
     const pageData = this.dataMap[id];
+
     return html` <figure
       class="screen"
       title=${pageData?.url || ""}
@@ -251,13 +252,15 @@ export class Screencast extends BtrixElement {
       @click=${pageData ? () => (this.focusedScreenData = pageData) : () => {}}
     >
       <figcaption class="caption">${pageData?.url || html`&nbsp;`}</figcaption>
-      <div
-        class="frame"
-        style="aspect-ratio: ${this.screenWidth / this.screenHeight}"
-      >
+      <div class="frame">
         ${pageData
           ? html`<img src="data:image/png;base64,${pageData.data}" />`
-          : html`<sl-spinner></sl-spinner>`}
+          : html`<div
+              class="flex size-full items-center justify-center"
+              style="aspect-ratio: ${this.screenWidth / this.screenHeight}"
+            >
+              <sl-spinner></sl-spinner>
+            </div>`}
       </div>
     </figure>`;
   };
