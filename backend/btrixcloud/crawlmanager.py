@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 
 from fastapi import HTTPException
 
-from .utils import dt_now, date_to_str, pod_count_from_browser_windows
+from .utils import dt_now, date_to_str, scale_from_browser_windows
 from .k8sapi import K8sAPI
 
 from .models import StorageRef, CrawlConfig, BgJobType
@@ -227,7 +227,7 @@ class CrawlManager(K8sAPI):
 
         await self.has_storage_secret(storage_secret)
 
-        scale = pod_count_from_browser_windows(crawlconfig.browserWindows)
+        scale = scale_from_browser_windows(crawlconfig.browserWindows)
 
         return await self.new_crawl_job(
             cid,
@@ -261,7 +261,7 @@ class CrawlManager(K8sAPI):
         # pylint: disable=use-dict-literal
         patch = dict(
             crawlerChannel=crawlconfig.crawlerChannel,
-            scale=pod_count_from_browser_windows(crawlconfig.browserWindows),
+            scale=scale_from_browser_windows(crawlconfig.browserWindows),
             browserWindows=crawlconfig.browserWindows,
             timeout=crawlconfig.crawlTimeout,
             maxCrawlSize=crawlconfig.maxCrawlSize,

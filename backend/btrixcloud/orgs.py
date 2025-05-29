@@ -90,7 +90,7 @@ from .utils import (
     get_duplicate_key_error_field,
     validate_language_code,
     JSONSerializer,
-    browser_windows_from_pod_count,
+    browser_windows_from_scale,
 )
 
 if TYPE_CHECKING:
@@ -1270,9 +1270,7 @@ class OrgOps:
             # Convert scale to browser windows and respect limits
             workflow_scale = max(workflow.get("scale", 1), MAX_CRAWL_SCALE)
             if workflow.get("browserWindows") is None:
-                workflow_browser_windows = browser_windows_from_pod_count(
-                    workflow_scale
-                )
+                workflow_browser_windows = browser_windows_from_scale(workflow_scale)
                 workflow["browserWindows"] = max(
                     workflow_browser_windows, MAX_BROWSER_WINDOWS
                 )
@@ -1310,9 +1308,7 @@ class OrgOps:
                 # Set browserWindows
                 browser_windows = item.get("browserWindows")
                 if browser_windows is None:
-                    browser_windows = browser_windows_from_pod_count(
-                        item.get("scale", 1)
-                    )
+                    browser_windows = browser_windows_from_scale(item.get("scale", 1))
                 item["browserWindows"] = max(browser_windows, MAX_BROWSER_WINDOWS)
 
                 item_obj = Crawl.from_dict(item)

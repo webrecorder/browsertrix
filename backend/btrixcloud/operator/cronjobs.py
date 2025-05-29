@@ -9,7 +9,7 @@ from .models import MCDecoratorSyncData, CJS, MCDecoratorSyncResponse
 from .baseoperator import BaseOperator
 
 from ..models import CrawlConfig
-from ..utils import pod_count_from_browser_windows
+from ..utils import scale_from_browser_windows
 
 
 # pylint: disable=too-many-locals
@@ -130,7 +130,7 @@ class CronJobOperator(BaseOperator):
             oid=str(oid),
             storage=str(org.storage),
             crawler_channel=crawlconfig.crawlerChannel or "default",
-            scale=pod_count_from_browser_windows(crawlconfig.browserWindows),
+            scale=scale_from_browser_windows(crawlconfig.browserWindows),
             browser_windows=crawlconfig.browserWindows,
             crawl_timeout=crawlconfig.crawlTimeout,
             max_crawl_size=crawlconfig.maxCrawlSize,

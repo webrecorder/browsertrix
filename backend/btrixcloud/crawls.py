@@ -10,7 +10,7 @@ import urllib.parse
 from datetime import datetime
 from uuid import UUID
 
-from typing import Optional, List, Dict, Union, Any, Sequence, AsyncIterator, cast
+from typing import Optional, List, Dict, Union, Any, Sequence, AsyncIterator
 
 from fastapi import Depends, HTTPException
 from fastapi.responses import StreamingResponse
@@ -25,8 +25,8 @@ from .utils import (
     parse_jsonl_log_messages,
     stream_dict_list_as_csv,
     validate_regexes,
-    pod_count_from_browser_windows,
-    browser_windows_from_pod_count,
+    scale_from_browser_windows,
+    browser_windows_from_scale,
 )
 from .basecrawls import BaseCrawlOps
 from .crawlmanager import CrawlManager
@@ -370,7 +370,7 @@ class CrawlOps(BaseCrawlOps):
             oid=crawlconfig.oid,
             cid=crawlconfig.id,
             cid_rev=crawlconfig.rev,
-            scale=pod_count_from_browser_windows(crawlconfig.browserWindows),
+            scale=scale_from_browser_windows(crawlconfig.browserWindows),
             browserWindows=crawlconfig.browserWindows,
             jobType=crawlconfig.jobType,
             config=crawlconfig.config,
@@ -552,8 +552,8 @@ class CrawlOps(BaseCrawlOps):
             }
             query_str = json.dumps(query)
 
-            pod_count = pod_count_from_browser_windows(browser_windows)
-            for i in range(0, pod_count):
+            scale = scale_from_browser_windows(browser_windows)
+            for i in range(0, scale):
                 await redis.rpush(f"crawl-{crawl_id}-{i}:msg", query_str)
 
         new_config = await self.crawl_configs.add_or_remove_exclusion(
@@ -1539,39 +1539,31 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
         response_model=CrawlScaleResponse,
     )
     async def scale_crawl(
-        scale: CrawlScale,
+        crawl_scale: CrawlScale,
         crawl_id,
         user: User = Depends(user_dep),
         org: Organization = Depends(org_crawl_dep),
     ):
-        if scale.scale is None and scale.browserWindows is None:
+        if crawl_scale.browserWindows:
+            browser_windows = crawl_scale.browserWindows
+            scale = scale_from_browser_windows(browser_windows)
+        elif crawl_scale.scale:
+            scale = crawl_scale.scale
+            browser_windows = browser_windows_from_scale(scale)
+        else:
             raise HTTPException(
                 status_code=400, detail="browser_windows_or_scale_required"
             )
 
-        if scale.browserWindows:
-            scale.scale = pod_count_from_browser_windows(
-                cast(int, scale.browserWindows)
-            )
-        else:
-            scale.browserWindows = browser_windows_from_pod_count(
-                cast(int, scale.scale)
-            )
+        await ops.update_crawl_scale(crawl_id, org, scale, browser_windows, user)
 
-        num_scale = cast(int, scale.scale)
-        browser_windows = cast(int, scale.browserWindows)
-
-        await ops.update_crawl_scale(crawl_id, org, num_scale, browser_windows, user)
-
-        result = await ops.crawl_manager.scale_crawl(
-            crawl_id, num_scale, browser_windows
-        )
+        result = await ops.crawl_manager.scale_crawl(crawl_id, scale, browser_windows)
         if not result or not result.get("success"):
             raise HTTPException(
                 status_code=400, detail=result.get("error") or "unknown"
             )
 
-        return {"scaled": True, "browserWindows": scale.browserWindows}
+        return {"scaled": True, "browserWindows": browser_windows}
 
     @app.get(
         "/orgs/{oid}/crawls/{crawl_id}/access",

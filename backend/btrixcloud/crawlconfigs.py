@@ -52,7 +52,7 @@ from .utils import (
     validate_regexes,
     validate_language_code,
     is_url,
-    browser_windows_from_pod_count,
+    browser_windows_from_scale,
 )
 
 if TYPE_CHECKING:
@@ -225,7 +225,7 @@ class CrawlConfigOps:
 
         # Overrides scale if set
         if config_in.browserWindows is None:
-            config_in.browserWindows = browser_windows_from_pod_count(
+            config_in.browserWindows = browser_windows_from_scale(
                 cast(int, config_in.scale)
             )
 
@@ -416,9 +416,7 @@ class CrawlConfigOps:
         orig_crawl_config = await self.get_crawl_config(cid, org.id)
 
         if update.scale:
-            update.browserWindows = browser_windows_from_pod_count(
-                cast(int, update.scale)
-            )
+            update.browserWindows = browser_windows_from_scale(cast(int, update.scale))
             update.scale = None
 
         if update.config and update.config.exclude:

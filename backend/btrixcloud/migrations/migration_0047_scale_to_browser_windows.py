@@ -3,7 +3,7 @@ Migration 0047 - Convert scale to browserWindows
 """
 
 from btrixcloud.migrations import BaseMigration
-from btrixcloud.utils import browser_windows_from_pod_count
+from btrixcloud.utils import browser_windows_from_scale
 
 
 MIGRATION_VERSION = "0047"
@@ -33,9 +33,7 @@ class Migration(BaseMigration):
                 await configs_mdb.find_one_and_update(
                     {"_id": config_id},
                     {
-                        "$set": {
-                            "browserWindows": browser_windows_from_pod_count(scale)
-                        },
+                        "$set": {"browserWindows": browser_windows_from_scale(scale)},
                     },
                 )
             # pylint: disable=broad-exception-caught
@@ -53,9 +51,7 @@ class Migration(BaseMigration):
                 await crawls_mdb.find_one_and_update(
                     {"_id": crawl_id},
                     {
-                        "$set": {
-                            "browserWindows": browser_windows_from_pod_count(scale)
-                        },
+                        "$set": {"browserWindows": browser_windows_from_scale(scale)},
                     },
                 )
             # pylint: disable=broad-exception-caught

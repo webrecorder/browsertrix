@@ -36,7 +36,7 @@ from btrixcloud.utils import (
     str_to_date,
     date_to_str,
     dt_now,
-    pod_count_from_browser_windows,
+    scale_from_browser_windows,
 )
 
 from .baseoperator import BaseOperator, Redis
@@ -365,14 +365,12 @@ class CrawlOperator(BaseOperator):
 
         is_paused = bool(crawl.paused_at) and status.state == "paused"
 
-        print(f"status.scale: {status.scale}", flush=True)
-        print(f"crawl.browser_windows: {crawl.browser_windows}", flush=True)
-
-        crawler_pod_count = pod_count_from_browser_windows(crawl.browser_windows)
+        # crawl_scale is the number of pods to create
+        crawler_scale = scale_from_browser_windows(crawl.browser_windows)
 
         browsers_per_pod = int(os.environ.get("NUM_BROWSERS", 1))
 
-        for i in range(0, crawler_pod_count):
+        for i in range(0, crawler_scale):
             if status.pagesFound < i * browsers_per_pod:
                 break
 
@@ -380,7 +378,7 @@ class CrawlOperator(BaseOperator):
                 self._load_crawler(
                     params,
                     i,
-                    crawler_pod_count,
+                    crawler_scale,
                     crawl.browser_windows,
                     status,
                     data.children,
@@ -600,7 +598,7 @@ class CrawlOperator(BaseOperator):
         scale and clean up previous scale state.
         """
 
-        desired_scale = pod_count_from_browser_windows(crawl.browser_windows)
+        desired_scale = scale_from_browser_windows(crawl.browser_windows)
 
         if status.pagesFound < desired_scale:
             desired_scale = max(1, status.pagesFound)
