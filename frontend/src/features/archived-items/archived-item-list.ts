@@ -80,7 +80,7 @@ export class ArchivedItemListItem extends BtrixElement {
     const checkboxId = `${this.item.id}-checkbox`;
     const rowName = renderName(this.item);
     const isUpload = this.item.type === "upload";
-    const crawlStatus = CrawlStatus.getContent(this.item.state, this.item.type);
+    const crawlStatus = CrawlStatus.getContent(this.item);
     let typeLabel = msg("Crawl");
     let typeIcon = "gear-wide-connected";
 
@@ -112,7 +112,9 @@ export class ArchivedItemListItem extends BtrixElement {
       ? Math.round((100 * activeQAStats.done) / activeQAStats.found)
       : 0;
 
-    const qaStatus = CrawlStatus.getContent(lastQAState || undefined);
+    const qaStatus = CrawlStatus.getContent({
+      state: lastQAState || undefined,
+    });
 
     return html`
       <btrix-table-row

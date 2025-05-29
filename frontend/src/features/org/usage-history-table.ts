@@ -63,15 +63,13 @@ export class UsageHistoryTable extends BtrixElement {
       {
         field: Field.ElapsedTime,
         label: msg("Elapsed Time"),
-        description: msg(
-          "Total duration of crawls and QA analysis runs, from start to finish",
-        ),
+        description: msg("Total duration of workflow and QA analysis runs."),
       },
       {
         field: Field.ExecutionTime,
         label: msg("Execution Time"),
         description: msg(
-          "Aggregated time across all browser windows that the crawler was actively executing a crawl or QA analysis run, i.e. not in a waiting state",
+          "Aggregated time across all browser windows that the crawler was actively executing a crawl or QA analysis run, i.e. not waiting or paused.",
         ),
       },
     ];
@@ -81,7 +79,7 @@ export class UsageHistoryTable extends BtrixElement {
         field: Field.BillableExecutionTime,
         label: msg("Billable Execution Time"),
         description: msg(
-          "Execution time used that is billable to the current month of the plan",
+          "Execution time used that is billable to the current month of the plan.",
         ),
       });
     }
@@ -90,7 +88,7 @@ export class UsageHistoryTable extends BtrixElement {
         field: Field.RolloverExecutionTime,
         label: msg("Rollover Execution Time"),
         description: msg(
-          "Additional execution time used, of which any extra minutes will roll over to next month as billable time",
+          "Additional execution time used, of which any extra minutes will roll over to next month as billable time.",
         ),
       });
     }
@@ -98,7 +96,7 @@ export class UsageHistoryTable extends BtrixElement {
       cols.push({
         field: Field.GiftedExecutionTime,
         label: msg("Gifted Execution Time"),
-        description: msg("Execution time used that is free of charge"),
+        description: msg("Execution time used that is free of charge."),
       });
     }
 

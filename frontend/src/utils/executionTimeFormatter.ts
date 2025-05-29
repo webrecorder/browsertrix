@@ -88,7 +88,7 @@ export const humanizeExecutionSeconds = (
 ) => {
   const {
     style = "long",
-    displaySeconds = false,
+    displaySeconds = seconds < 60,
     round = "up",
   } = options || {};
   const locale = localize.activeLanguage;
@@ -119,6 +119,7 @@ export const humanizeExecutionSeconds = (
     : Math.floor(seconds / 60) === 0 && seconds % 60 !== 0;
   const formattedDetails =
     detailsRelevant || seconds > 3600 ? `\u00a0(${details})` : nothing;
+  const prefix = detailsRelevant && seconds < 60 ? "<" : "";
 
   switch (style) {
     case "long":
@@ -126,13 +127,12 @@ export const humanizeExecutionSeconds = (
         title="${ifDefined(
           fullMinutes !== compactMinutes ? fullMinutes : undefined,
         )}"
-      >
-        ${compactMinutes}${formattedDetails}</span
+        >${prefix}${compactMinutes}${formattedDetails}</span
       >`;
     case "short":
       return html`<span
         title="${longMinuteFormatter.format(minutes)}${formattedDetails}"
-        >${compactMinutes}</span
+        >${prefix}${compactMinutes}</span
       >`;
   }
 };

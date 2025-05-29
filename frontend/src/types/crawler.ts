@@ -92,7 +92,11 @@ export type Workflow = CrawlConfig & {
   lastCrawlSize: number | null;
   lastStartedByName: string | null;
   lastCrawlStopping: boolean | null;
+  // User has requested pause, but actual state can be running or paused
+  // OR user has requested resume, but actual state is not running
   lastCrawlShouldPause: boolean | null;
+  lastCrawlPausedAt: string | null;
+  lastCrawlPausedExpiry: string | null;
   lastRun: string;
   totalSize: string | null;
   inactive: boolean;

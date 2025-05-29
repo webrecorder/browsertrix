@@ -13,8 +13,10 @@ import { customElement, property } from "lit/decorators.js";
  *
  * @attr {String} content
  * @attr {String} placement
+ * @attr {String} distance
  * @attr {String} trigger
  * @attr {Boolean} open
+ * @attr {Boolean} disabled
  */
 @customElement("btrix-popover")
 @localized()
@@ -29,8 +31,9 @@ export class Popover extends SlTooltip {
     slTooltipStyles,
     css`
       :host {
-        --btrix-border: 1px solid var(--sl-panel-border-color);
-        --sl-tooltip-background-color: var(--sl-color-neutral-0);
+        --btrix-border: 1px solid var(--sl-color-neutral-300);
+        --sl-tooltip-border-radius: var(--sl-border-radius-large);
+        --sl-tooltip-background-color: var(--sl-color-neutral-50);
         --sl-tooltip-color: var(--sl-color-neutral-700);
         --sl-tooltip-font-size: var(--sl-font-size-x-small);
         --sl-tooltip-padding: var(--sl-spacing-small);
@@ -39,7 +42,7 @@ export class Popover extends SlTooltip {
 
       ::part(body) {
         border: var(--btrix-border);
-        box-shadow: var(--sl-shadow-medium);
+        box-shadow: var(--sl-shadow-small), var(--sl-shadow-large);
       }
 
       ::part(arrow) {

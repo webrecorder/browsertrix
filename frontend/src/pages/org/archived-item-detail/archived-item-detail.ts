@@ -11,7 +11,6 @@ import { type Dialog } from "@/components/ui/dialog";
 import { ClipboardController } from "@/controllers/clipboard";
 import { pageBack, pageNav, type Breadcrumb } from "@/layouts/pageHeader";
 import { WorkflowTab } from "@/routes";
-import { tooltipFor } from "@/strings/archived-items/tooltips";
 import type { APIPaginatedList } from "@/types/api";
 import type {
   ArchivedItem,
@@ -316,7 +315,7 @@ export class ArchivedItemDetail extends BtrixElement {
       case "files":
         sectionContent = this.renderPanel(
           html` ${this.renderTitle(this.tabLabels.files)}
-            <sl-tooltip content=${tooltipFor.downloadMultWacz}>
+            <sl-tooltip content=${msg("Download Files as Multi-WACZ")}>
               <sl-button
                 href=${`/api/orgs/${this.orgId}/all-crawls/${this.itemId}/download?auth_bearer=${authToken}`}
                 download=${`browsertrix-${this.itemId}.wacz`}
@@ -333,7 +332,7 @@ export class ArchivedItemDetail extends BtrixElement {
       case "logs":
         sectionContent = this.renderPanel(
           html` ${this.renderTitle(this.tabLabels.logs)}
-            <sl-tooltip content=${tooltipFor.downloadLogs}>
+            <sl-tooltip content=${msg("Download Entire Log File")}>
               <sl-button
                 href=${`/api/orgs/${this.orgId}/crawls/${this.itemId}/logs?auth_bearer=${authToken}`}
                 download=${`browsertrix-${this.itemId}-logs.log`}
@@ -803,7 +802,7 @@ export class ArchivedItemDetail extends BtrixElement {
                     ? this.formattedFinishedDate
                     : html`<span class="text-0-400">${msg("Pending")}</span>`}
                 </btrix-desc-list-item>
-                <btrix-desc-list-item label=${msg("Elapsed Time")}>
+                <btrix-desc-list-item label=${msg("Run Duration")}>
                   ${this.item!.finished
                     ? html`${this.localize.humanizeDuration(
                         new Date(this.item!.finished).valueOf() -
@@ -1030,8 +1029,6 @@ ${this.item?.description}
   private readonly renderQAHeader = (qaRuns: QARun[]) => {
     const qaIsRunning = this.isQAActive;
     const qaIsAvailable = !!this.mostRecentNonFailedQARun;
-
-    console.log(new URL(window.location.href).pathname);
 
     const reviewLink =
       qaIsAvailable && this.qaRunId
