@@ -49,23 +49,23 @@ export class Popover extends SlTooltip {
         z-index: 1;
       }
 
-      [placement^="bottom"]::part(arrow),
-      [placement^="left"]::part(arrow) {
+      [data-current-placement^="bottom"]::part(arrow),
+      [data-current-placement^="left"]::part(arrow) {
         border-top: var(--btrix-border);
       }
 
-      [placement^="bottom"]::part(arrow),
-      [placement^="right"]::part(arrow) {
+      [data-current-placement^="bottom"]::part(arrow),
+      [data-current-placement^="right"]::part(arrow) {
         border-left: var(--btrix-border);
       }
 
-      [placement^="top"]::part(arrow),
-      [placement^="right"]::part(arrow) {
+      [data-current-placement^="top"]::part(arrow),
+      [data-current-placement^="right"]::part(arrow) {
         border-bottom: var(--btrix-border);
       }
 
-      [placement^="top"]::part(arrow),
-      [placement^="left"]::part(arrow) {
+      [data-current-placement^="top"]::part(arrow),
+      [data-current-placement^="left"]::part(arrow) {
         border-right: var(--btrix-border);
       }
     `,
