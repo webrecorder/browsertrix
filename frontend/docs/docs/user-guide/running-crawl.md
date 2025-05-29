@@ -18,7 +18,7 @@ A crawl workflow that is in progress can be in one of the following states:
 
 ## Watch Crawl
 
-You can watch the current state of the browser windows as the crawler visit pages in the **Watch** tab of **Latest Crawl**. A list of queued URLs are displayed below in the **Upcoming Pages** section.
+You can watch the current state of the browser windows as the crawler visits pages in the **Watch** tab of **Latest Crawl**. A list of queued URLs are displayed below in the **Upcoming Pages** section.
 
 ## Live Exclusion Editing
 
@@ -33,6 +33,16 @@ Exclusions added while crawling are applied to the same exclusion table saved in
 Like exclusions, the number of [browser windows](workflow-setup.md#browser-windows) can also be adjusted while crawling. On the **Watch** tab, press the **+/-** button next to the _Running in_ N _browser windows_ text and set the desired value.
 
 Unlike exclusions, this change will not be applied to future workflow runs.
+
+## Pausing and Resuming Crawls
+
+If you need to pause your crawl at any point after it has started, whether to reassess, rescope, or for any other reason, you now have the option to do so.
+
+Pausing a crawl will halt the timer and prevent any increase in the number of pages crawled or the overall size. Your Status will change from Running to Pausing to eventually Paused to signify that the crawler is no longer crawling.
+
+When you're ready to resume, simply click the resume button. Your status will update from Resuming to Running to indicate that the crawler has started crawling again.
+
+NOTE: While your crawl is paused, you are unable to replay the crawl until it is completed.
 
 ## End a Crawl
 
