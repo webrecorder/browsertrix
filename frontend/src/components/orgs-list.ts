@@ -742,9 +742,10 @@ export class OrgsList extends BtrixElement {
     if (org.storageQuotaReached || org.execMinutesQuotaReached) {
       status = {
         icon: html`<sl-icon
+          tabindex="0"
           class="text-base text-danger"
           name="exclamation-triangle-fill"
-          label=${msg("Issue")}
+          label=${msg("Active with issue")}
         >
         </sl-icon>`,
         description: org.storageQuotaReached
@@ -756,9 +757,10 @@ export class OrgsList extends BtrixElement {
     if (org.readOnly) {
       status = {
         icon: html`<sl-icon
+          tabindex="0"
           class="text-base text-neutral-400"
           name="ban"
-          label=${msg("disabled")}
+          label=${msg("Disabled")}
         >
         </sl-icon>`,
         description: org.readOnlyReason
@@ -786,13 +788,14 @@ export class OrgsList extends BtrixElement {
           ) {
             subscription = {
               icon: html`<sl-icon
+                tabindex="0"
                 class="text-base text-warning"
                 name="calendar2-x"
                 label=${msg("Subscription Cancellation Scheduled")}
               ></sl-icon>`,
-              description: html` <header class="font-medium leading-none">
+              description: html`<h3 class="font-bold">
                   ${msg("Subscription Cancellation Scheduled")}
-                </header>
+                </h3>
                 <hr class="my-2" />
                 <div class="mt-2 text-xs">
                   ${msg("Cancels in")}
@@ -814,7 +817,8 @@ export class OrgsList extends BtrixElement {
               0
           ) {
             subscription = {
-              icon: html`<sl-icon
+              icon: html` <div tabindex="0" class="flex flex-row gap-1">
+                <sl-icon
                   class="text-base text-warning"
                   name="calendar2-x"
                   label=${msg("Subscription Cancellation Scheduled")}
@@ -823,19 +827,20 @@ export class OrgsList extends BtrixElement {
                   class="text-base text-danger"
                   name="x-octagon-fill"
                   label=${msg("Issue")}
-                ></sl-icon>`,
-              description: html`${msg(
-                  "Subscription Cancellation Scheduled in the Past",
-                )}
-                <div class="mt-2 text-xs">
-                  ${msg("Subscription was scheduled for cancellation at")}
+                ></sl-icon>
+              </div>`,
+              description: html`<h3 class="font-bold">
+                  ${msg("Subscription Cancellation Scheduled in the Past")}
+                </h3>
+                <div class="mt-2">
+                  ${msg("Subscription was scheduled for cancellation at")}${" "}
                   ${this.localize.date(org.subscription.futureCancelDate, {
                     timeStyle: "medium",
                     dateStyle: "medium",
                   })}
-                  ${msg("but is still active.")}
+                  ${" "}${msg("but is still active.")}
                 </div>
-                <div class="my-2 font-bold text-danger-300">
+                <div class="mt-2 font-bold text-danger">
                   ${msg("This indicates something has gone wrong.")}
                 </div>`,
             };
@@ -869,13 +874,14 @@ export class OrgsList extends BtrixElement {
           ) {
             subscription = {
               icon: html`<sl-icon
+                tabindex="1"
                 class="text-base text-neutral-400"
                 name="x-square-fill"
                 label=${msg("Trial Cancelled")}
               ></sl-icon>`,
-              description: html`<header class="font-medium leading-none">
+              description: html`<h3 class="font-bold">
                   ${msg("Trial Cancellation Scheduled")}
-                </header>
+                </h3>
                 <hr class="my-2" />
                 <div class="mt-2 text-xs">
                   ${msg("Cancels in")}
@@ -897,7 +903,8 @@ export class OrgsList extends BtrixElement {
               0
           ) {
             subscription = {
-              icon: html`<sl-icon
+              icon: html`<div tabindex="0" class="flex flex-row gap-1">
+                <sl-icon
                   class="text-base text-neutral-400"
                   name="x-square-fill"
                   label=${msg("Trial Cancelled")}
@@ -906,10 +913,11 @@ export class OrgsList extends BtrixElement {
                   class="text-base text-danger"
                   name="x-octagon-fill"
                   label=${msg("Issue")}
-                ></sl-icon>`,
-              description: html`${msg(
-                  "Trial Cancellation Scheduled in the Past",
-                )}
+                ></sl-icon>
+              </div>`,
+              description: html`<h3 class="font-bold">
+                  ${msg("Trial Cancellation Scheduled in the Past")}
+                </h3>
                 <div class="mt-2 text-xs">
                   ${msg("Trial was scheduled for cancellation at")}
                   ${this.localize.date(org.subscription.futureCancelDate, {
@@ -918,7 +926,7 @@ export class OrgsList extends BtrixElement {
                   })}
                   ${msg("but is still active.")}
                 </div>
-                <div class="my-2 font-bold text-danger-300">
+                <div class="mt-2 font-bold text-danger">
                   ${msg("This indicates something has gone wrong.")}
                 </div>`,
             };
@@ -970,6 +978,7 @@ export class OrgsList extends BtrixElement {
           break;
       }
     }
+    const useTooltip = typeof subscription.description === "string";
 
     return html`
       <btrix-table-row
@@ -981,10 +990,14 @@ export class OrgsList extends BtrixElement {
           <sl-tooltip content=${status.description} hoist>
             ${status.icon}
           </sl-tooltip>
-          <sl-tooltip hoist>
-            <span slot="content">${subscription.description}</span>
-            ${subscription.icon}
-          </sl-tooltip>
+          ${useTooltip
+            ? html`<sl-tooltip hoist content=${subscription.description}>
+                ${subscription.icon}
+              </sl-tooltip>`
+            : html`<btrix-popover placement="top" hoist>
+                <span slot="content">${subscription.description}</span>
+                ${subscription.icon}
+              </btrix-popover>`}
         </btrix-table-cell>
         <btrix-table-cell class="p-2" rowClickTarget="a">
           <a
