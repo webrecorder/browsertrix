@@ -373,12 +373,15 @@ btrix-proxies:
 # crawler_fsgroup: 201407
 
 
-# optional: enable/disable crawler network policy
+# optional: enable/disable crawler network policy, prevents crawler pods from accessing internal services
 crawler_enable_network_policy: true
 
-# optional: replace the default crawler egress policy with your own
+# optional: add additional egress rules to the default crawler network policy (See chart/templates/networkpolicies.yaml for an example)
+# crawler_network_policy_additional_egress: []
+
+# optional: replace the default crawler egress policy with your own egress rules (See chart/templates/networkpolicies.yaml for an example)
 # see chart/templates/networkpolicies.yaml for an example
-# crawler_network_policy_egress: {}
+# crawler_network_policy_egress: []
 
 # time to wait for graceful stop
 grace_period: 1000
