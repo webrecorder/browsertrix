@@ -20,7 +20,7 @@ export function formatPercentage(n: number, fractionDigits = 2) {
 
 export const pageDetails = (page: ArchivedItemQAPage) =>
   html`<ul class="leading-4">
-      <li class="my-3 flex">
+      <li class="flex">
         ${iconFor(
           severityFromMatch(page.qa.screenshotMatch),
           tw`mr-2 flex-none`,
@@ -65,7 +65,7 @@ export const pageDetails = (page: ArchivedItemQAPage) =>
             : msg("No Crawl Diff")}
         </span>
       </li>
-      <li class="my-3 flex">
+      <li class="flex">
         ${iconFor(
           severityFromResourceCounts(
             page.qa.resourceCounts?.replayBad,
@@ -93,7 +93,7 @@ export const pageDetails = (page: ArchivedItemQAPage) =>
           <div class="my-2 text-xs text-neutral-400">
             ${msg("Newest comment:")}
           </div>
-          <div class="mb-3 flex text-xs leading-4">
+          <div class="flex text-xs leading-4">
             <sl-icon
               name="chat-square-text-fill"
               class="mr-2 size-4 flex-none text-blue-600"
