@@ -42,7 +42,8 @@ Pausing a crawl will halt the timer and prevent any increase in the number of pa
 
 When you're ready to resume, simply click the resume button. Your status will update from Resuming to Running to indicate that the crawler has started crawling again.
 
-NOTE: While your crawl is paused, you are unable to replay the crawl until it is completed.
+???+ Note
+    While your crawl is paused, you are unable to replay the crawl until it is completed.
 
 ## End a Crawl
 
