@@ -33,6 +33,7 @@ enum OrgFilter {
   Inactive = "inactive",
   Trialing = "trialing",
   ScheduledCancel = "scheduled-cancel",
+  BadStates = "bad-states",
 }
 
 const none = html`
@@ -180,6 +181,11 @@ export class OrgsList extends BtrixElement {
               icon: "calendar2-x",
               filter: OrgFilter.ScheduledCancel,
             },
+            {
+              label: msg("Unexpected States"),
+              icon: "exclamation-triangle",
+              filter: OrgFilter.BadStates,
+            },
           ].map((options) => this.renderFilterButton(searchResults, options))}
         </sl-radio-group>
       </btrix-overflow-scroll>
@@ -276,6 +282,35 @@ export class OrgsList extends BtrixElement {
         );
       case OrgFilter.All:
         return true;
+      case OrgFilter.BadStates:
+        // Check if org should be disabled but isn't
+        if (
+          !org.readOnly &&
+          org.subscription &&
+          [
+            SubscriptionStatus.Cancelled,
+            SubscriptionStatus.PausedPaymentFailed,
+          ].includes(org.subscription.status)
+        ) {
+          return true;
+        }
+
+        // Check if org is scheduled to cancel in the past
+        if (
+          org.subscription?.futureCancelDate &&
+          new Date(org.subscription.futureCancelDate).getTime() -
+            new Date().getTime() <
+            0
+        ) {
+          return true;
+        }
+
+        // Check if org has empty subscription id
+        if (org.subscription && !org.subscription.subId) {
+          return true;
+        }
+
+        return false;
     }
   }
 
@@ -773,6 +808,7 @@ export class OrgsList extends BtrixElement {
     let subscription: {
       icon: TemplateResult<1>;
       description: string | TemplateResult<1>;
+      unexpectedState?: true;
     } = {
       icon: none,
       description: msg("No Subscription"),
@@ -844,6 +880,7 @@ export class OrgsList extends BtrixElement {
                 <div class="mt-2 font-bold text-danger">
                   ${msg("This indicates something has gone wrong.")}
                 </div>`,
+              unexpectedState: true,
             };
           } else {
             subscription = {
@@ -930,6 +967,7 @@ export class OrgsList extends BtrixElement {
                 <div class="mt-2 font-bold text-danger">
                   ${msg("This indicates something has gone wrong.")}
                 </div>`,
+              unexpectedState: true,
             };
           } else {
             subscription = {
