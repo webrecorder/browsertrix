@@ -75,6 +75,7 @@ class CrawlSpec(BaseModel):
     oid: UUID
     org: Organization
     scale: int = 1
+    browser_windows: int = 1
     storage: StorageRef
     started: str
     crawler_channel: str
@@ -143,6 +144,8 @@ class PodInfo(BaseModel):
 
     evicted: Optional[bool] = False
 
+    lastWorkers: Optional[int] = 0
+
     def dict(self, *a, **kw):
         res = super().dict(*a, **kw)
         percent = {
@@ -205,6 +208,7 @@ class CrawlStatus(BaseModel):
     size: int = 0
     # human readable size string
     sizeHuman: str = ""
+    # number of pods
     scale: int = 1
     filesAdded: int = 0
     filesAddedSize: int = 0

@@ -33,7 +33,6 @@ import {
 } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { map } from "lit/directives/map.js";
-import { range } from "lit/directives/range.js";
 import { when } from "lit/directives/when.js";
 import compact from "lodash/fp/compact";
 import flow from "lodash/fp/flow";
@@ -115,6 +114,7 @@ import {
   getInitialFormState,
   getServerDefaults,
   makeUserGuideEvent,
+  rangeBrowserWindows,
   SECTIONS,
   workflowTabToGuideHash,
   type FormState,
@@ -1581,20 +1581,18 @@ https://archiveweb.page/images/${"logo.svg"}`}
         <sl-radio-group
           name="scale"
           label=${msg("Browser Windows")}
-          value=${this.formState.scale}
+          value=${this.formState.browserWindows}
           @sl-change=${(e: Event) =>
             this.updateFormState({
-              scale: +(e.target as SlCheckbox).value,
+              browserWindows: +(e.target as SlCheckbox).value,
             })}
         >
-          ${when(this.appState.settings?.numBrowsers, (numBrowsers) =>
-            map(
-              range(this.orgDefaults.maxScale),
-              (i: number) =>
-                html` <sl-radio-button value="${i + 1}" size="small"
-                  >${(i + 1) * numBrowsers}</sl-radio-button
-                >`,
-            ),
+          ${map(
+            rangeBrowserWindows(this.appState.settings),
+            (i: number) =>
+              html` <sl-radio-button value="${i}" size="small"
+                >${i}</sl-radio-button
+              >`,
           )}
         </sl-radio-group>
       `)}
@@ -2550,7 +2548,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       jobType: "custom",
       name: this.formState.jobName || "",
       description: this.formState.description,
-      scale: this.formState.scale,
+      browserWindows: this.formState.browserWindows,
       profileid: this.formState.browserProfile?.id || "",
       schedule: this.formState.scheduleType === "cron" ? this.utcSchedule : "",
       crawlTimeout: this.formState.crawlTimeoutMinutes * 60,

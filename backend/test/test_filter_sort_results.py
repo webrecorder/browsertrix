@@ -11,8 +11,8 @@ def test_get_config_by_created_by(crawler_auth_headers, default_org_id, crawler_
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?userid={crawler_userid}",
         headers=crawler_auth_headers,
     )
-    assert len(r.json()["items"]) == 5
-    assert r.json()["total"] == 5
+    assert len(r.json()["items"]) == 7
+    assert r.json()["total"] == 7
 
 
 def test_get_config_by_modified_by(
@@ -23,8 +23,8 @@ def test_get_config_by_modified_by(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?modifiedBy={crawler_userid}",
         headers=crawler_auth_headers,
     )
-    assert len(r.json()["items"]) == 5
-    assert r.json()["total"] == 5
+    assert len(r.json()["items"]) == 7
+    assert r.json()["total"] == 7
 
 
 def test_get_configs_by_first_seed(
@@ -362,9 +362,9 @@ def test_sort_crawl_configs(
         headers=crawler_auth_headers,
     )
     data = r.json()
-    assert data["total"] == 11
+    assert data["total"] == 13
     items = data["items"]
-    assert len(items) == 11
+    assert len(items) == 13
 
     last_created = None
     for config in items:

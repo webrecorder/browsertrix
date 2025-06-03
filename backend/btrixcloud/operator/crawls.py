@@ -32,7 +32,12 @@ from btrixcloud.models import (
     StorageRef,
 )
 
-from btrixcloud.utils import str_to_date, date_to_str, dt_now
+from btrixcloud.utils import (
+    str_to_date,
+    date_to_str,
+    dt_now,
+    scale_from_browser_windows,
+)
 
 from .baseoperator import BaseOperator, Redis
 from .models import (
@@ -168,6 +173,7 @@ class CrawlOperator(BaseOperator):
             crawler_channel=spec.get("crawlerChannel", "default"),
             proxy_id=spec.get("proxyId"),
             scale=spec.get("scale", 1),
+            browser_windows=spec.get("browserWindows", 1),
             started=data.parent["metadata"]["creationTimestamp"],
             stopping=spec.get("stopping", False),
             paused_at=str_to_date(spec.get("pausedAt")),
@@ -178,7 +184,7 @@ class CrawlOperator(BaseOperator):
         )
 
         if crawl.qa_source_crawl_id:
-            crawl.scale = int(params.get("qa_scale", 1))
+            crawl.browser_windows = int(params.get("qa_scale", 1))
 
         # if finalizing, crawl is being deleted
         if data.finalizing:
@@ -359,9 +365,25 @@ class CrawlOperator(BaseOperator):
 
         is_paused = bool(crawl.paused_at) and status.state == "paused"
 
-        for i in range(0, status.scale):
+        # crawl_scale is the number of pods to create
+        crawler_scale = scale_from_browser_windows(crawl.browser_windows)
+
+        browsers_per_pod = int(os.environ.get("NUM_BROWSERS", 1))
+
+        for i in range(0, crawler_scale):
+            if status.pagesFound < i * browsers_per_pod:
+                break
+
             children.extend(
-                self._load_crawler(params, i, status, data.children, is_paused)
+                self._load_crawler(
+                    params,
+                    i,
+                    crawler_scale,
+                    crawl.browser_windows,
+                    status,
+                    data.children,
+                    is_paused,
+                )
             )
 
         return {
@@ -467,7 +489,16 @@ class CrawlOperator(BaseOperator):
         return self.load_from_yaml("qa_configmap.yaml", params)
 
     # pylint: disable=too-many-arguments
-    def _load_crawler(self, params, i, status: CrawlStatus, children, paused: bool):
+    def _load_crawler(
+        self,
+        params,
+        i: int,
+        total_pods: int,
+        total_browser_windows: int,
+        status: CrawlStatus,
+        children,
+        is_paused: bool,
+    ):
         name = f"crawl-{params['id']}-{i}"
         has_pod = name in children[POD]
 
@@ -482,20 +513,47 @@ class CrawlOperator(BaseOperator):
             worker_field = "crawler_workers"
             pri_class = f"crawl-pri-{i}"
 
+        browsers_per_pod = params.get(worker_field) or 1
+
+        # if last pod, compute remaining browsers, or full amount if 0
+        if i == total_pods - 1:
+            workers = (total_browser_windows % browsers_per_pod) or browsers_per_pod
+        else:
+            workers = browsers_per_pod
+
+        # scale resources if < full browsers_per_pod
+        if workers < browsers_per_pod:
+            memory, cpu = self.k8s.compute_for_num_browsers(workers)
+        else:
+            cpu = params.get(cpu_field)
+            memory = params.get(mem_field)
+
         pod_info = status.podStatus[name]
+
+        # compute if number of browsers for this pod has changed
+        workers_changed = pod_info.lastWorkers != workers
+        if workers_changed:
+            print(f"Workers changed for {i}: {pod_info.lastWorkers} -> {workers}")
+
+        pod_info.lastWorkers = workers
+
         params["name"] = name
         params["priorityClassName"] = pri_class
-        params["cpu"] = pod_info.newCpu or params.get(cpu_field)
-        params["memory"] = pod_info.newMemory or params.get(mem_field)
+        params["cpu"] = pod_info.newCpu or cpu
+        params["memory"] = pod_info.newMemory or memory
+        params["workers"] = workers
         if self.k8s.enable_auto_resize:
             params["memory_limit"] = float(params["memory"]) * MEM_LIMIT_PADDING
         else:
             params["memory_limit"] = self.k8s.max_crawler_memory_size
         params["storage"] = pod_info.newStorage or params.get("crawler_storage")
-        params["workers"] = params.get(worker_field) or 1
-        params["init_crawler"] = not paused
-        if has_pod and not paused:
+
+        params["init_crawler"] = not is_paused
+        if has_pod and not is_paused:
             restart_reason = pod_info.should_restart_pod(params.get("force_restart"))
+            if not restart_reason and workers_changed:
+                restart_reason = "pod_resized"
+
             if restart_reason:
                 print(f"Restarting {name}, reason: {restart_reason}")
                 params["init_crawler"] = False
@@ -521,8 +579,7 @@ class CrawlOperator(BaseOperator):
     # pylint: disable=too-many-arguments
     async def _resolve_scale(
         self,
-        crawl_id: str,
-        desired_scale: int,
+        crawl: CrawlSpec,
         redis: Redis,
         status: CrawlStatus,
         pods: dict[str, dict],
@@ -535,14 +592,20 @@ class CrawlOperator(BaseOperator):
         scale and clean up previous scale state.
         """
 
+        desired_scale = scale_from_browser_windows(crawl.browser_windows)
+
+        if status.pagesFound < desired_scale:
+            desired_scale = max(1, status.pagesFound)
+
+        if desired_scale == status.scale:
+            return status.scale
+
+        crawl_id = crawl.id
+
         # actual scale (minus redis pod)
         actual_scale = len(pods)
         if pods.get(f"redis-{crawl_id}"):
             actual_scale -= 1
-
-        # ensure at least enough pages for the scale
-        if status.pagesFound < desired_scale:
-            desired_scale = max(1, status.pagesFound)
 
         # if desired_scale same or scaled up, return desired_scale
         if desired_scale >= actual_scale:
@@ -1477,13 +1540,11 @@ class CrawlOperator(BaseOperator):
                     )
 
         # resolve scale
-        if crawl.scale != status.scale:
-            status.scale = await self._resolve_scale(
-                crawl.id, crawl.scale, redis, status, pods
-            )
+        await self._resolve_scale(crawl, redis, status, pods)
 
         # check if done / failed
         status_count: dict[str, int] = {}
+
         for i in range(status.scale):
             res = results.get(f"crawl-{crawl.id}-{i}")
             if res:

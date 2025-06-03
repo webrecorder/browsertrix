@@ -4,7 +4,7 @@ export default {
   defaultBehaviorTimeSeconds: 0,
   defaultPageLoadTimeSeconds: 0,
   maxPagesPerCrawl: 0,
-  maxScale: 0,
+  maxBrowserWindows: 0,
   billingEnabled: true,
   signUpUrl: "",
   salesEmail: "",

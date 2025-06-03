@@ -239,6 +239,8 @@ def test_crawl_info(admin_auth_headers, default_org_id):
     assert data["fileCount"] == 1
     assert data["userName"]
     assert data["version"] == 2
+    assert data["scale"] == 1
+    assert data["browserWindows"] == 2
 
 
 def test_crawls_include_seed_info(admin_auth_headers, default_org_id):

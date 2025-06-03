@@ -8,6 +8,7 @@ from uuid import UUID
 import base64
 import hashlib
 import mimetypes
+import math
 import os
 
 from typing import Optional, List, Dict, Union, Literal, Any, get_args
@@ -30,8 +31,19 @@ from slugify import slugify
 
 from .db import BaseMongoModel
 
+# num browsers per crawler instance
+NUM_BROWSERS = int(os.environ.get("NUM_BROWSERS", 2))
+
+# browser window for constraint (preferred over scale if provided)
+MAX_BROWSER_WINDOWS = os.environ.get("MAX_BROWSER_WINDOWS") or 0
+
 # crawl scale for constraint
-MAX_CRAWL_SCALE = int(os.environ.get("MAX_CRAWL_SCALE", 3))
+if MAX_BROWSER_WINDOWS:
+    MAX_BROWSER_WINDOWS = int(MAX_BROWSER_WINDOWS)
+    MAX_CRAWL_SCALE = math.ceil(MAX_BROWSER_WINDOWS / NUM_BROWSERS)
+else:
+    MAX_CRAWL_SCALE = int(os.environ.get("MAX_CRAWL_SCALE", 3))
+    MAX_BROWSER_WINDOWS = MAX_CRAWL_SCALE * NUM_BROWSERS
 
 # Presign duration must be less than 604800 seconds (one week),
 # so set this one minute short of a week
@@ -52,7 +64,8 @@ MIN_UPLOAD_PART_SIZE = 10000000
 
 EmptyStr = Annotated[str, Field(min_length=0, max_length=0)]
 
-Scale = Annotated[int, Field(strict=True, ge=1, le=MAX_CRAWL_SCALE)]
+Scale = Annotated[int, Field(strict=True, ge=1, le=MAX_CRAWL_SCALE, deprecated=True)]
+BrowserWindowCount = Annotated[int, Field(strict=True, ge=1, le=MAX_BROWSER_WINDOWS)]
 ReviewStatus = Optional[Annotated[int, Field(strict=True, ge=1, le=5)]]
 
 any_http_url_adapter = TypeAdapter(AnyHttpUrlNonStr)
@@ -369,7 +382,11 @@ class CrawlConfigIn(BaseModel):
 
     crawlTimeout: int = 0
     maxCrawlSize: int = 0
+
     scale: Scale = 1
+
+    # Overrides scale if set
+    browserWindows: Optional[BrowserWindowCount] = None
 
     crawlFilenameTemplate: Optional[str] = None
 
@@ -390,7 +407,8 @@ class ConfigRevision(BaseMongoModel):
 
     crawlTimeout: Optional[int] = 0
     maxCrawlSize: Optional[int] = 0
-    scale: Scale = 1
+    scale: Optional[Scale] = 1
+    browserWindows: Optional[BrowserWindowCount] = 2
 
     modified: datetime
     modifiedBy: Optional[UUID] = None
@@ -411,7 +429,9 @@ class CrawlConfigCore(BaseMongoModel):
 
     crawlTimeout: Optional[int] = 0
     maxCrawlSize: Optional[int] = 0
-    scale: Scale = 1
+
+    scale: Optional[Scale] = None
+    browserWindows: BrowserWindowCount = 2
 
     oid: UUID
 
@@ -522,7 +542,8 @@ class UpdateCrawlConfig(BaseModel):
     proxyId: Optional[str] = None
     crawlTimeout: Optional[int] = None
     maxCrawlSize: Optional[int] = None
-    scale: Scale = 1
+    scale: Optional[Scale] = None
+    browserWindows: Optional[BrowserWindowCount] = None
     crawlFilenameTemplate: Optional[str] = None
     config: Optional[RawCrawlConfig] = None
 
@@ -874,7 +895,8 @@ class CrawlOut(BaseMongoModel):
     pausedAt: Optional[datetime] = None
     manual: bool = False
     cid_rev: Optional[int] = None
-    scale: Scale = 1
+    scale: Optional[Scale] = None
+    browserWindows: BrowserWindowCount = 2
 
     storageQuotaReached: Optional[bool] = False
     execMinutesQuotaReached: Optional[bool] = False
@@ -959,9 +981,10 @@ class MatchCrawlQueueResponse(BaseModel):
 
 # ============================================================================
 class CrawlScale(BaseModel):
-    """scale the crawl to N parallel containers"""
+    """scale the crawl to N parallel containers or windows"""
 
-    scale: Scale = 1
+    scale: Optional[Scale] = None
+    browserWindows: Optional[BrowserWindowCount] = None
 
 
 # ============================================================================
@@ -1053,7 +1076,8 @@ class CrawlCompleteIn(BaseModel):
 class CrawlScaleResponse(BaseModel):
     """Response model for modifying crawl scale"""
 
-    scaled: int
+    scaled: bool
+    browserWindows: int
 
 
 # ============================================================================

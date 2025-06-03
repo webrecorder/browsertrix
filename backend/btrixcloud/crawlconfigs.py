@@ -52,6 +52,7 @@ from .utils import (
     validate_regexes,
     validate_language_code,
     is_url,
+    browser_windows_from_scale,
 )
 
 if TYPE_CHECKING:
@@ -222,6 +223,12 @@ class CrawlConfigOps:
     ) -> CrawlConfigAddedResponse:
         """Add new crawl config"""
 
+        # Overrides scale if set
+        if config_in.browserWindows is None:
+            config_in.browserWindows = browser_windows_from_scale(
+                cast(int, config_in.scale)
+            )
+
         # ensure crawlChannel is valid
         if not self.get_channel_crawler_image(config_in.crawlerChannel):
             raise HTTPException(status_code=404, detail="crawler_not_found")
@@ -272,7 +279,7 @@ class CrawlConfigOps:
             jobType=config_in.jobType,
             crawlTimeout=config_in.crawlTimeout,
             maxCrawlSize=config_in.maxCrawlSize,
-            scale=config_in.scale,
+            browserWindows=config_in.browserWindows,
             autoAddCollections=config_in.autoAddCollections,
             profileid=profileid,
             crawlerChannel=config_in.crawlerChannel,
@@ -408,6 +415,10 @@ class CrawlConfigOps:
 
         orig_crawl_config = await self.get_crawl_config(cid, org.id)
 
+        if update.scale:
+            update.browserWindows = browser_windows_from_scale(cast(int, update.scale))
+            update.scale = None
+
         if update.config and update.config.exclude:
             exclude = update.config.exclude
             if isinstance(exclude, str):
@@ -441,7 +452,9 @@ class CrawlConfigOps:
         changed = changed or (
             self.check_attr_changed(orig_crawl_config, update, "crawlFilenameTemplate")
         )
-        changed = changed or self.check_attr_changed(orig_crawl_config, update, "scale")
+        changed = changed or self.check_attr_changed(
+            orig_crawl_config, update, "browserWindows"
+        )
 
         schedule_changed = self.check_attr_changed(
             orig_crawl_config, update, "schedule"
