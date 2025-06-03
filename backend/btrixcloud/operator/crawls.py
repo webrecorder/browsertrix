@@ -558,12 +558,6 @@ class CrawlOperator(BaseOperator):
                 print(f"Restarting {name}, reason: {restart_reason}")
                 params["init_crawler"] = False
 
-        worker_count = params["workers"]
-        print(
-            f"crawler pod {i}, {worker_count} workers",
-            flush=True,
-        )
-
         return self.load_from_yaml("crawler.yaml", params)
 
     def _qa_configmap_update_needed(self, name, configmap):
