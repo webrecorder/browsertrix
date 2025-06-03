@@ -2247,7 +2247,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
             "btrix-user-guide-show",
             {
               detail: {
-                path: `user-guide/workflow-setup/#${workflowTabToGuideHash[step]}`,
+                path: `workflow-setup/#${workflowTabToGuideHash[step]}`,
               },
               bubbles: true,
               composed: true,
