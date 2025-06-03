@@ -2804,7 +2804,11 @@
           crawling. For details, refer to
           <x id="0" equiv-text="&lt;a class=&quot;text-primary hover:text-primary-400&quot; href=&quot;/docs/user-guide/browser-profiles/&quot; target=&quot;_blank&quot;&gt;&#10;            ${msg(&quot;browser profile best practices&quot;)}&lt;/a&gt;"/>.
         </source>
-        <target state="translated">Il est fortement recommandé de créer des comptes dédiés à la collecte. Pour plus de détails, voir <x id="0" equiv-text="&lt;a class=&quot;text-primary hover:text-primary-400&quot; href=&quot;/docs/user-guide/browser-profiles/&quot; target=&quot;_blank&quot;&gt;&#10;            ${msg(&quot;browser profile best practices&quot;)}&lt;/a&gt;"/>. </target>
+        <target state="translated">
+          Il est fortement recommandé de créer des comptes dédiés à la collecte. 
+          Pour plus de détails, voir 
+<x id="0" equiv-text="&lt;a class=&quot;text-primary hover:text-primary-400&quot; href=&quot;/docs/user-guide/browser-profiles/&quot; target=&quot;_blank&quot;&gt;&#10;            ${msg(&quot;browser profile best practices&quot;)}&lt;/a&gt;"/>
+        </target>
       </trans-unit>
       <trans-unit id="se058d83e4b3bad9e" xml:space="preserve">
         <source>browser profile best practices</source>
