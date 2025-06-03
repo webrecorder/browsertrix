@@ -38,7 +38,7 @@ export const TopPlacement: Story = {
   args: {
     open: true,
     placement: "top",
-    anchor: html`<btrix-badge>Popover displays below</btrix-badge>`,
+    anchor: html`<btrix-badge>Popover displays above</btrix-badge>`,
   },
 };
 
