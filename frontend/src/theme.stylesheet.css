@@ -263,19 +263,6 @@
     min-width: min-content;
   }
 
-  /* Style tooltip with white background */
-  /* TODO Replace instances with `<btrix-popover>` */
-  sl-tooltip.invert-tooltip {
-    --sl-tooltip-arrow-size: 0;
-    --sl-tooltip-background-color: var(--sl-color-neutral-50);
-    --sl-tooltip-color: var(--sl-color-neutral-700);
-  }
-
-  sl-tooltip.invert-tooltip::part(body) {
-    outline: 1px solid var(--sl-panel-border-color);
-    box-shadow: var(--sl-shadow-large);
-  }
-
   sl-tab-group {
     --indicator-color: var(--sl-color-primary-500);
   }
