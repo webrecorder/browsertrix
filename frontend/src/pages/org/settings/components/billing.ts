@@ -3,6 +3,7 @@ import { Task } from "@lit/task";
 import clsx from "clsx";
 import { css, html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
+import { choose } from "lit/directives/choose.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import capitalize from "lodash/fp/capitalize";
@@ -38,11 +39,10 @@ export class OrgSettingsBilling extends BtrixElement {
 
     if (!subscription) return;
 
-    let label = msg("Manage Billing");
+    let label = msg("Manage Subscription");
 
     switch (subscription.status) {
-      case SubscriptionStatus.TrialingCanceled:
-      case SubscriptionStatus.Trialing: {
+      case SubscriptionStatus.TrialingCanceled: {
         label = msg("Subscribe Now");
         break;
       }
@@ -86,6 +86,10 @@ export class OrgSettingsBilling extends BtrixElement {
   });
 
   render() {
+    const manageSubscriptionMessage = msg(
+      str`Click “${this.portalUrlLabel}” to view plan details, payment methods, and billing information.`,
+    );
+
     return html`
       <section class="-mt-5">
         ${columns([
@@ -131,6 +135,13 @@ export class OrgSettingsBilling extends BtrixElement {
                       },
                     );
 
+                    const trialMessage = (detail: string) => html`
+                      <span class="font-medium text-neutral-700">
+                        ${msg(str`Your trial will end on ${futureCancelDate}`)}
+                      </span>
+                      &mdash; ${detail}
+                    `;
+
                     return html`
                       <div
                         class="mb-3 flex items-center gap-2 border-b pb-3 text-neutral-500"
@@ -140,22 +151,29 @@ export class OrgSettingsBilling extends BtrixElement {
                           class="size-4 flex-shrink-0"
                         ></sl-icon>
                         <div>
-                          ${org.subscription.status ===
-                            SubscriptionStatus.Trialing ||
-                          org.subscription.status ===
-                            SubscriptionStatus.TrialingCanceled
-                            ? html`
-                                <span class="font-medium text-neutral-700">
-                                  ${msg(
-                                    str`Your trial will end on ${futureCancelDate}`,
-                                  )}
-                                </span>
-                                &mdash;
-                                ${msg(str`subscribe to keep your account`)}
-                              `
-                            : msg(
+                          ${choose(
+                            org.subscription.status,
+                            [
+                              [
+                                SubscriptionStatus.Trialing,
+                                () =>
+                                  trialMessage(
+                                    msg("the card on file will be charged"),
+                                  ),
+                              ],
+                              [
+                                SubscriptionStatus.TrialingCanceled,
+                                () =>
+                                  trialMessage(
+                                    msg("subscribe to keep your account"),
+                                  ),
+                              ],
+                            ],
+                            () =>
+                              html`${msg(
                                 str`Your plan will be canceled on ${futureCancelDate}`,
-                              )}
+                              )}`,
+                          )}
                         </div>
                       </div>
                     `;
@@ -185,16 +203,30 @@ export class OrgSettingsBilling extends BtrixElement {
               ${when(this.org, (org) =>
                 org.subscription
                   ? html` <p class="mb-3 leading-normal">
-                        ${org.subscription.status ===
-                          SubscriptionStatus.Trialing ||
-                        org.subscription.status ===
-                          SubscriptionStatus.TrialingCanceled
-                          ? msg(
-                              str`To continue using Browsertrix at the end of your trial, click “${this.portalUrlLabel}”.`,
-                            )
-                          : msg(
-                              str`You can view plan details, update payment methods, and update billing information by clicking “${this.portalUrlLabel}”.`,
-                            )}
+                        ${choose(
+                          org.subscription.status,
+                          [
+                            [
+                              SubscriptionStatus.Trialing,
+                              () => [
+                                manageSubscriptionMessage,
+                                html`<br /><br />`,
+                                msg(
+                                  "You also have the ability to cancel your trial or permanently delete your account from the subscription portal.",
+                                ),
+                              ],
+                            ],
+                            [
+                              SubscriptionStatus.TrialingCanceled,
+                              () => [
+                                msg(
+                                  str`To continue using Browsertrix at the end of your trial, click “${this.portalUrlLabel}”.`,
+                                ),
+                              ],
+                            ],
+                          ],
+                          () => [manageSubscriptionMessage],
+                        )}
                       </p>
                       ${this.salesEmail
                         ? html`<p class="leading-normal">
