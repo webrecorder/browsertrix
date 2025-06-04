@@ -127,7 +127,7 @@ export class OrgStatusBanner extends BtrixElement {
           !!futureCancelDate &&
           ((isTrial && daysDiff < MAX_TRIAL_DAYS_SHOW_BANNER) ||
             isCancelingTrial),
-        variant: "warning",
+        variant: isCancelingTrial ? "danger" : "warning",
         content: () => {
           return {
             title:
