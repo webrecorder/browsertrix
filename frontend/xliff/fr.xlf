@@ -4797,7 +4797,10 @@
     Are you sure you want to delete
     <x id="0" equiv-text="&lt;strong class=&quot;font-semibold&quot;&gt;${name}&lt;/strong&gt;"/>?
   </source>
-        <target state="translated">Êtes-vous sûr de vouloir supprimer <x id="0" equiv-text="&lt;strong class=&quot;font-semibold&quot;&gt;${name}&lt;/strong&gt;"/> ? </target>
+        <target state="translated">
+    Êtes-vous sûr de vouloir supprimer 
+    <x id="0" equiv-text="&lt;strong class=&quot;font-semibold&quot;&gt;${name}&lt;/strong&gt;"/> ?
+  </target>
       </trans-unit>
       <trans-unit id="s537a1aeb41fca7c0" xml:space="preserve">
         <source>Delete Workflow?</source>
