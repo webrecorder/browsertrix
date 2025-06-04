@@ -1,4 +1,5 @@
 import { localized, msg, str } from "@lit/localize";
+import type { SlAlert } from "@shoelace-style/shoelace";
 import { differenceInHours } from "date-fns/fp";
 import { html, type TemplateResult } from "lit";
 import { customElement } from "lit/decorators.js";
@@ -9,6 +10,7 @@ import { OrgReadOnlyReason } from "@/types/org";
 
 type Alert = {
   test: () => boolean;
+  variant?: SlAlert["variant"];
   content: () => {
     title: string | TemplateResult;
     detail: string | TemplateResult;
@@ -30,7 +32,7 @@ export class OrgStatusBanner extends BtrixElement {
     return html`
       <div id="banner" class="border-b bg-slate-100 py-5">
         <div class="mx-auto box-border w-full max-w-screen-desktop px-3">
-          <sl-alert variant="danger" open>
+          <sl-alert variant=${alert.variant || "danger"} open>
             <sl-icon slot="icon" name="exclamation-triangle-fill"></sl-icon>
             <strong class="block font-semibold">${content.title}</strong>
             ${content.detail}
@@ -80,14 +82,13 @@ export class OrgStatusBanner extends BtrixElement {
       });
     }
 
-    const isTrialingCanceled =
+    const isCancelingTrial =
       subscription?.status == SubscriptionStatus.TrialingCanceled;
     const isTrial =
-      subscription?.status === SubscriptionStatus.Trialing ||
-      isTrialingCanceled;
+      subscription?.status === SubscriptionStatus.Trialing || isCancelingTrial;
 
     // show banner if < this many days of trial is left
-    const MAX_TRIAL_DAYS_SHOW_BANNER = 4;
+    const MAX_TRIAL_DAYS_SHOW_BANNER = 10;
 
     return [
       {
@@ -125,8 +126,8 @@ export class OrgStatusBanner extends BtrixElement {
           !readOnlyOnCancel &&
           !!futureCancelDate &&
           ((isTrial && daysDiff < MAX_TRIAL_DAYS_SHOW_BANNER) ||
-            isTrialingCanceled),
-
+            isCancelingTrial),
+        variant: "warning",
         content: () => {
           return {
             title:
@@ -138,21 +139,28 @@ export class OrgStatusBanner extends BtrixElement {
                       str`You have ${daysDiff} days left of your Browsertrix trial`,
                     ),
 
-            detail: html`
-              <p>
-                ${msg(
-                  html`Your free trial ends on ${dateStr}. To continue using
-                    Browsertrix, select <strong>Subscribe Now</strong> in
-                    ${billingTabLink}.`,
-                )}
-              </p>
-              <p>
-                ${msg(
-                  str`Your web archives are always yours — you can download any archived items you'd like to keep
+            detail: isCancelingTrial
+              ? html`
+                  <p>
+                    ${msg(
+                      html`Your free trial ends on ${dateStr}. To continue using
+                        Browsertrix, select <strong>Subscribe Now</strong> in
+                        ${billingTabLink}.`,
+                    )}
+                  </p>
+                  <p>
+                    ${msg(
+                      str`Your web archives are always yours — you can download any archived items you'd like to keep
                   before the trial ends!`,
-                )}
-              </p>
-            `,
+                    )}
+                  </p>
+                `
+              : html`<p>
+                  ${msg(
+                    html`Your free trial ends on ${dateStr}. Manage your
+                    subscription in ${billingTabLink}.`,
+                  )}
+                </p>`,
           };
         },
       },
