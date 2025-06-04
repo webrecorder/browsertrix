@@ -11,6 +11,9 @@ spec:
   policyTypes:
     - Egress
   egress:
+  {{- if .Values.crawler_network_policy_additional_egress | default false -}}
+  {{- .Values.crawler_network_policy_additional_egress | toYaml | nindent 4 -}}
+  {{- end -}}
   {{- if .Values.crawler_network_policy_egress | default false -}}
   {{- .Values.crawler_network_policy_egress | toYaml | nindent 4 -}}
   {{- else }}
