@@ -3692,15 +3692,22 @@
         <target state="translated">Collectera toutes les pages sur <x id="0" equiv-text="&lt;span class=&quot;text-blue-500&quot;&gt;${exampleHost}&lt;/span&gt;"/> et ignorera les pages de tous les sous-domaines.</target>
       </trans-unit>
       <trans-unit id="ha8f0ffdb034da2d1" xml:space="preserve">
-        <source>Will crawl all pages on <x id="0" equiv-text="&lt;span class=&quot;text-blue-500&quot;&gt;${exampleHost}&lt;/span&gt;"/> and <x id="1" equiv-text="&lt;span class=&quot;text-blue-500&quot;&gt;"/>subdomain.<x id="2" equiv-text="${exampleHost}&lt;/span&gt;"/>.</source>
+        <source>Will crawl all pages on
+            <x id="0" equiv-text="&lt;span class=&quot;text-blue-500&quot;&gt;${exampleHost}&lt;/span&gt;"/> and
+            <x id="1" equiv-text="&lt;span class=&quot;text-blue-500&quot;&gt;"/>subdomain.<x id="2" equiv-text="${exampleHost}&lt;/span&gt;"/>.</source>
         <target state="translated">Collectera toutes les pages sur <x id="0" equiv-text="&lt;span class=&quot;text-blue-500&quot;&gt;${exampleHost}&lt;/span&gt;"/> et <x id="1" equiv-text="&lt;span class=&quot;text-blue-500&quot;&gt;"/> sous-domaine.<x id="2" equiv-text="${exampleHost}&lt;/span&gt;"/>.</target>
       </trans-unit>
       <trans-unit id="hba1eb91e4626e056" xml:space="preserve">
-        <source>Will crawl hash anchor links as pages. For example, <x id="0" equiv-text="&lt;span class=&quot;break-word text-blue-500&quot;&gt;${exampleDomain}${examplePathname}&lt;/span&gt;&lt;span class=&quot;break-word font-medium text-blue-500&quot;&gt;"/>#example-page<x id="1" equiv-text="&lt;/span&gt;"/> will be treated as a separate page.</source>
+        <source>Will crawl hash anchor links as pages. For example,
+            <x id="0" equiv-text="&lt;span class=&quot;break-word text-blue-500&quot;&gt;${exampleDomain}${examplePathname}&lt;/span&gt;&lt;span class=&quot;break-word font-medium text-blue-500&quot;&gt;"/>#example-page<x id="1" equiv-text="&lt;/span&gt;"/>
+            will be treated as a separate page.</source>
         <target state="translated">Collectera les ancres de liens avec des hashtags comme des pages. Par exemple, <x id="0" equiv-text="&lt;span class=&quot;break-word text-blue-500&quot;&gt;${exampleDomain}${examplePathname}&lt;/span&gt;&lt;span class=&quot;break-word font-medium text-blue-500&quot;&gt;"/>#page-exemple<x id="1" equiv-text="&lt;/span&gt;"/> sera traité comme une page séparée.</target>
       </trans-unit>
       <trans-unit id="h2303b42f0dff5ee4" xml:space="preserve">
-        <source>Will crawl all page URLs that begin with <x id="0" equiv-text="&lt;span class=&quot;break-word text-blue-500&quot;&gt;${exampleDomain}${examplePathname}&lt;/span&gt;"/> or any URL that begins with those specified in <x id="1" equiv-text="&lt;em&gt;"/>Extra URL Prefixes in Scope<x id="2" equiv-text="&lt;/em&gt;"/></source>
+        <source>Will crawl all page URLs that begin with
+            <x id="0" equiv-text="&lt;span class=&quot;break-word text-blue-500&quot;&gt;${exampleDomain}${examplePathname}&lt;/span&gt;"/>
+            or any URL that begins with those specified in
+            <x id="1" equiv-text="&lt;em&gt;"/>Extra URL Prefixes in Scope<x id="2" equiv-text="&lt;/em&gt;"/></source>
         <target state="translated">Collectera toutes les URL qui commencent par <x id="0" equiv-text="&lt;span class=&quot;break-word text-blue-500&quot;&gt;${exampleDomain}${examplePathname}&lt;/span&gt;"/> ou par celles spécifiées dans <x id="1" equiv-text="&lt;em&gt;"/>préfixes d'URL supplémentaires dans la portée<x id="2" equiv-text="&lt;/em&gt;"/></target>
       </trans-unit>
       <trans-unit id="s285f35c68ab11461" xml:space="preserve">
@@ -3708,7 +3715,8 @@
         <target state="translated">Le point de départ de votre collecte.</target>
       </trans-unit>
       <trans-unit id="s09a8c053783eafa0" xml:space="preserve">
-        <source>If the crawler finds pages outside of the Crawl Scope they will only be saved if they begin with URLs listed here.</source>
+        <source>If the crawler finds pages outside of the Crawl Scope they
+            will only be saved if they begin with URLs listed here.</source>
         <target state="translated">Si le robot moissonneur trouve des pages en dehors du périmètre de collecte, elles ne seront sauvegardées que si elles commencent par les URL énumérées ici.</target>
       </trans-unit>
       <trans-unit id="s406e05cc7ea70f01" xml:space="preserve">
@@ -3720,7 +3728,8 @@
         <target state="translated">Limite le nombre de sauts que le robot moissonneur peut effectuer en restant dans le périmètre de collecte.</target>
       </trans-unit>
       <trans-unit id="sba156796788dc6c2" xml:space="preserve">
-        <source>If checked, the crawler will visit pages one link away outside of Crawl Scope.</source>
+        <source>If checked, the crawler will visit pages one link away outside of
+        Crawl Scope.</source>
         <target state="translated">Si cette option est cochée, le robot moissonneur visitera les pages qui se trouvent un lien à l'extérieur du périmètre de collecte.</target>
       </trans-unit>
       <trans-unit id="sf092ad58edfa163b" xml:space="preserve">
@@ -3792,7 +3801,8 @@
         <target state="translated">Quel jour du mois la collecte doit être exécutée ?</target>
       </trans-unit>
       <trans-unit id="h8c7c3a6e07d7c512" xml:space="preserve">
-        <source>Schedule: <x id="0" equiv-text="&lt;span class=&quot;text-blue-500&quot;&gt;${utcSchedule&#10;    ? humanizeSchedule(utcSchedule)&#10;    : msg(&quot;Invalid date&quot;)}&lt;/span&gt;"/>.</source>
+        <source>Schedule:
+                <x id="0" equiv-text="&lt;span class=&quot;text-blue-500&quot;&gt;${utcSchedule&#10;    ? humanizeSchedule(utcSchedule)&#10;    : msg(&quot;Invalid date&quot;)}&lt;/span&gt;"/>.</source>
         <target state="translated">Calendrier : <x id="0" equiv-text="&lt;span class=&quot;text-blue-500&quot;&gt;${utcSchedule&#10;    ? humanizeSchedule(utcSchedule)&#10;    : msg(&quot;Invalid date&quot;)}&lt;/span&gt;"/>.</target>
       </trans-unit>
       <trans-unit id="se0baa9b7fb0768e4" xml:space="preserve">
@@ -3800,7 +3810,8 @@
         <target state="translated">Date invalide</target>
       </trans-unit>
       <trans-unit id="h30728ea4302f7fe9" xml:space="preserve">
-        <source>Next scheduled run: <x id="0" equiv-text="&lt;span&gt;${utcSchedule&#10;    ? humanizeNextDate(utcSchedule)&#10;    : msg(&quot;Invalid date&quot;)}&lt;/span&gt;"/>.</source>
+        <source>Next scheduled run:
+                <x id="0" equiv-text="&lt;span&gt;${utcSchedule&#10;    ? humanizeNextDate(utcSchedule)&#10;    : msg(&quot;Invalid date&quot;)}&lt;/span&gt;"/>.</source>
         <target state="translated">Prochaine collecte programmée : <x id="0" equiv-text="&lt;span&gt;${utcSchedule&#10;    ? humanizeNextDate(utcSchedule)&#10;    : msg(&quot;Invalid date&quot;)}&lt;/span&gt;"/>.</target>
       </trans-unit>
       <trans-unit id="s4174899261b8b308" xml:space="preserve">
@@ -3808,7 +3819,8 @@
         <target state="translated">Une collecte s'effectuera à cette heure dans votre fuseau horaire actuel.</target>
       </trans-unit>
       <trans-unit id="s0d56a24ca72b8e48" xml:space="preserve">
-        <source>Customize this Workflow's name. Workflows are named after the first Crawl URL by default.</source>
+        <source>Customize this Workflow's name. Workflows are named after
+        the first Crawl URL by default.</source>
         <target state="translated">Personnalisez le nom de ce flux de travail. Par défaut, les flux de travail sont nommés d'après la première URL de collecte.</target>
       </trans-unit>
       <trans-unit id="sa8e78592c1db6c3a" xml:space="preserve">
@@ -3816,7 +3828,8 @@
         <target state="translated">Fournir des détails sur ce flux de travail.</target>
       </trans-unit>
       <trans-unit id="s163480f4b18e39c0" xml:space="preserve">
-        <source>Create or assign this crawl (and its outputs) to one or more tags to help organize your archived items.</source>
+        <source>Create or assign this crawl (and its outputs) to one or more tags
+        to help organize your archived items.</source>
         <target state="translated">Créez ou assignez cette collecte (et ses résultats) à une ou plusieurs étiquettes pour vous aider à organiser vos éléments archivés.</target>
       </trans-unit>
       <trans-unit id="s68f29315fcc19b3b" xml:space="preserve">
@@ -3824,7 +3837,9 @@
         <target state="translated">Rechercher une collection pour l'ajout automatique de collectes</target>
       </trans-unit>
       <trans-unit id="s54100e0807a1e40d" xml:space="preserve">
-        <source>Automatically add crawls from this workflow to one or more collections as soon as they complete. Individual crawls can be selected from within the collection later.</source>
+        <source>Automatically add crawls from this workflow to one or more collections
+          as soon as they complete.
+          Individual crawls can be selected from within the collection later.</source>
         <target state="translated">Ajoutez automatiquement les collectes de ce flux de travail à une ou plusieurs collections dès qu'elles sont terminées. Les collectes individuelles peuvent être sélectionnées ultérieurement au sein de la collection.</target>
       </trans-unit>
       <trans-unit id="s265a8f6e25a8c5f2" xml:space="preserve">
@@ -3864,8 +3879,12 @@
         <target state="translated">Veuillez supprimer ou corriger l'URL invalide suivante : <x id="0" equiv-text="${invalidUrl}"/></target>
       </trans-unit>
       <trans-unit id="saf63d34c8601dd41" xml:space="preserve">
-        <source><x id="0" equiv-text="${this.localize.number(this.item.pageCount ? +this.item.pageCount : 0)}"/> </source>
-        <target state="translated"><x id="0" equiv-text="${this.localize.number(this.item.pageCount ? +this.item.pageCount : 0)}"/> </target>
+        <source>
+          <x id="0" equiv-text="${this.localize.number(this.item.pageCount ? +this.item.pageCount : 0)}"/>
+        </source>
+        <target state="translated">
+          <x id="0" equiv-text="${this.localize.number(this.item.pageCount ? +this.item.pageCount : 0)}"/>
+        </target>
       </trans-unit>
       <trans-unit id="s136b21dec9a221bd" xml:space="preserve">
         <source>Manual run by <x id="0" equiv-text="${workflow.lastStartedByName}"/></source>
@@ -4976,13 +4995,18 @@
         <source>Change the visibility setting to embed this collection.</source>
       </trans-unit>
       <trans-unit id="h3a14a39406b82931">
-        <source>To embed this collection into an existing webpage, add the following embed code:</source>
+        <source>To embed this collection into an existing webpage, add the
+          following embed code:</source>
       </trans-unit>
       <trans-unit id="hacc9b91be8da34c8">
-        <source>Add the following JavaScript to your <x id="0" equiv-text="&lt;code class=&quot;text-[0.9em]&quot;&gt;"/>/replay/sw.js<x id="1" equiv-text="&lt;/code&gt;"/>:</source>
+        <source>Add the following JavaScript to your
+            <x id="0" equiv-text="&lt;code class=&quot;text-[0.9em]&quot;&gt;"/>/replay/sw.js<x id="1" equiv-text="&lt;/code&gt;"/>:</source>
       </trans-unit>
       <trans-unit id="h654faf8fb38c80f3">
-        <source>See <x id="0" equiv-text="&lt;a class=&quot;text-primary&quot; href=&quot;https://replayweb.page/docs/embedding&quot; target=&quot;_blank&quot;&gt;"/> our embedding guide<x id="1" equiv-text="&lt;/a&gt;"/> for more details.</source>
+        <source>See
+            <x id="0" equiv-text="&lt;a class=&quot;text-primary&quot; href=&quot;https://replayweb.page/docs/embedding&quot; target=&quot;_blank&quot;&gt;"/>
+              our embedding guide<x id="1" equiv-text="&lt;/a&gt;"/>
+            for more details.</source>
       </trans-unit>
       <trans-unit id="sf39becada022c325">
         <source>Choose what page viewers see first in replay</source>
@@ -5021,7 +5045,8 @@
         <source>Sorry, couldn't update org at this time.</source>
       </trans-unit>
       <trans-unit id="he6324c47251f0727">
-        <source>Viewing <x id="0" equiv-text="&lt;strong class=&quot;font-medium&quot;&gt;${this.userOrg.name}&lt;/strong&gt;"/></source>
+        <source>Viewing
+                      <x id="0" equiv-text="&lt;strong class=&quot;font-medium&quot;&gt;${this.userOrg.name}&lt;/strong&gt;"/></source>
       </trans-unit>
       <trans-unit id="s2ccab3f1e005dbc4">
         <source>Choose a name that represents your organization, your team, or your personal web archive.</source>
@@ -5188,10 +5213,13 @@
         <source>When enabled the browser will automatically click on links that don't navigate to other pages.</source>
       </trans-unit>
       <trans-unit id="hb4d7d27dcde87b24">
-        <source>Describe your collection in long-form rich text (e.g. <x id="0" equiv-text="&lt;strong&gt;"/>bold<x id="1" equiv-text="&lt;/strong&gt;"/> and <x id="2" equiv-text="&lt;em&gt;"/>italicized<x id="3" equiv-text="&lt;/em&gt;"/> text.)</source>
+        <source>Describe your collection in long-form rich text (e.g.
+                        <x id="0" equiv-text="&lt;strong&gt;"/>bold<x id="1" equiv-text="&lt;/strong&gt;"/> and <x id="2" equiv-text="&lt;em&gt;"/>italicized<x id="3" equiv-text="&lt;/em&gt;"/> text.)</source>
       </trans-unit>
       <trans-unit id="h46ac9a2331d608e2">
-        <source>If this collection is shareable, this will appear in the “About This Collection” section of the shared collection.</source>
+        <source>If this collection is shareable, this will appear in
+                      the “About This Collection” section of the shared
+                      collection.</source>
       </trans-unit>
       <trans-unit id="s492c3c47283fe263">
         <source>Updated org settings.</source>
@@ -5293,7 +5321,8 @@
         <source>Unsaved changes.</source>
       </trans-unit>
       <trans-unit id="h2c3943473fbe11e2">
-        <source>You can add a longer description in the “About” section after creating the collection.</source>
+        <source>You can add a longer description in the “About” section
+                  after creating the collection.</source>
       </trans-unit>
       <trans-unit id="s9b60514119bff158">
         <source>Set Initial View</source>
@@ -5302,7 +5331,7 @@
         <source>Initial View</source>
       </trans-unit>
       <trans-unit id="sdc999ebffd912691">
-        <source>Download Collection:</source>
+        <source>Download Collection: </source>
       </trans-unit>
       <trans-unit id="s02d4af030afd821a">
         <source>Please enter a valid regular expression</source>
@@ -5347,7 +5376,7 @@
         <source>Please fix all errors and try again.</source>
       </trans-unit>
       <trans-unit id="s77aee0d8cdd77b61">
-        <source>Please fix the following issue:</source>
+        <source>Please fix the following issue: </source>
       </trans-unit>
       <trans-unit id="sdc12eb8d90714683">
         <source>Page exclusion contains invalid regex</source>
