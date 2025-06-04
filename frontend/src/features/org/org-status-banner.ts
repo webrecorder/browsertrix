@@ -88,7 +88,7 @@ export class OrgStatusBanner extends BtrixElement {
       subscription?.status === SubscriptionStatus.Trialing || isCancelingTrial;
 
     // show banner if < this many days of trial is left
-    const MAX_TRIAL_DAYS_SHOW_BANNER = 10;
+    const MAX_TRIAL_DAYS_SHOW_BANNER = 4;
 
     return [
       {
