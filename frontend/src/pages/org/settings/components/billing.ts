@@ -154,13 +154,16 @@ export class OrgSettingsBilling extends BtrixElement {
                           ${choose(
                             org.subscription.status,
                             [
-                              [
-                                SubscriptionStatus.Trialing,
-                                () =>
-                                  trialMessage(
-                                    msg("the card on file will be charged"),
-                                  ),
-                              ],
+                              // TODO See if we can differentiate whether the trial
+                              // will rollover (card on file) or become read-only (no card on file)
+
+                              // [
+                              //   SubscriptionStatus.Trialing,
+                              //   () =>
+                              //     trialMessage(
+                              //       msg("the card on file will be charged"),
+                              //     ),
+                              // ],
                               [
                                 SubscriptionStatus.TrialingCanceled,
                                 () =>
