@@ -1,4 +1,3 @@
-import { localized } from "@lit/localize";
 import SlTooltip from "@shoelace-style/shoelace/dist/components/tooltip/tooltip.component.js";
 import slTooltipStyles from "@shoelace-style/shoelace/dist/components/tooltip/tooltip.styles.js";
 import { css } from "lit";
@@ -19,7 +18,6 @@ import { customElement, property } from "lit/decorators.js";
  * @attr {Boolean} disabled
  */
 @customElement("btrix-popover")
-@localized()
 export class Popover extends SlTooltip {
   @property({ type: Boolean, reflect: true })
   hoist = true;
