@@ -255,6 +255,9 @@ export class Dashboard extends BtrixElement {
                     name: "gear-wide-connected",
                     color: this.colors.crawls,
                   },
+                  button: {
+                    url: `/orgs/${this.navigate.orgBasePath}/items/crawl`,
+                  },
                 })}
                 ${this.renderStat({
                   value: metrics.uploadCount,
@@ -264,6 +267,9 @@ export class Dashboard extends BtrixElement {
                   singleLabel: msg("Upload"),
                   pluralLabel: msg("Uploads"),
                   iconProps: { name: "upload", color: this.colors.uploads },
+                  button: {
+                    url: `/orgs/${this.navigate.orgBasePath}/items/upload`,
+                  },
                 })}
                 ${this.renderStat({
                   value: metrics.profileCount,
@@ -275,6 +281,9 @@ export class Dashboard extends BtrixElement {
                   iconProps: {
                     name: "window-fullscreen",
                     color: this.colors.browserProfiles,
+                  },
+                  button: {
+                    url: `/orgs/${this.navigate.orgBasePath}/browser-profiles`,
                   },
                 })}
                 <sl-divider
@@ -288,6 +297,9 @@ export class Dashboard extends BtrixElement {
                   singleLabel: msg("Archived Item"),
                   pluralLabel: msg("Archived Items"),
                   iconProps: { name: "file-zip-fill" },
+                  button: {
+                    url: `/orgs/${this.navigate.orgBasePath}/items`,
+                  },
                 })}
               </dl>
             `,
@@ -308,6 +320,9 @@ export class Dashboard extends BtrixElement {
                     name: "dot",
                     library: "app",
                     color: metrics.workflowsRunningCount ? "green" : "neutral",
+                  },
+                  button: {
+                    url: `/orgs/${this.navigate.orgBasePath}/workflows?isCrawlRunning=true`,
                   },
                 })}
                 ${this.renderStat({
@@ -355,6 +370,9 @@ export class Dashboard extends BtrixElement {
                   singleLabel: msg("Collection Total"),
                   pluralLabel: msg("Collections Total"),
                   iconProps: { name: "collection-fill" },
+                  button: {
+                    url: `/orgs/${this.navigate.orgBasePath}/collections`,
+                  },
                 })}
                 ${this.renderStat({
                   value: metrics.publicCollectionsCount,
@@ -912,14 +930,15 @@ export class Dashboard extends BtrixElement {
   private renderStat(stat: {
     value: number | string | TemplateResult;
     secondaryValue?: number | string | TemplateResult;
+    button?: { label?: string | TemplateResult; url: string };
     singleLabel: string;
     pluralLabel: string;
     iconProps: { name: string; library?: string; color?: string };
   }) {
     const { value, iconProps } = stat;
     return html`
-      <div class="mb-2 flex items-center justify-between last:mb-0">
-        <div class="flex items-center">
+      <div class="mb-2 flex items-center gap-2 last:mb-0">
+        <div class="mr-auto flex items-center tabular-nums">
           <sl-icon
             class="mr-2 text-base text-neutral-500"
             name=${iconProps.name}
@@ -941,6 +960,18 @@ export class Dashboard extends BtrixElement {
               ${stat.secondaryValue}
             </div>
           `,
+        )}
+        ${when(
+          stat.button,
+          (button) =>
+            html`<btrix-button size="x-small" href=${button.url} @click=${this.navigate.link}
+              >${
+                button.label ??
+                html`<sl-tooltip content=${msg("View All")} placement="right"
+                  ><sl-icon name="arrow-right-circle"></sl-icon
+                ></sl-tooltip>`
+              }</sl-button
+            >`,
         )}
       </div>
     `;
