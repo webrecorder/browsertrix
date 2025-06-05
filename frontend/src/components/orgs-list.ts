@@ -91,8 +91,16 @@ export class OrgsList extends BtrixElement {
       "id",
       "name",
       "slug",
-      "users.name",
-      "users.email",
+      {
+        name: "users.name",
+        getFn: (org) =>
+          org.users ? Object.values(org.users).map((user) => user.name) : [],
+      },
+      {
+        name: "users.email",
+        getFn: (org) =>
+          org.users ? Object.values(org.users).map((user) => user.email) : [],
+      },
       "subscription.subId",
       "subscription.planId",
     ],
