@@ -40,6 +40,11 @@ metadata:
 spec:
   hostname: {{ name }}
   subdomain: redis
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 999
+    runAsGroup: 999
+    fsGroup: 999
 
   terminationGracePeriodSeconds: 10
   volumes:
