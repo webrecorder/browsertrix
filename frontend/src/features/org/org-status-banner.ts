@@ -59,11 +59,12 @@ export class OrgStatusBanner extends BtrixElement {
     const {
       readOnly,
       readOnlyReason,
-      readOnlyOnCancel,
       subscription,
       storageQuotaReached,
       execMinutesQuotaReached,
     } = this.org;
+    const readOnlyOnCancel =
+      subscription?.readOnlyOnCancel ?? this.org.readOnlyOnCancel;
 
     let hoursDiff = 0;
     let daysDiff = 0;
@@ -128,7 +129,10 @@ export class OrgStatusBanner extends BtrixElement {
           !!futureCancelDate &&
           ((isTrial && daysDiff < MAX_TRIAL_DAYS_SHOW_BANNER) ||
             isCancelingTrial),
-        variant: isCancelingTrial ? "danger" : "warning",
+        variant:
+          isCancelingTrial || subscription?.futureCancelDate
+            ? "danger"
+            : "warning",
         content: () => {
           return {
             title:
@@ -147,12 +151,12 @@ export class OrgStatusBanner extends BtrixElement {
                       html`To continue using Browsertrix, select
                         <strong>Subscribe Now</strong> in ${billingTabLink}.`,
                     )
-                  : readOnlyOnCancel
+                  : subscription?.futureCancelDate
                     ? // TODO See if we can differentiate whether the trial will rollover
                       // (card on file) or become read-only because no card on file
                       msg(
-                        html`To continue using Browsertrix, review your payment
-                        information in ${billingTabLink}.`,
+                        html`To continue using Browsertrix, add a payment method
+                        in ${billingTabLink}.`,
                       )
                     : html`${msg(
                         "Afterwards, your subscription will continue automatically.",
