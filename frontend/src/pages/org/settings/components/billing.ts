@@ -135,11 +135,11 @@ export class OrgSettingsBilling extends BtrixElement {
                       },
                     );
 
-                    const trialMessage = (detail: string) => html`
+                    const trialMessage = (detail?: string) => html`
                       <span class="font-medium text-neutral-700">
                         ${msg(str`Your trial will end on ${futureCancelDate}`)}
                       </span>
-                      &mdash; ${detail}
+                      ${when(detail, () => html`&mdash; ${detail}`)}
                     `;
 
                     return html`
@@ -154,16 +154,14 @@ export class OrgSettingsBilling extends BtrixElement {
                           ${choose(
                             org.subscription.status,
                             [
-                              // TODO See if we can differentiate whether the trial
-                              // will rollover (card on file) or become read-only (no card on file)
+                              [
+                                SubscriptionStatus.Trialing,
+                                () => trialMessage(),
+                                // TODO See if we can differentiate whether the trial
+                                // will rollover (card on file) or become read-only because no card on file
 
-                              // [
-                              //   SubscriptionStatus.Trialing,
-                              //   () =>
-                              //     trialMessage(
-                              //       msg("the card on file will be charged"),
-                              //     ),
-                              // ],
+                                // msg("the card on file will be charged"),
+                              ],
                               [
                                 SubscriptionStatus.TrialingCanceled,
                                 () =>

@@ -3,6 +3,7 @@ import type { SlAlert } from "@shoelace-style/shoelace";
 import { differenceInHours } from "date-fns/fp";
 import { html, type TemplateResult } from "lit";
 import { customElement } from "lit/decorators.js";
+import { when } from "lit/directives/when.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { SubscriptionStatus } from "@/types/billing";
@@ -139,28 +140,29 @@ export class OrgStatusBanner extends BtrixElement {
                       str`You have ${daysDiff} days left of your Browsertrix trial`,
                     ),
 
-            detail: isCancelingTrial
-              ? html`
-                  <p>
-                    ${msg(
-                      html`Your free trial ends on ${dateStr}. To continue using
-                        Browsertrix, select <strong>Subscribe Now</strong> in
-                        ${billingTabLink}.`,
+            detail: html`<p>
+                ${msg(str`Your free trial ends on ${dateStr}.`)}
+                ${isCancelingTrial || readOnlyOnCancel
+                  ? msg(
+                      html`To continue using Browsertrix, select
+                        <strong>Subscribe Now</strong> in ${billingTabLink}.`,
+                    )
+                  : msg(
+                      html`View and manage your subscription in
+                      ${billingTabLink}.`,
                     )}
-                  </p>
+              </p>
+              ${when(
+                isCancelingTrial,
+                () => html`
                   <p>
                     ${msg(
                       str`Your web archives are always yours — you can download any archived items you'd like to keep
                   before the trial ends!`,
                     )}
                   </p>
-                `
-              : html`<p>
-                  ${msg(
-                    html`Your free trial ends on ${dateStr}. Manage your
-                    subscription in ${billingTabLink}.`,
-                  )}
-                </p>`,
+                `,
+              )} `,
           };
         },
       },
