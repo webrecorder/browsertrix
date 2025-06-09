@@ -365,7 +365,7 @@ export class CollectionEdit extends BtrixElement {
       variant=${this.errorTab === panel ? "error" : "primary"}
     >
       <sl-icon
-        name=${this.errorTab === panel ? "exclamation-diamond-fill" : icon}
+        name=${this.errorTab === panel ? "exclamation-triangle-fill" : icon}
       ></sl-icon>
       ${string}
     </btrix-tab-group-tab>`;
@@ -377,7 +377,8 @@ export class CollectionEdit extends BtrixElement {
     } catch (e) {
       this.notify.toast({
         message: msg("Sorry, couldn't retrieve Collection at this time."),
-        variant: "warning",
+        variant: "danger",
+        icon: "exclamation-octagon",
         id: "collection-retrieve-status",
       });
     }

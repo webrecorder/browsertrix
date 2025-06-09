@@ -368,6 +368,7 @@ export class CollectionInitialViewDialog extends BtrixElement {
               "Home view updated, but couldn't update collection thumbnail at this time.",
             ),
             variant: "warning",
+            icon: "exclamation-triangle",
             id: "home-view-update-status",
           });
         }

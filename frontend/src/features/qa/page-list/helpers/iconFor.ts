@@ -14,13 +14,13 @@ export const iconFor = cached(
       // Severity
       case "severe":
         return html`<sl-icon
-          name="x-octagon-fill"
-          class=${clsx("text-danger", baseClasses, classList)}
+          name="exclamation-triangle-fill"
+          class=${clsx("text-red-500", baseClasses, classList)}
         ></sl-icon>`;
       case "moderate":
         return html`<sl-icon
           name="dash-square-fill"
-          class=${clsx("text-amber-600", baseClasses, classList)}
+          class=${clsx("text-yellow-500", baseClasses, classList)}
         ></sl-icon>`;
       case "good":
         return html`<sl-icon
@@ -37,7 +37,7 @@ export const iconFor = cached(
       case "rejected":
         return html`<sl-icon
           name="hand-thumbs-down-fill"
-          class=${clsx("text-warning", baseClasses, classList)}
+          class=${clsx("text-red-500", baseClasses, classList)}
         ></sl-icon>`;
       case "commentOnly":
         // Comment icons are rendered separately
@@ -47,7 +47,7 @@ export const iconFor = cached(
       default:
         return html`<sl-icon
           name="slash-circle"
-          class=${clsx("text-gray-400", baseClasses, classList)}
+          class=${clsx("text-gray-600", baseClasses, classList)}
         ></sl-icon>`;
     }
   },
