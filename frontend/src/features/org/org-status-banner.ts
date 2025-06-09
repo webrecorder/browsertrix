@@ -148,7 +148,9 @@ export class OrgStatusBanner extends BtrixElement {
                         <strong>Subscribe Now</strong> in ${billingTabLink}.`,
                     )
                   : readOnlyOnCancel
-                    ? msg(
+                    ? // TODO See if we can differentiate whether the trial will rollover
+                      // (card on file) or become read-only because no card on file
+                      msg(
                         html`To continue using Browsertrix, review your payment
                         information in ${billingTabLink}.`,
                       )
