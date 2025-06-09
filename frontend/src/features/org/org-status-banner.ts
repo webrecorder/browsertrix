@@ -142,15 +142,23 @@ export class OrgStatusBanner extends BtrixElement {
 
             detail: html`<p>
                 ${msg(str`Your free trial ends on ${dateStr}.`)}
-                ${isCancelingTrial || readOnlyOnCancel
+                ${isCancelingTrial
                   ? msg(
                       html`To continue using Browsertrix, select
                         <strong>Subscribe Now</strong> in ${billingTabLink}.`,
                     )
-                  : msg(
-                      html`View and manage your subscription in
-                      ${billingTabLink}.`,
-                    )}
+                  : readOnlyOnCancel
+                    ? msg(
+                        html`To continue using Browsertrix, review your payment
+                        information in ${billingTabLink}.`,
+                      )
+                    : html`${msg(
+                        "Afterwards, your subscription will continue automatically.",
+                      )}
+                      ${msg(
+                        html`View and manage your subscription in
+                        ${billingTabLink}.`,
+                      )}`}
               </p>
               ${when(
                 isCancelingTrial,
