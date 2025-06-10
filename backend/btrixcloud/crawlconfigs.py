@@ -45,6 +45,7 @@ from .models import (
     CrawlerProxy,
     CrawlerProxies,
     ValidateCustomBehavior,
+    RawCrawlConfig,
 )
 from .utils import (
     dt_now,
@@ -223,15 +224,18 @@ class CrawlConfigOps:
     ) -> CrawlConfigAddedResponse:
         """Add new crawl config"""
 
+        # ensure crawlChannel is valid
+        if not self.get_channel_crawler_image(config_in.crawlerChannel):
+            raise HTTPException(status_code=404, detail="crawler_not_found")
+
         # Overrides scale if set
         if config_in.browserWindows is None:
             config_in.browserWindows = browser_windows_from_scale(
                 cast(int, config_in.scale)
             )
 
-        # ensure crawlChannel is valid
-        if not self.get_channel_crawler_image(config_in.crawlerChannel):
-            raise HTTPException(status_code=404, detail="crawler_not_found")
+        if self.is_single_page(config_in.config):
+            config_in.browserWindows = 1
 
         profileid = None
         if isinstance(config_in.profileid, UUID):
@@ -320,6 +324,10 @@ class CrawlConfigOps:
             storageQuotaReached=storage_quota_reached,
             execMinutesQuotaReached=exec_mins_quota_reached,
         )
+
+    def is_single_page(self, config: RawCrawlConfig):
+        """return true if this config represents a single page crawl"""
+        return config.seeds and len(config.seeds) == 1 and config.extraHops == 0
 
     def _validate_link_selectors(self, link_selectors: List[str]):
         """Validate link selectors
@@ -434,6 +442,10 @@ class CrawlConfigOps:
 
         if update.config and update.config.lang:
             validate_language_code(update.config.lang)
+
+        if update.config or update.browserWindows:
+            if self.is_single_page(update.config or orig_crawl_config.config):
+                update.browserWindows = 1
 
         # indicates if any k8s crawl config settings changed
         changed = False
@@ -1021,6 +1033,7 @@ class CrawlConfigOps:
                 warc_prefix=self.get_warc_prefix(org, crawlconfig),
                 storage_filename=storage_filename,
                 profile_filename=profile_filename or "",
+                is_single_page=self.is_single_page(crawlconfig.config),
             )
             await self.add_new_crawl(crawl_id, crawlconfig, user, org, manual=True)
             return crawl_id

@@ -86,6 +86,7 @@ class CrawlSpec(BaseModel):
     max_crawl_size: int = 0
     qa_source_crawl_id: Optional[str] = ""
     proxy_id: Optional[str] = None
+    is_single_page: bool = False
 
     @property
     def db_crawl_id(self) -> str:

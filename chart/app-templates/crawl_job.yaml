@@ -39,3 +39,5 @@ spec:
 
   pausedAt: "{{ pausedAt }}"
 
+  isSinglePage: "{{ is_single_page }}"
+
