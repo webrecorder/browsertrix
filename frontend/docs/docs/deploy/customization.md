@@ -139,6 +139,8 @@ storages:
 
 When replica locations are set, the default behavior when a crawl, upload, or browser profile is deleted is that the replica files are deleted at the same time as the file in primary storage. To delay deletion of replicas, set `replica_deletion_delay_days` in the Helm chart to the number of days by which to delay replica file deletion. This feature gives Browsertrix administrators time in the event of files being deleted accidentally or maliciously to recover copies from configured replica locations.
 
+??? info "If you are specifying a custom Minio deployment running in the same Kubernetes cluster, be sure to update the [network policy to allow access to your custom resource](#local-network-access-policy-and-custom-services)"
+
 ## Horizontal Autoscaling
 
 Browsertrix also includes support for horizontal auto-scaling for both the backend and frontend pods.
@@ -250,3 +252,37 @@ type btrixEvent = (
 ```
 
 Tracking is optional and will never expose personally identifiable information.
+
+## Local Network Access Policy and Custom Services
+
+By default, Browsertrix configures the crawlers with a network policy that restricts access to internal Kubernetes resources, to prevent the crawler from snooping around the internal network. This should be fine for crawling
+public websites with the default configuration.
+
+However, you may want to provide access to an internal IP (for example, if crawling a site deployed on a local server) or another Kubernetes service (such as a custom Minio deployment)
+
+To provide access, you can extend the existing network policy 'egress' with the `crawler_network_policy_additional_egress` setting:
+
+For example, to allow the crawler to access the `10.0.0.1/32` IP block on port 80,
+and to pods that have a label `my-custom-minio` only on port 9000, add:
+
+```yaml
+crawler_network_policy_additional_egress:
+  - to:
+    - ipBlock:
+        cidr: 10.0.0.1/32
+    ports:
+      - port: 80
+        protocol: TCP
+
+  - to:
+    - namespaceSelector:
+      - podSelector:
+          matchLabels:
+            app: my-custom-minio
+
+    ports:
+      - port: 9000
+        protocol: TCP
+```
+
+Refer to the [default networkpolicies.yaml](https://github.com/webrecorder/browsertrix/blob/main/chart/templates/networkpolicies.yaml) for additional examples and the [official Kubernetes documentation for Network Policies](https://kubernetes.io/docs/concepts/services-networking/network-policies/)
