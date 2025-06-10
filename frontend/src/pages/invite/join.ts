@@ -124,7 +124,6 @@ export class Join extends LiteElement {
       `/api/users/invite/${token}?email=${encodeURIComponent(email)}`,
     );
 
-    console.log(this.appState.settings);
     switch (resp.status) {
       case 200:
         return (await resp.json()) as UserOrgInviteInfo;
