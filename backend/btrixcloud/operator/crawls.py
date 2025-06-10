@@ -37,7 +37,6 @@ from btrixcloud.utils import (
     date_to_str,
     dt_now,
     scale_from_browser_windows,
-    browser_windows_from_scale,
 )
 
 from .baseoperator import BaseOperator, Redis
