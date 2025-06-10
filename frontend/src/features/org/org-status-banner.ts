@@ -129,10 +129,7 @@ export class OrgStatusBanner extends BtrixElement {
           !!futureCancelDate &&
           ((isTrial && daysDiff < MAX_TRIAL_DAYS_SHOW_BANNER) ||
             isCancelingTrial),
-        variant:
-          isCancelingTrial || subscription?.futureCancelDate
-            ? "danger"
-            : "warning",
+        variant: isCancelingTrial ? "danger" : "warning",
         content: () => {
           return {
             title:
@@ -151,20 +148,13 @@ export class OrgStatusBanner extends BtrixElement {
                       html`To continue using Browsertrix, select
                         <strong>Subscribe Now</strong> in ${billingTabLink}.`,
                     )
-                  : subscription?.futureCancelDate
-                    ? // TODO See if we can differentiate whether the trial will rollover
-                      // (card on file) or become read-only because no card on file
-                      msg(
-                        html`To continue using Browsertrix, add a payment method
-                        in ${billingTabLink}.`,
-                      )
-                    : html`${msg(
-                        "Afterwards, your subscription will continue automatically.",
-                      )}
-                      ${msg(
-                        html`View and manage your subscription in
-                        ${billingTabLink}.`,
-                      )}`}
+                  : html`${msg(
+                      "Afterwards, your subscription will continue automatically.",
+                    )}
+                    ${msg(
+                      html`View and manage your subscription in
+                      ${billingTabLink}.`,
+                    )}`}
               </p>
               ${when(
                 isCancelingTrial,

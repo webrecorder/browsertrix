@@ -141,9 +141,6 @@ export class OrgSettingsBilling extends BtrixElement {
                       </span>
                       ${when(detail, () => html`&mdash; ${detail}`)}
                     `;
-                    const keepAccountDetail = msg(
-                      "subscribe to keep your account",
-                    );
 
                     return html`
                       <div
@@ -161,19 +158,17 @@ export class OrgSettingsBilling extends BtrixElement {
                                 SubscriptionStatus.Trialing,
                                 () =>
                                   trialMessage(
-                                    // TODO See if we can differentiate whether the trial will rollover
-                                    // (card on file) or become read-only because no card on file
-                                    org.subscription?.futureCancelDate
-                                      ? keepAccountDetail
-                                      : msg(
-                                          "subscription will automatically continue",
-                                        ),
-                                    // msg("the card on file will be charged"),
+                                    msg(
+                                      "subscription will automatically continue",
+                                    ),
                                   ),
                               ],
                               [
                                 SubscriptionStatus.TrialingCanceled,
-                                () => trialMessage(keepAccountDetail),
+                                () =>
+                                  trialMessage(
+                                    msg("subscribe to keep your account"),
+                                  ),
                               ],
                             ],
                             () =>
