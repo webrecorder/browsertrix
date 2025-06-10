@@ -275,10 +275,9 @@ crawler_network_policy_additional_egress:
         protocol: TCP
 
   - to:
-    - namespaceSelector:
-      - podSelector:
-          matchLabels:
-            app: my-custom-minio
+    - podSelector:
+        matchLabels:
+          app: my-custom-minio
 
     ports:
       - port: 9000
