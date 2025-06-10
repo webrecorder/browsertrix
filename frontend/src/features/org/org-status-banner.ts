@@ -73,7 +73,7 @@ export class OrgStatusBanner extends BtrixElement {
 
     if (futureCancelDate) {
       hoursDiff = differenceInHours(new Date(), new Date(futureCancelDate));
-      daysDiff = Math.trunc(hoursDiff / 24);
+      daysDiff = Math.ceil(hoursDiff / 24);
 
       dateStr = this.localize.date(futureCancelDate, {
         month: "long",
@@ -90,7 +90,7 @@ export class OrgStatusBanner extends BtrixElement {
       subscription?.status === SubscriptionStatus.Trialing || isCancelingTrial;
 
     // show banner if < this many days of trial is left
-    const MAX_TRIAL_DAYS_SHOW_BANNER = 4;
+    const MAX_TRIAL_DAYS_SHOW_BANNER = 8;
 
     return [
       {
