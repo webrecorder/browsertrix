@@ -217,7 +217,7 @@ export class FileUploader extends BtrixElement {
           (file) =>
             html`<btrix-file-list-item
               .file=${file}
-              @on-remove=${this.handleRemoveFile}
+              @btrix-remove=${this.handleRemoveFile}
             ></btrix-file-list-item>`,
         )}
       </btrix-file-list>
@@ -278,7 +278,7 @@ export class FileUploader extends BtrixElement {
                   html`<btrix-file-list-item
                     .file=${file}
                     progressValue=${this.progress}
-                    @on-remove=${this.handleRemoveFile}
+                    @btrix-remove=${this.handleRemoveFile}
                   ></btrix-file-list-item>`,
               )}
             </btrix-file-list>
@@ -319,7 +319,7 @@ export class FileUploader extends BtrixElement {
                 html`<btrix-file-list-item
                   .file=${file}
                   progressValue=${this.progress}
-                  @on-remove=${this.handleRemoveFile}
+                  @btrix-remove=${this.handleRemoveFile}
                 ></btrix-file-list-item>`,
             )}
           </btrix-file-list>
