@@ -16,7 +16,7 @@ type FileRemoveDetail = {
 export type FileRemoveEvent = CustomEvent<FileRemoveDetail>;
 
 /**
- * @event on-remove FileRemoveEvent
+ * @event btrix-remove FileRemoveEvent
  */
 @customElement("btrix-file-list-item")
 @localized()
@@ -117,7 +117,7 @@ export class FileListItem extends BtrixElement {
     if (!this.file) return;
     await this.updateComplete;
     this.dispatchEvent(
-      new CustomEvent<FileRemoveDetail>("on-remove", {
+      new CustomEvent<FileRemoveDetail>("btrix-remove", {
         detail: {
           file: this.file,
         },
