@@ -13,7 +13,7 @@ export type RenderProps = FileInput & {
 export const renderComponent = ({
   accept,
   multiple,
-  dropzone,
+  drop,
   anchor,
 }: Partial<RenderProps>) => {
   return html`
@@ -21,7 +21,7 @@ export const renderComponent = ({
       name=${formControlName}
       .accept=${accept}
       ?multiple=${multiple}
-      ?dropzone=${dropzone}
+      ?drop=${drop}
       @btrix-change=${console.log}
     >
       ${anchor}

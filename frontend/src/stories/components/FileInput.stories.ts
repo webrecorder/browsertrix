@@ -38,7 +38,7 @@ export const Multiple: Story = {
 
 export const DropZone: Story = {
   args: {
-    dropzone: true,
+    drop: true,
     anchor: html`
       <span>
         Drag file here or
@@ -69,7 +69,7 @@ export const FormControl: Story = {
 export const FormControlValidation: Story = {
   decorators: [fileInputFormDecorator],
   args: {
-    dropzone: true,
+    drop: true,
     multiple: true,
     accept: ".txt,.doc,.pdf",
     anchor: html`

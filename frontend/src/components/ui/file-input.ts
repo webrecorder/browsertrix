@@ -17,10 +17,13 @@ import { tw } from "@/utils/tailwind";
 
 import "@/components/ui/file-list";
 
+const droppingClass = tw`bg-slate-100`;
+
 /**
  * Allow attaching one or more files.
  *
  * @fires btrix-change
+ * @fires btrix-remove
  */
 @customElement("btrix-file-input")
 @localized()
@@ -47,10 +50,13 @@ export class FileInput extends FormControl(TailwindElement) {
    * Enable dragging files into drop zone
    */
   @property({ type: Boolean })
-  dropzone = false;
+  drop = false;
 
   @state()
   private files: File[] = [];
+
+  @query("#dropzone")
+  private readonly dropzone?: HTMLElement | null;
 
   @query("input[type='file']")
   private readonly input?: HTMLInputElement | null;
@@ -94,13 +100,20 @@ export class FileInput extends FormControl(TailwindElement) {
   private readonly renderInput = () => {
     return html`
       <label
+        id="dropzone"
         class=${clsx(
           tw`cursor-pointer`,
-          this.dropzone &&
+          this.drop &&
             tw`flex size-full flex-col items-center justify-center gap-2.5 rounded p-6 text-center outline-dashed outline-1 -outline-offset-1 outline-neutral-400 transition-all hover:outline-primary-400`,
         )}
-        @drop=${this.dropzone ? this.onDrop : undefined}
-        @dragover=${this.dropzone ? this.onDragover : undefined}
+        @drop=${this.drop ? this.onDrop : undefined}
+        @dragover=${this.drop ? this.onDragover : undefined}
+        @dragenter=${this.drop
+          ? () => this.dropzone?.classList.add(droppingClass)
+          : undefined}
+        @dragleave=${this.drop
+          ? () => this.dropzone?.classList.remove(droppingClass)
+          : undefined}
       >
         <input
           class="sr-only"
@@ -124,8 +137,6 @@ export class FileInput extends FormControl(TailwindElement) {
     return html`
       <btrix-file-list
         @btrix-remove=${(e: BtrixFileRemoveEvent) => {
-          e.stopPropagation();
-
           this.files = without([e.detail.item])(this.files);
         }}
       >
@@ -142,6 +153,8 @@ export class FileInput extends FormControl(TailwindElement) {
 
   private readonly onDrop = (e: DragEvent) => {
     e.preventDefault();
+
+    this.dropzone?.classList.remove(droppingClass);
 
     const files = e.dataTransfer?.files;
 
@@ -176,7 +189,8 @@ export class FileInput extends FormControl(TailwindElement) {
     e.preventDefault();
 
     if (e.dataTransfer) {
-      e.dataTransfer.dropEffect = "link";
+      this.dropzone?.classList.add(droppingClass);
+      e.dataTransfer.dropEffect = "copy";
     }
   };
 
