@@ -6,6 +6,7 @@ import { renderComponent, type RenderProps } from "./FileList";
 const meta = {
   title: "Components/File List",
   component: "btrix-file-list",
+  subcomponents: { FileListItem: "btrix-file-list-item" },
   tags: ["autodocs"],
   render: renderComponent,
   decorators: (story) => html` <div class="m-5">${story()}</div>`,

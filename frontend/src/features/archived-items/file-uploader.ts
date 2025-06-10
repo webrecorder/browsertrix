@@ -212,13 +212,10 @@ export class FileUploader extends BtrixElement {
     }
 
     return html`
-      <btrix-file-list>
+      <btrix-file-list @btrix-remove=${this.handleRemoveFile}>
         ${Array.from(this.fileList).map(
           (file) =>
-            html`<btrix-file-list-item
-              .file=${file}
-              @btrix-remove=${this.handleRemoveFile}
-            ></btrix-file-list-item>`,
+            html`<btrix-file-list-item .file=${file}></btrix-file-list-item>`,
         )}
       </btrix-file-list>
     `;
@@ -335,7 +332,7 @@ export class FileUploader extends BtrixElement {
 
   private readonly handleRemoveFile = (e: FileRemoveEvent) => {
     this.cancelUpload();
-    const idx = this.fileList.indexOf(e.detail.file);
+    const idx = this.fileList.indexOf(e.detail.item);
     if (idx === -1) return;
     this.fileList = [
       ...this.fileList.slice(0, idx),
