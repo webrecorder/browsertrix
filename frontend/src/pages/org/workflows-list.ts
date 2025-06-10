@@ -804,7 +804,6 @@ export class WorkflowsList extends BtrixElement {
           str`Only first ${this.localize.number(SEEDS_MAX)} URLs were copied.`,
         ),
         variant: "warning",
-        icon: "exclamation-triangle",
         id: "workflow-copied-status",
       });
     } else {

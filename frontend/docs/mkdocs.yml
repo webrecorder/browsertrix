@@ -33,7 +33,7 @@ theme:
       tip: bootstrap/exclamation-circle-fill
       success: bootstrap/check-circle-fill
       question: bootstrap/question-circle-fill
-      warning: bootstrap/exclamation-triangle-fill
+      warning: bootstrap/exclamation-diamond-fill
       failure: bootstrap/x-octagon-fill
       danger: bootstrap/exclamation-diamond-fill
       bug: bootstrap/bug-fill
