@@ -36,14 +36,14 @@ Unlike exclusions, this change will not be applied to future workflow runs.
 
 ## Pausing and Resuming Crawls
 
-If you need to pause your crawl at any point after it has started, whether to reassess, rescope, or for any other reason, you now have the option to do so.
 
-Pausing a crawl will halt the timer and prevent any increase in the number of pages crawled or the overall size. The crawl status will change from Running to Pausing to eventually Paused to signify that the crawler is no longer crawling.
+To pause a running crawl, click the *Pause* button. The crawl status will change from Running to Pausing as in-progress pages are completed, and then to Paused once the crawler is successful paused. Paused crawls do not continue to accrue execution time.
+While a crawl is paused, it is possible to replay the pages crawled up to that point and to download the WACZ files from the *Latest Crawl* tab.
 
-When you're ready to resume, simply click the Resume button. Your status will update from Resuming to Running to indicate that the crawler has started crawling again.
+To resume a paused crawl, simply click the *Resume* button. The crawl status will update from Resuming to Running to indicate that the crawler has started crawling again. Any changes to the workflow settings will be applied in the the resumed crawl.
 
 ???+ Note
-    While your crawl is paused, you can replay and view the data captured so far. However, if the crawl isn’t resumed within 7 days of being paused, it will automatically switch to a stopped state. Once stopped, the crawl is finished and can no longer be resumed.
+    Paused crawls that are not resumed within 7 days of being paused are automatically stopped. Once stopped, the crawl is finished and can no longer be resumed.
 
 ## End a Crawl
 
