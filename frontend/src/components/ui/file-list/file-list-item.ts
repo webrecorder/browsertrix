@@ -1,26 +1,19 @@
 import { localized, msg } from "@lit/localize";
 import { css, html } from "lit";
-import {
-  customElement,
-  property,
-  queryAssignedElements,
-} from "lit/decorators.js";
+import { customElement, property } from "lit/decorators.js";
 
-import { BtrixElement } from "@/classes/BtrixElement";
+import type { FileRemoveEvent } from "./events";
+
 import { TailwindElement } from "@/classes/TailwindElement";
+import { LocalizeController } from "@/controllers/localize";
 import { truncate } from "@/utils/css";
-
-type FileRemoveDetail = {
-  file: File;
-};
-export type FileRemoveEvent = CustomEvent<FileRemoveDetail>;
 
 /**
  * @event btrix-remove FileRemoveEvent
  */
 @customElement("btrix-file-list-item")
 @localized()
-export class FileListItem extends BtrixElement {
+export class FileListItem extends TailwindElement {
   static styles = [
     truncate,
     css`
@@ -75,6 +68,8 @@ export class FileListItem extends BtrixElement {
   @property({ type: Boolean })
   progressIndeterminate?: boolean;
 
+  readonly localize = new LocalizeController(this);
+
   render() {
     if (!this.file) return;
     return html`<div class="item">
@@ -117,50 +112,13 @@ export class FileListItem extends BtrixElement {
     if (!this.file) return;
     await this.updateComplete;
     this.dispatchEvent(
-      new CustomEvent<FileRemoveDetail>("btrix-remove", {
+      new CustomEvent<FileRemoveEvent["detail"]>("btrix-remove", {
         detail: {
-          file: this.file,
+          item: this.file,
         },
+        composed: true,
+        bubbles: true,
       }),
     );
   };
-}
-
-@customElement("btrix-file-list")
-export class FileList extends TailwindElement {
-  static styles = [
-    css`
-      ::slotted(btrix-file-list-item) {
-        --border: 1px solid var(--sl-panel-border-color);
-        --item-border-top: var(--border);
-        --item-border-left: var(--border);
-        --item-border-right: var(--border);
-        --item-border-bottom: var(--border);
-        --item-box-shadow: var(--sl-shadow-x-small);
-        --item-border-radius: var(--sl-border-radius-medium);
-        display: block;
-      }
-
-      ::slotted(btrix-file-list-item:not(:last-of-type)) {
-        margin-bottom: var(--sl-spacing-x-small);
-      }
-    `,
-  ];
-
-  @queryAssignedElements({ selector: "btrix-file-list-item" })
-  listItems!: HTMLElement[];
-
-  render() {
-    return html`<div class="list" role="list">
-      <slot @slotchange=${this.handleSlotchange}></slot>
-    </div>`;
-  }
-
-  private handleSlotchange() {
-    this.listItems.map((el) => {
-      if (!el.attributes.getNamedItem("role")) {
-        el.setAttribute("role", "listitem");
-      }
-    });
-  }
 }
