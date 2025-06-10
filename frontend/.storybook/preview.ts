@@ -6,6 +6,7 @@ import {
   type Preview,
 } from "@storybook/web-components";
 
+// eslint-disable-next-line import-x/no-unresolved -- File is generated at build time
 import customElements from "@/__generated__/custom-elements.json";
 
 import "../src/theme.stylesheet.css";
