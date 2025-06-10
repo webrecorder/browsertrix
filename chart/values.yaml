@@ -281,9 +281,6 @@ crawler_browser_instances: 2
 # defaults to 'crawler_browser_instances' if not set
 # qa_browser_instances: 2
 
-# number of browser windows for QA runs
-qa_browser_instances: 1
-
 # this value is added to crawler_cpu_base, for each additional browser
 # crawler_cpu = crawler_cpu_base + crawler_pu_per_extra_browser * (crawler_browser_instances - 1)
 crawler_extra_cpu_per_browser: 600m
