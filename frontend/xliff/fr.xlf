@@ -2738,8 +2738,9 @@
         <source>Reload page</source>
         <target state="translated">Recharger la page</target>
       </trans-unit>
-      <trans-unit id="s388e286f3911e3cf">
+      <trans-unit id="s388e286f3911e3cf" xml:space="preserve">
         <source>Toggle screenshot wipe view</source>
+        <target state="translated">Afficher la vue d'ensemble des captures d'écran</target>
       </trans-unit>
       <trans-unit id="s7381233b8fceb3a6" xml:space="preserve">
         <source>Loading page</source>
@@ -2803,7 +2804,11 @@
           crawling. For details, refer to
           <x id="0" equiv-text="&lt;a class=&quot;text-primary hover:text-primary-400&quot; href=&quot;/docs/user-guide/browser-profiles/&quot; target=&quot;_blank&quot;&gt;&#10;            ${msg(&quot;browser profile best practices&quot;)}&lt;/a&gt;"/>.
         </source>
-        <target state="translated">Il est fortement recommandé de créer des comptes dédiés à la collecte. Pour plus de détails, voir <x id="0" equiv-text="&lt;a class=&quot;text-primary hover:text-primary-400&quot; href=&quot;/docs/user-guide/browser-profiles/&quot; target=&quot;_blank&quot;&gt;&#10;            ${msg(&quot;browser profile best practices&quot;)}&lt;/a&gt;"/>. </target>
+        <target state="translated">
+          Il est fortement recommandé de créer des comptes dédiés à la collecte. 
+          Pour plus de détails, voir 
+<x id="0" equiv-text="&lt;a class=&quot;text-primary hover:text-primary-400&quot; href=&quot;/docs/user-guide/browser-profiles/&quot; target=&quot;_blank&quot;&gt;&#10;            ${msg(&quot;browser profile best practices&quot;)}&lt;/a&gt;"/>
+        </target>
       </trans-unit>
       <trans-unit id="se058d83e4b3bad9e" xml:space="preserve">
         <source>browser profile best practices</source>
@@ -3107,8 +3112,9 @@
                   Les membres ne pourront plus effectuer de collectes, charger des fichiers, créer 
                   des profils de navigation, ou créer des collections.</target>
       </trans-unit>
-      <trans-unit id="sdc8e0ecdba53dccc">
+      <trans-unit id="sdc8e0ecdba53dccc" xml:space="preserve">
         <source>Slug:</source>
+        <target state="translated">Étiquette :</target>
       </trans-unit>
       <trans-unit id="see2872cc86489f3e" xml:space="preserve">
         <source>Members:</source>
@@ -3685,122 +3691,156 @@
             on any subdomains.</source>
         <target state="translated">Collectera toutes les pages sur <x id="0" equiv-text="&lt;span class=&quot;text-blue-500&quot;&gt;${exampleHost}&lt;/span&gt;"/> et ignorera les pages de tous les sous-domaines.</target>
       </trans-unit>
-      <trans-unit id="ha8f0ffdb034da2d1">
+      <trans-unit id="ha8f0ffdb034da2d1" xml:space="preserve">
         <source>Will crawl all pages on
             <x id="0" equiv-text="&lt;span class=&quot;text-blue-500&quot;&gt;${exampleHost}&lt;/span&gt;"/> and
             <x id="1" equiv-text="&lt;span class=&quot;text-blue-500&quot;&gt;"/>subdomain.<x id="2" equiv-text="${exampleHost}&lt;/span&gt;"/>.</source>
+        <target state="translated">Collectera toutes les pages sur <x id="0" equiv-text="&lt;span class=&quot;text-blue-500&quot;&gt;${exampleHost}&lt;/span&gt;"/> et <x id="1" equiv-text="&lt;span class=&quot;text-blue-500&quot;&gt;"/> sous-domaine.<x id="2" equiv-text="${exampleHost}&lt;/span&gt;"/>.</target>
       </trans-unit>
-      <trans-unit id="hba1eb91e4626e056">
+      <trans-unit id="hba1eb91e4626e056" xml:space="preserve">
         <source>Will crawl hash anchor links as pages. For example,
             <x id="0" equiv-text="&lt;span class=&quot;break-word text-blue-500&quot;&gt;${exampleDomain}${examplePathname}&lt;/span&gt;&lt;span class=&quot;break-word font-medium text-blue-500&quot;&gt;"/>#example-page<x id="1" equiv-text="&lt;/span&gt;"/>
             will be treated as a separate page.</source>
+        <target state="translated">Collectera les ancres de liens avec des hashtags comme des pages. Par exemple, <x id="0" equiv-text="&lt;span class=&quot;break-word text-blue-500&quot;&gt;${exampleDomain}${examplePathname}&lt;/span&gt;&lt;span class=&quot;break-word font-medium text-blue-500&quot;&gt;"/>#page-exemple<x id="1" equiv-text="&lt;/span&gt;"/> sera traité comme une page séparée.</target>
       </trans-unit>
-      <trans-unit id="h2303b42f0dff5ee4">
+      <trans-unit id="h2303b42f0dff5ee4" xml:space="preserve">
         <source>Will crawl all page URLs that begin with
             <x id="0" equiv-text="&lt;span class=&quot;break-word text-blue-500&quot;&gt;${exampleDomain}${examplePathname}&lt;/span&gt;"/>
             or any URL that begins with those specified in
             <x id="1" equiv-text="&lt;em&gt;"/>Extra URL Prefixes in Scope<x id="2" equiv-text="&lt;/em&gt;"/></source>
+        <target state="translated">Collectera toutes les URL qui commencent par <x id="0" equiv-text="&lt;span class=&quot;break-word text-blue-500&quot;&gt;${exampleDomain}${examplePathname}&lt;/span&gt;"/> ou par celles spécifiées dans <x id="1" equiv-text="&lt;em&gt;"/>préfixes d'URL supplémentaires dans la portée<x id="2" equiv-text="&lt;/em&gt;"/></target>
       </trans-unit>
-      <trans-unit id="s285f35c68ab11461">
+      <trans-unit id="s285f35c68ab11461" xml:space="preserve">
         <source>The starting point of your crawl.</source>
+        <target state="translated">Le point de départ de votre collecte.</target>
       </trans-unit>
-      <trans-unit id="s09a8c053783eafa0">
+      <trans-unit id="s09a8c053783eafa0" xml:space="preserve">
         <source>If the crawler finds pages outside of the Crawl Scope they
             will only be saved if they begin with URLs listed here.</source>
+        <target state="translated">Si le robot moissonneur trouve des pages en dehors du périmètre de collecte, elles ne seront sauvegardées que si elles commencent par les URL énumérées ici.</target>
       </trans-unit>
-      <trans-unit id="s406e05cc7ea70f01">
+      <trans-unit id="s406e05cc7ea70f01" xml:space="preserve">
         <source>hops</source>
+        <target state="translated">sauts</target>
       </trans-unit>
-      <trans-unit id="sb43ce2ffe2a4857f">
+      <trans-unit id="sb43ce2ffe2a4857f" xml:space="preserve">
         <source>Limits how many hops away the crawler can visit while staying within the Crawl Scope.</source>
+        <target state="translated">Limite le nombre de sauts que le robot moissonneur peut effectuer en restant dans le périmètre de collecte.</target>
       </trans-unit>
-      <trans-unit id="sba156796788dc6c2">
+      <trans-unit id="sba156796788dc6c2" xml:space="preserve">
         <source>If checked, the crawler will visit pages one link away outside of
         Crawl Scope.</source>
+        <target state="translated">Si cette option est cochée, le robot moissonneur visitera les pages qui se trouvent un lien à l'extérieur du périmètre de collecte.</target>
       </trans-unit>
-      <trans-unit id="sf092ad58edfa163b">
+      <trans-unit id="sf092ad58edfa163b" xml:space="preserve">
         <source>Check for sitemap</source>
+        <target state="translated">Vérifier la présence d'un plan du site</target>
       </trans-unit>
-      <trans-unit id="s4caffd8aa426781c">
+      <trans-unit id="s4caffd8aa426781c" xml:space="preserve">
         <source>If checked, the crawler will check for a sitemap at /sitemap.xml and use it to discover pages to crawl if present.</source>
+        <target state="translated">Si cette option est cochée, le robot moissonneur vérifiera la présence d'un plan du site à l'adresse /plan_site.xml et l'utilisera pour découvrir des pages à collecter, le cas échéant.</target>
       </trans-unit>
-      <trans-unit id="s2279075e18f7dd74">
+      <trans-unit id="s2279075e18f7dd74" xml:space="preserve">
         <source>Additional Pages</source>
+        <target state="translated">Pages additionnelles</target>
       </trans-unit>
-      <trans-unit id="sdd5dbd4b0fef8660">
+      <trans-unit id="sdd5dbd4b0fef8660" xml:space="preserve">
         <source>Must be more than minimum of <x id="0" equiv-text="${this.localize.number(+min)}"/></source>
+        <target state="translated">Doit être supérieur à un minimum de <x id="0" equiv-text="${this.localize.number(+min)}"/></target>
       </trans-unit>
-      <trans-unit id="sa4f9d4099c408ae6">
+      <trans-unit id="sa4f9d4099c408ae6" xml:space="preserve">
         <source>Must be less than maximum of <x id="0" equiv-text="${this.localize.number(+max)}"/></source>
+        <target state="translated">Doit être inférieur à un minimum de <x id="0" equiv-text="${this.localize.number(+max)}"/></target>
       </trans-unit>
-      <trans-unit id="sab01daa76a48769f">
+      <trans-unit id="sab01daa76a48769f" xml:space="preserve">
         <source>pages</source>
+        <target state="translated">pages</target>
       </trans-unit>
-      <trans-unit id="sd412fd49fb930199">
+      <trans-unit id="sd412fd49fb930199" xml:space="preserve">
         <source>When enabled the browser will automatically scroll to the end of the page.</source>
+        <target state="translated">Lorsque cette option est activée, le navigateur défile automatiquement jusqu'à la fin de la page.</target>
       </trans-unit>
-      <trans-unit id="s9a3cc9f85491f80b">
+      <trans-unit id="s9a3cc9f85491f80b" xml:space="preserve">
         <source>Increase the number of open browser windows during a crawl. This will speed up your crawl by effectively running more crawlers at the same time.</source>
+        <target state="translated">Augmentez le nombre de fenêtres de navigateur ouvertes pendant une collecte. Cela permettra d'accélérer la collecte en faisant fonctionner plus de robots moissonneurs en même temps.</target>
       </trans-unit>
-      <trans-unit id="s5149476b5ea0a1b9">
+      <trans-unit id="s5149476b5ea0a1b9" xml:space="preserve">
         <source>See caveats</source>
+        <target state="translated">Voir les avertissements</target>
       </trans-unit>
-      <trans-unit id="s4dc337bffda2ec4d">
+      <trans-unit id="s4dc337bffda2ec4d" xml:space="preserve">
         <source>Crawl Schedule</source>
+        <target state="translated">Calendrier de collecte</target>
       </trans-unit>
-      <trans-unit id="se92749db624c8982">
+      <trans-unit id="se92749db624c8982" xml:space="preserve">
         <source>Configure crawls to run every day, week, or month at a specified time.</source>
+        <target state="translated">Configurer les collectes pour qu'elles s'exécutent tous les jours, toutes les semaines ou tous les mois à l'heure spécifiée.</target>
       </trans-unit>
-      <trans-unit id="sf94cd0bf25284668">
+      <trans-unit id="sf94cd0bf25284668" xml:space="preserve">
         <source>Set Schedule</source>
+        <target state="translated">Définir le calendrier</target>
       </trans-unit>
-      <trans-unit id="s4bfaefac9bc26241">
+      <trans-unit id="s4bfaefac9bc26241" xml:space="preserve">
         <source>Frequency</source>
+        <target state="translated">Fréquence</target>
       </trans-unit>
-      <trans-unit id="s680d6fc47b06b8b5">
+      <trans-unit id="s680d6fc47b06b8b5" xml:space="preserve">
         <source>Limit the frequency for how often a crawl will run.</source>
+        <target state="translated">Limiter la fréquence d'exécution d'une collecte.</target>
       </trans-unit>
-      <trans-unit id="se0955919920ee87d">
+      <trans-unit id="se0955919920ee87d" xml:space="preserve">
         <source>Day</source>
+        <target state="translated">Jour</target>
       </trans-unit>
-      <trans-unit id="s88d3b00e313183b5">
+      <trans-unit id="s88d3b00e313183b5" xml:space="preserve">
         <source>What day of the week should a crawl run on?</source>
+        <target state="translated">Quel jour de la semaine la collecte doit être exécutée ?</target>
       </trans-unit>
-      <trans-unit id="sb4ab7b002d655ce9">
+      <trans-unit id="sb4ab7b002d655ce9" xml:space="preserve">
         <source>What day of the month should a crawl run on?</source>
+        <target state="translated">Quel jour du mois la collecte doit être exécutée ?</target>
       </trans-unit>
-      <trans-unit id="h8c7c3a6e07d7c512">
+      <trans-unit id="h8c7c3a6e07d7c512" xml:space="preserve">
         <source>Schedule:
                 <x id="0" equiv-text="&lt;span class=&quot;text-blue-500&quot;&gt;${utcSchedule&#10;    ? humanizeSchedule(utcSchedule)&#10;    : msg(&quot;Invalid date&quot;)}&lt;/span&gt;"/>.</source>
+        <target state="translated">Calendrier : <x id="0" equiv-text="&lt;span class=&quot;text-blue-500&quot;&gt;${utcSchedule&#10;    ? humanizeSchedule(utcSchedule)&#10;    : msg(&quot;Invalid date&quot;)}&lt;/span&gt;"/>.</target>
       </trans-unit>
-      <trans-unit id="se0baa9b7fb0768e4">
+      <trans-unit id="se0baa9b7fb0768e4" xml:space="preserve">
         <source>Invalid date</source>
+        <target state="translated">Date invalide</target>
       </trans-unit>
-      <trans-unit id="h30728ea4302f7fe9">
+      <trans-unit id="h30728ea4302f7fe9" xml:space="preserve">
         <source>Next scheduled run:
                 <x id="0" equiv-text="&lt;span&gt;${utcSchedule&#10;    ? humanizeNextDate(utcSchedule)&#10;    : msg(&quot;Invalid date&quot;)}&lt;/span&gt;"/>.</source>
+        <target state="translated">Prochaine collecte programmée : <x id="0" equiv-text="&lt;span&gt;${utcSchedule&#10;    ? humanizeNextDate(utcSchedule)&#10;    : msg(&quot;Invalid date&quot;)}&lt;/span&gt;"/>.</target>
       </trans-unit>
-      <trans-unit id="s4174899261b8b308">
+      <trans-unit id="s4174899261b8b308" xml:space="preserve">
         <source>A crawl will run at this time in your current timezone.</source>
+        <target state="translated">Une collecte s'effectuera à cette heure dans votre fuseau horaire actuel.</target>
       </trans-unit>
-      <trans-unit id="s0d56a24ca72b8e48">
+      <trans-unit id="s0d56a24ca72b8e48" xml:space="preserve">
         <source>Customize this Workflow's name. Workflows are named after
         the first Crawl URL by default.</source>
+        <target state="translated">Personnalisez le nom de ce flux de travail. Par défaut, les flux de travail sont nommés d'après la première URL de collecte.</target>
       </trans-unit>
-      <trans-unit id="sa8e78592c1db6c3a">
+      <trans-unit id="sa8e78592c1db6c3a" xml:space="preserve">
         <source>Provide details about this Workflow.</source>
+        <target state="translated">Fournir des détails sur ce flux de travail.</target>
       </trans-unit>
-      <trans-unit id="s163480f4b18e39c0">
+      <trans-unit id="s163480f4b18e39c0" xml:space="preserve">
         <source>Create or assign this crawl (and its outputs) to one or more tags
         to help organize your archived items.</source>
+        <target state="translated">Créez ou assignez cette collecte (et ses résultats) à une ou plusieurs étiquettes pour vous aider à organiser vos éléments archivés.</target>
       </trans-unit>
-      <trans-unit id="s68f29315fcc19b3b">
+      <trans-unit id="s68f29315fcc19b3b" xml:space="preserve">
         <source>Search for a Collection to auto-add crawls</source>
+        <target state="translated">Rechercher une collection pour l'ajout automatique de collectes</target>
       </trans-unit>
-      <trans-unit id="s54100e0807a1e40d">
+      <trans-unit id="s54100e0807a1e40d" xml:space="preserve">
         <source>Automatically add crawls from this workflow to one or more collections
           as soon as they complete.
           Individual crawls can be selected from within the collection later.</source>
+        <target state="translated">Ajoutez automatiquement les collectes de ce flux de travail à une ou plusieurs collections dès qu'elles sont terminées. Les collectes individuelles peuvent être sélectionnées ultérieurement au sein de la collection.</target>
       </trans-unit>
       <trans-unit id="s265a8f6e25a8c5f2" xml:space="preserve">
         <source>Workflow created.</source>
@@ -3834,13 +3874,17 @@
         <source>Please shorten list to <x id="0" equiv-text="${this.localize.number(max)}"/> or fewer URLs.</source>
         <target state="translated">Merci de raccourcir la liste à <x id="0" equiv-text="${this.localize.number(max)}"/> URLs ou moins.</target>
       </trans-unit>
-      <trans-unit id="s40b5b363fefc9199">
+      <trans-unit id="s40b5b363fefc9199" xml:space="preserve">
         <source>Please remove or fix the following invalid URL: <x id="0" equiv-text="${invalidUrl}"/></source>
+        <target state="translated">Veuillez supprimer ou corriger l'URL invalide suivante : <x id="0" equiv-text="${invalidUrl}"/></target>
       </trans-unit>
-      <trans-unit id="saf63d34c8601dd41">
+      <trans-unit id="saf63d34c8601dd41" xml:space="preserve">
         <source>
           <x id="0" equiv-text="${this.localize.number(this.item.pageCount ? +this.item.pageCount : 0)}"/>
         </source>
+        <target state="translated">
+          <x id="0" equiv-text="${this.localize.number(this.item.pageCount ? +this.item.pageCount : 0)}"/>
+        </target>
       </trans-unit>
       <trans-unit id="s136b21dec9a221bd" xml:space="preserve">
         <source>Manual run by <x id="0" equiv-text="${workflow.lastStartedByName}"/></source>
@@ -3869,22 +3913,26 @@
                   ne soient supprimés. Pour conserver votre plan et vos données, voir
                   <x id="0" equiv-text="${billingTabLink}"/>.</target>
       </trans-unit>
-      <trans-unit id="s1f1b3cea8b3a20f3">
+      <trans-unit id="s1f1b3cea8b3a20f3" xml:space="preserve">
         <source>You have <x id="0" equiv-text="${daysDiff}"/> days left of your Browsertrix trial</source>
+        <target state="translated">Il vous reste <x id="0" equiv-text="${daysDiff}"/> jours d'essai à Browsertrix</target>
       </trans-unit>
-      <trans-unit id="se4dfda71fd51327d">
+      <trans-unit id="se4dfda71fd51327d" xml:space="preserve">
         <source>Your trial ends within one day</source>
+        <target state="translated">Il reste un jour à votre période d'essai</target>
       </trans-unit>
       <trans-unit id="se5578c14db3c7b2b" xml:space="preserve">
         <source>Your web archives are always yours — you can download any archived items you'd like to keep
                   before the trial ends!</source>
         <target state="translated">Les sites Web archivées demeure toujours les vôtres — vous pouvez télécharger tous les items qui ont été collectés avant la fin de la période d'essai !</target>
       </trans-unit>
-      <trans-unit id="sc3e0d8cbe688ccd5">
+      <trans-unit id="sc3e0d8cbe688ccd5" xml:space="preserve">
         <source>Archiving will be disabled in <x id="0" equiv-text="${daysDiff}"/> days</source>
+        <target state="translated">L'archivage sera désactivé dans <x id="0" equiv-text="${daysDiff}"/> jours</target>
       </trans-unit>
-      <trans-unit id="sda57befc109a45f6">
+      <trans-unit id="sda57befc109a45f6" xml:space="preserve">
         <source>Archiving will be disabled within one day</source>
+        <target state="translated">L'archivage sera désactivé dans 1 jour</target>
       </trans-unit>
       <trans-unit id="s618b35a93b6fd392" xml:space="preserve">
         <source>Your subscription ends on <x id="0" equiv-text="${dateStr}"/>. You will no longer be able to run crawls, upload files, create browser profiles, or create collections.</source>
@@ -4768,7 +4816,10 @@
     Are you sure you want to delete
     <x id="0" equiv-text="&lt;strong class=&quot;font-semibold&quot;&gt;${name}&lt;/strong&gt;"/>?
   </source>
-        <target state="translated">Êtes-vous sûr de vouloir supprimer <x id="0" equiv-text="&lt;strong class=&quot;font-semibold&quot;&gt;${name}&lt;/strong&gt;"/> ? </target>
+        <target state="translated">
+    Êtes-vous sûr de vouloir supprimer 
+    <x id="0" equiv-text="&lt;strong class=&quot;font-semibold&quot;&gt;${name}&lt;/strong&gt;"/> ?
+  </target>
       </trans-unit>
       <trans-unit id="s537a1aeb41fca7c0" xml:space="preserve">
         <source>Delete Workflow?</source>
