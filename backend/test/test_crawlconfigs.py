@@ -6,6 +6,7 @@ from .conftest import API_PREFIX
 
 
 cid = None
+cid_single_page = None
 UPDATED_NAME = "Updated name"
 UPDATED_DESCRIPTION = "Updated description"
 UPDATED_TAGS = ["tag3", "tag4"]
@@ -65,6 +66,37 @@ def test_verify_default_browser_windows(
     data = r.json()
     assert data.get("scale") is None
     assert data["browserWindows"] == 2
+
+
+def test_add_crawl_config_single_page(
+    crawler_auth_headers, default_org_id, sample_crawl_data
+):
+    # Create crawl config
+    sample_crawl_data["config"]["limit"] = 1
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        headers=crawler_auth_headers,
+        json=sample_crawl_data,
+    )
+    assert r.status_code == 200
+
+    data = r.json()
+    global cid_single_page
+    cid_single_page = data["id"]
+
+
+def test_verify_default_browser_windows_single_page(
+    crawler_auth_headers, default_org_id, sample_crawl_data
+):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid_single_page}/",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+
+    data = r.json()
+    assert data.get("scale") is None
+    assert data["browserWindows"] == 1
 
 
 def test_custom_browser_windows(

@@ -331,7 +331,7 @@ def sample_crawl_data():
     return {
         "runNow": False,
         "name": "Test Crawl",
-        "config": {"seeds": [{"url": "https://example.com/"}]},
+        "config": {"seeds": [{"url": "https://example.com/"}], "extraHops": 1},
         "tags": ["tag1", "tag2"],
     }
 

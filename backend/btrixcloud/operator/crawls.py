@@ -101,6 +101,8 @@ class CrawlOperator(BaseOperator):
 
     paused_expires_delta: timedelta
 
+    num_browsers_per_pod: int
+
     def __init__(self, *args):
         super().__init__(*args)
 
@@ -124,6 +126,8 @@ class CrawlOperator(BaseOperator):
         )
 
         self.paused_expires_delta = timedelta(minutes=paused_crawl_limit_minutes)
+
+        self.num_browsers_per_pod = int(os.environ.get("NUM_BROWSERS", 1))
 
     def init_routes(self, app):
         """init routes for this operator"""
@@ -181,6 +185,7 @@ class CrawlOperator(BaseOperator):
             max_crawl_size=int(spec.get("maxCrawlSize") or 0),
             scheduled=spec.get("manual") != "1",
             qa_source_crawl_id=spec.get("qaSourceCrawlId"),
+            is_single_page=spec.get("isSinglePage") == "1",
         )
 
         if crawl.qa_source_crawl_id:
@@ -301,7 +306,7 @@ class CrawlOperator(BaseOperator):
                 status.stopReason = stop_reason
                 await self.mark_finished(crawl, status, state)
 
-        children = self._load_redis(params, status, data.children)
+        children = self._load_redis(params, status, crawl, data.children)
 
         storage_path = crawl.storage.get_storage_extra_path(oid)
         storage_secret = crawl.storage.get_storage_secret_name(oid)
@@ -368,10 +373,8 @@ class CrawlOperator(BaseOperator):
         # crawl_scale is the number of pods to create
         crawler_scale = scale_from_browser_windows(crawl.browser_windows)
 
-        browsers_per_pod = int(os.environ.get("NUM_BROWSERS", 1))
-
         for i in range(0, crawler_scale):
-            if status.pagesFound < i * browsers_per_pod:
+            if status.pagesFound < i * self.num_browsers_per_pod:
                 break
 
             children.extend(
@@ -392,7 +395,7 @@ class CrawlOperator(BaseOperator):
             "resyncAfterSeconds": status.resync_after,
         }
 
-    def _load_redis(self, params, status: CrawlStatus, children):
+    def _load_redis(self, params, status: CrawlStatus, crawl: CrawlSpec, children):
         name = f"redis-{params['id']}"
         has_pod = name in children[POD]
 
@@ -400,6 +403,8 @@ class CrawlOperator(BaseOperator):
         params["name"] = name
         params["cpu"] = pod_info.newCpu or params.get("redis_cpu")
         params["memory"] = pod_info.newMemory or params.get("redis_memory")
+        params["no_pvc"] = crawl.is_single_page
+
         restart_reason = None
         if has_pod:
             restart_reason = pod_info.should_restart_pod()
@@ -870,7 +875,7 @@ class CrawlOperator(BaseOperator):
         if redis_pod in pods:
             # if has other pods, keep redis pod until they are removed
             if len(pods) > 1:
-                new_children = self._load_redis(params, status, children)
+                new_children = self._load_redis(params, status, crawl, children)
                 await self.increment_pod_exec_time(pods, crawl, status)
 
         # keep pvs until pods are removed

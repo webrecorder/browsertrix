@@ -140,6 +140,7 @@ class CronJobOperator(BaseOperator):
             storage_filename=self.crawl_config_ops.default_filename_template,
             profile_filename=profile_filename or "",
             proxy_id=crawlconfig.proxyId or "",
+            is_single_page=self.crawl_config_ops.is_single_page(crawlconfig.config),
         )
 
         return MCDecoratorSyncResponse(attachments=list(yaml.safe_load_all(crawljob)))

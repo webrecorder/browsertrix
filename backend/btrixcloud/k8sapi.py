@@ -95,6 +95,7 @@ class K8sAPI:
         profile_filename: str = "",
         qa_source: str = "",
         proxy_id: str = "",
+        is_single_page: bool = False,
     ):
         """load job template from yaml"""
         if not crawl_id:
@@ -119,6 +120,7 @@ class K8sAPI:
             "profile_filename": profile_filename,
             "qa_source": qa_source,
             "proxy_id": proxy_id,
+            "is_single_page": "1" if is_single_page else "0",
         }
 
         data = self.templates.env.get_template("crawl_job.yaml").render(params)
@@ -142,6 +144,7 @@ class K8sAPI:
         profile_filename: str = "",
         qa_source: str = "",
         proxy_id: str = "",
+        is_single_page: bool = False,
     ) -> str:
         """load and init crawl job via k8s api"""
         crawl_id, data = self.new_crawl_job_yaml(
@@ -161,6 +164,7 @@ class K8sAPI:
             profile_filename=profile_filename,
             qa_source=qa_source,
             proxy_id=proxy_id,
+            is_single_page=is_single_page,
         )
 
         # create job directly
