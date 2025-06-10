@@ -67,6 +67,39 @@ def test_verify_default_browser_windows(
     assert data["browserWindows"] == 2
 
 
+def test_add_crawl_config_single_page(
+    crawler_auth_headers, default_org_id, sample_crawl_data
+):
+    # Create crawl config
+    sample_crawl_data["schedule"] = "0 0 * * *"
+    sample_crawl_data["profileid"] = ""
+    sample_crawl_data["limit"] = 1
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        headers=crawler_auth_headers,
+        json=sample_crawl_data,
+    )
+    assert r.status_code == 200
+
+    data = r.json()
+    global cid
+    cid = data["id"]
+
+
+def test_verify_default_browser_windows_single_page(
+    crawler_auth_headers, default_org_id, sample_crawl_data
+):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+
+    data = r.json()
+    assert data.get("scale") is None
+    assert data["browserWindows"] == 1
+
+
 def test_custom_browser_windows(
     crawler_auth_headers, default_org_id, sample_crawl_data
 ):

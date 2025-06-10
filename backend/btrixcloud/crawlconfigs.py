@@ -327,7 +327,16 @@ class CrawlConfigOps:
 
     def is_single_page(self, config: RawCrawlConfig):
         """return true if this config represents a single page crawl"""
-        return config.seeds and len(config.seeds) == 1 and config.extraHops == 0
+        if not config.seeds or len(config.seeds) != 1:
+            return False
+
+        if config.limit == 1:
+            return True
+
+        extra_hops = config.seeds[0].extraHops or config.extraHops
+        scope_type = config.seeds[0].scopeType or config.scopeType
+
+        return extra_hops == 0 and scope_type == "page"
 
     def _validate_link_selectors(self, link_selectors: List[str]):
         """Validate link selectors

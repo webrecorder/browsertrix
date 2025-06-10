@@ -333,6 +333,7 @@ def sample_crawl_data():
         "name": "Test Crawl",
         "config": {"seeds": [{"url": "https://example.com/"}]},
         "tags": ["tag1", "tag2"],
+        "extraHops": 1,
     }
 
 
