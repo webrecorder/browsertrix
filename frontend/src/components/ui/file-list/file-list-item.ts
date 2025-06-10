@@ -2,14 +2,14 @@ import { localized, msg } from "@lit/localize";
 import { css, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
-import type { FileRemoveEvent } from "./events";
+import type { BtrixFileRemoveEvent } from "./events";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import { LocalizeController } from "@/controllers/localize";
 import { truncate } from "@/utils/css";
 
 /**
- * @event btrix-remove FileRemoveEvent
+ * @event btrix-remove
  */
 @customElement("btrix-file-list-item")
 @localized()
@@ -112,7 +112,7 @@ export class FileListItem extends TailwindElement {
     if (!this.file) return;
     await this.updateComplete;
     this.dispatchEvent(
-      new CustomEvent<FileRemoveEvent["detail"]>("btrix-remove", {
+      new CustomEvent<BtrixFileRemoveEvent["detail"]>("btrix-remove", {
         detail: {
           item: this.file,
         },

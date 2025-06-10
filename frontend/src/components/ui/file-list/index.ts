@@ -1,4 +1,4 @@
 import "./file-list";
 import "./file-list-item";
 
-export type { FileRemoveEvent } from "./events";
+export type { BtrixFileRemoveEvent as FileRemoveEvent } from "./events";
