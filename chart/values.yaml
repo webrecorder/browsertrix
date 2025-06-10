@@ -277,9 +277,12 @@ crawler_memory_base: 1024Mi
 # number of browser workers per crawler instances
 crawler_browser_instances: 2
 
-# number of browser workers per crawler instances for QA runs
+# number of browser workers per QA pod to run for QA runs
 # defaults to 'crawler_browser_instances' if not set
-# qa_browser_instances: 2
+qa_browser_instances: 1
+
+# fixed scale (number of QA pods) to run
+qa_scale: 1
 
 # this value is added to crawler_cpu_base, for each additional browser
 # crawler_cpu = crawler_cpu_base + crawler_pu_per_extra_browser * (crawler_browser_instances - 1)

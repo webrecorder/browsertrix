@@ -190,10 +190,7 @@ class CrawlOperator(BaseOperator):
         )
 
         if crawl.qa_source_crawl_id:
-            crawl.browser_windows = int(
-                params.get("qa_browser_instances")
-                or browser_windows_from_scale(params.get("qa_scale") or 1)
-            )
+            crawl.browser_windows = int(params.get("qa_scale", 1))
 
         # if finalizing, crawl is being deleted
         if data.finalizing:
