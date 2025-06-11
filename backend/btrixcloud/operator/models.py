@@ -209,8 +209,12 @@ class CrawlStatus(BaseModel):
     size: int = 0
     # human readable size string
     sizeHuman: str = ""
-    # number of pods
-    scale: int = 1
+
+    # actual observed scale (number of pods active)
+    scale: int = 0
+    # desired scale as computed by crawl state (number of pods that should be active)
+    desiredScale: int = 0
+
     filesAdded: int = 0
     filesAddedSize: int = 0
     finished: Optional[str] = None
