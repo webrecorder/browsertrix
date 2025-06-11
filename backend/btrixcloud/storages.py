@@ -314,11 +314,15 @@ class StorageOps:
 
         session = aiobotocore.session.get_session()
 
-        config = None
+        config = AioConfig(
+            request_checksum_calculation="WHEN_REQUIRED",
+            response_checksum_validation="WHEN_REQUIRED",
+        )
 
         if for_presign and storage.access_endpoint_url != storage.endpoint_url:
             s3 = {"addressing_style": storage.access_addressing_style}
-            config = AioConfig(signature_version="s3v4", s3=s3)
+            config.signature_version = "s3v4"
+            config.s3 = s3
 
         async with session.create_client(
             "s3",
