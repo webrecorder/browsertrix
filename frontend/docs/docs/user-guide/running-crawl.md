@@ -1,4 +1,4 @@
-# Modifying Running Crawls
+# Running Crawls
 
 Running crawls can be modified from the crawl workflow **Latest Crawl** tab. You may want to modify a running crawl if you find that the workflow is crawling pages that you didn't intend to archive, or if you want a boost of speed.
 
@@ -8,13 +8,16 @@ A crawl workflow that is in progress can be in one of the following states:
 
 | Status | Description |
 | ---- | ---- |
-| <span class="status-waiting">:bootstrap-hourglass-split: Waiting</span>     | The workflow can't start running yet but it is queued to run when resources are available. |
-| <span class="status-waiting">:btrix-status-dot: Starting</span>       | New resources are starting up. Crawling should begin shortly.|
-| <span class="status-success">:btrix-status-dot: Running</span>        | The crawler is finding and capturing pages! |
-| <span class="status-waiting">:btrix-status-dot: Stopping</span> | A user has instructed this workflow to stop. Finishing capture of the current pages.|
-| <span class="status-waiting">:btrix-status-dot: Finishing Downloads</span> | The workflow has finished crawling and is finalizing downloads.|
-| <span class="status-waiting">:btrix-status-dot: Generating WACZ</span> | Data is being packaged into WACZ files.|
-| <span class="status-waiting">:btrix-status-dot: Uploading WACZ</span> | WACZ files have been created and are being transferred to storage.|
+| <span class="status-violet-600">:bootstrap-hourglass-split: Waiting</span>     | The workflow can't start running yet but it is queued to run when resources are available. |
+| <span class="status-violet-600">:btrix-status-dot: Starting</span>       | New resources are starting up. Crawling should begin shortly.|
+| <span class="status-green-600">:btrix-status-dot: Running</span>        | The crawler is finding and capturing pages! |
+| <span class="status-violet-600">:bootstrap-pause-circle: Pausing</span>     | The workflow is in the process of being paused. |
+| <span class="status-neutral-500">:bootstrap-pause-circle: Paused</span>     | The workflow is currently paused. |
+| <span class="status-violet-600">:bootstrap-play-circle: Resuming</span>     | The workflow is in the process of resuming after being paused. |
+| <span class="status-violet-600">:btrix-status-dot: Stopping</span> | A user has instructed this workflow to stop. Finishing capture of the current pages.|
+| <span class="status-violet-600">:btrix-status-dot: Finishing Downloads</span> | The workflow has finished crawling and is finalizing downloads.|
+| <span class="status-violet-600">:btrix-status-dot: Generating WACZ</span> | Data is being packaged into WACZ files.|
+| <span class="status-violet-600">:btrix-status-dot: Uploading WACZ</span> | WACZ files have been created and are being transferred to storage.|
 
 ## Watch Crawl
 
