@@ -1076,7 +1076,7 @@ class CrawlOperator(BaseOperator):
                 elif role == "redis":
                     redis_running = redis_running or running
 
-            status.scale = scale_count
+            #status.scale = scale_count
 
         # pylint: disable=broad-except
         except Exception as exc:
