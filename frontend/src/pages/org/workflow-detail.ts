@@ -318,7 +318,7 @@ export class WorkflowDetail extends BtrixElement {
   }
 
   // Workflow is for a crawl that has failed or canceled
-  private get isFailed() {
+  private get isUnsuccessfullyFinished() {
     return (FAILED_STATES as readonly string[]).includes(
       this.workflow?.lastCrawlState || "",
     );
@@ -1402,7 +1402,7 @@ export class WorkflowDetail extends BtrixElement {
   };
 
   private readonly renderLatestCrawl = () => {
-    if (!this.lastCrawlId || this.isFailed) {
+    if (!this.lastCrawlId || this.isUnsuccessfullyFinished) {
       return this.renderInactiveCrawlMessage();
     }
 
