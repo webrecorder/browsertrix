@@ -5,7 +5,7 @@ import { customElement, property } from "lit/decorators.js";
 import startCase from "lodash/fp/startCase";
 
 import { TailwindElement } from "@/classes/TailwindElement";
-import type { CrawlState } from "@/types/crawlState";
+import { RUNNING_STATES, type CrawlState } from "@/types/crawlState";
 import { animatePulse } from "@/utils/css";
 
 type CrawlType = "crawl" | "upload" | "qa";
@@ -325,7 +325,10 @@ export class CrawlStatus extends TailwindElement {
     if (this.stopping && this.state === "running") {
       return "stopping";
     }
-    if (this.shouldPause && this.state !== "paused") {
+    if (
+      this.shouldPause &&
+      (RUNNING_STATES as readonly string[]).includes(this.state || "")
+    ) {
       return "pausing";
     }
     if (!this.shouldPause && this.state === "paused") {

@@ -28,7 +28,7 @@ import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
 import { WorkflowTab } from "@/routes";
 import { deleteConfirmation, noData, notApplicable } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
-import { type CrawlState } from "@/types/crawlState";
+import { FAILED_STATES, type CrawlState } from "@/types/crawlState";
 import { isApiError } from "@/utils/api";
 import {
   DEFAULT_MAX_SCALE,
@@ -315,6 +315,13 @@ export class WorkflowDetail extends BtrixElement {
   // Workflow is active and not paused
   private get isRunning() {
     return this.workflow?.isCrawlRunning && !this.isPaused;
+  }
+
+  // Workflow is for a crawl that has failed or canceled
+  private get isUnsuccessfullyFinished() {
+    return (FAILED_STATES as readonly string[]).includes(
+      this.workflow?.lastCrawlState || "",
+    );
   }
 
   // Crawl is explicitly running
@@ -1395,7 +1402,7 @@ export class WorkflowDetail extends BtrixElement {
   };
 
   private readonly renderLatestCrawl = () => {
-    if (!this.lastCrawlId) {
+    if (!this.lastCrawlId || this.isUnsuccessfullyFinished) {
       return this.renderInactiveCrawlMessage();
     }
 
@@ -1832,7 +1839,7 @@ export class WorkflowDetail extends BtrixElement {
       if (this.workflow.lastCrawlState === "canceled") {
         message = msg("This crawl can’t be replayed since it was canceled.");
       } else {
-        message = msg("Replay is not enabled on this crawl.");
+        message = msg("Replay is not available for this crawl.");
       }
     }
 

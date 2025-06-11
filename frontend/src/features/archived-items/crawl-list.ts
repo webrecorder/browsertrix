@@ -131,6 +131,7 @@ export class CrawlListItem extends BtrixElement {
             (crawl: Crawl) => html`
               <btrix-crawl-status
                 state=${crawl.state}
+                ?stopping=${crawl.stopping}
                 ?shouldPause=${crawl.shouldPause}
                 hideLabel
                 hoist
