@@ -256,7 +256,7 @@ class CrawlOperator(BaseOperator):
         if status.scale:
             for pod_name, pod in pods.items():
                 # don't count redis pod
-                if pod_name.startswith("redis-")
+                if pod_name.startswith("redis-"):
                     status.scale -= 1
 
                 self.sync_resources(status, pod_name, pod, data.children)
@@ -609,7 +609,7 @@ class CrawlOperator(BaseOperator):
 
         # actual scale (minus redis pod)
         # actual_scale = len(pods)
-        #if pods.get(f"redis-{crawl_id}"):
+        # if pods.get(f"redis-{crawl_id}"):
         #    actual_scale -= 1
 
         # if desired_scale same or scaled up, return desired_scale
@@ -1076,7 +1076,7 @@ class CrawlOperator(BaseOperator):
                 elif role == "redis":
                     redis_running = redis_running or running
 
-            #status.scale = scale_count
+            # status.scale = scale_count
 
         # pylint: disable=broad-except
         except Exception as exc:
