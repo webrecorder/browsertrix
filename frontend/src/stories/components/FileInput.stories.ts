@@ -66,7 +66,7 @@ export const FormControl: Story = {
 /**
  * When dragging and dropping, files that are not acceptable are filtered out.
  */
-export const FormControlValidation: Story = {
+export const FileFormat: Story = {
   decorators: [fileInputFormDecorator],
   args: {
     drop: true,
