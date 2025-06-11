@@ -373,8 +373,8 @@ class CrawlOperator(BaseOperator):
             num_browser_windows, num_browsers_per_pod
         )
 
-        if status.pagesFound < desired_scale:
-            desired_scale = max(1, status.pagesFound)
+        if status.pagesFound < status.desiredScale:
+            status.desiredScale = max(1, status.pagesFound)
 
         is_paused = bool(crawl.paused_at) and status.state == "paused"
 
