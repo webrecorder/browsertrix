@@ -130,6 +130,5 @@ After making any changes to backend code (in `./backend`) or frontend code (in `
 
 Changes to settings in `./chart/local.yaml` can be deployed with `helm upgrade ...` directly.
 
-## Deploying Frontend Only
-
-If you are just making changes to the frontend, you can also [deploy the frontend separately](frontend-dev.md) using a dev server for quicker iteration.
+??? Info "Alternative method for developing the frontend"
+    If you are not writing backend code or otherwise making changes to the backend, you can run the frontend outside of Docker to quickly iterate on the user interface. See [UI Development](./frontend-dev.md) for instructions on how to develop the frontend using Node.js tools.
