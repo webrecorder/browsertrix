@@ -373,6 +373,9 @@ class CrawlOperator(BaseOperator):
             num_browser_windows, num_browsers_per_pod
         )
 
+        if status.pagesFound < desired_scale:
+            desired_scale = max(1, status.pagesFound)
+
         is_paused = bool(crawl.paused_at) and status.state == "paused"
 
         for i in range(0, status.desiredScale):
@@ -599,17 +602,11 @@ class CrawlOperator(BaseOperator):
         desired_scale = status.desiredScale
         actual_scale = status.scale
 
-        if status.pagesFound < desired_scale:
-            desired_scale = max(1, status.pagesFound)
-
-        if desired_scale == actual_scale:
+        # if not scaling down, just return
+        if desired_scale >= actual_scale:
             return
 
         crawl_id = crawl.id
-
-        # if desired_scale same or scaled up, return desired_scale
-        if desired_scale >= actual_scale:
-            return
 
         new_scale = actual_scale
         for i in range(actual_scale - 1, desired_scale - 1, -1):
