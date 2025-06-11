@@ -42,7 +42,7 @@ def qa_run_pages_ready(qa_crawl_id, crawler_auth_headers, default_org_id, qa_run
         if count + 1 == MAX_ATTEMPTS:
             assert False
 
-        time.sleep(5)
+        time.sleep(10)
         count += 1
 
     # Wait until pages are ready
