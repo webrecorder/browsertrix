@@ -1,5 +1,5 @@
 import { localized, msg, str } from "@lit/localize";
-import type { SlAlert } from "@shoelace-style/shoelace";
+import type { SlAlert, SlIcon } from "@shoelace-style/shoelace";
 import { differenceInHours } from "date-fns/fp";
 import { html, type TemplateResult } from "lit";
 import { customElement } from "lit/decorators.js";
@@ -18,6 +18,26 @@ type Alert = {
   };
 };
 
+const iconForVariant = (
+  variant: SlAlert["variant"],
+): NonNullable<SlIcon["name"]> => {
+  switch (variant) {
+    case "danger":
+      return "exclamation-triangle";
+    case "success":
+      return "check2-circle";
+    case "warning":
+      return "exclamation-diamond";
+    default:
+      return "info-circle";
+  }
+};
+
+// show banner if <= this many days of trial is left
+const MAX_TRIAL_DAYS_SHOW_BANNER = 7;
+// display banner as warning if <=
+const MAX_TRIAL_DAYS_SHOW_WARNING = 4;
+
 @customElement("btrix-org-status-banner")
 @localized()
 export class OrgStatusBanner extends BtrixElement {
@@ -29,12 +49,13 @@ export class OrgStatusBanner extends BtrixElement {
     if (!alert) return;
 
     const content = alert.content();
+    const variant = alert.variant || "danger";
 
     return html`
       <div id="banner" class="border-b bg-slate-100 py-5">
         <div class="mx-auto box-border w-full max-w-screen-desktop px-3">
-          <sl-alert variant=${alert.variant || "danger"} open>
-            <sl-icon slot="icon" name="exclamation-triangle-fill"></sl-icon>
+          <sl-alert variant=${variant} open>
+            <sl-icon slot="icon" name=${iconForVariant(variant)}></sl-icon>
             <strong class="block font-semibold">${content.title}</strong>
             ${content.detail}
           </sl-alert>
@@ -89,9 +110,6 @@ export class OrgStatusBanner extends BtrixElement {
     const isTrial =
       subscription?.status === SubscriptionStatus.Trialing || isCancelingTrial;
 
-    // show banner if < this many days of trial is left
-    const MAX_TRIAL_DAYS_SHOW_BANNER = 8;
-
     return [
       {
         test: () =>
@@ -127,9 +145,13 @@ export class OrgStatusBanner extends BtrixElement {
           !readOnly &&
           !readOnlyOnCancel &&
           !!futureCancelDate &&
-          ((isTrial && daysDiff < MAX_TRIAL_DAYS_SHOW_BANNER) ||
+          ((isTrial && daysDiff <= MAX_TRIAL_DAYS_SHOW_BANNER) ||
             isCancelingTrial),
-        variant: isCancelingTrial ? "danger" : "warning",
+        variant: isCancelingTrial
+          ? "danger"
+          : isTrial && daysDiff <= MAX_TRIAL_DAYS_SHOW_WARNING
+            ? "warning"
+            : "primary",
         content: () => {
           return {
             title:
