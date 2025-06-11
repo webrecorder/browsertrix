@@ -607,11 +607,6 @@ class CrawlOperator(BaseOperator):
 
         crawl_id = crawl.id
 
-        # actual scale (minus redis pod)
-        # actual_scale = len(pods)
-        # if pods.get(f"redis-{crawl_id}"):
-        #    actual_scale -= 1
-
         # if desired_scale same or scaled up, return desired_scale
         if desired_scale >= actual_scale:
             return
@@ -1043,7 +1038,6 @@ class CrawlOperator(BaseOperator):
         crawler_running = False
         redis_running = False
         pod_done_count = 0
-        scale_count = 0
 
         try:
             for name, pod in pods.items():
@@ -1072,11 +1066,8 @@ class CrawlOperator(BaseOperator):
                     crawler_running = crawler_running or running
                     if phase == "Succeeded":
                         pod_done_count += 1
-                    scale_count += 1
                 elif role == "redis":
                     redis_running = redis_running or running
-
-            # status.scale = scale_count
 
         # pylint: disable=broad-except
         except Exception as exc:
