@@ -279,6 +279,8 @@ class CrawlOperator(BaseOperator):
             await self.increment_pod_exec_time(
                 pods, crawl, status, EXEC_TIME_UPDATE_SECS
             )
+        else:
+            status.scale = 1
 
         # stopping paused crawls
         if crawl.paused_at:
