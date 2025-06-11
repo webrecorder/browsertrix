@@ -279,8 +279,6 @@ class CrawlOperator(BaseOperator):
             await self.increment_pod_exec_time(
                 pods, crawl, status, EXEC_TIME_UPDATE_SECS
             )
-        else:
-            status.scale = 1
 
         # stopping paused crawls
         if crawl.paused_at:
@@ -590,7 +588,7 @@ class CrawlOperator(BaseOperator):
         redis: Redis,
         status: CrawlStatus,
         pods: dict[str, dict],
-    ):
+    ) -> None:
         """Resolve scale down
         Limit desired scale to number of pages
         If desired_scale >= actual scale, just return
@@ -605,13 +603,18 @@ class CrawlOperator(BaseOperator):
             desired_scale = max(1, status.pagesFound)
 
         if desired_scale == actual_scale:
-            return actual_scale
+            return
 
         crawl_id = crawl.id
 
+        # actual scale (minus redis pod)
+        actual_scale = len(pods)
+        if pods.get(f"redis-{crawl_id}"):
+            actual_scale -= 1
+
         # if desired_scale same or scaled up, return desired_scale
         if desired_scale >= actual_scale:
-            return desired_scale
+            return
 
         new_scale = actual_scale
         for i in range(actual_scale - 1, desired_scale - 1, -1):
@@ -637,8 +640,6 @@ class CrawlOperator(BaseOperator):
                 name = f"crawl-{crawl_id}-{i}"
                 await redis.hdel(f"{crawl_id}:stopone", name)
                 await redis.hdel(f"{crawl_id}:status", name)
-
-        return new_scale
 
     def sync_resources(self, status, name, pod, children):
         """set crawljob status from current resources"""
@@ -1042,6 +1043,7 @@ class CrawlOperator(BaseOperator):
         crawler_running = False
         redis_running = False
         pod_done_count = 0
+        scale_count = 0
 
         try:
             for name, pod in pods.items():
@@ -1070,8 +1072,11 @@ class CrawlOperator(BaseOperator):
                     crawler_running = crawler_running or running
                     if phase == "Succeeded":
                         pod_done_count += 1
+                    scale_count += 1
                 elif role == "redis":
                     redis_running = redis_running or running
+
+            status.scale = scale_count
 
         # pylint: disable=broad-except
         except Exception as exc:
