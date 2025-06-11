@@ -34,9 +34,9 @@ const iconForVariant = (
 };
 
 // show banner if <= this many days of trial is left
-const MAX_TRIAL_DAYS_SHOW_BANNER = 7;
-// display banner as warning if <=
-const MAX_TRIAL_DAYS_SHOW_WARNING = 4;
+const TRIAL_DAYS_SHOW_BANNER = 7;
+// show banner as warning if <= this many days of trial is left
+const TRIAL_DAYS_SHOW_WARNING = 4;
 
 @customElement("btrix-org-status-banner")
 @localized()
@@ -145,11 +145,10 @@ export class OrgStatusBanner extends BtrixElement {
           !readOnly &&
           !readOnlyOnCancel &&
           !!futureCancelDate &&
-          ((isTrial && daysDiff <= MAX_TRIAL_DAYS_SHOW_BANNER) ||
-            isCancelingTrial),
+          ((isTrial && daysDiff <= TRIAL_DAYS_SHOW_BANNER) || isCancelingTrial),
         variant: isCancelingTrial
           ? "danger"
-          : isTrial && daysDiff <= MAX_TRIAL_DAYS_SHOW_WARNING
+          : isTrial && daysDiff <= TRIAL_DAYS_SHOW_WARNING
             ? "warning"
             : "primary",
         content: () => {
