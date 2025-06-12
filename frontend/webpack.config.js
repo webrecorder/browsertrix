@@ -32,6 +32,10 @@ const DOCS_URL = process.env.DOCS_URL
     ? "https://docs.browsertrix.com/"
     : "/docs/";
 
+const OPENGRAPH_BASE_URL = process.env.OPENGRAPH_BASE_URL
+  ? new URL(process.env.OPENGRAPH_BASE_URL)
+  : "https://app.browsertrix.com/";
+
 // Get git info for release version info
 
 /**
@@ -201,7 +205,12 @@ const main = {
     new ForkTsCheckerWebpackPlugin({
       typescript: {
         configOverwrite: {
-          exclude: ["**/*.test.ts", "tests/**/*.ts", "playwright.config.ts"],
+          exclude: [
+            "**/*.test.ts",
+            "tests/**/*.ts",
+            "src/stories/**/*.ts",
+            "playwright.config.ts",
+          ],
         },
         // Re-enable type checking when `happyPackMode` is enabled
         diagnosticOptions: {
@@ -217,6 +226,7 @@ const main = {
         glitchtip_dsn: process.env.GLITCHTIP_DSN || "",
         environment: isDevServer ? "development" : "production",
         docsUrl: DOCS_URL,
+        openGraphBaseUrl: OPENGRAPH_BASE_URL,
         version,
         gitBranch,
         commitHash,
@@ -250,6 +260,12 @@ const main = {
         {
           from: path.resolve(__dirname, "src/manifest.webmanifest"),
           to: path.resolve(__dirname, "dist"),
+        },
+        // Copy public contents
+        {
+          from: path.resolve(__dirname, "public"),
+          to: path.resolve(__dirname, "dist"),
+          noErrorOnMissing: true,
         },
       ],
     }),

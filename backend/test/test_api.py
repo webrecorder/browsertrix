@@ -40,15 +40,16 @@ def test_api_settings():
 
     assert data == {
         "registrationEnabled": False,
-        "jwtTokenLifetime": 86400,
+        "jwtTokenLifetime": 1440,
         "defaultBehaviorTimeSeconds": 300,
         "maxPagesPerCrawl": 4,
-        "numBrowsers": 2,
-        "maxScale": 3,
+        "maxBrowserWindows": 8,
+        "numBrowsersPerInstance": 2,
         "defaultPageLoadTimeSeconds": 120,
         "billingEnabled": True,
         "signUpUrl": "",
         "salesEmail": "",
         "supportEmail": "",
         "localesEnabled": None,
+        "pausedExpiryMinutes": 10080,
     }

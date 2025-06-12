@@ -21,9 +21,10 @@ For a single-machine remote deployment, we recommend using [MicroK8s](https://mi
 
 4. Run with:
 
-   ```shell
-   helm upgrade --install -f ./chart/values.yaml -f ./chart/my-config.yaml btrix ./chart/
-   ```
+    ```shell
+    helm upgrade --install -f ./chart/values.yaml -f ./chart/my-config.yaml \
+      btrix ./chart/
+    ```
 
 ## Single Machine Deployment with k3s
 
@@ -31,21 +32,28 @@ Another option for a single-machine remote deployment is [k3s](https://k3s.io)
 
 1. Install K3s, as suggested in the [local deployment guide](../deploy/local.md). Make sure to **disable traefik** which can be done by adding `--no-deploy traefik` to the `systemd` unit when installing k3s
 
-2. Install `nginx-ingress` with: `helm upgrade --install nginx ingress-nginx/ingress-nginx -n ingress-nginx --create-namespace`
+2. Install `nginx-ingress` with:
+
+    ```zsh
+    helm upgrade --install ingress-nginx ingress-nginx \
+      --repo https://kubernetes.github.io/ingress-nginx \
+      --namespace ingress-nginx --create-namespace
+    ```
+
 3. Install `cert-manager`. We recommend installing `cert-manager` through Jetpack, like so: 
 
-```zsh
-helm repo add jetstack https://charts.jetstack.io
-helm repo update
+    ```zsh
+    helm repo add jetstack https://charts.jetstack.io
+    helm repo update
 
-helm repo update jetstack
-helm upgrade --install \
-  cert-manager jetstack/cert-manager \
-  --namespace cert-manager \
-  --create-namespace \
-  --version v1.12.0 \
-  --set installCRDs=true
-``` 
+    helm repo update jetstack
+    helm upgrade --install \
+      cert-manager jetstack/cert-manager \
+      --namespace cert-manager \
+      --create-namespace \
+      --version v1.12.0 \
+      --set installCRDs=true
+    ```
 
 4. Copy `cp ./chart/examples/k3s-hosted.yaml ./chart/my-config.yaml` to make local changes.
 
@@ -55,9 +63,10 @@ helm upgrade --install \
 
 7. Run with:
 
-   ```shell
-   helm upgrade --install -f ./chart/values.yaml -f ./chart/my-config.yaml btrix ./chart/
-   ```
+    ```shell
+    helm upgrade --install -f ./chart/values.yaml -f ./chart/my-config.yaml \
+      btrix ./chart/
+    ```
 
 ### Using Custom Storage
 

@@ -41,7 +41,7 @@ spec:
               value: {{ .Values.name }}-backend
 
             - name: CRAWLER_FQDN_SUFFIX
-              value: ".{{ .Values.crawler_namespace }}.svc.cluster.local"
+              value: ".{{ .Values.crawler_namespace }}{{ .Values.fqdn_suffix }}"
 
             - name: NGINX_ENTRYPOINT_WORKER_PROCESSES_AUTOTUNE
               value: "1"
@@ -60,7 +60,10 @@ spec:
 
             - name: LOCAL_BUCKET
               value: "{{ .Values.minio_local_bucket_name }}"
-            {{- end }}
+
+            - name: LOCAL_ACCESS_PATH
+              value: "{{ .Values.minio_access_path }}"
+             {{- end }}
 
             {{- if .Values.inject_extra }}
             - name: INJECT_EXTRA

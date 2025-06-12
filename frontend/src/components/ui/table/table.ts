@@ -19,55 +19,27 @@ tableCSS.split("}").forEach((rule: string) => {
 });
 
 /**
- * Low-level component for displaying content as a table.
+ * Low-level component for displaying content into columns and rows.
  * To style tables, use TailwindCSS utility classes.
+ * To render styled, tabular data, use `<btrix-data-grid>`.
  *
- * @example Usage:
- * ```ts
- * <btrix-table>
- *   <btrix-table-head class="border-b">
- *     <btrix-table-header-cell class="border-r">col 1 </btrix-table-header-cell>
- *     <btrix-table-header-cell>col 2</btrix-table-header-cell>
- *   </btrix-table-head>
- *   <btrix-table-body>
- *     <btrix-table-row class="border-b">
- *       <btrix-table-cell class="border-r">row 1 col 1</btrix-table-cell>
- *       <btrix-table-cell>row 1 col 2</btrix-table-cell>
- *     </btrix-table-row>
- *     <btrix-table-row>
- *       <btrix-table-cellclass="border-r">row 2 col 1</btrix-table-cell>
- *       <btrix-table-cell>row 2 col 2</btrix-table-cell>
- *     </btrix-table-row>
- *   </btrix-table-body>
- * </btrix-table>
- * ```
- *
- * Table columns will be automatically sized according to its content.
- * To specify column size, use `grid-template-columns`.
+ * Table columns are automatically sized according to their content.
+ * To specify column sizes, use `--btrix-table-grid-template-columns`.
  *
  * @slot head
  * @slot
  * @csspart head
- * @cssproperty --btrix-column-gap
- * @cssproperty --btrix-cell-gap
- * @cssproperty --btrix-cell-padding-top
- * @cssproperty --btrix-cell-padding-left
- * @cssproperty --btrix-cell-padding-right
- * @cssproperty --btrix-cell-padding-bottom
+ * @cssproperty --btrix-table-column-gap CSS value for `column-gap`
+ * @cssproperty --btrix-table-grid-template-columns CSS value for `grid-template-columns`
  */
 @customElement("btrix-table")
 export class Table extends LitElement {
   static styles = css`
     :host {
-      --btrix-column-gap: 0;
-      --btrix-cell-gap: 0;
-      --btrix-cell-padding-top: 0;
-      --btrix-cell-padding-bottom: 0;
-      --btrix-cell-padding-left: 0;
-      --btrix-cell-padding-right: 0;
-
       display: grid;
-      column-gap: var(--btrix-column-gap, 0);
+      column-gap: var(--btrix-table-column-gap, 0);
+      grid-template-columns: var(--btrix-table-grid-template-columns--internal);
+      min-width: min-content;
     }
   `;
 
@@ -86,9 +58,12 @@ export class Table extends LitElement {
     if (!headEl) return;
     await headEl.updateComplete;
 
+    // `grid-template-columns` must be defined in order for spanning all
+    // columns in a subgrid to work.
+    // See https://github.com/w3c/csswg-drafts/issues/2402
     this.style.setProperty(
-      "--btrix-table-grid-column",
-      `span ${headEl.colCount}`,
+      "--btrix-table-grid-template-columns--internal",
+      `var(--btrix-table-grid-template-columns, repeat(${headEl.colCount}, auto))`,
     );
   }
 }

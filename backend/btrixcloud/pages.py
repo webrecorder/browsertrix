@@ -191,15 +191,22 @@ class PageOps:
 
     async def _add_pages_to_db(self, crawl_id: str, pages: List[Page], ordered=True):
         """Add batch of pages to db in one insert"""
-        result = await self.pages.insert_many(
-            [
-                page.to_dict(
-                    exclude_unset=True, exclude_none=True, exclude_defaults=True
-                )
-                for page in pages
-            ],
-            ordered=ordered,
-        )
+        try:
+            result = await self.pages.insert_many(
+                [
+                    page.to_dict(
+                        exclude_unset=True, exclude_none=True, exclude_defaults=True
+                    )
+                    for page in pages
+                ],
+                ordered=ordered,
+            )
+        except pymongo.errors.BulkWriteError as bwe:
+            for err in bwe.details.get("writeErrors", []):
+                # ignorable duplicate key errors
+                if err.get("code") != 11000:
+                    raise
+
         if not result.inserted_ids:
             # pylint: disable=broad-exception-raised
             raise Exception("No pages inserted")
@@ -246,18 +253,25 @@ class PageOps:
             await self.add_qa_run_for_page(page.id, oid, qa_run_id, compare)
 
     async def update_crawl_file_and_error_counts(
-        self, crawl_id: str, pages: List[Page]
+        self, crawl_id: str, pages: Optional[List[Page]] = None
     ):
         """Update crawl filePageCount and errorPageCount for pages."""
         file_count = 0
         error_count = 0
 
-        for page in pages:
-            if page.isFile:
-                file_count += 1
-
-            if page.isError:
-                error_count += 1
+        if pages is not None:
+            for page in pages:
+                if page.isFile:
+                    file_count += 1
+                if page.isError:
+                    error_count += 1
+        else:
+            # If page list not supplied, count all pages in crawl
+            async for page_raw in self.pages.find({"crawl_id": crawl_id}):
+                if page_raw.get("isFile"):
+                    file_count += 1
+                if page_raw.get("isError"):
+                    error_count += 1
 
         if file_count == 0 and error_count == 0:
             return
@@ -276,7 +290,7 @@ class PageOps:
         )
 
     async def delete_crawl_pages(self, crawl_id: str, oid: Optional[UUID] = None):
-        """Delete crawl pages from db"""
+        """Delete crawl pages from db and clear crawl page counts"""
         query: Dict[str, Union[str, UUID]] = {"crawl_id": crawl_id}
         if oid:
             query["oid"] = oid
@@ -286,6 +300,25 @@ class PageOps:
         except Exception as err:
             print(
                 f"Error deleting pages from crawl {crawl_id}: {err}",
+                flush=True,
+            )
+
+        try:
+            await self.crawls.find_one_and_update(
+                {"_id": crawl_id},
+                {
+                    "$set": {
+                        "pageCount": 0,
+                        "uniquePageCount": 0,
+                        "filePageCount": 0,
+                        "errorPageCount": 0,
+                    }
+                },
+            )
+        # pylint: disable=broad-except
+        except Exception as err:
+            print(
+                f"Error resetting page counts for crawl {crawl_id}: {err}",
                 flush=True,
             )
 
@@ -497,7 +530,6 @@ class PageOps:
         coll_id: Optional[UUID] = None,
         crawl_ids: Optional[List[str]] = None,
         public_or_unlisted_only=False,
-        # pylint: disable=unused-argument
         org: Optional[Organization] = None,
         search: Optional[str] = None,
         url: Optional[str] = None,
@@ -535,8 +567,15 @@ class PageOps:
                     detail="only one of crawl_ids or coll_id can be provided",
                 )
 
+            if not org:
+                raise HTTPException(
+                    status_code=400, detail="org_missing_for_coll_pages"
+                )
+
             crawl_ids = await self.coll_ops.get_collection_crawl_ids(
-                coll_id, public_or_unlisted_only
+                coll_id,
+                org.id,
+                public_or_unlisted_only,
             )
 
         if not crawl_ids:
@@ -647,8 +686,8 @@ class PageOps:
                     raise HTTPException(
                         status_code=400, detail="qa_run_id_missing_for_qa_sort"
                     )
-
-                sort_by = f"qa.{qa_run_id}.{sort_by}"
+                # note: not using qa.{qa_run_id} because $set above means qa = qa.{qa_run_id}
+                sort_by = f"qa.{sort_by}"
 
             aggregate.extend([{"$sort": {sort_by: sort_direction}}])
 
@@ -708,12 +747,13 @@ class PageOps:
     async def list_page_url_counts(
         self,
         coll_id: UUID,
+        oid: UUID,
         url_prefix: Optional[str] = None,
         page_size: int = DEFAULT_PAGE_SIZE,
     ) -> List[PageUrlCount]:
         """List all page URLs in collection sorted desc by snapshot count
         unless prefix is specified"""
-        crawl_ids = await self.coll_ops.get_collection_crawl_ids(coll_id)
+        crawl_ids = await self.coll_ops.get_collection_crawl_ids(coll_id, oid)
 
         pages, _ = await self.list_pages(
             crawl_ids=crawl_ids,
@@ -922,6 +962,35 @@ class PageOps:
         )
         res = await cursor.to_list(1)
         return res[0].get("urls") if res else 0
+
+    async def get_top_page_hosts(
+        self, crawl_ids: List[str]
+    ) -> List[dict[str, str | int]]:
+        """Get count of top page hosts across all archived items"""
+        cursor = self.pages.aggregate(
+            [
+                {"$match": {"crawl_id": {"$in": crawl_ids}}},
+                {
+                    "$addFields": {
+                        "host": {
+                            "$regexFind": {
+                                "input": "$url",
+                                "regex": "^https?://([^/]+)",
+                            }
+                        }
+                    }
+                },
+                {
+                    "$group": {
+                        "_id": {"$first": "$host.captures"},
+                        "count": {"$count": {}},
+                    }
+                },
+                {"$sort": {"count": -1}},
+            ]
+        )
+        res = await cursor.to_list(10)
+        return [{"host": x.get("_id"), "count": x.get("count")} for x in res]
 
     async def set_archived_item_page_counts(self, crawl_id: str):
         """Store archived item page and unique page counts in crawl document"""
@@ -1413,14 +1482,15 @@ def init_pages_api(
     )
     async def get_collection_url_list(
         coll_id: UUID,
-        # oid: UUID,
         urlPrefix: Optional[str] = None,
         pageSize: int = DEFAULT_PAGE_SIZE,
+        org: Organization = Depends(org_viewer_dep),
         # page: int = 1,
     ):
         """Retrieve paginated list of urls in collection sorted by snapshot count"""
         pages = await ops.list_page_url_counts(
             coll_id=coll_id,
+            oid=org.id,
             url_prefix=urlPrefix,
             page_size=pageSize,
         )

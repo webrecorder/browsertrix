@@ -1,13 +1,9 @@
 import { localized, msg } from "@lit/localize";
 import clsx from "clsx";
-import { html, nothing } from "lit";
-import {
-  customElement,
-  property,
-  queryAssignedNodes,
-  state,
-} from "lit/decorators.js";
+import { html, nothing, type TemplateResult } from "lit";
+import { customElement, property, queryAssignedNodes } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
+import { keyed } from "lit/directives/keyed.js";
 import { when } from "lit/directives/when.js";
 
 import { CollectionThumbnail } from "./collection-thumbnail";
@@ -16,7 +12,7 @@ import { SelectCollectionAccess } from "./select-collection-access";
 import { BtrixElement } from "@/classes/BtrixElement";
 import { textSeparator } from "@/layouts/separator";
 import { RouteNamespace } from "@/routes";
-import type { PublicCollection } from "@/types/collection";
+import { CollectionAccess, type PublicCollection } from "@/types/collection";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
 
@@ -34,14 +30,14 @@ export class CollectionsGrid extends BtrixElement {
   @property({ type: Array })
   collections?: PublicCollection[];
 
-  @state()
-  collectionBeingEdited: string | null = null;
-
   @property({ type: String })
   collectionRefreshing: string | null = null;
 
   @property({ type: Boolean })
   showVisibility = false;
+
+  @property()
+  renderActions?: (collection: PublicCollection) => TemplateResult;
 
   @queryAssignedNodes({ slot: "pagination" })
   pagination!: Node[];
@@ -95,25 +91,45 @@ export class CollectionsGrid extends BtrixElement {
                 <div
                   class="relative mb-4 rounded-lg shadow-md shadow-stone-600/10 ring-1 ring-stone-600/10 transition group-hover:shadow-stone-800/20 group-hover:ring-stone-800/20"
                 >
-                  <btrix-collection-thumbnail
-                    src=${ifDefined(
-                      Object.entries(CollectionThumbnail.Variants).find(
-                        ([name]) => name === collection.defaultThumbnailName,
-                      )?.[1].path || collection.thumbnail?.path,
-                    )}
-                  ></btrix-collection-thumbnail>
+                  ${
+                    // When swapping images, the previous image is retained until the new one is loaded,
+                    // which leads to the wrong image briefly being displayed when switching pages.
+                    // This removes and replaces the image instead, which prevents this at the cost of the
+                    // occasional flash of white while loading, but overall this feels more responsive.
+                    keyed(
+                      collection.id,
+                      html` <btrix-collection-thumbnail
+                        src=${ifDefined(
+                          Object.entries(CollectionThumbnail.Variants).find(
+                            ([name]) =>
+                              name === collection.defaultThumbnailName,
+                          )?.[1].path || collection.thumbnail?.path,
+                        )}
+                        collectionName=${collection.name}
+                      ></btrix-collection-thumbnail>`,
+                    )
+                  }
                   ${this.renderDateBadge(collection)}
                 </div>
                 <div class="${showActions ? "mr-9" : ""} min-h-9 leading-tight">
                   ${this.showVisibility
-                    ? html`<sl-icon
-                        class="mr-[5px] align-[-1px] text-sm"
-                        name=${SelectCollectionAccess.Options[collection.access]
-                          .icon}
-                        label=${SelectCollectionAccess.Options[
+                    ? html`<sl-tooltip
+                        content=${SelectCollectionAccess.Options[
                           collection.access
                         ].label}
-                      ></sl-icon>`
+                      >
+                        <sl-icon
+                          class=${clsx(
+                            "mr-[5px] inline-block align-[-1px]",
+                            collection.access === CollectionAccess.Public
+                              ? "text-success-600"
+                              : "text-neutral-600",
+                          )}
+                          name=${SelectCollectionAccess.Options[
+                            collection.access
+                          ].icon}
+                        ></sl-icon>
+                      </sl-tooltip>`
                     : nothing}
                   <strong
                     class="text-base font-medium leading-tight text-stone-800 transition-colors group-hover:text-cyan-600"
@@ -138,7 +154,7 @@ export class CollectionsGrid extends BtrixElement {
                   `}
                 </div>
               </a>
-              ${when(showActions, () => this.renderActions(collection))}
+              ${when(showActions, () => this._renderActions(collection))}
               ${when(
                 this.collectionRefreshing === collection.id,
                 () =>
@@ -157,35 +173,29 @@ export class CollectionsGrid extends BtrixElement {
         class=${clsx("justify-center flex", this.pagination.length && "mt-10")}
         name="pagination"
       ></slot>
-
-      ${when(
-        showActions,
-        () =>
-          html`<btrix-collection-edit-dialog
-            .collectionId=${this.collectionBeingEdited ?? undefined}
-            ?open=${!!this.collectionBeingEdited}
-            @sl-after-hide=${() => {
-              this.collectionBeingEdited = null;
-            }}
-          ></btrix-collection-edit-dialog>`,
-      )}
     `;
   }
 
-  private readonly renderActions = (collection: PublicCollection) => html`
+  private readonly _renderActions = (collection: PublicCollection) => html`
     <div class="pointer-events-none absolute left-0 right-0 top-0 aspect-video">
       <div class="pointer-events-auto absolute bottom-2 right-2">
-        <sl-tooltip content=${msg("Edit Collection Settings")}>
-          <btrix-button
-            raised
-            size="small"
-            @click=${() => {
-              this.collectionBeingEdited = collection.id;
-            }}
-          >
-            <sl-icon name="pencil"></sl-icon>
-          </btrix-button>
-        </sl-tooltip>
+        ${this.renderActions
+          ? this.renderActions(collection)
+          : html`<sl-tooltip content=${msg("Edit Collection Settings")}>
+              <btrix-button
+                raised
+                size="small"
+                @click=${() => {
+                  this.dispatchEvent(
+                    new CustomEvent<string>("btrix-edit-collection", {
+                      detail: collection.id,
+                    }),
+                  );
+                }}
+              >
+                <sl-icon name="pencil"></sl-icon>
+              </btrix-button>
+            </sl-tooltip>`}
       </div>
     </div>
   `;

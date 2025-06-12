@@ -70,7 +70,7 @@ export class DetailPageTitle extends TailwindElement {
   private renderIcon() {
     if (!this.item?.state) return;
 
-    const crawlStatus = CrawlStatus.getContent(this.item.state, this.item.type);
+    const crawlStatus = CrawlStatus.getContent(this.item);
 
     let icon = html`<sl-tooltip
       content=${msg(str`Crawl: ${crawlStatus.label}`)}

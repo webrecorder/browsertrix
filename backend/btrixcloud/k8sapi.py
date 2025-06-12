@@ -85,6 +85,7 @@ class K8sAPI:
         storage: str,
         crawler_channel: Optional[str] = "",
         scale: Optional[int] = 1,
+        browser_windows: Optional[int] = 1,
         crawl_timeout: Optional[int] = 0,
         max_crawl_size: Optional[int] = 0,
         manual: bool = True,
@@ -94,6 +95,7 @@ class K8sAPI:
         profile_filename: str = "",
         qa_source: str = "",
         proxy_id: str = "",
+        is_single_page: bool = False,
     ):
         """load job template from yaml"""
         if not crawl_id:
@@ -109,6 +111,7 @@ class K8sAPI:
             "storage_name": storage,
             "crawler_channel": crawler_channel,
             "scale": scale,
+            "browser_windows": browser_windows,
             "timeout": crawl_timeout,
             "max_crawl_size": max_crawl_size or 0,
             "manual": "1" if manual else "0",
@@ -117,6 +120,7 @@ class K8sAPI:
             "profile_filename": profile_filename,
             "qa_source": qa_source,
             "proxy_id": proxy_id,
+            "is_single_page": "1" if is_single_page else "0",
         }
 
         data = self.templates.env.get_template("crawl_job.yaml").render(params)
@@ -130,6 +134,7 @@ class K8sAPI:
         storage: str,
         crawler_channel: Optional[str] = "",
         scale: Optional[int] = 1,
+        browser_windows: Optional[int] = 1,
         crawl_timeout: Optional[int] = 0,
         max_crawl_size: Optional[int] = 0,
         manual: bool = True,
@@ -139,6 +144,7 @@ class K8sAPI:
         profile_filename: str = "",
         qa_source: str = "",
         proxy_id: str = "",
+        is_single_page: bool = False,
     ) -> str:
         """load and init crawl job via k8s api"""
         crawl_id, data = self.new_crawl_job_yaml(
@@ -148,6 +154,7 @@ class K8sAPI:
             storage=storage,
             crawler_channel=crawler_channel,
             scale=scale,
+            browser_windows=browser_windows,
             crawl_timeout=crawl_timeout,
             max_crawl_size=max_crawl_size,
             manual=manual,
@@ -157,6 +164,7 @@ class K8sAPI:
             profile_filename=profile_filename,
             qa_source=qa_source,
             proxy_id=proxy_id,
+            is_single_page=is_single_page,
         )
 
         # create job directly
@@ -273,6 +281,18 @@ class K8sAPI:
                 name=name,
                 body={"spec": body},
                 _content_type="application/merge-patch+json",
+            )
+            return {"success": True}
+        # pylint: disable=broad-except
+        except Exception as exc:
+            traceback.print_exc()
+            return {"error": str(exc)}
+
+    async def unsuspend_k8s_job(self, name) -> dict:
+        """unsuspend k8s Job"""
+        try:
+            await self.batch_api.patch_namespaced_job(
+                name=name, namespace=self.namespace, body={"spec": {"suspend": False}}
             )
             return {"success": True}
         # pylint: disable=broad-except

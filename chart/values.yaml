@@ -50,8 +50,8 @@ default_crawl_filename_template: "@ts-@hostsuffix.wacz"
 crawler_extra_args: ""
 
 
-# max allowed crawl scale per crawl
-max_crawl_scale: 3
+# max allowed browser windows per crawl
+max_browser_windows: 8
 
 
 # Cluster Settings
@@ -82,6 +82,9 @@ allow_dupe_invites: "0"
 # number of seconds before pending invites expire - default is 7 days
 invite_expire_seconds: 604800
 
+# number of minutes before paused crawls are stopped - default is 7 days
+paused_crawl_limit_minutes: 10080
+
 # base url for replayweb.page
 rwp_base_url: "https://cdn.jsdelivr.net/npm/replaywebpage@2.3.3/"
 
@@ -103,8 +106,8 @@ replica_deletion_delay_days: 0
 
 # API Image
 # =========================================
-backend_image: "docker.io/webrecorder/browsertrix-backend:1.14.3"
-backend_pull_policy: "Always"
+backend_image: "docker.io/webrecorder/browsertrix-backend:1.17.0-beta.0"
+backend_pull_policy: "IfNotPresent"
 
 backend_password_secret: "PASSWORD!"
 
@@ -161,8 +164,8 @@ backend_avg_memory_threshold: 95
 
 # Nginx Image
 # =========================================
-frontend_image: "docker.io/webrecorder/browsertrix-frontend:1.14.3"
-frontend_pull_policy: "Always"
+frontend_image: "docker.io/webrecorder/browsertrix-frontend:1.17.0-beta.0"
+frontend_pull_policy: "IfNotPresent"
 
 frontend_cpu: "10m"
 
@@ -198,7 +201,7 @@ frontend_avg_memory_threshold: 95
 # =========================================
 mongo_local: true
 
-mongo_host: "local-mongo.default"
+mongo_host: "local-mongo"
 
 mongo_image: "docker.io/library/mongo:6.0.5"
 mongo_pull_policy: "IfNotPresent"
@@ -219,12 +222,8 @@ mongo_auth:
 
 # Redis Image
 # =========================================
-redis_local: true
-
 redis_image: "redis"
 redis_pull_policy: "IfNotPresent"
-
-redis_url: "redis://local-redis.default:6379/1"
 
 redis_cpu: "10m"
 
@@ -241,12 +240,15 @@ redis_storage: "3Gi"
 crawler_channels:
   - id: default
     image: "docker.io/webrecorder/browsertrix-crawler:latest"
+    imagePullPolicy: Always
 
   # Add, remove, or edit additional crawler versions below, for example:
   # - id: custom_version
   #   image: "<DOCKER IMAGE>"
+  #   imagePullPolicy: Always|IfNotPresent|Never (optional, defaults to crawler_pull_policy)
 
-crawler_pull_policy: "Always"
+# default crawler pull policy if not set per channel
+crawler_pull_policy: "IfNotPresent"
 
 crawler_namespace: "crawlers"
 
@@ -275,11 +277,11 @@ crawler_memory_base: 1024Mi
 # number of browser workers per crawler instances
 crawler_browser_instances: 2
 
-# number of browser workers per crawler instances for QA runs
+# number of browser workers per QA pod to run for QA runs
 # defaults to 'crawler_browser_instances' if not set
-# qa_browser_instances: 2
+qa_browser_instances: 1
 
-# fixed scale (number of crawler pods) for QA runs
+# fixed scale (number of QA pods) to run
 qa_scale: 1
 
 # this value is added to crawler_cpu_base, for each additional browser
@@ -371,12 +373,15 @@ btrix-proxies:
 # crawler_fsgroup: 201407
 
 
-# optional: enable/disable crawler network policy
+# optional: enable/disable crawler network policy, prevents crawler pods from accessing internal services
 crawler_enable_network_policy: true
 
-# optional: replace the default crawler egress policy with your own
+# optional: add additional egress rules to the default crawler network policy (See chart/templates/networkpolicies.yaml for an example)
+# crawler_network_policy_additional_egress: []
+
+# optional: replace the default crawler egress policy with your own egress rules (See chart/templates/networkpolicies.yaml for an example)
 # see chart/templates/networkpolicies.yaml for an example
-# crawler_network_policy_egress: {}
+# crawler_network_policy_egress: []
 
 # time to wait for graceful stop
 grace_period: 1000
@@ -391,13 +396,16 @@ minio_local: true
 # minio_local_console_port: 30091
 
 minio_scheme: "http"
-minio_host: "local-minio.default:9000"
+minio_host: "local-minio:9000"
 
 minio_image: docker.io/minio/minio:RELEASE.2022-10-24T18-35-07Z
 minio_mc_image: minio/mc
 minio_pull_policy: "IfNotPresent"
 
 minio_local_bucket_name: &local_bucket_name "btrix-data"
+
+# path for serving from local minio bucket
+minio_access_path: &minio_access_path "/data/"
 
 minio_cpu: "10m"
 minio_memory: "1024Mi"
@@ -414,8 +422,8 @@ storages:
     secret_key: "PASSW0RD"
     bucket_name: *local_bucket_name
 
-    endpoint_url: "http://local-minio.default:9000/"
-    access_endpoint_url: "/data/"
+    endpoint_url: "http://local-minio:9000/"
+    access_endpoint_url: *minio_access_path
 
 
 # optional: duration in minutes for WACZ download links to be valid
@@ -495,6 +503,9 @@ signer_memory: "50Mi"
 
 # Other Settings
 # =========================================
+
+# default FQDN suffix, shouldn't need to change
+fqdn_suffix: .svc.cluster.local
 
 # Optional: configure load balancing annotations
 # service:

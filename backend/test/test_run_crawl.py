@@ -184,7 +184,7 @@ def test_wait_for_complete(admin_auth_headers, default_org_id):
     assert len(data["resources"]) == 1
     assert data["resources"][0]["path"]
 
-    assert len(data["initialPages"]) == 1
+    assert len(data["initialPages"]) == 4
     assert data["pagesQueryUrl"].endswith(
         f"/orgs/{default_org_id}/crawls/{admin_crawl_id}/pagesSearch"
     )
@@ -239,6 +239,8 @@ def test_crawl_info(admin_auth_headers, default_org_id):
     assert data["fileCount"] == 1
     assert data["userName"]
     assert data["version"] == 2
+    assert data["scale"] == 1
+    assert data["browserWindows"] == 2
 
 
 def test_crawls_include_seed_info(admin_auth_headers, default_org_id):
@@ -956,6 +958,19 @@ def test_crawl_pages_qa_filters(crawler_auth_headers, default_org_id, crawler_cr
 
 
 def test_re_add_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
+    # Store page counts to compare against after re-adding
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    page_count_before = data["pageCount"]
+    page_count_before_unique = data["uniquePageCount"]
+    page_count_before_files = data["filePageCount"]
+    page_count_before_errors = data["errorPageCount"]
+
     # Re-add pages and verify they were correctly added
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages/reAdd",
@@ -1001,15 +1016,20 @@ def test_re_add_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_
     )
     assert r.status_code == 403
 
-    # Check that pageCount and uniquePageCount were stored on crawl
+    # Check that crawl page counts were recalculated properly
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
     data = r.json()
-    assert data["pageCount"] > 0
-    assert data["uniquePageCount"] > 0
+    assert data["pageCount"] > 0 and data["pageCount"] == page_count_before
+    assert (
+        data["uniquePageCount"] > 0
+        and data["uniquePageCount"] == page_count_before_unique
+    )
+    assert data["filePageCount"] == page_count_before_files
+    assert data["errorPageCount"] == page_count_before_errors
 
 
 def test_crawl_page_notes(crawler_auth_headers, default_org_id, crawler_crawl_id):
@@ -1283,3 +1303,66 @@ def test_delete_crawls_org_owner(
         headers=admin_auth_headers,
     )
     assert r.status_code == 404
+
+
+def test_custom_behavior_logs(
+    custom_behaviors_crawl_id, crawler_auth_headers, default_org_id
+):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{custom_behaviors_crawl_id}/behaviorLogs",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    custom_log_line_count = 0
+
+    assert data["total"] > 0
+    for log in data["items"]:
+        assert log["timestamp"]
+        assert log["context"] in ("behavior", "behaviorScript", "behaviorScriptCustom")
+
+        if log["context"] == "behaviorScriptCustom":
+            assert log["message"] in (
+                "test-stat",
+                "In Test Behavior!",
+            )
+            if log["message"] in ("test-stat", "done!"):
+                assert log["details"]["behavior"] == "TestBehavior"
+            assert log["details"]["page"] == "https://specs.webrecorder.net/"
+
+            custom_log_line_count += 1
+
+    assert custom_log_line_count == 2
+
+
+def test_crawls_exclude_behavior_logs(
+    custom_behaviors_crawl_id, admin_auth_headers, default_org_id
+):
+    # Get endpoint
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{custom_behaviors_crawl_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data.get("behaviorLogs") == []
+
+    # replay.json endpoint
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{custom_behaviors_crawl_id}/replay.json",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data.get("behaviorLogs") == []
+
+    # List endpoint
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    crawls = r.json()["items"]
+    for crawl in crawls:
+        assert data.get("behaviorLogs") == []

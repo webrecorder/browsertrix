@@ -45,6 +45,9 @@ class ProfileOperator(BaseOperator):
         params["storage_secret"] = storage_secret
         params["profile_filename"] = spec.get("profileFilename", "")
         params["crawler_image"] = spec["crawlerImage"]
+        pull_policy = spec.get("imagePullPolicy")
+        if pull_policy:
+            params["crawler_image_pull_policy"] = pull_policy
 
         proxy_id = spec.get("proxyId")
         if proxy_id:

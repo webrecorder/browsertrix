@@ -1,5 +1,6 @@
 import("./archived-item-list");
 import("./crawl-list");
+import("./crawl-log-table");
 import("./crawl-logs");
 import("./item-metadata-editor");
 import("./crawl-pending-exclusions");

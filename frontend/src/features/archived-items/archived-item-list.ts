@@ -80,7 +80,7 @@ export class ArchivedItemListItem extends BtrixElement {
     const checkboxId = `${this.item.id}-checkbox`;
     const rowName = renderName(this.item);
     const isUpload = this.item.type === "upload";
-    const crawlStatus = CrawlStatus.getContent(this.item.state, this.item.type);
+    const crawlStatus = CrawlStatus.getContent(this.item);
     let typeLabel = msg("Crawl");
     let typeIcon = "gear-wide-connected";
 
@@ -112,7 +112,9 @@ export class ArchivedItemListItem extends BtrixElement {
       ? Math.round((100 * activeQAStats.done) / activeQAStats.found)
       : 0;
 
-    const qaStatus = CrawlStatus.getContent(lastQAState || undefined);
+    const qaStatus = CrawlStatus.getContent({
+      state: lastQAState || undefined,
+    });
 
     return html`
       <btrix-table-row
@@ -356,9 +358,8 @@ export class ArchivedItemListItem extends BtrixElement {
 export class ArchivedItemList extends TailwindElement {
   static styles = css`
     btrix-table {
-      --btrix-cell-gap: var(--sl-spacing-x-small);
-      --btrix-cell-padding-left: var(--sl-spacing-small);
-      --btrix-cell-padding-right: var(--sl-spacing-small);
+      --btrix-table-cell-gap: var(--sl-spacing-x-small);
+      --btrix-table-cell-padding-x: var(--sl-spacing-small);
     }
 
     btrix-table-body ::slotted(*:nth-of-type(n + 2)) {
@@ -447,12 +448,12 @@ export class ArchivedItemList extends TailwindElement {
     return html`
       <style>
         btrix-table {
-          grid-template-columns: ${headerCols
+          --btrix-table-grid-template-columns: ${headerCols
             .map(({ cssCol }) => cssCol)
             .join(" ")};
         }
       </style>
-      <div class="overflow-auto">
+      <btrix-overflow-scroll class="-mx-5 part-[content]:px-5">
         <btrix-table>
           <btrix-table-head class="mb-2">
             <slot
@@ -473,7 +474,7 @@ export class ArchivedItemList extends TailwindElement {
             <slot></slot>
           </btrix-table-body>
         </btrix-table>
-      </div>
+      </btrix-overflow-scroll>
     `;
   }
 }

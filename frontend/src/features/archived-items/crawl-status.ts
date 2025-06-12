@@ -5,7 +5,7 @@ import { customElement, property } from "lit/decorators.js";
 import startCase from "lodash/fp/startCase";
 
 import { TailwindElement } from "@/classes/TailwindElement";
-import type { CrawlState } from "@/types/crawlState";
+import { RUNNING_STATES, type CrawlState } from "@/types/crawlState";
 import { animatePulse } from "@/utils/css";
 
 type CrawlType = "crawl" | "upload" | "qa";
@@ -24,6 +24,9 @@ export class CrawlStatus extends TailwindElement {
 
   @property({ type: Boolean })
   stopping = false;
+
+  @property({ type: Boolean })
+  shouldPause = false;
 
   @property({ type: Boolean })
   hoist = false;
@@ -49,10 +52,16 @@ export class CrawlStatus extends TailwindElement {
 
   // TODO look into customizing sl-select multi-select
   // instead of separate utility function?
-  static getContent(
-    state?: CrawlState | AnyString,
-    type: CrawlType = "crawl",
-  ): {
+  static getContent({
+    state,
+    originalState,
+    type = "crawl",
+  }: {
+    state?: CrawlState | AnyString;
+    // `state` might be composed status
+    originalState?: CrawlState | AnyString;
+    type?: CrawlType | undefined;
+  }): {
     icon: TemplateResult;
     label: string;
     cssColor: string;
@@ -65,6 +74,7 @@ export class CrawlStatus extends TailwindElement {
       style="color: ${color}"
     ></sl-icon>`;
     let label = "";
+    let reason = "";
 
     switch (state) {
       case "starting":
@@ -88,10 +98,11 @@ export class CrawlStatus extends TailwindElement {
           slot="prefix"
           style="color: ${color}"
         ></sl-icon>`;
-        label =
-          state === "waiting_capacity"
-            ? msg("Waiting (At Capacity)")
-            : msg("Waiting (Crawl Limit)");
+        label = msg("Waiting");
+        reason =
+          originalState === "waiting_capacity"
+            ? msg("At Capacity")
+            : msg("At Crawl Limit");
         break;
 
       case "running":
@@ -118,6 +129,44 @@ export class CrawlStatus extends TailwindElement {
         label = msg("Stopping");
         break;
 
+      case "pausing":
+        color = "var(--sl-color-violet-600)";
+        icon = html`<sl-icon
+          name="pause-circle"
+          class="animatePulse"
+          slot="prefix"
+          style="color: ${color}"
+        ></sl-icon>`;
+        label = msg("Pausing");
+        reason =
+          originalState === "pending-wait"
+            ? msg("Finishing Downloads")
+            : originalState?.endsWith("-wacz")
+              ? msg("Creating WACZ")
+              : "";
+        break;
+
+      case "resuming":
+        color = "var(--sl-color-violet-600)";
+        icon = html`<sl-icon
+          name="play-circle"
+          class="animatePulse"
+          slot="prefix"
+          style="color: ${color}"
+        ></sl-icon>`;
+        label = msg("Resuming");
+        break;
+
+      case "paused":
+        color = "var(--sl-color-neutral-500)";
+        icon = html`<sl-icon
+          name="pause-circle"
+          slot="prefix"
+          style="color: ${color}"
+        ></sl-icon>`;
+        label = msg("Paused");
+        break;
+
       case "pending-wait":
         color = "var(--sl-color-violet-600)";
         icon = html`<sl-icon
@@ -127,7 +176,7 @@ export class CrawlStatus extends TailwindElement {
           slot="prefix"
           style="color: ${color}"
         ></sl-icon>`;
-        label = msg("Finishing Crawl");
+        label = msg("Finishing Downloads");
         break;
 
       case "generate-wacz":
@@ -208,6 +257,16 @@ export class CrawlStatus extends TailwindElement {
         label = msg("Stopped");
         break;
 
+      case "stopped_pause_expired":
+        color = "var(--warning)";
+        icon = html`<sl-icon
+          name="dash-square-fill"
+          slot="prefix"
+          style="color: ${color}"
+        ></sl-icon>`;
+        label = msg("Stopped: Paused Too Long");
+        break;
+
       case "stopped_storage_quota_reached":
         color = "var(--warning)";
         icon = html`<sl-icon
@@ -255,13 +314,36 @@ export class CrawlStatus extends TailwindElement {
         }
         break;
     }
-    return { icon, label, cssColor: color };
+    return {
+      icon,
+      label: reason ? `${label} (${reason})` : label,
+      cssColor: color,
+    };
+  }
+
+  filterState() {
+    if (this.stopping && this.state === "running") {
+      return "stopping";
+    }
+    if (
+      this.shouldPause &&
+      (RUNNING_STATES as readonly string[]).includes(this.state || "")
+    ) {
+      return "pausing";
+    }
+    if (!this.shouldPause && this.state === "paused") {
+      return "resuming";
+    }
+    return this.state;
   }
 
   render() {
-    const state =
-      this.stopping && this.state === "running" ? "stopping" : this.state;
-    const { icon, label } = CrawlStatus.getContent(state, this.type);
+    const state = this.filterState();
+    const { icon, label } = CrawlStatus.getContent({
+      state,
+      originalState: this.state,
+      type: this.type,
+    });
     if (this.hideLabel) {
       return html`<div class="flex items-center">
         <sl-tooltip
@@ -275,12 +357,12 @@ export class CrawlStatus extends TailwindElement {
       </div>`;
     }
     if (label) {
-      return html`<div class="flex items-center gap-2">
+      return html`<div class="flex h-6 items-center gap-2">
         ${icon}
         <div class="leading-none">${label}</div>
       </div>`;
     }
-    return html`<div class="flex items-center gap-2">
+    return html`<div class="flex h-6 items-center gap-2">
       ${icon}<sl-skeleton></sl-skeleton>
     </div>`;
   }

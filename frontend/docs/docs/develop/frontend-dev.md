@@ -1,14 +1,16 @@
-# Developing the Frontend UI
+# Developing with Yarn
 
-This guide explains how to run the Browsertrix frontend development server with [Yarn](https://classic.yarnpkg.com).
+This guide explains how to build and serve the Browsertrix user interface with [Yarn](https://classic.yarnpkg.com).
 
-Instead of rebuilding the entire frontend image to view your UI changes, you can use the included local development server to access the frontend from your browser. This setup is ideal for rapid UI development that does not rely on any backend changes.
+Developing the user interface with Yarn bypasses the need to rebuild the entire frontend Docker image to view your UI changes. This setup is ideal for rapid UI development that does not rely on any backend changes.
 
 ## Requirements
 
 ### 1. Browsertrix API backend already in a Kubernetes cluster
 
 The frontend development server requires an existing backend that has been deployed locally or is in production. See [Deploying Browsertrix](../deploy/index.md).
+
+Once deployed, make note of the URL to the backend API. If you've deployed the backend locally using default values, the URL will be `http://localhost:30870`.
 
 ### 2. Node.js ≥20
 
@@ -71,17 +73,7 @@ Copy environment variables from the sample file:
 cp sample.env.local .env.local
 ```
 
-Update `API_BASE_URL` in `.env.local` to point to your backend API host. For example:
-
-```
-API_BASE_URL=http://dev.example.com
-```
-
-!!! note
-
-    This setup assumes that your API endpoints are available under `/api`, which is the default configuration for the Browsertrix backend.
-
-If connecting to a local deployment cluster, set `API_BASE_URL` to:
+Update `API_BASE_URL` in `.env.local` to point to your backend API URL noted earlier. For example, if connecting to your local deployment cluster:
 
 ```
 API_BASE_URL=http://localhost:30870
@@ -93,6 +85,10 @@ API_BASE_URL=http://localhost:30870
     obtained by running `minikube service browsertrix-cloud-frontend --url` in a separate terminal.
 
     Set API_BASE_URL to provided URL instead, eg. `API_BASE_URL=http://127.0.0.1:<TUNNEL_PORT>`
+
+!!! note
+
+    This setup assumes that your API endpoints are available under `/api`, which is the default configuration for the Browsertrix backend.
 
 Start the frontend development server:
 

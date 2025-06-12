@@ -13,6 +13,15 @@ export enum RouteNamespace {
   Superadmin = "admin",
 }
 
+export enum WorkflowTab {
+  LatestCrawl = "latest",
+  Crawls = "crawls",
+  Logs = "logs",
+  Settings = "settings",
+}
+
+const archivedItemPath = "/:itemId(/review/:qaTab)";
+
 export const ROUTES = {
   home: "/",
   join: "/join/:token",
@@ -29,8 +38,8 @@ export const ROUTES = {
     `/${RouteNamespace.PrivateOrgs}/:slug(/)`,
     // Org sections:
     `(/${OrgTab.Dashboard})`,
-    `(/${OrgTab.Workflows}(/new)(/:workflowId(/crawls/:itemId(/review/:qaTab))))`,
-    `(/${OrgTab.Items}(/:itemType(/:itemId(/review/:qaTab))))`,
+    `(/${OrgTab.Workflows}(/new)(/:workflowId(/:workflowTab)(/crawls${archivedItemPath})))`,
+    `(/${OrgTab.Items}(/:itemType(${archivedItemPath})))`,
     `(/${OrgTab.Collections}(/new)(/view/:collectionId(/:collectionTab)))`,
     `(/${OrgTab.BrowserProfiles}(/profile(/browser/:browserId)(/:browserProfileId)))`,
     `(/${OrgTab.Settings}(/:settingsTab))`,

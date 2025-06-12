@@ -7,16 +7,20 @@ import { css, html, type TemplateResult } from "lit";
 import { customElement, query, state } from "lit/decorators.js";
 import { guard } from "lit/directives/guard.js";
 import { ifDefined } from "lit/directives/if-defined.js";
+import type { Entries } from "type-fest";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { LanguageSelect } from "@/components/ui/language-select";
 import type { SelectCrawlerProxy } from "@/components/ui/select-crawler-proxy";
 import { proxiesContext, type ProxiesContext } from "@/context/org";
+import type { CustomBehaviorsTable } from "@/features/crawl-workflows/custom-behaviors-table";
 import type { QueueExclusionTable } from "@/features/crawl-workflows/queue-exclusion-table";
 import { columns, type Cols } from "@/layouts/columns";
-import infoTextStrings from "@/strings/crawl-workflows/infoText";
+import { infoTextFor } from "@/strings/crawl-workflows/infoText";
+import { labelFor } from "@/strings/crawl-workflows/labels";
 import sectionStrings from "@/strings/crawl-workflows/section";
 import { crawlingDefaultsSchema, type CrawlingDefaults } from "@/types/org";
+import { formValidator } from "@/utils/form";
 import {
   appDefaults,
   BYTES_PER_GB,
@@ -32,14 +36,10 @@ type Field = Record<FieldName, TemplateResult<1> | undefined>;
 
 const PLACEHOLDER_EXCLUSIONS = [""]; // Add empty slot
 
-function section(section: SectionsEnum | "exclusions", cols: Cols) {
+function section(section: SectionsEnum, cols: Cols) {
   return html`
     <section class="p-5">
-      <btrix-section-heading
-        >${section === "exclusions"
-          ? msg("Exclusions")
-          : sectionStrings[section]}</btrix-section-heading
-      >
+      <btrix-section-heading>${sectionStrings[section]}</btrix-section-heading>
       ${columns(cols)}
     </section>
   `;
@@ -63,6 +63,9 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
   @query("btrix-queue-exclusion-table")
   exclusionTable?: QueueExclusionTable | null;
 
+  @query("btrix-custom-behaviors-table")
+  customBehaviorsTable?: CustomBehaviorsTable | null;
+
   @query("btrix-language-select")
   languageSelect?: LanguageSelect | null;
 
@@ -71,6 +74,8 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
 
   @query('sl-button[type="submit"]')
   submitButton?: SlButton | null;
+
+  private readonly checkFormValidity = formValidator(this);
 
   connectedCallback() {
     super.connectedCallback();
@@ -82,7 +87,7 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
     return html` ${this.renderWorkflowDefaults()} `;
   }
 
-  get fields(): Partial<Record<SectionsEnum, Partial<Field>>> {
+  get fields() {
     const orgDefaults: Partial<CrawlingDefaults> = this.org
       ?.crawlingDefaults || {
       exclude: PLACEHOLDER_EXCLUSIONS,
@@ -101,7 +106,7 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
         ></btrix-queue-exclusion-table>
       `,
     };
-    const perCrawlLimits = {
+    const limits = {
       crawlTimeoutMinutes: html`
         <sl-input
           size="small"
@@ -139,7 +144,14 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
         </sl-input>
       `,
     };
-    const perPageLimits = {
+    const behaviors = {
+      customBehavior: html`
+        <label class="form-label text-xs">${labelFor.customBehaviors}</label>
+        <btrix-custom-behaviors-table
+          .customBehaviors=${orgDefaults.customBehaviors || []}
+          editable
+        ></btrix-custom-behaviors-table>
+      `,
       pageLoadTimeoutSeconds: html`
         <sl-input
           size="small"
@@ -255,10 +267,10 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
 
     return {
       scope,
-      perCrawlLimits,
-      perPageLimits,
+      limits,
+      behaviors,
       browserSettings,
-    };
+    } as const satisfies Partial<Record<SectionsEnum, Partial<Field>>>;
   }
 
   private renderWorkflowDefaults() {
@@ -266,17 +278,22 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
       <div class="rounded-lg border">
         <form @submit=${this.onSubmit}>
           ${guard([this.defaults, this.org], () =>
-            Object.entries(this.fields).map(([sectionName, fields]) =>
-              section(
-                sectionName as SectionsEnum,
-                Object.entries(fields)
-                  .filter(([, field]) => field as unknown)
-                  .map(([fieldName, field]) => [
-                    field,
-                    infoTextStrings[fieldName as FieldName],
-                  ]),
-              ),
-            ),
+            Object.entries(this.fields).map(([sectionName, fields]) => {
+              const cols: Cols = [];
+
+              (Object.entries(fields) as Entries<Field>).forEach(
+                ([fieldName, field]) => {
+                  if (field) {
+                    cols.push([
+                      field,
+                      infoTextFor[fieldName as keyof typeof infoTextFor],
+                    ]);
+                  }
+                },
+              );
+
+              return section(sectionName as SectionsEnum, cols);
+            }),
           )}
           <footer class="flex justify-end border-t px-4 py-3">
             <sl-button type="submit" size="small" variant="primary">
@@ -292,6 +309,31 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
     e.preventDefault();
 
     const form = e.target as HTMLFormElement;
+
+    // Wait for custom behaviors validation to finish
+    // TODO Move away from manual validation check
+    // See https://github.com/webrecorder/browsertrix/issues/2536
+    if (this.customBehaviorsTable) {
+      if (!this.customBehaviorsTable.checkValidity()) {
+        this.customBehaviorsTable.reportValidity();
+        return;
+      }
+
+      try {
+        await this.customBehaviorsTable.taskComplete;
+      } catch {
+        this.customBehaviorsTable.reportValidity();
+        return;
+      }
+    }
+
+    const isValid = await this.checkFormValidity(form);
+
+    if (!isValid) {
+      form.reportValidity();
+      return;
+    }
+
     const values = serialize(form) as Record<string, string>;
     const parseNumber = (value: string) => (value ? Number(value) : undefined);
     const parsedValues: CrawlingDefaults = {
@@ -312,6 +354,7 @@ export class OrgSettingsCrawlWorkflows extends BtrixElement {
       userAgent: values.userAgent,
       lang: this.languageSelect?.value || undefined,
       exclude: this.exclusionTable?.exclusions?.filter((v) => v) || [],
+      customBehaviors: this.customBehaviorsTable?.value || [],
     };
 
     // Set null or empty strings to undefined

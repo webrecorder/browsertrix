@@ -47,6 +47,7 @@ export const crawlingDefaultsSchema = z.object({
   lang: z.string().optional(),
   userAgent: z.string().optional(),
   exclude: z.array(z.string()),
+  customBehaviors: z.array(z.string()),
 });
 export type CrawlingDefaults = z.infer<typeof crawlingDefaultsSchema>;
 
@@ -89,7 +90,7 @@ export const orgDataSchema = z.object({
     .optional(),
   readOnly: z.boolean().nullable(),
   readOnlyReason: z.union([orgReadOnlyReasonSchema, z.string()]).nullable(),
-  readOnlyOnCancel: z.boolean(),
+  readOnlyOnCancel: z.boolean().optional(),
   subscription: subscriptionSchema.nullable(),
   crawlingDefaults: crawlingDefaultsSchema.nullable(),
   allowSharedProxies: z.boolean(),

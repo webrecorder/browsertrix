@@ -1,3 +1,4 @@
+{% if not no_pvc %}
 # -------
 # PVC
 # -------
@@ -22,6 +23,7 @@ spec:
   {% if volume_storage_class %}
   storageClassName: {{ volume_storage_class }}
   {% endif %}
+{% endif %}
 
 # --------
 # REDIS
@@ -40,6 +42,11 @@ metadata:
 spec:
   hostname: {{ name }}
   subdomain: redis
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 999
+    runAsGroup: 999
+    fsGroup: 999
 
   terminationGracePeriodSeconds: 10
   volumes:
@@ -51,8 +58,12 @@ spec:
             path: redis.conf
 
     - name: redis-data
+      {% if not no_pvc %}
       persistentVolumeClaim:
         claimName: {{ name }}
+      {% else %}
+      emptyDir: {}
+      {% endif %}
 
   affinity:
     nodeAffinity:

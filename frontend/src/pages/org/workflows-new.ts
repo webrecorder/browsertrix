@@ -1,33 +1,24 @@
 import { localized, msg } from "@lit/localize";
+import clsx from "clsx";
 import { mergeDeep } from "immutable";
 import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
+import type { PartialDeep } from "type-fest";
 
 import { ScopeType, type Seed, type WorkflowParams } from "./types";
 
-import type { UserGuideEventMap } from "@/index";
 import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
 import { WorkflowScopeType } from "@/types/workflow";
 import LiteElement, { html } from "@/utils/LiteElement";
-import type { FormState as WorkflowFormState } from "@/utils/workflow";
-
-type GuideHash =
-  | "scope"
-  | "limits"
-  | "browser-settings"
-  | "scheduling"
-  | "metadata"
-  | "review-settings";
-
-const workflowTabToGuideHash: Record<string, GuideHash> = {
-  crawlSetup: "scope",
-  crawlLimits: "limits",
-  browserSettings: "browser-settings",
-  crawlScheduling: "scheduling",
-  crawlMetadata: "metadata",
-  confirmSettings: "review-settings",
-};
+import { tw } from "@/utils/tailwind";
+import {
+  DEFAULT_AUTOCLICK_SELECTOR,
+  DEFAULT_SELECT_LINKS,
+  makeUserGuideEvent,
+  type SectionsEnum,
+  type FormState as WorkflowFormState,
+} from "@/utils/workflow";
 
 /**
  * Usage:
@@ -50,23 +41,6 @@ export class WorkflowsNew extends LiteElement {
   @property({ type: Object })
   initialWorkflow?: WorkflowParams;
 
-  private userGuideHashLink: GuideHash = "scope";
-
-  connectedCallback(): void {
-    super.connectedCallback();
-
-    this.userGuideHashLink =
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-      workflowTabToGuideHash[window.location.hash.slice(1) as GuideHash] ||
-      "scope";
-
-    window.addEventListener("hashchange", () => {
-      const hashValue = window.location.hash.slice(1) as GuideHash;
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-      this.userGuideHashLink = workflowTabToGuideHash[hashValue] || "scope";
-    });
-  }
-
   private get defaultNewWorkflow(): WorkflowParams {
     return {
       name: "",
@@ -84,13 +58,15 @@ export class WorkflowsNew extends LiteElement {
         useSitemap: false,
         failOnFailedSeed: false,
         userAgent: null,
-        selectLinks: ["a[href]->href"],
+        selectLinks: DEFAULT_SELECT_LINKS,
+        customBehaviors: [],
+        clickSelector: DEFAULT_AUTOCLICK_SELECTOR,
       },
       tags: [],
       crawlTimeout: null,
       maxCrawlSize: null,
       jobType: "custom",
-      scale: 1,
+      browserWindows: this.appState.settings?.numBrowsersPerInstance || 1,
       autoAddCollections: [],
       crawlerChannel: "default",
       proxyId: null,
@@ -118,26 +94,25 @@ export class WorkflowsNew extends LiteElement {
 
     return html`
       <div class="mb-5">${this.renderBreadcrumbs()}</div>
-      <header class="flex items-center justify-between">
+      <header
+        class="scrim scrim-to-b z-10 flex flex-wrap items-start justify-between gap-2 before:-top-3 lg:sticky lg:top-3"
+      >
         <h2 class="mb-6 text-xl font-semibold">${msg("New Crawl Workflow")}</h2>
         <sl-button
           size="small"
+          class=${clsx(
+            tw`transition-opacity`,
+            this.appState.userGuideOpen && tw`pointer-events-none opacity-0`,
+          )}
+          ?disabled=${this.appState.userGuideOpen}
           @click=${() => {
             this.dispatchEvent(
-              new CustomEvent<
-                UserGuideEventMap["btrix-user-guide-show"]["detail"]
-              >("btrix-user-guide-show", {
-                detail: {
-                  path: `user-guide/workflow-setup/#${this.userGuideHashLink}`,
-                },
-                bubbles: true,
-                composed: true,
-              }),
+              makeUserGuideEvent(window.location.hash.slice(1) as SectionsEnum),
             );
           }}
         >
           <sl-icon slot="prefix" name="book"></sl-icon>
-          ${msg("Setup Guide")}
+          ${msg("User Guide")}
         </sl-button>
       </header>
       ${when(this.org, (org) => {
@@ -147,19 +122,20 @@ export class WorkflowsNew extends LiteElement {
             profileid: org.crawlingDefaults?.profileid,
             config: {
               exclude: org.crawlingDefaults?.exclude || [""],
-              behaviorTimeout: org.crawlingDefaults?.behaviorTimeout,
-              pageLoadTimeout: org.crawlingDefaults?.pageLoadTimeout,
-              pageExtraDelay: org.crawlingDefaults?.pageExtraDelay,
-              postLoadDelay: org.crawlingDefaults?.postLoadDelay,
+              behaviorTimeout: org.crawlingDefaults?.behaviorTimeout ?? null,
+              pageLoadTimeout: org.crawlingDefaults?.pageLoadTimeout ?? null,
+              pageExtraDelay: org.crawlingDefaults?.pageExtraDelay ?? null,
+              postLoadDelay: org.crawlingDefaults?.postLoadDelay ?? null,
               userAgent: org.crawlingDefaults?.userAgent,
               blockAds: org.crawlingDefaults?.blockAds,
               lang: org.crawlingDefaults?.lang,
+              customBehaviors: org.crawlingDefaults?.customBehaviors || [],
             },
             crawlTimeout: org.crawlingDefaults?.crawlTimeout,
             maxCrawlSize: org.crawlingDefaults?.maxCrawlSize,
             crawlerChannel: org.crawlingDefaults?.crawlerChannel,
             proxyId: org.crawlingDefaults?.proxyId,
-          },
+          } satisfies PartialDeep<WorkflowParams>,
           this.initialWorkflow || {},
         );
 

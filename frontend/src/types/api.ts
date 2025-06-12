@@ -34,3 +34,16 @@ export type APISortQuery<T = Record<string, unknown>> = {
   sortBy?: keyof T;
   sortDirection?: SortDirection;
 };
+
+// TODO Add all error codes
+// https://github.com/webrecorder/browsertrix/issues/2512
+export enum APIErrorDetail {
+  InvalidLinkSelector = "invalid_link_selector",
+  InvalidRegex = "invalid_regex",
+  InvalidLang = "invalid_lang",
+  InvalidCustomBehavior = "invalid_custom_behavior",
+  CustomBehaviorNotFound = "custom_behavior_not_found",
+  CustomBehaviorBranchNotFound = "custom_behavior_branch_not_found",
+}
+export const APIErrorDetailEnum = z.nativeEnum(APIErrorDetail);
+export type APIErrorDetailEnum = z.infer<typeof APIErrorDetailEnum>;

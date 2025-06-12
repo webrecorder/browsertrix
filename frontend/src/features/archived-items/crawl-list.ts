@@ -26,7 +26,7 @@ import { TailwindElement } from "@/classes/TailwindElement";
 import type { OverflowDropdown } from "@/components/ui/overflow-dropdown";
 import type { Crawl } from "@/types/crawler";
 import { renderName } from "@/utils/crawler";
-import { pluralOf } from "@/utils/pluralize";
+import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 
 /**
  * @slot menu
@@ -128,9 +128,11 @@ export class CrawlListItem extends BtrixElement {
       >
         <btrix-table-cell class="pr-0">
           ${this.safeRender(
-            (workflow) => html`
+            (crawl: Crawl) => html`
               <btrix-crawl-status
-                state=${workflow.state}
+                state=${crawl.state}
+                ?stopping=${crawl.stopping}
+                ?shouldPause=${crawl.shouldPause}
                 hideLabel
                 hoist
               ></btrix-crawl-status>
@@ -185,21 +187,31 @@ export class CrawlListItem extends BtrixElement {
           )}
         </btrix-table-cell>
         <btrix-table-cell>
-          ${this.localize.bytes(this.crawl.fileSize || 0, {
-            unitDisplay: "narrow",
-          })}
+          ${this.safeRender((crawl) =>
+            humanizeExecutionSeconds(crawl.crawlExecSeconds),
+          )}
         </btrix-table-cell>
         <btrix-table-cell>
           ${this.safeRender((crawl) => {
             const pagesFound = +(crawl.stats?.found || 0);
             if (crawl.finished) {
               const pagesComplete = crawl.pageCount ? +crawl.pageCount : 0;
-              return `${this.localize.number(pagesComplete, { notation: "compact" })} ${pluralOf("pages", pagesComplete)}`;
+              return `${this.localize.number(pagesComplete, { notation: "compact" })}`;
             }
 
             const pagesComplete = +(crawl.stats?.done || 0);
-            return `${this.localize.number(pagesComplete, { notation: "compact" })} / ${this.localize.number(pagesFound, { notation: "compact" })} ${pluralOf("pages", pagesFound)}`;
+            return `${this.localize.number(pagesComplete, { notation: "compact" })} / ${this.localize.number(pagesFound, { notation: "compact" })}`;
           })}
+        </btrix-table-cell>
+        <btrix-table-cell>
+          ${this.safeRender((crawl) =>
+            this.localize.bytes(
+              crawl.finished ? crawl.fileSize || 0 : +(crawl.stats?.size || 0),
+              {
+                unitDisplay: "narrow",
+              },
+            ),
+          )}
         </btrix-table-cell>
         <btrix-table-cell>
           <div class="max-w-sm truncate">
@@ -245,14 +257,12 @@ export class CrawlListItem extends BtrixElement {
 export class CrawlList extends TailwindElement {
   static styles = css`
     btrix-table {
-      --btrix-cell-gap: var(--sl-spacing-x-small);
-      --btrix-cell-padding-left: var(--sl-spacing-small);
-      --btrix-cell-padding-right: var(--sl-spacing-small);
+      --btrix-table-cell-gap: var(--sl-spacing-x-small);
+      --btrix-table-cell-padding-x: var(--sl-spacing-small);
     }
 
     btrix-table-body {
-      --btrix-cell-padding-top: var(--sl-spacing-2x-small);
-      --btrix-cell-padding-bottom: var(--sl-spacing-2x-small);
+      --btrix-table-cell-padding-y: var(--sl-spacing-2x-small);
     }
 
     btrix-table-body ::slotted(*:nth-of-type(n + 2)) {
@@ -280,13 +290,12 @@ export class CrawlList extends TailwindElement {
   render() {
     return html` <style>
         btrix-table {
-          grid-template-columns:
-            min-content [clickable-start]
-            ${this.workflowId ? "" : `auto `}auto auto
-            auto auto auto auto [clickable-end] min-content;
+          --btrix-table-grid-template-columns: min-content [clickable-start]
+            ${this.workflowId ? "" : `auto `}repeat(7, auto) [clickable-end]
+            min-content;
         }
       </style>
-      <div class="overflow-auto">
+      <btrix-overflow-scroll class="-mx-3 part-[content]:px-3">
         <btrix-table>
           <btrix-table-head class="mb-2">
             <btrix-table-header-cell class="pr-0">
@@ -306,14 +315,15 @@ export class CrawlList extends TailwindElement {
               ${msg("Finished")}
             </btrix-table-header-cell>
             <btrix-table-header-cell
-              >${msg("Duration")}</btrix-table-header-cell
+              >${msg("Run Duration")}</btrix-table-header-cell
             >
-            <btrix-table-header-cell>${msg("Size")}</btrix-table-header-cell>
             <btrix-table-header-cell
-              >${msg("Pages Crawled")}</btrix-table-header-cell
+              >${msg("Execution Time")}</btrix-table-header-cell
             >
+            <btrix-table-header-cell>${msg("Pages")}</btrix-table-header-cell>
+            <btrix-table-header-cell>${msg("Size")}</btrix-table-header-cell>
             <btrix-table-header-cell>
-              ${msg("Created By")}
+              ${msg("Run By")}
             </btrix-table-header-cell>
             <btrix-table-header-cell class="pl-1 pr-1">
               <span class="sr-only">${msg("Row actions")}</span>
@@ -323,7 +333,7 @@ export class CrawlList extends TailwindElement {
             <slot @slotchange=${this.handleSlotchange}></slot>
           </btrix-table-body>
         </btrix-table>
-      </div>`;
+      </btrix-overflow-scroll>`;
   }
 
   private handleSlotchange() {

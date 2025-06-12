@@ -112,8 +112,8 @@ class SettingsResponse(BaseModel):
     defaultPageLoadTimeSeconds: int
 
     maxPagesPerCrawl: int
-    numBrowsers: int
-    maxScale: int
+    numBrowsersPerInstance: int
+    maxBrowserWindows: int
 
     billingEnabled: bool
 
@@ -123,6 +123,8 @@ class SettingsResponse(BaseModel):
     supportEmail: str = ""
 
     localesEnabled: Optional[List[str]]
+
+    pausedExpiryMinutes: int
 
 
 # ============================================================================
@@ -147,8 +149,8 @@ def main() -> None:
             os.environ.get("DEFAULT_PAGE_LOAD_TIME_SECONDS", 120)
         ),
         maxPagesPerCrawl=int(os.environ.get("MAX_PAGES_PER_CRAWL", 0)),
-        numBrowsers=int(os.environ.get("NUM_BROWSERS", 1)),
-        maxScale=int(os.environ.get("MAX_CRAWL_SCALE", 3)),
+        numBrowsersPerInstance=int(os.environ.get("NUM_BROWSERS", 1)),
+        maxBrowserWindows=int(os.environ.get("MAX_BROWSER_WINDOWS", 8)),
         billingEnabled=is_bool(os.environ.get("BILLING_ENABLED")),
         signUpUrl=os.environ.get("SIGN_UP_URL", ""),
         salesEmail=os.environ.get("SALES_EMAIL", ""),
@@ -158,6 +160,7 @@ def main() -> None:
             if os.environ.get("LOCALES_ENABLED")
             else None
         ),
+        pausedExpiryMinutes=int(os.environ.get("PAUSED_CRAWL_LIMIT_MINUTES", 10080)),
     )
 
     invites = init_invites(mdb, email)

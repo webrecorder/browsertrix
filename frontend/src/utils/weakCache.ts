@@ -102,7 +102,7 @@ export function cached<
       );
     }
     if (cache.has(k)) {
-      return cache.get(k)!;
+      return cache.get(k) as Result;
     } else {
       const v = fn(...args);
       cache.set(k, v);

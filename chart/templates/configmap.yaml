@@ -14,11 +14,13 @@ data:
 
   FRONTEND_ORIGIN: {{ .Values.frontend_alias | default "http://browsertrix-cloud-frontend" }}
 
-  CRAWLER_FQDN_SUFFIX: ".{{ .Values.crawler_namespace }}.svc.cluster.local"
+  CRAWLER_FQDN_SUFFIX: ".{{ .Values.crawler_namespace }}{{ .Values.fqdn_suffix }}"
 
   DEFAULT_ORG: "{{ .Values.default_org }}"
 
   INVITE_EXPIRE_SECONDS: "{{ .Values.invite_expire_seconds }}"
+
+  PAUSED_CRAWL_LIMIT_MINUTES: "{{ .Values.paused_crawl_limit_minutes }}"
 
   REGISTRATION_ENABLED: "{{ .Values.registration_enabled | default 0 }}"
 
@@ -34,6 +36,8 @@ data:
 
   DEFAULT_CRAWL_FILENAME_TEMPLATE: "{{ .Values.default_crawl_filename_template }}"
 
+  DEFAULT_CRAWLER_IMAGE_PULL_POLICY: "{{ .Values.crawler_pull_policy }}"
+
   MAX_PAGES_PER_CRAWL: "{{ .Values.max_pages_per_crawl | default 0 }}"
 
   IDLE_TIMEOUT: "{{ .Values.profile_browser_idle_seconds | default 60 }}"
@@ -46,10 +50,13 @@ data:
   FAST_RETRY_SECS: "{{ .Values.operator_fast_resync_secs | default 3 }}"
 
   MAX_CRAWL_SCALE: "{{ .Values.max_crawl_scale | default 3 }}"
+  MAX_BROWSER_WINDOWS: "{{ .Values.max_browser_windows | default 8 }}"
 
   LOG_FAILED_CRAWL_LINES: "{{ .Values.log_failed_crawl_lines | default 0 }}"
 
   IS_LOCAL_MINIO: "{{ .Values.minio_local }}"
+
+  LOCAL_MINIO_ACCESS_PATH: "{{ .Values.minio_access_path }}"
 
   STORAGES_JSON: "/ops-configs/storages.json"
 
@@ -90,6 +97,8 @@ data:
 
   REPLICA_DELETION_DELAY_DAYS: "{{ .Values.replica_deletion_delay_days | default 0 }}"
 
+  PRESIGN_BATCH_SIZE: "{{ .Values.presign_batch_size | default 8 }}"
+
 
 ---
 apiVersion: v1
@@ -99,7 +108,7 @@ metadata:
   namespace: {{ .Values.crawler_namespace }}
 
 data:
-  {{- define "btrix.crawler_args" }} --sizeLimit {{ .Values.crawler_session_size_limit_bytes }} --timeLimit {{ .Values.crawler_session_time_limit_seconds }} --maxPageLimit {{ .Values.max_pages_per_crawl | default 0 }} --healthCheckPort {{ .Values.crawler_liveness_port }} --diskUtilization {{ .Values.disk_utilization_threshold }} --logging {{ .Values.crawler_logging_opts }} --text {{ .Values.crawler_extract_full_text }} --generateWACZ --collection thecrawl --screencastPort 9037 --logErrorsToRedis --writePagesToRedis --restartsOnError --headless --screenshot view,thumbnail {{ .Values.crawler_extra_args }} {{- end }}
+  {{- define "btrix.crawler_args" }} --sizeLimit {{ .Values.crawler_session_size_limit_bytes }} --timeLimit {{ .Values.crawler_session_time_limit_seconds }} --maxPageLimit {{ .Values.max_pages_per_crawl | default 0 }} --healthCheckPort {{ .Values.crawler_liveness_port }} --diskUtilization {{ .Values.disk_utilization_threshold }} --logging {{ .Values.crawler_logging_opts }} --text {{ .Values.crawler_extract_full_text }} --generateWACZ --collection thecrawl --screencastPort 9037 --logErrorsToRedis --logBehaviorsToRedis --writePagesToRedis --restartsOnError --headless --screenshot view,thumbnail {{ .Values.crawler_extra_args }} {{- end }}
 
   CRAWL_ARGS: {{- include "btrix.crawler_args" . }}
 

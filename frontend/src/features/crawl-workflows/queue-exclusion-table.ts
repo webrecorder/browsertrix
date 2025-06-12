@@ -11,7 +11,7 @@ import RegexColorize from "regex-colorize";
 import type { Exclusion } from "./queue-exclusion-form";
 
 import { TailwindElement } from "@/classes/TailwindElement";
-import { type PageChangeEvent } from "@/components/ui/pagination";
+import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import type { SeedConfig } from "@/pages/org/types";
 import { regexEscape, regexUnescape } from "@/utils/string";
 import { tw } from "@/utils/tailwind";
@@ -33,15 +33,7 @@ function formatValue(type: Exclusion["type"], value: Exclusion["value"]) {
 }
 
 /**
- * Crawl queue exclusion table
- *
- * Usage example:
- * ```ts
- * <btrix-queue-exclusion-table
- *   .exclusions=${this.workflow.config.exclude}
- * >
- * </btrix-queue-exclusion-table>
- * ```
+ * Displays crawl exclusions in an editable table.
  *
  * @TODO Refactor to always be uncontrolled field
  * so that callers don't need to maintain their
@@ -90,7 +82,7 @@ export class QueueExclusionTable extends TailwindElement {
   private results: Exclusion[] = [];
 
   @state()
-  private page = 1;
+  private page = parsePage(new URLSearchParams(location.search).get("page"));
 
   @state()
   private exclusionToRemove?: string;
@@ -186,7 +178,7 @@ export class QueueExclusionTable extends TailwindElement {
         class="w-full border-separate leading-none"
         style="border-spacing: 0;"
       >
-        <thead class="font-mono text-xs uppercase text-neutral-600">
+        <thead class="text-xs text-neutral-600">
           <tr class="h-10 text-left">
             <th class="${typeColClass} w-40 bg-slate-50 px-2 font-normal">
               ${msg("Exclusion Type")}

@@ -22,7 +22,7 @@ import type { QuotaUpdateDetail } from "@/controllers/api";
 import needLogin from "@/decorators/needLogin";
 import type { CollectionSavedEvent } from "@/features/collections/collection-create-dialog";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
-import { OrgTab, RouteNamespace } from "@/routes";
+import { OrgTab, RouteNamespace, WorkflowTab } from "@/routes";
 import type { ProxiesAPIResponse } from "@/types/crawler";
 import type { UserOrg } from "@/types/user";
 import { isApiError } from "@/utils/api";
@@ -53,6 +53,7 @@ export type SelectNewDialogEvent = CustomEvent<ResourceName>;
 type ArchivedItemPageParams = {
   itemId?: string;
   workflowId?: string;
+  workflowTab?: WorkflowTab;
   collectionId?: string;
 };
 export type OrgParams = {
@@ -112,7 +113,7 @@ export class Org extends BtrixElement {
   orgTab?: OrgTab | string;
 
   @property({ type: Number })
-  maxScale: number = DEFAULT_MAX_SCALE;
+  maxBrowserWindows: number = DEFAULT_MAX_SCALE;
 
   @state()
   private openDialogName?: ResourceName;
@@ -293,7 +294,7 @@ export class Org extends BtrixElement {
                   OrgTab.Items,
                   () => html`
                     <btrix-document-title
-                      title=${`${msg("Archived Items")} - ${userOrg.name}`}
+                      title=${`${msg("Archived Items")} – ${userOrg.name}`}
                     ></btrix-document-title>
                     ${this.renderArchivedItem()}
                   `,
@@ -302,7 +303,7 @@ export class Org extends BtrixElement {
                   OrgTab.Workflows,
                   () => html`
                     <btrix-document-title
-                      title=${`${msg("Crawl Workflows")} - ${userOrg.name}`}
+                      title=${`${msg("Crawl Workflows")} – ${userOrg.name}`}
                     ></btrix-document-title>
                     ${this.renderWorkflows()}
                   `,
@@ -311,7 +312,7 @@ export class Org extends BtrixElement {
                   OrgTab.BrowserProfiles,
                   () => html`
                     <btrix-document-title
-                      title=${`${msg("Browser Profiles")} - ${userOrg.name}`}
+                      title=${`${msg("Browser Profiles")} – ${userOrg.name}`}
                     ></btrix-document-title>
                     ${this.renderBrowserProfiles()}
                   `,
@@ -320,7 +321,7 @@ export class Org extends BtrixElement {
                   OrgTab.Collections,
                   () => html`
                     <btrix-document-title
-                      title=${`${msg("Collections")} - ${userOrg.name}`}
+                      title=${`${msg("Collections")} – ${userOrg.name}`}
                     ></btrix-document-title>
                     ${this.renderCollections()}
                   `,
@@ -331,7 +332,7 @@ export class Org extends BtrixElement {
                     this.appState.isAdmin
                       ? html`
                           <btrix-document-title
-                            title=${`${msg("Org Settings")} - ${userOrg.name}`}
+                            title=${`${msg("Org Settings")} – ${userOrg.name}`}
                           ></btrix-document-title>
                           ${this.renderOrgSettings()}
                         `
@@ -355,36 +356,38 @@ export class Org extends BtrixElement {
       <div
         class="mx-auto box-border w-full overflow-x-hidden overscroll-contain"
       >
-        <nav class="-mx-3 flex items-end overflow-x-auto px-3 xl:px-6">
-          ${this.renderNavTab({
-            tabName: OrgTab.Dashboard,
-            label: msg("Dashboard"),
-          })}
-          ${this.renderNavTab({
-            tabName: OrgTab.Workflows,
-            label: msg("Crawling"),
-          })}
-          ${this.renderNavTab({
-            tabName: OrgTab.Items,
-            label: msg("Archived Items"),
-          })}
-          ${this.renderNavTab({
-            tabName: OrgTab.Collections,
-            label: msg("Collections"),
-          })}
-          ${when(this.appState.isCrawler, () =>
-            this.renderNavTab({
-              tabName: OrgTab.BrowserProfiles,
-              label: msg("Browser Profiles"),
-            }),
-          )}
-          ${when(this.appState.isAdmin || this.userInfo?.isSuperAdmin, () =>
-            this.renderNavTab({
-              tabName: OrgTab.Settings,
-              label: msg("Settings"),
-            }),
-          )}
-        </nav>
+        <btrix-overflow-scroll class="-mx-3 part-[content]:px-3">
+          <nav class="flex items-end xl:px-6">
+            ${this.renderNavTab({
+              tabName: OrgTab.Dashboard,
+              label: msg("Dashboard"),
+            })}
+            ${this.renderNavTab({
+              tabName: OrgTab.Workflows,
+              label: msg("Crawling"),
+            })}
+            ${this.renderNavTab({
+              tabName: OrgTab.Items,
+              label: msg("Archived Items"),
+            })}
+            ${this.renderNavTab({
+              tabName: OrgTab.Collections,
+              label: msg("Collections"),
+            })}
+            ${when(this.appState.isCrawler, () =>
+              this.renderNavTab({
+                tabName: OrgTab.BrowserProfiles,
+                label: msg("Browser Profiles"),
+              }),
+            )}
+            ${when(this.appState.isAdmin || this.userInfo?.isSuperAdmin, () =>
+              this.renderNavTab({
+                tabName: OrgTab.Settings,
+                label: msg("Settings"),
+              }),
+            )}
+          </nav>
+        </btrix-overflow-scroll>
       </div>
 
       <hr />
@@ -527,10 +530,13 @@ export class Org extends BtrixElement {
         <btrix-workflow-detail
           class="col-span-5"
           workflowId=${workflowId}
+          workflowTab=${ifDefined(
+            params.itemId ? WorkflowTab.Crawls : params.workflowTab,
+          )}
           openDialogName=${this.viewStateData?.dialog}
           ?isEditing=${isEditing}
           ?isCrawler=${this.appState.isCrawler}
-          .maxScale=${this.maxScale}
+          .maxBrowserWindows=${this.maxBrowserWindows}
         ></btrix-workflow-detail>
       `;
     }

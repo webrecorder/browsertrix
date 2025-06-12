@@ -7,6 +7,8 @@ on:
     paths:
       - 'backend/**'
       - 'chart/**'
+      - '.github/workflows/microk8s-ci.yaml'
+  workflow_dispatch:
 
 env:
   ECHO_SERVER_HOST_URL: http://10.0.1.1:18080
@@ -23,7 +25,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
         with:
           driver-opts: network=host
 
@@ -56,9 +58,9 @@ jobs:
           sudo microk8s helm3 upgrade --install -f ./chart/values.yaml -f ./chart/test/test.yaml -f ./chart/test/microk8s-ci.yaml btrix ./chart/
 
       - name: Install Python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.9'
+          python-version: '3.x'
 
       - name: Install Python Libs
         run: pip install -r ./backend/test-requirements.txt

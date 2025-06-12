@@ -1,29 +1,39 @@
+@import "./theme.css";
 /* Font style definitions */
 
 @font-face {
   font-family: "Recursive";
-  font-style: oblique 0deg 15deg;
-  font-weight: 300 1000;
-  src: url("../assets/fonts/Recursive_VF_1.084.woff2") format("woff2");
-  font-feature-settings: "ss12";
-}
-
-@font-face {
-  font-family: "Inter";
-  font-weight: 100 900;
-  font-display: swap;
   font-style: normal;
-  src: url("../assets/fonts/Inter.var.woff2") format("woff2");
-  font-feature-settings: "ss03";
+  font-weight: 300 800;
+  font-display: swap;
+  src: url("https://cdn.webrecorder.net/fonts/recursive/recursive-latin.woff2")
+    format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 @font-face {
-  font-family: "Inter";
+  font-family: "Inter Variable";
   font-weight: 100 900;
-  font-display: swap;
+  font-style: normal;
+  font-named-instance: "Regular";
+  font-feature-settings: "ss04";
+  src:
+    local("Inter Variable"),
+    url("https://cdn.webrecorder.net/fonts/inter/InterVariable.woff2")
+      format("woff2");
+}
+@font-face {
+  font-family: "Inter Variable";
+  font-weight: 100 900;
   font-style: italic;
-  src: url("../assets/fonts/Inter-Italic.var.woff2") format("woff2");
-  font-feature-settings: "ss03";
+  font-named-instance: "Italic";
+  font-feature-settings: "ss04";
+  src:
+    local("Inter Variable"),
+    url("https://cdn.webrecorder.net/fonts/inter/InterVariable-Italic.woff2")
+      format("woff2");
 }
 
 @font-face {
@@ -31,25 +41,25 @@
   font-weight: 100 900;
   font-display: swap;
   font-style: normal;
-  src: url("https://wr-static.sfo3.cdn.digitaloceanspaces.com/fonts/konsole/Konsolev1.1-VF.woff2")
+  src: url("https://cdn.webrecorder.net/fonts/konsole/Konsolev1.1-VF.woff2")
     format("woff2");
 }
 
 :root {
   --md-display-font: "Konsole", "Helvetica", sans-serif;
   --md-code-font: "Recursive", monospace;
-  --md-text-font: "Inter", "Helvetica", "Arial", sans-serif;
-  --wr-blue-primary: #088eaf;
-  --wr-orange-primary: #bb4a00;
+  --md-text-font: "Inter Variable", "Helvetica", "Arial", sans-serif;
+  --wr-blue-primary: var(--color-brand-blue);
+  --wr-orange-primary: var(--color-orange-500);
 }
 
 [data-md-color-scheme="webrecorder"] {
-  --md-primary-fg-color: #4d7c0f;
-  --md-primary-fg-color--light: #057894;
-  --md-primary-fg-color--dark: #035b71;
+  --md-primary-fg-color: var(--color-brand-green);
+  --md-primary-fg-color--light: var(--color-cyan-500);
+  --md-primary-fg-color--dark: var(--color-cyan-600);
   --md-typeset-color: black;
-  --md-accent-fg-color: #057894;
-  --md-typeset-a-color: #035b71;
+  --md-accent-fg-color: var(--color-cyan-500);
+  --md-typeset-a-color: var(--color-cyan-600);
   --md-code-bg-color: #f9fafb;
 }
 
@@ -130,6 +140,13 @@ h3 {
   font-variation-settings: "OPSZ" 35;
 }
 
+.md-typeset {
+  font-feature-settings:
+    "ss04" off,
+    "ss07" on,
+    "ss08" on;
+}
+
 /* Custom badge classes, applies custom overrides to inline-code blocks */
 
 .badge-blue {
@@ -158,47 +175,112 @@ h3 {
 
 /* Status Styling */
 
-.status-success {
-  font-family: var(--md-code-font);
-  font-weight: 500;
+.status-neutral-400 {
+  font-weight: 600;
   white-space: nowrap;
   & svg {
-    color: hsl(142.1 76.2% 36.3%);
+    color: var(--sl-color-neutral-400);
   }
 }
 
-.status-neutral {
-  font-family: var(--md-code-font);
-  font-weight: 500;
+.status-neutral-500 {
+  font-weight: 600;
   white-space: nowrap;
   & svg {
-    color: hsl(32.1 94.6% 43.7%);
+    color: var(--sl-color-neutral-500);
   }
 }
 
-.status-warning {
-  font-family: var(--md-code-font);
-  font-weight: 500;
+.status-neutral-600 {
+  font-weight: 600;
   white-space: nowrap;
   & svg {
-    color: hsl(21, 90%, 48%);
+    color: var(--sl-color-neutral-600);
   }
 }
 
-.status-danger {
-  font-family: var(--md-code-font);
-  font-weight: 500;
+.status-green-500 {
+  font-weight: 600;
   white-space: nowrap;
   & svg {
-    color: hsl(0 72.2% 50.6%);
+    color: var(--sl-color-green-500);
   }
 }
 
-.status-waiting {
-  font-family: var(--md-code-font);
-  font-weight: 500;
+.status-green-600 {
+  font-weight: 600;
   white-space: nowrap;
   & svg {
-    color: hsl(271.5 81.3% 55.9%);
+    color: var(--sl-color-green-600);
+  }
+}
+
+.status-amber-600 {
+  font-weight: 600;
+  white-space: nowrap;
+  & svg {
+    color: var(--sl-color-amber-600);
+  }
+}
+
+.status-neutral-600 {
+  font-weight: 600;
+  white-space: nowrap;
+  & svg {
+    color: var(--sl-color-neutral-600);
+  }
+}
+
+.status-amber-500 {
+  font-weight: 600;
+  white-space: nowrap;
+  & svg {
+    color: var(--sl-color-amber-500);
+  }
+}
+
+.status-red-600 {
+  font-weight: 600;
+  white-space: nowrap;
+  & svg {
+    color: var(--sl-color-red-600);
+  }
+}
+
+.status-orange-600 {
+  font-weight: 600;
+  white-space: nowrap;
+  & svg {
+    color: var(--sl-color-orange-600);
+  }
+}
+
+.status-violet-500 {
+  font-weight: 600;
+  white-space: nowrap;
+  & svg {
+    color: var(--sl-color-violet-500);
+  }
+}
+
+.status-violet-600 {
+  font-weight: 600;
+  white-space: nowrap;
+  & svg {
+    color: var(--sl-color-violet-600);
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
   }
 }

@@ -6,31 +6,18 @@ import { TailwindElement } from "@/classes/TailwindElement";
 type CellContent = string | TemplateResult<1>;
 
 /**
- * Styled data table
+ * @deprecated Use `<btrix-data-grid>` instead.
  *
- * Usage example:
- * ```ts
- * <btrix-data-table
- *   .columns=${[html`A`, html`B`, html`C`]}
- *   .rows=${[
- *     [html`1a`, html`1b`, html`1c`],
- *     [html`2a`, html`2b`, html`2c`],
- *   ]}
- *   .columnWidths=${["100%", "20rem"]}
- * >
- * </btrix-data-table>
- * ```
+ * Styled tables for handling lists of tabular data.
+ * Data tables are less flexible than `<btrix-table>` but require less configuration.
  */
 @customElement("btrix-data-table")
 export class DataTable extends TailwindElement {
   // postcss-lit-disable-next-line
   static styles = css`
     btrix-table {
-      --btrix-cell-gap: var(--sl-spacing-x-small);
-      --btrix-cell-padding-top: var(--sl-spacing-x-small);
-      --btrix-cell-padding-bottom: var(--sl-spacing-x-small);
-      --btrix-cell-padding-left: var(--sl-spacing-x-small);
-      --btrix-cell-padding-right: var(--sl-spacing-x-small);
+      --btrix-table-cell-gap: var(--sl-spacing-x-small);
+      --btrix-table-cell-padding: var(--sl-spacing-x-small);
     }
   `;
 
@@ -54,11 +41,10 @@ export class DataTable extends TailwindElement {
   border?: "grid" | "horizontal";
 
   render() {
-    const gridAutoColumnsStyle = `grid-template-columns: ${
-      this.columnWidths.length
-        ? this.columnWidths.join(" ")
-        : "minmax(max-content, auto)"
-    }`;
+    const gridAutoColumnsStyle = this.columnWidths.length
+      ? `--btrix-table-grid-template-columns: ${this.columnWidths.join(" ")}`
+      : "";
+
     return html`
       <btrix-table
         class="relative h-full w-full rounded border"

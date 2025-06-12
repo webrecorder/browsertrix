@@ -5,7 +5,7 @@ import { restore, stub } from "sinon";
 import { NavigateController } from "./controllers/navigate";
 import { NotifyController } from "./controllers/notify";
 import { type AppSettings } from "./utils/app";
-import AuthService from "./utils/AuthService";
+import AuthService, { type LoggedInEventDetail } from "./utils/AuthService";
 import { AppStateService } from "./utils/state";
 import { formatAPIUser } from "./utils/user";
 
@@ -27,6 +27,12 @@ const mockAPIUser: APIUser = {
   ],
 };
 const mockUserInfo = formatAPIUser(mockAPIUser);
+const mockAuth = {
+  headers: { Authorization: self.crypto.randomUUID() },
+  tokenExpiresAt: Date.now(),
+  username: "test-auth@example.com",
+  user: mockAPIUser,
+};
 
 const mockAppSettings: AppSettings = {
   registrationEnabled: false,
@@ -34,8 +40,7 @@ const mockAppSettings: AppSettings = {
   defaultBehaviorTimeSeconds: 300,
   defaultPageLoadTimeSeconds: 120,
   maxPagesPerCrawl: 50000,
-  numBrowsers: 2,
-  maxScale: 3,
+  maxBrowserWindows: 4,
   billingEnabled: false,
   signUpUrl: "",
   salesEmail: "",
@@ -79,7 +84,7 @@ describe("browsertrix-app", () => {
     expect(el.shadowRoot?.childElementCount).to.not.equal(0);
   });
 
-  it("renders org when authenticated", async () => {
+  it("renders 404 when not in org", async () => {
     stub(AuthService, "initSessionStorage").returns(
       Promise.resolve({
         headers: { Authorization: "_fake_headers_" },
@@ -89,7 +94,46 @@ describe("browsertrix-app", () => {
     );
     // @ts-expect-error checkFreshness is private
     stub(AuthService.prototype, "checkFreshness");
-    AppStateService.updateOrgSlug("fake-org");
+
+    AppStateService.updateUser(
+      formatAPIUser({
+        ...mockAPIUser,
+      }),
+    );
+    AppStateService.updateOrgSlug("nonexistent-org");
+    const el = await fixture<App>(
+      html` <browsertrix-app .settings=${mockAppSettings}></browsertrix-app>`,
+    );
+    await el.updateComplete;
+    expect(el.shadowRoot?.querySelector("btrix-not-found")).to.exist;
+  });
+
+  it("renders org when in org", async () => {
+    const id = self.crypto.randomUUID();
+    const mockOrg = {
+      id: id,
+      name: "test org 2",
+      slug: "test-org-2",
+      role: 10,
+    };
+
+    stub(AuthService, "initSessionStorage").returns(
+      Promise.resolve({
+        headers: { Authorization: "_fake_headers_" },
+        tokenExpiresAt: 0,
+        username: "test-auth@example.com",
+      }),
+    );
+    // @ts-expect-error checkFreshness is private
+    stub(AuthService.prototype, "checkFreshness");
+
+    AppStateService.updateUser(
+      formatAPIUser({
+        ...mockAPIUser,
+        orgs: [...mockAPIUser.orgs, mockOrg],
+      }),
+    );
+    AppStateService.updateOrgSlug("test-org-2");
     const el = await fixture<App>(
       html` <browsertrix-app .settings=${mockAppSettings}></browsertrix-app>`,
     );
@@ -202,5 +246,42 @@ describe("browsertrix-app", () => {
     const el = await fixture<App>("<browsertrix-app></browsertrix-app>");
 
     expect(el.appState.orgSlug).to.equal(id);
+  });
+
+  describe(".onLoggedIn()", () => {
+    describe("routing", () => {
+      it("routes to redirect URL if specified", async () => {
+        stub(App.prototype, "routeTo");
+
+        const event = new CustomEvent<LoggedInEventDetail>("btrix-logged-in", {
+          detail: {
+            ...mockAuth,
+            redirectUrl: "/fake-page",
+          },
+        });
+
+        const el = await fixture<App>("<browsertrix-app></browsertrix-app>");
+
+        el.onLoggedIn(event);
+
+        expect(el.routeTo).to.have.been.calledWith("/fake-page");
+      });
+
+      it("falls back to account settings", async () => {
+        stub(App.prototype, "routeTo");
+
+        const event = new CustomEvent<LoggedInEventDetail>("btrix-logged-in", {
+          detail: {
+            ...mockAuth,
+          },
+        });
+
+        const el = await fixture<App>("<browsertrix-app></browsertrix-app>");
+
+        el.onLoggedIn(event);
+
+        expect(el.routeTo).to.have.been.calledWith("/account/settings");
+      });
+    });
   });
 });

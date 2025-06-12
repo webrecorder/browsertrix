@@ -1,6 +1,7 @@
 """Operator Models"""
 
 from collections import defaultdict
+from datetime import datetime
 from uuid import UUID
 from typing import Optional, DefaultDict, Literal, Annotated, Any
 from pydantic import BaseModel, Field
@@ -17,6 +18,8 @@ CJS = f"CrawlJob.{BTRIX_API}"
 
 StopReason = Literal[
     "stopped_by_user",
+    "paused",
+    "stopped_pause_expired",
     "time-limit",
     "size-limit",
     "stopped_storage_quota_reached",
@@ -72,15 +75,18 @@ class CrawlSpec(BaseModel):
     oid: UUID
     org: Organization
     scale: int = 1
+    browser_windows: int = 1
     storage: StorageRef
     started: str
     crawler_channel: str
     stopping: bool = False
+    paused_at: Optional[datetime] = None
     scheduled: bool = False
     timeout: int = 0
     max_crawl_size: int = 0
     qa_source_crawl_id: Optional[str] = ""
     proxy_id: Optional[str] = None
+    is_single_page: bool = False
 
     @property
     def db_crawl_id(self) -> str:
@@ -138,6 +144,8 @@ class PodInfo(BaseModel):
     signalAtMem: Optional[int] = None
 
     evicted: Optional[bool] = False
+
+    lastWorkers: Optional[int] = 0
 
     def dict(self, *a, **kw):
         res = super().dict(*a, **kw)
@@ -201,6 +209,7 @@ class CrawlStatus(BaseModel):
     size: int = 0
     # human readable size string
     sizeHuman: str = ""
+    # number of pods
     scale: int = 1
     filesAdded: int = 0
     filesAddedSize: int = 0

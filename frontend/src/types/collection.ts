@@ -21,6 +21,7 @@ export const publicCollectionSchema = z.object({
   slug: z.string(),
   oid: z.string(),
   orgName: z.string(),
+  orgPublicProfile: z.boolean(),
   name: z.string(),
   created: z.string().datetime(),
   modified: z.string().datetime(),
@@ -40,6 +41,12 @@ export const publicCollectionSchema = z.object({
   crawlCount: z.number(),
   uniquePageCount: z.number(),
   pageCount: z.number(),
+  topPageHosts: z.array(
+    z.object({
+      host: z.string(),
+      count: z.number(),
+    }),
+  ),
   totalSize: z.number(),
   allowPublicDownload: z.boolean(),
   homeUrl: z.string().url().nullable(),

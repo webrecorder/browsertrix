@@ -11,7 +11,7 @@ import queryString from "query-string";
 import type { ArchivedItem, Crawl, Workflow } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import type { PageChangeEvent } from "@/components/ui/pagination";
+import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { ClipboardController } from "@/controllers/clipboard";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { pageHeader } from "@/layouts/pageHeader";
@@ -92,7 +92,7 @@ export class CrawlsList extends BtrixElement {
 
   @state()
   private pagination: Required<APIPaginationQuery> = {
-    page: 1,
+    page: parsePage(new URLSearchParams(location.search).get("page")),
     pageSize: INITIAL_PAGE_SIZE,
   };
 
@@ -669,7 +669,7 @@ export class CrawlsList extends BtrixElement {
   };
 
   private readonly renderStatusMenuItem = (state: CrawlState) => {
-    const { icon, label } = CrawlStatus.getContent(state);
+    const { icon, label } = CrawlStatus.getContent({ state });
 
     return html`<sl-option value=${state}>${icon}${label}</sl-option>`;
   };

@@ -1,4 +1,4 @@
-name: Publish Helm Chart
+name: Make Draft + Upload Helm Chart
 
 on:
   push:
@@ -30,7 +30,7 @@ jobs:
           echo "version=$(cat version.txt)" >> "$GITHUB_ENV"
 
       - name: Upload Chart To GitHub
-        uses: softprops/action-gh-release@v1
+        uses: ncipollo/release-action@v1
         with:
           body: |
             ## Deployment
@@ -50,9 +50,12 @@ jobs:
 
             See [the development guide](https://docs.browsertrix.com/deploy/) for more info how to deploy Browsertrix.
 
-          files: |
-            .chart-out/browsertrix-v${{ env.version }}.tgz
-            .chart-out/btrix-proxies-0.1.0.tgz
-          tag_name: v${{ env.version }}
+          allowUpdates: true
+          artifactErrorsFailBuild: true
+          artifacts: .chart-out/browsertrix-v${{ env.version }}.tgz,.chart-out/btrix-proxies-0.1.0.tgz
           draft: true
-          fail_on_unmatched_files: true
+          generateReleaseNotes: true
+          name: Browsertrix v${{ env.version }}
+          skipIfReleaseExists: true
+          tag: v${{ env.version }}
+          updateOnlyUnreleased: true

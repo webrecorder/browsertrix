@@ -5,6 +5,7 @@ import type {
   SlRadioGroup,
   SlSelectEvent,
 } from "@shoelace-style/shoelace";
+import clsx from "clsx";
 import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -14,7 +15,7 @@ import queryString from "query-string";
 import type { SelectNewDialogEvent } from ".";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import { type PageChangeEvent } from "@/components/ui/pagination";
+import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { type CollectionSavedEvent } from "@/features/collections/collection-edit-dialog";
 import { pageHeading } from "@/layouts/page";
 import { pageHeader } from "@/layouts/pageHeader";
@@ -70,17 +71,17 @@ export class Dashboard extends BtrixElement {
   collectionsView = CollectionGridView.Public;
 
   @state()
-  collectionPage = 1;
+  collectionPage = parsePage(new URLSearchParams(location.search).get("page"));
 
   // Used for busting cache when updating visible collection
   cacheBust = 0;
 
   private readonly colors = {
-    default: "neutral",
-    crawls: "green",
-    uploads: "sky",
-    browserProfiles: "indigo",
-    runningTime: "blue",
+    default: tw`text-neutral-600`,
+    crawls: tw`text-green-600`,
+    uploads: tw`text-sky-600`,
+    browserProfiles: tw`text-indigo-600`,
+    runningTime: tw`text-blue-600`,
   };
 
   private readonly collections = new Task(this, {
@@ -253,7 +254,7 @@ export class Dashboard extends BtrixElement {
                   pluralLabel: msg("Crawls"),
                   iconProps: {
                     name: "gear-wide-connected",
-                    color: this.colors.crawls,
+                    class: this.colors.crawls,
                   },
                 })}
                 ${this.renderStat({
@@ -263,7 +264,7 @@ export class Dashboard extends BtrixElement {
                     : this.localize.bytes(metrics.storageUsedUploads),
                   singleLabel: msg("Upload"),
                   pluralLabel: msg("Uploads"),
-                  iconProps: { name: "upload", color: this.colors.uploads },
+                  iconProps: { name: "upload", class: this.colors.uploads },
                 })}
                 ${this.renderStat({
                   value: metrics.profileCount,
@@ -274,7 +275,7 @@ export class Dashboard extends BtrixElement {
                   pluralLabel: msg("Browser Profiles"),
                   iconProps: {
                     name: "window-fullscreen",
-                    color: this.colors.browserProfiles,
+                    class: this.colors.browserProfiles,
                   },
                 })}
                 <sl-divider
@@ -307,14 +308,19 @@ export class Dashboard extends BtrixElement {
                   iconProps: {
                     name: "dot",
                     library: "app",
-                    color: metrics.workflowsRunningCount ? "green" : "neutral",
+                    class: metrics.workflowsRunningCount
+                      ? tw`animate-pulse text-green-600`
+                      : tw`text-neutral-600`,
                   },
                 })}
                 ${this.renderStat({
                   value: metrics.workflowsQueuedCount,
                   singleLabel: msg("Crawl Workflow Waiting"),
                   pluralLabel: msg("Crawl Workflows Waiting"),
-                  iconProps: { name: "hourglass-split", color: "violet" },
+                  iconProps: {
+                    name: "hourglass-split",
+                    class: tw`text-violet-600`,
+                  },
                 })}
                 <sl-divider
                   style="--spacing:var(--sl-spacing-small)"
@@ -325,7 +331,7 @@ export class Dashboard extends BtrixElement {
                   pluralLabel: msg("Pages Crawled"),
                   iconProps: {
                     name: "file-richtext-fill",
-                    color: this.colors.crawls,
+                    class: this.colors.crawls,
                   },
                 })}
                 ${this.renderStat({
@@ -334,7 +340,7 @@ export class Dashboard extends BtrixElement {
                   pluralLabel: msg("Pages Uploaded"),
                   iconProps: {
                     name: "file-richtext-fill",
-                    color: this.colors.uploads,
+                    class: this.colors.uploads,
                   },
                 })}
                 ${this.renderStat({
@@ -360,7 +366,10 @@ export class Dashboard extends BtrixElement {
                   value: metrics.publicCollectionsCount,
                   singleLabel: msg("Shareable Collection"),
                   pluralLabel: msg("Shareable Collections"),
-                  iconProps: { name: "people-fill", color: "emerald" },
+                  iconProps: {
+                    name: "people-fill",
+                    class: tw`text-emerald-600`,
+                  },
                 })}
               </dl>
             `,
@@ -376,33 +385,35 @@ export class Dashboard extends BtrixElement {
                     ? msg("Public Collections")
                     : msg("All Collections"),
               })}
-              ${this.collectionsView === CollectionGridView.Public
-                ? html` <span class="text-sm text-neutral-400"
-                    >—
-                    <a
-                      href=${`/${RouteNamespace.PublicOrgs}/${this.orgSlugState}`}
-                      class="inline-flex h-8 items-center text-sm font-medium text-primary-500 transition hover:text-primary-600"
-                      @click=${this.navigate.link}
-                    >
+              ${
+                this.collectionsView === CollectionGridView.Public
+                  ? html` <span class="text-sm text-neutral-400"
+                      >—
+                      <a
+                        href=${`/${RouteNamespace.PublicOrgs}/${this.orgSlugState}`}
+                        class="inline-flex h-8 items-center text-sm font-medium text-primary-500 transition hover:text-primary-600"
+                        @click=${this.navigate.link}
+                      >
+                        ${this.org?.enablePublicProfile
+                          ? msg("Visit public collections gallery")
+                          : msg("Preview public collections gallery")}
+                      </a>
+                      <!-- TODO Refactor clipboard code, get URL in a nicer way? -->
                       ${this.org?.enablePublicProfile
-                        ? msg("Visit public collections gallery")
-                        : msg("Preview public collections gallery")}
-                    </a>
-                    <!-- TODO Refactor clipboard code, get URL in a nicer way? -->
-                    ${this.org?.enablePublicProfile
-                      ? html`<btrix-copy-button
-                          value=${new URL(
-                            `/${RouteNamespace.PublicOrgs}/${this.orgSlugState}`,
-                            window.location.toString(),
-                          ).toString()}
-                          content=${msg(
-                            "Copy Link to Public Collections Gallery",
-                          )}
-                          class="inline-block"
-                        ></btrix-copy-button>`
-                      : nothing}
-                  </span>`
-                : nothing}
+                        ? html`<btrix-copy-button
+                            value=${new URL(
+                              `/${RouteNamespace.PublicOrgs}/${this.orgSlugState}`,
+                              window.location.toString(),
+                            ).toString()}
+                            content=${msg(
+                              "Copy Link to Public Collections Gallery",
+                            )}
+                            class="inline-block"
+                          ></btrix-copy-button>`
+                        : nothing}
+                    </span>`
+                  : nothing
+              }
             </div>
             <div class="flex items-center gap-2">
               ${when(
@@ -446,8 +457,7 @@ export class Dashboard extends BtrixElement {
             </div>
           </header>
           <div class="relative rounded-lg border p-10">
-            <btrix-collections-grid
-              slug=${this.orgSlugState || ""}
+            <btrix-collections-grid-with-edit-dialog
               .collections=${this.collections.value?.items}
               .collectionRefreshing=${this.collectionRefreshing}
               ?showVisibility=${this.collectionsView === CollectionGridView.All}
@@ -463,34 +473,41 @@ export class Dashboard extends BtrixElement {
             >
               ${this.renderNoPublicCollections()}
               <span slot="empty-text"
-                >${this.collectionsView === CollectionGridView.Public
-                  ? msg("No public collections yet.")
-                  : msg("No collections yet.")}</span
+                >${
+                  this.collectionsView === CollectionGridView.Public
+                    ? msg("No public collections yet.")
+                    : msg("No collections yet.")
+                }</span
               >
-              ${this.collections.value &&
-              this.collections.value.total > this.collections.value.items.length
-                ? html`
-                    <btrix-pagination
-                      page=${this.collectionPage}
-                      size=${PAGE_SIZE}
-                      totalCount=${this.collections.value.total}
-                      @page-change=${(e: PageChangeEvent) => {
-                        this.collectionPage = e.detail.page;
-                      }}
-                      slot="pagination"
-                    >
-                    </btrix-pagination>
-                  `
-                : nothing}
+              ${
+                this.collections.value &&
+                this.collections.value.total >
+                  this.collections.value.items.length
+                  ? html`
+                      <btrix-pagination
+                        page=${this.collectionPage}
+                        size=${PAGE_SIZE}
+                        totalCount=${this.collections.value.total}
+                        @page-change=${(e: PageChangeEvent) => {
+                          this.collectionPage = e.detail.page;
+                        }}
+                        slot="pagination"
+                      >
+                      </btrix-pagination>
+                    `
+                  : nothing
+              }
             </btrix-collections-grid>
-            ${this.collections.status === TaskStatus.PENDING &&
-            this.collections.value
-              ? html`<div
-                  class="absolute inset-0 rounded-lg bg-stone-50/75 p-24 text-center text-4xl"
-                >
-                  <sl-spinner></sl-spinner>
-                </div>`
-              : nothing}
+            ${
+              this.collections.status === TaskStatus.PENDING &&
+              this.collections.value
+                ? html`<div
+                    class="absolute inset-0 rounded-lg bg-stone-50/75 p-24 text-center text-4xl"
+                  >
+                    <sl-spinner></sl-spinner>
+                  </div>`
+                : nothing
+            }
           </div>
         </section>
       </main>
@@ -559,10 +576,7 @@ export class Dashboard extends BtrixElement {
           isStorageFull,
           () => html`
             <div class="flex items-center gap-2">
-              <sl-icon
-                class="text-danger"
-                name="exclamation-triangle"
-              ></sl-icon>
+              <sl-icon class="text-danger" name="x-octagon"></sl-icon>
               <span>${msg("Storage is Full")}</span>
             </div>
           `,
@@ -780,10 +794,7 @@ export class Dashboard extends BtrixElement {
           isReached,
           () => html`
             <div class="flex items-center gap-2">
-              <sl-icon
-                class="text-danger"
-                name="exclamation-triangle"
-              ></sl-icon>
+              <sl-icon class="text-danger" name="x-octagon"></sl-icon>
               <span>${msg("Execution Minutes Quota Reached")}</span>
             </div>
           `,
@@ -906,18 +917,19 @@ export class Dashboard extends BtrixElement {
     secondaryValue?: number | string | TemplateResult;
     singleLabel: string;
     pluralLabel: string;
-    iconProps: { name: string; library?: string; color?: string };
+    iconProps: { name: string; library?: string; class?: string };
   }) {
     const { value, iconProps } = stat;
     return html`
       <div class="mb-2 flex items-center justify-between last:mb-0">
         <div class="flex items-center">
           <sl-icon
-            class="mr-2 text-base text-neutral-500"
+            class=${clsx(
+              "mr-2 text-base",
+              iconProps.class ?? "text-neutral-600",
+            )}
             name=${iconProps.name}
             library=${ifDefined(iconProps.library)}
-            style="color:var(--sl-color-${iconProps.color ||
-            this.colors.default}-500)"
           ></sl-icon>
           <dt class="order-last">
             ${value === 1 ? stat.singleLabel : stat.pluralLabel}

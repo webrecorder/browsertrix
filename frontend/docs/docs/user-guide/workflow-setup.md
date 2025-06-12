@@ -109,6 +109,23 @@ When enabled, the crawler will check for a sitemap at /sitemap.xml and use it to
 
 This can be useful for discovering and capturing pages on a website that aren't linked to from the seed and which might not otherwise be captured.
 
+### Link Selectors
+
+Instructs the crawler which HTML elements should be used to extract URLs, i.e. considered a “link.” By default, the crawler checks the `href` value of all anchor (`<a>`) elements on a page.
+
+Specifying a custom link selector can be useful for websites that hyperlink to pages using an element other than the standard `<a>` tag, or use an attribute other than `href` to specify the URL.
+
+For example, for a page with the given HTML markup:
+
+```html
+<button class="link" data-href="/blog">Blog</button>
+<button class="link" data-href="/about">About</button>
+```
+
+The _CSS Selector_ for a custom link selector could be `button.link` and its _Link Attribute_ would be `data-href`.
+
+See [Basic CSS selectors (MDN)](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics/Basic_selectors) for examples of valid CSS selectors.
+
 ### Additional Pages
 
 A list of page URLs outside of the _Crawl Scope_ to include in the crawl.
@@ -129,7 +146,7 @@ This can be useful for avoiding crawler traps — sites that may automatically g
 
     e.g: If `#!regex \babout\/?\b` is entered, `example.com/about/` will not be crawled however `example.com/aboutme/` will be crawled.
 
-## Limits
+## Crawl Limits
 
 Enforce maximum limits on your crawl.
 
@@ -145,7 +162,56 @@ The crawl will be gracefully stopped after this set period of elapsed time.
 
 The crawl will be gracefully stopped after reaching this set size in GB.
 
-### Page Load Timeout
+## Page Behavior
+
+Customize how and when the browser performs specific operations on a page.
+
+_**Behaviors**_
+
+Behaviors are browser operations that can be enabled for additional page interactivity.
+
+### Autoscroll
+
+When enabled, the browser will automatically scroll to the end of the page.
+
+### Autoclick
+
+When enabled, the browser will automatically click on all link-like elements.
+
+When clicking a link-like element that would normally result in navigation, autoclick will only record the click and prevent navigation away from the current page.
+
+??? Info "Autoclick use cases"
+    This behavior can be helpful for:
+
+    - Websites that use anchor links (`<a>`) in non-standard ways, such as by using JavaScript in place of the standard `href` attribute to create a hyperlink.
+    
+    - Websites that use `<a>` in place of a `<button>` to reveal in-page content.
+
+#### Click Selector
+
+When autoclick is enabled, you can customize which element is automatically clicked by specifying a CSS selector.
+
+See [Basic CSS selectors (MDN)](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics/Basic_selectors) for examples of valid CSS selectors.
+
+### Use Custom Behaviors
+
+Enable custom behaviors to add your own behavior scripts. See [Browser Behaviors crawler documentation](https://crawler.docs.browsertrix.com/user-guide/behaviors/#built-in-behaviors) on creating custom behaviors.
+
+Custom behaviors can be specified as:
+
+#### URL
+
+A URL for a single JavaScript or JSON behavior file to download. This should be a URL that the crawler has access to. The workflow editor will validate that the supplied URL can be reached.
+
+#### Git repository
+
+A URL for a public Git repository containing one or more behavior files. Optionally, you can specify a branch and/or a relative path within the repository to specify exactly which behavior files within the repository should be used. The workflow editor will validate that the URL can be reached and is a Git repository. If a branch name is specified, the workflow editor will also validate that the branch exists in the Git repository.
+
+_**Page Timing**_
+
+Page timing gives you more granular control over how long the browser should stay on a page and when behaviors should run on a page. Add limits to decrease the amount of time the browser spends on a page, and add delays to increase the amount of time the browser waits on a page. Adding delays will increase the total amount of time spent on a crawl and may impact your overall crawl minutes.
+
+### Page Load Limit
 
 Limits amount of elapsed time to wait for a page to load. Behaviors will run after this timeout only if the page is partially or fully loaded.
 
@@ -153,23 +219,13 @@ Limits amount of elapsed time to wait for a page to load. Behaviors will run aft
 
 Waits on the page after initial HTML page load for a set number of seconds prior to moving on to next steps such as link extraction and behaviors. Can be useful with pages that are slow to load page contents.
 
-### Behavior Timeout
+### Behavior Limit
 
 Limits amount of elapsed time behaviors have to complete.
 
-### Autoscroll Behavior
-
-When enabled, the browser will automatically scroll to the end of the page.
-
-### Autoclick Behavior
-
-When enabled, the browser will automatically click on all links, even if they're empty or don't navigate to another page.
-
-This can be helpful for web applications that use JavaScript to handle navigation and don't link to things properly with `href=""` attributes.
-
 ### Delay Before Next Page
 
-Waits on the page for a set period of elapsed time after any behaviors have finished running. This can be helpful to avoid rate limiting however it will slow down your crawl.
+Waits on the page for a set number of seconds before unloading the current page. If any [behaviors](#autoscroll) are enabled, this delay will take place after all behaviors have finished running. This can be helpful to avoid rate limiting.
 
 ## Browser Settings
 

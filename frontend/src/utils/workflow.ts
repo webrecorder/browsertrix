@@ -1,10 +1,12 @@
 import { msg, str } from "@lit/localize";
 import { z } from "zod";
 
-import { getAppSettings } from "./app";
+import { getAppSettings, type AppSettings } from "./app";
 
 import type { Tags } from "@/components/ui/tag-input";
+import type { UserGuideEventMap } from "@/index";
 import {
+  Behavior,
   ScopeType,
   type Profile,
   type Seed,
@@ -22,16 +24,56 @@ import localize, { getDefaultLang } from "@/utils/localize";
 import { regexUnescape } from "@/utils/string";
 
 export const BYTES_PER_GB = 1e9;
+export const DEFAULT_SELECT_LINKS = ["a[href]->href" as const];
+export const DEFAULT_AUTOCLICK_SELECTOR = "a";
 
 export const SECTIONS = [
   "scope",
-  "perCrawlLimits",
-  "perPageLimits",
+  "limits",
+  "behaviors",
   "browserSettings",
   "scheduling",
+  "metadata",
 ] as const;
 export const sectionsEnum = z.enum(SECTIONS);
 export type SectionsEnum = z.infer<typeof sectionsEnum>;
+
+export enum GuideHash {
+  Scope = "scope",
+  Limits = "crawl-limits",
+  Behaviors = "page-behavior",
+  BrowserSettings = "browser-settings",
+  Scheduling = "scheduling",
+  Metadata = "metadata",
+}
+
+export const workflowTabToGuideHash: Record<SectionsEnum, GuideHash> = {
+  scope: GuideHash.Scope,
+  limits: GuideHash.Limits,
+  behaviors: GuideHash.Behaviors,
+  browserSettings: GuideHash.BrowserSettings,
+  scheduling: GuideHash.Scheduling,
+  metadata: GuideHash.Metadata,
+};
+
+export function makeUserGuideEvent(
+  section: SectionsEnum,
+): UserGuideEventMap["btrix-user-guide-show"] {
+  const userGuideHash =
+    (workflowTabToGuideHash[section] as GuideHash | undefined) ||
+    GuideHash.Scope;
+
+  return new CustomEvent<UserGuideEventMap["btrix-user-guide-show"]["detail"]>(
+    "btrix-user-guide-show",
+    {
+      detail: {
+        path: `workflow-setup/#${userGuideHash}`,
+      },
+      bubbles: true,
+      composed: true,
+    },
+  );
+}
 
 export function defaultLabel(value: unknown): string {
   if (value === Infinity) {
@@ -65,7 +107,7 @@ export type FormState = {
     | (typeof NewWorkflowOnlyScopeType)[keyof typeof NewWorkflowOnlyScopeType];
   exclusions: WorkflowParams["config"]["exclude"];
   pageLimit: WorkflowParams["config"]["limit"];
-  scale: WorkflowParams["scale"];
+  browserWindows: WorkflowParams["browserWindows"];
   blockAds: WorkflowParams["config"]["blockAds"];
   lang: WorkflowParams["config"]["lang"];
   scheduleType: "date" | "cron" | "none";
@@ -77,7 +119,6 @@ export type FormState = {
     minute: number;
     period: "AM" | "PM";
   };
-  runNow: boolean;
   jobName: WorkflowParams["name"];
   browserProfile: Profile | null;
   tags: Tags;
@@ -85,9 +126,12 @@ export type FormState = {
   description: WorkflowParams["description"];
   autoscrollBehavior: boolean;
   autoclickBehavior: boolean;
+  customBehavior: boolean;
   userAgent: string | null;
   crawlerChannel: string;
   proxyId: string | null;
+  selectLinks: string[];
+  clickSelector: string;
 };
 
 export type FormStateField = keyof FormState;
@@ -96,11 +140,11 @@ export type WorkflowDefaults = {
   behaviorTimeoutSeconds?: number;
   pageLoadTimeoutSeconds?: number;
   maxPagesPerCrawl?: number;
-  maxScale: number;
+  maxBrowserWindows: number;
 };
 
 export const appDefaults: WorkflowDefaults = {
-  maxScale: DEFAULT_MAX_SCALE,
+  maxBrowserWindows: DEFAULT_MAX_SCALE,
 };
 
 export const getDefaultFormState = (): FormState => ({
@@ -120,7 +164,7 @@ export const getDefaultFormState = (): FormState => ({
   scopeType: ScopeType.Page,
   exclusions: [],
   pageLimit: null,
-  scale: 1,
+  browserWindows: 2,
   blockAds: true,
   lang: getDefaultLang(),
   scheduleType: "none",
@@ -132,7 +176,6 @@ export const getDefaultFormState = (): FormState => ({
     minute: 0,
     period: "AM",
   },
-  runNow: false,
   jobName: "",
   browserProfile: null,
   tags: [],
@@ -143,6 +186,9 @@ export const getDefaultFormState = (): FormState => ({
   userAgent: null,
   crawlerChannel: "default",
   proxyId: null,
+  selectLinks: DEFAULT_SELECT_LINKS,
+  clickSelector: DEFAULT_AUTOCLICK_SELECTOR,
+  customBehavior: false,
 });
 
 export const mapSeedToUrl = (arr: Seed[]) =>
@@ -234,6 +280,10 @@ export function getInitialFormState(params: {
     return fallback;
   };
 
+  const enableCustomBehaviors = Boolean(
+    params.initialWorkflow.config.customBehaviors.length,
+  );
+
   return {
     ...defaultFormState,
     primarySeedUrl: defaultFormState.primarySeedUrl,
@@ -256,15 +306,11 @@ export function getInitialFormState(params: {
     postLoadDelaySeconds:
       seedsConfig.postLoadDelay ?? defaultFormState.postLoadDelaySeconds,
     maxScopeDepth: primarySeedConfig.depth ?? defaultFormState.maxScopeDepth,
-    scale: params.initialWorkflow.scale,
+    browserWindows: params.initialWorkflow.browserWindows,
     blockAds: params.initialWorkflow.config.blockAds,
     lang: params.initialWorkflow.config.lang ?? defaultFormState.lang,
     scheduleType: defaultFormState.scheduleType,
     scheduleFrequency: defaultFormState.scheduleFrequency,
-    runNow:
-      params.org?.storageQuotaReached || params.org?.execMinutesQuotaReached
-        ? false
-        : defaultFormState.runNow,
     tags: params.initialWorkflow.tags,
     autoAddCollections: params.initialWorkflow.autoAddCollections,
     jobName: params.initialWorkflow.name || defaultFormState.jobName,
@@ -283,11 +329,18 @@ export function getInitialFormState(params: {
     pageLimit:
       params.initialWorkflow.config.limit ?? defaultFormState.pageLimit,
     autoscrollBehavior: params.initialWorkflow.config.behaviors
-      ? params.initialWorkflow.config.behaviors.includes("autoscroll")
-      : defaultFormState.autoscrollBehavior,
+      ? params.initialWorkflow.config.behaviors.includes(Behavior.AutoScroll)
+      : enableCustomBehaviors
+        ? false
+        : defaultFormState.autoscrollBehavior,
     autoclickBehavior: params.initialWorkflow.config.behaviors
-      ? params.initialWorkflow.config.behaviors.includes("autoclick")
-      : defaultFormState.autoclickBehavior,
+      ? params.initialWorkflow.config.behaviors.includes(Behavior.AutoClick)
+      : enableCustomBehaviors
+        ? false
+        : defaultFormState.autoclickBehavior,
+    customBehavior: enableCustomBehaviors,
+    selectLinks: params.initialWorkflow.config.selectLinks,
+    clickSelector: params.initialWorkflow.config.clickSelector,
     userAgent:
       params.initialWorkflow.config.userAgent ?? defaultFormState.userAgent,
     crawlerChannel:
@@ -312,8 +365,8 @@ export async function getServerDefaults(): Promise<WorkflowDefaults> {
     if (data.maxPagesPerCrawl > 0) {
       defaults.maxPagesPerCrawl = data.maxPagesPerCrawl;
     }
-    if (data.maxScale) {
-      defaults.maxScale = data.maxScale;
+    if (data.maxBrowserWindows) {
+      defaults.maxBrowserWindows = data.maxBrowserWindows;
     }
 
     return defaults;
@@ -322,4 +375,27 @@ export async function getServerDefaults(): Promise<WorkflowDefaults> {
   }
 
   return defaults;
+}
+
+export function* rangeBrowserWindows(
+  settings: AppSettings | null,
+): Iterable<number> {
+  if (!settings) {
+    yield 1;
+    return;
+  }
+
+  const { numBrowsersPerInstance, maxBrowserWindows } = settings;
+
+  for (let i = 1; i < numBrowsersPerInstance; i++) {
+    yield i;
+  }
+
+  for (
+    let i = numBrowsersPerInstance;
+    i <= maxBrowserWindows;
+    i += numBrowsersPerInstance
+  ) {
+    yield i;
+  }
 }

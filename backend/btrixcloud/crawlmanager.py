@@ -4,11 +4,11 @@ import os
 import secrets
 
 from typing import Optional, Dict, Tuple
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from fastapi import HTTPException
 
-from .utils import dt_now, date_to_str
+from .utils import dt_now, date_to_str, scale_from_browser_windows
 from .k8sapi import K8sAPI
 
 from .models import StorageRef, CrawlConfig, BgJobType
@@ -33,6 +33,7 @@ class CrawlManager(K8sAPI):
         url: str,
         storage: StorageRef,
         crawler_image: str,
+        image_pull_policy: str,
         baseprofile: str = "",
         profile_filename: str = "",
         proxy_id: str = "",
@@ -57,6 +58,7 @@ class CrawlManager(K8sAPI):
             "vnc_password": secrets.token_hex(16),
             "expire_time": date_to_str(dt_now() + timedelta(seconds=30)),
             "crawler_image": crawler_image,
+            "image_pull_policy": image_pull_policy,
             "proxy_id": proxy_id or DEFAULT_PROXY_ID,
         }
 
@@ -218,6 +220,7 @@ class CrawlManager(K8sAPI):
         warc_prefix: str,
         storage_filename: str,
         profile_filename: str,
+        is_single_page: bool,
     ) -> str:
         """create new crawl job from config"""
         cid = str(crawlconfig.id)
@@ -225,13 +228,16 @@ class CrawlManager(K8sAPI):
 
         await self.has_storage_secret(storage_secret)
 
+        scale = scale_from_browser_windows(crawlconfig.browserWindows)
+
         return await self.new_crawl_job(
             cid,
             userid,
             str(crawlconfig.oid),
             str(storage),
             crawlconfig.crawlerChannel,
-            crawlconfig.scale,
+            scale,
+            crawlconfig.browserWindows,
             crawlconfig.crawlTimeout,
             crawlconfig.maxCrawlSize,
             manual=True,
@@ -239,6 +245,7 @@ class CrawlManager(K8sAPI):
             storage_filename=storage_filename,
             profile_filename=profile_filename,
             proxy_id=crawlconfig.proxyId or DEFAULT_PROXY_ID,
+            is_single_page=is_single_page,
         )
 
     async def reload_running_crawl_config(self, crawl_id: str):
@@ -246,6 +253,26 @@ class CrawlManager(K8sAPI):
         return await self._patch_job(
             crawl_id, {"lastConfigUpdate": date_to_str(dt_now())}
         )
+
+    async def update_running_crawl_config(
+        self, crawl_id: str, crawlconfig: CrawlConfig
+    ):
+        """force update of config for running crawl"""
+        time_now = date_to_str(dt_now())
+
+        # pylint: disable=use-dict-literal
+        patch = dict(
+            crawlerChannel=crawlconfig.crawlerChannel,
+            scale=scale_from_browser_windows(crawlconfig.browserWindows),
+            browserWindows=crawlconfig.browserWindows,
+            timeout=crawlconfig.crawlTimeout,
+            maxCrawlSize=crawlconfig.maxCrawlSize,
+            proxyId=crawlconfig.proxyId or DEFAULT_PROXY_ID,
+            lastConfigUpdate=time_now,
+            restartTime=time_now,
+        )
+
+        return await self._patch_job(crawl_id, patch)
 
     async def create_qa_crawl_job(
         self,
@@ -352,9 +379,13 @@ class CrawlManager(K8sAPI):
         update = date_to_str(dt_now())
         return await self._patch_job(crawl_id, {"restartTime": update})
 
-    async def scale_crawl(self, crawl_id: str, scale: int = 1) -> dict:
+    async def scale_crawl(
+        self, crawl_id: str, scale: int = 1, browser_windows: int = 1
+    ) -> dict:
         """Set the crawl scale (job parallelism) on the specified job"""
-        return await self._patch_job(crawl_id, {"scale": scale})
+        return await self._patch_job(
+            crawl_id, {"scale": scale, "browserWindows": browser_windows}
+        )
 
     async def shutdown_crawl(self, crawl_id: str, graceful=True) -> dict:
         """Request a crawl cancelation or stop by calling an API
@@ -364,6 +395,14 @@ class CrawlManager(K8sAPI):
             return await self._patch_job(crawl_id, patch)
 
         return await self.delete_crawl_job(crawl_id)
+
+    async def pause_resume_crawl(
+        self, crawl_id: str, paused_at: Optional[datetime] = None
+    ) -> dict:
+        """pause or resume a crawl"""
+        return await self._patch_job(
+            crawl_id, {"pausedAt": date_to_str(paused_at) if paused_at else ""}
+        )
 
     async def delete_crawl_configs_for_org(self, org: str) -> None:
         """Delete all crawl configs for given org"""

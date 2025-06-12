@@ -6,9 +6,10 @@ import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import type { PageChangeEvent } from "@/components/ui/pagination";
+import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import needLogin from "@/decorators/needLogin";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
+import { WorkflowTab } from "@/routes";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { Crawl } from "@/types/crawler";
 import type { CrawlState } from "@/types/crawlState";
@@ -34,6 +35,7 @@ const sortableFields: Record<
   },
 };
 const ABORT_REASON_THROTTLE = "throttled";
+const POLL_INTERVAL_SECONDS = 30;
 
 @customElement("btrix-crawls")
 @localized()
@@ -64,6 +66,8 @@ export class Crawls extends BtrixElement {
   private filterBy: Partial<Record<keyof Crawl, unknown>> = {
     state: activeCrawlStates,
   };
+
+  private timerId?: number;
 
   // Use to cancel requests
   private getCrawlsController: AbortController | null = null;
@@ -101,11 +105,13 @@ export class Crawls extends BtrixElement {
   disconnectedCallback(): void {
     this.cancelInProgressGetCrawls();
     super.disconnectedCallback();
+
+    window.clearTimeout(this.timerId);
   }
 
   render() {
     return html`<btrix-document-title
-        title=${msg("Running crawls")}
+        title=${msg("Active Crawls – Admin")}
       ></btrix-document-title>
 
       <div class="mx-auto box-border w-full max-w-screen-desktop px-3 py-4">
@@ -121,9 +127,7 @@ export class Crawls extends BtrixElement {
       <main>
         <header class="contents">
           <div class="mb-3 flex w-full justify-between border-b pb-4">
-            <h1 class="h-8 text-xl font-semibold">
-              ${msg("All Running Crawls")}
-            </h1>
+            <h1 class="h-8 text-xl font-semibold">${msg("Active Crawls")}</h1>
           </div>
           <div
             class="sticky top-2 z-10 mb-3 rounded-lg border bg-neutral-50 p-4"
@@ -253,7 +257,7 @@ export class Crawls extends BtrixElement {
   }
 
   private readonly renderStatusMenuItem = (state: CrawlState) => {
-    const { icon, label } = CrawlStatus.getContent(state);
+    const { icon, label } = CrawlStatus.getContent({ state });
 
     return html`<sl-option value=${state}>${icon}${label}</sl-option>`;
   };
@@ -291,10 +295,14 @@ export class Crawls extends BtrixElement {
   private readonly renderCrawlItem = (crawl: Crawl) => {
     const crawlPath = `/orgs/${this.slugLookup[crawl.oid]}/workflows/${crawl.cid}`;
     return html`
-      <btrix-crawl-list-item href=${`${crawlPath}#watch`} .crawl=${crawl}>
+      <btrix-crawl-list-item
+        href=${`${crawlPath}/${WorkflowTab.LatestCrawl}`}
+        .crawl=${crawl}
+      >
         <sl-menu slot="menu">
           <sl-menu-item
-            @click=${() => this.navigate.to(`${crawlPath}#settings`)}
+            @click=${() =>
+              this.navigate.to(`${crawlPath}/${WorkflowTab.Settings}`)}
           >
             ${msg("View Workflow Settings")}
           </sl-menu-item>
@@ -324,8 +332,16 @@ export class Crawls extends BtrixElement {
    */
   private async fetchCrawls(params?: APIPaginationQuery): Promise<void> {
     this.cancelInProgressGetCrawls();
+    window.clearTimeout(this.timerId);
+
     try {
       this.crawls = await this.getCrawls(params);
+
+      // TODO Refactor to poll task
+      // https://github.com/webrecorder/browsertrix/issues/1716
+      this.timerId = window.setTimeout(() => {
+        void this.fetchCrawls();
+      }, POLL_INTERVAL_SECONDS * 1000);
     } catch (e) {
       if ((e as Error).name === "AbortError") {
         console.debug("Fetch crawls aborted to throttle");
@@ -354,7 +370,10 @@ export class Crawls extends BtrixElement {
       {
         ...this.filterBy,
         ...queryParams,
-        page: queryParams?.page || this.crawls?.page || 1,
+        page:
+          queryParams?.page ||
+          this.crawls?.page ||
+          parsePage(new URLSearchParams(location.search).get("page")),
         pageSize: queryParams?.pageSize || this.crawls?.pageSize || 100,
         sortBy: this.orderBy.field,
         sortDirection: this.orderBy.direction === "desc" ? -1 : 1,

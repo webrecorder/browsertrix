@@ -326,12 +326,12 @@ def crawler_config_id_only(_crawler_create_config_only):
     return _crawler_config_id
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def sample_crawl_data():
     return {
         "runNow": False,
         "name": "Test Crawl",
-        "config": {"seeds": [{"url": "https://example.com/"}]},
+        "config": {"seeds": [{"url": "https://example.com/"}], "extraHops": 1},
         "tags": ["tag1", "tag2"],
     }
 
@@ -509,6 +509,42 @@ def all_crawls_delete_crawl_ids(admin_auth_headers, default_org_id):
 @pytest.fixture(scope="session")
 def all_crawls_delete_config_id(admin_crawl_id):
     return _all_crawls_delete_config_id
+
+
+@pytest.fixture(scope="session")
+def custom_behaviors_crawl_id(admin_auth_headers, default_org_id):
+    crawl_data = {
+        "runNow": True,
+        "name": "Custom Behavior Logs",
+        "config": {
+            "seeds": [{"url": "https://specs.webrecorder.net/"}],
+            "customBehaviors": [
+                "https://raw.githubusercontent.com/webrecorder/browsertrix-crawler/refs/heads/main/tests/custom-behaviors/custom.js"
+            ],
+            "limit": 1,
+        },
+    }
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        headers=admin_auth_headers,
+        json=crawl_data,
+    )
+    data = r.json()
+
+    crawl_id = data["run_now_job"]
+
+    # Wait for crawl to complete
+    while True:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawl_id}/replay.json",
+            headers=admin_auth_headers,
+        )
+        data = r.json()
+        if data["state"] in FINISHED_STATES:
+            break
+        time.sleep(5)
+
+    return crawl_id
 
 
 @pytest.fixture(scope="session")

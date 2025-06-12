@@ -1,0 +1,23 @@
+name: (Webrecorder Team) Planned Feature
+description: For internal Webrecorder use only.
+title: "[Feature]: "
+labels: ["feature design", "ui/ux", "front end", "back end"]
+type: "Feature"
+projects: ["webrecorder/9"]
+body:
+  - type: textarea
+    attributes:
+      label: Description
+      description: A summary of the new or improved feature.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Requirements
+      description: A list of software requirements.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Context
+      description: Additional context.

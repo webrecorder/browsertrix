@@ -8,6 +8,7 @@ from uuid import UUID
 import base64
 import hashlib
 import mimetypes
+import math
 import os
 
 from typing import Optional, List, Dict, Union, Literal, Any, get_args
@@ -30,8 +31,19 @@ from slugify import slugify
 
 from .db import BaseMongoModel
 
+# num browsers per crawler instance
+NUM_BROWSERS = int(os.environ.get("NUM_BROWSERS", 2))
+
+# browser window for constraint (preferred over scale if provided)
+MAX_BROWSER_WINDOWS = os.environ.get("MAX_BROWSER_WINDOWS") or 0
+
 # crawl scale for constraint
-MAX_CRAWL_SCALE = int(os.environ.get("MAX_CRAWL_SCALE", 3))
+if MAX_BROWSER_WINDOWS:
+    MAX_BROWSER_WINDOWS = int(MAX_BROWSER_WINDOWS)
+    MAX_CRAWL_SCALE = math.ceil(MAX_BROWSER_WINDOWS / NUM_BROWSERS)
+else:
+    MAX_CRAWL_SCALE = int(os.environ.get("MAX_CRAWL_SCALE", 3))
+    MAX_BROWSER_WINDOWS = MAX_CRAWL_SCALE * NUM_BROWSERS
 
 # Presign duration must be less than 604800 seconds (one week),
 # so set this one minute short of a week
@@ -52,7 +64,8 @@ MIN_UPLOAD_PART_SIZE = 10000000
 
 EmptyStr = Annotated[str, Field(min_length=0, max_length=0)]
 
-Scale = Annotated[int, Field(strict=True, ge=1, le=MAX_CRAWL_SCALE)]
+Scale = Annotated[int, Field(strict=True, ge=1, le=MAX_CRAWL_SCALE, deprecated=True)]
+BrowserWindowCount = Annotated[int, Field(strict=True, ge=1, le=MAX_BROWSER_WINDOWS)]
 ReviewStatus = Optional[Annotated[int, Field(strict=True, ge=1, le=5)]]
 
 any_http_url_adapter = TypeAdapter(AnyHttpUrlNonStr)
@@ -213,28 +226,6 @@ class UserOrgInfoOut(BaseModel):
 
 
 # ============================================================================
-class UserOut(BaseModel):
-    """Output User model"""
-
-    id: UUID
-
-    name: str = ""
-    email: EmailStr
-    is_superuser: bool = False
-    is_verified: bool = False
-
-    orgs: List[UserOrgInfoOut]
-
-
-# ============================================================================
-class UserEmailWithOrgInfo(BaseModel):
-    """Output model for getting user email list with org info for each"""
-
-    email: EmailStr
-    orgs: List[UserOrgInfoOut]
-
-
-# ============================================================================
 
 ### CRAWL STATES
 
@@ -244,7 +235,9 @@ TYPE_RUNNING_STATES = Literal[
 ]
 RUNNING_STATES = get_args(TYPE_RUNNING_STATES)
 
-TYPE_WAITING_STATES = Literal["starting", "waiting_capacity", "waiting_org_limit"]
+TYPE_WAITING_STATES = Literal[
+    "starting", "waiting_capacity", "waiting_org_limit", "paused"
+]
 WAITING_STATES = get_args(TYPE_WAITING_STATES)
 
 TYPE_FAILED_STATES = Literal[
@@ -258,11 +251,13 @@ FAILED_STATES = get_args(TYPE_FAILED_STATES)
 TYPE_SUCCESSFUL_STATES = Literal[
     "complete",
     "stopped_by_user",
+    "stopped_pause_expired",
     "stopped_storage_quota_reached",
     "stopped_time_quota_reached",
     "stopped_org_readonly",
 ]
 SUCCESSFUL_STATES = get_args(TYPE_SUCCESSFUL_STATES)
+SUCCESSFUL_AND_PAUSED_STATES = ["paused", *SUCCESSFUL_STATES]
 
 TYPE_RUNNING_AND_WAITING_STATES = Literal[TYPE_WAITING_STATES, TYPE_RUNNING_STATES]
 RUNNING_AND_WAITING_STATES = [*WAITING_STATES, *RUNNING_STATES]
@@ -355,10 +350,12 @@ class RawCrawlConfig(BaseModel):
 
     logging: Optional[str] = None
     behaviors: Optional[str] = "autoscroll,autoplay,autofetch,siteSpecific"
+    customBehaviors: List[str] = []
 
     userAgent: Optional[str] = None
 
     selectLinks: List[str] = ["a[href]->href"]
+    clickSelector: str = "a"
 
 
 # ============================================================================
@@ -385,7 +382,11 @@ class CrawlConfigIn(BaseModel):
 
     crawlTimeout: int = 0
     maxCrawlSize: int = 0
+
     scale: Scale = 1
+
+    # Overrides scale if set
+    browserWindows: Optional[BrowserWindowCount] = None
 
     crawlFilenameTemplate: Optional[str] = None
 
@@ -406,7 +407,8 @@ class ConfigRevision(BaseMongoModel):
 
     crawlTimeout: Optional[int] = 0
     maxCrawlSize: Optional[int] = 0
-    scale: Scale = 1
+    scale: Optional[Scale] = 1
+    browserWindows: Optional[BrowserWindowCount] = 2
 
     modified: datetime
     modifiedBy: Optional[UUID] = None
@@ -427,7 +429,9 @@ class CrawlConfigCore(BaseMongoModel):
 
     crawlTimeout: Optional[int] = 0
     maxCrawlSize: Optional[int] = 0
-    scale: Scale = 1
+
+    scale: Optional[Scale] = None
+    browserWindows: BrowserWindowCount = 2
 
     oid: UUID
 
@@ -498,6 +502,9 @@ class CrawlConfigOut(CrawlConfigCore, CrawlConfigAdditional):
     id: UUID
 
     lastCrawlStopping: Optional[bool] = False
+    lastCrawlShouldPause: Optional[bool] = False
+    lastCrawlPausedAt: Optional[datetime] = None
+    lastCrawlPausedExpiry: Optional[datetime] = None
     profileName: Optional[str] = None
     firstSeed: Optional[str] = None
     seedCount: int = 0
@@ -526,6 +533,7 @@ class UpdateCrawlConfig(BaseModel):
     description: Optional[str] = None
     autoAddCollections: Optional[List[UUID]] = None
     runNow: bool = False
+    updateRunning: bool = False
 
     # crawl data: revision tracked
     schedule: Optional[str] = None
@@ -534,7 +542,8 @@ class UpdateCrawlConfig(BaseModel):
     proxyId: Optional[str] = None
     crawlTimeout: Optional[int] = None
     maxCrawlSize: Optional[int] = None
-    scale: Scale = 1
+    scale: Optional[Scale] = None
+    browserWindows: Optional[BrowserWindowCount] = None
     crawlFilenameTemplate: Optional[str] = None
     config: Optional[RawCrawlConfig] = None
 
@@ -562,6 +571,8 @@ class CrawlConfigDefaults(BaseModel):
     userAgent: Optional[str] = None
 
     exclude: Optional[List[str]] = None
+
+    customBehaviors: List[str] = []
 
 
 # ============================================================================
@@ -596,9 +607,10 @@ class CrawlConfigSearchValues(BaseModel):
 class CrawlConfigUpdateResponse(BaseModel):
     """Response model for updating crawlconfigs"""
 
-    updated: bool
+    updated: bool = True
     settings_changed: bool
     metadata_changed: bool
+    updatedRunning: bool = False
 
     storageQuotaReached: Optional[bool] = False
     execMinutesQuotaReached: Optional[bool] = False
@@ -615,6 +627,13 @@ class CrawlConfigDeletedResponse(BaseModel):
 
 
 # ============================================================================
+class ValidateCustomBehavior(BaseModel):
+    """Input model for validating custom behavior URL/Git reference"""
+
+    customBehavior: str
+
+
+# ============================================================================
 
 ### CRAWLER VERSIONS ###
 
@@ -625,6 +644,7 @@ class CrawlerChannel(BaseModel):
 
     id: str
     image: str
+    imagePullPolicy: Optional[str] = None
 
 
 # ============================================================================
@@ -785,6 +805,7 @@ class CoreCrawlable(BaseModel):
     fileCount: int = 0
 
     errors: Optional[List[str]] = []
+    behaviorLogs: Optional[List[str]] = []
 
 
 # ============================================================================
@@ -856,6 +877,7 @@ class CrawlOut(BaseMongoModel):
     tags: Optional[List[str]] = []
 
     errors: Optional[List[str]] = []
+    behaviorLogs: Optional[List[str]] = []
 
     collectionIds: Optional[List[UUID]] = []
 
@@ -869,9 +891,12 @@ class CrawlOut(BaseMongoModel):
     seedCount: Optional[int] = None
     profileName: Optional[str] = None
     stopping: Optional[bool] = False
+    shouldPause: Optional[bool] = False
+    pausedAt: Optional[datetime] = None
     manual: bool = False
     cid_rev: Optional[int] = None
-    scale: Scale = 1
+    scale: Optional[Scale] = None
+    browserWindows: BrowserWindowCount = 2
 
     storageQuotaReached: Optional[bool] = False
     execMinutesQuotaReached: Optional[bool] = False
@@ -956,9 +981,10 @@ class MatchCrawlQueueResponse(BaseModel):
 
 # ============================================================================
 class CrawlScale(BaseModel):
-    """scale the crawl to N parallel containers"""
+    """scale the crawl to N parallel containers or windows"""
 
-    scale: Scale = 1
+    scale: Optional[Scale] = None
+    browserWindows: Optional[BrowserWindowCount] = None
 
 
 # ============================================================================
@@ -1023,6 +1049,7 @@ class Crawl(BaseCrawl, CrawlConfigCore):
     manual: bool = False
 
     stopping: Optional[bool] = False
+    shouldPause: Optional[bool] = False
 
     qaCrawlExecSeconds: int = 0
 
@@ -1049,12 +1076,13 @@ class CrawlCompleteIn(BaseModel):
 class CrawlScaleResponse(BaseModel):
     """Response model for modifying crawl scale"""
 
-    scaled: int
+    scaled: bool
+    browserWindows: int
 
 
 # ============================================================================
-class CrawlError(BaseModel):
-    """Crawl error"""
+class CrawlLogMessage(BaseModel):
+    """Crawl log message"""
 
     timestamp: str
     logLevel: str
@@ -1424,6 +1452,14 @@ class PreloadResource(BaseModel):
 
 
 # ============================================================================
+class HostCount(BaseModel):
+    """Host Count"""
+
+    host: str
+    count: int
+
+
+# ============================================================================
 class Collection(BaseMongoModel):
     """Org collection structure"""
 
@@ -1521,6 +1557,8 @@ class CollOut(BaseMongoModel):
     pagesQueryUrl: str = ""
     downloadUrl: Optional[str] = None
 
+    topPageHosts: List[HostCount] = []
+
 
 # ============================================================================
 class PublicCollOut(BaseMongoModel):
@@ -1531,6 +1569,7 @@ class PublicCollOut(BaseMongoModel):
     slug: str
     oid: UUID
     orgName: str
+    orgPublicProfile: bool
     description: Optional[str] = None
     caption: Optional[str] = None
     created: Optional[datetime] = None
@@ -1554,6 +1593,8 @@ class PublicCollOut(BaseMongoModel):
     defaultThumbnailName: Optional[str] = None
 
     allowPublicDownload: bool = True
+
+    topPageHosts: List[HostCount] = []
 
 
 # ============================================================================
@@ -1589,6 +1630,13 @@ class CollectionSearchValuesResponse(BaseModel):
     """Response model for collections search values"""
 
     names: List[str]
+
+
+# ============================================================================
+class CollectionAllResponse(BaseModel):
+    """Response model for '$all' collection endpoint"""
+
+    resources: List[CrawlFileOut] = []
 
 
 # ============================================================================
@@ -1659,6 +1707,7 @@ class S3StorageIn(BaseModel):
     endpoint_url: str
     bucket: str
     access_endpoint_url: Optional[str] = None
+    access_addressing_style: Literal["virtual", "path"] = "virtual"
     region: str = ""
 
 
@@ -1673,6 +1722,7 @@ class S3Storage(BaseModel):
     access_key: str
     secret_key: str
     access_endpoint_url: str
+    access_addressing_style: Literal["virtual", "path"] = "virtual"
     region: str = ""
 
 
@@ -1830,6 +1880,36 @@ class SubscriptionCanceledResponse(BaseModel):
 
     deleted: bool
     canceled: bool
+
+
+# ============================================================================
+# User Org Info With Subs
+# ============================================================================
+class UserOrgInfoOutWithSubs(UserOrgInfoOut):
+    """org per user with sub info"""
+
+    readOnly: bool
+    readOnlyReason: Optional[str] = None
+
+    subscription: Optional[Subscription] = None
+
+
+# ============================================================================
+class UserOutNoId(BaseModel):
+    """Output User Model, no ID"""
+
+    name: str = ""
+    email: EmailStr
+    orgs: List[UserOrgInfoOut | UserOrgInfoOutWithSubs]
+    is_verified: bool = False
+
+
+# ============================================================================
+class UserOut(UserOutNoId):
+    """Output User Model"""
+
+    id: UUID
+    is_superuser: bool = False
 
 
 # ============================================================================
@@ -2062,10 +2142,14 @@ class Organization(BaseMongoModel):
                 if not role:
                     continue
 
-                result["users"][id_] = {
+                email = org_user.get("email")
+                if not email:
+                    continue
+
+                result["users"][email] = {
                     "role": role,
                     "name": org_user.get("name", ""),
-                    "email": org_user.get("email", ""),
+                    "email": email,
                 }
 
         return OrgOut.from_dict(result)
@@ -2868,17 +2952,17 @@ class PaginatedWebhookNotificationResponse(PaginatedResponse):
 
 
 # ============================================================================
-class PaginatedCrawlErrorResponse(PaginatedResponse):
-    """Response model for crawl errors"""
+class PaginatedCrawlLogResponse(PaginatedResponse):
+    """Response model for crawl logs"""
 
-    items: List[CrawlError]
+    items: List[CrawlLogMessage]
 
 
 # ============================================================================
-class PaginatedUserEmailsResponse(PaginatedResponse):
+class PaginatedUserOutResponse(PaginatedResponse):
     """Response model for user emails with org info"""
 
-    items: List[UserEmailWithOrgInfo]
+    items: List[UserOutNoId]
 
 
 # ============================================================================

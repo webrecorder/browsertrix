@@ -24,7 +24,7 @@ module.exports = {
     "^~assets/(.*)",
     "",
   ],
-  importOrderParserPlugins: ["typescript", "decorators-legacy"],
+  importOrderParserPlugins: ["typescript", "jsx", "decorators-legacy"],
   overrides: [
     {
       files: "**/*.xlf",
@@ -35,6 +35,12 @@ module.exports = {
         xmlSortAttributesByKey: false,
         xmlWhitespaceSensitivity: "preserve",
         xmlSelfClosingSpace: false,
+      },
+    },
+    {
+      files: "**/*.mdx",
+      options: {
+        proseWrap: "always",
       },
     },
   ],

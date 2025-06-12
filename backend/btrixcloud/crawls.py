@@ -22,9 +22,11 @@ from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import (
     dt_now,
     date_to_str,
-    parse_jsonl_error_messages,
+    parse_jsonl_log_messages,
     stream_dict_list_as_csv,
     validate_regexes,
+    scale_from_browser_windows,
+    browser_windows_from_scale,
 )
 from .basecrawls import BaseCrawlOps
 from .crawlmanager import CrawlManager
@@ -49,7 +51,7 @@ from .models import (
     Seed,
     PaginatedCrawlOutResponse,
     PaginatedSeedResponse,
-    PaginatedCrawlErrorResponse,
+    PaginatedCrawlLogResponse,
     RUNNING_AND_WAITING_STATES,
     SUCCESSFUL_STATES,
     NON_RUNNING_STATES,
@@ -186,7 +188,7 @@ class CrawlOps(BaseCrawlOps):
             {"$match": query},
             {"$set": {"firstSeedObject": {"$arrayElemAt": ["$config.seeds", 0]}}},
             {"$set": {"firstSeed": "$firstSeedObject.url"}},
-            {"$unset": ["firstSeedObject", "errors", "config"]},
+            {"$unset": ["firstSeedObject", "errors", "behaviorLogs", "config"]},
             {"$set": {"activeQAStats": "$qa.stats"}},
             {
                 "$set": {
@@ -368,7 +370,8 @@ class CrawlOps(BaseCrawlOps):
             oid=crawlconfig.oid,
             cid=crawlconfig.id,
             cid_rev=crawlconfig.rev,
-            scale=crawlconfig.scale,
+            scale=scale_from_browser_windows(crawlconfig.browserWindows),
+            browserWindows=crawlconfig.browserWindows,
             jobType=crawlconfig.jobType,
             config=crawlconfig.config,
             profileid=crawlconfig.profileid,
@@ -392,16 +395,27 @@ class CrawlOps(BaseCrawlOps):
             pass
 
     async def update_crawl_scale(
-        self, crawl_id: str, org: Organization, crawl_scale: CrawlScale, user: User
+        self,
+        crawl_id: str,
+        org: Organization,
+        scale: int,
+        browser_windows: int,
+        user: User,
     ) -> bool:
         """Update crawl scale in the db"""
         crawl = await self.get_crawl(crawl_id, org)
-        update = UpdateCrawlConfig(scale=crawl_scale.scale)
+
+        update = UpdateCrawlConfig(browserWindows=browser_windows)
         await self.crawl_configs.update_crawl_config(crawl.cid, org, user, update)
 
         result = await self.crawls.find_one_and_update(
             {"_id": crawl_id, "type": "crawl", "oid": org.id},
-            {"$set": {"scale": crawl_scale.scale}},
+            {
+                "$set": {
+                    "scale": scale,
+                    "browserWindows": browser_windows,
+                }
+            },
             return_document=pymongo.ReturnDocument.AFTER,
         )
 
@@ -529,7 +543,7 @@ class CrawlOps(BaseCrawlOps):
 
         cid = crawl.cid
 
-        scale = crawl.scale or 1
+        browser_windows = crawl.browserWindows or 2
 
         async with self.get_redis(crawl_id) as redis:
             query = {
@@ -538,6 +552,7 @@ class CrawlOps(BaseCrawlOps):
             }
             query_str = json.dumps(query)
 
+            scale = scale_from_browser_windows(browser_windows)
             for i in range(0, scale):
                 await redis.rpush(f"crawl-{crawl_id}-{i}:msg", query_str)
 
@@ -670,6 +685,17 @@ class CrawlOps(BaseCrawlOps):
         )
         return res is not None
 
+    async def add_crawl_behavior_log(
+        self,
+        crawl_id: str,
+        log_line: str,
+    ) -> bool:
+        """add crawl behavior log from redis to mongodb behaviorLogs field"""
+        res = await self.crawls.find_one_and_update(
+            {"_id": crawl_id}, {"$push": {"behaviorLogs": log_line}}
+        )
+        return res is not None
+
     async def add_crawl_file(
         self, crawl_id: str, is_qa: bool, crawl_file: CrawlFile, size: int
     ) -> bool:
@@ -757,6 +783,39 @@ class CrawlOps(BaseCrawlOps):
             crawls_data.append(data)
 
         return crawls_data
+
+    async def pause_crawl(
+        self, crawl_id: str, org: Organization, pause: bool
+    ) -> Dict[str, bool]:
+        """pause or resume a crawl temporarily"""
+        crawl = await self.get_base_crawl(crawl_id, org)
+        if crawl and crawl.type != "crawl":
+            raise HTTPException(status_code=400, detail="not_a_crawl")
+
+        result = None
+
+        if pause:
+            paused_at = dt_now()
+        else:
+            paused_at = None
+
+        try:
+            result = await self.crawl_manager.pause_resume_crawl(
+                crawl_id, paused_at=paused_at
+            )
+
+            if result.get("success"):
+                await self.crawls.find_one_and_update(
+                    {"_id": crawl_id, "type": "crawl", "oid": org.id},
+                    {"$set": {"shouldPause": pause, "pausedAt": paused_at}},
+                )
+
+                return {"success": True}
+        # pylint: disable=bare-except
+        except:
+            pass
+
+        raise HTTPException(status_code=404, detail="crawl_not_found")
 
     async def shutdown_crawl(
         self, crawl_id: str, org: Organization, graceful: bool
@@ -1232,6 +1291,22 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
         return await ops.shutdown_crawl(crawl_id, org, graceful=True)
 
     @app.post(
+        "/orgs/{oid}/crawls/{crawl_id}/pause",
+        tags=["crawls"],
+        response_model=SuccessResponse,
+    )
+    async def pause_crawl(crawl_id, org: Organization = Depends(org_crawl_dep)):
+        return await ops.pause_crawl(crawl_id, org, pause=True)
+
+    @app.post(
+        "/orgs/{oid}/crawls/{crawl_id}/resume",
+        tags=["crawls"],
+        response_model=SuccessResponse,
+    )
+    async def resume_crawl(crawl_id, org: Organization = Depends(org_crawl_dep)):
+        return await ops.pause_crawl(crawl_id, org, pause=False)
+
+    @app.post(
         "/orgs/{oid}/crawls/delete",
         tags=["crawls"],
         response_model=DeletedCountResponseQuota,
@@ -1464,20 +1539,31 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
         response_model=CrawlScaleResponse,
     )
     async def scale_crawl(
-        scale: CrawlScale,
+        crawl_scale: CrawlScale,
         crawl_id,
         user: User = Depends(user_dep),
         org: Organization = Depends(org_crawl_dep),
     ):
-        await ops.update_crawl_scale(crawl_id, org, scale, user)
+        if crawl_scale.browserWindows:
+            browser_windows = crawl_scale.browserWindows
+            scale = scale_from_browser_windows(browser_windows)
+        elif crawl_scale.scale:
+            scale = crawl_scale.scale
+            browser_windows = browser_windows_from_scale(scale)
+        else:
+            raise HTTPException(
+                status_code=400, detail="browser_windows_or_scale_required"
+            )
 
-        result = await ops.crawl_manager.scale_crawl(crawl_id, scale.scale)
+        await ops.update_crawl_scale(crawl_id, org, scale, browser_windows, user)
+
+        result = await ops.crawl_manager.scale_crawl(crawl_id, scale, browser_windows)
         if not result or not result.get("success"):
             raise HTTPException(
                 status_code=400, detail=result.get("error") or "unknown"
             )
 
-        return {"scaled": scale.scale}
+        return {"scaled": True, "browserWindows": browser_windows}
 
     @app.get(
         "/orgs/{oid}/crawls/{crawl_id}/access",
@@ -1595,7 +1681,7 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
     @app.get(
         "/orgs/{oid}/crawls/{crawl_id}/errors",
         tags=["crawls"],
-        response_model=PaginatedCrawlErrorResponse,
+        response_model=PaginatedCrawlLogResponse,
     )
     async def get_crawl_errors(
         crawl_id: str,
@@ -1609,7 +1695,31 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
         upper_bound = skip + pageSize
 
         errors = crawl.errors[skip:upper_bound] if crawl.errors else []
-        parsed_errors = parse_jsonl_error_messages(errors)
+        parsed_errors = parse_jsonl_log_messages(errors)
         return paginated_format(parsed_errors, len(crawl.errors or []), page, pageSize)
+
+    @app.get(
+        "/orgs/{oid}/crawls/{crawl_id}/behaviorLogs",
+        tags=["crawls"],
+        response_model=PaginatedCrawlLogResponse,
+    )
+    async def get_crawl_behavior_logs(
+        crawl_id: str,
+        pageSize: int = DEFAULT_PAGE_SIZE,
+        page: int = 1,
+        org: Organization = Depends(org_viewer_dep),
+    ):
+        crawl = await ops.get_crawl(crawl_id, org)
+
+        skip = (page - 1) * pageSize
+        upper_bound = skip + pageSize
+
+        behavior_logs = (
+            crawl.behaviorLogs[skip:upper_bound] if crawl.behaviorLogs else []
+        )
+        parsed_logs = parse_jsonl_log_messages(behavior_logs)
+        return paginated_format(
+            parsed_logs, len(crawl.behaviorLogs or []), page, pageSize
+        )
 
     return ops

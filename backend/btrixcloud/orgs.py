@@ -79,6 +79,8 @@ from .models import (
     OrgSlugsResponse,
     OrgImportResponse,
     OrgPublicProfileUpdate,
+    MAX_BROWSER_WINDOWS,
+    MAX_CRAWL_SCALE,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import (
@@ -86,7 +88,9 @@ from .utils import (
     slug_from_name,
     validate_slug,
     get_duplicate_key_error_field,
+    validate_language_code,
     JSONSerializer,
+    browser_windows_from_scale,
 )
 
 if TYPE_CHECKING:
@@ -103,8 +107,6 @@ else:
 
 
 DEFAULT_ORG = os.environ.get("DEFAULT_ORG", "My Organization")
-
-MAX_CRAWL_SCALE = int(os.environ.get("MAX_CRAWL_SCALE", 3))
 
 # number of items to delete at a time
 DEL_ITEMS = 1000
@@ -548,6 +550,17 @@ class OrgOps:
         )
         return Organization.from_dict(org_data) if org_data else None
 
+    async def is_subscription_activated(self, sub_id: str) -> bool:
+        """return true if subscription for this org was 'activated', eg. at least
+        one user has signed up and changed the slug
+        """
+        org_data = await self.orgs.find_one({"subscription.subId": sub_id})
+        if not org_data:
+            return False
+
+        org = Organization.from_dict(org_data)
+        return len(org.users) > 0 and org.slug != str(org.id)
+
     async def update_custom_storages(self, org: Organization) -> bool:
         """Update storage on an existing organization"""
 
@@ -643,6 +656,9 @@ class OrgOps:
         self, org: Organization, defaults: CrawlConfigDefaults
     ):
         """Update crawling defaults"""
+        if defaults.lang:
+            validate_language_code(defaults.lang)
+
         res = await self.orgs.find_one_and_update(
             {"_id": org.id},
             {"$set": {"crawlingDefaults": defaults.model_dump()}},
@@ -1251,9 +1267,13 @@ class OrgOps:
                 if old_userid and old_userid in user_id_map:
                     workflow[userid_field] = user_id_map[old_userid]
 
-            # Ensure scale isn't above max_scale
-            workflow_scale = workflow.get("scale", 1)
-            workflow["scale"] = max(workflow_scale, MAX_CRAWL_SCALE)
+            # Convert scale to browser windows and respect limits
+            workflow_scale = max(workflow.get("scale", 1), MAX_CRAWL_SCALE)
+            if workflow.get("browserWindows") is None:
+                workflow_browser_windows = browser_windows_from_scale(workflow_scale)
+                workflow["browserWindows"] = max(
+                    workflow_browser_windows, MAX_BROWSER_WINDOWS
+                )
 
             # Ensure crawlerChannel is set
             if not workflow.get("crawlerChannel"):
@@ -1284,6 +1304,13 @@ class OrgOps:
                 # Ensure crawlerChannel is set
                 if not item.get("crawlerChannel"):
                     item["crawlerChannel"] = "default"
+
+                # Set browserWindows
+                browser_windows = item.get("browserWindows")
+                if browser_windows is None:
+                    browser_windows = browser_windows_from_scale(item.get("scale", 1))
+                item["browserWindows"] = max(browser_windows, MAX_BROWSER_WINDOWS)
+
                 item_obj = Crawl.from_dict(item)
             if item["type"] == "upload":
                 item_obj = UploadedCrawl.from_dict(item)  # type: ignore

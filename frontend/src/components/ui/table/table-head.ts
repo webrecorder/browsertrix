@@ -9,13 +9,12 @@ import { type TableHeaderCell } from "./table-header-cell";
 
 /**
  * @csspart base
- * @cssproperty --btrix-table-grid-column
  */
 @customElement("btrix-table-head")
 export class TableHead extends LitElement {
   static styles = css`
     :host {
-      grid-column: var(--btrix-table-grid-column);
+      grid-column: 1 / -1;
       display: grid;
       grid-template-columns: subgrid;
       color: var(--sl-color-neutral-700);

@@ -19,11 +19,12 @@ import {
 } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import type { PageChangeEvent } from "@/components/ui/pagination";
+import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { type SelectEvent } from "@/components/ui/search-combobox";
 import { ClipboardController } from "@/controllers/clipboard";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
 import { pageHeader } from "@/layouts/pageHeader";
+import { WorkflowTab } from "@/routes";
 import scopeTypeLabels from "@/strings/crawl-workflows/scopeType";
 import { deleteConfirmation } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
@@ -585,7 +586,7 @@ export class WorkflowsList extends BtrixElement {
           <sl-menu-item
             @click=${() =>
               this.navigate.to(
-                `${this.navigate.orgBasePath}/workflows/${workflow.id}#watch`,
+                `${this.navigate.orgBasePath}/workflows/${workflow.id}/${WorkflowTab.LatestCrawl}`,
                 {
                   dialog: "scale",
                 },
@@ -598,7 +599,7 @@ export class WorkflowsList extends BtrixElement {
             ?disabled=${workflow.lastCrawlState !== "running"}
             @click=${() =>
               this.navigate.to(
-                `${this.navigate.orgBasePath}/workflows/${workflow.id}#watch`,
+                `${this.navigate.orgBasePath}/workflows/${workflow.id}/${WorkflowTab.LatestCrawl}`,
                 {
                   dialog: "exclusions",
                 },
@@ -748,7 +749,10 @@ export class WorkflowsList extends BtrixElement {
     const query = queryString.stringify(
       {
         ...this.filterBy,
-        page: queryParams?.page || this.workflows?.page || 1,
+        page:
+          queryParams?.page ||
+          this.workflows?.page ||
+          parsePage(new URLSearchParams(location.search).get("page")),
         pageSize:
           queryParams?.pageSize ||
           this.workflows?.pageSize ||
@@ -800,7 +804,6 @@ export class WorkflowsList extends BtrixElement {
           str`Only first ${this.localize.number(SEEDS_MAX)} URLs were copied.`,
         ),
         variant: "warning",
-        icon: "exclamation-triangle",
         id: "workflow-copied-status",
       });
     } else {
@@ -897,7 +900,8 @@ export class WorkflowsList extends BtrixElement {
             <br />
             <a
               class="underline hover:no-underline"
-              href="${this.navigate.orgBasePath}/workflows/${workflow.id}#watch"
+              href="${this.navigate
+                .orgBasePath}/workflows/${workflow.id}/${WorkflowTab.LatestCrawl}"
               @click=${this.navigate.link.bind(this)}
               >Watch crawl</a
             >`,

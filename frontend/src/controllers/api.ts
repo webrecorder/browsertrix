@@ -2,7 +2,7 @@ import { msg } from "@lit/localize";
 import type { ReactiveController, ReactiveControllerHost } from "lit";
 import throttle from "lodash/fp/throttle";
 
-import { APIError, type Detail } from "@/utils/api";
+import { APIError } from "@/utils/api";
 import AuthService from "@/utils/AuthService";
 import appState from "@/utils/state";
 
@@ -101,6 +101,7 @@ export class APIController implements ReactiveController {
     }
 
     let errorDetail;
+    let errorDetails = null;
     try {
       errorDetail = (await resp.json()).detail;
     } catch {
@@ -151,6 +152,8 @@ export class APIController implements ReactiveController {
         if (typeof errorDetail === "string") {
           errorMessage = errorDetail;
         } else if (Array.isArray(errorDetail) && errorDetail.length) {
+          errorDetails = errorDetail;
+
           const fieldDetail = errorDetail[0] || {};
           const { loc, msg } = fieldDetail;
 
@@ -166,7 +169,8 @@ export class APIController implements ReactiveController {
     throw new APIError({
       message: errorMessage,
       status: resp.status,
-      details: errorDetail as Detail[],
+      details: errorDetails,
+      errorCode: errorDetail,
     });
   }
 

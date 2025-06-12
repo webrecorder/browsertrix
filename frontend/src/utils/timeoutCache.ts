@@ -10,7 +10,7 @@ export function timeoutCache(seconds: number) {
       this.cache[key] = value;
       setTimeout(() => {
         try {
-          delete this.cache[key as string];
+          delete this.cache[key];
         } catch (_) {
           /* empty */
           console.debug("missing key", key);

@@ -6,6 +6,7 @@ extra_css:
   - stylesheets/extra.css
 extra_javascript:
   - js/insertversion.js
+  - js/embed.js
 theme:
   name: material
   custom_dir: docs/overrides
@@ -32,7 +33,7 @@ theme:
       tip: bootstrap/exclamation-circle-fill
       success: bootstrap/check-circle-fill
       question: bootstrap/question-circle-fill
-      warning: bootstrap/exclamation-triangle-fill
+      warning: bootstrap/exclamation-diamond-fill
       failure: bootstrap/x-octagon-fill
       danger: bootstrap/exclamation-diamond-fill
       bug: bootstrap/bug-fill
@@ -46,8 +47,8 @@ theme:
 nav:
   - Overview: index.md
   - User Guide:
+      - user-guide/index.md
       - Getting Started:
-          - user-guide/index.md
           - user-guide/signup.md
           - user-guide/getting-started.md
       - Orgs:
@@ -63,6 +64,7 @@ nav:
           - user-guide/review.md
       - Collections:
           - user-guide/collection.md
+          - user-guide/public-collections-gallery.md
           - user-guide/presentation-sharing.md
       - Browser Profiles:
           - user-guide/browser-profiles.md
@@ -88,9 +90,16 @@ nav:
   - Development:
       - develop/index.md
       - develop/local-dev-setup.md
-      - develop/frontend-dev.md
-      - develop/localization.md
       - develop/docs.md
+
+      - UI Development:
+        - develop/frontend-dev.md
+        - develop/ui/components.md
+        - develop/ui/storybook.md
+        - develop/localization.md
+        - Design:
+          - develop/ui/design-action-menus.md
+          - develop/ui/design-status-icons.md
 
   - API Reference: !ENV [ API_DOCS_URL, "/api/" ]
 

@@ -12,6 +12,7 @@ module.exports = {
     "plugin:import-x/recommended",
     "plugin:wc/recommended",
     "plugin:lit/recommended",
+    "plugin:storybook/recommended",
     "prettier",
   ],
   plugins: ["@typescript-eslint", "lit"],
@@ -138,7 +139,14 @@ module.exports = {
       typescript: true,
     },
   },
-  ignorePatterns: ["__generated__", "__mocks__", "dist", "docs"],
+  ignorePatterns: [
+    "__generated__",
+    "__mocks__",
+    "dist",
+    "docs",
+    "!.storybook",
+    "storybook-static",
+  ],
   overrides: [
     {
       extends: ["plugin:@typescript-eslint/disable-type-checked"],
@@ -159,6 +167,19 @@ module.exports = {
       rules: {
         "@typescript-eslint/no-floating-promises": "off",
         "@typescript-eslint/no-unsafe-call": "off",
+      },
+    },
+    {
+      files: [".storybook/**/*.tsx"],
+      extends: [
+        "eslint:recommended",
+        "plugin:@typescript-eslint/eslint-recommended",
+        "plugin:import-x/recommended",
+        "plugin:storybook/recommended",
+        "prettier",
+      ],
+      parserOptions: {
+        project: [".storybook/tsconfig.json"],
       },
     },
   ],

@@ -15,7 +15,7 @@ import queryString from "query-string";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { type Dialog } from "@/components/ui/dialog";
-import type { PageChangeEvent } from "@/components/ui/pagination";
+import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { ClipboardController } from "@/controllers/clipboard";
 import { iconFor as iconForPageReview } from "@/features/qa/page-list/helpers";
 import * as pageApproval from "@/features/qa/page-list/helpers/approval";
@@ -77,10 +77,8 @@ function statusWithIcon(
 export class ArchivedItemDetailQA extends BtrixElement {
   static styles = css`
     btrix-table {
-      --btrix-cell-padding-top: var(--sl-spacing-x-small);
-      --btrix-cell-padding-bottom: var(--sl-spacing-x-small);
-      --btrix-cell-padding-left: var(--sl-spacing-small);
-      --btrix-cell-padding-right: var(--sl-spacing-small);
+      --btrix-table-cell-padding-x: var(--sl-spacing-small);
+      --btrix-table-cell-padding-y: var(--sl-spacing-x-small);
     }
   `;
 
@@ -754,7 +752,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
     return html`
       <btrix-table
         class="-mx-3 overflow-x-auto px-5"
-        style="grid-template-columns: ${[
+        style="--btrix-table-grid-template-columns: ${[
           "[clickable-start] minmax(12rem, auto)",
           "minmax(min-content, 12rem)",
           "minmax(min-content, 12rem) [clickable-end]",
@@ -799,12 +797,12 @@ export class ArchivedItemDetailQA extends BtrixElement {
                 <btrix-table-cell>
                   ${page.notes?.length
                     ? html`
-                        <sl-tooltip class="invert-tooltip">
+                        <btrix-popover>
                           <div slot="content">
-                            <div class="text-xs text-neutral-400">
+                            <div class="mb-1 text-xs text-neutral-400">
                               ${msg("Newest comment:")}
                             </div>
-                            <div class="leading04 max-w-60 text-xs">
+                            <div class="max-w-60 text-xs leading-4">
                               ${page.notes[page.notes.length - 1].text}
                             </div>
                           </div>
@@ -815,7 +813,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
                             ></sl-icon>`,
                             `${this.localize.number(page.notes.length)} ${pluralOf("comments", page.notes.length)}`,
                           )}
-                        </sl-tooltip>
+                        </btrix-popover>
                       `
                     : html`<span class="text-neutral-400">
                         ${msg("None")}
@@ -892,7 +890,10 @@ export class ArchivedItemDetailQA extends BtrixElement {
       }
 
       this.pages = await this.getPages({
-        page: params?.page ?? this.pages?.page ?? 1,
+        page:
+          params?.page ??
+          this.pages?.page ??
+          parsePage(new URLSearchParams(location.search).get("page")),
         pageSize: params?.pageSize ?? this.pages?.pageSize ?? 10,
         sortBy,
         sortDirection,

@@ -1,0 +1,16 @@
+name: Documentation / User Guide Change
+description: Request an update to https://docs.browsertrix.com.
+title: "[Docs]: "
+labels: ["documentation"]
+type: "Task"
+body:
+  - type: textarea
+    attributes:
+      label: Description
+      description: A summary of the change.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Context
+      description: Additional context.

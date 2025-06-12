@@ -10,6 +10,14 @@ export enum ScopeType {
   Any = "any",
 }
 
+export enum Behavior {
+  AutoScroll = "autoscroll",
+  AutoClick = "autoclick",
+  AutoPlay = "autoplay",
+  AutoFetch = "autofetch",
+  SiteSpecific = "siteSpecific",
+}
+
 export type Seed = {
   url: string;
   scopeType: ScopeType | undefined;
@@ -37,6 +45,8 @@ export type SeedConfig = Expand<
     depth?: number | null;
     userAgent?: string | null;
     selectLinks: string[];
+    customBehaviors: string[];
+    clickSelector: string;
   }
 >;
 
@@ -46,7 +56,7 @@ export type WorkflowParams = {
   jobType?: JobType;
   name: string;
   schedule: string;
-  scale: number;
+  browserWindows: number;
   profileid: string | null;
   config: SeedConfig;
   tags: string[];
@@ -82,6 +92,11 @@ export type Workflow = CrawlConfig & {
   lastCrawlSize: number | null;
   lastStartedByName: string | null;
   lastCrawlStopping: boolean | null;
+  // User has requested pause, but actual state can be running or paused
+  // OR user has requested resume, but actual state is not running
+  lastCrawlShouldPause: boolean | null;
+  lastCrawlPausedAt: string | null;
+  lastCrawlPausedExpiry: string | null;
   lastRun: string;
   totalSize: string | null;
   inactive: boolean;
@@ -178,6 +193,8 @@ export type Crawl = ArchivedItemBase &
     schedule: string;
     manual: boolean;
     scale: number;
+    browserWindows: number;
+    shouldPause: boolean | null;
     resources?: {
       name: string;
       path: string;
@@ -237,4 +254,31 @@ export type ArchivedItemPage = {
   modified?: string;
   approved?: boolean | null;
   notes?: ArchivedItemPageComment[];
+};
+
+export enum CrawlLogLevel {
+  Fatal = "fatal",
+  Error = "error",
+  Warning = "warn",
+  Info = "info",
+  Debug = "debug",
+}
+
+export enum CrawlLogContext {
+  General = "general",
+  Behavior = "behavior",
+  BehaviorScript = "behaviorScript",
+  BehaviorScriptCustom = "behaviorScriptCustom",
+}
+
+export type CrawlLog = {
+  timestamp: string;
+  logLevel: CrawlLogLevel;
+  details: Record<string, unknown> & {
+    behavior?: string;
+    page?: string;
+    stack?: string;
+  };
+  context: CrawlLogContext | string;
+  message: string;
 };

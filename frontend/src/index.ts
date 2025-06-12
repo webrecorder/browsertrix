@@ -1,7 +1,9 @@
 import "./utils/polyfills";
+import "./global";
 
 import { provide } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
+import { Task } from "@lit/task";
 import type {
   SlDialog,
   SlDrawer,
@@ -13,16 +15,11 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { until } from "lit/directives/until.js";
 import { when } from "lit/directives/when.js";
 import isEqual from "lodash/fp/isEqual";
+import queryString from "query-string";
 
-import "broadcastchannel-polyfill";
-import "construct-style-sheets-polyfill";
-import "./shoelace";
 import "./components";
 import "./features";
 import "./pages";
-import "./assets/fonts/Inter/inter.css";
-import "./assets/fonts/Recursive/recursive.css";
-import "./styles.css";
 
 import { viewStateContext } from "./context/view-state";
 import { OrgTab, RouteNamespace } from "./routes";
@@ -38,8 +35,9 @@ import AuthService, {
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { NavigateEventDetail } from "@/controllers/navigate";
 import type { NotifyEventDetail } from "@/controllers/notify";
-import { theme } from "@/theme";
+import type { APIPaginatedList } from "@/types/api";
 import { type Auth } from "@/types/auth";
+import type { Crawl } from "@/types/crawler";
 import {
   translatedLocales,
   type TranslatedLocaleEnum,
@@ -52,9 +50,6 @@ import router, { urlForName } from "@/utils/router";
 import { AppStateService } from "@/utils/state";
 import { formatAPIUser } from "@/utils/user";
 import brandLockupColor from "~assets/brand/browsertrix-lockup-color.svg";
-
-// Make theme CSS available in document
-document.adoptedStyleSheets = [theme];
 
 type DialogContent = {
   label?: TemplateResult | string;
@@ -74,6 +69,8 @@ export type APIUser = {
 export interface UserGuideEventMap {
   "btrix-user-guide-show": CustomEvent<{ path?: string }>;
 }
+
+const POLL_INTERVAL_SECONDS = 30;
 
 @customElement("browsertrix-app")
 @localized()
@@ -106,7 +103,7 @@ export class App extends BtrixElement {
   private viewState!: ViewState;
 
   @state()
-  private fullDocsUrl = "/docs/";
+  private userGuidePath = "";
 
   @state()
   private globalDialogContent: DialogContent = {};
@@ -116,6 +113,24 @@ export class App extends BtrixElement {
 
   @query("#userGuideDrawer")
   private readonly userGuideDrawer!: SlDrawer;
+
+  private readonly activeCrawlsTotalTask = new Task(this, {
+    task: async () => {
+      return await this.getActiveCrawlsTotal();
+    },
+    args: () => [] as const,
+  });
+
+  private readonly pollTask = new Task(this, {
+    task: async ([crawls]) => {
+      if (!crawls) return;
+
+      return window.setTimeout(() => {
+        void this.activeCrawlsTotalTask.run();
+      }, POLL_INTERVAL_SECONDS * 1000);
+    },
+    args: () => [this.activeCrawlsTotalTask.value] as const,
+  });
 
   get orgSlugInPath() {
     return this.viewState.params.slug || "";
@@ -173,12 +188,18 @@ export class App extends BtrixElement {
     this.startSyncBrowserTabs();
   }
 
+  disconnectedCallback(): void {
+    super.disconnectedCallback();
+
+    window.clearTimeout(this.pollTask.value);
+  }
+
   private attachUserGuideListeners() {
     this.addEventListener(
       "btrix-user-guide-show",
       (e: UserGuideEventMap["btrix-user-guide-show"]) => {
         e.stopPropagation();
-        this.showUserGuide(e.detail.path);
+        void this.showUserGuide(e.detail.path);
       },
     );
   }
@@ -191,7 +212,6 @@ export class App extends BtrixElement {
   willUpdate(changedProperties: Map<string, unknown>) {
     if (changedProperties.has("settings")) {
       AppStateService.updateSettings(this.settings || null);
-
     }
     if (changedProperties.has("viewState")) {
       this.handleViewStateChange(
@@ -346,10 +366,12 @@ export class App extends BtrixElement {
 
   render() {
     return html`
-      <div class="min-w-screen flex min-h-screen flex-col">
+      <div class="min-w-screen relative flex min-h-screen flex-col">
         ${this.renderSuperadminBanner()} ${this.renderNavBar()}
         ${this.renderAlertBanner()}
-        <main class="relative flex flex-auto md:min-h-[calc(100vh-3.125rem)]">
+        <main
+          class="relative flex flex-auto transition-[padding] md:min-h-[calc(100vh-3.125rem)]"
+        >
           ${this.renderPage()}
         </main>
         <div class="border-t border-neutral-100">${this.renderFooter()}</div>
@@ -363,24 +385,51 @@ export class App extends BtrixElement {
         >${this.globalDialogContent.body}</sl-dialog
       >
 
+      ${this.renderUserGuide()}
+    `;
+  }
+
+  private renderUserGuide() {
+    if (!this.docsUrl) return;
+
+    const url = `${this.docsUrl}user-guide/${this.userGuidePath}`;
+
+    return html`
       <sl-drawer
         id="userGuideDrawer"
         label=${msg("User Guide")}
-        style="--body-spacing: 0; --footer-spacing: var(--sl-spacing-2x-small);"
+        class="[--body-spacing:0] [--footer-spacing:var(--sl-spacing-2x-small)] [--size:31rem] part-[base]:fixed part-[base]:z-50 part-[panel]:[border-left:1px_solid_var(--sl-panel-border-color)]"
+        ?open=${this.appState.userGuideOpen}
+        contained
+        @sl-hide=${() => AppStateService.updateUserGuideOpen(false)}
+        @sl-after-hide=${() => {
+          // FIXME There might be a way to handle this in Mkdocs, but updating
+          // only the hash doesn't seem to update the docs view
+          const iframe = this.userGuideDrawer.querySelector("iframe");
+
+          if (!iframe) return;
+
+          const src = iframe.src;
+          const hashIdx = src.indexOf("#");
+
+          if (hashIdx > -1) {
+            iframe.src = src.slice(0, src.indexOf("#"));
+          }
+        }}
       >
         <span slot="label" class="flex items-center gap-3">
-          <sl-icon name="book" class=""></sl-icon>
+          <sl-icon name="book"></sl-icon>
           <span>${msg("User Guide")}</span>
         </span>
         <iframe
-          class="size-full transition-opacity duration-slow"
-          src="${this.docsUrl}user-guide/workflow-setup/"
+          class="size-full text-xs transition-opacity duration-slow"
+          src="${url}"
         ></iframe>
         <sl-button
           size="small"
           slot="footer"
           variant="text"
-          href="${this.fullDocsUrl}"
+          href="${url}"
           target="_blank"
         >
           <sl-icon slot="suffix" name="box-arrow-up-right"></sl-icon>
@@ -392,23 +441,9 @@ export class App extends BtrixElement {
 
   private renderSuperadminBanner() {
     if (this.userInfo?.isSuperAdmin) {
-      return html` <div
-        class="sticky top-0 z-50 border-b border-b-warning-800 bg-warning-700 py-2 text-xs text-warning-50 shadow-sm shadow-orange-700/20"
-      >
-        <div
-          class="mx-auto box-border flex w-full items-center gap-2 px-3 xl:pl-6"
-        >
-          <sl-icon
-            slot="icon"
-            name="exclamation-triangle-fill"
-            class="size-4"
-          ></sl-icon>
-          <span>
-            <strong>${msg("You are logged in as a superadmin")}</strong> –
-            ${msg("please be careful.")}
-          </span>
-        </div>
-      </div>`;
+      return html`<btrix-super-admin-banner
+        class="contents"
+      ></btrix-super-admin-banner>`;
     }
   }
 
@@ -500,7 +535,6 @@ export class App extends BtrixElement {
                       >
                     `
                   : nothing}
-                <div role="separator" class="mx-2.5 h-7 w-0 border-l"></div>
                 ${this.renderOrgs()}
               `,
             )}
@@ -515,7 +549,7 @@ export class App extends BtrixElement {
                     ? html`
                         <button
                           class="flex items-center gap-2 leading-none text-neutral-500 hover:text-primary"
-                          @click=${() => this.showUserGuide()}
+                          @click=${() => void this.showUserGuide()}
                         >
                           <sl-icon
                             name="book"
@@ -588,15 +622,22 @@ export class App extends BtrixElement {
           </div>
           ${isSuperAdmin
             ? html`
-                <div
-                  class="order-3 grid w-full auto-cols-max grid-flow-col items-center gap-5 md:order-2 md:w-auto"
-                >
+                <div class="order-3 w-full auto-cols-max md:order-2 md:w-auto">
                   <a
-                    class="font-medium text-neutral-500 hover:text-primary"
+                    class="inline-flex items-center gap-2 font-medium text-neutral-500 hover:text-primary"
                     href=${urlForName("adminCrawls")}
                     @click=${this.navigate.link}
-                    >${msg("Running Crawls")}</a
                   >
+                    ${msg("Active Crawls")}
+                    ${when(
+                      this.activeCrawlsTotalTask.value,
+                      (total) => html`
+                        <btrix-badge variant=${total > 0 ? "primary" : "blue"}>
+                          ${this.localize.number(total)}
+                        </btrix-badge>
+                      `,
+                    )}
+                  </a>
                 </div>
               `
             : nothing}
@@ -611,12 +652,12 @@ export class App extends BtrixElement {
 
     const selectedOption = this.orgSlugInPath
       ? orgs.find(({ slug }) => slug === this.orgSlugInPath)
-      : { slug: "", name: msg("All Organizations") };
+      : {
+          slug: "",
+          name: msg("All Organizations"),
+        };
+
     if (!selectedOption) {
-      console.debug(
-        `Couldn't find organization with slug ${this.orgSlugInPath}`,
-        orgs,
-      );
       return;
     }
 
@@ -624,6 +665,7 @@ export class App extends BtrixElement {
     const orgNameLength = 50;
 
     return html`
+      <div role="separator" class="mx-2.5 h-7 w-0 border-l"></div>
       <div class="max-w-32 truncate sm:max-w-52 md:max-w-none">
         ${selectedOption.slug
           ? html`
@@ -833,7 +875,7 @@ export class App extends BtrixElement {
       case "admin":
         return this.renderAdminPage(
           () => html`
-            <btrix-admin class="w-full md:bg-neutral-50"></btrix-admin>
+            <btrix-admin class="w-full bg-neutral-50"></btrix-admin>
           `,
         );
 
@@ -841,6 +883,10 @@ export class App extends BtrixElement {
         return html`<btrix-orgs class="w-full md:bg-neutral-50"></btrix-orgs>`;
 
       case "org": {
+        if (!this.isUserInCurrentOrg) {
+          return this.renderNotFoundPage();
+        }
+
         const slug = this.viewState.params.slug;
         const orgPath = this.viewState.pathname;
         const pathname = this.getLocationPathname();
@@ -853,7 +899,8 @@ export class App extends BtrixElement {
           class="w-full"
           .viewStateData=${this.viewState.data}
           .params=${this.viewState.params}
-          .maxScale=${this.appState.settings?.maxScale || DEFAULT_MAX_SCALE}
+          .maxBrowserWindows=${this.appState.settings?.maxBrowserWindows ||
+          DEFAULT_MAX_SCALE}
           orgPath=${orgPath.split(slug)[1]}
           orgTab=${orgTab}
         ></btrix-org>`;
@@ -950,19 +997,21 @@ export class App extends BtrixElement {
     ></btrix-not-found>`;
   }
 
-  private showUserGuide(pathName?: string) {
+  private async showUserGuide(pathName = "") {
     const iframe = this.userGuideDrawer.querySelector("iframe");
 
     if (iframe) {
-      if (pathName) {
-        this.fullDocsUrl = this.docsUrl + pathName;
-        iframe.src = this.fullDocsUrl;
-      } else {
-        this.fullDocsUrl = this.docsUrl;
-        iframe.src = this.fullDocsUrl;
+      const url = `${this.docsUrl}user-guide/${pathName}`;
+
+      if (url !== iframe.src) {
+        this.userGuidePath = pathName;
+
+        await this.updateComplete;
       }
 
-      void this.userGuideDrawer.show();
+      if (!this.appState.userGuideOpen) {
+        AppStateService.updateUserGuideOpen(true);
+      }
     } else {
       console.debug("user guide iframe not found");
     }
@@ -1133,5 +1182,17 @@ export class App extends BtrixElement {
 
   private clearSelectedOrg() {
     AppStateService.updateOrgSlug(null);
+  }
+
+  private async getActiveCrawlsTotal() {
+    const query = queryString.stringify({
+      pageSize: 1,
+    });
+
+    const data = await this.api.fetch<APIPaginatedList<Crawl>>(
+      `/orgs/all/crawls?${query}`,
+    );
+
+    return data.total;
   }
 }

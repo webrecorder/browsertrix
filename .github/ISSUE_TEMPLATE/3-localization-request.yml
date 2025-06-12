@@ -1,0 +1,16 @@
+name: Localization Request
+description: Request a new language or translation.
+title: "[L10N]: "
+labels: ["localization"]
+type: "Task"
+body:
+  - type: textarea
+    attributes:
+      label: Language
+      description: Specify the language you'd like to add or translate. A list of currently supported languages can be found in our [Weblate project](https://hosted.weblate.org/engage/browsertrix/).
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Context
+      description: Any background information that helps us understand the request.
