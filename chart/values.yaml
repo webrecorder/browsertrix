@@ -425,6 +425,14 @@ storages:
     endpoint_url: "http://local-minio:9000/"
     access_endpoint_url: *minio_access_path
 
+    #access_addressing_style: 'path' or 'virtual'
+    # determine if bucket should be accessed as:
+    #  - virtual - https://<bucket>.<host>/<key>
+    #  - path - https://<host>/<bucket>/<key>
+    #
+    # if not specified, defaults to 'path' for local minio or
+    # 'virtual' for all other storages
+
 
 # optional: duration in minutes for WACZ download links to be valid
 # used by webhooks and replay
