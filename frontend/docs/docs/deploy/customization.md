@@ -92,12 +92,13 @@ Since the local Minio service is not used, `minio_local: false` can be set to sa
 
 ### Custom Access Endpoint URL
 
-It may be useful to provide a custom access endpoint for accessing WACZ files and other data. if the `access_endpoint_url` is provided, it can be in either the 'virtual host' or 'path' form, while the `endpoint_url` should always be in path-prefix form.
+It may be useful to provide a custom access endpoint for accessing WACZ files and other data. If the `access_endpoint_url` is provided, it can be in either the 'virtual host' or 'path' form, while the `endpoint_url` should always be in path-prefix form.
 
 Here are two example of the addressing modes:
 
 #### Virtual Host vs Path Addressing for Access Endpoints
 
+Virtual host addressing:
 ```
 endpoint_url: https://s3provider.example.com/bucket/path/
 access_endpoint_url: https://my-custom-domain.example.com/path/
