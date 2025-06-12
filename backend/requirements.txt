@@ -10,7 +10,7 @@ loguru
 aiofiles
 kubernetes-asyncio==29.0.0
 kubernetes
-aiobotocore
+aiobotocore>=2.22.0
 requests
 redis>=5.0.0
 pyyaml
