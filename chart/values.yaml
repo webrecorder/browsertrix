@@ -281,8 +281,8 @@ crawler_browser_instances: 2
 # defaults to 'crawler_browser_instances' if not set
 qa_browser_instances: 1
 
-# fixed scale (number of QA pods) to run
-qa_scale: 1
+# number of browser windows to run for QA (with 'qa_browser_instances' per pod)
+qa_num_browser_windows: 2
 
 # this value is added to crawler_cpu_base, for each additional browser
 # crawler_cpu = crawler_cpu_base + crawler_pu_per_extra_browser * (crawler_browser_instances - 1)

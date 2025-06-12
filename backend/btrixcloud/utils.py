@@ -24,6 +24,8 @@ from slugify import slugify
 
 default_origin = os.environ.get("APP_ORIGIN", "")
 
+browsers_per_pod = int(os.environ.get("NUM_BROWSERS", 1))
+
 
 class JSONSerializer(json.JSONEncoder):
     """Serializer class for json.dumps with UUID and datetime support"""
@@ -203,13 +205,13 @@ def validate_language_code(lang: str):
         raise HTTPException(status_code=400, detail="invalid_lang")
 
 
-def scale_from_browser_windows(browser_windows: int) -> int:
+def scale_from_browser_windows(
+    browser_windows: int, custom_browsers_per_pod=None
+) -> int:
     """Return number of pods for given number of browser windows"""
-    browsers_per_pod = int(os.environ.get("NUM_BROWSERS", 1))
-    return math.ceil(browser_windows / browsers_per_pod)
+    return math.ceil(browser_windows / (custom_browsers_per_pod or browsers_per_pod))
 
 
 def browser_windows_from_scale(scale: int) -> int:
     """Return number of browser windows from specified scale"""
-    browsers_per_pod = int(os.environ.get("NUM_BROWSERS", 1))
     return scale * browsers_per_pod

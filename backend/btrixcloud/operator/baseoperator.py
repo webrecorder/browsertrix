@@ -57,6 +57,7 @@ class K8sOpAPI(K8sAPI):
         except:
             # default to 1 for now for best results (to revisit in the future)
             qa_num_workers = 1
+            p["qa_browser_instances"] = 1
 
         crawler_memory, crawler_cpu = self.compute_for_num_browsers(
             num_workers, p.get("crawler_memory"), p.get("crawler_cpu")
