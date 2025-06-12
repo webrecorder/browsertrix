@@ -1,6 +1,6 @@
 import { localized } from "@lit/localize";
 import clsx from "clsx";
-import { html, type PropertyValues } from "lit";
+import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { repeat } from "lit/directives/repeat.js";
@@ -33,6 +33,12 @@ export class FileInput extends FormControl(TailwindElement) {
    */
   @property({ type: String })
   name?: string;
+
+  /**
+   * Form control label, if used as a form control
+   */
+  @property({ type: String })
+  label?: string;
 
   /**
    * Specify which file types are allowed
@@ -93,18 +99,21 @@ export class FileInput extends FormControl(TailwindElement) {
 
   render() {
     return html`
+      ${this.label
+        ? html`<label for="fileInput" class="form-label">${this.label}</label>`
+        : nothing}
       ${this.files.length ? this.renderFiles() : this.renderInput()}
     `;
   }
 
   private readonly renderInput = () => {
     return html`
-      <label
+      <div
         id="dropzone"
         class=${clsx(
-          tw`cursor-pointer`,
+          tw`relative`,
           this.drop &&
-            tw`flex size-full flex-col items-center justify-center gap-2.5 rounded p-6 text-center outline-dashed outline-1 -outline-offset-1 outline-neutral-400 transition-all hover:outline-primary-400`,
+            tw`flex size-full items-center justify-center rounded p-6 text-center outline-dashed outline-1 -outline-offset-1 outline-neutral-400 transition-all hover:outline-primary-400`,
         )}
         @drop=${this.drop ? this.onDrop : undefined}
         @dragover=${this.drop ? this.onDragover : undefined}
@@ -114,8 +123,11 @@ export class FileInput extends FormControl(TailwindElement) {
         @dragleave=${this.drop
           ? () => this.dropzone?.classList.remove(droppingClass)
           : undefined}
+        dropzone="copy"
+        aria-dropeffect="copy"
       >
         <input
+          id="fileInput"
           class="sr-only"
           type="file"
           accept=${ifDefined(this.accept)}
@@ -128,8 +140,10 @@ export class FileInput extends FormControl(TailwindElement) {
             }
           }}
         />
-        <slot @click=${() => this.input?.click()}></slot>
-      </label>
+        <div class="relative z-10">
+          <slot @click=${() => this.input?.click()}></slot>
+        </div>
+      </div>
     `;
   };
 
@@ -157,6 +171,7 @@ export class FileInput extends FormControl(TailwindElement) {
     this.dropzone?.classList.remove(droppingClass);
 
     const files = e.dataTransfer?.files;
+    console.log("files:", files);
 
     if (files) {
       const list = new DataTransfer();

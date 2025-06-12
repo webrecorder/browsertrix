@@ -11,10 +11,10 @@ const meta = {
   render: renderComponent,
   decorators: (story) => html` <div class="m-5">${story()}</div>`,
   argTypes: {
-    anchor: { table: { disable: true } },
+    content: { table: { disable: true } },
   },
   args: {
-    anchor: html`
+    content: html`
       <sl-button size="small" variant="primary">Select File</sl-button>
     `,
   },
@@ -30,7 +30,7 @@ export const Basic: Story = {
 export const Multiple: Story = {
   args: {
     multiple: true,
-    anchor: html`
+    content: html`
       <sl-button size="small" variant="primary">Select Files</sl-button>
     `,
   },
@@ -39,11 +39,11 @@ export const Multiple: Story = {
 export const DropZone: Story = {
   args: {
     drop: true,
-    anchor: html`
+    content: html`
       <span>
         Drag file here or
         <button
-          class="text-primary-500 transition-colors hover:text-primary-600"
+          class="text-primary-500 underline underline-offset-2 transition-colors hover:no-underline"
         >
           choose from a folder
         </button>
@@ -69,10 +69,11 @@ export const FormControl: Story = {
 export const FileFormat: Story = {
   decorators: [fileInputFormDecorator],
   args: {
+    label: "Attach a Document",
     drop: true,
     multiple: true,
     accept: ".txt,.doc,.pdf",
-    anchor: html`
+    content: html`
       <div>
         Drag document here or
         <button

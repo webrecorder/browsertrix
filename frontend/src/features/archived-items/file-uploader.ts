@@ -199,7 +199,7 @@ export class FileUploader extends BtrixElement {
           >${msg("Browse Files")}</sl-button
         >
 
-        <p class="text-xs text-neutral-500">
+        <p class="mt-2.5 text-xs text-neutral-500">
           ${msg("Select a .wacz file to upload")}
         </p>
       </btrix-file-input>
