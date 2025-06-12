@@ -1,5 +1,5 @@
 import { localized, msg, str } from "@lit/localize";
-import type { SlAlert } from "@shoelace-style/shoelace";
+import type { SlAlert, SlIcon } from "@shoelace-style/shoelace";
 import { differenceInHours } from "date-fns/fp";
 import { html, type TemplateResult } from "lit";
 import { customElement } from "lit/decorators.js";
@@ -18,6 +18,24 @@ type Alert = {
   };
 };
 
+const iconForVariant = (
+  variant: SlAlert["variant"],
+): NonNullable<SlIcon["name"]> => {
+  switch (variant) {
+    case "danger":
+      return "exclamation-triangle";
+    case "success":
+      return "check2-circle";
+    case "warning":
+      return "exclamation-diamond";
+    default:
+      return "info-circle";
+  }
+};
+
+// show banner as warning if <= this many days of trial is left
+const TRIAL_DAYS_LEFT_SHOW_WARNING = 4;
+
 @customElement("btrix-org-status-banner")
 @localized()
 export class OrgStatusBanner extends BtrixElement {
@@ -29,12 +47,13 @@ export class OrgStatusBanner extends BtrixElement {
     if (!alert) return;
 
     const content = alert.content();
+    const variant = alert.variant || "danger";
 
     return html`
       <div id="banner" class="border-b bg-slate-100 py-5">
         <div class="mx-auto box-border w-full max-w-screen-desktop px-3">
-          <sl-alert variant=${alert.variant || "danger"} open>
-            <sl-icon slot="icon" name="exclamation-triangle-fill"></sl-icon>
+          <sl-alert variant=${variant} open>
+            <sl-icon slot="icon" name=${iconForVariant(variant)}></sl-icon>
             <strong class="block font-semibold">${content.title}</strong>
             ${content.detail}
           </sl-alert>
@@ -66,16 +85,19 @@ export class OrgStatusBanner extends BtrixElement {
     const readOnlyOnCancel =
       subscription?.readOnlyOnCancel ?? this.org.readOnlyOnCancel;
 
-    let hoursDiff = 0;
-    let daysDiff = 0;
-    let dateStr = "";
+    let hoursUntilTrialEnd = 0;
+    let daysUntilTrialEnd = 0;
+    let trialEndDate = "";
     const futureCancelDate = subscription?.futureCancelDate || null;
 
     if (futureCancelDate) {
-      hoursDiff = differenceInHours(new Date(), new Date(futureCancelDate));
-      daysDiff = Math.ceil(hoursDiff / 24);
+      hoursUntilTrialEnd = differenceInHours(
+        new Date(),
+        new Date(futureCancelDate),
+      );
+      daysUntilTrialEnd = Math.ceil(hoursUntilTrialEnd / 24);
 
-      dateStr = this.localize.date(futureCancelDate, {
+      trialEndDate = this.localize.date(futureCancelDate, {
         month: "long",
         day: "numeric",
         year: "numeric",
@@ -89,9 +111,6 @@ export class OrgStatusBanner extends BtrixElement {
     const isTrial =
       subscription?.status === SubscriptionStatus.Trialing || isCancelingTrial;
 
-    // show banner if < this many days of trial is left
-    const MAX_TRIAL_DAYS_SHOW_BANNER = 8;
-
     return [
       {
         test: () =>
@@ -100,15 +119,17 @@ export class OrgStatusBanner extends BtrixElement {
         content: () => {
           return {
             title:
-              hoursDiff < 24
+              hoursUntilTrialEnd < 24
                 ? msg("Your org will be deleted within one day")
-                : daysDiff === 1
+                : daysUntilTrialEnd === 1
                   ? msg("Your org will be deleted in one day.")
-                  : msg(str`Your org will be deleted in ${daysDiff} days`),
+                  : msg(
+                      str`Your org will be deleted in ${daysUntilTrialEnd} days`,
+                    ),
             detail: html`
               <p>
                 ${msg(
-                  str`Your subscription ends on ${dateStr}. Your user account, org, and all associated data will be deleted.`,
+                  str`Your subscription ends on ${trialEndDate}. Your user account, org, and all associated data will be deleted.`,
                 )}
               </p>
               <p>
@@ -124,25 +145,25 @@ export class OrgStatusBanner extends BtrixElement {
       },
       {
         test: () =>
-          !readOnly &&
-          !readOnlyOnCancel &&
-          !!futureCancelDate &&
-          ((isTrial && daysDiff < MAX_TRIAL_DAYS_SHOW_BANNER) ||
-            isCancelingTrial),
-        variant: isCancelingTrial ? "danger" : "warning",
+          !readOnly && !readOnlyOnCancel && !!futureCancelDate && isTrial,
+        variant: isCancelingTrial
+          ? "danger"
+          : isTrial && daysUntilTrialEnd <= TRIAL_DAYS_LEFT_SHOW_WARNING
+            ? "warning"
+            : "primary",
         content: () => {
           return {
             title:
-              hoursDiff < 24
+              hoursUntilTrialEnd < 24
                 ? msg("Your trial ends within one day")
-                : daysDiff === 1
+                : daysUntilTrialEnd === 1
                   ? msg("You have one day left of your Browsertrix trial")
                   : msg(
-                      str`You have ${daysDiff} days left of your Browsertrix trial`,
+                      str`You have ${daysUntilTrialEnd} days left of your Browsertrix trial`,
                     ),
 
             detail: html`<p>
-                ${msg(str`Your free trial ends on ${dateStr}.`)}
+                ${msg(str`Your free trial ends on ${trialEndDate}.`)}
                 ${isCancelingTrial
                   ? msg(
                       html`To continue using Browsertrix, select
@@ -177,13 +198,15 @@ export class OrgStatusBanner extends BtrixElement {
         content: () => {
           return {
             title:
-              daysDiff > 1
-                ? msg(str`Archiving will be disabled in ${daysDiff} days`)
+              daysUntilTrialEnd > 1
+                ? msg(
+                    str`Archiving will be disabled in ${daysUntilTrialEnd} days`,
+                  )
                 : msg("Archiving will be disabled within one day"),
             detail: html`
               <p>
                 ${msg(
-                  str`Your subscription ends on ${dateStr}. You will no longer be able to run crawls, upload files, create browser profiles, or create collections.`,
+                  str`Your subscription ends on ${trialEndDate}. You will no longer be able to run crawls, upload files, create browser profiles, or create collections.`,
                 )}
               </p>
               <p>
