@@ -4,6 +4,7 @@ import type {
   SlDialog,
   SlSelectEvent,
 } from "@shoelace-style/shoelace";
+import clsx from "clsx";
 import { html, type PropertyValues } from "lit";
 import { customElement, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -148,7 +149,11 @@ export class WorkflowsList extends BtrixElement {
       changedProperties.has("filterBy")
     ) {
       void this.fetchWorkflows({
-        page: 1,
+        page:
+          // If we've already loaded workflows and are switching filters, reset the page; otherwise, use the page from the URL or default to 1
+          this.workflows
+            ? 1
+            : parsePage(new URLSearchParams(location.search).get("page")) || 1,
       });
     }
     if (changedProperties.has("filterByCurrentUser")) {
@@ -509,27 +514,27 @@ export class WorkflowsList extends BtrixElement {
       <btrix-workflow-list>
         ${this.workflows.items.map(this.renderWorkflowItem)}
       </btrix-workflow-list>
-      ${when(
-        total > pageSize,
-        () => html`
-          <footer class="mt-6 flex justify-center">
-            <btrix-pagination
-              page=${page}
-              totalCount=${total}
-              size=${pageSize}
-              @page-change=${async (e: PageChangeEvent) => {
-                await this.fetchWorkflows({
-                  page: e.detail.page,
-                });
+      <footer
+        class=${clsx(
+          tw`mt-6 flex justify-center`,
+          total <= pageSize && tw`hidden`,
+        )}
+      >
+        <btrix-pagination
+          page=${page}
+          totalCount=${total}
+          size=${pageSize}
+          @page-change=${async (e: PageChangeEvent) => {
+            await this.fetchWorkflows({
+              page: e.detail.page,
+            });
 
-                // Scroll to top of list
-                // TODO once deep-linking is implemented, scroll to top of pushstate
-                this.scrollIntoView({ behavior: "smooth" });
-              }}
-            ></btrix-pagination>
-          </footer>
-        `,
-      )}
+            // Scroll to top of list
+            // TODO once deep-linking is implemented, scroll to top of pushstate
+            this.scrollIntoView({ behavior: "smooth" });
+          }}
+        ></btrix-pagination>
+      </footer>
     `;
   }
 
