@@ -2306,7 +2306,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
     if (
       key === "Enter" &&
-      this.progressState!.activeTab !== STEPS[STEPS.length - 1]
+      this.progressState!.activeTab !== STEPS[STEPS.length - 1] &&
+      // Prevent places where Enter is valid from being stopped
+      !["TEXTAREA", "SL-TEXTAREA"].includes(el.tagName)
     ) {
       // Prevent submission by "Enter" keypress if not on last tab
       event.preventDefault();
