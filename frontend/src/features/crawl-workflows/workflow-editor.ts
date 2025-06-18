@@ -2272,7 +2272,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
     if (metaKey) {
       if (key === "s" || key === "Enter") {
         event.preventDefault();
-        debugger;
 
         this.saveAndRun = key === "Enter";
 
@@ -2301,7 +2300,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
       // Prevent typing non-numeric keys
       if (!metaKey && !event.shiftKey && key.length === 1 && /\D/.test(key)) {
         event.preventDefault();
-        debugger;
         return;
       }
     }
@@ -2314,7 +2312,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
     ) {
       // Prevent submission by "Enter" keypress if not on last tab
       event.preventDefault();
-      debugger;
     }
   }
 
