@@ -18,6 +18,7 @@ import("./copy-button");
 import("./copy-field");
 import("./data-grid");
 import("./details");
+import("./file-input");
 import("./file-list");
 import("./format-date");
 import("./inline-input");

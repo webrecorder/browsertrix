@@ -10,6 +10,7 @@ import queryString from "query-string";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { FileRemoveEvent } from "@/components/ui/file-list";
+import type { BtrixFileChangeEvent } from "@/components/ui/file-list/events";
 import type {
   TagInputEvent,
   Tags,
@@ -182,45 +183,26 @@ export class FileUploader extends BtrixElement {
   }
 
   private renderFiles() {
-    if (!this.fileList.length) {
-      return html`
-        <div class="flex h-full flex-col items-center justify-center gap-3 p-5">
-          <label>
-            <input
-              class="sr-only"
-              type="file"
-              accept=".wacz"
-              @change=${(e: Event) => {
-                const files = (e.target as HTMLInputElement).files;
-                if (files?.length) {
-                  this.fileList = Array.from(files);
-                }
-              }}
-            />
-            <sl-button
-              variant="primary"
-              @click=${(e: MouseEvent) =>
-                (e.target as SlButton).parentElement?.click()}
-              >${msg("Browse Files")}</sl-button
-            >
-          </label>
-          <p class="text-xs text-neutral-500">
-            ${msg("Select a .wacz file to upload")}
-          </p>
-        </div>
-      `;
-    }
-
     return html`
-      <btrix-file-list>
-        ${Array.from(this.fileList).map(
-          (file) =>
-            html`<btrix-file-list-item
-              .file=${file}
-              @on-remove=${this.handleRemoveFile}
-            ></btrix-file-list-item>`,
-        )}
-      </btrix-file-list>
+      <btrix-file-input
+        accept=".wacz"
+        drop
+        @btrix-change=${(e: BtrixFileChangeEvent) => {
+          this.fileList = e.detail.value;
+        }}
+        @btrix-remove=${this.handleRemoveFile}
+      >
+        <sl-button
+          variant="primary"
+          @click=${(e: MouseEvent) =>
+            (e.target as SlButton).parentElement?.click()}
+          >${msg("Browse Files")}</sl-button
+        >
+
+        <p class="mt-2.5 text-xs text-neutral-500">
+          ${msg("Select a .wacz file to upload")}
+        </p>
+      </btrix-file-input>
     `;
   }
 
@@ -278,7 +260,7 @@ export class FileUploader extends BtrixElement {
                   html`<btrix-file-list-item
                     .file=${file}
                     progressValue=${this.progress}
-                    @on-remove=${this.handleRemoveFile}
+                    @btrix-remove=${this.handleRemoveFile}
                   ></btrix-file-list-item>`,
               )}
             </btrix-file-list>
@@ -319,7 +301,7 @@ export class FileUploader extends BtrixElement {
                 html`<btrix-file-list-item
                   .file=${file}
                   progressValue=${this.progress}
-                  @on-remove=${this.handleRemoveFile}
+                  @btrix-remove=${this.handleRemoveFile}
                 ></btrix-file-list-item>`,
             )}
           </btrix-file-list>
@@ -335,7 +317,7 @@ export class FileUploader extends BtrixElement {
 
   private readonly handleRemoveFile = (e: FileRemoveEvent) => {
     this.cancelUpload();
-    const idx = this.fileList.indexOf(e.detail.file);
+    const idx = this.fileList.indexOf(e.detail.item);
     if (idx === -1) return;
     this.fileList = [
       ...this.fileList.slice(0, idx),
