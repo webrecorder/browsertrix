@@ -148,7 +148,11 @@ export class WorkflowsList extends BtrixElement {
       changedProperties.has("filterBy")
     ) {
       void this.fetchWorkflows({
-        page: 1,
+        page:
+          // If we've already loaded workflows and are switching filters, reset the page; otherwise, use the page from the URL or default to 1
+          this.workflows
+            ? 1
+            : parsePage(new URLSearchParams(location.search).get("page")) || 1,
       });
     }
     if (changedProperties.has("filterByCurrentUser")) {
