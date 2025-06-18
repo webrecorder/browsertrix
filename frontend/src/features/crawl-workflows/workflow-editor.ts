@@ -2272,6 +2272,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     if (metaKey) {
       if (key === "s" || key === "Enter") {
         event.preventDefault();
+        debugger;
 
         this.saveAndRun = key === "Enter";
 
@@ -2300,16 +2301,20 @@ https://archiveweb.page/images/${"logo.svg"}`}
       // Prevent typing non-numeric keys
       if (!metaKey && !event.shiftKey && key.length === 1 && /\D/.test(key)) {
         event.preventDefault();
+        debugger;
         return;
       }
     }
 
     if (
       key === "Enter" &&
-      this.progressState!.activeTab !== STEPS[STEPS.length - 1]
+      this.progressState!.activeTab !== STEPS[STEPS.length - 1] &&
+      // Prevent places where Enter is valid from being stopped
+      !["TEXTAREA", "SL-TEXTAREA"].includes(el.tagName)
     ) {
       // Prevent submission by "Enter" keypress if not on last tab
       event.preventDefault();
+      debugger;
     }
   }
 
