@@ -5074,111 +5074,146 @@
         <source>Viewing <x id="0" equiv-text="&lt;strong class=&quot;font-medium&quot;&gt;${this.userOrg.name}&lt;/strong&gt;"/></source>
         <target state="translated">Visualisant <x id="0" equiv-text="&lt;strong class=&quot;font-medium&quot;&gt;${this.userOrg.name}&lt;/strong&gt;"/></target>
       </trans-unit>
-      <trans-unit id="s2ccab3f1e005dbc4">
+      <trans-unit id="s2ccab3f1e005dbc4" xml:space="preserve">
         <source>Choose a name that represents your organization, your team, or your personal web archive.</source>
+        <target state="translated">Choisissez un nom qui représente votre organisation, votre équipe ou vos archives web personnelles.</target>
       </trans-unit>
-      <trans-unit id="sf8388a998523b72c">
+      <trans-unit id="sf8388a998523b72c" xml:space="preserve">
         <source>Org URL</source>
+        <target state="translated">URL de l'organisation</target>
       </trans-unit>
-      <trans-unit id="sf64646b094ecba96">
+      <trans-unit id="sf64646b094ecba96" xml:space="preserve">
         <source>Developer Tools</source>
+        <target state="translated">Outils du développeur</target>
       </trans-unit>
-      <trans-unit id="s30ed673daca7e44b">
+      <trans-unit id="s30ed673daca7e44b" xml:space="preserve">
         <source>Use this ID to reference your org in the Browsertrix API.</source>
+        <target state="translated">Utilisez cet identifiant pour référencer votre organisation dans l'API de Browsertrix.</target>
       </trans-unit>
-      <trans-unit id="s1f224cf8b88cb893">
+      <trans-unit id="s1f224cf8b88cb893" xml:space="preserve">
         <source>Link copied</source>
+        <target state="translated">Lien copié</target>
       </trans-unit>
-      <trans-unit id="s0337805916bf0549">
+      <trans-unit id="s0337805916bf0549" xml:space="preserve">
         <source>Copy Share Link</source>
+        <target state="translated">Copier le lien de partage</target>
       </trans-unit>
-      <trans-unit id="s15c412aa2f2d4d3d">
+      <trans-unit id="s15c412aa2f2d4d3d" xml:space="preserve">
         <source>Public Collections</source>
+        <target state="translated">Collections publiques</target>
       </trans-unit>
-      <trans-unit id="s11f71e0566d8cc93">
+      <trans-unit id="s11f71e0566d8cc93" xml:space="preserve">
         <source>Manage Collections</source>
+        <target state="translated">Gérer les collections</target>
       </trans-unit>
-      <trans-unit id="se25e3fa3c918d26e">
+      <trans-unit id="se25e3fa3c918d26e" xml:space="preserve">
         <source>Create a Collection</source>
+        <target state="translated">Créer une collection</target>
       </trans-unit>
-      <trans-unit id="s0d5c241bca67f37d">
+      <trans-unit id="s0d5c241bca67f37d" xml:space="preserve">
         <source>Go to Settings</source>
+        <target state="translated">Accéder aux paramètres</target>
       </trans-unit>
-      <trans-unit id="se87b7534b82892ab">
+      <trans-unit id="se87b7534b82892ab" xml:space="preserve">
         <source><x id="0" equiv-text="${org.name}"/> is web archiving with Browsertrix.</source>
+        <target state="translated"><x id="0" equiv-text="${org.name}"/> est l'archivage de sites web avec Browsertrix.</target>
       </trans-unit>
-      <trans-unit id="s08250b6ffcc61273">
+      <trans-unit id="s08250b6ffcc61273" xml:space="preserve">
         <source>Do you have web archives to share?</source>
+        <target state="translated">Avez-vous des archives web à partager ?</target>
       </trans-unit>
-      <trans-unit id="s909144751c40f105">
+      <trans-unit id="s909144751c40f105" xml:space="preserve">
         <source>Get started with Browsertrix</source>
+        <target state="translated">Commencer avec Browsertrix</target>
       </trans-unit>
-      <trans-unit id="s7fee95b66225e1fb">
+      <trans-unit id="s7fee95b66225e1fb" xml:space="preserve">
         <source>Dashboard</source>
+        <target state="translated">Tableau de bord</target>
       </trans-unit>
-      <trans-unit id="s10a35688032060b4">
+      <trans-unit id="s10a35688032060b4" xml:space="preserve">
         <source>Return to Sign In</source>
+        <target state="translated">Retour à l'inscription</target>
       </trans-unit>
-      <trans-unit id="sc4eedb434536bdb4">
+      <trans-unit id="sc4eedb434536bdb4" xml:space="preserve">
         <source>Need an account?</source>
+        <target state="translated">Besoin d'un compte ?</target>
       </trans-unit>
-      <trans-unit id="s77419748aa9dcc7c">
+      <trans-unit id="s77419748aa9dcc7c" xml:space="preserve">
         <source>Request Password Reset</source>
+        <target state="translated">Demande de réinitialisation du mot de passe</target>
       </trans-unit>
-      <trans-unit id="s7b37d08c6fefddb1">
+      <trans-unit id="s7b37d08c6fefddb1" xml:space="preserve">
         <source>Browse Collection</source>
+        <target state="translated">Parcourir la collection</target>
       </trans-unit>
-      <trans-unit id="sf2dbd171f2672a76">
+      <trans-unit id="sf2dbd171f2672a76" xml:space="preserve">
         <source>About This Collection</source>
+        <target state="translated">À propos de cette collection</target>
       </trans-unit>
-      <trans-unit id="s5e94738a2eeb8943">
+      <trans-unit id="s5e94738a2eeb8943" xml:space="preserve">
         <source>Sign In</source>
+        <target state="translated">S'identifier</target>
       </trans-unit>
-      <trans-unit id="sfa251e3af0f9c14c">
+      <trans-unit id="sfa251e3af0f9c14c" xml:space="preserve">
         <source><x id="0" equiv-text="${startMonthYear}"/> to <x id="1" equiv-text="${endMonthYear}"/></source>
+        <target state="translated"><x id="0" equiv-text="${startMonthYear}"/> à <x id="1" equiv-text="${endMonthYear}"/></target>
         <note from="lit-localize">Date range formatted to show full month name and year</note>
       </trans-unit>
-      <trans-unit id="s2428027aa3e49f16">
+      <trans-unit id="s2428027aa3e49f16" xml:space="preserve">
         <source>Last Crawl</source>
+        <target state="translated">Dernière collecte</target>
       </trans-unit>
-      <trans-unit id="sb9e424bd9e3e2723">
+      <trans-unit id="sb9e424bd9e3e2723" xml:space="preserve">
         <source>No Subscription</source>
+        <target state="translated">Pas d'abonnement</target>
       </trans-unit>
-      <trans-unit id="s7da138cc56abec6c">
+      <trans-unit id="s7da138cc56abec6c" xml:space="preserve">
         <source>Active Subscription</source>
+        <target state="translated">Abonnement actif</target>
       </trans-unit>
-      <trans-unit id="se3d7a30d5e45c393">
+      <trans-unit id="se3d7a30d5e45c393" xml:space="preserve">
         <source>Trial</source>
+        <target state="translated">Essai</target>
       </trans-unit>
-      <trans-unit id="s5aff130b6d78c668">
+      <trans-unit id="s5aff130b6d78c668" xml:space="preserve">
         <source>Trial Cancelled</source>
+        <target state="translated">Essai annulé</target>
       </trans-unit>
-      <trans-unit id="s2e515f3ca456f9c6">
+      <trans-unit id="s2e515f3ca456f9c6" xml:space="preserve">
         <source>Trial Canceled</source>
+        <target state="translated">Essai annulé</target>
       </trans-unit>
-      <trans-unit id="s31e12850da47731e">
+      <trans-unit id="s31e12850da47731e" xml:space="preserve">
         <source>Payment Failed</source>
+        <target state="translated">Échec du paiement</target>
       </trans-unit>
-      <trans-unit id="s537d04835ef62b2b">
+      <trans-unit id="s537d04835ef62b2b" xml:space="preserve">
         <source>Search for a page in this collection</source>
+        <target state="translated">Rechercher une page dans cette collection</target>
       </trans-unit>
-      <trans-unit id="sb48ebdd9325e370b">
+      <trans-unit id="sb48ebdd9325e370b" xml:space="preserve">
         <source>Page exists in collection</source>
+        <target state="translated">La page existe dans la collection</target>
       </trans-unit>
-      <trans-unit id="s485d151771b0a33c">
+      <trans-unit id="s485d151771b0a33c" xml:space="preserve">
         <source>Page not found in collection. Please check the URL and try again</source>
+        <target state="translated">Page non trouvée dans la collection. Veuillez vérifier l'URL et réessayer</target>
       </trans-unit>
-      <trans-unit id="sd632247a75e16736">
+      <trans-unit id="sd632247a75e16736" xml:space="preserve">
         <source>No matching page found.</source>
+        <target state="translated">Aucune page correspondante n'a été trouvée.</target>
       </trans-unit>
-      <trans-unit id="s8df0435252529c62">
+      <trans-unit id="s8df0435252529c62" xml:space="preserve">
         <source>Choose a page snapshot</source>
+        <target state="translated">Choisir une photo de la page</target>
       </trans-unit>
-      <trans-unit id="s9b649a5c57384213">
+      <trans-unit id="s9b649a5c57384213" xml:space="preserve">
         <source>Your org doesn’t have any collections yet.</source>
+        <target state="translated">Votre organisation n'a pas encore de collections.</target>
       </trans-unit>
-      <trans-unit id="sa35d8dcb231a2c75">
+      <trans-unit id="sa35d8dcb231a2c75" xml:space="preserve">
         <source>Collections let you easily organize, replay, and share multiple crawls.</source>
+        <target state="translated">Les collections vous permettent d'organiser, de rejouer et de partager facilement des collectes multiples.</target>
       </trans-unit>
       <trans-unit id="sd42ed7f1a573d096" xml:space="preserve">
         <source>Page Uploaded</source>
@@ -5192,24 +5227,29 @@
         <source>Page Total</source>
         <target state="translated">Total de pages</target>
       </trans-unit>
-      <trans-unit id="s1fda6e1bbcd65195">
+      <trans-unit id="s1fda6e1bbcd65195" xml:space="preserve">
         <source>Pages Total</source>
+        <target state="translated">Total de pages</target>
       </trans-unit>
-      <trans-unit id="s271e65e1451601ef">
+      <trans-unit id="s271e65e1451601ef" xml:space="preserve">
         <source>Crawls: <x id="0" equiv-text="${this.localize.bytes(org.bytesStoredCrawls)}"/></source>
+        <target state="translated">Collectes : <x id="0" equiv-text="${this.localize.bytes(org.bytesStoredCrawls)}"/></target>
       </trans-unit>
       <trans-unit id="s6fc1df91bcc961d3" xml:space="preserve">
         <source>Uploads: <x id="0" equiv-text="${this.localize.bytes(org.bytesStoredUploads)}"/></source>
         <target state="translated">Chargements:  <x id="0" equiv-text="${this.localize.bytes(org.bytesStoredUploads)}"/></target>
       </trans-unit>
-      <trans-unit id="sbe6bd4a4b8f70dc1">
+      <trans-unit id="sbe6bd4a4b8f70dc1" xml:space="preserve">
         <source>Profiles: <x id="0" equiv-text="${this.localize.bytes(org.bytesStoredProfiles)}"/></source>
+        <target state="translated">Profils : <x id="0" equiv-text="${this.localize.bytes(org.bytesStoredProfiles)}"/></target>
       </trans-unit>
-      <trans-unit id="s9f0d2cd0850b47df">
+      <trans-unit id="s9f0d2cd0850b47df" xml:space="preserve">
         <source>Unique Pages in Collection</source>
+        <target state="translated">Pages uniques dans la collection</target>
       </trans-unit>
-      <trans-unit id="s97a904f2a41ddc4b">
+      <trans-unit id="s97a904f2a41ddc4b" xml:space="preserve">
         <source>Total Pages Crawled</source>
+        <target state="translated">Nombre total de pages collectées</target>
       </trans-unit>
       <trans-unit id="s37cc328c4da4b137">
         <source>Anyone can view from the org public collections gallery</source>
