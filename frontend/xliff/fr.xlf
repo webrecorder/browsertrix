@@ -2708,7 +2708,7 @@
       </trans-unit>
       <trans-unit id="sbf9c9810624e0c87" xml:space="preserve">
         <source>Submit Review</source>
-        <target state="needs-translation">Soumettre la vérification</target>
+        <target state="translated">Soumettre la vérification</target>
       </trans-unit>
       <trans-unit id="s6d7c9c2bb994f236" xml:space="preserve">
         <source>Comments (<x id="0" equiv-text="${this.localize.number(commentCount)}"/>)</source>
@@ -2816,7 +2816,7 @@
       </trans-unit>
       <trans-unit id="h6c440abb1e1a7d78" xml:space="preserve">
         <source>Extending <x id="0" equiv-text="&lt;strong&gt;${this.browserParams.name}&lt;/strong&gt;"/></source>
-        <target state="needs-translation">Extension <x id="0" equiv-text="&lt;strong&gt;${this.browserParams.name}&lt;/strong&gt;"/></target>
+        <target state="translated">Étendre <x id="0" equiv-text="&lt;strong&gt;${this.browserParams.name}&lt;/strong&gt;"/></target>
       </trans-unit>
       <trans-unit id="s3b397808715b71d8" xml:space="preserve">
         <source>Cancel Profile Creation?</source>
@@ -5251,14 +5251,17 @@
         <source>Total Pages Crawled</source>
         <target state="translated">Nombre total de pages collectées</target>
       </trans-unit>
-      <trans-unit id="s37cc328c4da4b137">
+      <trans-unit id="s37cc328c4da4b137" xml:space="preserve">
         <source>Anyone can view from the org public collections gallery</source>
+        <target state="translated">Tout le monde peut consulter la galerie des collections publiques de l'organisation</target>
       </trans-unit>
-      <trans-unit id="s8debd5b6fc21f95e">
+      <trans-unit id="s8debd5b6fc21f95e" xml:space="preserve">
         <source>This doesn't have a public collections gallery enabled yet. To make this collection and basic org information public, update the org's gallery visibility setting.</source>
+        <target state="translated">La galerie des collections publiques n'est pas encore activée. Pour rendre cette collection et les informations de base de l'organisation publiques, mettez à jour les paramètres de visibilité de la galerie de l'organisation.</target>
       </trans-unit>
-      <trans-unit id="s7834e4ac05eb381a">
+      <trans-unit id="s7834e4ac05eb381a" xml:space="preserve">
         <source>Write a short description that summarizes this collection. If the collection is shareable, this will appear next to the collection name.</source>
+        <target state="translated">Rédigez une courte description qui résume cette collection. Si la collection est partageable, cette description apparaîtra à côté du nom de la collection.</target>
       </trans-unit>
       <trans-unit id="sa6c663d28c4eeb33">
         <source>This collection will be visible in the org public collection gallery, even without archived items. You may want to set visibility to 'Unlisted' until archived items have been added.</source>
