@@ -5263,44 +5263,57 @@
         <source>Write a short description that summarizes this collection. If the collection is shareable, this will appear next to the collection name.</source>
         <target state="translated">Rédigez une courte description qui résume cette collection. Si la collection est partageable, cette description apparaîtra à côté du nom de la collection.</target>
       </trans-unit>
-      <trans-unit id="sa6c663d28c4eeb33">
+      <trans-unit id="sa6c663d28c4eeb33" xml:space="preserve">
         <source>This collection will be visible in the org public collection gallery, even without archived items. You may want to set visibility to 'Unlisted' until archived items have been added.</source>
+        <target state="translated">Cette collection sera visible dans la galerie des collections publiques de l'organisation, même si elle ne contient pas d'éléments archivés. Il peut être utile de régler la visibilité sur « Non listé » jusqu'à ce que des éléments archivés aient été ajoutés.</target>
       </trans-unit>
-      <trans-unit id="s1d7d69e58796f97a">
+      <trans-unit id="s1d7d69e58796f97a" xml:space="preserve">
         <source>Page Timestamp</source>
+        <target state="translated">Horodatage de la page</target>
       </trans-unit>
-      <trans-unit id="s3025ddefad4c31c7">
+      <trans-unit id="s3025ddefad4c31c7" xml:space="preserve">
         <source>Choose a timestamp</source>
+        <target state="translated">Choisir un horodatage</target>
       </trans-unit>
-      <trans-unit id="sf160136cfa00f822">
+      <trans-unit id="sf160136cfa00f822" xml:space="preserve">
         <source>Enter a page URL to choose timestamp</source>
+        <target state="translated">Saisir l'URL d'une page pour choisir l'horodatage</target>
       </trans-unit>
-      <trans-unit id="s2892cf7cbbdf4424">
+      <trans-unit id="s2892cf7cbbdf4424" xml:space="preserve">
         <source>Autoclick behavior</source>
+        <target state="translated">Comportement d'autoclic</target>
       </trans-unit>
-      <trans-unit id="se49bd27b259a14ed">
+      <trans-unit id="se49bd27b259a14ed" xml:space="preserve">
         <source>When enabled the browser will automatically click on links that don't navigate to other pages.</source>
+        <target state="translated">Lorsque cette option est activée, le navigateur clique automatiquement sur les liens qui ne renvoient pas à d'autres pages.</target>
       </trans-unit>
-      <trans-unit id="hb4d7d27dcde87b24">
+      <trans-unit id="hb4d7d27dcde87b24" xml:space="preserve">
         <source>Describe your collection in long-form rich text (e.g. <x id="0" equiv-text="&lt;strong&gt;"/>bold<x id="1" equiv-text="&lt;/strong&gt;"/> and <x id="2" equiv-text="&lt;em&gt;"/>italicized<x id="3" equiv-text="&lt;/em&gt;"/> text.)</source>
+        <target state="translated">Décrivez votre collection en texte enrichi (par ex. <x id="0" equiv-text="&lt;strong&gt;"/>gras<x id="1" equiv-text="&lt;/strong&gt;"/> et <x id="2" equiv-text="&lt;em&gt;"/>en italique<x id="3" equiv-text="&lt;/em&gt;"/> texte.)</target>
       </trans-unit>
-      <trans-unit id="h46ac9a2331d608e2">
+      <trans-unit id="h46ac9a2331d608e2" xml:space="preserve">
         <source>If this collection is shareable, this will appear in the “About This Collection” section of the shared collection.</source>
+        <target state="translated">Si cette collection est partageable, elle apparaîtra dans la section « À propos de cette collection » de la collection partagée.</target>
       </trans-unit>
-      <trans-unit id="s492c3c47283fe263">
+      <trans-unit id="s492c3c47283fe263" xml:space="preserve">
         <source>Updated org settings.</source>
+        <target state="translated">Mise à jour des paramètres de l'organisation.</target>
       </trans-unit>
-      <trans-unit id="s8283503fb503486b">
+      <trans-unit id="s8283503fb503486b" xml:space="preserve">
         <source>Public Collections Gallery</source>
+        <target state="translated">Galerie des collections publiques</target>
       </trans-unit>
-      <trans-unit id="s7bcbd0fafce2565d">
+      <trans-unit id="s7bcbd0fafce2565d" xml:space="preserve">
         <source>Customize your org's Browsertrix URL.</source>
+        <target state="translated">Personnalisez l'URL Browsertrix de votre organisation.</target>
       </trans-unit>
-      <trans-unit id="s9826534c5f9f250d">
+      <trans-unit id="s9826534c5f9f250d" xml:space="preserve">
         <source>This org URL is already taken, try another one.</source>
+        <target state="translated">Cette URL est déjà utilisée, essayez-en une autre.</target>
       </trans-unit>
-      <trans-unit id="se90868439a248884">
+      <trans-unit id="se90868439a248884" xml:space="preserve">
         <source>This org URL is invalid. Please use alphanumeric characters and dashes (-) only.</source>
+        <target state="translated">L'URL de cet organisme n'est pas valide. Veuillez utiliser uniquement des caractères alphanumériques et des tirets (-).</target>
       </trans-unit>
       <trans-unit id="h33ab0b911e13ad09">
         <source>Name &amp; Collection Period</source>
