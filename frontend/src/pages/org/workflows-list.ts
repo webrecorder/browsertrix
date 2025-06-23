@@ -142,18 +142,20 @@ export class WorkflowsList extends BtrixElement {
   protected async willUpdate(
     changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {
-    if (
-      changedProperties.has("orderBy") ||
-      changedProperties.has("filterByCurrentUser") ||
-      changedProperties.has("filterByScheduled") ||
-      changedProperties.has("filterBy")
-    ) {
-      const isInitialRender = [
-        "orderBy",
-        "filterByCurrentUser",
-        "filterByScheduled",
-        "filterBy",
-      ]
+    // Props that reset the page to 1 when changed
+    const resetToFirstPageProps = [
+      "filterByCurrentUser",
+      "filterByScheduled",
+      "filterBy",
+      "orderBy",
+    ];
+
+    // Props that require a data refetch
+    const refetchDataProps = [...resetToFirstPageProps];
+
+    if (refetchDataProps.some((k) => changedProperties.has(k))) {
+      console.log(changedProperties);
+      const isInitialRender = resetToFirstPageProps
         .map((k) => changedProperties.get(k))
         .every((v) => v === undefined);
       void this.fetchWorkflows({
