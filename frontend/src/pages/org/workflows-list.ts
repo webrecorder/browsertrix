@@ -38,8 +38,20 @@ import { isArchivingDisabled } from "@/utils/orgs";
 import { tw } from "@/utils/tailwind";
 
 type SearchFields = "name" | "firstSeed";
-type SortField = "lastRun" | "name" | "firstSeed" | "created" | "modified";
-type SortDirection = "asc" | "desc";
+const SORT_FIELDS = [
+  "lastRun",
+  "name",
+  "firstSeed",
+  "created",
+  "modified",
+] as const;
+type SortField = (typeof SORT_FIELDS)[number];
+const SORT_DIRECTIONS = ["asc", "desc"] as const;
+type SortDirection = (typeof SORT_DIRECTIONS)[number];
+type Sort = {
+  field: SortField;
+  direction: SortDirection;
+};
 
 const FILTER_BY_CURRENT_USER_STORAGE_KEY =
   "btrix.filterByCurrentUser.crawlConfigs";
@@ -74,6 +86,11 @@ const sortableFields: Record<
     defaultDirection: "desc",
   },
 };
+
+const DEFAULT_SORT = {
+  field: "lastRun",
+  direction: sortableFields["lastRun"].defaultDirection!,
+} as const;
 
 const USED_FILTERS = [
   "schedule",
@@ -110,13 +127,7 @@ export class WorkflowsList extends BtrixElement {
   private workflowToDelete?: ListWorkflow;
 
   @state()
-  private orderBy: {
-    field: SortField;
-    direction: SortDirection;
-  } = {
-    field: "lastRun",
-    direction: sortableFields["lastRun"].defaultDirection!,
-  };
+  private orderBy: Sort = DEFAULT_SORT;
 
   @state()
   private filterBy: Partial<{ [k in keyof ListWorkflow]: boolean }> = {};
@@ -156,8 +167,30 @@ export class WorkflowsList extends BtrixElement {
     }
     // add filters present in search params
     for (const [key, value] of params) {
+      if (key === "mine") {
+        this.filterByCurrentUser = value === "true";
+      }
+
+      // Sorting field
+      if (key === "sortBy") {
+        if (value in sortableFields) {
+          this.orderBy = {
+            field: value as SortField,
+            direction:
+              // Use default direction for field if available, otherwise use current direction
+              sortableFields[value as SortField].defaultDirection ||
+              this.orderBy.direction,
+          };
+        }
+      }
+      if (key === "sortDir") {
+        if (SORT_DIRECTIONS.includes(value as SortDirection)) {
+          // Overrides sort direction if specified
+          this.orderBy = { ...this.orderBy, direction: value as SortDirection };
+        }
+      }
       // ignored params
-      if (["page", "mine"].includes(key)) return;
+      if (["page", "mine", "sortBy", "sortDir"].includes(key)) return;
 
       // convert string bools to filter values
       if (value === "true") {
@@ -222,14 +255,36 @@ export class WorkflowsList extends BtrixElement {
   ) {
     if (
       changedProperties.has("filterBy") ||
-      changedProperties.has("filterByCurrentUser")
+      changedProperties.has("filterByCurrentUser") ||
+      changedProperties.has("orderBy")
     ) {
       this.searchParams.update((params) => {
+        // Page is handled by <btrix-pagination> component
         params.delete("page");
         for (const [filter, value] of [
+          // Known filters
           ...USED_FILTERS.map((f) => [f, undefined]),
+
+          // Existing filters
           ...Object.entries(this.filterBy),
+
+          // Filter by current user
           ["mine", this.filterByCurrentUser || undefined],
+
+          // Sorting fields
+          [
+            "sortBy",
+            this.orderBy.field !== DEFAULT_SORT.field
+              ? this.orderBy.field
+              : undefined,
+          ],
+          [
+            "sortDir",
+            this.orderBy.direction !==
+            sortableFields[this.orderBy.field].defaultDirection
+              ? this.orderBy.direction
+              : undefined,
+          ],
         ] as [string, boolean | undefined][]) {
           if (value !== undefined) {
             params.set(filter, value.toString());
