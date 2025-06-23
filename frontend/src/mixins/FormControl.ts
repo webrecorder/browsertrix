@@ -9,6 +9,10 @@ export const FormControl = <T extends Constructor<LitElement>>(superClass: T) =>
     static formAssociated = true;
     readonly #internals: ElementInternals;
 
+    get form() {
+      return this.#internals.form;
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     constructor(...args: any[]) {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
