@@ -458,10 +458,14 @@ export class WorkflowsList extends BtrixElement {
         <div class="grow">${this.renderSearch()}</div>
 
         <div class="flex w-full items-center md:w-fit">
-          <div class="text-0-500 mr-2 whitespace-nowrap text-sm">
+          <label
+            class="text-0-500 mr-2 whitespace-nowrap text-sm"
+            for="sort-select"
+          >
             ${msg("Sort by:")}
-          </div>
+          </label>
           <sl-select
+            id="sort-select"
             class="flex-1 md:min-w-[9.2rem]"
             size="small"
             pill
@@ -494,52 +498,57 @@ export class WorkflowsList extends BtrixElement {
           ></sl-icon-button>
         </div>
       </div>
-
-      <div class="flex flex-wrap items-center justify-start gap-4">
-        <sl-radio-group
-          size="small"
-          @sl-change=${(e: SlChangeEvent) => {
-            const filter = (e.target as SlRadioGroup).value;
-            switch (filter) {
-              case "all-schedules":
-                this.filterBy = {
-                  ...this.filterBy,
-                  schedule: undefined,
-                };
-                break;
-              case "scheduled":
-                this.filterBy = {
-                  ...this.filterBy,
-                  schedule: true,
-                };
-                break;
-              case "unscheduled":
-                this.filterBy = {
-                  ...this.filterBy,
-                  schedule: false,
-                };
-                break;
-            }
-          }}
-          value=${this.filterBy.schedule === undefined
-            ? "all-schedules"
-            : this.filterBy.schedule
-              ? "scheduled"
-              : "unscheduled"}
-        >
-          <sl-radio-button value="all-schedules" pill>
-            <sl-icon name="asterisk" slot="prefix"></sl-icon>
-            ${msg("All Schedule States")}
-          </sl-radio-button>
-          <sl-radio-button value="scheduled" pill>
-            <sl-icon name="calendar2-check" slot="prefix"></sl-icon>
-            ${msg("Scheduled")}
-          </sl-radio-button>
-          <sl-radio-button value="unscheduled" pill>
-            <sl-icon name="calendar2-x" slot="prefix"></sl-icon>
-            ${msg("No schedule")}
-          </sl-radio-button>
-        </sl-radio-group>
+      <div class="flex flex-wrap items-center justify-end gap-4">
+        <label class="flex items-center" for="schedule-filter">
+          <span class="text-0-500 mr-2 whitespace-nowrap text-sm">
+            ${msg("Schedule:")}
+          </span>
+          <sl-radio-group
+            size="small"
+            id="schedule-filter"
+            @sl-change=${(e: SlChangeEvent) => {
+              const filter = (e.target as SlRadioGroup).value;
+              switch (filter) {
+                case "all-schedules":
+                  this.filterBy = {
+                    ...this.filterBy,
+                    schedule: undefined,
+                  };
+                  break;
+                case "scheduled":
+                  this.filterBy = {
+                    ...this.filterBy,
+                    schedule: true,
+                  };
+                  break;
+                case "unscheduled":
+                  this.filterBy = {
+                    ...this.filterBy,
+                    schedule: false,
+                  };
+                  break;
+              }
+            }}
+            value=${this.filterBy.schedule === undefined
+              ? "all-schedules"
+              : this.filterBy.schedule
+                ? "scheduled"
+                : "unscheduled"}
+          >
+            <sl-radio-button value="all-schedules" pill>
+              <sl-icon name="asterisk" slot="prefix"></sl-icon>
+              ${msg("All Schedule States")}
+            </sl-radio-button>
+            <sl-radio-button value="scheduled" pill>
+              <sl-icon name="calendar2-check" slot="prefix"></sl-icon>
+              ${msg("Scheduled")}
+            </sl-radio-button>
+            <sl-radio-button value="unscheduled" pill>
+              <sl-icon name="calendar2-x" slot="prefix"></sl-icon>
+              ${msg("No schedule")}
+            </sl-radio-button>
+          </sl-radio-group>
+        </label>
 
         <label>
           <span class="mr-1 text-xs text-neutral-500"
