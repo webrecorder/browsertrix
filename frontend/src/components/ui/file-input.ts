@@ -111,9 +111,9 @@ export class FileInput extends FormControl(TailwindElement) {
       <div
         id="dropzone"
         class=${clsx(
-          tw`relative`,
-          this.drop &&
-            tw`flex size-full items-center justify-center rounded p-6 text-center outline-dashed outline-1 -outline-offset-1 outline-neutral-400 transition-all hover:outline-primary-400`,
+          this.drop
+            ? tw`flex size-full cursor-pointer items-center justify-center rounded p-6 text-center outline-dashed outline-1 -outline-offset-1 outline-neutral-400 transition-all hover:bg-slate-50 hover:outline-primary-400`
+            : tw`size-max`,
         )}
         @drop=${this.drop ? this.onDrop : undefined}
         @dragover=${this.drop ? this.onDragover : undefined}
@@ -123,6 +123,8 @@ export class FileInput extends FormControl(TailwindElement) {
         @dragleave=${this.drop
           ? () => this.dropzone?.classList.remove(droppingClass)
           : undefined}
+        @click=${() => this.input?.click()}
+        role="button"
         dropzone="copy"
         aria-dropeffect="copy"
       >
@@ -141,7 +143,7 @@ export class FileInput extends FormControl(TailwindElement) {
           }}
         />
         <div class="relative z-10">
-          <slot @click=${() => this.input?.click()}></slot>
+          <slot></slot>
         </div>
       </div>
     `;
@@ -171,7 +173,6 @@ export class FileInput extends FormControl(TailwindElement) {
     this.dropzone?.classList.remove(droppingClass);
 
     const files = e.dataTransfer?.files;
-    console.log("files:", files);
 
     if (files) {
       const list = new DataTransfer();
