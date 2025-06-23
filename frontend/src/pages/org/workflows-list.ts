@@ -154,7 +154,6 @@ export class WorkflowsList extends BtrixElement {
     const refetchDataProps = [...resetToFirstPageProps];
 
     if (refetchDataProps.some((k) => changedProperties.has(k))) {
-      console.log(changedProperties);
       const isInitialRender = resetToFirstPageProps
         .map((k) => changedProperties.get(k))
         .every((v) => v === undefined);
