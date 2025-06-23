@@ -148,12 +148,20 @@ export class WorkflowsList extends BtrixElement {
       changedProperties.has("filterByScheduled") ||
       changedProperties.has("filterBy")
     ) {
+      const isInitialRender = [
+        "orderBy",
+        "filterByCurrentUser",
+        "filterByScheduled",
+        "filterBy",
+      ]
+        .map((k) => changedProperties.get(k))
+        .every((v) => v === undefined);
       void this.fetchWorkflows({
         page:
-          // If we've already loaded workflows and are switching filters, reset the page; otherwise, use the page from the URL or default to 1
-          this.workflows
-            ? 1
-            : parsePage(new URLSearchParams(location.search).get("page")) || 1,
+          // If this is the initial render, use the page from the URL or default to 1; otherwise, reset the page to 1
+          isInitialRender
+            ? parsePage(new URLSearchParams(location.search).get("page")) || 1
+            : 1,
       });
     }
     if (changedProperties.has("filterByCurrentUser")) {
