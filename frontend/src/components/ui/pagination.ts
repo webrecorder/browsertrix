@@ -173,6 +173,7 @@ export class Pagination extends LitElement {
   set page(page: number) {
     if (page !== this._page) {
       this.setPage(page);
+      this._page = page;
     }
   }
 
