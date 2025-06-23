@@ -541,16 +541,27 @@ export class WorkflowsList extends BtrixElement {
               `,
             )}
           </sl-select>
-          <sl-icon-button
-            name="arrow-down-up"
-            label=${msg("Reverse sort")}
-            @click=${() => {
-              this.orderBy = {
-                ...this.orderBy,
-                direction: this.orderBy.direction === "asc" ? "desc" : "asc",
-              };
-            }}
-          ></sl-icon-button>
+          <sl-tooltip
+            content=${this.orderBy.direction === "asc"
+              ? msg("Sort in descending order")
+              : msg("Sort in ascending order")}
+          >
+            <sl-icon-button
+              name=${this.orderBy.direction === "asc"
+                ? "sort-up-alt"
+                : "sort-down"}
+              class="text-base"
+              label=${this.orderBy.direction === "asc"
+                ? msg("Sort Descending")
+                : msg("Sort Ascending")}
+              @click=${() => {
+                this.orderBy = {
+                  ...this.orderBy,
+                  direction: this.orderBy.direction === "asc" ? "desc" : "asc",
+                };
+              }}
+            ></sl-icon-button>
+          </sl-tooltip>
         </div>
       </div>
       <div class="flex flex-wrap items-center justify-end gap-4">
