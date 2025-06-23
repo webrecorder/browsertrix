@@ -157,7 +157,7 @@ export class WorkflowsList extends BtrixElement {
     // add filters present in search params
     for (const [key, value] of params) {
       // ignored params
-      if (["page"].includes(key)) return;
+      if (["page", "mine"].includes(key)) return;
 
       // convert string bools to filter values
       if (value === "true") {
@@ -220,12 +220,16 @@ export class WorkflowsList extends BtrixElement {
   protected updated(
     changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {
-    if (changedProperties.has("filterBy")) {
+    if (
+      changedProperties.has("filterBy") ||
+      changedProperties.has("filterByCurrentUser")
+    ) {
       this.searchParams.update((params) => {
         params.delete("page");
         for (const [filter, value] of [
           ...USED_FILTERS.map((f) => [f, undefined]),
           ...Object.entries(this.filterBy),
+          ["mine", this.filterByCurrentUser || undefined],
         ] as [string, boolean | undefined][]) {
           if (value !== undefined) {
             params.set(filter, value.toString());
